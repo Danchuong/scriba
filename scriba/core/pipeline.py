@@ -63,7 +63,9 @@ class Pipeline:
         # Try to use the renderer's own _render_inline if it exists.
         inline = getattr(tex_renderer, "_render_inline", None)
         if callable(inline):
-            return inline  # type: ignore[return-value]
+            def _delegate(fragment: str) -> str:
+                return inline(fragment)
+            return _delegate
 
         def _stub(fragment: str) -> str:
             return fragment
