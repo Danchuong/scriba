@@ -11,7 +11,14 @@ from pathlib import Path
 
 import pytest
 
-from scriba import SubprocessWorker, SubprocessWorkerPool, WorkerError
+from scriba import (
+    OneShotSubprocessWorker,
+    PersistentSubprocessWorker,
+    SubprocessWorker,
+    SubprocessWorkerPool,
+    Worker,
+    WorkerError,
+)
 
 FAKE_WORKER = Path(__file__).resolve().parents[1] / "fixtures" / "fake_worker.py"
 
@@ -85,6 +92,61 @@ def test_subprocess_worker_timeout_raises():
             w.send({"sleep": 2.0}, timeout=0.05)
     finally:
         w.close()
+
+
+def test_subprocess_worker_alias_is_persistent():
+    assert SubprocessWorker is PersistentSubprocessWorker
+
+
+def test_worker_protocol_runtime_checkable():
+    w = PersistentSubprocessWorker("fake", _fake_argv())
+    try:
+        assert isinstance(w, Worker)
+    finally:
+        w.close()
+    o = OneShotSubprocessWorker("fake", _fake_argv())
+    try:
+        assert isinstance(o, Worker)
+    finally:
+        o.close()
+
+
+def test_oneshot_mode():
+    """OneShotSubprocessWorker spawns a fresh subprocess per call."""
+    argv = [
+        sys.executable,
+        "-c",
+        (
+            "import sys,json;"
+            "line=sys.stdin.readline();"
+            "print(json.dumps({'echo': json.loads(line)}))"
+        ),
+    ]
+    w = OneShotSubprocessWorker("oneshot-echo", argv)
+    try:
+        r1 = w.send({"a": 1})
+        assert r1 == {"echo": {"a": 1}}
+        r2 = w.send({"b": 2})
+        assert r2 == {"echo": {"b": 2}}
+    finally:
+        w.close()
+
+
+def test_pool_register_oneshot_mode():
+    argv = [
+        sys.executable,
+        "-c",
+        (
+            "import sys,json;"
+            "line=sys.stdin.readline();"
+            "print(json.dumps({'echo': json.loads(line)}))"
+        ),
+    ]
+    with SubprocessWorkerPool() as pool:
+        pool.register("oneshot", argv, mode="oneshot")
+        w = pool.get("oneshot")
+        assert isinstance(w, OneShotSubprocessWorker)
+        assert w.send({"x": 3}) == {"echo": {"x": 3}}
 
 
 def test_subprocess_worker_max_requests_restart():

@@ -29,6 +29,10 @@ class Renderer(Protocol):
     version: int
     """Integer plugin version. Starts at 1."""
 
+    priority: int
+    """Tie-breaker when two renderers detect blocks starting at the same
+    offset. Lower wins. Default is 100 (see Pipeline docs)."""
+
     def detect(self, source: str) -> list[Block]:
         """Scan the source and return every Block this renderer claims.
 

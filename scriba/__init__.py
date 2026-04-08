@@ -10,7 +10,13 @@ from scriba.core.artifact import Block, RenderArtifact, Document
 from scriba.core.context import RenderContext, ResourceResolver
 from scriba.core.renderer import Renderer, RendererAssets
 from scriba.core.pipeline import Pipeline
-from scriba.core.workers import SubprocessWorker, SubprocessWorkerPool
+from scriba.core.workers import (
+    OneShotSubprocessWorker,
+    PersistentSubprocessWorker,
+    SubprocessWorker,
+    SubprocessWorkerPool,
+    Worker,
+)
 from scriba.core.errors import (
     ScribaError,
     RendererError,
@@ -30,7 +36,10 @@ __all__ = [
     "Renderer",
     "RendererAssets",
     "Pipeline",
+    "Worker",
     "SubprocessWorker",
+    "PersistentSubprocessWorker",
+    "OneShotSubprocessWorker",
     "SubprocessWorkerPool",
     "ScribaError",
     "RendererError",

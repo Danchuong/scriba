@@ -60,6 +60,14 @@ class RenderArtifact:
     """Optional plugin-private data returned to the Pipeline but not
     exposed on the final Document."""
 
+    block_id: str | None = None
+    """Stable identifier a renderer may attach to this block so downstream
+    consumers can look up associated data on ``Document.block_data``."""
+
+    data: Mapping[str, Any] | None = None
+    """Optional public data payload, exposed on ``Document.block_data``
+    keyed by ``block_id``. Skipped if either is missing."""
+
 
 @dataclass(frozen=True)
 class Document:
@@ -82,6 +90,13 @@ class Document:
     versions: Mapping[str, int]
     """Mapping of plugin-name -> integer version. Always contains "core"
     and one key per Renderer in the Pipeline."""
+
+    block_data: Mapping[str, Any] = field(default_factory=dict)
+    """Public data payloads keyed by ``RenderArtifact.block_id``."""
+
+    required_assets: Mapping[str, Path] = field(default_factory=dict)
+    """Resolved filesystem paths for every namespaced asset key present in
+    ``required_css`` and ``required_js``. Keys match those sets exactly."""
 
 
 @dataclass(frozen=True)

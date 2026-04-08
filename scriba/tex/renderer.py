@@ -6,6 +6,7 @@ See ``docs/scriba/02-tex-plugin.md`` §Public API for the locked signature.
 from __future__ import annotations
 
 import html as _html
+import logging
 import os
 import re
 import shutil
@@ -16,7 +17,7 @@ from typing import Literal, Mapping
 
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
-from scriba.core.errors import RendererError, WorkerError
+from scriba.core.errors import RendererError, ValidationError, WorkerError
 from scriba.core.workers import SubprocessWorker, SubprocessWorkerPool
 from scriba.tex.parser.code_blocks import extract_lstlisting
 from scriba.tex.parser.dashes_quotes import apply_typography
@@ -39,11 +40,18 @@ from scriba.tex.parser.text_commands import apply_size_commands, apply_text_comm
 from scriba.tex.validate import validate as _validate
 
 
+logger = logging.getLogger(__name__)
+
+MAX_SOURCE_SIZE = 1_048_576
+"""Maximum raw source bytes accepted by TexRenderer (1 MiB)."""
+
+
 class TexRenderer:
     """Render a TeX-flavored problem statement to a self-contained HTML fragment."""
 
     name: str = "tex"
     version: int = 1
+    priority: int = 100
 
     def __init__(
         self,
@@ -115,6 +123,11 @@ class TexRenderer:
     # ----- Renderer protocol -----
 
     def detect(self, source: str) -> list[Block]:
+        if len(source.encode("utf-8", errors="ignore")) > MAX_SOURCE_SIZE:
+            raise ValidationError(
+                f"tex source exceeds maximum size "
+                f"({MAX_SOURCE_SIZE} bytes)"
+            )
         return [Block(start=0, end=len(source), kind="tex", raw=source)]
 
     def render_block(self, block: Block, ctx: RenderContext) -> RenderArtifact:
@@ -175,9 +188,10 @@ class TexRenderer:
             request["macros"] = dict(self._katex_macros)
         try:
             response = worker.send(request, timeout=self._katex_worker_timeout)
-        except WorkerError:
+        except WorkerError as e:
             if self._strict_math:
                 raise
+            logger.warning("KaTeX inline failed, escaping: %s", e)
             return html_escape_text(tex)
         html = response.get("html")
         if html is None:
@@ -257,9 +271,10 @@ class TexRenderer:
                     strict=self._strict_math,
                     timeout=self._katex_worker_timeout,
                 )
-            except WorkerError:
+            except WorkerError as e:
                 if self._strict_math:
                     raise
+                logger.warning("KaTeX batch failed, escaping: %s", e)
                 substitutions = {
                     item.placeholder: html_escape_text(item.math)
                     for item in math_items
