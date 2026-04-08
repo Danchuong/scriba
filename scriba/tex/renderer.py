@@ -18,6 +18,7 @@ from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
 from scriba.core.errors import RendererError, WorkerError
 from scriba.core.workers import SubprocessWorker, SubprocessWorkerPool
+from scriba.tex.parser.code_blocks import extract_lstlisting
 from scriba.tex.parser.dashes_quotes import apply_typography
 from scriba.tex.parser.environments import (
     apply_center,
@@ -26,12 +27,14 @@ from scriba.tex.parser.environments import (
     apply_urls,
 )
 from scriba.tex.parser.escape import PlaceholderManager, html_escape_text
+from scriba.tex.parser.images import apply_includegraphics
 from scriba.tex.parser.lists import apply_lists
 from scriba.tex.parser.math import (
     extract_math,
     render_math_batch,
     restore_dollar_literals,
 )
+from scriba.tex.parser.tables import apply_tabular
 from scriba.tex.parser.text_commands import apply_size_commands, apply_text_commands
 from scriba.tex.validate import validate as _validate
 
@@ -115,7 +118,7 @@ class TexRenderer:
         return [Block(start=0, end=len(source), kind="tex", raw=source)]
 
     def render_block(self, block: Block, ctx: RenderContext) -> RenderArtifact:
-        html_text = self._render_source(block.raw)
+        html_text = self._render_source(block.raw, ctx)
         css = {"scriba-tex-content.css"}
         if self._pygments_theme in ("one-light", "github-light"):
             css.add("scriba-tex-pygments-light.css")
@@ -187,15 +190,34 @@ class TexRenderer:
 
     # ----- main pipeline -----
 
-    def _render_source(self, source: str) -> str:
+    def _render_source(self, source: str, ctx: RenderContext) -> str:
         if not source:
             return ""
 
         placeholders = PlaceholderManager()
         slug_counts: dict[str, int] = {}
 
-        # 1. Extract math first so we don't HTML-escape KaTeX output later.
-        text, math_items = extract_math(source, placeholders)
+        # 0. Extract lstlisting and tabular FIRST so their bodies are not
+        #    interpreted as TeX (cells use ``&``, code uses ``$``, both
+        #    would otherwise collide with math/cell parsing).
+        text = extract_lstlisting(
+            source,
+            placeholders,
+            theme=self._pygments_theme,
+            enable_copy_button=self._enable_copy_buttons,
+        )
+        text = apply_tabular(text, placeholders)
+
+        # 0b. Resolve images before HTML escaping so the resolver sees the
+        #     real filename and we can entity-escape the URL exactly once.
+        text = apply_includegraphics(
+            text,
+            placeholders,
+            resource_resolver=ctx.resource_resolver,
+        )
+
+        # 1. Extract math next so we don't HTML-escape KaTeX output later.
+        text, math_items = extract_math(text, placeholders)
 
         # 2. HTML-escape free text. Math placeholders contain only NULs and
         #    ASCII so they survive escape unchanged.
@@ -245,13 +267,15 @@ class TexRenderer:
             for placeholder, html in substitutions.items():
                 text = text.replace(placeholder, html)
 
-        # 9. Restore any inline placeholders the parser modules created.
-        text = placeholders.restore_all(text)
+        # 9. Restore inline placeholders. Block placeholders stay as opaque
+        #    sentinels so the paragraph wrapper does not try to peek inside
+        #    their nested HTML (e.g. ``<div class="highlight"><pre>...``).
+        text = placeholders.restore_inline(text)
 
         # 10. Paragraph wrapping. Insert blank lines around top-level block
-        #     elements so each one gets its own paragraph slot. We use a
-        #     non-greedy match per element kind so adjacent siblings split
-        #     cleanly without breaking the inner content.
+        #     elements so each one gets its own paragraph slot. Block
+        #     placeholders are surrounded by blank lines so each becomes a
+        #     standalone paragraph that bypasses ``<p>`` wrapping.
         text = re.sub(
             r"(<(h2|h3|h4)\b[^>]*>.*?</\2>)",
             r"\n\n\1\n\n",
@@ -259,25 +283,34 @@ class TexRenderer:
             flags=re.DOTALL,
         )
         text = re.sub(
-            r"(<(ul|ol|div|blockquote|table|pre|figure)\b[^>]*>.*?</\2>)",
+            r"(<(ul|ol|blockquote|table|figure)\b[^>]*>.*?</\2>)",
             r"\n\n\1\n\n",
             text,
             flags=re.DOTALL,
         )
+        for token in placeholders.block_tokens:
+            text = text.replace(token, f"\n\n{token}\n\n")
         paragraphs = [
             p.strip() for p in re.split(r"\n\n+", text) if p.strip()
         ]
         if not paragraphs:
             return ""
-        wrapped = "".join(self._wrap_paragraph(p) for p in paragraphs)
+        wrapped = "".join(
+            self._wrap_paragraph(p, placeholders) for p in paragraphs
+        )
         return wrapped
 
     _BLOCK_PREFIX_RE = re.compile(
         r"^\s*<(h2|h3|h4|ul|ol|div|blockquote|table|pre|figure)\b"
     )
 
-    def _wrap_paragraph(self, text: str) -> str:
+    def _wrap_paragraph(
+        self, text: str, placeholders: PlaceholderManager
+    ) -> str:
         """Wrap inline text in ``<p>`` but emit block elements bare."""
+        # Block placeholder paragraphs render their HTML directly.
+        if text in placeholders.block_tokens:
+            return placeholders.restore_blocks(text)
         if self._BLOCK_PREFIX_RE.match(text):
-            return text
-        return f'<p class="scriba-tex-paragraph">{text}</p>'
+            return placeholders.restore_blocks(text)
+        return f'<p class="scriba-tex-paragraph">{placeholders.restore_blocks(text)}</p>'

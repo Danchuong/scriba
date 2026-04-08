@@ -106,6 +106,22 @@ class PlaceholderManager:
             text = text.replace(token, html)
         return text
 
+    def restore_inline(self, text: str) -> str:
+        """Substitute only inline placeholders, leaving block ones intact."""
+        for token, html in self._items:
+            if token in self._block:
+                continue
+            text = text.replace(token, html)
+        return text
+
+    def restore_blocks(self, text: str) -> str:
+        """Substitute only block placeholders."""
+        for token, html in self._items:
+            if token not in self._block:
+                continue
+            text = text.replace(token, html)
+        return text
+
     @property
     def block_tokens(self) -> frozenset[str]:
         return frozenset(self._block)

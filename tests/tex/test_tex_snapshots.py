@@ -223,7 +223,7 @@ def test_empty_input(pipeline, ctx):
 # 30
 def test_very_long_input_10k_chars(pipeline, ctx):
     chunks = []
-    for i in range(200):
+    for i in range(225):
         chunks.append(f"Paragraph {i} with math $x_{i} = {i}$ and text.\n\n")
     tex = "".join(chunks)
     assert len(tex) >= 10_000

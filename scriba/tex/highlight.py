@@ -1,26 +1,23 @@
 """Pygments wrapper for TeX lstlisting code blocks.
 
-Phase 2c ships the import-and-call shim only; full lstlisting wiring lands
-in 2d. The shim uses ``HtmlFormatter(classprefix="tok-")`` so that the
-shipped ``scriba-tex-pygments-light.css`` selectors line up.
+Returns Pygments-highlighted HTML using ``HtmlFormatter(classprefix="tok-")``
+so the output lines up with the shipped ``scriba-tex-pygments-{light,dark}.css``.
+
+When the theme is ``"none"``, Pygments is unavailable, or the language is
+unknown, returns ``None`` to signal callers to use the plain fallback path.
 """
 
 from __future__ import annotations
 
 
-def highlight_code(code: str, language: str | None, *, theme: str) -> str:
-    """Return Pygments-highlighted HTML or a plain ``<pre>`` fallback.
+def highlight_code(code: str, language: str | None, *, theme: str) -> str | None:
+    """Return Pygments-highlighted HTML or ``None`` for the plain fallback.
 
-    Phase 2c stub: callers in 2d will route lstlisting through this entry.
-    Returns the highlighted HTML wrapped in ``<div class="highlight">``.
-    Falls back to plain ``<pre class="scriba-tex-code-plain">`` if Pygments
-    is missing, the language is unknown, or theme is ``"none"``.
+    The returned HTML is wrapped by Pygments in ``<div class="highlight">``.
+    Callers are responsible for the outer ``scriba-tex-code-block`` wrapper.
     """
-    import html as _html
-
-    escaped = _html.escape(code, quote=False)
-    if theme == "none" or language is None:
-        return f'<pre class="scriba-tex-code-plain"><code>{escaped}</code></pre>'
+    if theme == "none" or not language:
+        return None
 
     try:
         from pygments import highlight as _hl
@@ -28,12 +25,12 @@ def highlight_code(code: str, language: str | None, *, theme: str) -> str:
         from pygments.lexers import get_lexer_by_name
         from pygments.util import ClassNotFound
     except ImportError:
-        return f'<pre class="scriba-tex-code-plain"><code>{escaped}</code></pre>'
+        return None
 
     try:
         lexer = get_lexer_by_name(language, stripall=False)
     except ClassNotFound:
-        return f'<pre class="scriba-tex-code-plain"><code>{escaped}</code></pre>'
+        return None
 
     formatter = HtmlFormatter(classprefix="tok-", nowrap=False)
     return _hl(code, lexer, formatter)

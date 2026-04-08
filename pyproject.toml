@@ -22,7 +22,7 @@ classifiers = [
   "Topic :: Text Processing :: Markup :: LaTeX",
 ]
 dependencies = [
-  "pygments>=2.17",
+  "pygments>=2.17,<2.20",
 ]
 
 [project.optional-dependencies]
