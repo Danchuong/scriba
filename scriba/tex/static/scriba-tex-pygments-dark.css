@@ -1,0 +1,116 @@
+/* Scriba Pygments theme — One Dark
+ * Scoped under [data-theme="dark"] .scriba-tex-content .highlight
+ * Uses Pygments `.tok-*` token class names.
+ */
+
+[data-theme="dark"] .scriba-tex-content .highlight {
+  background: var(--scriba-bg-code);
+  color: #abb2bf;
+}
+
+[data-theme="dark"] .scriba-tex-content .highlight pre {
+  background: transparent;
+  color: inherit;
+}
+
+/* Keywords */
+[data-theme="dark"] .scriba-tex-content .highlight .tok-k,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-kc,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-kd,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-kn,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-kp,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-kr,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-kt {
+  color: #c678dd;
+}
+
+/* Names */
+[data-theme="dark"] .scriba-tex-content .highlight .tok-n,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-na,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-nx {
+  color: #abb2bf;
+}
+
+[data-theme="dark"] .scriba-tex-content .highlight .tok-nf,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-fm,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-nd {
+  color: #61afef;
+}
+
+[data-theme="dark"] .scriba-tex-content .highlight .tok-nc,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-ne {
+  color: #e5c07b;
+}
+
+[data-theme="dark"] .scriba-tex-content .highlight .tok-nb,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-no {
+  color: #d19a66;
+}
+
+[data-theme="dark"] .scriba-tex-content .highlight .tok-nv {
+  color: #e06c75;
+}
+
+/* Strings */
+[data-theme="dark"] .scriba-tex-content .highlight .tok-s,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-sa,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-sb,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-sc,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-dl,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-sd,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-s1,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-s2,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-sh,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-si,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-sx,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-sr,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-ss {
+  color: #98c379;
+}
+
+[data-theme="dark"] .scriba-tex-content .highlight .tok-se {
+  color: #56b6c2;
+}
+
+/* Numbers */
+[data-theme="dark"] .scriba-tex-content .highlight .tok-m,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-mb,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-mf,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-mh,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-mi,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-mo,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-l {
+  color: #d19a66;
+}
+
+/* Comments */
+[data-theme="dark"] .scriba-tex-content .highlight .tok-c,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-ch,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-cm,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-cpf,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-c1,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-cs {
+  color: #5c6370;
+  font-style: italic;
+}
+
+[data-theme="dark"] .scriba-tex-content .highlight .tok-cp {
+  color: #c678dd;
+  font-style: normal;
+}
+
+/* Operators, punctuation */
+[data-theme="dark"] .scriba-tex-content .highlight .tok-o,
+[data-theme="dark"] .scriba-tex-content .highlight .tok-ow {
+  color: #56b6c2;
+}
+
+[data-theme="dark"] .scriba-tex-content .highlight .tok-p {
+  color: #abb2bf;
+}
+
+/* Errors */
+[data-theme="dark"] .scriba-tex-content .highlight .tok-err {
+  color: var(--scriba-error);
+  background: var(--scriba-error-bg);
+}

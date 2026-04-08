@@ -1,0 +1,44 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scriba"
+version = "0.1.0"
+description = "Backend-only Python package for rendering Online Judge problem statements (LaTeX + D2 diagrams)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+keywords = ["latex", "katex", "d2", "online-judge", "problem-statement", "renderer"]
+authors = [{ name = "OJCloud" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Text Processing :: Markup :: LaTeX",
+]
+dependencies = [
+  "pygments>=2.17",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "bleach>=6.1",
+  "lxml>=5.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["scriba"]
+
+[tool.hatch.build.targets.wheel.package-data]
+"scriba" = ["py.typed"]
+"scriba.tex" = ["katex_worker.js", "static/*.css", "static/*.js"]
+"scriba.diagram" = ["static/*.css", "static/*.js"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

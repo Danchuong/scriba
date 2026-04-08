@@ -1,0 +1,116 @@
+/* Scriba Pygments theme — One Light
+ * Scoped under .scriba-tex-content .highlight
+ * Uses Pygments `.tok-*` token class names.
+ */
+
+.scriba-tex-content .highlight {
+  background: var(--scriba-bg-code);
+  color: var(--scriba-fg);
+}
+
+.scriba-tex-content .highlight pre {
+  background: transparent;
+  color: inherit;
+}
+
+/* Keywords */
+.scriba-tex-content .highlight .tok-k,
+.scriba-tex-content .highlight .tok-kc,
+.scriba-tex-content .highlight .tok-kd,
+.scriba-tex-content .highlight .tok-kn,
+.scriba-tex-content .highlight .tok-kp,
+.scriba-tex-content .highlight .tok-kr,
+.scriba-tex-content .highlight .tok-kt {
+  color: #a626a4;
+}
+
+/* Names */
+.scriba-tex-content .highlight .tok-n,
+.scriba-tex-content .highlight .tok-na,
+.scriba-tex-content .highlight .tok-nx {
+  color: var(--scriba-fg);
+}
+
+.scriba-tex-content .highlight .tok-nf,
+.scriba-tex-content .highlight .tok-fm,
+.scriba-tex-content .highlight .tok-nd {
+  color: #4078f2;
+}
+
+.scriba-tex-content .highlight .tok-nc,
+.scriba-tex-content .highlight .tok-ne {
+  color: #c18401;
+}
+
+.scriba-tex-content .highlight .tok-nb,
+.scriba-tex-content .highlight .tok-no {
+  color: #986801;
+}
+
+.scriba-tex-content .highlight .tok-nv {
+  color: #e45649;
+}
+
+/* Strings */
+.scriba-tex-content .highlight .tok-s,
+.scriba-tex-content .highlight .tok-sa,
+.scriba-tex-content .highlight .tok-sb,
+.scriba-tex-content .highlight .tok-sc,
+.scriba-tex-content .highlight .tok-dl,
+.scriba-tex-content .highlight .tok-sd,
+.scriba-tex-content .highlight .tok-s1,
+.scriba-tex-content .highlight .tok-s2,
+.scriba-tex-content .highlight .tok-sh,
+.scriba-tex-content .highlight .tok-si,
+.scriba-tex-content .highlight .tok-sx,
+.scriba-tex-content .highlight .tok-sr,
+.scriba-tex-content .highlight .tok-ss {
+  color: #50a14f;
+}
+
+.scriba-tex-content .highlight .tok-se {
+  color: #0184bc;
+}
+
+/* Numbers */
+.scriba-tex-content .highlight .tok-m,
+.scriba-tex-content .highlight .tok-mb,
+.scriba-tex-content .highlight .tok-mf,
+.scriba-tex-content .highlight .tok-mh,
+.scriba-tex-content .highlight .tok-mi,
+.scriba-tex-content .highlight .tok-mo,
+.scriba-tex-content .highlight .tok-l {
+  color: #986801;
+}
+
+/* Comments */
+.scriba-tex-content .highlight .tok-c,
+.scriba-tex-content .highlight .tok-ch,
+.scriba-tex-content .highlight .tok-cm,
+.scriba-tex-content .highlight .tok-cpf,
+.scriba-tex-content .highlight .tok-c1,
+.scriba-tex-content .highlight .tok-cs {
+  color: var(--scriba-fg-muted);
+  font-style: italic;
+}
+
+.scriba-tex-content .highlight .tok-cp {
+  color: #a626a4;
+  font-style: normal;
+}
+
+/* Operators, punctuation */
+.scriba-tex-content .highlight .tok-o,
+.scriba-tex-content .highlight .tok-ow {
+  color: #0184bc;
+}
+
+.scriba-tex-content .highlight .tok-p {
+  color: var(--scriba-fg);
+}
+
+/* Errors */
+.scriba-tex-content .highlight .tok-err {
+  color: var(--scriba-error);
+  background: var(--scriba-error-bg);
+}
