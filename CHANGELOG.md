@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+### Fixed
+- Vendor `katex.min.css` and the 20 `KaTeX_*.woff2` fonts alongside the
+  already-vendored `katex.min.js`. Previously the consumer frontend was
+  silently relying on `katex/dist/katex.min.css` shipped via an npm
+  side-effect import; that import was removed and math rendering broke
+  on every problem statement page. Scriba now owns both the HTML class
+  tree it emits (`.katex .strut .mord .vlist ...`) and the CSS that
+  styles it. Backend exposes the files at `/api/static/scriba-katex/`.
+  CSS has the unused `.woff` and `.ttf` `@font-face` fallbacks stripped
+  (woff2 only). No new npm deps; no version drift between the JS engine
+  and the CSS.
+
 ### Changed
 - Vendored KaTeX `0.16.11` into the wheel at
   `scriba/tex/vendor/katex/katex.min.js`. `pip install scriba` now works
