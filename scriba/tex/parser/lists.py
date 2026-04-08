@@ -6,13 +6,16 @@ See ``docs/scriba/02-tex-plugin.md`` §3 for the HTML output contract.
 from __future__ import annotations
 
 import re
+from typing import Callable
 
 _UL_OPEN = '<ul class="scriba-tex-list scriba-tex-list-unordered">'
 _OL_OPEN = '<ol class="scriba-tex-list scriba-tex-list-ordered">'
 _LI_OPEN = '<li class="scriba-tex-list-item">'
 
 
-def _process_nested_environment(text: str, env_name: str, callback) -> str:
+def _process_nested_environment(
+    text: str, env_name: str, callback: Callable[[str], str]
+) -> str:
     """Walk ``\\begin{env}...\\end{env}`` blocks honoring nesting depth."""
     begin_tag = f"\\begin{{{env_name}}}"
     end_tag = f"\\end{{{env_name}}}"

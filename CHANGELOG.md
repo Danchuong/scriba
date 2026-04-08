@@ -1,5 +1,72 @@
 # Changelog
 
+## 0.1.1-alpha (2026-04-08)
+
+Phase 3 architect-review fixes. Bumps `SCRIBA_VERSION` to `2` because
+`Document` gains `block_data` and `required_assets` fields and the
+asset key shape changes (now namespaced as `<renderer>/<basename>`).
+
+### Added
+- `scriba.core.Worker` — runtime-checkable Protocol any worker satisfies
+- `scriba.core.PersistentSubprocessWorker` — renamed from
+  `SubprocessWorker` (kept as deprecated alias for one release)
+- `scriba.core.OneShotSubprocessWorker` — spawns a fresh subprocess per
+  call for engines that should not be kept alive
+- `SubprocessWorkerPool.register(..., mode="persistent"|"oneshot")`
+- `RenderArtifact.block_id` and `RenderArtifact.data` — public per-block
+  payload exposed on `Document.block_data`
+- `Document.block_data` — `{block_id: data}` aggregated from artifacts
+- `Document.required_assets` — `{namespaced-key: Path}` map for renderer
+  assets, parallel to `required_css`/`required_js`
+- `Renderer.priority: int` — overlap tie-breaker (lower wins, default 100)
+- `Pipeline(..., context_providers=[...])` — pluggable hooks; default
+  set keeps the previous TeX inline-renderer auto-wiring
+- `scriba.tex.tex_inline_provider` — explicit context provider that
+  callers can pass to opt out of duck-typing detection
+- `scriba.tex.parser._urls.is_safe_url` — shared URL safety check used by
+  href/url and the includegraphics resolver
+- `scriba.tex.parser.math.MAX_MATH_ITEMS = 500`
+- `scriba.tex.renderer.MAX_SOURCE_SIZE = 1_048_576`
+- New tests: oneshot worker, Worker protocol, namespaced assets,
+  block_data round-trip, priority tie-breaker, math item cap, source
+  size cap, four new XSS tests for href URL smuggling, image resolver
+  output validation
+
+### Changed
+- **BREAKING (cache key)** `Document.required_css` / `required_js` now
+  contain namespaced strings of the form `"<renderer>/<basename>"` so
+  two renderers can ship files with the same basename without
+  collision. Consumers should treat the strings as opaque keys; the
+  basename is the part after the final `/`.
+- `Pipeline.render` overlap resolution now sorts by
+  `(block.start, renderer.priority, list-index)` instead of just
+  `(start, list-index)`.
+- `_is_safe_url` rewritten to use `urllib.parse.urlparse` after
+  stripping all C0 control characters and unicode line/paragraph
+  separators. Catches `JAVASCRIPT:`, `java\tscript:`, `java\u2028script:`
+  and newline-smuggle payloads.
+- `extract_math` raises `ValidationError` if more than `MAX_MATH_ITEMS`
+  expressions are found.
+- `TexRenderer.detect` raises `ValidationError` for sources larger than
+  `MAX_SOURCE_SIZE` bytes.
+- `TexRenderer._render_inline` and the math batch fallback now log a
+  `warning` before swallowing `WorkerError`.
+- `Pipeline` no longer late-imports `scriba.tex` for inline-tex wiring;
+  the default context provider duck-types on `name == "tex"` and
+  callable `_render_inline`. The old isinstance check is gone.
+- `SubprocessWorkerPool.get(name)` typed as returning the `Worker`
+  protocol instead of the concrete subprocess class.
+- Cleanup paths in `PersistentSubprocessWorker` now log via the module
+  logger instead of swallowing every `Exception`.
+- `apply_includegraphics` validates the resolver result through
+  `is_safe_url`; unsafe URLs are treated as missing images.
+
+### Sanitization
+- Downstream consumers should pair `bleach.clean(...)` with
+  `bleach.css_sanitizer.CSSSanitizer` to scrub the inline `style`
+  attribute on `<img class="scriba-tex-image">`. Scriba does not ship
+  a sanitizer.
+
 ## 0.1.0-alpha (2026-04-08)
 
 First alpha release. TeX plugin port from ojcloud complete; diagram plugin

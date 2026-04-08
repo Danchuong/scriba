@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scriba"
-version = "0.1.0"
+version = "0.1.1a0"
 description = "Backend-only Python package for rendering Online Judge problem statements (LaTeX + D2 diagrams)"
 readme = "README.md"
 license = { text = "MIT" }
