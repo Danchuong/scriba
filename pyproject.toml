@@ -5,12 +5,22 @@ build-backend = "hatchling.build"
 [project]
 name = "scriba"
 version = "0.1.1a0"
-description = "Backend-only Python package for rendering Online Judge problem statements (LaTeX + D2 diagrams)"
+description = "Backend Python library for rendering LaTeX problem statements and CP editorial animations to self-contained HTML"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10"
-keywords = ["latex", "katex", "d2", "online-judge", "problem-statement", "renderer"]
-authors = [{ name = "OJCloud" }]
+keywords = [
+  "latex",
+  "katex",
+  "online-judge",
+  "problem-statement",
+  "renderer",
+  "competitive-programming",
+  "editorial",
+  "animation",
+]
+# TODO: confirm maintainer contact email before first public release
+authors = [{ name = "OJCloud", email = "maintainers@ojcloud.dev" }]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
@@ -32,12 +42,32 @@ dev = [
   "lxml>=5.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/ojcloud/scriba"       # TODO: confirm URL
+Repository = "https://github.com/ojcloud/scriba"     # TODO: confirm URL
+Issues = "https://github.com/ojcloud/scriba/issues"  # TODO: confirm URL
+Documentation = "https://github.com/ojcloud/scriba/tree/main/docs"  # TODO: confirm URL
+
 [tool.hatch.build.targets.wheel]
 packages = ["scriba"]
+# Ship user-facing docs with the wheel; exclude internal design logs.
+include = [
+  "scriba/**",
+  "README.md",
+  "CHANGELOG.md",
+  "CONTRIBUTING.md",
+  "SECURITY.md",
+  "LICENSE",
+]
+exclude = [
+  "PHASE2_DECISIONS.md",
+  "tests/**",
+  "examples/**",
+]
 
 [tool.hatch.build.targets.wheel.package-data]
 "scriba" = ["py.typed"]
-"scriba.tex" = ["katex_worker.js", "static/*.css", "static/*.js"]
+"scriba.tex" = ["katex_worker.js", "static/*.css", "static/*.js", "vendor/katex/*.js", "vendor/katex/*.md", "vendor/katex/LICENSE"]
 "scriba.diagram" = ["static/*.css", "static/*.js"]
 
 [tool.pytest.ini_options]

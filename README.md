@@ -1,46 +1,70 @@
 # Scriba
 
-Backend-only Python package for rendering Online Judge problem statements (LaTeX + diagrams).
+**Status:** v0.1.1-alpha · MIT · Python 3.10+
+
+Scriba is a backend Python library that renders LaTeX problem statements and
+competitive-programming editorials to self-contained HTML fragments. It is
+LaTeX-first: drop a `.tex` source in, get out HTML plus the exact CSS/JS
+asset basenames needed to display it.
+
+## What is Scriba?
+
+- **LaTeX-first rendering** for CP problem statements and editorials, with
+  KaTeX math, Pygments code highlighting, lists, tables, sections, figures,
+  `\href` / `\url` with XSS hardening, and `\begin{lstlisting}` code blocks.
+- **Self-contained output contract:** every render produces an HTML fragment
+  plus a namespaced set of required CSS and JS basenames and a block-data
+  map — consumers decide how to serve the static assets.
+- **Coming in v0.2.0:** a `\begin{animation}` environment for step-through
+  editorial walkthroughs, followed by a `\begin{diagram}` environment for
+  inline graph/tree figures. See
+  [`docs/scriba/04-environments-spec.md`](https://github.com/ojcloud/scriba/tree/main/docs)
+  <!-- TODO: update once public mirror exists -->.
 
 ## Install
 
 ```bash
 pip install scriba
-
-# System prerequisites
-apt-get install nodejs   # or brew install node
-npm install -g katex@0.16.11
 ```
 
-## Quick start
+Scriba shells out to a small Node.js worker for KaTeX math, so the host
+environment needs Node.js 18+ on PATH:
+
+```bash
+# System prerequisite — Node.js only
+apt-get install nodejs   # or: brew install node
+```
+
+KaTeX `0.16.11` is vendored inside the wheel (at
+`scriba/tex/vendor/katex/katex.min.js`), so **no separate
+`npm install -g katex` step is required**. `pip install scriba` is all
+you need once Node is present.
+
+## Hello world
 
 ```python
 from scriba import Pipeline, RenderContext, SubprocessWorkerPool
 from scriba.tex import TexRenderer
 
 pool = SubprocessWorkerPool()
-renderer = TexRenderer(worker_pool=pool, pygments_theme="one-light")
-pipeline = Pipeline([renderer])
+pipeline = Pipeline([TexRenderer(worker_pool=pool, pygments_theme="one-light")])
 
 ctx = RenderContext(
     resource_resolver=lambda name: f"/cdn/problems/1/{name}",
-    theme="light",
-    dark_mode=False,
-    metadata={},
-    render_inline_tex=None,
+    theme="light", dark_mode=False, metadata={}, render_inline_tex=None,
 )
 
-doc = pipeline.render(r"\section{Hello} Cho $x^2$ là bình phương.", ctx)
-print(doc.html)           # HTML fragment
-print(doc.required_css)   # {"scriba-tex-content.css", "scriba-tex-pygments-light.css"}
-print(doc.required_js)    # {"scriba-tex-copy.js"}
-
+doc = pipeline.render(r"\section{Hello} Let $x^2$ be the square.", ctx)
+print(doc.html)          # HTML fragment
+print(doc.required_css)  # namespaced CSS keys
 pipeline.close()
 ```
 
 ## Sanitize before embedding
 
-Scriba does NOT sanitize output. Consumers must sanitize:
+Scriba does **not** sanitize its output — consumers must pass it through a
+vetted sanitizer before embedding in a page. Scriba ships an allowlist that
+matches its output contract:
 
 ```python
 import bleach
@@ -48,21 +72,21 @@ from bleach.css_sanitizer import CSSSanitizer
 from scriba import ALLOWED_TAGS, ALLOWED_ATTRS
 
 css = CSSSanitizer(allowed_css_properties=("transform","transform-origin","width","height"))
-safe = bleach.clean(doc.html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS, css_sanitizer=css, strip=True)
+safe = bleach.clean(doc.html, tags=ALLOWED_TAGS, attributes=ALLOWED_ATTRS,
+                    css_sanitizer=css, strip=True)
 ```
 
-## Serve static assets
+## Serving static assets
 
 Assets ship inside the Python package. Copy them at deploy time:
 
 ```python
 from importlib.resources import files
 import shutil
-src = files("scriba.tex.static")
-shutil.copytree(str(src), "./public/scriba", dirs_exist_ok=True)
+shutil.copytree(str(files("scriba.tex.static")), "./public/scriba", dirs_exist_ok=True)
 ```
 
-Then include in your template:
+Then include them alongside the rendered fragment:
 
 ```html
 <link rel="stylesheet" href="/cdn/katex/katex.min.css">
@@ -73,11 +97,12 @@ Then include in your template:
 <article class="scriba-tex-content">{{ doc.html }}</article>
 ```
 
-## Status
+## Documentation
 
-- **0.1.0-alpha** — TeX plugin complete; diagram plugin (D2) planned for 0.2/0.3.
-- See `docs/scriba/` in the ojcloud repo for the full architecture contract, roadmap, and open questions.
+Full architecture, contracts, and roadmap live under the project docs tree:
+<https://github.com/ojcloud/scriba/tree/main/docs>
+<!-- TODO: update once public mirror exists -->
 
 ## License
 
-MIT. See `LICENSE`.
+MIT. See [`LICENSE`](LICENSE).

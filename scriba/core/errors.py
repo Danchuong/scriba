@@ -26,6 +26,18 @@ class WorkerError(ScribaError):
         self.stderr = stderr
 
 
+class ScribaRuntimeError(ScribaError):
+    """Raised when a required external runtime dependency is missing or broken.
+
+    Typical causes: ``node`` not on PATH, or the ``katex`` npm module cannot
+    be resolved by the Node.js runtime that Scriba will spawn.
+    """
+
+    def __init__(self, message: str, *, component: str | None = None) -> None:
+        super().__init__(message)
+        self.component = component
+
+
 class ValidationError(ScribaError):
     """Raised on structurally invalid input (NUL bytes, unmatched braces)."""
 

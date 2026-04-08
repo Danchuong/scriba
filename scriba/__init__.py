@@ -1,4 +1,4 @@
-"""Scriba — backend renderer for Online Judge problem statements.
+"""Scriba — backend renderer for LaTeX problem statements and CP editorial animations.
 
 Public API surface. Plugins (TexRenderer, DiagramRenderer, D2Engine) live
 under :mod:`scriba.tex` and :mod:`scriba.diagram` and are NOT re-exported

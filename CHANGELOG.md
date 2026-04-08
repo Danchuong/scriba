@@ -1,5 +1,16 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Vendored KaTeX `0.16.11` into the wheel at
+  `scriba/tex/vendor/katex/katex.min.js`. `pip install scriba` now works
+  without a separate `npm install -g katex@0.16.11` step — only Node.js
+  18+ on PATH is required. The `_probe_runtime` hook now only checks for
+  `node` and that the vendored KaTeX file is loadable; if the vendored
+  file fails to load that is treated as a packaging bug with a
+  file-a-bug error message. Resolves open question Q32.
+
 ## 0.1.1-alpha (2026-04-08)
 
 Phase 3 architect-review fixes. Bumps `SCRIBA_VERSION` to `2` because
@@ -69,12 +80,12 @@ asset key shape changes (now namespaced as `<renderer>/<basename>`).
 
 ## 0.1.0-alpha (2026-04-08)
 
-First alpha release. TeX plugin port from ojcloud complete; diagram plugin
-(0.2+) reserved.
+First alpha release. TeX plugin generalized from an earlier in-house KaTeX
+worker; diagram plugin (0.2+) reserved.
 
 ### Added
 - `scriba.core.Pipeline` — plugin orchestration with detect-then-render-with-placeholders
-- `scriba.core.SubprocessWorkerPool` / `SubprocessWorker` — generalized persistent/per-call subprocess management, ported and generalized from ojcloud's katex_worker.py
+- `scriba.core.SubprocessWorkerPool` / `SubprocessWorker` — generalized persistent/per-call subprocess management, generalized from an earlier in-house KaTeX worker
 - `scriba.core.{Block, RenderArtifact, Document, RenderContext, RendererAssets}` — frozen dataclasses for the plugin contract
 - `scriba.core.{ScribaError, RendererError, WorkerError, ValidationError}` — exception hierarchy
 - `scriba.tex.TexRenderer` — LaTeX → HTML renderer with KaTeX math, Pygments highlighting

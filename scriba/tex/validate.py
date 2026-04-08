@@ -1,8 +1,9 @@
 """TeX structural validator: brace, environment, and dollar balance.
 
-Pure Python — no subprocess, no rendering. Ported from
-``services/tenant/backend/app/utils/tex_renderer.py:validate_tex_content``.
-See ``docs/scriba/02-tex-plugin.md`` §10 for the 6 test cases.
+Pure Python — no subprocess, no rendering. Runs before the KaTeX worker is
+invoked so malformed input fails fast with a clear error. Also enforces
+library-wide resource caps (maximum source size and maximum number of math
+items) to bound worker work and memory use.
 """
 
 from __future__ import annotations

@@ -11,13 +11,19 @@ import os
 import re
 import shutil
 import subprocess
+import threading
 from importlib.resources import files
 from pathlib import Path
 from typing import Literal, Mapping
 
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
-from scriba.core.errors import RendererError, ValidationError, WorkerError
+from scriba.core.errors import (
+    RendererError,
+    ScribaRuntimeError,
+    ValidationError,
+    WorkerError,
+)
 from scriba.core.workers import SubprocessWorker, SubprocessWorkerPool
 from scriba.tex.parser.code_blocks import extract_lstlisting
 from scriba.tex.parser.dashes_quotes import apply_typography
@@ -44,6 +50,83 @@ logger = logging.getLogger(__name__)
 
 MAX_SOURCE_SIZE = 1_048_576
 """Maximum raw source bytes accepted by TexRenderer (1 MiB)."""
+
+_RUNTIME_PROBE_LOCK = threading.Lock()
+_RUNTIME_PROBED = False
+
+_NODE_MISSING_MSG = """\
+Scriba requires Node.js to render TeX math (KaTeX runs inside a Node subprocess).
+`node` was not found on your PATH.
+
+Install Node.js 18+ and make sure it is on PATH:
+  macOS:   brew install node
+  Debian:  sudo apt install nodejs npm
+  Other:   https://nodejs.org/en/download
+
+Then re-run your program. To skip this check (e.g. in tests that mock the
+worker), set the environment variable SCRIBA_SKIP_RUNTIME_PROBE=1.
+"""
+
+_KATEX_MISSING_MSG = """\
+Scriba ships KaTeX 0.16.11 bundled inside the wheel, but Node.js could not
+load the vendored file. This is a packaging bug, not a user install issue.
+
+Please file a bug at https://github.com/ojcloud/scriba/issues with:
+- your `pip show scriba` output
+- your Node.js version (`node --version`)
+- the Node stderr below
+
+Node stderr from the probe:
+{stderr}
+
+To skip this check (e.g. in tests that mock the worker), set the environment
+variable SCRIBA_SKIP_RUNTIME_PROBE=1.
+"""
+
+
+def _probe_runtime(node_executable: str) -> None:
+    """Verify node + katex are available; raise ScribaRuntimeError otherwise.
+
+    Runs at most once per process (guarded by a module-level lock). Can be
+    bypassed entirely by setting ``SCRIBA_SKIP_RUNTIME_PROBE=1``.
+    """
+    global _RUNTIME_PROBED
+    if os.environ.get("SCRIBA_SKIP_RUNTIME_PROBE") == "1":
+        return
+    with _RUNTIME_PROBE_LOCK:
+        if _RUNTIME_PROBED:
+            return
+        if shutil.which(node_executable) is None:
+            raise ScribaRuntimeError(_NODE_MISSING_MSG, component="node")
+        # Vendored katex.min.js ships inside the wheel next to the worker.
+        vendored = Path(str(files("scriba.tex").joinpath("vendor/katex/katex.min.js")))
+        probe_env = os.environ.copy()
+        try:
+            result = subprocess.run(
+                [node_executable, "-e", f"require({repr(str(vendored))})"],
+                capture_output=True,
+                text=True,
+                timeout=3,
+                env=probe_env,
+            )
+        except subprocess.TimeoutExpired as e:
+            raise ScribaRuntimeError(
+                _KATEX_MISSING_MSG.format(stderr="(probe timed out)"),
+                component="katex",
+            ) from e
+        except OSError as e:
+            raise ScribaRuntimeError(
+                _KATEX_MISSING_MSG.format(stderr=str(e)),
+                component="katex",
+            ) from e
+        if result.returncode != 0:
+            raise ScribaRuntimeError(
+                _KATEX_MISSING_MSG.format(
+                    stderr=(result.stderr or "").strip() or "(no stderr)"
+                ),
+                component="katex",
+            )
+        _RUNTIME_PROBED = True
 
 
 class TexRenderer:
@@ -91,6 +174,9 @@ class TexRenderer:
             global_root = self._discover_node_global_root()
             if global_root:
                 os.environ["NODE_PATH"] = global_root
+
+        # Fail fast with an actionable error if node/katex are missing.
+        _probe_runtime(self._node_executable)
 
         worker = SubprocessWorker(
             name="katex",
