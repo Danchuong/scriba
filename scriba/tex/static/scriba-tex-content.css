@@ -137,7 +137,7 @@
   max-width: 100%;
   overflow-x: auto;
   overflow-y: hidden;
-  text-align: left;
+  text-align: inherit;
 }
 
 .katex-display > .katex > .katex-html {
@@ -173,10 +173,15 @@
   display: inline;
 }
 
-.scriba-tex-content .scriba-tex-math-display {
+.scriba-tex-content .scriba-tex-math-display,
+.scriba-tex-content .scriba-tex-math-display .katex-display,
+.scriba-tex-content .scriba-tex-math-display .katex {
   display: block;
-  margin: 1rem 0;
   text-align: center;
+}
+
+.scriba-tex-content .scriba-tex-math-display {
+  margin: 1rem 0;
 }
 
 .scriba-tex-content .scriba-tex-math-error {
@@ -255,7 +260,7 @@
 .scriba-tex-content .scriba-tex-table-cell {
   padding: 0.375rem 0.625rem;
   border-color: var(--scriba-border);
-  vertical-align: top;
+  vertical-align: middle;
 }
 
 .scriba-tex-content .scriba-tex-align-left {
@@ -409,19 +414,29 @@
    Epigraph
    ============================================ */
 
+/* Epigraph follows the LaTeX `epigraph` package convention: a narrow
+   block floated to the right margin with the attribution right-aligned
+   and a thin rule between quote and author. */
 .scriba-tex-content .scriba-tex-epigraph {
-  margin: 1rem 0;
-  padding: 0.25rem 0 0.25rem 1rem;
-  border-left: 4px solid var(--scriba-epigraph-border);
+  float: right;
+  clear: right;
+  width: 45%;
+  max-width: 28rem;
+  margin: 0.5rem 0 1rem 1.5rem;
+  padding: 0.25rem 0;
   font-style: italic;
   color: var(--scriba-fg);
+  text-align: right;
 }
 
 .scriba-tex-content .scriba-tex-epigraph-quote {
-  margin: 0 0 0.25rem 0;
+  margin: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--scriba-epigraph-border);
 }
 
 .scriba-tex-content .scriba-tex-epigraph-attribution {
+  margin-top: 0.25rem;
   color: var(--scriba-fg-muted);
   font-style: normal;
   font-size: 0.9em;
@@ -429,6 +444,12 @@
 
 .scriba-tex-content .scriba-tex-epigraph-attribution::before {
   content: "— ";
+}
+
+/* Make sure following content clears the floated epigraph so it doesn't
+   wrap awkwardly when the epigraph is the last thing in a section. */
+.scriba-tex-content .scriba-tex-epigraph + * {
+  clear: both;
 }
 
 /* ============================================
@@ -501,6 +522,14 @@
 
 .scriba-tex-content .scriba-tex-center {
   text-align: center;
+}
+
+/* text-align: center only centers inline content. Block-level children
+   like <table> need margin auto to actually horizontally center. */
+.scriba-tex-content .scriba-tex-center > table,
+.scriba-tex-content .scriba-tex-center > .scriba-tex-table {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .scriba-tex-content .highlight {
