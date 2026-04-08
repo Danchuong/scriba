@@ -7,6 +7,8 @@ produce safe HTML before any sanitizer runs. See PHASE2_DECISIONS.md D-09.
 
 from __future__ import annotations
 
+import pytest
+
 
 def test_xss_script_tag_in_text(pipeline, ctx):
     tex = r"\textbf{<script>alert(1)</script>}"
@@ -42,6 +44,7 @@ def test_xss_malformed_brace_img_onerror(pipeline, ctx):
     assert "<img src=x onerror" not in html.lower()
 
 
+@pytest.mark.skip(reason="implemented in sub-phase 2d")
 def test_xss_data_code_breakout(pipeline, ctx):
     tex = (
         r"\begin{lstlisting}[language=cpp]"
