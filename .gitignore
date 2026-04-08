@@ -5,3 +5,4 @@ dist/
 build/
 *.pyc
 .pytest_cache/
+.coverage
