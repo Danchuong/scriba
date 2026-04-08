@@ -48,7 +48,7 @@ def _build_block_html(
     # ", ', <, >, &, blocking attribute breakout.
     data_code = _html.escape(code, quote=True)
 
-    highlighted = highlight_code(code, language, theme=theme)
+    highlight_result = highlight_code(code, language, theme=theme)
 
     copy_button = (
         '<button type="button" class="scriba-tex-copy-btn" '
@@ -57,9 +57,11 @@ def _build_block_html(
         else ""
     )
 
-    if highlighted is not None:
-        # Pygments path: include data-language too.
-        lang_attr = _html.escape(language or "", quote=True)
+    if highlight_result is not None:
+        highlighted, detected_lang = highlight_result
+        # Pygments path: data-language reflects what the lexer actually was
+        # (auto-detected when no explicit language was given).
+        lang_attr = _html.escape(language or detected_lang, quote=True)
         return (
             f'<div class="scriba-tex-code-block" data-language="{lang_attr}" '
             f'data-code="{data_code}">{highlighted}{copy_button}</div>'
