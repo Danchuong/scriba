@@ -10,6 +10,7 @@ import html as _html
 import re
 from typing import Callable
 
+from scriba.tex.parser._urls import is_safe_url
 from scriba.tex.parser.escape import PlaceholderManager
 
 _INCLUDEGRAPHICS_RE = re.compile(
@@ -89,6 +90,8 @@ def apply_includegraphics(
         safe_name = _html.escape(filename, quote=True)
 
         url = resource_resolver(filename)
+        if url is not None and not is_safe_url(url):
+            url = None
         if url is None:
             html = (
                 f'<span class="scriba-tex-image-missing" '

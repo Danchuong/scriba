@@ -41,6 +41,49 @@ def test_xss_malformed_brace_img_onerror(pipeline, ctx):
     assert "<img src=x onerror" not in html.lower()
 
 
+def test_xss_href_newline_smuggle(pipeline, ctx):
+    tex = "\\href{http://evil.com\x0Ajavascript:alert(1)}{x}"
+    doc = pipeline.render(tex, ctx)
+    html = doc.html.lower()
+    assert "javascript:" not in html
+
+
+def test_xss_href_unicode_line_separator(pipeline, ctx):
+    tex = "\\href{java\u2028script:alert(1)}{x}"
+    doc = pipeline.render(tex, ctx)
+    html = doc.html.lower()
+    assert "javascript:" not in html
+    assert "scriba-tex-link-disabled" in doc.html
+
+
+def test_xss_href_tab_smuggle(pipeline, ctx):
+    tex = "\\href{\tjavascript:alert(1)}{x}"
+    doc = pipeline.render(tex, ctx)
+    assert "javascript:" not in doc.html.lower()
+    assert "scriba-tex-link-disabled" in doc.html
+
+
+def test_xss_href_uppercase_javascript(pipeline, ctx):
+    tex = r"\href{JAVASCRIPT:alert(1)}{x}"
+    doc = pipeline.render(tex, ctx)
+    assert "javascript:" not in doc.html.lower()
+    assert "scriba-tex-link-disabled" in doc.html
+
+
+def test_xss_image_resolver_returns_javascript_url(pipeline):
+    """Resource resolver returning a javascript: URL must be treated as
+    a missing image, not embedded as src."""
+    from scriba import RenderContext
+
+    bad_ctx = RenderContext(
+        resource_resolver=lambda name: "javascript:alert(1)",
+    )
+    doc = pipeline.render(r"\includegraphics{evil.png}", bad_ctx)
+    assert "javascript:" not in doc.html.lower()
+    assert "<img" not in doc.html.lower()
+    assert "scriba-tex-image-missing" in doc.html
+
+
 def test_xss_data_code_breakout(pipeline, ctx):
     tex = (
         r"\begin{lstlisting}[language=cpp]"

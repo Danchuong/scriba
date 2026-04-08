@@ -9,13 +9,12 @@ from __future__ import annotations
 import re
 import unicodedata
 
+from scriba.tex.parser._urls import is_safe_url as _is_safe_url
 from scriba.tex.parser.escape import (
     extract_brace_content,
     html_escape_attr,
     html_escape_text,
 )
-
-_SAFE_SCHEMES: frozenset[str] = frozenset({"http", "https", "mailto"})
 
 
 def slugify(text: str) -> str:
@@ -102,22 +101,6 @@ def apply_epigraph(text: str) -> str:
         )
         cursor = after2
     return "".join(out_parts)
-
-
-def _is_safe_url(url: str) -> bool:
-    cleaned = url.strip().lower()
-    cleaned = (
-        cleaned.replace("\x00", "")
-        .replace("\t", "")
-        .replace("\n", "")
-        .replace("\r", "")
-        .lstrip()
-    )
-    if ":" not in cleaned:
-        # Relative URLs are safe.
-        return True
-    scheme = cleaned.split(":", 1)[0]
-    return scheme in _SAFE_SCHEMES
 
 
 def apply_urls(text: str) -> str:

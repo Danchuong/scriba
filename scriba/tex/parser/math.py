@@ -12,11 +12,14 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from scriba.core.errors import RendererError
+from scriba.core.errors import RendererError, ValidationError
 from scriba.core.workers import SubprocessWorker
 from scriba.tex.parser.escape import PlaceholderManager
 
 _DOLLAR_LITERAL = "\x00SCRIBA_TEX_DOLLAR\x00"
+
+MAX_MATH_ITEMS = 500
+"""Maximum number of math expressions allowed per document."""
 
 
 @dataclass(frozen=True)
@@ -84,6 +87,11 @@ def extract_math(
         lambda m: _make_item(m.group(1), False),
         text,
     )
+
+    if len(items) > MAX_MATH_ITEMS:
+        raise ValidationError(
+            f"too many math expressions: {len(items)} > {MAX_MATH_ITEMS}"
+        )
 
     return text, items
 
