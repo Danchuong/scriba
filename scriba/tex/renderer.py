@@ -174,6 +174,53 @@ class TexRenderer:
 
     # ----- private API -----
 
+    def _render_cell(self, raw: str) -> str:
+        """Render raw TeX from inside a tabular cell to safe HTML.
+
+        Runs the same passes as the main pipeline but in a smaller, local
+        scope: inline math via the KaTeX worker, text-style commands,
+        dashes and smart quotes, HTML escape. Math output is temporarily
+        stashed in placeholders so HTML-escape and regex passes don't
+        mangle the KaTeX markup.
+        """
+        if not raw.strip():
+            return ""
+
+        # 1. Inline math first → safe HTML span → placeholder.
+        cell_placeholders: list[tuple[str, str]] = []
+
+        def _stash(html: str) -> str:
+            ph = f"\x00CELL{len(cell_placeholders)}\x00"
+            cell_placeholders.append((ph, html))
+            return ph
+
+        def _math_sub(m: re.Match[str]) -> str:
+            inner = m.group(1)
+            if not inner.strip():
+                return m.group(0)
+            return _stash(self._render_inline(inner))
+
+        text = re.sub(r"\$([^\$]+?)\$", _math_sub, raw)
+
+        # 2. Escape literals before HTML escape.
+        text = text.replace("\\$", "$").replace("\\&", "&")
+
+        # 3. HTML-escape free text (math is already stashed).
+        text = _html.escape(text, quote=False)
+
+        # 4. Text commands and size commands (operate on escaped text;
+        #    they emit fixed safe wrappers).
+        text = apply_text_commands(text)
+        text = apply_size_commands(text)
+
+        # 5. Typography (dashes, smart quotes).
+        text = apply_typography(text)
+
+        # 6. Restore math placeholders.
+        for ph, html in cell_placeholders:
+            text = text.replace(ph, html)
+        return text
+
     def _render_inline(self, tex: str) -> str:
         """Render a bare inline math fragment to HTML."""
         if not tex.strip():
@@ -220,7 +267,7 @@ class TexRenderer:
             theme=self._pygments_theme,
             enable_copy_button=self._enable_copy_buttons,
         )
-        text = apply_tabular(text, placeholders)
+        text = apply_tabular(text, placeholders, cell_renderer=self._render_cell)
 
         # 0b. Resolve images before HTML escaping so the resolver sees the
         #     real filename and we can entity-escape the URL exactly once.
