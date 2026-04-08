@@ -208,6 +208,15 @@ class TexRenderer:
         # 3. HTML-escape free text (math is already stashed).
         text = _html.escape(text, quote=False)
 
+        # 3b. Unescape remaining TeX specials: \% \# \_ \{ \}
+        text = (
+            text.replace("\\%", "%")
+                .replace("\\#", "#")
+                .replace("\\_", "_")
+                .replace("\\{", "{")
+                .replace("\\}", "}")
+        )
+
         # 4. Text commands and size commands (operate on escaped text;
         #    they emit fixed safe wrappers).
         text = apply_text_commands(text)
@@ -286,6 +295,17 @@ class TexRenderer:
 
         # 3. Restore the dollar-literal sentinel.
         text = restore_dollar_literals(text)
+
+        # 3b. Unescape TeX special characters: \% \# \_ \& \{ \}
+        #     html.escape already turned `\&` into `\&amp;`, so match that.
+        text = (
+            text.replace("\\&amp;", "&amp;")
+                .replace("\\%", "%")
+                .replace("\\#", "#")
+                .replace("\\_", "_")
+                .replace("\\{", "{")
+                .replace("\\}", "}")
+        )
 
         # 4. Apply text-style commands BEFORE the regex-driven environments
         #    so things like ``\textbf{<script>}`` see escaped angle brackets.

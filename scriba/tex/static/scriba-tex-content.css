@@ -95,7 +95,7 @@
   max-width: 100%;
   overflow-wrap: break-word;
   word-wrap: break-word;
-  font-size: 0.8125rem;
+  font-size: inherit;
 }
 
 .scriba-tex-content strong,
