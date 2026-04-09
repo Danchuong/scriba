@@ -200,16 +200,13 @@ def _snapshot_to_frame_data(
     for hl_target in snap.highlights:
         parts = hl_target.split(".", 1)
         if len(parts) == 2:
-            sname, suffix = parts
+            sname = parts[0]
             if sname in shape_states:
-                full_key = hl_target
-                if full_key in shape_states[sname]:
-                    shape_states[sname][full_key]["highlighted"] = True
+                if hl_target in shape_states[sname]:
+                    shape_states[sname][hl_target]["highlighted"] = True
                 else:
-                    shape_states[sname][full_key] = {
-                        "state": "idle",
-                        "highlighted": True,
-                    }
+                    # Target not in state map yet — only set highlighted flag
+                    shape_states[sname][hl_target] = {"highlighted": True}
 
     annotations = [
         {

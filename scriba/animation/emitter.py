@@ -159,6 +159,20 @@ def _expand_selectors(
     )
     all_re = re.compile(rf"^{re.escape(shape_name)}\.all$")
 
+    def _merge(target: str, data: dict) -> None:
+        """Merge data into expanded[target].
+
+        Later writes win for 'state', but 'highlighted' is always preserved.
+        """
+        if target in expanded:
+            merged = {**expanded[target], **data}
+            # Always preserve highlighted flag from either side
+            if expanded[target].get("highlighted") or data.get("highlighted"):
+                merged["highlighted"] = True
+            expanded[target] = merged
+        else:
+            expanded[target] = dict(data)
+
     for key, data in shape_state.items():
         m_range = range_re.match(key)
         m_all = all_re.match(key)
@@ -171,14 +185,14 @@ def _expand_selectors(
                     target = f"{shape_name}.tick[{i}]"
                 else:
                     target = f"{shape_name}.cell[{i}]"
-                expanded[target] = dict(data)
+                _merge(target, data)
         elif m_all:
             parts = prim.addressable_parts()
             for part in parts:
                 if ".all" not in part and ".range" not in part:
-                    expanded[part] = dict(data)
+                    _merge(part, data)
         else:
-            expanded[key] = data
+            _merge(key, data)
 
     return expanded
 
