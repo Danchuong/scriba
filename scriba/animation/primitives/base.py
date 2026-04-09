@@ -50,7 +50,7 @@ STATE_COLORS: dict[str, dict[str, str]] = {
     "done":      {"fill": "#009E73", "stroke": "#007a59", "text": "#ffffff"},
     "dim":       {"fill": "#e9ecef", "stroke": "#dee2e6", "text": "#adb5bd"},
     "error":     {"fill": "#D55E00", "stroke": "#b34e00", "text": "#ffffff"},
-    "good":      {"fill": "#009E73", "stroke": "#007a59", "text": "#ffffff"},
+    "good":      {"fill": "#56B4E9", "stroke": "#3a95c9", "text": "#ffffff"},
     "highlight": {"fill": "#F0E442", "stroke": "#d4c836", "text": "#212529"},
 }
 

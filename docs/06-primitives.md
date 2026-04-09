@@ -56,7 +56,7 @@ All primitives share the same locked state set (applied via `\recolor`):
 | `done`      | `scriba-state-done`      | `#009E73` (green)          |
 | `dim`       | `scriba-state-dim`       | 50% opacity, desaturated   |
 | `error`     | `scriba-state-error`     | `#D55E00` (vermillion)     |
-| `good`      | `scriba-state-good`      | `#009E73` (bluish-green)   |
+| `good`      | `scriba-state-good`      | `#56B4E9` (sky blue)       |
 | `highlight` | `scriba-state-highlight` | `#F0E442` (yellow) + 2px stroke (ephemeral only) |
 
 ### 2.4 Common `\apply` parameters
