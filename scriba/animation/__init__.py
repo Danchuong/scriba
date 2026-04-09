@@ -1,11 +1,14 @@
-"""Scriba animation plugin — step-based editorial animations.
+"""Animation plugin for Scriba — editorial step-through animations.
 
-Provides ``AnimationRenderer`` (Wave 2) and the Scene IR AST types.
+Re-exports the public surface for convenience:
+
+* :class:`AnimationRenderer` — the ``Renderer`` implementation
+* :func:`detect_animation_blocks` — standalone block detector
 """
 
 from __future__ import annotations
 
-# AnimationRenderer will be implemented in Wave 2.
-# from scriba.animation.renderer import AnimationRenderer  # noqa: ERA001
+from scriba.animation.detector import detect_animation_blocks
+from scriba.animation.renderer import AnimationRenderer
 
-__all__: list[str] = []
+__all__ = ["AnimationRenderer", "detect_animation_blocks"]
