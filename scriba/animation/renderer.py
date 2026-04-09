@@ -35,6 +35,7 @@ from scriba.animation.primitives import (
     ArrayPrimitive,
     DPTablePrimitive,
     Graph,
+    GridPrimitive,
     NumberLinePrimitive,
     Tree,
 )
@@ -58,6 +59,7 @@ PRIMITIVE_CATALOG: dict[str, Any] = {
     "Array": ArrayPrimitive,
     "DPTable": DPTablePrimitive,
     "Graph": Graph,
+    "Grid": GridPrimitive,
     "NumberLine": NumberLinePrimitive,
     "Tree": Tree,
 }

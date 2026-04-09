@@ -178,7 +178,7 @@ def _emit_frame_svg(
         shape_state = frame.shape_states.get(shape_name, {})
         ptype = getattr(prim, "primitive_type", "")
 
-        if ptype in ("array", "dptable", "grid"):
+        if ptype in ("array", "dptable", "grid", "numberline"):
             if ptype == "dptable":
                 prim_anns = [
                     a
