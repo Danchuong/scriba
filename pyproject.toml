@@ -68,7 +68,7 @@ exclude = [
 [tool.hatch.build.targets.wheel.package-data]
 "scriba" = ["py.typed"]
 "scriba.tex" = ["katex_worker.js", "static/*.css", "static/*.js", "vendor/katex/*.js", "vendor/katex/*.css", "vendor/katex/*.md", "vendor/katex/LICENSE", "vendor/katex/fonts/*.woff2"]
-"scriba.diagram" = ["static/*.css", "static/*.js"]
+"scriba.animation" = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
