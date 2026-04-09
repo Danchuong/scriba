@@ -25,8 +25,11 @@
 
 \step
 \recolor{G.node[C]}{state=done}
-\recolor{G.node[D]}{state=dim}
 \recolor{G.edge[(B,E)]}{state=done}
 \recolor{G.node[E]}{state=current}
-\narrate{Backtrack to B, visit E. DFS complete: A-B-D-C-E.}
+\narrate{Backtrack to B, visit E.}
+
+\step
+\recolor{G.node[E]}{state=done}
+\narrate{DFS complete. Order: A, B, D, C, E.}
 \end{animation}
