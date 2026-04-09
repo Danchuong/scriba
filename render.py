@@ -17,8 +17,6 @@ from pathlib import Path
 from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.renderer import AnimationRenderer
 from scriba.core.context import RenderContext
-from scriba.core.workers import SubprocessWorkerPool
-from scriba.tex.renderer import TexRenderer
 
 
 HTML_TEMPLATE = """\
@@ -28,7 +26,6 @@ HTML_TEMPLATE = """\
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scriba — {title}</title>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <style>
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
 body {{
@@ -207,22 +204,10 @@ def render_file(
     title = input_path.stem
 
     renderer = AnimationRenderer()
-
-    # Wire up KaTeX for inline TeX rendering in narration text.
-    pool = SubprocessWorkerPool()
-    try:
-        tex_renderer = TexRenderer(worker_pool=pool)
-        render_inline_tex = tex_renderer._render_inline
-    except Exception:
-        # If Node.js or KaTeX is unavailable, fall back to no TeX rendering.
-        tex_renderer = None
-        render_inline_tex = None
-
     ctx = RenderContext(
         resource_resolver=lambda name: f"/static/{name}",
         theme="light",
         metadata={"output_mode": output_mode},
-        render_inline_tex=render_inline_tex,
     )
 
     blocks = detect_animation_blocks(source)
@@ -240,9 +225,6 @@ def render_file(
 
     output_path.write_text(full_html)
     print(f"Rendered {len(blocks)} animation(s) -> {output_path}")
-
-    # Clean up the worker pool.
-    pool.close()
 
 
 def main():

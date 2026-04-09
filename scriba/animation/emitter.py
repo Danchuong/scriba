@@ -375,7 +375,7 @@ def emit_interactive_html(
   function show(i){{
     cur=i;
     stage.innerHTML=frames[i].svg;
-    narr.innerHTML=frames[i].narration;
+    narr.textContent=frames[i].narration;
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
