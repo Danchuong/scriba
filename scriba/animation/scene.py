@@ -49,6 +49,7 @@ def _selector_to_str(sel: Selector | str) -> str:
         NamedAccessor,
         NodeAccessor,
         RangeAccessor,
+        TickAccessor,
     )
 
     name = sel.shape_name
@@ -59,6 +60,8 @@ def _selector_to_str(sel: Selector | str) -> str:
     if isinstance(acc, CellAccessor):
         indices = "".join(f"[{i}]" for i in acc.indices)
         return f"{name}.cell{indices}"
+    if isinstance(acc, TickAccessor):
+        return f"{name}.tick[{acc.index}]"
     if isinstance(acc, NodeAccessor):
         return f"{name}.node[{acc.node_id}]"
     if isinstance(acc, EdgeAccessor):

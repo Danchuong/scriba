@@ -31,7 +31,13 @@ from scriba.animation.extensions.hl_macro import process_hl_macros
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
 from scriba.animation.parser.ast import AnimationIR, ShapeCommand
 from scriba.animation.parser.grammar import SceneParser
-from scriba.animation.primitives import ArrayPrimitive, DPTablePrimitive, Graph
+from scriba.animation.primitives import (
+    ArrayPrimitive,
+    DPTablePrimitive,
+    Graph,
+    NumberLinePrimitive,
+    Tree,
+)
 from scriba.animation.scene import FrameSnapshot, SceneState
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
@@ -52,6 +58,8 @@ PRIMITIVE_CATALOG: dict[str, Any] = {
     "Array": ArrayPrimitive,
     "DPTable": DPTablePrimitive,
     "Graph": Graph,
+    "NumberLine": NumberLinePrimitive,
+    "Tree": Tree,
 }
 
 

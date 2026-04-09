@@ -79,6 +79,13 @@ class AllAccessor:
 
 
 @dataclass(frozen=True, slots=True)
+class TickAccessor:
+    """``shape.tick[i]`` — a single tick mark on a NumberLine."""
+
+    index: IndexExpr
+
+
+@dataclass(frozen=True, slots=True)
 class NamedAccessor:
     """``shape.axis`` or similar named sub-part."""
 
@@ -91,6 +98,7 @@ SelectorAccessor = Union[
     EdgeAccessor,
     RangeAccessor,
     AllAccessor,
+    TickAccessor,
     NamedAccessor,
 ]
 

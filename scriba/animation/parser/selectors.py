@@ -8,6 +8,7 @@ BNF (from 04-environments-spec.md §4.1):
 
     selector    ::= IDENT ( "." accessor )*
     accessor    ::= "cell" "[" index "]" ( "[" index "]" )?
+                  | "tick" "[" index "]"
                   | "node" "[" node_id "]"
                   | "edge" "[" "(" node_id "," node_id ")" "]"
                   | "range" "[" index ":" index "]"
@@ -30,6 +31,7 @@ from .ast import (
     RangeAccessor,
     Selector,
     SelectorAccessor,
+    TickAccessor,
 )
 
 
@@ -72,6 +74,8 @@ class SelectorParser:
         name = self._expect_ident()
         if name == "cell":
             return self._parse_cell()
+        if name == "tick":
+            return self._parse_tick()
         if name == "node":
             return self._parse_node()
         if name == "edge":
@@ -92,6 +96,12 @@ class SelectorParser:
             self._expect("]")
             indices.append(idx2)
         return CellAccessor(indices=tuple(indices))
+
+    def _parse_tick(self) -> TickAccessor:
+        self._expect("[")
+        idx = self._parse_index_expr()
+        self._expect("]")
+        return TickAccessor(index=idx)
 
     def _parse_node(self) -> NodeAccessor:
         self._expect("[")

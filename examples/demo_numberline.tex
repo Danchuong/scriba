@@ -1,0 +1,10 @@
+\begin{animation}[id="numline", label="Number Line Range Query"]
+\shape{nl}{NumberLine}{domain=[0,10], ticks=11, labels="0..10"}
+\step
+\recolor{nl.range[3:7]}{state=current}
+\narrate{Query range [3, 7] highlighted.}
+\step
+\recolor{nl.range[3:7]}{state=done}
+\highlight{nl.tick[5]}
+\narrate{Midpoint at 5. Range [3,7] processed.}
+\end{animation}
