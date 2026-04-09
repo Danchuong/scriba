@@ -277,6 +277,15 @@ class Graph(PrimitiveBase):
             node_colors = svg_style_attrs(state)
             cx, cy = self.positions[node_id]
             node_sw = "1.5" if state == "idle" else "2"
+            hl_suffixes = getattr(self, "_highlighted", set())
+            is_hl = self._node_key(node_id) in hl_suffixes
+            hl_overlay = ""
+            if is_hl:
+                hl_overlay = (
+                    f'<circle cx="{cx}" cy="{cy}" r="{_NODE_RADIUS}" '
+                    f'fill="none" stroke="#F0E442" stroke-width="3" '
+                    f'stroke-dasharray="6 3"/>'
+                )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
                 f'class="scriba-state-{state}">'
@@ -288,6 +297,7 @@ class Graph(PrimitiveBase):
                 f'dominant-baseline="central" '
                 f'fill="{node_colors["text"]}">'
                 f'{html_escape(str(node_id))}</text>'
+                f'{hl_overlay}'
                 f'</g>'
             )
         parts.append('</g>')

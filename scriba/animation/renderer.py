@@ -196,6 +196,21 @@ def _snapshot_to_frame_data(
                 entry["label"] = ts.label
             shape_states[shape_name][target_key] = entry
 
+    # Mark highlighted targets (additive — does not replace state)
+    for hl_target in snap.highlights:
+        parts = hl_target.split(".", 1)
+        if len(parts) == 2:
+            sname, suffix = parts
+            if sname in shape_states:
+                full_key = hl_target
+                if full_key in shape_states[sname]:
+                    shape_states[sname][full_key]["highlighted"] = True
+                else:
+                    shape_states[sname][full_key] = {
+                        "state": "idle",
+                        "highlighted": True,
+                    }
+
     annotations = [
         {
             "target": a.target,

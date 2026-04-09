@@ -192,6 +192,13 @@ class NumberLineInstance:
                 f'fill="{colors["text"]}">'
                 f"{_escape_xml(tick_label)}</text>"
             )
+            # Highlight overlay (additive — gold circle around tick)
+            if tick_state.get("highlighted"):
+                lines.append(
+                    f'    <circle cx="{x}" cy="{NL_AXIS_Y}" r="8" '
+                    f'fill="none" stroke="#F0E442" stroke-width="3" '
+                    f'stroke-dasharray="4 2"/>'
+                )
             lines.append("  </g>")
 
         # Caption label

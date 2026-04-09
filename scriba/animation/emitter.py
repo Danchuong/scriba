@@ -236,6 +236,7 @@ def _emit_frame_svg(
                 svg_parts.append(prim.emit_svg(shape_state))
         else:
             # Graph / PrimitiveBase -- apply state then emit
+            highlighted_suffixes: set[str] = set()
             for target_key, target_data in shape_state.items():
                 if isinstance(target_data, dict):
                     state_val = target_data.get("state", "idle")
@@ -243,6 +244,9 @@ def _emit_frame_svg(
                     if suffix.startswith(shape_name + "."):
                         suffix = suffix[len(shape_name) + 1 :]
                     prim.set_state(suffix, state_val)
+                    if target_data.get("highlighted"):
+                        highlighted_suffixes.add(suffix)
+            prim._highlighted = highlighted_suffixes
             svg_parts.append(prim.emit_svg())
 
         svg_parts.append("</g>")

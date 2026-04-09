@@ -155,6 +155,15 @@ class ArrayInstance:
                 f'fill="{colors["text"]}">'
                 f"{_escape_xml(value)}</text>"
             )
+            # Highlight overlay (additive — dashed gold border on top)
+            if cell_state.get("highlighted"):
+                lines.append(
+                    f'    <rect x="{x}" y="{y}" '
+                    f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" '
+                    f'rx="4" fill="none" '
+                    f'stroke="#F0E442" stroke-width="3" '
+                    f'stroke-dasharray="6 3"/>'
+                )
             lines.append("  </g>")
 
             # Index labels below the cell
