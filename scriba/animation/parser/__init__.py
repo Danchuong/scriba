@@ -1,64 +1,59 @@
-"""Scene IR parser package.
-
-Re-exports all AST types from :mod:`scriba.animation.parser.ast`.
-"""
+"""Animation parser — lexer, grammar, and selector parser."""
 
 from __future__ import annotations
 
-from scriba.animation.parser.ast import (
-    AllAccessor,
-    AnnotateCommand,
+from .grammar import (
     AnimationIR,
     AnimationOptions,
+    AnnotateCommand,
     ApplyCommand,
-    CellAccessor,
     Command,
     ComputeCommand,
-    DiagramIR,
-    DiagramOptions,
-    EdgeAccessor,
     FrameIR,
     HighlightCommand,
-    IndexExpr,
-    InterpolationRef,
-    MutationCommand,
-    NamedAccessor,
     NarrateCommand,
-    NodeAccessor,
-    ParamValue,
-    RangeAccessor,
     RecolorCommand,
-    Selector,
-    SelectorAccessor,
+    SceneParser,
     ShapeCommand,
     StepCommand,
+)
+from .lexer import Lexer, Token, TokenKind
+from .selectors import (
+    AllAccessor,
+    CellAccessor,
+    EdgeAccessor,
+    InterpolationRef,
+    NamedAccessor,
+    NodeAccessor,
+    RangeAccessor,
+    Selector,
+    parse_selector,
 )
 
 __all__ = [
     "AllAccessor",
-    "AnnotateCommand",
     "AnimationIR",
     "AnimationOptions",
+    "AnnotateCommand",
     "ApplyCommand",
     "CellAccessor",
     "Command",
     "ComputeCommand",
-    "DiagramIR",
-    "DiagramOptions",
     "EdgeAccessor",
     "FrameIR",
     "HighlightCommand",
-    "IndexExpr",
     "InterpolationRef",
-    "MutationCommand",
+    "Lexer",
     "NamedAccessor",
     "NarrateCommand",
     "NodeAccessor",
-    "ParamValue",
     "RangeAccessor",
     "RecolorCommand",
+    "SceneParser",
     "Selector",
-    "SelectorAccessor",
     "ShapeCommand",
     "StepCommand",
+    "Token",
+    "TokenKind",
+    "parse_selector",
 ]
