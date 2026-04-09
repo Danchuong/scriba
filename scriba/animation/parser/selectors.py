@@ -26,6 +26,7 @@ from .ast import (
     EdgeAccessor,
     IndexExpr,
     InterpolationRef,
+    ItemAccessor,
     NamedAccessor,
     NodeAccessor,
     RangeAccessor,
@@ -76,6 +77,8 @@ class SelectorParser:
             return self._parse_cell()
         if name == "tick":
             return self._parse_tick()
+        if name == "item":
+            return self._parse_item()
         if name == "node":
             return self._parse_node()
         if name == "edge":
@@ -102,6 +105,12 @@ class SelectorParser:
         idx = self._parse_index_expr()
         self._expect("]")
         return TickAccessor(index=idx)
+
+    def _parse_item(self) -> ItemAccessor:
+        self._expect("[")
+        idx = self._parse_index_expr()
+        self._expect("]")
+        return ItemAccessor(index=idx)
 
     def _parse_node(self) -> NodeAccessor:
         self._expect("[")

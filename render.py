@@ -203,28 +203,38 @@ def render_file(
     source = input_path.read_text()
     title = input_path.stem
 
-    renderer = AnimationRenderer()
+    from scriba.animation.detector import detect_diagram_blocks
+    from scriba.animation.renderer import DiagramRenderer
+
+    anim_renderer = AnimationRenderer()
+    diag_renderer = DiagramRenderer()
     ctx = RenderContext(
         resource_resolver=lambda name: f"/static/{name}",
         theme="light",
         metadata={"output_mode": output_mode},
     )
 
-    blocks = detect_animation_blocks(source)
-    if not blocks:
-        print(f"No \\begin{{animation}} blocks found in {input_path}")
+    anim_blocks = detect_animation_blocks(source)
+    diag_blocks = detect_diagram_blocks(source)
+
+    if not anim_blocks and not diag_blocks:
+        print(f"No \\begin{{animation}} or \\begin{{diagram}} blocks found in {input_path}")
         sys.exit(1)
 
     html_parts = []
-    for block in blocks:
-        artifact = renderer.render_block(block, ctx)
+    for block in anim_blocks:
+        artifact = anim_renderer.render_block(block, ctx)
+        html_parts.append(artifact.html)
+    for block in diag_blocks:
+        artifact = diag_renderer.render_block(block, ctx)
         html_parts.append(artifact.html)
 
     body = "\n\n".join(html_parts)
     full_html = HTML_TEMPLATE.format(title=title, body=body)
 
     output_path.write_text(full_html)
-    print(f"Rendered {len(blocks)} animation(s) -> {output_path}")
+    total = len(anim_blocks) + len(diag_blocks)
+    print(f"Rendered {total} block(s) -> {output_path}")
 
 
 def main():

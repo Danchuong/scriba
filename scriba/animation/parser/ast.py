@@ -86,6 +86,13 @@ class TickAccessor:
 
 
 @dataclass(frozen=True, slots=True)
+class ItemAccessor:
+    """``shape.item[i]`` — a single item in a Stack."""
+
+    index: IndexExpr
+
+
+@dataclass(frozen=True, slots=True)
 class NamedAccessor:
     """``shape.axis`` or similar named sub-part."""
 
@@ -99,6 +106,7 @@ SelectorAccessor = Union[
     RangeAccessor,
     AllAccessor,
     TickAccessor,
+    ItemAccessor,
     NamedAccessor,
 ]
 

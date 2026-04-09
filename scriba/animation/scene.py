@@ -46,6 +46,7 @@ def _selector_to_str(sel: Selector | str) -> str:
         AllAccessor,
         CellAccessor,
         EdgeAccessor,
+        ItemAccessor,
         NamedAccessor,
         NodeAccessor,
         RangeAccessor,
@@ -62,6 +63,8 @@ def _selector_to_str(sel: Selector | str) -> str:
         return f"{name}.cell{indices}"
     if isinstance(acc, TickAccessor):
         return f"{name}.tick[{acc.index}]"
+    if isinstance(acc, ItemAccessor):
+        return f"{name}.item[{acc.index}]"
     if isinstance(acc, NodeAccessor):
         return f"{name}.node[{acc.node_id}]"
     if isinstance(acc, EdgeAccessor):
@@ -87,6 +90,7 @@ class ShapeTargetState:
     state: str = "default"
     value: str | None = None
     label: str | None = None
+    apply_params: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True)
@@ -184,6 +188,11 @@ class SceneState:
             frame_ir.narrate_body,
         )
 
+        # Clear apply_params after snapshot (they are ephemeral per-frame)
+        for targets in self.shape_states.values():
+            for ts in targets.values():
+                ts.apply_params = None
+
         # Restore bindings (frame-scoped compute is transient)
         if frame_ir.compute:
             self.bindings = saved_bindings
@@ -201,6 +210,7 @@ class SceneState:
                     state=s.state,
                     value=s.value,
                     label=s.label,
+                    apply_params=dict(s.apply_params) if s.apply_params else None,
                 )
                 for t, s in targets.items()
             }
@@ -228,7 +238,7 @@ class SceneState:
             self._apply_annotate(cmd)
 
     def _apply_apply(self, cmd: ApplyCommand) -> None:
-        """\\apply — persistent value + optional label."""
+        """\\apply — persistent value + optional label + custom params."""
         target_str = _selector_to_str(cmd.target)
         target_state = self._ensure_target(target_str)
         value = cmd.params.get("value")
@@ -237,6 +247,10 @@ class SceneState:
         label = cmd.params.get("label")
         if label is not None:
             target_state.label = str(label)
+        # Store push/pop and other custom params for primitives like Stack
+        extra = {k: v for k, v in cmd.params.items() if k not in ("value", "label")}
+        if extra:
+            target_state.apply_params = extra
 
     def _apply_recolor(self, cmd: RecolorCommand) -> None:
         """\\recolor — persistent state replacement."""
@@ -275,6 +289,6 @@ class SceneState:
         """Execute a compute block via the Starlark host."""
         if starlark_host is None:
             return
-        result = starlark_host.evaluate(cb.source, self.bindings)
+        result = starlark_host.eval(self.bindings, cb.source)
         if isinstance(result, dict):
             self.bindings.update(result)

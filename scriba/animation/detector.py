@@ -17,7 +17,7 @@ import re
 from scriba.animation.errors import NestedAnimationError, UnclosedAnimationError
 from scriba.core.artifact import Block
 
-__all__ = ["detect_animation_blocks"]
+__all__ = ["detect_animation_blocks", "detect_diagram_blocks"]
 
 # Matches \begin{lstlisting} ... \end{lstlisting} (greedy-safe via DOTALL).
 _LSTLISTING_RE = re.compile(
@@ -112,5 +112,59 @@ def detect_animation_blocks(source: str) -> list[Block]:
 
     if open_start is not None:
         raise UnclosedAnimationError(position=open_start)
+
+    return blocks
+
+
+# ---------------------------------------------------------------------------
+# Diagram detection
+# ---------------------------------------------------------------------------
+
+_DIAGRAM_BEGIN_RE = re.compile(
+    r"\\begin\{diagram\}(\[[^\]]*\])?",
+)
+
+_DIAGRAM_END_RE = re.compile(
+    r"\\end\{diagram\}",
+)
+
+
+def detect_diagram_blocks(source: str) -> list[Block]:
+    """Find all ``\\begin{diagram}...\\end{diagram}`` blocks in *source*."""
+    masked = _mask_lstlisting(source)
+    blocks: list[Block] = []
+    open_start: int | None = None
+    open_options_raw: str | None = None
+
+    begins = list(_DIAGRAM_BEGIN_RE.finditer(masked))
+    ends = list(_DIAGRAM_END_RE.finditer(masked))
+
+    events: list[tuple[int, str, re.Match[str]]] = []
+    for m in begins:
+        events.append((m.start(), "begin", m))
+    for m in ends:
+        events.append((m.start(), "end", m))
+    events.sort(key=lambda e: e[0])
+
+    for offset, kind, match in events:
+        if kind == "begin":
+            open_start = match.start()
+            open_options_raw = _parse_options_raw(match.group(1))
+        elif kind == "end":
+            if open_start is None:
+                continue
+            block_end = match.end()
+            raw = source[open_start:block_end]
+            blocks.append(
+                Block(
+                    start=open_start,
+                    end=block_end,
+                    kind="diagram",
+                    raw=raw,
+                    metadata={"options_raw": open_options_raw},
+                )
+            )
+            open_start = None
+            open_options_raw = None
 
     return blocks

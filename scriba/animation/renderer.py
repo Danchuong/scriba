@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from scriba.animation.detector import detect_animation_blocks
-from scriba.animation.emitter import FrameData, emit_animation_html, emit_html
+from scriba.animation.emitter import FrameData, emit_animation_html, emit_html, scene_id_from_source
 from scriba.animation.errors import FrameCountError
 from scriba.animation.extensions.hl_macro import process_hl_macros
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
@@ -36,7 +36,9 @@ from scriba.animation.primitives import (
     DPTablePrimitive,
     Graph,
     GridPrimitive,
+    MatrixPrimitive,
     NumberLinePrimitive,
+    Stack,
     Tree,
 )
 from scriba.animation.scene import FrameSnapshot, SceneState
@@ -44,7 +46,7 @@ from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
 from scriba.core.errors import RendererError, ValidationError
 
-__all__ = ["AnimationRenderer"]
+__all__ = ["AnimationRenderer", "DiagramRenderer"]
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +62,10 @@ PRIMITIVE_CATALOG: dict[str, Any] = {
     "DPTable": DPTablePrimitive,
     "Graph": Graph,
     "Grid": GridPrimitive,
+    "Heatmap": MatrixPrimitive,
+    "Matrix": MatrixPrimitive,
     "NumberLine": NumberLinePrimitive,
+    "Stack": Stack,
     "Tree": Tree,
 }
 
@@ -171,7 +176,7 @@ def _instantiate_primitive(
         )
     resolved_params = _resolve_params(shape.params, bindings)
 
-    if shape.type_name in ("Graph", "Tree"):
+    if shape.type_name in ("Graph", "Tree", "Stack"):
         return factory_cls(shape.name, resolved_params)
 
     factory = factory_cls()
@@ -194,6 +199,8 @@ def _snapshot_to_frame_data(
                 entry["value"] = ts.value
             if ts.label is not None:
                 entry["label"] = ts.label
+            if ts.apply_params is not None:
+                entry["apply_params"] = ts.apply_params
             shape_states[shape_name][target_key] = entry
 
     # Mark highlighted targets (additive — does not replace state)
@@ -373,3 +380,97 @@ class AnimationRenderer:
             snapshots.append(snap)
 
         return snapshots
+
+
+# ============================================================================
+# DiagramRenderer — static single-frame figures
+# ============================================================================
+
+_DIAGRAM_ENV_BEGIN_RE = re.compile(
+    r"\\begin\{diagram\}(\[[^\]]*\])?\s*\n?",
+)
+_DIAGRAM_ENV_END_RE = re.compile(
+    r"\s*\\end\{diagram\}\s*$",
+)
+
+
+class DiagramRenderer:
+    """Renderer for ``\\begin{diagram}...\\end{diagram}`` environments.
+
+    Produces a static ``<figure class="scriba-diagram">`` with a single SVG.
+    Reuses the same parser, primitives, and emitter as AnimationRenderer.
+
+    Key differences:
+    - ``\\step`` is forbidden (E1050)
+    - ``\\narrate`` is forbidden (E1054)
+    - ``\\highlight`` is persistent (not ephemeral)
+    - Output is a static figure with no controls
+    """
+
+    name = "diagram"
+    version = 1
+    priority = 10
+
+    def __init__(self, *, starlark_host: Any | None = None) -> None:
+        self._starlark_host = starlark_host
+
+    def detect(self, source: str) -> list[Block]:
+        from scriba.animation.detector import detect_diagram_blocks
+
+        return detect_diagram_blocks(source)
+
+    def render_block(self, block: Block, ctx: RenderContext) -> RenderArtifact:
+        raw = block.raw
+        begin_m = _DIAGRAM_ENV_BEGIN_RE.match(raw)
+        opts_str = begin_m.group(1) or "" if begin_m else ""
+        body_start = begin_m.end() if begin_m else 0
+        end_m = _DIAGRAM_ENV_END_RE.search(raw, body_start)
+        body_end = end_m.start() if end_m else len(raw)
+        body = raw[body_start:body_end]
+
+        parse_input = opts_str + "\n" + body if opts_str else body
+        ir = SceneParser().parse(parse_input)
+
+        # Validate: no \step or \narrate in diagram
+        if ir.frames:
+            raise ValidationError("[E1050] \\step is not allowed in diagram")
+
+        scene_id = scene_id_from_source(raw)
+        if hasattr(ir, "options") and hasattr(ir.options, "id") and ir.options.id:
+            scene_id = ir.options.id
+
+        # Instantiate primitives
+        primitives = AnimationRenderer._instantiate_primitives(
+            self, ir
+        )
+
+        # Apply all prelude commands as a single frame
+        state = SceneState()
+        state.apply_prelude(
+            shapes=ir.shapes,
+            prelude_commands=ir.prelude_commands,
+            prelude_compute=getattr(ir, "prelude_compute", []),
+            starlark_host=self._starlark_host,
+        )
+        snap = state.snapshot(index=1, narration=None)
+
+        frame = _snapshot_to_frame_data(snap, 1, scene_id, ctx)
+        html = emit_html(scene_id, [frame], primitives, mode="diagram")
+
+        return RenderArtifact(
+            html=html,
+            css_assets=frozenset({"scriba-animation.css", "scriba-scene-primitives.css"}),
+            js_assets=frozenset(),
+            block_id=scene_id,
+            data={},
+        )
+
+    def assets(self) -> RendererAssets:
+        static = files("scriba.animation").joinpath("static")
+        css_files: set[Path] = set()
+        for name in ("scriba-animation.css", "scriba-scene-primitives.css"):
+            css_files.add(Path(str(static / name)))
+        return RendererAssets(
+            css_files=frozenset(css_files),
+            js_files=frozenset(),
+        )

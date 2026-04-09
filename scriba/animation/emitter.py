@@ -173,9 +173,12 @@ def _expand_selectors(
         else:
             expanded[target] = dict(data)
 
+    top_re = re.compile(rf"^{re.escape(shape_name)}\.top$")
+
     for key, data in shape_state.items():
         m_range = range_re.match(key)
         m_all = all_re.match(key)
+        m_top = top_re.match(key)
 
         if m_range:
             lo, hi = int(m_range.group(1)), int(m_range.group(2))
@@ -186,6 +189,14 @@ def _expand_selectors(
                 else:
                     target = f"{shape_name}.cell[{i}]"
                 _merge(target, data)
+        elif m_top:
+            # s.top → s.item[N-1] for stack, or pass through for others
+            ptype = getattr(prim, "primitive_type", "")
+            if ptype == "stack" and hasattr(prim, "items") and prim.items:
+                top_idx = len(prim.items) - 1
+                _merge(f"{shape_name}.item[{top_idx}]", data)
+            else:
+                _merge(key, data)
         elif m_all:
             parts = prim.addressable_parts()
             for part in parts:
@@ -236,7 +247,7 @@ def _emit_frame_svg(
         )
         ptype = getattr(prim, "primitive_type", "")
 
-        if ptype in ("array", "dptable", "grid", "numberline"):
+        if ptype in ("array", "dptable", "grid", "numberline", "matrix"):
             if ptype == "dptable":
                 prim_anns = [
                     a
@@ -251,6 +262,14 @@ def _emit_frame_svg(
         else:
             # Graph / PrimitiveBase -- apply state then emit
             highlighted_suffixes: set[str] = set()
+
+            # Process apply_params for primitives that support them (e.g. Stack)
+            for target_key, target_data in shape_state.items():
+                if isinstance(target_data, dict):
+                    apply_params = target_data.get("apply_params")
+                    if apply_params and hasattr(prim, "apply_command"):
+                        prim.apply_command(apply_params)
+
             for target_key, target_data in shape_state.items():
                 if isinstance(target_data, dict):
                     state_val = target_data.get("state", "idle")
@@ -479,4 +498,40 @@ def emit_html(
     """
     if mode == "static":
         return emit_animation_html(scene_id, frames, primitives)
+    if mode == "diagram":
+        return emit_diagram_html(scene_id, frames, primitives)
     return emit_interactive_html(scene_id, frames, primitives, label=label)
+
+
+# ---------------------------------------------------------------------------
+# Diagram output (static single-frame figure)
+# ---------------------------------------------------------------------------
+
+
+def emit_diagram_html(
+    scene_id: str,
+    frames: list[FrameData],
+    primitives: dict[str, Any],
+) -> str:
+    """Produce a static ``<figure class="scriba-diagram">`` with no controls."""
+    if not frames:
+        # Diagrams should have exactly 1 implicit frame from prelude commands
+        return (
+            f'<figure class="scriba-diagram" '
+            f'data-scriba-scene="{_escape(scene_id)}">'
+            f'<div class="scriba-stage"></div>'
+            f'</figure>'
+        )
+
+    viewbox = compute_viewbox(primitives)
+    frame = frames[0]
+    svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox)
+
+    return (
+        f'<figure class="scriba-diagram" '
+        f'data-scriba-scene="{_escape(scene_id)}">\n'
+        f'  <div class="scriba-stage">\n'
+        f'    {svg_html}\n'
+        f'  </div>\n'
+        f'</figure>'
+    )
