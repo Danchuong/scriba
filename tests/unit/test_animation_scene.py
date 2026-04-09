@@ -5,15 +5,74 @@ from __future__ import annotations
 import pytest
 
 from scriba.animation.parser.ast import (
-    AnnotateCmd,
-    ApplyCmd,
-    ComputeBlock,
+    AnnotateCommand,
+    ApplyCommand,
+    ComputeCommand,
     FrameIR,
-    HighlightCmd,
-    RecolorCmd,
-    ShapeDecl,
+    HighlightCommand,
+    RecolorCommand,
+    Selector,
+    ShapeCommand,
 )
 from scriba.animation.scene import AnnotationEntry, SceneState, ShapeTargetState
+
+
+# ---------------------------------------------------------------------------
+# Helpers to build AST nodes succinctly
+# ---------------------------------------------------------------------------
+
+
+def _shape(name: str, type_name: str = "array") -> ShapeCommand:
+    return ShapeCommand(line=0, col=0, name=name, type_name=type_name, params={})
+
+
+def _sel(target_str: str) -> Selector:
+    """Build a bare ``Selector`` from a dotted string like ``arr.0``."""
+    return Selector(shape_name=target_str)
+
+
+def _apply(target: str, value: str | None = None, label: str | None = None) -> ApplyCommand:
+    params: dict = {}
+    if value is not None:
+        params["value"] = value
+    if label is not None:
+        params["label"] = label
+    return ApplyCommand(line=0, col=0, target=_sel(target), params=params)
+
+
+def _recolor(target: str, state: str) -> RecolorCommand:
+    return RecolorCommand(line=0, col=0, target=_sel(target), state=state)
+
+
+def _highlight(target: str) -> HighlightCommand:
+    return HighlightCommand(line=0, col=0, target=_sel(target))
+
+
+def _annotate(
+    target: str,
+    text: str = "",
+    ephemeral: bool = False,
+) -> AnnotateCommand:
+    return AnnotateCommand(
+        line=0, col=0, target=_sel(target), label=text, ephemeral=ephemeral,
+    )
+
+
+def _compute(source: str) -> ComputeCommand:
+    return ComputeCommand(line=0, col=0, source=source)
+
+
+def _frame(
+    commands: tuple = (),
+    compute: tuple = (),
+    narrate_body: str | None = None,
+) -> FrameIR:
+    return FrameIR(line=0, commands=commands, compute=compute, narrate_body=narrate_body)
+
+
+# ---------------------------------------------------------------------------
+# Tests
+# ---------------------------------------------------------------------------
 
 
 class TestPrelude:
@@ -22,10 +81,7 @@ class TestPrelude:
     def test_shape_declarations_recorded(self) -> None:
         state = SceneState()
         state.apply_prelude(
-            shapes=(
-                ShapeDecl(name="arr", shape_type="array"),
-                ShapeDecl(name="graph", shape_type="graph"),
-            ),
+            shapes=(_shape("arr"), _shape("graph", "graph")),
         )
         assert "arr" in state.shape_states
         assert "graph" in state.shape_states
@@ -33,8 +89,8 @@ class TestPrelude:
     def test_prelude_apply_sets_initial_state(self) -> None:
         state = SceneState()
         state.apply_prelude(
-            shapes=(ShapeDecl(name="arr", shape_type="array"),),
-            prelude_commands=(ApplyCmd(target="arr.0", value="5"),),
+            shapes=(_shape("arr"),),
+            prelude_commands=(_apply("arr.0", value="5"),),
         )
         assert state.shape_states["arr"]["arr.0"].value == "5"
 
@@ -44,48 +100,31 @@ class TestApply:
 
     def test_value_persists_across_frames(self) -> None:
         state = SceneState()
-        state.apply_prelude(shapes=(ShapeDecl(name="arr", shape_type="array"),))
+        state.apply_prelude(shapes=(_shape("arr"),))
 
-        frame1 = FrameIR(
-            index=1,
-            commands=(ApplyCmd(target="arr.0", value="10"),),
-        )
-        snap1 = state.apply_frame(frame1)
-
-        frame2 = FrameIR(index=2, commands=())
-        snap2 = state.apply_frame(frame2)
+        snap1 = state.apply_frame(_frame(commands=(_apply("arr.0", value="10"),)))
+        snap2 = state.apply_frame(_frame())
 
         assert snap1.shape_states["arr"]["arr.0"].value == "10"
         assert snap2.shape_states["arr"]["arr.0"].value == "10"
 
     def test_apply_with_label(self) -> None:
         state = SceneState()
-        state.apply_prelude(shapes=(ShapeDecl(name="arr", shape_type="array"),))
+        state.apply_prelude(shapes=(_shape("arr"),))
 
-        frame = FrameIR(
-            index=1,
-            commands=(ApplyCmd(target="arr.0", value="42", label="answer"),),
+        snap = state.apply_frame(
+            _frame(commands=(_apply("arr.0", value="42", label="answer"),))
         )
-        snap = state.apply_frame(frame)
 
         assert snap.shape_states["arr"]["arr.0"].value == "42"
         assert snap.shape_states["arr"]["arr.0"].label == "answer"
 
     def test_apply_overwrites_previous_value(self) -> None:
         state = SceneState()
-        state.apply_prelude(shapes=(ShapeDecl(name="arr", shape_type="array"),))
+        state.apply_prelude(shapes=(_shape("arr"),))
 
-        frame1 = FrameIR(
-            index=1,
-            commands=(ApplyCmd(target="arr.0", value="10"),),
-        )
-        state.apply_frame(frame1)
-
-        frame2 = FrameIR(
-            index=2,
-            commands=(ApplyCmd(target="arr.0", value="20"),),
-        )
-        snap2 = state.apply_frame(frame2)
+        state.apply_frame(_frame(commands=(_apply("arr.0", value="10"),)))
+        snap2 = state.apply_frame(_frame(commands=(_apply("arr.0", value="20"),)))
 
         assert snap2.shape_states["arr"]["arr.0"].value == "20"
 
@@ -95,35 +134,20 @@ class TestRecolor:
 
     def test_recolor_persists(self) -> None:
         state = SceneState()
-        state.apply_prelude(shapes=(ShapeDecl(name="arr", shape_type="array"),))
+        state.apply_prelude(shapes=(_shape("arr"),))
 
-        frame1 = FrameIR(
-            index=1,
-            commands=(RecolorCmd(target="arr.0", state="visited"),),
-        )
-        snap1 = state.apply_frame(frame1)
-
-        frame2 = FrameIR(index=2, commands=())
-        snap2 = state.apply_frame(frame2)
+        snap1 = state.apply_frame(_frame(commands=(_recolor("arr.0", "visited"),)))
+        snap2 = state.apply_frame(_frame())
 
         assert snap1.shape_states["arr"]["arr.0"].state == "visited"
         assert snap2.shape_states["arr"]["arr.0"].state == "visited"
 
     def test_recolor_replaces_prior_state(self) -> None:
         state = SceneState()
-        state.apply_prelude(shapes=(ShapeDecl(name="arr", shape_type="array"),))
+        state.apply_prelude(shapes=(_shape("arr"),))
 
-        frame1 = FrameIR(
-            index=1,
-            commands=(RecolorCmd(target="arr.0", state="visited"),),
-        )
-        state.apply_frame(frame1)
-
-        frame2 = FrameIR(
-            index=2,
-            commands=(RecolorCmd(target="arr.0", state="active"),),
-        )
-        snap2 = state.apply_frame(frame2)
+        state.apply_frame(_frame(commands=(_recolor("arr.0", "visited"),)))
+        snap2 = state.apply_frame(_frame(commands=(_recolor("arr.0", "active"),)))
 
         assert snap2.shape_states["arr"]["arr.0"].state == "active"
 
@@ -133,24 +157,13 @@ class TestHighlight:
 
     def test_highlight_present_in_frame(self) -> None:
         state = SceneState()
-        frame = FrameIR(
-            index=1,
-            commands=(HighlightCmd(target="arr.0"),),
-        )
-        snap = state.apply_frame(frame)
+        snap = state.apply_frame(_frame(commands=(_highlight("arr.0"),)))
         assert "arr.0" in snap.highlights
 
     def test_highlight_cleared_at_next_frame(self) -> None:
         state = SceneState()
-        frame1 = FrameIR(
-            index=1,
-            commands=(HighlightCmd(target="arr.0"),),
-        )
-        state.apply_frame(frame1)
-
-        frame2 = FrameIR(index=2, commands=())
-        snap2 = state.apply_frame(frame2)
-
+        state.apply_frame(_frame(commands=(_highlight("arr.0"),)))
+        snap2 = state.apply_frame(_frame())
         assert "arr.0" not in snap2.highlights
 
 
@@ -159,14 +172,8 @@ class TestAnnotate:
 
     def test_persistent_annotation(self) -> None:
         state = SceneState()
-        frame1 = FrameIR(
-            index=1,
-            commands=(AnnotateCmd(target="arr.0", text="note"),),
-        )
-        snap1 = state.apply_frame(frame1)
-
-        frame2 = FrameIR(index=2, commands=())
-        snap2 = state.apply_frame(frame2)
+        snap1 = state.apply_frame(_frame(commands=(_annotate("arr.0", text="note"),)))
+        snap2 = state.apply_frame(_frame())
 
         assert len(snap1.annotations) == 1
         assert snap1.annotations[0].text == "note"
@@ -174,16 +181,10 @@ class TestAnnotate:
 
     def test_ephemeral_annotation_cleared(self) -> None:
         state = SceneState()
-        frame1 = FrameIR(
-            index=1,
-            commands=(
-                AnnotateCmd(target="arr.0", text="temp", ephemeral=True),
-            ),
+        snap1 = state.apply_frame(
+            _frame(commands=(_annotate("arr.0", text="temp", ephemeral=True),))
         )
-        snap1 = state.apply_frame(frame1)
-
-        frame2 = FrameIR(index=2, commands=())
-        snap2 = state.apply_frame(frame2)
+        snap2 = state.apply_frame(_frame())
 
         assert len(snap1.annotations) == 1
         assert len(snap2.annotations) == 0
@@ -196,27 +197,22 @@ class TestCompute:
         host = _FakeStarlarkHost({"x": 42})
         state = SceneState()
         state.apply_prelude(
-            prelude_compute=(ComputeBlock(code="x = 42", scope="global"),),
+            prelude_compute=(_compute("x = 42"),),
             starlark_host=host,
         )
 
-        frame = FrameIR(index=1, commands=())
-        snap = state.apply_frame(frame)
+        snap = state.apply_frame(_frame())
         assert snap.bindings.get("x") == 42
 
     def test_frame_local_compute_scoped(self) -> None:
         host = _FakeStarlarkHost({"y": 99})
         state = SceneState()
 
-        frame1 = FrameIR(
-            index=1,
-            commands=(),
-            compute_blocks=(ComputeBlock(code="y = 99", scope="frame"),),
+        snap1 = state.apply_frame(
+            _frame(compute=(_compute("y = 99"),)),
+            starlark_host=host,
         )
-        snap1 = state.apply_frame(frame1, starlark_host=host)
-
-        frame2 = FrameIR(index=2, commands=())
-        snap2 = state.apply_frame(frame2)
+        snap2 = state.apply_frame(_frame())
 
         assert snap1.bindings.get("y") == 99
         assert "y" not in snap2.bindings
@@ -227,22 +223,17 @@ class TestMultipleShapes:
 
     def test_independent_shape_state(self) -> None:
         state = SceneState()
-        state.apply_prelude(
-            shapes=(
-                ShapeDecl(name="arr", shape_type="array"),
-                ShapeDecl(name="stack", shape_type="stack"),
-            ),
-        )
+        state.apply_prelude(shapes=(_shape("arr"), _shape("stack")))
 
-        frame = FrameIR(
-            index=1,
-            commands=(
-                ApplyCmd(target="arr.0", value="A"),
-                ApplyCmd(target="stack.0", value="B"),
-                RecolorCmd(target="arr.0", state="visited"),
-            ),
+        snap = state.apply_frame(
+            _frame(
+                commands=(
+                    _apply("arr.0", value="A"),
+                    _apply("stack.0", value="B"),
+                    _recolor("arr.0", "visited"),
+                ),
+            )
         )
-        snap = state.apply_frame(frame)
 
         assert snap.shape_states["arr"]["arr.0"].value == "A"
         assert snap.shape_states["arr"]["arr.0"].state == "visited"

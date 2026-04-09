@@ -34,6 +34,16 @@ class NestedAnimationError(ValidationError):
         )
 
 
+# --- Primitive errors (E1100 -- E1109) ---
+
+E1103 = "E1103"
+
+
+def animation_error(code: str, detail: str) -> ValidationError:
+    """Create a validation error with the given animation error code."""
+    return ValidationError(f"[{code}] {detail}")
+
+
 # --- Parse errors (E1100 -- E1149) ---
 
 class AnimationParseError(ValidationError):

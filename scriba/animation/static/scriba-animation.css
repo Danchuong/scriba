@@ -1,290 +1,38 @@
-/* Scriba Animation Filmstrip Layout
- * Layout classes for .scriba-animation, .scriba-frames, .scriba-frame,
- * frame header, step label, narration, widget controls, progress bars,
- * and :target highlight.
- *
- * Imports scriba-scene-primitives.css for state classes and primitive
- * base styles.  No JavaScript — all visual behavior is pure CSS.
+/* Scriba Animation — core styles
+ * Pure CSS, zero JavaScript.
  */
 
-@import "scriba-scene-primitives.css";
+/* ---------- \hl macro highlights ---------- */
 
-/* ============================================
-   Animation container
-   ============================================ */
-
-.scriba-animation {
-  margin:    1.5rem 0;
-  max-width: 100%;
-}
-
-/* ============================================
-   Filmstrip layout (default: horizontal scroll)
-   ============================================ */
-
-.scriba-animation .scriba-frames {
-  display:           grid;
-  grid-auto-flow:    column;
-  grid-auto-columns: minmax(18rem, 1fr);
-  gap:               var(--scriba-frame-gap);
-  overflow-x:        auto;
-  scroll-snap-type:  x mandatory;
-  padding-block:     0.5rem;
-  list-style:        none;
-  margin:            0;
-  padding-inline:    0;
-}
-
-/* Stack layout variant (via data attribute) */
-.scriba-animation[data-layout="stack"] .scriba-frames {
-  grid-auto-flow:    row;
-  grid-auto-columns: 1fr;
-  overflow-x:        visible;
-  scroll-snap-type:  none;
-}
-
-/* ============================================
-   Frame card
-   ============================================ */
-
-.scriba-frame {
-  scroll-snap-align: start;
-  border:            var(--scriba-frame-border);
-  border-radius:     var(--scriba-frame-radius);
-  background:        var(--scriba-bg);
-  overflow:          hidden;
-  counter-increment: scriba-step;
-}
-
-.scriba-frame:target {
-  outline:        2px solid var(--scriba-link);
-  outline-offset: 2px;
-}
-
-/* ============================================
-   Frame header and step label
-   ============================================ */
-
-.scriba-frame-header {
-  padding:       0.5rem var(--scriba-frame-padding);
-  border-bottom: 1px solid var(--scriba-border);
-}
-
-.scriba-step-label {
-  font:           var(--scriba-step-label-font);
-  color:          var(--scriba-step-label-color);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* ============================================
-   Stage (SVG container)
-   ============================================ */
-
-.scriba-stage {
-  padding:         var(--scriba-stage-padding);
-  background:      var(--scriba-stage-bg);
-  display:         flex;
-  justify-content: center;
-  align-items:     center;
-}
-
-.scriba-stage-svg {
-  width:     100%;
-  max-width: 720px;
-  height:    auto;
-  display:   block;
-}
-
-/* ============================================
-   Narration
-   ============================================ */
-
-.scriba-narration {
-  padding:     var(--scriba-narration-padding);
-  font-size:   var(--scriba-narration-font-size);
-  line-height: var(--scriba-narration-line-height);
-  color:       var(--scriba-fg);
-  border-top:  1px solid var(--scriba-border);
-}
-
-.scriba-narration[aria-hidden="true"] {
-  display: none;
-}
-
-/* ============================================
-   Widget classes (interactive wrapper)
-   ============================================ */
-
-figure.scriba-widget {
-  margin:        2rem 0;
-  background:    var(--scriba-bg);
-  border:        1px solid var(--scriba-border);
-  border-radius: var(--scriba-widget-radius);
-  overflow:      hidden;
-  box-shadow:    var(--scriba-widget-shadow);
-}
-
-figure.scriba-widget:focus-visible {
-  outline:        var(--scriba-widget-focus-ring);
-  outline-offset: 2px;
-}
-
-.scriba-widget-svg {
-  background:      var(--scriba-stage-bg);
-  padding:         var(--scriba-stage-padding);
-  min-height:      280px;
-  display:         flex;
-  justify-content: center;
-  align-items:     center;
-}
-
-.scriba-widget-svg svg {
-  width:     100%;
-  max-width: 720px;
-  height:    auto;
-  display:   block;
-}
-
-.scriba-widget-controls {
-  display:     flex;
-  align-items: center;
-  gap:         0.5rem;
-  padding:     0.75rem 1rem;
-  border-top:  1px solid var(--scriba-border);
-  background:  var(--scriba-bg);
-}
-
-.scriba-widget-controls button {
-  font:          500 0.85rem inherit;
-  background:    var(--scriba-bg);
-  border:        1px solid var(--scriba-border);
-  color:         var(--scriba-fg);
-  padding:       0.45rem 0.85rem;
-  border-radius: 7px;
-  cursor:        pointer;
-}
-
-.scriba-widget-controls button:hover:not(:disabled) {
-  background:   var(--scriba-bg-code);
-  border-color: var(--scriba-border-strong);
-}
-
-.scriba-widget-controls button:disabled {
-  opacity: 0.35;
-  cursor:  not-allowed;
-}
-
-.scriba-widget-controls button[data-action="play"].playing {
-  background:   var(--scriba-link);
-  color:        #ffffff;
-  border-color: var(--scriba-link);
-}
-
-.scriba-widget-counter {
-  margin-left:          auto;
-  font:                 500 0.82rem ui-monospace, monospace;
-  color:                var(--scriba-fg-muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.scriba-widget-progress {
-  display:    flex;
-  gap:        4px;
-  padding:    0 1rem 0.75rem;
-  background: var(--scriba-bg);
-}
-
-.scriba-widget-progress .bar {
-  flex:          1;
-  height:        var(--scriba-progress-height);
+/* When a filmstrip frame is targeted via URL fragment, highlight matching
+   \hl spans inside the narration panel. */
+.scriba-frame:target .scriba-hl {
+  background-color: var(--scriba-state-highlight-fill, #F0E442);
+  padding: 0.1em 0.2em;
   border-radius: 2px;
-  background:    var(--scriba-progress-bg);
 }
 
-.scriba-widget-progress .bar.done {
-  background: var(--scriba-progress-fill);
-}
+/* ---------- Keyframe animation utility classes ---------- */
 
-.scriba-widget-narration {
-  padding:    1rem 1.25rem 1.25rem;
-  border-top: 1px solid var(--scriba-border);
-  background: var(--scriba-bg);
-  min-height: 4rem;
-}
+.scriba-anim-rotate { animation: var(--scriba-anim-name) 2s linear infinite; }
+.scriba-anim-pulse { animation: var(--scriba-anim-name) 1s ease-in-out infinite; }
+.scriba-anim-orbit { animation: var(--scriba-anim-name) 3s linear infinite; }
+.scriba-anim-fade-loop { animation: var(--scriba-anim-name) 2s ease-in-out infinite; }
+.scriba-anim-trail { animation: var(--scriba-anim-name) 1.5s linear infinite; }
 
-.scriba-widget-narration .step-title {
-  font:           var(--scriba-step-label-font);
-  color:          var(--scriba-link);
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin:         0 0 0.4rem;
-}
+/* ---------- Reduced motion ---------- */
 
-.scriba-widget-narration p {
-  margin:    0;
-  color:     var(--scriba-fg);
-  display:   none;
-  font-size: var(--scriba-narration-font-size);
-}
-
-.scriba-widget-narration p.active {
-  display: block;
-}
-
-/* ============================================
-   Responsive — narrow viewport
-   ============================================ */
-
-@media (max-width: 640px) {
-  .scriba-animation .scriba-frames {
-    grid-auto-flow:    row;
-    grid-auto-columns: 1fr;
-    overflow-x:        visible;
-    scroll-snap-type:  none;
-  }
-}
-
-/* ============================================
-   Print
-   ============================================ */
-
-@media print {
-  .scriba-animation .scriba-frames {
-    grid-auto-flow:    row;
-    grid-auto-columns: 1fr;
-    overflow-x:        visible;
-    scroll-snap-type:  none;
-    gap:               2rem;
+@media (prefers-reduced-motion: reduce) {
+  .scriba-anim-rotate,
+  .scriba-anim-pulse,
+  .scriba-anim-orbit,
+  .scriba-anim-fade-loop,
+  .scriba-anim-trail {
+    animation: none !important;
   }
 
-  .scriba-frame {
-    break-inside:      avoid;
-    page-break-inside: avoid;
-    border:            1px solid #000;
-    box-shadow:        none;
+  .scriba-frame:target .scriba-hl {
+    /* Keep the highlight but skip any transition */
+    transition: none !important;
   }
-
-  .scriba-narration {
-    break-inside:      avoid;
-    page-break-inside: avoid;
-  }
-
-  /* Widget controls are irrelevant in print */
-  .scriba-widget-controls,
-  .scriba-widget-progress {
-    display: none;
-  }
-
-  /* Force state colors to print */
-  .scriba-state-current > rect,
-  .scriba-state-current > circle { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .scriba-state-done > rect,
-  .scriba-state-done > circle    { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .scriba-state-error > rect,
-  .scriba-state-error > circle   { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .scriba-state-good > rect,
-  .scriba-state-good > circle    { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .scriba-state-highlight > rect,
-  .scriba-state-highlight > circle { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }

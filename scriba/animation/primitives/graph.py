@@ -13,7 +13,7 @@ import random
 from html import escape as html_escape
 from typing import Any
 
-from scriba.animation.primitives.base import BoundingBox, Primitive
+from scriba.animation.primitives.base import BoundingBox, PrimitiveBase
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -151,7 +151,7 @@ def _shorten_line_to_circle(
 # ---------------------------------------------------------------------------
 
 
-class Graph(Primitive):
+class Graph(PrimitiveBase):
     """Force-directed graph primitive.
 
     Parameters

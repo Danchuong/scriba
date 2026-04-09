@@ -15,7 +15,11 @@ from typing import Any
 
 from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.errors import FrameCountError
-from scriba.animation.parser.ast import AnimationIR, FrameIR
+from scriba.animation.parser.ast import (
+    AnimationIR,
+    AnimationOptions,
+    FrameIR,
+)
 from scriba.animation.scene import FrameSnapshot, SceneState
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
@@ -78,7 +82,11 @@ class AnimationRenderer:
         """Parse, materialise scenes, and emit HTML for one animation block."""
         ir = self._parse(block)
 
-        scene_id = ir.id_option or _scene_id(block.raw)
+        scene_id = (
+            ir.options.id
+            if ir.options.id is not None
+            else _scene_id(block.raw)
+        )
         snapshots = self._materialise(ir)
 
         frame_count = len(snapshots)
@@ -114,12 +122,7 @@ class AnimationRenderer:
     # ---- private ----
 
     def _parse(self, block: Block) -> AnimationIR:
-        """Parse a block into AnimationIR.
-
-        Attempts to use SceneParser from the parser sub-package.  If it
-        is not yet implemented (Wave 1 stub), falls back to a minimal
-        inline parser that extracts frames separated by ``\\step``.
-        """
+        """Parse a block into AnimationIR."""
         try:
             from scriba.animation.parser.grammar import SceneParser
 
@@ -134,14 +137,21 @@ class AnimationRenderer:
         """
         import re
 
-        # Strip \begin{animation}[...] and \end{animation}
+        # Strip \\begin{animation}[...] and \\end{animation}
         body_match = re.search(
             r"\\begin\{animation\}(?:\[[^\]]*\])?\s*\n?(.*?)\\end\{animation\}",
             raw,
             re.DOTALL,
         )
         if body_match is None:
-            return AnimationIR()
+            return AnimationIR(
+                options=AnimationOptions(),
+                shapes=(),
+                prelude_compute=(),
+                prelude_commands=(),
+                frames=(),
+                source_hash=hashlib.sha256(raw.encode()).hexdigest(),
+            )
 
         body = body_match.group(1)
 
@@ -150,25 +160,25 @@ class AnimationRenderer:
             r"\\begin\{animation\}\[([^\]]*)\]",
             raw,
         )
-        options: tuple[Any, ...] = ()
+        anim_id: str | None = None
+        anim_label: str | None = None
         if opt_match:
-            from scriba.animation.parser.ast import Option
-
             raw_opts = opt_match.group(1)
-            opts = []
             for pair in raw_opts.split(","):
                 pair = pair.strip()
                 if "=" in pair:
                     k, v = pair.split("=", 1)
+                    k = k.strip()
                     v = v.strip().strip('"').strip("'")
-                    opts.append(Option(key=k.strip(), value=v))
-            options = tuple(opts)
+                    if k == "id":
+                        anim_id = v
+                    elif k == "label":
+                        anim_label = v
 
-        # Split on \step to get frames
+        options = AnimationOptions(id=anim_id, label=anim_label)
+
+        # Split on \\step to get frames
         parts = re.split(r"\\step\b", body)
-
-        # First part is prelude (before first \step)
-        prelude_text = parts[0].strip() if parts else ""
 
         frames: list[FrameIR] = []
         frame_parts = parts[1:] if len(parts) > 1 else []
@@ -177,27 +187,29 @@ class AnimationRenderer:
             narration = part.strip() if part.strip() else None
             frames.append(
                 FrameIR(
-                    index=i + 1,
+                    line=i + 1,
                     commands=(),
-                    narration=narration,
-                    compute_blocks=(),
+                    narrate_body=narration,
                 )
             )
 
-        # If no \step found, treat entire body as one frame
+        # If no \\step found, treat entire body as one frame
         if not frames and body.strip():
             frames.append(
                 FrameIR(
-                    index=1,
+                    line=1,
                     commands=(),
-                    narration=body.strip() if body.strip() else None,
-                    compute_blocks=(),
+                    narrate_body=body.strip() if body.strip() else None,
                 )
             )
 
         return AnimationIR(
             options=options,
+            shapes=(),
+            prelude_compute=(),
+            prelude_commands=(),
             frames=tuple(frames),
+            source_hash=hashlib.sha256(raw.encode()).hexdigest(),
         )
 
     def _materialise(self, ir: AnimationIR) -> list[FrameSnapshot]:
