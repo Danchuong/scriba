@@ -141,6 +141,48 @@ def emit_shared_defs(primitives: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _expand_selectors(
+    shape_state: dict[str, dict],
+    shape_name: str,
+    prim: Any,
+) -> dict[str, dict]:
+    """Expand range/all selectors into individual targets.
+
+    E.g., ``nl.range[3:7]`` → ``nl.tick[3]``, ..., ``nl.tick[7]``
+    and ``a.all`` → ``a.cell[0]``, ..., ``a.cell[N-1]``.
+    """
+    import re
+
+    expanded: dict[str, dict] = {}
+    range_re = re.compile(
+        rf"^{re.escape(shape_name)}\.range\[(\d+):(\d+)\]$"
+    )
+    all_re = re.compile(rf"^{re.escape(shape_name)}\.all$")
+
+    for key, data in shape_state.items():
+        m_range = range_re.match(key)
+        m_all = all_re.match(key)
+
+        if m_range:
+            lo, hi = int(m_range.group(1)), int(m_range.group(2))
+            ptype = getattr(prim, "primitive_type", "")
+            for i in range(lo, hi + 1):
+                if ptype == "numberline":
+                    target = f"{shape_name}.tick[{i}]"
+                else:
+                    target = f"{shape_name}.cell[{i}]"
+                expanded[target] = dict(data)
+        elif m_all:
+            parts = prim.addressable_parts()
+            for part in parts:
+                if ".all" not in part and ".range" not in part:
+                    expanded[part] = dict(data)
+        else:
+            expanded[key] = data
+
+    return expanded
+
+
 def _emit_frame_svg(
     frame: FrameData,
     primitives: dict[str, Any],
@@ -175,7 +217,9 @@ def _emit_frame_svg(
 
         svg_parts.append(f'<g transform="translate({x_offset},{y_cursor})">')
 
-        shape_state = frame.shape_states.get(shape_name, {})
+        shape_state = _expand_selectors(
+            frame.shape_states.get(shape_name, {}), shape_name, prim
+        )
         ptype = getattr(prim, "primitive_type", "")
 
         if ptype in ("array", "dptable", "grid", "numberline"):
