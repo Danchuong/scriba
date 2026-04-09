@@ -1,4 +1,4 @@
-"""Base protocol and helpers for animation primitives.
+"""Base protocol, helpers, and shared constants for animation primitives.
 
 Every primitive type (Array, Grid, DPTable, Graph, Tree, NumberLine)
 implements the :class:`Primitive` factory and the :class:`PrimitiveInstance`
@@ -9,8 +9,25 @@ See ``docs/06-primitives.md`` for the authoritative catalog.
 
 from __future__ import annotations
 
+import abc
 import re
+from dataclasses import dataclass
 from typing import Any, Protocol
+
+
+# ---------------------------------------------------------------------------
+# Bounding box value object
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, slots=True)
+class BoundingBox:
+    """Axis-aligned bounding box for a primitive's SVG footprint."""
+
+    x: int
+    y: int
+    width: int
+    height: int
 
 
 # ---------------------------------------------------------------------------
@@ -47,7 +64,7 @@ _ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
 
 
 # ---------------------------------------------------------------------------
-# Protocols
+# Protocols (for cell-based primitives: Array, Grid, DPTable)
 # ---------------------------------------------------------------------------
 
 
@@ -75,7 +92,7 @@ class PrimitiveInstance(Protocol):
         """
         ...
 
-    def bounding_box(self) -> tuple[float, float, float, float]:
+    def bounding_box(self) -> tuple[float, float, float, float] | BoundingBox:
         """Return ``(x, y, width, height)`` for viewBox computation."""
         ...
 
@@ -93,6 +110,52 @@ class Primitive(Protocol):
         on missing required fields.
         """
         ...
+
+
+# ---------------------------------------------------------------------------
+# Abstract base (for node/edge primitives: Graph, Tree)
+# ---------------------------------------------------------------------------
+
+
+class PrimitiveBase(abc.ABC):
+    """Base class for primitives that manage their own internal state.
+
+    Used by Graph, Tree, and other node/edge-based primitives.
+    Cell-based primitives (Array, DPTable) use the Protocol approach instead.
+    """
+
+    def __init__(self, name: str, params: dict[str, Any]) -> None:
+        self.name = name
+        self.params = params
+        self._states: dict[str, str] = {}  # target suffix -> state name
+
+    # ----- state management ------------------------------------------------
+
+    def set_state(self, target: str, state: str) -> None:
+        """Set the CSS state class for an addressable target."""
+        self._states[target] = state
+
+    def get_state(self, target: str) -> str:
+        """Return the CSS state class for *target*, defaulting to ``idle``."""
+        return self._states.get(target, "idle")
+
+    # ----- abstract interface ----------------------------------------------
+
+    @abc.abstractmethod
+    def addressable_parts(self) -> list[str]:
+        """Return all valid selector suffixes for this primitive."""
+
+    @abc.abstractmethod
+    def validate_selector(self, suffix: str) -> bool:
+        """Return ``True`` if *suffix* is a valid addressable part."""
+
+    @abc.abstractmethod
+    def bounding_box(self) -> BoundingBox:
+        """Return the bounding box of this primitive in SVG coordinates."""
+
+    @abc.abstractmethod
+    def emit_svg(self) -> str:
+        """Return the SVG fragment (``<g data-primitive="...">...</g>``)."""
 
 
 # ---------------------------------------------------------------------------
