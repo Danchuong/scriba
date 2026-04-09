@@ -1,0 +1,23 @@
+\begin{animation}[id="twoptr", label="Two Pointer - Find Pair Sum"]
+\shape{a}{Array}{size=8, data=[1,2,4,5,7,9,11,14], labels="0..7"}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\recolor{a.cell[7]}{state=current}
+\narrate{Left pointer at a[0]=1, right pointer at a[7]=14. Sum = 15, target = 13. Too large, move right inward.}
+
+\step
+\recolor{a.cell[7]}{state=dim}
+\recolor{a.cell[6]}{state=current}
+\narrate{Left at a[0]=1, right at a[6]=11. Sum = 12. Too small, move left inward.}
+
+\step
+\recolor{a.cell[0]}{state=dim}
+\recolor{a.cell[1]}{state=current}
+\narrate{Left at a[1]=2, right at a[6]=11. Sum = 13. Found the target pair!}
+
+\step
+\recolor{a.cell[1]}{state=good}
+\recolor{a.cell[6]}{state=good}
+\narrate{Pair found: a[1]=2 + a[6]=11 = 13.}
+\end{animation}

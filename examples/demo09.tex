@@ -1,0 +1,33 @@
+\begin{animation}[id="selsort", label="Selection Sort"]
+\shape{a}{Array}{size=6, data=[29,10,14,37,13,8], labels="0..5"}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\recolor{a.cell[5]}{state=current}
+\narrate{Pass 1: scan for minimum. Min found at a[5]=8. Swap with a[0]=29.}
+
+\step
+\apply{a.cell[0]}{value=8}
+\apply{a.cell[5]}{value=29}
+\recolor{a.cell[0]}{state=done}
+\recolor{a.cell[5]}{state=idle}
+\recolor{a.cell[1]}{state=current}
+\recolor{a.cell[4]}{state=current}
+\narrate{After swap: [8,...]. Pass 2: scan a[1..5]. Min at a[1]=10. Already in place.}
+
+\step
+\recolor{a.cell[1]}{state=done}
+\recolor{a.cell[4]}{state=idle}
+\recolor{a.cell[2]}{state=current}
+\recolor{a.cell[3]}{state=current}
+\narrate{Pass 3: scan a[2..5]. Min at a[4]=13. Swap a[2]=14 with a[4]=13.}
+
+\step
+\apply{a.cell[2]}{value=13}
+\apply{a.cell[4]}{value=14}
+\recolor{a.cell[2]}{state=done}
+\recolor{a.cell[3]}{state=done}
+\recolor{a.cell[4]}{state=done}
+\recolor{a.cell[5]}{state=done}
+\narrate{Result so far: [8,10,13,14,29,...]. Remaining passes complete the sort.}
+\end{animation}

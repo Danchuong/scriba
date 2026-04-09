@@ -1,0 +1,32 @@
+\begin{animation}[id="dfs", label="DFS Traversal"]
+\shape{G}{Graph}{nodes=[A,B,C,D,E], edges=[(A,B),(A,C),(B,D),(B,E),(D,C)], directed=true}
+
+\step
+\recolor{G.node[A]}{state=current}
+\narrate{Start DFS from node A.}
+
+\step
+\recolor{G.node[A]}{state=done}
+\recolor{G.edge[(A,B)]}{state=done}
+\recolor{G.node[B]}{state=current}
+\narrate{Visit A, go deeper to B.}
+
+\step
+\recolor{G.node[B]}{state=done}
+\recolor{G.edge[(B,D)]}{state=done}
+\recolor{G.node[D]}{state=current}
+\narrate{Visit B, go deeper to D.}
+
+\step
+\recolor{G.node[D]}{state=done}
+\recolor{G.edge[(D,C)]}{state=done}
+\recolor{G.node[C]}{state=current}
+\narrate{Visit D, go to C. C has no unvisited neighbors.}
+
+\step
+\recolor{G.node[C]}{state=done}
+\recolor{G.node[D]}{state=dim}
+\recolor{G.edge[(B,E)]}{state=done}
+\recolor{G.node[E]}{state=current}
+\narrate{Backtrack to B, visit E. DFS complete: A-B-D-C-E.}
+\end{animation}
