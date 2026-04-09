@@ -182,14 +182,18 @@ class NumberLineInstance:
             lines.append(
                 f'  <g data-target="{target}" class="{css}">'
             )
+            # Tick line uses state color, but thicker when active
+            sw = "2.5" if state_name not in ("idle", "dim") else "1.5"
             lines.append(
                 f'    <line x1="{x}" y1="{NL_TICK_TOP}" '
                 f'x2="{x}" y2="{NL_TICK_BOTTOM}" '
-                f'stroke="{colors["stroke"]}" stroke-width="1.5"/>'
+                f'stroke="{colors["fill"]}" stroke-width="{sw}"/>'
             )
+            # Text always uses dark color (no background rect to contrast against)
+            text_color = "#212529" if state_name != "dim" else "#adb5bd"
             lines.append(
                 f'    <text x="{x}" y="{NL_LABEL_Y}" '
-                f'fill="{colors["text"]}">'
+                f'fill="{text_color}">'
                 f"{_escape_xml(tick_label)}</text>"
             )
             # Highlight overlay (additive — gold circle around tick)
