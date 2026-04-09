@@ -62,7 +62,7 @@ def _selector_to_str(sel: Selector | str) -> str:
     if isinstance(acc, NodeAccessor):
         return f"{name}.node[{acc.node_id}]"
     if isinstance(acc, EdgeAccessor):
-        return f"{name}.edge[{acc.source}][{acc.target}]"
+        return f"{name}.edge[({acc.source},{acc.target})]"
     if isinstance(acc, RangeAccessor):
         return f"{name}.range[{acc.lo}:{acc.hi}]"
     if isinstance(acc, AllAccessor):
