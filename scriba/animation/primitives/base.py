@@ -41,6 +41,25 @@ VALID_STATES: frozenset[str] = frozenset(
 DEFAULT_STATE = "idle"
 
 # ---------------------------------------------------------------------------
+# Wong CVD-safe color map for inline SVG styling
+# ---------------------------------------------------------------------------
+
+STATE_COLORS: dict[str, dict[str, str]] = {
+    "idle":      {"fill": "#f6f8fa", "stroke": "#d0d7de", "text": "#212529"},
+    "current":   {"fill": "#0072B2", "stroke": "#005a8e", "text": "#ffffff"},
+    "done":      {"fill": "#009E73", "stroke": "#007a59", "text": "#ffffff"},
+    "dim":       {"fill": "#e9ecef", "stroke": "#dee2e6", "text": "#adb5bd"},
+    "error":     {"fill": "#D55E00", "stroke": "#b34e00", "text": "#ffffff"},
+    "good":      {"fill": "#009E73", "stroke": "#007a59", "text": "#ffffff"},
+    "highlight": {"fill": "#F0E442", "stroke": "#d4c836", "text": "#212529"},
+}
+
+
+def svg_style_attrs(state_name: str) -> dict[str, str]:
+    """Return fill, stroke, text-fill for a state."""
+    return STATE_COLORS.get(state_name, STATE_COLORS["idle"])
+
+# ---------------------------------------------------------------------------
 # Layout constants shared across cell-based primitives
 # ---------------------------------------------------------------------------
 

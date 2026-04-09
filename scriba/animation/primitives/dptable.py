@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     INDEX_LABEL_OFFSET,
     _escape_xml,
     state_class,
+    svg_style_attrs,
 )
 
 
@@ -187,7 +188,7 @@ class DPTableInstance:
             label_y = int(base_y + INDEX_LABEL_OFFSET)
             lines.append(
                 f'  <text class="scriba-primitive-label" '
-                f'x="{center_x}" y="{label_y}">'
+                f'x="{center_x}" y="{label_y}" fill="#6c757d">'
                 f"{_escape_xml(self.label)}</text>"
             )
 
@@ -221,21 +222,27 @@ class DPTableInstance:
         for i in range(self.cols):
             target = f"{self.shape_name}.cell[{i}]"
             cell_state = state.get(target, {})
-            css = state_class(cell_state.get("state", DEFAULT_STATE))
+            state_name = cell_state.get("state", DEFAULT_STATE)
+            css = state_class(state_name)
+            colors = svg_style_attrs(state_name)
             value = cell_state.get("value", self.data[i])
 
             x = int(i * (CELL_WIDTH + CELL_GAP))
             y = 0
+            stroke_w = "1.5" if state_name == "idle" else "2"
 
             lines.append(f'  <g data-target="{target}" class="{css}">')
             lines.append(
                 f'    <rect x="{x}" y="{y}" '
-                f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" />'
+                f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" '
+                f'rx="4" fill="{colors["fill"]}" '
+                f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
             )
             text_x = int(x + CELL_WIDTH // 2)
             text_y = int(y + CELL_HEIGHT // 2)
             lines.append(
-                f'    <text x="{text_x}" y="{text_y}">'
+                f'    <text x="{text_x}" y="{text_y}" '
+                f'fill="{colors["text"]}">'
                 f"{_escape_xml(value)}</text>"
             )
             lines.append("  </g>")
@@ -243,8 +250,8 @@ class DPTableInstance:
             if idx_labels is not None:
                 label_y = int(CELL_HEIGHT + INDEX_LABEL_OFFSET)
                 lines.append(
-                    f'  <text class="scriba-index-label" '
-                    f'x="{text_x}" y="{label_y}">'
+                    f'  <text class="scriba-index-label idx" '
+                    f'x="{text_x}" y="{label_y}" fill="#6c757d">'
                     f"{_escape_xml(idx_labels[i])}</text>"
                 )
 
@@ -258,24 +265,30 @@ class DPTableInstance:
             for c in range(self.cols):
                 target = f"{self.shape_name}.cell[{r}][{c}]"
                 cell_state = state.get(target, {})
-                css = state_class(cell_state.get("state", DEFAULT_STATE))
+                state_name = cell_state.get("state", DEFAULT_STATE)
+                css = state_class(state_name)
+                colors = svg_style_attrs(state_name)
                 flat_idx = r * self.cols + c
                 value = cell_state.get("value", self.data[flat_idx])
 
                 x = int(c * (CELL_WIDTH + CELL_GAP))
                 y = int(r * (CELL_HEIGHT + CELL_GAP))
+                stroke_w = "1.5" if state_name == "idle" else "2"
 
                 lines.append(
                     f'  <g data-target="{target}" class="{css}">'
                 )
                 lines.append(
                     f'    <rect x="{x}" y="{y}" '
-                    f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" />'
+                    f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" '
+                    f'rx="4" fill="{colors["fill"]}" '
+                    f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
                 )
                 text_x = int(x + CELL_WIDTH // 2)
                 text_y = int(y + CELL_HEIGHT // 2)
                 lines.append(
-                    f'    <text x="{text_x}" y="{text_y}">'
+                    f'    <text x="{text_x}" y="{text_y}" '
+                    f'fill="{colors["text"]}">'
                     f"{_escape_xml(value)}</text>"
                 )
                 lines.append("  </g>")

@@ -1,8 +1,7 @@
 """SVG emitter and HTML stitcher — Wave 3 final rendering stage.
 
-Takes per-frame data and primitive instances, produces the complete
-``<figure>`` HTML filmstrip output per ``04-environments-spec.md`` section 8.1
-and ``08-svg-emitter.md``.
+Takes per-frame data and primitive instances, produces either an
+interactive widget (default) or a static filmstrip HTML output.
 
 The emitter is stateless and safe for concurrent use.
 """
@@ -20,6 +19,8 @@ __all__ = [
     "FrameData",
     "compute_viewbox",
     "emit_animation_html",
+    "emit_html",
+    "emit_interactive_html",
     "emit_shared_defs",
     "scene_id_from_source",
 ]
@@ -161,7 +162,7 @@ def _emit_frame_svg(
     if defs:
         svg_parts.append(defs)
 
-    # Primitive groups — vertical stacking with translate
+    # Primitive groups -- vertical stacking with translate
     y_cursor = _PADDING
     vb_parts = viewbox.split()
     vb_width = int(vb_parts[2]) if len(vb_parts) >= 3 else 0
@@ -190,7 +191,7 @@ def _emit_frame_svg(
             else:
                 svg_parts.append(prim.emit_svg(shape_state))
         else:
-            # Graph / PrimitiveBase — apply state then emit
+            # Graph / PrimitiveBase -- apply state then emit
             for target_key, target_data in shape_state.items():
                 if isinstance(target_data, dict):
                     state_val = target_data.get("state", "idle")
@@ -208,13 +209,28 @@ def _emit_frame_svg(
 
 
 # ---------------------------------------------------------------------------
-# HTML stitcher
+# HTML helpers
 # ---------------------------------------------------------------------------
 
 
 def _escape(text: str) -> str:
     """Escape text for use in HTML attributes."""
     return _html.escape(text, quote=True)
+
+
+def _escape_js(text: str) -> str:
+    """Escape text for embedding in a JS template literal (backtick string)."""
+    return (
+        text
+        .replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("${", "\\${")
+    )
+
+
+# ---------------------------------------------------------------------------
+# Static filmstrip HTML (legacy mode)
+# ---------------------------------------------------------------------------
 
 
 def emit_animation_html(
@@ -287,3 +303,118 @@ def emit_animation_html(
         f"  </ol>\n"
         f"</figure>"
     )
+
+
+# ---------------------------------------------------------------------------
+# Interactive widget HTML (default mode)
+# ---------------------------------------------------------------------------
+
+
+def emit_interactive_html(
+    scene_id: str,
+    frames: list[FrameData],
+    primitives: dict[str, Any],
+    label: str = "",
+) -> str:
+    """Produce interactive widget HTML with step controller."""
+    frame_count = len(frames)
+
+    if not frames:
+        return (
+            f'<div class="scriba-widget" id="{_escape(scene_id)}">'
+            f'<p class="scriba-narration">No frames</p>'
+            f'</div>'
+        )
+
+    viewbox = compute_viewbox(primitives)
+
+    # Build frame data list for JS
+    js_frames: list[str] = []
+    for frame in frames:
+        svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox)
+        svg_escaped = _escape_js(svg_html)
+        narration_escaped = _escape_js(frame.narration_html)
+        js_frames.append(
+            f'{{svg:`{svg_escaped}`,narration:`{narration_escaped}`}}'
+        )
+
+    js_frames_str = ",\n    ".join(js_frames)
+
+    # Build progress dots
+    dots_html = "\n      ".join(
+        f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
+        for i in range(frame_count)
+    )
+
+    widget_html = f"""\
+<div class="scriba-widget" id="{_escape(scene_id)}">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter">Step 1 / {frame_count}</span>
+    <button class="scriba-btn-next"{"" if frame_count > 1 else " disabled"}>Next</button>
+    <div class="scriba-progress">
+      {dots_html}
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration"></p>
+</div>
+<script>
+(function(){{
+  var W=document.getElementById('{_escape_js(scene_id)}');
+  var frames=[
+    {js_frames_str}
+  ];
+  var cur=0;
+  var stage=W.querySelector('.scriba-stage');
+  var narr=W.querySelector('.scriba-narration');
+  var ctr=W.querySelector('.scriba-step-counter');
+  var prev=W.querySelector('.scriba-btn-prev');
+  var next=W.querySelector('.scriba-btn-next');
+  var dots=W.querySelectorAll('.scriba-dot');
+  function show(i){{
+    cur=i;
+    stage.innerHTML=frames[i].svg;
+    narr.textContent=frames[i].narration;
+    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    prev.disabled=i===0;
+    next.disabled=i===frames.length-1;
+    dots.forEach(function(d,j){{d.className='scriba-dot'+(j===i?' active':j<i?' done':'');}});
+  }}
+  prev.addEventListener('click',function(){{if(cur>0)show(cur-1);}});
+  next.addEventListener('click',function(){{if(cur<frames.length-1)show(cur+1);}});
+  W.addEventListener('keydown',function(e){{
+    if(e.key==='ArrowRight'||e.key===' '){{e.preventDefault();if(cur<frames.length-1)show(cur+1);}}
+    if(e.key==='ArrowLeft'){{e.preventDefault();if(cur>0)show(cur-1);}}
+  }});
+  W.setAttribute('tabindex','0');
+  show(0);
+}})();
+</script>"""
+
+    return widget_html
+
+
+# ---------------------------------------------------------------------------
+# Unified entry point
+# ---------------------------------------------------------------------------
+
+
+def emit_html(
+    scene_id: str,
+    frames: list[FrameData],
+    primitives: dict[str, Any],
+    mode: str = "interactive",
+    label: str = "",
+) -> str:
+    """Produce HTML for an animation scene.
+
+    Parameters
+    ----------
+    mode:
+        ``"interactive"`` (default) produces a step-controller widget.
+        ``"static"`` produces the legacy filmstrip ``<figure>``.
+    """
+    if mode == "static":
+        return emit_animation_html(scene_id, frames, primitives)
+    return emit_interactive_html(scene_id, frames, primitives, label=label)

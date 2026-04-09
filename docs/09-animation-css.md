@@ -384,9 +384,50 @@ Only one `scriba-state-*` class is applied per `<g data-target>` at any time. Th
 }
 ```
 
-### 4.7 Widget classes (interactive wrapper)
+### 4.7 Widget classes (interactive mode)
 
-The widget classes style the interactive controller used in cookbook demos. They are emitted by the consumer integration layer (not by Scriba's renderer) and are included in `scriba-animation.css` for completeness.
+The widget classes style the interactive controller emitted by `AnimationRenderer` in **interactive output mode** (the default). In static mode these classes are not emitted. See `04-environments-spec.md` §8.0 for mode selection.
+
+Additional interactive-mode classes:
+
+```css
+.scriba-controls {
+  display:     flex;
+  align-items: center;
+  gap:         0.5rem;
+  padding:     0.75rem 1rem;
+  border-top:  1px solid var(--scriba-border);
+  background:  var(--scriba-bg);
+}
+
+.scriba-step-counter {
+  margin-left:          auto;
+  font:                 500 0.82rem ui-monospace, monospace;
+  color:                var(--scriba-fg-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.scriba-progress {
+  display:    flex;
+  gap:        6px;
+  padding:    0 1rem 0.75rem;
+  background: var(--scriba-bg);
+}
+
+.scriba-dot {
+  width:         8px;
+  height:        8px;
+  border-radius: 50%;
+  background:    var(--scriba-progress-bg);
+  transition:    background var(--scriba-transition-duration) ease;
+}
+
+.scriba-dot.active {
+  background: var(--scriba-progress-fill);
+}
+```
+
+Legacy widget classes (retained for backward compatibility):
 
 ```css
 figure.scriba-widget {
@@ -794,11 +835,14 @@ Per `04-environments-spec.md` §9.1, print media always falls back to a vertical
 
 ---
 
-## 10. No runtime JavaScript
+## 10. JavaScript policy
 
-The stylesheets do not reference, depend on, or assume any JavaScript. All visual states (idle, current, done, dim, error, good, highlight) are applied as CSS classes at build time by the renderer. The filmstrip's only navigation affordance is the `:target` CSS selector driven by URL fragments (`#{scene-id}-frame-N`). This guarantees the output works in email clients, RSS readers, PDF print, and any consumer that supports SVG + CSS.
+`AnimationRenderer` supports two output modes (see `04-environments-spec.md` §8.0):
 
-Widget controls (`.scriba-widget-controls`, `.scriba-widget-progress`) are styled in the CSS for cookbook demo completeness. In the locked v0.3 pipeline, `AnimationRenderer` and `DiagramRenderer` emit zero JavaScript assets. Any future interactive controller requires an ADR per `04-environments-spec.md` §13.
+- **Interactive mode** (default): emits a small (~2KB) inline `<script>` that powers the step controller, keyboard navigation, and frame transitions. The widget classes in §4.7 (`.scriba-widget`, `.scriba-controls`, `.scriba-step-counter`, `.scriba-progress`, `.scriba-dot`) are used in this mode.
+- **Static mode**: emits zero JavaScript. All visual states are applied as CSS classes at build time. The filmstrip's only navigation affordance is the `:target` CSS selector driven by URL fragments (`#{scene-id}-frame-N`). This guarantees the output works in email clients, RSS readers, PDF print, Codeforces embed, and any consumer that supports SVG + CSS.
+
+`DiagramRenderer` always emits zero JavaScript regardless of output mode.
 
 ---
 
@@ -818,11 +862,15 @@ Complete list of CSS classes emitted by the animation/diagram pipeline, grouped 
 | `.scriba-stage` | `<div>` | SVG container |
 | `.scriba-stage-svg` | `<svg>` | The inline SVG |
 | `.scriba-narration` | `<p>` | Narration paragraph |
-| `.scriba-widget` | `<figure>` | Interactive widget wrapper (consumer layer) |
+| `.scriba-widget` | `<figure>` | Interactive widget wrapper |
+| `.scriba-controls` | `<div>` | Interactive mode step controller |
+| `.scriba-step-counter` | `<span>` | Interactive mode step counter (Step N of M) |
+| `.scriba-progress` | `<div>` | Interactive mode progress dot container |
+| `.scriba-dot` | `<span>` | Individual progress dot |
 | `.scriba-widget-svg` | `<div>` | Widget SVG container |
-| `.scriba-widget-controls` | `<div>` | Play/prev/next controls |
-| `.scriba-widget-counter` | `<span>` | Step counter |
-| `.scriba-widget-progress` | `<div>` | Progress bar container |
+| `.scriba-widget-controls` | `<div>` | Play/prev/next controls (legacy) |
+| `.scriba-widget-counter` | `<span>` | Step counter (legacy) |
+| `.scriba-widget-progress` | `<div>` | Progress bar container (legacy) |
 | `.scriba-widget-narration` | `<div>` | Widget narration container |
 
 ### 11.2 `scriba-diagram.css`

@@ -20,6 +20,19 @@ def renderer() -> AnimationRenderer:
 
 @pytest.fixture
 def ctx() -> RenderContext:
+    """Default context uses static mode for backward-compatible tests."""
+    return RenderContext(
+        resource_resolver=lambda name: f"/resources/{name}",
+        theme="light",
+        dark_mode=False,
+        metadata={"output_mode": "static"},
+        render_inline_tex=None,
+    )
+
+
+@pytest.fixture
+def ctx_interactive() -> RenderContext:
+    """Context using the new interactive (default) mode."""
     return RenderContext(
         resource_resolver=lambda name: f"/resources/{name}",
         theme="light",
@@ -38,7 +51,7 @@ def ctx_with_tex() -> RenderContext:
         resource_resolver=lambda name: f"/resources/{name}",
         theme="light",
         dark_mode=False,
-        metadata={},
+        metadata={"output_mode": "static"},
         render_inline_tex=render_tex,
     )
 
@@ -141,6 +154,33 @@ class TestRenderBlock:
 
         assert "scriba-animation.css" in artifact.css_assets
         assert "scriba-scene-primitives.css" in artifact.css_assets
+
+
+class TestInteractiveOutput:
+    """render_block() produces interactive widget with default context."""
+
+    def test_interactive_mode_produces_widget(
+        self,
+        renderer: AnimationRenderer,
+        ctx_interactive: RenderContext,
+    ) -> None:
+        source = (
+            r"\begin{animation}" "\n"
+            r"\step" "\n"
+            r"\narrate{Hello}" "\n"
+            r"\step" "\n"
+            r"\narrate{World}" "\n"
+            r"\end{animation}"
+        )
+        block = Block(start=0, end=len(source), kind="animation", raw=source)
+        artifact = renderer.render_block(block, ctx_interactive)
+
+        assert 'class="scriba-widget"' in artifact.html
+        assert "<script>" in artifact.html
+        assert "scriba-btn-prev" in artifact.html
+        assert "scriba-btn-next" in artifact.html
+        assert "Hello" in artifact.html
+        assert "World" in artifact.html
 
 
 class TestFrameCountLimits:

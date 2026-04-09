@@ -343,6 +343,7 @@ Primitive (Protocol):
 - [ ] CSS passes axe-core contrast checks in light and dark themes.
 - [ ] Filmstrip collapses to vertical on `@media print` and `@media (max-width: 640px)`.
 - [ ] `AnimationRenderer.version = 1` recorded in `Document.versions`.
+- [ ] Interactive output mode is the default; static mode available via `output_mode` metadata.
 - [ ] No CRITICAL or HIGH issues from code-reviewer + security-reviewer agents.
 - [ ] Ojcloud tenant backend pinned to `scriba==0.2.0a1`.
 - [ ] Tag `0.2.0rc1` → `0.2.0` final after maintainer approval.

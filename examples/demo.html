@@ -8,1128 +8,299 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  max-width: 960px;
+  max-width: 720px;
   margin: 2rem auto;
   padding: 0 1rem;
   background: #fafafa;
   color: #212529;
 }
-h1 { font-size: 1.5rem; margin-bottom: 1.5rem; }
-.theme-toggle {
-  position: fixed; top: 1rem; right: 1rem;
-  padding: 0.4rem 0.8rem; cursor: pointer;
-  border: 1px solid #ccc; border-radius: 4px; background: white;
-}
-/* Scriba Scene Primitives
- * Shared base styles for SVG primitives used by AnimationRenderer and
- * DiagramRenderer.  State classes, primitive geometry, annotation styles,
- * and all --scriba-state-* custom properties live here.
- *
- * Uses --scriba-* CSS variables.  Base tokens (--scriba-fg, --scriba-bg,
- * --scriba-border, etc.) are defined in scriba-tex-content.css and are
- * referenced — never redefined — by this file.
- *
- * Wong CVD-safe palette: colors are distinguishable under protanopia,
- * deuteranopia, and tritanopia.
- */
-
-/* ============================================
-   Scene-level tokens
-   ============================================ */
-
-:root {
-  /* Base tokens — fallbacks when scriba-tex-content.css is not loaded */
-  --scriba-fg:                     #212529;
-  --scriba-fg-muted:               #6c757d;
-  --scriba-bg:                     #ffffff;
-  --scriba-bg-code:                #f6f8fa;
-  --scriba-border:                 #d0d7de;
-  --scriba-link:                   #0969da;
-  --scriba-radius:                 6px;
-
-  /* Frame layout */
-  --scriba-frame-gap:              1rem;
-  --scriba-frame-padding:          1rem;
-  --scriba-frame-border:           1px solid var(--scriba-border);
-  --scriba-frame-radius:           var(--scriba-radius);
-
-  /* Stage (SVG container) */
-  --scriba-stage-padding:          1.5rem 1rem;
-  --scriba-stage-bg:               var(--scriba-bg-code);
-
-  /* Narration */
-  --scriba-narration-font-size:    0.92rem;
-  --scriba-narration-line-height:  1.55;
-  --scriba-narration-padding:      0.75rem 1rem;
-
-  /* Step label */
-  --scriba-step-label-font:        600 0.72rem ui-monospace, "SF Mono", "Cascadia Mono", monospace;
-  --scriba-step-label-color:       var(--scriba-fg-muted);
-
-  /* Primitive geometry */
-  --scriba-cell-size:              46px;
-  --scriba-cell-rx:                5px;
-  --scriba-cell-stroke-width:      1.5;
-  --scriba-node-r:                 22px;
-  --scriba-node-stroke-width:      2;
-  --scriba-edge-stroke-width:      1.5;
-  --scriba-tick-stroke-width:      1.5;
-  --scriba-tick-length:            8px;
-
-  /* Primitive typography */
-  --scriba-cell-font:              700 14px inherit;
-  --scriba-cell-index-font:        500 10px ui-monospace, monospace;
-  --scriba-cell-index-color:       var(--scriba-fg-muted);
-  --scriba-node-font:              700 14px inherit;
-  --scriba-label-font:             600 11px ui-monospace, monospace;
-  --scriba-label-color:            var(--scriba-fg-muted);
-
-  /* Annotation */
-  --scriba-annotation-font:        600 11px ui-monospace, monospace;
-  --scriba-annotation-arrow-width: 1.6;
-
-  /* Widget (interactive wrapper) */
-  --scriba-widget-shadow:          0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
-  --scriba-widget-radius:          12px;
-  --scriba-widget-focus-ring:      2px solid var(--scriba-link);
-
-  /* Progress bar */
-  --scriba-progress-height:        3px;
-  --scriba-progress-bg:            var(--scriba-border);
-  --scriba-progress-fill:          var(--scriba-link);
-}
-
-/* ============================================
-   State color tokens (Wong CVD-safe palette)
-   ============================================ */
-
-:root {
-  --scriba-state-idle-fill:        var(--scriba-bg-code);
-  --scriba-state-idle-stroke:      var(--scriba-border);
-  --scriba-state-idle-text:        var(--scriba-fg);
-
-  --scriba-state-current-fill:     #0072B2;
-  --scriba-state-current-stroke:   #0072B2;
-  --scriba-state-current-text:     #ffffff;
-
-  --scriba-state-done-fill:        #009E73;
-  --scriba-state-done-stroke:      #009E73;
-  --scriba-state-done-text:        #ffffff;
-
-  --scriba-state-dim-fill:         color-mix(in oklch, var(--scriba-fg) 10%, transparent);
-  --scriba-state-dim-stroke:       color-mix(in oklch, var(--scriba-fg) 20%, transparent);
-  --scriba-state-dim-text:         var(--scriba-fg-muted);
-
-  --scriba-state-error-fill:       #D55E00;
-  --scriba-state-error-stroke:     #D55E00;
-  --scriba-state-error-text:       #ffffff;
-
-  --scriba-state-good-fill:        #009E73;
-  --scriba-state-good-stroke:      #009E73;
-  --scriba-state-good-text:        #ffffff;
-
-  --scriba-state-highlight-fill:   #F0E442;
-  --scriba-state-highlight-stroke: currentColor;
-  --scriba-state-highlight-text:   var(--scriba-fg);
-
-  /* Annotation color tokens */
-  --scriba-annotation-info:        #0072B2;
-  --scriba-annotation-warn:        #E69F00;
-  --scriba-annotation-good:        #009E73;
-  --scriba-annotation-error:       #D55E00;
-  --scriba-annotation-muted:       var(--scriba-fg-muted);
-}
-
-/* ============================================
-   State classes
-   Applied to <g data-target="..."> elements.
-   Only one scriba-state-* class per element.
-   ============================================ */
-
-/* -- idle (default) ---------------------------------------- */
-.scriba-state-idle > rect,
-.scriba-state-idle > circle {
-  fill:         var(--scriba-state-idle-fill);
-  stroke:       var(--scriba-state-idle-stroke);
-  stroke-width: var(--scriba-cell-stroke-width);
-}
-
-.scriba-state-idle > line {
-  stroke:       var(--scriba-state-idle-stroke);
-  stroke-width: var(--scriba-edge-stroke-width);
-}
-
-.scriba-state-idle > text {
-  fill: var(--scriba-state-idle-text);
-}
-
-/* -- current ----------------------------------------------- */
-.scriba-state-current > rect,
-.scriba-state-current > circle {
-  fill:         var(--scriba-state-current-fill);
-  stroke:       var(--scriba-state-current-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 1);
-}
-
-.scriba-state-current > line {
-  stroke:       var(--scriba-state-current-stroke);
-  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
-}
-
-.scriba-state-current > text {
-  fill: var(--scriba-state-current-text);
-}
-
-/* -- done -------------------------------------------------- */
-.scriba-state-done > rect,
-.scriba-state-done > circle {
-  fill:         var(--scriba-state-done-fill);
-  stroke:       var(--scriba-state-done-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 0.5);
-}
-
-.scriba-state-done > line {
-  stroke:       var(--scriba-state-done-stroke);
-  stroke-width: calc(var(--scriba-edge-stroke-width) + 0.5);
-}
-
-.scriba-state-done > text {
-  fill: var(--scriba-state-done-text);
-}
-
-/* -- dim --------------------------------------------------- */
-.scriba-state-dim > rect,
-.scriba-state-dim > circle {
-  fill:   var(--scriba-state-dim-fill);
-  stroke: var(--scriba-state-dim-stroke);
-}
-
-.scriba-state-dim > line {
-  stroke: var(--scriba-state-dim-stroke);
-}
-
-.scriba-state-dim > text {
-  fill: var(--scriba-state-dim-text);
-}
-
-.scriba-state-dim {
-  opacity: 0.5;
-  filter:  saturate(0.3);
-}
-
-/* -- error ------------------------------------------------- */
-.scriba-state-error > rect,
-.scriba-state-error > circle {
-  fill:         var(--scriba-state-error-fill);
-  stroke:       var(--scriba-state-error-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 1);
-}
-
-.scriba-state-error > line {
-  stroke:       var(--scriba-state-error-stroke);
-  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
-}
-
-.scriba-state-error > text {
-  fill: var(--scriba-state-error-text);
-}
-
-/* -- good -------------------------------------------------- */
-.scriba-state-good > rect,
-.scriba-state-good > circle {
-  fill:         var(--scriba-state-good-fill);
-  stroke:       var(--scriba-state-good-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 0.5);
-}
-
-.scriba-state-good > line {
-  stroke:       var(--scriba-state-good-stroke);
-  stroke-width: calc(var(--scriba-edge-stroke-width) + 0.5);
-}
-
-.scriba-state-good > text {
-  fill: var(--scriba-state-good-text);
-}
-
-/* -- highlight (ephemeral) --------------------------------- */
-.scriba-state-highlight > rect,
-.scriba-state-highlight > circle {
-  fill:         var(--scriba-state-highlight-fill);
-  stroke:       var(--scriba-state-highlight-stroke);
-  stroke-width: 2px;
-}
-
-.scriba-state-highlight > line {
-  stroke:       var(--scriba-state-highlight-stroke);
-  stroke-width: 2px;
-}
-
-.scriba-state-highlight > text {
-  fill: var(--scriba-state-highlight-text);
-}
-
-/* ============================================
-   Primitive base styles
-   ============================================ */
-
-/* -- Cell (Array, Grid, DPTable) --------------------------- */
-[data-primitive="array"] > [data-target] > rect,
-[data-primitive="grid"] > [data-target] > rect,
-[data-primitive="dptable"] > [data-target] > rect {
-  fill:         var(--scriba-state-idle-fill);
-  stroke:       var(--scriba-state-idle-stroke);
-  stroke-width: var(--scriba-cell-stroke-width);
-  rx:           var(--scriba-cell-rx);
-}
-
-[data-primitive="array"] > [data-target] > text,
-[data-primitive="grid"] > [data-target] > text,
-[data-primitive="dptable"] > [data-target] > text {
-  font:              var(--scriba-cell-font);
-  fill:              var(--scriba-fg);
-  text-anchor:       middle;
-  dominant-baseline: middle;
-  pointer-events:    none;
-}
-
-/* -- Node (Graph, Tree) ------------------------------------ */
-[data-primitive="graph"] .scriba-graph-nodes > [data-target] > circle,
-[data-primitive="tree"] .scriba-tree-nodes > [data-target] > circle {
-  fill:         var(--scriba-state-idle-fill);
-  stroke:       var(--scriba-state-idle-stroke);
-  stroke-width: var(--scriba-node-stroke-width);
-}
-
-[data-primitive="graph"] .scriba-graph-nodes > [data-target] > text,
-[data-primitive="tree"] .scriba-tree-nodes > [data-target] > text {
-  font:              var(--scriba-node-font);
-  fill:              var(--scriba-fg);
-  text-anchor:       middle;
-  dominant-baseline: middle;
-  pointer-events:    none;
-}
-
-/* -- Edge (Graph, Tree) ------------------------------------ */
-[data-primitive="graph"] .scriba-graph-edges > [data-target] > line,
-[data-primitive="tree"] .scriba-tree-edges > [data-target] > line {
-  stroke:       var(--scriba-state-idle-stroke);
-  stroke-width: var(--scriba-edge-stroke-width);
-  fill:         none;
-}
-
-/* -- Tick mark (NumberLine) -------------------------------- */
-[data-primitive="numberline"] > [data-target="nl.axis"] > line {
-  stroke:       var(--scriba-fg);
-  stroke-width: var(--scriba-edge-stroke-width);
-}
-
-[data-primitive="numberline"] > [data-target] > line {
-  stroke:       var(--scriba-state-idle-stroke);
-  stroke-width: var(--scriba-tick-stroke-width);
-}
-
-[data-primitive="numberline"] > [data-target] > text {
-  font:              var(--scriba-cell-index-font);
-  fill:              var(--scriba-fg);
-  text-anchor:       middle;
-  dominant-baseline: hanging;
-}
-
-/* -- Primitive labels -------------------------------------- */
-[data-primitive] > .scriba-primitive-label {
-  font:        var(--scriba-label-font);
-  fill:        var(--scriba-label-color);
-  text-anchor: start;
-}
-
-/* ============================================
-   Annotation styles
-   ============================================ */
-
-.scriba-annotation {
-  pointer-events: none;
-}
-
-.scriba-annotation > text {
-  font:        var(--scriba-annotation-font);
-  text-anchor: middle;
-}
-
-.scriba-annotation > path,
-.scriba-annotation > line {
-  fill:         none;
-  stroke-width: var(--scriba-annotation-arrow-width);
-  marker-end:   url(#scriba-annotation-arrowhead);
-}
-
-/* -- Annotation color tokens ------------------------------- */
-.scriba-annotation-info > text  { fill: var(--scriba-annotation-info); }
-.scriba-annotation-info > path,
-.scriba-annotation-info > line  { stroke: var(--scriba-annotation-info); }
-
-.scriba-annotation-warn > text  { fill: var(--scriba-annotation-warn); }
-.scriba-annotation-warn > path,
-.scriba-annotation-warn > line  { stroke: var(--scriba-annotation-warn); }
-
-.scriba-annotation-good > text  { fill: var(--scriba-annotation-good); }
-.scriba-annotation-good > path,
-.scriba-annotation-good > line  { stroke: var(--scriba-annotation-good); }
-
-.scriba-annotation-error > text { fill: var(--scriba-annotation-error); }
-.scriba-annotation-error > path,
-.scriba-annotation-error > line { stroke: var(--scriba-annotation-error); }
-
-.scriba-annotation-muted > text { fill: var(--scriba-annotation-muted); }
-.scriba-annotation-muted > path,
-.scriba-annotation-muted > line { stroke: var(--scriba-annotation-muted); }
-
-/* ============================================
-   Dark mode
-   ============================================ */
-
-[data-theme="dark"] {
-  /* Base token overrides for dark mode */
-  --scriba-fg:                 #e6edf3;
-  --scriba-fg-muted:           #7d8590;
-  --scriba-bg:                 #0d1117;
-  --scriba-bg-code:            #161b22;
-  --scriba-border:             #30363d;
-  --scriba-link:               #58a6ff;
-
-  /* State overrides — only idle and dim change */
-  --scriba-state-idle-fill:    var(--scriba-bg-code);
-  --scriba-state-idle-stroke:  var(--scriba-border);
-  --scriba-state-idle-text:    var(--scriba-fg);
-
-  --scriba-state-dim-fill:     color-mix(in oklch, var(--scriba-fg) 10%, transparent);
-  --scriba-state-dim-stroke:   color-mix(in oklch, var(--scriba-fg) 20%, transparent);
-  --scriba-state-dim-text:     var(--scriba-fg-muted);
-
-  --scriba-state-highlight-text: var(--scriba-fg);
-
-  /* Layout surface overrides */
-  --scriba-stage-bg:           var(--scriba-bg-code);
-
-  /* Annotation muted adjusts to dark fg-muted */
-  --scriba-annotation-muted:   var(--scriba-fg-muted);
-}
-
-/* ============================================
-   Accessibility — reduced motion
-   ============================================ */
-
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 0.01ms !important;
-    animation-duration:  0.01ms !important;
-  }
-}
-
-/* Scriba Animation — core styles
- * Pure CSS, zero JavaScript.
- */
-
-/* ---------- \hl macro highlights ---------- */
-
-/* When a filmstrip frame is targeted via URL fragment, highlight matching
-   \hl spans inside the narration panel. */
-.scriba-frame:target .scriba-hl {
-  background-color: var(--scriba-state-highlight-fill, #F0E442);
-  padding: 0.1em 0.2em;
-  border-radius: 2px;
-}
-
-/* ---------- Keyframe animation utility classes ---------- */
-
-.scriba-anim-rotate { animation: var(--scriba-anim-name) 2s linear infinite; }
-.scriba-anim-pulse { animation: var(--scriba-anim-name) 1s ease-in-out infinite; }
-.scriba-anim-orbit { animation: var(--scriba-anim-name) 3s linear infinite; }
-.scriba-anim-fade-loop { animation: var(--scriba-anim-name) 2s ease-in-out infinite; }
-.scriba-anim-trail { animation: var(--scriba-anim-name) 1.5s linear infinite; }
-
-/* ---------- Reduced motion ---------- */
-
-@media (prefers-reduced-motion: reduce) {
-  .scriba-anim-rotate,
-  .scriba-anim-pulse,
-  .scriba-anim-orbit,
-  .scriba-anim-fade-loop,
-  .scriba-anim-trail {
-    animation: none !important;
-  }
-
-  .scriba-frame:target .scriba-hl {
-    /* Keep the highlight but skip any transition */
-    transition: none !important;
-  }
-}
-
-/* Scriba TeX Content Styles
- * Scoped under .scriba-tex-content
- * Uses --scriba-* CSS variables — see :root block below for defaults.
- * Dark mode via [data-theme="dark"] ancestor selector.
- */
-
-/* ============================================
-   Design tokens
-   ============================================ */
-
-:root {
-  /* Text and background */
-  --scriba-fg: #1f2328;
-  --scriba-fg-muted: #656d76;
-  --scriba-bg: #ffffff;
-  --scriba-bg-code: #f6f8fa;
-  --scriba-bg-inline-code: rgba(175, 184, 193, 0.2);
-
-  /* Borders and lines */
-  --scriba-border: #d0d7de;
-  --scriba-border-strong: #8c959f;
-
-  /* Links */
-  --scriba-link: #0969da;
-  --scriba-link-hover: #0550ae;
-
-  /* Errors */
-  --scriba-error: #cf222e;
-  --scriba-error-bg: #ffebe9;
-
-  /* Epigraph */
-  --scriba-epigraph-border: #6b7280;
-
-  /* Copy button */
-  --scriba-copy-btn-bg: #f6f8fa;
-  --scriba-copy-btn-fg: #1f2328;
-  --scriba-copy-btn-bg-hover: #eaeef2;
-  --scriba-copy-btn-fg-hover: #0969da;
-  --scriba-copy-btn-bg-copied: #dafbe1;
-  --scriba-copy-btn-fg-copied: #1a7f37;
-
-  /* Diagram */
-  --scriba-diagram-dim-opacity: 0.2;
-  --scriba-diagram-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  --scriba-diagram-active-fill: #0969da;
-  --scriba-diagram-active-stroke: #0969da;
-
-  /* Geometry and typography */
-  --scriba-radius: 6px;
-  --scriba-code-font: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
-
-  /* TeX size commands */
-  --scriba-font-size-tiny: 0.625em;
-  --scriba-font-size-scriptsize: 0.75em;
-  --scriba-font-size-footnotesize: 0.85em;
-  --scriba-font-size-small: 0.9em;
-  --scriba-font-size-normalsize: 1em;
-  --scriba-font-size-large: 1.2em;
-  --scriba-font-size-Large: 1.4em;
-  --scriba-font-size-LARGE: 1.6em;
-  --scriba-font-size-huge: 1.9em;
-  --scriba-font-size-Huge: 2.3em;
-}
-
-[data-theme="dark"] {
-  --scriba-fg: #e6edf3;
-  --scriba-fg-muted: #7d8590;
-  --scriba-bg: #0d1117;
-  --scriba-bg-code: #161b22;
-  --scriba-bg-inline-code: rgba(110, 118, 129, 0.4);
-  --scriba-border: #30363d;
-  --scriba-border-strong: #6e7681;
-  --scriba-link: #2f81f7;
-  --scriba-link-hover: #58a6ff;
-  --scriba-error: #ff7b72;
-  --scriba-error-bg: rgba(248, 81, 73, 0.15);
-  --scriba-epigraph-border: #8b949e;
-  --scriba-copy-btn-bg: #21262d;
-  --scriba-copy-btn-fg: #e6edf3;
-  --scriba-copy-btn-bg-hover: #30363d;
-  --scriba-copy-btn-fg-hover: #58a6ff;
-  --scriba-copy-btn-bg-copied: rgba(46, 160, 67, 0.2);
-  --scriba-copy-btn-fg-copied: #56d364;
-  --scriba-diagram-active-fill: #58a6ff;
-  --scriba-diagram-active-stroke: #58a6ff;
-}
-
-/* ============================================
-   Typography — container
-   ============================================ */
-
-.scriba-tex-content {
-  color: var(--scriba-fg);
-  line-height: 1.65;
-  max-width: 100%;
-  overflow-wrap: break-word;
-  word-wrap: break-word;
-  font-size: inherit;
-}
-
-.scriba-tex-content strong,
-.scriba-tex-content b {
-  font-weight: 600;
-}
-
-.scriba-tex-content em,
-.scriba-tex-content i {
-  font-style: italic;
-}
-
-.scriba-tex-content .scriba-tex-smallcaps {
-  font-variant-caps: small-caps;
-}
-
-.scriba-tex-content .scriba-tex-paragraph {
-  margin: 0 0 0.75rem 0;
-}
-
-.scriba-tex-content .scriba-tex-paragraph:last-child {
-  margin-bottom: 0;
-}
-
-/* ============================================
-   Math (KaTeX)
-   KaTeX owns .katex / .katex-display globally —
-   these rules remain unscoped to avoid double-scoping issues.
-   ============================================ */
-
-.katex-display {
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding: 0.5rem 0;
-  margin: 1rem 0;
-}
-
-.katex-display > .katex {
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  text-align: inherit;
-}
-
-.katex-display > .katex > .katex-html {
-  white-space: normal;
-}
-
-.katex {
-  font-size: 1em;
-}
-
-.katex-error {
-  color: var(--scriba-error);
-  background: var(--scriba-error-bg);
-  padding: 0.125rem 0.25rem;
-  border-radius: 2px;
-}
-
-[data-theme="dark"] .katex {
-  color: var(--scriba-fg);
-}
-
-[data-theme="dark"] .katex .mord,
-[data-theme="dark"] .katex .mop,
-[data-theme="dark"] .katex .mrel,
-[data-theme="dark"] .katex .mbin,
-[data-theme="dark"] .katex .minner,
-[data-theme="dark"] .katex .mpunct {
-  color: inherit;
-}
-
-/* Scriba math wrappers */
-.scriba-tex-content .scriba-tex-math-inline {
-  display: inline;
-}
-
-.scriba-tex-content .scriba-tex-math-display,
-.scriba-tex-content .scriba-tex-math-display .katex-display,
-.scriba-tex-content .scriba-tex-math-display .katex {
-  display: block;
-  text-align: center;
-}
-
-.scriba-tex-content .scriba-tex-math-display {
-  margin: 1rem 0;
-}
-
-.scriba-tex-content .scriba-tex-math-error {
-  color: var(--scriba-error);
-  background: var(--scriba-error-bg);
-  padding: 0.125rem 0.25rem;
-  border-radius: 2px;
-  font-family: var(--scriba-code-font);
-  font-size: 0.9em;
-}
-
-.scriba-tex-content .katex-fallback {
-  color: var(--scriba-error);
-  font-family: var(--scriba-code-font);
-}
-
-/* ============================================
-   Headings
-   ============================================ */
-
-.scriba-tex-content .scriba-tex-heading {
-  font-weight: 600;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: var(--scriba-fg);
-  scroll-margin-top: 4.5rem;
-}
-
-.scriba-tex-content .scriba-tex-heading-2 {
-  font-size: 1.25rem;
-}
-
-.scriba-tex-content .scriba-tex-heading-3 {
-  font-size: 1.125rem;
-}
-
-.scriba-tex-content .scriba-tex-heading-4 {
-  font-size: 1rem;
-}
-
-/* ============================================
-   Lists
-   ============================================ */
-
-.scriba-tex-content .scriba-tex-list {
-  padding-left: 1.25rem;
-  margin: 0.5rem 0;
-}
-
-.scriba-tex-content .scriba-tex-list-unordered {
-  list-style: disc;
-}
-
-.scriba-tex-content .scriba-tex-list-ordered {
-  list-style: decimal;
-}
-
-.scriba-tex-content .scriba-tex-list-item {
-  margin: 0.125rem 0;
-}
-
-/* ============================================
-   Tables
-   ============================================ */
-
-.scriba-tex-content .scriba-tex-table {
-  border-collapse: collapse;
-  margin: 0.75rem 0;
-  max-width: 100%;
-}
-
-.scriba-tex-content .scriba-tex-table-row {
-  /* no-op wrapper */
-}
-
-.scriba-tex-content .scriba-tex-table-cell {
-  padding: 0.375rem 0.625rem;
-  border-color: var(--scriba-border);
-  vertical-align: middle;
-}
-
-.scriba-tex-content .scriba-tex-align-left {
-  text-align: left;
-}
-
-.scriba-tex-content .scriba-tex-align-center {
-  text-align: center;
-}
-
-.scriba-tex-content .scriba-tex-align-right {
-  text-align: right;
-}
-
-.scriba-tex-content .scriba-tex-border-top {
-  border-top: 1px solid var(--scriba-border);
-}
-
-.scriba-tex-content .scriba-tex-border-bottom {
-  border-bottom: 1px solid var(--scriba-border);
-}
-
-.scriba-tex-content .scriba-tex-border-left {
-  border-left: 1px solid var(--scriba-border);
-}
-
-.scriba-tex-content .scriba-tex-border-right {
-  border-right: 1px solid var(--scriba-border);
-}
-
-/* ============================================
-   Images
-   ============================================ */
-
-.scriba-tex-content .scriba-tex-image {
-  max-width: 100%;
-  height: auto;
-  display: inline-block;
-}
-
-.scriba-tex-content .scriba-tex-image-missing {
-  display: inline-block;
-  padding: 0.25rem 0.5rem;
-  border: 1px dashed var(--scriba-border-strong);
-  color: var(--scriba-fg-muted);
-  font-family: var(--scriba-code-font);
-  font-size: 0.85em;
-  border-radius: var(--scriba-radius);
-}
-
-/* ============================================
-   Code — inline and blocks, plus copy button
-   ============================================ */
-
-.scriba-tex-content .scriba-tex-code-inline {
-  font-family: var(--scriba-code-font);
-  font-size: 0.9em;
-  background: var(--scriba-bg-inline-code);
-  padding: 0.125rem 0.25rem;
-  border-radius: 3px;
-  color: var(--scriba-fg);
-}
-
-.scriba-tex-content .scriba-tex-code-block {
-  position: relative;
-  margin: 1rem 0;
-  border-radius: var(--scriba-radius);
-  background: var(--scriba-bg-code);
-  border: 1px solid var(--scriba-border);
+h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
+
+/* Widget container */
+.scriba-widget {
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  background: #ffffff;
   overflow: hidden;
 }
 
-.scriba-tex-content .scriba-tex-code-block pre {
-  margin: 0;
-  padding: 0.75rem;
-  overflow-x: auto;
-  white-space: pre;
-  font-family: var(--scriba-code-font);
-  font-size: 0.8125rem;
-  line-height: 1.5;
-  background: transparent;
-  color: var(--scriba-fg);
-}
-
-.scriba-tex-content .scriba-tex-code-block pre code {
-  background: transparent;
-  padding: 0;
-  border-radius: 0;
-  font-size: inherit;
-  font-family: inherit;
-  color: inherit;
-}
-
-.scriba-tex-content .scriba-tex-code-plain {
-  font-family: var(--scriba-code-font);
-}
-
-.scriba-tex-content .scriba-tex-code-block .highlight {
-  background: transparent;
-  border-radius: var(--scriba-radius);
-}
-
-.scriba-tex-content .scriba-tex-code-block .highlight pre {
-  background: transparent;
-}
-
-.scriba-tex-content .scriba-tex-copy-btn {
-  position: absolute;
-  top: 0.375rem;
-  right: 0.375rem;
-  z-index: 10;
-  display: inline-flex;
+/* Controls bar */
+.scriba-controls {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  min-width: 52px;
-  height: 26px;
-  padding: 0 0.5rem;
-  border: 1px solid var(--scriba-border);
-  border-radius: 4px;
-  background: var(--scriba-copy-btn-bg);
-  color: var(--scriba-copy-btn-fg);
-  font-family: inherit;
-  font-size: 0.75rem;
-  font-weight: 500;
-  line-height: 1;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  user-select: none;
+}
+.scriba-controls button {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
   cursor: pointer;
-  opacity: 0;
-  transition:
-    opacity 150ms ease,
-    background 150ms ease,
-    color 150ms ease;
+  color: #212529;
+  transition: background 0.15s, border-color 0.15s;
 }
-
-.scriba-tex-content .scriba-tex-code-block:hover .scriba-tex-copy-btn,
-.scriba-tex-content .scriba-tex-copy-btn:focus-visible {
-  opacity: 1;
-}
-
-.scriba-tex-content .scriba-tex-copy-btn:hover {
-  background: var(--scriba-copy-btn-bg-hover);
-  color: var(--scriba-copy-btn-fg-hover);
-}
-
-.scriba-tex-content .scriba-tex-copy-btn.copied {
-  opacity: 1;
-  background: var(--scriba-copy-btn-bg-copied);
-  color: var(--scriba-copy-btn-fg-copied);
-}
-
-/* ============================================
-   Epigraph
-   ============================================ */
-
-/* Epigraph follows the LaTeX `epigraph` package convention: a narrow
-   block floated to the right margin with the attribution right-aligned
-   and a thin rule between quote and author. */
-.scriba-tex-content .scriba-tex-epigraph {
-  float: right;
-  clear: right;
-  width: 45%;
-  max-width: 28rem;
-  margin: 0.5rem 0 1rem 1.5rem;
-  padding: 0.25rem 0;
-  font-style: italic;
-  color: var(--scriba-fg);
-  text-align: right;
-}
-
-.scriba-tex-content .scriba-tex-epigraph-quote {
-  margin: 0;
-  padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--scriba-epigraph-border);
-}
-
-.scriba-tex-content .scriba-tex-epigraph-attribution {
-  margin-top: 0.25rem;
-  color: var(--scriba-fg-muted);
-  font-style: normal;
-  font-size: 0.9em;
-}
-
-.scriba-tex-content .scriba-tex-epigraph-attribution::before {
-  content: "— ";
-}
-
-/* Make sure following content clears the floated epigraph so it doesn't
-   wrap awkwardly when the epigraph is the last thing in a section. */
-.scriba-tex-content .scriba-tex-epigraph + * {
-  clear: both;
-}
-
-/* ============================================
-   Links
-   ============================================ */
-
-.scriba-tex-content .scriba-tex-link {
-  color: var(--scriba-link);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
-
-.scriba-tex-content .scriba-tex-link:hover {
-  color: var(--scriba-link-hover);
-}
-
-.scriba-tex-content .scriba-tex-link-disabled {
-  color: var(--scriba-fg-muted);
-  text-decoration: line-through;
-  cursor: not-allowed;
-}
-
-/* ============================================
-   Size commands
-   ============================================ */
-
-.scriba-tex-content .scriba-tex-size-tiny {
-  font-size: var(--scriba-font-size-tiny);
-}
-
-.scriba-tex-content .scriba-tex-size-scriptsize {
-  font-size: var(--scriba-font-size-scriptsize);
-}
-
-.scriba-tex-content .scriba-tex-size-footnotesize {
-  font-size: var(--scriba-font-size-footnotesize);
-}
-
-.scriba-tex-content .scriba-tex-size-small {
-  font-size: var(--scriba-font-size-small);
-}
-
-.scriba-tex-content .scriba-tex-size-normalsize {
-  font-size: var(--scriba-font-size-normalsize);
-}
-
-.scriba-tex-content .scriba-tex-size-large {
-  font-size: var(--scriba-font-size-large);
-}
-
-.scriba-tex-content .scriba-tex-size-Large {
-  font-size: var(--scriba-font-size-Large);
-}
-
-.scriba-tex-content .scriba-tex-size-LARGE {
-  font-size: var(--scriba-font-size-LARGE);
-}
-
-.scriba-tex-content .scriba-tex-size-huge {
-  font-size: var(--scriba-font-size-huge);
-}
-
-.scriba-tex-content .scriba-tex-size-Huge {
-  font-size: var(--scriba-font-size-Huge);
-}
-
-/* ============================================
-   Utility — center, Pygments wrapper
-   ============================================ */
-
-.scriba-tex-content .scriba-tex-center {
+.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
+.scriba-controls button:active { background: #e4e4e4; }
+.scriba-controls button:disabled { opacity: 0.35; cursor: default; }
+.scriba-step-counter {
+  font: 600 0.78rem ui-monospace, "SF Mono", monospace;
+  color: #6c757d;
+  min-width: 5rem;
   text-align: center;
 }
 
-/* text-align: center only centers inline content. Block-level children
-   like <table> need margin auto to actually horizontally center. */
-.scriba-tex-content .scriba-tex-center > table,
-.scriba-tex-content .scriba-tex-center > .scriba-tex-table {
+/* Progress dots */
+.scriba-progress {
+  display: flex;
+  gap: 4px;
   margin-left: auto;
-  margin-right: auto;
+}
+.scriba-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #d0d7de;
+  transition: background 0.2s;
+}
+.scriba-dot.active { background: #0072B2; }
+.scriba-dot.done { background: #009E73; }
+
+/* Stage */
+.scriba-stage {
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: center;
+  min-height: 100px;
+}
+.scriba-stage-svg { width: 100%; height: auto; }
+
+/* Narration */
+.scriba-narration {
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #212529;
+  border-top: 1px solid #f0f0f0;
+  min-height: 2.5rem;
 }
 
-.scriba-tex-content .highlight {
-  background: var(--scriba-bg-code);
-  color: var(--scriba-fg);
-  border-radius: var(--scriba-radius);
+/* SVG text */
+svg text {
+  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.idx {
+  font: 500 10px ui-monospace, monospace;
+  fill: #6c757d;
 }
 
-.scriba-tex-content .highlight pre {
-  margin: 0;
-  background: transparent;
+/* Frame transition */
+.scriba-stage svg, .scriba-narration {
+  transition: opacity 0.2s ease;
 }
 
+/* Static filmstrip layout (legacy) */
+.scriba-animation { max-width: 100%; }
+.scriba-frames {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+}
+.scriba-frame {
+  flex: 0 0 auto;
+  min-width: 280px;
+  max-width: 560px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #ffffff;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+.scriba-frame-header {
+  padding: 0.5rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+}
+.scriba-step-label {
+  font: 600 0.72rem ui-monospace, monospace;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem;
+  padding: 0.35rem 0.7rem; cursor: pointer;
+  border: 1px solid #ccc; border-radius: 6px; background: white;
+  font-size: 0.8rem;
+}
+
+/* Dark mode */
+[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
+[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
+[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
+[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
+[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
+[data-theme="dark"] .scriba-dot { background: #30363d; }
+[data-theme="dark"] .idx { fill: #7d8590; }
+[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-step-label { color: #7d8590; }
+[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
 </head>
 <body>
 <button class="theme-toggle" onclick="
-  document.documentElement.dataset.theme =
-    document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+  var t = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>demo</h1>
-<figure class="scriba-animation" data-scriba-scene="bsearch" data-frame-count="2" data-layout="filmstrip" aria-label="">
-  <ol class="scriba-frames">
-    <li class="scriba-frame" id="bsearch-frame-1" data-step="1">
-      <header class="scriba-frame-header">
-        <span class="scriba-step-label">Step 1 / 2</span>
-      </header>
-      <div class="scriba-stage">
-        <svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+<div class="scriba-widget" id="bsearch">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter">Step 1 / 2</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration"></p>
+</div>
+<script>
+(function(){
+  var W=document.getElementById('bsearch');
+  var frames=[
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" />
-    <text x="30" y="20">1</text>
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">1</text>
   </g>
-  <text class="scriba-index-label" x="30" y="56">0</text>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" />
-    <text x="92" y="20">3</text>
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">3</text>
   </g>
-  <text class="scriba-index-label" x="92" y="56">1</text>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" />
-    <text x="154" y="20">5</text>
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">5</text>
   </g>
-  <text class="scriba-index-label" x="154" y="56">2</text>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="a.cell[3]" class="scriba-state-current">
-    <rect x="186" y="0" width="60" height="40" />
-    <text x="216" y="20">7</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">7</text>
   </g>
-  <text class="scriba-index-label" x="216" y="56">3</text>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" />
-    <text x="278" y="20">9</text>
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">9</text>
   </g>
-  <text class="scriba-index-label" x="278" y="56">4</text>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" />
-    <text x="340" y="20">11</text>
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">11</text>
   </g>
-  <text class="scriba-index-label" x="340" y="56">5</text>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="a.cell[6]" class="scriba-state-idle">
-    <rect x="372" y="0" width="60" height="40" />
-    <text x="402" y="20">13</text>
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">13</text>
   </g>
-  <text class="scriba-index-label" x="402" y="56">6</text>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="a.cell[7]" class="scriba-state-idle">
-    <rect x="434" y="0" width="60" height="40" />
-    <text x="464" y="20">15</text>
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529">15</text>
   </g>
-  <text class="scriba-index-label" x="464" y="56">7</text>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>
-      </div>
-      <p class="scriba-narration" id="bsearch-frame-1-narration">Check middle element a[3]=7.</p>
-    </li>
-    <li class="scriba-frame" id="bsearch-frame-2" data-step="2">
-      <header class="scriba-frame-header">
-        <span class="scriba-step-label">Step 2 / 2</span>
-      </header>
-      <div class="scriba-stage">
-        <svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+</svg>`,narration:`Check middle element a[3]=7.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" />
-    <text x="30" y="20">1</text>
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">1</text>
   </g>
-  <text class="scriba-index-label" x="30" y="56">0</text>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" />
-    <text x="92" y="20">3</text>
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">3</text>
   </g>
-  <text class="scriba-index-label" x="92" y="56">1</text>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" />
-    <text x="154" y="20">5</text>
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">5</text>
   </g>
-  <text class="scriba-index-label" x="154" y="56">2</text>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="a.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" />
-    <text x="216" y="20">7</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">7</text>
   </g>
-  <text class="scriba-index-label" x="216" y="56">3</text>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" />
-    <text x="278" y="20">9</text>
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">9</text>
   </g>
-  <text class="scriba-index-label" x="278" y="56">4</text>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" />
-    <text x="340" y="20">11</text>
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">11</text>
   </g>
-  <text class="scriba-index-label" x="340" y="56">5</text>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="a.cell[6]" class="scriba-state-idle">
-    <rect x="372" y="0" width="60" height="40" />
-    <text x="402" y="20">13</text>
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">13</text>
   </g>
-  <text class="scriba-index-label" x="402" y="56">6</text>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="a.cell[7]" class="scriba-state-idle">
-    <rect x="434" y="0" width="60" height="40" />
-    <text x="464" y="20">15</text>
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529">15</text>
   </g>
-  <text class="scriba-index-label" x="464" y="56">7</text>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>
-      </div>
-      <p class="scriba-narration" id="bsearch-frame-2-narration">Found! a[3] = 7.</p>
-    </li>
-  </ol>
-</figure>
+</svg>`,narration:`Found! a[3] = 7.`}
+  ];
+  var cur=0;
+  var stage=W.querySelector('.scriba-stage');
+  var narr=W.querySelector('.scriba-narration');
+  var ctr=W.querySelector('.scriba-step-counter');
+  var prev=W.querySelector('.scriba-btn-prev');
+  var next=W.querySelector('.scriba-btn-next');
+  var dots=W.querySelectorAll('.scriba-dot');
+  function show(i){
+    cur=i;
+    stage.innerHTML=frames[i].svg;
+    narr.textContent=frames[i].narration;
+    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    prev.disabled=i===0;
+    next.disabled=i===frames.length-1;
+    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+  }
+  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
+  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
+  W.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
+    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
+  });
+  W.setAttribute('tabindex','0');
+  show(0);
+})();
+</script>
 </body>
 </html>

@@ -50,13 +50,21 @@ in [`docs/scriba/primitives/`](primitives/).
 
 ## 3. Philosophy
 
-### Zero runtime JavaScript
+### Dual output modes (interactive default, static for portability)
 
-The `animation` and `diagram` environments compile at build time to a pure
-`<figure>` + `<ol>` + inline `<svg>` tree. There is no Lit widget, no Motion One
-timeline, no step controller, no keyboard navigation JS. The HTML works in
-email, RSS, print, PDF export, and any sanitizer-aware consumer. See
-`04-environments-spec.md` §1 and §8 for the non-negotiable HTML contract.
+`AnimationRenderer` supports two output modes (see `04-environments-spec.md` §8.0):
+
+- **Interactive mode** (default): renders a single widget with step controller,
+  keyboard navigation, progress dots, and frame transitions. Includes a small
+  (~2KB) inline `<script>`. This is the default for ojcloud tenant and any web
+  platform.
+- **Static mode**: compiles to a pure `<figure>` + `<ol>` + inline `<svg>`
+  filmstrip with zero runtime JavaScript. The HTML works in email, RSS, print,
+  PDF export, Codeforces embed, and any sanitizer-aware consumer.
+
+The zero-JS constraint applies only to static mode. Interactive mode is the
+default for web platforms where JavaScript is available. Consumers select the
+mode via `RenderContext.metadata["output_mode"]`.
 
 ### Build-time determinism
 

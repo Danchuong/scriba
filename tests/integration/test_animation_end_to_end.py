@@ -34,7 +34,7 @@ def ctx() -> RenderContext:
         resource_resolver=lambda name: f"/resources/{name}",
         theme="light",
         dark_mode=False,
-        metadata={},
+        metadata={"output_mode": "static"},
         render_inline_tex=None,
     )
 
@@ -48,7 +48,7 @@ def ctx_with_tex() -> RenderContext:
         resource_resolver=lambda name: f"/resources/{name}",
         theme="light",
         dark_mode=False,
-        metadata={},
+        metadata={"output_mode": "static"},
         render_inline_tex=render_tex,
     )
 

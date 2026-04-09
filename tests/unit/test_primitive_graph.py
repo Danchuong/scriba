@@ -232,7 +232,8 @@ class TestGraphEmitSvg:
             "edges": [("A", "B")],
         })
         svg = g.emit_svg()
-        assert 'stroke-width="2"' in svg
+        # Idle edges have stroke-width="1.5", active states have "2"
+        assert 'stroke-width="1.5"' in svg
 
     def test_node_label_rendered(self) -> None:
         g = Graph("G", {

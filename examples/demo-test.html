@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CSS Debug Test</title>
+<style>
+/* Minimal inline test — does .scriba-state-current > rect get fill? */
+.scriba-state-idle > rect { fill: #f6f8fa; stroke: #d0d7de; stroke-width: 1.5; }
+.scriba-state-idle > text { fill: #212529; }
+.scriba-state-current > rect { fill: #0072B2; stroke: #0072B2; stroke-width: 1.5; }
+.scriba-state-current > text { fill: #ffffff; }
+.scriba-state-done > rect { fill: #009E73; stroke: #009E73; stroke-width: 1.5; }
+.scriba-state-done > text { fill: #ffffff; }
+text { font: 700 14px sans-serif; text-anchor: middle; dominant-baseline: central; }
+.scriba-index-label { font: 500 10px monospace; text-anchor: middle; fill: #6c757d; }
+</style>
+</head>
+<body>
+<h3>If you see colored boxes below, CSS works:</h3>
+<svg viewBox="0 0 400 80" width="400" height="80" xmlns="http://www.w3.org/2000/svg">
+  <g data-target="a.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" />
+    <text x="30" y="20">1</text>
+  </g>
+  <g data-target="a.cell[1]" class="scriba-state-current">
+    <rect x="70" y="0" width="60" height="40" />
+    <text x="100" y="20">3</text>
+  </g>
+  <g data-target="a.cell[2]" class="scriba-state-done">
+    <rect x="140" y="0" width="60" height="40" />
+    <text x="170" y="20">5</text>
+  </g>
+  <text class="scriba-index-label" x="30" y="56">idle</text>
+  <text class="scriba-index-label" x="100" y="56">current</text>
+  <text class="scriba-index-label" x="170" y="56">done</text>
+</svg>
+</body>
+</html>

@@ -25,7 +25,7 @@ from pathlib import Path
 from typing import Any
 
 from scriba.animation.detector import detect_animation_blocks
-from scriba.animation.emitter import FrameData, emit_animation_html
+from scriba.animation.emitter import FrameData, emit_animation_html, emit_html
 from scriba.animation.errors import FrameCountError
 from scriba.animation.extensions.hl_macro import process_hl_macros
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
@@ -271,8 +271,9 @@ class AnimationRenderer:
             for snap in snapshots
         ]
 
-        # Produce final HTML via the real emitter
-        html = emit_animation_html(scene_id, frames, primitives)
+        # Produce final HTML via the emitter
+        output_mode = ctx.metadata.get("output_mode", "interactive")
+        html = emit_html(scene_id, frames, primitives, mode=output_mode)
 
         # Collect CSS assets
         css_assets: set[str] = {

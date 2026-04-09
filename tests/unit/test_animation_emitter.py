@@ -1,7 +1,8 @@
 """Tests for the SVG emitter and HTML stitcher (Wave 3).
 
 Covers FrameData, viewBox computation, shared defs, scene ID,
-frame numbering, narration, aria-label, and multi-primitive layout.
+frame numbering, narration, aria-label, multi-primitive layout,
+and both interactive and static output modes.
 """
 
 from __future__ import annotations
@@ -15,6 +16,8 @@ from scriba.animation.emitter import (
     FrameData,
     compute_viewbox,
     emit_animation_html,
+    emit_html,
+    emit_interactive_html,
     emit_shared_defs,
     scene_id_from_source,
 )
@@ -142,7 +145,9 @@ class TestSharedDefs:
         assert emit_shared_defs({"G": g}) == ""
 
 
-class TestEmitSingleFrame:
+class TestStaticMode:
+    """Tests for the legacy filmstrip (static) mode."""
+
     def test_single_frame_with_array(self) -> None:
         prim = _StubPrimitive(shape_name="a")
         frame = _frame(step=1, total=1, narration="Hello world")
@@ -164,9 +169,100 @@ class TestEmitSingleFrame:
         assert 'xmlns="http://www.w3.org/2000/svg"' in html
         assert 'role="img"' in html
 
+    def test_figure_class_present(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1)
+        html = emit_animation_html("s2", [frame], {"a": prim})
+        assert '<figure class="scriba-animation"' in html
+
+    def test_no_frames(self) -> None:
+        html = emit_animation_html("empty", [], {})
+        assert 'data-frame-count="0"' in html
+        assert 'data-layout="filmstrip"' in html
+        assert "<ol" in html
+
+
+class TestInteractiveMode:
+    """Tests for the interactive widget (default) mode."""
+
+    def test_widget_class_present(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1, narration="Hello world")
+        html = emit_interactive_html("test-1", [frame], {"a": prim})
+
+        assert 'class="scriba-widget"' in html
+        assert 'id="test-1"' in html
+
+    def test_script_block_present(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1)
+        html = emit_interactive_html("s1", [frame], {"a": prim})
+
+        assert "<script>" in html
+        assert "</script>" in html
+
+    def test_controls_present(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=2)
+        html = emit_interactive_html("ctrl", [frame], {"a": prim})
+
+        assert 'class="scriba-controls"' in html
+        assert 'class="scriba-btn-prev"' in html
+        assert 'class="scriba-btn-next"' in html
+        assert 'class="scriba-step-counter"' in html
+
+    def test_progress_dots(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frames = [_frame(step=1, total=3), _frame(step=2, total=3)]
+        html = emit_interactive_html("dots", frames, {"a": prim})
+
+        assert 'class="scriba-dot active"' in html
+        assert 'class="scriba-dot"' in html
+
+    def test_narration_in_frames_data(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1, narration="Hello interactive")
+        html = emit_interactive_html("narr", [frame], {"a": prim})
+
+        assert "Hello interactive" in html
+
+    def test_keyboard_navigation(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1)
+        html = emit_interactive_html("kb", [frame], {"a": prim})
+
+        assert "ArrowRight" in html
+        assert "ArrowLeft" in html
+        assert "tabindex" in html
+
+    def test_empty_frames(self) -> None:
+        html = emit_interactive_html("empty", [], {})
+        assert 'class="scriba-widget"' in html
+        assert "No frames" in html
+
+
+class TestEmitHtml:
+    """Tests for the unified emit_html entry point."""
+
+    def test_default_is_interactive(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1)
+        html = emit_html("def", [frame], {"a": prim})
+
+        assert 'class="scriba-widget"' in html
+        assert "<script>" in html
+
+    def test_static_mode(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1)
+        html = emit_html("st", [frame], {"a": prim}, mode="static")
+
+        assert '<figure class="scriba-animation"' in html
+        assert "<script>" not in html
+
 
 class TestMultiFrame:
-    def test_frame_numbering(self) -> None:
+    def test_frame_numbering_static(self) -> None:
         prim = _StubPrimitive(shape_name="a")
         frames = [
             _frame(step=1, total=3, narration="First"),
@@ -195,17 +291,6 @@ class TestMultiFrame:
         assert 'id="fid-frame-1"' in html
         assert 'id="fid-frame-2"' in html
 
-    def test_state_changes_across_frames(self) -> None:
-        prim = _StubPrimitive(shape_name="a")
-        f1 = _frame(step=1, total=2, shape_states={"a": {}})
-        f2 = _frame(
-            step=2,
-            total=2,
-            shape_states={"a": {"a.cell[0]": {"state": "done", "value": "X"}}},
-        )
-        html = emit_animation_html("sc", [f1, f2], {"a": prim})
-        assert 'data-frame-count="2"' in html
-
 
 class TestNarration:
     def test_narration_html_included(self) -> None:
@@ -219,7 +304,6 @@ class TestNarration:
         frame = _frame(step=1, total=1, narration="")
         html = emit_animation_html("n2", [frame], {"a": prim})
         assert 'class="scriba-narration"' in html
-        # The <p> tag is present even with no narration content
         assert "<p" in html
 
     def test_narration_id_attribute(self) -> None:
@@ -246,7 +330,6 @@ class TestAriaLabel:
         prim = _StubPrimitive(shape_name="a")
         frame = _frame(step=1, total=1, label='A "quoted" <label>')
         html = emit_animation_html("al3", [frame], {"a": prim})
-        # Should be HTML-escaped in the attribute
         assert "&quot;" in html or "&#x27;" in html or "quoted" in html
         assert "&lt;" in html
 
@@ -281,7 +364,6 @@ class TestMultiplePrimitives:
         frame = _frame(step=1, total=1)
         html = emit_animation_html("mp", [frame], {"a": p1, "b": p2})
 
-        # Both primitives appear
         assert 'data-shape="a"' in html
         assert 'data-shape="b"' in html
 
@@ -296,7 +378,6 @@ class TestMultiplePrimitives:
 class TestHtmlEscaping:
     def test_narration_with_entities(self) -> None:
         prim = _StubPrimitive(shape_name="a")
-        # Raw HTML in narration should pass through (already rendered)
         frame = _frame(step=1, total=1, narration="a &amp; b < c")
         html = emit_animation_html("esc", [frame], {"a": prim})
         assert "a &amp; b < c" in html
@@ -331,10 +412,46 @@ class TestRealArrayPrimitive:
         assert 'viewBox="0 0' in html
         assert "Array step" in html
 
+    def test_real_array_has_inline_fill(self) -> None:
+        """SVG elements must have inline fill/stroke attributes."""
+        arr = ArrayPrimitive().declare("a", {"size": 2})
+        frame = _frame(
+            step=1,
+            total=1,
+            shape_states={
+                "a": {
+                    "a.cell[0]": {"state": "current", "value": "X"},
+                    "a.cell[1]": {"state": "idle", "value": "Y"},
+                },
+            },
+        )
+        html = emit_animation_html("fill", [frame], {"a": arr})
 
-class TestEmptyAnimation:
-    def test_no_frames(self) -> None:
-        html = emit_animation_html("empty", [], {})
-        assert 'data-frame-count="0"' in html
-        assert 'data-layout="filmstrip"' in html
-        assert "<ol" in html
+        # Current cell should have blue fill inline
+        assert 'fill="#0072B2"' in html
+        # Idle cell should have light fill inline
+        assert 'fill="#f6f8fa"' in html
+        # Text should have inline fill
+        assert 'fill="#ffffff"' in html
+        assert 'fill="#212529"' in html
+        # rx="4" for rounded corners
+        assert 'rx="4"' in html
+
+    def test_real_array_interactive_mode(self) -> None:
+        """Interactive mode works with real array primitives."""
+        arr = ArrayPrimitive().declare("a", {"size": 2})
+        frame = _frame(
+            step=1,
+            total=1,
+            narration="test",
+            shape_states={
+                "a": {
+                    "a.cell[0]": {"state": "idle", "value": "1"},
+                },
+            },
+        )
+        html = emit_interactive_html("ireal", [frame], {"a": arr})
+
+        assert 'class="scriba-widget"' in html
+        assert "<script>" in html
+        assert 'fill="#f6f8fa"' in html

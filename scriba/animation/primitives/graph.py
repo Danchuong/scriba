@@ -13,7 +13,7 @@ import random
 from html import escape as html_escape
 from typing import Any
 
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase
+from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, svg_style_attrs
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -235,7 +235,7 @@ class Graph(PrimitiveBase):
         if self.label is not None:
             parts.append(
                 f'<text x="{self.width // 2}" y="14" '
-                f'text-anchor="middle" class="scriba-label">'
+                f'text-anchor="middle" class="scriba-label" fill="#6c757d">'
                 f'{html_escape(str(self.label))}</text>'
             )
 
@@ -256,11 +256,14 @@ class Graph(PrimitiveBase):
                 x2, y2 = _shorten_line_to_circle(x1, y1, x2, y2, _NODE_RADIUS)
 
             marker = ' marker-end="url(#scriba-arrow)"' if self.directed else ""
+            edge_colors = svg_style_attrs(state)
+            edge_stroke = edge_colors["stroke"]
+            edge_sw = "1.5" if state == "idle" else "2"
             parts.append(
                 f'<g data-target="{html_escape(edge_target)}" '
                 f'class="scriba-state-{state}">'
                 f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
-                f'stroke="currentColor" stroke-width="{_EDGE_STROKE_WIDTH}"'
+                f'stroke="{edge_stroke}" stroke-width="{edge_sw}"'
                 f'{marker}/>'
                 f'</g>'
             )
@@ -271,13 +274,19 @@ class Graph(PrimitiveBase):
         for node_id in self.nodes:
             node_target = f"{self.name}.{self._node_key(node_id)}"
             state = self.get_state(self._node_key(node_id))
+            node_colors = svg_style_attrs(state)
             cx, cy = self.positions[node_id]
+            node_sw = "1.5" if state == "idle" else "2"
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
                 f'class="scriba-state-{state}">'
-                f'<circle cx="{cx}" cy="{cy}" r="{_NODE_RADIUS}"/>'
+                f'<circle cx="{cx}" cy="{cy}" r="{_NODE_RADIUS}" '
+                f'fill="{node_colors["fill"]}" '
+                f'stroke="{node_colors["stroke"]}" '
+                f'stroke-width="{node_sw}"/>'
                 f'<text x="{cx}" y="{cy}" text-anchor="middle" '
-                f'dominant-baseline="central">'
+                f'dominant-baseline="central" '
+                f'fill="{node_colors["text"]}">'
                 f'{html_escape(str(node_id))}</text>'
                 f'</g>'
             )
