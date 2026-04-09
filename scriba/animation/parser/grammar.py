@@ -36,13 +36,27 @@ _VALID_OPTION_KEYS = frozenset({"width", "height", "id", "label", "layout"})
 class SceneParser:
     """Parse the body of a ``\\begin{animation}`` environment."""
 
-    def parse(self, source: str) -> AnimationIR:
-        """Parse *source* into an ``AnimationIR``."""
+    def parse(
+        self,
+        source: str,
+        *,
+        allow_highlight_in_prelude: bool = False,
+    ) -> AnimationIR:
+        """Parse *source* into an ``AnimationIR``.
+
+        Parameters
+        ----------
+        allow_highlight_in_prelude:
+            If ``True``, ``\\highlight`` commands are allowed before the
+            first ``\\step``.  Used by :class:`DiagramRenderer` where
+            there are no steps and all commands live in the prelude.
+        """
         lexer = Lexer()
         self._tokens = lexer.tokenize(source)
         self._pos = 0
         self._source = source
         self._lexer = lexer
+        self._allow_highlight_in_prelude = allow_highlight_in_prelude
 
         options = self._try_parse_options()
         shapes: list[ShapeCommand] = []
@@ -119,13 +133,17 @@ class SceneParser:
                     frame_narrate_seen = True
 
                 elif cmd_name == "highlight":
-                    if in_prelude:
+                    if in_prelude and not self._allow_highlight_in_prelude:
                         raise ValidationError(
                             f"E1053: \\highlight is not allowed in the "
                             f"prelude (line {tok.line}, col {tok.col})",
                             position=tok.col,
                         )
-                    frame_commands.append(self._parse_highlight())
+                    cmd = self._parse_highlight()
+                    if in_prelude:
+                        prelude_commands.append(cmd)
+                    else:
+                        frame_commands.append(cmd)
 
                 elif cmd_name == "apply":
                     cmd = self._parse_apply()

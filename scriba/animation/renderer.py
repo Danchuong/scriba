@@ -429,7 +429,9 @@ class DiagramRenderer:
         body = raw[body_start:body_end]
 
         parse_input = opts_str + "\n" + body if opts_str else body
-        ir = SceneParser().parse(parse_input)
+        ir = SceneParser().parse(
+            parse_input, allow_highlight_in_prelude=True,
+        )
 
         # Validate: no \step or \narrate in diagram
         if ir.frames:
