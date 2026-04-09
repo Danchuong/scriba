@@ -1,8 +1,8 @@
 """Scriba — backend renderer for LaTeX problem statements and CP editorial animations.
 
-Public API surface. Plugins (TexRenderer, DiagramRenderer, D2Engine) live
-under :mod:`scriba.tex` and :mod:`scriba.diagram` and are NOT re-exported
-from this top-level module.
+Public API surface. Plugins (TexRenderer, AnimationRenderer) live under
+:mod:`scriba.tex` and :mod:`scriba.animation` and are NOT re-exported from
+this top-level module.
 """
 
 from scriba._version import __version__, SCRIBA_VERSION

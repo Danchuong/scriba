@@ -1,0 +1,389 @@
+/* Scriba Scene Primitives
+ * Shared base styles for SVG primitives used by AnimationRenderer and
+ * DiagramRenderer.  State classes, primitive geometry, annotation styles,
+ * and all --scriba-state-* custom properties live here.
+ *
+ * Uses --scriba-* CSS variables.  Base tokens (--scriba-fg, --scriba-bg,
+ * --scriba-border, etc.) are defined in scriba-tex-content.css and are
+ * referenced — never redefined — by this file.
+ *
+ * Wong CVD-safe palette: colors are distinguishable under protanopia,
+ * deuteranopia, and tritanopia.
+ */
+
+/* ============================================
+   Scene-level tokens
+   ============================================ */
+
+:root {
+  /* Frame layout */
+  --scriba-frame-gap:              1rem;
+  --scriba-frame-padding:          1rem;
+  --scriba-frame-border:           1px solid var(--scriba-border);
+  --scriba-frame-radius:           var(--scriba-radius);
+
+  /* Stage (SVG container) */
+  --scriba-stage-padding:          1.5rem 1rem;
+  --scriba-stage-bg:               var(--scriba-bg-code);
+
+  /* Narration */
+  --scriba-narration-font-size:    0.92rem;
+  --scriba-narration-line-height:  1.55;
+  --scriba-narration-padding:      0.75rem 1rem;
+
+  /* Step label */
+  --scriba-step-label-font:        600 0.72rem ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  --scriba-step-label-color:       var(--scriba-fg-muted);
+
+  /* Primitive geometry */
+  --scriba-cell-size:              46px;
+  --scriba-cell-rx:                5px;
+  --scriba-cell-stroke-width:      1.5;
+  --scriba-node-r:                 22px;
+  --scriba-node-stroke-width:      2;
+  --scriba-edge-stroke-width:      1.5;
+  --scriba-tick-stroke-width:      1.5;
+  --scriba-tick-length:            8px;
+
+  /* Primitive typography */
+  --scriba-cell-font:              700 14px inherit;
+  --scriba-cell-index-font:        500 10px ui-monospace, monospace;
+  --scriba-cell-index-color:       var(--scriba-fg-muted);
+  --scriba-node-font:              700 14px inherit;
+  --scriba-label-font:             600 11px ui-monospace, monospace;
+  --scriba-label-color:            var(--scriba-fg-muted);
+
+  /* Annotation */
+  --scriba-annotation-font:        600 11px ui-monospace, monospace;
+  --scriba-annotation-arrow-width: 1.6;
+
+  /* Widget (interactive wrapper) */
+  --scriba-widget-shadow:          0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+  --scriba-widget-radius:          12px;
+  --scriba-widget-focus-ring:      2px solid var(--scriba-link);
+
+  /* Progress bar */
+  --scriba-progress-height:        3px;
+  --scriba-progress-bg:            var(--scriba-border);
+  --scriba-progress-fill:          var(--scriba-link);
+}
+
+/* ============================================
+   State color tokens (Wong CVD-safe palette)
+   ============================================ */
+
+:root {
+  --scriba-state-idle-fill:        var(--scriba-bg-code);
+  --scriba-state-idle-stroke:      var(--scriba-border);
+  --scriba-state-idle-text:        var(--scriba-fg);
+
+  --scriba-state-current-fill:     #0072B2;
+  --scriba-state-current-stroke:   #0072B2;
+  --scriba-state-current-text:     #ffffff;
+
+  --scriba-state-done-fill:        #009E73;
+  --scriba-state-done-stroke:      #009E73;
+  --scriba-state-done-text:        #ffffff;
+
+  --scriba-state-dim-fill:         color-mix(in oklch, var(--scriba-fg) 10%, transparent);
+  --scriba-state-dim-stroke:       color-mix(in oklch, var(--scriba-fg) 20%, transparent);
+  --scriba-state-dim-text:         var(--scriba-fg-muted);
+
+  --scriba-state-error-fill:       #D55E00;
+  --scriba-state-error-stroke:     #D55E00;
+  --scriba-state-error-text:       #ffffff;
+
+  --scriba-state-good-fill:        #009E73;
+  --scriba-state-good-stroke:      #009E73;
+  --scriba-state-good-text:        #ffffff;
+
+  --scriba-state-highlight-fill:   #F0E442;
+  --scriba-state-highlight-stroke: currentColor;
+  --scriba-state-highlight-text:   var(--scriba-fg);
+
+  /* Annotation color tokens */
+  --scriba-annotation-info:        #0072B2;
+  --scriba-annotation-warn:        #E69F00;
+  --scriba-annotation-good:        #009E73;
+  --scriba-annotation-error:       #D55E00;
+  --scriba-annotation-muted:       var(--scriba-fg-muted);
+}
+
+/* ============================================
+   State classes
+   Applied to <g data-target="..."> elements.
+   Only one scriba-state-* class per element.
+   ============================================ */
+
+/* -- idle (default) ---------------------------------------- */
+.scriba-state-idle > rect,
+.scriba-state-idle > circle {
+  fill:         var(--scriba-state-idle-fill);
+  stroke:       var(--scriba-state-idle-stroke);
+  stroke-width: var(--scriba-cell-stroke-width);
+}
+
+.scriba-state-idle > line {
+  stroke:       var(--scriba-state-idle-stroke);
+  stroke-width: var(--scriba-edge-stroke-width);
+}
+
+.scriba-state-idle > text {
+  fill: var(--scriba-state-idle-text);
+}
+
+/* -- current ----------------------------------------------- */
+.scriba-state-current > rect,
+.scriba-state-current > circle {
+  fill:         var(--scriba-state-current-fill);
+  stroke:       var(--scriba-state-current-stroke);
+  stroke-width: calc(var(--scriba-cell-stroke-width) + 1);
+}
+
+.scriba-state-current > line {
+  stroke:       var(--scriba-state-current-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
+}
+
+.scriba-state-current > text {
+  fill: var(--scriba-state-current-text);
+}
+
+/* -- done -------------------------------------------------- */
+.scriba-state-done > rect,
+.scriba-state-done > circle {
+  fill:         var(--scriba-state-done-fill);
+  stroke:       var(--scriba-state-done-stroke);
+  stroke-width: calc(var(--scriba-cell-stroke-width) + 0.5);
+}
+
+.scriba-state-done > line {
+  stroke:       var(--scriba-state-done-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 0.5);
+}
+
+.scriba-state-done > text {
+  fill: var(--scriba-state-done-text);
+}
+
+/* -- dim --------------------------------------------------- */
+.scriba-state-dim > rect,
+.scriba-state-dim > circle {
+  fill:   var(--scriba-state-dim-fill);
+  stroke: var(--scriba-state-dim-stroke);
+}
+
+.scriba-state-dim > line {
+  stroke: var(--scriba-state-dim-stroke);
+}
+
+.scriba-state-dim > text {
+  fill: var(--scriba-state-dim-text);
+}
+
+.scriba-state-dim {
+  opacity: 0.5;
+  filter:  saturate(0.3);
+}
+
+/* -- error ------------------------------------------------- */
+.scriba-state-error > rect,
+.scriba-state-error > circle {
+  fill:         var(--scriba-state-error-fill);
+  stroke:       var(--scriba-state-error-stroke);
+  stroke-width: calc(var(--scriba-cell-stroke-width) + 1);
+}
+
+.scriba-state-error > line {
+  stroke:       var(--scriba-state-error-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
+}
+
+.scriba-state-error > text {
+  fill: var(--scriba-state-error-text);
+}
+
+/* -- good -------------------------------------------------- */
+.scriba-state-good > rect,
+.scriba-state-good > circle {
+  fill:         var(--scriba-state-good-fill);
+  stroke:       var(--scriba-state-good-stroke);
+  stroke-width: calc(var(--scriba-cell-stroke-width) + 0.5);
+}
+
+.scriba-state-good > line {
+  stroke:       var(--scriba-state-good-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 0.5);
+}
+
+.scriba-state-good > text {
+  fill: var(--scriba-state-good-text);
+}
+
+/* -- highlight (ephemeral) --------------------------------- */
+.scriba-state-highlight > rect,
+.scriba-state-highlight > circle {
+  fill:         var(--scriba-state-highlight-fill);
+  stroke:       var(--scriba-state-highlight-stroke);
+  stroke-width: 2px;
+}
+
+.scriba-state-highlight > line {
+  stroke:       var(--scriba-state-highlight-stroke);
+  stroke-width: 2px;
+}
+
+.scriba-state-highlight > text {
+  fill: var(--scriba-state-highlight-text);
+}
+
+/* ============================================
+   Primitive base styles
+   ============================================ */
+
+/* -- Cell (Array, Grid, DPTable) --------------------------- */
+[data-primitive="array"] > [data-target] > rect,
+[data-primitive="grid"] > [data-target] > rect,
+[data-primitive="dptable"] > [data-target] > rect {
+  fill:         var(--scriba-state-idle-fill);
+  stroke:       var(--scriba-state-idle-stroke);
+  stroke-width: var(--scriba-cell-stroke-width);
+  rx:           var(--scriba-cell-rx);
+}
+
+[data-primitive="array"] > [data-target] > text,
+[data-primitive="grid"] > [data-target] > text,
+[data-primitive="dptable"] > [data-target] > text {
+  font:              var(--scriba-cell-font);
+  fill:              var(--scriba-fg);
+  text-anchor:       middle;
+  dominant-baseline: middle;
+  pointer-events:    none;
+}
+
+/* -- Node (Graph, Tree) ------------------------------------ */
+[data-primitive="graph"] .scriba-graph-nodes > [data-target] > circle,
+[data-primitive="tree"] .scriba-tree-nodes > [data-target] > circle {
+  fill:         var(--scriba-state-idle-fill);
+  stroke:       var(--scriba-state-idle-stroke);
+  stroke-width: var(--scriba-node-stroke-width);
+}
+
+[data-primitive="graph"] .scriba-graph-nodes > [data-target] > text,
+[data-primitive="tree"] .scriba-tree-nodes > [data-target] > text {
+  font:              var(--scriba-node-font);
+  fill:              var(--scriba-fg);
+  text-anchor:       middle;
+  dominant-baseline: middle;
+  pointer-events:    none;
+}
+
+/* -- Edge (Graph, Tree) ------------------------------------ */
+[data-primitive="graph"] .scriba-graph-edges > [data-target] > line,
+[data-primitive="tree"] .scriba-tree-edges > [data-target] > line {
+  stroke:       var(--scriba-state-idle-stroke);
+  stroke-width: var(--scriba-edge-stroke-width);
+  fill:         none;
+}
+
+/* -- Tick mark (NumberLine) -------------------------------- */
+[data-primitive="numberline"] > [data-target="nl.axis"] > line {
+  stroke:       var(--scriba-fg);
+  stroke-width: var(--scriba-edge-stroke-width);
+}
+
+[data-primitive="numberline"] > [data-target] > line {
+  stroke:       var(--scriba-state-idle-stroke);
+  stroke-width: var(--scriba-tick-stroke-width);
+}
+
+[data-primitive="numberline"] > [data-target] > text {
+  font:              var(--scriba-cell-index-font);
+  fill:              var(--scriba-fg);
+  text-anchor:       middle;
+  dominant-baseline: hanging;
+}
+
+/* -- Primitive labels -------------------------------------- */
+[data-primitive] > .scriba-primitive-label {
+  font:        var(--scriba-label-font);
+  fill:        var(--scriba-label-color);
+  text-anchor: start;
+}
+
+/* ============================================
+   Annotation styles
+   ============================================ */
+
+.scriba-annotation {
+  pointer-events: none;
+}
+
+.scriba-annotation > text {
+  font:        var(--scriba-annotation-font);
+  text-anchor: middle;
+}
+
+.scriba-annotation > path,
+.scriba-annotation > line {
+  fill:         none;
+  stroke-width: var(--scriba-annotation-arrow-width);
+  marker-end:   url(#scriba-annotation-arrowhead);
+}
+
+/* -- Annotation color tokens ------------------------------- */
+.scriba-annotation-info > text  { fill: var(--scriba-annotation-info); }
+.scriba-annotation-info > path,
+.scriba-annotation-info > line  { stroke: var(--scriba-annotation-info); }
+
+.scriba-annotation-warn > text  { fill: var(--scriba-annotation-warn); }
+.scriba-annotation-warn > path,
+.scriba-annotation-warn > line  { stroke: var(--scriba-annotation-warn); }
+
+.scriba-annotation-good > text  { fill: var(--scriba-annotation-good); }
+.scriba-annotation-good > path,
+.scriba-annotation-good > line  { stroke: var(--scriba-annotation-good); }
+
+.scriba-annotation-error > text { fill: var(--scriba-annotation-error); }
+.scriba-annotation-error > path,
+.scriba-annotation-error > line { stroke: var(--scriba-annotation-error); }
+
+.scriba-annotation-muted > text { fill: var(--scriba-annotation-muted); }
+.scriba-annotation-muted > path,
+.scriba-annotation-muted > line { stroke: var(--scriba-annotation-muted); }
+
+/* ============================================
+   Dark mode
+   ============================================ */
+
+[data-theme="dark"] {
+  /* State overrides — only idle and dim change */
+  --scriba-state-idle-fill:    var(--scriba-bg-code);
+  --scriba-state-idle-stroke:  var(--scriba-border);
+  --scriba-state-idle-text:    var(--scriba-fg);
+
+  --scriba-state-dim-fill:     color-mix(in oklch, var(--scriba-fg) 10%, transparent);
+  --scriba-state-dim-stroke:   color-mix(in oklch, var(--scriba-fg) 20%, transparent);
+  --scriba-state-dim-text:     var(--scriba-fg-muted);
+
+  --scriba-state-highlight-text: var(--scriba-fg);
+
+  /* Layout surface overrides */
+  --scriba-stage-bg:           var(--scriba-bg-code);
+
+  /* Annotation muted adjusts to dark fg-muted */
+  --scriba-annotation-muted:   var(--scriba-fg-muted);
+}
+
+/* ============================================
+   Accessibility — reduced motion
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration:  0.01ms !important;
+  }
+}
