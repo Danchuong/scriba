@@ -64,8 +64,10 @@ class TestRenderBlock:
     ) -> None:
         source = (
             r"\begin{animation}" "\n"
-            r"\step" "\nFirst step\n"
-            r"\step" "\nSecond step\n"
+            r"\step" "\n"
+            r"\narrate{First step}" "\n"
+            r"\step" "\n"
+            r"\narrate{Second step}" "\n"
             r"\end{animation}"
         )
         block = Block(start=0, end=len(source), kind="animation", raw=source)
@@ -83,7 +85,8 @@ class TestRenderBlock:
     ) -> None:
         source = (
             r"\begin{animation}" "\n"
-            r"\step" "\nWe start here.\n"
+            r"\step" "\n"
+            r"\narrate{We start here.}" "\n"
             r"\end{animation}"
         )
         block = Block(start=0, end=len(source), kind="animation", raw=source)
@@ -99,7 +102,8 @@ class TestRenderBlock:
     ) -> None:
         source = (
             r"\begin{animation}" "\n"
-            r"\step" "\nCompute $x^2$.\n"
+            r"\step" "\n"
+            r"\narrate{Compute $x^2$.}" "\n"
             r"\end{animation}"
         )
         block = Block(start=0, end=len(source), kind="animation", raw=source)
@@ -108,27 +112,35 @@ class TestRenderBlock:
         # The render_inline_tex callback wraps in <span class='tex'>
         assert "<span class='tex'>" in artifact.html
 
-    def test_render_block_single_frame(
+    def test_render_block_prelude_only(
         self,
         renderer: AnimationRenderer,
         ctx: RenderContext,
     ) -> None:
-        source = r"\begin{animation}" "\nOnly content, no step.\n" r"\end{animation}"
+        source = (
+            r"\begin{animation}" "\n"
+            r"\end{animation}"
+        )
         block = Block(start=0, end=len(source), kind="animation", raw=source)
         artifact = renderer.render_block(block, ctx)
 
-        assert 'data-frame-count="1"' in artifact.html
+        assert 'data-frame-count="0"' in artifact.html
 
     def test_css_assets(
         self,
         renderer: AnimationRenderer,
         ctx: RenderContext,
     ) -> None:
-        source = r"\begin{animation}" "\n" r"\step" "\nx\n" r"\end{animation}"
+        source = (
+            r"\begin{animation}" "\n"
+            r"\step" "\n"
+            r"\end{animation}"
+        )
         block = Block(start=0, end=len(source), kind="animation", raw=source)
         artifact = renderer.render_block(block, ctx)
 
         assert "scriba-animation.css" in artifact.css_assets
+        assert "scriba-scene-primitives.css" in artifact.css_assets
 
 
 class TestFrameCountLimits:
@@ -140,7 +152,7 @@ class TestFrameCountLimits:
         ctx: RenderContext,
         caplog: pytest.LogCaptureFixture,
     ) -> None:
-        steps = "\n".join(rf"\step" "\nstep content" for _ in range(31))
+        steps = "\n".join(r"\step" for _ in range(31))
         source = r"\begin{animation}" "\n" + steps + "\n" r"\end{animation}"
         block = Block(start=0, end=len(source), kind="animation", raw=source)
 
@@ -155,7 +167,7 @@ class TestFrameCountLimits:
         renderer: AnimationRenderer,
         ctx: RenderContext,
     ) -> None:
-        steps = "\n".join(rf"\step" "\nx" for _ in range(101))
+        steps = "\n".join(r"\step" for _ in range(101))
         source = r"\begin{animation}" "\n" + steps + "\n" r"\end{animation}"
         block = Block(start=0, end=len(source), kind="animation", raw=source)
 
@@ -171,6 +183,7 @@ class TestAssets:
         ra = renderer.assets()
         css_names = {p.name for p in ra.css_files}
         assert "scriba-animation.css" in css_names
+        assert "scriba-scene-primitives.css" in css_names
         assert len(ra.js_files) == 0
 
 

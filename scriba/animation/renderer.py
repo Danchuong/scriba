@@ -1,7 +1,17 @@
 """AnimationRenderer — Renderer protocol implementation for animation blocks.
 
-Wires detection, parsing, scene materialisation, and HTML emission into the
-:class:`Renderer` protocol defined in :mod:`scriba.core.renderer`.
+Wires detection, parsing, scene materialisation, primitive SVG emission,
+and HTML stitching into the :class:`Renderer` protocol defined in
+:mod:`scriba.core.renderer`.
+
+Pipeline (end-to-end):
+    block.raw → SceneParser().parse() → AnimationIR
+    → StarlarkHost.eval() for \\compute blocks → bindings
+    → SceneState.apply_prelude() → initial state with shapes
+    → For each frame: SceneState.apply_frame() → per-frame state
+    → Collect primitive emit_svg() + narration
+    → emit_animation_html() → final HTML
+    → RenderArtifact(html, css_assets, js_assets)
 """
 
 from __future__ import annotations
@@ -9,21 +19,23 @@ from __future__ import annotations
 import hashlib
 import html as _html
 import logging
+import re
 from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
 from scriba.animation.detector import detect_animation_blocks
+from scriba.animation.emitter import FrameData, emit_animation_html
 from scriba.animation.errors import FrameCountError
-from scriba.animation.parser.ast import (
-    AnimationIR,
-    AnimationOptions,
-    FrameIR,
-)
+from scriba.animation.extensions.hl_macro import process_hl_macros
+from scriba.animation.extensions.keyframes import generate_keyframe_styles
+from scriba.animation.parser.ast import AnimationIR, ShapeCommand
+from scriba.animation.parser.grammar import SceneParser
+from scriba.animation.primitives import ArrayPrimitive, DPTablePrimitive, Graph
 from scriba.animation.scene import FrameSnapshot, SceneState
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
-from scriba.core.errors import RendererError
+from scriba.core.errors import RendererError, ValidationError
 
 __all__ = ["AnimationRenderer"]
 
@@ -32,6 +44,45 @@ logger = logging.getLogger(__name__)
 _FRAME_WARN_THRESHOLD = 30
 _FRAME_ERROR_THRESHOLD = 100
 
+# ---------------------------------------------------------------------------
+# Primitive catalog
+# ---------------------------------------------------------------------------
+
+PRIMITIVE_CATALOG: dict[str, Any] = {
+    "Array": ArrayPrimitive,
+    "DPTable": DPTablePrimitive,
+    "Graph": Graph,
+}
+
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+
+_ENV_BEGIN_RE = re.compile(
+    r"\\begin\{animation\}(\[[^\]]*\])?\s*\n?",
+)
+_ENV_END_RE = re.compile(
+    r"\s*\\end\{animation\}\s*$",
+)
+
+
+def _strip_environment(raw: str) -> tuple[str, str]:
+    """Strip ``\\begin{animation}[opts]`` and ``\\end{animation}`` delimiters.
+
+    Returns ``(body, options_bracket)`` where *options_bracket* is the
+    ``[key=val,...]`` string including brackets, or empty string.
+    """
+    begin_m = _ENV_BEGIN_RE.match(raw)
+    opts_str = begin_m.group(1) or "" if begin_m else ""
+    body_start = begin_m.end() if begin_m else 0
+
+    end_m = _ENV_END_RE.search(raw, body_start)
+    body_end = end_m.start() if end_m else len(raw)
+
+    return raw[body_start:body_end], opts_str
+
 
 def _scene_id(raw: str) -> str:
     """Deterministic scene ID from block source."""
@@ -39,16 +90,125 @@ def _scene_id(raw: str) -> str:
     return f"scriba-{digest}"
 
 
-def _escape_narration(
+def _render_narration(
     text: str | None,
+    scene_id: str,
     ctx: RenderContext,
 ) -> str:
-    """Render narration text: pass through ctx.render_inline_tex or escape."""
+    """Render narration text through hl macros and optional TeX."""
     if text is None:
         return ""
+    processed = process_hl_macros(
+        text,
+        scene_id=scene_id,
+        render_inline_tex=ctx.render_inline_tex,
+    )
     if ctx.render_inline_tex is not None:
-        return ctx.render_inline_tex(text)
-    return _html.escape(text, quote=False)
+        return ctx.render_inline_tex(processed)
+    return _html.escape(processed, quote=False)
+
+
+def _resolve_params(
+    params: dict[str, Any],
+    bindings: dict[str, Any],
+) -> dict[str, Any]:
+    """Resolve ${interpolation} references in shape parameters."""
+    from scriba.animation.parser.ast import InterpolationRef
+
+    resolved: dict[str, Any] = {}
+    for key, value in params.items():
+        if isinstance(value, InterpolationRef):
+            result = bindings.get(value.name, value.name)
+            for sub in value.subscripts:
+                if isinstance(sub, int) and isinstance(result, (list, tuple)):
+                    result = result[sub]
+                elif isinstance(sub, str) and isinstance(result, dict):
+                    result = result[sub]
+            resolved[key] = result
+        elif isinstance(value, list):
+            resolved[key] = [
+                _resolve_single(v, bindings) for v in value
+            ]
+        else:
+            resolved[key] = value
+    return resolved
+
+
+def _resolve_single(value: Any, bindings: dict[str, Any]) -> Any:
+    """Resolve a single parameter value."""
+    from scriba.animation.parser.ast import InterpolationRef
+
+    if isinstance(value, InterpolationRef):
+        result = bindings.get(value.name, value.name)
+        for sub in value.subscripts:
+            if isinstance(sub, int) and isinstance(result, (list, tuple)):
+                result = result[sub]
+            elif isinstance(sub, str) and isinstance(result, dict):
+                result = result[sub]
+        return result
+    return value
+
+
+def _instantiate_primitive(
+    shape: ShapeCommand,
+    bindings: dict[str, Any],
+) -> Any:
+    """Create a primitive instance from a shape declaration."""
+    factory_cls = PRIMITIVE_CATALOG.get(shape.type_name)
+    if factory_cls is None:
+        raise ValidationError(
+            f"[E1102] unknown primitive type {shape.type_name!r}",
+        )
+    resolved_params = _resolve_params(shape.params, bindings)
+
+    if shape.type_name == "Graph":
+        return factory_cls(shape.name, resolved_params)
+
+    factory = factory_cls()
+    return factory.declare(shape.name, resolved_params)
+
+
+def _snapshot_to_frame_data(
+    snap: FrameSnapshot,
+    total_frames: int,
+    scene_id: str,
+    ctx: RenderContext,
+) -> FrameData:
+    """Convert a FrameSnapshot into a FrameData for the emitter."""
+    shape_states: dict[str, dict[str, dict]] = {}
+    for shape_name, targets in snap.shape_states.items():
+        shape_states[shape_name] = {}
+        for target_key, ts in targets.items():
+            entry: dict[str, Any] = {"state": ts.state}
+            if ts.value is not None:
+                entry["value"] = ts.value
+            if ts.label is not None:
+                entry["label"] = ts.label
+            shape_states[shape_name][target_key] = entry
+
+    annotations = [
+        {
+            "target": a.target,
+            "label": a.text,
+            "ephemeral": a.ephemeral,
+        }
+        for a in snap.annotations
+    ]
+
+    narration_html = _render_narration(snap.narration, scene_id, ctx)
+
+    return FrameData(
+        step_number=snap.index,
+        total_frames=total_frames,
+        narration_html=narration_html,
+        shape_states=shape_states,
+        annotations=annotations,
+    )
+
+
+# ---------------------------------------------------------------------------
+# Renderer
+# ---------------------------------------------------------------------------
 
 
 class AnimationRenderer:
@@ -87,6 +247,11 @@ class AnimationRenderer:
             if ir.options.id is not None
             else _scene_id(block.raw)
         )
+
+        # Instantiate primitives from shape declarations
+        primitives = self._instantiate_primitives(ir)
+
+        # Run the scene state machine
         snapshots = self._materialise(ir)
 
         frame_count = len(snapshots)
@@ -100,117 +265,74 @@ class AnimationRenderer:
                 _FRAME_WARN_THRESHOLD,
             )
 
-        html = self._emit_html(scene_id, snapshots, ctx)
+        # Build FrameData list for the emitter
+        frames = [
+            _snapshot_to_frame_data(snap, frame_count, scene_id, ctx)
+            for snap in snapshots
+        ]
+
+        # Produce final HTML via the real emitter
+        html = emit_animation_html(scene_id, frames, primitives)
+
+        # Collect CSS assets
+        css_assets: set[str] = {
+            "scriba-animation.css",
+            "scriba-scene-primitives.css",
+        }
 
         return RenderArtifact(
             html=html,
-            css_assets=frozenset({"scriba-animation.css"}),
+            css_assets=frozenset(css_assets),
             js_assets=frozenset(),
             block_id=scene_id,
             data={"frame_count": frame_count},
         )
 
     def assets(self) -> RendererAssets:
-        """Return the always-on CSS file for animation blocks."""
+        """Return the always-on CSS files for animation blocks."""
         static = files("scriba.animation").joinpath("static")
-        css_path = Path(str(static / "scriba-animation.css"))
+        css_files: set[Path] = set()
+        for name in ("scriba-animation.css", "scriba-scene-primitives.css"):
+            css_files.add(Path(str(static / name)))
         return RendererAssets(
-            css_files=frozenset({css_path}),
+            css_files=frozenset(css_files),
             js_files=frozenset(),
         )
 
     # ---- private ----
 
     def _parse(self, block: Block) -> AnimationIR:
-        """Parse a block into AnimationIR."""
-        try:
-            from scriba.animation.parser.grammar import SceneParser
+        """Parse a block into AnimationIR using the real SceneParser.
 
-            return SceneParser().parse(block.raw)
-        except (ImportError, NotImplementedError):
-            return self._fallback_parse(block.raw)
-
-    def _fallback_parse(self, raw: str) -> AnimationIR:
-        """Minimal fallback parser when the full grammar is unavailable.
-
-        Splits on ``\\step`` and extracts narration from free text.
+        Strips the ``\\begin{animation}[opts]`` / ``\\end{animation}``
+        delimiters and passes the options string to the parser separately
+        via the body content (the parser expects ``[opts]\\n...body...``).
         """
-        import re
+        raw = block.raw
+        # Extract the body between \begin{animation}[...] and \end{animation}
+        body, opts_str = _strip_environment(raw)
+        # Re-prefix the options bracket so the parser can see [id=..., ...]
+        parse_input = opts_str + "\n" + body if opts_str else body
+        return SceneParser().parse(parse_input)
 
-        # Strip \\begin{animation}[...] and \\end{animation}
-        body_match = re.search(
-            r"\\begin\{animation\}(?:\[[^\]]*\])?\s*\n?(.*?)\\end\{animation\}",
-            raw,
-            re.DOTALL,
-        )
-        if body_match is None:
-            return AnimationIR(
-                options=AnimationOptions(),
-                shapes=(),
-                prelude_compute=(),
-                prelude_commands=(),
-                frames=(),
-                source_hash=hashlib.sha256(raw.encode()).hexdigest(),
+    def _instantiate_primitives(self, ir: AnimationIR) -> dict[str, Any]:
+        """Create primitive instances from shape declarations.
+
+        Resolves interpolation references using prelude compute bindings.
+        """
+        bindings: dict[str, Any] = {}
+        if self._starlark_host is not None:
+            for cb in ir.prelude_compute:
+                result = self._starlark_host.eval(bindings, cb.source)
+                if isinstance(result, dict):
+                    bindings.update(result)
+
+        primitives: dict[str, Any] = {}
+        for shape in ir.shapes:
+            primitives[shape.name] = _instantiate_primitive(
+                shape, bindings,
             )
-
-        body = body_match.group(1)
-
-        # Extract options
-        opt_match = re.search(
-            r"\\begin\{animation\}\[([^\]]*)\]",
-            raw,
-        )
-        anim_id: str | None = None
-        anim_label: str | None = None
-        if opt_match:
-            raw_opts = opt_match.group(1)
-            for pair in raw_opts.split(","):
-                pair = pair.strip()
-                if "=" in pair:
-                    k, v = pair.split("=", 1)
-                    k = k.strip()
-                    v = v.strip().strip('"').strip("'")
-                    if k == "id":
-                        anim_id = v
-                    elif k == "label":
-                        anim_label = v
-
-        options = AnimationOptions(id=anim_id, label=anim_label)
-
-        # Split on \\step to get frames
-        parts = re.split(r"\\step\b", body)
-
-        frames: list[FrameIR] = []
-        frame_parts = parts[1:] if len(parts) > 1 else []
-
-        for i, part in enumerate(frame_parts):
-            narration = part.strip() if part.strip() else None
-            frames.append(
-                FrameIR(
-                    line=i + 1,
-                    commands=(),
-                    narrate_body=narration,
-                )
-            )
-
-        # If no \\step found, treat entire body as one frame
-        if not frames and body.strip():
-            frames.append(
-                FrameIR(
-                    line=1,
-                    commands=(),
-                    narrate_body=body.strip() if body.strip() else None,
-                )
-            )
-
-        return AnimationIR(
-            options=options,
-            shapes=(),
-            prelude_compute=(),
-            prelude_commands=(),
-            frames=tuple(frames),
-            source_hash=hashlib.sha256(raw.encode()).hexdigest(),
-        )
+        return primitives
 
     def _materialise(self, ir: AnimationIR) -> list[FrameSnapshot]:
         """Run the delta state machine and collect per-frame snapshots."""
@@ -228,47 +350,3 @@ class AnimationRenderer:
             snapshots.append(snap)
 
         return snapshots
-
-    def _emit_html(
-        self,
-        scene_id: str,
-        snapshots: list[FrameSnapshot],
-        ctx: RenderContext,
-    ) -> str:
-        """Emit the HTML skeleton per 04-environments-spec.md section 8.1."""
-        frame_count = len(snapshots)
-
-        frame_items: list[str] = []
-        for snap in snapshots:
-            narration_html = _escape_narration(snap.narration, ctx)
-            narration_block = (
-                f'      <p class="scriba-narration">{narration_html}</p>'
-                if narration_html
-                else '      <p class="scriba-narration"></p>'
-            )
-            frame_items.append(
-                f'    <li class="scriba-frame" '
-                f'id="{scene_id}-frame-{snap.index}" '
-                f'data-step="{snap.index}">\n'
-                f'      <header class="scriba-frame-header">\n'
-                f'        <span class="scriba-step-label">'
-                f"Step {snap.index} / {frame_count}</span>\n"
-                f"      </header>\n"
-                f'      <div class="scriba-stage">\n'
-                f"        <!-- SVG placeholder -->\n"
-                f"      </div>\n"
-                f"{narration_block}\n"
-                f"    </li>"
-            )
-
-        frames_html = "\n".join(frame_items)
-
-        return (
-            f'<figure class="scriba-animation" '
-            f'data-scriba-scene="{scene_id}" '
-            f'data-frame-count="{frame_count}">\n'
-            f'  <ol class="scriba-frames">\n'
-            f"{frames_html}\n"
-            f"  </ol>\n"
-            f"</figure>"
-        )

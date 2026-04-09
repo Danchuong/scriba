@@ -2,33 +2,31 @@
 
 from __future__ import annotations
 
-from .grammar import (
+from .ast import (
+    AllAccessor,
     AnimationIR,
     AnimationOptions,
     AnnotateCommand,
     ApplyCommand,
+    CellAccessor,
     Command,
     ComputeCommand,
+    EdgeAccessor,
     FrameIR,
     HighlightCommand,
+    InterpolationRef,
+    NamedAccessor,
     NarrateCommand,
+    NodeAccessor,
+    RangeAccessor,
     RecolorCommand,
-    SceneParser,
+    Selector,
     ShapeCommand,
     StepCommand,
 )
+from .grammar import SceneParser
 from .lexer import Lexer, Token, TokenKind
-from .selectors import (
-    AllAccessor,
-    CellAccessor,
-    EdgeAccessor,
-    InterpolationRef,
-    NamedAccessor,
-    NodeAccessor,
-    RangeAccessor,
-    Selector,
-    parse_selector,
-)
+from .selectors import parse_selector
 
 __all__ = [
     "AllAccessor",

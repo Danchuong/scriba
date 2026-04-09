@@ -17,71 +17,20 @@ BNF (from 04-environments-spec.md §4.1):
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Union
-
 from scriba.core.errors import ValidationError
 
-
-# ---------------------------------------------------------------------------
-# Selector AST types (stubs — TODO: import from ast.py after merge)
-# ---------------------------------------------------------------------------
-
-IndexExpr = Union[int, str, "InterpolationRef"]
-
-
-@dataclass(frozen=True, slots=True)
-class InterpolationRef:
-    name: str
-    subscripts: tuple[IndexExpr, ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
-class CellAccessor:
-    indices: tuple[IndexExpr, ...]
-
-
-@dataclass(frozen=True, slots=True)
-class NodeAccessor:
-    node_id: IndexExpr
-
-
-@dataclass(frozen=True, slots=True)
-class EdgeAccessor:
-    source: IndexExpr
-    target: IndexExpr
-
-
-@dataclass(frozen=True, slots=True)
-class RangeAccessor:
-    lo: IndexExpr
-    hi: IndexExpr
-
-
-@dataclass(frozen=True, slots=True)
-class AllAccessor:
-    pass
-
-
-@dataclass(frozen=True, slots=True)
-class NamedAccessor:
-    name: str
-
-
-SelectorAccessor = (
-    CellAccessor
-    | NodeAccessor
-    | EdgeAccessor
-    | RangeAccessor
-    | AllAccessor
-    | NamedAccessor
+from .ast import (
+    AllAccessor,
+    CellAccessor,
+    EdgeAccessor,
+    IndexExpr,
+    InterpolationRef,
+    NamedAccessor,
+    NodeAccessor,
+    RangeAccessor,
+    Selector,
+    SelectorAccessor,
 )
-
-
-@dataclass(frozen=True, slots=True)
-class Selector:
-    shape_name: str
-    accessor: SelectorAccessor | None = None
 
 
 # ---------------------------------------------------------------------------

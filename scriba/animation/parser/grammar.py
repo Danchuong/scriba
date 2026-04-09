@@ -3,94 +3,29 @@
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
 from typing import Any, Union
 
 from scriba.core.errors import ValidationError
 
+from .ast import (
+    AnimationIR,
+    AnimationOptions,
+    AnnotateCommand,
+    ApplyCommand,
+    ComputeCommand,
+    FrameIR,
+    HighlightCommand,
+    InterpolationRef,
+    MutationCommand as Command,
+    NarrateCommand,
+    ParamValue,
+    RecolorCommand,
+    Selector,
+    ShapeCommand,
+    StepCommand,
+)
 from .lexer import Lexer, Token, TokenKind
-from .selectors import InterpolationRef, Selector, parse_selector
-
-# -- AST types (stubs — TODO: import from ast.py after merge) ---------------
-
-ParamValue = Union[int, float, str, bool, list[Any], InterpolationRef]
-
-
-@dataclass(frozen=True, slots=True)
-class ShapeCommand:
-    line: int; col: int; name: str; type_name: str  # noqa: E702
-    params: dict[str, ParamValue]
-
-
-@dataclass(frozen=True, slots=True)
-class ComputeCommand:
-    line: int; col: int; source: str  # noqa: E702
-
-
-@dataclass(frozen=True, slots=True)
-class StepCommand:
-    line: int; col: int  # noqa: E702
-
-
-@dataclass(frozen=True, slots=True)
-class NarrateCommand:
-    line: int; col: int; body: str  # noqa: E702
-
-
-@dataclass(frozen=True, slots=True)
-class ApplyCommand:
-    line: int; col: int; target: Selector  # noqa: E702
-    params: dict[str, ParamValue]
-
-
-@dataclass(frozen=True, slots=True)
-class HighlightCommand:
-    line: int; col: int; target: Selector  # noqa: E702
-
-
-@dataclass(frozen=True, slots=True)
-class RecolorCommand:
-    line: int; col: int; target: Selector; state: str  # noqa: E702
-
-
-@dataclass(frozen=True, slots=True)
-class AnnotateCommand:
-    line: int; col: int; target: Selector  # noqa: E702
-    label: str | None = None
-    position: str = "above"
-    color: str = "info"
-    arrow: bool = False
-    ephemeral: bool = False
-    arrow_from: Selector | None = None
-
-Command = ApplyCommand | HighlightCommand | RecolorCommand | AnnotateCommand
-
-
-@dataclass(frozen=True, slots=True)
-class AnimationOptions:
-    width: str | None = None
-    height: str | None = None
-    id: str | None = None
-    label: str | None = None
-    layout: str = "filmstrip"
-
-
-@dataclass(frozen=True, slots=True)
-class FrameIR:
-    line: int
-    commands: tuple[Command, ...]
-    compute: tuple[ComputeCommand, ...] = ()
-    narrate_body: str | None = None
-
-
-@dataclass(frozen=True, slots=True)
-class AnimationIR:
-    options: AnimationOptions
-    shapes: tuple[ShapeCommand, ...]
-    prelude_compute: tuple[ComputeCommand, ...]
-    prelude_commands: tuple[Command, ...]
-    frames: tuple[FrameIR, ...]
-    source_hash: str
+from .selectors import parse_selector
 
 _VALID_RECOLOR_STATES = frozenset({"idle", "current", "done", "dim", "error", "good"})
 _VALID_ANNOTATE_POSITIONS = frozenset({"above", "below", "left", "right", "inside"})
@@ -453,6 +388,9 @@ class SceneParser:
         if tok.kind == TokenKind.LBRACKET:
             return self._parse_list_value()
 
+        if tok.kind == TokenKind.LPAREN:
+            return self._parse_tuple_value()
+
         raise ValidationError(
             f"E1005: unexpected token {tok.kind.name} "
             f"(line {tok.line}, col {tok.col})",
@@ -471,6 +409,21 @@ class SceneParser:
                 self._advance()
             self._skip_newlines()
         if not self._at_end() and self._peek().kind == TokenKind.RBRACKET:
+            self._advance()
+        return items
+
+    def _parse_tuple_value(self) -> list[ParamValue]:
+        """Parse ``(value, value, ...)`` — returned as a list."""
+        self._advance()  # consume (
+        items: list[ParamValue] = []
+        self._skip_newlines()
+        while not self._at_end() and self._peek().kind != TokenKind.RPAREN:
+            items.append(self._parse_param_value())
+            self._skip_newlines()
+            if not self._at_end() and self._peek().kind == TokenKind.COMMA:
+                self._advance()
+            self._skip_newlines()
+        if not self._at_end() and self._peek().kind == TokenKind.RPAREN:
             self._advance()
         return items
 
