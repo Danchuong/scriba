@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>Scriba diagram widget — segment tree range sum</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false},{left:'$$',right:'$$',display:true}]})"></script>
+<style>
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --muted: #64748b;
+    --accent: #2563eb;
+    --accent-fg: #ffffff;
+
+    --node-idle-stroke: #cbd5e1;
+    --node-idle-fill:   #ffffff;
+    --node-idle-text:   #334155;
+
+    --node-path-stroke: #2563eb;
+    --node-path-fill:   #dbeafe;
+    --node-path-text:   #1e3a8a;
+
+    --node-take-stroke: #059669;
+    --node-take-fill:   #d1fae5;
+    --node-take-text:   #064e3b;
+
+    --node-skip-stroke: #e5e7eb;
+    --node-skip-fill:   #f9fafb;
+    --node-skip-text:   #9ca3af;
+
+    --node-focus-ring:  #f59e0b;
+
+    --edge-idle: #cbd5e1;
+    --edge-path: #2563eb;
+    --edge-skip: #e5e7eb;
+  }
+  [data-theme="dark"] {
+    --bg: #020617;
+    --surface: #0f172a;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+
+    --node-idle-stroke: #334155;
+    --node-idle-fill:   #0f172a;
+    --node-idle-text:   #cbd5e1;
+
+    --node-path-stroke: #60a5fa;
+    --node-path-fill:   #1e3a8a;
+    --node-path-text:   #dbeafe;
+
+    --node-take-stroke: #34d399;
+    --node-take-fill:   #064e3b;
+    --node-take-text:   #d1fae5;
+
+    --node-skip-stroke: #1f2937;
+    --node-skip-fill:   #0b1220;
+    --node-skip-text:   #4b5563;
+
+    --node-focus-ring:  #fbbf24;
+
+    --edge-idle: #1f2937;
+    --edge-path: #60a5fa;
+    --edge-skip: #0b1220;
+  }
+
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2.5rem 1rem 4rem;
+  }
+  .wrap { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin: 0 0 0.25rem; letter-spacing: -0.01em; }
+  .subtitle { color: var(--muted); font-size: 0.9rem; margin: 0 0 2rem; }
+  kbd {
+    font-family: ui-monospace, monospace;
+    font-size: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+    background: var(--surface);
+  }
+  code {
+    font-family: ui-monospace, monospace;
+    font-size: 0.85em;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 5px;
+  }
+
+  /* ============ WIDGET ============ */
+  .scriba-diagram-widget {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 20px rgba(0,0,0,0.03);
+  }
+  .scriba-diagram-widget:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* Crossfaded SVG frames */
+  .scriba-diagram-svg {
+    position: relative;
+    background: var(--bg);
+    padding: 1.5rem 1rem 1rem;
+    min-height: 380px;
+  }
+  .scriba-diagram-svg .frame {
+    position: absolute;
+    inset: 1.5rem 1rem 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 320ms ease;
+    display: flex;
+    justify-content: center;
+  }
+  .scriba-diagram-svg .frame.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .scriba-diagram-svg svg {
+    width: 100%;
+    max-width: 720px;
+    height: auto;
+    display: block;
+  }
+
+  /* Node state styling */
+  .node circle {
+    stroke-width: 1.5;
+    stroke: var(--node-idle-stroke);
+    fill: var(--node-idle-fill);
+    transition: all 200ms ease;
+  }
+  .node .range { font: 600 11px ui-monospace, monospace; fill: var(--node-idle-text); text-anchor: middle; }
+  .node .sum   { font: 700 14px ui-sans-serif, system-ui, sans-serif; fill: var(--node-idle-text); text-anchor: middle; }
+
+  .node.path  circle { stroke: var(--node-path-stroke); fill: var(--node-path-fill); stroke-width: 2; }
+  .node.path  .range, .node.path  .sum { fill: var(--node-path-text); }
+
+  .node.take  circle { stroke: var(--node-take-stroke); fill: var(--node-take-fill); stroke-width: 2.5; }
+  .node.take  .range, .node.take  .sum { fill: var(--node-take-text); }
+
+  .node.skip  circle { stroke: var(--node-skip-stroke); fill: var(--node-skip-fill); }
+  .node.skip  .range, .node.skip  .sum { fill: var(--node-skip-text); }
+  .node.skip          { opacity: 0.45; }
+
+  .node.focus .ring  { stroke: var(--node-focus-ring); }
+
+  .edge { stroke: var(--edge-idle); stroke-width: 1.5; fill: none; transition: stroke 200ms, stroke-width 200ms; }
+  .edge.path { stroke: var(--edge-path); stroke-width: 2; }
+  .edge.skip { stroke: var(--edge-skip); opacity: 0.45; }
+
+  /* Array strip */
+  .array-cell rect { fill: var(--node-idle-fill); stroke: var(--node-idle-stroke); stroke-width: 1.5; }
+  .array-cell .idx { font: 500 10px ui-monospace, monospace; fill: var(--muted); text-anchor: middle; }
+  .array-cell .val { font: 700 14px ui-sans-serif, system-ui, sans-serif; fill: var(--node-idle-text); text-anchor: middle; }
+  .array-cell.in-range rect { fill: var(--node-path-fill); stroke: var(--node-path-stroke); }
+  .array-cell.in-range .val { fill: var(--node-path-text); }
+  .array-cell.in-range .idx { fill: var(--node-path-stroke); }
+
+  /* ============ CONTROLS ============ */
+  .scriba-diagram-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .scriba-diagram-controls button {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 0.45rem 0.85rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font: 500 0.875rem ui-sans-serif, system-ui, sans-serif;
+    transition: background 150ms, border-color 150ms;
+  }
+  .scriba-diagram-controls button:hover:not(:disabled) {
+    background: var(--bg);
+    border-color: var(--muted);
+  }
+  .scriba-diagram-controls button:disabled { opacity: 0.35; cursor: not-allowed; }
+  .scriba-diagram-controls button[data-action="play"].playing {
+    background: var(--accent);
+    color: var(--accent-fg);
+    border-color: var(--accent);
+  }
+  .scriba-diagram-step-counter {
+    margin-left: auto;
+    color: var(--muted);
+    font: 500 0.875rem ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .scriba-diagram-progress {
+    display: flex;
+    gap: 4px;
+    padding: 0 1rem 0.75rem;
+    background: var(--surface);
+  }
+  .scriba-diagram-progress .bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background 200ms;
+  }
+  .scriba-diagram-progress .bar.done { background: var(--accent); }
+
+  /* ============ DESCRIPTION ============ */
+  .scriba-diagram-description {
+    padding: 1rem 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+    min-height: 4.5rem;
+    background: var(--surface);
+  }
+  .scriba-diagram-description .step-title {
+    font: 600 0.75rem ui-monospace, monospace;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 0.35rem;
+  }
+  .scriba-diagram-description p { margin: 0; display: none; color: var(--text); }
+  .scriba-diagram-description p.active { display: block; }
+
+  /* ============ LEGEND + THEME ============ */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .legend {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 0.35rem; }
+  .legend-swatch {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--node-idle-stroke);
+    background: var(--node-idle-fill);
+  }
+  .legend-swatch.path { border-color: var(--node-path-stroke); background: var(--node-path-fill); }
+  .legend-swatch.take { border-color: var(--node-take-stroke); background: var(--node-take-fill); }
+  .legend-swatch.skip { border-color: var(--node-skip-stroke); background: var(--node-skip-fill); opacity: 0.6; }
+
+  .theme-toggle {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <h1>Segment tree — Range sum query</h1>
+  <p class="subtitle">
+    Mock-up của <code>scriba-diagram-widget</code> theo spec
+    <code>docs/scriba/03-diagram-plugin.md</code>. Mỗi step là 1 SVG hoàn chỉnh, crossfade opacity —
+    cùng kỹ thuật D2 dùng cho animated steps.
+  </p>
+
+  <div class="toolbar">
+    <div class="legend">
+      <span class="legend-item"><span class="legend-swatch"></span> Idle</span>
+      <span class="legend-item"><span class="legend-swatch path"></span> Visited</span>
+      <span class="legend-item"><span class="legend-swatch take"></span> Taken</span>
+      <span class="legend-item"><span class="legend-swatch skip"></span> Skipped</span>
+    </div>
+    <button class="theme-toggle" id="themeToggle">🌓 Toggle theme</button>
+  </div>
+
+  <figure class="scriba-diagram-widget"
+          data-step-current="1"
+          data-step-total="6"
+          tabindex="0"
+          aria-label="Segment tree range sum query visualization">
+
+    <div class="scriba-diagram-svg" id="svgHost"></div>
+
+    <div class="scriba-diagram-progress" id="progressBars"></div>
+
+    <div class="scriba-diagram-controls">
+      <button data-action="first" aria-label="First step">⏮</button>
+      <button data-action="prev"  aria-label="Previous step">◀ Prev</button>
+      <button data-action="play"  aria-label="Play">▶ Play</button>
+      <button data-action="next"  aria-label="Next step">Next ▶</button>
+      <button data-action="last"  aria-label="Last step">⏭</button>
+      <span class="scriba-diagram-step-counter">
+        <span class="cur">1</span> / <span class="total">6</span>
+      </span>
+    </div>
+
+    <div class="scriba-diagram-description">
+      <p class="step-title" id="stepTitle">STEP 1 — INITIAL</p>
+      <p data-step="1" class="active">
+        Mảng $a = [2, 5, 1, 4, 9, 3]$ với segment tree lưu <b>tổng đoạn</b>.
+        Truy vấn: $\text{sum}(1, 4) = a_1 + a_2 + a_3 + a_4 = ?$
+      </p>
+      <p data-step="2">
+        Tại gốc $[0,5]$, đoạn truy vấn $[1,4]$ giao <b>một phần</b> → đệ quy xuống cả hai con $[0,2]$ và $[3,5]$.
+      </p>
+      <p data-step="3">
+        Xuống trái $[0,2]$: $[0,1]$ giao một phần → đệ quy tiếp; nút $[1,1]$ phủ hoàn toàn → <b>lấy 5</b>;
+        $[0,0]$ ngoài khoảng → <b>bỏ qua</b>; nút $[2,2]$ phủ hoàn toàn → <b>lấy 1</b>.
+      </p>
+      <p data-step="4">
+        Xuống phải $[3,5]$: nút $[3,4]$ phủ hoàn toàn → <b>lấy 13</b> (khỏi đi sâu); $[5,5]$ ngoài khoảng → <b>bỏ qua</b>.
+      </p>
+      <p data-step="5">
+        Ba nút đóng góp: $[1,1]$, $[2,2]$, $[3,4]$. Các nhánh còn lại không cần chạm tới —
+        đây là lý do truy vấn chạy trong $O(\log n)$.
+      </p>
+      <p data-step="6">
+        Kết quả: $5 + 1 + 13 = 19$. Cây có 11 nút, chỉ cần đọc <b>3</b> nút để trả lời.
+      </p>
+    </div>
+
+  </figure>
+
+  <p class="subtitle" style="margin-top: 1rem;">
+    Điều khiển: <kbd>←</kbd> <kbd>→</kbd> chuyển step, <kbd>Space</kbd> play/pause,
+    <kbd>Home</kbd> <kbd>End</kbd> đi đầu/cuối. Click vào widget để focus.
+  </p>
+
+</div>
+
+<script>
+// ============================================================
+// Segment tree data — manually computed for [2,5,1,4,9,3]
+// ============================================================
+const NODES = [
+  { id: 1,  range: "[0,5]", sum: 24, x: 360, y: 48  },
+  { id: 2,  range: "[0,2]", sum:  8, x: 200, y: 130 },
+  { id: 3,  range: "[3,5]", sum: 16, x: 540, y: 130 },
+  { id: 4,  range: "[0,1]", sum:  7, x: 120, y: 220 },
+  { id: 5,  range: "[2,2]", sum:  1, x: 280, y: 220 },
+  { id: 6,  range: "[3,4]", sum: 13, x: 460, y: 220 },
+  { id: 7,  range: "[5,5]", sum:  3, x: 620, y: 220 },
+  { id: 8,  range: "[0,0]", sum:  2, x:  80, y: 308 },
+  { id: 9,  range: "[1,1]", sum:  5, x: 160, y: 308 },
+  { id: 12, range: "[3,3]", sum:  4, x: 420, y: 308 },
+  { id: 13, range: "[4,4]", sum:  9, x: 500, y: 308 },
+];
+const EDGES = [
+  [1, 2], [1, 3],
+  [2, 4], [2, 5],
+  [3, 6], [3, 7],
+  [4, 8], [4, 9],
+  [6, 12], [6, 13],
+];
+const ARRAY = [2, 5, 1, 4, 9, 3];
+const QUERY_L = 1, QUERY_R = 4;
+
+// ============================================================
+// State per step — each key is node id → state class
+// states: "" (idle) | "path" | "take" | "skip" | "focus"
+// ============================================================
+const STEPS = [
+  // Step 1 — initial
+  {},
+  // Step 2 — root visited, both children marked path
+  { 1: "focus path", 2: "path", 3: "path" },
+  // Step 3 — left descent complete: 2,4 path; 9,5 taken; 8 skipped; 3 still path
+  { 1: "path", 2: "path", 3: "path",
+    4: "path", 5: "take",
+    8: "skip", 9: "take" },
+  // Step 4 — right descent: 6 taken, 7 skipped; 3 path
+  { 1: "path", 2: "path", 3: "path",
+    4: "path", 5: "take", 6: "take", 7: "skip",
+    8: "skip", 9: "take" },
+  // Step 5 — highlight only the three contributing nodes; others dim
+  { 1: "skip", 2: "skip", 3: "skip",
+    4: "skip", 5: "take focus", 6: "take focus", 7: "skip",
+    8: "skip", 9: "take focus", 12: "skip", 13: "skip" },
+  // Step 6 — result screen: same as 5
+  { 1: "skip", 2: "skip", 3: "skip",
+    4: "skip", 5: "take", 6: "take", 7: "skip",
+    8: "skip", 9: "take", 12: "skip", 13: "skip" },
+];
+
+// Which array indices are highlighted (in query range) per step
+const ARRAY_HIGHLIGHT = [
+  /* 1 */ [],
+  /* 2 */ [1, 2, 3, 4],
+  /* 3 */ [1, 2, 3, 4],
+  /* 4 */ [1, 2, 3, 4],
+  /* 5 */ [1, 2, 3, 4],
+  /* 6 */ [1, 2, 3, 4],
+];
+
+const STEP_TITLES = [
+  "STEP 1 — INITIAL",
+  "STEP 2 — VISIT ROOT",
+  "STEP 3 — DESCEND LEFT",
+  "STEP 4 — DESCEND RIGHT",
+  "STEP 5 — COLLECT",
+  "STEP 6 — RESULT: 19",
+];
+
+// ============================================================
+// SVG generation — one complete frame per step
+// ============================================================
+function buildFrame(stepIdx) {
+  const state = STEPS[stepIdx];
+  const svgNS = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNS, "svg");
+  svg.setAttribute("viewBox", "0 0 720 380");
+  svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", `Segment tree state at step ${stepIdx + 1}`);
+
+  // --- query brace + label at top ---
+  const queryG = document.createElementNS(svgNS, "g");
+  queryG.setAttribute("transform", "translate(0, 6)");
+  const qText = document.createElementNS(svgNS, "text");
+  qText.setAttribute("x", "360");
+  qText.setAttribute("y", "14");
+  qText.setAttribute("text-anchor", "middle");
+  qText.setAttribute("font", "600 12px ui-monospace, monospace");
+  qText.style.font = "600 12px ui-monospace, monospace";
+  qText.style.fill = "var(--accent)";
+  qText.textContent = stepIdx === 5 ? "query sum(1,4) = 5 + 1 + 13 = 19" : "query sum(1,4) = ?";
+  queryG.appendChild(qText);
+  svg.appendChild(queryG);
+
+  // --- edges (draw first so nodes sit on top) ---
+  for (const [a, b] of EDGES) {
+    const na = NODES.find(n => n.id === a);
+    const nb = NODES.find(n => n.id === b);
+    const line = document.createElementNS(svgNS, "line");
+    line.setAttribute("x1", na.x);
+    line.setAttribute("y1", na.y);
+    line.setAttribute("x2", nb.x);
+    line.setAttribute("y2", nb.y);
+
+    const sa = (state[a] || "").split(" ");
+    const sb = (state[b] || "").split(" ");
+    let cls = "edge";
+    // Edge is "path" if both endpoints are visited (path/take/focus) AND not skipped
+    const visited = s => s.includes("path") || s.includes("take") || s.includes("focus");
+    const skipped = s => s.includes("skip") && !s.includes("take");
+    if (skipped(sa) || skipped(sb)) cls += " skip";
+    else if (visited(sa) && visited(sb)) cls += " path";
+    line.setAttribute("class", cls);
+    svg.appendChild(line);
+  }
+
+  // --- nodes ---
+  for (const n of NODES) {
+    const cls = state[n.id] || "";
+    const g = document.createElementNS(svgNS, "g");
+    g.setAttribute("class", "node " + cls);
+    g.setAttribute("transform", `translate(${n.x}, ${n.y})`);
+
+    // focus ring (only visible when .focus class is set)
+    if (cls.includes("focus")) {
+      const ring = document.createElementNS(svgNS, "circle");
+      ring.setAttribute("class", "ring");
+      ring.setAttribute("r", "32");
+      ring.setAttribute("fill", "none");
+      ring.setAttribute("stroke", "var(--node-focus-ring)");
+      ring.setAttribute("stroke-width", "2.5");
+      ring.setAttribute("stroke-dasharray", "4 3");
+      g.appendChild(ring);
+    }
+
+    const circle = document.createElementNS(svgNS, "circle");
+    circle.setAttribute("r", "26");
+    g.appendChild(circle);
+
+    const rangeText = document.createElementNS(svgNS, "text");
+    rangeText.setAttribute("class", "range");
+    rangeText.setAttribute("y", "-4");
+    rangeText.textContent = n.range;
+    g.appendChild(rangeText);
+
+    const sumText = document.createElementNS(svgNS, "text");
+    sumText.setAttribute("class", "sum");
+    sumText.setAttribute("y", "13");
+    sumText.textContent = n.sum;
+    g.appendChild(sumText);
+
+    svg.appendChild(g);
+  }
+
+  // --- array strip at bottom ---
+  const stripY = 342;
+  const cellW = 44;
+  const stripStartX = 360 - (ARRAY.length * cellW) / 2;
+  const highlight = new Set(ARRAY_HIGHLIGHT[stepIdx]);
+
+  for (let i = 0; i < ARRAY.length; i++) {
+    const g = document.createElementNS(svgNS, "g");
+    g.setAttribute("class", "array-cell" + (highlight.has(i) ? " in-range" : ""));
+    g.setAttribute("transform", `translate(${stripStartX + i * cellW}, ${stripY})`);
+
+    const rect = document.createElementNS(svgNS, "rect");
+    rect.setAttribute("x", "0");
+    rect.setAttribute("y", "0");
+    rect.setAttribute("width", cellW - 4);
+    rect.setAttribute("height", "30");
+    rect.setAttribute("rx", "4");
+    g.appendChild(rect);
+
+    const idx = document.createElementNS(svgNS, "text");
+    idx.setAttribute("class", "idx");
+    idx.setAttribute("x", (cellW - 4) / 2);
+    idx.setAttribute("y", "-4");
+    idx.textContent = i;
+    g.appendChild(idx);
+
+    const val = document.createElementNS(svgNS, "text");
+    val.setAttribute("class", "val");
+    val.setAttribute("x", (cellW - 4) / 2);
+    val.setAttribute("y", "20");
+    val.textContent = ARRAY[i];
+    g.appendChild(val);
+
+    svg.appendChild(g);
+  }
+
+  return svg;
+}
+
+// ============================================================
+// Widget controller
+// ============================================================
+(function initWidget() {
+  const widget   = document.querySelector(".scriba-diagram-widget");
+  const host     = document.getElementById("svgHost");
+  const progress = document.getElementById("progressBars");
+  const total    = parseInt(widget.dataset.stepTotal, 10);
+  const counter  = widget.querySelector(".scriba-diagram-step-counter .cur");
+  const titleEl  = document.getElementById("stepTitle");
+  const descs    = widget.querySelectorAll(".scriba-diagram-description p[data-step]");
+  const firstBtn = widget.querySelector('[data-action="first"]');
+  const prevBtn  = widget.querySelector('[data-action="prev"]');
+  const nextBtn  = widget.querySelector('[data-action="next"]');
+  const lastBtn  = widget.querySelector('[data-action="last"]');
+  const playBtn  = widget.querySelector('[data-action="play"]');
+  let timer = null;
+
+  // Pre-render all frames
+  const frames = [];
+  for (let i = 0; i < total; i++) {
+    const div = document.createElement("div");
+    div.className = "frame";
+    div.appendChild(buildFrame(i));
+    host.appendChild(div);
+    frames.push(div);
+  }
+
+  // Build progress bars
+  for (let i = 0; i < total; i++) {
+    const bar = document.createElement("div");
+    bar.className = "bar";
+    progress.appendChild(bar);
+  }
+  const bars = progress.querySelectorAll(".bar");
+
+  function setStep(n) {
+    n = Math.max(1, Math.min(total, n));
+    widget.dataset.stepCurrent = n;
+    counter.textContent = n;
+    titleEl.textContent = STEP_TITLES[n - 1];
+
+    frames.forEach((f, i) => f.classList.toggle("active", i === n - 1));
+    descs.forEach(p => p.classList.toggle("active", parseInt(p.dataset.step, 10) === n));
+    bars.forEach((b, i) => b.classList.toggle("done", i < n));
+
+    firstBtn.disabled = n === 1;
+    prevBtn.disabled  = n === 1;
+    nextBtn.disabled  = n === total;
+    lastBtn.disabled  = n === total;
+    if (n === total) stopPlay();
+  }
+  function cur() { return parseInt(widget.dataset.stepCurrent, 10); }
+  function stopPlay() {
+    if (timer) { clearInterval(timer); timer = null; }
+    playBtn.classList.remove("playing");
+    playBtn.textContent = "▶ Play";
+  }
+  function startPlay() {
+    if (cur() === total) setStep(1);
+    playBtn.classList.add("playing");
+    playBtn.textContent = "⏸ Pause";
+    timer = setInterval(() => {
+      if (cur() >= total) stopPlay();
+      else setStep(cur() + 1);
+    }, 1800);
+  }
+
+  firstBtn.addEventListener("click", () => { stopPlay(); setStep(1); });
+  prevBtn .addEventListener("click", () => { stopPlay(); setStep(cur() - 1); });
+  nextBtn .addEventListener("click", () => { stopPlay(); setStep(cur() + 1); });
+  lastBtn .addEventListener("click", () => { stopPlay(); setStep(total); });
+  playBtn .addEventListener("click", () => { timer ? stopPlay() : startPlay(); });
+
+  widget.addEventListener("keydown", (e) => {
+    switch (e.key) {
+      case "ArrowLeft":  stopPlay(); setStep(cur() - 1); e.preventDefault(); break;
+      case "ArrowRight": stopPlay(); setStep(cur() + 1); e.preventDefault(); break;
+      case "Home":       stopPlay(); setStep(1);         e.preventDefault(); break;
+      case "End":        stopPlay(); setStep(total);     e.preventDefault(); break;
+      case " ":          timer ? stopPlay() : startPlay(); e.preventDefault(); break;
+    }
+  });
+
+  setStep(1);
+})();
+
+// Theme toggle
+document.getElementById("themeToggle").addEventListener("click", () => {
+  const root = document.documentElement;
+  root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+});
+</script>
+
+</body>
+</html>

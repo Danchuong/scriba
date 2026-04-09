@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Swap Game — Visualization-First Editorial (v3)</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- Global SVG defs (arrow markers used by .fig-arrow) -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#888"/>
+    </marker>
+    <marker id="arrGood" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="oklch(65% 0.17 150)"/>
+    </marker>
+  </defs>
+</svg>
+
+<!-- ============================================================
+     §1 HERO — viz above the fold, input thật
+     ============================================================ -->
+<header class="hero">
+  <div class="hero-grid">
+    <div class="hero-viz">
+      <div id="heroViz" aria-label="Animated solution on real 3x3 input"></div>
+      <div class="hero-caption">
+        <span id="heroSwapLabel">Swap 1 / 2</span>
+        <button id="heroReplay" type="button">↻ Replay</button>
+      </div>
+    </div>
+
+    <div class="hero-meta">
+      <h1>Swap Game</h1>
+      <p class="tag">CSES · 3×3 grid · min swaps to sort</p>
+
+      <div class="tldr">
+        <div class="tldr-row"><span class="k">Kỹ thuật</span><span class="v">BFS trên không gian hoán vị</span></div>
+        <div class="tldr-row"><span class="k">Độ phức tạp</span><span class="v">O(9! · 12) ≈ 4.3M</span></div>
+        <div class="tldr-row"><span class="k">Insight</span><span class="v">mỗi swap = 1 edge, unweighted ⇒ BFS</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<!-- ============================================================
+     §2 PROBLEM AS PICTURE — inline SVG thay cho đọc đề
+     ============================================================ -->
+<section id="problem">
+  <h2>1. Bài toán, nhìn bằng hình</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 520 240" class="fig-svg" role="img" aria-label="3x3 grid with 12 swap edges">
+      <!-- left: start grid -->
+      <g transform="translate(20,40)">
+        <text x="70" y="-12" class="fig-label">input</text>
+        <g class="sg-grid" data-grid="start"></g>
+      </g>
+      <!-- middle: edges legend -->
+      <g transform="translate(200,40)">
+        <text x="70" y="-12" class="fig-label">12 cặp kề</text>
+        <g class="sg-grid" data-grid="edges"></g>
+        <!-- edge overlays drawn by JS -->
+        <g id="edgeOverlay"></g>
+      </g>
+      <!-- right: target -->
+      <g transform="translate(380,40)">
+        <text x="70" y="-12" class="fig-label">target</text>
+        <g class="sg-grid" data-grid="target"></g>
+      </g>
+      <!-- arrows -->
+      <path d="M 110 115 L 190 115" class="fig-arrow"/>
+      <path d="M 290 115 L 370 115" class="fig-arrow"/>
+    </svg>
+    <figcaption>Mỗi nước đi = hoán đổi 2 ô chia cạnh. 6 cặp ngang + 6 cặp dọc = 12 edge per state.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================
+     §3 WHY NAIVE FAILS — state space small multiples
+     ============================================================ -->
+<section id="naive">
+  <h2>2. Vì sao brute force không làm nổi</h2>
+
+  <figure class="fig small-multiples">
+    <svg viewBox="0 0 600 180" class="fig-svg" role="img" aria-label="State space explosion">
+      <g transform="translate(40,40)">
+        <text class="fig-label" x="50" y="-12">2×2 grid</text>
+        <circle class="bubble" cx="50" cy="60" r="18"/>
+        <text class="bubble-n" x="50" y="64">24</text>
+        <text class="bubble-cap" x="50" y="120">4! trạng thái</text>
+      </g>
+      <g transform="translate(220,40)">
+        <text class="fig-label" x="50" y="-12">2×3 grid</text>
+        <circle class="bubble" cx="50" cy="60" r="36"/>
+        <text class="bubble-n" x="50" y="64">720</text>
+        <text class="bubble-cap" x="50" y="120">6! trạng thái</text>
+      </g>
+      <g transform="translate(400,40)">
+        <text class="fig-label" x="80" y="-12">3×3 grid</text>
+        <circle class="bubble danger" cx="80" cy="70" r="70"/>
+        <text class="bubble-n big" x="80" y="74">362 880</text>
+        <text class="bubble-cap" x="80" y="160">9! trạng thái</text>
+      </g>
+    </svg>
+    <figcaption>State space bùng nổ theo n!. DFS không cắt = nổ stack. Nhưng 9! vẫn vừa bộ nhớ ⇒ vẫn duyệt được, chỉ cần duyệt <em>đúng cách</em>.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================
+     §4 KEY INSIGHT — 1 figure, 1 câu
+     ============================================================ -->
+<section id="insight">
+  <h2>3. Insight</h2>
+
+  <figure class="fig">
+    <svg viewBox="0 0 600 240" class="fig-svg" role="img" aria-label="BFS layers from start">
+      <g id="insightLayers"></g>
+    </svg>
+    <figcaption><strong>Mỗi swap = 1 edge với trọng số = 1.</strong> Trên đồ thị không trọng số, BFS từ start trả về khoảng cách ngắn nhất tới mọi trạng thái — bao gồm target.</figcaption>
+  </figure>
+</section>
+
+<!-- ============================================================
+     §5 INTERACTIVE TRACE — BFS widget on REAL input
+     ============================================================ -->
+<section id="trace">
+  <h2>4. BFS chạy trên chính input này</h2>
+
+  <div id="bfsWidget" class="widget"></div>
+</section>
+
+<!-- ============================================================
+     §6 WALKTHROUGH — prose xen figure
+     ============================================================ -->
+<section id="walk">
+  <h2>5. Đi lại từng bước</h2>
+
+  <p>Pop <code>312/456/789</code> (depth 0). Sinh 12 neighbor. Một trong số đó là <code>132/456/789</code>.</p>
+
+  <figure class="fig inline">
+    <svg viewBox="0 0 360 130" class="fig-svg">
+      <g transform="translate(20,30)"><g class="sg-grid" data-grid="walk0"></g></g>
+      <text x="175" y="55" class="fig-label tiny">swap (0,0)(0,1)</text>
+      <path d="M 110 75 L 200 75" class="fig-arrow"/>
+      <g transform="translate(210,30)"><g class="sg-grid" data-grid="walk1"></g></g>
+    </svg>
+  </figure>
+
+  <p>Pop <code>132/456/789</code> (depth 1). Neighbor thứ 2 của nó là <code>123/456/789</code> = target. Trả về <code>dist = 2</code>.</p>
+
+  <figure class="fig inline">
+    <svg viewBox="0 0 360 130" class="fig-svg">
+      <g transform="translate(20,30)"><g class="sg-grid" data-grid="walk1b"></g></g>
+      <text x="175" y="55" class="fig-label tiny found">swap (0,1)(0,2) ✓</text>
+      <path d="M 110 75 L 200 75" class="fig-arrow found"/>
+      <g transform="translate(210,30)"><g class="sg-grid" data-grid="walk2"></g></g>
+    </svg>
+  </figure>
+
+  <p><em>Visited set</em> cứu chúng ta khỏi push trùng. Không có nó, queue phình theo 12^depth.</p>
+</section>
+
+<!-- ============================================================
+     §7 CODE — với sync hook
+     ============================================================ -->
+<section id="code">
+  <h2>6. Code (click từng dòng để widget seek)</h2>
+
+  <pre id="codeBlock"><code><span data-line="1">from collections import deque</span>
+<span data-line="2">target = (1,2,3,4,5,6,7,8,9)</span>
+<span data-line="3">EDGES = [(0,1),(1,2),(3,4),(4,5),(6,7),(7,8),</span>
+<span data-line="4">         (0,3),(1,4),(2,5),(3,6),(4,7),(5,8)]</span>
+<span data-line="5">def solve(start):</span>
+<span data-line="6">    q = deque([(start, 0)])</span>
+<span data-line="7">    seen = {start}</span>
+<span data-line="8">    while q:</span>
+<span data-line="9">        s, d = q.popleft()</span>
+<span data-line="10">        if s == target: return d</span>
+<span data-line="11">        for i, j in EDGES:</span>
+<span data-line="12">            t = list(s)</span>
+<span data-line="13">            t[i], t[j] = t[j], t[i]</span>
+<span data-line="14">            t = tuple(t)</span>
+<span data-line="15">            if t not in seen:</span>
+<span data-line="16">                seen.add(t)</span>
+<span data-line="17">                q.append((t, d+1))</span></code></pre>
+</section>
+
+<!-- ============================================================
+     §8 VARIANTS
+     ============================================================ -->
+<section id="variants">
+  <h2>7. Biến thể &amp; bẫy</h2>
+  <ul class="variants">
+    <li><strong>n×n tổng quát.</strong> n≤4 còn BFS được (16! ≈ 2·10¹³ — quá lớn, cần A* với Manhattan).</li>
+    <li><strong>Swap bất kỳ (không cần kề).</strong> Đáp án = n² − số chu trình của hoán vị. Công thức đóng, không cần BFS.</li>
+    <li><strong>Quên visited set.</strong> Queue phình mũ, TLE/MLE ngay cả với n=3.</li>
+  </ul>
+</section>
+
+</main>
+
+<script defer src="app.js"></script>
+</body>
+</html>

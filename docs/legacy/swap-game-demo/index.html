@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<title>CSES Swap Game — Bài giảng BFS từ số 0</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="styles.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header class="page-header">
+    <div>
+      <h1>Swap Game — bài giảng BFS cho người mới</h1>
+      <p class="subtitle">
+        CSES · 3×3 grid · tìm số swap nhỏ nhất để về $[1..9]$ ·
+        giả sử bạn chưa từng nghe tới BFS
+      </p>
+    </div>
+    <button class="theme-toggle" id="themeToggle">🌓 Theme</button>
+  </header>
+
+  <!-- ====================================================== -->
+  <!-- §1 — PROBLEM                                            -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§1</div>
+    <h2>Đề bài</h2>
+    <p>
+      Bạn có 1 bảng $3 \times 3$ chứa các số từ 1 đến 9, sắp xếp lộn xộn.
+      Mỗi lần bạn được phép <b>đổi chỗ 2 ô kề nhau</b> (kề ngang hoặc kề dọc).
+      Hỏi ít nhất bao nhiêu lần swap để về bảng đã sắp xếp:
+    </p>
+    <div class="sample-row" id="problemStatement"></div>
+    <p class="muted-note">
+      Sample đề ra: start swap <b>4 lần</b> là về target.
+      Nhưng mà — <em>làm sao biết chắc 4 là nhỏ nhất?</em> Không phải 3? Không phải 5?
+      Đó là câu hỏi cả bài này sẽ trả lời.
+    </p>
+  </section>
+
+  <!-- ====================================================== -->
+  <!-- §2 — WHAT IS A MOVE (HALO WIDGET)                       -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§2</div>
+    <h2>"Một bước" là gì? — mỗi bảng có đúng 12 neighbors</h2>
+    <p>
+      Trước khi nghĩ đến thuật toán, ta phải hiểu rõ 1 bước làm được gì.
+      Từ 1 bảng bất kỳ, bạn swap 2 ô kề nhau → ra 1 bảng mới. Có bao nhiêu cách?
+    </p>
+    <p>
+      Đếm các <em>cặp kề nhau</em>, không phải các ô:
+      bảng $3 \times 3$ có <b>2 cặp ngang × 3 hàng = 6 swap ngang</b>,
+      và <b>2 cặp dọc × 3 cột = 6 swap dọc</b>. Tổng = <b>12 neighbors</b>.
+      Dưới đây là 12 bảng bạn có thể đến trong <em>đúng 1 swap</em> từ start.
+      Hover/tap vào bất kỳ bảng nhỏ nào để thấy cặp ô đã swap.
+    </p>
+
+    <div class="widget-halo" id="haloWidget"></div>
+
+    <p class="muted-note">
+      Mỗi bảng trong 12 bảng này lại có 12 neighbors của riêng nó.
+      Cứ thế mở rộng ra, bạn được 1 <b>đồ thị khổng lồ</b> với các bảng là <em>đỉnh (node)</em>
+      và các swap là <em>cạnh (edge)</em>. Đó chính là đồ thị mà BFS sẽ chạy trên.
+    </p>
+  </section>
+
+  <!-- ====================================================== -->
+  <!-- §3 — STATE SPACE SIZE                                   -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§3</div>
+    <h2>Đồ thị lớn cỡ nào? — $9! = 362{,}880$</h2>
+    <p>
+      Mỗi <b>state</b> (trạng thái) là 1 cách sắp xếp các số 1..9 vào 9 ô.
+      Số cách = $9! = 362{,}880$. Không quá lớn — máy tính chạy trong milligiây.
+    </p>
+    <p>
+      <b>Tưởng tượng thế này:</b> hãy hình dung $362{,}880$ chấm điểm trên tường.
+      Mỗi chấm là 1 bảng khác nhau. Giữa 2 chấm có 1 đường kẻ nếu chúng khác nhau đúng 1 swap kề.
+      Chấm bên trái là start của bạn, chấm bên phải là target $[1..9]$.
+      <b>Nhiệm vụ:</b> tìm dãy đường kẻ ngắn nhất nối start đến target.
+    </p>
+    <p>
+      Đó chính là <b>bài toán đường đi ngắn nhất trên đồ thị không trọng số</b>.
+      Và có đúng 1 thuật toán cực kỳ đơn giản giải được: <b>BFS</b>.
+    </p>
+  </section>
+
+  <!-- ====================================================== -->
+  <!-- §4 — WHY BFS                                            -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§4</div>
+    <h2>Tại sao không dùng các thứ khác?</h2>
+    <table class="why-table">
+      <thead>
+        <tr><th>Cách làm</th><th>Tại sao không</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>Greedy</b> — "mỗi bước fix được nhiều ô nhất"</td>
+          <td>Kẹt ở parity và các chu trình. Swap tạo hoán vị, đôi khi phải lùi 1 bước để tiến 2 bước. Greedy không nhìn được xa.</td>
+        </tr>
+        <tr>
+          <td><b>DFS</b> — đi sâu trước</td>
+          <td>Tìm được <em>1 đường</em>, không phải <em>đường ngắn nhất</em>. Với state space $9!$ thì DFS cũng có thể lạc xa.</td>
+        </tr>
+        <tr>
+          <td><b>DP</b> — quy hoạch động</td>
+          <td>Không có thứ tự tự nhiên trên các state. Bạn có thể swap qua rồi swap lại — subproblem bị vòng lặp.</td>
+        </tr>
+        <tr>
+          <td class="ok"><b>BFS</b> — mở rộng theo layer</td>
+          <td class="ok">Mọi cạnh trọng số = 1 (mỗi swap = 1 bước). BFS bảo đảm <em>lần đầu tiên gặp 1 node = khoảng cách ngắn nhất</em>. Ra đáp án chính xác trong $O(9!)$.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ====================================================== -->
+  <!-- §5 — BFS LAYER CONCEPT                                  -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§5</div>
+    <h2>Ý tưởng BFS: "nở ra" từng lớp đồng tâm</h2>
+    <p>
+      Từ start, hãy đánh dấu mọi node bằng <b>khoảng cách</b> ngắn nhất tới nó.
+      BFS xây dần các lớp này theo thứ tự $0, 1, 2, 3, \ldots$:
+    </p>
+    <ul>
+      <li><b>Lớp 0</b>: chỉ có start (1 node).</li>
+      <li><b>Lớp 1</b>: tất cả node cách start đúng 1 bước ⇒ 12 bảng (từ §2).</li>
+      <li><b>Lớp 2</b>: tất cả node cách đúng 2 bước (không kể các node đã thuộc lớp 0, 1).</li>
+      <li>Cứ thế…</li>
+    </ul>
+    <p>
+      <b>Câu then chốt:</b> target thuộc lớp $k$ nào thì $k$ chính là đáp án.
+      Không có đường nào ngắn hơn vì BFS đã quét <em>hết</em> các lớp $0, 1, \ldots, k-1$
+      mà không thấy target. Đây là <em>invariant</em> của BFS: lần đầu gặp 1 node = khoảng cách nhỏ nhất.
+    </p>
+
+    <div class="ring-diagram" id="ringDiagram"></div>
+    <p class="muted-note">
+      Với sample đề ra, target nằm ở <b>lớp 4</b> → đáp án = 4. Lớp 0 có 1 state,
+      lớp 1 có 12, lớp 2 có ~100, lớp 3 có ~1000, lớp 4 có ~9000 — tổng &lt; 11,000 state
+      cần duyệt trước khi ra đáp án. Rất rẻ so với $362{,}880$.
+    </p>
+  </section>
+
+  <!-- ====================================================== -->
+  <!-- §6 — BFS TRACE ON TOY GRAPH                             -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§6</div>
+    <h2>BFS chạy thực tế trên 1 đồ thị nhỏ</h2>
+    <p>
+      Trước khi quay lại bài swap game (với $9!$ node), hãy xem BFS chạy trên 1 đồ thị
+      <b>chỉ 5 node</b> cho dễ hiểu. Ta có các node <code>A, B, C, D, E</code>, start = A, target = E.
+      BFS dùng 2 thứ:
+    </p>
+    <ul>
+      <li><b>Queue</b> (hàng đợi) — danh sách các node chờ duyệt, kiểu <em>FIFO</em> (ai vào trước ra trước).</li>
+      <li><b>Visited set</b> — đánh dấu node nào đã gặp rồi, để không lặp lại.</li>
+    </ul>
+    <p>
+      Vòng lặp chính của BFS:
+    </p>
+    <pre class="pseudo"><code>queue.push(start); visited.add(start)
+while queue not empty:
+    cur = queue.pop_front()      <span class="c">// lấy node đầu queue</span>
+    if cur == target: return dist[cur]
+    for each neighbor n of cur:
+        if n not in visited:
+            visited.add(n)
+            dist[n] = dist[cur] + 1
+            queue.push_back(n)</code></pre>
+    <p>
+      Bấm <b>Next ▶</b> để thấy từng bước. Chú ý 3 thứ thay đổi mỗi bước:
+      (1) node nào là <em>current</em>, (2) queue thay đổi, (3) visited set lớn dần.
+      <b>Đặc biệt để ý bước 4</b>: ta thử thêm node D vào queue nhưng D đã trong visited
+      → đó chính là lúc "visited set" cứu BFS khỏi vòng lặp vô tận.
+    </p>
+
+    <div class="widget-trace" id="traceWidget"></div>
+  </section>
+
+  <!-- ====================================================== -->
+  <!-- §7 — APPLY TO SWAP GAME (REPLAY)                        -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§7</div>
+    <h2>Quay lại Swap Game — đáp án là 4</h2>
+    <p>
+      Bây giờ bạn đã hiểu BFS. Thay cụm "nhỏ 5-node graph" bằng "đồ thị 362,880 node với mỗi node là 1 bảng 3×3",
+      mọi thứ còn lại y hệt. BFS chạy, quét lớp 0, 1, 2, 3, rồi đến lớp 4 mới gặp target. Đáp án = 4.
+    </p>
+    <p>
+      Dưới đây là 1 trong các dãy swap tối ưu BFS có thể trả về. Bấm <b>Next ▶</b> hoặc <b>Play</b> để xem 4 move:
+    </p>
+
+    <div class="widget-replay" id="replayWidget"></div>
+  </section>
+
+  <!-- ====================================================== -->
+  <!-- §8 — THE CODE                                           -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§8</div>
+    <h2>Code thực tế</h2>
+    <p>
+      Bây giờ đọc lại đoạn code "kinh điển" ở đầu chương, bạn sẽ thấy nó chỉ là <em>vòng lặp BFS</em>
+      ở §6, với <em>state = bảng 3×3</em> được mã hóa thành số nguyên base-9 cho nhanh.
+    </p>
+    <pre class="code"><code>#include &lt;bits/stdc++.h&gt;
+using namespace std;
+
+int powers[10];
+int move(int grid, int i, int j) {  <span class="c">// swap cell i và j, trả grid mới</span>
+    int a = grid % powers[i+1] / powers[i];
+    int b = grid % powers[j+1] / powers[j];
+    return grid - a*powers[i] - b*powers[j] + b*powers[i] + a*powers[j];
+}
+
+int main() {
+    powers[0] = 1;
+    for (int i = 1; i &lt; 10; i++) powers[i] = 9 * powers[i-1];
+    vector&lt;bool&gt; vis(powers[9], false);
+
+    int target = 0;                  <span class="c">// bảng 1..9</span>
+    for (int i = 8; i &gt;= 0; i--) target += (8-i) * powers[i];
+
+    int grid = 0, num;               <span class="c">// đọc input</span>
+    for (int i = 8; i &gt;= 0; i--) { cin &gt;&gt; num; grid += (num-1)*powers[i]; }
+
+    queue&lt;pair&lt;int,int&gt;&gt; q;          <span class="c">// {state, distance}</span>
+    q.push({grid, 0});
+    vis[grid] = true;
+    while (!q.empty()) {
+        auto [g, dist] = q.front(); q.pop();
+        if (g == target) { cout &lt;&lt; dist; return 0; }
+
+        for (int i = 0; i &lt; 8; i++) {        <span class="c">// 6 swap ngang</span>
+            if (i % 3 == 2) continue;
+            int g2 = move(g, 8-i, 8-(i+1));
+            if (!vis[g2]) { vis[g2] = true; q.push({g2, dist+1}); }
+        }
+        for (int i = 0; i &lt; 6; i++) {        <span class="c">// 6 swap dọc</span>
+            int g2 = move(g, 8-i, 8-(i+3));
+            if (!vis[g2]) { vis[g2] = true; q.push({g2, dist+1}); }
+        }
+    }
+}</code></pre>
+    <p>
+      Hai vòng <code>for</code> kia chính là chỗ sinh ra <b>12 neighbors</b> (6 ngang + 6 dọc) bạn đã thấy ở §2.
+      <code>vis[]</code> là <em>visited set</em>. <code>q</code> là <em>queue</em>. Không có gì bí ẩn.
+    </p>
+  </section>
+
+  <!-- ====================================================== -->
+  <!-- §9 — TAKEAWAYS                                          -->
+  <!-- ====================================================== -->
+  <section class="lesson">
+    <div class="sec-num">§9</div>
+    <h2>Nhớ những gì</h2>
+    <div class="grid-cards">
+      <div class="card">
+        <h3>1. State = node của đồ thị</h3>
+        <p>Thấy 1 bài có "cấu hình có thể biến đổi", hãy hỏi: mỗi cấu hình là 1 node, mỗi biến đổi là 1 edge. Bài toán chuyển thành tìm đường đi.</p>
+      </div>
+      <div class="card">
+        <h3>2. Đếm neighbors cẩn thận</h3>
+        <p>Không phải "4 hướng = 4 neighbor". Với swap game là <b>6+6 = 12</b>. Đếm đúng là bước đầu tiên để code BFS chính xác.</p>
+      </div>
+      <div class="card">
+        <h3>3. BFS = shortest path trên unit-weight graph</h3>
+        <p>Mọi edge có cùng trọng số 1? ⇒ BFS. Không cần Dijkstra, không cần A*, không cần DP. Chỉ cần queue + visited.</p>
+      </div>
+      <div class="card">
+        <h3>4. Visited set là sống còn</h3>
+        <p>Không có visited, queue sẽ phình ra vô tận vì các state đã gặp lại được thêm lại. Thêm vào visited <em>ngay lúc push</em>, không phải lúc pop.</p>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script defer src="app.js"></script>
+</body>
+</html>

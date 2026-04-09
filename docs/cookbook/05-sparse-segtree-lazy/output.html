@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Scriba output — Example 05: Sparse segtree + lazy</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false}]})"></script>
+<style>
+  body { font-family: "Inter", system-ui, sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1.5rem 4rem; color: #0f172a; line-height: 1.6; background: #f8fafc; }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .meta { color: #64748b; font-size: .85rem; margin: 0 0 2rem; }
+  kbd { font: 11px ui-monospace, monospace; border: 1px solid #cbd5e1; border-bottom-width: 2px; border-radius: 4px; padding: 1px 5px; background: #fff; }
+
+  figure.scriba-widget {
+    margin: 2rem 0;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+  }
+  figure.scriba-widget:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+
+  .scriba-widget-svg {
+    background: #f8fafc;
+    padding: 1.5rem 1rem;
+    min-height: 430px;
+  }
+  .scriba-widget-svg svg { width: 100%; max-width: 780px; height: auto; display: block; margin: 0 auto; }
+
+  /* Node states */
+  .sst-node {
+    opacity: 0;
+    transition: opacity 380ms ease;
+  }
+  .sst-node.visible { opacity: 1; }
+  .sst-node rect.box {
+    fill: #fff;
+    stroke: #cbd5e1;
+    stroke-width: 1.5;
+    transition: all 300ms;
+  }
+  .sst-node.current rect.box { fill: #fef3c7; stroke: #f59e0b; stroke-width: 2.5; }
+  .sst-node.taken rect.box   { fill: #d1fae5; stroke: #059669; stroke-width: 2; }
+  .sst-node.push rect.box    { fill: #fce7f3; stroke: #db2777; stroke-width: 2; }
+
+  .sst-node .range { font: 600 11px ui-monospace, monospace; fill: #334155; text-anchor: middle; }
+  .sst-node .sum   { font: 700 14px "Inter", sans-serif; fill: #0f172a; text-anchor: middle; }
+  .sst-node .lazy  {
+    font: 600 10px ui-monospace, monospace;
+    fill: #fff;
+    text-anchor: middle;
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+  .sst-node .lazy-bg {
+    fill: #db2777;
+    opacity: 0;
+    transition: opacity 300ms;
+  }
+  .sst-node.has-lazy .lazy,
+  .sst-node.has-lazy .lazy-bg { opacity: 1; }
+
+  .sst-edge {
+    stroke: #cbd5e1;
+    stroke-width: 1.5;
+    fill: none;
+    opacity: 0;
+    transition: opacity 380ms;
+  }
+  .sst-edge.visible { opacity: 1; }
+
+  .number-line {
+    font: 500 10px ui-monospace, monospace;
+    fill: #64748b;
+    text-anchor: middle;
+  }
+  .number-line-axis { stroke: #cbd5e1; stroke-width: 1; }
+
+  /* Controls etc — same as example 03/04 */
+  .scriba-widget-controls { display: flex; gap: .5rem; padding: .75rem 1rem; border-top: 1px solid #e2e8f0; background: #fff; align-items: center; }
+  .scriba-widget-controls button { font: 500 .85rem "Inter", sans-serif; background: #fff; border: 1px solid #cbd5e1; padding: .45rem .85rem; border-radius: 7px; cursor: pointer; color: #0f172a; }
+  .scriba-widget-controls button:hover:not(:disabled) { background: #f1f5f9; border-color: #64748b; }
+  .scriba-widget-controls button:disabled { opacity: .35; cursor: not-allowed; }
+  .scriba-widget-controls button[data-action="play"].playing { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .scriba-widget-counter { margin-left: auto; font: 500 .82rem ui-monospace, monospace; color: #64748b; font-variant-numeric: tabular-nums; }
+  .scriba-widget-progress { display: flex; gap: 4px; padding: 0 1rem .75rem; background: #fff; }
+  .scriba-widget-progress .bar { flex: 1; height: 3px; border-radius: 2px; background: #e2e8f0; transition: background 220ms; }
+  .scriba-widget-progress .bar.done { background: #2563eb; }
+  .scriba-widget-narration { padding: 1rem 1.25rem 1.25rem; border-top: 1px solid #e2e8f0; background: #fff; min-height: 5rem; }
+  .scriba-widget-narration .step-title { font: 600 .72rem ui-monospace, monospace; color: #2563eb; text-transform: uppercase; letter-spacing: .05em; margin: 0 0 .4rem; }
+  .scriba-widget-narration p { margin: 0; color: #0f172a; display: none; font-size: .92rem; line-height: 1.55; }
+  .scriba-widget-narration p.active { display: block; }
+</style>
+</head>
+<body>
+
+<h1>Example 05 — Sparse segtree + lazy output</h1>
+<p class="meta">9-step walkthrough. Node pop-in khi allocate. Lazy badge hiển thị khi tag != null. <kbd>←</kbd> <kbd>→</kbd> nav.</p>
+
+<figure class="scriba-widget"
+        data-scriba-kind="scene"
+        data-scriba-src="input.md:4"
+        data-step-current="1"
+        data-step-total="9"
+        tabindex="0">
+
+  <div class="scriba-widget-svg">
+    <svg viewBox="0 0 780 430" role="img">
+      <!-- Number line at bottom -->
+      <line class="number-line-axis" x1="80" y1="380" x2="700" y2="380"/>
+      <g class="number-line">
+        <text x="80" y="400">0</text>
+        <text x="168" y="400">1</text>
+        <text x="257" y="400">2</text>
+        <text x="346" y="400">3</text>
+        <text x="434" y="400">4</text>
+        <text x="523" y="400">5</text>
+        <text x="612" y="400">6</text>
+        <text x="700" y="400">7</text>
+      </g>
+
+      <!-- Edges (hidden by default, shown via .visible) -->
+      <g class="sst-edges">
+        <line id="e-07-03"  class="sst-edge" x1="390" y1="75"  x2="210" y2="155"/>
+        <line id="e-07-47"  class="sst-edge" x1="390" y1="75"  x2="570" y2="155"/>
+        <line id="e-03-01"  class="sst-edge" x1="210" y1="155" x2="120" y2="235"/>
+        <line id="e-03-23"  class="sst-edge" x1="210" y1="155" x2="300" y2="235"/>
+        <line id="e-47-45"  class="sst-edge" x1="570" y1="155" x2="480" y2="235"/>
+        <line id="e-47-67"  class="sst-edge" x1="570" y1="155" x2="660" y2="235"/>
+        <line id="e-45-44"  class="sst-edge" x1="480" y1="235" x2="435" y2="315"/>
+        <line id="e-45-55"  class="sst-edge" x1="480" y1="235" x2="525" y2="315"/>
+      </g>
+
+      <!-- Nodes: rendered as rounded rect with range/sum + optional lazy badge -->
+
+      <!-- [0,7] root -->
+      <g id="n-0-7" class="sst-node visible" transform="translate(390, 75)">
+        <rect class="box" x="-42" y="-28" width="84" height="52" rx="7"/>
+        <text class="range" x="0" y="-6">[0,7]</text>
+        <text class="sum"   x="0" y="14">0</text>
+        <rect class="lazy-bg" x="22" y="-30" width="26" height="16" rx="3"/>
+        <text class="lazy" x="35" y="-18"></text>
+      </g>
+
+      <!-- [0,3] -->
+      <g id="n-0-3" class="sst-node" transform="translate(210, 155)">
+        <rect class="box" x="-42" y="-28" width="84" height="52" rx="7"/>
+        <text class="range" x="0" y="-6">[0,3]</text>
+        <text class="sum"   x="0" y="14">0</text>
+        <rect class="lazy-bg" x="22" y="-30" width="26" height="16" rx="3"/>
+        <text class="lazy" x="35" y="-18"></text>
+      </g>
+
+      <!-- [4,7] -->
+      <g id="n-4-7" class="sst-node" transform="translate(570, 155)">
+        <rect class="box" x="-42" y="-28" width="84" height="52" rx="7"/>
+        <text class="range" x="0" y="-6">[4,7]</text>
+        <text class="sum"   x="0" y="14">0</text>
+        <rect class="lazy-bg" x="22" y="-30" width="26" height="16" rx="3"/>
+        <text class="lazy" x="35" y="-18"></text>
+      </g>
+
+      <!-- [0,1] -->
+      <g id="n-0-1" class="sst-node" transform="translate(120, 235)">
+        <rect class="box" x="-36" y="-24" width="72" height="46" rx="6"/>
+        <text class="range" x="0" y="-4">[0,1]</text>
+        <text class="sum"   x="0" y="14">0</text>
+      </g>
+
+      <!-- [2,3] -->
+      <g id="n-2-3" class="sst-node" transform="translate(300, 235)">
+        <rect class="box" x="-36" y="-24" width="72" height="46" rx="6"/>
+        <text class="range" x="0" y="-4">[2,3]</text>
+        <text class="sum"   x="0" y="14">0</text>
+        <rect class="lazy-bg" x="20" y="-26" width="22" height="14" rx="3"/>
+        <text class="lazy" x="31" y="-15"></text>
+      </g>
+
+      <!-- [4,5] -->
+      <g id="n-4-5" class="sst-node" transform="translate(480, 235)">
+        <rect class="box" x="-36" y="-24" width="72" height="46" rx="6"/>
+        <text class="range" x="0" y="-4">[4,5]</text>
+        <text class="sum"   x="0" y="14">0</text>
+        <rect class="lazy-bg" x="20" y="-26" width="22" height="14" rx="3"/>
+        <text class="lazy" x="31" y="-15"></text>
+      </g>
+
+      <!-- [6,7] -->
+      <g id="n-6-7" class="sst-node" transform="translate(660, 235)">
+        <rect class="box" x="-36" y="-24" width="72" height="46" rx="6"/>
+        <text class="range" x="0" y="-4">[6,7]</text>
+        <text class="sum"   x="0" y="14">0</text>
+      </g>
+
+      <!-- [4,4] (appears only at push_down step) -->
+      <g id="n-4-4" class="sst-node" transform="translate(435, 315)">
+        <rect class="box" x="-28" y="-20" width="56" height="40" rx="5"/>
+        <text class="range" x="0" y="-4">[4,4]</text>
+        <text class="sum"   x="0" y="12">0</text>
+        <rect class="lazy-bg" x="14" y="-22" width="22" height="14" rx="3"/>
+        <text class="lazy" x="25" y="-11"></text>
+      </g>
+
+      <!-- [5,5] (appears only at push_down step) -->
+      <g id="n-5-5" class="sst-node" transform="translate(525, 315)">
+        <rect class="box" x="-28" y="-20" width="56" height="40" rx="5"/>
+        <text class="range" x="0" y="-4">[5,5]</text>
+        <text class="sum"   x="0" y="12">0</text>
+        <rect class="lazy-bg" x="14" y="-22" width="22" height="14" rx="3"/>
+        <text class="lazy" x="25" y="-11"></text>
+      </g>
+    </svg>
+  </div>
+
+  <div class="scriba-widget-controls">
+    <button data-action="first">⏮</button>
+    <button data-action="prev">◀ Prev</button>
+    <button data-action="play">▶ Play</button>
+    <button data-action="next">Next ▶</button>
+    <button data-action="last">⏭</button>
+    <span class="scriba-widget-counter">Step <span class="cur">1</span> / 9</span>
+  </div>
+
+  <div class="scriba-widget-progress">
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+  </div>
+
+  <div class="scriba-widget-narration">
+    <p class="step-title" id="step-title">STEP 1 — INITIAL</p>
+    <p data-step="1" class="active">Trục $[0, 7]$. Chỉ root $[0,7]$ tồn tại ban đầu. Lazy sparse segtree.</p>
+    <p data-step="2">Pop $[0,7]$. Giao $[2,5]$ không full → phải <b>allocate 2 con</b>.</p>
+    <p data-step="3">Tạo $[0,3]$ và $[4,7]$ on-demand. Cả 2 chưa có gì, $\text{sum}=0$, $\text{lazy}=\bot$.</p>
+    <p data-step="4">Xuống $[0,3]$: giao $[2,3]$ không full, allocate tiếp.</p>
+    <p data-step="5">$[2,3]$ phủ hoàn toàn trong $[2,5]$ → <b>set lazy=3</b>, $\text{sum}=2 \cdot 3=6$. Không xuống sâu hơn.</p>
+    <p data-step="6">Bên phải: $[4,5]$ phủ hoàn toàn → set lazy=3, sum=6. $[6,7]$ ngoài khoảng.</p>
+    <p data-step="7">Bubble-up sum: $[0,3]=6$, $[4,7]=6$, root $=12$. set(2,5)=3 hoàn tất.</p>
+    <p data-step="8">set(4,7)=2 cần xuống $[4,5]$. Nó có lazy=3 cũ → <b>push_down</b>: tạo $[4,4]$, $[5,5]$ với lazy=3.</p>
+    <p data-step="9">Final: sau cả 3 op, root $=14$. Mỗi op $O(\log \text{range})$, node $O(\text{ops} \cdot \log \text{range})$ thay vì $O(\text{range})$.</p>
+  </div>
+</figure>
+
+<script>
+(function() {
+  // Each step is a cumulative state snapshot.
+  // Keys:
+  //   "n-X-Y:visible"    → show node
+  //   "e-X-Y:visible"    → show edge
+  //   "n-X-Y:state"      → current/taken/push/""
+  //   "n-X-Y:sum"        → replace sum text
+  //   "n-X-Y:lazy"       → replace lazy text ("" means clear)
+  //   "n-X-Y:has-lazy"   → true/false
+  const STEPS = {
+    1: {
+      "n-0-7:visible": true,
+    },
+    2: {
+      "n-0-7:state": "current",
+    },
+    3: {
+      "n-0-3:visible": true,
+      "n-4-7:visible": true,
+      "e-07-03:visible": true,
+      "e-07-47:visible": true,
+      "n-0-7:state": "",
+    },
+    4: {
+      "n-0-3:state": "current",
+    },
+    5: {
+      "n-0-1:visible": true,
+      "n-2-3:visible": true,
+      "e-03-01:visible": true,
+      "e-03-23:visible": true,
+      "n-2-3:state": "taken",
+      "n-2-3:sum": "6",
+      "n-2-3:lazy": "3",
+      "n-2-3:has-lazy": true,
+      "n-0-3:state": "",
+    },
+    6: {
+      "n-4-5:visible": true,
+      "n-6-7:visible": true,
+      "e-47-45:visible": true,
+      "e-47-67:visible": true,
+      "n-4-5:state": "taken",
+      "n-4-5:sum": "6",
+      "n-4-5:lazy": "3",
+      "n-4-5:has-lazy": true,
+    },
+    7: {
+      "n-0-3:sum": "6",
+      "n-4-7:sum": "6",
+      "n-0-7:sum": "12",
+    },
+    8: {
+      "n-4-5:state": "push",
+      "n-4-4:visible": true,
+      "n-5-5:visible": true,
+      "e-45-44:visible": true,
+      "e-45-55:visible": true,
+      "n-4-4:lazy": "3",
+      "n-4-4:has-lazy": true,
+      "n-4-4:sum": "3",
+      "n-5-5:lazy": "3",
+      "n-5-5:has-lazy": true,
+      "n-5-5:sum": "3",
+      // lazy on parent is pushed down → cleared
+      "n-4-5:lazy": "",
+      "n-4-5:has-lazy": false,
+    },
+    9: {
+      // narration-only change, no visual delta
+      "n-0-7:sum": "14",
+      "n-4-5:state": "",
+    },
+  };
+
+  const TITLES = [
+    "STEP 1 — INITIAL",
+    "STEP 2 — POP ROOT",
+    "STEP 3 — ALLOCATE [0,3] AND [4,7]",
+    "STEP 4 — DESCEND [0,3]",
+    "STEP 5 — ALLOCATE AND TAKE [2,3]",
+    "STEP 6 — ALLOCATE AND TAKE [4,5]",
+    "STEP 7 — BUBBLE UP SUMS",
+    "STEP 8 — PUSH_DOWN LAZY",
+    "STEP 9 — FINAL STATE",
+  ];
+
+  function resetAll(widget) {
+    widget.querySelectorAll(".sst-node").forEach(n => {
+      n.classList.remove("visible", "current", "taken", "push", "has-lazy");
+      const sum = n.querySelector(".sum"); if (sum) sum.textContent = "0";
+      const lz = n.querySelector(".lazy"); if (lz) lz.textContent = "";
+    });
+    widget.querySelectorAll(".sst-edge").forEach(e => e.classList.remove("visible"));
+  }
+
+  function applyDelta(widget, key, value) {
+    const [id, attr] = key.split(":");
+    const elem = widget.querySelector("#" + id);
+    if (!elem) return;
+    if (attr === "visible" && value) elem.classList.add("visible");
+    else if (attr === "state") {
+      elem.classList.remove("current", "taken", "push");
+      if (value) elem.classList.add(value);
+    }
+    else if (attr === "sum") {
+      const t = elem.querySelector(".sum");
+      if (t) t.textContent = value;
+    }
+    else if (attr === "lazy") {
+      const t = elem.querySelector(".lazy");
+      if (t) t.textContent = value;
+    }
+    else if (attr === "has-lazy") {
+      elem.classList.toggle("has-lazy", value);
+    }
+  }
+
+  function initWidget(widget) {
+    const total = parseInt(widget.dataset.stepTotal, 10);
+    const counter = widget.querySelector(".scriba-widget-counter .cur");
+    const titleEl = widget.querySelector("#step-title");
+    const narrations = widget.querySelectorAll(".scriba-widget-narration p[data-step]");
+    const bars = widget.querySelectorAll(".scriba-widget-progress .bar");
+    const playBtn = widget.querySelector('[data-action="play"]');
+    let timer = null;
+
+    function setStep(n) {
+      n = Math.max(1, Math.min(total, n));
+      widget.dataset.stepCurrent = n;
+      counter.textContent = n;
+      titleEl.textContent = TITLES[n - 1];
+
+      resetAll(widget);
+      for (let i = 1; i <= n; i++) {
+        const delta = STEPS[i] || {};
+        for (const k in delta) applyDelta(widget, k, delta[k]);
+      }
+
+      narrations.forEach(p => p.classList.toggle("active", parseInt(p.dataset.step, 10) === n));
+      bars.forEach((b, i) => b.classList.toggle("done", i < n));
+
+      widget.querySelector('[data-action="first"]').disabled = n === 1;
+      widget.querySelector('[data-action="prev"]').disabled = n === 1;
+      widget.querySelector('[data-action="next"]').disabled = n === total;
+      widget.querySelector('[data-action="last"]').disabled = n === total;
+      if (n === total && timer) stopPlay();
+    }
+    const cur = () => parseInt(widget.dataset.stepCurrent, 10);
+    function stopPlay() { if (timer) { clearInterval(timer); timer = null; } playBtn.classList.remove("playing"); playBtn.textContent = "▶ Play"; }
+    function startPlay() { if (cur() === total) setStep(1); playBtn.classList.add("playing"); playBtn.textContent = "⏸ Pause"; timer = setInterval(() => { if (cur() >= total) stopPlay(); else setStep(cur() + 1); }, 2100); }
+
+    widget.querySelector('[data-action="first"]').addEventListener("click", () => { stopPlay(); setStep(1); });
+    widget.querySelector('[data-action="prev"]').addEventListener("click",  () => { stopPlay(); setStep(cur() - 1); });
+    widget.querySelector('[data-action="next"]').addEventListener("click",  () => { stopPlay(); setStep(cur() + 1); });
+    widget.querySelector('[data-action="last"]').addEventListener("click",  () => { stopPlay(); setStep(total); });
+    playBtn.addEventListener("click", () => timer ? stopPlay() : startPlay());
+    widget.addEventListener("keydown", e => {
+      if (e.key === "ArrowLeft")  { stopPlay(); setStep(cur() - 1); e.preventDefault(); }
+      if (e.key === "ArrowRight") { stopPlay(); setStep(cur() + 1); e.preventDefault(); }
+      if (e.key === "Home")       { stopPlay(); setStep(1); e.preventDefault(); }
+      if (e.key === "End")        { stopPlay(); setStep(total); e.preventDefault(); }
+      if (e.key === " ")          { timer ? stopPlay() : startPlay(); e.preventDefault(); }
+    });
+
+    setStep(1);
+  }
+
+  document.querySelectorAll(".scriba-widget").forEach(initWidget);
+})();
+</script>
+
+</body>
+</html>

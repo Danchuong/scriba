@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monkey and Apple-trees — Editorial</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="styles.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-title">Problem F · <strong>Monkey and Apple-trees</strong></div>
+    <div class="topbar-actions">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌓</button>
+      <label class="expert-toggle">
+        <input type="checkbox" id="expertToggle" role="switch" aria-pressed="false">
+        <span class="track"><span class="thumb"></span></span>
+        <span class="label">Chế độ chuyên gia</span>
+      </label>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+  <main class="content">
+
+    <aside class="tldr tldr-mobile" aria-label="TL;DR">
+      <div class="tldr-row"><span class="tldr-key">Kỹ thuật</span><span class="tldr-val">Sparse segment tree + lazy propagation</span></div>
+      <div class="tldr-row"><span class="tldr-key">Độ phức tạp</span><span class="tldr-val">$O(M \log N)$ time và space</span></div>
+      <div class="tldr-row"><span class="tldr-key">Insight</span><span class="tldr-val">Range $10^9$ nhưng chỉ ≤ $M$ update → tạo node động + treo lazy tag để skip subtree</span></div>
+    </aside>
+
+    <nav class="chip-strip" aria-label="Section navigation">
+      <a href="#insight" class="chip">Insight</a>
+      <a href="#code" class="chip">Code</a>
+      <a href="#complexity" class="chip">Complexity</a>
+      <a href="#pitfalls" class="chip">Pitfalls</a>
+    </nav>
+
+    <!-- §1 -->
+    <section class="sec sec-core" id="problem">
+      <h2><span class="num">§1</span> Đề bài tóm tắt</h2>
+      <p>
+        Có dãy cây táo đánh số $1$ đến $N \le 10^9$, ban đầu tất cả đều xanh. Có $M \le 10^5$ event:
+      </p>
+      <ul>
+        <li><b>Type 2 (cập nhật):</b> đoạn $[x+c, y+c]$ chuyển toàn bộ thành chín đỏ.</li>
+        <li><b>Type 1 (truy vấn):</b> đếm số cây đã chín đỏ trong $[x+c, y+c]$, in ra, và <b>cập nhật $c$</b> bằng kết quả.</li>
+      </ul>
+      <p>
+        Trick: $c$ phụ thuộc kết quả query trước nên bài này <b>online</b> — không thể nén tọa độ trước.
+      </p>
+    </section>
+
+    <!-- §2 -->
+    <section class="sec sec-core" id="insight">
+      <h2><span class="num">§2</span> Quan sát chìa khóa</h2>
+      <p>
+        Range $10^9$ quá lớn để dựng segment tree thường ($\sim 4 \cdot 10^9$ node). Nhưng số query chỉ $\le 10^5$,
+        và mỗi query chạm $O(\log N) \approx 30$ node. Tổng số node <b>thực sự chạm</b> khoảng $3 \cdot 10^6$ —
+        vừa bộ nhớ. Giải pháp:
+      </p>
+      <ul>
+        <li><b>Sparse segment tree</b>: chỉ allocate node khi range_set hoặc range_sum thực sự đi qua.</li>
+        <li><b>Lazy propagation</b>: range_set không đi xuống đến tận lá — gặp 1 node bị phủ kín thì <b>treo "lazy tag"</b> rồi dừng. Lần sau có ai đi xuống mới push tag xuống children.</li>
+      </ul>
+    </section>
+
+    <!-- §3 -->
+    <section class="sec sec-beginner" data-audience="beginner" id="naive">
+      <span class="badge">Cho người mới</span>
+      <h2><span class="num">§3</span> Tiếp cận ngây thơ</h2>
+      <p>
+        <b>Naive 1:</b> mảng <code>bool ripe[10⁹]</code> — 1 GB, MLE ngay.
+      </p>
+      <p>
+        <b>Naive 2:</b> nén tọa độ — gom tất cả $x, y$ rồi map về $\le 2M$ giá trị, dựng segtree thường. <em>Sai</em>:
+        bài <b>online</b>, $c$ thay đổi sau mỗi query → không biết trước các giá trị cần nén.
+      </p>
+      <p>
+        <b>Naive 3:</b> segtree thường size $10^9$ — vẫn MLE vì cần $4 \cdot 10^9$ node ngay từ build.
+      </p>
+      <p>
+        Cả ba thất bại vì chúng <em>cấp phát toàn bộ cây từ đầu</em>. Quan sát: bài chỉ chạm tới rất ít node trong $10^9$ — phải <b>tạo node lười</b>.
+      </p>
+    </section>
+
+    <!-- §4 -->
+    <section class="sec sec-beginner" data-audience="beginner" id="idea">
+      <span class="badge">Cho người mới</span>
+      <h2><span class="num">§4</span> Ý tưởng thuật toán</h2>
+      <p>
+        Hai ý tưởng kết hợp.
+      </p>
+      <p>
+        <b>Ý 1 — Sparse (cây thưa).</b> Thay vì dựng cây đầy đủ trước, ta bắt đầu chỉ với root đại diện $[0, N-1]$.
+        Mỗi lần thuật toán <em>cần</em> đi xuống con trái/phải, kiểm tra: nếu con đó chưa tồn tại, <b>tạo mới</b>. Sau $M$ query,
+        số node được tạo $\le M \cdot \log N$ — vừa bộ nhớ.
+      </p>
+      <p>
+        <b>Ý 2 — Lazy propagation (treo nhãn lười).</b> Khi cập nhật $[\ell, r]$ và gặp 1 node có range $[a, b]$ <em>nằm trọn</em> trong $[\ell, r]$,
+        ta <b>không đi xuống</b> các con của nó. Thay vào đó:
+      </p>
+      <ul>
+        <li>Cập nhật <code>freq</code> của node = $b - a + 1$ (toàn bộ chín đỏ).</li>
+        <li>Treo <code>lazy = 1</code> trên node — nghĩa là "cả subtree này đã được set đỏ, nhưng tao chưa thông báo cho con cháu".</li>
+      </ul>
+      <p>
+        Lần sau, nếu có truy vấn cần đi <em>xuống</em> qua node này (vì query không phủ kín), ta mới <b>push_down</b>:
+        truyền lazy xuống cả 2 con (set <code>freq</code> + <code>lazy</code> của con), rồi xóa lazy ở mình. Việc trì hoãn này
+        biến range update từ $O(N)$ thành $O(\log N)$.
+      </p>
+      <p>
+        Kết hợp 2 ý: range_set không tạo nodes vô ích (treo lazy là đủ); chỉ khi range_sum cần descend qua 1 node lazy, các con của nó mới được tạo.
+      </p>
+    </section>
+
+    <!-- §5 -->
+    <section class="sec sec-beginner" data-audience="beginner" id="visualize">
+      <span class="badge">Cho người mới</span>
+      <h2><span class="num">§5</span> Hình dung — Lazy propagation chạy thật</h2>
+      <p class="muted">
+        Widget bên dưới mô phỏng segtree trên range $[0, 7]$. Theo dõi: <b>node nào được tạo</b>, <b>lazy tag</b> ở đâu,
+        và <b>khoảnh khắc push_down</b> ở step 8 — đó chính là lúc lazy được truyền xuống và 2 children mới sinh ra.
+      </p>
+
+      <div class="widget-segtree" id="segtreeWidget"></div>
+    </section>
+
+    <!-- §6 -->
+    <section class="sec sec-beginner" data-audience="beginner" id="proof">
+      <span class="badge">Cho người mới</span>
+      <h2><span class="num">§6</span> Vì sao lazy đúng</h2>
+      <p>
+        <b>Bất biến lazy:</b> tại mọi thời điểm, với mỗi node $v$, giá trị <code>v.freq</code> luôn phản ánh <em>đúng</em>
+        tổng số cây chín trong range của $v$ — kể cả khi <code>v.lazy = 1</code> chưa được đẩy xuống. Lazy chỉ là "nợ kỹ thuật"
+        đối với <em>các con</em>, không ảnh hưởng giá trị tại $v$.
+      </p>
+      <p>
+        Khi range_set treo lazy ở $v$, ta cập nhật ngay <code>v.freq</code> = full coverage → bất biến giữ.
+        Khi push_down, ta truyền lazy xuống 2 con (cập nhật <code>freq</code> + <code>lazy</code> của con) rồi reset $v$.lazy = 0.
+        Cả 2 con bây giờ "trả nợ" được — bất biến vẫn giữ trên cả 3.
+      </p>
+      <p>
+        Vì range_set chỉ treo lazy ở các node phủ kín và recurse qua các node biên, mỗi update chạm $O(\log N)$ node — đó là lý do range update thành $O(\log N)$.
+      </p>
+    </section>
+
+    <!-- §7 -->
+    <section class="sec sec-core" id="implementation">
+      <h2><span class="num">§7</span> Cài đặt</h2>
+      <ol>
+        <li><b>Node struct.</b> <code>freq</code> (sum của subtree), <code>lazy</code> (tag chờ push), <code>left</code>, <code>right</code> (con trỏ hoặc index, mặc định null).</li>
+        <li><b><code>apply(node, len, val)</code></b>: cập nhật <code>node.freq = len * val</code> và <code>node.lazy = val</code>. Đây là nơi "treo" lazy.</li>
+        <li><b><code>push_down(cur, l, r)</code></b>: tạo 2 con nếu chưa có, gọi <code>apply</code> trên cả 2 con với len tương ứng, reset <code>cur.lazy = 0</code>.</li>
+        <li><b><code>range_set(cur, l, r, ql, qr, val)</code></b>: 3 case — disjoint return, contained → apply, partial → push_down + recurse + recompute <code>cur.freq</code>.</li>
+        <li><b><code>range_sum(cur, l, r, ql, qr)</code></b>: tương tự, contained → return <code>cur.freq</code>; partial → push_down + recurse + sum.</li>
+        <li><b>Online query <code>c</code>:</b> đọc <code>x, y</code> rồi cộng $c$ vào <em>trong main</em>, không phải sửa input. Sau mỗi type-1, gán <code>c</code> = kết quả.</li>
+      </ol>
+    </section>
+
+    <!-- §8 -->
+    <section class="sec sec-core" id="code">
+      <h2><span class="num">§8</span> Code C++</h2>
+
+      <div class="code-block">
+        <p class="code-cap">Block 1 — Node + apply + push_down. Đây là nơi "lazy" được treo và truyền xuống.</p>
+        <pre><code>struct Node {
+    int freq = 0, lazy = 0;
+    Node *left = nullptr, *right = nullptr;
+};
+Node *root = new Node();
+
+void apply(Node *cur, int len, int val) {
+    if (val == 1) {              // chỉ set thành đỏ
+        cur-&gt;lazy = val;
+        cur-&gt;freq = len * val;
+    }
+}
+
+void push_down(Node *cur, int l, int r) {
+    if (!cur-&gt;left)  cur-&gt;left  = new Node();
+    if (!cur-&gt;right) cur-&gt;right = new Node();
+    int m = (l + r) / 2;
+    apply(cur-&gt;left,  m - l + 1, cur-&gt;lazy);
+    apply(cur-&gt;right, r - m,     cur-&gt;lazy);
+    // Lưu ý: bài này không cần reset lazy về 0
+    // vì chỉ có 1 loại update (set 1) — đã set rồi thì không undo.
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <p class="code-cap">Block 2 — range_set với 3 case (disjoint / contained / partial).</p>
+        <pre><code>void range_set(Node *cur, int l, int r, int ql, int qr, int val) {
+    if (qr &lt; l || ql &gt; r) return;                    // disjoint
+    if (ql &lt;= l &amp;&amp; r &lt;= qr) {                          // contained
+        apply(cur, r - l + 1, val);                    // treo lazy, dừng
+        return;
+    }
+    push_down(cur, l, r);                              // partial → đi xuống
+    int m = (l + r) / 2;
+    range_set(cur-&gt;left,  l,     m, ql, qr, val);
+    range_set(cur-&gt;right, m + 1, r, ql, qr, val);
+    cur-&gt;freq = cur-&gt;left-&gt;freq + cur-&gt;right-&gt;freq;    // recompute
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <p class="code-cap">Block 3 — range_sum + main. Online <code>c</code> được cộng vào ngay trong main.</p>
+        <pre><code>int range_sum(Node *cur, int l, int r, int ql, int qr) {
+    if (qr &lt; l || ql &gt; r) return 0;
+    if (ql &lt;= l &amp;&amp; r &lt;= qr) return cur-&gt;freq;
+    push_down(cur, l, r);
+    int m = (l + r) / 2;
+    return range_sum(cur-&gt;left, l, m, ql, qr)
+         + range_sum(cur-&gt;right, m + 1, r, ql, qr);
+}
+
+int main() {
+    int M; cin &gt;&gt; M;
+    const int N = 1e9;
+    int c = 0;
+    while (M--) {
+        int d, x, y; cin &gt;&gt; d &gt;&gt; x &gt;&gt; y;
+        x += c; y += c;                   // online: cộng c vào trong main
+        if (d == 1) {
+            c = range_sum(root, 0, N, x, y);
+            cout &lt;&lt; c &lt;&lt; '\n';
+        } else {
+            range_set(root, 0, N, x, y, 1);
+        }
+    }
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- §9 -->
+    <section class="sec sec-core" id="complexity">
+      <h2><span class="num">§9</span> Độ phức tạp</h2>
+      <p>
+        <b>Time:</b> mỗi query chạm $O(\log N) \approx 30$ node, tổng $O(M \log N) \approx 3 \cdot 10^6$ thao tác.
+        <b>Space:</b> số node tạo ra $O(M \log N) \approx 3 \cdot 10^6$ nodes ≈ 100 MB với pointer. Dùng index implementation tiết kiệm hơn (~50 MB).
+      </p>
+    </section>
+
+    <!-- §10 -->
+    <section class="sec sec-core" id="pitfalls">
+      <h2><span class="num">§10</span> Bẫy thường gặp</h2>
+      <ul class="pitfalls">
+        <li><b>Quên cộng <code>c</code> trong main.</b> Bài <em>online</em> — phải $x + c, y + c$ <em>tại thời điểm đọc query</em>, không phải hardcode trong input.</li>
+        <li><b>Tạo node trong <code>range_sum</code> ở case disjoint.</b> Lỗi này khiến cây phình gấp $4\times$ → MLE. Chỉ tạo node trong <code>push_down</code>, không phải mỗi lần descend.</li>
+        <li><b>Sai công thức len cho lazy.</b> Left con cover $[l, m]$ → len $= m - l + 1$. Right con cover $[m+1, r]$ → len $= r - m$. Đảo nhầm sẽ ra freq sai.</li>
+        <li><b>Reserve vector không đủ trong index implementation.</b> Vector reallocate → con trỏ nội bộ invalid. Dùng <code>tree.reserve(2 * M * log(N))</code> ngay đầu.</li>
+        <li><b>Quên recompute <code>cur.freq</code></b> sau khi recurse trong range_set partial case — root.freq vẫn cũ → tất cả query sai sau đó.</li>
+      </ul>
+    </section>
+
+    <!-- §11 -->
+    <section class="sec sec-core" id="related">
+      <h2><span class="num">§11</span> Bài tương tự</h2>
+      <ul class="related">
+        <li><b>CSES Range Updates and Sums</b> <span class="diff easy">easy</span> — segtree lazy cổ điển, range nhỏ, không cần sparse.</li>
+        <li><b>CSES Hotel Queries</b> <span class="diff easy">easy</span> — segtree với binary search xuống cây.</li>
+        <li><b>CSES List Removals</b> <span class="diff med">medium</span> — segtree với "k-th unfilled".</li>
+        <li><b>Codeforces 915E "Physical Education Lessons"</b> <span class="diff med">medium</span> — y chang Monkey Apple-trees nhưng range $10^9$ và 2 loại set (0 và 1).</li>
+        <li><b>Codeforces "Chtholly tree"</b> <span class="diff hard">hard</span> — kỹ thuật khác cho range assign + range query, đôi khi nhanh hơn segtree lazy.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <aside class="tldr tldr-rail" aria-label="TL;DR">
+    <div class="tldr-card">
+      <div class="tldr-title">TL;DR</div>
+      <div class="tldr-row">
+        <div class="tldr-key">Kỹ thuật</div>
+        <div class="tldr-val">Sparse segment tree + lazy propagation</div>
+      </div>
+      <div class="tldr-row">
+        <div class="tldr-key">Độ phức tạp</div>
+        <div class="tldr-val">$O(M \log N)$ time<br>$O(M \log N)$ space</div>
+      </div>
+      <div class="tldr-row">
+        <div class="tldr-key">Insight</div>
+        <div class="tldr-val">Range $10^9$ nhưng chỉ ≤ $M$ update → tạo node động + treo lazy tag để skip subtree</div>
+      </div>
+      <div class="tldr-anchors">
+        <a href="#code">→ Code</a>
+        <a href="#complexity">→ Complexity</a>
+        <a href="#pitfalls">→ Pitfalls</a>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<script defer src="app.js"></script>
+</body>
+</html>

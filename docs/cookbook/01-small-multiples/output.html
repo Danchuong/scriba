@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Scriba output — Example 01: Small multiples</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false}]})"></script>
+<style>
+  body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    max-width: 760px;
+    margin: 2rem auto;
+    padding: 0 1.5rem 4rem;
+    color: #0f172a;
+    line-height: 1.6;
+    background: #f8fafc;
+  }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .meta { color: #64748b; font-size: .85rem; margin: 0 0 2rem; }
+
+  /* ============== Scriba figure output ============== */
+  figure.scriba-figure {
+    margin: 2rem 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px 20px 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.03);
+  }
+  figure.scriba-figure .scriba-figure-body {
+    background: #f8fafc;
+    border-radius: 6px;
+    padding: 24px 16px;
+    margin-bottom: 14px;
+  }
+  figure.scriba-figure svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+  }
+  figure.scriba-figure figcaption {
+    font-size: .84rem;
+    color: #475569;
+    text-align: left;
+    line-height: 1.55;
+  }
+  figure.scriba-figure figcaption .fig-num {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  /* D2-rendered SVG styling (what D2 emits, reproduced here) */
+  .sm-panel { }
+  .sm-panel-label {
+    font: 600 12px "Inter", system-ui, sans-serif;
+    fill: #64748b;
+    text-anchor: middle;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .sm-bubble {
+    stroke-width: 2;
+  }
+  .sm-bubble.info {
+    fill: #dbeafe;
+    stroke: #2563eb;
+  }
+  .sm-bubble.danger {
+    fill: #fde2e2;
+    stroke: #dc2626;
+  }
+  .sm-bubble-label {
+    font: 700 14px "JetBrains Mono", ui-monospace, monospace;
+    fill: #0f172a;
+    text-anchor: middle;
+  }
+  .sm-bubble-label.big {
+    font-size: 16px;
+  }
+  .sm-bubble-count {
+    font: 500 11px ui-monospace, monospace;
+    fill: #64748b;
+    text-anchor: middle;
+  }
+</style>
+</head>
+<body>
+
+<h1>Example 01 — Small multiples output</h1>
+<p class="meta">Expected HTML mà Scriba compiler emit cho <code>input.md</code>. Figure duy nhất, static, không JS controller.</p>
+
+<!-- ============================================================
+     Scriba-emitted figure
+     ============================================================ -->
+<figure class="scriba-figure"
+        id="fig-state-space"
+        data-scriba-kind="figure"
+        data-scriba-src="input.md:4">
+
+  <div class="scriba-figure-body">
+    <!-- This SVG is what D2 would emit for the compiled D2 source.
+         In production, Scriba invokes `d2` subprocess and pipes the
+         result here. Reproduced manually for cookbook demo. -->
+    <svg viewBox="0 0 620 240" role="img" aria-label="State space sizes across grid dimensions">
+
+      <!-- Panel 1: 2x2 grid -->
+      <g class="sm-panel" data-scriba-src="input.md:8" transform="translate(100, 30)">
+        <text class="sm-panel-label" x="0" y="0">2×2 grid</text>
+        <circle class="sm-bubble info" cx="0" cy="100" r="24"/>
+        <text class="sm-bubble-label" x="0" y="104">4!</text>
+        <text class="sm-bubble-count" x="0" y="155">24 states</text>
+      </g>
+
+      <!-- Panel 2: 2x3 grid -->
+      <g class="sm-panel" data-scriba-src="input.md:12" transform="translate(310, 30)">
+        <text class="sm-panel-label" x="0" y="0">2×3 grid</text>
+        <circle class="sm-bubble info" cx="0" cy="100" r="48"/>
+        <text class="sm-bubble-label" x="0" y="104">6!</text>
+        <text class="sm-bubble-count" x="0" y="175">720 states</text>
+      </g>
+
+      <!-- Panel 3: 3x3 grid (danger color) -->
+      <g class="sm-panel" data-scriba-src="input.md:16" transform="translate(520, 30)">
+        <text class="sm-panel-label" x="0" y="0">3×3 grid</text>
+        <circle class="sm-bubble danger" cx="0" cy="110" r="82"/>
+        <text class="sm-bubble-label big" x="0" y="115">9!</text>
+        <text class="sm-bubble-count" x="0" y="210">362 880 states</text>
+      </g>
+    </svg>
+  </div>
+
+  <figcaption>
+    <span class="fig-num">Hình 1.</span>
+    State space bùng nổ theo $n!$. $9!$ vẫn vừa bộ nhớ ⇒ BFS duyệt được.
+  </figcaption>
+</figure>
+
+<h2 style="font-size:1.05rem; color:#334155;">Notes on what you're seeing</h2>
+<ul style="font-size:.9rem; color:#475569;">
+  <li>
+    <strong>No JavaScript</strong> for this figure. Static figures không cần step controller.
+    Chỉ có KaTeX auto-render (inherited từ Scriba TeX plugin) để render <code>$n!$</code> trong caption.
+  </li>
+  <li>
+    <code>figure</code> có attributes <code>id="fig-state-space"</code>, <code>data-scriba-kind="figure"</code>,
+    <code>data-scriba-src="input.md:4"</code>. Consumer có thể <code>\ref{fig:state-space}</code> ở prose →
+    auto-numbered link.
+  </li>
+  <li>
+    Mỗi panel group <code>&lt;g class="sm-panel"&gt;</code> có <code>data-scriba-src</code> chỉ về line trong
+    <code>input.md</code> mà panel đó được khai báo. Dev tool inspect → nhảy về source. Production build
+    có thể strip attr này để giảm size.
+  </li>
+  <li>
+    Bubble <code>r</code> (radius) được compute từ <code>log(value) × scale</code>: 24 → r=24, 720 → r=48,
+    362880 → r=82. Tác giả không set r thủ công.
+  </li>
+  <li>
+    Panel thứ 3 dùng <code>color=danger</code> → compile xuống D2 <code>style.fill: "#fde2e2"</code>,
+    <code>style.stroke: "#dc2626"</code>. Semantic mapping từ color name sang Wong palette.
+  </li>
+</ul>
+
+</body>
+</html>

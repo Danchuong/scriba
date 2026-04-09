@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Scriba output — Example 07: Swap Game BFS</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false}]})"></script>
+<style>
+  :root {
+    --fg: #0f172a;
+    --muted: #64748b;
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --accent-soft: #dbeafe;
+    --warn: #f59e0b;
+    --warn-soft: #fef3c7;
+    --good: #059669;
+    --good-soft: #d1fae5;
+  }
+  body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    max-width: 920px;
+    margin: 2rem auto;
+    padding: 0 1.5rem 4rem;
+    color: var(--fg);
+    line-height: 1.6;
+    background: var(--bg);
+  }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .meta { color: var(--muted); font-size: .85rem; margin: 0 0 2rem; }
+  kbd {
+    font: 11px ui-monospace, monospace;
+    border: 1px solid #cbd5e1;
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 5px;
+    background: #fff;
+  }
+
+  /* ============ SCRIBA WIDGET ============ */
+  figure.scriba-widget {
+    margin: 2rem 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+  }
+  figure.scriba-widget:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .scriba-widget-svg {
+    background: var(--bg);
+    padding: 1.5rem 1rem 1rem;
+    display: grid;
+    grid-template-columns: minmax(160px, 200px) 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .scene-label {
+    font: 500 10px "Inter", system-ui, sans-serif;
+    fill: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    text-anchor: start;
+  }
+
+  /* current state column */
+  .current-col { text-align: center; }
+  .current-col svg { width: 140px; height: 140px; }
+  .meta-row {
+    display: flex;
+    justify-content: space-between;
+    font: 500 .78rem ui-monospace, monospace;
+    color: var(--muted);
+    padding: .15rem .25rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  .meta-row .v { color: var(--fg); }
+
+  /* queue column */
+  .queue-col { min-width: 0; }
+  .queue-col svg { width: 100%; height: auto; max-height: 180px; }
+
+  /* grid cell styling */
+  .cell-bg {
+    fill: #ffffff;
+    stroke: #cbd5e1;
+    stroke-width: 1.2;
+    transition: all 250ms ease;
+  }
+  .cell-bg.target { fill: var(--good-soft); stroke: var(--good); }
+  .cell-bg.hl     { fill: var(--warn-soft); stroke: var(--warn); }
+  .cell-txt {
+    font: 700 14px ui-monospace, monospace;
+    text-anchor: middle;
+    fill: var(--fg);
+    pointer-events: none;
+  }
+
+  /* queue cell */
+  .q-cell .frame {
+    fill: #ffffff;
+    stroke: #cbd5e1;
+    stroke-width: 1.2;
+    transition: all 250ms ease;
+  }
+  .q-cell.head .frame { fill: var(--accent-soft); stroke: var(--accent); }
+  .q-cell.target-found .frame { fill: var(--good-soft); stroke: var(--good); stroke-width: 2; }
+  .q-label {
+    font: 500 10px "Inter", system-ui, sans-serif;
+    fill: var(--muted);
+    text-anchor: start;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+  .q-depth {
+    font: 600 9px ui-monospace, monospace;
+    fill: var(--muted);
+    text-anchor: middle;
+  }
+
+  /* badge (current-state annotation) */
+  .badge {
+    font: 600 .72rem ui-monospace, monospace;
+    display: inline-block;
+    padding: .15rem .5rem;
+    border-radius: 999px;
+    margin-top: .35rem;
+    opacity: 0;
+    transition: opacity 200ms;
+  }
+  .badge.show { opacity: 1; }
+  .badge.warn { background: var(--warn-soft); color: #78350f; border: 1px solid var(--warn); }
+  .badge.info { background: var(--accent-soft); color: #0c4a6e; border: 1px solid var(--accent); }
+  .badge.good { background: var(--good-soft); color: #064e3b; border: 1px solid var(--good); }
+
+  /* ============ CONTROLS ============ */
+  .scriba-widget-controls {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem 1rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .scriba-widget-controls button {
+    font: 500 .85rem "Inter", system-ui, sans-serif;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    color: var(--fg);
+    padding: .45rem .85rem;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 150ms;
+  }
+  .scriba-widget-controls button:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: var(--muted);
+  }
+  .scriba-widget-controls button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+  }
+  .scriba-widget-controls button[data-action="play"].playing {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .scriba-widget-counter {
+    margin-left: auto;
+    font: 500 .82rem ui-monospace, monospace;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ============ PROGRESS BARS ============ */
+  .scriba-widget-progress {
+    display: flex;
+    gap: 4px;
+    padding: 0 1rem .75rem;
+    background: var(--surface);
+  }
+  .scriba-widget-progress .bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--border);
+    transition: background 220ms;
+  }
+  .scriba-widget-progress .bar.done { background: var(--accent); }
+
+  /* ============ NARRATION ============ */
+  .scriba-widget-narration {
+    padding: 1rem 1.25rem 1.25rem;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    min-height: 5rem;
+  }
+  .scriba-widget-narration .step-title {
+    font: 600 .72rem ui-monospace, monospace;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin: 0 0 .4rem;
+  }
+  .scriba-widget-narration p {
+    margin: 0;
+    color: var(--fg);
+    display: none;
+    font-size: .92rem;
+  }
+  .scriba-widget-narration p.active { display: block; }
+
+  /* ============ PREDICT BOX ============ */
+  .predict-box {
+    margin: .75rem 0 0;
+    padding: .85rem 1rem;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 8px;
+    display: none;
+  }
+  .predict-box.show { display: block; }
+  .predict-box .prompt {
+    font: 600 .88rem "Inter", system-ui, sans-serif;
+    margin: 0 0 .6rem;
+    color: #7c2d12;
+  }
+  .predict-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .4rem;
+  }
+  .predict-options button {
+    font: 500 .82rem "Inter", system-ui, sans-serif;
+    background: #fff;
+    border: 1px solid #fdba74;
+    color: #7c2d12;
+    padding: .4rem .6rem;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .predict-options button:hover { background: #fef3c7; }
+  .predict-result {
+    margin-top: .6rem;
+    font: 500 .82rem "Inter", system-ui, sans-serif;
+    min-height: 1.2rem;
+  }
+  .predict-result.right { color: var(--good); }
+  .predict-result.wrong { color: #b91c1c; }
+</style>
+</head>
+<body>
+
+<h1>Example 07 — Swap Game BFS output</h1>
+<p class="meta">
+  8-step scene. BFS trên $3\times3$ swap space với input $[3,1,2/4,5,6/7,8,9]$.
+  Thử: Next/Prev, <kbd>←</kbd>/<kbd>→</kbd>, Space để Play. Dừng ở step 6 để predict.
+  Click widget trước để focus keyboard nav.
+</p>
+
+<!-- ============================================================
+     Scriba-emitted animated widget
+     ============================================================ -->
+<figure class="scriba-widget"
+        id="widget-swap-game"
+        data-scriba-kind="scene"
+        data-scriba-src="input.md:12"
+        data-step-current="1"
+        data-step-total="8"
+        tabindex="0"
+        aria-label="Swap Game BFS walkthrough, 8 steps">
+
+  <div class="scriba-widget-svg">
+
+    <!-- ========= CURRENT STATE COLUMN ========= -->
+    <div class="current-col">
+      <svg viewBox="0 0 100 100" role="img" aria-label="Current state grid">
+        <g id="cur-grid" transform="translate(8, 8)">
+          <!-- 9 cells, populated from STEPS.current -->
+          <g id="cur-cell-0"><rect class="cell-bg" x="0"  y="0"  width="26" height="26" rx="3"/><text class="cell-txt" x="13" y="18"></text></g>
+          <g id="cur-cell-1"><rect class="cell-bg" x="28" y="0"  width="26" height="26" rx="3"/><text class="cell-txt" x="41" y="18"></text></g>
+          <g id="cur-cell-2"><rect class="cell-bg" x="56" y="0"  width="26" height="26" rx="3"/><text class="cell-txt" x="69" y="18"></text></g>
+          <g id="cur-cell-3"><rect class="cell-bg" x="0"  y="28" width="26" height="26" rx="3"/><text class="cell-txt" x="13" y="46"></text></g>
+          <g id="cur-cell-4"><rect class="cell-bg" x="28" y="28" width="26" height="26" rx="3"/><text class="cell-txt" x="41" y="46"></text></g>
+          <g id="cur-cell-5"><rect class="cell-bg" x="56" y="28" width="26" height="26" rx="3"/><text class="cell-txt" x="69" y="46"></text></g>
+          <g id="cur-cell-6"><rect class="cell-bg" x="0"  y="56" width="26" height="26" rx="3"/><text class="cell-txt" x="13" y="74"></text></g>
+          <g id="cur-cell-7"><rect class="cell-bg" x="28" y="56" width="26" height="26" rx="3"/><text class="cell-txt" x="41" y="74"></text></g>
+          <g id="cur-cell-8"><rect class="cell-bg" x="56" y="56" width="26" height="26" rx="3"/><text class="cell-txt" x="69" y="74"></text></g>
+        </g>
+      </svg>
+      <div class="meta-row"><span class="k">depth</span><span class="v" id="cur-depth">—</span></div>
+      <div class="meta-row"><span class="k">seen</span><span class="v" id="cur-seen">1</span></div>
+      <span class="badge info" id="cur-badge"></span>
+    </div>
+
+    <!-- ========= QUEUE COLUMN ========= -->
+    <div class="queue-col">
+      <svg viewBox="0 0 560 170" role="img" aria-label="BFS queue FIFO">
+        <text class="q-label" x="0" y="12">queue (fifo →)</text>
+        <g transform="translate(0, 22)">
+          <!-- 12 slots + overflow -->
+          <g class="q-cell" id="q-cell-0"><rect class="frame" x="0"   y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(4,4)"></g><text class="q-depth" x="19" y="52"></text></g>
+          <g class="q-cell" id="q-cell-1"><rect class="frame" x="42"  y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(46,4)"></g><text class="q-depth" x="61" y="52"></text></g>
+          <g class="q-cell" id="q-cell-2"><rect class="frame" x="84"  y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(88,4)"></g><text class="q-depth" x="103" y="52"></text></g>
+          <g class="q-cell" id="q-cell-3"><rect class="frame" x="126" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(130,4)"></g><text class="q-depth" x="145" y="52"></text></g>
+          <g class="q-cell" id="q-cell-4"><rect class="frame" x="168" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(172,4)"></g><text class="q-depth" x="187" y="52"></text></g>
+          <g class="q-cell" id="q-cell-5"><rect class="frame" x="210" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(214,4)"></g><text class="q-depth" x="229" y="52"></text></g>
+          <g class="q-cell" id="q-cell-6"><rect class="frame" x="252" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(256,4)"></g><text class="q-depth" x="271" y="52"></text></g>
+          <g class="q-cell" id="q-cell-7"><rect class="frame" x="294" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(298,4)"></g><text class="q-depth" x="313" y="52"></text></g>
+          <g class="q-cell" id="q-cell-8"><rect class="frame" x="336" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(340,4)"></g><text class="q-depth" x="355" y="52"></text></g>
+          <g class="q-cell" id="q-cell-9"><rect class="frame" x="378" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(382,4)"></g><text class="q-depth" x="397" y="52"></text></g>
+          <g class="q-cell" id="q-cell-10"><rect class="frame" x="420" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(424,4)"></g><text class="q-depth" x="439" y="52"></text></g>
+          <g class="q-cell" id="q-cell-11"><rect class="frame" x="462" y="0" width="38" height="38" rx="4"/><g class="mini" transform="translate(466,4)"></g><text class="q-depth" x="481" y="52"></text></g>
+          <text id="q-overflow" class="q-depth" x="520" y="24" style="font-size:11px"></text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="scriba-widget-controls">
+    <button data-action="first" aria-label="First step">⏮</button>
+    <button data-action="prev"  aria-label="Prev step">◀ Prev</button>
+    <button data-action="play"  aria-label="Play">▶ Play</button>
+    <button data-action="next"  aria-label="Next step">Next ▶</button>
+    <button data-action="last"  aria-label="Last step">⏭</button>
+    <span class="scriba-widget-counter">
+      Step <span class="cur">1</span> / 8
+    </span>
+  </div>
+
+  <div class="scriba-widget-progress">
+    <div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div>
+  </div>
+
+  <div class="scriba-widget-narration">
+    <p class="step-title" id="step-title">STEP 1 — INIT</p>
+    <p data-step="1" class="active">
+      Khởi tạo: $\text{queue} = [(start, d{=}0)]$, $\text{seen} = \{start\}$. Chưa có gì xảy ra.
+    </p>
+    <p data-step="2">
+      Pop đầu queue: $(3,1,2,\dots)$ ở $d{=}0$. Queue rỗng tạm thời.
+    </p>
+    <p data-step="3">
+      $start \ne target$. Không return. Chuyển sang expand.
+    </p>
+    <p data-step="4">
+      Duyệt 12 edge, sinh 12 state mới, tất cả chưa trong $seen$. Push vào queue với $d{=}1$.
+    </p>
+    <p data-step="5">
+      Pop $(1,3,2,\dots)$ ở $d{=}1$. Còn 11 phần tử trong queue.
+    </p>
+    <p data-step="6">
+      Ta sắp expand $(1,3,2,\dots)$. Một trong 12 neighbor chính là target. <strong>Edge nào?</strong>
+    </p>
+    <p data-step="7">
+      Khi tới edge $(1,2)$ trên $A$: swap cho $(1,2,3,\dots)$ = target. Chưa trong seen ⇒ push với $d{=}2$.
+    </p>
+    <p data-step="8">
+      BFS pop hết state $d{=}1$, rồi pop $(1,2,3,\dots)$ ở $d{=}2$. $s == target$ ⇒ <strong>return 2</strong>.
+    </p>
+
+    <!-- Predict box — only shown on step 6 -->
+    <div class="predict-box" id="predict-box">
+      <p class="prompt">🔮 Swap nào trên $(1,3,2,\dots)$ cho ra $(1,2,3,\dots)$?</p>
+      <div class="predict-options">
+        <button data-correct="0">edge (0,1) — 2 ô trên cùng</button>
+        <button data-correct="1">edge (1,2) — ô giữa &amp; phải trên</button>
+        <button data-correct="0">edge (3,4) — hàng giữa trái</button>
+        <button data-correct="0">edge (0,3) — cột 1</button>
+      </div>
+      <div class="predict-result" id="predict-result"></div>
+    </div>
+  </div>
+</figure>
+
+<h2 style="font-size:1.05rem; color:#334155;">Notes on what you're seeing</h2>
+<ul style="font-size:.9rem; color:#475569;">
+  <li>
+    <strong>Current state</strong> (trái) = 9 cell của lưới $3\times3$, runtime chỉ set <code>text</code>
+    + <code>class</code>. Cell có giá trị đúng vị trí (target) tô xanh. Highlight pair (cell swap) tô vàng.
+  </li>
+  <li>
+    <strong>Queue strip</strong> (phải) = 12 slot cố định + overflow counter. Slot đầu (<code>head</code>)
+    tô xanh dương. Slot chứa target được tag <code>target-found</code> tô xanh lá viền đậm.
+  </li>
+  <li>
+    <strong>Predict box</strong> chỉ show ở step 6. Click option sai → đỏ; click option đúng → xanh.
+    Reader có thể Next để bỏ qua nếu không muốn đoán.
+  </li>
+  <li>
+    <strong>Cumulative</strong> — mỗi step là một delta. Step 4 kế thừa "current = start" từ step 2,
+    chỉ thêm 12 item vào queue. Step 5 pop head, current đổi sang A.
+  </li>
+  <li>
+    <strong>Keyboard</strong>: ← prev, → next, Space toggle play, Home/End first/last.
+  </li>
+</ul>
+
+<!-- ============================================================
+     scriba-steps.js — inline for demo.
+     ============================================================ -->
+<script>
+(function() {
+  // ============ Problem data ============
+  const START  = [3,1,2,4,5,6,7,8,9];
+  const TARGET = [1,2,3,4,5,6,7,8,9];
+  const EDGES = [
+    [0,1],[1,2],[3,4],[4,5],[6,7],[7,8],
+    [0,3],[1,4],[2,5],[3,6],[4,7],[5,8],
+  ];
+  const swap = (s, i, j) => {
+    const t = s.slice();
+    [t[i], t[j]] = [t[j], t[i]];
+    return t;
+  };
+  const eq = (a, b) => a.join("") === b.join("");
+  const A = swap(START, 0, 1); // [1,3,2,4,5,6,7,8,9]
+
+  // 12 neighbors of START in EDGE order
+  const N0 = EDGES.map(([i,j]) => swap(START, i, j));
+
+  // ============ Step database ============
+  // Each frame: { current, curHL, depth, seen, queue, badge, predict }
+  const STEPS = {
+    1: {
+      current: START, curHL: [], depth: "—", seen: 1,
+      queue: [{ state: START, d: 0 }],
+      badge: null,
+    },
+    2: {
+      current: START, curHL: [], depth: "d = 0", seen: 1,
+      queue: [],
+      badge: null,
+    },
+    3: {
+      current: START, curHL: [], depth: "d = 0", seen: 1,
+      queue: [],
+      badge: { text: "s ≠ target", cls: "warn" },
+    },
+    4: {
+      current: START, curHL: [], depth: "d = 0", seen: 13,
+      queue: N0.map(s => ({ state: s, d: 1 })),
+      badge: { text: "12 neighbors", cls: "info" },
+    },
+    5: {
+      current: A, curHL: [0,1], depth: "d = 1", seen: 13,
+      queue: N0.slice(1).map(s => ({ state: s, d: 1 })),
+      badge: null,
+    },
+    6: {
+      current: A, curHL: [0,1], depth: "d = 1", seen: 13,
+      queue: N0.slice(1).map(s => ({ state: s, d: 1 })),
+      badge: null,
+      predict: true,
+    },
+    7: {
+      current: A, curHL: [1,2], depth: "d = 1", seen: 14,
+      queue: [
+        ...N0.slice(1).map(s => ({ state: s, d: 1 })),
+        { state: TARGET, d: 2, isTarget: true },
+      ],
+      badge: null,
+    },
+    8: {
+      current: TARGET, curHL: [], depth: "d = 2", seen: 14,
+      queue: [],
+      badge: { text: "return 2", cls: "good" },
+    },
+  };
+
+  const TITLES = {
+    1: "STEP 1 — INIT",
+    2: "STEP 2 — POP start",
+    3: "STEP 3 — CHECK TARGET",
+    4: "STEP 4 — EXPAND (12 neighbors)",
+    5: "STEP 5 — POP neighbor #1",
+    6: "STEP 6 — BẠN ĐOÁN XEM",
+    7: "STEP 7 — PUSH target",
+    8: "STEP 8 — POP target, RETURN 2",
+  };
+
+  // ============ Mini-grid renderer for queue cells ============
+  const NS = "http://www.w3.org/2000/svg";
+  function renderMini(g, state, isTarget) {
+    while (g.firstChild) g.removeChild(g.firstChild);
+    const cell = 10, gap = 0;
+    for (let i = 0; i < 9; i++) {
+      const r = Math.floor(i / 3), c = i % 3;
+      const x = c * (cell + gap);
+      const y = r * (cell + gap);
+      const rect = document.createElementNS(NS, "rect");
+      rect.setAttribute("x", x);
+      rect.setAttribute("y", y);
+      rect.setAttribute("width", cell);
+      rect.setAttribute("height", cell);
+      rect.setAttribute("rx", 1);
+      rect.setAttribute("fill", isTarget && state[i] === i+1 ? "#d1fae5" : "#ffffff");
+      rect.setAttribute("stroke", "#cbd5e1");
+      rect.setAttribute("stroke-width", "0.5");
+      g.appendChild(rect);
+      const txt = document.createElementNS(NS, "text");
+      txt.setAttribute("x", x + cell/2);
+      txt.setAttribute("y", y + cell/2 + 2);
+      txt.setAttribute("text-anchor", "middle");
+      txt.setAttribute("font-family", "ui-monospace, monospace");
+      txt.setAttribute("font-size", "7");
+      txt.setAttribute("font-weight", "700");
+      txt.setAttribute("fill", "#0f172a");
+      txt.textContent = state[i];
+      g.appendChild(txt);
+    }
+  }
+
+  // ============ Apply frame to current-state grid ============
+  function applyCurrent(widget, frame) {
+    for (let i = 0; i < 9; i++) {
+      const g = widget.querySelector("#cur-cell-" + i);
+      const rect = g.querySelector("rect");
+      const text = g.querySelector("text");
+      const val = frame.current[i];
+      text.textContent = val;
+      rect.classList.remove("target", "hl");
+      if (val === i + 1) rect.classList.add("target");
+      if (frame.curHL && frame.curHL.includes(i)) {
+        rect.classList.remove("target");
+        rect.classList.add("hl");
+      }
+    }
+    widget.querySelector("#cur-depth").textContent = frame.depth;
+    widget.querySelector("#cur-seen").textContent = frame.seen;
+
+    const badge = widget.querySelector("#cur-badge");
+    badge.className = "badge";
+    if (frame.badge) {
+      badge.classList.add("show", frame.badge.cls);
+      badge.textContent = frame.badge.text;
+    }
+  }
+
+  // ============ Apply frame to queue strip ============
+  function applyQueue(widget, frame) {
+    const maxShow = 12;
+    for (let i = 0; i < maxShow; i++) {
+      const cell = widget.querySelector("#q-cell-" + i);
+      cell.classList.remove("head", "target-found");
+      const mini = cell.querySelector(".mini");
+      const depthText = cell.querySelector(".q-depth");
+      const frame_i = frame.queue[i];
+      if (frame_i) {
+        renderMini(mini, frame_i.state, eq(frame_i.state, TARGET));
+        depthText.textContent = "d=" + frame_i.d;
+        if (i === 0) cell.classList.add("head");
+        if (frame_i.isTarget) cell.classList.add("target-found");
+        cell.style.opacity = 1;
+      } else {
+        while (mini.firstChild) mini.removeChild(mini.firstChild);
+        depthText.textContent = "";
+        cell.style.opacity = 0.2;
+      }
+    }
+    const overflow = widget.querySelector("#q-overflow");
+    overflow.textContent = frame.queue.length > maxShow
+      ? "+" + (frame.queue.length - maxShow)
+      : "";
+  }
+
+  // ============ Widget controller ============
+  function initWidget(widget) {
+    const total = parseInt(widget.dataset.stepTotal, 10);
+    const counter = widget.querySelector(".scriba-widget-counter .cur");
+    const titleEl = widget.querySelector("#step-title");
+    const narrations = widget.querySelectorAll(".scriba-widget-narration p[data-step]");
+    const bars = widget.querySelectorAll(".scriba-widget-progress .bar");
+    const playBtn = widget.querySelector('[data-action="play"]');
+    const predictBox = widget.querySelector("#predict-box");
+    const predictResult = widget.querySelector("#predict-result");
+    let timer = null;
+
+    // Wire predict buttons once
+    predictBox.querySelectorAll("button").forEach(b => {
+      b.addEventListener("click", () => {
+        if (b.dataset.correct === "1") {
+          predictResult.textContent = "✓ Đúng! Swap ô (0,1)=3 với ô (0,2)=2 → hàng đầu 1,2,3 = target.";
+          predictResult.className = "predict-result right";
+        } else {
+          predictResult.textContent = "✗ Chưa đúng. Thử lại, hoặc Next để xem đáp án.";
+          predictResult.className = "predict-result wrong";
+        }
+      });
+    });
+
+    function setStep(n) {
+      n = Math.max(1, Math.min(total, n));
+      widget.dataset.stepCurrent = n;
+      counter.textContent = n;
+      titleEl.textContent = TITLES[n];
+
+      const frame = STEPS[n];
+      applyCurrent(widget, frame);
+      applyQueue(widget, frame);
+
+      narrations.forEach(p => {
+        p.classList.toggle("active", parseInt(p.dataset.step, 10) === n);
+      });
+      bars.forEach((b, i) => b.classList.toggle("done", i < n));
+
+      predictBox.classList.toggle("show", !!frame.predict);
+      if (!frame.predict) {
+        predictResult.textContent = "";
+        predictResult.className = "predict-result";
+      }
+
+      widget.querySelector('[data-action="first"]').disabled = n === 1;
+      widget.querySelector('[data-action="prev"]').disabled  = n === 1;
+      widget.querySelector('[data-action="next"]').disabled  = n === total;
+      widget.querySelector('[data-action="last"]').disabled  = n === total;
+
+      if (n === total && timer) stopPlay();
+    }
+
+    function cur() { return parseInt(widget.dataset.stepCurrent, 10); }
+    function stopPlay() {
+      if (timer) { clearInterval(timer); timer = null; }
+      playBtn.classList.remove("playing");
+      playBtn.textContent = "▶ Play";
+    }
+    function startPlay() {
+      if (cur() === total) setStep(1);
+      playBtn.classList.add("playing");
+      playBtn.textContent = "⏸ Pause";
+      timer = setInterval(() => {
+        if (cur() >= total) stopPlay();
+        else setStep(cur() + 1);
+      }, 1800);
+    }
+
+    widget.querySelector('[data-action="first"]').addEventListener("click", () => { stopPlay(); setStep(1); });
+    widget.querySelector('[data-action="prev"]').addEventListener("click",  () => { stopPlay(); setStep(cur() - 1); });
+    widget.querySelector('[data-action="next"]').addEventListener("click",  () => { stopPlay(); setStep(cur() + 1); });
+    widget.querySelector('[data-action="last"]').addEventListener("click",  () => { stopPlay(); setStep(total); });
+    playBtn.addEventListener("click", () => { timer ? stopPlay() : startPlay(); });
+
+    widget.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "ArrowLeft":  stopPlay(); setStep(cur() - 1); e.preventDefault(); break;
+        case "ArrowRight": stopPlay(); setStep(cur() + 1); e.preventDefault(); break;
+        case "Home":       stopPlay(); setStep(1);         e.preventDefault(); break;
+        case "End":        stopPlay(); setStep(total);     e.preventDefault(); break;
+        case " ":          timer ? stopPlay() : startPlay(); e.preventDefault(); break;
+      }
+    });
+
+    setStep(1);
+  }
+
+  document.querySelectorAll(".scriba-widget").forEach(initWidget);
+})();
+</script>
+
+</body>
+</html>

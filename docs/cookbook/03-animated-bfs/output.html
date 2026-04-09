@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Scriba output — Example 03: Animated BFS</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$',right:'$',display:false}]})"></script>
+<style>
+  body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    max-width: 820px;
+    margin: 2rem auto;
+    padding: 0 1.5rem 4rem;
+    color: #0f172a;
+    line-height: 1.6;
+    background: #f8fafc;
+  }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .meta { color: #64748b; font-size: .85rem; margin: 0 0 2rem; }
+  kbd {
+    font: 11px ui-monospace, monospace;
+    border: 1px solid #cbd5e1;
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 5px;
+    background: #fff;
+  }
+
+  /* ============ SCRIBA WIDGET ============ */
+  figure.scriba-widget {
+    margin: 2rem 0;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+  }
+  figure.scriba-widget:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+
+  .scriba-widget-svg {
+    background: #f8fafc;
+    padding: 2rem 1rem 1.5rem;
+    min-height: 280px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .scriba-widget-svg svg {
+    width: 100%;
+    max-width: 560px;
+    height: auto;
+  }
+
+  /* SVG node/edge styling (what D2 would emit) */
+  .g-node circle {
+    stroke-width: 2;
+    transition: all 250ms ease;
+  }
+  .g-node text {
+    font: 700 14px "Inter", system-ui, sans-serif;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    pointer-events: none;
+    transition: fill 250ms ease;
+  }
+  .g-edge {
+    stroke: #cbd5e1;
+    stroke-width: 1.5;
+    fill: none;
+    transition: all 250ms ease;
+  }
+
+  /* Queue styling */
+  .q-cell rect {
+    fill: #ffffff;
+    stroke: #cbd5e1;
+    stroke-width: 1.2;
+    transition: all 250ms ease;
+  }
+  .q-cell text {
+    font: 700 13px ui-monospace, monospace;
+    text-anchor: middle;
+    dominant-baseline: middle;
+    fill: #0f172a;
+  }
+  .q-label {
+    font: 500 10px "Inter", system-ui, sans-serif;
+    fill: #64748b;
+    text-anchor: start;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+
+  /* =========== Step-cumulative visibility =========== */
+  /* Scriba runtime toggles data-step-current on widget.
+     Elements with data-step="N" become "active state" when N == current.
+     Cumulative semantics: style carries over from prior step. */
+
+  /* ============ CONTROLS ============ */
+  .scriba-widget-controls {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .75rem 1rem;
+    border-top: 1px solid #e2e8f0;
+    background: #fff;
+  }
+  .scriba-widget-controls button {
+    font: 500 .85rem "Inter", system-ui, sans-serif;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    color: #0f172a;
+    padding: .45rem .85rem;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all 150ms;
+  }
+  .scriba-widget-controls button:hover:not(:disabled) {
+    background: #f1f5f9;
+    border-color: #64748b;
+  }
+  .scriba-widget-controls button:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+  }
+  .scriba-widget-controls button[data-action="play"].playing {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+  .scriba-widget-counter {
+    margin-left: auto;
+    font: 500 .82rem ui-monospace, monospace;
+    color: #64748b;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ============ PROGRESS BARS ============ */
+  .scriba-widget-progress {
+    display: flex;
+    gap: 4px;
+    padding: 0 1rem .75rem;
+    background: #fff;
+  }
+  .scriba-widget-progress .bar {
+    flex: 1;
+    height: 3px;
+    border-radius: 2px;
+    background: #e2e8f0;
+    transition: background 220ms;
+  }
+  .scriba-widget-progress .bar.done { background: #2563eb; }
+
+  /* ============ NARRATION ============ */
+  .scriba-widget-narration {
+    padding: 1rem 1.25rem 1.25rem;
+    border-top: 1px solid #e2e8f0;
+    background: #fff;
+    min-height: 4rem;
+  }
+  .scriba-widget-narration .step-title {
+    font: 600 .72rem ui-monospace, monospace;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin: 0 0 .4rem;
+  }
+  .scriba-widget-narration p {
+    margin: 0;
+    color: #0f172a;
+    display: none;
+    font-size: .92rem;
+  }
+  .scriba-widget-narration p.active { display: block; }
+</style>
+</head>
+<body>
+
+<h1>Example 03 — Animated BFS output</h1>
+<p class="meta">
+  4-step scene với full widget. Thử: click Next/Prev, bấm <kbd>←</kbd> <kbd>→</kbd>, hoặc Play.
+  Click vào widget trước để focus cho keyboard nav.
+</p>
+
+<!-- ============================================================
+     Scriba-emitted animated widget
+     ============================================================ -->
+<figure class="scriba-widget"
+        id="widget-mini-bfs"
+        data-scriba-kind="scene"
+        data-scriba-src="input.md:4"
+        data-step-current="1"
+        data-step-total="4"
+        tabindex="0"
+        aria-label="Mini BFS walkthrough, 4 steps">
+
+  <div class="scriba-widget-svg">
+    <svg viewBox="0 0 560 260" role="img" aria-label="BFS state diagram">
+
+      <!-- Edges (rendered first so nodes sit on top) -->
+      <g class="g-edges">
+        <line id="edge-AB" class="g-edge" x1="140" y1="90" x2="250" y2="160"/>
+        <line id="edge-AC" class="g-edge" x1="140" y1="90" x2="250" y2="40"/>
+      </g>
+
+      <!-- Nodes: A, B, C -->
+      <g class="g-node" id="node-A" data-scriba-src="input.md:10">
+        <circle cx="140" cy="90" r="26" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="140" y="90" fill="#0f172a">A</text>
+      </g>
+      <g class="g-node" id="node-B" data-scriba-src="input.md:10">
+        <circle cx="250" cy="160" r="26" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="250" y="160" fill="#0f172a">B</text>
+      </g>
+      <g class="g-node" id="node-C" data-scriba-src="input.md:10">
+        <circle cx="250" cy="40" r="26" fill="#ffffff" stroke="#cbd5e1"/>
+        <text x="250" y="40" fill="#0f172a">C</text>
+      </g>
+
+      <!-- Queue at right side -->
+      <g class="queue" transform="translate(360, 70)">
+        <text class="q-label" x="0" y="-8">queue (fifo →)</text>
+        <g class="q-cell" id="q-cell-0">
+          <rect x="0" y="0" width="44" height="44" rx="5"/>
+          <text id="q-text-0" x="22" y="22"></text>
+        </g>
+        <g class="q-cell" id="q-cell-1">
+          <rect x="48" y="0" width="44" height="44" rx="5"/>
+          <text id="q-text-1" x="70" y="22"></text>
+        </g>
+        <g class="q-cell" id="q-cell-2">
+          <rect x="96" y="0" width="44" height="44" rx="5"/>
+          <text id="q-text-2" x="118" y="22"></text>
+        </g>
+      </g>
+    </svg>
+  </div>
+
+  <div class="scriba-widget-controls">
+    <button data-action="first" aria-label="First step">⏮</button>
+    <button data-action="prev"  aria-label="Prev step">◀ Prev</button>
+    <button data-action="play"  aria-label="Play">▶ Play</button>
+    <button data-action="next"  aria-label="Next step">Next ▶</button>
+    <button data-action="last"  aria-label="Last step">⏭</button>
+    <span class="scriba-widget-counter">
+      Step <span class="cur">1</span> / 4
+    </span>
+  </div>
+
+  <div class="scriba-widget-progress">
+    <div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div>
+  </div>
+
+  <div class="scriba-widget-narration">
+    <p class="step-title" id="step-title">STEP 1 — INIT</p>
+    <p data-step="1" class="active">
+      Khởi tạo BFS từ nút $A$. $\text{queue} = [A]$, $\text{seen} = \{A\}$.
+    </p>
+    <p data-step="2">
+      Pop $A$. Duyệt 2 neighbor: $B$ và $C$, cả hai chưa visit.
+    </p>
+    <p data-step="3">
+      Push $B$, $C$ vào queue. $\text{queue} = [B, C]$, $\text{seen} = \{A, B, C\}$.
+    </p>
+    <p data-step="4">
+      Pop $B$ khỏi queue. $A$ hoàn tất (tất cả neighbor đã thăm).
+    </p>
+  </div>
+</figure>
+
+<h2 style="font-size:1.05rem; color:#334155;">Notes on what you're seeing</h2>
+<ul style="font-size:.9rem; color:#475569;">
+  <li>
+    <strong>1 SVG master</strong>, không phải 4 SVG crossfade. Step state được compute bằng JS
+    từ IR (data-driven), áp dụng vào element attr (fill, stroke, text content).
+  </li>
+  <li>
+    <strong>Narration</strong> là <code>&lt;p data-step="N"&gt;</code>, chỉ 1 active tại mỗi step.
+    KaTeX render <code>$...$</code> delimiters ở load time.
+  </li>
+  <li>
+    <strong>Progress bars</strong> = 4 div, fill theo current step (step N → N bar đầu có class
+    <code>done</code>).
+  </li>
+  <li>
+    <strong>Keyboard</strong>: ← prev, → next, Space toggle play, Home/End first/last. Widget
+    phải focus trước (click vào).
+  </li>
+  <li>
+    <strong>Cumulative</strong>: step 4 kế thừa state từ step 3, 2, 1. Step 1 → A xanh dương.
+    Step 2 → A vàng (current). Step 3 → B, C xanh dương. Step 4 → A xanh lá (done), B vàng.
+  </li>
+  <li>
+    <strong>Data-scriba-src</strong>: inspect các <code>&lt;g class="g-node"&gt;</code> → thấy
+    <code>data-scriba-src="input.md:10"</code> (nơi khai báo graph). Production có thể strip.
+  </li>
+  <li>
+    <strong>Cái script bên dưới</strong> là <code>scriba-steps.js</code> được embed inline cho
+    demo. Trong production, consumer <code>&lt;script src="/static/scriba/scriba-steps.js"&gt;&lt;/script&gt;</code>
+    và script tự discover mọi <code>.scriba-widget</code> trên page.
+  </li>
+</ul>
+
+<!-- ============================================================
+     scriba-steps.js — inline for this demo.
+     In production, this is a single shared asset loaded once.
+     ============================================================ -->
+<script>
+(function() {
+  // ============ Step state database (authored in IR) ============
+  // Each step is a cumulative snapshot of property values per element.
+  // Scriba compiler emits this from the SceneIR.
+  const STEPS = {
+    1: {
+      "node-A circle": { fill: "#dbeafe", stroke: "#2563eb" },
+      "node-A text":   { fill: "#0c4a6e" },
+      "q-text-0":      { text: "A" },
+      "q-cell-0 rect": { fill: "#dbeafe", stroke: "#2563eb" },
+    },
+    2: {
+      "node-A circle": { fill: "#fef3c7", stroke: "#f59e0b" },
+      "node-A text":   { fill: "#78350f" },
+      "q-text-0":      { text: "" },
+      "q-cell-0 rect": { fill: "#ffffff", stroke: "#cbd5e1" },
+      "edge-AB":       { stroke: "#2563eb", "stroke-width": "2.5" },
+      "edge-AC":       { stroke: "#2563eb", "stroke-width": "2.5" },
+    },
+    3: {
+      "q-text-0":      { text: "B" },
+      "q-cell-0 rect": { fill: "#dbeafe", stroke: "#2563eb" },
+      "q-text-1":      { text: "C" },
+      "q-cell-1 rect": { fill: "#dbeafe", stroke: "#2563eb" },
+      "node-B circle": { fill: "#dbeafe", stroke: "#2563eb" },
+      "node-B text":   { fill: "#0c4a6e" },
+      "node-C circle": { fill: "#dbeafe", stroke: "#2563eb" },
+      "node-C text":   { fill: "#0c4a6e" },
+    },
+    4: {
+      "node-A circle": { fill: "#d1fae5", stroke: "#059669" },
+      "node-A text":   { fill: "#064e3b" },
+      "q-text-0":      { text: "" },
+      "q-cell-0 rect": { fill: "#ffffff", stroke: "#cbd5e1" },
+      "q-text-1":      { text: "" },
+      "q-cell-1 rect": { fill: "#ffffff", stroke: "#cbd5e1" },
+      "node-B circle": { fill: "#fef3c7", stroke: "#f59e0b" },
+      "node-B text":   { fill: "#78350f" },
+    },
+  };
+
+  const TITLES = {
+    1: "STEP 1 — INIT",
+    2: "STEP 2 — POP A, INSPECT NEIGHBORS",
+    3: "STEP 3 — PUSH B, C",
+    4: "STEP 4 — POP B, A DONE",
+  };
+
+  // ============ Frame computation ============
+  // Cumulative fold: frame[N] = merge of STEPS[1], STEPS[2], ..., STEPS[N]
+  function computeFrame(stepNum) {
+    const frame = {};
+    for (let i = 1; i <= stepNum; i++) {
+      const delta = STEPS[i] || {};
+      for (const key in delta) {
+        frame[key] = Object.assign({}, frame[key] || {}, delta[key]);
+      }
+    }
+    return frame;
+  }
+
+  // ============ Apply frame to DOM ============
+  function applyFrame(widget, frame) {
+    for (const selector in frame) {
+      // Selector is "element-id attr-type" e.g. "node-A circle"
+      const [id, tag] = selector.split(" ");
+      const root = widget.querySelector("#" + id);
+      if (!root) continue;
+      const target = tag ? root.querySelector(tag) : root;
+      if (!target) continue;
+      const props = frame[selector];
+      for (const prop in props) {
+        if (prop === "text") {
+          target.textContent = props[prop];
+        } else {
+          target.setAttribute(prop, props[prop]);
+        }
+      }
+    }
+  }
+
+  // ============ Reset element to baseline (for backward scrub) ============
+  function resetWidget(widget) {
+    // Collect all keys we ever touched
+    const allKeys = new Set();
+    for (const step in STEPS) {
+      for (const key in STEPS[step]) allKeys.add(key);
+    }
+    for (const selector of allKeys) {
+      const [id, tag] = selector.split(" ");
+      const root = widget.querySelector("#" + id);
+      if (!root) continue;
+      const target = tag ? root.querySelector(tag) : root;
+      if (!target) continue;
+      // Baseline: white fill, grey stroke, empty text
+      if (tag === "circle" || tag === "rect") {
+        target.setAttribute("fill", "#ffffff");
+        target.setAttribute("stroke", "#cbd5e1");
+        target.removeAttribute("stroke-width");
+      } else if (tag === "text") {
+        target.setAttribute("fill", "#0f172a");
+      } else if (!tag && target.tagName === "line") {
+        target.setAttribute("stroke", "#cbd5e1");
+        target.setAttribute("stroke-width", "1.5");
+      } else if (!tag && target.tagName === "text") {
+        target.textContent = "";
+      }
+    }
+  }
+
+  // ============ Widget controller ============
+  function initWidget(widget) {
+    const total = parseInt(widget.dataset.stepTotal, 10);
+    const counter = widget.querySelector(".scriba-widget-counter .cur");
+    const titleEl = widget.querySelector("#step-title");
+    const narrations = widget.querySelectorAll(".scriba-widget-narration p[data-step]");
+    const bars = widget.querySelectorAll(".scriba-widget-progress .bar");
+    const playBtn = widget.querySelector('[data-action="play"]');
+    let timer = null;
+
+    function setStep(n) {
+      n = Math.max(1, Math.min(total, n));
+      widget.dataset.stepCurrent = n;
+      counter.textContent = n;
+      titleEl.textContent = TITLES[n];
+
+      // Apply cumulative frame
+      resetWidget(widget);
+      applyFrame(widget, computeFrame(n));
+
+      // Update narration
+      narrations.forEach(p => {
+        p.classList.toggle("active", parseInt(p.dataset.step, 10) === n);
+      });
+
+      // Update progress bars
+      bars.forEach((b, i) => b.classList.toggle("done", i < n));
+
+      // Update button disabled states
+      widget.querySelector('[data-action="first"]').disabled = n === 1;
+      widget.querySelector('[data-action="prev"]').disabled  = n === 1;
+      widget.querySelector('[data-action="next"]').disabled  = n === total;
+      widget.querySelector('[data-action="last"]').disabled  = n === total;
+
+      if (n === total && timer) stopPlay();
+    }
+
+    function cur() { return parseInt(widget.dataset.stepCurrent, 10); }
+    function stopPlay() {
+      if (timer) { clearInterval(timer); timer = null; }
+      playBtn.classList.remove("playing");
+      playBtn.textContent = "▶ Play";
+    }
+    function startPlay() {
+      if (cur() === total) setStep(1);
+      playBtn.classList.add("playing");
+      playBtn.textContent = "⏸ Pause";
+      timer = setInterval(() => {
+        if (cur() >= total) stopPlay();
+        else setStep(cur() + 1);
+      }, 1700);
+    }
+
+    widget.querySelector('[data-action="first"]').addEventListener("click", () => { stopPlay(); setStep(1); });
+    widget.querySelector('[data-action="prev"]').addEventListener("click",  () => { stopPlay(); setStep(cur() - 1); });
+    widget.querySelector('[data-action="next"]').addEventListener("click",  () => { stopPlay(); setStep(cur() + 1); });
+    widget.querySelector('[data-action="last"]').addEventListener("click",  () => { stopPlay(); setStep(total); });
+    playBtn.addEventListener("click", () => { timer ? stopPlay() : startPlay(); });
+
+    widget.addEventListener("keydown", (e) => {
+      switch (e.key) {
+        case "ArrowLeft":  stopPlay(); setStep(cur() - 1); e.preventDefault(); break;
+        case "ArrowRight": stopPlay(); setStep(cur() + 1); e.preventDefault(); break;
+        case "Home":       stopPlay(); setStep(1);         e.preventDefault(); break;
+        case "End":        stopPlay(); setStep(total);     e.preventDefault(); break;
+        case " ":          timer ? stopPlay() : startPlay(); e.preventDefault(); break;
+      }
+    });
+
+    setStep(1);
+  }
+
+  // ============ Auto-init all widgets on page ============
+  document.querySelectorAll(".scriba-widget").forEach(initWidget);
+})();
+</script>
+
+</body>
+</html>

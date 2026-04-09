@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CSES Swap Game — Editorial v2</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<link rel="stylesheet" href="styles.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
+  onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+</head>
+<body>
+
+<!-- ============ TOP BAR ============ -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-title">CSES · <strong>Swap Game</strong></div>
+    <div class="topbar-actions">
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">🌓</button>
+      <label class="expert-toggle">
+        <input type="checkbox" id="expertToggle" role="switch" aria-pressed="false">
+        <span class="track"><span class="thumb"></span></span>
+        <span class="label">Chế độ chuyên gia</span>
+      </label>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ============ MAIN CONTENT ============ -->
+  <main class="content">
+
+    <!-- TL;DR mobile (visible only <1024px, sticky on mobile sits below) -->
+    <aside class="tldr tldr-mobile" aria-label="TL;DR">
+      <div class="tldr-row"><span class="tldr-key">Kỹ thuật</span><span class="tldr-val">BFS trên không gian trạng thái</span></div>
+      <div class="tldr-row"><span class="tldr-key">Độ phức tạp</span><span class="tldr-val">$O(9! \cdot 12)$ time · $O(9!)$ space</span></div>
+      <div class="tldr-row"><span class="tldr-key">Insight</span><span class="tldr-val">Mỗi hoán vị $3\times 3$ là 1 đỉnh, mỗi swap kề là 1 cạnh</span></div>
+    </aside>
+
+    <!-- Anchor chip strip -->
+    <nav class="chip-strip" aria-label="Section navigation">
+      <a href="#insight" class="chip">Insight</a>
+      <a href="#code" class="chip">Code</a>
+      <a href="#complexity" class="chip">Complexity</a>
+      <a href="#pitfalls" class="chip">Pitfalls</a>
+    </nav>
+
+    <!-- §1 -->
+    <section class="sec sec-core" id="problem">
+      <h2><span class="num">§1</span> Đề bài tóm tắt</h2>
+      <p>
+        Cho lưới $3\times 3$ là một hoán vị của $1..9$. Mỗi bước được đổi chỗ <b>hai ô kề ngang hoặc dọc</b>.
+        Cần tìm số bước nhỏ nhất để đưa lưới về dạng sắp tăng dần theo hàng. Với mẫu
+        <code>[[2,1,3],[7,5,9],[8,4,6]]</code> đáp án là <b>4</b>. Một test case duy nhất, không có ràng buộc input lớn.
+      </p>
+    </section>
+
+    <!-- §2 -->
+    <section class="sec sec-core" id="insight">
+      <h2><span class="num">§2</span> Quan sát chìa khóa</h2>
+      <p>
+        Có đúng $9! = 362{,}880$ hoán vị — đủ nhỏ để duyệt <b>toàn bộ</b>.
+        Từ mỗi trạng thái sinh ra đúng <b>12 trạng thái kề</b>: 6 cặp ngang
+        (2 cặp mỗi hàng × 3 hàng) cộng 6 cặp dọc. Mọi swap đều có chi phí bằng $1$,
+        nên bài toán quy về <b>đường đi ngắn nhất trên đồ thị unit-weight</b> —
+        đúng định nghĩa của BFS. Không cần Dijkstra, không cần A*, không cần heuristic.
+      </p>
+    </section>
+
+    <!-- §3 — Cho người mới -->
+    <section class="sec sec-beginner" data-audience="beginner" id="naive">
+      <span class="badge">Cho người mới</span>
+      <h2><span class="num">§3</span> Tiếp cận ngây thơ</h2>
+      <p>
+        Phản xạ đầu tiên là <em>brute force theo chuỗi swap</em>: thử mọi dãy swap có thể, chọn dãy ngắn nhất.
+        Mỗi bước có 12 lựa chọn nên sau $k$ bước có $12^k$ dãy — bùng nổ ngay khi $k \ge 8$.
+      </p>
+      <p>
+        Phản xạ thứ hai là <b>greedy</b>: mỗi bước chọn swap đưa nhiều ô về đúng vị trí nhất.
+        Cách này sai vì đôi khi phải "lùi 1 bước để tiến 2 bước" — đẩy 1 ô sai sang chỗ khác để mở đường cho ô khác.
+        Cả hai cách đều không kiểm soát được việc <b>lặp lại trạng thái cũ</b> — đó là điều BFS giải quyết bằng <code>visited</code>.
+      </p>
+    </section>
+
+    <!-- §4 — Cho người mới -->
+    <section class="sec sec-beginner" data-audience="beginner" id="idea">
+      <span class="badge">Cho người mới</span>
+      <h2><span class="num">§4</span> Ý tưởng thuật toán</h2>
+      <p>
+        Hãy đổi cách nhìn. Đừng nghĩ "tôi đang sắp xếp 1 mảng" — hãy nghĩ "tôi đang đi trên 1 bản đồ khổng lồ".
+        Mỗi <em>cách bày</em> lưới $3\times 3$ là 1 <b>thành phố</b> trên bản đồ. Hai thành phố nối với nhau bằng 1
+        <em>con đường dài 1 km</em> nếu bạn có thể biến thành phố này thành thành phố kia chỉ bằng đúng 1 swap kề.
+        Câu hỏi gốc trở thành: từ thành phố <code>start</code> đến thành phố <code>target</code> ($[1..9]$), con đường ngắn nhất dài bao nhiêu km?
+      </p>
+      <p>
+        Khi mọi con đường có cùng độ dài, có 1 thuật toán đặc biệt làm việc này hoàn hảo: <b>BFS</b> (Breadth-First Search).
+        BFS đi theo <em>từng lớp</em>: lớp 0 là start, lớp 1 là 12 thành phố cách start đúng 1 swap, lớp 2 là tất cả thành phố
+        cách start đúng 2 swap (chưa thuộc lớp 0 hoặc 1), v.v. Lần đầu BFS chạm đến <code>target</code> ở lớp $k$,
+        ta biết ngay đáp án là $k$ — không cần đi tiếp.
+      </p>
+      <p>
+        Tổng số thành phố là $9!$ — chỉ khoảng 360 nghìn — và mỗi thành phố sinh đúng 12 hàng xóm,
+        nên toàn bộ duyệt vừa vặn trong vài chục mili giây. Mẹo còn lại là <b>mã hóa</b> mỗi lưới thành 1 số nguyên
+        (ví dụ 1 số base-9 chín chữ số) để dùng làm key của mảng <code>visited</code>, tránh dùng <code>map&lt;string,int&gt;</code> chậm.
+      </p>
+    </section>
+
+    <!-- §5 — Cho người mới (widget) -->
+    <section class="sec sec-beginner" data-audience="beginner" id="visualize">
+      <span class="badge">Cho người mới</span>
+      <h2><span class="num">§5</span> Hình dung — BFS chạy thật</h2>
+      <p class="muted">
+        Widget bên dưới minh họa BFS trên 1 đồ thị 5-node để bạn thấy <b>queue</b>, <b>visited</b>,
+        và <b>current node</b> thay đổi qua từng bước. Đặc biệt chú ý <b>step 6</b>: lúc thuật toán cố push 1 node đã trong visited
+        — đó chính là khoảnh khắc visited cứu BFS khỏi vòng lặp vô tận.
+      </p>
+
+      <div class="widget-trace" id="traceWidget"></div>
+    </section>
+
+    <!-- §6 — Cho người mới -->
+    <section class="sec sec-beginner" data-audience="beginner" id="proof">
+      <span class="badge">Cho người mới</span>
+      <h2><span class="num">§6</span> Vì sao BFS đúng</h2>
+      <p>
+        Tính đúng đắn dựa trên 1 <b>bất biến lớp</b>: khi pop 1 node ra khỏi queue, <code>dist</code> của nó đã là khoảng cách ngắn nhất.
+        Quy nạp theo lớp $k$. <em>Cơ sở:</em> lớp 0 chỉ chứa start với <code>dist = 0</code>.
+      </p>
+      <p>
+        <em>Bước quy nạp:</em> giả sử mọi node ở lớp $\le k$ đã được pop với <code>dist</code> đúng. Xét node $u$ thuộc lớp $k+1$ khi pop.
+        Nếu tồn tại đường đi ngắn hơn $k+1$ tới $u$, đường đó phải đi qua 1 node $v$ ở lớp $\le k$ — nhưng khi xử lý $v$,
+        $u$ đã được mark visited với <code>dist = k+1</code>, mâu thuẫn. Vì cạnh có trọng số $1$, lớp $k+1$ chính là tập các láng giềng
+        chưa visited của lớp $k$. ∎
+      </p>
+    </section>
+
+    <!-- §7 -->
+    <section class="sec sec-core" id="implementation">
+      <h2><span class="num">§7</span> Cài đặt</h2>
+      <ol>
+        <li><b>Mã hóa trạng thái.</b> Đọc lưới row-major thành dãy 9 chữ số, ép thành số nguyên base-9 (max $\approx 387 \cdot 10^6$).</li>
+        <li><b>Pre-compute 12 cặp kề.</b> Mảng <code>pairs[12][2]</code>: 6 cặp ngang $\{(0,1),(1,2),(3,4),(4,5),(6,7),(7,8)\}$ + 6 cặp dọc $\{(0,3),(3,6),(1,4),(4,7),(2,5),(5,8)\}$.</li>
+        <li><b>Init.</b> Tính <code>start_code</code> và <code>target_code</code> $= 012345678_9$. Push <code>(start, 0)</code>, mark <code>visited[start] = true</code>.</li>
+        <li><b>Vòng BFS.</b> Pop <code>(u, d)</code>. Với mỗi cặp: swap, encode lại thành $v$. Nếu $v$ = target → return $d+1$. Nếu chưa visited → mark + push $(v, d+1)$.</li>
+        <li><b>Edge case.</b> Lưới đã sắp xếp sẵn → return 0. Mảng <code>visited</code> size $9^9$ nên cấp phát ngoài <code>main</code>.</li>
+      </ol>
+    </section>
+
+    <!-- §8 -->
+    <section class="sec sec-core" id="code">
+      <h2><span class="num">§8</span> Code C++</h2>
+
+      <div class="code-block">
+        <p class="code-cap">Block 1 — Encode/decode + swap helper. Biến mỗi lưới thành 1 khóa nguyên duy nhất.</p>
+        <pre><code>int powers[10];
+int swap_at(int grid, int i, int j) {
+    int a = grid % powers[i+1] / powers[i];
+    int b = grid % powers[j+1] / powers[j];
+    return grid - a*powers[i] - b*powers[j]
+                + b*powers[i] + a*powers[j];
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <p class="code-cap">Block 2 — Tiền xử lý. Tính <code>powers[]</code>, <code>target</code>, đọc input grid.</p>
+        <pre><code>powers[0] = 1;
+for (int i = 1; i &lt; 10; i++) powers[i] = 9 * powers[i-1];
+vector&lt;bool&gt; vis(powers[9], false);
+
+int target = 0;
+for (int i = 8; i &gt;= 0; i--) target += (8-i) * powers[i];
+
+int grid = 0, num;
+for (int i = 8; i &gt;= 0; i--) {
+    cin &gt;&gt; num;
+    grid += (num-1) * powers[i];
+}</code></pre>
+      </div>
+
+      <div class="code-block">
+        <p class="code-cap">Block 3 — BFS loop. Đây là động cơ shortest path. Sinh 12 neighbor mỗi pop.</p>
+        <pre><code>queue&lt;pair&lt;int,int&gt;&gt; q;
+q.push({grid, 0});
+vis[grid] = true;
+while (!q.empty()) {
+    auto [g, dist] = q.front(); q.pop();
+    if (g == target) { cout &lt;&lt; dist; return 0; }
+
+    for (int i = 0; i &lt; 8; i++) {            // 6 swap ngang
+        if (i % 3 == 2) continue;
+        int g2 = swap_at(g, 8-i, 8-(i+1));
+        if (!vis[g2]) { vis[g2] = true; q.push({g2, dist+1}); }
+    }
+    for (int i = 0; i &lt; 6; i++) {            // 6 swap dọc
+        int g2 = swap_at(g, 8-i, 8-(i+3));
+        if (!vis[g2]) { vis[g2] = true; q.push({g2, dist+1}); }
+    }
+}</code></pre>
+      </div>
+    </section>
+
+    <!-- §9 -->
+    <section class="sec sec-core" id="complexity">
+      <h2><span class="num">§9</span> Độ phức tạp</h2>
+      <p>
+        <b>Time:</b> $O(9! \cdot 12) \approx 4.4 \times 10^6$ — mỗi state vào queue đúng 1 lần và sinh 12 neighbor.
+        <b>Space:</b> $O(9^9)$ bool cho <code>visited</code> ($\approx 48$ MB nếu dùng <code>bitset</code> hoặc index base-9).
+      </p>
+    </section>
+
+    <!-- §10 -->
+    <section class="sec sec-core" id="pitfalls">
+      <h2><span class="num">§10</span> Bẫy thường gặp</h2>
+      <ul class="pitfalls">
+        <li><b>Mark <code>visited</code> lúc <em>pop</em> thay vì lúc <em>push</em>.</b> Cùng 1 state bị push nhiều lần, queue phình $10\times$, có thể MLE.</li>
+        <li><b>Sinh sai 12 cặp kề.</b> Quên loại cặp $(2,3)$ — kề trong mảng phẳng nhưng <b>không</b> kề trên lưới (cuối hàng 1, đầu hàng 2).</li>
+        <li><b>Encode ngược row/column.</b> Đọc row-major nhưng so sánh column-major → sai đáp án mà không crash.</li>
+        <li><b>Dùng <code>map&lt;string,int&gt;</code></b> thay vì mảng nguyên → chậm hơn $10\times$ vì hash + so sánh chuỗi.</li>
+        <li><b>Quên check target ngay sau pop.</b> Nếu chỉ check khi sinh neighbor, sẽ bỏ sót trường hợp lưới đã sắp sẵn.</li>
+      </ul>
+    </section>
+
+    <!-- §11 -->
+    <section class="sec sec-core" id="related">
+      <h2><span class="num">§11</span> Bài tương tự</h2>
+      <ul class="related">
+        <li><b>CSES Message Route</b> <span class="diff easy">easy</span> — BFS shortest path cổ điển trên đồ thị tổng quát.</li>
+        <li><b>CSES Grid Paths</b> <span class="diff easy">easy</span> — BFS trên lưới phẳng, làm quen với queue + visited.</li>
+        <li><b>Codeforces 1063B "Labyrinth"</b> <span class="diff med">medium</span> — BFS với state mở rộng (số bước trái/phải còn lại).</li>
+        <li><b>15-Puzzle / 8-Puzzle</b> <span class="diff hard">hard</span> — state space lớn hơn nhiều, cần A* với heuristic Manhattan.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <!-- ============ TL;DR DESKTOP RAIL ============ -->
+  <aside class="tldr tldr-rail" aria-label="TL;DR">
+    <div class="tldr-card">
+      <div class="tldr-title">TL;DR</div>
+      <div class="tldr-row">
+        <div class="tldr-key">Kỹ thuật</div>
+        <div class="tldr-val">BFS trên không gian trạng thái</div>
+      </div>
+      <div class="tldr-row">
+        <div class="tldr-key">Độ phức tạp</div>
+        <div class="tldr-val">$O(9! \cdot 12)$ time<br>$O(9!)$ space</div>
+      </div>
+      <div class="tldr-row">
+        <div class="tldr-key">Insight</div>
+        <div class="tldr-val">Mỗi hoán vị $3\times 3$ là 1 đỉnh, mỗi swap kề là 1 cạnh trọng số 1</div>
+      </div>
+      <div class="tldr-anchors">
+        <a href="#code">→ Code</a>
+        <a href="#complexity">→ Complexity</a>
+        <a href="#pitfalls">→ Pitfalls</a>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<script defer src="app.js"></script>
+</body>
+</html>

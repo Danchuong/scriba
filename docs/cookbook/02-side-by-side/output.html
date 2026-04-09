@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<title>Scriba output — Example 02: Side-by-side</title>
+<style>
+  body {
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    max-width: 820px;
+    margin: 2rem auto;
+    padding: 0 1.5rem 4rem;
+    color: #0f172a;
+    line-height: 1.6;
+    background: #f8fafc;
+  }
+  h1 { font-size: 1.5rem; margin: 0 0 .25rem; }
+  .meta { color: #64748b; font-size: .85rem; margin: 0 0 2rem; }
+
+  /* Scriba figure styling */
+  figure.scriba-figure {
+    margin: 2rem 0;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 20px 20px 16px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.03);
+  }
+  figure.scriba-figure .scriba-figure-body {
+    background: #f8fafc;
+    border-radius: 6px;
+    padding: 24px 12px;
+    margin-bottom: 14px;
+  }
+  figure.scriba-figure svg {
+    display: block;
+    margin: 0 auto;
+    max-width: 100%;
+    height: auto;
+  }
+  figure.scriba-figure figcaption {
+    font-size: .84rem;
+    color: #475569;
+    line-height: 1.55;
+  }
+  figure.scriba-figure figcaption .fig-num {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  /* Inline SVG classes */
+  .panel-label {
+    font: 600 11px "Inter", system-ui, sans-serif;
+    fill: #64748b;
+    text-anchor: middle;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+  }
+  .cell {
+    fill: #ffffff;
+    stroke: #cbd5e1;
+    stroke-width: 1.2;
+  }
+  .cell.done {
+    fill: #d1fae5;
+    stroke: #059669;
+    stroke-width: 1.5;
+  }
+  .cell-text {
+    font: 700 16px "JetBrains Mono", ui-monospace, monospace;
+    fill: #0f172a;
+    text-anchor: middle;
+  }
+  .cell-text.done { fill: #064e3b; }
+
+  .adj-edge {
+    stroke: #2563eb;
+    stroke-width: 1.4;
+    stroke-dasharray: 3 2;
+    fill: none;
+    opacity: 0.7;
+  }
+
+  .connector {
+    stroke: #64748b;
+    stroke-width: 2;
+    fill: none;
+    marker-end: url(#arrowHead);
+  }
+</style>
+</head>
+<body>
+
+<h1>Example 02 — Side-by-side output</h1>
+<p class="meta">3 panel grid với connector arrow giữa. Static figure, không JS.</p>
+
+<!-- Global arrow marker for all .scriba-figure connector arrows -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arrowHead" markerWidth="10" markerHeight="10"
+            refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#64748b"/>
+    </marker>
+  </defs>
+</svg>
+
+<figure class="scriba-figure"
+        id="fig-swap-problem"
+        data-scriba-kind="figure"
+        data-scriba-src="input.md:4">
+
+  <div class="scriba-figure-body">
+    <!-- D2-rendered SVG (mock) -->
+    <svg viewBox="0 0 760 220" role="img" aria-label="Input, 12 adjacent pairs, and target">
+
+      <!-- Panel 1: Input grid (3,1,2 / 4,5,6 / 7,8,9) -->
+      <g class="panel" data-scriba-src="input.md:8" transform="translate(30, 30)">
+        <text class="panel-label" x="90" y="-2">Input</text>
+        <!-- Row 0 -->
+        <rect class="cell" x="30"  y="15" width="40" height="40" rx="4"/>
+        <rect class="cell" x="75"  y="15" width="40" height="40" rx="4"/>
+        <rect class="cell" x="120" y="15" width="40" height="40" rx="4"/>
+        <text class="cell-text" x="50"  y="43">3</text>
+        <text class="cell-text" x="95"  y="43">1</text>
+        <text class="cell-text" x="140" y="43">2</text>
+        <!-- Row 1 -->
+        <rect class="cell" x="30"  y="60" width="40" height="40" rx="4"/>
+        <rect class="cell" x="75"  y="60" width="40" height="40" rx="4"/>
+        <rect class="cell" x="120" y="60" width="40" height="40" rx="4"/>
+        <text class="cell-text" x="50"  y="88">4</text>
+        <text class="cell-text" x="95"  y="88">5</text>
+        <text class="cell-text" x="140" y="88">6</text>
+        <!-- Row 2 -->
+        <rect class="cell" x="30"  y="105" width="40" height="40" rx="4"/>
+        <rect class="cell" x="75"  y="105" width="40" height="40" rx="4"/>
+        <rect class="cell" x="120" y="105" width="40" height="40" rx="4"/>
+        <text class="cell-text" x="50"  y="133">7</text>
+        <text class="cell-text" x="95"  y="133">8</text>
+        <text class="cell-text" x="140" y="133">9</text>
+      </g>
+
+      <!-- Connector 1 -->
+      <path class="connector" d="M 222 125 L 268 125"/>
+
+      <!-- Panel 2: 12 adjacent pairs overlay -->
+      <g class="panel" data-scriba-src="input.md:12" transform="translate(290, 30)">
+        <text class="panel-label" x="90" y="-2">12 cặp kề</text>
+        <!-- Grid -->
+        <rect class="cell" x="30"  y="15" width="40" height="40" rx="4"/>
+        <rect class="cell" x="75"  y="15" width="40" height="40" rx="4"/>
+        <rect class="cell" x="120" y="15" width="40" height="40" rx="4"/>
+        <rect class="cell" x="30"  y="60" width="40" height="40" rx="4"/>
+        <rect class="cell" x="75"  y="60" width="40" height="40" rx="4"/>
+        <rect class="cell" x="120" y="60" width="40" height="40" rx="4"/>
+        <rect class="cell" x="30"  y="105" width="40" height="40" rx="4"/>
+        <rect class="cell" x="75"  y="105" width="40" height="40" rx="4"/>
+        <rect class="cell" x="120" y="105" width="40" height="40" rx="4"/>
+        <text class="cell-text" x="50"  y="43">1</text>
+        <text class="cell-text" x="95"  y="43">2</text>
+        <text class="cell-text" x="140" y="43">3</text>
+        <text class="cell-text" x="50"  y="88">4</text>
+        <text class="cell-text" x="95"  y="88">5</text>
+        <text class="cell-text" x="140" y="88">6</text>
+        <text class="cell-text" x="50"  y="133">7</text>
+        <text class="cell-text" x="95"  y="133">8</text>
+        <text class="cell-text" x="140" y="133">9</text>
+
+        <!-- 12 adjacency edges (6 horizontal + 6 vertical) -->
+        <!-- horizontal pairs -->
+        <line class="adj-edge" x1="50"  y1="35"  x2="95"  y2="35"/>
+        <line class="adj-edge" x1="95"  y1="35"  x2="140" y2="35"/>
+        <line class="adj-edge" x1="50"  y1="80"  x2="95"  y2="80"/>
+        <line class="adj-edge" x1="95"  y1="80"  x2="140" y2="80"/>
+        <line class="adj-edge" x1="50"  y1="125" x2="95"  y2="125"/>
+        <line class="adj-edge" x1="95"  y1="125" x2="140" y2="125"/>
+        <!-- vertical pairs -->
+        <line class="adj-edge" x1="50"  y1="35"  x2="50"  y2="80"/>
+        <line class="adj-edge" x1="95"  y1="35"  x2="95"  y2="80"/>
+        <line class="adj-edge" x1="140" y1="35"  x2="140" y2="80"/>
+        <line class="adj-edge" x1="50"  y1="80"  x2="50"  y2="125"/>
+        <line class="adj-edge" x1="95"  y1="80"  x2="95"  y2="125"/>
+        <line class="adj-edge" x1="140" y1="80"  x2="140" y2="125"/>
+      </g>
+
+      <!-- Connector 2 -->
+      <path class="connector" d="M 482 125 L 528 125"/>
+
+      <!-- Panel 3: Target grid (done state) -->
+      <g class="panel" data-scriba-src="input.md:17" transform="translate(550, 30)">
+        <text class="panel-label" x="90" y="-2">Target</text>
+        <rect class="cell done" x="30"  y="15"  width="40" height="40" rx="4"/>
+        <rect class="cell done" x="75"  y="15"  width="40" height="40" rx="4"/>
+        <rect class="cell done" x="120" y="15"  width="40" height="40" rx="4"/>
+        <rect class="cell done" x="30"  y="60"  width="40" height="40" rx="4"/>
+        <rect class="cell done" x="75"  y="60"  width="40" height="40" rx="4"/>
+        <rect class="cell done" x="120" y="60"  width="40" height="40" rx="4"/>
+        <rect class="cell done" x="30"  y="105" width="40" height="40" rx="4"/>
+        <rect class="cell done" x="75"  y="105" width="40" height="40" rx="4"/>
+        <rect class="cell done" x="120" y="105" width="40" height="40" rx="4"/>
+        <text class="cell-text done" x="50"  y="43">1</text>
+        <text class="cell-text done" x="95"  y="43">2</text>
+        <text class="cell-text done" x="140" y="43">3</text>
+        <text class="cell-text done" x="50"  y="88">4</text>
+        <text class="cell-text done" x="95"  y="88">5</text>
+        <text class="cell-text done" x="140" y="88">6</text>
+        <text class="cell-text done" x="50"  y="133">7</text>
+        <text class="cell-text done" x="95"  y="133">8</text>
+        <text class="cell-text done" x="140" y="133">9</text>
+      </g>
+
+    </svg>
+  </div>
+
+  <figcaption>
+    <span class="fig-num">Hình 2.</span>
+    Mỗi swap đổi 2 ô chia cạnh. 6 cặp ngang + 6 cặp dọc = 12 edge per state.
+  </figcaption>
+</figure>
+
+<h2 style="font-size:1.05rem; color:#334155;">Notes on what you're seeing</h2>
+<ul style="font-size:.9rem; color:#475569;">
+  <li>
+    <strong>Connector arrow</strong> giữa 3 panel là tự động từ <code>connector=arrow</code>.
+    Compiler emit 2 D2 edge (Input → CapKe, CapKe → Target), D2 routing từ panel bounding box.
+  </li>
+  <li>
+    <strong>12 adjacency edge</strong> được sinh bởi <code>Edges.adjacent_pairs(g)</code> — tác giả viết 1 dòng,
+    compiler generate 12 D2 edge declarations với <code>style.stroke-dash: 3</code>.
+  </li>
+  <li>
+    Panel 3 dùng <code>state=done</code> → compiler apply green palette cho cả 9 cell.
+    Nếu tác giả muốn từng cell khác màu, họ dùng <code>data=[{v:1,state:done}, ...]</code> (verbose hơn).
+  </li>
+  <li>
+    <code>data-scriba-src</code> attr trên mỗi panel group chỉ về đúng dòng trong <code>input.md</code>.
+    Inspect element → jump to source.
+  </li>
+  <li>
+    Layout engine (dagre) decide giữa các panel là 3 column đều nhau. Tác giả không căn pixel.
+  </li>
+</ul>
+
+</body>
+</html>
