@@ -1,0 +1,14 @@
+\begin{animation}[id="tree", label="Binary Tree Traversal"]
+\shape{T}{Tree}{root=1, nodes=[1,2,3,4,5], edges=[(1,2),(1,3),(2,4),(2,5)]}
+\step
+\recolor{T.node[1]}{state=current}
+\narrate{Start at root node 1.}
+\step
+\recolor{T.node[1]}{state=done}
+\recolor{T.node[2]}{state=current}
+\narrate{Visit left child node 2.}
+\step
+\recolor{T.node[2]}{state=done}
+\recolor{T.node[3]}{state=current}
+\narrate{Visit right child node 3.}
+\end{animation}

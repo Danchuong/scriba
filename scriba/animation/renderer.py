@@ -169,7 +169,7 @@ def _instantiate_primitive(
         )
     resolved_params = _resolve_params(shape.params, bindings)
 
-    if shape.type_name == "Graph":
+    if shape.type_name in ("Graph", "Tree"):
         return factory_cls(shape.name, resolved_params)
 
     factory = factory_cls()
