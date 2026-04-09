@@ -1,0 +1,18 @@
+\begin{animation}[id="hldemo", label="Highlight Macro Demo"]
+\shape{a}{Array}{size=5, data=[2,7,3,9,1], labels="0..5"}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\recolor{a.cell[4]}{state=current}
+\narrate{Two pointer: check \hl{step1}{a[0]=2} and \hl{step1}{a[4]=1}. Sum = 3.}
+
+\step
+\recolor{a.cell[0]}{state=done}
+\recolor{a.cell[1]}{state=current}
+\narrate{Move left pointer. Check \hl{step2}{a[1]=7} and \hl{step2}{a[4]=1}. Sum = 8.}
+
+\step
+\recolor{a.cell[4]}{state=done}
+\recolor{a.cell[3]}{state=current}
+\narrate{Move right pointer. Check \hl{step3}{a[1]=7} and \hl{step3}{a[3]=9}. Sum = 16.}
+\end{animation}

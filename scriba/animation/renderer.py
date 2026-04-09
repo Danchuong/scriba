@@ -90,22 +90,77 @@ def _scene_id(raw: str) -> str:
     return f"scriba-{digest}"
 
 
+_INLINE_MATH_RE = re.compile(r"\$([^$]+)\$")
+
+
 def _render_narration(
     text: str | None,
     scene_id: str,
     ctx: RenderContext,
 ) -> str:
-    """Render narration text through hl macros and optional TeX."""
+    """Render narration text through hl macros and optional inline TeX.
+
+    Processing order:
+    1. ``$...$`` inline math fragments are rendered via KaTeX (when
+       ``ctx.render_inline_tex`` is available) and replaced with NUL
+       placeholders so later passes don't mangle the HTML.
+    2. ``\\hl{step}{tex}`` macros are expanded (they call
+       ``render_inline_tex`` internally for their own TeX content).
+       Their output is also stashed behind placeholders.
+    3. Non-math, non-macro text is HTML-escaped.
+    4. Placeholders are restored, yielding the final HTML.
+    """
     if text is None:
         return ""
+
+    render_tex = ctx.render_inline_tex
+
+    if render_tex is None:
+        # No TeX renderer — expand \hl macros (plain-text fallback) then escape.
+        processed = process_hl_macros(text, scene_id=scene_id, render_inline_tex=None)
+        return _html.escape(processed, quote=False)
+
+    # --- TeX is available: stash rendered HTML behind placeholders. ----------
+    stash: list[str] = []
+
+    def _stash(html_fragment: str) -> str:
+        idx = len(stash)
+        stash.append(html_fragment)
+        return f"\x00NARR{idx}\x00"
+
+    # Step 1: Expand \hl macros first.  process_hl_macros produces
+    # complete <span> elements; we re-scan its output and replace each
+    # <span class="scriba-hl" ...>...</span> block with a placeholder
+    # so the HTML-escape in step 3 doesn't mangle them.
     processed = process_hl_macros(
         text,
         scene_id=scene_id,
-        render_inline_tex=ctx.render_inline_tex,
+        render_inline_tex=render_tex,
     )
-    if ctx.render_inline_tex is not None:
-        return ctx.render_inline_tex(processed)
-    return _html.escape(processed, quote=False)
+    processed = re.sub(
+        r'<span class="scriba-hl"[^>]*>.*?</span>',
+        lambda m: _stash(m.group(0)),
+        processed,
+    )
+
+    # Step 2: Replace $...$ with rendered KaTeX HTML placeholders.
+    def _math_sub(m: re.Match[str]) -> str:
+        try:
+            return _stash(render_tex(m.group(1)))
+        except Exception:
+            return m.group(0)  # keep raw on error; will be escaped later
+
+    processed = _INLINE_MATH_RE.sub(_math_sub, processed)
+
+    # Step 3: HTML-escape remaining plain text (placeholders survive — they
+    # contain only NUL + ASCII digits which html.escape leaves unchanged).
+    processed = _html.escape(processed, quote=False)
+
+    # Step 4: Restore placeholders.
+    for idx, html_fragment in enumerate(stash):
+        processed = processed.replace(f"\x00NARR{idx}\x00", html_fragment)
+
+    return processed
 
 
 def _resolve_params(
