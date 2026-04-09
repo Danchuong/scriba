@@ -16,6 +16,15 @@
    ============================================ */
 
 :root {
+  /* Base tokens — fallbacks when scriba-tex-content.css is not loaded */
+  --scriba-fg:                     #212529;
+  --scriba-fg-muted:               #6c757d;
+  --scriba-bg:                     #ffffff;
+  --scriba-bg-code:                #f6f8fa;
+  --scriba-border:                 #d0d7de;
+  --scriba-link:                   #0969da;
+  --scriba-radius:                 6px;
+
   /* Frame layout */
   --scriba-frame-gap:              1rem;
   --scriba-frame-padding:          1rem;
@@ -357,6 +366,14 @@
    ============================================ */
 
 [data-theme="dark"] {
+  /* Base token overrides for dark mode */
+  --scriba-fg:                 #e6edf3;
+  --scriba-fg-muted:           #7d8590;
+  --scriba-bg:                 #0d1117;
+  --scriba-bg-code:            #161b22;
+  --scriba-border:             #30363d;
+  --scriba-link:               #58a6ff;
+
   /* State overrides — only idle and dim change */
   --scriba-state-idle-fill:    var(--scriba-bg-code);
   --scriba-state-idle-stroke:  var(--scriba-border);
