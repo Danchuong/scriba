@@ -1,0 +1,17 @@
+\begin{animation}[id="grid", label="BFS on Grid"]
+\shape{g}{Grid}{rows=3, cols=3, data=[[0,0,0],[0,1,0],[0,0,0]]}
+\step
+\recolor{g.cell[0][0]}{state=current}
+\narrate{Start BFS from top-left corner.}
+\step
+\recolor{g.cell[0][0]}{state=done}
+\recolor{g.cell[0][1]}{state=current}
+\recolor{g.cell[1][0]}{state=current}
+\narrate{Explore neighbors. Cell (1,1)=1 is blocked.}
+\step
+\recolor{g.cell[0][1]}{state=done}
+\recolor{g.cell[1][0]}{state=done}
+\recolor{g.cell[0][2]}{state=current}
+\recolor{g.cell[2][0]}{state=current}
+\narrate{Continue expanding. Approaching goal at (2,2).}
+\end{animation}
