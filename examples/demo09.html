@@ -169,10 +169,13 @@ svg text {
 <div class="scriba-widget" id="selsort">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">Step 1 / 4</span>
+    <span class="scriba-step-counter">Step 1 / 7</span>
     <button class="scriba-btn-next">Next</button>
     <div class="scriba-progress">
       <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
       <div class="scriba-dot"></div>
       <div class="scriba-dot"></div>
       <div class="scriba-dot"></div>
@@ -188,9 +191,9 @@ svg text {
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-current">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">29</text>
+  <g data-target="a.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">29</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="a.cell[1]" class="scriba-state-idle">
@@ -213,14 +216,14 @@ svg text {
     <text x="278" y="20" fill="#212529">13</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-current">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">8</text>
+  <g data-target="a.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">8</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
 </g>
 </g>
-</svg>`,narration:`Pass 1: scan for minimum. Min found at a[5]=8. Swap with a[0]=29.`},
+</svg>`,narration:`Pass 1: scan entire array for minimum. Min = 8 at index 5.`},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
@@ -229,8 +232,80 @@ svg text {
     <text x="30" y="20" fill="#ffffff">8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-current">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+  <g data-target="a.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">10</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="a.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">14</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="a.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">37</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="a.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">13</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="a.cell[5]" class="scriba-state-default">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="2"/>
+    <text x="340" y="20" fill="#212529">29</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+</g>
+</g>
+</svg>`,narration:`Swap a[0] and a[5]. Array: [8, 10, 14, 37, 13, 29]. a[0] is sorted.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="a.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">10</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="a.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">14</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="a.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">37</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="a.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">13</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="a.cell[5]" class="scriba-state-default">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="2"/>
+    <text x="340" y="20" fill="#212529">29</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+</g>
+</g>
+</svg>`,narration:`Pass 2: scan a[1..5] for minimum. Min = 10 at index 1. Already in place.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="a.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
     <text x="92" y="20" fill="#ffffff">10</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
@@ -244,20 +319,20 @@ svg text {
     <text x="216" y="20" fill="#212529">37</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-current">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">13</text>
+  <g data-target="a.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">13</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+  <g data-target="a.cell[5]" class="scriba-state-default">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="2"/>
     <text x="340" y="20" fill="#212529">29</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
 </g>
 </g>
-</svg>`,narration:`After swap: [8,...]. Pass 2: scan a[1..5]. Min at a[1]=10. Already in place.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
+</svg>`,narration:`Pass 3: scan a[2..5] for minimum. Min = 13 at index 4.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-done">
@@ -270,30 +345,30 @@ svg text {
     <text x="92" y="20" fill="#ffffff">10</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-current">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">14</text>
+  <g data-target="a.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">13</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-current">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">37</text>
+  <g data-target="a.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">37</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">13</text>
+  <g data-target="a.cell[4]" class="scriba-state-default">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="2"/>
+    <text x="278" y="20" fill="#212529">14</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+  <g data-target="a.cell[5]" class="scriba-state-default">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="2"/>
     <text x="340" y="20" fill="#212529">29</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
 </g>
 </g>
-</svg>`,narration:`Pass 3: scan a[2..5]. Min at a[4]=13. Swap a[2]=14 with a[4]=13.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
+</svg>`,narration:`Swap a[2] and a[4]. Array: [8, 10, 13, 37, 14, 29]. Scan a[3..5], min = 14 at index 4.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-done">
@@ -313,22 +388,58 @@ svg text {
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="a.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">37</text>
+    <text x="216" y="20" fill="#ffffff">14</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-done">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">14</text>
+  <g data-target="a.cell[4]" class="scriba-state-default">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="2"/>
+    <text x="278" y="20" fill="#212529">37</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-done">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">29</text>
+  <g data-target="a.cell[5]" class="scriba-state-default">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="2"/>
+    <text x="340" y="20" fill="#212529">29</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
 </g>
 </g>
-</svg>`,narration:`Result so far: [8,10,13,14,29,...]. Remaining passes complete the sort.`}
+</svg>`,narration:`Swap a[3] and a[4]. Array: [8, 10, 13, 14, 37, 29]. Scan a[4..5], min = 29 at index 5.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 88" role="img" aria-labelledby="selsort-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="a.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">10</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="a.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">13</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="a.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">14</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="a.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">29</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="a.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">37</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+</g>
+</g>
+</svg>`,narration:`Swap a[4] and a[5]. Final sorted array: [8, 10, 13, 14, 29, 37].`}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
