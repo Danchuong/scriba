@@ -8,11 +8,16 @@ callbacks at runtime; at parse time the frames carry empty command tuples.
 
 from __future__ import annotations
 
-from scriba.animation.parser.ast import FastForwardCommand, FrameIR
+from scriba.animation.parser.ast import FastForwardCommand, FastForwardMeta, FrameIR
 
 
 def expand_fastforward(cmd: FastForwardCommand) -> tuple[FrameIR, ...]:
-    """Expand a ``\\fastforward`` command into N sequential FrameIR objects."""
+    """Expand a ``\\fastforward`` command into N sequential FrameIR objects.
+
+    Each frame carries a :class:`FastForwardMeta` so that the renderer can
+    run the Starlark ``iterate(scene, rng)`` callback at materialisation
+    time and inject real state mutations.
+    """
     n_frames = cmd.total_iters // cmd.sample_every
     frames: list[FrameIR] = []
     for k in range(1, n_frames + 1):
@@ -30,6 +35,12 @@ def expand_fastforward(cmd: FastForwardCommand) -> tuple[FrameIR, ...]:
                 commands=(),
                 compute=(),
                 narrate_body=narrate,
+                ff_meta=FastForwardMeta(
+                    total_iters=cmd.total_iters,
+                    sample_every=cmd.sample_every,
+                    seed=cmd.seed,
+                    frame_index=k - 1,
+                ),
             ),
         )
     return tuple(frames)

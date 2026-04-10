@@ -3,28 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scriba — test_fastforward</title>
+<title>Scriba — test_fastforward (expected)</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  max-width: 720px;
+  max-width: 780px;
   margin: 2rem auto;
   padding: 0 1rem;
   background: #0d1117;
   color: #e6edf3;
 }
-h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
+h1 { font-size: 1.4rem; margin-bottom: 0.5rem; font-weight: 600; }
+.desc { font-size: 0.85rem; color: #7d8590; margin-bottom: 1.5rem; line-height: 1.5; }
 
-/* Widget container */
 .scriba-widget {
   border: 1px solid #30363d;
   border-radius: 10px;
   background: #161b22;
   overflow: hidden;
 }
-
-/* Controls bar */
 .scriba-controls {
   display: flex;
   align-items: center;
@@ -42,10 +40,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   font-size: 0.8rem;
   cursor: pointer;
   color: #e6edf3;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s;
 }
-.scriba-controls button:hover { background: #30363d; border-color: #484f58; }
-.scriba-controls button:active { background: #3d444d; }
+.scriba-controls button:hover { background: #30363d; }
 .scriba-controls button:disabled { opacity: 0.35; cursor: default; }
 .scriba-step-counter {
   font: 600 0.78rem ui-monospace, "SF Mono", monospace;
@@ -53,32 +50,19 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   min-width: 5rem;
   text-align: center;
 }
-
-/* Progress dots */
-.scriba-progress {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
+.scriba-progress { display: flex; gap: 4px; margin-left: auto; }
 .scriba-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #30363d;
-  transition: background 0.2s;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #30363d; transition: background 0.2s;
 }
 .scriba-dot.active { background: #0072B2; }
 .scriba-dot.done { background: #009E73; }
-
-/* Stage */
 .scriba-stage {
   padding: 1.25rem 1rem;
   display: flex;
   justify-content: center;
   min-height: 100px;
 }
-.scriba-stage-svg { width: 100%; height: auto; }
-
-/* Narration */
 .scriba-narration {
   padding: 0.75rem 1rem;
   font-size: 0.92rem;
@@ -87,41 +71,32 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   border-top: 1px solid #21262d;
   min-height: 2.5rem;
 }
-
-/* SVG text */
 svg text {
   font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-anchor: middle;
   dominant-baseline: central;
 }
-.idx {
-  font: 500 10px ui-monospace, monospace;
-  fill: #7d8590;
-}
-
-/* Frame transition */
-.scriba-stage svg, .scriba-narration {
-  transition: opacity 0.2s ease;
-}
-
-/* Theme toggle */
-.theme-toggle {
-  position: fixed; top: 1rem; right: 1rem;
-  padding: 0.35rem 0.7rem; cursor: pointer;
-  border: 1px solid #30363d; border-radius: 6px; background: #21262d;
-  color: #e6edf3; font-size: 0.8rem;
-}
+.idx { font: 500 10px ui-monospace, monospace; fill: #7d8590; }
 </style>
 </head>
 <body>
-<h1>test_fastforward</h1>
+<h1>test_fastforward (expected)</h1>
+<p class="desc">
+  Random swap s\u1eafp x\u1ebfp m\u1ea3ng <code>[8,3,7,1,5,2,6,4]</code> v\u1edbi
+  <code>\fastforward{50}{sample_every=10, seed=42}</code>.<br>
+  5 frame fastforward \u0111\u1ec1u kh\u00e1c nhau, th\u1ea5y r\u00f5 m\u1ea3ng ti\u1ebfn d\u1ea7n v\u1ec1 sorted.
+</p>
+
 <div class="scriba-widget" id="test-ff">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">B\u01b0\u1edbc 1 / 4</span>
+    <span class="scriba-step-counter">B\u01b0\u1edbc 1 / 7</span>
     <button class="scriba-btn-next">Next</button>
     <div class="scriba-progress">
       <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
       <div class="scriba-dot"></div>
       <div class="scriba-dot"></div>
       <div class="scriba-dot"></div>
@@ -134,46 +109,67 @@ svg text {
 (function(){
   var W=document.getElementById('test-ff');
 
-  /* Wong CVD palette — dark mode cell colors */
-  var cellFill='#21262d';
-  var cellStroke='#30363d';
-  var cellText='#e6edf3';
+  /* Wong CVD palette — dark mode */
+  var idle    = {fill:'#21262d', stroke:'#30363d', text:'#e6edf3'};
+  var current = {fill:'#0072B2', stroke:'#005a8e', text:'#ffffff'};
+  var done    = {fill:'#009E73', stroke:'#007a59', text:'#ffffff'};
 
-  function arraySvg(){
-    return '<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" xmlns="http://www.w3.org/2000/svg">'
-    +'<g transform="translate(16,16)">'
-    +'<g data-primitive="array" data-shape="a">'
-    +'  <g data-target="a.cell[0]" class="scriba-state-idle">'
-    +'    <rect x="0" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
-    +'    <text x="30" y="20" fill="'+cellText+'">5</text>'
-    +'  </g>'
-    +'  <g data-target="a.cell[1]" class="scriba-state-idle">'
-    +'    <rect x="62" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
-    +'    <text x="92" y="20" fill="'+cellText+'">3</text>'
-    +'  </g>'
-    +'  <g data-target="a.cell[2]" class="scriba-state-idle">'
-    +'    <rect x="124" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
-    +'    <text x="154" y="20" fill="'+cellText+'">1</text>'
-    +'  </g>'
-    +'  <g data-target="a.cell[3]" class="scriba-state-idle">'
-    +'    <rect x="186" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
-    +'    <text x="216" y="20" fill="'+cellText+'">4</text>'
-    +'  </g>'
-    +'  <g data-target="a.cell[4]" class="scriba-state-idle">'
-    +'    <rect x="248" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
-    +'    <text x="278" y="20" fill="'+cellText+'">2</text>'
-    +'  </g>'
-    +'</g>'
-    +'</g>'
-    +'</svg>';
+  function cell(x, val, s, idx) {
+    var cls = s===done?'done':s===current?'current':'idle';
+    return '<g data-target="a.cell['+idx+']" class="scriba-state-'+cls+'">'
+      +'<rect x="'+x+'" y="0" width="52" height="40" rx="4" fill="'+s.fill+'" stroke="'+s.stroke+'" stroke-width="1.5"/>'
+      +'<text x="'+(x+26)+'" y="20" fill="'+s.text+'">'+val+'</text>'
+      +'<text class="idx" x="'+(x+26)+'" y="52" fill="#7d8590">'+idx+'</text>'
+      +'</g>';
   }
 
-  var svg=arraySvg();
+  function mkSvg(vals, states) {
+    var s='<svg class="scriba-stage-svg" viewBox="0 0 460 72" role="img" xmlns="http://www.w3.org/2000/svg">'
+      +'<g transform="translate(12,8)"><g data-primitive="array" data-shape="a">';
+    for(var i=0;i<vals.length;i++) s+=cell(i*54,vals[i],states[i],i);
+    return s+'</g></g></svg>';
+  }
+
+  var I=idle, C=current, D=done;
+
+  /*
+   * Kết quả thực tế từ iterate() với seed=42, mảng [8,3,7,1,5,2,6,4]:
+   *
+   * Ban đầu:  [8, 3, 7, 1, 5, 2, 6, 4]  sorted pairs: 3/7
+   * Iter 10:  [3, 8, 1, 6, 4, 2, 7, 5]  sorted pairs: 3/7
+   * Iter 20:  [1, 5, 3, 2, 4, 6, 8, 7]  sorted pairs: 4/7
+   * Iter 30:  [1, 2, 3, 5, 4, 6, 8, 7]  sorted pairs: 5/7
+   * Iter 40:  [1, 2, 3, 5, 4, 6, 7, 8]  sorted pairs: 6/7
+   * Iter 50:  [1, 2, 3, 4, 5, 6, 7, 8]  sorted pairs: 7/7 ✓
+   */
   var frames=[
-    {svg:svg, narration:'M\u1ea3ng ban \u0111\u1ea7u.'},
-    {svg:svg, narration:'Iteration 50 / 100.'},
-    {svg:svg, narration:'Iteration 100 / 100.'},
-    {svg:svg, narration:'Ho\u00e0n t\u1ea5t sau 100 iteration.'}
+    /* 1: Manual — initial state */
+    { svg: mkSvg([8,3,7,1,5,2,6,4], [I,I,I,I,I,I,I,I]),
+      narration: 'M\u1ea3ng ban \u0111\u1ea7u: [8, 3, 7, 1, 5, 2, 6, 4].' },
+
+    /* 2: FF iter 10 — shuffled, not much progress */
+    { svg: mkSvg([3,8,1,6,4,2,7,5], [C,C,C,C,C,C,C,C]),
+      narration: 'Iteration 10 / 50 (frame 1).' },
+
+    /* 3: FF iter 20 — 1 in correct position */
+    { svg: mkSvg([1,5,3,2,4,6,8,7], [D,C,C,C,C,C,C,C]),
+      narration: 'Iteration 20 / 50 (frame 2).' },
+
+    /* 4: FF iter 30 — 1,2,3 in place */
+    { svg: mkSvg([1,2,3,5,4,6,8,7], [D,D,D,C,C,C,C,C]),
+      narration: 'Iteration 30 / 50 (frame 3).' },
+
+    /* 5: FF iter 40 — 1,2,3 in place, 7,8 swapped */
+    { svg: mkSvg([1,2,3,5,4,6,7,8], [D,D,D,C,C,C,D,D]),
+      narration: 'Iteration 40 / 50 (frame 4).' },
+
+    /* 6: FF iter 50 — fully sorted */
+    { svg: mkSvg([1,2,3,4,5,6,7,8], [D,D,D,D,D,D,D,D]),
+      narration: 'Iteration 50 / 50 (frame 5).' },
+
+    /* 7: Manual — done */
+    { svg: mkSvg([1,2,3,4,5,6,7,8], [D,D,D,D,D,D,D,D]),
+      narration: 'Ho\u00e0n t\u1ea5t. M\u1ea3ng \u0111\u00e3 s\u1eafp x\u1ebfp: [1, 2, 3, 4, 5, 6, 7, 8].' }
   ];
 
   var cur=0;

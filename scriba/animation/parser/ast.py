@@ -290,6 +290,20 @@ class SubstoryBlock:
 
 
 @dataclass(frozen=True, slots=True)
+class FastForwardMeta:
+    """Metadata attached to frames expanded from ``\\fastforward``.
+
+    Carries the information needed at materialisation time to run the
+    Starlark ``iterate(scene, rng)`` callback.
+    """
+
+    total_iters: int
+    sample_every: int
+    seed: int
+    frame_index: int  # 0-based index within the ff batch
+
+
+@dataclass(frozen=True, slots=True)
 class FrameIR:
     """One ``\\step`` block inside an animation."""
 
@@ -298,6 +312,7 @@ class FrameIR:
     compute: tuple[ComputeCommand, ...] = ()
     narrate_body: str | None = None
     substories: tuple[SubstoryBlock, ...] = ()
+    ff_meta: FastForwardMeta | None = None
 
 
 @dataclass(frozen=True, slots=True)

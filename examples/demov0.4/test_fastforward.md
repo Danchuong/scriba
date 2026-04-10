@@ -1,38 +1,46 @@
-# Test \fastforward -- Chay nhanh nhieu iteration
+# Test \fastforward — Sắp xếp mảng bằng random swap (SA-style)
 
-## Muc dich
+## Mục đích
 
-Kiem tra extension `\fastforward` co the chay nhieu iteration mot cach tu dong va chi lay mau (sample) tai nhung buoc duoc chi dinh. Nguoi dung cuoi cung nhin thay cac frame mau nhu the chung la cac buoc thu cong binh thuong -- khong co su khac biet nao ve mat giao dien.
+Kiểm tra extension `\fastforward` thực sự chạy callback `iterate(scene, rng)` trong Starlark, thay đổi trạng thái shapes qua mỗi iteration, và chỉ sample tại các bước được chỉ định.
 
-## Mo ta bai toan
+## Mô tả bài toán
 
-File `.tex` khai bao mot mang 5 phan tu `[5, 3, 1, 4, 2]`, sau do:
+Cho mảng 8 phần tử `[8, 3, 7, 1, 5, 2, 6, 4]`. Thuật toán random swap:
+- Mỗi iteration: chọn ngẫu nhiên hai vị trí `i`, `j`
+- Nếu swap giúp mảng "sắp xếp hơn" (phần tử nhỏ hơn ở vị trí nhỏ hơn), thực hiện swap
+- Lặp 50 lần, seed=42, sample mỗi 10 iteration
 
-1. **Buoc thu cong dau tien** (`\step` + `\narrate`): Hien thi mang ban dau voi narration "Mang ban dau."
-2. **`\fastforward{100}{sample_every=50, seed=42}`**: Chay 100 iteration, lay mau moi 50 iteration. Dieu nay tao ra **2 frame mau**:
-   - Frame tai iteration 50: narration "Iteration 50 / 100."
-   - Frame tai iteration 100: narration "Iteration 100 / 100."
-3. **Buoc thu cong cuoi** (`\step` + `\narrate`): Narration "Hoan tat sau 100 iteration."
+## Cấu hình
 
-Tong cong: **4 buoc** trong widget.
+```
+\fastforward{50}{sample_every=10, seed=42}
+```
 
-## Cac buoc ky vong
+- Tổng iterations: 50
+- Sample mỗi: 10 iterations
+- Số frame fastforward: 50 / 10 = **5 frames**
+- Tổng bước widget: 1 (thủ công) + 5 (fastforward) + 1 (thủ công) = **7 bước**
 
-| Buoc | Loai | Narration | Ghi chu |
-|------|------|-----------|---------|
-| 1 | Thu cong | "Mang ban dau." | Mang `[5,3,1,4,2]` trang thai idle |
-| 2 | Fastforward (sample) | "Iteration 50 / 100." | Mang khong doi, narration tu dong sinh voi so iteration |
-| 3 | Fastforward (sample) | "Iteration 100 / 100." | Mang khong doi, narration tu dong sinh voi so iteration |
-| 4 | Thu cong | "Hoan tat sau 100 iteration." | Mang khong doi |
+## Các bước kỳ vọng (kết quả thực tế với seed=42)
 
-## Dieu kien chap nhan
+| Bước | Loại | Iteration | Mảng | Sorted pairs |
+|------|------|-----------|------|-------------|
+| 1 | Thủ công | — | `[8,3,7,1,5,2,6,4]` | 3/7 |
+| 2 | FF sample | 10 | `[3,8,1,6,4,2,7,5]` | 3/7 |
+| 3 | FF sample | 20 | `[1,5,3,2,4,6,8,7]` | 4/7 |
+| 4 | FF sample | 30 | `[1,2,3,5,4,6,8,7]` | 5/7 |
+| 5 | FF sample | 40 | `[1,2,3,5,4,6,7,8]` | 6/7 |
+| 6 | FF sample | 50 | `[1,2,3,4,5,6,7,8]` | 7/7 (sorted) |
+| 7 | Thủ công | — | `[1,2,3,4,5,6,7,8]` | 7/7 |
 
-- [ ] `\fastforward{100}{sample_every=50, seed=42}` tao ra dung 2 frame mau (tai iteration 50 va 100)
-- [ ] Tong so buoc trong widget la 4 (1 thu cong + 2 fastforward + 1 thu cong)
-- [ ] Cac frame fastforward trong giong het cac frame thu cong (nguoi dung khong phan biet duoc)
-- [ ] Narration cua frame fastforward chua so iteration da duoc resolve (vd: "Iteration 50 / 100."), khong chua `${iter}` nguyen van
-- [ ] Bo dem buoc hien thi dung: "Buoc 1 / 4", "Buoc 2 / 4", "Buoc 3 / 4", "Buoc 4 / 4"
-- [ ] Nut Prev/Next hoat dong binh thuong qua tat ca 4 buoc
-- [ ] Progress dots hien thi 4 cham, trang thai active/done cap nhat dung
-- [ ] Widget su dung dark theme, bang mau Wong CVD, narration tieng Viet co dau
-- [ ] Mang `[5, 3, 1, 4, 2]` hien thi nhat quan o tat ca 4 frame
+## Điều kiện chấp nhận
+
+- [ ] `\fastforward{50}{sample_every=10, seed=42}` tạo đúng 5 frame
+- [ ] Callback `iterate(scene, rng)` được gọi 50 lần
+- [ ] Mỗi frame sample hiển thị trạng thái mảng **thực sự khác nhau**
+- [ ] 5 frame đều có mảng unique (không có 2 frame giống nhau)
+- [ ] Frame cuối cùng (iter 50) hiển thị mảng đã sorted `[1,2,3,4,5,6,7,8]`
+- [ ] Tổng số bước: 7
+- [ ] Deterministic: cùng seed=42 → cùng kết quả mỗi lần build
+- [ ] Widget dark theme, bảng màu Wong CVD
