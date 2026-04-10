@@ -2,7 +2,7 @@
 
 > Single-source reference for all grammar rules, constraints, error codes, CSS contracts,
 > HTML shape contracts, and validation limits that define Scriba's behavior.
-> Generated from `04-environments-spec.md`, `06-primitives.md`, `00-ARCHITECTURE-DECISION`,
+> Generated from `environments.md`, `primitives.md`, `../planning/architecture-decision.md`,
 > extension/primitive specs, and source code analysis.
 
 ---
@@ -57,6 +57,14 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\annotate` | `{target}{params}` | both | persistent (default), ephemeral if `ephemeral=true` |
 | `\foreach` | `{variable}{iterable}...body...\endforeach` | prelude or step | expands to body commands |
 | `\endforeach` | (no args) | closes `\foreach` | — |
+
+**`\foreach` iterable formats:**
+
+| Format | Example | Meaning |
+|--------|---------|---------|
+| Range literal | `0..5` | Inclusive integer range `[0,1,2,3,4,5]` |
+| Binding reference | `${name}` | Resolves to a list produced by `\compute` |
+| List literal | `[1,2,3]` | Parsed via Python `literal_eval` |
 
 ### 2.2 Extension Commands (2)
 
@@ -345,6 +353,8 @@ chr, ord, pow
 
 Named CSS animation presets: `rotate`, `orbit`, `pulse`, `trail`, `fade-loop`.
 Inlined into frame `<style>` at build time.
+
+### 7.4 _(reserved)_
 
 ### 7.5 `\begin{figure-embed}` (E1)
 
@@ -789,12 +799,15 @@ Print media: lines forced to `stroke: #000`.
 | Frames (hard) | 100 | E1181 (error) |
 | Starlark ops | 10^8 | E1153 |
 | Starlark wall clock | 5s | E1152 |
-| Starlark memory | 64 MB | E1151 |
+| Starlark memory | 64 MB | E1151 (surfaces as E1151) |
 | Substory nesting depth | 3 | E1360 |
 | Foreach nesting depth | 3 | E1170 |
 | Graph stable nodes | 20 | E1501 (warning) |
 | Graph stable frames | 50 | E1502 (warning) |
 | Matrix cells | 10,000 | E1425 |
+| Foreach iterable length | 10,000 | E1173 |
+| Plane2D elements per frame | 500 | E1466 |
+| MetricPlot points per series | 1,000 | E1483 |
 
 ---
 
@@ -802,9 +815,9 @@ Print media: lines forced to `stroke: #000`.
 
 | Document | Content |
 |----------|---------|
-| `04-environments-spec.md` | Locked base spec (grammar, commands, HTML shape, CSS) |
-| `06-primitives.md` | 6 base primitive specs |
-| `00-ARCHITECTURE-DECISION-2026-04-09.md` | Pivot #2 rationale (10 additions) |
+| `environments.md` | Locked base spec (grammar, commands, HTML shape, CSS) |
+| `primitives.md` | 6 base primitive specs |
+| `../planning/architecture-decision.md` | Pivot #2 rationale (10 additions) |
 | `extensions/hl-macro.md` | E2 spec |
 | `extensions/substory.md` | E4 spec |
 | `extensions/keyframe-animation.md` | E5 spec |
@@ -814,4 +827,4 @@ Print media: lines forced to `stroke: #000`.
 | `primitives/plane2d.md` | P3 spec |
 | `primitives/metricplot.md` | P4 spec |
 | `primitives/graph-stable-layout.md` | P5 spec |
-| `09-animation-css.md` | CSS stylesheet spec |
+| `animation-css.md` | CSS stylesheet spec |

@@ -492,9 +492,9 @@ class SceneParser:
         variable = self._read_brace_arg(tok).strip()
         if not variable or not variable.isidentifier():
             raise ValidationError(
-                f"invalid foreach variable name {variable!r}",
+                f"invalid variable name in foreach: {variable!r}",
                 position=tok.col,
-                code="E1171",
+                code="E1173",
                 line=tok.line,
                 col=tok.col,
             )
