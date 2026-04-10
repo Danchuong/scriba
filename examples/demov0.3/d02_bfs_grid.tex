@@ -1,0 +1,51 @@
+\begin{animation}[id="bfs-grid", label="BFS on 4x4 Grid"]
+\shape{g}{Grid}{rows=4, cols=4, data=[[0,0,0,0],[0,1,0,0],[0,0,0,1],[0,0,0,0]]}
+
+\step
+\recolor{g.cell[0][0]}{state=current}
+\narrate{Start BFS from (0,0). Goal is (3,3). Cells with 1 are walls.}
+
+\step
+\recolor{g.cell[0][0]}{state=done}
+\recolor{g.cell[0][1]}{state=current}
+\recolor{g.cell[1][0]}{state=current}
+\narrate{Wave 1: expand to neighbors (0,1) and (1,0). Cell (1,1) is a wall.}
+
+\step
+\recolor{g.cell[0][1]}{state=done}
+\recolor{g.cell[1][0]}{state=done}
+\recolor{g.cell[0][2]}{state=current}
+\recolor{g.cell[2][0]}{state=current}
+\narrate{Wave 2: expand to (0,2) and (2,0). The frontier moves outward.}
+
+\step
+\recolor{g.cell[0][2]}{state=done}
+\recolor{g.cell[2][0]}{state=done}
+\recolor{g.cell[0][3]}{state=current}
+\recolor{g.cell[1][2]}{state=current}
+\recolor{g.cell[2][1]}{state=current}
+\recolor{g.cell[3][0]}{state=current}
+\narrate{Wave 3: expand to (0,3), (1,2), (2,1), (3,0). Getting closer to goal.}
+
+\step
+\recolor{g.cell[0][3]}{state=done}
+\recolor{g.cell[1][2]}{state=done}
+\recolor{g.cell[2][1]}{state=done}
+\recolor{g.cell[3][0]}{state=done}
+\recolor{g.cell[1][3]}{state=current}
+\recolor{g.cell[2][2]}{state=current}
+\recolor{g.cell[3][1]}{state=current}
+\narrate{Wave 4: expand to (1,3), (2,2), (3,1). Cell (2,3) is a wall. Almost there.}
+
+\step
+\recolor{g.cell[1][3]}{state=done}
+\recolor{g.cell[2][2]}{state=done}
+\recolor{g.cell[3][1]}{state=done}
+\recolor{g.cell[3][2]}{state=current}
+\narrate{Wave 5: reach (3,2). One more step to the goal.}
+
+\step
+\recolor{g.cell[3][2]}{state=done}
+\recolor{g.cell[3][3]}{state=good}
+\narrate{Wave 6: reached goal (3,3). Shortest path found with BFS.}
+\end{animation}

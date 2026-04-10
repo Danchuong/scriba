@@ -1,0 +1,37 @@
+\begin{animation}[id="multi-primitive", label="Array and NumberLine Together"]
+\shape{arr}{Array}{size=8, data=[2,5,1,8,3,7,4,6], labels="0..7"}
+\shape{nl}{NumberLine}{domain=[0,8], ticks=9, labels="0..8"}
+
+\step
+\narrate{An array of 8 values and a number line showing the value range. We will find the maximum.}
+
+\step
+\recolor{arr.cell[0]}{state=current}
+\recolor{nl.range[0:2]}{state=current}
+\narrate{Check index 0, value 2. Current max = 2.}
+
+\step
+\recolor{arr.cell[0]}{state=done}
+\recolor{arr.cell[1]}{state=current}
+\recolor{nl.range[0:2]}{state=done}
+\recolor{nl.range[0:5]}{state=current}
+\narrate{Check index 1, value 5. New max = 5.}
+
+\step
+\recolor{arr.cell[1]}{state=done}
+\recolor{arr.cell[3]}{state=current}
+\recolor{nl.range[0:5]}{state=done}
+\recolor{nl.range[0:8]}{state=current}
+\narrate{Scanning ahead, index 3 has value 8. New max = 8.}
+
+\step
+\recolor{arr.cell[3]}{state=good}
+\recolor{arr.cell[2]}{state=done}
+\recolor{arr.cell[4]}{state=done}
+\recolor{arr.cell[5]}{state=done}
+\recolor{arr.cell[6]}{state=done}
+\recolor{arr.cell[7]}{state=done}
+\recolor{nl.range[0:8]}{state=good}
+\highlight{nl.tick[8]}
+\narrate{Scan complete. Maximum value is 8 at index 3.}
+\end{animation}

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriba — d09_diagram_architecture</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  background: #fafafa;
+  color: #212529;
+}
+h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
+
+/* Widget container */
+.scriba-widget {
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* Controls bar */
+.scriba-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  user-select: none;
+}
+.scriba-controls button {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #212529;
+  transition: background 0.15s, border-color 0.15s;
+}
+.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
+.scriba-controls button:active { background: #e4e4e4; }
+.scriba-controls button:disabled { opacity: 0.35; cursor: default; }
+.scriba-step-counter {
+  font: 600 0.78rem ui-monospace, "SF Mono", monospace;
+  color: #6c757d;
+  min-width: 5rem;
+  text-align: center;
+}
+
+/* Progress dots */
+.scriba-progress {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.scriba-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #d0d7de;
+  transition: background 0.2s;
+}
+.scriba-dot.active { background: #0072B2; }
+.scriba-dot.done { background: #009E73; }
+
+/* Stage */
+.scriba-stage {
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: center;
+  min-height: 100px;
+}
+.scriba-stage-svg { width: 100%; height: auto; }
+
+/* Narration */
+.scriba-narration {
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #212529;
+  border-top: 1px solid #f0f0f0;
+  min-height: 2.5rem;
+}
+
+/* SVG text */
+svg text {
+  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.idx {
+  font: 500 10px ui-monospace, monospace;
+  fill: #6c757d;
+}
+
+/* Frame transition */
+.scriba-stage svg, .scriba-narration {
+  transition: opacity 0.2s ease;
+}
+
+/* Static filmstrip layout (legacy) */
+.scriba-animation { max-width: 100%; }
+.scriba-frames {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+}
+.scriba-frame {
+  flex: 0 0 auto;
+  min-width: 280px;
+  max-width: 560px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #ffffff;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+.scriba-frame-header {
+  padding: 0.5rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+}
+.scriba-step-label {
+  font: 600 0.72rem ui-monospace, monospace;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem;
+  padding: 0.35rem 0.7rem; cursor: pointer;
+  border: 1px solid #ccc; border-radius: 6px; background: white;
+  font-size: 0.8rem;
+}
+
+/* Dark mode */
+[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
+[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
+[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
+[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
+[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
+[data-theme="dark"] .scriba-dot { background: #30363d; }
+[data-theme="dark"] .idx { fill: #7d8590; }
+[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-step-label { color: #7d8590; }
+[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="
+  var t = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
+">Toggle theme</button>
+<h1>d09_diagram_architecture</h1>
+<figure class="scriba-diagram" data-scriba-scene="system-arch">
+  <div class="scriba-stage">
+    <svg class="scriba-stage-svg" viewBox="0 0 432 332" role="img" aria-labelledby="system-arch-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+<defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs>
+<g transform="translate(16,16)">
+<g data-primitive="graph" data-shape="G"><defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs><g class="scriba-graph-edges"><g data-target="G.edge[(Client,API)]" class="scriba-state-current"><line x1="341" y1="20" x2="221" y2="159" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(API,DB)]" class="scriba-state-done"><line x1="208" y1="174" x2="55" y2="265" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(API,Cache)]" class="scriba-state-current"><line x1="208" y1="174" x2="363" y2="270" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(API,Queue)]" class="scriba-state-dim"><line x1="208" y1="174" x2="39" y2="135" stroke="#dee2e6" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(Queue,DB)]" class="scriba-state-dim"><line x1="20" y1="130" x2="36" y2="255" stroke="#dee2e6" stroke-width="2" marker-end="url(#scriba-arrow)"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[Client]" class="scriba-state-current"><circle cx="341" cy="20" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="341" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">Client</text></g><g data-target="G.node[API]" class="scriba-state-good"><circle cx="208" cy="174" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="208" y="174" text-anchor="middle" dominant-baseline="central" fill="#ffffff">API</text></g><g data-target="G.node[DB]" class="scriba-state-done"><circle cx="38" cy="275" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="38" y="275" text-anchor="middle" dominant-baseline="central" fill="#ffffff">DB</text></g><g data-target="G.node[Cache]" class="scriba-state-current"><circle cx="380" cy="280" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">Cache</text></g><g data-target="G.node[Queue]" class="scriba-state-dim"><circle cx="20" cy="130" r="20" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="20" y="130" text-anchor="middle" dominant-baseline="central" fill="#adb5bd">Queue</text></g></g></g>
+</g>
+</svg>
+  </div>
+</figure>
+</body>
+</html>

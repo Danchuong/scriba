@@ -1,0 +1,34 @@
+\begin{animation}[id="stack-parens", label="Parenthesis Matching with Stack"]
+\shape{s}{Stack}{items=[]}
+
+\step
+\narrate{Process the string ( ( ) ( character by character using a stack.}
+
+\step
+\apply{s}{push="("}
+\recolor{s.item[0]}{state=current}
+\narrate{Char 1: opening paren. Push onto stack. Stack: ( .}
+
+\step
+\recolor{s.item[0]}{state=idle}
+\apply{s}{push="("}
+\recolor{s.item[1]}{state=current}
+\narrate{Char 2: opening paren. Push onto stack. Stack: ( ( .}
+
+\step
+\recolor{s.item[1]}{state=good}
+\apply{s}{pop=1}
+\recolor{s.item[0]}{state=current}
+\narrate{Char 3: closing paren. Pop top, matched! Stack: ( .}
+
+\step
+\recolor{s.item[0]}{state=idle}
+\apply{s}{push="("}
+\recolor{s.item[1]}{state=current}
+\narrate{Char 4: opening paren. Push onto stack. Stack: ( ( .}
+
+\step
+\recolor{s.item[0]}{state=error}
+\recolor{s.item[1]}{state=error}
+\narrate{End of string. Stack is not empty, so the parentheses are unbalanced.}
+\end{animation}

@@ -1,0 +1,13 @@
+\begin{diagram}[id="system-arch"]
+\shape{G}{Graph}{nodes=["Client","API","DB","Cache","Queue"], edges=[("Client","API"),("API","DB"),("API","Cache"),("API","Queue"),("Queue","DB")], directed=true}
+\recolor{G.node[Client]}{state=current}
+\recolor{G.node[API]}{state=good}
+\recolor{G.node[DB]}{state=done}
+\recolor{G.node[Cache]}{state=current}
+\recolor{G.node[Queue]}{state=dim}
+\recolor{G.edge[(Client,API)]}{state=current}
+\recolor{G.edge[(API,DB)]}{state=done}
+\recolor{G.edge[(API,Cache)]}{state=current}
+\recolor{G.edge[(API,Queue)]}{state=dim}
+\recolor{G.edge[(Queue,DB)]}{state=dim}
+\end{diagram}

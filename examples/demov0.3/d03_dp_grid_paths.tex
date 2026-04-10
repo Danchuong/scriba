@@ -1,0 +1,47 @@
+\begin{animation}[id="dp-grid-paths", label="DP Grid Path Counting (3x3)"]
+\shape{dp}{DPTable}{rows=3, cols=3, data=["","","","","","","","",""]}
+
+\step
+\apply{dp.cell[0][0]}{value="1"}
+\recolor{dp.cell[0][0]}{state=current}
+\narrate{Start at (0,0). There is exactly 1 way to reach the starting cell.}
+
+\step
+\recolor{dp.cell[0][0]}{state=done}
+\apply{dp.cell[0][1]}{value="1"}
+\apply{dp.cell[0][2]}{value="1"}
+\recolor{dp.cell[0][1]}{state=current}
+\recolor{dp.cell[0][2]}{state=current}
+\narrate{Fill first row. Each cell in row 0 has exactly 1 path (go right).}
+
+\step
+\recolor{dp.cell[0][1]}{state=done}
+\recolor{dp.cell[0][2]}{state=done}
+\apply{dp.cell[1][0]}{value="1"}
+\apply{dp.cell[2][0]}{value="1"}
+\recolor{dp.cell[1][0]}{state=current}
+\recolor{dp.cell[2][0]}{state=current}
+\narrate{Fill first column. Each cell in col 0 has exactly 1 path (go down).}
+
+\step
+\recolor{dp.cell[1][0]}{state=done}
+\recolor{dp.cell[2][0]}{state=done}
+\apply{dp.cell[1][1]}{value="2"}
+\recolor{dp.cell[1][1]}{state=current}
+\narrate{Cell (1,1) = dp(0,1) + dp(1,0) = 1 + 1 = 2 paths.}
+
+\step
+\recolor{dp.cell[1][1]}{state=done}
+\apply{dp.cell[1][2]}{value="3"}
+\apply{dp.cell[2][1]}{value="3"}
+\recolor{dp.cell[1][2]}{state=current}
+\recolor{dp.cell[2][1]}{state=current}
+\narrate{Cell (1,2) = 1 + 2 = 3. Cell (2,1) = 1 + 2 = 3.}
+
+\step
+\recolor{dp.cell[1][2]}{state=done}
+\recolor{dp.cell[2][1]}{state=done}
+\apply{dp.cell[2][2]}{value="6"}
+\recolor{dp.cell[2][2]}{state=good}
+\narrate{Cell (2,2) = dp(1,2) + dp(2,1) = 3 + 3 = 6 unique paths from (0,0) to (2,2).}
+\end{animation}
