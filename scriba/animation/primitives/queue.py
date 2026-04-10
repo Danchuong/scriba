@@ -111,6 +111,14 @@ class Queue(PrimitiveBase):
 
         # Direct cell value assignment (handled by scene.py _apply_apply)
 
+    def set_value(self, suffix: str, value: str) -> None:
+        """Set a cell's display value (called by emitter)."""
+        m = _CELL_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if 0 <= idx < self.capacity:
+                self.cells[idx] = value
+
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:

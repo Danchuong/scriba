@@ -103,6 +103,14 @@ class HashMap(PrimitiveBase):
                     self._bucket_values[idx] = str(params["value"])
                 return
 
+    def set_value(self, suffix: str, value: str) -> None:
+        """Set a bucket's display value (called by emitter)."""
+        m = _BUCKET_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if 0 <= idx < self.capacity:
+                self._bucket_values[idx] = value
+
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:

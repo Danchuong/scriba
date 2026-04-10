@@ -21,21 +21,21 @@
 \narrate{Dequeue node 1 (done). Process node 2 next. Front pointer advances.}
 
 \step
+\apply{q}{dequeue=true}
 \apply{q}{enqueue=5}
 \apply{q}{enqueue=3}
-\recolor{q.cell[1]}{state=done}
+\recolor{q.cell[1]}{state=dim}
 \recolor{q.cell[2]}{state=current}
 \recolor{q.cell[3]}{state=good}
 \recolor{q.cell[4]}{state=good}
-\narrate{Node 2 processed. Enqueue its neighbors 5 and 3. Dequeue node 4 next.}
+\narrate{Dequeue node 2 (done). Process node 4. Enqueue its neighbors 5 and 3.}
 
 \step
 \apply{q}{dequeue=true}
-\recolor{q.cell[1]}{state=dim}
-\recolor{q.cell[2]}{state=done}
+\recolor{q.cell[2]}{state=dim}
 \recolor{q.cell[3]}{state=current}
 \recolor{q.cell[4]}{state=idle}
-\narrate{Dequeue node 4 and process it. Front advances to cell 3.}
+\narrate{Dequeue node 4 (done). Process node 5 next. Front advances to cell 3.}
 
 \step
 \recolor{q.cell[0]}{state=dim}

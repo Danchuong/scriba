@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import html as _html
+import inspect
 import re as _re
 from dataclasses import dataclass
 from typing import Any, Callable
@@ -254,11 +255,31 @@ def _emit_frame_svg(
             frame.shape_states.get(shape_name, {}), shape_name, prim
         )
         if hasattr(prim, "apply_command"):
+            # Check once whether apply_command accepts target_suffix
+            _accepts_suffix = "target_suffix" in inspect.signature(
+                prim.apply_command
+            ).parameters
+
             for target_key, target_data in shape_state.items():
                 if isinstance(target_data, dict):
                     ap = target_data.get("apply_params")
                     if ap:
-                        prim.apply_command(ap)
+                        # Extract the suffix (e.g. "bucket[0]") from the
+                        # full target key (e.g. "hm.bucket[0]").
+                        suffix = target_key
+                        if suffix.startswith(shape_name + "."):
+                            suffix = suffix[len(shape_name) + 1 :]
+
+                        # apply_params is a list of dicts (one per \apply
+                        # command in the frame).  Process each in order.
+                        params_list = ap if isinstance(ap, list) else [ap]
+                        for params in params_list:
+                            if _accepts_suffix:
+                                prim.apply_command(
+                                    params, target_suffix=suffix
+                                )
+                            else:
+                                prim.apply_command(params)
 
     # Recompute viewbox AFTER push/pop, including arrow annotation space
     viewbox = compute_viewbox(primitives, annotations=frame.annotations)
@@ -334,6 +355,13 @@ def _emit_frame_svg(
                     prim.set_state(suffix, state_val)
                     if target_data.get("highlighted"):
                         highlighted_suffixes.add(suffix)
+                    # Pass value to primitives that track per-part values
+                    # (e.g. VariableWatch).  The scene stores ``value``
+                    # separately from ``apply_params``, so PrimitiveBase
+                    # subclasses need it delivered explicitly.
+                    val = target_data.get("value")
+                    if val is not None and hasattr(prim, "set_value"):
+                        prim.set_value(suffix, str(val))
             prim._highlighted = highlighted_suffixes
             svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
 

@@ -93,6 +93,14 @@ class VariableWatch(PrimitiveBase):
             if vn in params:
                 self._values[vn] = str(params[vn])
 
+    def set_value(self, suffix: str, value: str) -> None:
+        """Set a variable's display value (called by emitter)."""
+        m = _VAR_RE.match(suffix)
+        if m:
+            varname = m.group("varname")
+            if varname in self._values:
+                self._values[varname] = value
+
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:

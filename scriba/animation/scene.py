@@ -99,7 +99,7 @@ class ShapeTargetState:
     state: str = "idle"
     value: str | None = None
     label: str | None = None
-    apply_params: dict[str, Any] | None = None
+    apply_params: list[dict[str, Any]] | None = None
 
 
 @dataclass(frozen=True)
@@ -225,7 +225,7 @@ class SceneState:
                     state=s.state,
                     value=s.value,
                     label=s.label,
-                    apply_params=dict(s.apply_params) if s.apply_params else None,
+                    apply_params=list(s.apply_params) if s.apply_params else None,
                 )
                 for t, s in targets.items()
             }
@@ -258,7 +258,7 @@ class SceneState:
                     state=s.state,
                     value=s.value,
                     label=s.label,
-                    apply_params=dict(s.apply_params) if s.apply_params else None,
+                    apply_params=list(s.apply_params) if s.apply_params else None,
                 )
                 for t, s in targets.items()
             }
@@ -529,10 +529,14 @@ class SceneState:
         label = cmd.params.get("label")
         if label is not None:
             target_state.label = str(label)
-        # Store push/pop and other custom params for primitives like Stack
+        # Store push/pop and other custom params for primitives like Stack/Queue.
+        # Accumulate into a list so multiple \apply commands on the same target
+        # in one frame are all preserved (e.g. two enqueue calls).
         extra = {k: v for k, v in cmd.params.items() if k not in ("value", "label")}
         if extra:
-            target_state.apply_params = extra
+            if target_state.apply_params is None:
+                target_state.apply_params = []
+            target_state.apply_params.append(extra)
 
     def _apply_recolor(self, cmd: RecolorCommand) -> None:
         """\\recolor — persistent state replacement and/or annotation recolor."""

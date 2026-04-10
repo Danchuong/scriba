@@ -112,6 +112,14 @@ class LinkedList(PrimitiveBase):
             if 0 <= idx < len(self.values):
                 self.values.pop(idx)
 
+    def set_value(self, suffix: str, value: str) -> None:
+        """Set a node's display value (called by emitter)."""
+        m = _NODE_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if 0 <= idx < len(self.values):
+                self.values[idx] = value
+
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:
