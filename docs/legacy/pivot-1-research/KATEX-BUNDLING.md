@@ -1,7 +1,7 @@
 # KaTeX Bundling Strategy for Scriba
 
 > Status: research, not a decision. Feeds open question **Q32** in
-> [`../07-open-questions.md`](../07-open-questions.md).
+> [`../07-open-questions.md`](../../planning/open-questions.md).
 
 ## Problem
 

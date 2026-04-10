@@ -6,11 +6,11 @@
 > the only difference is that `AnimationRenderer` calls it once per frame while
 > `DiagramRenderer` calls it once.
 >
-> Cross-references: [`04-environments-spec.md`](04-environments-spec.md) §8 for the frozen
+> Cross-references: [`04-environments-spec.md`](environments.md) §8 for the frozen
 > HTML output shape, §9 for the CSS class contract and state variables;
-> [`06-primitives.md`](06-primitives.md) for the per-primitive SVG output templates and
-> selector grammar; [`09-animation-plugin.md`](09-animation-plugin.md) §5–6 for how the
-> emitter is invoked per frame; [`03-diagram-plugin.md`](03-diagram-plugin.md) §5–6 for
+> [`06-primitives.md`](primitives.md) for the per-primitive SVG output templates and
+> selector grammar; [`09-animation-plugin.md`](../guides/animation-plugin.md) §5–6 for how the
+> emitter is invoked per frame; [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §5–6 for
 > the single-frame invocation path.
 >
 > This file does **not** define: the Scene IR datatypes (`05-scene-ir.md`), the primitive
@@ -141,7 +141,7 @@ primitive's x-offset is `(viewBox_width - primitive_width) / 2`.
 
 ### 3.4 Frozen geometry across frames
 
-Per [`09-animation-plugin.md`](09-animation-plugin.md) §6, the primitive layout (positions,
+Per [`09-animation-plugin.md`](../guides/animation-plugin.md) §6, the primitive layout (positions,
 sizes, graph/tree topology) is computed **once from the prelude state** and cached across
 frames. Per-frame rendering only re-applies state classes and annotation overlays on top of
 the frozen geometry. The viewBox dimensions and all element positions are identical across
@@ -152,7 +152,7 @@ all frames of an animation. This guarantees visual stability and prevents layout
 The viewBox computation is fully deterministic. Given the same set of primitives with the
 same parameters, the output viewBox and all element positions are byte-identical across
 runs. This preserves the content-hash cache contract from
-[`01-architecture.md`](01-architecture.md).
+[`01-architecture.md`](architecture.md).
 
 ---
 
@@ -192,7 +192,7 @@ keeps the emitter decoupled from the HTML shell contract.
 
 Each primitive type maps to a layout algorithm and an SVG template. The dispatch is by
 primitive type name (case-insensitive match against the 6 built-in types from
-[`06-primitives.md`](06-primitives.md)).
+[`06-primitives.md`](primitives.md)).
 
 | Primitive    | Layout algorithm          | SVG root group                    | §reference |
 |--------------|---------------------------|-----------------------------------|------------|
@@ -306,7 +306,7 @@ overlapping cell content.
 | `"circular"`      | Nodes on a circle               | Deterministic by node order        |
 | `"bipartite"`     | Two-column partition            | Deterministic by partition order   |
 | `"hierarchical"`  | Layered (Sugiyama-style)        | Deterministic by edge order        |
-| `"stable"`        | Joint simulated annealing       | Seeded via `layout_seed`; see [`primitives/graph-stable-layout.md`](primitives/graph-stable-layout.md) |
+| `"stable"`        | Joint simulated annealing       | Seeded via `layout_seed`; see [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) |
 
 All layout algorithms run **in-process** in Python at build time. No external binary (D2,
 Graphviz, ELK) is invoked. For editorial-scale graphs (N <= 20), the in-process algorithms
@@ -490,7 +490,7 @@ addressable group always carries exactly one state class (or two when highlight 
 ### 7.1 Contract
 
 Every addressable sub-part of every primitive MUST carry a `data-target` attribute whose
-value is the canonical selector string from [`06-primitives.md`](06-primitives.md) §10.
+value is the canonical selector string from [`06-primitives.md`](primitives.md) §10.
 This is the same string an author writes in `\recolor{...}`, `\apply{...}`,
 `\highlight{...}`, or `\annotate{...}`.
 
@@ -747,7 +747,7 @@ The SVG emitter MUST produce byte-identical output given the same inputs:
    after denormalization.
 
 These guarantees support the content-hash cache in `tenant-backend`
-([`01-architecture.md`](01-architecture.md) §Versioning): identical source + identical
+([`01-architecture.md`](architecture.md) §Versioning): identical source + identical
 Scriba version = identical HTML = identical cache key.
 
 ---

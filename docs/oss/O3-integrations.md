@@ -1,6 +1,6 @@
 # O3 — Reference Integrations
 
-> How consumers wire Scriba into an existing system. Source of truth: [`../04-environments-spec.md`](../04-environments-spec.md).
+> How consumers wire Scriba into an existing system. Source of truth: [`../04-environments-spec.md`](../spec/environments.md).
 
 ## 1. Integration model
 

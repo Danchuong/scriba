@@ -4,12 +4,12 @@
 > truth for the 6 built-in primitive types usable via `\shape{name}{Type}{params}` in
 > `\begin{animation}` and `\begin{diagram}` environments.
 >
-> Cross-references: [`04-environments-spec.md`](04-environments-spec.md) §3.1 for the
+> Cross-references: [`04-environments-spec.md`](environments.md) §3.1 for the
 > `\shape` command grammar, §4 for target selector syntax, §3.5–3.8 for `\apply` /
 > `\highlight` / `\recolor` / `\annotate` commands.
 >
 > Extended primitives (Matrix, Plane2D, MetricPlot, Stack) are defined in
-> [`primitives/`](primitives/) as draft extensions and are **not** part of this locked
+> [`primitives/`](../primitives/) as draft extensions and are **not** part of this locked
 > catalog. Third-party primitive plug-ins are a v0.4+ concern.
 
 ---
@@ -43,7 +43,7 @@ These parameters are accepted by **all** primitives unless explicitly noted othe
 
 Every addressable sub-part of a primitive is an SVG `<g>` element with a
 `data-target` attribute matching the selector grammar from
-[`04-environments-spec.md`](04-environments-spec.md) §4.
+[`04-environments-spec.md`](environments.md) §4.
 
 ### 2.3 State classes
 
@@ -322,7 +322,7 @@ Both are required (E1103).
 | `layout_seed`| integer | `42`      | Seed for deterministic layout.                        |
 | `label`     | string   | `None`    | Caption for the entire graph.                         |
 
-**`layout="stable"` constraints** (see [`primitives/graph-stable-layout.md`](primitives/graph-stable-layout.md)):
+**`layout="stable"` constraints** (see [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md)):
 - N <= 20 nodes (E1501 warning, fallback to force if exceeded).
 - T <= 50 frames (E1502 warning if exceeded).
 - Node positions remain stable across all animation frames.
@@ -557,7 +557,7 @@ Layout: horizontal axis with uniform tick spacing.
 
 ## 9. Error codes (primitive-specific)
 
-All error codes from [`04-environments-spec.md`](04-environments-spec.md) §11 that
+All error codes from [`04-environments-spec.md`](environments.md) §11 that
 pertain to primitive declaration and usage:
 
 | Code   | Condition                                    | Resolution                            |

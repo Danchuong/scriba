@@ -2,7 +2,7 @@
 
 > This is a taste document, not a mechanics document. For grammar, commands,
 > primitives, states, and error codes, read
-> [`04-environments-spec.md`](04-environments-spec.md). This file is about
+> [`04-environments-spec.md`](../spec/environments.md). This file is about
 > *when* and *why* to reach for `\begin{animation}` or `\begin{diagram}`, and
 > how to write them so the result feels inevitable rather than decorated.
 
@@ -249,6 +249,6 @@ back to the prose.
 
 ---
 
-*Mechanics in [`04-environments-spec.md`](04-environments-spec.md).
-Starter problems in [`cookbook/`](cookbook/). Integration examples in
-[`08-usage-example.md`](08-usage-example.md).*
+*Mechanics in [`04-environments-spec.md`](../spec/environments.md).
+Starter problems in [`cookbook/`](../cookbook/). Integration examples in
+[`08-usage-example.md`](usage-example.md).*

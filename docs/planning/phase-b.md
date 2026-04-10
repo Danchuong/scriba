@@ -3,9 +3,9 @@
 > **Target:** Complete 6/6 base primitives + `\begin{diagram}` + `figure-embed` + Matrix + Stack.
 > **Effort:** ~2.5 weeks solo, ~1.5 weeks with 2 engineers.
 > **Prerequisite:** v0.2.0 complete (animation + Array/DPTable/Graph + interactive widget).
-> **Binds to:** [`04-environments-spec.md`](04-environments-spec.md),
-> [`06-primitives.md`](06-primitives.md), [`primitives/matrix.md`](primitives/matrix.md),
-> [`primitives/stack.md`](primitives/stack.md).
+> **Binds to:** [`04-environments-spec.md`](../spec/environments.md),
+> [`06-primitives.md`](../spec/primitives.md), [`primitives/matrix.md`](../primitives/matrix.md),
+> [`primitives/stack.md`](../primitives/stack.md).
 
 ---
 
@@ -275,10 +275,10 @@ No controls, no narration, no step counter.
 
 | Document | Relationship |
 |----------|--------------|
-| [`04-roadmap.md`](04-roadmap.md) §5 | Phase B milestone |
-| [`05-implementation-phases.md`](05-implementation-phases.md) | Task breakdown |
-| [`06-primitives.md`](06-primitives.md) | Grid, Tree, NumberLine specs |
-| [`primitives/matrix.md`](primitives/matrix.md) | Matrix/Heatmap spec |
-| [`primitives/stack.md`](primitives/stack.md) | Stack spec |
-| [`extensions/figure-embed.md`](extensions/figure-embed.md) | figure-embed spec |
-| [`PHASE-A-PLAN.md`](PHASE-A-PLAN.md) | Phase A (predecessor) |
+| [`04-roadmap.md`](roadmap.md) §5 | Phase B milestone |
+| [`05-implementation-phases.md`](implementation-phases.md) | Task breakdown |
+| [`06-primitives.md`](../spec/primitives.md) | Grid, Tree, NumberLine specs |
+| [`primitives/matrix.md`](../primitives/matrix.md) | Matrix/Heatmap spec |
+| [`primitives/stack.md`](../primitives/stack.md) | Stack spec |
+| [`extensions/figure-embed.md`](../extensions/figure-embed.md) | figure-embed spec |
+| [`PHASE-A-PLAN.md`](phase-a.md) | Phase A (predecessor) |

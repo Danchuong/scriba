@@ -1,12 +1,12 @@
 # 04 — Roadmap
 
 > **Revised 2026-04-09 for Pivot #2. Supersedes the prior roadmap.**
-> See [`00-ARCHITECTURE-DECISION-2026-04-09.md`](00-ARCHITECTURE-DECISION-2026-04-09.md)
+> See [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md)
 > for rationale. The source of truth for the base environments model remains
-> [`04-environments-spec.md`](04-environments-spec.md); all milestones below bind
+> [`04-environments-spec.md`](../spec/environments.md); all milestones below bind
 > to the class names, environment grammar, HTML output shape, error codes, and CSS
 > contract defined there. Do not relitigate locked decisions in this file; open an
-> entry in [`07-open-questions.md`](07-open-questions.md) instead.
+> entry in [`07-open-questions.md`](open-questions.md) instead.
 
 ## 1. Current state — v0.1.1-alpha (shipped)
 
@@ -32,9 +32,9 @@ without modifying the base grammar. All additions are pure Python, compile-time,
 zero runtime JS.
 
 The 10 additions and their coverage targets are documented in
-[`00-ARCHITECTURE-DECISION-2026-04-09.md`](00-ARCHITECTURE-DECISION-2026-04-09.md).
-Extension specs live in [`docs/scriba/extensions/`](extensions/) and primitive specs
-in [`docs/scriba/primitives/`](primitives/).
+[`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md).
+Extension specs live in [`docs/scriba/extensions/`](../extensions/) and primitive specs
+in [`docs/scriba/primitives/`](../primitives/).
 
 ## 2. Roadmap at a glance
 
@@ -147,11 +147,11 @@ Starlark host.
 - **Pivot #2 — Extension E2:** `scriba/animation/extensions/hl_macro.py` —
   `\hl{step-id}{tex}` macro integration with `TexRenderer`; CSS `:target` sibling
   selector wired in `scriba-animation.css`. Spec:
-  [`docs/scriba/extensions/hl-macro.md`](extensions/hl-macro.md).
+  [`docs/scriba/extensions/hl-macro.md`](../extensions/hl-macro.md).
 - **Pivot #2 — Extension E5:** `scriba/animation/extensions/keyframes.py` —
   CSS `@keyframes` named slot infrastructure: `rotate`, `orbit`, `pulse`,
   `trail`, `fade-loop` presets inlined into frame `<style>`. Spec:
-  [`docs/scriba/extensions/keyframe-animation.md`](extensions/keyframe-animation.md).
+  [`docs/scriba/extensions/keyframe-animation.md`](../extensions/keyframe-animation.md).
 
 ### 4.3 Success criteria
 
@@ -203,14 +203,14 @@ v0.3 locked spec is implemented and 5/10 HARD-TO-DISPLAY problems are covered.
 - **Pivot #2 — Extension E1:** `scriba/animation/extensions/figure_embed.py` —
   `\begin{figure-embed}` environment: DOMPurify SVG sanitization, PNG pass-through,
   mandatory `alt`/`caption`/`credit` linter, `scriba.lock` content-hash entry.
-  Spec: [`docs/scriba/extensions/figure-embed.md`](extensions/figure-embed.md).
+  Spec: [`docs/scriba/extensions/figure-embed.md`](../extensions/figure-embed.md).
 - **Pivot #2 — Primitive P1:** `scriba/animation/primitives/matrix.py` —
   `Matrix` + `Heatmap` with `viridis`/`magma`/`rdbu` compile-time colorscales,
   value-label overlay, `cell[r][c]`/`all` selectors, N ≤ 20 editorial scale.
-  Spec: [`docs/scriba/primitives/matrix.md`](primitives/matrix.md).
+  Spec: [`docs/scriba/primitives/matrix.md`](../primitives/matrix.md).
 - **Pivot #2 — Primitive P2:** `scriba/animation/primitives/stack.py` — `Stack`
   vertical/horizontal labeled sequence with push/pop delta semantics.
-  Spec: [`docs/scriba/primitives/stack.md`](primitives/stack.md).
+  Spec: [`docs/scriba/primitives/stack.md`](../primitives/stack.md).
 - One-off migration script for lingering pre-pivot `d2` fenced blocks.
 
 ### 5.3 Success criteria
@@ -257,23 +257,23 @@ By the end of Phase C, 9/10 HARD-TO-DISPLAY problems are covered.
 - **Pivot #2 — Primitive P3:** `scriba/animation/primitives/plane2d.py` —
   `Plane2D` 2D coordinate plane: fixed axis grid, animatable lines/points/segments/
   shaded regions, pure Python geometry compute helpers, viewport + transform.
-  Spec: [`docs/scriba/primitives/plane2d.md`](primitives/plane2d.md).
+  Spec: [`docs/scriba/primitives/plane2d.md`](../primitives/plane2d.md).
 - **Pivot #2 — Primitive P4:** `scriba/animation/primitives/metricplot.py` —
   `MetricPlot` compile-time SVG line chart: `<svg polyline>` per series, scalar
   tracking across filmstrip frames, multi-series overlay.
-  Spec: [`docs/scriba/primitives/metricplot.md`](primitives/metricplot.md).
+  Spec: [`docs/scriba/primitives/metricplot.md`](../primitives/metricplot.md).
 - **Pivot #2 — Primitive P5:** `scriba/animation/primitives/graph_stable_layout.py`
   — `Graph layout=stable` mode: pure Python SA joint-optimization across all
   animation frames; node positions computed once at build time and pinned.
-  Spec: [`docs/scriba/primitives/graph-stable-layout.md`](primitives/graph-stable-layout.md).
+  Spec: [`docs/scriba/primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md).
 - **Pivot #2 — Extension E4:** `scriba/animation/extensions/substory.py` —
   `\substory` / `\endsubstory` inline linear drilldown: nested `<ol>` inside the
   enclosing `<li class="scriba-frame">`, CSS-only indent.
-  Spec: [`docs/scriba/extensions/substory.md`](extensions/substory.md).
+  Spec: [`docs/scriba/extensions/substory.md`](../extensions/substory.md).
 - **Pivot #2 — Extension E3:** `scriba/animation/extensions/fastforward.py` —
   `\fastforward{N}{sample_every=K, seed=42}` meta-step: elevated Starlark worker
   step cap for the block, seeded RNG, frame sampling.
-  Spec: [`docs/scriba/extensions/fastforward.md`](extensions/fastforward.md).
+  Spec: [`docs/scriba/extensions/fastforward.md`](../extensions/fastforward.md).
 - `docs-site/` — Astro Starlight project; sidebar from `docs/scriba/`; error
   catalog and primitive reference auto-generated.
 - `examples/plain-html/`, `examples/nextjs/`, `examples/astro/`, `examples/mdbook/`.
@@ -355,7 +355,7 @@ accessibility audit, and document the known partial (Problem #3, 4D Knapsack).
 | 4D Tensor primitive with slice scrubber | Enough demand from multidimensional DP editorial authors | Deferred; HARD-TO-DISPLAY §3 accepted as cognitive limit |
 | 1.0 API freeze | Two consecutive minor releases with no HTML shape change + one external OJ in production | Not scheduled |
 
-See [`06-out-of-scope.md`](06-out-of-scope.md) for features that are **explicitly not
+See [`06-out-of-scope.md`](out-of-scope.md) for features that are **explicitly not
 coming** in the 0.x series, including the interactive scrubber, true FFT-parallel
 step mode, and Manim-class continuous animation.
 
@@ -363,21 +363,21 @@ step mode, and Manim-class continuous animation.
 
 | Document | Relationship |
 |----------|--------------|
-| [`00-ARCHITECTURE-DECISION-2026-04-09.md`](00-ARCHITECTURE-DECISION-2026-04-09.md) | Pivot #2 rationale, coverage matrix, rejected alternatives. |
-| [`01-architecture.md`](01-architecture.md) | Locks `Pipeline`, `Renderer`, `SubprocessWorkerPool`. |
-| [`02-tex-plugin.md`](02-tex-plugin.md) | v0.1 TeX internals. Still current. |
-| [`04-environments-spec.md`](04-environments-spec.md) | Locked grammar, HTML shape, CSS contract, error codes for v0.2–v0.3. Extended by Pivot #2, not replaced. |
-| [`05-implementation-phases.md`](05-implementation-phases.md) | Week-by-week task breakdown refining this roadmap. |
-| [`06-out-of-scope.md`](06-out-of-scope.md) | Explicit non-goals. |
-| [`07-open-questions.md`](07-open-questions.md) | Deferred decisions (Q21: Starlark host choice). |
-| [`cookbook/HARD-TO-DISPLAY.md`](cookbook/HARD-TO-DISPLAY.md) | 10-problem stress test that motivated Pivot #2. |
-| [`extensions/figure-embed.md`](extensions/figure-embed.md) | E1 spec (written by Agent 2). |
-| [`extensions/hl-macro.md`](extensions/hl-macro.md) | E2 spec (written by Agent 2). |
-| [`extensions/fastforward.md`](extensions/fastforward.md) | E3 spec (written by Agent 2). |
-| [`extensions/substory.md`](extensions/substory.md) | E4 spec (written by Agent 2). |
-| [`extensions/keyframe-animation.md`](extensions/keyframe-animation.md) | E5 spec (written by Agent 2). |
-| [`primitives/matrix.md`](primitives/matrix.md) | P1 spec (written by Agent 3). |
-| [`primitives/stack.md`](primitives/stack.md) | P2 spec (written by Agent 3). |
-| [`primitives/plane2d.md`](primitives/plane2d.md) | P3 spec (written by Agent 3). |
-| [`primitives/metricplot.md`](primitives/metricplot.md) | P4 spec (written by Agent 3). |
-| [`primitives/graph-stable-layout.md`](primitives/graph-stable-layout.md) | P5 spec (written by Agent 3). |
+| [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md) | Pivot #2 rationale, coverage matrix, rejected alternatives. |
+| [`01-architecture.md`](../spec/architecture.md) | Locks `Pipeline`, `Renderer`, `SubprocessWorkerPool`. |
+| [`02-tex-plugin.md`](../guides/tex-plugin.md) | v0.1 TeX internals. Still current. |
+| [`04-environments-spec.md`](../spec/environments.md) | Locked grammar, HTML shape, CSS contract, error codes for v0.2–v0.3. Extended by Pivot #2, not replaced. |
+| [`05-implementation-phases.md`](implementation-phases.md) | Week-by-week task breakdown refining this roadmap. |
+| [`06-out-of-scope.md`](out-of-scope.md) | Explicit non-goals. |
+| [`07-open-questions.md`](open-questions.md) | Deferred decisions (Q21: Starlark host choice). |
+| [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) | 10-problem stress test that motivated Pivot #2. |
+| [`extensions/figure-embed.md`](../extensions/figure-embed.md) | E1 spec (written by Agent 2). |
+| [`extensions/hl-macro.md`](../extensions/hl-macro.md) | E2 spec (written by Agent 2). |
+| [`extensions/fastforward.md`](../extensions/fastforward.md) | E3 spec (written by Agent 2). |
+| [`extensions/substory.md`](../extensions/substory.md) | E4 spec (written by Agent 2). |
+| [`extensions/keyframe-animation.md`](../extensions/keyframe-animation.md) | E5 spec (written by Agent 2). |
+| [`primitives/matrix.md`](../primitives/matrix.md) | P1 spec (written by Agent 3). |
+| [`primitives/stack.md`](../primitives/stack.md) | P2 spec (written by Agent 3). |
+| [`primitives/plane2d.md`](../primitives/plane2d.md) | P3 spec (written by Agent 3). |
+| [`primitives/metricplot.md`](../primitives/metricplot.md) | P4 spec (written by Agent 3). |
+| [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) | P5 spec (written by Agent 3). |

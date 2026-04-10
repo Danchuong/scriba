@@ -5,11 +5,11 @@
 > It defines every class, custom property, color value, layout rule, and dark-mode
 > override that the three static CSS files contain.
 >
-> Cross-references: [`04-environments-spec.md`](04-environments-spec.md) §8 for the
+> Cross-references: [`04-environments-spec.md`](environments.md) §8 for the
 > frozen HTML output shape, §9 for the CSS class contract and state-class palette;
-> [`06-primitives.md`](06-primitives.md) §2.3 for the state-class table and §2.5 for
-> SVG output conventions; [`09-animation-plugin.md`](09-animation-plugin.md) §9 for
-> `AnimationRenderer.assets()`; [`03-diagram-plugin.md`](03-diagram-plugin.md) §9 for
+> [`06-primitives.md`](primitives.md) §2.3 for the state-class table and §2.5 for
+> SVG output conventions; [`09-animation-plugin.md`](../guides/animation-plugin.md) §9 for
+> `AnimationRenderer.assets()`; [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §9 for
 > `DiagramRenderer.assets()`. Where this file and `04-environments-spec.md` appear to
 > disagree, `04-environments-spec.md` wins and this file is the bug.
 
@@ -37,7 +37,7 @@ No JavaScript is emitted. All visual behavior is pure CSS.
 
 ## 2. CSS custom properties (`--scriba-*`)
 
-All variables are namespaced `--scriba-*` per [`01-architecture.md`](01-architecture.md) §"CSS variable naming convention". The animation/diagram plugin extends the canonical set declared in `scriba-tex-content.css`; it never redefines the base tokens (`--scriba-fg`, `--scriba-bg`, `--scriba-border`, etc.) but references them.
+All variables are namespaced `--scriba-*` per [`01-architecture.md`](architecture.md) §"CSS variable naming convention". The animation/diagram plugin extends the canonical set declared in `scriba-tex-content.css`; it never redefines the base tokens (`--scriba-fg`, `--scriba-bg`, `--scriba-border`, etc.) but references them.
 
 ### 2.1 Scene-level tokens
 

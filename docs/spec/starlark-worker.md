@@ -2,7 +2,7 @@
 
 > Status: **locked foundation spec** for Scriba v0.3. This file is the single source of truth for the Starlark worker subprocess wire protocol -- how the main Python process communicates with the Starlark execution host over stdin/stdout. `04-environments-spec.md` SS5 defines the **language contract** (allowed features, scope rules, determinism); this file defines the **transport and lifecycle**.
 >
-> Cross-references: [`04-environments-spec.md`](04-environments-spec.md) SS5 (Starlark host contract, scope rules, sandboxing), [`01-architecture.md`](01-architecture.md) SS`SubprocessWorkerPool`, [`03-diagram-plugin.md`](03-diagram-plugin.md) SS7 (diagram compute usage), [`09-animation-plugin.md`](09-animation-plugin.md) SS7 (animation compute usage, frame-local vs global scope).
+> Cross-references: [`04-environments-spec.md`](environments.md) SS5 (Starlark host contract, scope rules, sandboxing), [`01-architecture.md`](architecture.md) SS`SubprocessWorkerPool`, [`03-diagram-plugin.md`](../guides/diagram-plugin.md) SS7 (diagram compute usage), [`09-animation-plugin.md`](../guides/animation-plugin.md) SS7 (animation compute usage, frame-local vs global scope).
 
 ## 1. Overview
 

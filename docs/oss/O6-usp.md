@@ -1,6 +1,6 @@
 # O6 — Unique Selling Proposition & Launch Messaging
 
-> Source of truth for what Scriba is: [`../04-environments-spec.md`](../04-environments-spec.md). This file freezes the positioning that lands on the README, the home page, and the HN post.
+> Source of truth for what Scriba is: [`../04-environments-spec.md`](../spec/environments.md). This file freezes the positioning that lands on the README, the home page, and the HN post.
 
 ## 1. One-sentence USP
 

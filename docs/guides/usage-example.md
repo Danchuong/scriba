@@ -4,7 +4,7 @@
 > uses one `\begin{animation}` and one `\begin{diagram}` flows through the
 > `scriba.Pipeline` and becomes HTML. Uses the real Python API from
 > `packages/scriba/`. Does not re-derive the HTML/CSS contract — see
-> [`04-environments-spec.md`](04-environments-spec.md) §11 for the
+> [`04-environments-spec.md`](../spec/environments.md) §11 for the
 > canonical output shape; this file only shows the outline you should
 > expect.
 
@@ -192,7 +192,7 @@ Notes on the API surface you are actually touching:
 ## 4. What the HTML looks like
 
 The exact class names, ARIA attributes, and nested structure are locked
-in [`04-environments-spec.md`](04-environments-spec.md) §11. Do not
+in [`04-environments-spec.md`](../spec/environments.md) §11. Do not
 duplicate that contract here; reference it. What your caller should
 expect in broad strokes:
 

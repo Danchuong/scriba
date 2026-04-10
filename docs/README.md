@@ -1,6 +1,6 @@
 > **Active pivot in progress (2026-04-09): Pivot #2 — Zero-JS maxed out for HARD-TO-DISPLAY coverage.**
 >
-> See [`00-ARCHITECTURE-DECISION-2026-04-09.md`](00-ARCHITECTURE-DECISION-2026-04-09.md) for the decision. New feature specs are being written under `extensions/` and `primitives/`. Current locked spec in `04-environments-spec.md` remains the base and will be EXTENDED, not replaced.
+> See [`architecture-decision.md`](planning/architecture-decision.md) for the decision. New feature specs are being written under `extensions/` and `primitives/`. Current locked spec in `spec/environments.md` remains the base and will be EXTENDED, not replaced.
 
 ---
 
@@ -143,38 +143,68 @@ else in this folder is spec, cookbook, and taste.
 
 ## Table of contents
 
-### Foundations
+### `spec/` — Locked specs (source of truth)
 
 | File | Purpose |
 |---|---|
-| [`01-architecture.md`](01-architecture.md) | The Pipeline, Renderer, RenderContext, and Document contracts. Read this first if you are implementing a renderer or integrating Scriba into a service. |
-| [`04-environments-spec.md`](04-environments-spec.md) | **Locked** spec for the `animation` and `diagram` environments: grammar, the 8 inner commands, the 6 primitives, the 6 semantic states, the Starlark host, the HTML/CSS contract, and the error catalog. Single source of truth for implementation. |
-| [`03-diagram-plugin.md`](03-diagram-plugin.md) | How `DiagramRenderer` fits into the pipeline and shares primitives with `AnimationRenderer`. |
-| [`09-animation-plugin.md`](09-animation-plugin.md) | How `AnimationRenderer` parses, runs Starlark, drives the scene IR, and emits the filmstrip HTML. |
+| [`architecture.md`](spec/architecture.md) | The Pipeline, Renderer, RenderContext, and Document contracts. Read this first if you are implementing a renderer or integrating Scriba into a service. |
+| [`environments.md`](spec/environments.md) | **Locked** spec for the `animation` and `diagram` environments: grammar, the 8 inner commands, the 6 primitives, the 6 semantic states, the Starlark host, the HTML/CSS contract, and the error catalog. Single source of truth for implementation. |
+| [`scene-ir.md`](spec/scene-ir.md) | Scene IR datatype definitions. |
+| [`primitives.md`](spec/primitives.md) | Primitive catalog (Array, DPTable, Graph, Grid, Tree, NumberLine). |
+| [`svg-emitter.md`](spec/svg-emitter.md) | SVG emitter specification. |
+| [`animation-css.md`](spec/animation-css.md) | CSS stylesheet specification. |
+| [`starlark-worker.md`](spec/starlark-worker.md) | Starlark worker wire protocol. |
+| [`ruleset.md`](spec/ruleset.md) | Comprehensive ruleset derived from specs. |
 
-### Planning & scope
-
-| File | Purpose |
-|---|---|
-| [`04-roadmap.md`](04-roadmap.md) | Release milestones and what each one ships. |
-| [`05-implementation-phases.md`](05-implementation-phases.md) | Ordered phases from parser → primitives → Starlark worker → SVG emitter → CSS. |
-| [`06-out-of-scope.md`](06-out-of-scope.md) | Things that look like they belong in Scriba but explicitly do not. Read before proposing features. |
-| [`07-open-questions.md`](07-open-questions.md) | Known unresolved tradeoffs. File issues against this file, not the spec. |
-
-### Using Scriba
+### `guides/` — How-to and plugin docs
 
 | File | Purpose |
 |---|---|
-| [`08-usage-example.md`](08-usage-example.md) | A full end-to-end worked example: a real `.tex` problem with one `animation` and one `diagram`, the exact Python to run it, and the resulting HTML shape. |
-| [`EDITORIAL-PRINCIPLES-V2.md`](EDITORIAL-PRINCIPLES-V2.md) | Authoring principles. When to reach for `animation` vs `diagram`, how to budget frames, how to write narration that earns its place, and how to stay accessible by construction. |
+| [`tex-plugin.md`](guides/tex-plugin.md) | TeX renderer internals: HTML output contract, snapshot spec, KaTeX worker. |
+| [`diagram-plugin.md`](guides/diagram-plugin.md) | How `DiagramRenderer` fits into the pipeline and shares primitives with `AnimationRenderer`. |
+| [`animation-plugin.md`](guides/animation-plugin.md) | How `AnimationRenderer` parses, runs Starlark, drives the scene IR, and emits the filmstrip HTML. |
+| [`usage-example.md`](guides/usage-example.md) | A full end-to-end worked example: a real `.tex` problem with one `animation` and one `diagram`, the exact Python to run it, and the resulting HTML shape. |
+| [`editorial-principles.md`](guides/editorial-principles.md) | Authoring principles. When to reach for `animation` vs `diagram`, how to budget frames, how to write narration that earns its place, and how to stay accessible by construction. |
+
+### `planning/` — Roadmap, phases, decisions
+
+| File | Purpose |
+|---|---|
+| [`roadmap.md`](planning/roadmap.md) | Release milestones and what each one ships. |
+| [`implementation-phases.md`](planning/implementation-phases.md) | Ordered phases from parser to primitives to Starlark worker to SVG emitter to CSS. |
+| [`architecture-decision.md`](planning/architecture-decision.md) | Pivot #2 rationale, coverage matrix, rejected alternatives. |
+| [`phase-a.md`](planning/phase-a.md) | Phase A plan (core pipeline, parser, Array/DPTable/Graph). |
+| [`phase-b.md`](planning/phase-b.md) | Phase B plan (Grid, Tree, NumberLine, Matrix, Stack). |
+| [`phase-c.md`](planning/phase-c.md) | Phase C plan (Plane2D, MetricPlot, graph-stable-layout, substory). |
+| [`phase-d.md`](planning/phase-d.md) | Phase D plan (polish, docs site, OSS launch). |
+| [`open-questions.md`](planning/open-questions.md) | Known unresolved tradeoffs. File issues against this file, not the spec. |
+| [`out-of-scope.md`](planning/out-of-scope.md) | Things that look like they belong in Scriba but explicitly do not. Read before proposing features. |
+
+### `operations/` — Packaging and migration
+
+| File | Purpose |
+|---|---|
+| [`packaging.md`](operations/packaging.md) | Wheel layout, build system, dependencies, vendored assets, versioning scheme. |
+| [`migration.md`](operations/migration.md) | Migrating from the old renderer to Scriba. |
+
+### `archive/` — One-off audit and verify reports
+
+| File | Purpose |
+|---|---|
+| [`audit-2026-04-09.md`](archive/audit-2026-04-09.md) | Audit of the locked base spec (2026-04-09). |
+| [`verify-2026-04-09.md`](archive/verify-2026-04-09.md) | Verification report (2026-04-09). |
+| [`v020-verify.md`](archive/v020-verify.md) | v0.2.0 verification report. |
+
+### Other directories (unchanged)
+
+| Directory | Purpose |
+|---|---|
 | [`cookbook/`](cookbook/) | Worked problems. Frog DP, 0/1 Knapsack, BFS on a grid, segment tree query, binary search on the answer. Copy-paste starters. |
+| [`extensions/`](extensions/) | Extension specs (figure-embed, hl-macro, fastforward, substory, keyframe-animation). |
+| [`primitives/`](primitives/) | Draft primitive extension specs (matrix, stack, plane2d, metricplot, graph-stable-layout). |
+| [`blog/`](blog/) | Launch blog posts and community thread templates. |
 | [`oss/`](oss/) | Notes on the open-source pipeline: what ships publicly, what stays in-tree. |
-
-### Historical
-
-| File | Purpose |
-|---|---|
-| `legacy/` | Earlier drafts preserved for context. Do not cite from implementation code. |
+| [`legacy/`](legacy/) | Earlier drafts preserved for context. Do not cite from implementation code. |
 
 ## Design commitments, in one breath
 
@@ -187,4 +217,4 @@ byte-identical input, so the content-hash cache in `tenant-backend` keeps
 working.
 
 Everything else is a detail. Start with
-[`04-environments-spec.md`](04-environments-spec.md).
+[`environments.md`](spec/environments.md).

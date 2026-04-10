@@ -88,7 +88,7 @@ def _selector_to_str(sel: Selector | str) -> str:
 class ShapeTargetState:
     """Accumulated state for one target within one shape."""
 
-    state: str = "default"
+    state: str = "idle"
     value: str | None = None
     label: str | None = None
     apply_params: dict[str, Any] | None = None
@@ -103,6 +103,8 @@ class AnnotationEntry:
     ephemeral: bool = False
     arrow_from: str | None = None
     color: str = "info"
+    position: str = "above"
+    arrow: bool = False
 
 
 @dataclass(frozen=True)
@@ -329,6 +331,8 @@ class SceneState:
                             ephemeral=ann.ephemeral,
                             arrow_from=ann.arrow_from,
                             color=new_color,
+                            position=ann.position,
+                            arrow=ann.arrow,
                         )
 
     def _apply_highlight(self, cmd: HighlightCommand) -> None:
@@ -347,6 +351,8 @@ class SceneState:
                 ephemeral=cmd.ephemeral,
                 arrow_from=arrow_from_str,
                 color=cmd.color or "info",
+                position=cmd.position or "above",
+                arrow=cmd.arrow if hasattr(cmd, "arrow") else False,
             )
         )
 

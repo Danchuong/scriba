@@ -1,12 +1,12 @@
 # 05 — Implementation Phases
 
 > **Revised 2026-04-09 for Pivot #2. Supersedes the prior phases document.**
-> See [`00-ARCHITECTURE-DECISION-2026-04-09.md`](00-ARCHITECTURE-DECISION-2026-04-09.md)
-> for rationale and [`04-roadmap.md`](04-roadmap.md) for the milestone view.
+> See [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md)
+> for rationale and [`04-roadmap.md`](roadmap.md) for the milestone view.
 >
 > This file refines the roadmap into a week-by-week task breakdown. Every task
-> binds to the contracts in [`04-environments-spec.md`](04-environments-spec.md),
-> [`01-architecture.md`](01-architecture.md), and the current
+> binds to the contracts in [`04-environments-spec.md`](../spec/environments.md),
+> [`01-architecture.md`](../spec/architecture.md), and the current
 > `packages/scriba/` source tree (v0.1.1-alpha). Extension tasks bind to their
 > spec files in `docs/scriba/extensions/`; primitive tasks bind to their spec
 > files in `docs/scriba/primitives/`. Effort estimates assume a single mid-senior
@@ -311,18 +311,18 @@ Goal: production-grade error UX, Homebrew tap, PyPI final, launch, and formal
 
 ## Cross-reference
 
-- [`04-roadmap.md`](04-roadmap.md) — milestone-level view; phase allocation rationale; Pivot #2 feature list.
-- [`00-ARCHITECTURE-DECISION-2026-04-09.md`](00-ARCHITECTURE-DECISION-2026-04-09.md) — HARD-TO-DISPLAY coverage matrix; rejected alternatives.
-- [`04-environments-spec.md`](04-environments-spec.md) — source of truth for grammar, selectors, HTML shape, error codes referenced in every task above.
-- [`07-open-questions.md`](07-open-questions.md) — Q21 on Starlark host choice may reshape Week A1 tasks.
-- [`docs/scriba/extensions/hl-macro.md`](extensions/hl-macro.md) — E2 spec.
-- [`docs/scriba/extensions/keyframe-animation.md`](extensions/keyframe-animation.md) — E5 spec.
-- [`docs/scriba/extensions/figure-embed.md`](extensions/figure-embed.md) — E1 spec.
-- [`docs/scriba/extensions/substory.md`](extensions/substory.md) — E4 spec.
-- [`docs/scriba/extensions/fastforward.md`](extensions/fastforward.md) — E3 spec.
-- [`docs/scriba/primitives/matrix.md`](primitives/matrix.md) — P1 spec.
-- [`docs/scriba/primitives/stack.md`](primitives/stack.md) — P2 spec.
-- [`docs/scriba/primitives/plane2d.md`](primitives/plane2d.md) — P3 spec.
-- [`docs/scriba/primitives/metricplot.md`](primitives/metricplot.md) — P4 spec.
-- [`docs/scriba/primitives/graph-stable-layout.md`](primitives/graph-stable-layout.md) — P5 spec.
-- [`cookbook/HARD-TO-DISPLAY.md`](cookbook/HARD-TO-DISPLAY.md) — editorial stress test that motivated Pivot #2; 9 of 10 problems resolved in Phase C.
+- [`04-roadmap.md`](roadmap.md) — milestone-level view; phase allocation rationale; Pivot #2 feature list.
+- [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md) — HARD-TO-DISPLAY coverage matrix; rejected alternatives.
+- [`04-environments-spec.md`](../spec/environments.md) — source of truth for grammar, selectors, HTML shape, error codes referenced in every task above.
+- [`07-open-questions.md`](open-questions.md) — Q21 on Starlark host choice may reshape Week A1 tasks.
+- [`docs/scriba/extensions/hl-macro.md`](../extensions/hl-macro.md) — E2 spec.
+- [`docs/scriba/extensions/keyframe-animation.md`](../extensions/keyframe-animation.md) — E5 spec.
+- [`docs/scriba/extensions/figure-embed.md`](../extensions/figure-embed.md) — E1 spec.
+- [`docs/scriba/extensions/substory.md`](../extensions/substory.md) — E4 spec.
+- [`docs/scriba/extensions/fastforward.md`](../extensions/fastforward.md) — E3 spec.
+- [`docs/scriba/primitives/matrix.md`](../primitives/matrix.md) — P1 spec.
+- [`docs/scriba/primitives/stack.md`](../primitives/stack.md) — P2 spec.
+- [`docs/scriba/primitives/plane2d.md`](../primitives/plane2d.md) — P3 spec.
+- [`docs/scriba/primitives/metricplot.md`](../primitives/metricplot.md) — P4 spec.
+- [`docs/scriba/primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) — P5 spec.
+- [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) — editorial stress test that motivated Pivot #2; 9 of 10 problems resolved in Phase C.

@@ -1,6 +1,6 @@
 # O4 — Quality Bar (v0.3)
 
-> The standards a Scriba v0.3 release must meet before it ships. Source of truth for environments, commands, and error codes: [`../04-environments-spec.md`](../04-environments-spec.md).
+> The standards a Scriba v0.3 release must meet before it ships. Source of truth for environments, commands, and error codes: [`../04-environments-spec.md`](../spec/environments.md).
 
 ## 1. Targets at a glance
 

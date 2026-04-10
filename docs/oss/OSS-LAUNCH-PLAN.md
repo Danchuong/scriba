@@ -1,6 +1,6 @@
 # Scriba OSS Launch Plan — v0.3
 
-> Unified launch plan for Scriba v0.3 after the LaTeX-environments pivot. Source of truth for the environments, commands, primitives, and error codes is [`../04-environments-spec.md`](../04-environments-spec.md). Each sub-report (O1–O6) drills into one dimension; this file is the ranked synthesis.
+> Unified launch plan for Scriba v0.3 after the LaTeX-environments pivot. Source of truth for the environments, commands, primitives, and error codes is [`../04-environments-spec.md`](../spec/environments.md). Each sub-report (O1–O6) drills into one dimension; this file is the ranked synthesis.
 
 ---
 

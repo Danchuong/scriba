@@ -3,7 +3,7 @@
 > **Target:** Polish error UX, PyPI final publish, Homebrew tap, launch messaging, HARD-TO-DISPLAY verification.
 > **Effort:** ~1.5 weeks solo, ~1 week with 2 engineers.
 > **Prerequisite:** v0.4.0 complete (all 11 primitives, `\substory`, docs site).
-> **Binds to:** [`04-roadmap.md`](04-roadmap.md) §7.
+> **Binds to:** [`04-roadmap.md`](roadmap.md) §7.
 
 ---
 
@@ -295,9 +295,9 @@ After v0.5.0 GA, Scriba enters maintenance + on-demand mode:
 
 | Document | Relationship |
 |----------|--------------|
-| [`04-roadmap.md`](04-roadmap.md) §7 | Phase D milestone |
-| [`PHASE-A-PLAN.md`](PHASE-A-PLAN.md) | Phase A (predecessor) |
-| [`PHASE-B-PLAN.md`](PHASE-B-PLAN.md) | Phase B (predecessor) |
-| [`PHASE-C-PLAN.md`](PHASE-C-PLAN.md) | Phase C (predecessor) |
-| [`cookbook/HARD-TO-DISPLAY.md`](cookbook/HARD-TO-DISPLAY.md) | 10-problem stress test |
-| [`00-ARCHITECTURE-DECISION-2026-04-09.md`](00-ARCHITECTURE-DECISION-2026-04-09.md) | Pivot #2 rationale |
+| [`04-roadmap.md`](roadmap.md) §7 | Phase D milestone |
+| [`PHASE-A-PLAN.md`](phase-a.md) | Phase A (predecessor) |
+| [`PHASE-B-PLAN.md`](phase-b.md) | Phase B (predecessor) |
+| [`PHASE-C-PLAN.md`](phase-c.md) | Phase C (predecessor) |
+| [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) | 10-problem stress test |
+| [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md) | Pivot #2 rationale |

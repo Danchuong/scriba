@@ -1,6 +1,6 @@
 # O1 — API Surface
 
-> Source of truth: [`../04-environments-spec.md`](../04-environments-spec.md). This file ranks and freezes the **public** surface that Scriba v0.3 ships. Anything not listed here is internal and may change between patch releases.
+> Source of truth: [`../04-environments-spec.md`](../spec/environments.md). This file ranks and freezes the **public** surface that Scriba v0.3 ships. Anything not listed here is internal and may change between patch releases.
 
 ## 1. What is "the API"?
 

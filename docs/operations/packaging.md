@@ -1,6 +1,6 @@
 # 04 — Packaging and Build Specification
 
-> Normative reference for the `scriba` wheel layout, build system, dependencies, vendored assets, and versioning scheme. Binds verbatim to [`01-architecture.md`](01-architecture.md) (package layout, `RendererAssets`, `SCRIBA_VERSION`) and to [`02-tex-plugin.md`](02-tex-plugin.md) (KaTeX worker resolution, static assets). Where this file and those documents appear to disagree, `01-architecture.md` wins and this file is the bug.
+> Normative reference for the `scriba` wheel layout, build system, dependencies, vendored assets, and versioning scheme. Binds verbatim to [`01-architecture.md`](../spec/architecture.md) (package layout, `RendererAssets`, `SCRIBA_VERSION`) and to [`02-tex-plugin.md`](../guides/tex-plugin.md) (KaTeX worker resolution, static assets). Where this file and those documents appear to disagree, `01-architecture.md` wins and this file is the bug.
 
 ## 1. Build system
 

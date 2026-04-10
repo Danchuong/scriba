@@ -42,7 +42,7 @@ The suite covers snapshot HTML output, XSS hardening, the validator, the
 pipeline contract, the subprocess worker pool, and the sanitization
 allowlist. Snapshots live under `tests/tex/snapshots/` and should only be
 updated after manual review against the TeX plugin contract in
-`docs/scriba/02-tex-plugin.md`.
+`docs/guides/tex-plugin.md`.
 
 ## Code style
 
@@ -66,19 +66,19 @@ updated after manual review against the TeX plugin contract in
 
 ## Architecture and open questions
 
-The canonical design documents live under `docs/scriba/`:
+The canonical design documents live under `docs/`:
 
-- `01-architecture.md` — pipeline, workers, renderer protocol
-- `02-tex-plugin.md` — HTML output contract and snapshot spec
-- `04-environments-spec.md` — the v0.2.0 `\begin{animation}` environment
+- `spec/architecture.md` — pipeline, workers, renderer protocol
+- `guides/tex-plugin.md` — HTML output contract and snapshot spec
+- `spec/environments.md` — the v0.2.0 `\begin{animation}` environment
   (and the v0.3+ `\begin{diagram}` environment roadmap)
-- `07-open-questions.md` — unresolved design decisions
+- `planning/open-questions.md` — unresolved design decisions
 
 ## Roadmap pointer
 
 The next feature milestone is **v0.2.0**, which introduces the
 `\begin{animation}` LaTeX environment for step-through CP editorials.
-See `docs/scriba/04-environments-spec.md` for the contract in progress.
+See `docs/spec/environments.md` for the contract in progress.
 Contributions targeting that milestone are especially welcome.
 
 By contributing, you agree that your contributions will be licensed under

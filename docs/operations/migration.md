@@ -2,9 +2,9 @@
 
 > This document is a **guide**, not a locked spec. It describes how to migrate
 > existing ojcloud content and backend code to use Scriba. The authoritative
-> contracts it references are [`01-architecture.md`](01-architecture.md),
-> [`02-tex-plugin.md`](02-tex-plugin.md), and
-> [`04-environments-spec.md`](04-environments-spec.md). When this guide and a
+> contracts it references are [`01-architecture.md`](../spec/architecture.md),
+> [`02-tex-plugin.md`](../guides/tex-plugin.md), and
+> [`04-environments-spec.md`](../spec/environments.md). When this guide and a
 > locked spec disagree, the spec wins.
 
 ## 1. Migration scope
@@ -27,7 +27,7 @@ selectors, and asset serving.
 
 The prior system is `services/tenant/backend/app/utils/tex_renderer.py`
 (1686 lines). Scriba introduces the following breaking changes, all
-documented in [`02-tex-plugin.md` 4](02-tex-plugin.md):
+documented in [`02-tex-plugin.md` 4](../guides/tex-plugin.md):
 
 ### 2.1 CSS class renames
 
@@ -44,12 +44,12 @@ valid under Scriba's CSS; both cannot coexist on the same page.
 | `code-block-wrapper` | `scriba-tex-code-block` |
 | (no class, bare `<pre>`) for unknown-language code | `scriba-tex-code-plain` |
 
-The full mapping is in [`02-tex-plugin.md` 3](02-tex-plugin.md).
+The full mapping is in [`02-tex-plugin.md` 3](../guides/tex-plugin.md).
 
 ### 2.2 Inline styles removed
 
 Scriba emits inline `style=""` in exactly three cases
-([`02-tex-plugin.md` 3.3](02-tex-plugin.md)):
+([`02-tex-plugin.md` 3.3](../guides/tex-plugin.md)):
 
 1. `\includegraphics[scale=...]` -- `transform: scale(X); transform-origin: top left`
 2. `\includegraphics[width=...|height=...]` -- `width: Npx` / `height: Npx`
@@ -77,7 +77,7 @@ the consumer owns URL shape entirely.
 
 The old `get_katex_worker()` singleton is replaced by a per-`Pipeline`
 `SubprocessWorkerPool`. Each gunicorn worker process gets its own pool.
-See [`02-tex-plugin.md` 12.3](02-tex-plugin.md) for the full ops
+See [`02-tex-plugin.md` 12.3](../guides/tex-plugin.md) for the full ops
 migration note.
 
 ## 3. Step-by-step migration process
@@ -153,7 +153,7 @@ migration note.
 
 5. **Update any response caching.** Consumer caches must be keyed on
    `doc.versions` plus `sha256(source)` instead of the old ad-hoc keys.
-   See [`01-architecture.md` "Versioning policy"](01-architecture.md).
+   See [`01-architecture.md` "Versioning policy"](../spec/architecture.md).
 
 ### Phase 3: Asset migration (1 day)
 
@@ -257,7 +257,7 @@ supersets of typical editorial HTML needs and include MathML, SVG, and
 environments.
 
 **Alternative: nh3.** If you prefer `nh3` over `bleach` (see
-[`07-open-questions.md` Q7](07-open-questions.md)), the allowlists are
+[`07-open-questions.md` Q7](../planning/open-questions.md)), the allowlists are
 plain Python data structures and translate directly to `nh3.clean()`
 kwargs.
 
@@ -407,7 +407,7 @@ differences indicate a regression in the port.
 
 ### 7.2 Scriba's built-in snapshot tests
 
-Scriba ships 30 snapshot tests ([`02-tex-plugin.md` 8](02-tex-plugin.md))
+Scriba ships 30 snapshot tests ([`02-tex-plugin.md` 8](../guides/tex-plugin.md))
 that lock the output shape. Run them after installation:
 
 ```bash
@@ -420,7 +420,7 @@ output, catching regressions where old class names leak through.
 
 ### 7.3 XSS regression tests
 
-Scriba ships 5 XSS tests ([`02-tex-plugin.md` 9](02-tex-plugin.md))
+Scriba ships 5 XSS tests ([`02-tex-plugin.md` 9](../guides/tex-plugin.md))
 that verify hostile input is neutralized after a bleach pass with
 `ALLOWED_TAGS` / `ALLOWED_ATTRS`. Run them as part of the migration
 validation:
@@ -442,7 +442,7 @@ CSS is loaded.
 Existing ojcloud content authored against the pre-pivot D2 fenced-block
 format (`\`\`\`d2 ... \`\`\``) must be migrated to
 `\begin{diagram}` before Scriba v0.3.0. A one-off migration script is
-delivered as part of Phase B ([`04-roadmap.md` 5.2](04-roadmap.md)):
+delivered as part of Phase B ([`04-roadmap.md` 5.2](../planning/roadmap.md)):
 
 1. Scan all `.tex` files for D2 fenced blocks.
 2. Rewrite each block to the `\begin{diagram}...\end{diagram}` grammar.
@@ -511,18 +511,18 @@ classes will render incorrectly under the old CSS.
 ## 10. Timeline alignment with roadmap
 
 The migration is phased to align with the Scriba release roadmap
-([`04-roadmap.md`](04-roadmap.md)):
+([`04-roadmap.md`](../planning/roadmap.md)):
 
 | Scriba version | Migration milestone |
 |---|---|
 | **v0.1.1-alpha** (shipped) | Backend render path migrated. TeX content renders through `Pipeline` / `TexRenderer`. Frontend updated to `scriba-tex-*` classes. Sanitization wired with `ALLOWED_TAGS` / `ALLOWED_ATTRS`. |
 | **v0.2.0** (Phase A) | `\begin{animation}` environment available. No migration needed -- new feature, not a replacement. Update `ALLOWED_TAGS` / `ALLOWED_ATTRS` if new tags/attributes are added. |
-| **v0.3.0** (Phase B) | `\begin{diagram}` environment ships. Pre-pivot `d2` blocks migrated via script. `scriba.ALLOWED_TAGS` updated for animation/diagram elements. Tenant frontend sanitizer whitelist updated per [`04-environments-spec.md` 8](04-environments-spec.md). |
+| **v0.3.0** (Phase B) | `\begin{diagram}` environment ships. Pre-pivot `d2` blocks migrated via script. `scriba.ALLOWED_TAGS` updated for animation/diagram elements. Tenant frontend sanitizer whitelist updated per [`04-environments-spec.md` 8](../spec/environments.md). |
 | **v0.4.0** (Phase C) | New primitives and extensions. No migration -- additive only. |
 | **v0.5.0 GA** (Phase D) | Migration complete. Old renderer code fully removed from the monorepo. Legacy branch archived. |
 
 No Scriba version is tagged until the ojcloud tenant backend has
-migrated to it ([`04-roadmap.md` 3](04-roadmap.md)). The migration
+migrated to it ([`04-roadmap.md` 3](../planning/roadmap.md)). The migration
 and the release are coupled by design.
 
 ## 11. Checklist
@@ -554,7 +554,7 @@ Use this checklist to track migration progress:
 
 | Document | Relationship |
 |----------|-------------|
-| [`01-architecture.md`](01-architecture.md) | Locked API surface: `Pipeline`, `RenderContext`, `ResourceResolver`, `ALLOWED_TAGS`, `ALLOWED_ATTRS` |
-| [`02-tex-plugin.md`](02-tex-plugin.md) | TeX port details, HTML output contract, diff vs old renderer, snapshot/XSS tests |
-| [`04-roadmap.md`](04-roadmap.md) | Release timeline, migration coupling |
-| [`07-open-questions.md`](07-open-questions.md) | Q7 (bleach vs nh3), Q5 (dark mode trigger) |
+| [`01-architecture.md`](../spec/architecture.md) | Locked API surface: `Pipeline`, `RenderContext`, `ResourceResolver`, `ALLOWED_TAGS`, `ALLOWED_ATTRS` |
+| [`02-tex-plugin.md`](../guides/tex-plugin.md) | TeX port details, HTML output contract, diff vs old renderer, snapshot/XSS tests |
+| [`04-roadmap.md`](../planning/roadmap.md) | Release timeline, migration coupling |
+| [`07-open-questions.md`](../planning/open-questions.md) | Q7 (bleach vs nh3), Q5 (dark mode trigger) |

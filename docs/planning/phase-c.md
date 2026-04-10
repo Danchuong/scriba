@@ -4,11 +4,11 @@
 > **Note:** `\fastforward` (E3) was removed — inferior output compared to manual `\compute` + `\step`.
 > **Effort:** ~5 weeks solo, ~3 weeks with 2 engineers.
 > **Prerequisite:** v0.3.0 complete (all 8 primitives + DiagramRenderer + interactive widget).
-> **Binds to:** [`04-roadmap.md`](04-roadmap.md) §6,
-> [`primitives/plane2d.md`](primitives/plane2d.md),
-> [`primitives/metricplot.md`](primitives/metricplot.md),
-> [`primitives/graph-stable-layout.md`](primitives/graph-stable-layout.md),
-> [`extensions/substory.md`](extensions/substory.md).
+> **Binds to:** [`04-roadmap.md`](roadmap.md) §6,
+> [`primitives/plane2d.md`](../primitives/plane2d.md),
+> [`primitives/metricplot.md`](../primitives/metricplot.md),
+> [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md),
+> [`extensions/substory.md`](../extensions/substory.md).
 
 ---
 
@@ -396,11 +396,11 @@ Mitigation:
 
 | Document | Relationship |
 |----------|--------------|
-| [`04-roadmap.md`](04-roadmap.md) §6 | Phase C milestone |
-| [`primitives/plane2d.md`](primitives/plane2d.md) | P3 spec |
-| [`primitives/metricplot.md`](primitives/metricplot.md) | P4 spec |
-| [`primitives/graph-stable-layout.md`](primitives/graph-stable-layout.md) | P5 spec |
-| [`extensions/fastforward.md`](extensions/fastforward.md) | E3 spec |
-| [`extensions/substory.md`](extensions/substory.md) | E4 spec |
-| [`PHASE-A-PLAN.md`](PHASE-A-PLAN.md) | Phase A (predecessor) |
-| [`PHASE-B-PLAN.md`](PHASE-B-PLAN.md) | Phase B (predecessor) |
+| [`04-roadmap.md`](roadmap.md) §6 | Phase C milestone |
+| [`primitives/plane2d.md`](../primitives/plane2d.md) | P3 spec |
+| [`primitives/metricplot.md`](../primitives/metricplot.md) | P4 spec |
+| [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) | P5 spec |
+| [`extensions/fastforward.md`](../extensions/fastforward.md) | E3 spec |
+| [`extensions/substory.md`](../extensions/substory.md) | E4 spec |
+| [`PHASE-A-PLAN.md`](phase-a.md) | Phase A (predecessor) |
+| [`PHASE-B-PLAN.md`](phase-b.md) | Phase B (predecessor) |

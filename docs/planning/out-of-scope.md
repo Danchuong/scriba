@@ -9,8 +9,8 @@ check this file. If the feature is listed here, read the rationale first. If
 you still believe the exclusion is wrong, follow the proposal process in §3.
 
 The items below were re-derived for the v0.3 LaTeX-environments model locked
-in [`04-environments-spec.md`](04-environments-spec.md) and the editorial
-genres catalogued in [`cookbook/HARD-TO-DISPLAY.md`](cookbook/HARD-TO-DISPLAY.md).
+in [`04-environments-spec.md`](../spec/environments.md) and the editorial
+genres catalogued in [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md).
 
 ---
 
@@ -79,7 +79,7 @@ not via third-party code.
 
 `04-environments-spec.md` §3.1 locks primitives to 1D and 2D layouts. A 4D
 or higher-rank tensor primitive with a slice scrubber is **deferred** —
-see [`cookbook/HARD-TO-DISPLAY.md`](cookbook/HARD-TO-DISPLAY.md) §3.
+see [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) §3.
 Rationale: honest 4D visualization requires runtime interaction (slice
 selector), which contradicts §1. The best a static filmstrip can do is
 animate two fixed 2D slices, which authors already express with two
@@ -297,4 +297,4 @@ either impose unacceptable coupling, increase install footprint without
 proportional value, or blur the boundary between Scriba's responsibility
 and the consumer's. For the full catalogue of editorial genres Scriba
 gracefully refuses, see
-[`cookbook/HARD-TO-DISPLAY.md`](cookbook/HARD-TO-DISPLAY.md).
+[`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md).

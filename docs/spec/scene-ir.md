@@ -4,15 +4,15 @@
 > truth for the internal Scene IR datatypes emitted by `SceneParser` and consumed by
 > the Starlark host, primitive catalog, SVG emitter, and HTML stitcher.
 >
-> Cross-references: [`04-environments-spec.md`](04-environments-spec.md) §10.3 for the
+> Cross-references: [`04-environments-spec.md`](environments.md) §10.3 for the
 > parser-to-IR contract, §3 for the 8 inner commands, §4 for target selector syntax,
-> §6 for frame semantics. [`03-diagram-plugin.md`](03-diagram-plugin.md) §4 step 6 for
-> `DiagramIR`. [`09-animation-plugin.md`](09-animation-plugin.md) §4 for `AnimationIR`
-> and `FrameIR`. [`06-primitives.md`](06-primitives.md) for the primitive catalog that
+> §6 for frame semantics. [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §4 step 6 for
+> `DiagramIR`. [`09-animation-plugin.md`](../guides/animation-plugin.md) §4 for `AnimationIR`
+> and `FrameIR`. [`06-primitives.md`](primitives.md) for the primitive catalog that
 > interprets `ShapeCommand` parameters.
 >
 > Type safety: Scene IR types are Pydantic v2 `BaseModel` subclasses throughout (see
-> [`oss/O4-quality-bar.md`](oss/O4-quality-bar.md) §4). Parsed values are validated at
+> [`oss/O4-quality-bar.md`](../oss/O4-quality-bar.md) §4). Parsed values are validated at
 > IR boundaries, not inside rendering code.
 
 ---
@@ -75,7 +75,7 @@ All IR types are defined in `scriba/animation/parser/ast.py` and re-exported fro
 
 ## 3. Command IR types
 
-Each of the 8 inner commands from [`04-environments-spec.md`](04-environments-spec.md) §3
+Each of the 8 inner commands from [`04-environments-spec.md`](environments.md) §3
 is represented by a frozen dataclass. All command types share a common base.
 
 ### 3.1 Base fields
@@ -109,7 +109,7 @@ class ShapeCommand(BaseModel):
 |-------------|---------------------------|------------------------------------------------------------|
 | `name`      | `str`                     | Matches `[a-z][a-zA-Z0-9_]*`. Unique per environment (`E1101`). |
 | `type_name` | `str`                     | One of the 6 built-in primitives (`E1102` on unknown).     |
-| `params`    | `dict[str, ParamValue]`   | Primitive-specific. See [`06-primitives.md`](06-primitives.md). Missing required param is `E1103`; type mismatch is `E1104`. |
+| `params`    | `dict[str, ParamValue]`   | Primitive-specific. See [`06-primitives.md`](primitives.md). Missing required param is `E1103`; type mismatch is `E1104`. |
 
 `ParamValue` is a union type:
 
@@ -275,7 +275,7 @@ class AnnotateCommand(BaseModel):
 ## 4. Selector type
 
 The `Selector` type represents a parsed target selector per
-[`04-environments-spec.md`](04-environments-spec.md) §4.
+[`04-environments-spec.md`](environments.md) §4.
 
 ```python
 class Selector(BaseModel):
@@ -501,7 +501,7 @@ Keys are resolved selector strings (e.g., `"dp.cell[0]"`, `"G.node[A]"`).
 
 ### 7.1 Delta application rules
 
-Per [`04-environments-spec.md`](04-environments-spec.md) §6.1, the scene materializer
+Per [`04-environments-spec.md`](environments.md) §6.1, the scene materializer
 applies `AnimationIR` to produce one `SceneState` per frame:
 
 1. **Initial state.** Instantiate shapes from `AnimationIR.shapes`. Apply
@@ -571,7 +571,7 @@ The primitive catalog reads `ShapeCommand` values from `AnimationIR.shapes` or
 
 1. Look up `ShapeCommand.type_name` in the primitive registry (`E1102` on miss).
 2. Resolve `InterpolationRef` values in `ShapeCommand.params` against the Starlark scope.
-3. Validate required and optional parameters per [`06-primitives.md`](06-primitives.md).
+3. Validate required and optional parameters per [`06-primitives.md`](primitives.md).
 4. Instantiate the primitive, computing layout (positions, sizes, topology) once.
 5. Register addressable parts as valid selector targets for downstream command validation.
 

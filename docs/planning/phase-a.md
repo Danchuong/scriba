@@ -3,9 +3,9 @@
 > **Target:** `\begin{animation}` end-to-end with 3 base primitives + 2 extensions.
 > **Effort:** ~3 weeks solo, ~2 weeks with 2 engineers.
 > **Prerequisite:** v0.1.1-alpha shipped (TeX plugin complete, 71 tests passing).
-> **Binds to:** [`04-environments-spec.md`](04-environments-spec.md),
-> [`05-scene-ir.md`](05-scene-ir.md), [`07-starlark-worker.md`](07-starlark-worker.md),
-> [`08-svg-emitter.md`](08-svg-emitter.md), [`09-animation-css.md`](09-animation-css.md).
+> **Binds to:** [`04-environments-spec.md`](../spec/environments.md),
+> [`05-scene-ir.md`](../spec/scene-ir.md), [`07-starlark-worker.md`](../spec/starlark-worker.md),
+> [`08-svg-emitter.md`](../spec/svg-emitter.md), [`09-animation-css.md`](../spec/animation-css.md).
 
 ---
 
@@ -382,14 +382,14 @@ Primitive (Protocol):
 
 | Document | Relationship |
 |----------|--------------|
-| [`04-roadmap.md`](04-roadmap.md) §4 | Phase A milestone definition |
-| [`05-implementation-phases.md`](05-implementation-phases.md) | Week-by-week task breakdown (source of truth for task list) |
-| [`04-environments-spec.md`](04-environments-spec.md) | Locked grammar, HTML shape, CSS contract, error codes |
-| [`05-scene-ir.md`](05-scene-ir.md) | Scene IR datatype definitions |
-| [`06-primitives.md`](06-primitives.md) | Primitive catalog (Array, DPTable, Graph for Phase A) |
-| [`07-starlark-worker.md`](07-starlark-worker.md) | Starlark worker wire protocol |
-| [`08-svg-emitter.md`](08-svg-emitter.md) | SVG emitter specification |
-| [`09-animation-css.md`](09-animation-css.md) | CSS stylesheet specification |
-| [`extensions/hl-macro.md`](extensions/hl-macro.md) | E2 spec |
-| [`extensions/keyframe-animation.md`](extensions/keyframe-animation.md) | E5 spec |
-| [`07-open-questions.md`](07-open-questions.md) Q21 | Starlark host choice (Go vs Python) |
+| [`04-roadmap.md`](roadmap.md) §4 | Phase A milestone definition |
+| [`05-implementation-phases.md`](implementation-phases.md) | Week-by-week task breakdown (source of truth for task list) |
+| [`04-environments-spec.md`](../spec/environments.md) | Locked grammar, HTML shape, CSS contract, error codes |
+| [`05-scene-ir.md`](../spec/scene-ir.md) | Scene IR datatype definitions |
+| [`06-primitives.md`](../spec/primitives.md) | Primitive catalog (Array, DPTable, Graph for Phase A) |
+| [`07-starlark-worker.md`](../spec/starlark-worker.md) | Starlark worker wire protocol |
+| [`08-svg-emitter.md`](../spec/svg-emitter.md) | SVG emitter specification |
+| [`09-animation-css.md`](../spec/animation-css.md) | CSS stylesheet specification |
+| [`extensions/hl-macro.md`](../extensions/hl-macro.md) | E2 spec |
+| [`extensions/keyframe-animation.md`](../extensions/keyframe-animation.md) | E5 spec |
+| [`07-open-questions.md`](open-questions.md) Q21 | Starlark host choice (Go vs Python) |

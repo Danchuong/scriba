@@ -1,6 +1,6 @@
 # O2 — Docs Site: Tool Selection & IA
 
-> Picks the docs site stack and locks an information architecture for the v0.3 launch. Source of truth for environments, commands, primitives, and error codes is [`../04-environments-spec.md`](../04-environments-spec.md).
+> Picks the docs site stack and locks an information architecture for the v0.3 launch. Source of truth for environments, commands, primitives, and error codes is [`../04-environments-spec.md`](../spec/environments.md).
 
 ## 1. Winner: Astro Starlight on Cloudflare Pages + Pagefind
 

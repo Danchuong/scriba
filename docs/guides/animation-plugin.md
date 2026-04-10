@@ -1,6 +1,6 @@
 # 09 — `scriba.animation.AnimationRenderer`
 
-> Wave 3 plugin spec. Binds verbatim to [`01-architecture.md`](01-architecture.md) (`Renderer`, `Block`, `RenderArtifact`, `RenderContext`, `RendererAssets`, `SubprocessWorker`, `SubprocessWorkerPool`, `RendererError`, `WorkerError`, `ValidationError`) and to [`04-environments-spec.md`](04-environments-spec.md), which is the single source of truth for the `\begin{animation}` grammar, inner command set, target selectors, Starlark host contract, frame semantics, HTML output shape, CSS class contract, and error catalog. Sibling spec: [`03-diagram-plugin.md`](03-diagram-plugin.md) (the single-frame counterpart).
+> Wave 3 plugin spec. Binds verbatim to [`01-architecture.md`](../spec/architecture.md) (`Renderer`, `Block`, `RenderArtifact`, `RenderContext`, `RendererAssets`, `SubprocessWorker`, `SubprocessWorkerPool`, `RendererError`, `WorkerError`, `ValidationError`) and to [`04-environments-spec.md`](../spec/environments.md), which is the single source of truth for the `\begin{animation}` grammar, inner command set, target selectors, Starlark host contract, frame semantics, HTML output shape, CSS class contract, and error catalog. Sibling spec: [`03-diagram-plugin.md`](diagram-plugin.md) (the single-frame counterpart).
 
 ## 1. Purpose
 
@@ -24,7 +24,7 @@ Non-goals:
 - Rasterization to PNG, OG image generation, GIF export. The output is SVG-in-HTML only.
 - Per-frame interactivity or client-side state. Each `<li>` is inert markup.
 
-`AnimationRenderer` and `DiagramRenderer` are siblings in the `scriba.animation` package and share the parser, primitive catalog, Starlark worker registration, and SVG emitter. See [`03-diagram-plugin.md`](03-diagram-plugin.md) §12 for the shared-core boundary.
+`AnimationRenderer` and `DiagramRenderer` are siblings in the `scriba.animation` package and share the parser, primitive catalog, Starlark worker registration, and SVG emitter. See [`03-diagram-plugin.md`](diagram-plugin.md) §12 for the shared-core boundary.
 
 ## 2. Public API
 
@@ -120,7 +120,7 @@ Parse pipeline:
    - `\step` or `\narrate` missing → `E1057` on zero frames, `E1150` on zero narrations (warning).
    - Frame count > 30 → `E1180` (warning). Frame count > 100 → `E1181` (error, no HTML emitted).
 
-The resulting `AnimationIR` is a frozen dataclass; subsequent stages consume it read-only. See [`05-scene-ir.md`](05-scene-ir.md) for the full field layout.
+The resulting `AnimationIR` is a frozen dataclass; subsequent stages consume it read-only. See [`05-scene-ir.md`](../spec/scene-ir.md) for the full field layout.
 
 ## 5. `render_block()` contract
 
