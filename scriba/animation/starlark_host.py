@@ -7,12 +7,60 @@ registered in the Pipeline's ``SubprocessWorkerPool``.
 
 from __future__ import annotations
 
+import logging
 import sys
 import uuid
 from typing import Any
 
 from scriba.core.errors import WorkerError
 from scriba.core.workers import SubprocessWorkerPool
+
+logger = logging.getLogger(__name__)
+
+# Resource limits applied to the starlark worker child process.
+_MEMORY_LIMIT_BYTES = 256 * 1024 * 1024  # 256 MB
+_CPU_LIMIT_SECONDS = 5
+
+
+def _starlark_preexec() -> None:
+    """Set OS-level resource limits in the child process before exec.
+
+    Called via ``preexec_fn`` on Unix only (skipped on Windows).
+
+    * **Linux**: ``RLIMIT_AS`` caps virtual address space.
+    * **macOS/Darwin**: ``RLIMIT_AS`` silently fails, so we use
+      ``RLIMIT_DATA`` instead to cap heap allocation.
+    * **Both**: ``RLIMIT_CPU`` enforces a hard CPU-time ceiling
+      independent of the wall-clock SIGALRM inside the worker.
+    """
+    import resource  # import here — only needed in the child
+
+    # Memory limit
+    if sys.platform == "linux":
+        try:
+            resource.setrlimit(
+                resource.RLIMIT_AS,
+                (_MEMORY_LIMIT_BYTES, _MEMORY_LIMIT_BYTES),
+            )
+        except (ValueError, OSError):
+            logger.debug("RLIMIT_AS not supported; memory limit not enforced")
+    elif sys.platform == "darwin":
+        try:
+            resource.setrlimit(
+                resource.RLIMIT_DATA,
+                (_MEMORY_LIMIT_BYTES, _MEMORY_LIMIT_BYTES),
+            )
+        except (ValueError, OSError):
+            logger.debug("RLIMIT_DATA not supported; memory limit not enforced")
+
+    # CPU time limit (works on both Linux and macOS)
+    try:
+        resource.setrlimit(
+            resource.RLIMIT_CPU,
+            (_CPU_LIMIT_SECONDS, _CPU_LIMIT_SECONDS),
+        )
+    except (ValueError, OSError):
+        logger.debug("RLIMIT_CPU not supported; CPU time limit not enforced")
 
 
 class StarlarkHost:
@@ -35,6 +83,7 @@ class StarlarkHost:
             ready_signal="starlark-worker ready",
             max_requests=50_000,
             default_timeout=10.0,
+            preexec_fn=_starlark_preexec,
         )
         self._pool = worker_pool
 

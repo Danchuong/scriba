@@ -23,15 +23,27 @@ from __future__ import annotations
 
 import ast
 import json
-import logging
 import math
-import resource
 import signal
 import sys
 import threading
 import traceback
+import tracemalloc
 from io import StringIO
 from typing import Any
+
+# ---------------------------------------------------------------------------
+# AST literal limits (defence-in-depth against C-level bombs)
+# ---------------------------------------------------------------------------
+
+_MAX_INT_LITERAL = 10**7  # 10 million
+_MAX_STR_LITERAL_LEN = 10_000  # characters
+
+# ---------------------------------------------------------------------------
+# Runtime range() limit
+# ---------------------------------------------------------------------------
+
+_MAX_RANGE_LEN = 10**6  # 1 million elements
 
 # ---------------------------------------------------------------------------
 # Blocked attribute names (sandbox escape vectors)
@@ -151,6 +163,32 @@ def _scan_ast(source: str) -> tuple[str, int | None, int | None] | None:
                 col += 1
             return node.id, line, col
 
+        # Cap integer literals to prevent memory/CPU bombs like "x" * 10**8
+        if isinstance(node, ast.Constant) and isinstance(node.value, int):
+            if abs(node.value) > _MAX_INT_LITERAL:
+                line = getattr(node, "lineno", None)
+                col = getattr(node, "col_offset", None)
+                if col is not None:
+                    col += 1
+                return (
+                    f"integer literal too large (max {_MAX_INT_LITERAL})",
+                    line,
+                    col,
+                )
+
+        # Cap string literal length
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if len(node.value) > _MAX_STR_LITERAL_LEN:
+                line = getattr(node, "lineno", None)
+                col = getattr(node, "col_offset", None)
+                if col is not None:
+                    col += 1
+                return (
+                    f"string literal too long (max {_MAX_STR_LITERAL_LEN} chars)",
+                    line,
+                    col,
+                )
+
     return None
 
 
@@ -175,6 +213,21 @@ def _make_print_fn(capture_list: list[str]):
     return _print
 
 
+def _safe_range(*args: int) -> range:
+    """Wrapper around built-in ``range()`` that caps length to _MAX_RANGE_LEN."""
+    for a in args:
+        if abs(a) > _MAX_RANGE_LEN:
+            raise ValueError(
+                f"range() argument too large (max {_MAX_RANGE_LEN})"
+            )
+    r = range(*args)
+    if len(r) > _MAX_RANGE_LEN:
+        raise ValueError(
+            f"range() would produce {len(r)} elements (max {_MAX_RANGE_LEN})"
+        )
+    return r
+
+
 _ALLOWED_BUILTINS: dict[str, Any] = {
     # Types / constructors
     "list": list,
@@ -191,7 +244,7 @@ _ALLOWED_BUILTINS: dict[str, Any] = {
     "None": None,
     # Built-in functions
     "len": len,
-    "range": range,
+    "range": _safe_range,
     "min": min,
     "max": max,
     "abs": abs,
@@ -276,7 +329,7 @@ def _timeout_handler(signum: int, frame: Any) -> None:
 # Evaluator
 # ---------------------------------------------------------------------------
 
-_WALL_CLOCK_SECONDS = 5
+_WALL_CLOCK_SECONDS = 3
 
 
 def _evaluate(
@@ -324,12 +377,19 @@ def _evaluate(
             old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
             signal.alarm(_WALL_CLOCK_SECONDS)
 
+        # Start tracemalloc for runtime memory checking
+        _tracemalloc_was_tracing = tracemalloc.is_tracing()
+        if not _tracemalloc_was_tracing:
+            tracemalloc.start()
+
         old_trace = sys.gettrace()
         sys.settrace(_step_trace)
         try:
             exec(compile(source, "<compute>", "exec"), namespace)  # noqa: S102
         finally:
             sys.settrace(old_trace)
+            if not _tracemalloc_was_tracing and tracemalloc.is_tracing():
+                tracemalloc.stop()
 
         if has_alarm:
             signal.alarm(0)
@@ -352,6 +412,18 @@ def _evaluate(
             "message": f"parse error: {exc.msg}",
             "line": exc.lineno,
             "col": exc.offset,
+        }
+    except MemoryError as exc:
+        if has_alarm:
+            signal.alarm(0)
+        msg = str(exc) if str(exc) else "memory limit exceeded"
+        return {
+            "id": request_id,
+            "ok": False,
+            "code": "E1155",
+            "message": msg,
+            "line": None,
+            "col": None,
         }
     except Exception as exc:
         if has_alarm:
@@ -398,7 +470,8 @@ def _evaluate(
 
 _STEP_LIMIT = 10**8
 _STEP_LIMIT_FASTFORWARD = 10**9
-_MEMORY_LIMIT_BYTES = 67_108_864  # 64 MB
+_TRACEMALLOC_PEAK_LIMIT = 128 * 1024 * 1024  # 128 MB
+_MEMORY_CHECK_INTERVAL = 1000  # check every N steps
 
 # Thread-local step counter for sys.settrace
 _step_local = threading.local()
@@ -409,26 +482,27 @@ def _step_trace(frame: Any, event: str, arg: Any) -> Any:
     _step_local.count += 1
     if _step_local.count > _step_local.limit:
         raise RuntimeError("E1153: step count exceeded")
+    # Periodic memory check via tracemalloc (catches string multiplication etc.)
+    if (
+        _step_local.count % _MEMORY_CHECK_INTERVAL == 0
+        and tracemalloc.is_tracing()
+    ):
+        _, peak = tracemalloc.get_traced_memory()
+        if peak > _TRACEMALLOC_PEAK_LIMIT:
+            raise MemoryError(
+                f"E1155: peak memory {peak // (1024 * 1024)}MB "
+                f"exceeds {_TRACEMALLOC_PEAK_LIMIT // (1024 * 1024)}MB limit"
+            )
     return _step_trace
 
 
-def _set_memory_limit() -> None:
-    """Set process memory limit via resource.setrlimit if available."""
-    if hasattr(resource, "RLIMIT_AS"):
-        try:
-            resource.setrlimit(
-                resource.RLIMIT_AS,
-                (_MEMORY_LIMIT_BYTES, _MEMORY_LIMIT_BYTES),
-            )
-        except (ValueError, OSError):
-            logging.warning(
-                "RLIMIT_AS not supported on this platform; memory limit not enforced"
-            )
-
-
 def main() -> None:
-    """Entry point for the starlark worker subprocess."""
-    _set_memory_limit()
+    """Entry point for the starlark worker subprocess.
+
+    Resource limits (RLIMIT_AS/RLIMIT_DATA, RLIMIT_CPU) are set by the
+    parent process via ``preexec_fn`` before this code runs.  See
+    ``starlark_host._starlark_preexec``.
+    """
     sys.stderr.flush()  # flush any logging output before ready signal
 
     sys.stderr.write("starlark-worker ready\n")

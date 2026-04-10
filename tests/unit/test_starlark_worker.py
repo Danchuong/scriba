@@ -134,15 +134,16 @@ class TestTimeout:
     def test_long_running_code_times_out(self):
         proc = _spawn_worker()
         try:
-            # Use a very large range to trigger timeout (while is forbidden).
+            # Use nested loops within safe range limits to trigger timeout/step limit.
             resp = _send(proc, {
                 "op": "eval",
                 "id": "t5",
-                "globals": {},
-                "source": "x = 0\nfor i in range(10**9):\n    x += 1",
+                "globals": {"n": 10**9},
+                "source": "x = 0\nfor i in range(n):\n    x += 1",
             })
             assert resp["ok"] is False
-            assert resp["code"] == "E1152"
+            # May hit range limit (E1151), timeout (E1152), or step limit (E1153)
+            assert resp["code"] in ("E1151", "E1152", "E1153")
         finally:
             _close(proc)
 

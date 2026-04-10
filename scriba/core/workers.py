@@ -24,7 +24,7 @@ import select
 import subprocess
 import sys
 import threading
-from typing import Literal, Optional, Protocol, runtime_checkable
+from typing import Callable, Literal, Optional, Protocol, runtime_checkable
 
 from scriba.core.errors import WorkerError
 
@@ -61,12 +61,16 @@ class PersistentSubprocessWorker:
         ready_signal: str | None = None,
         max_requests: int = 50_000,
         default_timeout: float = 10.0,
+        preexec_fn: Callable[[], None] | None = None,
     ) -> None:
         self._name = name
         self._argv = list(argv)
         self._ready_signal = ready_signal
         self._max_requests = max_requests
         self._default_timeout = default_timeout
+        # preexec_fn is called in the child process before exec on Unix.
+        # On Windows (where preexec_fn is not supported), pass None.
+        self._preexec_fn = preexec_fn if sys.platform != "win32" else None
         self._process: Optional[subprocess.Popen] = None
         self._request_count = 0
         self._lock = threading.Lock()
@@ -96,6 +100,7 @@ class PersistentSubprocessWorker:
                 stderr=subprocess.PIPE,
                 text=True,
                 bufsize=1,
+                preexec_fn=self._preexec_fn,
             )
         except FileNotFoundError as e:
             self._process = None
@@ -405,6 +410,7 @@ class SubprocessWorkerPool:
         ready_signal: str | None = None,
         max_requests: int = 50_000,
         default_timeout: float = 10.0,
+        preexec_fn: Callable[[], None] | None = None,
         worker: Worker | None = None,
     ) -> None:
         """Register a worker.
@@ -435,6 +441,7 @@ class SubprocessWorkerPool:
                     ready_signal=ready_signal,
                     max_requests=max_requests,
                     default_timeout=default_timeout,
+                    preexec_fn=preexec_fn,
                 )
             elif mode == "oneshot":
                 self._workers[name] = OneShotSubprocessWorker(
