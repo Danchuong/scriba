@@ -156,7 +156,14 @@ class SelectorParser:
             return self._parse_interpolation()
         if self._pos < len(self._text) and self._text[self._pos] == '"':
             return self._parse_string()
-        return self._parse_number()
+        # Try number first; fall back to bare identifier (string key)
+        if self._pos < len(self._text) and (
+            self._text[self._pos].isdigit()
+            or self._text[self._pos] == "-"
+        ):
+            return self._parse_number()
+        # Bare identifier as string key (e.g. var[name], entry[key])
+        return self._expect_ident()
 
     def _parse_node_id(self) -> IndexExpr:
         self._skip_ws()

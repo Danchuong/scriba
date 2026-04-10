@@ -1,0 +1,35 @@
+\begin{animation}[id="linkedlist", label="Linked List Traversal"]
+\shape{ll}{LinkedList}{data=[3,7,1,9], label="$list$"}
+
+\step
+\narrate{A singly-linked list with four nodes: 3 → 7 → 1 → 9.}
+
+\step
+\recolor{ll.node[0]}{state=current}
+\narrate{Begin traversal at the head. Node 0 holds value 3.}
+
+\step
+\recolor{ll.node[0]}{state=done}
+\recolor{ll.link[0]}{state=current}
+\recolor{ll.node[1]}{state=current}
+\narrate{Follow the pointer to node 1. Value is 7.}
+
+\step
+\recolor{ll.link[0]}{state=done}
+\recolor{ll.node[1]}{state=done}
+\recolor{ll.link[1]}{state=current}
+\recolor{ll.node[2]}{state=current}
+\narrate{Advance to node 2. Value is 1.}
+
+\step
+\recolor{ll.link[1]}{state=done}
+\recolor{ll.node[2]}{state=done}
+\recolor{ll.link[2]}{state=current}
+\recolor{ll.node[3]}{state=current}
+\narrate{Advance to node 3. Value is 9. This is the tail.}
+
+\step
+\recolor{ll.link[2]}{state=done}
+\recolor{ll.node[3]}{state=done}
+\narrate{Traversal complete. All nodes visited.}
+\end{animation}

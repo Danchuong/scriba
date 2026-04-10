@@ -1,0 +1,47 @@
+\begin{animation}[id="bfs-queue", label="BFS Queue Demo"]
+\shape{q}{Queue}{capacity=6, data=[1], label="$Q$"}
+
+\step
+\recolor{q.cell[0]}{state=current}
+\narrate{BFS starts. Enqueue source node 1. Front and rear both point to cell 0.}
+
+\step
+\apply{q}{enqueue=2}
+\apply{q}{enqueue=4}
+\recolor{q.cell[0]}{state=idle}
+\recolor{q.cell[1]}{state=good}
+\recolor{q.cell[2]}{state=good}
+\narrate{Discover neighbors of node 1. Enqueue nodes 2 and 4.}
+
+\step
+\apply{q}{dequeue=true}
+\recolor{q.cell[0]}{state=dim}
+\recolor{q.cell[1]}{state=current}
+\recolor{q.cell[2]}{state=idle}
+\narrate{Dequeue node 1 (done). Process node 2 next. Front pointer advances.}
+
+\step
+\apply{q}{enqueue=5}
+\apply{q}{enqueue=3}
+\recolor{q.cell[1]}{state=done}
+\recolor{q.cell[2]}{state=current}
+\recolor{q.cell[3]}{state=good}
+\recolor{q.cell[4]}{state=good}
+\narrate{Node 2 processed. Enqueue its neighbors 5 and 3. Dequeue node 4 next.}
+
+\step
+\apply{q}{dequeue=true}
+\recolor{q.cell[1]}{state=dim}
+\recolor{q.cell[2]}{state=done}
+\recolor{q.cell[3]}{state=current}
+\recolor{q.cell[4]}{state=idle}
+\narrate{Dequeue node 4 and process it. Front advances to cell 3.}
+
+\step
+\recolor{q.cell[0]}{state=dim}
+\recolor{q.cell[1]}{state=dim}
+\recolor{q.cell[2]}{state=dim}
+\recolor{q.cell[3]}{state=done}
+\recolor{q.cell[4]}{state=done}
+\narrate{BFS complete. All reachable nodes have been visited.}
+\end{animation}

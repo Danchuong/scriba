@@ -1,0 +1,23 @@
+\begin{animation}[id="hashmap-demo", label="HashMap Insertion with Collision"]
+\shape{hm}{HashMap}{capacity=4, label="$map$"}
+
+\step
+\narrate{An empty hash map with 4 buckets.}
+
+\step
+\recolor{hm.bucket[0]}{state=current}
+\apply{hm.bucket[0]}{value="cat:3"}
+\narrate{Insert key "cat" with value 3. hash("cat") mod 4 = 0. Bucket 0 now holds cat:3.}
+
+\step
+\recolor{hm.bucket[0]}{state=done}
+\recolor{hm.bucket[2]}{state=current}
+\apply{hm.bucket[2]}{value="dog:5"}
+\narrate{Insert key "dog" with value 5. hash("dog") mod 4 = 2. Bucket 2 now holds dog:5.}
+
+\step
+\recolor{hm.bucket[2]}{state=done}
+\recolor{hm.bucket[0]}{state=error}
+\apply{hm.bucket[0]}{value="cat:3  car:7"}
+\narrate{Insert key "car" with value 7. hash("car") mod 4 = 0 -- collision! Bucket 0 chains both entries: cat:3 and car:7.}
+\end{animation}

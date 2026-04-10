@@ -1,0 +1,26 @@
+\begin{animation}[id="variablewatch", label="Variable Watch Demo"]
+\shape{vars}{VariableWatch}{names=["i","j","min_val","result"], label="Variables"}
+
+\step
+\narrate{Four variables declared. All show placeholder values.}
+
+\step
+\apply{vars.var[i]}{value=0}
+\apply{vars.var[j]}{value=0}
+\apply{vars.var[min_val]}{value=99}
+\recolor{vars.var[i]}{state=current}
+\recolor{vars.var[j]}{state=current}
+\recolor{vars.var[min_val]}{state=current}
+\narrate{Initialize i=0, j=0, min\_val=99. Changed variables highlighted.}
+
+\step
+\apply{vars.var[i]}{value=3}
+\apply{vars.var[j]}{value=1}
+\apply{vars.var[min_val]}{value=7}
+\recolor{vars.var[i]}{state=done}
+\recolor{vars.var[j]}{state=done}
+\recolor{vars.var[min_val]}{state=good}
+\apply{vars.var[result]}{value=42}
+\recolor{vars.var[result]}{state=current}
+\narrate{After iteration: i=3, j=1, min\_val=7, result=42. Result is newly set.}
+\end{animation}

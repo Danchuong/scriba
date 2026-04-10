@@ -37,15 +37,20 @@ from scriba.animation.parser.ast import (
 from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.primitives import (
     ArrayPrimitive,
+    CodePanel,
     DPTablePrimitive,
     Graph,
     GridPrimitive,
+    HashMap,
+    LinkedList,
     MatrixPrimitive,
     MetricPlot,
     NumberLinePrimitive,
     Plane2D,
+    Queue,
     Stack,
     Tree,
+    VariableWatch,
 )
 from scriba.animation.scene import FrameSnapshot, SceneState
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
@@ -65,16 +70,21 @@ _FRAME_ERROR_THRESHOLD = 100
 
 PRIMITIVE_CATALOG: dict[str, Any] = {
     "Array": ArrayPrimitive,
+    "CodePanel": CodePanel,
     "DPTable": DPTablePrimitive,
     "Graph": Graph,
     "Grid": GridPrimitive,
+    "HashMap": HashMap,
     "Heatmap": MatrixPrimitive,
+    "LinkedList": LinkedList,
     "Matrix": MatrixPrimitive,
     "MetricPlot": MetricPlot,
     "NumberLine": NumberLinePrimitive,
     "Plane2D": Plane2D,
+    "Queue": Queue,
     "Stack": Stack,
     "Tree": Tree,
+    "VariableWatch": VariableWatch,
 }
 
 
@@ -185,7 +195,10 @@ def _instantiate_primitive(
         )
     resolved_params = _resolve_params(shape.params, bindings)
 
-    if shape.type_name in ("Graph", "Tree", "Stack", "Plane2D", "MetricPlot"):
+    if shape.type_name in (
+        "Graph", "Tree", "Stack", "Plane2D", "MetricPlot",
+        "Queue", "LinkedList", "HashMap", "CodePanel", "VariableWatch",
+    ):
         return factory_cls(shape.name, resolved_params)
 
     factory = factory_cls()

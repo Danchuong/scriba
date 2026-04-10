@@ -1,0 +1,259 @@
+"""VariableWatch primitive — name-value table for displaying variable states.
+
+Renders a two-column table (name | value) that updates as the algorithm
+progresses.  Each variable row is independently addressable and state-colorable.
+
+See ``docs/archive/PRIMITIVES-PLAN.md`` §5 for the authoritative specification.
+"""
+
+from __future__ import annotations
+
+import re
+from html import escape as html_escape
+from typing import Any, Callable
+
+from scriba.animation.primitives.base import (
+    BoundingBox,
+    PrimitiveBase,
+    _render_svg_text,
+    svg_style_attrs,
+)
+
+# ---------------------------------------------------------------------------
+# Constants
+# ---------------------------------------------------------------------------
+
+_NAME_COL_WIDTH = 100
+_VALUE_COL_WIDTH = 100
+_ROW_HEIGHT = 40
+_PADDING = 4
+_TOTAL_WIDTH = _NAME_COL_WIDTH + _VALUE_COL_WIDTH
+_FONT_SIZE = "13"
+_NAME_FONT_SIZE = "12"
+
+# ---------------------------------------------------------------------------
+# Selector regex
+# ---------------------------------------------------------------------------
+
+_VAR_RE = re.compile(r"^var\[(?P<varname>[A-Za-z_]\w*)\]$")
+_ALL_RE = re.compile(r"^all$")
+
+# ---------------------------------------------------------------------------
+# VariableWatch primitive
+# ---------------------------------------------------------------------------
+
+
+class VariableWatch(PrimitiveBase):
+    """Two-column name-value table for algorithm variable inspection.
+
+    Parameters
+    ----------
+    name:
+        Shape name used in selectors (e.g. ``vars``).
+    params:
+        Dictionary of parameters from the ``\\shape`` command.
+        Required keys: ``names`` (list of variable name strings).
+        Optional keys: ``label``.
+    """
+
+    def __init__(self, name: str, params: dict[str, Any]) -> None:
+        super().__init__(name, params)
+
+        raw_names = params.get("names", [])
+        if isinstance(raw_names, str):
+            # Handle comma-separated string fallback
+            raw_names = [n.strip().strip('"').strip("'") for n in raw_names.split(",")]
+        self.var_names: list[str] = [str(n) for n in raw_names]
+        self.label_text: str | None = params.get("label")
+
+        # Per-variable values: varname -> display string
+        self._values: dict[str, str] = {vn: "----" for vn in self.var_names}
+
+        self.primitive_type: str = "VariableWatch"
+
+    # ----- apply commands --------------------------------------------------
+
+    def apply_command(self, params: dict[str, Any], *, target_suffix: str | None = None) -> None:
+        """Process value-set commands from ``\\apply``.
+
+        When the target is a specific variable (e.g. ``vars.var[i]``),
+        *target_suffix* is ``"var[i]"`` and *params* should contain
+        ``value``.
+        """
+        if target_suffix is not None:
+            m = _VAR_RE.match(target_suffix)
+            if m:
+                varname = m.group("varname")
+                if varname in self._values and "value" in params:
+                    self._values[varname] = str(params["value"])
+                return
+
+        # Bulk apply: iterate params looking for variable names
+        for vn in self.var_names:
+            if vn in params:
+                self._values[vn] = str(params[vn])
+
+    # ----- Primitive interface ---------------------------------------------
+
+    def addressable_parts(self) -> list[str]:
+        parts: list[str] = []
+        for vn in self.var_names:
+            parts.append(f"var[{vn}]")
+        parts.append("all")
+        return parts
+
+    def validate_selector(self, suffix: str) -> bool:
+        if suffix == "all":
+            return True
+
+        m = _VAR_RE.match(suffix)
+        if m:
+            return m.group("varname") in self._values
+
+        return False
+
+    def bounding_box(self) -> BoundingBox:
+        row_count = max(len(self.var_names), 1)
+        h = row_count * _ROW_HEIGHT + 2 * _PADDING
+        w = _TOTAL_WIDTH + 2 * _PADDING
+
+        if self.label_text:
+            h += 20
+
+        return BoundingBox(x=0, y=0, width=w, height=h)
+
+    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
+        parts: list[str] = []
+        parts.append(
+            f'<g data-primitive="VariableWatch" data-shape="{html_escape(self.name)}">'
+        )
+
+        if not self.var_names:
+            # Empty placeholder
+            parts.append(
+                f'<rect x="{_PADDING}" y="{_PADDING}" '
+                f'width="{_TOTAL_WIDTH}" height="{_ROW_HEIGHT}" '
+                f'fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" '
+                f'stroke-dasharray="4 2" rx="4"/>'
+            )
+            parts.append(
+                f'<text x="{_PADDING + _TOTAL_WIDTH // 2}" '
+                f'y="{_PADDING + _ROW_HEIGHT // 2}" '
+                f'text-anchor="middle" dominant-baseline="central" '
+                f'fill="#adb5bd" font-size="11">no variables</text>'
+            )
+            parts.append("</g>")
+            return "".join(parts)
+
+        # Outer border
+        row_count = len(self.var_names)
+        table_h = row_count * _ROW_HEIGHT
+        parts.append(
+            f'<rect x="{_PADDING}" y="{_PADDING}" '
+            f'width="{_TOTAL_WIDTH}" height="{table_h}" '
+            f'fill="none" stroke="#d0d7de" stroke-width="1" rx="4"/>'
+        )
+
+        # Column divider
+        divider_x = _PADDING + _NAME_COL_WIDTH
+        parts.append(
+            f'<line x1="{divider_x}" y1="{_PADDING}" '
+            f'x2="{divider_x}" y2="{_PADDING + table_h}" '
+            f'stroke="#d0d7de" stroke-width="1"/>'
+        )
+
+        for row_idx, vn in enumerate(self.var_names):
+            suffix = f"var[{vn}]"
+            target = f"{self.name}.{suffix}"
+
+            state = self.get_state(suffix)
+            # Also check "all" state
+            all_state = self.get_state("all")
+            if all_state != "idle" and state == "idle":
+                state = all_state
+
+            colors = svg_style_attrs(state)
+
+            row_y = _PADDING + row_idx * _ROW_HEIGHT
+
+            parts.append(
+                f'<g data-target="{html_escape(target)}" '
+                f'class="scriba-state-{state}">'
+            )
+
+            # Row divider (skip first row)
+            if row_idx > 0:
+                parts.append(
+                    f'<line x1="{_PADDING}" y1="{row_y}" '
+                    f'x2="{_PADDING + _TOTAL_WIDTH}" y2="{row_y}" '
+                    f'stroke="#d0d7de" stroke-width="0.5"/>'
+                )
+
+            # Value cell background (right column)
+            value_x = _PADDING + _NAME_COL_WIDTH
+            parts.append(
+                f'<rect x="{value_x}" y="{row_y}" '
+                f'width="{_VALUE_COL_WIDTH}" height="{_ROW_HEIGHT}" '
+                f'fill="{colors["fill"]}" stroke="none"/>'
+            )
+
+            # Name text (left column, monospace, gray)
+            name_tx = _PADDING + 8
+            name_ty = row_y + _ROW_HEIGHT // 2
+            parts.append(
+                _render_svg_text(
+                    vn,
+                    name_tx,
+                    name_ty,
+                    fill="#6c757d",
+                    font_size=_NAME_FONT_SIZE,
+                    text_anchor="start",
+                    dominant_baseline="central",
+                    fo_width=_NAME_COL_WIDTH - 12,
+                    fo_height=_ROW_HEIGHT,
+                    render_inline_tex=render_inline_tex,
+                )
+            )
+
+            # Value text (right column, centered, state-colored)
+            value_tx = value_x + _VALUE_COL_WIDTH // 2
+            value_ty = row_y + _ROW_HEIGHT // 2
+            display_value = self._values.get(vn, "----")
+            parts.append(
+                _render_svg_text(
+                    display_value,
+                    value_tx,
+                    value_ty,
+                    fill=colors["text"],
+                    font_size=_FONT_SIZE,
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                    fo_width=_VALUE_COL_WIDTH - 8,
+                    fo_height=_ROW_HEIGHT,
+                    render_inline_tex=render_inline_tex,
+                )
+            )
+
+            parts.append("</g>")
+
+        # Caption / label
+        if self.label_text is not None:
+            bbox = self.bounding_box()
+            cx = bbox.width // 2
+            cy = bbox.height - 4
+            parts.append(
+                _render_svg_text(
+                    str(self.label_text),
+                    cx,
+                    cy,
+                    fill="#6c757d",
+                    css_class="scriba-primitive-label",
+                    text_anchor="middle",
+                    fo_width=bbox.width,
+                    fo_height=20,
+                    render_inline_tex=render_inline_tex,
+                )
+            )
+
+        parts.append("</g>")
+        return "".join(parts)
