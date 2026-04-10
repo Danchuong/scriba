@@ -159,6 +159,8 @@ svg text {
 [data-theme="dark"] .scriba-step-label { color: #7d8590; }
 [data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
 </head>
 <body>
 <button class="theme-toggle" onclick="
@@ -274,7 +276,7 @@ svg text {
   <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">Adjacent diffs</text>
 </g>
 </g>
-</svg>`,narration:`Construct a beautiful permutation of $[1..8]$: no two adjacent elements differ by 1. Strategy: place all evens first, then all odds.`,substory:``},
+</svg>`,narration:`Construct a beautiful permutation of <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">1..8</span><span class="mclose">]</span></span></span></span></span>: no two adjacent elements differ by 1. Strategy: place all evens first, then all odds.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 216" role="img" aria-labelledby="permutations-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="perm">
@@ -361,7 +363,7 @@ svg text {
   <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">Adjacent diffs</text>
 </g>
 </g>
-</svg>`,narration:`Place even numbers: $[2, 4, 6, 8]$. Each adjacent pair differs by 2. Safe!`,substory:``},
+</svg>`,narration:`Place even numbers: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">4</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mclose">]</span></span></span></span></span>. Each adjacent pair differs by 2. Safe!`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 216" role="img" aria-labelledby="permutations-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="perm">
@@ -448,7 +450,7 @@ svg text {
   <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">Adjacent diffs</text>
 </g>
 </g>
-</svg>`,narration:`Diffs within evens: $|4-2|=2$, $|6-4|=2$, $|8-6|=2$. All $\\geq 2$. Good.`,substory:``},
+</svg>`,narration:`Diffs within evens: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣4</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣6</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">4∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">6∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>. All <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7719em;vertical-align:-0.136em;"></span><span class="mrel">≥</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>. Good.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 216" role="img" aria-labelledby="permutations-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="perm">
@@ -535,7 +537,7 @@ svg text {
   <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">Adjacent diffs</text>
 </g>
 </g>
-</svg>`,narration:`Place odd numbers: $[1, 3, 5, 7]$. Each adjacent pair differs by 2. Safe!`,substory:``},
+</svg>`,narration:`Place odd numbers: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mclose">]</span></span></span></span></span>. Each adjacent pair differs by 2. Safe!`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 216" role="img" aria-labelledby="permutations-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="perm">
@@ -624,7 +626,7 @@ svg text {
   <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">Adjacent diffs</text>
 </g>
 </g>
-</svg>`,narration:`Boundary: $|8 - 1| = 7$. Diffs within odds: all 2. The critical boundary is safe because $7 \\neq 1$.`,substory:``},
+</svg>`,narration:`Boundary: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>. Diffs within odds: all 2. The critical boundary is safe because <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mrel"><span class="mord vbox"><span class="thinbox"><span class="rlap"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="inner"><span class="mord"><span class="mrel"></span></span></span><span class="fix"></span></span></span></span></span><span class="mrel">=</span></span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 216" role="img" aria-labelledby="permutations-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="perm">
@@ -711,7 +713,7 @@ svg text {
   <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">Adjacent diffs</text>
 </g>
 </g>
-</svg>`,narration:`Beautiful permutation: $[2, 4, 6, 8, 1, 3, 5, 7]$. All adjacent differences $\\geq 2$: $[2, 2, 2, 7, 2, 2, 2]$. Done!`,substory:``}
+</svg>`,narration:`Beautiful permutation: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">4</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mclose">]</span></span></span></span></span>. All adjacent differences <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7719em;vertical-align:-0.136em;"></span><span class="mrel">≥</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mclose">]</span></span></span></span></span>. Done!`,substory:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');

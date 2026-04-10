@@ -576,7 +576,7 @@ def emit_interactive_html(
     var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
     var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
     var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
-    function sh(i){{sc=i;ss.innerHTML=fd[i].svg;sn.textContent=fd[i].narration;
+    function sh(i){{sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
       sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
       sp.disabled=i===0;sx.disabled=i===fd.length-1;
       sd.forEach(function(d,j){{d.className='scriba-dot'+(j===i?' active':j<i?' done':'');}});
@@ -588,7 +588,7 @@ def emit_interactive_html(
   function show(i){{
     cur=i;
     stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
+    narr.innerHTML=frames[i].narration;
     subC.innerHTML=frames[i].substory||'';
     subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
     ctr.textContent='Step '+(i+1)+' / '+frames.length;

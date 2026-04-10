@@ -17,6 +17,40 @@ from pathlib import Path
 from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.renderer import AnimationRenderer
 from scriba.core.context import RenderContext
+from scriba.core.workers import SubprocessWorkerPool
+from scriba.tex.renderer import TexRenderer
+
+
+def _make_inline_tex_callback(
+    tex_renderer: TexRenderer,
+) -> callable:
+    """Build a callback that extracts $...$ from text and renders via KaTeX."""
+    import html as _html
+    import re
+
+    def render_inline_tex(text: str) -> str:
+        if "$" not in text:
+            return _html.escape(text, quote=False)
+        placeholders: list[tuple[str, str]] = []
+
+        def _stash(html_fragment: str) -> str:
+            ph = f"\x00MATH{len(placeholders)}\x00"
+            placeholders.append((ph, html_fragment))
+            return ph
+
+        def _math_sub(m: re.Match[str]) -> str:
+            inner = m.group(1)
+            if not inner.strip():
+                return m.group(0)
+            return _stash(tex_renderer._render_inline(inner))
+
+        result = re.sub(r"\$([^\$]+?)\$", _math_sub, text)
+        result = _html.escape(result, quote=False)
+        for ph, html_fragment in placeholders:
+            result = result.replace(_html.escape(ph, quote=False), html_fragment)
+        return result
+
+    return render_inline_tex
 
 
 HTML_TEMPLATE = """\
@@ -181,6 +215,7 @@ svg text {{
 [data-theme="dark"] .scriba-step-label {{ color: #7d8590; }}
 [data-theme="dark"] .theme-toggle {{ background: #21262d; color: #e6edf3; border-color: #30363d; }}
 </style>
+{katex_css}
 </head>
 <body>
 <button class="theme-toggle" onclick="
@@ -208,10 +243,17 @@ def render_file(
 
     anim_renderer = AnimationRenderer()
     diag_renderer = DiagramRenderer()
+
+    # Wire up KaTeX for inline math in narration text.
+    worker_pool = SubprocessWorkerPool()
+    tex_renderer = TexRenderer(worker_pool=worker_pool)
+    inline_tex_cb = _make_inline_tex_callback(tex_renderer)
+
     ctx = RenderContext(
         resource_resolver=lambda name: f"/static/{name}",
         theme="light",
         metadata={"output_mode": output_mode},
+        render_inline_tex=inline_tex_cb,
     )
 
     anim_blocks = detect_animation_blocks(source)
@@ -229,8 +271,14 @@ def render_file(
         artifact = diag_renderer.render_block(block, ctx)
         html_parts.append(artifact.html)
 
+    worker_pool.close()
+
     body = "\n\n".join(html_parts)
-    full_html = HTML_TEMPLATE.format(title=title, body=body)
+
+    # Include KaTeX CSS for math rendering in narration (CDN for font support).
+    katex_css = '\n<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">'
+
+    full_html = HTML_TEMPLATE.format(title=title, body=body, katex_css=katex_css)
 
     output_path.write_text(full_html)
     total = len(anim_blocks) + len(diag_blocks)
