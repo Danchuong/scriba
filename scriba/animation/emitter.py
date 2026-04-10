@@ -217,6 +217,9 @@ def _emit_frame_svg(
     """Produce the ``<svg>`` element for one frame."""
     narration_id = f"{scene_id}-frame-{frame.step_number}-narration"
 
+    # Recompute viewbox for this frame (handles Stack push/pop changing size)
+    viewbox = compute_viewbox(primitives)
+
     svg_parts: list[str] = [
         f'<svg class="scriba-stage-svg" viewBox="{viewbox}" '
         f'role="img" '
