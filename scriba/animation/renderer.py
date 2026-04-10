@@ -312,6 +312,16 @@ class AnimationRenderer:
             "scriba-scene-primitives.css",
         }
 
+        # Add primitive-specific CSS when those primitives are present
+        _PRIMITIVE_CSS: dict[str, str] = {
+            "Plane2D": "scriba-plane2d.css",
+            "MetricPlot": "scriba-metricplot.css",
+        }
+        for shape in ir.shapes:
+            css_name = _PRIMITIVE_CSS.get(shape.type_name)
+            if css_name is not None:
+                css_assets.add(css_name)
+
         return RenderArtifact(
             html=html,
             css_assets=frozenset(css_assets),
@@ -324,8 +334,15 @@ class AnimationRenderer:
         """Return the always-on CSS files for animation blocks."""
         static = files("scriba.animation").joinpath("static")
         css_files: set[Path] = set()
-        for name in ("scriba-animation.css", "scriba-scene-primitives.css"):
-            css_files.add(Path(str(static / name)))
+        for name in (
+            "scriba-animation.css",
+            "scriba-scene-primitives.css",
+            "scriba-plane2d.css",
+            "scriba-metricplot.css",
+        ):
+            path = Path(str(static / name))
+            if path.exists():
+                css_files.add(path)
         return RendererAssets(
             css_files=frozenset(css_files),
             js_files=frozenset(),

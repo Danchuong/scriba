@@ -1,0 +1,13 @@
+\begin{animation}[id="test-stable"]
+\shape{g}{Graph}{nodes=["a","b","c","d"], edges=[("a","b"),("b","c"),("c","d")], directed=true, layout="stable", layout_seed=42}
+\step
+\highlight{g.edge[(a,b)]}
+\narrate{Path a->b highlighted.}
+\step
+\recolor{g.edge[(a,b)]}{state=done}
+\highlight{g.edge[(b,c)]}
+\narrate{Move to b->c.}
+\step
+\recolor{g.all}{state=done}
+\narrate{All edges done. Nodes stayed in same positions.}
+\end{animation}

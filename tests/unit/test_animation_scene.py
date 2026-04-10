@@ -247,5 +247,8 @@ class _FakeStarlarkHost:
     def __init__(self, result: dict) -> None:
         self._result = result
 
+    def eval(self, bindings: dict, code: str) -> dict:
+        return dict(self._result)
+
     def evaluate(self, code: str, bindings: dict) -> dict:
         return dict(self._result)
