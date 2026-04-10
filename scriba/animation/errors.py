@@ -17,8 +17,9 @@ class UnclosedAnimationError(ValidationError):
 
     def __init__(self, position: int) -> None:
         super().__init__(
-            f"[{self.code}] unclosed \\begin{{animation}} at byte {position}",
+            "unclosed \\begin{animation}",
             position=position,
+            code=self.code,
         )
 
 
@@ -29,8 +30,9 @@ class NestedAnimationError(ValidationError):
 
     def __init__(self, position: int) -> None:
         super().__init__(
-            f"[{self.code}] nested \\begin{{animation}} at byte {position}",
+            "nested \\begin{animation}",
             position=position,
+            code=self.code,
         )
 
 
@@ -41,7 +43,7 @@ E1103 = "E1103"
 
 def animation_error(code: str, detail: str) -> ValidationError:
     """Create a validation error with the given animation error code."""
-    return ValidationError(f"[{code}] {detail}")
+    return ValidationError(detail, code=code)
 
 
 # --- Parse errors (E1100 -- E1149) ---
@@ -67,9 +69,9 @@ class FrameCountError(RendererError):
 
     def __init__(self, count: int) -> None:
         super().__init__(
-            f"[{self.code}] animation has {count} frames, exceeding the "
-            f"100-frame limit",
+            f"animation has {count} frames, exceeding the 100-frame limit",
             renderer="animation",
+            code=self.code,
         )
 
 
@@ -82,6 +84,7 @@ class StarlarkEvalError(RendererError):
 
     def __init__(self, detail: str) -> None:
         super().__init__(
-            f"[{self.code}] Starlark evaluation error: {detail}",
+            f"Starlark evaluation error: {detail}",
             renderer="animation",
+            code=self.code,
         )

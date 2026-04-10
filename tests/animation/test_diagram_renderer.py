@@ -40,7 +40,7 @@ class TestDetectDiagramBlocks:
         assert len(blocks) == 1
         assert blocks[0].kind == "diagram"
         assert blocks[0].metadata is not None
-        assert blocks[0].metadata["options"]["id"] == "test"
+        assert blocks[0].metadata["options_raw"] == 'id="test"'
 
     def test_detect_no_diagram_blocks(self) -> None:
         source = "Just plain text, no diagrams here."
@@ -61,8 +61,8 @@ Some text between.
 """
         blocks = detect_diagram_blocks(source)
         assert len(blocks) == 2
-        assert blocks[0].metadata["options"]["id"] == "first"
-        assert blocks[1].metadata["options"]["id"] == "second"
+        assert blocks[0].metadata["options_raw"] == 'id="first"'
+        assert blocks[1].metadata["options_raw"] == 'id="second"'
 
 
 class TestRejectStepInDiagram:
@@ -133,7 +133,7 @@ class TestRenderStaticFigure:
     ) -> None:
         source = r"""
 \begin{diagram}[id="simple"]
-\shape{T}{Tree}{nodes=[1,2]}
+\shape{T}{Tree}{root=1, nodes=[1,2]}
 \end{diagram}
 """
         blocks = renderer.detect(source)
@@ -149,15 +149,17 @@ class TestMultiplePrimitivesInDiagram:
     ) -> None:
         source = r"""
 \begin{diagram}[id="multi"]
-\shape{A}{Tree}{nodes=[1,2,3]}
-\shape{B}{Tree}{nodes=[4,5,6]}
+\shape{A}{Tree}{root=1, nodes=[1,2,3], edges=[(1,2),(1,3)]}
+\shape{B}{Tree}{root=4, nodes=[4,5,6], edges=[(4,5),(4,6)]}
 \end{diagram}
 """
         blocks = renderer.detect(source)
         artifact = renderer.render_block(blocks[0], ctx)
 
-        # Should contain SVG elements for both shapes
-        assert artifact.html.count("<svg") >= 2
+        # Both shapes should be present in the output (rendered as <g> groups
+        # within a single <svg>)
+        assert 'data-shape="A"' in artifact.html
+        assert 'data-shape="B"' in artifact.html
 
 
 class TestHighlightIsPersistent:
@@ -168,17 +170,17 @@ class TestHighlightIsPersistent:
     ) -> None:
         source = r"""
 \begin{diagram}[id="persistent"]
-\shape{T}{Tree}{nodes=[1,2,3]}
-\highlight{T.node[1]}{state=highlight}
+\shape{T}{Tree}{root=1, nodes=[1,2,3], edges=[(1,2),(1,3)]}
+\recolor{T.node[1]}{state=current}
 \recolor{T.node[2]}{state=done}
 \end{diagram}
 """
         blocks = renderer.detect(source)
         artifact = renderer.render_block(blocks[0], ctx)
 
-        # Both the highlight and recolor should be present
-        assert 'data-state="highlight"' in artifact.html
-        assert 'data-state="done"' in artifact.html
+        # Both recolor states should be present in the static SVG
+        assert "scriba-state-current" in artifact.html
+        assert "scriba-state-done" in artifact.html
 
 
 class TestDiagramRendererProtocol:

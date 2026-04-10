@@ -5,25 +5,94 @@ See ``docs/scriba/01-architecture.md`` §Exception hierarchy.
 
 from __future__ import annotations
 
+_DOCS_BASE_URL = "https://scriba.ojcloud.dev/errors"
+
 
 class ScribaError(Exception):
     """Base exception for all Scriba failures."""
+
+    code: str | None = None
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        line: int | None = None,
+        col: int | None = None,
+        hint: str | None = None,
+    ) -> None:
+        self._raw_message = message
+        self.line = line
+        self.col = col
+        self.hint = hint
+        if code is not None:
+            self.code = code
+        super().__init__(str(self))
+
+    def __str__(self) -> str:
+        parts: list[str] = []
+
+        # Error code prefix
+        if self.code:
+            parts.append(f"[{self.code}]")
+
+        # Location
+        if self.line is not None:
+            loc = f"at line {self.line}"
+            if self.col is not None:
+                loc += f", col {self.col}"
+            parts.append(loc + ":")
+        elif parts:
+            # Have code but no line — just append colon to code
+            parts[-1] += ":"
+
+        parts.append(self._raw_message)
+        result = " ".join(parts)
+
+        # Hint
+        if self.hint:
+            result += f"\n  hint: {self.hint}"
+
+        # Docs URL
+        if self.code:
+            result += f"\n  -> {_DOCS_BASE_URL}/{self.code}"
+
+        return result
 
 
 class RendererError(ScribaError):
     """Raised by a Renderer when render_block() cannot produce output."""
 
-    def __init__(self, message: str, *, renderer: str | None = None) -> None:
-        super().__init__(message)
+    def __init__(
+        self,
+        message: str,
+        *,
+        renderer: str | None = None,
+        code: str | None = None,
+        line: int | None = None,
+        col: int | None = None,
+        hint: str | None = None,
+    ) -> None:
         self.renderer = renderer
+        super().__init__(message, code=code, line=line, col=col, hint=hint)
 
 
 class WorkerError(ScribaError):
     """Raised when a subprocess worker fails (crash, timeout, bad JSON)."""
 
-    def __init__(self, message: str, *, stderr: str | None = None) -> None:
-        super().__init__(message)
+    def __init__(
+        self,
+        message: str,
+        *,
+        stderr: str | None = None,
+        code: str | None = None,
+        line: int | None = None,
+        col: int | None = None,
+        hint: str | None = None,
+    ) -> None:
         self.stderr = stderr
+        super().__init__(message, code=code, line=line, col=col, hint=hint)
 
 
 class ScribaRuntimeError(ScribaError):
@@ -33,14 +102,32 @@ class ScribaRuntimeError(ScribaError):
     be resolved by the Node.js runtime that Scriba will spawn.
     """
 
-    def __init__(self, message: str, *, component: str | None = None) -> None:
-        super().__init__(message)
+    def __init__(
+        self,
+        message: str,
+        *,
+        component: str | None = None,
+        code: str | None = None,
+        line: int | None = None,
+        col: int | None = None,
+        hint: str | None = None,
+    ) -> None:
         self.component = component
+        super().__init__(message, code=code, line=line, col=col, hint=hint)
 
 
 class ValidationError(ScribaError):
     """Raised on structurally invalid input (NUL bytes, unmatched braces)."""
 
-    def __init__(self, message: str, *, position: int | None = None) -> None:
-        super().__init__(message)
+    def __init__(
+        self,
+        message: str,
+        *,
+        position: int | None = None,
+        code: str | None = None,
+        line: int | None = None,
+        col: int | None = None,
+        hint: str | None = None,
+    ) -> None:
         self.position = position
+        super().__init__(message, code=code, line=line, col=col, hint=hint)

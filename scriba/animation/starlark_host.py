@@ -82,7 +82,7 @@ class StarlarkHost:
         if not response.get("ok", False):
             code = response.get("code", "E1151")
             message = response.get("message", "unknown starlark error")
-            raise WorkerError(f"[{code}] {message}")
+            raise WorkerError(message, code=code)
 
         return response.get("bindings", {})
 

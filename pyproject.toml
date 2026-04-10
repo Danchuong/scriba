@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scriba"
-version = "0.1.1a0"
+version = "0.5.0"
 description = "Backend Python library for rendering LaTeX problem statements and CP editorial animations to self-contained HTML"
 readme = "README.md"
 license = { text = "MIT" }
@@ -22,7 +22,7 @@ keywords = [
 # TODO: confirm maintainer contact email before first public release
 authors = [{ name = "OJCloud", email = "maintainers@ojcloud.dev" }]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",

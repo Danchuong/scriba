@@ -173,7 +173,8 @@ def compute_stable_layout(
     # --- Validate seed ---
     if not isinstance(seed, int) or seed < 0:
         raise ValidationError(
-            f"E1505: layout_seed must be a non-negative integer, got {seed!r}"
+            f"layout_seed must be a non-negative integer, got {seed!r}",
+            code="E1505",
         )
 
     # --- Validate and clamp lambda ---

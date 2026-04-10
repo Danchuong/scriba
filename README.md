@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.1.1-alpha · MIT · Python 3.10+
+**Status:** v0.5.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is

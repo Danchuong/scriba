@@ -224,8 +224,11 @@ class Lexer:
         """
         if pos >= len(source) or source[pos] != "{":
             raise ValidationError(
-                f"E1007: expected '{{' at line {line}, col {col}",
+                "expected '{'",
                 position=pos,
+                code="E1007",
+                line=line,
+                col=col,
             )
         depth = 1
         start = pos + 1
@@ -247,8 +250,11 @@ class Lexer:
                 cur_col += 1
             i += 1
         raise ValidationError(
-            f"E1001: unbalanced braces starting at line {line}, col {col}",
+            "unbalanced braces",
             position=pos,
+            code="E1001",
+            line=line,
+            col=col,
         )
 
 
@@ -299,8 +305,11 @@ def _extract_interpolation(
                 return source[start:i], i + 1
         i += 1
     raise ValidationError(
-        f"E1001: unclosed interpolation starting at line {line}, col {col}",
+        "unclosed interpolation",
         position=pos,
+        code="E1001",
+        line=line,
+        col=col,
     )
 
 
@@ -356,6 +365,9 @@ def _extract_string(
         i += 1
         cur_col += 1
     raise ValidationError(
-        f"E1001: unclosed string starting at line {line}, col {col}",
+        "unclosed string",
         position=pos,
+        code="E1001",
+        line=line,
+        col=col,
     )

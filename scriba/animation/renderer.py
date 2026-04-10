@@ -176,7 +176,8 @@ def _instantiate_primitive(
     factory_cls = PRIMITIVE_CATALOG.get(shape.type_name)
     if factory_cls is None:
         raise ValidationError(
-            f"[E1102] unknown primitive type {shape.type_name!r}",
+            f"unknown primitive type {shape.type_name!r}",
+            code="E1102",
         )
     resolved_params = _resolve_params(shape.params, bindings)
 
@@ -525,14 +526,25 @@ class DiagramRenderer:
         body_end = end_m.start() if end_m else len(raw)
         body = raw[body_start:body_end]
 
+        # Validate: no \narrate in diagram (check before parsing to avoid
+        # the parser raising E1056 for narrate-outside-step)
+        if re.search(r"\\narrate\b", body):
+            raise ValidationError(
+                "\\narrate is not allowed in diagram",
+                code="E1054",
+            )
+
         parse_input = opts_str + "\n" + body if opts_str else body
         ir = SceneParser().parse(
             parse_input, allow_highlight_in_prelude=True,
         )
 
-        # Validate: no \step or \narrate in diagram
+        # Validate: no \step in diagram
         if ir.frames:
-            raise ValidationError("[E1050] \\step is not allowed in diagram")
+            raise ValidationError(
+                "\\step is not allowed in diagram",
+                code="E1050",
+            )
 
         scene_id = scene_id_from_source(raw)
         if hasattr(ir, "options") and hasattr(ir.options, "id") and ir.options.id:

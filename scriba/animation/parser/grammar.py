@@ -95,9 +95,11 @@ class SceneParser:
                 if cmd_name == "shape":
                     if not in_prelude:
                         raise ValidationError(
-                            f"E1051: \\shape must appear before the first "
-                            f"\\step (line {tok.line}, col {tok.col})",
+                            "\\shape must appear before the first \\step",
                             position=tok.col,
+                            code="E1051",
+                            line=tok.line,
+                            col=tok.col,
                         )
                     shapes.append(self._parse_shape())
 
@@ -132,15 +134,19 @@ class SceneParser:
                 elif cmd_name == "narrate":
                     if in_prelude:
                         raise ValidationError(
-                            f"E1056: \\narrate must be inside a \\step block "
-                            f"(line {tok.line}, col {tok.col})",
+                            "\\narrate must be inside a \\step block",
                             position=tok.col,
+                            code="E1056",
+                            line=tok.line,
+                            col=tok.col,
                         )
                     if frame_narrate_seen:
                         raise ValidationError(
-                            f"E1055: duplicate \\narrate in the same step "
-                            f"(line {tok.line}, col {tok.col})",
+                            "duplicate \\narrate in the same step",
                             position=tok.col,
+                            code="E1055",
+                            line=tok.line,
+                            col=tok.col,
                         )
                     narr = self._parse_narrate()
                     frame_narrate = narr.body
@@ -149,9 +155,11 @@ class SceneParser:
                 elif cmd_name == "highlight":
                     if in_prelude and not self._allow_highlight_in_prelude:
                         raise ValidationError(
-                            f"E1053: \\highlight is not allowed in the "
-                            f"prelude (line {tok.line}, col {tok.col})",
+                            "\\highlight is not allowed in the prelude",
                             position=tok.col,
+                            code="E1053",
+                            line=tok.line,
+                            col=tok.col,
                         )
                     cmd = self._parse_highlight()
                     if in_prelude:
@@ -183,27 +191,33 @@ class SceneParser:
                 elif cmd_name == "substory":
                     if in_prelude:
                         raise ValidationError(
-                            f"E1362: \\substory must be inside a \\step "
-                            f"block (line {tok.line}, col {tok.col})",
+                            "\\substory must be inside a \\step block",
                             position=tok.col,
+                            code="E1362",
+                            line=tok.line,
+                            col=tok.col,
                         )
                     block = self._parse_substory()
                     frame_substories.append(block)
 
                 elif cmd_name == "endsubstory":
                     raise ValidationError(
-                        f"E1365: \\endsubstory without matching "
-                        f"\\substory (line {tok.line}, col {tok.col})",
+                        "\\endsubstory without matching \\substory",
                         position=tok.col,
+                        code="E1365",
+                        line=tok.line,
+                        col=tok.col,
                     )
 
                 elif cmd_name == "fastforward":
                     if in_prelude:
                         raise ValidationError(
-                            f"E1345: \\fastforward must appear after "
-                            f"the first \\step, not in the prelude "
-                            f"(line {tok.line}, col {tok.col})",
+                            "\\fastforward must appear after the first "
+                            "\\step, not in the prelude",
                             position=tok.col,
+                            code="E1345",
+                            line=tok.line,
+                            col=tok.col,
                         )
                     # Close the current frame before expanding
                     frames.append(
@@ -233,9 +247,11 @@ class SceneParser:
 
                 else:
                     raise ValidationError(
-                        f"E1006: unknown command \\{cmd_name} "
-                        f"(line {tok.line}, col {tok.col})",
+                        f"unknown command \\{cmd_name}",
                         position=tok.col,
+                        code="E1006",
+                        line=tok.line,
+                        col=tok.col,
                     )
             else:
                 self._advance()
@@ -285,15 +301,20 @@ class SceneParser:
                 pass
             else:
                 raise ValidationError(
-                    f"E1005: invalid option value at line {val_tok.line}",
+                    "invalid option value",
                     position=val_tok.col,
+                    code="E1005",
+                    line=val_tok.line,
+                    col=val_tok.col,
                 )
             key = key_tok.value
             if key not in _VALID_OPTION_KEYS:
                 raise ValidationError(
-                    f"E1004: unknown option key {key!r} "
-                    f"(line {key_tok.line}, col {key_tok.col})",
+                    f"unknown option key {key!r}",
                     position=key_tok.col,
+                    code="E1004",
+                    line=key_tok.line,
+                    col=key_tok.col,
                 )
             opts[key] = val
             self._skip_newlines()
@@ -342,9 +363,11 @@ class SceneParser:
         state = str(params.get("state", "idle"))
         if state not in _VALID_RECOLOR_STATES:
             raise ValidationError(
-                f"E1109: unknown recolor state {state!r} "
-                f"(line {tok.line}, col {tok.col})",
+                f"unknown recolor state {state!r}",
                 position=tok.col,
+                code="E1109",
+                line=tok.line,
+                col=tok.col,
             )
         sel = parse_selector(target_str, line=tok.line, col=tok.col)
         return RecolorCommand(tok.line, tok.col, sel, state)
@@ -357,13 +380,21 @@ class SceneParser:
         position = str(params.get("position", "above"))
         if position not in _VALID_ANNOTATE_POSITIONS:
             raise ValidationError(
-                f"E1112: unknown annotation position {position!r} "
-                f"(line {tok.line}, col {tok.col})", position=tok.col)
+                f"unknown annotation position {position!r}",
+                position=tok.col,
+                code="E1112",
+                line=tok.line,
+                col=tok.col,
+            )
         color = str(params.get("color", "info"))
         if color not in _VALID_ANNOTATE_COLORS:
             raise ValidationError(
-                f"E1113: unknown annotation color {color!r} "
-                f"(line {tok.line}, col {tok.col})", position=tok.col)
+                f"unknown annotation color {color!r}",
+                position=tok.col,
+                code="E1113",
+                line=tok.line,
+                col=tok.col,
+            )
         arrow = params.get("arrow", False) in (True, "true")
         ephemeral = params.get("ephemeral", False) in (True, "true")
         af_raw = params.get("arrow_from")
@@ -386,23 +417,29 @@ class SceneParser:
             total_iters = int(total_iters_str)
         except ValueError:
             raise ValidationError(
-                f"E1346: total_iters must be a positive integer, "
-                f"got {total_iters_str!r} (line {line}, col {col})",
+                f"total_iters must be a positive integer, got {total_iters_str!r}",
                 position=col,
+                code="E1346",
+                line=line,
+                col=col,
             )
 
         if total_iters <= 0:
             raise ValidationError(
-                f"E1346: total_iters must be a positive integer, "
-                f"got {total_iters} (line {line}, col {col})",
+                f"total_iters must be a positive integer, got {total_iters}",
                 position=col,
+                code="E1346",
+                line=line,
+                col=col,
             )
 
         if total_iters > _MAX_TOTAL_ITERS:
             raise ValidationError(
-                f"E1340: total_iters exceeds maximum of {_MAX_TOTAL_ITERS}, "
-                f"got {total_iters} (line {line}, col {col})",
+                f"total_iters exceeds maximum of {_MAX_TOTAL_ITERS}, got {total_iters}",
                 position=col,
+                code="E1340",
+                line=line,
+                col=col,
             )
 
         # Second brace arg: key=value params
@@ -412,25 +449,31 @@ class SceneParser:
         sample_every_raw = params.get("sample_every")
         if sample_every_raw is None:
             raise ValidationError(
-                f"E1347: sample_every parameter is required "
-                f"(line {line}, col {col})",
+                "sample_every parameter is required",
                 position=col,
+                code="E1347",
+                line=line,
+                col=col,
             )
         sample_every = int(sample_every_raw)
         if sample_every <= 0:
             raise ValidationError(
-                f"E1347: sample_every must be a positive integer, "
-                f"got {sample_every} (line {line}, col {col})",
+                f"sample_every must be a positive integer, got {sample_every}",
                 position=col,
+                code="E1347",
+                line=line,
+                col=col,
             )
 
         # Extract seed (required)
         seed_raw = params.get("seed")
         if seed_raw is None:
             raise ValidationError(
-                f"E1342: seed parameter is required for deterministic "
-                f"builds (line {line}, col {col})",
+                "seed parameter is required for deterministic builds",
                 position=col,
+                code="E1342",
+                line=line,
+                col=col,
             )
         seed = int(seed_raw)
 
@@ -441,17 +484,21 @@ class SceneParser:
         n_frames = total_iters // sample_every
         if n_frames == 0:
             raise ValidationError(
-                f"E1346: total_iters ({total_iters}) < sample_every "
-                f"({sample_every}) produces 0 frames "
-                f"(line {line}, col {col})",
+                f"total_iters ({total_iters}) < sample_every "
+                f"({sample_every}) produces 0 frames",
                 position=col,
+                code="E1346",
+                line=line,
+                col=col,
             )
         if n_frames > _MAX_FF_FRAMES:
             raise ValidationError(
-                f"E1341: N = floor({total_iters}/{sample_every}) = "
-                f"{n_frames} exceeds maximum of {_MAX_FF_FRAMES} frames "
-                f"(line {line}, col {col})",
+                f"N = floor({total_iters}/{sample_every}) = "
+                f"{n_frames} exceeds maximum of {_MAX_FF_FRAMES} frames",
                 position=col,
+                code="E1341",
+                line=line,
+                col=col,
             )
 
         # Optionally parse a following \narrate{...} as the template
@@ -492,10 +539,11 @@ class SceneParser:
         self._substory_depth += 1
         if self._substory_depth > _MAX_SUBSTORY_DEPTH:
             raise ValidationError(
-                f"E1360: substory nesting depth exceeds maximum "
-                f"of {_MAX_SUBSTORY_DEPTH} "
-                f"(line {tok.line}, col {tok.col})",
+                f"substory nesting depth exceeds maximum of {_MAX_SUBSTORY_DEPTH}",
                 position=tok.col,
+                code="E1360",
+                line=tok.line,
+                col=tok.col,
             )
 
         # Check for trailing text on same line as \substory
@@ -520,9 +568,11 @@ class SceneParser:
                 key = key_tok.value
                 if key not in _VALID_SUBSTORY_OPTION_KEYS:
                     raise ValidationError(
-                        f"E1004: unknown substory option key {key!r} "
-                        f"(line {key_tok.line}, col {key_tok.col})",
+                        f"unknown substory option key {key!r}",
                         position=key_tok.col,
+                        code="E1004",
+                        line=key_tok.line,
+                        col=key_tok.col,
                     )
                 if key == "title":
                     title = val_tok.value
@@ -598,9 +648,11 @@ class SceneParser:
                 elif inner_cmd == "shape":
                     if not sub_in_prelude:
                         raise ValidationError(
-                            f"E1051: \\shape must appear before the first "
-                            f"\\step (line {inner_tok.line}, col {inner_tok.col})",
+                            "\\shape must appear before the first \\step",
                             position=inner_tok.col,
+                            code="E1051",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
                         )
                     sub_shapes.append(self._parse_shape())
 
@@ -635,15 +687,19 @@ class SceneParser:
                 elif inner_cmd == "narrate":
                     if sub_in_prelude:
                         raise ValidationError(
-                            f"E1056: \\narrate must be inside a \\step block "
-                            f"(line {inner_tok.line}, col {inner_tok.col})",
+                            "\\narrate must be inside a \\step block",
                             position=inner_tok.col,
+                            code="E1056",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
                         )
                     if sub_frame_narrate_seen:
                         raise ValidationError(
-                            f"E1055: duplicate \\narrate in the same step "
-                            f"(line {inner_tok.line}, col {inner_tok.col})",
+                            "duplicate \\narrate in the same step",
                             position=inner_tok.col,
+                            code="E1055",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
                         )
                     narr = self._parse_narrate()
                     sub_frame_narrate = narr.body
@@ -680,18 +736,22 @@ class SceneParser:
                 elif inner_cmd == "substory":
                     if sub_in_prelude:
                         raise ValidationError(
-                            f"E1362: \\substory must be inside a \\step "
-                            f"block (line {inner_tok.line}, col {inner_tok.col})",
+                            "\\substory must be inside a \\step block",
                             position=inner_tok.col,
+                            code="E1362",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
                         )
                     nested_block = self._parse_substory()
                     sub_frame_substories.append(nested_block)
 
                 else:
                     raise ValidationError(
-                        f"E1006: unknown command \\{inner_cmd} "
-                        f"(line {inner_tok.line}, col {inner_tok.col})",
+                        f"unknown command \\{inner_cmd}",
                         position=inner_tok.col,
+                        code="E1006",
+                        line=inner_tok.line,
+                        col=inner_tok.col,
                     )
             else:
                 self._advance()
@@ -699,9 +759,11 @@ class SceneParser:
         # If we reach EOF/end without \endsubstory
         self._substory_depth -= 1
         raise ValidationError(
-            f"E1361: unclosed \\substory "
-            f"(line {substory_line}, col {substory_col})",
+            "unclosed \\substory",
             position=substory_col,
+            code="E1361",
+            line=substory_line,
+            col=substory_col,
         )
 
     def _check_substory_trailing(self, cmd_line: int, cmd_name: str) -> None:
@@ -717,9 +779,11 @@ class SceneParser:
                 TokenKind.LBRACKET,
             ):
                 raise ValidationError(
-                    f"E1368: text on same line as "
-                    f"\\{cmd_name} on line {cmd_line}",
+                    f"text on same line as \\{cmd_name}",
                     position=tok.col,
+                    code="E1368",
+                    line=cmd_line,
+                    col=tok.col,
                 )
             break
 
@@ -762,8 +826,11 @@ class SceneParser:
             else:
                 parts.append(_remap.get(t.kind, t.value))
         raise ValidationError(
-            f"E1001: unbalanced braces at line {cmd_tok.line}, col {cmd_tok.col}",
+            "unbalanced braces",
             position=cmd_tok.col,
+            code="E1001",
+            line=cmd_tok.line,
+            col=cmd_tok.col,
         )
 
     def _read_param_brace(self) -> dict[str, ParamValue]:
@@ -824,9 +891,11 @@ class SceneParser:
             return self._parse_tuple_value()
 
         raise ValidationError(
-            f"E1005: unexpected token {tok.kind.name} "
-            f"(line {tok.line}, col {tok.col})",
+            f"unexpected token {tok.kind.name}",
             position=tok.col,
+            code="E1005",
+            line=tok.line,
+            col=tok.col,
         )
 
     def _parse_list_value(self) -> list[ParamValue]:
@@ -914,8 +983,11 @@ class SceneParser:
                 break
             if tok.line == step_line and tok.kind != TokenKind.NEWLINE:
                 raise ValidationError(
-                    f"E1052: trailing text after \\step on line {step_line}",
+                    "trailing text after \\step",
                     position=tok.col,
+                    code="E1052",
+                    line=step_line,
+                    col=tok.col,
                 )
             break
 
@@ -936,9 +1008,10 @@ class SceneParser:
         tok = self._peek()
         if tok.kind != kind:
             raise ValidationError(
-                f"expected {kind.name}, got {tok.kind.name} "
-                f"(line {tok.line}, col {tok.col})",
+                f"expected {kind.name}, got {tok.kind.name}",
                 position=tok.col,
+                line=tok.line,
+                col=tok.col,
             )
         return self._advance()
 
