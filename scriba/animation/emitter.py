@@ -48,6 +48,7 @@ class SubstoryData:
     substory_id: str
     depth: int
     frames: list["FrameData"]
+    primitives: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -435,13 +436,17 @@ def emit_substory_html(
     title = substory.title
     sub_frame_count = len(substory.frames)
 
+    # Use substory's own primitives if available, otherwise fall back to parent
+    sub_primitives = substory.primitives if substory.primitives else primitives
+    sub_viewbox = compute_viewbox(sub_primitives) if substory.primitives else viewbox
+
     sub_frame_items: list[str] = []
     for sub_frame in substory.frames:
         sub_step = sub_frame.step_number
         sub_frame_id = f"{parent_frame_id}-substory-{sub_id}-frame-{sub_step}"
         narration_id = f"{sub_frame_id}-narration"
 
-        svg_html = _emit_frame_svg(sub_frame, primitives, scene_id, viewbox)
+        svg_html = _emit_frame_svg(sub_frame, sub_primitives, scene_id, sub_viewbox)
 
         # Handle nested substories
         nested_substory_html = ""

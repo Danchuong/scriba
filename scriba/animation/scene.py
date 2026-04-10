@@ -251,6 +251,8 @@ class SceneState:
         saved_highlights = set(self.highlights)
         saved_annotations = list(self.annotations)
         saved_bindings = dict(self.bindings)
+        saved_frame_counter = self._frame_counter
+        self._frame_counter = 0  # Reset for substory-local numbering
 
         # Register substory-local shapes
         for shape in substory.shapes:
@@ -271,6 +273,7 @@ class SceneState:
         self.highlights = saved_highlights
         self.annotations = saved_annotations
         self.bindings = saved_bindings
+        self._frame_counter = saved_frame_counter
 
         return snapshots
 

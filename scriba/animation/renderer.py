@@ -438,6 +438,16 @@ class AnimationRenderer:
         depth: int,
     ) -> SubstoryData:
         """Materialise a substory block into SubstoryData."""
+        # Instantiate substory-local primitives
+        sub_primitives: dict[str, Any] | None = None
+        if substory.shapes:
+            bindings: dict[str, Any] = {}
+            sub_primitives = {}
+            for shape in substory.shapes:
+                sub_primitives[shape.name] = _instantiate_primitive(
+                    shape, bindings,
+                )
+
         sub_snapshots = state.apply_substory(
             substory, starlark_host=self._starlark_host,
         )
@@ -465,6 +475,7 @@ class AnimationRenderer:
             substory_id=substory.substory_id or f"substory{depth}",
             depth=depth,
             frames=sub_frames,
+            primitives=sub_primitives,
         )
 
 
