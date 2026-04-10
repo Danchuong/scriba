@@ -309,7 +309,10 @@ class AnimationRenderer:
 
         # Produce final HTML via the emitter
         output_mode = ctx.metadata.get("output_mode", "interactive")
-        html = emit_html(scene_id, frames, primitives, mode=output_mode)
+        html = emit_html(
+            scene_id, frames, primitives, mode=output_mode,
+            render_inline_tex=ctx.render_inline_tex,
+        )
 
         # Collect CSS assets
         css_assets: set[str] = {
@@ -571,7 +574,10 @@ class DiagramRenderer:
         snap = state.snapshot(index=1, narration=None)
 
         frame = _snapshot_to_frame_data(snap, 1, scene_id, ctx)
-        html = emit_html(scene_id, [frame], primitives, mode="diagram")
+        html = emit_html(
+            scene_id, [frame], primitives, mode="diagram",
+            render_inline_tex=ctx.render_inline_tex,
+        )
 
         return RenderArtifact(
             html=html,

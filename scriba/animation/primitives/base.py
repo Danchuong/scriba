@@ -12,7 +12,7 @@ from __future__ import annotations
 import abc
 import re
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +104,12 @@ class PrimitiveInstance(Protocol):
         """Check whether *selector_str* is valid for this instance."""
         ...
 
-    def emit_svg(self, state: dict[str, dict[str, Any]]) -> str:
+    def emit_svg(
+        self,
+        state: dict[str, dict[str, Any]],
+        *,
+        render_inline_tex: "Callable[[str], str] | None" = None,
+    ) -> str:
         """Emit SVG markup for the current frame.
 
         *state* maps ``target_str -> {state, value, label, ...}``.
@@ -173,7 +178,7 @@ class PrimitiveBase(abc.ABC):
         """Return the bounding box of this primitive in SVG coordinates."""
 
     @abc.abstractmethod
-    def emit_svg(self) -> str:
+    def emit_svg(self, *, render_inline_tex: "Callable[[str], str] | None" = None) -> str:
         """Return the SVG fragment (``<g data-primitive="...">...</g>``)."""
 
 
@@ -195,4 +200,132 @@ def _escape_xml(text: str) -> str:
         .replace("<", "&lt;")
         .replace(">", "&gt;")
         .replace('"', "&quot;")
+    )
+
+
+# ---------------------------------------------------------------------------
+# Inline TeX / foreignObject helpers
+# ---------------------------------------------------------------------------
+
+_INLINE_MATH_RE = re.compile(r"\$([^\$]+?)\$")
+
+
+def _has_math(text: str) -> bool:
+    """Return True if *text* contains at least one ``$...$`` fragment."""
+    return "$" in str(text) and _INLINE_MATH_RE.search(str(text)) is not None
+
+
+def _render_mixed_html(
+    text: str,
+    render_inline_tex: "Callable[[str], str]",
+) -> str:
+    """Render a string that may contain ``$...$`` math into HTML.
+
+    Non-math segments are XML-escaped; math segments are rendered via
+    the *render_inline_tex* callback (which takes a bare fragment, no
+    ``$`` delimiters) and returned as-is (already HTML).
+    """
+    parts: list[str] = []
+    last = 0
+    for m in _INLINE_MATH_RE.finditer(str(text)):
+        # Escape the literal text before this match
+        if m.start() > last:
+            parts.append(_escape_xml(str(text)[last : m.start()]))
+        # Render the math fragment — wrap in $…$ because the callback
+        # (from _make_inline_tex_callback / tex_inline_provider) expects
+        # text that may contain ``$...$`` delimiters.
+        parts.append(render_inline_tex(f"${m.group(1)}$"))
+        last = m.end()
+    # Trailing literal text
+    tail = str(text)[last:]
+    if tail:
+        parts.append(_escape_xml(tail))
+    return "".join(parts)
+
+
+def _render_svg_text(
+    text: str | Any,
+    x: int,
+    y: int,
+    *,
+    fill: str = "#212529",
+    css_class: str | None = None,
+    font_weight: str | None = None,
+    font_size: str | None = None,
+    text_anchor: str | None = None,
+    dominant_baseline: str | None = None,
+    fo_width: int = 0,
+    fo_height: int = 0,
+    render_inline_tex: "Callable[[str], str] | None" = None,
+) -> str:
+    """Render a text value as either a plain ``<text>`` or a ``<foreignObject>``.
+
+    When *text* contains no ``$`` math delimiters or *render_inline_tex* is
+    ``None``, this emits a standard SVG ``<text>`` element with
+    ``_escape_xml(text)`` — identical to the original behaviour with zero
+    overhead.
+
+    When math IS present and a callback is provided, the text is rendered
+    inside a ``<foreignObject>`` with an XHTML ``<div>`` so that KaTeX
+    HTML can be embedded.
+
+    Parameters
+    ----------
+    x, y:
+        Centre coordinates of the text (for ``<text>`` these become the
+        ``x``/``y`` attributes; for ``<foreignObject>`` the element is
+        positioned so the text is visually centred on this point).
+    fo_width, fo_height:
+        Width and height of the ``<foreignObject>``.  When zero the
+        caller should supply the enclosing cell dimensions.
+    """
+    text_str = str(text)
+
+    # Fast path — no math or no callback: emit a plain <text>
+    if render_inline_tex is None or not _has_math(text_str):
+        attrs = f'x="{x}" y="{y}" fill="{fill}"'
+        if css_class:
+            attrs = f'class="{css_class}" {attrs}'
+        if text_anchor:
+            attrs += f' text-anchor="{text_anchor}"'
+        if dominant_baseline:
+            attrs += f' dominant-baseline="{dominant_baseline}"'
+        if font_weight:
+            attrs += f' font-weight="{font_weight}"'
+        if font_size:
+            attrs += f' font-size="{font_size}"'
+        return f"<text {attrs}>{_escape_xml(text_str)}</text>"
+
+    # Slow path — render via foreignObject
+    inner_html = _render_mixed_html(text_str, render_inline_tex)
+
+    w = fo_width if fo_width > 0 else 80
+    h = fo_height if fo_height > 0 else 30
+    fo_x = x - w // 2
+    fo_y = y - h // 2
+
+    style_parts: list[str] = [
+        "display:flex",
+        "align-items:center",
+        "justify-content:center",
+        f"width:{w}px",
+        f"height:{h}px",
+        f"color:{fill}",
+        "text-align:center",
+        "line-height:1",
+        "overflow:visible",
+    ]
+    if font_weight:
+        style_parts.append(f"font-weight:{font_weight}")
+    if font_size:
+        style_parts.append(f"font-size:{font_size}")
+
+    style = ";".join(style_parts)
+
+    return (
+        f'<foreignObject x="{fo_x}" y="{fo_y}" width="{w}" height="{h}">'
+        f'<div xmlns="http://www.w3.org/1999/xhtml" style="{style}">'
+        f"{inner_html}"
+        f"</div>"
+        f"</foreignObject>"
     )

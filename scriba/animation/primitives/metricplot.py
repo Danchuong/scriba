@@ -13,7 +13,7 @@ from __future__ import annotations
 import html
 import logging
 import math
-from typing import Any
+from typing import Any, Callable
 
 from scriba.animation.errors import animation_error
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase
@@ -318,7 +318,7 @@ class MetricPlot(PrimitiveBase):
     # SVG emission
     # -----------------------------------------------------------------
 
-    def emit_svg(self) -> str:
+    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         """Return the SVG fragment for the current frame."""
         xmin, xmax = self._compute_xrange()
         ymin_left, ymax_left = self._compute_yrange("left")

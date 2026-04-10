@@ -41,7 +41,7 @@ class _StubPrimitive:
     def bounding_box(self) -> tuple[float, float, float, float]:
         return self._bbox
 
-    def emit_svg(self, state: dict[str, dict[str, Any]] | None = None) -> str:
+    def emit_svg(self, state: dict[str, dict[str, Any]] | None = None, *, render_inline_tex=None) -> str:
         return f'<g data-primitive="{self.primitive_type}" data-shape="{self.shape_name}"></g>'
 
 
@@ -64,7 +64,7 @@ class _StubGraph:
     def get_state(self, target: str) -> str:
         return self._states.get(target, "idle")
 
-    def emit_svg(self) -> str:
+    def emit_svg(self, *, render_inline_tex=None) -> str:
         return f'<g data-primitive="graph" data-shape="{self.shape_name}"></g>'
 
 

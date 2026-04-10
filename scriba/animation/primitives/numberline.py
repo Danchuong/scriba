@@ -7,13 +7,14 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     DEFAULT_STATE,
     STATE_COLORS,
     _escape_xml,
+    _render_svg_text,
     state_class,
     svg_style_attrs,
 )
@@ -150,7 +151,12 @@ class NumberLineInstance:
 
         return False
 
-    def emit_svg(self, state: dict[str, dict[str, Any]]) -> str:
+    def emit_svg(
+        self,
+        state: dict[str, dict[str, Any]],
+        *,
+        render_inline_tex: "Callable[[str], str] | None" = None,
+    ) -> str:
         """Emit SVG ``<g>`` for the number line."""
         lines: list[str] = [
             f'<g data-primitive="numberline" data-shape="{self.shape_name}">'
@@ -197,9 +203,16 @@ class NumberLineInstance:
             # Text always uses dark color (no background rect to contrast against)
             text_color = "#212529" if state_name != "dim" else "#adb5bd"
             lines.append(
-                f'    <text x="{x}" y="{NL_LABEL_Y}" '
-                f'fill="{text_color}">'
-                f"{_escape_xml(tick_label)}</text>"
+                "    "
+                + _render_svg_text(
+                    tick_label,
+                    x,
+                    NL_LABEL_Y,
+                    fill=text_color,
+                    fo_width=40,
+                    fo_height=20,
+                    render_inline_tex=render_inline_tex,
+                )
             )
             # Highlight overlay (additive — gold circle around tick)
             if tick_state.get("highlighted"):
@@ -215,9 +228,17 @@ class NumberLineInstance:
             center_x = int(NL_WIDTH // 2)
             label_y = NL_HEIGHT
             lines.append(
-                f'  <text class="scriba-primitive-label" '
-                f'x="{center_x}" y="{label_y}" fill="#6c757d">'
-                f"{_escape_xml(self.label)}</text>"
+                "  "
+                + _render_svg_text(
+                    self.label,
+                    center_x,
+                    label_y,
+                    fill="#6c757d",
+                    css_class="scriba-primitive-label",
+                    fo_width=NL_WIDTH,
+                    fo_height=20,
+                    render_inline_tex=render_inline_tex,
+                )
             )
 
         lines.append("</g>")

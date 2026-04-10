@@ -11,9 +11,14 @@ from __future__ import annotations
 import math
 import random
 from html import escape as html_escape
-from typing import Any
+from typing import Any, Callable
 
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, svg_style_attrs
+from scriba.animation.primitives.base import (
+    BoundingBox,
+    PrimitiveBase,
+    _render_svg_text,
+    svg_style_attrs,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -219,7 +224,7 @@ class Graph(PrimitiveBase):
     def bounding_box(self) -> BoundingBox:
         return BoundingBox(x=0, y=0, width=self.width, height=self.height)
 
-    def emit_svg(self) -> str:
+    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         if not self.nodes:
             return (
                 f'<g data-primitive="graph" data-shape="{html_escape(self.name)}">'
@@ -234,9 +239,17 @@ class Graph(PrimitiveBase):
         # Optional label / caption
         if self.label is not None:
             parts.append(
-                f'<text x="{self.width // 2}" y="14" '
-                f'text-anchor="middle" class="scriba-label" fill="#6c757d">'
-                f'{html_escape(str(self.label))}</text>'
+                _render_svg_text(
+                    str(self.label),
+                    self.width // 2,
+                    14,
+                    fill="#6c757d",
+                    css_class="scriba-label",
+                    text_anchor="middle",
+                    fo_width=self.width,
+                    fo_height=24,
+                    render_inline_tex=render_inline_tex,
+                )
             )
 
         # Arrowhead defs for directed graphs
@@ -286,6 +299,17 @@ class Graph(PrimitiveBase):
                     f'fill="none" stroke="#F0E442" stroke-width="3" '
                     f'stroke-dasharray="6 3"/>'
                 )
+            node_text = _render_svg_text(
+                str(node_id),
+                cx,
+                cy,
+                fill=node_colors["text"],
+                text_anchor="middle",
+                dominant_baseline="central",
+                fo_width=_NODE_RADIUS * 2,
+                fo_height=_NODE_RADIUS * 2,
+                render_inline_tex=render_inline_tex,
+            )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
                 f'class="scriba-state-{state}">'
@@ -293,10 +317,7 @@ class Graph(PrimitiveBase):
                 f'fill="{node_colors["fill"]}" '
                 f'stroke="{node_colors["stroke"]}" '
                 f'stroke-width="{node_sw}"/>'
-                f'<text x="{cx}" y="{cy}" text-anchor="middle" '
-                f'dominant-baseline="central" '
-                f'fill="{node_colors["text"]}">'
-                f'{html_escape(str(node_id))}</text>'
+                f'{node_text}'
                 f'{hl_overlay}'
                 f'</g>'
             )

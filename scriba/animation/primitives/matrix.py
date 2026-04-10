@@ -10,12 +10,13 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     DEFAULT_STATE,
     _escape_xml,
+    _render_svg_text,
     state_class,
     svg_style_attrs,
 )
@@ -238,7 +239,12 @@ class MatrixInstance:
 
         return False
 
-    def emit_svg(self, state: dict[str, dict[str, Any]]) -> str:
+    def emit_svg(
+        self,
+        state: dict[str, dict[str, Any]],
+        *,
+        render_inline_tex: "Callable[[str], str] | None" = None,
+    ) -> str:
         """Emit SVG ``<g>`` for the matrix/heatmap."""
         stops = COLORSCALES.get(self.colorscale, VIRIDIS)
         effective_vmin, effective_vmax = self._compute_range()
@@ -256,9 +262,18 @@ class MatrixInstance:
             for c, cl in enumerate(self.col_labels[:self.cols]):
                 cx = x_offset + c * (self.cell_size + _CELL_GAP) + self.cell_size // 2
                 lines.append(
-                    f'  <text x="{cx}" y="{y_offset - 3}" '
-                    f'text-anchor="middle" fill="#6c757d" '
-                    f'font-size="10">{_escape_xml(str(cl))}</text>'
+                    "  "
+                    + _render_svg_text(
+                        str(cl),
+                        cx,
+                        y_offset - 3,
+                        fill="#6c757d",
+                        text_anchor="middle",
+                        font_size="10",
+                        fo_width=self.cell_size,
+                        fo_height=_LABEL_OFFSET,
+                        render_inline_tex=render_inline_tex,
+                    )
                 )
 
         # Row labels
@@ -266,9 +281,19 @@ class MatrixInstance:
             for r, rl in enumerate(self.row_labels[:self.rows]):
                 ry = y_offset + r * (self.cell_size + _CELL_GAP) + self.cell_size // 2
                 lines.append(
-                    f'  <text x="{x_offset - 3}" y="{ry}" '
-                    f'text-anchor="end" dominant-baseline="central" '
-                    f'fill="#6c757d" font-size="10">{_escape_xml(str(rl))}</text>'
+                    "  "
+                    + _render_svg_text(
+                        str(rl),
+                        x_offset - 3,
+                        ry,
+                        fill="#6c757d",
+                        text_anchor="end",
+                        dominant_baseline="central",
+                        font_size="10",
+                        fo_width=_LABEL_OFFSET,
+                        fo_height=self.cell_size,
+                        render_inline_tex=render_inline_tex,
+                    )
                 )
 
         for r in range(self.rows):
@@ -315,10 +340,19 @@ class MatrixInstance:
                     ty = y + self.cell_size // 2
                     font_size = max(8, self.cell_size // 3)
                     lines.append(
-                        f'    <text x="{tx}" y="{ty}" '
-                        f'text-anchor="middle" dominant-baseline="central" '
-                        f'fill="{text_fill}" font-size="{font_size}">'
-                        f'{_escape_xml(self._format_value(val))}</text>'
+                        "    "
+                        + _render_svg_text(
+                            self._format_value(val),
+                            tx,
+                            ty,
+                            fill=text_fill,
+                            text_anchor="middle",
+                            dominant_baseline="central",
+                            font_size=str(font_size),
+                            fo_width=self.cell_size,
+                            fo_height=self.cell_size,
+                            render_inline_tex=render_inline_tex,
+                        )
                     )
 
                 # Highlight overlay
@@ -338,10 +372,18 @@ class MatrixInstance:
             center_x = total_w // 2
             label_y = self._total_height() + 14
             lines.append(
-                f'  <text class="scriba-primitive-label" '
-                f'x="{center_x}" y="{label_y}" '
-                f'text-anchor="middle" fill="#6c757d">'
-                f'{_escape_xml(self.label)}</text>'
+                "  "
+                + _render_svg_text(
+                    self.label,
+                    center_x,
+                    label_y,
+                    fill="#6c757d",
+                    css_class="scriba-primitive-label",
+                    text_anchor="middle",
+                    fo_width=total_w,
+                    fo_height=20,
+                    render_inline_tex=render_inline_tex,
+                )
             )
 
         lines.append("</g>")

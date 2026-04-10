@@ -10,9 +10,14 @@ from __future__ import annotations
 
 import re
 from html import escape as html_escape
-from typing import Any
+from typing import Any, Callable
 
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, svg_style_attrs
+from scriba.animation.primitives.base import (
+    BoundingBox,
+    PrimitiveBase,
+    _render_svg_text,
+    svg_style_attrs,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -159,7 +164,7 @@ class Stack(PrimitiveBase):
 
         return BoundingBox(x=0, y=0, width=w, height=h)
 
-    def emit_svg(self) -> str:
+    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="stack" data-shape="{html_escape(self.name)}">'
@@ -230,9 +235,17 @@ class Stack(PrimitiveBase):
             tx = x + _CELL_WIDTH // 2
             ty = y + _CELL_HEIGHT // 2
             parts.append(
-                f'<text x="{tx}" y="{ty}" '
-                f'text-anchor="middle" dominant-baseline="central" '
-                f'fill="{colors["text"]}">{html_escape(str(item.label))}</text>'
+                _render_svg_text(
+                    str(item.label),
+                    tx,
+                    ty,
+                    fill=colors["text"],
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                    fo_width=_CELL_WIDTH,
+                    fo_height=_CELL_HEIGHT,
+                    render_inline_tex=render_inline_tex,
+                )
             )
 
             if is_hl:
@@ -266,9 +279,17 @@ class Stack(PrimitiveBase):
             cx = bbox.width // 2
             cy = bbox.height - 4
             parts.append(
-                f'<text class="scriba-primitive-label" '
-                f'x="{cx}" y="{cy}" text-anchor="middle" '
-                f'fill="#6c757d">{html_escape(str(self.label_text))}</text>'
+                _render_svg_text(
+                    str(self.label_text),
+                    cx,
+                    cy,
+                    fill="#6c757d",
+                    css_class="scriba-primitive-label",
+                    text_anchor="middle",
+                    fo_width=bbox.width,
+                    fo_height=20,
+                    render_inline_tex=render_inline_tex,
+                )
             )
 
         parts.append("</g>")

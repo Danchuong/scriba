@@ -11,7 +11,7 @@ from __future__ import annotations
 import hashlib
 import html as _html
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Callable
 
 from scriba.animation.primitives.base import BoundingBox
 
@@ -227,6 +227,7 @@ def _emit_frame_svg(
     primitives: dict[str, Any],
     scene_id: str,
     viewbox: str,
+    render_inline_tex: Callable[[str], str] | None = None,
 ) -> str:
     """Produce the ``<svg>`` element for one frame."""
     narration_id = f"{scene_id}-frame-{frame.step_number}-narration"
@@ -284,10 +285,16 @@ def _emit_frame_svg(
                     if a.get("target", "").startswith(shape_name + ".")
                 ]
                 svg_parts.append(
-                    prim.emit_svg(shape_state, annotations=prim_anns)
+                    prim.emit_svg(
+                        shape_state,
+                        annotations=prim_anns,
+                        render_inline_tex=render_inline_tex,
+                    )
                 )
             else:
-                svg_parts.append(prim.emit_svg(shape_state))
+                svg_parts.append(
+                    prim.emit_svg(shape_state, render_inline_tex=render_inline_tex)
+                )
         else:
             # Graph / PrimitiveBase -- apply state then emit
             highlighted_suffixes: set[str] = set()
@@ -304,7 +311,7 @@ def _emit_frame_svg(
                     if target_data.get("highlighted"):
                         highlighted_suffixes.add(suffix)
             prim._highlighted = highlighted_suffixes
-            svg_parts.append(prim.emit_svg())
+            svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
 
         svg_parts.append("</g>")
         y_cursor += bh + _PRIMITIVE_GAP
@@ -345,6 +352,7 @@ def emit_animation_html(
     frames: list[FrameData],
     primitives: dict[str, Any],
     css_assets: set[str] | None = None,
+    render_inline_tex: Callable[[str], str] | None = None,
 ) -> str:
     """Produce the complete ``<figure>`` HTML for an animation.
 
@@ -379,13 +387,14 @@ def emit_animation_html(
         frame_id = f"{scene_id}-frame-{step}"
         narration_id = f"{frame_id}-narration"
 
-        svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox)
+        svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex)
 
         substory_html = ""
         if frame.substories:
             for sub in frame.substories:
                 substory_html += emit_substory_html(
                     scene_id, frame_id, sub, primitives, viewbox,
+                    render_inline_tex=render_inline_tex,
                 )
 
         frame_items.append(
@@ -434,6 +443,7 @@ def emit_substory_html(
     substory: SubstoryData,
     primitives: dict[str, Any],
     viewbox: str,
+    render_inline_tex: Callable[[str], str] | None = None,
 ) -> str:
     """Produce interactive ``<section class="scriba-substory">`` with step controller.
 
@@ -458,7 +468,7 @@ def emit_substory_html(
     import json as _json
     json_frames: list[dict[str, str]] = []
     for sub_frame in substory.frames:
-        svg_html = _emit_frame_svg(sub_frame, sub_primitives, scene_id, sub_viewbox)
+        svg_html = _emit_frame_svg(sub_frame, sub_primitives, scene_id, sub_viewbox, render_inline_tex)
         json_frames.append({
             "svg": svg_html,
             "narration": sub_frame.narration_html,
@@ -503,6 +513,7 @@ def emit_interactive_html(
     frames: list[FrameData],
     primitives: dict[str, Any],
     label: str = "",
+    render_inline_tex: Callable[[str], str] | None = None,
 ) -> str:
     """Produce interactive widget HTML with step controller."""
     frame_count = len(frames)
@@ -519,7 +530,7 @@ def emit_interactive_html(
     # Build frame data list for JS
     js_frames: list[str] = []
     for frame in frames:
-        svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox)
+        svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex)
         svg_escaped = _escape_js(svg_html)
         narration_escaped = _escape_js(frame.narration_html)
         # Include substory HTML if present
@@ -529,6 +540,7 @@ def emit_interactive_html(
             for sub in frame.substories:
                 substory_html += emit_substory_html(
                     scene_id, frame_id, sub, primitives, viewbox,
+                    render_inline_tex=render_inline_tex,
                 )
         substory_escaped = _escape_js(substory_html)
         js_frames.append(
@@ -621,6 +633,7 @@ def emit_html(
     primitives: dict[str, Any],
     mode: str = "interactive",
     label: str = "",
+    render_inline_tex: Callable[[str], str] | None = None,
 ) -> str:
     """Produce HTML for an animation scene.
 
@@ -629,12 +642,21 @@ def emit_html(
     mode:
         ``"interactive"`` (default) produces a step-controller widget.
         ``"static"`` produces the legacy filmstrip ``<figure>``.
+    render_inline_tex:
+        Optional callback that renders a bare TeX math fragment to HTML.
     """
     if mode == "static":
-        return emit_animation_html(scene_id, frames, primitives)
+        return emit_animation_html(
+            scene_id, frames, primitives, render_inline_tex=render_inline_tex,
+        )
     if mode == "diagram":
-        return emit_diagram_html(scene_id, frames, primitives)
-    return emit_interactive_html(scene_id, frames, primitives, label=label)
+        return emit_diagram_html(
+            scene_id, frames, primitives, render_inline_tex=render_inline_tex,
+        )
+    return emit_interactive_html(
+        scene_id, frames, primitives, label=label,
+        render_inline_tex=render_inline_tex,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -646,6 +668,7 @@ def emit_diagram_html(
     scene_id: str,
     frames: list[FrameData],
     primitives: dict[str, Any],
+    render_inline_tex: Callable[[str], str] | None = None,
 ) -> str:
     """Produce a static ``<figure class="scriba-diagram">`` with no controls."""
     if not frames:
@@ -659,7 +682,7 @@ def emit_diagram_html(
 
     viewbox = compute_viewbox(primitives)
     frame = frames[0]
-    svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox)
+    svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex)
 
     return (
         f'<figure class="scriba-diagram" '

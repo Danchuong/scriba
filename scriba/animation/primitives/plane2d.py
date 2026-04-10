@@ -15,10 +15,10 @@ import logging
 import math
 import re
 from html import escape as html_escape
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 from scriba.animation.errors import animation_error
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, svg_style_attrs
+from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, _render_svg_text, svg_style_attrs
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
 
 __all__ = ["Plane2D"]
@@ -315,7 +315,7 @@ class Plane2D(PrimitiveBase):
 
     # ----- SVG emission ----------------------------------------------------
 
-    def emit_svg(self) -> str:
+    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="plane2d" data-shape="{html_escape(self.name)}" '

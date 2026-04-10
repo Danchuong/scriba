@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     DEFAULT_STATE,
     INDEX_LABEL_OFFSET,
     _escape_xml,
+    _render_svg_text,
     state_class,
     svg_style_attrs,
 )
@@ -125,7 +126,12 @@ class ArrayInstance:
 
         return False
 
-    def emit_svg(self, state: dict[str, dict[str, Any]]) -> str:
+    def emit_svg(
+        self,
+        state: dict[str, dict[str, Any]],
+        *,
+        render_inline_tex: "Callable[[str], str] | None" = None,
+    ) -> str:
         """Emit SVG ``<g>`` for the array."""
         lines: list[str] = [
             f'<g data-primitive="array" data-shape="{self.shape_name}">'
@@ -156,9 +162,16 @@ class ArrayInstance:
             text_x = int(x + CELL_WIDTH // 2)
             text_y = int(y + CELL_HEIGHT // 2)
             lines.append(
-                f'    <text x="{text_x}" y="{text_y}" '
-                f'fill="{colors["text"]}">'
-                f"{_escape_xml(value)}</text>"
+                "    "
+                + _render_svg_text(
+                    value,
+                    text_x,
+                    text_y,
+                    fill=colors["text"],
+                    fo_width=CELL_WIDTH,
+                    fo_height=CELL_HEIGHT,
+                    render_inline_tex=render_inline_tex,
+                )
             )
             # Highlight overlay (additive — dashed gold border on top)
             if cell_state.get("highlighted"):
@@ -176,9 +189,17 @@ class ArrayInstance:
                 idx_labels = _parse_index_labels(self.labels, self.size)
                 label_y = int(CELL_HEIGHT + INDEX_LABEL_OFFSET)
                 lines.append(
-                    f'  <text class="scriba-index-label idx" '
-                    f'x="{text_x}" y="{label_y}" fill="#6c757d">'
-                    f"{_escape_xml(idx_labels[i])}</text>"
+                    "  "
+                    + _render_svg_text(
+                        idx_labels[i],
+                        text_x,
+                        label_y,
+                        fill="#6c757d",
+                        css_class="scriba-index-label idx",
+                        fo_width=CELL_WIDTH,
+                        fo_height=20,
+                        render_inline_tex=render_inline_tex,
+                    )
                 )
 
         # Caption label below the array
@@ -190,9 +211,17 @@ class ArrayInstance:
             )
             label_y = int(label_y_offset)
             lines.append(
-                f'  <text class="scriba-primitive-label" '
-                f'x="{center_x}" y="{label_y}" fill="#6c757d">'
-                f"{_escape_xml(self.label)}</text>"
+                "  "
+                + _render_svg_text(
+                    self.label,
+                    center_x,
+                    label_y,
+                    fill="#6c757d",
+                    css_class="scriba-primitive-label",
+                    fo_width=total_width,
+                    fo_height=20,
+                    render_inline_tex=render_inline_tex,
+                )
             )
 
         lines.append("</g>")
