@@ -229,6 +229,22 @@ class ForeachCommand:
     col: int = 0
 
 
+@dataclass(frozen=True, slots=True)
+class CursorCommand:
+    """``\\cursor{targets}{index}`` — advance a cursor across one or more shape accessors.
+
+    Finds the element currently in *curr_state*, sets it to *prev_state*,
+    then sets ``target_prefix[index]`` to *curr_state*.
+    """
+
+    targets: tuple[str, ...]
+    index: int | str
+    prev_state: str = "dim"
+    curr_state: str = "current"
+    line: int = 0
+    col: int = 0
+
+
 # ---------------------------------------------------------------------------
 # Union aliases
 # ---------------------------------------------------------------------------
@@ -241,6 +257,7 @@ MutationCommand = Union[
     ReannotateCommand,
     AnnotateCommand,
     ForeachCommand,
+    CursorCommand,
 ]
 
 # All inner commands (8 base + substory + foreach).
@@ -255,6 +272,7 @@ Command = Union[
     ReannotateCommand,
     AnnotateCommand,
     ForeachCommand,
+    CursorCommand,
     "SubstoryBlock",
 ]
 

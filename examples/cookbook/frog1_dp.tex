@@ -12,17 +12,14 @@
 \narrate{Co so: $dp[0] = 0$ vi ech bat dau o da $0$, chua ton chi phi nao.}
 
 \step
-\recolor{h.cell[0]}{state=dim}
-\recolor{h.cell[1]}{state=current}
-\recolor{dp.cell[1]}{state=current}
+\cursor{h.cell, dp.cell}{1}
 \annotate{dp.cell[1]}{label="+7", arrow_from="dp.cell[0]", color=good}
 \narrate{$dp[1]$: chi co the nhay tu da $0$. Chi phi $= dp[0] + |h_1 - h_0| = 0 + |9-2| = 7$.}
 
 \step
 \apply{dp.cell[1]}{value=7}
 \recolor{dp.cell[1]}{state=done}
-\recolor{h.cell[1]}{state=dim}
-\recolor{h.cell[2]}{state=current}
+\cursor{h.cell}{2}
 \recolor{dp.cell[2]}{state=current}
 \annotate{dp.cell[2]}{label="+2", arrow_from="dp.cell[0]", color=good}
 \annotate{dp.cell[2]}{label="+5", arrow_from="dp.cell[1]", color=info}
@@ -31,9 +28,7 @@
 \step
 \apply{dp.cell[2]}{value=2}
 \recolor{dp.cell[2]}{state=done}
-\recolor{h.cell[2]}{state=dim}
-\recolor{h.cell[3]}{state=current}
-\recolor{dp.cell[3]}{state=current}
+\cursor{h.cell, dp.cell}{3}
 \annotate{dp.cell[3]}{label="+4", arrow_from="dp.cell[1]", color=info}
 \annotate{dp.cell[3]}{label="+1", arrow_from="dp.cell[2]", color=good}
 \narrate{$dp[3]$: tu da $1$: $|5-9| = 4$, tu da $2$: $|5-4| = 1$. Tong: $\min(7+4, 2+1) = \min(11, 3) = 3$.}
@@ -41,9 +36,7 @@
 \step
 \apply{dp.cell[3]}{value=3}
 \recolor{dp.cell[3]}{state=done}
-\recolor{h.cell[3]}{state=dim}
-\recolor{h.cell[4]}{state=current}
-\recolor{dp.cell[4]}{state=current}
+\cursor{h.cell, dp.cell}{4}
 \annotate{dp.cell[4]}{label="+3", arrow_from="dp.cell[2]", color=good}
 \annotate{dp.cell[4]}{label="+4", arrow_from="dp.cell[3]", color=info}
 \narrate{$dp[4]$: tu da $2$: $|1-4| = 3$, tu da $3$: $|1-5| = 4$. Tong: $\min(2+3, 3+4) = \min(5, 7) = 5$.}
@@ -51,9 +44,7 @@
 \step
 \apply{dp.cell[4]}{value=5}
 \recolor{dp.cell[4]}{state=done}
-\recolor{h.cell[4]}{state=dim}
-\recolor{h.cell[5]}{state=current}
-\recolor{dp.cell[5]}{state=current}
+\cursor{h.cell, dp.cell}{5}
 \annotate{dp.cell[5]}{label="+1", arrow_from="dp.cell[3]", color=good}
 \annotate{dp.cell[5]}{label="+5", arrow_from="dp.cell[4]", color=info}
 \narrate{$dp[5]$: tu da $3$: $|6-5| = 1$, tu da $4$: $|6-1| = 5$. Tong: $\min(3+1, 5+5) = \min(4, 10) = 4$.}

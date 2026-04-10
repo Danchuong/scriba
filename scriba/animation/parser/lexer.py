@@ -73,6 +73,7 @@ _KNOWN_COMMANDS = frozenset(
         "endsubstory",
         "foreach",
         "endforeach",
+        "cursor",
     }
 )
 

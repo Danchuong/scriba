@@ -40,9 +40,9 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 
 ---
 
-## 2. Inner Commands (13 total)
+## 2. Inner Commands (14 total)
 
-### 2.1 Base Commands (11)
+### 2.1 Base Commands (12)
 
 | Command | Signature | Contexts | Persistence |
 |---------|-----------|----------|-------------|
@@ -55,6 +55,7 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\recolor` | `{target}{state=...}` | both | persistent |
 | `\reannotate` | `{target}{color=..., arrow_from=...}` | both | persistent |
 | `\annotate` | `{target}{params}` | both | persistent (default), ephemeral if `ephemeral=true` |
+| `\cursor` | `{targets}{index}` | prelude or step | persistent |
 | `\foreach` | `{variable}{iterable}...body...\endforeach` | prelude or step | expands to body commands |
 | `\endforeach` | (no args) | closes `\foreach` | — |
 
@@ -132,11 +133,12 @@ option          ::= IDENT "=" option_value
 option_value    ::= STRING | IDENT | NUMBER
 
 prelude         ::= (shape_cmd | compute_cmd | apply_cmd | recolor_cmd
-                     | reannotate_cmd | annotate_cmd | foreach_block)*
+                     | reannotate_cmd | annotate_cmd | cursor_cmd
+                     | foreach_block)*
 step_block      ::= step_cmd command*
 command         ::= compute_cmd | narrate_cmd | apply_cmd | highlight_cmd
                   | recolor_cmd | reannotate_cmd | annotate_cmd
-                  | foreach_block | substory_block
+                  | cursor_cmd | foreach_block | substory_block
 ```
 
 #### Shape Declaration
@@ -167,6 +169,9 @@ recolor_cmd     ::= "\recolor" "{" selector "}" param_brace
 reannotate_cmd  ::= "\reannotate" "{" selector "}" param_brace
                   (* param_brace must contain color= *)
 annotate_cmd    ::= "\annotate" "{" selector "}" param_brace
+cursor_cmd      ::= "\cursor" "{" target_list "}" "{" cursor_params "}"
+                  (* target_list is comma-separated accessor prefixes *)
+                  (* cursor_params: index [, prev_state=..., curr_state=...] *)
 narrate_cmd     ::= "\narrate" "{" latex_text "}"
 compute_cmd     ::= "\compute" "{" starlark_source "}"
 ```
@@ -211,10 +216,63 @@ iterable        ::= range_lit | interp_ref | list_literal
 range_lit       ::= NUMBER ".." NUMBER
 list_literal    ::= "[" (param_value ("," param_value)*)? "]"
 foreach_body    ::= (recolor_cmd | reannotate_cmd | apply_cmd
-                     | highlight_cmd | annotate_cmd | foreach_block)+
+                     | highlight_cmd | annotate_cmd | cursor_cmd
+                     | foreach_block)+
 ```
 
 The body must contain at least one command. Nesting `\foreach` inside `\foreach` is permitted. Commands `\step`, `\shape`, `\substory`, and `\endsubstory` are not allowed inside `\foreach`.
+
+#### Cursor Command
+
+```
+cursor_cmd      ::= "\cursor" "{" target_list "}" "{" cursor_params "}"
+target_list     ::= accessor_prefix ("," accessor_prefix)*
+accessor_prefix ::= IDENT "." IDENT
+cursor_params   ::= index ("," cursor_opt)*
+cursor_opt      ::= "prev_state" "=" state_enum
+                  | "curr_state" "=" state_enum
+index           ::= NUMBER | interp_ref
+```
+
+**Syntax:**
+
+```tex
+\cursor{shape.accessor}{index}
+\cursor{shape.accessor}{index, prev_state=dim, curr_state=current}
+\cursor{h.cell, dp.cell}{index}
+```
+
+**Defaults:** `prev_state=dim`, `curr_state=current`
+
+**Semantics:**
+
+For each target prefix in the target list:
+
+1. Find the element currently in `curr_state` on that prefix.
+2. Set it to `prev_state` (dim it).
+3. Set `prefix[index]` to `curr_state` (highlight new position).
+
+If no element is currently in `curr_state` (first cursor call), step 1-2 are skipped.
+
+**Example — before and after:**
+
+```tex
+% Before: 3 lines per step
+\recolor{h.cell[0]}{state=dim}
+\recolor{h.cell[1]}{state=current}
+\recolor{dp.cell[1]}{state=current}
+
+% After: 1 line
+\cursor{h.cell, dp.cell}{1}
+```
+
+`\cursor` supports `${var}` interpolation inside `\foreach`:
+
+```tex
+\foreach{i}{1..5}
+  \cursor{h.cell, dp.cell}{${i}}
+\endforeach
+```
 
 #### Substory Block
 
@@ -228,7 +286,8 @@ substory_opt    ::= ("title" | "id") "=" option_value
 substory_prelude::= (shape_cmd | compute_cmd)*
 substory_step   ::= step_cmd (compute_cmd | narrate_cmd | apply_cmd
                      | highlight_cmd | recolor_cmd | reannotate_cmd
-                     | annotate_cmd | foreach_block | substory_block)*
+                     | annotate_cmd | cursor_cmd | foreach_block
+                     | substory_block)*
 ```
 
 Both `\substory` and `\endsubstory` must be on their own line. Maximum nesting depth is 3. Substory mutations are ephemeral (parent state is saved and restored).

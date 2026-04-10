@@ -21,6 +21,7 @@ from scriba.animation.parser.ast import (
     AnnotateCommand,
     ApplyCommand,
     ComputeCommand,
+    CursorCommand,
     ForeachCommand,
     FrameIR,
     HighlightCommand,
@@ -515,6 +516,8 @@ class SceneState:
             self._apply_highlight(cmd)
         elif isinstance(cmd, AnnotateCommand):
             self._apply_annotate(cmd)
+        elif isinstance(cmd, CursorCommand):
+            self._apply_cursor(cmd)
 
     def _apply_apply(self, cmd: ApplyCommand) -> None:
         """\\apply — persistent value + optional label + custom params."""
@@ -595,6 +598,30 @@ class SceneState:
                 arrow=cmd.arrow if hasattr(cmd, "arrow") else False,
             )
         )
+
+    def _apply_cursor(self, cmd: CursorCommand) -> None:
+        """``\\cursor`` — advance cursor on one or more shape accessors.
+
+        For each target prefix:
+        1. Find the element currently in ``curr_state`` and set it to ``prev_state``.
+        2. Set ``target_prefix[index]`` to ``curr_state``.
+        If no element is currently in ``curr_state`` (first call), skip step 1.
+        """
+        for target_prefix in cmd.targets:
+            # Find the shape name (part before the first dot)
+            shape_name = target_prefix.split(".")[0]
+
+            # Search all targets for this shape to find the one currently in curr_state
+            if shape_name in self.shape_states:
+                for key, ts in self.shape_states[shape_name].items():
+                    if key.startswith(target_prefix) and ts.state == cmd.curr_state:
+                        ts.state = cmd.prev_state
+                        break
+
+            # Set the new index to curr_state
+            new_key = f"{target_prefix}[{cmd.index}]"
+            target_state = self._ensure_target(new_key)
+            target_state.state = cmd.curr_state
 
     def _ensure_target(self, target: str) -> ShapeTargetState:
         """Find or create a target state entry."""

@@ -13,6 +13,7 @@ from .ast import (
     AnnotateCommand,
     ApplyCommand,
     ComputeCommand,
+    CursorCommand,
     ForeachCommand,
     FrameIR,
     HighlightCommand,
@@ -258,6 +259,9 @@ class SceneParser:
 
         if cmd_name == "annotate":
             return self._parse_annotate()
+
+        if cmd_name == "cursor":
+            return self._parse_cursor()
 
         if cmd_name == "foreach":
             return self._parse_foreach()
@@ -564,6 +568,91 @@ class SceneParser:
             ephemeral=ephemeral, arrow_from=arrow_from,
         )
 
+    def _parse_cursor(self) -> CursorCommand:
+        """Parse ``\\cursor{targets}{params}``."""
+        tok = self._advance()  # consume \cursor
+
+        # First brace arg: comma-separated list of accessor prefixes
+        targets_raw = self._read_brace_arg(tok).strip()
+        if not targets_raw:
+            raise ValidationError(
+                "\\cursor requires at least one target",
+                position=tok.col,
+                code="E1180",
+                line=tok.line,
+                col=tok.col,
+            )
+        targets = tuple(t.strip() for t in targets_raw.split(",") if t.strip())
+        if not targets:
+            raise ValidationError(
+                "\\cursor requires at least one target",
+                position=tok.col,
+                code="E1180",
+                line=tok.line,
+                col=tok.col,
+            )
+
+        # Second brace arg: index (required), optional prev_state=, curr_state=
+        params_raw = self._read_brace_arg(tok).strip()
+        if not params_raw:
+            raise ValidationError(
+                "\\cursor requires an index parameter",
+                position=tok.col,
+                code="E1181",
+                line=tok.line,
+                col=tok.col,
+            )
+
+        # Parse the params content: first value is the index, rest are key=value
+        parts = [p.strip() for p in params_raw.split(",")]
+        index_str = parts[0].strip()
+
+        # Determine index: int or interpolation string
+        index: int | str
+        try:
+            index = int(index_str)
+        except ValueError:
+            index = index_str  # e.g. "${i}"
+
+        # Parse optional key=value pairs
+        prev_state = "dim"
+        curr_state = "current"
+        for part in parts[1:]:
+            if "=" not in part:
+                continue
+            key, val = part.split("=", 1)
+            key = key.strip()
+            val = val.strip()
+            if key == "prev_state":
+                if val not in _VALID_RECOLOR_STATES:
+                    raise ValidationError(
+                        f"unknown cursor prev_state {val!r}",
+                        position=tok.col,
+                        code="E1182",
+                        line=tok.line,
+                        col=tok.col,
+                    )
+                prev_state = val
+            elif key == "curr_state":
+                if val not in _VALID_RECOLOR_STATES:
+                    raise ValidationError(
+                        f"unknown cursor curr_state {val!r}",
+                        position=tok.col,
+                        code="E1182",
+                        line=tok.line,
+                        col=tok.col,
+                    )
+                curr_state = val
+
+        return CursorCommand(
+            targets=targets,
+            index=index,
+            prev_state=prev_state,
+            curr_state=curr_state,
+            line=tok.line,
+            col=tok.col,
+        )
+
     def _parse_foreach(self) -> ForeachCommand:
         """Parse ``\\foreach{var}{iterable}...\\endforeach`` block."""
         tok = self._advance()  # consume \foreach
@@ -631,6 +720,9 @@ class SceneParser:
 
                 elif inner_cmd == "annotate":
                     body.append(self._parse_annotate())
+
+                elif inner_cmd == "cursor":
+                    body.append(self._parse_cursor())
 
                 elif inner_cmd == "foreach":
                     body.append(self._parse_foreach())
@@ -870,6 +962,13 @@ class SceneParser:
 
                 elif inner_cmd == "annotate":
                     cmd = self._parse_annotate()
+                    if sub_in_prelude:
+                        pass
+                    else:
+                        sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "cursor":
+                    cmd = self._parse_cursor()
                     if sub_in_prelude:
                         pass
                     else:

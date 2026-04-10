@@ -168,7 +168,7 @@ evens = [i for i in range(6) if i % 2 == 0]
 
 ### Cursor advance
 
-Move a "current" marker through an array one cell at a time:
+Use `\cursor` to move a "current" marker through an array. It finds the element currently in `current` state, dims it, and highlights the new index -- all in one line.
 
 ```tex
 \step
@@ -176,12 +176,41 @@ Move a "current" marker through an array one cell at a time:
 \narrate{Start at index 0.}
 
 \step
-\recolor{a.cell[0]}{state=done}
-\recolor{a.cell[1]}{state=current}
-\narrate{Move to index 1. Index 0 is now done.}
+\cursor{a.cell}{1}
+\narrate{Move to index 1. Index 0 is now dimmed automatically.}
 ```
 
-The key: dim or mark `done` the *previous* cell, then mark the *next* cell `current`.
+**Multi-target variant** -- move the cursor on two arrays simultaneously:
+
+```tex
+\cursor{h.cell, dp.cell}{3}
+```
+
+**Before/after comparison:**
+
+```tex
+% Before: 3 lines per step
+\recolor{h.cell[0]}{state=dim}
+\recolor{h.cell[1]}{state=current}
+\recolor{dp.cell[1]}{state=current}
+
+% After: 1 line
+\cursor{h.cell, dp.cell}{1}
+```
+
+**With `\foreach`:**
+
+```tex
+\foreach{i}{1..5}
+  \cursor{h.cell, dp.cell}{${i}}
+\endforeach
+```
+
+By default `\cursor` uses `prev_state=dim` and `curr_state=current`. Override with:
+
+```tex
+\cursor{a.cell}{2, prev_state=done, curr_state=good}
+```
 
 ### Batch initialization
 
