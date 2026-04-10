@@ -465,17 +465,22 @@ class Plane2D(PrimitiveBase):
     def _emit_points(self) -> str:
         parts: list[str] = []
         hl_suffixes = getattr(self, "_highlighted", set())
+        # Scale radius from pixels to math-space units so it renders
+        # at the desired pixel size after the transform is applied.
+        scale_factor = abs(self._sx) if self._sx != 0 else 1
         for i, pt in enumerate(self.points):
             suffix = f"point[{i}]"
             target = f"{self.name}.{suffix}"
             state = self.get_state(suffix)
             colors = svg_style_attrs(state)
-            r = pt.get("radius", _POINT_RADIUS)
+            r_px = pt.get("radius", _POINT_RADIUS)
+            r_math = r_px / scale_factor
             is_hl = suffix in hl_suffixes
             hl_overlay = ""
             if is_hl:
+                r_hl = (r_px + 2) / scale_factor
                 hl_overlay = (
-                    f'<circle cx="{pt["x"]}" cy="{pt["y"]}" r="{r + 2}" '
+                    f'<circle cx="{pt["x"]}" cy="{pt["y"]}" r="{r_hl:.4f}" '
                     f'fill="none" stroke="#F0E442" stroke-width="3" '
                     f'stroke-dasharray="6 3" '
                     f'vector-effect="non-scaling-stroke"/>'
@@ -483,7 +488,7 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<g data-target="{html_escape(target)}" '
                 f'class="scriba-plane-point scriba-state-{state}">'
-                f'<circle cx="{pt["x"]}" cy="{pt["y"]}" r="{r}" '
+                f'<circle cx="{pt["x"]}" cy="{pt["y"]}" r="{r_math:.4f}" '
                 f'fill="{colors["fill"]}" stroke="{colors["stroke"]}" '
                 f'stroke-width="1.5" vector-effect="non-scaling-stroke"/>'
                 f'{hl_overlay}'
