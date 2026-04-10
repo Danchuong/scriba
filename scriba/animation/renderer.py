@@ -48,7 +48,6 @@ from scriba.animation.primitives import (
     Tree,
 )
 from scriba.animation.scene import FrameSnapshot, SceneState
-from scriba.animation.svg_diff import Patch, compute_patches, patches_to_json
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
 from scriba.core.errors import RendererError, ValidationError
@@ -312,12 +311,6 @@ class AnimationRenderer:
                 _FRAME_WARN_THRESHOLD,
             )
 
-        # Compute SVG dedup patches if enabled
-        dedup = ctx.metadata.get("dedup", True)
-        svg_patches_json: list[list[dict]] | None = None
-        if dedup and len(self.last_snapshots) > 1:
-            svg_patches_json = self._compute_svg_patches(self.last_snapshots)
-
         # Produce final HTML via the emitter
         output_mode = ctx.metadata.get("output_mode", "interactive")
         minify = ctx.metadata.get("minify", True)
@@ -325,8 +318,6 @@ class AnimationRenderer:
             scene_id, frames, primitives, mode=output_mode,
             render_inline_tex=ctx.render_inline_tex,
             minify=minify,
-            dedup=dedup,
-            patches_json=svg_patches_json,
         )
 
         # Collect CSS assets
@@ -345,16 +336,12 @@ class AnimationRenderer:
             if css_name is not None:
                 css_assets.add(css_name)
 
-        artifact_data: dict[str, Any] = {"frame_count": frame_count}
-        if svg_patches_json is not None:
-            artifact_data["svg_patches"] = svg_patches_json
-
         return RenderArtifact(
             html=html,
             css_assets=frozenset(css_assets),
             js_assets=frozenset(),
             block_id=scene_id,
-            data=artifact_data,
+            data={"frame_count": frame_count},
         )
 
     def assets(self) -> RendererAssets:
@@ -508,18 +495,6 @@ class AnimationRenderer:
             frames=sub_frames,
             primitives=sub_primitives,
         )
-
-    @staticmethod
-    def _compute_svg_patches(
-        snapshots: list[FrameSnapshot],
-    ) -> list[list[dict]]:
-        """Compute dedup patches from frame snapshots.
-
-        Compares every frame against frame 0 and returns a JSON-serializable
-        list of patch lists suitable for embedding in the HTML output.
-        """
-        patches = compute_patches(snapshots)
-        return patches_to_json(patches)
 
 
 # ============================================================================
