@@ -242,9 +242,10 @@ def _emit_frame_svg(
     scene_id: str,
     viewbox: str,
     render_inline_tex: Callable[[str], str] | None = None,
+    narration_id_override: str | None = None,
 ) -> str:
     """Produce the ``<svg>`` element for one frame."""
-    narration_id = f"{scene_id}-frame-{frame.step_number}-narration"
+    narration_id = narration_id_override or f"{scene_id}-frame-{frame.step_number}-narration"
 
     # Pre-pass: apply push/pop commands so bounding boxes are correct
     for shape_name, prim in primitives.items():
@@ -550,9 +551,10 @@ def emit_interactive_html(
     viewbox = compute_viewbox(primitives)
 
     # Build frame data list for JS
+    narration_id = f"{scene_id}-narration"
     js_frames: list[str] = []
     for frame in frames:
-        svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex)
+        svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex, narration_id_override=narration_id)
         svg_escaped = _escape_js(svg_html)
         narration_escaped = _escape_js(frame.narration_html)
         # Include substory HTML if present
@@ -578,17 +580,17 @@ def emit_interactive_html(
     )
 
     widget_html = f"""\
-<div class="scriba-widget" id="{_escape(scene_id)}">
+<div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">Step 1 / {frame_count}</span>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / {frame_count}</span>
     <button class="scriba-btn-next"{"" if frame_count > 1 else " disabled"}>Next</button>
     <div class="scriba-progress">
       {dots_html}
     </div>
   </div>
   <div class="scriba-stage"></div>
-  <p class="scriba-narration"></p>
+  <p class="scriba-narration" id="{_escape(scene_id)}-narration" aria-live="polite"></p>
   <div class="scriba-substory-container"></div>
 </div>
 <script>
@@ -636,7 +638,6 @@ def emit_interactive_html(
     if(e.key==='ArrowRight'||e.key===' '){{e.preventDefault();if(cur<frames.length-1)show(cur+1);}}
     if(e.key==='ArrowLeft'){{e.preventDefault();if(cur>0)show(cur-1);}}
   }});
-  W.setAttribute('tabindex','0');
   show(0);
 }})();
 </script>"""

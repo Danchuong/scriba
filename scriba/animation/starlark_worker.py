@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import ast
 import json
+import logging
 import math
 import resource
 import signal
@@ -45,6 +46,12 @@ _BLOCKED_ATTRIBUTES: frozenset[str] = frozenset(
         "__globals__",
         "__builtins__",
         "__import__",
+        "__code__",
+        "__func__",
+        "__dict__",
+        "__reduce__",
+        "__reduce_ex__",
+        "__init_subclass__",
     }
 )
 
@@ -414,8 +421,9 @@ def _set_memory_limit() -> None:
                 (_MEMORY_LIMIT_BYTES, _MEMORY_LIMIT_BYTES),
             )
         except (ValueError, OSError):
-            # Some platforms do not support RLIMIT_AS; ignore gracefully.
-            pass
+            logging.warning(
+                "RLIMIT_AS not supported on this platform; memory limit not enforced"
+            )
 
 
 def main() -> None:

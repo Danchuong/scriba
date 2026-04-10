@@ -635,6 +635,7 @@ Print media: lines forced to `stroke: #000`.
 | E1010 | Unexpected token in selector |
 | E1011 | Unterminated string in selector |
 | E1012 | Expected token not found |
+| E1013 | Source exceeds maximum size of 1 MB |
 
 ### Semantic Errors (E1050–E1099)
 
@@ -806,6 +807,7 @@ Print media: lines forced to `stroke: #000`.
 | Graph stable frames | 50 | E1502 (warning) |
 | Matrix cells | 10,000 | E1425 |
 | Foreach iterable length | 10,000 | E1173 |
+| Source size | 1 MB | E1013 |
 | Plane2D elements per frame | 500 | E1466 |
 | MetricPlot points per series | 1,000 | E1483 |
 

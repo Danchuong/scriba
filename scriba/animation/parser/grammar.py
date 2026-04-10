@@ -58,6 +58,11 @@ class SceneParser:
             first ``\\step``.  Used by :class:`DiagramRenderer` where
             there are no steps and all commands live in the prelude.
         """
+        if len(source) > 1_000_000:
+            raise ValidationError(
+                "source exceeds maximum size of 1MB",
+                code="E1013",
+            )
         lexer = Lexer()
         self._tokens = lexer.tokenize(source)
         self._pos = 0

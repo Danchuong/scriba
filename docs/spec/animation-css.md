@@ -126,7 +126,7 @@ Declared on `:root` in `scriba-scene-primitives.css`. These are the **only** col
 
   --scriba-state-good-fill:        #56B4E9;
   --scriba-state-good-stroke:      #3a95c9;
-  --scriba-state-good-text:        #ffffff;
+  --scriba-state-good-text:        #0c4a6e;
 
   --scriba-state-path-fill:        #dbeafe;
   --scriba-state-path-stroke:      #2563eb;

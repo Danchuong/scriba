@@ -430,7 +430,7 @@ class ArrayInstance:
             return 0
 
         max_height = 0
-        for ann in arrow_anns:
+        for idx, ann in enumerate(arrow_anns):
             src = self._cell_center(ann.get("arrow_from", ""))
             dst = self._cell_center(ann.get("target", ""))
             if src is None or dst is None:
@@ -441,9 +441,9 @@ class ArrayInstance:
             target = ann.get("target", "")
             arrow_index = sum(
                 1
-                for a in arrow_anns
+                for j, a in enumerate(arrow_anns)
                 if a.get("target") == target
-                and arrow_anns.index(a) < arrow_anns.index(ann)
+                and j < idx
             )
             base_offset = max(CELL_HEIGHT * 0.75, abs(x2 - x1) * 0.25)
             stagger = CELL_HEIGHT * 0.5

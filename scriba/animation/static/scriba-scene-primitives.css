@@ -104,7 +104,7 @@
 
   --scriba-state-good-fill:        #56B4E9;
   --scriba-state-good-stroke:      #3a95c9;
-  --scriba-state-good-text:        #ffffff;
+  --scriba-state-good-text:        #0c4a6e;
 
   --scriba-state-highlight-fill:   #F0E442;
   --scriba-state-highlight-stroke: currentColor;
@@ -416,6 +416,16 @@
 
   /* Annotation muted adjusts to dark fg-muted */
   --scriba-annotation-muted:   var(--scriba-fg-muted);
+}
+
+/* ============================================
+   Focus indicator (interactive widget)
+   ============================================ */
+
+.scriba-widget:focus,
+.scriba-widget:focus-visible {
+  outline: var(--scriba-widget-focus-ring);
+  outline-offset: 2px;
 }
 
 /* ============================================
