@@ -107,6 +107,9 @@ class PersistentSubprocessWorker:
 
         if self._ready_signal is not None:
             assert self._process.stderr is not None
+            import os
+            fd = self._process.stderr.fileno()
+            buf = b""
             deadline_iters = 0
             ready = False
             while deadline_iters < 200:  # ~10s with 0.05s slices
@@ -118,18 +121,28 @@ class PersistentSubprocessWorker:
                         ready = True
                         break
                 else:
-                    r, _, _ = select.select(
-                        [self._process.stderr], [], [], 0.05
-                    )
+                    # Use raw fd reads to avoid TextIOWrapper
+                    # buffering that can make select() miss data.
+                    r, _, _ = select.select([fd], [], [], 0.05)
                     if r:
-                        line = self._process.stderr.readline()
-                        if not line:
+                        chunk = os.read(fd, 4096)
+                        if not chunk:
                             break
-                        if self._ready_signal in line:
+                        buf += chunk
+                        if self._ready_signal.encode() in buf:
                             ready = True
                             break
                 deadline_iters += 1
                 if self._process.poll() is not None:
+                    # Process exited; drain any remaining output.
+                    try:
+                        chunk = os.read(fd, 4096)
+                        if chunk:
+                            buf += chunk
+                            if self._ready_signal.encode() in buf:
+                                ready = True
+                    except OSError:
+                        pass
                     break
 
             if not ready:

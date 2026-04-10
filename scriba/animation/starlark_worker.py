@@ -429,6 +429,7 @@ def _set_memory_limit() -> None:
 def main() -> None:
     """Entry point for the starlark worker subprocess."""
     _set_memory_limit()
+    sys.stderr.flush()  # flush any logging output before ready signal
 
     sys.stderr.write("starlark-worker ready\n")
     sys.stderr.flush()
