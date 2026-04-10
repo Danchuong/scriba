@@ -519,13 +519,14 @@ Each frame inherits full state from previous frame, then:
 
 /* Annotation */
 --scriba-annotation-font:        600 11px ui-monospace, monospace;
---scriba-annotation-arrow-width: 1.6;
+--scriba-annotation-arrow-width: 2.0;
 
 /* Annotation color tokens */
 --scriba-annotation-info:        #0072B2;
 --scriba-annotation-warn:        #E69F00;
 --scriba-annotation-good:        #009E73;
 --scriba-annotation-error:       #D55E00;
+--scriba-annotation-path:        #2563eb;
 --scriba-annotation-muted:       var(--scriba-fg-muted);
 
 /* Widget (interactive wrapper) */
