@@ -1,0 +1,61 @@
+\begin{animation}[id="missing-number", label="Missing Number via Sum Formula"]
+
+\compute{
+  n = 8
+  given = [1, 2, 3, 4, 6, 7, 8]
+  expected_sum = n * (n + 1) // 2
+}
+
+\shape{arr}{Array}{size=7, data=[1, 2, 3, 4, 6, 7, 8], labels="0..6", label="Given numbers"}
+\shape{info}{Array}{size=3, data=[36, 0, 0], labels="0..2", label="expected | actual | missing"}
+
+\step
+\narrate{We have $n = 8$ numbers from 1 to 8, but one is missing. Expected sum $= \frac{8 \times 9}{2} = 36$. Scan the array and compute actual sum.}
+
+\step
+\highlight{arr.cell[0]}
+\apply{info.cell[1]}{value=1}
+\narrate{Add $a[0] = 1$. Actual sum $= 1$.}
+
+\step
+\recolor{arr.cell[0]}{state=done}
+\highlight{arr.cell[1]}
+\apply{info.cell[1]}{value=3}
+\narrate{Add $a[1] = 2$. Actual sum $= 1 + 2 = 3$.}
+
+\step
+\recolor{arr.cell[1]}{state=done}
+\highlight{arr.cell[2]}
+\apply{info.cell[1]}{value=6}
+\narrate{Add $a[2] = 3$. Actual sum $= 3 + 3 = 6$.}
+
+\step
+\recolor{arr.cell[2]}{state=done}
+\highlight{arr.cell[3]}
+\apply{info.cell[1]}{value=10}
+\narrate{Add $a[3] = 4$. Actual sum $= 6 + 4 = 10$.}
+
+\step
+\recolor{arr.cell[3]}{state=done}
+\highlight{arr.cell[4]}
+\apply{info.cell[1]}{value=16}
+\narrate{Add $a[4] = 6$. Actual sum $= 10 + 6 = 16$. Notice we jumped from 4 to 6 -- the gap is where 5 should be!}
+
+\step
+\recolor{arr.cell[4]}{state=done}
+\highlight{arr.cell[5]}
+\apply{info.cell[1]}{value=23}
+\narrate{Add $a[5] = 7$. Actual sum $= 16 + 7 = 23$.}
+
+\step
+\recolor{arr.cell[5]}{state=done}
+\highlight{arr.cell[6]}
+\apply{info.cell[1]}{value=31}
+\narrate{Add $a[6] = 8$. Actual sum $= 23 + 8 = 31$.}
+
+\step
+\recolor{arr.cell[6]}{state=done}
+\apply{info.cell[2]}{value=5}
+\recolor{info.cell[2]}{state=good}
+\narrate{All elements scanned. Missing $= 36 - 31 = 5$. The missing number is $\mathbf{5}$.}
+\end{animation}

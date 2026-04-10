@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriba — cses_necessary_roads</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  background: #fafafa;
+  color: #212529;
+}
+h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
+
+/* Widget container */
+.scriba-widget {
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* Controls bar */
+.scriba-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  user-select: none;
+}
+.scriba-controls button {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #212529;
+  transition: background 0.15s, border-color 0.15s;
+}
+.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
+.scriba-controls button:active { background: #e4e4e4; }
+.scriba-controls button:disabled { opacity: 0.35; cursor: default; }
+.scriba-step-counter {
+  font: 600 0.78rem ui-monospace, "SF Mono", monospace;
+  color: #6c757d;
+  min-width: 5rem;
+  text-align: center;
+}
+
+/* Progress dots */
+.scriba-progress {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.scriba-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #d0d7de;
+  transition: background 0.2s;
+}
+.scriba-dot.active { background: #0072B2; }
+.scriba-dot.done { background: #009E73; }
+
+/* Stage */
+.scriba-stage {
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: center;
+  min-height: 100px;
+}
+.scriba-stage-svg { width: 100%; height: auto; }
+
+/* Narration */
+.scriba-narration {
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #212529;
+  border-top: 1px solid #f0f0f0;
+  min-height: 2.5rem;
+}
+
+/* SVG text */
+svg text {
+  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.idx {
+  font: 500 10px ui-monospace, monospace;
+  fill: #6c757d;
+}
+
+/* Frame transition */
+.scriba-stage svg, .scriba-narration {
+  transition: opacity 0.2s ease;
+}
+
+/* Static filmstrip layout (legacy) */
+.scriba-animation { max-width: 100%; }
+.scriba-frames {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+}
+.scriba-frame {
+  flex: 0 0 auto;
+  min-width: 280px;
+  max-width: 560px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #ffffff;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+.scriba-frame-header {
+  padding: 0.5rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+}
+.scriba-step-label {
+  font: 600 0.72rem ui-monospace, monospace;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem;
+  padding: 0.35rem 0.7rem; cursor: pointer;
+  border: 1px solid #ccc; border-radius: 6px; background: white;
+  font-size: 0.8rem;
+}
+
+/* Dark mode */
+[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
+[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
+[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
+[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
+[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
+[data-theme="dark"] .scriba-dot { background: #30363d; }
+[data-theme="dark"] .idx { fill: #7d8590; }
+[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-step-label { color: #7d8590; }
+[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="
+  var t = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
+">Toggle theme</button>
+<h1>cses_necessary_roads</h1>
+<div class="scriba-widget" id="necessary-roads">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter">Step 1 / 16</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
+</div>
+<script>
+(function(){
+  var W=document.getElementById('necessary-roads');
+  var frames=[
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-idle"><line x1="293" y1="280" x2="380" y2="280" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-idle"><line x1="380" y1="280" x2="380" y2="159" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-idle"><line x1="380" y1="159" x2="293" y2="280" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-idle"><line x1="380" y1="159" x2="311" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-idle"><line x1="311" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-idle"><line x1="137" y1="20" x2="20" y2="124" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-idle"><line x1="20" y1="124" x2="20" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-idle"><circle cx="293" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">1</text></g><g data-target="g.node[2]" class="scriba-state-idle"><circle cx="380" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">2</text></g><g data-target="g.node[3]" class="scriba-state-idle"><circle cx="380" cy="159" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#212529">3</text></g><g data-target="g.node[4]" class="scriba-state-idle"><circle cx="311" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">4</text></g><g data-target="g.node[5]" class="scriba-state-idle"><circle cx="137" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">5</text></g><g data-target="g.node[6]" class="scriba-state-idle"><circle cx="20" cy="124" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#212529">6</text></g><g data-target="g.node[7]" class="scriba-state-idle"><circle cx="20" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Graph with 7 nodes and 8 edges. Goal: find bridges -- edges whose removal disconnects the graph. Tarjan's algorithm uses DFS with two arrays: disc[u] (discovery time) and low[u] (lowest disc reachable via back edges). An edge (u,v) is a bridge if low[v] &gt; disc[u].`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-idle"><line x1="293" y1="280" x2="380" y2="280" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-idle"><line x1="380" y1="280" x2="380" y2="159" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-idle"><line x1="380" y1="159" x2="293" y2="280" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-idle"><line x1="380" y1="159" x2="311" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-idle"><line x1="311" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-idle"><line x1="137" y1="20" x2="20" y2="124" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-idle"><line x1="20" y1="124" x2="20" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-current"><circle cx="293" cy="280" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-idle"><circle cx="380" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">2</text></g><g data-target="g.node[3]" class="scriba-state-idle"><circle cx="380" cy="159" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#212529">3</text></g><g data-target="g.node[4]" class="scriba-state-idle"><circle cx="311" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">4</text></g><g data-target="g.node[5]" class="scriba-state-idle"><circle cx="137" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">5</text></g><g data-target="g.node[6]" class="scriba-state-idle"><circle cx="20" cy="124" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#212529">6</text></g><g data-target="g.node[7]" class="scriba-state-idle"><circle cx="20" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-current">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-current">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`DFS starts at node 1. Set disc[1] = 0, low[1] = 0. Explore neighbor 2.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-idle"><line x1="380" y1="280" x2="380" y2="159" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-idle"><line x1="380" y1="159" x2="293" y2="280" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-idle"><line x1="380" y1="159" x2="311" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-idle"><line x1="311" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-idle"><line x1="137" y1="20" x2="20" y2="124" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-idle"><line x1="20" y1="124" x2="20" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-current"><circle cx="380" cy="280" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-idle"><circle cx="380" cy="159" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#212529">3</text></g><g data-target="g.node[4]" class="scriba-state-idle"><circle cx="311" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">4</text></g><g data-target="g.node[5]" class="scriba-state-idle"><circle cx="137" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">5</text></g><g data-target="g.node[6]" class="scriba-state-idle"><circle cx="20" cy="124" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#212529">6</text></g><g data-target="g.node[7]" class="scriba-state-idle"><circle cx="20" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Visit node 2. Tree edge 1-&gt;2. disc[2] = 1, low[2] = 1. Explore neighbor 3.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-idle"><line x1="380" y1="159" x2="293" y2="280" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-idle"><line x1="380" y1="159" x2="311" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-idle"><line x1="311" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-idle"><line x1="137" y1="20" x2="20" y2="124" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-idle"><line x1="20" y1="124" x2="20" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-current"><circle cx="380" cy="159" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-idle"><circle cx="311" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">4</text></g><g data-target="g.node[5]" class="scriba-state-idle"><circle cx="137" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">5</text></g><g data-target="g.node[6]" class="scriba-state-idle"><circle cx="20" cy="124" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#212529">6</text></g><g data-target="g.node[7]" class="scriba-state-idle"><circle cx="20" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-current">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-current">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Visit node 3. Tree edge 2-&gt;3. disc[3] = 2, low[3] = 2.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-current"><line x1="380" y1="159" x2="293" y2="280" stroke="#005a8e" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-idle"><line x1="380" y1="159" x2="311" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-idle"><line x1="311" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-idle"><line x1="137" y1="20" x2="20" y2="124" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-idle"><line x1="20" y1="124" x2="20" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-current"><circle cx="380" cy="159" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-idle"><circle cx="311" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">4</text></g><g data-target="g.node[5]" class="scriba-state-idle"><circle cx="137" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">5</text></g><g data-target="g.node[6]" class="scriba-state-idle"><circle cx="20" cy="124" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#212529">6</text></g><g data-target="g.node[7]" class="scriba-state-idle"><circle cx="20" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-current">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-good">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Node 3 sees neighbor 1 -- already visited and not parent. Back edge found! low[3] = min(2, disc[1]) = min(2, 0) = 0. This back edge lets subtree of 3 reach all the way up to node 1.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-done"><line x1="380" y1="159" x2="311" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-idle"><line x1="311" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-idle"><line x1="137" y1="20" x2="20" y2="124" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-idle"><line x1="20" y1="124" x2="20" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-current"><circle cx="311" cy="20" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-idle"><circle cx="137" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">5</text></g><g data-target="g.node[6]" class="scriba-state-idle"><circle cx="20" cy="124" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#212529">6</text></g><g data-target="g.node[7]" class="scriba-state-idle"><circle cx="20" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-current">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-current">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Continue DFS from 3 to 4. Tree edge 3-&gt;4. disc[4] = 3, low[4] = 3. Node 4 has no back edges upward.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-done"><line x1="380" y1="159" x2="311" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-done"><line x1="311" y1="20" x2="137" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-idle"><line x1="137" y1="20" x2="20" y2="124" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-idle"><line x1="20" y1="124" x2="20" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-current"><circle cx="137" cy="20" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-idle"><circle cx="20" cy="124" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#212529">6</text></g><g data-target="g.node[7]" class="scriba-state-idle"><circle cx="20" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-current">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-current">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`DFS to node 5. Tree edge 4-&gt;5. disc[5] = 4, low[5] = 4.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-8-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-done"><line x1="380" y1="159" x2="311" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-done"><line x1="311" y1="20" x2="137" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-done"><line x1="137" y1="20" x2="20" y2="124" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-idle"><line x1="20" y1="124" x2="20" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-done"><circle cx="137" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-current"><circle cx="20" cy="124" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-idle"><circle cx="20" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-current">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-current">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529">-</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`DFS to node 6. Tree edge 5-&gt;6. disc[6] = 5, low[6] = 5.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-9-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-done"><line x1="380" y1="159" x2="311" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-done"><line x1="311" y1="20" x2="137" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-done"><line x1="137" y1="20" x2="20" y2="124" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-done"><line x1="20" y1="124" x2="20" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-idle"><line x1="20" y1="20" x2="137" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-done"><circle cx="137" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-done"><circle cx="20" cy="124" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-current"><circle cx="20" cy="20" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`DFS to node 7. Tree edge 6-&gt;7. disc[7] = 6, low[7] = 6.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-10-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-done"><line x1="380" y1="159" x2="311" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-done"><line x1="311" y1="20" x2="137" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-done"><line x1="137" y1="20" x2="20" y2="124" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-done"><line x1="20" y1="124" x2="20" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-current"><line x1="20" y1="20" x2="137" y2="20" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-done"><circle cx="137" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-done"><circle cx="20" cy="124" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-current"><circle cx="20" cy="20" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-good">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Node 7 sees neighbor 5 -- already visited, not parent (parent is 6). Back edge! low[7] = min(6, disc[5]) = min(6, 4) = 4. The cycle 5-6-7-5 means none of those edges are bridges.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-11-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-done"><line x1="380" y1="159" x2="311" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-done"><line x1="311" y1="20" x2="137" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-done"><line x1="137" y1="20" x2="20" y2="124" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-done"><line x1="20" y1="124" x2="20" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-dim"><line x1="20" y1="20" x2="137" y2="20" stroke="#dee2e6" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-done"><circle cx="137" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-done"><circle cx="20" cy="124" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-done"><circle cx="20" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Backtrack 7-&gt;6. low[6] = min(5, low[7]) = min(5, 4) = 4. Bridge check: low[7]=4 &gt; disc[6]=5? No. Edge 6-7 is NOT a bridge.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-12-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-done"><line x1="380" y1="159" x2="311" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-done"><line x1="311" y1="20" x2="137" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-done"><line x1="137" y1="20" x2="20" y2="124" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-done"><line x1="20" y1="124" x2="20" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-dim"><line x1="20" y1="20" x2="137" y2="20" stroke="#dee2e6" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-done"><circle cx="137" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-done"><circle cx="20" cy="124" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-done"><circle cx="20" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Backtrack 6-&gt;5. low[5] = min(4, low[6]) = min(4, 4) = 4. Bridge check: low[6]=4 &gt; disc[5]=4? No (not strictly greater). Edge 5-6 is NOT a bridge.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-13-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-done"><line x1="380" y1="159" x2="311" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-error"><line x1="311" y1="20" x2="137" y2="20" stroke="#b34e00" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-done"><line x1="137" y1="20" x2="20" y2="124" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-done"><line x1="20" y1="124" x2="20" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-dim"><line x1="20" y1="20" x2="137" y2="20" stroke="#dee2e6" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-done"><circle cx="137" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-done"><circle cx="20" cy="124" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-done"><circle cx="20" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Backtrack 5-&gt;4. low[4] = min(3, low[5]) = min(3, 4) = 3. Bridge check: low[5]=4 &gt; disc[4]=3? YES! Edge (4,5) is a BRIDGE. No back edge from {5,6,7} reaches node 4 or above.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-14-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-error"><line x1="380" y1="159" x2="311" y2="20" stroke="#b34e00" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-error"><line x1="311" y1="20" x2="137" y2="20" stroke="#b34e00" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-done"><line x1="137" y1="20" x2="20" y2="124" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-done"><line x1="20" y1="124" x2="20" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-dim"><line x1="20" y1="20" x2="137" y2="20" stroke="#dee2e6" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-done"><circle cx="137" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-done"><circle cx="20" cy="124" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-done"><circle cx="20" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Backtrack 4-&gt;3. low[3] remains 3. Bridge check: low[4]=3 &gt; disc[3]=2? YES! Edge (3,4) is also a BRIDGE. Node 4 has no back edges at all -- its subtree is completely isolated from ancestors of 3.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-15-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-done"><line x1="293" y1="280" x2="380" y2="280" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-done"><line x1="380" y1="280" x2="380" y2="159" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-dim"><line x1="380" y1="159" x2="293" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-error"><line x1="380" y1="159" x2="311" y2="20" stroke="#b34e00" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-error"><line x1="311" y1="20" x2="137" y2="20" stroke="#b34e00" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-done"><line x1="137" y1="20" x2="20" y2="124" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-done"><line x1="20" y1="124" x2="20" y2="20" stroke="#007a59" stroke-width="2"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-dim"><line x1="20" y1="20" x2="137" y2="20" stroke="#dee2e6" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-done"><circle cx="293" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-done"><circle cx="380" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-done"><circle cx="380" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-done"><circle cx="311" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-done"><circle cx="137" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-done"><circle cx="20" cy="124" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-done"><circle cx="20" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Backtrack 3-&gt;2. low[2] = min(1, low[3]) = min(1, 0) = 0. Bridge check: low[3]=0 &gt; disc[2]=1? No. Edge 2-3 is safe. Backtrack 2-&gt;1. low[1] = min(0, 0) = 0. Edge 1-2: low[2]=0 &gt; disc[1]=0? No. DFS complete.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 532" role="img" aria-labelledby="necessary-roads-frame-16-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(32,16)">
+<g data-primitive="graph" data-shape="g"><g class="scriba-graph-edges"><g data-target="g.edge[(1,2)]" class="scriba-state-good"><line x1="293" y1="280" x2="380" y2="280" stroke="#3a95c9" stroke-width="2"/></g><g data-target="g.edge[(2,3)]" class="scriba-state-good"><line x1="380" y1="280" x2="380" y2="159" stroke="#3a95c9" stroke-width="2"/></g><g data-target="g.edge[(3,1)]" class="scriba-state-good"><line x1="380" y1="159" x2="293" y2="280" stroke="#3a95c9" stroke-width="2"/></g><g data-target="g.edge[(3,4)]" class="scriba-state-error"><line x1="380" y1="159" x2="311" y2="20" stroke="#b34e00" stroke-width="2"/></g><g data-target="g.edge[(4,5)]" class="scriba-state-error"><line x1="311" y1="20" x2="137" y2="20" stroke="#b34e00" stroke-width="2"/></g><g data-target="g.edge[(5,6)]" class="scriba-state-good"><line x1="137" y1="20" x2="20" y2="124" stroke="#3a95c9" stroke-width="2"/></g><g data-target="g.edge[(6,7)]" class="scriba-state-good"><line x1="20" y1="124" x2="20" y2="20" stroke="#3a95c9" stroke-width="2"/></g><g data-target="g.edge[(7,5)]" class="scriba-state-good"><line x1="20" y1="20" x2="137" y2="20" stroke="#3a95c9" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="g.node[1]" class="scriba-state-good"><circle cx="293" cy="280" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="293" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">1</text></g><g data-target="g.node[2]" class="scriba-state-good"><circle cx="380" cy="280" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="380" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">2</text></g><g data-target="g.node[3]" class="scriba-state-good"><circle cx="380" cy="159" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="380" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">3</text></g><g data-target="g.node[4]" class="scriba-state-error"><circle cx="311" cy="20" r="20" fill="#D55E00" stroke="#b34e00" stroke-width="2"/><text x="311" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">4</text></g><g data-target="g.node[5]" class="scriba-state-good"><circle cx="137" cy="20" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="137" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">5</text></g><g data-target="g.node[6]" class="scriba-state-good"><circle cx="20" cy="124" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="20" y="124" text-anchor="middle" dominant-baseline="central" fill="#ffffff">6</text></g><g data-target="g.node[7]" class="scriba-state-good"><circle cx="20" cy="20" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="20" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">7</text></g></g></g>
+</g>
+<g transform="translate(16,332)">
+<g data-primitive="array" data-shape="disc">
+  <g data-target="disc.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="disc.cell[1]" class="scriba-state-good">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="disc.cell[2]" class="scriba-state-good">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="disc.cell[3]" class="scriba-state-good">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="disc.cell[4]" class="scriba-state-good">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="disc.cell[5]" class="scriba-state-good">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="disc.cell[6]" class="scriba-state-good">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">disc</text>
+</g>
+</g>
+<g transform="translate(16,432)">
+<g data-primitive="array" data-shape="low">
+  <g data-target="low.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="low.cell[1]" class="scriba-state-good">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="low.cell[2]" class="scriba-state-good">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="low.cell[3]" class="scriba-state-good">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="low.cell[4]" class="scriba-state-good">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="low.cell[5]" class="scriba-state-good">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="low.cell[6]" class="scriba-state-good">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <text class="scriba-primitive-label" x="216" y="68" fill="#6c757d">low</text>
+</g>
+</g>
+</svg>`,narration:`Result: 2 bridges -- (3,4) and (4,5), shown in red. Node 4 is an articulation point connecting two biconnected components: cycle {1,2,3} and cycle {5,6,7}. Removing either bridge disconnects the graph. Tarjan's algorithm found all bridges in O(n + m) with a single DFS pass.`,substory:``}
+  ];
+  var cur=0;
+  var stage=W.querySelector('.scriba-stage');
+  var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
+  var ctr=W.querySelector('.scriba-step-counter');
+  var prev=W.querySelector('.scriba-btn-prev');
+  var next=W.querySelector('.scriba-btn-next');
+  var dots=W.querySelectorAll('.scriba-dot');
+  function initSub(el){
+    var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
+    var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
+    var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
+    var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
+    function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.textContent=fd[i].narration;
+      sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+      sp.disabled=i===0;sx.disabled=i===fd.length-1;
+      sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+    }
+    sp.addEventListener('click',function(){if(sc>0)sh(sc-1);});
+    sx.addEventListener('click',function(){if(sc<fd.length-1)sh(sc+1);});
+    sh(0);
+  }
+  function show(i){
+    cur=i;
+    stage.innerHTML=frames[i].svg;
+    narr.textContent=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
+    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    prev.disabled=i===0;
+    next.disabled=i===frames.length-1;
+    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+  }
+  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
+  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
+  W.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
+    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
+  });
+  W.setAttribute('tabindex','0');
+  show(0);
+})();
+</script>
+</body>
+</html>

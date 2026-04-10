@@ -1,0 +1,149 @@
+\begin{animation}[id="necessary-roads", label="Necessary Roads -- Tarjan's Bridge Finding"]
+\shape{g}{Graph}{nodes=[1,2,3,4,5,6,7], edges=[(1,2),(2,3),(3,1),(3,4),(4,5),(5,6),(6,7),(7,5)], directed=false}
+\shape{disc}{Array}{size=7, data=["-","-","-","-","-","-","-"], labels="1..7", label="disc"}
+\shape{low}{Array}{size=7, data=["-","-","-","-","-","-","-"], labels="1..7", label="low"}
+
+\step
+\narrate{Graph with 7 nodes and 8 edges. Goal: find bridges -- edges whose removal disconnects the graph. Tarjan's algorithm uses DFS with two arrays: disc[u] (discovery time) and low[u] (lowest disc reachable via back edges). An edge (u,v) is a bridge if low[v] > disc[u].}
+
+\step
+\recolor{g.node[1]}{state=current}
+\apply{disc.cell[0]}{value="0"}
+\apply{low.cell[0]}{value="0"}
+\recolor{disc.cell[0]}{state=current}
+\recolor{low.cell[0]}{state=current}
+\narrate{DFS starts at node 1. Set disc[1] = 0, low[1] = 0. Explore neighbor 2.}
+
+\step
+\recolor{g.node[1]}{state=done}
+\recolor{g.node[2]}{state=current}
+\recolor{g.edge[(1,2)]}{state=done}
+\apply{disc.cell[1]}{value="1"}
+\apply{low.cell[1]}{value="1"}
+\recolor{disc.cell[0]}{state=done}
+\recolor{low.cell[0]}{state=done}
+\recolor{disc.cell[1]}{state=current}
+\recolor{low.cell[1]}{state=current}
+\narrate{Visit node 2. Tree edge 1->2. disc[2] = 1, low[2] = 1. Explore neighbor 3.}
+
+\step
+\recolor{g.node[2]}{state=done}
+\recolor{g.node[3]}{state=current}
+\recolor{g.edge[(2,3)]}{state=done}
+\apply{disc.cell[2]}{value="2"}
+\apply{low.cell[2]}{value="2"}
+\recolor{disc.cell[1]}{state=done}
+\recolor{low.cell[1]}{state=done}
+\recolor{disc.cell[2]}{state=current}
+\recolor{low.cell[2]}{state=current}
+\narrate{Visit node 3. Tree edge 2->3. disc[3] = 2, low[3] = 2.}
+
+\step
+\recolor{g.edge[(3,1)]}{state=current}
+\apply{low.cell[2]}{value="0"}
+\recolor{low.cell[2]}{state=good}
+\narrate{Node 3 sees neighbor 1 -- already visited and not parent. Back edge found! low[3] = min(2, disc[1]) = min(2, 0) = 0. This back edge lets subtree of 3 reach all the way up to node 1.}
+
+\step
+\recolor{g.edge[(3,1)]}{state=dim}
+\recolor{g.node[3]}{state=done}
+\recolor{g.node[4]}{state=current}
+\recolor{g.edge[(3,4)]}{state=done}
+\apply{disc.cell[3]}{value="3"}
+\apply{low.cell[3]}{value="3"}
+\recolor{disc.cell[2]}{state=done}
+\recolor{low.cell[2]}{state=done}
+\recolor{disc.cell[3]}{state=current}
+\recolor{low.cell[3]}{state=current}
+\narrate{Continue DFS from 3 to 4. Tree edge 3->4. disc[4] = 3, low[4] = 3. Node 4 has no back edges upward.}
+
+\step
+\recolor{g.node[4]}{state=done}
+\recolor{g.node[5]}{state=current}
+\recolor{g.edge[(4,5)]}{state=done}
+\apply{disc.cell[4]}{value="4"}
+\apply{low.cell[4]}{value="4"}
+\recolor{disc.cell[3]}{state=done}
+\recolor{low.cell[3]}{state=done}
+\recolor{disc.cell[4]}{state=current}
+\recolor{low.cell[4]}{state=current}
+\narrate{DFS to node 5. Tree edge 4->5. disc[5] = 4, low[5] = 4.}
+
+\step
+\recolor{g.node[5]}{state=done}
+\recolor{g.node[6]}{state=current}
+\recolor{g.edge[(5,6)]}{state=done}
+\apply{disc.cell[5]}{value="5"}
+\apply{low.cell[5]}{value="5"}
+\recolor{disc.cell[4]}{state=done}
+\recolor{low.cell[4]}{state=done}
+\recolor{disc.cell[5]}{state=current}
+\recolor{low.cell[5]}{state=current}
+\narrate{DFS to node 6. Tree edge 5->6. disc[6] = 5, low[6] = 5.}
+
+\step
+\recolor{g.node[6]}{state=done}
+\recolor{g.node[7]}{state=current}
+\recolor{g.edge[(6,7)]}{state=done}
+\apply{disc.cell[6]}{value="6"}
+\apply{low.cell[6]}{value="6"}
+\recolor{disc.cell[5]}{state=done}
+\recolor{low.cell[5]}{state=done}
+\recolor{disc.cell[6]}{state=current}
+\recolor{low.cell[6]}{state=current}
+\narrate{DFS to node 7. Tree edge 6->7. disc[7] = 6, low[7] = 6.}
+
+\step
+\recolor{g.edge[(7,5)]}{state=current}
+\apply{low.cell[6]}{value="4"}
+\recolor{low.cell[6]}{state=good}
+\narrate{Node 7 sees neighbor 5 -- already visited, not parent (parent is 6). Back edge! low[7] = min(6, disc[5]) = min(6, 4) = 4. The cycle 5-6-7-5 means none of those edges are bridges.}
+
+\step
+\recolor{g.node[7]}{state=done}
+\recolor{g.edge[(7,5)]}{state=dim}
+\apply{low.cell[5]}{value="4"}
+\recolor{low.cell[5]}{state=done}
+\recolor{low.cell[6]}{state=done}
+\narrate{Backtrack 7->6. low[6] = min(5, low[7]) = min(5, 4) = 4. Bridge check: low[7]=4 > disc[6]=5? No. Edge 6-7 is NOT a bridge.}
+
+\step
+\apply{low.cell[4]}{value="4"}
+\recolor{low.cell[4]}{state=done}
+\narrate{Backtrack 6->5. low[5] = min(4, low[6]) = min(4, 4) = 4. Bridge check: low[6]=4 > disc[5]=4? No (not strictly greater). Edge 5-6 is NOT a bridge.}
+
+\step
+\apply{low.cell[3]}{value="3"}
+\recolor{low.cell[3]}{state=done}
+\recolor{g.edge[(4,5)]}{state=error}
+\narrate{Backtrack 5->4. low[4] = min(3, low[5]) = min(3, 4) = 3. Bridge check: low[5]=4 > disc[4]=3? YES! Edge (4,5) is a BRIDGE. No back edge from {5,6,7} reaches node 4 or above.}
+
+\step
+\recolor{g.edge[(3,4)]}{state=error}
+\narrate{Backtrack 4->3. low[3] remains 3. Bridge check: low[4]=3 > disc[3]=2? YES! Edge (3,4) is also a BRIDGE. Node 4 has no back edges at all -- its subtree is completely isolated from ancestors of 3.}
+
+\step
+\apply{low.cell[1]}{value="0"}
+\apply{low.cell[0]}{value="0"}
+\recolor{low.cell[1]}{state=done}
+\recolor{low.cell[0]}{state=done}
+\narrate{Backtrack 3->2. low[2] = min(1, low[3]) = min(1, 0) = 0. Bridge check: low[3]=0 > disc[2]=1? No. Edge 2-3 is safe. Backtrack 2->1. low[1] = min(0, 0) = 0. Edge 1-2: low[2]=0 > disc[1]=0? No. DFS complete.}
+
+\step
+\recolor{g.node[1]}{state=good}
+\recolor{g.node[2]}{state=good}
+\recolor{g.node[3]}{state=good}
+\recolor{g.edge[(1,2)]}{state=good}
+\recolor{g.edge[(2,3)]}{state=good}
+\recolor{g.edge[(3,1)]}{state=good}
+\recolor{g.node[5]}{state=good}
+\recolor{g.node[6]}{state=good}
+\recolor{g.node[7]}{state=good}
+\recolor{g.edge[(5,6)]}{state=good}
+\recolor{g.edge[(6,7)]}{state=good}
+\recolor{g.edge[(7,5)]}{state=good}
+\recolor{g.node[4]}{state=error}
+\recolor{disc.range[0:6]}{state=good}
+\recolor{low.range[0:6]}{state=good}
+\narrate{Result: 2 bridges -- (3,4) and (4,5), shown in red. Node 4 is an articulation point connecting two biconnected components: cycle {1,2,3} and cycle {5,6,7}. Removing either bridge disconnects the graph. Tarjan's algorithm found all bridges in O(n + m) with a single DFS pass.}
+\end{animation}

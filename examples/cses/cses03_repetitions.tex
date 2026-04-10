@@ -1,0 +1,62 @@
+\begin{animation}[id="repetitions", label="Longest Consecutive Repetition in DNA"]
+
+\compute{
+  s = ["A", "T", "T", "C", "G", "G", "G", "A"]
+  n = len(s)
+}
+
+\shape{dna}{Array}{size=8, data=["A", "T", "T", "C", "G", "G", "G", "A"], labels="0..7", label="DNA string"}
+\shape{vars}{Array}{size=2, data=[1, 1], labels="0..1", label="current | max"}
+
+\step
+\recolor{dna.cell[0]}{state=current}
+\narrate{Start scanning. First char: A. Current run = 1, max = 1.}
+
+\step
+\recolor{dna.cell[0]}{state=done}
+\recolor{dna.cell[1]}{state=current}
+\narrate{Index 1: T $\neq$ A. New run starts. current = 1, max = 1.}
+
+\step
+\recolor{dna.cell[1]}{state=done}
+\recolor{dna.cell[2]}{state=current}
+\apply{vars.cell[0]}{value=2}
+\apply{vars.cell[1]}{value=2}
+\narrate{Index 2: T $=$ T. Run extends to 2. max = 2.}
+
+\step
+\recolor{dna.cell[2]}{state=done}
+\recolor{dna.cell[3]}{state=current}
+\apply{vars.cell[0]}{value=1}
+\narrate{Index 3: C $\neq$ T. New run starts. current = 1, max = 2.}
+
+\step
+\recolor{dna.cell[3]}{state=done}
+\recolor{dna.cell[4]}{state=current}
+\narrate{Index 4: G $\neq$ C. New run starts. current = 1, max = 2.}
+
+\step
+\recolor{dna.cell[4]}{state=done}
+\recolor{dna.cell[5]}{state=current}
+\apply{vars.cell[0]}{value=2}
+\narrate{Index 5: G $=$ G. Run extends to 2. max = 2.}
+
+\step
+\recolor{dna.cell[5]}{state=done}
+\recolor{dna.cell[6]}{state=current}
+\apply{vars.cell[0]}{value=3}
+\apply{vars.cell[1]}{value=3}
+\recolor{vars.cell[1]}{state=good}
+\narrate{Index 6: G $=$ G. Run extends to 3! New max = 3.}
+
+\step
+\recolor{dna.cell[6]}{state=done}
+\recolor{dna.cell[7]}{state=current}
+\apply{vars.cell[0]}{value=1}
+\narrate{Index 7: A $\neq$ G. New run starts. current = 1, max = 3.}
+
+\step
+\recolor{dna.cell[7]}{state=done}
+\recolor{dna.range[4:6]}{state=good}
+\narrate{Scan complete. Longest repetition: 3 (GGG at indices 4--6). Answer: $\mathbf{3}$.}
+\end{animation}

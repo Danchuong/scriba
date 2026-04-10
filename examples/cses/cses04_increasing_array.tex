@@ -1,0 +1,52 @@
+\begin{animation}[id="increasing-array", label="Minimum Moves to Make Non-Decreasing"]
+
+\compute{
+  arr = [3, 2, 5, 1, 7]
+  n = len(arr)
+}
+
+\shape{a}{Array}{size=5, data=[3, 2, 5, 1, 7], labels="0..4", label="Array"}
+\shape{cost}{Array}{size=1, data=[0], label="Total moves"}
+
+\step
+\narrate{Make the array non-decreasing using minimum increases. Array: $[3, 2, 5, 1, 7]$.}
+
+\step
+\recolor{a.cell[0]}{state=done}
+\narrate{Index 0: value 3. First element, always OK. Max so far = 3.}
+
+\step
+\recolor{a.cell[1]}{state=error}
+\narrate{Index 1: value 2 $<$ previous 3. Violation! Must increase by $3 - 2 = 1$.}
+
+\step
+\apply{a.cell[1]}{value=3}
+\apply{cost.cell[0]}{value=1}
+\recolor{a.cell[1]}{state=done}
+\narrate{Set $a[1] = 3$. Total moves = 1. Max so far = 3.}
+
+\step
+\recolor{a.cell[2]}{state=current}
+\narrate{Index 2: value 5 $\geq$ 3. No increase needed. Max so far = 5.}
+
+\step
+\recolor{a.cell[2]}{state=done}
+\recolor{a.cell[3]}{state=error}
+\narrate{Index 3: value 1 $<$ previous 5. Violation! Must increase by $5 - 1 = 4$.}
+
+\step
+\apply{a.cell[3]}{value=5}
+\apply{cost.cell[0]}{value=5}
+\recolor{a.cell[3]}{state=done}
+\narrate{Set $a[3] = 5$. Total moves = $1 + 4 = 5$. Max so far = 5.}
+
+\step
+\recolor{a.cell[4]}{state=current}
+\narrate{Index 4: value 7 $\geq$ 5. No increase needed.}
+
+\step
+\recolor{a.cell[4]}{state=done}
+\recolor{a.all}{state=good}
+\recolor{cost.cell[0]}{state=good}
+\narrate{Array is now non-decreasing: $[3, 3, 5, 5, 7]$. Total moves = $\mathbf{5}$.}
+\end{animation}

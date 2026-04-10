@@ -1,0 +1,143 @@
+\begin{animation}[id="weird-algo", label="Weird Algorithm (Collatz) -- n = 7"]
+\shape{val}{Array}{size=1, data=[7], label="Current n"}
+\shape{seq}{Array}{size=17, data=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], labels="0..16", label="Sequence"}
+\shape{plot}{MetricPlot}{series=["n"], xlabel="step", ylabel="value"}
+
+\step
+\apply{val.cell[0]}{value=7}
+\apply{seq.cell[0]}{value=7}
+\recolor{val.cell[0]}{state=current}
+\recolor{seq.cell[0]}{state=current}
+\apply{plot}{n=7}
+\narrate{Start with n = 7. The sequence begins. 7 is odd, so next we compute 3*7 + 1 = 22.}
+
+\step
+\apply{val.cell[0]}{value=22}
+\apply{seq.cell[1]}{value=22}
+\recolor{seq.cell[0]}{state=done}
+\recolor{seq.cell[1]}{state=current}
+\apply{plot}{n=22}
+\narrate{n = 22. Even, so divide by 2: 22 / 2 = 11.}
+
+\step
+\apply{val.cell[0]}{value=11}
+\apply{seq.cell[2]}{value=11}
+\recolor{seq.cell[1]}{state=done}
+\recolor{seq.cell[2]}{state=current}
+\apply{plot}{n=11}
+\narrate{n = 11. Odd, so 3*11 + 1 = 34.}
+
+\step
+\apply{val.cell[0]}{value=34}
+\apply{seq.cell[3]}{value=34}
+\recolor{seq.cell[2]}{state=done}
+\recolor{seq.cell[3]}{state=current}
+\apply{plot}{n=34}
+\narrate{n = 34. Even, 34 / 2 = 17.}
+
+\step
+\apply{val.cell[0]}{value=17}
+\apply{seq.cell[4]}{value=17}
+\recolor{seq.cell[3]}{state=done}
+\recolor{seq.cell[4]}{state=current}
+\apply{plot}{n=17}
+\narrate{n = 17. Odd, 3*17 + 1 = 52. Notice the value jumped up -- the Collatz sequence is unpredictable!}
+
+\step
+\apply{val.cell[0]}{value=52}
+\apply{seq.cell[5]}{value=52}
+\recolor{seq.cell[4]}{state=done}
+\recolor{seq.cell[5]}{state=current}
+\apply{plot}{n=52}
+\narrate{n = 52. Even, 52 / 2 = 26. The peak so far: the plot shows the characteristic spikes of Collatz.}
+
+\step
+\apply{val.cell[0]}{value=26}
+\apply{seq.cell[6]}{value=26}
+\recolor{seq.cell[5]}{state=done}
+\recolor{seq.cell[6]}{state=current}
+\apply{plot}{n=26}
+\narrate{n = 26. Even, 26 / 2 = 13.}
+
+\step
+\apply{val.cell[0]}{value=13}
+\apply{seq.cell[7]}{value=13}
+\recolor{seq.cell[6]}{state=done}
+\recolor{seq.cell[7]}{state=current}
+\apply{plot}{n=13}
+\narrate{n = 13. Odd, 3*13 + 1 = 40. Another spike up from the odd rule.}
+
+\step
+\apply{val.cell[0]}{value=40}
+\apply{seq.cell[8]}{value=40}
+\recolor{seq.cell[7]}{state=done}
+\recolor{seq.cell[8]}{state=current}
+\apply{plot}{n=40}
+\narrate{n = 40. Even, 40 / 2 = 20.}
+
+\step
+\apply{val.cell[0]}{value=20}
+\apply{seq.cell[9]}{value=20}
+\recolor{seq.cell[8]}{state=done}
+\recolor{seq.cell[9]}{state=current}
+\apply{plot}{n=20}
+\narrate{n = 20. Even, 20 / 2 = 10. From here the values will cascade downward.}
+
+\step
+\apply{val.cell[0]}{value=10}
+\apply{seq.cell[10]}{value=10}
+\recolor{seq.cell[9]}{state=done}
+\recolor{seq.cell[10]}{state=current}
+\apply{plot}{n=10}
+\narrate{n = 10. Even, 10 / 2 = 5.}
+
+\step
+\apply{val.cell[0]}{value=5}
+\apply{seq.cell[11]}{value=5}
+\recolor{seq.cell[10]}{state=done}
+\recolor{seq.cell[11]}{state=current}
+\apply{plot}{n=5}
+\narrate{n = 5. Odd, 3*5 + 1 = 16. One last spike, but 16 is a power of 2 -- it will halve straight down to 1!}
+
+\step
+\apply{val.cell[0]}{value=16}
+\apply{seq.cell[12]}{value=16}
+\recolor{seq.cell[11]}{state=done}
+\recolor{seq.cell[12]}{state=current}
+\apply{plot}{n=16}
+\narrate{n = 16. Even, 16 / 2 = 8. Powers of 2 guarantee a smooth descent.}
+
+\step
+\apply{val.cell[0]}{value=8}
+\apply{seq.cell[13]}{value=8}
+\recolor{seq.cell[12]}{state=done}
+\recolor{seq.cell[13]}{state=current}
+\apply{plot}{n=8}
+\narrate{n = 8. Even, 8 / 2 = 4.}
+
+\step
+\apply{val.cell[0]}{value=4}
+\apply{seq.cell[14]}{value=4}
+\recolor{seq.cell[13]}{state=done}
+\recolor{seq.cell[14]}{state=current}
+\apply{plot}{n=4}
+\narrate{n = 4. Even, 4 / 2 = 2.}
+
+\step
+\apply{val.cell[0]}{value=2}
+\apply{seq.cell[15]}{value=2}
+\recolor{seq.cell[14]}{state=done}
+\recolor{seq.cell[15]}{state=current}
+\apply{plot}{n=2}
+\narrate{n = 2. Even, 2 / 2 = 1. Almost there!}
+
+\step
+\apply{val.cell[0]}{value=1}
+\apply{seq.cell[16]}{value=1}
+\recolor{seq.cell[15]}{state=done}
+\recolor{seq.cell[16]}{state=good}
+\recolor{val.cell[0]}{state=good}
+\recolor{seq.range[0:16]}{state=good}
+\apply{plot}{n=1}
+\narrate{n = 1. Done! The full Collatz sequence for n=7 has 17 values: 7 22 11 34 17 52 26 13 40 20 10 5 16 8 4 2 1. The MetricPlot shows the characteristic hailstone pattern -- values spike up on odd steps (3n+1) and cascade down on even steps (n/2), eventually reaching 1.}
+\end{animation}

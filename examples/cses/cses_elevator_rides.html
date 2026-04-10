@@ -1,0 +1,2503 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriba — cses_elevator_rides</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  background: #fafafa;
+  color: #212529;
+}
+h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
+
+/* Widget container */
+.scriba-widget {
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* Controls bar */
+.scriba-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  user-select: none;
+}
+.scriba-controls button {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #212529;
+  transition: background 0.15s, border-color 0.15s;
+}
+.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
+.scriba-controls button:active { background: #e4e4e4; }
+.scriba-controls button:disabled { opacity: 0.35; cursor: default; }
+.scriba-step-counter {
+  font: 600 0.78rem ui-monospace, "SF Mono", monospace;
+  color: #6c757d;
+  min-width: 5rem;
+  text-align: center;
+}
+
+/* Progress dots */
+.scriba-progress {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.scriba-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #d0d7de;
+  transition: background 0.2s;
+}
+.scriba-dot.active { background: #0072B2; }
+.scriba-dot.done { background: #009E73; }
+
+/* Stage */
+.scriba-stage {
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: center;
+  min-height: 100px;
+}
+.scriba-stage-svg { width: 100%; height: auto; }
+
+/* Narration */
+.scriba-narration {
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #212529;
+  border-top: 1px solid #f0f0f0;
+  min-height: 2.5rem;
+}
+
+/* SVG text */
+svg text {
+  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.idx {
+  font: 500 10px ui-monospace, monospace;
+  fill: #6c757d;
+}
+
+/* Frame transition */
+.scriba-stage svg, .scriba-narration {
+  transition: opacity 0.2s ease;
+}
+
+/* Static filmstrip layout (legacy) */
+.scriba-animation { max-width: 100%; }
+.scriba-frames {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+}
+.scriba-frame {
+  flex: 0 0 auto;
+  min-width: 280px;
+  max-width: 560px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #ffffff;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+.scriba-frame-header {
+  padding: 0.5rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+}
+.scriba-step-label {
+  font: 600 0.72rem ui-monospace, monospace;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem;
+  padding: 0.35rem 0.7rem; cursor: pointer;
+  border: 1px solid #ccc; border-radius: 6px; background: white;
+  font-size: 0.8rem;
+}
+
+/* Dark mode */
+[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
+[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
+[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
+[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
+[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
+[data-theme="dark"] .scriba-dot { background: #30363d; }
+[data-theme="dark"] .idx { fill: #7d8590; }
+[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-step-label { color: #7d8590; }
+[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
+</style>
+</head>
+<body>
+<button class="theme-toggle" onclick="
+  var t = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
+">Toggle theme</button>
+<h1>cses_elevator_rides</h1>
+<div class="scriba-widget" id="elevator-rides">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter">Step 1 / 20</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
+</div>
+<script>
+(function(){
+  var W=document.getElementById('elevator-rides');
+  var frames=[
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-idle">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="526" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-idle">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="588" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Problem: 4 people with weights [3, 5, 2, 7], elevator capacity x = 8. Find the minimum number of rides. We use bitmask DP where each of the 16 masks represents a subset of people already transported. dp[mask] stores (min rides, max remaining capacity in last ride).`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-idle">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="526" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-idle">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="588" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Base case: dp[0] = (1, 8). No one transported yet. We have 1 ride open with full capacity 8 remaining. Mask 0 = binary 0000 means no person selected.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-idle">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="526" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-idle">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="588" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Try adding person 0 (weight 3) to mask 0000. Weight 3 &lt;= 8 remaining, so they fit in the current ride. dp[0001] = (1, 8-3) = (1, 5). One ride used, 5 capacity left.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-current">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-idle">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="526" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-idle">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="588" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Add person 1 (weight 5) to mask 0000. Weight 5 &lt;= 8, fits. dp[0010] = (1, 8-5) = (1, 3). One ride, 3 remaining.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-current">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-idle">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="526" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-idle">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="588" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Add person 2 (weight 2) to mask 0000. Weight 2 &lt;= 8, fits. dp[0100] = (1, 8-2) = (1, 6).`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-current">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-idle">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="588" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Add person 3 (weight 7) to mask 0000. Weight 7 &lt;= 8, fits. dp[1000] = (1, 8-7) = (1, 1). All four single-person states computed from the empty set.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-current">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-idle">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="588" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Now process mask 0001 = (1,5). Add person 1 (weight 5). 5 &lt;= 5 remaining, fits! dp[0011] = (1, 5-5) = (1, 0). Persons 0 and 1 share one ride at exactly capacity 3+5=8.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-8-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-current">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-idle">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="588" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`From mask 0001 = (1,5), add person 2 (weight 2). 2 &lt;= 5, fits. dp[0101] = (1, 5-2) = (1, 3). Persons 0 and 2 share a ride (weight 3+2=5).`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-9-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-idle">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="402" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-current">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`From mask 0001 = (1,5), add person 3 (weight 7). 7 &gt; 5 remaining -- does not fit! Start a new ride. dp[1001] = (1+1, 8-7) = (2, 1). Now we need 2 rides.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-10-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-current">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-idle">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="650" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`From mask 0010 = (1,3), add person 2 (weight 2). 2 &lt;= 3, fits. dp[0110] = (1, 3-2) = (1, 1). Persons 1 and 2 share a ride (weight 5+2=7).`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-11-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-current">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-idle">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="774" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`From mask 0010 = (1,3), add person 3 (weight 7). 7 &gt; 3, new ride. dp[1010] = (2, 8-7) = (2, 1). Persons 1 and 3 each need their own ride.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-12-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-current">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-current">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`From mask 0100 = (1,6), add person 3 (weight 7). 7 &gt; 6, new ride. dp[1100] = (2, 1). Note: also reachable from mask 1000+person 2 giving (2, 6) which is better -- we will update next.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-13-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-current">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-idle">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="464" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-current">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Update! From mask 1000 = (1,1), add person 2 (weight 2). 2 &gt; 1, new ride. Candidate = (2, 8-2) = (2, 6). Since 6 &gt; 1 remaining and same rides, dp[1100] updates to (2, 6). More remaining capacity means more room for future people.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-14-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-current">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-current">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="464" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-idle">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="712" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-done">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`From mask 0011 = (1,0), add person 2 (weight 2). 2 &gt; 0, new ride. dp[0111] = (2, 8-2) = (2, 6). Persons 0,1 filled ride 1 completely; person 2 starts ride 2 with 6 remaining.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-15-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-done">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="464" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-current">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="712" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-done">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-idle">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="898" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Best path to mask 0011 = (1,0), add person 3 (weight 7). 7 &gt; 0, new ride. dp[1011] = (2, 8-7) = (2, 1). But also from mask 0101=(1,3)+person 3: 7&gt;3, gives (2,1). And from mask 1001=(2,1)+person 1: 5&gt;1, gives (3,3). Best so far: (2,1). Actually from mask 0110=(1,1)+person 3: 7&gt;1, gives (2,1). All paths agree on 2 rides.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-16-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-done">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="464" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-done">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="712" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-done">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-idle">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="836" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-current">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="898" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`From mask 0110 = (1,1), add person 3 (weight 7). 7 &gt; 1, new ride. dp[1110] = (2, 8-7) = (2, 1). But from mask 1100=(2,6)+person 1: 5&lt;=6, fits! Candidate (2,1). And from mask 1010=(2,1)+person 2: 2&gt;1, gives (3,6). Best: (2, 1). Then from mask 0110=(1,1)+person 3: (2,1). All yield 2 rides.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-17-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-done">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="464" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-done">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="712" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-done">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-current">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="836" y="20" fill="#ffffff">2,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-done">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="898" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-idle">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="960" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`dp[1101] = mask with persons {0,2,3}. Best path: from mask 0101=(1,3)+person 3: 7&gt;3, gives (2,1). From mask 1100=(2,6)+person 0: 3&lt;=6, gives (2,3). The second is better -- same 2 rides but 3 remaining beats 1. dp[1101] = (2, 3).`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-18-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-done">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="464" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-done">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="712" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-done">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-done">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="836" y="20" fill="#ffffff">2,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-done">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="898" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-current">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="960" y="20" fill="#ffffff"></text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Finally, dp[1111] -- all 4 people. We check transitions from all masks missing exactly one person. From dp[0111]=(2,6)+person 3 (w=7): 7&gt;6, new ride, candidate (3,1). From dp[1011]=(2,1)+person 2 (w=2): 2&gt;1, new ride, candidate (3,6). From dp[1101]=(2,3)+person 1 (w=5): 5&gt;3, new ride, candidate (3,3). From dp[1110]=(2,1)+person 0 (w=3): 3&gt;1, new ride, candidate (3,3).`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-19-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-good">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-done">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="464" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-done">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="712" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-done">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-done">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="836" y="20" fill="#ffffff">2,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-done">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="898" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-current">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="960" y="20" fill="#ffffff">3,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`All four transitions give 3 rides. The best remaining is 6 (from dp[1011]+person 2). dp[1111] = (3, 6). But the answer is just the number of rides: 3.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-20-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(388,16)">
+<g data-primitive="array" data-shape="w">
+  <g data-target="w.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="w.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="w.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="w.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <text class="scriba-primitive-label" x="123" y="68" fill="#6c757d">weights</text>
+</g>
+</g>
+<g transform="translate(16,116)">
+<g data-primitive="dptable" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">1,8</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1,5</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">1,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">1,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="dp.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="dp.cell[7]" class="scriba-state-done">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="464" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+  <g data-target="dp.cell[8]" class="scriba-state-done">
+    <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="526" y="20" fill="#ffffff">1,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
+  <g data-target="dp.cell[9]" class="scriba-state-done">
+    <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="588" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
+  <g data-target="dp.cell[10]" class="scriba-state-done">
+    <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="650" y="20" fill="#ffffff">2,1</text>
+  </g>
+  <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
+  <g data-target="dp.cell[11]" class="scriba-state-done">
+    <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="712" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
+  <g data-target="dp.cell[12]" class="scriba-state-done">
+    <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="774" y="20" fill="#ffffff">2,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
+  <g data-target="dp.cell[13]" class="scriba-state-done">
+    <rect x="806" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="836" y="20" fill="#ffffff">2,3</text>
+  </g>
+  <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
+  <g data-target="dp.cell[14]" class="scriba-state-done">
+    <rect x="868" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="898" y="20" fill="#ffffff">2,0</text>
+  </g>
+  <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
+  <g data-target="dp.cell[15]" class="scriba-state-good">
+    <rect x="930" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="960" y="20" fill="#ffffff">3,6</text>
+  </g>
+  <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
+  <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
+</g>
+</g>
+</svg>`,narration:`Answer: dp[1111].rides = 3. The minimum number of elevator rides for weights [3, 5, 2, 7] with capacity 8 is 3. One optimal grouping: ride 1 = {person 1, person 0} (5+3=8), ride 2 = {person 2} (2), ride 3 = {person 3} (7). The bitmask DP explored all 2^4 = 16 subsets in O(2^n * n) time.`,substory:``}
+  ];
+  var cur=0;
+  var stage=W.querySelector('.scriba-stage');
+  var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
+  var ctr=W.querySelector('.scriba-step-counter');
+  var prev=W.querySelector('.scriba-btn-prev');
+  var next=W.querySelector('.scriba-btn-next');
+  var dots=W.querySelectorAll('.scriba-dot');
+  function initSub(el){
+    var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
+    var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
+    var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
+    var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
+    function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.textContent=fd[i].narration;
+      sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+      sp.disabled=i===0;sx.disabled=i===fd.length-1;
+      sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+    }
+    sp.addEventListener('click',function(){if(sc>0)sh(sc-1);});
+    sx.addEventListener('click',function(){if(sc<fd.length-1)sh(sc+1);});
+    sh(0);
+  }
+  function show(i){
+    cur=i;
+    stage.innerHTML=frames[i].svg;
+    narr.textContent=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
+    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    prev.disabled=i===0;
+    next.disabled=i===frames.length-1;
+    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+  }
+  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
+  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
+  W.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
+    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
+  });
+  W.setAttribute('tabindex','0');
+  show(0);
+})();
+</script>
+</body>
+</html>
