@@ -217,7 +217,19 @@ def _emit_frame_svg(
     """Produce the ``<svg>`` element for one frame."""
     narration_id = f"{scene_id}-frame-{frame.step_number}-narration"
 
-    # Recompute viewbox for this frame (handles Stack push/pop changing size)
+    # Pre-pass: apply push/pop commands so bounding boxes are correct
+    for shape_name, prim in primitives.items():
+        shape_state = _expand_selectors(
+            frame.shape_states.get(shape_name, {}), shape_name, prim
+        )
+        if hasattr(prim, "apply_command"):
+            for target_key, target_data in shape_state.items():
+                if isinstance(target_data, dict):
+                    ap = target_data.get("apply_params")
+                    if ap:
+                        prim.apply_command(ap)
+
+    # Recompute viewbox AFTER push/pop
     viewbox = compute_viewbox(primitives)
 
     svg_parts: list[str] = [
@@ -266,12 +278,7 @@ def _emit_frame_svg(
             # Graph / PrimitiveBase -- apply state then emit
             highlighted_suffixes: set[str] = set()
 
-            # Process apply_params for primitives that support them (e.g. Stack)
-            for target_key, target_data in shape_state.items():
-                if isinstance(target_data, dict):
-                    apply_params = target_data.get("apply_params")
-                    if apply_params and hasattr(prim, "apply_command"):
-                        prim.apply_command(apply_params)
+            # apply_params already processed in pre-pass above
 
             for target_key, target_data in shape_state.items():
                 if isinstance(target_data, dict):
