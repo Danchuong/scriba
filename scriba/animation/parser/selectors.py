@@ -87,6 +87,14 @@ class SelectorParser:
             return self._parse_range()
         if name == "all":
             return AllAccessor()
+        # Plane2D and other primitive-defined accessors with [index]
+        if self._pos < len(self._text) and self._text[self._pos] == "[":
+            self._expect("[")
+            idx = self._parse_index_expr()
+            self._expect("]")
+            # Reuse CellAccessor with a prefixed name for generic indexed parts
+            # Store as "point", "line", etc. in a NamedAccessor-like form
+            return NamedAccessor(name=f"{name}[{idx}]")
         return NamedAccessor(name=name)
 
     def _parse_cell(self) -> CellAccessor:
