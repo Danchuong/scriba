@@ -40,9 +40,9 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 
 ---
 
-## 2. Inner Commands (13 total)
+## 2. Inner Commands (14 total)
 
-### 2.1 Base Commands (10)
+### 2.1 Base Commands (11)
 
 | Command | Signature | Contexts | Persistence |
 |---------|-----------|----------|-------------|
@@ -52,7 +52,8 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\narrate` | `{LaTeX text}` | animation step only | per-frame |
 | `\apply` | `{target}{params}` | prelude or step | persistent |
 | `\highlight` | `{target}` | step only (animation), anywhere (diagram) | ephemeral (animation), persistent (diagram) |
-| `\recolor` | `{target}{state=..., color=..., arrow_from=...}` | both | persistent |
+| `\recolor` | `{target}{state=...}` | both | persistent |
+| `\reannotate` | `{target}{color=..., arrow_from=...}` | both | persistent |
 | `\annotate` | `{target}{params}` | both | persistent (default), ephemeral if `ephemeral=true` |
 | `\foreach` | `{variable}{iterable}...body...\endforeach` | prelude or step | expands to body commands |
 | `\endforeach` | (no args) | closes `\foreach` | — |
@@ -125,12 +126,16 @@ Interpolation: `${name}` resolved from Starlark bindings at build time.
 > via the `\highlight` command. The CSS class `.scriba-state-highlight` exists (see §10.1)
 > but cannot be set through `\recolor`.
 
-#### Optional annotation recoloring parameters
+#### Annotation recoloring (`\reannotate`)
 
-- `color` — optional, recolors annotation(s) on the target. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`.
+Use `\reannotate` to recolor annotations on a target:
+
+- `color` — required. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`.
 - `arrow_from` — optional, filters which annotation to recolor by source selector.
-- At least one of `state` or `color` must be present.
-- Example: `\recolor{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}`
+- Example: `\reannotate{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}`
+
+> **Deprecation:** `color=` and `arrow_from=` on `\recolor` are deprecated as of v0.5.0.
+> They still work but emit a `DeprecationWarning`. Use `\reannotate` instead.
 
 Unknown state → `E1109`
 

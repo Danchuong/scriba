@@ -20,6 +20,7 @@ from .ast import (
     MutationCommand as Command,
     NarrateCommand,
     ParamValue,
+    ReannotateCommand,
     RecolorCommand,
     Selector,
     ShapeCommand,
@@ -173,6 +174,13 @@ class SceneParser:
 
                 elif cmd_name == "recolor":
                     cmd = self._parse_recolor()
+                    if in_prelude:
+                        prelude_commands.append(cmd)
+                    else:
+                        frame_commands.append(cmd)
+
+                elif cmd_name == "reannotate":
+                    cmd = self._parse_reannotate()
                     if in_prelude:
                         prelude_commands.append(cmd)
                     else:
@@ -351,9 +359,15 @@ class SceneParser:
                     col=tok.col,
                 )
 
-        # annotation color (optional)
+        # annotation color (optional) — deprecated, use \reannotate instead
         annotation_color: str | None = None
         if "color" in params:
+            _warnings_mod.warn(
+                f"\\recolor with color= is deprecated (line {tok.line}); "
+                "use \\reannotate instead",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             annotation_color = str(params["color"])
             if annotation_color not in _VALID_ANNOTATE_COLORS:
                 raise ValidationError(
@@ -364,10 +378,17 @@ class SceneParser:
                     col=tok.col,
                 )
 
-        # annotation source filter (optional)
+        # annotation source filter (optional) — deprecated, use \reannotate instead
         annotation_from: str | None = None
         af_raw = params.get("arrow_from")
         if isinstance(af_raw, str):
+            if annotation_color is None:
+                _warnings_mod.warn(
+                    f"\\recolor with arrow_from= is deprecated (line {tok.line}); "
+                    "use \\reannotate instead",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
             annotation_from = af_raw
 
         # At least one of state or color must be present
@@ -386,6 +407,45 @@ class SceneParser:
             state=state,
             annotation_color=annotation_color,
             annotation_from=annotation_from,
+        )
+
+    def _parse_reannotate(self) -> ReannotateCommand:
+        tok = self._advance()
+        target_str = self._read_brace_arg(tok)
+        params = self._read_param_brace()
+
+        # color is required
+        if "color" not in params:
+            raise ValidationError(
+                "\\reannotate requires 'color' parameter",
+                position=tok.col,
+                code="E1113",
+                line=tok.line,
+                col=tok.col,
+            )
+        color = str(params["color"])
+        if color not in _VALID_ANNOTATE_COLORS:
+            raise ValidationError(
+                f"unknown annotation color {color!r}",
+                position=tok.col,
+                code="E1113",
+                line=tok.line,
+                col=tok.col,
+            )
+
+        # arrow_from is optional
+        arrow_from: str | None = None
+        af_raw = params.get("arrow_from")
+        if isinstance(af_raw, str):
+            arrow_from = af_raw
+
+        sel = parse_selector(target_str, line=tok.line, col=tok.col)
+        return ReannotateCommand(
+            target=sel,
+            color=color,
+            arrow_from=arrow_from,
+            line=tok.line,
+            col=tok.col,
         )
 
     def _parse_annotate(self) -> AnnotateCommand:
@@ -477,6 +537,9 @@ class SceneParser:
 
                 elif inner_cmd == "recolor":
                     body.append(self._parse_recolor())
+
+                elif inner_cmd == "reannotate":
+                    body.append(self._parse_reannotate())
 
                 elif inner_cmd == "apply":
                     body.append(self._parse_apply())
@@ -711,6 +774,13 @@ class SceneParser:
 
                 elif inner_cmd == "recolor":
                     cmd = self._parse_recolor()
+                    if sub_in_prelude:
+                        pass
+                    else:
+                        sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "reannotate":
+                    cmd = self._parse_reannotate()
                     if sub_in_prelude:
                         pass
                     else:

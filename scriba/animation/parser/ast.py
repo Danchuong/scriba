@@ -193,6 +193,17 @@ class RecolorCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class ReannotateCommand:
+    """``\\reannotate{target}{color=..., arrow_from=...}``."""
+
+    target: Selector | str
+    color: str  # info/warn/good/error/muted/path
+    arrow_from: str | None = None
+    line: int = 0
+    col: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class AnnotateCommand:
     """``\\annotate{target}{params...}``."""
 
@@ -227,6 +238,7 @@ MutationCommand = Union[
     ApplyCommand,
     HighlightCommand,
     RecolorCommand,
+    ReannotateCommand,
     AnnotateCommand,
     ForeachCommand,
 ]
@@ -240,6 +252,7 @@ Command = Union[
     ApplyCommand,
     HighlightCommand,
     RecolorCommand,
+    ReannotateCommand,
     AnnotateCommand,
     ForeachCommand,
     "SubstoryBlock",

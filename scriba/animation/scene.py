@@ -25,6 +25,7 @@ from scriba.animation.parser.ast import (
     FrameIR,
     HighlightCommand,
     InterpolationRef,
+    ReannotateCommand,
     RecolorCommand,
     Selector,
     ShapeCommand,
@@ -508,6 +509,8 @@ class SceneState:
             self._apply_apply(cmd)
         elif isinstance(cmd, RecolorCommand):
             self._apply_recolor(cmd)
+        elif isinstance(cmd, ReannotateCommand):
+            self._apply_reannotate(cmd)
         elif isinstance(cmd, HighlightCommand):
             self._apply_highlight(cmd)
         elif isinstance(cmd, AnnotateCommand):
@@ -553,6 +556,24 @@ class SceneState:
                             position=ann.position,
                             arrow=ann.arrow,
                         )
+
+    def _apply_reannotate(self, cmd: ReannotateCommand) -> None:
+        """\\reannotate — recolor matching annotations on a target."""
+        target_str = _selector_to_str(cmd.target)
+        new_color = cmd.color
+        arrow_from_str = cmd.arrow_from
+        for i, ann in enumerate(self.annotations):
+            if ann.target == target_str:
+                if arrow_from_str is None or ann.arrow_from == arrow_from_str:
+                    self.annotations[i] = AnnotationEntry(
+                        target=ann.target,
+                        text=ann.text,
+                        ephemeral=ann.ephemeral,
+                        arrow_from=ann.arrow_from,
+                        color=new_color,
+                        position=ann.position,
+                        arrow=ann.arrow,
+                    )
 
     def _apply_highlight(self, cmd: HighlightCommand) -> None:
         """\\highlight — ephemeral, cleared at next step."""
