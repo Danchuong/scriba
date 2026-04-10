@@ -2,7 +2,7 @@
 
 > **Target:** Polish error UX, PyPI final publish, Homebrew tap, launch messaging, HARD-TO-DISPLAY verification.
 > **Effort:** ~1.5 weeks solo, ~1 week with 2 engineers.
-> **Prerequisite:** v0.4.0 complete (all 11 primitives, `\fastforward`, `\substory`, docs site).
+> **Prerequisite:** v0.4.0 complete (all 11 primitives, `\substory`, docs site).
 > **Binds to:** [`04-roadmap.md`](04-roadmap.md) §7.
 
 ---
@@ -80,7 +80,7 @@
 - E10xx: parser errors
 - E11xx: scene/renderer errors
 - E12xx: Starlark worker errors
-- E13xx: `\fastforward` errors
+- E13xx: reserved (formerly `\fastforward`, removed)
 - E14xx: primitive errors (plane2d, metricplot, graph-stable)
 
 **Test additions:** ~10 tests verifying error format, line/col accuracy, URL presence.
@@ -163,7 +163,7 @@ end
 | 6 | Li Chao / CHT | Plane2D + geometry helpers | Covered | |
 | 7 | Splay amortized | Tree + MetricPlot | Covered | |
 | 8 | Persistent segtree | Tree (segtree) | Covered | |
-| 9 | Simulated Annealing | Graph + MetricPlot + `\fastforward` | Covered | |
+| 9 | Simulated Annealing | Graph + MetricPlot + `\compute` + `\step` | Covered | |
 | 10 | Heavy-Light Decomposition | Tree + Array | Covered | |
 
 **Accessibility checklist (per editorial):**

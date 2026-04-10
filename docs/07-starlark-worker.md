@@ -2,7 +2,7 @@
 
 > Status: **locked foundation spec** for Scriba v0.3. This file is the single source of truth for the Starlark worker subprocess wire protocol -- how the main Python process communicates with the Starlark execution host over stdin/stdout. `04-environments-spec.md` SS5 defines the **language contract** (allowed features, scope rules, determinism); this file defines the **transport and lifecycle**.
 >
-> Cross-references: [`04-environments-spec.md`](04-environments-spec.md) SS5 (Starlark host contract, scope rules, sandboxing), [`01-architecture.md`](01-architecture.md) SS`SubprocessWorkerPool`, [`03-diagram-plugin.md`](03-diagram-plugin.md) SS7 (diagram compute usage), [`09-animation-plugin.md`](09-animation-plugin.md) SS7 (animation compute usage, frame-local vs global scope), [`extensions/fastforward.md`](extensions/fastforward.md) SS5 (elevated resource limits for `\fastforward`).
+> Cross-references: [`04-environments-spec.md`](04-environments-spec.md) SS5 (Starlark host contract, scope rules, sandboxing), [`01-architecture.md`](01-architecture.md) SS`SubprocessWorkerPool`, [`03-diagram-plugin.md`](03-diagram-plugin.md) SS7 (diagram compute usage), [`09-animation-plugin.md`](09-animation-plugin.md) SS7 (animation compute usage, frame-local vs global scope).
 
 ## 1. Overview
 
@@ -14,7 +14,7 @@ The worker evaluates Starlark source blocks on behalf of `\compute{...}` command
 
 1. **One worker, shared across plugins.** `AnimationRenderer` and `DiagramRenderer` share a single `"starlark"` worker instance. The `SubprocessWorkerPool` ensures only one registration (idempotent `register()`; see `workers.py` line 406).
 2. **No state between requests.** Each `eval` request is self-contained. The worker does not cache bindings, environments, or function definitions across requests. This simplifies crash recovery and makes the worker trivially restartable.
-3. **Deterministic output.** Identical `(source, globals)` pairs MUST produce identical `bindings` maps. The worker does not inject randomness, time, or I/O. (The `rng` object for `\fastforward` is injected only during `fastforward` op requests; see SS3.2.)
+3. **Deterministic output.** Identical `(source, globals)` pairs MUST produce identical `bindings` maps. The worker does not inject randomness, time, or I/O.
 4. **Fail-fast error reporting.** Every error is surfaced as a structured JSON response with an error code from `04-environments-spec.md` SS11.4 (`E1150`--`E1157`). The worker never writes unstructured text to stdout.
 
 ## 2. Worker registration
@@ -84,36 +84,6 @@ The primary request type. Evaluates a Starlark source block in a fresh environme
 | `globals`  | object   | yes      | Key-value map of bindings to pre-populate in the Starlark global scope before executing `source`. Values must be JSON-serializable. Functions defined in earlier `\compute` blocks are serialized as their source text under a `"__fn__"` wrapper (see SS4). |
 | `source`   | string   | yes      | The raw Starlark source from inside the `\compute{...}` braces. Newlines are literal `\n` characters in the JSON string. |
 
-#### `fastforward` -- Run iteration loop with sampling
-
-Used by the `\fastforward` extension. Executes an `iterate(scene, rng)` callback for `total_iters` iterations and returns sampled snapshots.
-
-```json
-{
-  "op": "fastforward",
-  "env_id": "<string>",
-  "globals": { ... },
-  "iterate_source": "<starlark_source_of_iterate_fn>",
-  "scene": { ... },
-  "total_iters": 10000,
-  "sample_every": 500,
-  "seed": 42
-}
-```
-
-| Field              | Type     | Required | Description                                                              |
-|--------------------|----------|----------|--------------------------------------------------------------------------|
-| `op`               | string   | yes      | `"fastforward"`.                                                         |
-| `env_id`           | string   | yes      | Same as `eval`.                                                          |
-| `globals`          | object   | yes      | Global bindings (including the `iterate` function definition).           |
-| `iterate_source`   | string   | yes      | Source of the `iterate` function, re-evaluated in the worker's env.      |
-| `scene`            | object   | yes      | Initial scene state dict. Deep-copied before the first iteration.        |
-| `total_iters`      | integer  | yes      | Total number of iterations to run. 1 <= total_iters <= 10^6.             |
-| `sample_every`     | integer  | yes      | Take a snapshot every K iterations. >= 1.                                |
-| `seed`             | integer  | yes      | RNG seed for the injected `rng` object.                                  |
-
-The worker uses an elevated step cap of 10^9 ops for `fastforward` requests (vs 10^8 for `eval`). See `extensions/fastforward.md` SS5.
-
 #### `ping` -- Health check
 
 ```json
@@ -154,25 +124,6 @@ The host uses `ping` to verify the worker is alive after crash recovery. The `Pe
 | `bindings` | object   | All top-level bindings after evaluation. Includes both pre-existing globals that were passed in and new bindings created by the source. Functions are serialized as `{"__fn__": "<source>", "name": "<fn_name>"}`. Non-serializable values (if any) are omitted with a `debug` warning. |
 | `debug`    | array    | Captured `print()` output, one string per call. Empty array if no `print` calls were made.           |
 
-#### Success response (`fastforward`)
-
-```json
-{
-  "ok": true,
-  "snapshots": [
-    { "<key>": <json_value>, ... },
-    ...
-  ],
-  "debug": [...]
-}
-```
-
-| Field       | Type     | Description                                                             |
-|-------------|----------|-------------------------------------------------------------------------|
-| `ok`        | boolean  | `true` on success.                                                      |
-| `snapshots` | array    | Array of `N` scene-state dicts, one per sampled iteration. `N = floor(total_iters / sample_every)`. Each snapshot is a deep copy of the scene dict at that sample point. |
-| `debug`     | array    | Captured `print()` output from all iterations.                          |
-
 #### Error response
 
 ```json
@@ -202,7 +153,7 @@ The worker maps internal Starlark interpreter exceptions to the error codes defi
 | E1150  | Starlark syntax/parse error                            | Return error response with line/col from the parser exception.          |
 | E1151  | Starlark runtime error (including memory cap exceeded) | Return error response with traceback in `message`. If the process was killed by OOM, the host receives a `WorkerError` (broken pipe / empty response) and maps it to E1151. |
 | E1152  | Wall-clock timeout (>5s)                               | The worker runs a 5s internal alarm. If the alarm fires, it writes an E1152 error response and resets the interpreter. If the worker is unresponsive, the host's transport-level timeout (10s) kills the process and raises `WorkerError`, which the plugin maps to E1152. |
-| E1153  | Step-count cap exceeded (>10^8 ops, or >10^9 for `fastforward`) | The interpreter's step counter callback raises an internal exception. The worker catches it and returns an E1153 error response. |
+| E1153  | Step-count cap exceeded (>10^8 ops) | The interpreter's step counter callback raises an internal exception. The worker catches it and returns an E1153 error response. |
 | E1154  | Forbidden feature detected (`while`, `import`, `class`, `lambda`, `try`) | The worker's pre-parse scanner detects forbidden keywords before evaluation. Returns E1154 with the offending line/col. |
 | E1155  | Interpolation references unknown binding               | Raised by the host (Python side) during `${name}` resolution, not by the worker. Included here for completeness. |
 | E1156  | Interpolation subscript out of range                   | Raised by the host (Python side). Included here for completeness.       |
@@ -251,12 +202,12 @@ The ready signal MUST NOT be written to stdout (stdout is reserved for JSON resp
 
 The worker enforces resource limits per-evaluation to prevent runaway Starlark code from blocking the Pipeline.
 
-| Limit             | Regular `\compute` (`eval`) | `\fastforward`   | Enforcement mechanism                                          |
-|-------------------|-----------------------------|-------------------|----------------------------------------------------------------|
-| Wall clock        | 5 s                         | 5 s               | Internal alarm (SIGALRM on Unix) plus host transport timeout.  |
-| Starlark ops      | 10^8                        | 10^9              | Interpreter step-counter callback. Raises internal exception on breach. |
-| Memory            | 64 MB                       | 64 MB             | Process-level `RLIMIT_AS` / `RLIMIT_DATA` set at startup.     |
-| Recursion depth   | 1000 frames                 | 1000 frames       | Starlark interpreter `MaxRecursionDepth` setting.              |
+| Limit             | Value         | Enforcement mechanism                                          |
+|-------------------|---------------|----------------------------------------------------------------|
+| Wall clock        | 5 s           | Internal alarm (SIGALRM on Unix) plus host transport timeout.  |
+| Starlark ops      | 10^8          | Interpreter step-counter callback. Raises internal exception on breach. |
+| Memory            | 64 MB         | Process-level `RLIMIT_AS` / `RLIMIT_DATA` set at startup.     |
+| Recursion depth   | 1000 frames   | Starlark interpreter `MaxRecursionDepth` setting.              |
 
 ### 6.1 Wall-clock timeout
 
@@ -275,8 +226,6 @@ The Starlark interpreter's step counter is configured via a callback that fires 
 1. The callback raises an internal `StepLimitExceeded` exception.
 2. The worker catches it and writes an `E1153` error response.
 3. The worker resets and returns to the request loop.
-
-For `fastforward` requests, the worker reads the elevated cap (10^9) from the request metadata. The cap applies to the total operations across all iterations, not per-iteration.
 
 ### 6.3 Memory cap
 
@@ -325,7 +274,7 @@ print
 
 `print(*args)` is captured into the `debug` array of the response. It never writes to the worker's stdout (which is reserved for JSON responses) or stderr.
 
-No other names are pre-bound. Authors cannot access Python stdlib, Starlark stdlib extensions, or any host-injected objects beyond this set (except `rng` during `fastforward` requests).
+No other names are pre-bound. Authors cannot access Python stdlib, Starlark stdlib extensions, or any host-injected objects beyond this set.
 
 ## 8. Lifecycle
 
@@ -446,11 +395,7 @@ The worker uses `starlark-go` compiled as a Python extension (via cgo + cffi) or
 
 Alternative: a pure-Python Starlark implementation (e.g., `pystarlark`, `starlark-pgo`). The wire protocol is identical regardless of interpreter choice.
 
-### 10.2 PRNG for `fastforward`
-
-The worker implements the `rng` object using a PCG64 generator (or equivalent well-tested PRNG with 64-bit state). The exact generator choice is documented here for reproducibility but is not part of the frozen wire protocol. The `rng` interface is defined in `extensions/fastforward.md` SS4.1.
-
-### 10.3 Thread safety
+### 10.2 Thread safety
 
 The worker subprocess is single-threaded. Concurrent requests from multiple `render_block()` calls are serialized by `PersistentSubprocessWorker._lock` on the host side. The worker never receives concurrent requests.
 

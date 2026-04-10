@@ -205,19 +205,6 @@ class AnnotateCommand:
     arrow_from: Selector | None = None
 
 
-@dataclass(frozen=True, slots=True)
-class FastForwardCommand:
-    """``\\fastforward{total_iters}{sample_every=K, seed=S}``."""
-
-    line: int
-    col: int
-    total_iters: int
-    sample_every: int
-    seed: int
-    label: str = "ff"
-    narrate_template: str | None = None
-
-
 # ---------------------------------------------------------------------------
 # Union aliases
 # ---------------------------------------------------------------------------
@@ -230,7 +217,7 @@ MutationCommand = Union[
     AnnotateCommand,
 ]
 
-# All inner commands (8 base + fastforward + substory).
+# All inner commands (8 base + substory).
 Command = Union[
     ShapeCommand,
     ComputeCommand,
@@ -240,7 +227,6 @@ Command = Union[
     HighlightCommand,
     RecolorCommand,
     AnnotateCommand,
-    FastForwardCommand,
     "SubstoryBlock",
 ]
 
@@ -290,20 +276,6 @@ class SubstoryBlock:
 
 
 @dataclass(frozen=True, slots=True)
-class FastForwardMeta:
-    """Metadata attached to frames expanded from ``\\fastforward``.
-
-    Carries the information needed at materialisation time to run the
-    Starlark ``iterate(scene, rng)`` callback.
-    """
-
-    total_iters: int
-    sample_every: int
-    seed: int
-    frame_index: int  # 0-based index within the ff batch
-
-
-@dataclass(frozen=True, slots=True)
 class FrameIR:
     """One ``\\step`` block inside an animation."""
 
@@ -312,7 +284,6 @@ class FrameIR:
     compute: tuple[ComputeCommand, ...] = ()
     narrate_body: str | None = None
     substories: tuple[SubstoryBlock, ...] = ()
-    ff_meta: FastForwardMeta | None = None
 
 
 @dataclass(frozen=True, slots=True)

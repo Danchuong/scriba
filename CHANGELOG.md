@@ -32,8 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   animation frames.
 - `\substory` macro for composing nested editorial sub-narratives within a
   single animation timeline.
-- `\fastforward` macro to skip ahead in the animation timeline, collapsing
-  intermediate steps.
 
 ### Changed
 - Graph renderer now supports stable layout by default when `layout=stable` is

@@ -58,9 +58,10 @@ final implementations:
   circle and an animated Array for the butterfly passes.
 - **#5**: Plan called for `Graph + Matrix`. The actual implementation uses only
   Graph with `layout="stable"`; no Matrix/heatmap primitive was included.
-- **#9**: Plan called for `Graph + MetricPlot + \fastforward`. The actual
-  implementation uses Graph + MetricPlot but does not use the `\fastforward`
-  macro (steps are written out manually instead).
+- **#9**: Plan originally called for `Graph + MetricPlot + \fastforward`. The
+  `\fastforward` extension was removed (inferior output vs manual `\compute` +
+  `\step`). The actual implementation uses Graph + MetricPlot with manually
+  authored steps.
 
 ## Artifacts Inventory
 

@@ -70,7 +70,7 @@ The mode is selected at render time, not at authoring time. Write once, deploy t
 Scriba is a compile-time system. The pipeline is:
 
 1. **Parse** -- LaTeX `\begin{animation}` environments are extracted and parsed into an AST of shapes, steps, highlights, recolors, and narrations.
-2. **Compute** -- `\compute{...}` blocks run deterministic Starlark code in a sandboxed subprocess worker. No RNG (unless seeded via `\fastforward`), no I/O, no network. Same source + same Scriba version = byte-identical output.
+2. **Compute** -- `\compute{...}` blocks run deterministic Starlark code in a sandboxed subprocess worker. No RNG, no I/O, no network. Same source + same Scriba version = byte-identical output.
 3. **Emit** -- The scene graph is materialized into SVG frames with CSS state classes and inline styles. Each frame is a `<li>` inside an `<ol>`, wrapped in a `<figure>`.
 
 Everything happens at build time. The output is a frozen filmstrip, not a runtime application.
@@ -92,7 +92,7 @@ Scriba ships with 11 primitive types that cover the visualization vocabulary of 
 | Plane2D | 2D coordinate plane for geometry, CHT, Li Chao |
 | MetricPlot | Live scalar tracking across frames (potential, cost) |
 
-Plus 5 extensions: `\hl` (step-synced LaTeX highlighting), figure-embed (SVG/PNG escape hatch), `\substory` (nested drilldown), `\fastforward` (sampled iteration loops), and CSS `@keyframes` slots.
+Plus 4 extensions: `\hl` (step-synced LaTeX highlighting), figure-embed (SVG/PNG escape hatch), `\substory` (nested drilldown), and CSS `@keyframes` slots.
 
 ## The 10 hard problems
 

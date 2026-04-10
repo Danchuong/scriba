@@ -55,11 +55,10 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\recolor` | `{target}{state=...}` | both | persistent |
 | `\annotate` | `{target}{params}` | both | persistent (default), ephemeral if `ephemeral=true` |
 
-### 2.2 Extension Commands (3)
+### 2.2 Extension Commands (2)
 
 | Command | Signature | Contexts | Spec |
 |---------|-----------|----------|------|
-| `\fastforward` | `{N}{sample_every=K, seed=S}` | animation step only | E3 |
 | `\substory` | `[title=..., id=...]` | animation step only | E4 |
 | `\endsubstory` | (no args) | closes `\substory` | E4 |
 
@@ -282,11 +281,11 @@ reversed, any, all, sum, divmod, print
 
 ### 6.4 Resource Limits
 
-| Limit | Regular `\compute` | `\fastforward` |
-|-------|--------------------|----|
-| Wall clock | 5s | 5s |
-| Operations | 10^8 | 10^9 |
-| Memory | 64 MB | 64 MB |
+| Limit | Value |
+|-------|-------|
+| Wall clock | 5s |
+| Operations | 10^8 |
+| Memory | 64 MB |
 
 ### 6.5 Scope Rules
 
@@ -305,28 +304,14 @@ reversed, any, all, sum, divmod, print
 - Zero JS: uses CSS `:target` selector
 - Step ID must match `\step[label=...]` or implicit `step{N}` → `E1321`
 
-### 7.2 `\fastforward{N}{params}` (E3)
-
-| Parameter | Required | Constraint |
-|-----------|----------|-----------|
-| `total_iters` | yes | 1 to 10^6 |
-| `sample_every` | yes | ≥1; `floor(N/sample_every)` ≤ 100 → `E1341` |
-| `seed` | yes | explicit → `E1342` |
-| `label` | no | default `"ff"` |
-| `narrate_template` | no | Custom narration text for generated frames. If omitted, defaults to `"Iteration {i} / {N} (frame {k})."` |
-
-- A `\narrate{...}` immediately following `\fastforward` is consumed as the `narrate_template`.
-- Requires `iterate(scene, rng)` in preceding `\compute` → `E1343`
-- RNG methods: `random()`, `randint(lo,hi)`, `uniform(lo,hi)`, `shuffle(lst)`, `choice(lst)`
-
-### 7.3 `\substory` / `\endsubstory` (E4)
+### 7.2 `\substory` / `\endsubstory` (E4)
 
 - Animation steps only → `E1362`
 - Max nesting depth: 3 → `E1360`
 - Substory mutations ephemeral (parent state saved/restored)
 - Rendered as nested `<section class="scriba-substory">` with own Prev/Next controls
 
-### 7.4 `@keyframes` Slots (E5)
+### 7.3 `@keyframes` Slots (E5)
 
 Named CSS animation presets: `rotate`, `orbit`, `pulse`, `trail`, `fade-loop`.
 Inlined into frame `<style>` at build time.
@@ -676,20 +661,6 @@ Print media: lines forced to `stroke: #000`.
 | E1323 | `\hl` in diagram |
 | E1324 | Cross-block step_id |
 
-### `\fastforward` Errors (E1340–E1349)
-
-| Code | Meaning |
-|------|---------|
-| E1340 | total_iters > 10^6 |
-| E1341 | Sampled frames > 100 |
-| E1342 | Missing seed |
-| E1343 | Missing `iterate()` function |
-| E1344 | Non-deterministic callback |
-| E1345 | `\fastforward` in prelude/diagram |
-| E1346 | `total_iters` is 0 or negative |
-| E1347 | `sample_every` is 0 or negative |
-| E1348 | N=1 sampled frame from `\fastforward` (warning; consider `\step` instead) |
-
 ### `\substory` Errors (E1360–E1369)
 
 | Code | Meaning |
@@ -754,7 +725,6 @@ Print media: lines forced to `stroke: #000`.
 - No randomness in `\compute` (no `random` module)
 - No I/O or time-dependent operations
 - Dict iteration is insertion-order (Starlark spec)
-- Seeded RNG for `\fastforward` (seed mandatory)
 - `layout_seed` for Graph/Tree (deterministic layout)
 - Optional CI check: `SCRIBA_CHECK_DETERMINISM=1`
 
@@ -766,12 +736,9 @@ Print media: lines forced to `stroke: #000`.
 |-----------|-------|------------|
 | Frames (soft) | 30 | E1180 (warning) |
 | Frames (hard) | 100 | E1181 (error) |
-| Starlark ops (regular) | 10^8 | E1153 |
-| Starlark ops (fastforward) | 10^9 | E1153 |
+| Starlark ops | 10^8 | E1153 |
 | Starlark wall clock | 5s | E1152 |
 | Starlark memory | 64 MB | E1151 |
-| Fastforward total_iters | 10^6 | E1340 |
-| Fastforward sampled frames | 100 | E1341 |
 | Substory nesting depth | 3 | E1360 |
 | Graph stable nodes | 20 | E1501 (warning) |
 | Graph stable frames | 50 | E1502 (warning) |
@@ -787,7 +754,6 @@ Print media: lines forced to `stroke: #000`.
 | `06-primitives.md` | 6 base primitive specs |
 | `00-ARCHITECTURE-DECISION-2026-04-09.md` | Pivot #2 rationale (10 additions) |
 | `extensions/hl-macro.md` | E2 spec |
-| `extensions/fastforward.md` | E3 spec |
 | `extensions/substory.md` | E4 spec |
 | `extensions/keyframe-animation.md` | E5 spec |
 | `extensions/figure-embed.md` | E1 spec |

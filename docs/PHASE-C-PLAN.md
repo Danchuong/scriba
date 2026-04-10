@@ -1,14 +1,14 @@
 # Phase C — v0.4.0 Implementation Plan
 
-> **Target:** `Plane2D` (P3) + `MetricPlot` (P4) + `Graph layout=stable` (P5) + `\substory` (E4) + `\fastforward` (E3) + docs site + integration examples.
+> **Target:** `Plane2D` (P3) + `MetricPlot` (P4) + `Graph layout=stable` (P5) + `\substory` (E4) + docs site + integration examples.
+> **Note:** `\fastforward` (E3) was removed — inferior output compared to manual `\compute` + `\step`.
 > **Effort:** ~5 weeks solo, ~3 weeks with 2 engineers.
 > **Prerequisite:** v0.3.0 complete (all 8 primitives + DiagramRenderer + interactive widget).
 > **Binds to:** [`04-roadmap.md`](04-roadmap.md) §6,
 > [`primitives/plane2d.md`](primitives/plane2d.md),
 > [`primitives/metricplot.md`](primitives/metricplot.md),
 > [`primitives/graph-stable-layout.md`](primitives/graph-stable-layout.md),
-> [`extensions/substory.md`](extensions/substory.md),
-> [`extensions/fastforward.md`](extensions/fastforward.md).
+> [`extensions/substory.md`](extensions/substory.md).
 
 ---
 
@@ -19,7 +19,6 @@
 | Primitive P3 | **Plane2D** — 2D coordinate plane with lines/points/segments/polygons/regions | `primitives/plane2d.md` |
 | Primitive P4 | **MetricPlot** — compile-time SVG line chart tracking scalars across frames | `primitives/metricplot.md` |
 | Primitive P5 | **Graph layout=stable** — SA joint-optimization for fixed node positions | `primitives/graph-stable-layout.md` |
-| Extension E3 | **`\fastforward`** — bulk Starlark iteration with sampled frames | `extensions/fastforward.md` |
 | Extension E4 | **`\substory`** — inline nested drilldown frames | `extensions/substory.md` |
 | Docs site | Astro Starlight site from `docs/scriba/` | `04-roadmap.md` §6.2 |
 | Integration | `examples/plain-html/`, `examples/nextjs/`, `examples/astro/`, `examples/mdbook/` | `04-roadmap.md` §6.2 |
@@ -35,17 +34,16 @@ Phase C has 8 deliverables. Ordered by dependency chain and engineering risk.
 
 | # | Deliverable | Effort | Why first |
 |---|-------------|--------|-----------|
-| 1 | **`\fastforward` (E3)** | 3 days | Required by MetricPlot + SA demos; touches parser, Starlark host, scene materializer |
-| 2 | **`\substory` (E4)** | 2 days | Touches parser + emitter + scene; better to stabilize grammar changes early |
+| 1 | **`\substory` (E4)** | 2 days | Touches parser + emitter + scene; better to stabilize grammar changes early |
 
-After these: parser extended with 2 new commands, Starlark worker has elevated step cap + seeded RNG.
+After this: parser extended with substory commands.
 
 ### Tier 2 — New primitives (independent of each other, parallel-safe)
 
 | # | Deliverable | Effort | Why |
 |---|-------------|--------|-----|
 | 3 | **Plane2D (P3)** | 4 days | Most complex new primitive; geometry helpers, math→SVG transform, 3-layer SVG |
-| 4 | **MetricPlot (P4)** | 3 days | Compile-time line chart; depends on `\fastforward` for SA demos |
+| 4 | **MetricPlot (P4)** | 3 days | Compile-time line chart; used with manual `\compute` + `\step` for SA demos |
 | 5 | **Graph layout=stable (P5)** | 3 days | SA layout optimizer; pure Python, self-contained |
 
 After these: all 11 primitives/modes working, 9/10 HARD-TO-DISPLAY covered.

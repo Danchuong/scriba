@@ -31,11 +31,6 @@ from scriba.animation.extensions.hl_macro import process_hl_macros
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
 from scriba.animation.parser.ast import (
     AnimationIR,
-    ApplyCommand,
-    CellAccessor,
-    FastForwardMeta,
-    FrameIR as FrameIRNode,
-    Selector,
     ShapeCommand,
     SubstoryBlock,
 )
@@ -53,7 +48,6 @@ from scriba.animation.primitives import (
     Tree,
 )
 from scriba.animation.scene import FrameSnapshot, SceneState
-from scriba.animation.starlark_rng import StarlarkRNG
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
 from scriba.core.errors import RendererError, ValidationError
@@ -420,59 +414,7 @@ class AnimationRenderer:
         total_frames = len(ir.frames)
         frame_data_list: list[FrameData] = []
 
-        # Collect all compute sources that may define iterate()
-        all_compute_sources: list[str] = [
-            cb.source for cb in ir.prelude_compute
-        ]
-
-        # State carried across consecutive fastforward frames
-        ff_rng: StarlarkRNG | None = None
-        ff_scene_dict: dict[str, Any] | None = None
-
         for frame_ir in ir.frames:
-            # Accumulate frame-level compute sources (they may define iterate)
-            if frame_ir.compute and frame_ir.ff_meta is None:
-                for cb in frame_ir.compute:
-                    all_compute_sources.append(cb.source)
-
-            if frame_ir.ff_meta is not None:
-                meta = frame_ir.ff_meta
-
-                # First frame in a new ff batch: initialise RNG and scene dict
-                if meta.frame_index == 0:
-                    ff_rng = StarlarkRNG(meta.seed)
-                    ff_scene_dict = self._build_scene_dict(
-                        ir.shapes, state, primitives=None,
-                    )
-
-                # Run iterate() for sample_every iterations
-                if ff_rng is not None and ff_scene_dict is not None:
-                    ff_scene_dict = self._run_ff_iterations(
-                        ff_scene_dict,
-                        ff_rng,
-                        meta.sample_every,
-                        state.bindings,
-                        compute_sources=all_compute_sources,
-                    )
-
-                    # Inject ApplyCommands from the scene dict into the frame
-                    ff_commands = self._scene_dict_to_commands(
-                        ff_scene_dict, ir.shapes, frame_ir.line,
-                    )
-                    # Create a new FrameIR with the injected commands
-                    frame_ir = FrameIRNode(
-                        line=frame_ir.line,
-                        commands=tuple(ff_commands),
-                        compute=frame_ir.compute,
-                        narrate_body=frame_ir.narrate_body,
-                        substories=frame_ir.substories,
-                        ff_meta=frame_ir.ff_meta,
-                    )
-            else:
-                # Reset ff state when we leave a ff batch
-                ff_rng = None
-                ff_scene_dict = None
-
             snap = state.apply_frame(frame_ir, starlark_host=self._starlark_host)
 
             # Process substories for this frame
@@ -492,140 +434,6 @@ class AnimationRenderer:
             frame_data_list.append(fd)
 
         return frame_data_list
-
-    # ---- fastforward helpers ----
-
-    @staticmethod
-    def _build_scene_dict(
-        shapes: tuple[ShapeCommand, ...],
-        state: SceneState,
-        primitives: dict[str, Any] | None,
-    ) -> dict[str, Any]:
-        """Build a simple dict representing current shape state for iterate().
-
-        For an Array shape ``a`` with size 5, produces::
-
-            {"a": [5, 3, 1, 4, 2]}
-
-        Values are read from SceneState first (in case prior frames changed
-        them), falling back to the shape declaration's ``data`` parameter.
-        """
-        scene_dict: dict[str, Any] = {}
-        for shape in shapes:
-            if shape.type_name == "Array":
-                size = int(shape.params.get("size", shape.params.get("n", 0)))
-                data = list(shape.params.get("data", []))
-                if not data:
-                    data = [0] * size
-
-                # Overlay any values already set in SceneState
-                shape_targets = state.shape_states.get(shape.name, {})
-                arr: list[Any] = list(data)
-                for i in range(size):
-                    target_key = f"{shape.name}.cell[{i}]"
-                    ts = shape_targets.get(target_key)
-                    if ts is not None and ts.value is not None:
-                        # Try to preserve numeric types
-                        try:
-                            arr[i] = int(ts.value)
-                        except (ValueError, TypeError):
-                            try:
-                                arr[i] = float(ts.value)
-                            except (ValueError, TypeError):
-                                arr[i] = ts.value
-                scene_dict[shape.name] = arr
-            # Future: add Graph, Matrix, etc. here
-        return scene_dict
-
-    def _run_ff_iterations(
-        self,
-        scene_dict: dict[str, Any],
-        rng: StarlarkRNG,
-        n_iters: int,
-        bindings: dict[str, Any],
-        compute_sources: list[str] | None = None,
-    ) -> dict[str, Any]:
-        """Call the Starlark ``iterate(scene, rng)`` function *n_iters* times.
-
-        The iterate function is defined in a prior ``\\compute`` block.
-        We replay the compute source in-process using a restricted ``exec``
-        (the same sandbox rules as the starlark worker) so that the
-        ``StarlarkRNG`` object is directly accessible without JSON
-        serialisation.
-        """
-        if not compute_sources:
-            logger.warning(
-                "fastforward: no compute sources with iterate(); "
-                "frames will have no state changes"
-            )
-            return scene_dict
-
-        # Build a single source: re-define iterate(), then call it n_iters
-        # times in a for loop.
-        parts = list(compute_sources)
-        parts.append(
-            f"for _ff_i in range({n_iters}):\n"
-            f"    scene = iterate(scene, rng)\n"
-        )
-        combined_source = "\n".join(parts)
-
-        # Execute in a restricted namespace with the scene dict and rng.
-        namespace: dict[str, Any] = {
-            "__builtins__": {
-                "list": list, "dict": dict, "tuple": tuple,
-                "set": set, "str": str, "int": int, "float": float,
-                "bool": bool, "len": len, "range": range,
-                "min": min, "max": max, "abs": abs, "sorted": sorted,
-                "enumerate": enumerate, "zip": zip, "reversed": reversed,
-                "any": any, "all": all, "sum": sum,
-                "True": True, "False": False, "None": None,
-                "isinstance": isinstance, "round": round,
-                "map": map, "filter": filter, "print": lambda *a, **k: None,
-            },
-            "scene": scene_dict,
-            "rng": rng,
-        }
-
-        try:
-            exec(compile(combined_source, "<fastforward>", "exec"), namespace)  # noqa: S102
-        except Exception:
-            logger.exception("fastforward: iterate() execution failed")
-            return scene_dict
-
-        result = namespace.get("scene", scene_dict)
-        if isinstance(result, dict):
-            return result
-        return scene_dict
-
-    @staticmethod
-    def _scene_dict_to_commands(
-        scene_dict: dict[str, Any],
-        shapes: tuple[ShapeCommand, ...],
-        line: int,
-    ) -> list[ApplyCommand]:
-        """Convert a scene dict back to ApplyCommand mutations.
-
-        For each array element, generates an ApplyCommand setting the value.
-        """
-        commands: list[ApplyCommand] = []
-        for shape in shapes:
-            if shape.type_name == "Array":
-                arr = scene_dict.get(shape.name)
-                if arr is None:
-                    continue
-                for i, val in enumerate(arr):
-                    commands.append(
-                        ApplyCommand(
-                            line=line,
-                            col=0,
-                            target=Selector(
-                                shape_name=shape.name,
-                                accessor=CellAccessor(indices=(i,)),
-                            ),
-                            params={"value": val},
-                        )
-                    )
-        return commands
 
     def _materialise_substory(
         self,

@@ -13,7 +13,6 @@ from .ast import (
     AnnotateCommand,
     ApplyCommand,
     ComputeCommand,
-    FastForwardCommand,
     FrameIR,
     HighlightCommand,
     InterpolationRef,
@@ -37,9 +36,6 @@ _VALID_ANNOTATE_COLORS = frozenset({"info", "warn", "good", "error", "muted"})
 _VALID_OPTION_KEYS = frozenset({"width", "height", "id", "label", "layout", "grid"})
 _VALID_SUBSTORY_OPTION_KEYS = frozenset({"title", "id"})
 _MAX_SUBSTORY_DEPTH = 3
-_VALID_FF_PARAMS = frozenset({"sample_every", "seed", "label"})
-_MAX_TOTAL_ITERS = 10**6
-_MAX_FF_FRAMES = 100
 
 
 class SceneParser:
@@ -209,42 +205,6 @@ class SceneParser:
                         col=tok.col,
                     )
 
-                elif cmd_name == "fastforward":
-                    if in_prelude:
-                        raise ValidationError(
-                            "\\fastforward must appear after the first "
-                            "\\step, not in the prelude",
-                            position=tok.col,
-                            code="E1345",
-                            line=tok.line,
-                            col=tok.col,
-                        )
-                    # Close the current frame before expanding
-                    frames.append(
-                        FrameIR(
-                            line=frame_line,
-                            commands=tuple(frame_commands),
-                            compute=tuple(frame_compute),
-                            narrate_body=frame_narrate,
-                            substories=tuple(frame_substories),
-                        ),
-                    )
-                    ff_cmd = self._parse_fastforward()
-                    from scriba.animation.extensions.fastforward import (
-                        expand_fastforward,
-                    )
-                    ff_frames = expand_fastforward(ff_cmd)
-                    frames.extend(ff_frames)
-                    # Reset frame state — next \step will start fresh
-                    frame_line = ff_cmd.line
-                    frame_commands = []
-                    frame_compute = []
-                    frame_narrate = None
-                    frame_narrate_seen = False
-                    frame_substories = []
-                    # Mark that we need a new \step to open the next frame
-                    in_prelude = True
-
                 else:
                     raise ValidationError(
                         f"unknown command \\{cmd_name}",
@@ -404,129 +364,6 @@ class SceneParser:
             label=str(params["label"]) if "label" in params else None,
             position=position, color=color, arrow=arrow,
             ephemeral=ephemeral, arrow_from=arrow_from,
-        )
-
-    def _parse_fastforward(self) -> FastForwardCommand:
-        """Parse ``\\fastforward{total_iters}{sample_every=K, seed=S}``."""
-        tok = self._advance()  # consume \fastforward token
-        line, col = tok.line, tok.col
-
-        # First brace arg: total_iters
-        total_iters_str = self._read_brace_arg(tok).strip()
-        try:
-            total_iters = int(total_iters_str)
-        except ValueError:
-            raise ValidationError(
-                f"total_iters must be a positive integer, got {total_iters_str!r}",
-                position=col,
-                code="E1346",
-                line=line,
-                col=col,
-            )
-
-        if total_iters <= 0:
-            raise ValidationError(
-                f"total_iters must be a positive integer, got {total_iters}",
-                position=col,
-                code="E1346",
-                line=line,
-                col=col,
-            )
-
-        if total_iters > _MAX_TOTAL_ITERS:
-            raise ValidationError(
-                f"total_iters exceeds maximum of {_MAX_TOTAL_ITERS}, got {total_iters}",
-                position=col,
-                code="E1340",
-                line=line,
-                col=col,
-            )
-
-        # Second brace arg: key=value params
-        params = self._read_param_brace()
-
-        # Extract sample_every (required)
-        sample_every_raw = params.get("sample_every")
-        if sample_every_raw is None:
-            raise ValidationError(
-                "sample_every parameter is required",
-                position=col,
-                code="E1347",
-                line=line,
-                col=col,
-            )
-        sample_every = int(sample_every_raw)
-        if sample_every <= 0:
-            raise ValidationError(
-                f"sample_every must be a positive integer, got {sample_every}",
-                position=col,
-                code="E1347",
-                line=line,
-                col=col,
-            )
-
-        # Extract seed (required)
-        seed_raw = params.get("seed")
-        if seed_raw is None:
-            raise ValidationError(
-                "seed parameter is required for deterministic builds",
-                position=col,
-                code="E1342",
-                line=line,
-                col=col,
-            )
-        seed = int(seed_raw)
-
-        # Extract optional label
-        label = str(params.get("label", "ff"))
-
-        # Validate N = floor(total_iters / sample_every)
-        n_frames = total_iters // sample_every
-        if n_frames == 0:
-            raise ValidationError(
-                f"total_iters ({total_iters}) < sample_every "
-                f"({sample_every}) produces 0 frames",
-                position=col,
-                code="E1346",
-                line=line,
-                col=col,
-            )
-        if n_frames > _MAX_FF_FRAMES:
-            raise ValidationError(
-                f"N = floor({total_iters}/{sample_every}) = "
-                f"{n_frames} exceeds maximum of {_MAX_FF_FRAMES} frames",
-                position=col,
-                code="E1341",
-                line=line,
-                col=col,
-            )
-
-        # Optionally parse a following \narrate{...} as the template
-        narrate_template: str | None = None
-        self._skip_newlines()
-        if not self._at_end() and self._peek().kind == TokenKind.BACKSLASH_CMD:
-            if self._peek().value == "narrate":
-                narr = self._parse_narrate()
-                narrate_template = narr.body
-
-        # Warn if N == 1
-        if n_frames == 1:
-            import warnings
-            warnings.warn(
-                f"E1348: N=1 sampled frame from \\fastforward; "
-                f"consider using \\step instead "
-                f"(line {line}, col {col})",
-                stacklevel=2,
-            )
-
-        return FastForwardCommand(
-            line=line,
-            col=col,
-            total_iters=total_iters,
-            sample_every=sample_every,
-            seed=seed,
-            label=label,
-            narrate_template=narrate_template,
         )
 
     def _parse_substory(self) -> SubstoryBlock:

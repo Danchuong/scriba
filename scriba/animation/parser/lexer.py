@@ -68,7 +68,6 @@ _KNOWN_COMMANDS = frozenset(
         "highlight",
         "recolor",
         "annotate",
-        "fastforward",
         "substory",
         "endsubstory",
     }
