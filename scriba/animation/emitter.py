@@ -433,7 +433,12 @@ def emit_substory_html(
     primitives: dict[str, Any],
     viewbox: str,
 ) -> str:
-    """Produce interactive ``<section class="scriba-substory">`` with step controller."""
+    """Produce interactive ``<section class="scriba-substory">`` with step controller.
+
+    Uses ``data-scriba-frames`` attribute with JSON-encoded frame data
+    so no ``<script>`` is needed inside the substory section.  The parent
+    widget's initialiser calls ``_initSubWidget()`` after injection.
+    """
     global _substory_counter
     _substory_counter += 1
     widget_id = f"sub-{scene_id}-{_substory_counter}"
@@ -447,17 +452,16 @@ def emit_substory_html(
     sub_primitives = substory.primitives if substory.primitives else primitives
     sub_viewbox = compute_viewbox(sub_primitives) if substory.primitives else viewbox
 
-    # Build JS frame data for substory
-    js_sub_frames: list[str] = []
+    # Build JSON frame data for substory (stored in data attribute)
+    import json as _json
+    json_frames: list[dict[str, str]] = []
     for sub_frame in substory.frames:
         svg_html = _emit_frame_svg(sub_frame, sub_primitives, scene_id, sub_viewbox)
-        svg_esc = _escape_js(svg_html)
-        narr_esc = _escape_js(sub_frame.narration_html)
-        js_sub_frames.append(
-            f'{{svg:`{svg_esc}`,narration:`{narr_esc}`}}'
-        )
-
-    js_frames_str = ",\n      ".join(js_sub_frames)
+        json_frames.append({
+            "svg": svg_html,
+            "narration": sub_frame.narration_html,
+        })
+    frames_json = _escape(_json.dumps(json_frames))
 
     dots_html = "\n        ".join(
         f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
@@ -469,7 +473,8 @@ def emit_substory_html(
         f'               aria-label="Sub-computation: {_escape(title)}"\n'
         f'               data-substory-id="{_escape(sub_id)}"\n'
         f'               data-substory-depth="{depth}">\n'
-        f'        <div class="scriba-substory-widget" id="{widget_id}">\n'
+        f'        <div class="scriba-substory-widget" id="{widget_id}"\n'
+        f'             data-scriba-frames="{frames_json}">\n'
         f'          <div class="scriba-controls scriba-substory-controls">\n'
         f'            <button class="scriba-btn-prev" disabled>Prev</button>\n'
         f'            <span class="scriba-step-counter">Sub-step 1 / {sub_frame_count}</span>\n'
@@ -482,33 +487,6 @@ def emit_substory_html(
         f'          <div class="scriba-stage"></div>\n'
         f'          <p class="scriba-narration"></p>\n'
         f'        </div>\n'
-        f'        <script>\n'
-        f'        (function(){{\n'
-        f"          var W=document.getElementById('{_escape_js(widget_id)}');\n"
-        f'          var frames=[\n'
-        f'            {js_frames_str}\n'
-        f'          ];\n'
-        f'          var cur=0;\n'
-        f"          var stage=W.querySelector('.scriba-stage');\n"
-        f"          var narr=W.querySelector('.scriba-narration');\n"
-        f"          var ctr=W.querySelector('.scriba-step-counter');\n"
-        f"          var prev=W.querySelector('.scriba-btn-prev');\n"
-        f"          var next=W.querySelector('.scriba-btn-next');\n"
-        f"          var dots=W.querySelectorAll('.scriba-dot');\n"
-        f'          function show(i){{\n'
-        f'            cur=i;\n'
-        f'            stage.innerHTML=frames[i].svg;\n'
-        f'            narr.textContent=frames[i].narration;\n'
-        f"            ctr.textContent='Sub-step '+(i+1)+' / '+frames.length;\n"
-        f'            prev.disabled=i===0;\n'
-        f'            next.disabled=i===frames.length-1;\n'
-        f"            dots.forEach(function(d,j){{d.className='scriba-dot'+(j===i?' active':j<i?' done':'');}});\n"
-        f'          }}\n'
-        f"          prev.addEventListener('click',function(){{if(cur>0)show(cur-1);}});\n"
-        f"          next.addEventListener('click',function(){{if(cur<frames.length-1)show(cur+1);}});\n"
-        f'          show(0);\n'
-        f'        }})();\n'
-        f'        </script>\n'
         f'      </section>\n'
     )
 
@@ -591,11 +569,26 @@ def emit_interactive_html(
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
   var dots=W.querySelectorAll('.scriba-dot');
+  function initSub(el){{
+    var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
+    var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
+    var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
+    var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
+    function sh(i){{sc=i;ss.innerHTML=fd[i].svg;sn.textContent=fd[i].narration;
+      sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+      sp.disabled=i===0;sx.disabled=i===fd.length-1;
+      sd.forEach(function(d,j){{d.className='scriba-dot'+(j===i?' active':j<i?' done':'');}});
+    }}
+    sp.addEventListener('click',function(){{if(sc>0)sh(sc-1);}});
+    sx.addEventListener('click',function(){{if(sc<fd.length-1)sh(sc+1);}});
+    sh(0);
+  }}
   function show(i){{
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.textContent=frames[i].narration;
     subC.innerHTML=frames[i].substory||'';
+    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
