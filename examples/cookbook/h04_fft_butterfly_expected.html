@@ -1,551 +1,685 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scriba — h04_fft_butterfly</title>
+<title>Scriba — FFT Butterfly (Expected)</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  max-width: 720px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  background: #fafafa;
-  color: #212529;
-}
-h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
-
-/* Widget container */
-.scriba-widget {
-  border: 1px solid #d0d7de;
-  border-radius: 10px;
-  background: #ffffff;
-  overflow: hidden;
+/* ── Reset & Base ─────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:#13131a;color:#e0e0e8;
+  max-width:780px;margin:0 auto;padding:1.5rem 1rem 3rem;
+  line-height:1.55;
 }
 
-/* Controls bar */
-.scriba-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-  user-select: none;
-}
-.scriba-controls button {
-  background: #ffffff;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-  color: #212529;
-  transition: background 0.15s, border-color 0.15s;
-}
-.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
-.scriba-controls button:active { background: #e4e4e4; }
-.scriba-controls button:disabled { opacity: 0.35; cursor: default; }
-.scriba-step-counter {
-  font: 600 0.78rem ui-monospace, "SF Mono", monospace;
-  color: #6c757d;
-  min-width: 5rem;
-  text-align: center;
+/* ── Wong CVD-safe palette ────────────────────────── */
+:root{
+  --idle:    #f6f8fa;
+  --current: #0072B2;
+  --done:    #009E73;
+  --error:   #D55E00;
+  --good:    #56B4E9;
+  --dim:     #e8e8e8;
+  --bg-widget: #1e1e2e;
+  --bg-svg:    #252536;
+  --border:    #35354a;
+  --text:      #e0e0e8;
+  --text-dim:  #8888a0;
 }
 
-/* Progress dots */
-.scriba-progress {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
-.scriba-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #d0d7de;
-  transition: background 0.2s;
-}
-.scriba-dot.active { background: #0072B2; }
-.scriba-dot.done { background: #009E73; }
-
-/* Stage */
-.scriba-stage {
-  padding: 1.25rem 1rem;
-  display: flex;
-  justify-content: center;
-  min-height: 100px;
-}
-.scriba-stage-svg { width: 100%; height: auto; }
-
-/* Narration */
-.scriba-narration {
-  padding: 0.75rem 1rem;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: #212529;
-  border-top: 1px solid #f0f0f0;
-  min-height: 2.5rem;
+h1{
+  font-size:1.35rem;font-weight:700;
+  margin-bottom:1.2rem;
+  background:linear-gradient(135deg,var(--error),var(--good));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:-0.02em;
 }
 
-/* SVG text */
-svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: central;
+/* ── Widget chrome ────────────────────────────────── */
+.widget{
+  background:var(--bg-widget);
+  border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
+  margin-bottom:1.5rem;
 }
-.idx {
-  font: 500 10px ui-monospace, monospace;
-  fill: #6c757d;
+.controls{
+  display:flex;align-items:center;gap:.7rem;
+  padding:.55rem 1rem;
+  background:#1a1a28;border-bottom:1px solid var(--border);
+  user-select:none;
+}
+.controls button{
+  background:#2a2a3e;border:1px solid var(--border);
+  border-radius:6px;padding:.3rem .75rem;
+  font-size:.78rem;color:var(--text);cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+.controls button:hover{background:#35354a;border-color:#555}
+.controls button:active{background:#444}
+.controls button:disabled{opacity:.3;cursor:default}
+.step-label{font-size:.78rem;color:var(--text-dim);margin-left:auto}
+
+.canvas{padding:1.2rem;min-height:340px;position:relative}
+.step{display:none}
+.step.active{display:block}
+
+.narration{
+  padding:.9rem 1.2rem;
+  border-top:1px solid var(--border);
+  font-size:.85rem;color:var(--text-dim);
+  line-height:1.6;
+}
+.narration strong{color:var(--good)}
+
+.section-title{
+  font-size:1.05rem;font-weight:600;
+  margin-bottom:.8rem;color:var(--text-dim);
 }
 
-/* Frame transition */
-.scriba-stage svg, .scriba-narration {
-  transition: opacity 0.2s ease;
-}
+/* ── SVG helpers ──────────────────────────────────── */
+svg text{font-family:inherit}
+.label{fill:var(--text);font-size:11px;text-anchor:middle;dominant-baseline:central}
+.label-dim{fill:var(--text-dim);font-size:10px;text-anchor:middle;dominant-baseline:central}
+.val{fill:#fff;font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+.val-sm{fill:#fff;font-size:10px;font-weight:600;text-anchor:middle;dominant-baseline:central}
 
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
-}
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
-}
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+.cell-idle{fill:#2a2a3e;stroke:var(--border);stroke-width:1}
+.cell-current{fill:var(--current);stroke:var(--current);stroke-width:1.5}
+.cell-done{fill:var(--done);stroke:var(--done);stroke-width:1.5}
+.cell-good{fill:var(--good);stroke:var(--good);stroke-width:1.5}
+.cell-dim{fill:#1e1e2e;stroke:var(--border);stroke-width:1}
+.cell-even{fill:var(--current);stroke:var(--current);stroke-width:1.5}
+.cell-odd{fill:#2a2a3e;stroke:var(--border);stroke-width:1.5;opacity:.4}
 
-/* Theme toggle */
-.theme-toggle {
-  position: fixed; top: 1rem; right: 1rem;
-  padding: 0.35rem 0.7rem; cursor: pointer;
-  border: 1px solid #ccc; border-radius: 6px; background: white;
-  font-size: 0.8rem;
-}
+/* Butterfly arrows */
+.bfly-plus{stroke:var(--done);stroke-width:1.8;fill:none}
+.bfly-minus{stroke:var(--error);stroke-width:1.8;fill:none;stroke-dasharray:5,3}
 
-/* Dark mode */
-[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
-[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
-[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
-[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
-[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
-[data-theme="dark"] .scriba-dot { background: #30363d; }
-[data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
-[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
+@media(max-width:500px){
+  body{padding:1rem .5rem 2rem}
+  .canvas{padding:.8rem}
+  h1{font-size:1.15rem}
+}
 </style>
 </head>
 <body>
-<button class="theme-toggle" onclick="
-  var t = document.documentElement.dataset.theme;
-  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
-">Toggle theme</button>
-<h1>h04_fft_butterfly</h1>
-<div class="scriba-widget" id="fft-butterfly">
-  <div class="scriba-controls">
-    <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">Step 1 / 7</span>
-    <button class="scriba-btn-next">Next</button>
-    <div class="scriba-progress">
-      <div class="scriba-dot active"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
+
+<h1>FFT Butterfly &mdash; Phan tach DFT de quy</h1>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- PART 1: Static Unit Circle Diagram              -->
+<!-- ════════════════════════════════════════════════ -->
+<p class="section-title">Phan 1 &mdash; Vong tron don vi va can bac 8</p>
+<div class="widget">
+  <div class="canvas" style="min-height:auto;padding:1rem">
+    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+      <!-- Background circle -->
+      <circle cx="200" cy="200" r="150" fill="none" stroke="var(--border)" stroke-width="1.5"/>
+      <!-- Axes -->
+      <line x1="40" y1="200" x2="360" y2="200" stroke="var(--border)" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <line x1="200" y1="40" x2="200" y2="360" stroke="var(--border)" stroke-width="0.8" stroke-dasharray="3,3"/>
+      <text x="370" y="204" class="label-dim" text-anchor="start">Re</text>
+      <text x="204" y="36" class="label-dim" text-anchor="start">Im</text>
+
+      <!-- 8 roots of unity: w_8^k = e^(2*pi*i*k/8) -->
+      <!-- w^0 = (1,0) -->
+      <circle cx="350" cy="200" r="10" fill="var(--done)" opacity=".9"/>
+      <text x="350" y="200" class="val" font-size="10">0</text>
+      <text x="372" y="190" fill="var(--done)" font-size="10" text-anchor="start" font-weight="600">w^0=1</text>
+
+      <!-- w^1 = (cos45, sin45) = (0.707, 0.707) => (306, 94) -->
+      <circle cx="306" cy="94" r="10" fill="var(--current)" opacity=".9"/>
+      <text x="306" y="94" class="val" font-size="10">1</text>
+      <text x="322" y="82" fill="var(--current)" font-size="10" text-anchor="start" font-weight="600">w^1</text>
+
+      <!-- w^2 = (0,1) => (200, 50) -->
+      <circle cx="200" cy="50" r="10" fill="var(--good)" opacity=".9"/>
+      <text x="200" y="50" class="val" font-size="10">2</text>
+      <text x="216" y="42" fill="var(--good)" font-size="10" text-anchor="start" font-weight="600">w^2=i</text>
+
+      <!-- w^3 = (-0.707, 0.707) => (94, 94) -->
+      <circle cx="94" cy="94" r="10" fill="var(--error)" opacity=".85"/>
+      <text x="94" y="94" class="val" font-size="10">3</text>
+      <text x="68" y="82" fill="var(--error)" font-size="10" text-anchor="end" font-weight="600">w^3</text>
+
+      <!-- w^4 = (-1,0) => (50, 200) -->
+      <circle cx="50" cy="200" r="10" fill="var(--done)" opacity=".9"/>
+      <text x="50" y="200" class="val" font-size="10">4</text>
+      <text x="28" y="190" fill="var(--done)" font-size="10" text-anchor="end" font-weight="600">w^4=-1</text>
+
+      <!-- w^5 = (-0.707, -0.707) => (94, 306) -->
+      <circle cx="94" cy="306" r="10" fill="var(--current)" opacity=".9"/>
+      <text x="94" y="306" class="val" font-size="10">5</text>
+      <text x="68" y="318" fill="var(--current)" font-size="10" text-anchor="end" font-weight="600">w^5</text>
+
+      <!-- w^6 = (0,-1) => (200, 350) -->
+      <circle cx="200" cy="350" r="10" fill="var(--good)" opacity=".9"/>
+      <text x="200" y="350" class="val" font-size="10">6</text>
+      <text x="216" y="362" fill="var(--good)" font-size="10" text-anchor="start" font-weight="600">w^6=-i</text>
+
+      <!-- w^7 = (0.707, -0.707) => (306, 306) -->
+      <circle cx="306" cy="306" r="10" fill="var(--error)" opacity=".85"/>
+      <text x="306" y="306" class="val" font-size="10">7</text>
+      <text x="322" y="318" fill="var(--error)" font-size="10" text-anchor="start" font-weight="600">w^7</text>
+
+      <!-- Connect to center with thin lines -->
+      <line x1="200" y1="200" x2="350" y2="200" stroke="var(--done)" stroke-width="0.6" opacity=".4"/>
+      <line x1="200" y1="200" x2="306" y2="94"  stroke="var(--current)" stroke-width="0.6" opacity=".4"/>
+      <line x1="200" y1="200" x2="200" y2="50"  stroke="var(--good)" stroke-width="0.6" opacity=".4"/>
+      <line x1="200" y1="200" x2="94"  y2="94"  stroke="var(--error)" stroke-width="0.6" opacity=".4"/>
+      <line x1="200" y1="200" x2="50"  y2="200" stroke="var(--done)" stroke-width="0.6" opacity=".4"/>
+      <line x1="200" y1="200" x2="94"  y2="306" stroke="var(--current)" stroke-width="0.6" opacity=".4"/>
+      <line x1="200" y1="200" x2="200" y2="350" stroke="var(--good)" stroke-width="0.6" opacity=".4"/>
+      <line x1="200" y1="200" x2="306" y2="306" stroke="var(--error)" stroke-width="0.6" opacity=".4"/>
+
+      <!-- Center dot -->
+      <circle cx="200" cy="200" r="3" fill="var(--text-dim)"/>
+
+      <!-- Title -->
+      <text x="200" y="390" class="label-dim" font-size="11" text-anchor="middle">w_n = e^(2pi*i/n), n=8 — 8 can bac 8 cua don vi</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════ -->
+<!-- PART 2: Animated Butterfly Steps                -->
+<!-- ════════════════════════════════════════════════ -->
+<p class="section-title">Phan 2 &mdash; Butterfly animation (6 buoc)</p>
+<div class="widget">
+  <div class="controls">
+    <button id="prevBtn" disabled>&laquo; Prev</button>
+    <button id="nextBtn">Next &raquo;</button>
+    <span class="step-label" id="stepLabel">Step 1 / 6</span>
+  </div>
+
+  <div class="canvas">
+
+    <!-- ============ STEP 1 ============ -->
+    <div class="step active" id="step-1">
+      <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg">
+        <text x="30" y="22" fill="var(--text)" font-size="12" font-weight="600">Input: 8 he so da thuc</text>
+        <!-- 8 cells in a row -->
+        <g transform="translate(30,40)">
+          <rect x="0"   y="0" width="68" height="44" rx="6" class="cell-idle"/>
+          <text x="34"  y="16" class="val-sm">a_0</text>
+          <text x="34"  y="32" class="label-dim" font-size="8">idx 0</text>
+
+          <rect x="76"  y="0" width="68" height="44" rx="6" class="cell-idle"/>
+          <text x="110" y="16" class="val-sm">a_1</text>
+          <text x="110" y="32" class="label-dim" font-size="8">idx 1</text>
+
+          <rect x="152" y="0" width="68" height="44" rx="6" class="cell-idle"/>
+          <text x="186" y="16" class="val-sm">a_2</text>
+          <text x="186" y="32" class="label-dim" font-size="8">idx 2</text>
+
+          <rect x="228" y="0" width="68" height="44" rx="6" class="cell-idle"/>
+          <text x="262" y="16" class="val-sm">a_3</text>
+          <text x="262" y="32" class="label-dim" font-size="8">idx 3</text>
+
+          <rect x="304" y="0" width="68" height="44" rx="6" class="cell-idle"/>
+          <text x="338" y="16" class="val-sm">a_4</text>
+          <text x="338" y="32" class="label-dim" font-size="8">idx 4</text>
+
+          <rect x="380" y="0" width="68" height="44" rx="6" class="cell-idle"/>
+          <text x="414" y="16" class="val-sm">a_5</text>
+          <text x="414" y="32" class="label-dim" font-size="8">idx 5</text>
+
+          <rect x="456" y="0" width="68" height="44" rx="6" class="cell-idle"/>
+          <text x="490" y="16" class="val-sm">a_6</text>
+          <text x="490" y="32" class="label-dim" font-size="8">idx 6</text>
+
+          <rect x="532" y="0" width="68" height="44" rx="6" class="cell-idle"/>
+          <text x="566" y="16" class="val-sm">a_7</text>
+          <text x="566" y="32" class="label-dim" font-size="8">idx 7</text>
+        </g>
+
+        <!-- FFT formula -->
+        <g transform="translate(30,110)">
+          <rect x="0" y="0" width="580" height="50" rx="8" fill="#252536" stroke="var(--border)"/>
+          <text x="290" y="20" fill="var(--text)" font-size="11" text-anchor="middle">FFT: A[k] = sum_{j=0}^{n-1} a_j * w_n^{jk},  n = 8</text>
+          <text x="290" y="38" class="label-dim" text-anchor="middle" font-size="10">Muc tieu: tinh 8 gia tri A[0]..A[7] trong O(n log n)</text>
+        </g>
+
+        <!-- Recursive tree sketch -->
+        <g transform="translate(30,180)">
+          <text x="0" y="0" class="label-dim" font-size="10">Chien luoc: chia de tri (divide & conquer)</text>
+          <text x="0" y="18" class="label-dim" font-size="10">Even indices: a_0, a_2, a_4, a_6</text>
+          <text x="0" y="34" class="label-dim" font-size="10">Odd indices:  a_1, a_3, a_5, a_7</text>
+          <text x="0" y="56" class="label-dim" font-size="10">Butterfly: A[k] = E[k] + w^k * O[k]</text>
+          <text x="0" y="72" class="label-dim" font-size="10">           A[k+4] = E[k] - w^k * O[k]</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 2 ============ -->
+    <div class="step" id="step-2">
+      <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg">
+        <text x="30" y="22" fill="var(--text)" font-size="12" font-weight="600">Chia: Even (xanh) va Odd (mo)</text>
+
+        <!-- Even highlighted, odd dimmed -->
+        <g transform="translate(30,40)">
+          <!-- a_0 even -->
+          <rect x="0"   y="0" width="68" height="44" rx="6" class="cell-even"/>
+          <text x="34"  y="16" class="val-sm">a_0</text>
+          <text x="34"  y="32" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".7">even</text>
+          <!-- a_1 odd -->
+          <rect x="76"  y="0" width="68" height="44" rx="6" class="cell-odd"/>
+          <text x="110" y="16" class="val-sm" opacity=".5">a_1</text>
+          <text x="110" y="32" class="label-dim" font-size="8" opacity=".5">odd</text>
+          <!-- a_2 even -->
+          <rect x="152" y="0" width="68" height="44" rx="6" class="cell-even"/>
+          <text x="186" y="16" class="val-sm">a_2</text>
+          <text x="186" y="32" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".7">even</text>
+          <!-- a_3 odd -->
+          <rect x="228" y="0" width="68" height="44" rx="6" class="cell-odd"/>
+          <text x="262" y="16" class="val-sm" opacity=".5">a_3</text>
+          <text x="262" y="32" class="label-dim" font-size="8" opacity=".5">odd</text>
+          <!-- a_4 even -->
+          <rect x="304" y="0" width="68" height="44" rx="6" class="cell-even"/>
+          <text x="338" y="16" class="val-sm">a_4</text>
+          <text x="338" y="32" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".7">even</text>
+          <!-- a_5 odd -->
+          <rect x="380" y="0" width="68" height="44" rx="6" class="cell-odd"/>
+          <text x="414" y="16" class="val-sm" opacity=".5">a_5</text>
+          <text x="414" y="32" class="label-dim" font-size="8" opacity=".5">odd</text>
+          <!-- a_6 even -->
+          <rect x="456" y="0" width="68" height="44" rx="6" class="cell-even"/>
+          <text x="490" y="16" class="val-sm">a_6</text>
+          <text x="490" y="32" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".7">even</text>
+          <!-- a_7 odd -->
+          <rect x="532" y="0" width="68" height="44" rx="6" class="cell-odd"/>
+          <text x="566" y="16" class="val-sm" opacity=".5">a_7</text>
+          <text x="566" y="32" class="label-dim" font-size="8" opacity=".5">odd</text>
+        </g>
+
+        <!-- Regrouped -->
+        <text x="30" y="108" class="label-dim" font-size="10">Sap xep lai thanh 2 nhom:</text>
+
+        <!-- Even group -->
+        <g transform="translate(30,120)">
+          <rect x="-4" y="-4" width="310" height="52" rx="8" fill="none" stroke="var(--current)" stroke-width="2"/>
+          <text x="150" y="-10" fill="var(--current)" font-size="9" text-anchor="middle" font-weight="600">EVEN</text>
+          <rect x="0"   y="0" width="68" height="40" rx="5" class="cell-even"/>
+          <text x="34"  y="14" class="val-sm">a_0</text>
+          <text x="34"  y="30" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".6">idx 0</text>
+          <rect x="76"  y="0" width="68" height="40" rx="5" class="cell-even"/>
+          <text x="110" y="14" class="val-sm">a_2</text>
+          <text x="110" y="30" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".6">idx 2</text>
+          <rect x="152" y="0" width="68" height="40" rx="5" class="cell-even"/>
+          <text x="186" y="14" class="val-sm">a_4</text>
+          <text x="186" y="30" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".6">idx 4</text>
+          <rect x="228" y="0" width="68" height="40" rx="5" class="cell-even"/>
+          <text x="262" y="14" class="val-sm">a_6</text>
+          <text x="262" y="30" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".6">idx 6</text>
+        </g>
+
+        <!-- Odd group -->
+        <g transform="translate(350,120)">
+          <rect x="-4" y="-4" width="310" height="52" rx="8" fill="none" stroke="var(--text-dim)" stroke-width="1.5" stroke-dasharray="4,3"/>
+          <text x="150" y="-10" class="label-dim" font-size="9" font-weight="600">ODD</text>
+          <rect x="0"   y="0" width="68" height="40" rx="5" class="cell-odd"/>
+          <text x="34"  y="14" class="val-sm" opacity=".6">a_1</text>
+          <text x="34"  y="30" class="label-dim" font-size="8" opacity=".5">idx 1</text>
+          <rect x="76"  y="0" width="68" height="40" rx="5" class="cell-odd"/>
+          <text x="110" y="14" class="val-sm" opacity=".6">a_3</text>
+          <text x="110" y="30" class="label-dim" font-size="8" opacity=".5">idx 3</text>
+          <rect x="152" y="0" width="68" height="40" rx="5" class="cell-odd"/>
+          <text x="186" y="14" class="val-sm" opacity=".6">a_5</text>
+          <text x="186" y="30" class="label-dim" font-size="8" opacity=".5">idx 5</text>
+          <rect x="228" y="0" width="68" height="40" rx="5" class="cell-odd"/>
+          <text x="262" y="14" class="val-sm" opacity=".6">a_7</text>
+          <text x="262" y="30" class="label-dim" font-size="8" opacity=".5">idx 7</text>
+        </g>
+
+        <g transform="translate(30,200)">
+          <text x="0" y="0" class="label-dim" font-size="10">De quy FFT tren moi nua (n/2 = 4 phan tu)</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 3 ============ -->
+    <div class="step" id="step-3">
+      <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg">
+        <text x="30" y="22" fill="var(--text)" font-size="12" font-weight="600">Even-half FFT: E[0..3]</text>
+
+        <!-- Even inputs -->
+        <g transform="translate(30,40)">
+          <text x="0" y="-6" fill="var(--current)" font-size="9" font-weight="600">Input even:</text>
+          <rect x="0"  y="0" width="60" height="36" rx="5" class="cell-even"/>
+          <text x="30" y="18" class="val-sm">a_0</text>
+          <rect x="68" y="0" width="60" height="36" rx="5" class="cell-even"/>
+          <text x="98" y="18" class="val-sm">a_2</text>
+          <rect x="136" y="0" width="60" height="36" rx="5" class="cell-even"/>
+          <text x="166" y="18" class="val-sm">a_4</text>
+          <rect x="204" y="0" width="60" height="36" rx="5" class="cell-even"/>
+          <text x="234" y="18" class="val-sm">a_6</text>
+        </g>
+
+        <!-- Arrow down -->
+        <g transform="translate(150,82)">
+          <line x1="0" y1="0" x2="0" y2="30" stroke="var(--current)" stroke-width="2"/>
+          <polygon points="-5,25 5,25 0,33" fill="var(--current)"/>
+          <text x="16" y="18" fill="var(--current)" font-size="9">FFT_4</text>
+        </g>
+
+        <!-- Even FFT result -->
+        <g transform="translate(30,120)">
+          <text x="0" y="-6" fill="var(--done)" font-size="9" font-weight="600">Output E[k]:</text>
+          <rect x="0"  y="0" width="60" height="40" rx="5" class="cell-done"/>
+          <text x="30" y="14" class="val-sm">E[0]</text>
+          <text x="30" y="30" class="label-dim" font-size="8">sum even</text>
+          <rect x="68" y="0" width="60" height="40" rx="5" class="cell-done"/>
+          <text x="98" y="14" class="val-sm">E[1]</text>
+          <rect x="136" y="0" width="60" height="40" rx="5" class="cell-done"/>
+          <text x="166" y="14" class="val-sm">E[2]</text>
+          <rect x="204" y="0" width="60" height="40" rx="5" class="cell-done"/>
+          <text x="234" y="14" class="val-sm">E[3]</text>
+        </g>
+
+        <!-- Formula -->
+        <g transform="translate(30,185)">
+          <rect x="0" y="0" width="400" height="40" rx="6" fill="#252536" stroke="var(--border)"/>
+          <text x="200" y="24" class="label-dim" text-anchor="middle" font-size="10">E[k] = FFT_4(a_0, a_2, a_4, a_6) — dung w_4^k = w_8^{2k}</text>
+        </g>
+
+        <!-- Visual note -->
+        <g transform="translate(360,40)">
+          <rect x="0" y="0" width="250" height="120" rx="8" fill="#252536" stroke="var(--done)" stroke-width="1"/>
+          <text x="125" y="22" fill="var(--done)" font-size="11" text-anchor="middle" font-weight="600">De quy (recurse)</text>
+          <text x="16" y="42" class="label-dim" text-anchor="start" font-size="10">FFT_8 goi FFT_4 cho nua even.</text>
+          <text x="16" y="58" class="label-dim" text-anchor="start" font-size="10">FFT_4 lai chia tiep thanh 2</text>
+          <text x="16" y="74" class="label-dim" text-anchor="start" font-size="10">nhom even/odd cua no...</text>
+          <text x="16" y="98" class="label-dim" text-anchor="start" font-size="10">Cuoi cung: FFT_1 = chinh no.</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 4 ============ -->
+    <div class="step" id="step-4">
+      <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg">
+        <text x="30" y="22" fill="var(--text)" font-size="12" font-weight="600">Odd-half FFT: O[0..3]</text>
+
+        <!-- Odd inputs -->
+        <g transform="translate(30,40)">
+          <text x="0" y="-6" fill="var(--text-dim)" font-size="9" font-weight="600">Input odd:</text>
+          <rect x="0"  y="0" width="60" height="36" rx="5" fill="#2a2a3e" stroke="var(--text-dim)" stroke-width="1.5"/>
+          <text x="30" y="18" class="val-sm">a_1</text>
+          <rect x="68" y="0" width="60" height="36" rx="5" fill="#2a2a3e" stroke="var(--text-dim)" stroke-width="1.5"/>
+          <text x="98" y="18" class="val-sm">a_3</text>
+          <rect x="136" y="0" width="60" height="36" rx="5" fill="#2a2a3e" stroke="var(--text-dim)" stroke-width="1.5"/>
+          <text x="166" y="18" class="val-sm">a_5</text>
+          <rect x="204" y="0" width="60" height="36" rx="5" fill="#2a2a3e" stroke="var(--text-dim)" stroke-width="1.5"/>
+          <text x="234" y="18" class="val-sm">a_7</text>
+        </g>
+
+        <!-- Arrow down -->
+        <g transform="translate(150,82)">
+          <line x1="0" y1="0" x2="0" y2="30" stroke="var(--text-dim)" stroke-width="2"/>
+          <polygon points="-5,25 5,25 0,33" fill="var(--text-dim)"/>
+          <text x="16" y="18" fill="var(--text-dim)" font-size="9">FFT_4</text>
+        </g>
+
+        <!-- Odd FFT result -->
+        <g transform="translate(30,120)">
+          <text x="0" y="-6" fill="var(--error)" font-size="9" font-weight="600">Output O[k]:</text>
+          <rect x="0"  y="0" width="60" height="40" rx="5" fill="var(--error)" opacity=".85" stroke="var(--error)"/>
+          <text x="30" y="14" class="val-sm">O[0]</text>
+          <text x="30" y="30" fill="#fff" font-size="8" text-anchor="middle" dominant-baseline="central" opacity=".7">sum odd</text>
+          <rect x="68" y="0" width="60" height="40" rx="5" fill="var(--error)" opacity=".85" stroke="var(--error)"/>
+          <text x="98" y="14" class="val-sm">O[1]</text>
+          <rect x="136" y="0" width="60" height="40" rx="5" fill="var(--error)" opacity=".85" stroke="var(--error)"/>
+          <text x="166" y="14" class="val-sm">O[2]</text>
+          <rect x="204" y="0" width="60" height="40" rx="5" fill="var(--error)" opacity=".85" stroke="var(--error)"/>
+          <text x="234" y="14" class="val-sm">O[3]</text>
+        </g>
+
+        <!-- Both results side by side -->
+        <g transform="translate(30,190)">
+          <text x="0" y="0" class="label-dim" font-size="10">Bay gio co ca E[0..3] va O[0..3]. San sang butterfly!</text>
+        </g>
+
+        <!-- Summary boxes -->
+        <g transform="translate(360,40)">
+          <rect x="0" y="0" width="120" height="44" rx="6" fill="var(--done)" opacity=".2" stroke="var(--done)" stroke-width="1"/>
+          <text x="60" y="16" fill="var(--done)" font-size="10" text-anchor="middle" font-weight="600">E[0..3]</text>
+          <text x="60" y="34" class="label-dim" font-size="9" text-anchor="middle">4 gia tri</text>
+        </g>
+        <g transform="translate(500,40)">
+          <rect x="0" y="0" width="120" height="44" rx="6" fill="var(--error)" opacity=".2" stroke="var(--error)" stroke-width="1"/>
+          <text x="60" y="16" fill="var(--error)" font-size="10" text-anchor="middle" font-weight="600">O[0..3]</text>
+          <text x="60" y="34" class="label-dim" font-size="9" text-anchor="middle">4 gia tri</text>
+        </g>
+
+        <!-- Combine formula preview -->
+        <g transform="translate(360,100)">
+          <rect x="0" y="0" width="260" height="80" rx="8" fill="#252536" stroke="var(--good)" stroke-width="1"/>
+          <text x="130" y="20" fill="var(--good)" font-size="11" text-anchor="middle" font-weight="600">Butterfly combine (buoc tiep):</text>
+          <text x="16" y="42" class="label-dim" text-anchor="start" font-size="10">A[k]   = E[k] + w^k * O[k]</text>
+          <text x="16" y="60" class="label-dim" text-anchor="start" font-size="10">A[k+4] = E[k] - w^k * O[k]</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 5 ============ -->
+    <div class="step" id="step-5">
+      <svg viewBox="0 0 660 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrP" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+            <path d="M0,0 L7,2.5 L0,5Z" fill="var(--done)"/>
+          </marker>
+          <marker id="arrM" markerWidth="7" markerHeight="5" refX="6" refY="2.5" orient="auto">
+            <path d="M0,0 L7,2.5 L0,5Z" fill="var(--error)"/>
+          </marker>
+        </defs>
+        <text x="30" y="22" fill="var(--text)" font-size="12" font-weight="600">Butterfly: A[k] = E[k] +/- w^k * O[k]</text>
+
+        <!-- E results (top-left column) -->
+        <g transform="translate(30,45)">
+          <text x="30" y="-6" fill="var(--done)" font-size="9" text-anchor="middle" font-weight="600">E[k]</text>
+          <rect x="0" y="0"  width="60" height="32" rx="4" class="cell-done"/>
+          <text x="30" y="16" class="val-sm">E[0]</text>
+          <rect x="0" y="40" width="60" height="32" rx="4" class="cell-done"/>
+          <text x="30" y="56" class="val-sm">E[1]</text>
+          <rect x="0" y="80" width="60" height="32" rx="4" class="cell-done"/>
+          <text x="30" y="96" class="val-sm">E[2]</text>
+          <rect x="0" y="120" width="60" height="32" rx="4" class="cell-done"/>
+          <text x="30" y="136" class="val-sm">E[3]</text>
+        </g>
+
+        <!-- O results (top-right column, with twiddle) -->
+        <g transform="translate(140,45)">
+          <text x="30" y="-6" fill="var(--error)" font-size="9" text-anchor="middle" font-weight="600">w^k * O[k]</text>
+          <rect x="0" y="0"  width="70" height="32" rx="4" fill="var(--error)" opacity=".8" stroke="var(--error)"/>
+          <text x="35" y="16" class="val-sm">w^0*O[0]</text>
+          <rect x="0" y="40" width="70" height="32" rx="4" fill="var(--error)" opacity=".8" stroke="var(--error)"/>
+          <text x="35" y="56" class="val-sm">w^1*O[1]</text>
+          <rect x="0" y="80" width="70" height="32" rx="4" fill="var(--error)" opacity=".8" stroke="var(--error)"/>
+          <text x="35" y="96" class="val-sm">w^2*O[2]</text>
+          <rect x="0" y="120" width="70" height="32" rx="4" fill="var(--error)" opacity=".8" stroke="var(--error)"/>
+          <text x="35" y="136" class="val-sm">w^3*O[3]</text>
+        </g>
+
+        <!-- Butterfly arrows -->
+        <!-- A[0] = E[0] + w^0*O[0] -->
+        <line x1="90" y1="61" x2="280" y2="61"  class="bfly-plus" marker-end="url(#arrP)"/>
+        <line x1="210" y1="61" x2="280" y2="61" class="bfly-plus" marker-end="url(#arrP)"/>
+        <!-- A[1] = E[1] + w^1*O[1] -->
+        <line x1="90" y1="101" x2="280" y2="101" class="bfly-plus" marker-end="url(#arrP)"/>
+        <line x1="210" y1="101" x2="280" y2="101" class="bfly-plus" marker-end="url(#arrP)"/>
+        <!-- A[2] = E[2] + w^2*O[2] -->
+        <line x1="90" y1="141" x2="280" y2="141" class="bfly-plus" marker-end="url(#arrP)"/>
+        <line x1="210" y1="141" x2="280" y2="141" class="bfly-plus" marker-end="url(#arrP)"/>
+        <!-- A[3] = E[3] + w^3*O[3] -->
+        <line x1="90" y1="181" x2="280" y2="181" class="bfly-plus" marker-end="url(#arrP)"/>
+        <line x1="210" y1="181" x2="280" y2="181" class="bfly-plus" marker-end="url(#arrP)"/>
+
+        <!-- Cross arrows for A[4..7] = E[k] - w^k*O[k] -->
+        <line x1="90" y1="61"  x2="280" y2="221" class="bfly-minus" marker-end="url(#arrM)"/>
+        <line x1="210" y1="61" x2="280" y2="221" class="bfly-minus" marker-end="url(#arrM)"/>
+        <line x1="90" y1="101" x2="280" y2="261" class="bfly-minus" marker-end="url(#arrM)"/>
+        <line x1="210" y1="101" x2="280" y2="261" class="bfly-minus" marker-end="url(#arrM)"/>
+        <line x1="90" y1="141" x2="280" y2="301" class="bfly-minus" marker-end="url(#arrM)"/>
+        <line x1="210" y1="141" x2="280" y2="301" class="bfly-minus" marker-end="url(#arrM)"/>
+        <!-- simplified: show 4 more crossing to bottom -->
+
+        <!-- Output A[0..7] -->
+        <g transform="translate(285,45)">
+          <text x="35" y="-6" fill="var(--good)" font-size="9" text-anchor="middle" font-weight="600">A[k] output</text>
+          <!-- + side -->
+          <rect x="0" y="0"  width="70" height="32" rx="4" class="cell-good"/>
+          <text x="35" y="12" class="val-sm">A[0]</text>
+          <text x="35" y="26" fill="#fff" font-size="7" text-anchor="middle" opacity=".6">E+w^0O</text>
+          <rect x="0" y="40" width="70" height="32" rx="4" class="cell-good"/>
+          <text x="35" y="52" class="val-sm">A[1]</text>
+          <text x="35" y="66" fill="#fff" font-size="7" text-anchor="middle" opacity=".6">E+w^1O</text>
+          <rect x="0" y="80" width="70" height="32" rx="4" class="cell-good"/>
+          <text x="35" y="92" class="val-sm">A[2]</text>
+          <text x="35" y="106" fill="#fff" font-size="7" text-anchor="middle" opacity=".6">E+w^2O</text>
+          <rect x="0" y="120" width="70" height="32" rx="4" class="cell-good"/>
+          <text x="35" y="132" class="val-sm">A[3]</text>
+          <text x="35" y="146" fill="#fff" font-size="7" text-anchor="middle" opacity=".6">E+w^3O</text>
+          <!-- - side -->
+          <rect x="0" y="160" width="70" height="32" rx="4" fill="#3a2020" stroke="var(--error)" stroke-width="1.5"/>
+          <text x="35" y="172" class="val-sm">A[4]</text>
+          <text x="35" y="186" fill="var(--error)" font-size="7" text-anchor="middle" opacity=".8">E-w^0O</text>
+          <rect x="0" y="200" width="70" height="32" rx="4" fill="#3a2020" stroke="var(--error)" stroke-width="1.5"/>
+          <text x="35" y="212" class="val-sm">A[5]</text>
+          <text x="35" y="226" fill="var(--error)" font-size="7" text-anchor="middle" opacity=".8">E-w^1O</text>
+          <rect x="0" y="240" width="70" height="32" rx="4" fill="#3a2020" stroke="var(--error)" stroke-width="1.5"/>
+          <text x="35" y="252" class="val-sm">A[6]</text>
+          <text x="35" y="266" fill="var(--error)" font-size="7" text-anchor="middle" opacity=".8">E-w^2O</text>
+          <rect x="0" y="280" width="70" height="32" rx="4" fill="#3a2020" stroke="var(--error)" stroke-width="1.5"/>
+          <text x="35" y="292" class="val-sm">A[7]</text>
+          <text x="35" y="306" fill="var(--error)" font-size="7" text-anchor="middle" opacity=".8">E-w^3O</text>
+        </g>
+
+        <!-- Legend -->
+        <g transform="translate(430,50)">
+          <line x1="0" y1="0" x2="40" y2="0" class="bfly-plus" stroke-width="2"/>
+          <text x="50" y="4" class="label-dim" text-anchor="start" font-size="9">+ (cong)</text>
+          <line x1="0" y1="20" x2="40" y2="20" class="bfly-minus" stroke-width="2"/>
+          <text x="50" y="24" class="label-dim" text-anchor="start" font-size="9">- (tru)</text>
+        </g>
+
+        <g transform="translate(430,100)">
+          <rect x="0" y="0" width="200" height="70" rx="8" fill="#252536" stroke="var(--border)"/>
+          <text x="100" y="18" fill="var(--good)" font-size="10" text-anchor="middle" font-weight="600">Butterfly pattern</text>
+          <text x="16" y="36" class="label-dim" text-anchor="start" font-size="9">Moi cap (k, k+n/2) dung</text>
+          <text x="16" y="50" class="label-dim" text-anchor="start" font-size="9">cung E[k] va O[k] nhung</text>
+          <text x="16" y="64" class="label-dim" text-anchor="start" font-size="9">voi dau + va dau -.</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 6 ============ -->
+    <div class="step" id="step-6">
+      <svg viewBox="0 0 660 300" xmlns="http://www.w3.org/2000/svg">
+        <text x="30" y="22" fill="var(--text)" font-size="12" font-weight="600">Ket qua cuoi: A[0..7] — FFT hoan tat!</text>
+
+        <!-- All 8 results -->
+        <g transform="translate(30,45)">
+          <rect x="0"   y="0" width="72" height="48" rx="6" class="cell-done"/>
+          <text x="36"  y="18" class="val">A_0</text>
+          <text x="36"  y="36" fill="#fff" font-size="8" text-anchor="middle" opacity=".6">done</text>
+
+          <rect x="80"  y="0" width="72" height="48" rx="6" class="cell-done"/>
+          <text x="116" y="18" class="val">A_1</text>
+          <text x="116" y="36" fill="#fff" font-size="8" text-anchor="middle" opacity=".6">done</text>
+
+          <rect x="160" y="0" width="72" height="48" rx="6" class="cell-done"/>
+          <text x="196" y="18" class="val">A_2</text>
+          <text x="196" y="36" fill="#fff" font-size="8" text-anchor="middle" opacity=".6">done</text>
+
+          <rect x="240" y="0" width="72" height="48" rx="6" class="cell-done"/>
+          <text x="276" y="18" class="val">A_3</text>
+          <text x="276" y="36" fill="#fff" font-size="8" text-anchor="middle" opacity=".6">done</text>
+
+          <rect x="320" y="0" width="72" height="48" rx="6" class="cell-done"/>
+          <text x="356" y="18" class="val">A_4</text>
+          <text x="356" y="36" fill="#fff" font-size="8" text-anchor="middle" opacity=".6">done</text>
+
+          <rect x="400" y="0" width="72" height="48" rx="6" class="cell-done"/>
+          <text x="436" y="18" class="val">A_5</text>
+          <text x="436" y="36" fill="#fff" font-size="8" text-anchor="middle" opacity=".6">done</text>
+
+          <rect x="480" y="0" width="72" height="48" rx="6" class="cell-done"/>
+          <text x="516" y="18" class="val">A_6</text>
+          <text x="516" y="36" fill="#fff" font-size="8" text-anchor="middle" opacity=".6">done</text>
+
+          <rect x="560" y="0" width="72" height="48" rx="6" class="cell-done"/>
+          <text x="596" y="18" class="val">A_7</text>
+          <text x="596" y="36" fill="#fff" font-size="8" text-anchor="middle" opacity=".6">done</text>
+        </g>
+
+        <!-- Summary -->
+        <g transform="translate(30,120)">
+          <rect x="0" y="0" width="600" height="100" rx="10" fill="var(--done)" opacity=".1" stroke="var(--done)" stroke-width="1.5"/>
+          <text x="300" y="26" fill="var(--done)" font-size="14" text-anchor="middle" font-weight="700">FFT hoan tat trong O(n log n)</text>
+          <text x="300" y="48" fill="var(--text-dim)" font-size="11" text-anchor="middle">8 he so -> 8 gia tri DFT, chi 3 tang (log2(8) = 3)</text>
+
+          <g transform="translate(40,60)">
+            <rect x="0" y="0" width="160" height="28" rx="5" fill="#252536" stroke="var(--done)" stroke-width="1"/>
+            <text x="80" y="18" fill="var(--done)" font-size="10" text-anchor="middle">T(n) = 2T(n/2) + O(n)</text>
+          </g>
+          <g transform="translate(220,60)">
+            <rect x="0" y="0" width="100" height="28" rx="5" fill="#252536" stroke="var(--good)" stroke-width="1"/>
+            <text x="50" y="18" fill="var(--good)" font-size="10" text-anchor="middle">= O(n log n)</text>
+          </g>
+          <g transform="translate(340,60)">
+            <text x="0" y="18" class="label-dim" font-size="10" text-anchor="start">vs brute force O(n^2)</text>
+          </g>
+        </g>
+
+        <!-- Recursion tree summary -->
+        <g transform="translate(30,240)">
+          <text x="0" y="0" class="label-dim" font-size="10">Tang 0: FFT_8 (1 lan, n=8 phep tinh)</text>
+          <text x="0" y="16" class="label-dim" font-size="10">Tang 1: 2x FFT_4 (2 lan, moi lan n/2=4 => tong 8)</text>
+          <text x="0" y="32" class="label-dim" font-size="10">Tang 2: 4x FFT_2 (4 lan, moi lan n/4=2 => tong 8)</text>
+          <text x="0" y="48" class="label-dim" font-size="10">=> Moi tang O(n), co log(n) tang => O(n log n)</text>
+        </g>
+      </svg>
     </div>
   </div>
-  <div class="scriba-stage"></div>
-  <p class="scriba-narration"></p>
-</div>
-<script>
-(function(){
-  var W=document.getElementById('fft-butterfly');
-  var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="fft-butterfly-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">a0</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">a1</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">a2</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">a3</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">a4</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">a5</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-idle">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="402" y="20" fill="#212529">a6</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-idle">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="464" y="20" fill="#212529">a7</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg>`,narration:`FFT bien doi day [a0..a7] thanh [A0..A7] bang cach de quy chia doi. Vong tron don vi phia tren cho thay 8 can bac 8 cua 1: w^k = e^(2*pi*i*k/8).`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="fft-butterfly-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-current">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">a0</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-dim">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
-    <text x="92" y="20" fill="#adb5bd">a1</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-current">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">a2</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-dim">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
-    <text x="216" y="20" fill="#adb5bd">a3</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-current">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">a4</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-dim">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
-    <text x="340" y="20" fill="#adb5bd">a5</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-current">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">a6</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-dim">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
-    <text x="464" y="20" fill="#adb5bd">a7</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg>`,narration:`Buoc 1: Chia thanh chi so chan (a0,a2,a4,a6) va chi so le (a1,a3,a5,a7). FFT de quy tren moi nua.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="fft-butterfly-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-good">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">E0</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-dim">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
-    <text x="92" y="20" fill="#adb5bd">a1</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">E1</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-dim">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
-    <text x="216" y="20" fill="#adb5bd">a3</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">E2</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-dim">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
-    <text x="340" y="20" fill="#adb5bd">a5</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-done">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">E3</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-dim">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
-    <text x="464" y="20" fill="#adb5bd">a7</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg>`,narration:`Buoc 2: FFT nua chan cho E[k] = FFT(a0,a2,a4,a6). Voi N/2=4, dung w4 = can bac 4 cua 1.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="fft-butterfly-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-good">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">E0</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-good">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">O0</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">E1</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">O1</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">E2</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">O2</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-done">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">E3</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-done">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">O3</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg>`,narration:`Buoc 3: FFT nua le cho O[k] = FFT(a1,a3,a5,a7). Tuong tu voi w4.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="fft-butterfly-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-current">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">A0</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-current">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">O0</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">E1</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">O1</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">A4</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">O2</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-done">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">E3</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-done">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">O3</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg>`,narration:`Butterfly k=0: A[0] = E[0] + w8^0 * O[0], A[4] = E[0] - w8^0 * O[0]. Twiddle factor w8^0 = 1.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="fft-butterfly-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">A0</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-current">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">A1</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-current">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">A2</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-current">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">A3</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-done">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">A4</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-current">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">A5</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-current">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">A6</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-done">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">A7</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg>`,narration:`Butterfly k=1,2,3: A[k] = E[k] + w8^k * O[k], A[k+4] = E[k] - w8^k * O[k]. Twiddle factor w8^k quay tren vong tron don vi.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="fft-butterfly-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-good">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">A0</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-good">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">A1</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-good">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">A2</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-good">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">A3</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">A4</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">A5</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">A6</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">A7</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg>`,narration:`Hoan tat! FFT tinh [A0..A7] trong O(n log n) = 8*3 = 24 phep tinh, thay vi O(n^2) = 64. Day la nen tang cua nhan da thuc nhanh.`}
-  ];
-  var cur=0;
-  var stage=W.querySelector('.scriba-stage');
-  var narr=W.querySelector('.scriba-narration');
-  var ctr=W.querySelector('.scriba-step-counter');
-  var prev=W.querySelector('.scriba-btn-prev');
-  var next=W.querySelector('.scriba-btn-next');
-  var dots=W.querySelectorAll('.scriba-dot');
-  function show(i){
-    cur=i;
-    stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
-    ctr.textContent='Step '+(i+1)+' / '+frames.length;
-    prev.disabled=i===0;
-    next.disabled=i===frames.length-1;
-    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
-  }
-  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
-  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
-  W.addEventListener('keydown',function(e){
-    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
-    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
-  });
-  W.setAttribute('tabindex','0');
-  show(0);
-})();
-</script>
 
-<figure class="scriba-diagram" data-scriba-scene="fft-unit-circle">
-  <div class="scriba-stage">
-    <svg class="scriba-stage-svg" viewBox="0 0 352 352" role="img" aria-labelledby="fft-unit-circle-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 320" data-scriba-xrange="-1.5 1.5" data-scriba-yrange="-1.5 1.5" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="74.67" y1="32.00" x2="74.67" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="245.33" y1="32.00" x2="245.33" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="245.33" x2="288.00" y2="245.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="74.67" x2="288.00" y2="74.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 160.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="160.00" y1="288.00" x2="160.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 160.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(160.0000, 160.0000) scale(85.3333, -85.3333)"><g data-target="p.point[0]" class="scriba-plane-point scriba-state-good"><circle cx="0.707" cy="-0.707" r="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="74.67" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-1</text><text x="245.33" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="154.00" y="248.33" text-anchor="end" font-size="10" fill="#6c757d">-1</text><text x="154.00" y="77.67" text-anchor="end" font-size="10" fill="#6c757d">1</text></g></svg>
-</g>
-</svg>
+  <div class="narration" id="narration">
+    <strong>Buoc 1:</strong> Cho 8 he so da thuc a_0..a_7. FFT tinh 8 gia tri A[k] = tong a_j * w_8^{jk}. Chien luoc: chia mang thanh phan tu chi so chan (even) va le (odd), de quy FFT tren moi nua, roi ket hop bang butterfly.
   </div>
-</figure>
+</div>
+
+<script>
+const NARRATIONS = [
+  '<strong>Buoc 1:</strong> Cho 8 he so da thuc a_0..a_7. FFT tinh 8 gia tri A[k] = tong a_j * w_8^{jk}. Chien luoc: chia mang thanh phan tu chi so chan (even) va le (odd), de quy FFT tren moi nua, roi ket hop bang butterfly.',
+  '<strong>Buoc 2:</strong> Chia input thanh 2 nhom. <strong>Even</strong> (xanh duong): a_0, a_2, a_4, a_6 — cac phan tu o chi so chan. <strong>Odd</strong> (mo): a_1, a_3, a_5, a_7 — cac phan tu o chi so le. Moi nhom co n/2 = 4 phan tu.',
+  '<strong>Buoc 3:</strong> Goi de quy FFT_4 tren nhom even (a_0, a_2, a_4, a_6). Ket qua: E[0], E[1], E[2], E[3]. Day la 4 gia tri DFT cua nua even, dung can bac 4 cua don vi (w_4^k = w_8^{2k}).',
+  '<strong>Buoc 4:</strong> Goi de quy FFT_4 tren nhom odd (a_1, a_3, a_5, a_7). Ket qua: O[0], O[1], O[2], O[3]. Bay gio co ca E va O, san sang ket hop bang butterfly.',
+  '<strong>Buoc 5 (Butterfly):</strong> Ket hop E[k] va O[k] voi twiddle factor w^k. <strong>Nua tren</strong>: A[k] = E[k] + w^k * O[k] (cong, duong lien). <strong>Nua duoi</strong>: A[k+4] = E[k] - w^k * O[k] (tru, duong dut). Day la "butterfly" — moi cap chia se cung E va O nhung khac dau.',
+  '<strong>Buoc 6:</strong> FFT hoan tat! 8 gia tri A[0]..A[7] da duoc tinh. Do phuc tap: T(n) = 2T(n/2) + O(n) = <strong>O(n log n)</strong>. Voi n=8, chi can 3 tang (log2(8)=3), moi tang O(n) phep tinh. So voi brute force O(n^2) = 64 phep tinh, FFT chi can ~24.'
+];
+
+let step = 0;
+const total = NARRATIONS.length;
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const label = document.getElementById('stepLabel');
+const narration = document.getElementById('narration');
+
+function render() {
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.toggle('active', i === step);
+  });
+  narration.innerHTML = NARRATIONS[step];
+  label.textContent = `Step ${step + 1} / ${total}`;
+  prevBtn.disabled = step === 0;
+  nextBtn.disabled = step === total - 1;
+}
+prevBtn.addEventListener('click', () => { if (step > 0) { step--; render(); } });
+nextBtn.addEventListener('click', () => { if (step < total - 1) { step++; render(); } });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') prevBtn.click();
+  if (e.key === 'ArrowRight') nextBtn.click();
+});
+</script>
 </body>
 </html>
