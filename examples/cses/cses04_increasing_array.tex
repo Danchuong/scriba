@@ -9,44 +9,44 @@
 \shape{cost}{Array}{size=1, data=[0], label="Total moves"}
 
 \step
-\narrate{Make the array non-decreasing using minimum increases. Array: $[3, 2, 5, 1, 7]$.}
+\narrate{Biến mảng thành không giảm với số lần tăng ít nhất. Mảng: $[3, 2, 5, 1, 7]$.}
 
 \step
 \recolor{a.cell[0]}{state=done}
-\narrate{Index 0: value 3. First element, always OK. Max so far = 3.}
+\narrate{Vị trí 0: giá trị 3. Phần tử đầu tiên, luôn hợp lệ. Max hiện tại = 3.}
 
 \step
 \recolor{a.cell[1]}{state=error}
-\narrate{Index 1: value 2 $<$ previous 3. Violation! Must increase by $3 - 2 = 1$.}
+\narrate{Vị trí 1: giá trị 2 $<$ giá trị trước 3. Vi phạm! Cần tăng thêm $3 - 2 = 1$.}
 
 \step
 \apply{a.cell[1]}{value=3}
 \apply{cost.cell[0]}{value=1}
 \recolor{a.cell[1]}{state=done}
-\narrate{Set $a[1] = 3$. Total moves = 1. Max so far = 3.}
+\narrate{Gán $a[1] = 3$. Tổng thao tác = 1. Max hiện tại = 3.}
 
 \step
 \recolor{a.cell[2]}{state=current}
-\narrate{Index 2: value 5 $\geq$ 3. No increase needed. Max so far = 5.}
+\narrate{Vị trí 2: giá trị 5 $\geq$ 3. Không cần tăng. Max hiện tại = 5.}
 
 \step
 \recolor{a.cell[2]}{state=done}
 \recolor{a.cell[3]}{state=error}
-\narrate{Index 3: value 1 $<$ previous 5. Violation! Must increase by $5 - 1 = 4$.}
+\narrate{Vị trí 3: giá trị 1 $<$ giá trị trước 5. Vi phạm! Cần tăng thêm $5 - 1 = 4$.}
 
 \step
 \apply{a.cell[3]}{value=5}
 \apply{cost.cell[0]}{value=5}
 \recolor{a.cell[3]}{state=done}
-\narrate{Set $a[3] = 5$. Total moves = $1 + 4 = 5$. Max so far = 5.}
+\narrate{Gán $a[3] = 5$. Tổng thao tác = $1 + 4 = 5$. Max hiện tại = 5.}
 
 \step
 \recolor{a.cell[4]}{state=current}
-\narrate{Index 4: value 7 $\geq$ 5. No increase needed.}
+\narrate{Vị trí 4: giá trị 7 $\geq$ 5. Không cần tăng.}
 
 \step
 \recolor{a.cell[4]}{state=done}
 \recolor{a.all}{state=good}
 \recolor{cost.cell[0]}{state=good}
-\narrate{Array is now non-decreasing: $[3, 3, 5, 5, 7]$. Total moves = $\mathbf{5}$.}
+\narrate{Mảng giờ đã không giảm: $[3, 3, 5, 5, 7]$. Tổng thao tác = $\mathbf{5}$.}
 \end{animation}

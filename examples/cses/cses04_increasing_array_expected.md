@@ -1,50 +1,50 @@
-# CSES 04 — Increasing Array: Expected Animation
+# CSES 04 — Increasing Array: Mô tả hoạt ảnh kỳ vọng
 
-## Overview
+## Tổng quan
 
-- **Frames:** 9 total
-- **Primitives:** 2 Arrays (main array + cost counter)
-- **Visual flow:** Left-to-right scan, violations shown in red then fixed
+- **Số khung hình:** 9
+- **Đối tượng:** 2 mảng (mảng chính + bộ đếm chi phí)
+- **Luồng trực quan:** Duyệt từ trái sang phải, vi phạm hiển thị màu đỏ rồi được sửa
 
-## Frame-by-Frame Description
+## Mô tả từng khung hình
 
-### Frame 0 (Initial)
-- `a`: [3, 2, 5, 1, 7] all idle
+### Khung 0 (Khởi tạo)
+- `a`: [3, 2, 5, 1, 7] tất cả ở trạng thái chờ
 - `cost`: [0]
-- Narration explains the problem
+- Lời dẫn giải thích đề bài
 
-### Frame 1 (Index 0)
-- cell[0] marked `done` — first element always OK
-- Max so far = 3
+### Khung 1 (Vị trí 0)
+- cell[0] đánh dấu `done` — phần tử đầu tiên luôn hợp lệ
+- Max hiện tại = 3
 
-### Frame 2 (Index 1 — VIOLATION)
-- cell[1] marked `error` (red) — value 2 < 3
-- Narration: need +1
+### Khung 2 (Vị trí 1 — VI PHẠM)
+- cell[1] đánh dấu `error` (đỏ) — giá trị 2 < 3
+- Lời dẫn: cần tăng thêm 1
 
-### Frame 3 (Index 1 — FIX)
-- cell[1] value changes 2 → 3, marked `done`
+### Khung 3 (Vị trí 1 — SỬA)
+- cell[1] giá trị thay đổi 2 -> 3, đánh dấu `done`
 - cost = 1
 
-### Frame 4 (Index 2 — OK)
-- cell[2] marked `current` then `done` — 5 >= 3
+### Khung 4 (Vị trí 2 — HỢP LỆ)
+- cell[2] đánh dấu `current` rồi `done` — 5 >= 3
 
-### Frame 5 (Index 3 — VIOLATION)
-- cell[3] marked `error` — value 1 < 5
-- Narration: need +4
+### Khung 5 (Vị trí 3 — VI PHẠM)
+- cell[3] đánh dấu `error` — giá trị 1 < 5
+- Lời dẫn: cần tăng thêm 4
 
-### Frame 6 (Index 3 — FIX)
-- cell[3] value changes 1 → 5, marked `done`
+### Khung 6 (Vị trí 3 — SỬA)
+- cell[3] giá trị thay đổi 1 -> 5, đánh dấu `done`
 - cost = 5
 
-### Frame 7 (Index 4 — OK)
-- cell[4] current — 7 >= 5
+### Khung 7 (Vị trí 4 — HỢP LỆ)
+- cell[4] đang xét — 7 >= 5
 
-### Frame 8 (Final)
-- All cells marked `good` (sky blue)
-- cost marked `good`
-- Narration: "Total moves = 5"
+### Khung 8 (Kết thúc)
+- Tất cả ô đánh dấu `good` (xanh da trời)
+- cost đánh dấu `good`
+- Lời dẫn: "Tổng thao tác = 5"
 
-## Visual Characteristics
-- `error` state (red) clearly marks violations before fixing
-- Values update in-place to show the "increase" operation
-- Cost counter tracks running total
+## Đặc điểm trực quan
+- Trạng thái `error` (đỏ) đánh dấu rõ ràng các vi phạm trước khi sửa
+- Giá trị cập nhật trực tiếp tại chỗ để minh họa thao tác "tăng"
+- Bộ đếm chi phí theo dõi tổng tích lũy

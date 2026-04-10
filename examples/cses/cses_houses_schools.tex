@@ -4,19 +4,19 @@
 \shape{cost_val}{Array}{size=1, data=[0], label="cost(l,r)"}
 
 \step
-\narrate{Houses and Schools: place k=2 schools among n=6 houses to minimize total walking distance. Children counts: [2, 3, 5, 1, 4, 6]. We build dp[j][i] = min cost using j schools for houses 1..i.}
+\narrate{Bài Houses and Schools: đặt k=2 trường học vào n=6 ngôi nhà sao cho tổng quãng đường đi bộ nhỏ nhất. Số trẻ em: [2, 3, 5, 1, 4, 6]. Ta xây dựng dp[j][i] = chi phí nhỏ nhất khi dùng j trường cho các nhà 1..i.}
 
 \step
 \apply{dp.cell[0][0]}{value=0}
 \recolor{dp.cell[0][0]}{state=done}
-\narrate{Base case: dp[0][0] = 0. Zero schools covering zero houses costs nothing. All other dp[0][i] are infinite (cannot cover houses with no schools).}
+\narrate{Trường hợp cơ sở: dp[0][0] = 0. Không trường nào phục vụ không nhà nào thì chi phí bằng 0. Tất cả dp[0][i] khác đều là vô cực (không thể phục vụ nhà nào mà không có trường).}
 
 \step
 \recolor{dp.cell[1][1]}{state=current}
 \highlight{a.cell[0]}
 \apply{dp.cell[1][1]}{value=0}
 \apply{cost_val.cell[0]}{value=0}
-\narrate{dp[1][1] = cost(1,1) = 0. One school at house 1 serves only house 1. No walking needed.}
+\narrate{dp[1][1] = cost(1,1) = 0. Một trường tại nhà 1 chỉ phục vụ nhà 1. Không cần đi bộ.}
 
 \step
 \recolor{dp.cell[1][1]}{state=done}
@@ -24,7 +24,7 @@
 \highlight{a.range[0:1]}
 \apply{dp.cell[1][2]}{value=2}
 \apply{cost_val.cell[0]}{value=2}
-\narrate{dp[1][2] = cost(1,2) = 2. One school for houses 1-2: weighted median at house 2 (weight 3 $\geq$ half of 5). Cost = 2*1 + 3*0 = 2.}
+\narrate{dp[1][2] = cost(1,2) = 2. Một trường cho nhà 1-2: trung vị có trọng số tại nhà 2 (trọng số 3 $\geq$ nửa của 5). Chi phí = 2*1 + 3*0 = 2.}
 
 \step
 \recolor{dp.cell[1][2]}{state=done}
@@ -32,7 +32,7 @@
 \highlight{a.range[0:2]}
 \apply{dp.cell[1][3]}{value=7}
 \apply{cost_val.cell[0]}{value=7}
-\narrate{dp[1][3] = cost(1,3) = 7. Weighted median at house 3. Cost = 2*2 + 3*1 + 5*0 = 7.}
+\narrate{dp[1][3] = cost(1,3) = 7. Trung vị có trọng số tại nhà 3. Chi phí = 2*2 + 3*1 + 5*0 = 7.}
 
 \step
 \recolor{dp.cell[1][3]}{state=done}
@@ -40,7 +40,7 @@
 \highlight{a.range[0:3]}
 \apply{dp.cell[1][4]}{value=8}
 \apply{cost_val.cell[0]}{value=8}
-\narrate{dp[1][4] = cost(1,4) = 8. Median still at house 3 (cumulative weight 10 $\geq$ 5.5). Cost = 2*2 + 3*1 + 5*0 + 1*1 = 8.}
+\narrate{dp[1][4] = cost(1,4) = 8. Trung vị vẫn tại nhà 3 (trọng số tích lũy 10 $\geq$ 5.5). Chi phí = 2*2 + 3*1 + 5*0 + 1*1 = 8.}
 
 \step
 \recolor{dp.cell[1][4]}{state=done}
@@ -48,7 +48,7 @@
 \highlight{a.range[0:4]}
 \apply{dp.cell[1][5]}{value=16}
 \apply{cost_val.cell[0]}{value=16}
-\narrate{dp[1][5] = cost(1,5) = 16. Median at house 3. Cost = 2*2 + 3*1 + 5*0 + 1*1 + 4*2 = 16. Adding distant house 5 increases cost significantly.}
+\narrate{dp[1][5] = cost(1,5) = 16. Trung vị tại nhà 3. Chi phí = 2*2 + 3*1 + 5*0 + 1*1 + 4*2 = 16. Thêm nhà 5 ở xa làm chi phí tăng đáng kể.}
 
 \step
 \recolor{dp.cell[1][5]}{state=done}
@@ -56,69 +56,69 @@
 \highlight{a.range[0:5]}
 \apply{dp.cell[1][6]}{value=33}
 \apply{cost_val.cell[0]}{value=33}
-\narrate{dp[1][6] = cost(1,6) = 33. Median shifts to house 4. Cost = 2*3 + 3*2 + 5*1 + 1*0 + 4*1 + 6*2 = 33. One school for all houses is expensive!}
+\narrate{dp[1][6] = cost(1,6) = 33. Trung vị dịch sang nhà 4. Chi phí = 2*3 + 3*2 + 5*1 + 1*0 + 4*1 + 6*2 = 33. Một trường cho tất cả các nhà rất tốn kém!}
 
 \step
 \recolor{dp.cell[1][6]}{state=done}
-\narrate{Row j=1 complete. With one school, the cost grows quickly as the segment widens. Now we compute row j=2: placing two schools. The recurrence is dp[2][i] = min over m of dp[1][m] + cost(m+1, i).}
+\narrate{Hàng j=1 hoàn thành. Với một trường, chi phí tăng nhanh khi đoạn mở rộng. Bây giờ ta tính hàng j=2: đặt hai trường. Công thức truy hồi là dp[2][i] = min theo m của dp[1][m] + cost(m+1, i).}
 
 \step
 \recolor{dp.cell[2][2]}{state=current}
 \highlight{a.cell[0]}
 \apply{dp.cell[2][2]}{value=0}
 \apply{cost_val.cell[0]}{value=0}
-\narrate{dp[2][2] = dp[1][1] + cost(2,2) = 0 + 0 = 0. Split at m=1: first school covers house 1, second covers house 2. Both have zero walking.}
+\narrate{dp[2][2] = dp[1][1] + cost(2,2) = 0 + 0 = 0. Chia tại m=1: trường thứ nhất phục vụ nhà 1, trường thứ hai phục vụ nhà 2. Cả hai đều không cần đi bộ.}
 
 \step
 \recolor{dp.cell[2][2]}{state=done}
 \recolor{dp.cell[2][3]}{state=current}
 \highlight{a.range[1:2]}
 \apply{cost_val.cell[0]}{value=3}
-\narrate{dp[2][3]: try m=1: dp[1][1] + cost(2,3) = 0 + 3 = 3 (median at 3, cost=3*1+5*0=3). Try m=2: dp[1][2] + cost(3,3) = 2 + 0 = 2. Best is m=2.}
+\narrate{dp[2][3]: thử m=1: dp[1][1] + cost(2,3) = 0 + 3 = 3 (trung vị tại 3, chi phí=3*1+5*0=3). Thử m=2: dp[1][2] + cost(3,3) = 2 + 0 = 2. Tốt nhất là m=2.}
 
 \step
 \apply{dp.cell[2][3]}{value=2}
 \recolor{dp.cell[2][3]}{state=done}
 \apply{cost_val.cell[0]}{value=0}
-\narrate{dp[2][3] = 2. Optimal split: first school covers houses 1-2 (cost 2), second school at house 3 (cost 0). The D&C optimization exploits that opt(j,i) is monotone.}
+\narrate{dp[2][3] = 2. Chia tối ưu: trường thứ nhất phục vụ nhà 1-2 (chi phí 2), trường thứ hai tại nhà 3 (chi phí 0). Tối ưu chia để trị khai thác tính đơn điệu của opt(j,i).}
 
 \step
 \recolor{dp.cell[2][4]}{state=current}
 \highlight{a.range[2:3]}
 \apply{cost_val.cell[0]}{value=1}
-\narrate{dp[2][4]: try m=1 gives 4, m=2 gives dp[1][2]+cost(3,4) = 2+1 = 3 (median at 3, cost=5*0+1*1=1), m=3 gives 7. Best at m=2.}
+\narrate{dp[2][4]: thử m=1 cho 4, m=2 cho dp[1][2]+cost(3,4) = 2+1 = 3 (trung vị tại 3, chi phí=5*0+1*1=1), m=3 cho 7. Tốt nhất tại m=2.}
 
 \step
 \apply{dp.cell[2][4]}{value=3}
 \recolor{dp.cell[2][4]}{state=done}
-\narrate{dp[2][4] = 3. Split at m=2: school 1 covers houses 1-2 (cost 2), school 2 covers 3-4 (cost 1). The monotonicity holds: opt(2,4) = 2 $\geq$ opt(2,3) = 2.}
+\narrate{dp[2][4] = 3. Chia tại m=2: trường 1 phục vụ nhà 1-2 (chi phí 2), trường 2 phục vụ nhà 3-4 (chi phí 1). Tính đơn điệu được giữ: opt(2,4) = 2 $\geq$ opt(2,3) = 2.}
 
 \step
 \recolor{dp.cell[2][5]}{state=current}
 \highlight{a.range[3:4]}
 \apply{cost_val.cell[0]}{value=1}
-\narrate{dp[2][5]: m=3 gives dp[1][3]+cost(4,5) = 7+1 = 8 (school at 5, cost=1*1+4*0=1). m=4 also gives 8+0=8. Best is 8.}
+\narrate{dp[2][5]: m=3 cho dp[1][3]+cost(4,5) = 7+1 = 8 (trường tại 5, chi phí=1*1+4*0=1). m=4 cũng cho 8+0=8. Tốt nhất là 8.}
 
 \step
 \apply{dp.cell[2][5]}{value=8}
 \recolor{dp.cell[2][5]}{state=done}
-\narrate{dp[2][5] = 8. With 2 schools for 5 houses, splitting at m=3 or m=4 both yield cost 8. The optimal split point has moved right, confirming monotonicity.}
+\narrate{dp[2][5] = 8. Với 2 trường cho 5 nhà, chia tại m=3 hay m=4 đều cho chi phí 8. Điểm chia tối ưu đã dịch sang phải, xác nhận tính đơn điệu.}
 
 \step
 \recolor{dp.cell[2][6]}{state=current}
 \highlight{a.range[4:5]}
 \apply{cost_val.cell[0]}{value=4}
-\narrate{dp[2][6]: m=4 gives dp[1][4]+cost(5,6) = 8+4 = 12 (school at 6, cost=4*1+6*0=4). Other splits: m=3 gives 13, m=5 gives 16. Best at m=4.}
+\narrate{dp[2][6]: m=4 cho dp[1][4]+cost(5,6) = 8+4 = 12 (trường tại 6, chi phí=4*1+6*0=4). Các cách chia khác: m=3 cho 13, m=5 cho 16. Tốt nhất tại m=4.}
 
 \step
 \apply{dp.cell[2][6]}{value=12}
 \recolor{dp.cell[2][6]}{state=done}
-\narrate{dp[2][6] = 12. Split at m=4: school 1 at house 3 covers houses 1-4 (cost 8), school 2 at house 6 covers houses 5-6 (cost 4). Total = 12.}
+\narrate{dp[2][6] = 12. Chia tại m=4: trường 1 tại nhà 3 phục vụ nhà 1-4 (chi phí 8), trường 2 tại nhà 6 phục vụ nhà 5-6 (chi phí 4). Tổng = 12.}
 
 \step
 \recolor{dp.cell[2][6]}{state=good}
 \recolor{a.cell[2]}{state=good}
 \recolor{a.cell[5]}{state=good}
 \apply{cost_val.cell[0]}{value=12}
-\narrate{Answer: dp[2][6] = 12. Schools at houses 3 and 6. Without D&C optimization this takes O(kn^2). With monotonicity of opt, each row solves in O(n log n), giving O(kn log n) total. For n=3000, that is the difference between TLE and AC.}
+\narrate{Đáp án: dp[2][6] = 12. Trường đặt tại nhà 3 và nhà 6. Không có tối ưu chia để trị thì mất $O(kn^2)$. Nhờ tính đơn điệu của opt, mỗi hàng giải trong $O(n \log n)$, tổng cộng $O(kn \log n)$. Với n=3000, đó là sự khác biệt giữa TLE và AC.}
 \end{animation}

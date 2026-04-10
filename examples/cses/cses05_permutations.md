@@ -1,40 +1,40 @@
-# CSES Problem 5: Permutations
+# CSES Bài 5: Hoán vị
 
-## Problem Statement
+## Đề bài
 
-A permutation of integers 1, 2, ..., n is called **beautiful** if there are no two adjacent elements whose difference is 1.
+Một hoán vị của các số nguyên 1, 2, ..., n được gọi là **hoán vị đẹp** nếu không tồn tại hai phần tử liền kề nào có hiệu bằng 1.
 
-Given n, construct a beautiful permutation if one exists.
+Cho n, hãy xây dựng một hoán vị đẹp nếu tồn tại.
 
-**Input:** An integer n (1 <= n <= 10^6)
+**Đầu vào:** Một số nguyên n (1 <= n <= 10^6)
 
-**Output:** A beautiful permutation, or "NO SOLUTION" if none exists.
+**Đầu ra:** Một hoán vị đẹp, hoặc "NO SOLUTION" nếu không tồn tại.
 
-### Examples
+### Ví dụ
 
 - n=1: `1`
-- n=2: `NO SOLUTION` (only [1,2] and [2,1], both have adjacent diff 1)
+- n=2: `NO SOLUTION` (chỉ có [1,2] và [2,1], cả hai đều có cặp liền kề hiệu bằng 1)
 - n=3: `NO SOLUTION`
 - n=4: `2 4 1 3`
 - n=5: `2 4 1 3 5`
 
 ---
 
-## Solution
+## Lời giải
 
-**Strategy:** Place all even numbers first, then all odd numbers.
+**Chiến lược:** Đặt tất cả số chẵn trước, sau đó đặt tất cả số lẻ.
 
-For n >= 4: output `2, 4, 6, ..., 1, 3, 5, ...`
+Với n >= 4: xuất ra `2, 4, 6, ..., 1, 3, 5, ...`
 
-- Within evens: each pair differs by 2
-- Within odds: each pair differs by 2
-- At the boundary (last even, first odd): |n_even - 1| >= 3 for n >= 4
+- Trong dãy số chẵn: mỗi cặp liền kề có hiệu bằng 2
+- Trong dãy số lẻ: mỗi cặp liền kề có hiệu bằng 2
+- Tại ranh giới (số chẵn cuối cùng, số lẻ đầu tiên): |n_chẵn - 1| >= 3 khi n >= 4
 
-**Edge cases:**
-- n = 1: trivially `[1]`
-- n = 2 or n = 3: `NO SOLUTION`
+**Trường hợp đặc biệt:**
+- n = 1: hiển nhiên `[1]`
+- n = 2 hoặc n = 3: `NO SOLUTION`
 
-### C++ Implementation
+### Cài đặt C++
 
 ```cpp
 #include <bits/stdc++.h>
@@ -49,7 +49,7 @@ int main() {
     } else if (n <= 3) {
         cout << "NO SOLUTION" << endl;
     } else {
-        // Evens first, then odds
+        // Số chẵn trước, rồi số lẻ
         for (int i = 2; i <= n; i += 2) {
             cout << i << " ";
         }
@@ -63,7 +63,7 @@ int main() {
 }
 ```
 
-### Complexity
+### Độ phức tạp
 
-- **Time:** O(n)
-- **Space:** O(1) (streaming output)
+- **Thời gian:** O(n)
+- **Bộ nhớ:** O(1) (xuất trực tiếp)

@@ -11,7 +11,7 @@
 \shape{diffs}{Array}{size=7, data=[0, 0, 0, 0, 0, 0, 0], labels="0..6", label="Adjacent diffs"}
 
 \step
-\narrate{Construct a beautiful permutation of $[1..8]$: no two adjacent elements differ by 1. Strategy: place all evens first, then all odds.}
+\narrate{Xây dựng hoán vị đẹp của $[1..8]$: không có hai phần tử liền kề nào có hiệu bằng 1. Chiến lược: đặt tất cả số chẵn trước, rồi đến số lẻ.}
 
 \step
 \apply{perm.cell[0]}{value=2}
@@ -19,7 +19,7 @@
 \apply{perm.cell[2]}{value=6}
 \apply{perm.cell[3]}{value=8}
 \recolor{perm.range[0:3]}{state=current}
-\narrate{Place even numbers: $[2, 4, 6, 8]$. Each adjacent pair differs by 2. Safe!}
+\narrate{Đặt các số chẵn: $[2, 4, 6, 8]$. Mỗi cặp liền kề có hiệu bằng 2. An toàn!}
 
 \step
 \apply{diffs.cell[0]}{value=2}
@@ -27,7 +27,7 @@
 \apply{diffs.cell[2]}{value=2}
 \recolor{diffs.range[0:2]}{state=done}
 \recolor{perm.range[0:3]}{state=done}
-\narrate{Diffs within evens: $|4-2|=2$, $|6-4|=2$, $|8-6|=2$. All $\geq 2$. Good.}
+\narrate{Hiệu trong dãy chẵn: $|4-2|=2$, $|6-4|=2$, $|8-6|=2$. Tất cả $\geq 2$. Tốt.}
 
 \step
 \apply{perm.cell[4]}{value=1}
@@ -35,7 +35,7 @@
 \apply{perm.cell[6]}{value=5}
 \apply{perm.cell[7]}{value=7}
 \recolor{perm.range[4:7]}{state=current}
-\narrate{Place odd numbers: $[1, 3, 5, 7]$. Each adjacent pair differs by 2. Safe!}
+\narrate{Đặt các số lẻ: $[1, 3, 5, 7]$. Mỗi cặp liền kề có hiệu bằng 2. An toàn!}
 
 \step
 \apply{diffs.cell[3]}{value=7}
@@ -46,10 +46,10 @@
 \recolor{diffs.range[4:6]}{state=done}
 \highlight{perm.cell[3]}
 \highlight{perm.cell[4]}
-\narrate{Boundary: $|8 - 1| = 7$. Diffs within odds: all 2. The critical boundary is safe because $7 \neq 1$.}
+\narrate{Ranh giới: $|8 - 1| = 7$. Hiệu trong dãy lẻ: đều bằng 2. Ranh giới quan trọng nhất vẫn an toàn vì $7 \neq 1$.}
 
 \step
 \recolor{perm.all}{state=good}
 \recolor{diffs.all}{state=good}
-\narrate{Beautiful permutation: $[2, 4, 6, 8, 1, 3, 5, 7]$. All adjacent differences $\geq 2$: $[2, 2, 2, 7, 2, 2, 2]$. Done!}
+\narrate{Hoán vị đẹp: $[2, 4, 6, 8, 1, 3, 5, 7]$. Tất cả hiệu liền kề $\geq 2$: $[2, 2, 2, 7, 2, 2, 2]$. Hoàn thành!}
 \end{animation}

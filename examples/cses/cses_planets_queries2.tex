@@ -4,7 +4,7 @@
 \shape{ans}{Array}{size=1, data=["?"], label="Answer"}
 
 \step
-\narrate{Functional graph: each node has exactly one outgoing edge. Node 1 teleports to 2, node 2 to 3, node 3 to 1 (cycle of length 3). Similarly 4->5->6->4 forms a second cycle. Each weakly connected component is rho-shaped -- here both are pure cycles.}
+\narrate{Đồ thị hàm: mỗi đỉnh có đúng một cạnh đi ra. Đỉnh 1 dịch chuyển đến 2, đỉnh 2 đến 3, đỉnh 3 đến 1 (chu trình độ dài 3). Tương tự, 4->5->6->4 tạo thành chu trình thứ hai. Mỗi thành phần liên thông yếu có dạng chữ rho -- ở đây cả hai đều là chu trình thuần túy.}
 
 \step
 \recolor{g.node[1]}{state=current}
@@ -13,7 +13,7 @@
 \recolor{g.edge[(1,2)]}{state=current}
 \recolor{g.edge[(2,3)]}{state=current}
 \recolor{g.edge[(3,1)]}{state=current}
-\narrate{Component 1: cycle 1 -> 2 -> 3 -> 1 with length 3. All three nodes are on the cycle (depth 0).}
+\narrate{Thành phần 1: chu trình 1 -> 2 -> 3 -> 1 có độ dài 3. Cả ba đỉnh đều nằm trên chu trình (độ sâu 0).}
 
 \step
 \recolor{g.node[1]}{state=idle}
@@ -28,7 +28,7 @@
 \recolor{g.edge[(4,5)]}{state=current}
 \recolor{g.edge[(5,6)]}{state=current}
 \recolor{g.edge[(6,4)]}{state=current}
-\narrate{Component 2: cycle 4 -> 5 -> 6 -> 4 with length 3. Also a pure cycle. Nodes in different components can never reach each other.}
+\narrate{Thành phần 2: chu trình 4 -> 5 -> 6 -> 4 có độ dài 3. Cũng là chu trình thuần túy. Các đỉnh ở khác thành phần không bao giờ có thể đến được nhau.}
 
 \step
 \recolor{g.node[4]}{state=idle}
@@ -37,7 +37,7 @@
 \recolor{g.edge[(4,5)]}{state=idle}
 \recolor{g.edge[(5,6)]}{state=idle}
 \recolor{g.edge[(6,4)]}{state=idle}
-\narrate{Now we build the binary lifting table. lift[k][i] = the node reached from i after 2^k teleportations. Row 0 is k=0 (1 step), row 1 is k=1 (2 steps), row 2 is k=2 (4 steps).}
+\narrate{Bây giờ ta xây dựng bảng nhảy đôi (binary lifting). lift[k][i] = đỉnh đến được từ i sau $2^k$ lần dịch chuyển. Hàng 0 là k=0 (1 bước), hàng 1 là k=1 (2 bước), hàng 2 là k=2 (4 bước).}
 
 \step
 \apply{lift.cell[0][0]}{value="2"}
@@ -52,7 +52,7 @@
 \recolor{lift.cell[0][3]}{state=current}
 \recolor{lift.cell[0][4]}{state=current}
 \recolor{lift.cell[0][5]}{state=current}
-\narrate{Row k=0: lift[0][i] = t[i], the direct teleport target. Node 1->2, 2->3, 3->1, 4->5, 5->6, 6->4. This is just the original edge list.}
+\narrate{Hàng k=0: lift[0][i] = t[i], đích dịch chuyển trực tiếp. Đỉnh 1->2, 2->3, 3->1, 4->5, 5->6, 6->4. Đây chính là danh sách cạnh ban đầu.}
 
 \step
 \recolor{lift.cell[0][0]}{state=done}
@@ -73,7 +73,7 @@
 \recolor{lift.cell[1][3]}{state=current}
 \recolor{lift.cell[1][4]}{state=current}
 \recolor{lift.cell[1][5]}{state=current}
-\narrate{Row k=1: lift[1][i] = lift[0][lift[0][i]], the node reached after 2 steps. For node 1: lift[0][lift[0][1]] = lift[0][2] = 3. Each entry chains two single-step jumps.}
+\narrate{Hàng k=1: lift[1][i] = lift[0][lift[0][i]], đỉnh đến được sau 2 bước. Với đỉnh 1: lift[0][lift[0][1]] = lift[0][2] = 3. Mỗi ô được tính bằng cách nối hai bước nhảy đơn.}
 
 \step
 \recolor{lift.cell[1][0]}{state=done}
@@ -94,7 +94,7 @@
 \recolor{lift.cell[2][3]}{state=current}
 \recolor{lift.cell[2][4]}{state=current}
 \recolor{lift.cell[2][5]}{state=current}
-\narrate{Row k=2: lift[2][i] = lift[1][lift[1][i]], the node after 4 steps. Since cycle length is 3, jumping 4 steps is the same as jumping 1 step. Node 1 after 4 steps: 1->2->3->1->2, so lift[2][1]=2. Notice it matches lift[0][1] -- that is 4 mod 3 = 1 step.}
+\narrate{Hàng k=2: lift[2][i] = lift[1][lift[1][i]], đỉnh đến được sau 4 bước. Vì chu trình có độ dài 3, nhảy 4 bước tương đương nhảy 1 bước. Đỉnh 1 sau 4 bước: 1->2->3->1->2, nên lift[2][1]=2. Nhận thấy nó trùng với lift[0][1] -- vì $4 \bmod 3 = 1$ bước.}
 
 \step
 \recolor{lift.cell[2][0]}{state=done}
@@ -103,21 +103,21 @@
 \recolor{lift.cell[2][3]}{state=done}
 \recolor{lift.cell[2][4]}{state=done}
 \recolor{lift.cell[2][5]}{state=done}
-\narrate{Binary lifting table complete. We can now jump any node forward by any distance d in O(log d) time by decomposing d into powers of 2. Now let us answer queries.}
+\narrate{Bảng binary lifting đã hoàn thành. Giờ ta có thể nhảy bất kỳ đỉnh nào về phía trước một khoảng cách d trong $O(\log d)$ bằng cách phân tích d thành tổng các lũy thừa của 2. Bây giờ hãy trả lời các truy vấn.}
 
 \step
 \recolor{g.node[1]}{state=current}
 \highlight{g.node[3]}
 \apply{ans.cell[0]}{value="?"}
 \recolor{ans.cell[0]}{state=current}
-\narrate{Query 1: distance from node 1 to node 3? Both are in component 1 (same cycle). We need to follow edges from 1 and count steps until we reach 3.}
+\narrate{Truy vấn 1: khoảng cách từ đỉnh 1 đến đỉnh 3? Cả hai đều thuộc thành phần 1 (cùng chu trình). Ta cần đi theo các cạnh từ 1 và đếm số bước cho đến khi gặp 3.}
 
 \step
 \recolor{g.node[1]}{state=current}
 \recolor{g.edge[(1,2)]}{state=current}
 \recolor{g.node[2]}{state=done}
 \highlight{g.node[3]}
-\narrate{Step 1: teleport from 1 to 2. We have not reached 3 yet. Continue.}
+\narrate{Bước 1: dịch chuyển từ 1 đến 2. Chưa đến 3. Tiếp tục.}
 
 \step
 \recolor{g.node[1]}{state=done}
@@ -125,12 +125,12 @@
 \recolor{g.node[2]}{state=done}
 \recolor{g.node[3]}{state=good}
 \recolor{g.edge[(1,2)]}{state=done}
-\narrate{Step 2: teleport from 2 to 3. We reached the target! Distance = 2. On the cycle of length 3, the forward distance from position 0 to position 2 is (2 - 0) mod 3 = 2.}
+\narrate{Bước 2: dịch chuyển từ 2 đến 3. Đã đến đích! Khoảng cách = 2. Trên chu trình độ dài 3, khoảng cách thuận từ vị trí 0 đến vị trí 2 là $(2 - 0) \bmod 3 = 2$.}
 
 \step
 \apply{ans.cell[0]}{value="2"}
 \recolor{ans.cell[0]}{state=good}
-\narrate{Answer for query (1, 3) = 2. Two teleportations: 1 -> 2 -> 3.}
+\narrate{Đáp án truy vấn (1, 3) = 2. Hai lần dịch chuyển: 1 -> 2 -> 3.}
 
 \step
 \recolor{g.all}{state=idle}
@@ -139,7 +139,7 @@
 \recolor{g.node[4]}{state=current}
 \highlight{g.node[2]}
 \recolor{ans.cell[0]}{state=current}
-\narrate{Query 2: distance from node 4 to node 2? Node 4 is in component 2, node 2 is in component 1. Are they in the same component?}
+\narrate{Truy vấn 2: khoảng cách từ đỉnh 4 đến đỉnh 2? Đỉnh 4 thuộc thành phần 2, đỉnh 2 thuộc thành phần 1. Chúng có cùng thành phần không?}
 
 \step
 \recolor{g.node[4]}{state=error}
@@ -150,12 +150,12 @@
 \recolor{g.edge[(1,2)]}{state=dim}
 \recolor{g.edge[(2,3)]}{state=dim}
 \recolor{g.edge[(3,1)]}{state=dim}
-\narrate{Different components! Node 4 belongs to cycle {4,5,6} and node 2 belongs to cycle {1,2,3}. No sequence of teleportations can cross between components. Immediately return -1.}
+\narrate{Khác thành phần! Đỉnh 4 thuộc chu trình {4,5,6} còn đỉnh 2 thuộc chu trình {1,2,3}. Không có chuỗi dịch chuyển nào có thể đi giữa hai thành phần. Trả về -1 ngay lập tức.}
 
 \step
 \apply{ans.cell[0]}{value="-1"}
 \recolor{ans.cell[0]}{state=error}
-\narrate{Answer for query (4, 2) = -1. Unreachable -- different connected components in the functional graph.}
+\narrate{Đáp án truy vấn (4, 2) = -1. Không thể đến được -- hai thành phần liên thông khác nhau trong đồ thị hàm.}
 
 \step
 \recolor{g.all}{state=idle}
@@ -164,13 +164,13 @@
 \recolor{g.node[1]}{state=current}
 \highlight{g.node[1]}
 \recolor{ans.cell[0]}{state=current}
-\narrate{Bonus query: distance from node 1 to node 1? Same source and target.}
+\narrate{Truy vấn bổ sung: khoảng cách từ đỉnh 1 đến đỉnh 1? Cùng nguồn và đích.}
 
 \step
 \apply{ans.cell[0]}{value="0"}
 \recolor{ans.cell[0]}{state=good}
 \recolor{g.node[1]}{state=good}
-\narrate{Answer = 0. No teleportations needed -- you are already there. Note: the cycle distance would be 3 (go all the way around), but the minimum is 0 since a = b.}
+\narrate{Đáp án = 0. Không cần dịch chuyển -- bạn đã ở đó rồi. Lưu ý: khoảng cách vòng sẽ là 3 (đi hết một vòng), nhưng giá trị nhỏ nhất là 0 vì a = b.}
 
 \step
 \recolor{g.all}{state=idle}
@@ -181,7 +181,7 @@
 \recolor{lift.cell[0][3]}{state=idle}
 \recolor{lift.cell[0][4]}{state=idle}
 \recolor{lift.cell[0][5]}{state=idle}
-\narrate{To handle tail nodes (trees hanging off cycles), we also need depth information. If b is on a's path toward the cycle, we jump a forward by (depth[a] - depth[b]) steps and check if we land on b. If b is on the cycle, we walk a to the cycle, then compute cyclic distance.}
+\narrate{Để xử lý các đỉnh đuôi (cây treo vào chu trình), ta cần thêm thông tin về độ sâu. Nếu b nằm trên đường đi từ a đến chu trình, ta nhảy a về phía trước (depth[a] - depth[b]) bước rồi kiểm tra có đến đúng b không. Nếu b nằm trên chu trình, ta đưa a đến chu trình rồi tính khoảng cách vòng.}
 
 \step
 \recolor{g.node[1]}{state=good}
@@ -196,5 +196,5 @@
 \recolor{g.edge[(4,5)]}{state=good}
 \recolor{g.edge[(5,6)]}{state=good}
 \recolor{g.edge[(6,4)]}{state=good}
-\narrate{Summary: in a functional graph, binary lifting lets us jump forward efficiently, cycle detection identifies components, and combining both gives O(log n) per query. Total complexity: O((n + q) log n). The key insight is that reachability in a functional graph is strictly forward along the unique path from each node into its cycle.}
+\narrate{Tổng kết: trong đồ thị hàm, binary lifting giúp ta nhảy về phía trước hiệu quả, phát hiện chu trình xác định các thành phần, và kết hợp cả hai cho ta $O(\log n)$ mỗi truy vấn. Tổng độ phức tạp: $O((n + q) \log n)$. Ý tưởng cốt lõi là khả năng tiếp cận trong đồ thị hàm chỉ đi theo chiều thuận trên đường đi duy nhất từ mỗi đỉnh vào chu trình của nó.}
 \end{animation}

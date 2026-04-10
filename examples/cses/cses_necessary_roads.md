@@ -1,28 +1,28 @@
-# CSES: Necessary Roads (Bridges)
+# CSES: Necessary Roads (Cầu trong đồ thị)
 
-## Problem Statement
+## Đề bài
 
-You are given an undirected connected graph with **n** nodes and **m** edges. Your task is to find all edges whose removal would disconnect the graph. These edges are called **bridges** (or necessary roads).
+Cho một đồ thị vô hướng liên thông gồm **n** đỉnh và **m** cạnh. Nhiệm vụ của bạn là tìm tất cả các cạnh mà nếu xóa đi sẽ làm đồ thị mất tính liên thông. Những cạnh như vậy được gọi là **cầu** (bridge).
 
-### Input
+### Đầu vào
 
-The first line has two integers n and m: the number of nodes and edges.
+Dòng đầu tiên chứa hai số nguyên n và m: số đỉnh và số cạnh.
 
-Then m lines follow, each containing two integers a and b: there is an edge between nodes a and b.
+Tiếp theo là m dòng, mỗi dòng chứa hai số nguyên a và b: có một cạnh nối đỉnh a và đỉnh b.
 
-### Output
+### Đầu ra
 
-First print the number of necessary roads k, then print k lines describing them.
+Đầu tiên in số lượng cầu k, sau đó in k dòng mô tả các cầu đó.
 
-### Constraints
+### Ràng buộc
 
 - 1 <= n <= 10^5
 - 1 <= m <= 2 * 10^5
-- The graph is connected
+- Đồ thị liên thông
 
-### Example
+### Ví dụ
 
-**Input:**
+**Đầu vào:**
 ```
 7 8
 1 2
@@ -35,44 +35,44 @@ First print the number of necessary roads k, then print k lines describing them.
 7 5
 ```
 
-**Output:**
+**Đầu ra:**
 ```
 2
 3 4
 4 5
 ```
 
-Edges (3,4) and (4,5) are bridges. Nodes {1,2,3} form a cycle and {5,6,7} form a cycle, but node 4 connects them with no redundant path. Removing either bridge disconnects the graph.
+Cạnh (3,4) và (4,5) là cầu. Các đỉnh {1,2,3} tạo thành một chu trình và {5,6,7} cũng tạo thành một chu trình, nhưng đỉnh 4 nối hai phần này mà không có đường đi dự phòng. Xóa bất kỳ cầu nào cũng làm đồ thị mất liên thông.
 
 ---
 
-## Solution
+## Lời giải
 
-### Key Insight
+### Ý tưởng chính
 
-An edge (u, v) is a bridge if and only if there is no back edge from the subtree rooted at v (in a DFS tree) that reaches u or an ancestor of u. This is captured by **Tarjan's bridge-finding algorithm**.
+Một cạnh (u, v) là cầu khi và chỉ khi không tồn tại cạnh ngược (back edge) nào từ cây con gốc v (trong cây DFS) có thể nối lên tới u hoặc tổ tiên của u. Điều này được thể hiện qua **thuật toán tìm cầu của Tarjan**.
 
-### Tarjan's Algorithm
+### Thuật toán Tarjan
 
-We perform a DFS and maintain two arrays:
+Ta thực hiện DFS và duy trì hai mảng:
 
-- **disc[u]**: the discovery time of node u (when it was first visited)
-- **low[u]**: the minimum discovery time reachable from the subtree rooted at u using back edges
+- **disc[u]**: thời điểm phát hiện đỉnh u (thứ tự duyệt lần đầu)
+- **low[u]**: thời điểm phát hiện nhỏ nhất có thể đạt được từ cây con gốc u thông qua các cạnh ngược
 
-#### Computing low[u]
+#### Tính low[u]
 
-For each neighbor v of u during DFS:
-1. If v is **unvisited**: recurse into v, then `low[u] = min(low[u], low[v])`
-2. If v is **visited** and v is not the parent of u (i.e., (u,v) is a back edge): `low[u] = min(low[u], disc[v])`
+Với mỗi đỉnh kề v của u trong quá trình DFS:
+1. Nếu v **chưa thăm**: đệ quy vào v, sau đó `low[u] = min(low[u], low[v])`
+2. Nếu v **đã thăm** và v không phải cha của u (tức (u,v) là cạnh ngược): `low[u] = min(low[u], disc[v])`
 
-#### Bridge Condition
+#### Điều kiện cầu
 
-After DFS returns from child v back to u:
-- If `low[v] > disc[u]`, then edge (u, v) is a **bridge**
+Sau khi DFS quay về từ con v tới u:
+- Nếu `low[v] > disc[u]`, thì cạnh (u, v) là **cầu**
 
-This means there is no back edge from v's subtree that can reach u or above, so removing (u,v) disconnects v's subtree from the rest.
+Điều này có nghĩa là không có cạnh ngược nào từ cây con của v có thể nối tới u hoặc cao hơn, nên việc xóa cạnh (u,v) sẽ tách cây con của v ra khỏi phần còn lại.
 
-### C++ Solution
+### Code C++
 
 ```cpp
 #include <bits/stdc++.h>
@@ -122,22 +122,22 @@ int main() {
 }
 ```
 
-### Time Complexity
+### Độ phức tạp thời gian
 
-**O(n + m)** -- a single DFS visits every node and edge exactly once.
+**O(n + m)** -- chỉ cần một lần DFS duyệt qua tất cả các đỉnh và cạnh.
 
-### Space Complexity
+### Độ phức tạp bộ nhớ
 
-**O(n + m)** -- adjacency list storage plus the disc/low arrays and recursion stack.
+**O(n + m)** -- lưu danh sách kề cùng các mảng disc/low và ngăn xếp đệ quy.
 
 ---
 
-## Why This Works
+## Tại sao thuật toán đúng
 
-The DFS tree partitions edges into **tree edges** and **back edges**. A tree edge (u, v) is a bridge only if no back edge in v's subtree "jumps over" it to reach u or higher. The low value precisely tracks the highest ancestor reachable via back edges. When `low[v] > disc[u]`, v's entire subtree is isolated if we cut (u, v).
+Cây DFS phân chia các cạnh thành **cạnh cây** (tree edge) và **cạnh ngược** (back edge). Một cạnh cây (u, v) là cầu khi và chỉ khi không có cạnh ngược nào trong cây con của v "nhảy qua" nó để nối tới u hoặc cao hơn. Giá trị low chính xác theo dõi tổ tiên cao nhất có thể đạt được qua các cạnh ngược. Khi `low[v] > disc[u]`, toàn bộ cây con của v sẽ bị cô lập nếu ta cắt cạnh (u, v).
 
-### Edge Cases
+### Các trường hợp đặc biệt
 
-- **Tree graph** (m = n-1): every edge is a bridge
-- **Biconnected graph**: no bridges exist
-- **Multiple edges between same pair**: parallel edges are never bridges (need to track edge index, not just parent node, to handle this correctly)
+- **Đồ thị cây** (m = n-1): mọi cạnh đều là cầu
+- **Đồ thị hai-liên-thông**: không có cầu nào
+- **Cạnh song song giữa cùng một cặp đỉnh**: các cạnh song song không bao giờ là cầu (cần theo dõi chỉ số cạnh thay vì chỉ đỉnh cha để xử lý đúng trường hợp này)

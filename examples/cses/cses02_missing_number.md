@@ -1,39 +1,39 @@
-# CSES Problem 2: Missing Number
+# CSES Bài 2: Số Bị Thiếu
 
-## Problem Statement
+## Đề bài
 
-You are given all integers between 1 and n except one. Your task is to find the missing number.
+Cho tất cả các số nguyên từ 1 đến n, ngoại trừ một số. Nhiệm vụ của bạn là tìm số bị thiếu đó.
 
-**Input:** The first line contains an integer n. The second line contains n-1 integers, each distinct and in the range [1, n].
+**Đầu vào:** Dòng đầu tiên chứa một số nguyên n. Dòng thứ hai chứa n-1 số nguyên, mỗi số đều khác nhau và nằm trong đoạn [1, n].
 
-**Output:** Print the missing number.
+**Đầu ra:** In ra số bị thiếu.
 
-**Constraints:** 2 <= n <= 2 * 10^5
+**Ràng buộc:** 2 <= n <= 2 * 10^5
 
-### Example
+### Ví dụ
 
-Input:
+Đầu vào:
 ```
 5
 2 3 1 5
 ```
 
-Output:
+Đầu ra:
 ```
 4
 ```
 
 ---
 
-## Approach 1: Sum Formula
+## Cách 1: Công thức tổng
 
-The sum of integers from 1 to n is n(n+1)/2. Subtract the sum of the given n-1 numbers from this expected sum to get the missing number.
+Tổng các số nguyên từ 1 đến n là n(n+1)/2. Lấy tổng kỳ vọng trừ đi tổng của n-1 số đã cho sẽ ra số bị thiếu.
 
-**Why it works:** Exactly one number is missing, so expected_sum - actual_sum isolates that number.
+**Tại sao đúng:** Đúng một số bị thiếu, nên tổng_kỳ_vọng - tổng_thực_tế chính là số đó.
 
-**Edge case:** For large n, the sum can reach ~2 * 10^10, which fits in a 64-bit integer but overflows a 32-bit one. Use `long long` in C++.
+**Trường hợp đặc biệt:** Với n lớn, tổng có thể lên đến ~2 * 10^10, vừa đủ cho số nguyên 64-bit nhưng sẽ tràn số nguyên 32-bit. Dùng `long long` trong C++.
 
-### C++ Code
+### Mã C++
 
 ```cpp
 #include <bits/stdc++.h>
@@ -60,18 +60,18 @@ int main() {
 }
 ```
 
-**Time complexity:** O(n)
-**Space complexity:** O(1)
+**Độ phức tạp thời gian:** O(n)
+**Độ phức tạp bộ nhớ:** O(1)
 
 ---
 
-## Approach 2: XOR
+## Cách 2: XOR
 
-XOR all integers from 1 to n, then XOR all the given numbers. Because a XOR a = 0 for any a, every number that appears in both cancels out, leaving only the missing number.
+XOR tất cả các số nguyên từ 1 đến n, rồi XOR với tất cả các số đã cho. Vì a XOR a = 0 với mọi a, nên mỗi số xuất hiện ở cả hai phía sẽ triệt tiêu nhau, chỉ còn lại số bị thiếu.
 
-**Why it works:** XOR is associative, commutative, and self-inverse. Every number present in both the full range and the input cancels to zero.
+**Tại sao đúng:** XOR có tính kết hợp, giao hoán, và nghịch đảo của chính nó. Mỗi số có mặt trong cả dãy đầy đủ lẫn đầu vào sẽ triệt tiêu về 0.
 
-### C++ Code
+### Mã C++
 
 ```cpp
 #include <bits/stdc++.h>
@@ -101,16 +101,16 @@ int main() {
 }
 ```
 
-**Time complexity:** O(n)
-**Space complexity:** O(1)
+**Độ phức tạp thời gian:** O(n)
+**Độ phức tạp bộ nhớ:** O(1)
 
 ---
 
-## Comparison
+## So sánh
 
-| Approach | Overflow risk | Operations per element |
-|----------|--------------|----------------------|
-| Sum formula | Yes (use `long long`) | 1 addition |
-| XOR | No (bounded by n) | 1 XOR |
+| Cách tiếp cận | Nguy cơ tràn số | Phép tính mỗi phần tử |
+|----------------|-----------------|----------------------|
+| Công thức tổng | Có (dùng `long long`) | 1 phép cộng |
+| XOR | Không (giới hạn bởi n) | 1 phép XOR |
 
-Both approaches are O(n) time and O(1) space. The XOR approach avoids overflow entirely, while the sum approach is more intuitive.
+Cả hai cách đều có độ phức tạp thời gian O(n) và bộ nhớ O(1). Cách XOR tránh hoàn toàn vấn đề tràn số, trong khi cách dùng công thức tổng trực quan hơn.

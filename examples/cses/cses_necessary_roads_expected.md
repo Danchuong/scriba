@@ -1,102 +1,102 @@
-# CSES Necessary Roads: Expected Animation
+# CSES Necessary Roads: Mô tả hoạt ảnh kỳ vọng
 
-## Overview
+## Tổng quan
 
-- **Frames:** 16 total
-- **Primitives:** Graph (7 nodes, 8 edges), 2 Arrays (disc[] and low[], each size 7)
-- **Visual flow:** DFS traversal with discovery/low value computation, back edge detection, bridge identification on backtrack
+- **Số khung hình:** 16
+- **Các cấu trúc:** Đồ thị (7 đỉnh, 8 cạnh), 2 Mảng (disc[] và low[], mỗi mảng kích thước 7)
+- **Luồng trực quan:** Duyệt DFS với tính toán giá trị disc/low, phát hiện cạnh ngược, xác định cầu khi quay lui
 
-## Frame-by-Frame Description
+## Mô tả từng khung hình
 
-### Frame 0 (Introduction)
-- Graph: all nodes and edges in idle state
-- disc[]: all cells show "-"
-- low[]: all cells show "-"
-- Narration introduces the bridge-finding problem and Tarjan's algorithm
+### Khung 0 (Giới thiệu)
+- Đồ thị: tất cả đỉnh và cạnh ở trạng thái mặc định (idle)
+- disc[]: tất cả ô hiển thị "-"
+- low[]: tất cả ô hiển thị "-"
+- Lời dẫn giới thiệu bài toán tìm cầu và thuật toán Tarjan
 
-### Frame 1 (Start DFS at node 1)
-- g.node[1]: current (blue)
-- disc[1] = 0, low[1] = 0, both cells current
-- Narration: DFS begins at node 1
+### Khung 1 (Bắt đầu DFS tại đỉnh 1)
+- g.node[1]: đang xử lý (xanh dương)
+- disc[1] = 0, low[1] = 0, cả hai ô đang xử lý
+- Lời dẫn: DFS bắt đầu từ đỉnh 1
 
-### Frame 2 (Visit node 2)
-- g.node[1]: done (green), g.node[2]: current
-- g.edge[(1,2)]: done (tree edge)
+### Khung 2 (Thăm đỉnh 2)
+- g.node[1]: hoàn tất (xanh lá), g.node[2]: đang xử lý
+- g.edge[(1,2)]: hoàn tất (cạnh cây)
 - disc[2] = 1, low[2] = 1
 
-### Frame 3 (Visit node 3)
-- g.node[2]: done, g.node[3]: current
-- g.edge[(2,3)]: done (tree edge)
+### Khung 3 (Thăm đỉnh 3)
+- g.node[2]: hoàn tất, g.node[3]: đang xử lý
+- g.edge[(2,3)]: hoàn tất (cạnh cây)
 - disc[3] = 2, low[3] = 2
 
-### Frame 4 (Back edge 3->1)
-- g.edge[(3,1)]: current (yellow highlight for back edge)
-- low[3] updated from 2 to 0, shown in good (sky blue)
-- Narration explains back edge detection: node 3 can reach ancestor 1
+### Khung 4 (Cạnh ngược 3->1)
+- g.edge[(3,1)]: đang xử lý (tô vàng cho cạnh ngược)
+- low[3] cập nhật từ 2 thành 0, hiển thị trạng thái tốt (xanh nhạt)
+- Lời dẫn giải thích phát hiện cạnh ngược: đỉnh 3 có thể nối tới tổ tiên 1
 
-### Frame 5 (Visit node 4)
-- g.node[3]: done, g.node[4]: current
-- g.edge[(3,4)]: done (tree edge), g.edge[(3,1)]: dim (back edge faded)
+### Khung 5 (Thăm đỉnh 4)
+- g.node[3]: hoàn tất, g.node[4]: đang xử lý
+- g.edge[(3,4)]: hoàn tất (cạnh cây), g.edge[(3,1)]: mờ (cạnh ngược đã xử lý)
 - disc[4] = 3, low[4] = 3
 
-### Frame 6 (Visit node 5)
-- g.node[4]: done, g.node[5]: current
-- g.edge[(4,5)]: done (tree edge)
+### Khung 6 (Thăm đỉnh 5)
+- g.node[4]: hoàn tất, g.node[5]: đang xử lý
+- g.edge[(4,5)]: hoàn tất (cạnh cây)
 - disc[5] = 4, low[5] = 4
 
-### Frame 7 (Visit node 6)
-- g.node[5]: done, g.node[6]: current
-- g.edge[(5,6)]: done
+### Khung 7 (Thăm đỉnh 6)
+- g.node[5]: hoàn tất, g.node[6]: đang xử lý
+- g.edge[(5,6)]: hoàn tất
 - disc[6] = 5, low[6] = 5
 
-### Frame 8 (Visit node 7)
-- g.node[6]: done, g.node[7]: current
-- g.edge[(6,7)]: done
+### Khung 8 (Thăm đỉnh 7)
+- g.node[6]: hoàn tất, g.node[7]: đang xử lý
+- g.edge[(6,7)]: hoàn tất
 - disc[7] = 6, low[7] = 6
 
-### Frame 9 (Back edge 7->5)
-- g.edge[(7,5)]: current (back edge detected)
-- low[7] updated from 6 to 4, shown in good (sky blue)
-- Narration: cycle 5-6-7-5 protects those edges from being bridges
+### Khung 9 (Cạnh ngược 7->5)
+- g.edge[(7,5)]: đang xử lý (phát hiện cạnh ngược)
+- low[7] cập nhật từ 6 thành 4, hiển thị trạng thái tốt (xanh nhạt)
+- Lời dẫn: chu trình 5-6-7-5 bảo vệ các cạnh đó khỏi trở thành cầu
 
-### Frame 10 (Backtrack 7->6)
-- g.node[7]: done, g.edge[(7,5)]: dim
-- low[6] updated to 4
-- Bridge check: low[7]=4 > disc[6]=5? No -- edge 6-7 is safe
+### Khung 10 (Quay lui 7->6)
+- g.node[7]: hoàn tất, g.edge[(7,5)]: mờ
+- low[6] cập nhật thành 4
+- Kiểm tra cầu: low[7]=4 > disc[6]=5? Không -- cạnh 6-7 an toàn
 
-### Frame 11 (Backtrack 6->5)
-- low[5] updated to 4
-- Bridge check: low[6]=4 > disc[5]=4? No -- edge 5-6 is safe
+### Khung 11 (Quay lui 6->5)
+- low[5] cập nhật thành 4
+- Kiểm tra cầu: low[6]=4 > disc[5]=4? Không -- cạnh 5-6 an toàn
 
-### Frame 12 (Backtrack 5->4 -- bridge found)
-- low[4] stays 3
-- Bridge check: low[5]=4 > disc[4]=3? YES
-- g.edge[(4,5)]: error (red) -- marked as bridge
-- Narration: no back edge from {5,6,7} reaches above node 4
+### Khung 12 (Quay lui 5->4 -- tìm thấy cầu)
+- low[4] giữ nguyên 3
+- Kiểm tra cầu: low[5]=4 > disc[4]=3? ĐÚNG
+- g.edge[(4,5)]: lỗi (đỏ) -- đánh dấu là cầu
+- Lời dẫn: không có cạnh ngược nào từ {5,6,7} nối tới phía trên đỉnh 4
 
-### Frame 13 (Backtrack 4->3 -- bridge found)
-- Bridge check: low[4]=3 > disc[3]=2? YES
-- g.edge[(3,4)]: error (red) -- marked as bridge
-- Narration: node 4 has no back edges, its subtree is isolated
+### Khung 13 (Quay lui 4->3 -- tìm thấy cầu)
+- Kiểm tra cầu: low[4]=3 > disc[3]=2? ĐÚNG
+- g.edge[(3,4)]: lỗi (đỏ) -- đánh dấu là cầu
+- Lời dẫn: đỉnh 4 không có cạnh ngược, cây con của nó bị cô lập
 
-### Frame 14 (Backtrack to root)
+### Khung 14 (Quay lui về gốc)
 - low[2] = 0, low[1] = 0
-- Edge 2-3 and 1-2 both pass bridge check (not bridges)
-- DFS complete
+- Cạnh 2-3 và 1-2 đều vượt qua kiểm tra cầu (không phải cầu)
+- DFS hoàn tất
 
-### Frame 15 (Final result)
-- Cycle {1,2,3}: nodes and edges in good (sky blue)
-- Cycle {5,6,7}: nodes and edges in good (sky blue)
-- Node 4: error (red) -- articulation point
-- Edges (3,4) and (4,5): error (red) -- bridges
-- disc[] and low[] arrays: all good
-- Narration summarizes: 2 bridges, O(n + m) complexity
+### Khung 15 (Kết quả cuối cùng)
+- Chu trình {1,2,3}: các đỉnh và cạnh ở trạng thái tốt (xanh nhạt)
+- Chu trình {5,6,7}: các đỉnh và cạnh ở trạng thái tốt (xanh nhạt)
+- Đỉnh 4: lỗi (đỏ) -- đỉnh khớp (articulation point)
+- Cạnh (3,4) và (4,5): lỗi (đỏ) -- cầu
+- Mảng disc[] và low[]: tất cả ở trạng thái tốt
+- Lời dẫn tổng kết: 2 cầu, độ phức tạp O(n + m)
 
-## Visual Characteristics
+## Đặc điểm trực quan
 
-- Tree edges colored done (green) as DFS progresses forward
-- Back edges flash current (yellow) when detected, then dim
-- low[] cells flash good (sky blue) when updated by back edges
-- Bridge edges colored error (red) on backtrack when condition met
-- Final frame shows clear biconnected component structure: two green/sky-blue cycles connected by red bridge edges through a red articulation point
-- The two arrays provide a running log of the algorithm state at each DFS step
+- Cạnh cây được tô màu hoàn tất (xanh lá) khi DFS tiến về phía trước
+- Cạnh ngược nhấp nháy trạng thái đang xử lý (vàng) khi được phát hiện, sau đó mờ dần
+- Các ô low[] nhấp nháy trạng thái tốt (xanh nhạt) khi được cập nhật bởi cạnh ngược
+- Cạnh cầu được tô màu lỗi (đỏ) khi quay lui và thỏa điều kiện
+- Khung cuối cùng thể hiện rõ cấu trúc thành phần hai-liên-thông: hai chu trình xanh lá/xanh nhạt nối với nhau qua các cạnh cầu đỏ qua đỉnh khớp đỏ
+- Hai mảng cung cấp nhật ký liên tục về trạng thái thuật toán tại mỗi bước DFS

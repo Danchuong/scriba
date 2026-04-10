@@ -4,7 +4,7 @@
 \shape{low}{Array}{size=7, data=["-","-","-","-","-","-","-"], labels="1..7", label="low"}
 
 \step
-\narrate{Graph with 7 nodes and 8 edges. Goal: find bridges -- edges whose removal disconnects the graph. Tarjan's algorithm uses DFS with two arrays: disc[u] (discovery time) and low[u] (lowest disc reachable via back edges). An edge (u,v) is a bridge if low[v] > disc[u].}
+\narrate{Đồ thị có 7 đỉnh và 8 cạnh. Mục tiêu: tìm các cầu -- những cạnh mà nếu xóa đi sẽ làm đồ thị mất liên thông. Thuật toán Tarjan dùng DFS với hai mảng: disc[u] (thời điểm phát hiện) và low[u] (giá trị disc nhỏ nhất có thể đạt qua cạnh ngược). Cạnh (u,v) là cầu nếu low[v] > disc[u].}
 
 \step
 \recolor{g.node[1]}{state=current}
@@ -12,7 +12,7 @@
 \apply{low.cell[0]}{value="0"}
 \recolor{disc.cell[0]}{state=current}
 \recolor{low.cell[0]}{state=current}
-\narrate{DFS starts at node 1. Set disc[1] = 0, low[1] = 0. Explore neighbor 2.}
+\narrate{DFS bắt đầu tại đỉnh 1. Gán disc[1] = 0, low[1] = 0. Duyệt đỉnh kề 2.}
 
 \step
 \recolor{g.node[1]}{state=done}
@@ -24,7 +24,7 @@
 \recolor{low.cell[0]}{state=done}
 \recolor{disc.cell[1]}{state=current}
 \recolor{low.cell[1]}{state=current}
-\narrate{Visit node 2. Tree edge 1->2. disc[2] = 1, low[2] = 1. Explore neighbor 3.}
+\narrate{Thăm đỉnh 2. Cạnh cây 1->2. disc[2] = 1, low[2] = 1. Duyệt đỉnh kề 3.}
 
 \step
 \recolor{g.node[2]}{state=done}
@@ -36,13 +36,13 @@
 \recolor{low.cell[1]}{state=done}
 \recolor{disc.cell[2]}{state=current}
 \recolor{low.cell[2]}{state=current}
-\narrate{Visit node 3. Tree edge 2->3. disc[3] = 2, low[3] = 2.}
+\narrate{Thăm đỉnh 3. Cạnh cây 2->3. disc[3] = 2, low[3] = 2.}
 
 \step
 \recolor{g.edge[(3,1)]}{state=current}
 \apply{low.cell[2]}{value="0"}
 \recolor{low.cell[2]}{state=good}
-\narrate{Node 3 sees neighbor 1 -- already visited and not parent. Back edge found! low[3] = min(2, disc[1]) = min(2, 0) = 0. This back edge lets subtree of 3 reach all the way up to node 1.}
+\narrate{Đỉnh 3 thấy đỉnh kề 1 -- đã thăm và không phải cha. Phát hiện cạnh ngược! low[3] = min(2, disc[1]) = min(2, 0) = 0. Cạnh ngược này cho phép cây con của 3 nối ngược lên tận đỉnh 1.}
 
 \step
 \recolor{g.edge[(3,1)]}{state=dim}
@@ -55,7 +55,7 @@
 \recolor{low.cell[2]}{state=done}
 \recolor{disc.cell[3]}{state=current}
 \recolor{low.cell[3]}{state=current}
-\narrate{Continue DFS from 3 to 4. Tree edge 3->4. disc[4] = 3, low[4] = 3. Node 4 has no back edges upward.}
+\narrate{Tiếp tục DFS từ 3 sang 4. Cạnh cây 3->4. disc[4] = 3, low[4] = 3. Đỉnh 4 không có cạnh ngược nào đi lên.}
 
 \step
 \recolor{g.node[4]}{state=done}
@@ -67,7 +67,7 @@
 \recolor{low.cell[3]}{state=done}
 \recolor{disc.cell[4]}{state=current}
 \recolor{low.cell[4]}{state=current}
-\narrate{DFS to node 5. Tree edge 4->5. disc[5] = 4, low[5] = 4.}
+\narrate{DFS sang đỉnh 5. Cạnh cây 4->5. disc[5] = 4, low[5] = 4.}
 
 \step
 \recolor{g.node[5]}{state=done}
@@ -79,7 +79,7 @@
 \recolor{low.cell[4]}{state=done}
 \recolor{disc.cell[5]}{state=current}
 \recolor{low.cell[5]}{state=current}
-\narrate{DFS to node 6. Tree edge 5->6. disc[6] = 5, low[6] = 5.}
+\narrate{DFS sang đỉnh 6. Cạnh cây 5->6. disc[6] = 5, low[6] = 5.}
 
 \step
 \recolor{g.node[6]}{state=done}
@@ -91,13 +91,13 @@
 \recolor{low.cell[5]}{state=done}
 \recolor{disc.cell[6]}{state=current}
 \recolor{low.cell[6]}{state=current}
-\narrate{DFS to node 7. Tree edge 6->7. disc[7] = 6, low[7] = 6.}
+\narrate{DFS sang đỉnh 7. Cạnh cây 6->7. disc[7] = 6, low[7] = 6.}
 
 \step
 \recolor{g.edge[(7,5)]}{state=current}
 \apply{low.cell[6]}{value="4"}
 \recolor{low.cell[6]}{state=good}
-\narrate{Node 7 sees neighbor 5 -- already visited, not parent (parent is 6). Back edge! low[7] = min(6, disc[5]) = min(6, 4) = 4. The cycle 5-6-7-5 means none of those edges are bridges.}
+\narrate{Đỉnh 7 thấy đỉnh kề 5 -- đã thăm, không phải cha (cha là 6). Cạnh ngược! low[7] = min(6, disc[5]) = min(6, 4) = 4. Chu trình 5-6-7-5 đảm bảo không cạnh nào trong đó là cầu.}
 
 \step
 \recolor{g.node[7]}{state=done}
@@ -105,29 +105,29 @@
 \apply{low.cell[5]}{value="4"}
 \recolor{low.cell[5]}{state=done}
 \recolor{low.cell[6]}{state=done}
-\narrate{Backtrack 7->6. low[6] = min(5, low[7]) = min(5, 4) = 4. Bridge check: low[7]=4 > disc[6]=5? No. Edge 6-7 is NOT a bridge.}
+\narrate{Quay lui 7->6. low[6] = min(5, low[7]) = min(5, 4) = 4. Kiểm tra cầu: low[7]=4 > disc[6]=5? Không. Cạnh 6-7 KHÔNG phải cầu.}
 
 \step
 \apply{low.cell[4]}{value="4"}
 \recolor{low.cell[4]}{state=done}
-\narrate{Backtrack 6->5. low[5] = min(4, low[6]) = min(4, 4) = 4. Bridge check: low[6]=4 > disc[5]=4? No (not strictly greater). Edge 5-6 is NOT a bridge.}
+\narrate{Quay lui 6->5. low[5] = min(4, low[6]) = min(4, 4) = 4. Kiểm tra cầu: low[6]=4 > disc[5]=4? Không (không lớn hơn nghiêm ngặt). Cạnh 5-6 KHÔNG phải cầu.}
 
 \step
 \apply{low.cell[3]}{value="3"}
 \recolor{low.cell[3]}{state=done}
 \recolor{g.edge[(4,5)]}{state=error}
-\narrate{Backtrack 5->4. low[4] = min(3, low[5]) = min(3, 4) = 3. Bridge check: low[5]=4 > disc[4]=3? YES! Edge (4,5) is a BRIDGE. No back edge from {5,6,7} reaches node 4 or above.}
+\narrate{Quay lui 5->4. low[4] = min(3, low[5]) = min(3, 4) = 3. Kiểm tra cầu: low[5]=4 > disc[4]=3? ĐÚNG! Cạnh (4,5) là CẦU. Không có cạnh ngược nào từ {5,6,7} nối tới đỉnh 4 hoặc cao hơn.}
 
 \step
 \recolor{g.edge[(3,4)]}{state=error}
-\narrate{Backtrack 4->3. low[3] remains 3. Bridge check: low[4]=3 > disc[3]=2? YES! Edge (3,4) is also a BRIDGE. Node 4 has no back edges at all -- its subtree is completely isolated from ancestors of 3.}
+\narrate{Quay lui 4->3. low[3] giữ nguyên 3. Kiểm tra cầu: low[4]=3 > disc[3]=2? ĐÚNG! Cạnh (3,4) cũng là CẦU. Đỉnh 4 hoàn toàn không có cạnh ngược -- cây con của nó bị cô lập hoàn toàn khỏi các tổ tiên của 3.}
 
 \step
 \apply{low.cell[1]}{value="0"}
 \apply{low.cell[0]}{value="0"}
 \recolor{low.cell[1]}{state=done}
 \recolor{low.cell[0]}{state=done}
-\narrate{Backtrack 3->2. low[2] = min(1, low[3]) = min(1, 0) = 0. Bridge check: low[3]=0 > disc[2]=1? No. Edge 2-3 is safe. Backtrack 2->1. low[1] = min(0, 0) = 0. Edge 1-2: low[2]=0 > disc[1]=0? No. DFS complete.}
+\narrate{Quay lui 3->2. low[2] = min(1, low[3]) = min(1, 0) = 0. Kiểm tra cầu: low[3]=0 > disc[2]=1? Không. Cạnh 2-3 an toàn. Quay lui 2->1. low[1] = min(0, 0) = 0. Cạnh 1-2: low[2]=0 > disc[1]=0? Không. DFS hoàn tất.}
 
 \step
 \recolor{g.node[1]}{state=good}
@@ -145,5 +145,5 @@
 \recolor{g.node[4]}{state=error}
 \recolor{disc.range[0:6]}{state=good}
 \recolor{low.range[0:6]}{state=good}
-\narrate{Result: 2 bridges -- (3,4) and (4,5), shown in red. Node 4 is an articulation point connecting two biconnected components: cycle {1,2,3} and cycle {5,6,7}. Removing either bridge disconnects the graph. Tarjan's algorithm found all bridges in O(n + m) with a single DFS pass.}
+\narrate{Kết quả: 2 cầu -- (3,4) và (4,5), tô đỏ. Đỉnh 4 là đỉnh khớp nối hai thành phần hai-liên-thông: chu trình {1,2,3} và chu trình {5,6,7}. Xóa bất kỳ cầu nào cũng làm đồ thị mất liên thông. Thuật toán Tarjan tìm tất cả các cầu trong O(n + m) chỉ với một lần duyệt DFS.}
 \end{animation}

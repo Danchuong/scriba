@@ -1,60 +1,60 @@
-# CSES Houses and Schools: Expected Animation
+# CSES Houses and Schools: Mô tả hoạt ảnh kỳ vọng
 
-## Overview
+## Tổng quan
 
-- **Frames:** 20 total
-- **Primitives:** Array (children per house, 6 cells), DPTable (3 rows x 7 cols for dp[j][i]), Array (cost display, 1 cell)
-- **Example:** n=6, k=2, children=[2, 3, 5, 1, 4, 6]
-- **Answer:** dp[2][6] = 12
+- **Số khung hình:** 20
+- **Các hình:** Mảng (số trẻ em mỗi nhà, 6 ô), Bảng DP (3 hàng x 7 cột cho dp[j][i]), Mảng (hiển thị chi phí, 1 ô)
+- **Ví dụ:** n=6, k=2, trẻ em=[2, 3, 5, 1, 4, 6]
+- **Đáp án:** dp[2][6] = 12
 
-## Frame-by-Frame Description
+## Mô tả từng khung hình
 
-### Frame 0 (Introduction)
-- All shapes visible in initial state
-- Array shows [2, 3, 5, 1, 4, 6] with labels 1..6
-- DPTable is empty (3 rows for j=0,1,2 and 7 cols for i=0..6)
-- Narration introduces the problem and DP formulation
+### Khung 0 (Giới thiệu)
+- Tất cả các hình hiển thị ở trạng thái ban đầu
+- Mảng hiển thị [2, 3, 5, 1, 4, 6] với nhãn 1..6
+- Bảng DP trống (3 hàng cho j=0,1,2 và 7 cột cho i=0..6)
+- Lời dẫn giới thiệu bài toán và công thức DP
 
-### Frame 1 (Base case)
-- dp[0][0] = 0, marked `done`
-- Narration explains zero schools for zero houses
+### Khung 1 (Trường hợp cơ sở)
+- dp[0][0] = 0, đánh dấu `done`
+- Lời dẫn giải thích: không trường cho không nhà
 
-### Frames 2-8 (Row j=1: one school)
-Each frame computes dp[1][i] for i=1..6:
-- Frame 2: dp[1][1]=0 (school at house 1)
-- Frame 3: dp[1][2]=2 (median at house 2)
-- Frame 4: dp[1][3]=7 (median at house 3)
-- Frame 5: dp[1][4]=8 (median at house 3)
-- Frame 6: dp[1][5]=16 (median at house 3)
-- Frame 7: dp[1][6]=33 (median shifts to house 4)
-- Frame 8: Summary of row 1, transition to row 2
+### Khung 2-8 (Hàng j=1: một trường)
+Mỗi khung tính dp[1][i] với i=1..6:
+- Khung 2: dp[1][1]=0 (trường tại nhà 1)
+- Khung 3: dp[1][2]=2 (trung vị tại nhà 2)
+- Khung 4: dp[1][3]=7 (trung vị tại nhà 3)
+- Khung 5: dp[1][4]=8 (trung vị tại nhà 3)
+- Khung 6: dp[1][5]=16 (trung vị tại nhà 3)
+- Khung 7: dp[1][6]=33 (trung vị dịch sang nhà 4)
+- Khung 8: Tổng kết hàng 1, chuyển sang hàng 2
 
-Visual behavior:
-- Current cell is `current` (blue), finalized cells are `done` (green)
-- Array range [0..i-1] is highlighted (ephemeral) showing the segment under consideration
-- cost_val displays the computed cost(1, i) value
+Hành vi trực quan:
+- Ô đang tính là `current` (xanh dương), ô đã xong là `done` (xanh lá)
+- Đoạn mảng [0..i-1] được tô sáng (tạm thời) cho thấy đoạn đang xét
+- cost_val hiển thị giá trị cost(1, i) vừa tính
 
-### Frames 9-18 (Row j=2: two schools)
-Each frame computes dp[2][i] for i=2..6, showing the split point search:
-- Frame 9: dp[2][2]=0 (trivial: one school per house)
-- Frames 10-11: dp[2][3]=2, shows trying m=1 and m=2, picks m=2
-- Frames 12-13: dp[2][4]=3, optimal split at m=2
-- Frames 14-15: dp[2][5]=8, split at m=3 or m=4
-- Frames 16-17: dp[2][6]=12, split at m=4
+### Khung 9-18 (Hàng j=2: hai trường)
+Mỗi khung tính dp[2][i] với i=2..6, cho thấy quá trình tìm điểm chia:
+- Khung 9: dp[2][2]=0 (tầm thường: mỗi nhà một trường)
+- Khung 10-11: dp[2][3]=2, thử m=1 và m=2, chọn m=2
+- Khung 12-13: dp[2][4]=3, chia tối ưu tại m=2
+- Khung 14-15: dp[2][5]=8, chia tại m=3 hoặc m=4
+- Khung 16-17: dp[2][6]=12, chia tại m=4
 
-Visual behavior:
-- When computing dp[2][i], the right segment being costed is highlighted in the array
-- cost_val shows the cost(m+1, i) being evaluated
-- Narration mentions monotonicity of optimal split points (D&C optimization justification)
+Hành vi trực quan:
+- Khi tính dp[2][i], đoạn bên phải đang tính chi phí được tô sáng trong mảng
+- cost_val hiển thị giá trị cost(m+1, i) đang xét
+- Lời dẫn đề cập tính đơn điệu của điểm chia tối ưu (cơ sở cho tối ưu chia để trị)
 
-### Frame 19 (Final answer)
-- dp[2][6] marked `good` (sky blue)
-- Houses 3 and 6 in the array marked `good` (school positions)
-- cost_val shows 12
-- Narration: "Answer: dp[2][6] = 12. Schools at houses 3 and 6."
-- Explains the O(kn log n) complexity from D&C optimization
+### Khung 19 (Đáp án cuối cùng)
+- dp[2][6] đánh dấu `good` (xanh da trời)
+- Nhà 3 và nhà 6 trong mảng đánh dấu `good` (vị trí đặt trường)
+- cost_val hiển thị 12
+- Lời dẫn: "Đáp án: dp[2][6] = 12. Trường đặt tại nhà 3 và nhà 6."
+- Giải thích độ phức tạp O(kn log n) nhờ tối ưu chia để trị
 
-## DP Table Final State
+## Bảng DP trạng thái cuối
 
 ```
 j\i |  0     1     2     3     4     5     6
@@ -64,11 +64,11 @@ j\i |  0     1     2     3     4     5     6
  2  |  -     -     0     2     3     8    12
 ```
 
-## Visual Characteristics
+## Đặc điểm trực quan
 
-- **DPTable** fills top to bottom (row j=1 then j=2), left to right within each row
-- **Array highlights** show which houses are in the current cost segment
-- **Color progression:** idle -> current (computing) -> done (finalized) -> good (answer cell)
-- **cost_val** updates each frame to show the cost function output being evaluated
-- **Monotonicity** is narrated: optimal split points move rightward as i increases, justifying D&C
-- School positions (houses 3 and 6) are highlighted in the final frame
+- **Bảng DP** điền từ trên xuống dưới (hàng j=1 rồi j=2), từ trái sang phải trong mỗi hàng
+- **Vùng tô sáng trên mảng** cho thấy những nhà nào thuộc đoạn chi phí đang tính
+- **Sự chuyển đổi màu:** idle -> current (đang tính) -> done (đã xong) -> good (ô đáp án)
+- **cost_val** cập nhật mỗi khung để hiển thị kết quả hàm chi phí đang xét
+- **Tính đơn điệu** được giải thích trong lời dẫn: điểm chia tối ưu dịch sang phải khi i tăng, biện minh cho tối ưu chia để trị
+- Vị trí đặt trường (nhà 3 và nhà 6) được tô sáng ở khung cuối cùng

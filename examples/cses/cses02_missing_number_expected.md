@@ -1,33 +1,33 @@
-# CSES 02 — Missing Number: Expected Animation
+# CSES 02 -- Số Bị Thiếu: Mô tả hoạt ảnh kỳ vọng
 
-## Overview
+## Tổng quan
 
-- **Frames:** 9 total
-- **Primitives:** 2 Arrays (given numbers + computation tracker)
-- **Visual flow:** Left-to-right scan with running sum accumulation
+- **Số khung hình:** 9
+- **Các thành phần:** 2 Mảng (dãy số đã cho + bảng tính toán)
+- **Luồng hình ảnh:** Duyệt từ trái sang phải, cộng dồn tổng
 
-## Frame-by-Frame Description
+## Mô tả từng khung hình
 
-### Frame 0 (Initial)
-- `arr`: [1, 2, 3, 4, 6, 7, 8] all idle
-- `info`: [36, 0, 0] — expected sum pre-filled, actual and missing at 0
-- Narration explains the sum formula approach
+### Khung hình 0 (Khởi tạo)
+- `arr`: [1, 2, 3, 4, 6, 7, 8] tất cả ở trạng thái chờ
+- `info`: [36, 0, 0] -- tổng kỳ vọng đã điền sẵn, tổng thực tế và số thiếu bằng 0
+- Thuyết minh giải thích cách tiếp cận dùng công thức tổng
 
-### Frames 1–7 (Scanning)
-Each frame:
-- Highlights the current element (yellow border, ephemeral)
-- Previous elements marked `done` (green)
-- `info.cell[1]` (actual sum) updated with running total
-- Narration shows the arithmetic
+### Khung hình 1--7 (Duyệt mảng)
+Mỗi khung hình:
+- Tô sáng phần tử đang xét (viền vàng, tạm thời)
+- Các phần tử trước đó đánh dấu `done` (xanh lá)
+- `info.cell[1]` (tổng thực tế) được cập nhật với tổng cộng dồn
+- Thuyết minh trình bày phép tính
 
-Key moment — Frame 5 (index 4, value=6):
-- Narration notes the gap: jumped from 4 to 6, hinting where 5 should be
+Thời điểm đáng chú ý -- Khung hình 5 (chỉ số 4, giá trị = 6):
+- Thuyết minh chỉ ra khoảng trống: nhảy từ 4 sang 6, gợi ý vị trí của số 5
 
-### Frame 8 (Result)
-- All `arr` cells marked `done` (green)
-- `info.cell[2]` (missing) set to 5 with `good` state (sky blue)
-- Narration: "Missing = 36 - 31 = 5"
+### Khung hình 8 (Kết quả)
+- Tất cả ô trong `arr` đánh dấu `done` (xanh lá)
+- `info.cell[2]` (số thiếu) được gán giá trị 5 với trạng thái `good` (xanh da trời)
+- Thuyết minh: "Số bị thiếu = 36 - 31 = 5"
 
-## Visual Characteristics
-- The `info` array acts as a dashboard showing expected/actual/missing
-- The scanning pattern (highlight current, done for previous) creates a clear left-to-right progression
+## Đặc điểm hình ảnh
+- Mảng `info` đóng vai trò bảng điều khiển hiển thị tổng kỳ vọng / tổng thực tế / số thiếu
+- Mẫu duyệt (tô sáng phần tử hiện tại, đánh dấu xong cho phần tử trước) tạo ra tiến trình rõ ràng từ trái sang phải

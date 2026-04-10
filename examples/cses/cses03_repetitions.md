@@ -1,37 +1,37 @@
-# CSES Problem 3: Repetitions
+# CSES Bài 3: Repetitions (Lặp lại)
 
-## Problem Statement
+## Đề bài
 
-You are given a DNA sequence: a string consisting of characters A, C, G, and T. Your task is to find the longest repetition in the string — that is, the maximum number of consecutive identical characters.
+Cho một chuỗi DNA gồm các ký tự A, C, G và T. Nhiệm vụ của bạn là tìm đoạn lặp dài nhất trong chuỗi — tức là số lượng ký tự giống nhau liên tiếp lớn nhất.
 
-**Input:** A string of length n (1 <= n <= 10^6)
+**Đầu vào:** Một chuỗi có độ dài n (1 <= n <= 10^6)
 
-**Output:** The length of the longest consecutive repetition.
+**Đầu ra:** Độ dài của đoạn lặp liên tiếp dài nhất.
 
-### Example
+### Ví dụ
 
-Input: `ATTCGGGA`
+Đầu vào: `ATTCGGGA`
 
-Output: `3` (the substring "GGG")
+Đầu ra: `3` (chuỗi con "GGG")
 
 ---
 
-## Solution
+## Lời giải
 
-Scan left to right, keeping track of the current run length and the maximum seen so far.
+Duyệt từ trái sang phải, theo dõi độ dài đoạn lặp hiện tại và giá trị lớn nhất đã gặp.
 
-### Algorithm
+### Thuật toán
 
 ```
 1. current_run = 1, max_run = 1
-2. For i = 1 to n-1:
-   a. If s[i] == s[i-1]: current_run += 1
-   b. Else: current_run = 1
+2. Với i = 1 đến n-1:
+   a. Nếu s[i] == s[i-1]: current_run += 1
+   b. Ngược lại: current_run = 1
    c. max_run = max(max_run, current_run)
-3. Print max_run
+3. In max_run
 ```
 
-### C++ Implementation
+### Cài đặt C++
 
 ```cpp
 #include <bits/stdc++.h>
@@ -56,7 +56,7 @@ int main() {
 }
 ```
 
-### Complexity
+### Độ phức tạp
 
-- **Time:** O(n) — single pass
-- **Space:** O(1) extra
+- **Thời gian:** O(n) — duyệt một lần
+- **Bộ nhớ:** O(1) phụ trợ

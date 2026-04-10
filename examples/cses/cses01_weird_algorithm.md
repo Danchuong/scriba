@@ -1,51 +1,51 @@
-# CSES Problem 1: Weird Algorithm
+# CSES Bài 1: Thuật Toán Kỳ Lạ
 
-## Problem Statement
+## Đề bài
 
-Consider an algorithm that takes as input a positive integer **n**. If **n** is even, the algorithm divides it by two. If **n** is odd, the algorithm multiplies it by three and adds one. The algorithm repeats this until **n** is **1**.
+Cho một thuật toán nhận đầu vào là một số nguyên dương **n**. Nếu **n** chẵn, thuật toán chia nó cho hai. Nếu **n** lẻ, thuật toán nhân nó với ba rồi cộng thêm một. Thuật toán lặp lại quá trình này cho đến khi **n** bằng **1**.
 
-Your task is to simulate this algorithm and print each value of **n**, including the first and last value.
+Nhiệm vụ của bạn là mô phỏng thuật toán trên và in ra tất cả các giá trị của **n**, bao gồm giá trị đầu tiên và giá trị cuối cùng.
 
-### Input
+### Đầu vào
 
-A single integer n.
+Một số nguyên duy nhất n.
 
-### Output
+### Đầu ra
 
-Print all values of n during the algorithm on a single line, separated by spaces.
+In tất cả các giá trị của n trong quá trình thực hiện thuật toán trên một dòng, cách nhau bởi dấu cách.
 
-### Constraints
+### Ràng buộc
 
 - 1 <= n <= 10^6
 
-### Example
+### Ví dụ
 
-**Input:** `3`
+**Đầu vào:** `3`
 
-**Output:** `3 2 1`
+**Đầu ra:** `3 2 1`
 
-**Input:** `7`
+**Đầu vào:** `7`
 
-**Output:** `7 22 11 34 17 52 26 13 40 20 10 5 16 8 4 2 1`
+**Đầu ra:** `7 22 11 34 17 52 26 13 40 20 10 5 16 8 4 2 1`
 
 ---
 
-## Solution
+## Lời giải
 
-This problem requires straightforward simulation of the Collatz conjecture. There is no clever optimization needed -- just follow the rules until n reaches 1.
+Bài này chỉ yêu cầu mô phỏng trực tiếp giả thuyết Collatz. Không cần tối ưu gì phức tạp -- chỉ cần thực hiện đúng các phép tính cho đến khi n về 1.
 
-### Algorithm
+### Thuật toán
 
 ```
-1. Read n
-2. Print n
-3. While n != 1:
-   a. If n is even: n = n / 2
-   b. If n is odd:  n = 3 * n + 1
-   c. Print n
+1. Đọc n
+2. In n
+3. Khi n != 1:
+   a. Nếu n chẵn: n = n / 2
+   b. Nếu n lẻ:  n = 3 * n + 1
+   c. In n
 ```
 
-### C++ Solution
+### Lời giải C++
 
 ```cpp
 #include <iostream>
@@ -69,22 +69,22 @@ int main() {
 }
 ```
 
-### Key Implementation Details
+### Chi tiết cài đặt quan trọng
 
-1. **Use `long long`**: Even though the input n <= 10^6, intermediate values can exceed 2^31 - 1. For example, starting from n = 113383, the sequence reaches values above 2.5 billion. Always use 64-bit integers.
+1. **Dùng `long long`**: Mặc dù đầu vào n <= 10^6, các giá trị trung gian có thể vượt quá 2^31 - 1. Ví dụ, bắt đầu từ n = 113383, dãy số đạt tới các giá trị trên 2,5 tỷ. Luôn dùng số nguyên 64-bit.
 
-2. **Output format**: Values are separated by spaces with no trailing space. The simplest approach is to print the first value, then print `" " + value` for each subsequent step.
+2. **Định dạng đầu ra**: Các giá trị cách nhau bởi dấu cách, không có dấu cách thừa ở cuối. Cách đơn giản nhất là in giá trị đầu tiên, sau đó in `" " + giá trị` cho mỗi bước tiếp theo.
 
-### Time Complexity
+### Độ phức tạp thời gian
 
-The Collatz conjecture states that this sequence always reaches 1, but this is unproven in general. However, for n <= 10^6 the sequences are known to terminate and are practically short (the longest sequence for n <= 10^6 has around 525 steps). The algorithm runs in O(steps) time where "steps" is the length of the Collatz sequence, which is empirically O(log n) to O(n) but has no known tight theoretical bound.
+Giả thuyết Collatz khẳng định rằng dãy số này luôn kết thúc ở 1, nhưng điều này chưa được chứng minh tổng quát. Tuy nhiên, với n <= 10^6, các dãy số đều kết thúc và có độ dài tương đối ngắn (dãy dài nhất với n <= 10^6 có khoảng 525 bước). Thuật toán chạy trong O(số bước), trong đó "số bước" là độ dài dãy Collatz -- theo thực nghiệm vào khoảng O(log n) đến O(n), nhưng chưa có cận chặt về mặt lý thuyết.
 
-### Space Complexity
+### Độ phức tạp bộ nhớ
 
-O(1) -- we only store the current value of n.
+O(1) -- ta chỉ lưu giá trị hiện tại của n.
 
 ---
 
-## Why This Works
+## Tại sao lời giải này đúng
 
-The problem is pure simulation. There is no mathematical shortcut. The only pitfall is integer overflow: since 3n + 1 can temporarily push values far above the original input, 32-bit integers are insufficient. With `long long`, all inputs within the constraint are safe.
+Bài toán là mô phỏng thuần túy. Không có thủ thuật toán học nào cả. Cạm bẫy duy nhất là tràn số: vì phép tính 3n + 1 có thể đẩy giá trị lên rất cao so với đầu vào ban đầu, nên số nguyên 32-bit là không đủ. Với `long long`, mọi đầu vào trong phạm vi ràng buộc đều an toàn.

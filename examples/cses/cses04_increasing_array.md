@@ -1,53 +1,46 @@
-# CSES Problem 4: Increasing Array
+# CSES Bài 4: Increasing Array (Mảng tăng dần)
 
-## Problem Statement
+## Đề bài
 
-You are given an array of `n` integers. You want to modify the array so that it is
-non-decreasing, i.e., every element is at least as large as the previous element.
+Cho một mảng gồm `n` số nguyên. Bạn cần biến đổi mảng sao cho nó không giảm, tức là mỗi phần tử phải lớn hơn hoặc bằng phần tử đứng trước nó.
 
-In each move, you can increase the value of any element by one. What is the minimum
-number of moves required?
+Mỗi thao tác, bạn có thể tăng giá trị của một phần tử bất kỳ lên 1. Hỏi số thao tác tối thiểu cần thực hiện là bao nhiêu?
 
-**Input:** The first line contains an integer `n` (1 <= n <= 2 * 10^5). The second
-line contains `n` integers a_1, a_2, ..., a_n (1 <= a_i <= 10^9).
+**Đầu vào:** Dòng đầu chứa số nguyên `n` (1 <= n <= 2 * 10^5). Dòng thứ hai chứa `n` số nguyên a_1, a_2, ..., a_n (1 <= a_i <= 10^9).
 
-**Output:** Print the minimum number of moves.
+**Đầu ra:** In ra số thao tác tối thiểu.
 
-### Example
+### Ví dụ
 
 ```
-Input:
+Đầu vào:
 5
 3 2 5 1 7
 
-Output:
+Đầu ra:
 5
 ```
 
-Explanation:
+Giải thích:
 
-- Index 0: value 3. First element, no action needed.
-- Index 1: value 2 < 3 (previous). Increase 2 -> 3. Cost = 1. Total = 1.
-- Index 2: value 5 >= 3 (previous). No action needed.
-- Index 3: value 1 < 5 (previous). Increase 1 -> 5. Cost = 4. Total = 5.
-- Index 4: value 7 >= 5 (previous). No action needed.
+- Vị trí 0: giá trị 3. Phần tử đầu tiên, không cần xử lý.
+- Vị trí 1: giá trị 2 < 3 (phần tử trước). Tăng 2 -> 3. Chi phí = 1. Tổng = 1.
+- Vị trí 2: giá trị 5 >= 3 (phần tử trước). Không cần xử lý.
+- Vị trí 3: giá trị 1 < 5 (phần tử trước). Tăng 1 -> 5. Chi phí = 4. Tổng = 5.
+- Vị trí 4: giá trị 7 >= 5 (phần tử trước). Không cần xử lý.
 
-Total moves = 1 + 4 = **5**.
+Tổng số thao tác = 1 + 4 = **5**.
 
-## Solution
+## Lời giải
 
-Scan the array left to right. Maintain a running maximum. Whenever `a[i]` is less than
-the current maximum, we must increase `a[i]` to match the maximum, costing
-`max - a[i]` moves. If `a[i]` is greater than or equal to the maximum, update the
-maximum to `a[i]`.
+Duyệt mảng từ trái sang phải, duy trì giá trị lớn nhất đã gặp. Khi `a[i]` nhỏ hơn giá trị lớn nhất hiện tại, ta phải tăng `a[i]` lên bằng giá trị đó, tốn `max - a[i]` thao tác. Nếu `a[i]` lớn hơn hoặc bằng giá trị lớn nhất, ta cập nhật giá trị lớn nhất thành `a[i]`.
 
-This greedy approach is optimal because:
-1. We can only increase elements, never decrease them.
-2. Each element must be at least as large as its predecessor.
-3. The cheapest way to satisfy the constraint is to raise each violating element to
-   exactly the level of the previous element (i.e., the running maximum).
+Cách tiếp cận tham lam này là tối ưu vì:
+1. Ta chỉ có thể tăng phần tử, không thể giảm.
+2. Mỗi phần tử phải lớn hơn hoặc bằng phần tử đứng trước.
+3. Cách rẻ nhất để thỏa mãn điều kiện là nâng mỗi phần tử vi phạm lên đúng bằng giá trị của phần tử trước đó (tức giá trị lớn nhất đang duy trì).
 
-### C++ Implementation
+### Cài đặt C++
 
 ```cpp
 #include <bits/stdc++.h>
@@ -78,7 +71,7 @@ int main() {
 }
 ```
 
-### Complexity
+### Độ phức tạp
 
-- **Time:** O(n) -- single pass through the array.
-- **Space:** O(1) extra (beyond the input array).
+- **Thời gian:** O(n) -- duyệt mảng một lần.
+- **Bộ nhớ:** O(1) phụ trợ (ngoài mảng đầu vào).

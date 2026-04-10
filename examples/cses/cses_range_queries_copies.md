@@ -1,73 +1,73 @@
-# CSES: Range Queries and Copies
+# CSES: Range Queries and Copies (Truy vấn đoạn và sao chép)
 
-## Problem Statement
+## Đề bài
 
-You have an array of **n** integers. Your task is to process **q** queries of three types:
+Cho một mảng gồm **n** số nguyên. Nhiệm vụ của bạn là xử lý **q** truy vấn thuộc ba loại:
 
-1. **Update:** Set `a[k] = x` in the current version.
-2. **Sum query:** Compute the sum of elements `a[l..r]` in the current version.
-3. **Copy:** Create a new version by copying the current array. Subsequent operations work on the new version; the old version is preserved and may be revisited later.
+1. **Cập nhật:** Gán `a[k] = x` trong phiên bản hiện tại.
+2. **Truy vấn tổng:** Tính tổng các phần tử `a[l..r]` trong phiên bản hiện tại.
+3. **Sao chép:** Tạo phiên bản mới bằng cách sao chép mảng hiện tại. Các thao tác tiếp theo áp dụng lên phiên bản mới; phiên bản cũ được giữ nguyên và có thể truy cập lại sau.
 
-After a copy, operations apply to the newest version. Each version is an independent snapshot of the array at the time of copying.
+Sau khi sao chép, các thao tác áp dụng lên phiên bản mới nhất. Mỗi phiên bản là một bản chụp độc lập của mảng tại thời điểm sao chép.
 
-### Input
+### Đầu vào
 
-The first line contains two integers n and q.
-The second line contains n integers: the initial array.
-Each of the next q lines describes a query:
-- `1 k x v` -- in version v, set a[k] = x
-- `2 l r v` -- in version v, compute sum of a[l..r]
-- `3 v` -- copy version v to create a new version
+Dòng đầu tiên chứa hai số nguyên n và q.
+Dòng thứ hai chứa n số nguyên: mảng ban đầu.
+Mỗi dòng trong q dòng tiếp theo mô tả một truy vấn:
+- `1 k x v` -- trong phiên bản v, gán a[k] = x
+- `2 l r v` -- trong phiên bản v, tính tổng a[l..r]
+- `3 v` -- sao chép phiên bản v để tạo phiên bản mới
 
-### Constraints
+### Ràng buộc
 
 - 1 <= n, q <= 2 * 10^5
 - 1 <= a[i] <= 10^9
 
 ---
 
-## Solution: Persistent Segment Tree
+## Lời giải: Segment Tree bền vững (Persistent Segment Tree)
 
-### Key Insight
+### Ý tưởng chính
 
-A naive approach would copy the entire array on each type-3 query, leading to O(n) per copy and O(n * q) total memory. Instead, we use a **persistent segment tree** with **path copying**: each update creates only O(log n) new nodes along the root-to-leaf path, while sharing all unchanged subtrees with previous versions.
+Cách tiếp cận đơn giản là sao chép toàn bộ mảng mỗi khi có truy vấn loại 3, dẫn đến O(n) cho mỗi lần sao chép và tổng bộ nhớ O(n * q). Thay vào đó, ta dùng **segment tree bền vững** với kỹ thuật **sao chép đường đi** (path copying): mỗi lần cập nhật chỉ tạo O(log n) nút mới dọc theo đường từ gốc đến lá, trong khi chia sẻ toàn bộ cây con không thay đổi với phiên bản trước.
 
-### How Path Copying Works
+### Cách hoạt động của sao chép đường đi
 
-A standard segment tree for an array of size n has O(n) nodes. When we update a single element, only the nodes on the path from the leaf to the root change -- that is O(log n) nodes. In a persistent segment tree:
+Một segment tree chuẩn cho mảng kích thước n có O(n) nút. Khi cập nhật một phần tử, chỉ các nút trên đường từ lá đến gốc bị thay đổi -- tức là O(log n) nút. Trong segment tree bền vững:
 
-1. For each node on the update path, allocate a **new node** with the updated value.
-2. The new node's children that are NOT on the update path simply **point to the old children** from the previous version.
-3. Store the new root in a **roots array** indexed by version number.
+1. Với mỗi nút trên đường cập nhật, cấp phát một **nút mới** chứa giá trị đã cập nhật.
+2. Các con của nút mới mà KHÔNG nằm trên đường cập nhật chỉ đơn giản **trỏ tới các con cũ** từ phiên bản trước.
+3. Lưu gốc mới vào **mảng roots** được đánh chỉ số theo số phiên bản.
 
-This means:
-- Old versions remain fully intact (their root still points to the original structure).
-- Each update costs O(log n) time and O(log n) space (for the new nodes).
-- Queries on any version work exactly like standard segment tree queries, starting from that version's root.
+Điều này có nghĩa:
+- Các phiên bản cũ hoàn toàn nguyên vẹn (gốc cũ vẫn trỏ đến cấu trúc ban đầu).
+- Mỗi lần cập nhật tốn O(log n) thời gian và O(log n) bộ nhớ (cho các nút mới).
+- Truy vấn trên bất kỳ phiên bản nào hoạt động giống hệt segment tree thông thường, bắt đầu từ gốc của phiên bản đó.
 
-### Copy Operation
+### Thao tác sao chép
 
-A copy is trivially O(1): just push the current root pointer into the roots array. The new version shares the entire tree with the source version until a future update diverges them via path copying.
+Sao chép chỉ tốn O(1): chỉ cần đẩy con trỏ gốc hiện tại vào mảng roots. Phiên bản mới chia sẻ toàn bộ cây với phiên bản nguồn cho đến khi một cập nhật tương lai phân tách chúng qua sao chép đường đi.
 
-### Data Structures
+### Cấu trúc dữ liệu
 
 ```cpp
 struct Node {
     long long sum;
-    int left, right;  // indices into a node pool
+    int left, right;  // chỉ số trong bể nút (node pool)
 };
 
 const int MAXN = 200005;
-const int MAXNODES = MAXN * 40;  // ~n + q * log(n) nodes
+const int MAXNODES = MAXN * 40;  // ~n + q * log(n) nút
 
 Node tree[MAXNODES];
 int pool = 0;
-int roots[MAXN];  // roots[v] = root node index for version v
+int roots[MAXN];  // roots[v] = chỉ số nút gốc của phiên bản v
 ```
 
-### Build
+### Khởi tạo (Build)
 
-Build the initial segment tree from the array. This creates the standard O(n) nodes.
+Xây dựng segment tree ban đầu từ mảng. Bước này tạo O(n) nút theo chuẩn.
 
 ```cpp
 int build(int l, int r, int a[]) {
@@ -85,14 +85,14 @@ int build(int l, int r, int a[]) {
 }
 ```
 
-### Point Update (with persistence)
+### Cập nhật điểm (có bền vững)
 
-Create new nodes along the path from root to the target leaf. All other children are shared with the previous version.
+Tạo các nút mới dọc theo đường từ gốc đến lá mục tiêu. Tất cả các con khác được chia sẻ với phiên bản trước.
 
 ```cpp
 int update(int prev, int l, int r, int pos, long long val) {
     int id = pool++;
-    tree[id] = tree[prev];  // copy the old node
+    tree[id] = tree[prev];  // sao chép nút cũ
     if (l == r) {
         tree[id].sum = val;
         return id;
@@ -107,9 +107,9 @@ int update(int prev, int l, int r, int pos, long long val) {
 }
 ```
 
-### Range Sum Query
+### Truy vấn tổng đoạn
 
-Standard segment tree query, unchanged from non-persistent version.
+Truy vấn segment tree chuẩn, không thay đổi so với phiên bản không bền vững.
 
 ```cpp
 long long query(int id, int l, int r, int ql, int qr) {
@@ -121,7 +121,7 @@ long long query(int id, int l, int r, int ql, int qr) {
 }
 ```
 
-### Main Loop
+### Vòng lặp chính
 
 ```cpp
 int main() {
@@ -155,24 +155,24 @@ int main() {
 }
 ```
 
-### Complexity
+### Độ phức tạp
 
-| Operation | Time | Space |
-|-----------|------|-------|
-| Build | O(n) | O(n) |
-| Update | O(log n) | O(log n) new nodes |
-| Query | O(log n) | O(1) |
-| Copy | O(1) | O(1) |
-| **Total** | **O(n + q log n)** | **O(n + q log n)** |
+| Thao tác | Thời gian | Bộ nhớ |
+|----------|-----------|--------|
+| Khởi tạo | O(n) | O(n) |
+| Cập nhật | O(log n) | O(log n) nút mới |
+| Truy vấn | O(log n) | O(1) |
+| Sao chép | O(1) | O(1) |
+| **Tổng** | **O(n + q log n)** | **O(n + q log n)** |
 
-The space bound comes from each update allocating at most O(log n) new nodes, and copies being free (just a pointer copy).
+Giới hạn bộ nhớ đến từ việc mỗi lần cập nhật cấp phát tối đa O(log n) nút mới, còn sao chép là miễn phí (chỉ sao chép con trỏ).
 
 ---
 
-## Why Persistent Over Other Approaches
+## Tại sao chọn Persistent Segment Tree
 
-- **Full copy on type-3**: O(n) per copy, O(n * q) total. Too slow.
-- **Sqrt decomposition**: Cannot efficiently handle versioning.
-- **Persistent segment tree**: O(log n) per operation, O(n + q log n) total space. Fits the constraints perfectly.
+- **Sao chép toàn bộ khi loại 3**: O(n) mỗi lần sao chép, tổng O(n * q). Quá chậm.
+- **Chia căn (sqrt decomposition)**: Không thể xử lý hiệu quả cơ chế phiên bản.
+- **Persistent segment tree**: O(log n) mỗi thao tác, tổng bộ nhớ O(n + q log n). Hoàn toàn phù hợp với ràng buộc.
 
-The persistent segment tree is the standard technique for problems requiring array versioning with point updates and range queries.
+Persistent segment tree là kỹ thuật chuẩn cho các bài toán yêu cầu quản lý phiên bản mảng với cập nhật điểm và truy vấn đoạn.
