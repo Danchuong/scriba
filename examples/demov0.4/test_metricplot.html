@@ -179,6 +179,7 @@ svg text {
   </div>
   <div class="scriba-stage"></div>
   <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
 </div>
 <script>
 (function(){
@@ -186,7 +187,7 @@ svg text {
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 232" role="img" aria-labelledby="test-metricplot-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="134.67" x2="304" y2="134.67"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="108.0" x2="304" y2="108.0"/>
@@ -236,12 +237,12 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Initial values.`},
+</g>
+</svg>`,narration:`Initial values.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 232" role="img" aria-labelledby="test-metricplot-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="158.43" x2="304" y2="158.43"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="132.35" x2="304" y2="132.35"/>
@@ -324,12 +325,12 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Step 2.`},
+</g>
+</svg>`,narration:`Step 2.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 232" role="img" aria-labelledby="test-metricplot-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="154.32" x2="304" y2="154.32"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="129.05" x2="304" y2="129.05"/>
@@ -412,13 +413,14 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Step 3.`}
+</g>
+</svg>`,narration:`Step 3.`,substory:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
   var ctr=W.querySelector('.scriba-step-counter');
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
@@ -427,6 +429,7 @@ svg text {
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.textContent=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;

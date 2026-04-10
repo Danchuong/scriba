@@ -180,6 +180,7 @@ svg text {
   </div>
   <div class="scriba-stage"></div>
   <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
 </div>
 <script>
 (function(){
@@ -210,7 +211,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Initial array.`},
+</svg>`,narration:`Initial array.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" aria-labelledby="test-ff-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
@@ -236,7 +237,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Iteration \${iter} of 100.`},
+</svg>`,narration:`Iteration \${iter} of 100.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" aria-labelledby="test-ff-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
@@ -262,7 +263,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Iteration \${iter} of 100.`},
+</svg>`,narration:`Iteration \${iter} of 100.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" aria-labelledby="test-ff-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
@@ -288,11 +289,12 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Done after 100 iterations.`}
+</svg>`,narration:`Done after 100 iterations.`,substory:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
   var ctr=W.querySelector('.scriba-step-counter');
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
@@ -301,6 +303,7 @@ svg text {
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.textContent=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;

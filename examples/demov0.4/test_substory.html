@@ -178,6 +178,7 @@ svg text {
   </div>
   <div class="scriba-stage"></div>
   <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
 </div>
 <script>
 (function(){
@@ -204,7 +205,80 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Processing element 0.`},
+</svg>`,narration:`Processing element 0.`,substory:`      <section class="scriba-substory" role="group"
+               aria-label="Sub-computation: Sub-computation for element 0"
+               data-substory-id="substory1"
+               data-substory-depth="1">
+        <ol class="scriba-substory-frames">
+        <li class="scriba-frame scriba-substory-frame"
+            id="test-substory-frame-1-substory-substory1-frame-2"
+            data-step="2"
+            data-substory-depth="1">
+          <header class="scriba-frame-header">
+            <span class="scriba-step-label">Sub-step 2 / 2</span>
+          </header>
+          <div class="scriba-stage">
+            <svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-current">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">3</text>
+  </g>
+  <g data-target="a.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">1</text>
+  </g>
+  <g data-target="a.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">4</text>
+  </g>
+  <g data-target="a.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">1</text>
+  </g>
+</g>
+</g>
+</svg>
+          </div>
+          <p class="scriba-narration" id="test-substory-frame-1-substory-substory1-frame-2-narration">Compare 3 and 1.</p>
+        </li>
+        <li class="scriba-frame scriba-substory-frame"
+            id="test-substory-frame-1-substory-substory1-frame-3"
+            data-step="3"
+            data-substory-depth="1">
+          <header class="scriba-frame-header">
+            <span class="scriba-step-label">Sub-step 3 / 2</span>
+          </header>
+          <div class="scriba-stage">
+            <svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-current">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">3</text>
+  </g>
+  <g data-target="a.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">1</text>
+  </g>
+  <g data-target="a.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">4</text>
+  </g>
+  <g data-target="a.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">1</text>
+  </g>
+</g>
+</g>
+</svg>
+          </div>
+          <p class="scriba-narration" id="test-substory-frame-1-substory-substory1-frame-3-narration">Sub-computation complete.</p>
+        </li>
+        </ol>
+      </section>
+`},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
@@ -226,11 +300,12 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Element 0 processed.`}
+</svg>`,narration:`Element 0 processed.`,substory:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
   var ctr=W.querySelector('.scriba-step-counter');
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
@@ -239,6 +314,7 @@ svg text {
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.textContent=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;

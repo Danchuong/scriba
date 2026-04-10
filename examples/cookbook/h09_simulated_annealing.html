@@ -185,6 +185,7 @@ svg text {
   </div>
   <div class="scriba-stage"></div>
   <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
 </div>
 <script>
 (function(){
@@ -195,7 +196,7 @@ svg text {
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-idle"><line x1="20" y1="237" x2="200" y2="280" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-idle"><line x1="200" y1="280" x2="380" y2="236" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-idle"><line x1="380" y1="236" x2="380" y2="59" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-idle"><line x1="380" y1="59" x2="200" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-idle"><line x1="200" y1="20" x2="20" y2="61" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-idle"><line x1="20" y1="61" x2="20" y2="237" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="160.0" x2="304" y2="160.0"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="131.2" x2="304" y2="131.2"/>
@@ -242,15 +243,15 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Simulated Annealing (SA) giai bai TSP 6 thanh pho. Bat dau voi tour A-B-C-D-E-F-A. Nhiet do cao: chap nhan loi di xau. Nhiet do ha: chi nhan loi di tot.`},
+</g>
+</svg>`,narration:`Simulated Annealing (SA) giai bai TSP 6 thanh pho. Bat dau voi tour A-B-C-D-E-F-A. Nhiet do cao: chap nhan loi di xau. Nhiet do ha: chi nhan loi di tot.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-current"><line x1="20" y1="237" x2="200" y2="280" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-current"><line x1="200" y1="280" x2="380" y2="236" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-current"><line x1="380" y1="236" x2="380" y2="59" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-current"><line x1="380" y1="59" x2="200" y2="20" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-current"><line x1="200" y1="20" x2="20" y2="61" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="152.14" x2="304" y2="152.14"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="131.45" x2="304" y2="131.45"/>
@@ -306,15 +307,15 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Tour ban dau: A-&gt;B-&gt;C-&gt;D-&gt;E-&gt;F-&gt;A. Chi phi = 42. Nhiet do T=100 (cao).`},
+</g>
+</svg>`,narration:`Tour ban dau: A-&gt;B-&gt;C-&gt;D-&gt;E-&gt;F-&gt;A. Chi phi = 42. Nhiet do T=100 (cao).`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-current"><line x1="20" y1="237" x2="200" y2="280" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-current"><line x1="380" y1="236" x2="380" y2="59" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-current"><line x1="200" y1="20" x2="20" y2="61" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="144.13" x2="304" y2="144.13"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="124.77" x2="304" y2="124.77"/>
@@ -400,15 +401,15 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Buoc 1: Dao doan [C,D] -&gt; tour A-B-D-C-E-F-A. Chi phi giam 42-&gt;38. Chap nhan! T=80.`},
+</g>
+</svg>`,narration:`Buoc 1: Dao doan [C,D] -&gt; tour A-B-D-C-E-F-A. Chi phi giam 42-&gt;38. Chap nhan! T=80.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-current"><line x1="380" y1="236" x2="380" y2="59" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="144.13" x2="304" y2="144.13"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="124.77" x2="304" y2="124.77"/>
@@ -494,15 +495,15 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Buoc 2: Thu dao doan [B..E] -&gt; chi phi tang 38-&gt;41. T=64 con cao, xac suat chap nhan = e^(-3/64) = 0.95. Chap nhan de thoat cuc tri!`},
+</g>
+</svg>`,narration:`Buoc 2: Thu dao doan [B..E] -&gt; chi phi tang 38-&gt;41. T=64 con cao, xac suat chap nhan = e^(-3/64) = 0.95. Chap nhan de thoat cuc tri!`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="138.77" x2="304" y2="138.77"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="101.85" x2="304" y2="101.85"/>
@@ -567,15 +568,15 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Buoc 3: Dao doan [D..F] -&gt; chi phi giam manh 41-&gt;35. Chap nhan. T=51. Dang tien gan loi giai tot.`},
+</g>
+</svg>`,narration:`Buoc 3: Dao doan [D..F] -&gt; chi phi giam manh 41-&gt;35. Chap nhan. T=51. Dang tien gan loi giai tot.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="135.46" x2="304" y2="135.46"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="99.64" x2="304" y2="99.64"/>
@@ -646,15 +647,15 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Buoc 4: Dao doan [D,E] -&gt; chi phi 35-&gt;33. Cai thien. T=41.`},
+</g>
+</svg>`,narration:`Buoc 4: Dao doan [D,E] -&gt; chi phi 35-&gt;33. Cai thien. T=41.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="135.46" x2="304" y2="135.46"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="99.64" x2="304" y2="99.64"/>
@@ -716,15 +717,15 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Buoc 5: Thu dao khac -&gt; chi phi tang 33-&gt;36. T=33, xac suat = e^(-3/33) = 0.91. Van chap nhan -- nhiet do chua du thap.`},
+</g>
+</svg>`,narration:`Buoc 5: Thu dao khac -&gt; chi phi tang 33-&gt;36. T=33, xac suat = e^(-3/33) = 0.91. Van chap nhan -- nhiet do chua du thap.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-8-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="157.73" x2="304" y2="157.73"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="125.3" x2="304" y2="125.3"/>
@@ -792,15 +793,15 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Buoc 6: Dao thanh cong -&gt; chi phi giam 36-&gt;31. T=26. Dang hoi tu.`},
+</g>
+</svg>`,narration:`Buoc 6: Dao thanh cong -&gt; chi phi giam 36-&gt;31. T=26. Dang hoi tu.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-9-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
 </g>
 <g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
+<g data-primitive="metricplot" data-shape="plot" data-scriba-series="cost,temp">
 <g class="scriba-metricplot-grid">
 <line class="scriba-metricplot-gridline-h" x1="48" y1="134.67" x2="304" y2="134.67"/>
 <line class="scriba-metricplot-gridline-h" x1="48" y1="108.0" x2="304" y2="108.0"/>
@@ -871,13 +872,14 @@ svg text {
 <line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
 <text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
 </g>
-</svg>
 </g>
-</svg>`,narration:`Buoc 7-8: T thap, chi chap nhan cai thien. Chi phi toi uu = 29. MetricPlot cho thay cost giam dan va temp ha theo lich trinh. SA tim loi giai gan toi uu cho NP-hard!`}
+</g>
+</svg>`,narration:`Buoc 7-8: T thap, chi chap nhan cai thien. Chi phi toi uu = 29. MetricPlot cho thay cost giam dan va temp ha theo lich trinh. SA tim loi giai gan toi uu cho NP-hard!`,substory:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
   var ctr=W.querySelector('.scriba-step-counter');
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
@@ -886,6 +888,7 @@ svg text {
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.textContent=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;

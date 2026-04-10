@@ -183,6 +183,7 @@ svg text {
   </div>
   <div class="scriba-stage"></div>
   <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
 </div>
 <script>
 (function(){
@@ -424,7 +425,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Toi uu Knuth cho DP chia doan. opt[i][j] = diem chia toi uu. Tinh chat: opt[i][j-1] &lt;= opt[i][j] &lt;= opt[i+1][j]. Do phuc tap giam tu O(n^3) xuong O(n^2).`},
+</svg>`,narration:`Toi uu Knuth cho DP chia doan. opt[i][j] = diem chia toi uu. Tinh chat: opt[i][j-1] &lt;= opt[i][j] &lt;= opt[i+1][j]. Do phuc tap giam tu O(n^3) xuong O(n^2).`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 396" role="img" aria-labelledby="dp-optimization-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="dptable" data-shape="dp">
@@ -661,7 +662,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Co so: dp[i][i] = 0 cho moi i. Khong co chi phi khi doan chi co 1 phan tu.`},
+</svg>`,narration:`Co so: dp[i][i] = 0 cho moi i. Khong co chi phi khi doan chi co 1 phan tu.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 396" role="img" aria-labelledby="dp-optimization-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="dptable" data-shape="dp">
@@ -898,7 +899,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Doan dai 2: chi co 1 diem chia, opt[i][i+1] = i. Tinh truc tiep.`},
+</svg>`,narration:`Doan dai 2: chi co 1 diem chia, opt[i][i+1] = i. Tinh truc tiep.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 396" role="img" aria-labelledby="dp-optimization-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="dptable" data-shape="dp">
@@ -1135,7 +1136,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`dp[0][2]: Nho Knuth, chi xet opt[0][1]..opt[1][2] = 0..1. Diem chia toi uu = 0. Chi phi = 11.`},
+</svg>`,narration:`dp[0][2]: Nho Knuth, chi xet opt[0][1]..opt[1][2] = 0..1. Diem chia toi uu = 0. Chi phi = 11.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 396" role="img" aria-labelledby="dp-optimization-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="dptable" data-shape="dp">
@@ -1372,7 +1373,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Doan dai 3: moi o chi xet vung opt thu hep. Diem chia di chuyen don dieu sang phai tren NumberLine.`},
+</svg>`,narration:`Doan dai 3: moi o chi xet vung opt thu hep. Diem chia di chuyen don dieu sang phai tren NumberLine.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 396" role="img" aria-labelledby="dp-optimization-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="dptable" data-shape="dp">
@@ -1609,7 +1610,7 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`Doan dai 4: tinh chat don dieu giup moi o chi xet O(1) diem chia trung binh. Tong = O(n^2).`},
+</svg>`,narration:`Doan dai 4: tinh chat don dieu giup moi o chi xet O(1) diem chia trung binh. Tong = O(n^2).`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 464 396" role="img" aria-labelledby="dp-optimization-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="dptable" data-shape="dp">
@@ -1846,11 +1847,12 @@ svg text {
   </g>
 </g>
 </g>
-</svg>`,narration:`dp[0][6] = 48. Toi uu Knuth giam tu ~216 phep tinh (n^3) xuong ~36 (n^2). Hieu qua gap 6 lan!`}
+</svg>`,narration:`dp[0][6] = 48. Toi uu Knuth giam tu ~216 phep tinh (n^3) xuong ~36 (n^2). Hieu qua gap 6 lan!`,substory:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
   var ctr=W.querySelector('.scriba-step-counter');
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
@@ -1859,6 +1861,7 @@ svg text {
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.textContent=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
