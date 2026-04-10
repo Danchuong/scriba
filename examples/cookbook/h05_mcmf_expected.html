@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scriba — h05_mcmf</title>
+<title>Scriba — h05_mcmf (Expected)</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  max-width: 720px;
+  max-width: 760px;
   margin: 2rem auto;
   padding: 0 1rem;
   background: #fafafa;
@@ -90,50 +90,26 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 
 /* SVG text */
 svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 700 13px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-anchor: middle;
   dominant-baseline: central;
 }
-.idx {
-  font: 500 10px ui-monospace, monospace;
-  fill: #6c757d;
+.cap-label {
+  font: 600 10px ui-monospace, monospace;
+  fill: #495057;
+}
+.cap-label-current {
+  font: 700 10px ui-monospace, monospace;
+  fill: #0072B2;
+}
+.cap-label-done {
+  font: 600 10px ui-monospace, monospace;
+  fill: #009E73;
 }
 
 /* Frame transition */
 .scriba-stage svg, .scriba-narration {
   transition: opacity 0.2s ease;
-}
-
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
-}
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
-}
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 /* Theme toggle */
@@ -153,10 +129,6 @@ svg text {
 [data-theme="dark"] .scriba-step-counter { color: #7d8590; }
 [data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
 [data-theme="dark"] .scriba-dot { background: #30363d; }
-[data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
 [data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
 </head>
@@ -165,7 +137,7 @@ svg text {
   var t = document.documentElement.dataset.theme;
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
-<h1>h05_mcmf</h1>
+<h1>h05_mcmf &mdash; Min-Cost Max-Flow</h1>
 <div class="scriba-widget" id="mcmf">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
@@ -184,39 +156,145 @@ svg text {
 </div>
 <script>
 (function(){
-  var W=document.getElementById('mcmf');
+  // Fixed node positions (stable layout — never change between steps)
+  // s=source(right), t=sink(left), a/b middle-top/bottom, c/d inner
+  var NX={s:540,a:360,b:360,c:180,d:180,t:20};
+  var NY={s:150,a:60,b:240,c:60,d:240,t:150};
+  var R=22;
+  var VB="0 0 580 310";
+
+  // Helper: draw an edge with arrow, capacity label, optional dash
+  function edge(x1,y1,x2,y2,label,state,dashed){
+    var colors={idle:"#d0d7de",current:"#0072B2",done:"#009E73",good:"#56B4E9",dim:"#e8e8e8"};
+    var sw={idle:1.5,current:2.5,done:2,good:2,dim:1};
+    var col=colors[state]||colors.idle;
+    // Shorten line so arrow doesn't overlap circle
+    var dx=x2-x1, dy=y2-y1, len=Math.sqrt(dx*dx+dy*dy);
+    var ux=dx/len, uy=dy/len;
+    var ax1=x1+ux*(R+2), ay1=y1+uy*(R+2);
+    var ax2=x2-ux*(R+6), ay2=y2-uy*(R+6);
+    // Label position: midpoint offset perpendicular
+    var mx=(x1+x2)/2, my=(y1+y2)/2;
+    var px=-uy*14, py=ux*14;
+    var lx=mx+px, ly=my+py;
+    var lcls=state==="current"?"cap-label-current":state==="done"?"cap-label-done":"cap-label";
+    var dash=dashed?' stroke-dasharray="6,4"':'';
+    return '<line x1="'+ax1+'" y1="'+ay1+'" x2="'+ax2+'" y2="'+ay2+'" stroke="'+col+'" stroke-width="'+sw[state]+'" marker-end="url(#arr-'+state+')"'+dash+'/>'+
+      (label?'<text x="'+lx+'" y="'+ly+'" class="'+lcls+'">'+label+'</text>':'');
+  }
+
+  // Helper: draw a node
+  function node(id,state){
+    var fills={idle:"#f6f8fa",current:"#0072B2",done:"#009E73",good:"#56B4E9",dim:"#e8e8e8"};
+    var strokes={idle:"#d0d7de",current:"#005a8e",done:"#007a59",good:"#3a95c9",dim:"#ccc"};
+    var textFill=(state==="idle"||state==="dim")?"#212529":"#ffffff";
+    return '<circle cx="'+NX[id]+'" cy="'+NY[id]+'" r="'+R+'" fill="'+fills[state]+'" stroke="'+strokes[state]+'" stroke-width="'+(state==="idle"?1.5:2)+'"/>'+
+      '<text x="'+NX[id]+'" y="'+NY[id]+'" fill="'+textFill+'">'+id+'</text>';
+  }
+
+  function markers(){
+    var cols={idle:"#d0d7de",current:"#0072B2",done:"#009E73",good:"#56B4E9",dim:"#e8e8e8"};
+    var s='<defs>';
+    for(var k in cols){
+      s+='<marker id="arr-'+k+'" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="'+cols[k]+'"/></marker>';
+    }
+    s+='</defs>';
+    return s;
+  }
+
+  function svgWrap(inner){
+    return '<svg class="scriba-stage-svg" viewBox="'+VB+'" xmlns="http://www.w3.org/2000/svg">'+
+      markers()+'<g>'+inner+'</g></svg>';
+  }
+
+  // ---- EDGES: (from, to, capacity, cost) ----
+  // s->a cap=3 cost=1, s->b cap=4 cost=2
+  // a->c cap=2 cost=1, a->d cap=3 cost=3
+  // b->c cap=1 cost=2, b->d cap=3 cost=1
+  // c->t cap=3 cost=2, d->t cap=4 cost=1
+
+  // Step 1: Initial graph, all idle, show capacities
+  var f1_edges =
+    edge(NX.s,NY.s,NX.a,NY.a,"0/3","idle")+
+    edge(NX.s,NY.s,NX.b,NY.b,"0/4","idle")+
+    edge(NX.a,NY.a,NX.c,NY.c,"0/2","idle")+
+    edge(NX.a,NY.a,NX.d,NY.d,"0/3","idle")+
+    edge(NX.b,NY.b,NX.c,NY.c,"0/1","idle")+
+    edge(NX.b,NY.b,NX.d,NY.d,"0/3","idle")+
+    edge(NX.c,NY.c,NX.t,NY.t,"0/3","idle")+
+    edge(NX.d,NY.d,NX.t,NY.t,"0/4","idle");
+  var f1_nodes=node("s","idle")+node("a","idle")+node("b","idle")+node("c","idle")+node("d","idle")+node("t","idle");
+
+  // Step 2: Augmenting path s->a->c->t, flow=2, cost=1+1+2=4 per unit
+  var f2_edges =
+    edge(NX.s,NY.s,NX.a,NY.a,"2/3","current")+
+    edge(NX.s,NY.s,NX.b,NY.b,"0/4","idle")+
+    edge(NX.a,NY.a,NX.c,NY.c,"2/2","current")+
+    edge(NX.a,NY.a,NX.d,NY.d,"0/3","idle")+
+    edge(NX.b,NY.b,NX.c,NY.c,"0/1","idle")+
+    edge(NX.b,NY.b,NX.d,NY.d,"0/3","idle")+
+    edge(NX.c,NY.c,NX.t,NY.t,"2/3","current")+
+    edge(NX.d,NY.d,NX.t,NY.t,"0/4","idle");
+  var f2_nodes=node("s","current")+node("a","current")+node("b","idle")+node("c","current")+node("d","idle")+node("t","current");
+
+  // Step 3: Path s->b->d->t, flow=3, residual edges appear dashed
+  var f3_edges =
+    edge(NX.s,NY.s,NX.a,NY.a,"2/3","done")+
+    edge(NX.a,NY.a,NX.s,NY.s,"","dim",true)+ // reverse (dashed)
+    edge(NX.s,NY.s,NX.b,NY.b,"3/4","current")+
+    edge(NX.a,NY.a,NX.c,NY.c,"2/2","done")+
+    edge(NX.c,NY.c,NX.a,NY.a,"","dim",true)+ // reverse
+    edge(NX.a,NY.a,NX.d,NY.d,"0/3","idle")+
+    edge(NX.b,NY.b,NX.c,NY.c,"0/1","idle")+
+    edge(NX.b,NY.b,NX.d,NY.d,"3/3","current")+
+    edge(NX.c,NY.c,NX.t,NY.t,"2/3","done")+
+    edge(NX.t,NY.t,NX.c,NY.c,"","dim",true)+ // reverse
+    edge(NX.d,NY.d,NX.t,NY.t,"3/4","current");
+  var f3_nodes=node("s","current")+node("a","done")+node("b","current")+node("c","done")+node("d","current")+node("t","current");
+
+  // Step 4: Path s->a->d->t, flow=1 (residual cap on s->a is 1)
+  var f4_edges =
+    edge(NX.s,NY.s,NX.a,NY.a,"3/3","current")+
+    edge(NX.a,NY.a,NX.s,NY.s,"","dim",true)+
+    edge(NX.s,NY.s,NX.b,NY.b,"3/4","done")+
+    edge(NX.b,NY.b,NX.s,NY.s,"","dim",true)+
+    edge(NX.a,NY.a,NX.c,NY.c,"2/2","done")+
+    edge(NX.c,NY.c,NX.a,NY.a,"","dim",true)+
+    edge(NX.a,NY.a,NX.d,NY.d,"1/3","current")+
+    edge(NX.b,NY.b,NX.c,NY.c,"0/1","idle")+
+    edge(NX.b,NY.b,NX.d,NY.d,"3/3","done")+
+    edge(NX.d,NY.d,NX.b,NY.b,"","dim",true)+
+    edge(NX.c,NY.c,NX.t,NY.t,"2/3","done")+
+    edge(NX.t,NY.t,NX.c,NY.c,"","dim",true)+
+    edge(NX.d,NY.d,NX.t,NY.t,"4/4","current");
+  var f4_nodes=node("s","current")+node("a","current")+node("b","done")+node("c","done")+node("d","current")+node("t","current");
+
+  // Step 5: No more augmenting paths. Max flow=6. All done.
+  var f5_edges =
+    edge(NX.s,NY.s,NX.a,NY.a,"3/3","good")+
+    edge(NX.s,NY.s,NX.b,NY.b,"3/4","good")+
+    edge(NX.a,NY.a,NX.c,NY.c,"2/2","good")+
+    edge(NX.a,NY.a,NX.d,NY.d,"1/3","good")+
+    edge(NX.b,NY.b,NX.c,NY.c,"0/1","dim")+
+    edge(NX.b,NY.b,NX.d,NY.d,"3/3","good")+
+    edge(NX.c,NY.c,NX.t,NY.t,"2/3","good")+
+    edge(NX.d,NY.d,NX.t,NY.t,"4/4","good");
+  var f5_nodes=node("s","good")+node("a","done")+node("b","done")+node("c","done")+node("d","done")+node("t","good");
+
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 332" role="img" aria-labelledby="mcmf-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs>
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs><g class="scriba-graph-edges"><g data-target="G.edge[(s,a)]" class="scriba-state-idle"><line x1="380" y1="20" x2="234" y2="40" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(s,b)]" class="scriba-state-idle"><line x1="380" y1="20" x2="304" y2="142" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,c)]" class="scriba-state-idle"><line x1="214" y1="43" x2="184" y2="220" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,d)]" class="scriba-state-idle"><line x1="214" y1="43" x2="112" y2="117" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,c)]" class="scriba-state-idle"><line x1="293" y1="159" x2="197" y2="228" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,d)]" class="scriba-state-idle"><line x1="293" y1="159" x2="116" y2="132" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(c,t)]" class="scriba-state-idle"><line x1="181" y1="240" x2="39" y2="275" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(d,t)]" class="scriba-state-idle"><line x1="96" y1="129" x2="29" y2="262" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[s]" class="scriba-state-idle"><circle cx="380" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">s</text></g><g data-target="G.node[a]" class="scriba-state-idle"><circle cx="214" cy="43" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="214" y="43" text-anchor="middle" dominant-baseline="central" fill="#212529">a</text></g><g data-target="G.node[b]" class="scriba-state-idle"><circle cx="293" cy="159" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="293" y="159" text-anchor="middle" dominant-baseline="central" fill="#212529">b</text></g><g data-target="G.node[c]" class="scriba-state-idle"><circle cx="181" cy="240" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="181" y="240" text-anchor="middle" dominant-baseline="central" fill="#212529">c</text></g><g data-target="G.node[d]" class="scriba-state-idle"><circle cx="96" cy="129" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="96" y="129" text-anchor="middle" dominant-baseline="central" fill="#212529">d</text></g><g data-target="G.node[t]" class="scriba-state-idle"><circle cx="20" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">t</text></g></g></g>
-</g>
-</svg>`,narration:`Do thi 6 dinh, nguon s, dich t. Moi canh co (dung luong, chi phi). Tim luong cuc dai voi tong chi phi nho nhat bang SPFA/Bellman-Ford.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 332" role="img" aria-labelledby="mcmf-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
-<defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs>
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs><g class="scriba-graph-edges"><g data-target="G.edge[(s,a)]" class="scriba-state-current"><line x1="380" y1="20" x2="234" y2="40" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(s,b)]" class="scriba-state-idle"><line x1="380" y1="20" x2="304" y2="142" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,c)]" class="scriba-state-current"><line x1="214" y1="43" x2="184" y2="220" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,d)]" class="scriba-state-idle"><line x1="214" y1="43" x2="112" y2="117" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,c)]" class="scriba-state-idle"><line x1="293" y1="159" x2="197" y2="228" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,d)]" class="scriba-state-idle"><line x1="293" y1="159" x2="116" y2="132" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(c,t)]" class="scriba-state-current"><line x1="181" y1="240" x2="39" y2="275" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(d,t)]" class="scriba-state-idle"><line x1="96" y1="129" x2="29" y2="262" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[s]" class="scriba-state-current"><circle cx="380" cy="20" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="380" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">s</text></g><g data-target="G.node[a]" class="scriba-state-current"><circle cx="214" cy="43" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="214" y="43" text-anchor="middle" dominant-baseline="central" fill="#ffffff">a</text></g><g data-target="G.node[b]" class="scriba-state-idle"><circle cx="293" cy="159" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="293" y="159" text-anchor="middle" dominant-baseline="central" fill="#212529">b</text></g><g data-target="G.node[c]" class="scriba-state-current"><circle cx="181" cy="240" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="181" y="240" text-anchor="middle" dominant-baseline="central" fill="#ffffff">c</text></g><g data-target="G.node[d]" class="scriba-state-idle"><circle cx="96" cy="129" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="96" y="129" text-anchor="middle" dominant-baseline="central" fill="#212529">d</text></g><g data-target="G.node[t]" class="scriba-state-current"><circle cx="20" cy="280" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="20" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">t</text></g></g></g>
-</g>
-</svg>`,narration:`Duong tang 1: s -&gt; a -&gt; c -&gt; t. Chi phi duong ngan nhat = 3. Day luong = 2 don vi. Tong chi phi: 2*3 = 6.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 332" role="img" aria-labelledby="mcmf-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
-<defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs>
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs><g class="scriba-graph-edges"><g data-target="G.edge[(s,a)]" class="scriba-state-done"><line x1="380" y1="20" x2="234" y2="40" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(s,b)]" class="scriba-state-current"><line x1="380" y1="20" x2="304" y2="142" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,c)]" class="scriba-state-done"><line x1="214" y1="43" x2="184" y2="220" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,d)]" class="scriba-state-idle"><line x1="214" y1="43" x2="112" y2="117" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,c)]" class="scriba-state-idle"><line x1="293" y1="159" x2="197" y2="228" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,d)]" class="scriba-state-current"><line x1="293" y1="159" x2="116" y2="132" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(c,t)]" class="scriba-state-done"><line x1="181" y1="240" x2="39" y2="275" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(d,t)]" class="scriba-state-current"><line x1="96" y1="129" x2="29" y2="262" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[s]" class="scriba-state-done"><circle cx="380" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">s</text></g><g data-target="G.node[a]" class="scriba-state-done"><circle cx="214" cy="43" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="214" y="43" text-anchor="middle" dominant-baseline="central" fill="#ffffff">a</text></g><g data-target="G.node[b]" class="scriba-state-current"><circle cx="293" cy="159" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="293" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">b</text></g><g data-target="G.node[c]" class="scriba-state-done"><circle cx="181" cy="240" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="181" y="240" text-anchor="middle" dominant-baseline="central" fill="#ffffff">c</text></g><g data-target="G.node[d]" class="scriba-state-current"><circle cx="96" cy="129" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="96" y="129" text-anchor="middle" dominant-baseline="central" fill="#ffffff">d</text></g><g data-target="G.node[t]" class="scriba-state-done"><circle cx="20" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">t</text></g></g></g>
-</g>
-</svg>`,narration:`Duong tang 2: s -&gt; b -&gt; d -&gt; t. Chi phi = 5. Day luong = 3. Tong chi phi cong don: 6 + 15 = 21.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 332" role="img" aria-labelledby="mcmf-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
-<defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs>
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs><g class="scriba-graph-edges"><g data-target="G.edge[(s,a)]" class="scriba-state-done"><line x1="380" y1="20" x2="234" y2="40" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(s,b)]" class="scriba-state-done"><line x1="380" y1="20" x2="304" y2="142" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,c)]" class="scriba-state-done"><line x1="214" y1="43" x2="184" y2="220" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,d)]" class="scriba-state-idle"><line x1="214" y1="43" x2="112" y2="117" stroke="#d0d7de" stroke-width="1.5" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,c)]" class="scriba-state-current"><line x1="293" y1="159" x2="197" y2="228" stroke="#005a8e" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,d)]" class="scriba-state-done"><line x1="293" y1="159" x2="116" y2="132" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(c,t)]" class="scriba-state-done"><line x1="181" y1="240" x2="39" y2="275" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(d,t)]" class="scriba-state-done"><line x1="96" y1="129" x2="29" y2="262" stroke="#007a59" stroke-width="2" marker-end="url(#scriba-arrow)"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[s]" class="scriba-state-done"><circle cx="380" cy="20" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="380" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">s</text></g><g data-target="G.node[a]" class="scriba-state-done"><circle cx="214" cy="43" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="214" y="43" text-anchor="middle" dominant-baseline="central" fill="#ffffff">a</text></g><g data-target="G.node[b]" class="scriba-state-current"><circle cx="293" cy="159" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="293" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">b</text></g><g data-target="G.node[c]" class="scriba-state-current"><circle cx="181" cy="240" r="20" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="181" y="240" text-anchor="middle" dominant-baseline="central" fill="#ffffff">c</text></g><g data-target="G.node[d]" class="scriba-state-done"><circle cx="96" cy="129" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="96" y="129" text-anchor="middle" dominant-baseline="central" fill="#ffffff">d</text></g><g data-target="G.node[t]" class="scriba-state-done"><circle cx="20" cy="280" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="20" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">t</text></g></g></g>
-</g>
-</svg>`,narration:`Duong tang 3: s -&gt; b -&gt; c -&gt; t. Dung canh nguoc va canh con du. Day luong = 1. Chi phi = 4. Tong: 21 + 4 = 25.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 332" role="img" aria-labelledby="mcmf-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
-<defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs>
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><defs><marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/></marker></defs><g class="scriba-graph-edges"><g data-target="G.edge[(s,a)]" class="scriba-state-good"><line x1="380" y1="20" x2="234" y2="40" stroke="#3a95c9" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(s,b)]" class="scriba-state-good"><line x1="380" y1="20" x2="304" y2="142" stroke="#3a95c9" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,c)]" class="scriba-state-good"><line x1="214" y1="43" x2="184" y2="220" stroke="#3a95c9" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(a,d)]" class="scriba-state-dim"><line x1="214" y1="43" x2="112" y2="117" stroke="#dee2e6" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,c)]" class="scriba-state-good"><line x1="293" y1="159" x2="197" y2="228" stroke="#3a95c9" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(b,d)]" class="scriba-state-good"><line x1="293" y1="159" x2="116" y2="132" stroke="#3a95c9" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(c,t)]" class="scriba-state-good"><line x1="181" y1="240" x2="39" y2="275" stroke="#3a95c9" stroke-width="2" marker-end="url(#scriba-arrow)"/></g><g data-target="G.edge[(d,t)]" class="scriba-state-good"><line x1="96" y1="129" x2="29" y2="262" stroke="#3a95c9" stroke-width="2" marker-end="url(#scriba-arrow)"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[s]" class="scriba-state-good"><circle cx="380" cy="20" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="380" y="20" text-anchor="middle" dominant-baseline="central" fill="#ffffff">s</text></g><g data-target="G.node[a]" class="scriba-state-done"><circle cx="214" cy="43" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="214" y="43" text-anchor="middle" dominant-baseline="central" fill="#ffffff">a</text></g><g data-target="G.node[b]" class="scriba-state-done"><circle cx="293" cy="159" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="293" y="159" text-anchor="middle" dominant-baseline="central" fill="#ffffff">b</text></g><g data-target="G.node[c]" class="scriba-state-done"><circle cx="181" cy="240" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="181" y="240" text-anchor="middle" dominant-baseline="central" fill="#ffffff">c</text></g><g data-target="G.node[d]" class="scriba-state-done"><circle cx="96" cy="129" r="20" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="96" y="129" text-anchor="middle" dominant-baseline="central" fill="#ffffff">d</text></g><g data-target="G.node[t]" class="scriba-state-good"><circle cx="20" cy="280" r="20" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="20" y="280" text-anchor="middle" dominant-baseline="central" fill="#ffffff">t</text></g></g></g>
-</g>
-</svg>`,narration:`Khong con duong tang. Luong cuc dai = 6, chi phi cuc tieu = 25. Canh a-&gt;d khong duoc dung (dim). MCMF hoan tat!`}
+    {svg:svgWrap(f1_edges+f1_nodes),
+     narration:"Do thi 6 dinh (s, a, b, c, d, t). Moi canh hien thi luong/dung luong (vi du \"0/3\"). Muc tieu: tim luong cuc dai tu s den t voi tong chi phi nho nhat (MCMF) bang SPFA."},
+    {svg:svgWrap(f2_edges+f2_nodes),
+     narration:"Duong tang 1: s \u2192 a \u2192 c \u2192 t. Bottleneck = min(3,2,3) = 2. Day 2 don vi luong. Chi phi don vi = 1+1+2 = 4. Tong chi phi: 2\u00d74 = 8."},
+    {svg:svgWrap(f3_edges+f3_nodes),
+     narration:"Cap nhat do thi thang du: canh nguoc (net dut) xuat hien. Duong tang 2: s \u2192 b \u2192 d \u2192 t. Bottleneck = min(4,3,4) = 3. Chi phi don vi = 2+1+1 = 4. Tong cong don: 8 + 12 = 20."},
+    {svg:svgWrap(f4_edges+f4_nodes),
+     narration:"Duong tang 3: s \u2192 a \u2192 d \u2192 t. Dung luong con lai tren s\u2192a la 1. Day 1 don vi. Chi phi = 1+3+1 = 5. Tong: 20 + 5 = 25."},
+    {svg:svgWrap(f5_edges+f5_nodes),
+     narration:"Khong con duong tang nao. Luong cuc dai = 6 (3+3+0 = 6 tren cac canh ra khoi s). Tong chi phi cuc tieu = 25. Canh b\u2192c khong duoc dung (dim). MCMF hoan tat!"}
   ];
+
+  var W=document.getElementById('mcmf');
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
@@ -227,7 +305,7 @@ svg text {
   function show(i){
     cur=i;
     stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
+    narr.innerHTML=frames[i].narration;
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;

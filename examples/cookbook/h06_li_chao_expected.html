@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scriba — h06_li_chao</title>
+<title>Scriba — h06_li_chao (Expected)</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  max-width: 720px;
+  max-width: 760px;
   margin: 2rem auto;
   padding: 0 1rem;
   background: #fafafa;
@@ -16,15 +16,12 @@ body {
 }
 h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 
-/* Widget container */
 .scriba-widget {
   border: 1px solid #d0d7de;
   border-radius: 10px;
   background: #ffffff;
   overflow: hidden;
 }
-
-/* Controls bar */
 .scriba-controls {
   display: flex;
   align-items: center;
@@ -53,8 +50,6 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   min-width: 5rem;
   text-align: center;
 }
-
-/* Progress dots */
 .scriba-progress {
   display: flex;
   gap: 4px;
@@ -68,8 +63,6 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 }
 .scriba-dot.active { background: #0072B2; }
 .scriba-dot.done { background: #009E73; }
-
-/* Stage */
 .scriba-stage {
   padding: 1.25rem 1rem;
   display: flex;
@@ -77,8 +70,6 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   min-height: 100px;
 }
 .scriba-stage-svg { width: 100%; height: auto; }
-
-/* Narration */
 .scriba-narration {
   padding: 0.75rem 1rem;
   font-size: 0.92rem;
@@ -87,64 +78,18 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   border-top: 1px solid #f0f0f0;
   min-height: 2.5rem;
 }
-
-/* SVG text */
 svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-anchor: middle;
   dominant-baseline: central;
 }
-.idx {
-  font: 500 10px ui-monospace, monospace;
-  fill: #6c757d;
-}
 
-/* Frame transition */
-.scriba-stage svg, .scriba-narration {
-  transition: opacity 0.2s ease;
-}
-
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
-}
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
-}
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Theme toggle */
 .theme-toggle {
   position: fixed; top: 1rem; right: 1rem;
   padding: 0.35rem 0.7rem; cursor: pointer;
   border: 1px solid #ccc; border-radius: 6px; background: white;
   font-size: 0.8rem;
 }
-
-/* Dark mode */
 [data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
 [data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
 [data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
@@ -153,10 +98,6 @@ svg text {
 [data-theme="dark"] .scriba-step-counter { color: #7d8590; }
 [data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
 [data-theme="dark"] .scriba-dot { background: #30363d; }
-[data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
 [data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
 </head>
@@ -165,8 +106,8 @@ svg text {
   var t = document.documentElement.dataset.theme;
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
-<h1>h06_li_chao</h1>
-<div class="scriba-widget" id="li-chao-tree">
+<h1>h06_li_chao &mdash; Li Chao Tree / Convex Hull Trick</h1>
+<div class="scriba-widget" id="lichao">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
     <span class="scriba-step-counter">Step 1 / 8</span>
@@ -187,49 +128,191 @@ svg text {
 </div>
 <script>
 (function(){
-  var W=document.getElementById('li-chao-tree');
-  var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 512" role="img" aria-labelledby="li-chao-tree-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 480" data-scriba-xrange="0 8" data-scriba-yrange="0 12" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="64.00" y1="32.00" x2="64.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="96.00" y1="32.00" x2="96.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="128.00" y1="32.00" x2="128.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="192.00" y1="32.00" x2="192.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="224.00" y1="32.00" x2="224.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="256.00" y1="32.00" x2="256.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="413.33" x2="288.00" y2="413.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="378.67" x2="288.00" y2="378.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="344.00" x2="288.00" y2="344.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="309.33" x2="288.00" y2="309.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="274.67" x2="288.00" y2="274.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="240.00" x2="288.00" y2="240.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="205.33" x2="288.00" y2="205.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="170.67" x2="288.00" y2="170.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="136.00" x2="288.00" y2="136.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="101.33" x2="288.00" y2="101.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="66.67" x2="288.00" y2="66.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 448.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="32.00" y1="448.00" x2="32.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 32.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(32.0000, 448.0000) scale(32.0000, -34.6667)"></g><g class="scriba-plane-labels"><text x="64.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="96.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="128.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="160.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">4</text><text x="192.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">5</text><text x="224.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">6</text><text x="256.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">7</text><text x="288.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">8</text><text x="26.00" y="416.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="26.00" y="381.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="26.00" y="347.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="26.00" y="312.33" text-anchor="end" font-size="10" fill="#6c757d">4</text><text x="26.00" y="277.67" text-anchor="end" font-size="10" fill="#6c757d">5</text><text x="26.00" y="243.00" text-anchor="end" font-size="10" fill="#6c757d">6</text><text x="26.00" y="208.33" text-anchor="end" font-size="10" fill="#6c757d">7</text><text x="26.00" y="173.67" text-anchor="end" font-size="10" fill="#6c757d">8</text><text x="26.00" y="139.00" text-anchor="end" font-size="10" fill="#6c757d">9</text><text x="26.00" y="104.33" text-anchor="end" font-size="10" fill="#6c757d">10</text><text x="26.00" y="69.67" text-anchor="end" font-size="10" fill="#6c757d">11</text><text x="26.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">12</text></g></svg>
-</g>
-</svg>`,narration:`Li Chao Tree quan ly tap cac duong thang y = ax + b. Ho tro them duong va truy van min/max tai x. Minh hoa chen 6 duong va tim bao loi duoi (lower envelope).`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 512" role="img" aria-labelledby="li-chao-tree-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 480" data-scriba-xrange="0 8" data-scriba-yrange="0 12" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="64.00" y1="32.00" x2="64.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="96.00" y1="32.00" x2="96.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="128.00" y1="32.00" x2="128.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="192.00" y1="32.00" x2="192.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="224.00" y1="32.00" x2="224.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="256.00" y1="32.00" x2="256.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="413.33" x2="288.00" y2="413.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="378.67" x2="288.00" y2="378.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="344.00" x2="288.00" y2="344.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="309.33" x2="288.00" y2="309.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="274.67" x2="288.00" y2="274.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="240.00" x2="288.00" y2="240.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="205.33" x2="288.00" y2="205.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="170.67" x2="288.00" y2="170.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="136.00" x2="288.00" y2="136.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="101.33" x2="288.00" y2="101.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="66.67" x2="288.00" y2="66.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 448.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="32.00" y1="448.00" x2="32.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 32.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(32.0000, 448.0000) scale(32.0000, -34.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-current"><line x1="0" y1="1.0" x2="7.333333333333333" y2="12" stroke="#005a8e" stroke-width="2" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="64.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="96.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="128.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="160.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">4</text><text x="192.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">5</text><text x="224.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">6</text><text x="256.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">7</text><text x="288.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">8</text><text x="26.00" y="416.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="26.00" y="381.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="26.00" y="347.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="26.00" y="312.33" text-anchor="end" font-size="10" fill="#6c757d">4</text><text x="26.00" y="277.67" text-anchor="end" font-size="10" fill="#6c757d">5</text><text x="26.00" y="243.00" text-anchor="end" font-size="10" fill="#6c757d">6</text><text x="26.00" y="208.33" text-anchor="end" font-size="10" fill="#6c757d">7</text><text x="26.00" y="173.67" text-anchor="end" font-size="10" fill="#6c757d">8</text><text x="26.00" y="139.00" text-anchor="end" font-size="10" fill="#6c757d">9</text><text x="26.00" y="104.33" text-anchor="end" font-size="10" fill="#6c757d">10</text><text x="26.00" y="69.67" text-anchor="end" font-size="10" fill="#6c757d">11</text><text x="26.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">12</text><text x="272.67" y="26.00" font-size="10" fill="#212529">L1</text></g></svg>
-</g>
-</svg>`,narration:`Chen L1: y = 1.5x + 1. Duong dau tien, tu dong la bao loi duoi tren toan mien [0,8].`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 512" role="img" aria-labelledby="li-chao-tree-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 480" data-scriba-xrange="0 8" data-scriba-yrange="0 12" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="64.00" y1="32.00" x2="64.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="96.00" y1="32.00" x2="96.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="128.00" y1="32.00" x2="128.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="192.00" y1="32.00" x2="192.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="224.00" y1="32.00" x2="224.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="256.00" y1="32.00" x2="256.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="413.33" x2="288.00" y2="413.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="378.67" x2="288.00" y2="378.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="344.00" x2="288.00" y2="344.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="309.33" x2="288.00" y2="309.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="274.67" x2="288.00" y2="274.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="240.00" x2="288.00" y2="240.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="205.33" x2="288.00" y2="205.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="170.67" x2="288.00" y2="170.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="136.00" x2="288.00" y2="136.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="101.33" x2="288.00" y2="101.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="66.67" x2="288.00" y2="66.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 448.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="32.00" y1="448.00" x2="32.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 32.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(32.0000, 448.0000) scale(32.0000, -34.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="1.0" x2="7.333333333333333" y2="12" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-current"><line x1="0" y1="10.0" x2="8" y2="6.0" stroke="#005a8e" stroke-width="2" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="64.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="96.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="128.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="160.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">4</text><text x="192.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">5</text><text x="224.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">6</text><text x="256.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">7</text><text x="288.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">8</text><text x="26.00" y="416.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="26.00" y="381.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="26.00" y="347.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="26.00" y="312.33" text-anchor="end" font-size="10" fill="#6c757d">4</text><text x="26.00" y="277.67" text-anchor="end" font-size="10" fill="#6c757d">5</text><text x="26.00" y="243.00" text-anchor="end" font-size="10" fill="#6c757d">6</text><text x="26.00" y="208.33" text-anchor="end" font-size="10" fill="#6c757d">7</text><text x="26.00" y="173.67" text-anchor="end" font-size="10" fill="#6c757d">8</text><text x="26.00" y="139.00" text-anchor="end" font-size="10" fill="#6c757d">9</text><text x="26.00" y="104.33" text-anchor="end" font-size="10" fill="#6c757d">10</text><text x="26.00" y="69.67" text-anchor="end" font-size="10" fill="#6c757d">11</text><text x="26.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">12</text><text x="272.67" y="26.00" font-size="10" fill="#212529">L1</text><text x="294.00" y="234.00" font-size="10" fill="#212529">L2</text></g></svg>
-</g>
-</svg>`,narration:`Chen L2: y = -0.5x + 10. Cat L1 tai x = 4.5. L2 nho hon ben phai, L1 nho hon ben trai. Bao loi cap nhat.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 512" role="img" aria-labelledby="li-chao-tree-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 480" data-scriba-xrange="0 8" data-scriba-yrange="0 12" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="64.00" y1="32.00" x2="64.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="96.00" y1="32.00" x2="96.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="128.00" y1="32.00" x2="128.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="192.00" y1="32.00" x2="192.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="224.00" y1="32.00" x2="224.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="256.00" y1="32.00" x2="256.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="413.33" x2="288.00" y2="413.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="378.67" x2="288.00" y2="378.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="344.00" x2="288.00" y2="344.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="309.33" x2="288.00" y2="309.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="274.67" x2="288.00" y2="274.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="240.00" x2="288.00" y2="240.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="205.33" x2="288.00" y2="205.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="170.67" x2="288.00" y2="170.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="136.00" x2="288.00" y2="136.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="101.33" x2="288.00" y2="101.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="66.67" x2="288.00" y2="66.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 448.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="32.00" y1="448.00" x2="32.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 32.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(32.0000, 448.0000) scale(32.0000, -34.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="1.0" x2="7.333333333333333" y2="12" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="10.0" x2="8" y2="6.0" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[2]" class="scriba-plane-line scriba-state-current"><line x1="0" y1="2.0" x2="8" y2="8.4" stroke="#005a8e" stroke-width="2" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="64.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="96.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="128.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="160.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">4</text><text x="192.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">5</text><text x="224.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">6</text><text x="256.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">7</text><text x="288.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">8</text><text x="26.00" y="416.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="26.00" y="381.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="26.00" y="347.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="26.00" y="312.33" text-anchor="end" font-size="10" fill="#6c757d">4</text><text x="26.00" y="277.67" text-anchor="end" font-size="10" fill="#6c757d">5</text><text x="26.00" y="243.00" text-anchor="end" font-size="10" fill="#6c757d">6</text><text x="26.00" y="208.33" text-anchor="end" font-size="10" fill="#6c757d">7</text><text x="26.00" y="173.67" text-anchor="end" font-size="10" fill="#6c757d">8</text><text x="26.00" y="139.00" text-anchor="end" font-size="10" fill="#6c757d">9</text><text x="26.00" y="104.33" text-anchor="end" font-size="10" fill="#6c757d">10</text><text x="26.00" y="69.67" text-anchor="end" font-size="10" fill="#6c757d">11</text><text x="26.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">12</text><text x="272.67" y="26.00" font-size="10" fill="#212529">L1</text><text x="294.00" y="234.00" font-size="10" fill="#212529">L2</text><text x="294.00" y="150.80" font-size="10" fill="#212529">L3</text></g></svg>
-</g>
-</svg>`,narration:`Chen L3: y = 0.8x + 2. L3 nam duoi L1 tren [0, ~1.4] nhung tren L1 sau do. Li Chao chia doan [0,8] tai mid=4 de quyet dinh giu duong nao.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 512" role="img" aria-labelledby="li-chao-tree-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 480" data-scriba-xrange="0 8" data-scriba-yrange="0 12" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="64.00" y1="32.00" x2="64.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="96.00" y1="32.00" x2="96.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="128.00" y1="32.00" x2="128.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="192.00" y1="32.00" x2="192.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="224.00" y1="32.00" x2="224.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="256.00" y1="32.00" x2="256.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="413.33" x2="288.00" y2="413.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="378.67" x2="288.00" y2="378.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="344.00" x2="288.00" y2="344.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="309.33" x2="288.00" y2="309.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="274.67" x2="288.00" y2="274.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="240.00" x2="288.00" y2="240.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="205.33" x2="288.00" y2="205.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="170.67" x2="288.00" y2="170.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="136.00" x2="288.00" y2="136.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="101.33" x2="288.00" y2="101.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="66.67" x2="288.00" y2="66.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 448.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="32.00" y1="448.00" x2="32.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 32.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(32.0000, 448.0000) scale(32.0000, -34.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="1.0" x2="7.333333333333333" y2="12" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="10.0" x2="8" y2="6.0" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[2]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="2.0" x2="8" y2="8.4" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[3]" class="scriba-plane-line scriba-state-current"><line x1="0" y1="3.0" x2="8" y2="4.6" stroke="#005a8e" stroke-width="2" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="64.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="96.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="128.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="160.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">4</text><text x="192.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">5</text><text x="224.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">6</text><text x="256.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">7</text><text x="288.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">8</text><text x="26.00" y="416.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="26.00" y="381.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="26.00" y="347.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="26.00" y="312.33" text-anchor="end" font-size="10" fill="#6c757d">4</text><text x="26.00" y="277.67" text-anchor="end" font-size="10" fill="#6c757d">5</text><text x="26.00" y="243.00" text-anchor="end" font-size="10" fill="#6c757d">6</text><text x="26.00" y="208.33" text-anchor="end" font-size="10" fill="#6c757d">7</text><text x="26.00" y="173.67" text-anchor="end" font-size="10" fill="#6c757d">8</text><text x="26.00" y="139.00" text-anchor="end" font-size="10" fill="#6c757d">9</text><text x="26.00" y="104.33" text-anchor="end" font-size="10" fill="#6c757d">10</text><text x="26.00" y="69.67" text-anchor="end" font-size="10" fill="#6c757d">11</text><text x="26.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">12</text><text x="272.67" y="26.00" font-size="10" fill="#212529">L1</text><text x="294.00" y="234.00" font-size="10" fill="#212529">L2</text><text x="294.00" y="150.80" font-size="10" fill="#212529">L3</text><text x="294.00" y="282.53" font-size="10" fill="#212529">L4</text></g></svg>
-</g>
-</svg>`,narration:`Chen L4: y = 0.2x + 3. Duong gan ngang. Tao doan bao loi moi quanh x=2..5 noi L4 thap hon L1 va L2.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 512" role="img" aria-labelledby="li-chao-tree-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 480" data-scriba-xrange="0 8" data-scriba-yrange="0 12" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="64.00" y1="32.00" x2="64.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="96.00" y1="32.00" x2="96.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="128.00" y1="32.00" x2="128.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="192.00" y1="32.00" x2="192.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="224.00" y1="32.00" x2="224.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="256.00" y1="32.00" x2="256.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="413.33" x2="288.00" y2="413.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="378.67" x2="288.00" y2="378.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="344.00" x2="288.00" y2="344.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="309.33" x2="288.00" y2="309.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="274.67" x2="288.00" y2="274.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="240.00" x2="288.00" y2="240.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="205.33" x2="288.00" y2="205.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="170.67" x2="288.00" y2="170.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="136.00" x2="288.00" y2="136.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="101.33" x2="288.00" y2="101.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="66.67" x2="288.00" y2="66.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 448.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="32.00" y1="448.00" x2="32.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 32.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(32.0000, 448.0000) scale(32.0000, -34.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="1.0" x2="7.333333333333333" y2="12" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="10.0" x2="8" y2="6.0" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[2]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="2.0" x2="8" y2="8.4" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[3]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="3.0" x2="8" y2="4.6" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[4]" class="scriba-plane-line scriba-state-current"><line x1="0" y1="11.0" x2="8" y2="3.0" stroke="#005a8e" stroke-width="2" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="64.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="96.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="128.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="160.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">4</text><text x="192.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">5</text><text x="224.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">6</text><text x="256.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">7</text><text x="288.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">8</text><text x="26.00" y="416.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="26.00" y="381.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="26.00" y="347.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="26.00" y="312.33" text-anchor="end" font-size="10" fill="#6c757d">4</text><text x="26.00" y="277.67" text-anchor="end" font-size="10" fill="#6c757d">5</text><text x="26.00" y="243.00" text-anchor="end" font-size="10" fill="#6c757d">6</text><text x="26.00" y="208.33" text-anchor="end" font-size="10" fill="#6c757d">7</text><text x="26.00" y="173.67" text-anchor="end" font-size="10" fill="#6c757d">8</text><text x="26.00" y="139.00" text-anchor="end" font-size="10" fill="#6c757d">9</text><text x="26.00" y="104.33" text-anchor="end" font-size="10" fill="#6c757d">10</text><text x="26.00" y="69.67" text-anchor="end" font-size="10" fill="#6c757d">11</text><text x="26.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">12</text><text x="272.67" y="26.00" font-size="10" fill="#212529">L1</text><text x="294.00" y="234.00" font-size="10" fill="#212529">L2</text><text x="294.00" y="150.80" font-size="10" fill="#212529">L3</text><text x="294.00" y="282.53" font-size="10" fill="#212529">L4</text><text x="294.00" y="338.00" font-size="10" fill="#212529">L5</text></g></svg>
-</g>
-</svg>`,narration:`Chen L5: y = -x + 11. Do doc am manh. Thap nhat tai x=8 (y=3). Chiem bao loi o doan phai.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 512" role="img" aria-labelledby="li-chao-tree-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 480" data-scriba-xrange="0 8" data-scriba-yrange="0 12" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="64.00" y1="32.00" x2="64.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="96.00" y1="32.00" x2="96.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="128.00" y1="32.00" x2="128.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="192.00" y1="32.00" x2="192.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="224.00" y1="32.00" x2="224.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="256.00" y1="32.00" x2="256.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="413.33" x2="288.00" y2="413.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="378.67" x2="288.00" y2="378.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="344.00" x2="288.00" y2="344.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="309.33" x2="288.00" y2="309.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="274.67" x2="288.00" y2="274.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="240.00" x2="288.00" y2="240.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="205.33" x2="288.00" y2="205.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="170.67" x2="288.00" y2="170.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="136.00" x2="288.00" y2="136.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="101.33" x2="288.00" y2="101.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="66.67" x2="288.00" y2="66.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 448.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="32.00" y1="448.00" x2="32.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 32.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(32.0000, 448.0000) scale(32.0000, -34.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="1.0" x2="7.333333333333333" y2="12" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="10.0" x2="8" y2="6.0" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[2]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="2.0" x2="8" y2="8.4" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[3]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="3.0" x2="8" y2="4.6" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[4]" class="scriba-plane-line scriba-state-done"><line x1="0" y1="11.0" x2="8" y2="3.0" stroke="#007a59" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[5]" class="scriba-plane-line scriba-state-current"><line x1="0" y1="0.0" x2="6.0" y2="12" stroke="#005a8e" stroke-width="2" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="64.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="96.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="128.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="160.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">4</text><text x="192.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">5</text><text x="224.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">6</text><text x="256.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">7</text><text x="288.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">8</text><text x="26.00" y="416.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="26.00" y="381.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="26.00" y="347.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="26.00" y="312.33" text-anchor="end" font-size="10" fill="#6c757d">4</text><text x="26.00" y="277.67" text-anchor="end" font-size="10" fill="#6c757d">5</text><text x="26.00" y="243.00" text-anchor="end" font-size="10" fill="#6c757d">6</text><text x="26.00" y="208.33" text-anchor="end" font-size="10" fill="#6c757d">7</text><text x="26.00" y="173.67" text-anchor="end" font-size="10" fill="#6c757d">8</text><text x="26.00" y="139.00" text-anchor="end" font-size="10" fill="#6c757d">9</text><text x="26.00" y="104.33" text-anchor="end" font-size="10" fill="#6c757d">10</text><text x="26.00" y="69.67" text-anchor="end" font-size="10" fill="#6c757d">11</text><text x="26.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">12</text><text x="272.67" y="26.00" font-size="10" fill="#212529">L1</text><text x="294.00" y="234.00" font-size="10" fill="#212529">L2</text><text x="294.00" y="150.80" font-size="10" fill="#212529">L3</text><text x="294.00" y="282.53" font-size="10" fill="#212529">L4</text><text x="294.00" y="338.00" font-size="10" fill="#212529">L5</text><text x="230.00" y="26.00" font-size="10" fill="#212529">L6</text></g></svg>
-</g>
-</svg>`,narration:`Chen L6: y = 2x. Di qua goc toa do. Thap nhat tai x=0 (y=0) nhung tang nhanh. Chi chiem bao loi o x rat nho.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 512" role="img" aria-labelledby="li-chao-tree-frame-8-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 480" data-scriba-xrange="0 8" data-scriba-yrange="0 12" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="64.00" y1="32.00" x2="64.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="96.00" y1="32.00" x2="96.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="128.00" y1="32.00" x2="128.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="192.00" y1="32.00" x2="192.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="224.00" y1="32.00" x2="224.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="256.00" y1="32.00" x2="256.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="413.33" x2="288.00" y2="413.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="378.67" x2="288.00" y2="378.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="344.00" x2="288.00" y2="344.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="309.33" x2="288.00" y2="309.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="274.67" x2="288.00" y2="274.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="240.00" x2="288.00" y2="240.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="205.33" x2="288.00" y2="205.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="170.67" x2="288.00" y2="170.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="136.00" x2="288.00" y2="136.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="101.33" x2="288.00" y2="101.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="66.67" x2="288.00" y2="66.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="448.00" x2="288.00" y2="448.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 448.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="32.00" y1="448.00" x2="32.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 32.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(32.0000, 448.0000) scale(32.0000, -34.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-dim"><line x1="0" y1="1.0" x2="7.333333333333333" y2="12" stroke="#dee2e6" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-dim"><line x1="0" y1="10.0" x2="8" y2="6.0" stroke="#dee2e6" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[2]" class="scriba-plane-line scriba-state-dim"><line x1="0" y1="2.0" x2="8" y2="8.4" stroke="#dee2e6" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[3]" class="scriba-plane-line scriba-state-good"><line x1="0" y1="3.0" x2="8" y2="4.6" stroke="#3a95c9" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[4]" class="scriba-plane-line scriba-state-good"><line x1="0" y1="11.0" x2="8" y2="3.0" stroke="#3a95c9" stroke-width="2" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[5]" class="scriba-plane-line scriba-state-good"><line x1="0" y1="0.0" x2="6.0" y2="12" stroke="#3a95c9" stroke-width="2" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="64.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="96.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="128.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="160.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">4</text><text x="192.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">5</text><text x="224.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">6</text><text x="256.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">7</text><text x="288.00" y="460.00" text-anchor="middle" font-size="10" fill="#6c757d">8</text><text x="26.00" y="416.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="26.00" y="381.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="26.00" y="347.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="26.00" y="312.33" text-anchor="end" font-size="10" fill="#6c757d">4</text><text x="26.00" y="277.67" text-anchor="end" font-size="10" fill="#6c757d">5</text><text x="26.00" y="243.00" text-anchor="end" font-size="10" fill="#6c757d">6</text><text x="26.00" y="208.33" text-anchor="end" font-size="10" fill="#6c757d">7</text><text x="26.00" y="173.67" text-anchor="end" font-size="10" fill="#6c757d">8</text><text x="26.00" y="139.00" text-anchor="end" font-size="10" fill="#6c757d">9</text><text x="26.00" y="104.33" text-anchor="end" font-size="10" fill="#6c757d">10</text><text x="26.00" y="69.67" text-anchor="end" font-size="10" fill="#6c757d">11</text><text x="26.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">12</text><text x="272.67" y="26.00" font-size="10" fill="#212529">L1</text><text x="294.00" y="234.00" font-size="10" fill="#212529">L2</text><text x="294.00" y="150.80" font-size="10" fill="#212529">L3</text><text x="294.00" y="282.53" font-size="10" fill="#212529">L4</text><text x="294.00" y="338.00" font-size="10" fill="#212529">L5</text><text x="230.00" y="26.00" font-size="10" fill="#212529">L6</text></g></svg>
-</g>
-</svg>`,narration:`Bao loi duoi: L6 (x nho), L4 (x giua), L5 (x lon). Truy van min tai bat ky x trong O(log n). Li Chao Tree la ky thuat manh cho DP Convex Hull Trick!`}
+  // Coordinate system: x in [0,8], y in [0,12]
+  // SVG viewport
+  var svgW=600, svgH=400;
+  var pad={l:50,r:30,t:20,b:35};
+  var plotW=svgW-pad.l-pad.r, plotH=svgH-pad.t-pad.b;
+  var xMin=0, xMax=8, yMin=0, yMax=12;
+
+  function tx(x){ return pad.l + (x-xMin)/(xMax-xMin)*plotW; }
+  function ty(y){ return pad.t + (1-(y-yMin)/(yMax-yMin))*plotH; }
+
+  // Lines: L1..L6
+  var lines=[
+    {a:1.5, b:1,  label:"L1: y=1.5x+1"},
+    {a:-0.5,b:10, label:"L2: y=-0.5x+10"},
+    {a:0.3, b:2,  label:"L3: y=0.3x+2"},
+    {a:-1.5,b:11, label:"L4: y=-1.5x+11"},
+    {a:0,   b:5,  label:"L5: y=5"},
+    {a:2,   b:0,  label:"L6: y=2x"}
   ];
+
+  function lineY(l,x){ return l.a*x+l.b; }
+
+  // Clip line to viewport and return SVG coords
+  function clipLine(l){
+    var x0=xMin, x1=xMax;
+    var y0=lineY(l,x0), y1=lineY(l,x1);
+    // Clip top/bottom
+    if(y0>yMax){ x0=(yMax-l.b)/l.a; y0=yMax; }
+    if(y0<yMin){ x0=(yMin-l.b)/l.a; y0=yMin; }
+    if(y1>yMax){ x1=(yMax-l.b)/l.a; y1=yMax; }
+    if(y1<yMin){ x1=(yMin-l.b)/l.a; y1=yMin; }
+    // Ensure within x range
+    x0=Math.max(xMin,Math.min(xMax,x0));
+    x1=Math.max(xMin,Math.min(xMax,x1));
+    y0=lineY(l,x0); y1=lineY(l,x1);
+    if(y0<yMin||y0>yMax||y1<yMin||y1>yMax) return null;
+    return {x1:tx(x0),y1:ty(y0),x2:tx(x1),y2:ty(y1)};
+  }
+
+  // Grid + axes
+  function grid(){
+    var s='';
+    // Grid lines
+    for(var x=0;x<=8;x++){
+      s+='<line x1="'+tx(x)+'" y1="'+ty(yMin)+'" x2="'+tx(x)+'" y2="'+ty(yMax)+'" stroke="#eee" stroke-width="0.5"/>';
+      s+='<text x="'+tx(x)+'" y="'+(ty(yMin)+16)+'" text-anchor="middle" style="font:400 10px ui-monospace,monospace;fill:#999">'+x+'</text>';
+    }
+    for(var y=0;y<=12;y+=2){
+      s+='<line x1="'+tx(xMin)+'" y1="'+ty(y)+'" x2="'+tx(xMax)+'" y2="'+ty(y)+'" stroke="#eee" stroke-width="0.5"/>';
+      s+='<text x="'+(tx(xMin)-12)+'" y="'+ty(y)+'" text-anchor="end" style="font:400 10px ui-monospace,monospace;fill:#999" dominant-baseline="central">'+y+'</text>';
+    }
+    // Axes
+    s+='<line x1="'+tx(xMin)+'" y1="'+ty(yMin)+'" x2="'+tx(xMax)+'" y2="'+ty(yMin)+'" stroke="#495057" stroke-width="1.5"/>';
+    s+='<line x1="'+tx(xMin)+'" y1="'+ty(yMin)+'" x2="'+tx(xMin)+'" y2="'+ty(yMax)+'" stroke="#495057" stroke-width="1.5"/>';
+    // Axis labels
+    s+='<text x="'+tx((xMin+xMax)/2)+'" y="'+(ty(yMin)+30)+'" style="font:600 11px sans-serif;fill:#495057" text-anchor="middle">x</text>';
+    s+='<text x="'+(tx(xMin)-30)+'" y="'+ty((yMin+yMax)/2)+'" style="font:600 11px sans-serif;fill:#495057" text-anchor="middle" transform="rotate(-90,'+(tx(xMin)-30)+','+ty((yMin+yMax)/2)+')">y</text>';
+    return s;
+  }
+
+  var colors={
+    current:"#0072B2",
+    idle:"#6c757d",
+    done:"#009E73",
+    good:"#56B4E9",
+    dim:"#e8e8e8",
+    error:"#D55E00"
+  };
+
+  function drawLine(l,state,labelPos){
+    var c=clipLine(l);
+    if(!c) return '';
+    var col=colors[state]||colors.idle;
+    var sw=state==="current"?2.5:state==="good"?2:state==="dim"?1:1.5;
+    var opacity=state==="dim"?0.4:1;
+    var s='<line x1="'+c.x1+'" y1="'+c.y1+'" x2="'+c.x2+'" y2="'+c.y2+'" stroke="'+col+'" stroke-width="'+sw+'" opacity="'+opacity+'"/>';
+    // Label
+    if(labelPos!==false){
+      var lx, ly;
+      if(labelPos==="left"){ lx=c.x1+6; ly=c.y1-8; }
+      else if(labelPos==="right"){ lx=c.x2-6; ly=c.y2-8; }
+      else { lx=(c.x1+c.x2)/2; ly=Math.min(c.y1,c.y2)-8; }
+      s+='<text x="'+lx+'" y="'+ly+'" style="font:600 9px ui-monospace,monospace;fill:'+col+';opacity:'+opacity+'" text-anchor="'+(labelPos==="right"?"end":"start")+'">'+l.label+'</text>';
+    }
+    return s;
+  }
+
+  // Intersection point marker
+  function intPt(l1,l2){
+    if(l1.a===l2.a) return '';
+    var ix=(l2.b-l1.b)/(l1.a-l2.a);
+    var iy=lineY(l1,ix);
+    if(ix<xMin||ix>xMax||iy<yMin||iy>yMax) return '';
+    return '<circle cx="'+tx(ix)+'" cy="'+ty(iy)+'" r="4" fill="#D55E00" stroke="white" stroke-width="1.5"/>'+
+      '<text x="'+(tx(ix)+8)+'" y="'+(ty(iy)-8)+'" style="font:600 9px ui-monospace,monospace;fill:#D55E00" text-anchor="start">('+ix.toFixed(1)+','+iy.toFixed(1)+')</text>';
+  }
+
+  // Lower envelope: given a set of lines, compute and draw the envelope
+  function envelope(activeLines){
+    if(activeLines.length===0) return '';
+    // Sample many x values, find min y
+    var pts=[];
+    var step=0.05;
+    for(var x=xMin;x<=xMax;x+=step){
+      var minY=Infinity, minIdx=-1;
+      for(var i=0;i<activeLines.length;i++){
+        var y=lineY(activeLines[i],x);
+        if(y<minY){ minY=y; minIdx=i; }
+      }
+      if(minY>=yMin && minY<=yMax){
+        pts.push({x:x,y:minY});
+      }
+    }
+    if(pts.length<2) return '';
+    var d='M '+tx(pts[0].x)+' '+ty(pts[0].y);
+    for(var i=1;i<pts.length;i++){
+      d+=' L '+tx(pts[i].x)+' '+ty(pts[i].y);
+    }
+    return '<path d="'+d+'" fill="none" stroke="#009E73" stroke-width="3" stroke-linecap="round"/>';
+  }
+
+  function svgWrap(inner){
+    return '<svg class="scriba-stage-svg" viewBox="0 0 '+svgW+' '+svgH+'" xmlns="http://www.w3.org/2000/svg">'+inner+'</svg>';
+  }
+
+  // Build frames
+  var frames=[];
+
+  // Step 1: Empty plane
+  frames.push({
+    svg: svgWrap(grid()),
+    narration: "Mat phang toa do 2D voi luoi tai cac vi tri nguyen. Li Chao Tree duy tri lower envelope cua mot tap duong thang y=ax+b. Moi truy van min y tai x bat ky duoc tra loi trong O(log n)."
+  });
+
+  // Step 2: Insert L1
+  frames.push({
+    svg: svgWrap(grid()+drawLine(lines[0],"current","left")),
+    narration: "Chen L1: y = 1.5x + 1. Day la duong thang dau tien, no lam lower envelope tren toan bo mien [0,8]."
+  });
+
+  // Step 3: Insert L2, show intersection
+  frames.push({
+    svg: svgWrap(grid()+drawLine(lines[0],"idle","left")+drawLine(lines[1],"current","right")+intPt(lines[0],lines[1])),
+    narration: "Chen L2: y = -0.5x + 10. Giao diem voi L1 tai x = 4.5. Voi x < 4.5 thi L1 thap hon; x > 4.5 thi L2 thap hon. Lower envelope chuyen."
+  });
+
+  // Step 4: Insert L3
+  frames.push({
+    svg: svgWrap(grid()+drawLine(lines[0],"idle","left")+drawLine(lines[1],"idle","right")+drawLine(lines[2],"current","left")+intPt(lines[0],lines[2])),
+    narration: "Chen L3: y = 0.3x + 2. Duong nay nam gan day voi L1 va thap hon L1 khi x nho. Giao diem voi L1 tai x \u2248 0.83."
+  });
+
+  // Step 5: Insert L4
+  frames.push({
+    svg: svgWrap(grid()+drawLine(lines[0],"idle","left")+drawLine(lines[1],"idle","right")+drawLine(lines[2],"idle","left")+drawLine(lines[3],"current","right")+intPt(lines[2],lines[3])),
+    narration: "Chen L4: y = -1.5x + 11. Do doc am manh. Giao diem voi L3 tai x = 5. L4 thap hon khi x lon."
+  });
+
+  // Step 6: Insert L5
+  frames.push({
+    svg: svgWrap(grid()+drawLine(lines[0],"idle","left")+drawLine(lines[1],"idle","right")+drawLine(lines[2],"idle","left")+drawLine(lines[3],"idle","right")+drawLine(lines[4],"current","left")),
+    narration: "Chen L5: y = 5 (duong ngang). Duong nay nam giua, chi la phan cua envelope trong mot khoang nho (neu co)."
+  });
+
+  // Step 7: Insert L6
+  frames.push({
+    svg: svgWrap(grid()+drawLine(lines[0],"dim","left")+drawLine(lines[1],"dim","right")+drawLine(lines[2],"idle","left")+drawLine(lines[3],"idle","right")+drawLine(lines[4],"dim","left")+drawLine(lines[5],"current","left")),
+    narration: "Chen L6: y = 2x. Do doc lon nhat. L1 va L5 bi dim vi khong con gop vao lower envelope. L6 chi thap nhat gan x = 0."
+  });
+
+  // Step 8: Final — highlight envelope lines, dim others
+  // The lower envelope is formed by L6 (near x=0), L3 (middle), L4 (right part)
+  frames.push({
+    svg: svgWrap(grid()+
+      drawLine(lines[0],"dim","left")+
+      drawLine(lines[1],"dim","right")+
+      drawLine(lines[2],"good","left")+
+      drawLine(lines[3],"good","right")+
+      drawLine(lines[4],"dim",false)+
+      drawLine(lines[5],"good","left")+
+      envelope([lines[2],lines[3],lines[5]])),
+    narration: "Lower envelope hoan chinh (duong xanh dam): gom L6 (x nho), L3 (x trung binh), L4 (x lon). Cac duong khac (dim) khong gop vao envelope. Truy van min y tai bat ky x nao chi can duyet Li Chao Tree trong O(log n)."
+  });
+
+  var W=document.getElementById('lichao');
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
@@ -240,7 +323,7 @@ svg text {
   function show(i){
     cur=i;
     stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
+    narr.innerHTML=frames[i].narration;
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;

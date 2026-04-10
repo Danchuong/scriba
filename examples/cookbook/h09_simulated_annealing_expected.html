@@ -8,7 +8,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  max-width: 720px;
+  max-width: 900px;
   margin: 2rem auto;
   padding: 0 1rem;
   background: #fafafa;
@@ -90,7 +90,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 
 /* SVG text */
 svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font: 700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   text-anchor: middle;
   dominant-baseline: central;
 }
@@ -102,38 +102,6 @@ svg text {
 /* Frame transition */
 .scriba-stage svg, .scriba-narration {
   transition: opacity 0.2s ease;
-}
-
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
-}
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
-}
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
 /* Theme toggle */
@@ -154,9 +122,6 @@ svg text {
 [data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
 [data-theme="dark"] .scriba-dot { background: #30363d; }
 [data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
 [data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
 </head>
@@ -166,7 +131,7 @@ svg text {
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>h09_simulated_annealing</h1>
-<div class="scriba-widget" id="simulated-annealing">
+<div class="scriba-widget" id="sim-anneal">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
     <span class="scriba-step-counter">Step 1 / 9</span>
@@ -188,693 +153,184 @@ svg text {
 </div>
 <script>
 (function(){
-  var W=document.getElementById('simulated-annealing');
-  var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-idle"><line x1="20" y1="237" x2="200" y2="280" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-idle"><line x1="200" y1="280" x2="380" y2="236" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-idle"><line x1="380" y1="236" x2="380" y2="59" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-idle"><line x1="380" y1="59" x2="200" y2="20" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-idle"><line x1="200" y1="20" x2="20" y2="61" stroke="#d0d7de" stroke-width="1.5"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-idle"><line x1="20" y1="61" x2="20" y2="237" stroke="#d0d7de" stroke-width="1.5"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="160.0" x2="304" y2="160.0"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="131.2" x2="304" y2="131.2"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="102.4" x2="304" y2="102.4"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="73.6" x2="304" y2="73.6"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="44.8" x2="304" y2="44.8"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="16.0" x2="304" y2="16.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="160.0" x2="48" y2="160.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="164.0" text-anchor="end" font-size="10">0</text>
-<line x1="44" y1="131.2" x2="48" y2="131.2" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="135.2" text-anchor="end" font-size="10">0.2</text>
-<line x1="44" y1="102.4" x2="48" y2="102.4" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="106.4" text-anchor="end" font-size="10">0.4</text>
-<line x1="44" y1="73.6" x2="48" y2="73.6" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="77.6" text-anchor="end" font-size="10">0.6</text>
-<line x1="44" y1="44.8" x2="48" y2="44.8" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="48.8" text-anchor="end" font-size="10">0.8</text>
-<line x1="44" y1="16.0" x2="48" y2="16.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="20.0" text-anchor="end" font-size="10">1</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-</g>
-</g>
+  /* 6 cities at fixed positions (map-like layout) */
+  var cities = {
+    A: {x:80,  y:40,  label:'A'},
+    B: {x:220, y:30,  label:'B'},
+    C: {x:310, y:110, label:'C'},
+    D: {x:260, y:210, label:'D'},
+    E: {x:120, y:230, label:'E'},
+    F: {x:40,  y:130, label:'F'}
+  };
+  var cityKeys = ['A','B','C','D','E','F'];
+  var graphW = 380, graphH = 280;
+  var chartW = 380, chartH = 180;
+  var chartL = 50, chartR = 370, chartT = 20, chartB = 160;
 
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Simulated Annealing (SA) giai bai TSP 6 thanh pho. Bat dau voi tour A-B-C-D-E-F-A. Nhiet do cao: chap nhan loi di xau. Nhiet do ha: chi nhan loi di tot.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-current"><line x1="20" y1="237" x2="200" y2="280" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-current"><line x1="200" y1="280" x2="380" y2="236" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-current"><line x1="380" y1="236" x2="380" y2="59" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-current"><line x1="380" y1="59" x2="200" y2="20" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-current"><line x1="200" y1="20" x2="20" y2="61" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="152.14" x2="304" y2="152.14"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="131.45" x2="304" y2="131.45"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="110.76" x2="304" y2="110.76"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="90.07" x2="304" y2="90.07"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="69.38" x2="304" y2="69.38"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="48.69" x2="304" y2="48.69"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="152.14" x2="48" y2="152.14" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="156.14" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="131.45" x2="48" y2="131.45" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="135.45" text-anchor="end" font-size="10">50</text>
-<line x1="44" y1="110.76" x2="48" y2="110.76" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="114.76" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="90.07" x2="48" y2="90.07" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="94.07" text-anchor="end" font-size="10">70</text>
-<line x1="44" y1="69.38" x2="48" y2="69.38" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="73.38" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="48.69" x2="48" y2="48.69" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="52.69" text-anchor="end" font-size="10">90</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,148.0" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="48.0" y1="16" x2="48.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="48.0" cy="148.0" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="48.0" cy="28.0" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Tour ban dau: A-&gt;B-&gt;C-&gt;D-&gt;E-&gt;F-&gt;A. Chi phi = 42. Nhiet do T=100 (cao).`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-current"><line x1="20" y1="237" x2="200" y2="280" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-current"><line x1="380" y1="236" x2="380" y2="59" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-current"><line x1="200" y1="20" x2="20" y2="61" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="144.13" x2="304" y2="144.13"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="124.77" x2="304" y2="124.77"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="105.42" x2="304" y2="105.42"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="86.06" x2="304" y2="86.06"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="66.71" x2="304" y2="66.71"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="47.35" x2="304" y2="47.35"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="73.6" y1="16" x2="73.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="99.2" y1="16" x2="99.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="124.8" y1="16" x2="124.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="150.4" y1="16" x2="150.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="176.0" y1="16" x2="176.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="201.6" y1="16" x2="201.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="227.2" y1="16" x2="227.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="252.8" y1="16" x2="252.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="278.4" y1="16" x2="278.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="73.6" y1="160" x2="73.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="73.6" y="174" text-anchor="middle" font-size="10">0.1</text>
-<line x1="99.2" y1="160" x2="99.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="99.2" y="174" text-anchor="middle" font-size="10">0.2</text>
-<line x1="124.8" y1="160" x2="124.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="124.8" y="174" text-anchor="middle" font-size="10">0.3</text>
-<line x1="150.4" y1="160" x2="150.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="150.4" y="174" text-anchor="middle" font-size="10">0.4</text>
-<line x1="176.0" y1="160" x2="176.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="176.0" y="174" text-anchor="middle" font-size="10">0.5</text>
-<line x1="201.6" y1="160" x2="201.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="201.6" y="174" text-anchor="middle" font-size="10">0.6</text>
-<line x1="227.2" y1="160" x2="227.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="227.2" y="174" text-anchor="middle" font-size="10">0.7</text>
-<line x1="252.8" y1="160" x2="252.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="252.8" y="174" text-anchor="middle" font-size="10">0.8</text>
-<line x1="278.4" y1="160" x2="278.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="278.4" y="174" text-anchor="middle" font-size="10">0.9</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">1</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="144.13" x2="48" y2="144.13" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="148.13" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="124.77" x2="48" y2="124.77" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="128.77" text-anchor="end" font-size="10">50</text>
-<line x1="44" y1="105.42" x2="48" y2="105.42" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="109.42" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="86.06" x2="48" y2="86.06" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="90.06" text-anchor="end" font-size="10">70</text>
-<line x1="44" y1="66.71" x2="48" y2="66.71" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="70.71" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="47.35" x2="48" y2="47.35" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="51.35" text-anchor="end" font-size="10">90</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,140.26 304.0,148.0" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 304.0,66.71" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="148.0" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="66.71" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Buoc 1: Dao doan [C,D] -&gt; tour A-B-D-C-E-F-A. Chi phi giam 42-&gt;38. Chap nhan! T=80.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-current"><line x1="380" y1="236" x2="380" y2="59" stroke="#005a8e" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="144.13" x2="304" y2="144.13"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="124.77" x2="304" y2="124.77"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="105.42" x2="304" y2="105.42"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="86.06" x2="304" y2="86.06"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="66.71" x2="304" y2="66.71"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="47.35" x2="304" y2="47.35"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="73.6" y1="16" x2="73.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="99.2" y1="16" x2="99.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="124.8" y1="16" x2="124.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="150.4" y1="16" x2="150.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="176.0" y1="16" x2="176.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="201.6" y1="16" x2="201.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="227.2" y1="16" x2="227.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="252.8" y1="16" x2="252.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="278.4" y1="16" x2="278.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="73.6" y1="160" x2="73.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="73.6" y="174" text-anchor="middle" font-size="10">0.2</text>
-<line x1="99.2" y1="160" x2="99.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="99.2" y="174" text-anchor="middle" font-size="10">0.4</text>
-<line x1="124.8" y1="160" x2="124.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="124.8" y="174" text-anchor="middle" font-size="10">0.6</text>
-<line x1="150.4" y1="160" x2="150.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="150.4" y="174" text-anchor="middle" font-size="10">0.8</text>
-<line x1="176.0" y1="160" x2="176.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="176.0" y="174" text-anchor="middle" font-size="10">1</text>
-<line x1="201.6" y1="160" x2="201.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="201.6" y="174" text-anchor="middle" font-size="10">1.2</text>
-<line x1="227.2" y1="160" x2="227.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="227.2" y="174" text-anchor="middle" font-size="10">1.4</text>
-<line x1="252.8" y1="160" x2="252.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="252.8" y="174" text-anchor="middle" font-size="10">1.6</text>
-<line x1="278.4" y1="160" x2="278.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="278.4" y="174" text-anchor="middle" font-size="10">1.8</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">2</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="144.13" x2="48" y2="144.13" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="148.13" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="124.77" x2="48" y2="124.77" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="128.77" text-anchor="end" font-size="10">50</text>
-<line x1="44" y1="105.42" x2="48" y2="105.42" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="109.42" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="86.06" x2="48" y2="86.06" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="90.06" text-anchor="end" font-size="10">70</text>
-<line x1="44" y1="66.71" x2="48" y2="66.71" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="70.71" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="47.35" x2="48" y2="47.35" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="51.35" text-anchor="end" font-size="10">90</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,140.26 176.0,148.0 304.0,142.19" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 176.0,66.71 304.0,97.68" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="142.19" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="97.68" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Buoc 2: Thu dao doan [B..E] -&gt; chi phi tang 38-&gt;41. T=64 con cao, xac suat chap nhan = e^(-3/64) = 0.95. Chap nhan de thoat cuc tri!`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="138.77" x2="304" y2="138.77"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="101.85" x2="304" y2="101.85"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="64.92" x2="304" y2="64.92"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="90.67" y1="16" x2="90.67" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="133.33" y1="16" x2="133.33" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="176.0" y1="16" x2="176.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="218.67" y1="16" x2="218.67" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="261.33" y1="16" x2="261.33" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="90.67" y1="160" x2="90.67" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="90.67" y="174" text-anchor="middle" font-size="10">0.5</text>
-<line x1="133.33" y1="160" x2="133.33" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="133.33" y="174" text-anchor="middle" font-size="10">1</text>
-<line x1="176.0" y1="160" x2="176.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="176.0" y="174" text-anchor="middle" font-size="10">1.5</text>
-<line x1="218.67" y1="160" x2="218.67" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="218.67" y="174" text-anchor="middle" font-size="10">2</text>
-<line x1="261.33" y1="160" x2="261.33" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="261.33" y="174" text-anchor="middle" font-size="10">2.5</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">3</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="138.77" x2="48" y2="138.77" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="142.77" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="101.85" x2="48" y2="101.85" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="105.85" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="64.92" x2="48" y2="64.92" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="68.92" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,135.08 133.33,142.46 218.67,136.92 304.0,148.0" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 133.33,64.92 218.67,94.46 304.0,118.46" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="148.0" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="118.46" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Buoc 3: Dao doan [D..F] -&gt; chi phi giam manh 41-&gt;35. Chap nhan. T=51. Dang tien gan loi giai tot.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="135.46" x2="304" y2="135.46"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="99.64" x2="304" y2="99.64"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="63.82" x2="304" y2="63.82"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="80.0" y1="16" x2="80.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="112.0" y1="16" x2="112.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="144.0" y1="16" x2="144.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="176.0" y1="16" x2="176.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="208.0" y1="16" x2="208.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="240.0" y1="16" x2="240.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="272.0" y1="16" x2="272.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="80.0" y1="160" x2="80.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="80.0" y="174" text-anchor="middle" font-size="10">0.5</text>
-<line x1="112.0" y1="160" x2="112.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="112.0" y="174" text-anchor="middle" font-size="10">1</text>
-<line x1="144.0" y1="160" x2="144.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="144.0" y="174" text-anchor="middle" font-size="10">1.5</text>
-<line x1="176.0" y1="160" x2="176.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="176.0" y="174" text-anchor="middle" font-size="10">2</text>
-<line x1="208.0" y1="160" x2="208.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="208.0" y="174" text-anchor="middle" font-size="10">2.5</text>
-<line x1="240.0" y1="160" x2="240.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="240.0" y="174" text-anchor="middle" font-size="10">3</text>
-<line x1="272.0" y1="160" x2="272.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="272.0" y="174" text-anchor="middle" font-size="10">3.5</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">4</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="135.46" x2="48" y2="135.46" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="139.46" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="99.64" x2="48" y2="99.64" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="103.64" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="63.82" x2="48" y2="63.82" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="67.82" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,131.88 112.0,139.04 176.0,133.67 240.0,144.42 304.0,148.0" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 112.0,63.82 176.0,92.48 240.0,115.76 304.0,133.67" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="148.0" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="133.67" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Buoc 4: Dao doan [D,E] -&gt; chi phi 35-&gt;33. Cai thien. T=41.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="135.46" x2="304" y2="135.46"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="99.64" x2="304" y2="99.64"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="63.82" x2="304" y2="63.82"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="99.2" y1="16" x2="99.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="150.4" y1="16" x2="150.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="201.6" y1="16" x2="201.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="252.8" y1="16" x2="252.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="99.2" y1="160" x2="99.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="99.2" y="174" text-anchor="middle" font-size="10">1</text>
-<line x1="150.4" y1="160" x2="150.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="150.4" y="174" text-anchor="middle" font-size="10">2</text>
-<line x1="201.6" y1="160" x2="201.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="201.6" y="174" text-anchor="middle" font-size="10">3</text>
-<line x1="252.8" y1="160" x2="252.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="252.8" y="174" text-anchor="middle" font-size="10">4</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">5</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="135.46" x2="48" y2="135.46" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="139.46" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="99.64" x2="48" y2="99.64" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="103.64" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="63.82" x2="48" y2="63.82" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="67.82" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,131.88 99.2,139.04 150.4,133.67 201.6,144.42 252.8,148.0 304.0,142.63" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 99.2,63.82 150.4,92.48 201.6,115.76 252.8,133.67 304.0,148.0" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="142.63" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="148.0" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Buoc 5: Thu dao khac -&gt; chi phi tang 33-&gt;36. T=33, xac suat = e^(-3/33) = 0.91. Van chap nhan -- nhiet do chua du thap.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-8-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="157.73" x2="304" y2="157.73"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="125.3" x2="304" y2="125.3"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="92.86" x2="304" y2="92.86"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="60.43" x2="304" y2="60.43"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="90.67" y1="16" x2="90.67" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="133.33" y1="16" x2="133.33" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="176.0" y1="16" x2="176.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="218.67" y1="16" x2="218.67" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="261.33" y1="16" x2="261.33" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="90.67" y1="160" x2="90.67" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="90.67" y="174" text-anchor="middle" font-size="10">1</text>
-<line x1="133.33" y1="160" x2="133.33" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="133.33" y="174" text-anchor="middle" font-size="10">2</text>
-<line x1="176.0" y1="160" x2="176.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="176.0" y="174" text-anchor="middle" font-size="10">3</text>
-<line x1="218.67" y1="160" x2="218.67" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="218.67" y="174" text-anchor="middle" font-size="10">4</text>
-<line x1="261.33" y1="160" x2="261.33" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="261.33" y="174" text-anchor="middle" font-size="10">5</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">6</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="157.73" x2="48" y2="157.73" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="161.73" text-anchor="end" font-size="10">20</text>
-<line x1="44" y1="125.3" x2="48" y2="125.3" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="129.3" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="92.86" x2="48" y2="92.86" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="96.86" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="60.43" x2="48" y2="60.43" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="64.43" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,122.05 90.67,128.54 133.33,123.68 176.0,133.41 218.67,136.65 261.33,131.78 304.0,139.89" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 90.67,60.43 133.33,86.38 176.0,107.46 218.67,123.68 261.33,136.65 304.0,148.0" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="139.89" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="148.0" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Buoc 6: Dao thanh cong -&gt; chi phi giam 36-&gt;31. T=26. Dang hoi tu.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 432 548" role="img" aria-labelledby="simulated-annealing-frame-9-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="graph" data-shape="G"><g class="scriba-graph-edges"><g data-target="G.edge[(A,B)]" class="scriba-state-dim"><line x1="20" y1="237" x2="200" y2="280" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(B,C)]" class="scriba-state-dim"><line x1="200" y1="280" x2="380" y2="236" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(C,D)]" class="scriba-state-dim"><line x1="380" y1="236" x2="380" y2="59" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(D,E)]" class="scriba-state-dim"><line x1="380" y1="59" x2="200" y2="20" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(E,F)]" class="scriba-state-dim"><line x1="200" y1="20" x2="20" y2="61" stroke="#dee2e6" stroke-width="2"/></g><g data-target="G.edge[(F,A)]" class="scriba-state-current"><line x1="20" y1="61" x2="20" y2="237" stroke="#005a8e" stroke-width="2"/></g></g><g class="scriba-graph-nodes"><g data-target="G.node[A]" class="scriba-state-idle"><circle cx="20" cy="237" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="237" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="G.node[B]" class="scriba-state-idle"><circle cx="200" cy="280" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="280" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="G.node[C]" class="scriba-state-idle"><circle cx="380" cy="236" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="236" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="G.node[D]" class="scriba-state-idle"><circle cx="380" cy="59" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="380" y="59" text-anchor="middle" dominant-baseline="central" fill="#212529">D</text></g><g data-target="G.node[E]" class="scriba-state-idle"><circle cx="200" cy="20" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="200" y="20" text-anchor="middle" dominant-baseline="central" fill="#212529">E</text></g><g data-target="G.node[F]" class="scriba-state-idle"><circle cx="20" cy="61" r="20" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="20" y="61" text-anchor="middle" dominant-baseline="central" fill="#212529">F</text></g></g></g>
-</g>
-<g transform="translate(56,332)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="134.67" x2="304" y2="134.67"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="108.0" x2="304" y2="108.0"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="81.33" x2="304" y2="81.33"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="54.67" x2="304" y2="54.67"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="84.57" y1="16" x2="84.57" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="121.14" y1="16" x2="121.14" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="157.71" y1="16" x2="157.71" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="194.29" y1="16" x2="194.29" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="230.86" y1="16" x2="230.86" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="267.43" y1="16" x2="267.43" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="84.57" y1="160" x2="84.57" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="84.57" y="174" text-anchor="middle" font-size="10">1</text>
-<line x1="121.14" y1="160" x2="121.14" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="121.14" y="174" text-anchor="middle" font-size="10">2</text>
-<line x1="157.71" y1="160" x2="157.71" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="157.71" y="174" text-anchor="middle" font-size="10">3</text>
-<line x1="194.29" y1="160" x2="194.29" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="194.29" y="174" text-anchor="middle" font-size="10">4</text>
-<line x1="230.86" y1="160" x2="230.86" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="230.86" y="174" text-anchor="middle" font-size="10">5</text>
-<line x1="267.43" y1="160" x2="267.43" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="267.43" y="174" text-anchor="middle" font-size="10">6</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">7</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="134.67" x2="48" y2="134.67" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="138.67" text-anchor="end" font-size="10">20</text>
-<line x1="44" y1="108.0" x2="48" y2="108.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="112.0" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="81.33" x2="48" y2="81.33" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="85.33" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="54.67" x2="48" y2="54.67" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="58.67" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">iteration</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,105.33 84.57,110.67 121.14,106.67 157.71,114.67 194.29,117.33 230.86,113.33 267.43,120.0 304.0,122.67" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 84.57,54.67 121.14,76.0 157.71,93.33 194.29,106.67 230.86,117.33 267.43,126.67 304.0,148.0" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="122.67" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="148.0" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Buoc 7-8: T thap, chi chap nhan cai thien. Chi phi toi uu = 29. MetricPlot cho thay cost giam dan va temp ha theo lich trinh. SA tim loi giai gan toi uu cho NP-hard!`}
+  /* Palette */
+  var COL = {
+    idle:'#f6f8fa', current:'#0072B2', done:'#009E73',
+    error:'#D55E00', good:'#56B4E9', dim:'#e8e8e8',
+    costLine:'#0072B2', tempLine:'#D55E00',
+    nodeFill:'#f6f8fa', nodeStroke:'#d0d7de'
+  };
+
+  /* Tour data per step:
+     Step 1: initial  A-B-C-D-E-F-A  cost=48  T=100
+     Step 2: 2-opt reverse [C,D]->  A-B-D-C-E-F-A  cost=44  T=100
+     Step 3: worse accepted A-B-D-F-E-C-A  cost=47 T=80  (accepted by prob)
+     Step 4: T drops, improvement A-B-D-E-F-C-A  cost=42  T=64
+     Step 5: improvement  A-B-D-E-C-F-A  cost=39  T=51
+     Step 6: improvement  A-B-C-E-D-F-A  cost=37  T=41
+     Step 7: improvement  A-F-D-E-C-B-A  cost=35  T=33
+     Step 8: converged  A-F-E-D-C-B-A  cost=32  T=26
+     Step 9: final  same  cost=32  T=21
+  */
+  var tours = [
+    ['A','B','C','D','E','F'],
+    ['A','B','D','C','E','F'],
+    ['A','B','D','F','E','C'],
+    ['A','B','D','E','F','C'],
+    ['A','B','D','E','C','F'],
+    ['A','B','C','E','D','F'],
+    ['A','F','D','E','C','B'],
+    ['A','F','E','D','C','B'],
+    ['A','F','E','D','C','B']
   ];
+
+  function dist(a,b){
+    var dx=cities[a].x-cities[b].x, dy=cities[a].y-cities[b].y;
+    return Math.sqrt(dx*dx+dy*dy);
+  }
+  /* Precompute realistic costs */
+  function tourCost(tour){
+    var s=0;
+    for(var i=0;i<tour.length;i++){
+      s+=dist(tour[i], tour[(i+1)%tour.length]);
+    }
+    return Math.round(s);
+  }
+
+  var costs=[], temps=[];
+  var T0=100, alpha=0.8;
+  for(var i=0;i<tours.length;i++){
+    costs.push(tourCost(tours[i]));
+    temps.push(Math.round(T0*Math.pow(alpha,i)));
+  }
+
+  /* Edge state per step */
+  var edgeStates = [
+    'idle','idle','error','current','current','current','done','done','done'
+  ];
+
+  function buildTourSvg(stepIdx) {
+    var tour = tours[stepIdx];
+    var estate = edgeStates[stepIdx];
+    var svg = '';
+    /* edges */
+    var edgeCol = estate==='idle'?'#d0d7de':estate==='current'?COL.current:estate==='done'?COL.done:estate==='error'?COL.error:COL.good;
+    var edgeSW = estate==='idle'?1.5:2.5;
+    for(var i=0;i<tour.length;i++){
+      var a=cities[tour[i]], b=cities[tour[(i+1)%tour.length]];
+      svg += '<line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'" stroke="'+edgeCol+'" stroke-width="'+edgeSW+'" stroke-linecap="round"/>';
+    }
+    /* direction arrows (small) on first edge */
+    var a0=cities[tour[0]], a1=cities[tour[1]];
+    var mx=(a0.x+a1.x)/2, my=(a0.y+a1.y)/2;
+    var ang=Math.atan2(a1.y-a0.y,a1.x-a0.x);
+    var ax1=mx-6*Math.cos(ang-0.4), ay1=my-6*Math.sin(ang-0.4);
+    var ax2=mx-6*Math.cos(ang+0.4), ay2=my-6*Math.sin(ang+0.4);
+    svg += '<polygon points="'+mx+','+my+' '+ax1+','+ay1+' '+ax2+','+ay2+'" fill="'+edgeCol+'"/>';
+
+    /* city nodes */
+    for(var i=0;i<cityKeys.length;i++){
+      var c = cities[cityKeys[i]];
+      svg += '<circle cx="'+c.x+'" cy="'+c.y+'" r="16" fill="'+COL.nodeFill+'" stroke="'+COL.nodeStroke+'" stroke-width="1.5"/>';
+      svg += '<text x="'+c.x+'" y="'+c.y+'" fill="#212529">'+c.label+'</text>';
+    }
+    /* cost label */
+    svg += '<text x="190" y="270" style="font:600 12px sans-serif;fill:#6c757d">cost = '+costs[stepIdx]+'  |  T = '+temps[stepIdx]+'</text>';
+    return svg;
+  }
+
+  function buildChartSvg(stepIdx) {
+    var svg = '';
+    var maxCost = Math.max.apply(null, costs) + 20;
+    var maxTemp = 110;
+    var n = stepIdx + 1;
+
+    /* grid */
+    svg += '<rect x="'+chartL+'" y="'+chartT+'" width="'+(chartR-chartL)+'" height="'+(chartB-chartT)+'" fill="none" stroke="#e8e8e8" stroke-width="0.5"/>';
+    for(var g=0;g<5;g++){
+      var gy = chartT + g*(chartB-chartT)/4;
+      svg += '<line x1="'+chartL+'" y1="'+gy+'" x2="'+chartR+'" y2="'+gy+'" stroke="#f0f0f0" stroke-width="0.5"/>';
+    }
+    /* Y axis labels */
+    svg += '<text x="'+(chartL-5)+'" y="'+chartT+'" style="font:400 9px sans-serif;fill:#999;text-anchor:end">'+maxCost+'</text>';
+    svg += '<text x="'+(chartL-5)+'" y="'+chartB+'" style="font:400 9px sans-serif;fill:#999;text-anchor:end">0</text>';
+    /* X axis */
+    svg += '<text x="'+((chartL+chartR)/2)+'" y="'+(chartB+16)+'" style="font:400 9px sans-serif;fill:#999">iteration</text>';
+
+    function cx(i){ return chartL + i*(chartR-chartL)/(tours.length-1); }
+    function cyC(v){ return chartB - (v/maxCost)*(chartB-chartT); }
+    function cyT(v){ return chartB - (v/maxTemp)*(chartB-chartT); }
+
+    /* cost polyline */
+    if(n>0){
+      var pts = [];
+      for(var i=0;i<n;i++) pts.push(cx(i)+','+cyC(costs[i]));
+      svg += '<polyline points="'+pts.join(' ')+'" fill="none" stroke="'+COL.costLine+'" stroke-width="2" stroke-linejoin="round"/>';
+      /* dots */
+      for(var i=0;i<n;i++){
+        svg += '<circle cx="'+cx(i)+'" cy="'+cyC(costs[i])+'" r="3" fill="'+COL.costLine+'"/>';
+      }
+    }
+    /* temp polyline */
+    if(n>0){
+      var pts2 = [];
+      for(var i=0;i<n;i++) pts2.push(cx(i)+','+cyT(temps[i]));
+      svg += '<polyline points="'+pts2.join(' ')+'" fill="none" stroke="'+COL.tempLine+'" stroke-width="2" stroke-dasharray="4 2" stroke-linejoin="round"/>';
+      for(var i=0;i<n;i++){
+        svg += '<circle cx="'+cx(i)+'" cy="'+cyT(temps[i])+'" r="3" fill="'+COL.tempLine+'"/>';
+      }
+    }
+
+    /* Legend */
+    svg += '<line x1="'+(chartR-120)+'" y1="'+(chartT+8)+'" x2="'+(chartR-100)+'" y2="'+(chartT+8)+'" stroke="'+COL.costLine+'" stroke-width="2"/>';
+    svg += '<text x="'+(chartR-95)+'" y="'+(chartT+8)+'" style="font:500 10px sans-serif;fill:'+COL.costLine+';text-anchor:start">cost</text>';
+    svg += '<line x1="'+(chartR-120)+'" y1="'+(chartT+22)+'" x2="'+(chartR-100)+'" y2="'+(chartT+22)+'" stroke="'+COL.tempLine+'" stroke-width="2" stroke-dasharray="4 2"/>';
+    svg += '<text x="'+(chartR-95)+'" y="'+(chartT+22)+'" style="font:500 10px sans-serif;fill:'+COL.tempLine+';text-anchor:start">temp</text>';
+
+    return svg;
+  }
+
+  function buildFrame(stepIdx) {
+    var tourSvg = buildTourSvg(stepIdx);
+    var chartSvg = buildChartSvg(stepIdx);
+    return '<svg class="scriba-stage-svg" viewBox="0 0 420 490" role="img" xmlns="http://www.w3.org/2000/svg">'+
+      '<g transform="translate(16,10)">'+tourSvg+'</g>'+
+      '<g transform="translate(16,300)">'+chartSvg+'</g>'+
+      '</svg>';
+  }
+
+  var narrations = [
+    'Simulated Annealing (SA) giai bai TSP 6 thanh pho. Bat dau voi tour ngau nhien. Nhiet do T cao -> chap nhan ca loi giam lan tang chi phi voi xac suat exp(-dE/T). Tour: A-B-C-D-E-F-A, cost='+costs[0]+', T='+temps[0]+'.',
+    'Buoc 1: Thu dao doan 2-opt [C,D]. Tour moi A-B-D-C-E-F-A. Chi phi giam '+costs[0]+' -> '+costs[1]+'. Cai thien! Chap nhan ngay. T='+temps[1]+'.',
+    'Buoc 2: Thu dao doan [D,F,E,C]. Tour A-B-D-F-E-C-A. Chi phi TANG '+costs[1]+' -> '+costs[2]+'. T='+temps[2]+' con cao -> xac suat chap nhan = exp(-'+Math.abs(costs[2]-costs[1])+'/'+temps[2]+') kha lon. Chap nhan loi xau!',
+    'Buoc 3: Dao doan -> A-B-D-E-F-C-A. Chi phi giam '+costs[2]+' -> '+costs[3]+'. T='+temps[3]+'. Cai thien, chap nhan.',
+    'Buoc 4: Dao tiep -> A-B-D-E-C-F-A. Chi phi '+costs[3]+' -> '+costs[4]+'. T='+temps[4]+'. Xu huong giam dan.',
+    'Buoc 5: Dao -> A-B-C-E-D-F-A. Chi phi '+costs[4]+' -> '+costs[5]+'. T='+temps[5]+'. Nhiet do thap dan, kho chap nhan loi xau hon.',
+    'Buoc 6: Dao lon -> A-F-D-E-C-B-A. Chi phi '+costs[5]+' -> '+costs[6]+'. T='+temps[6]+'. Tour dang hoi tu.',
+    'Buoc 7: Dao -> A-F-E-D-C-B-A. Chi phi '+costs[6]+' -> '+costs[7]+'. T='+temps[7]+'. Tour gan toi uu. Tat ca canh done.',
+    'Hoan tat. Tour toi uu: A-F-E-D-C-B-A, cost='+costs[8]+'. Bieu do: cost co vai "bump" ban dau (chap nhan loi xau khi T cao), sau do hoi tu. Temp giam theo ham mu. SA tim nghiem gan dung tot cho NP-hard.'
+  ];
+
+  var frames = [];
+  for(var i=0;i<9;i++){
+    frames.push({svg: buildFrame(i), narration: narrations[i]});
+  }
+
+  var W=document.getElementById('sim-anneal');
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');

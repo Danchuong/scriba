@@ -1,1507 +1,730 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scriba — h01_zuma_interval_dp</title>
+<title>Scriba — Zuma Interval DP (Expected)</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  max-width: 720px;
-  margin: 2rem auto;
-  padding: 0 1rem;
-  background: #fafafa;
-  color: #212529;
-}
-h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
-
-/* Widget container */
-.scriba-widget {
-  border: 1px solid #d0d7de;
-  border-radius: 10px;
-  background: #ffffff;
-  overflow: hidden;
+/* ── Reset & Base ─────────────────────────────────── */
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:"Inter","SF Pro Text",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:#13131a;color:#e0e0e8;
+  max-width:780px;margin:0 auto;padding:1.5rem 1rem 3rem;
+  line-height:1.55;
 }
 
-/* Controls bar */
-.scriba-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.6rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-  user-select: none;
-}
-.scriba-controls button {
-  background: #ffffff;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  padding: 0.3rem 0.7rem;
-  font-size: 0.8rem;
-  cursor: pointer;
-  color: #212529;
-  transition: background 0.15s, border-color 0.15s;
-}
-.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
-.scriba-controls button:active { background: #e4e4e4; }
-.scriba-controls button:disabled { opacity: 0.35; cursor: default; }
-.scriba-step-counter {
-  font: 600 0.78rem ui-monospace, "SF Mono", monospace;
-  color: #6c757d;
-  min-width: 5rem;
-  text-align: center;
+/* ── Wong CVD-safe palette ────────────────────────── */
+:root{
+  --idle:    #f6f8fa;
+  --current: #0072B2;
+  --done:    #009E73;
+  --error:   #D55E00;
+  --good:    #56B4E9;
+  --dim:     #e8e8e8;
+  --bg-widget: #1e1e2e;
+  --bg-svg:    #252536;
+  --border:    #35354a;
+  --text:      #e0e0e8;
+  --text-dim:  #8888a0;
 }
 
-/* Progress dots */
-.scriba-progress {
-  display: flex;
-  gap: 4px;
-  margin-left: auto;
-}
-.scriba-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #d0d7de;
-  transition: background 0.2s;
-}
-.scriba-dot.active { background: #0072B2; }
-.scriba-dot.done { background: #009E73; }
-
-/* Stage */
-.scriba-stage {
-  padding: 1.25rem 1rem;
-  display: flex;
-  justify-content: center;
-  min-height: 100px;
-}
-.scriba-stage-svg { width: 100%; height: auto; }
-
-/* Narration */
-.scriba-narration {
-  padding: 0.75rem 1rem;
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: #212529;
-  border-top: 1px solid #f0f0f0;
-  min-height: 2.5rem;
+/* ── Title ────────────────────────────────────────── */
+h1{
+  font-size:1.35rem;font-weight:700;
+  margin-bottom:1.2rem;
+  background:linear-gradient(135deg,var(--good),var(--current));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  letter-spacing:-0.02em;
 }
 
-/* SVG text */
-svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: central;
+/* ── Widget chrome ────────────────────────────────── */
+.widget{
+  background:var(--bg-widget);
+  border:1px solid var(--border);
+  border-radius:12px;overflow:hidden;
 }
-.idx {
-  font: 500 10px ui-monospace, monospace;
-  fill: #6c757d;
+.controls{
+  display:flex;align-items:center;gap:.7rem;
+  padding:.55rem 1rem;
+  background:#1a1a28;border-bottom:1px solid var(--border);
+  user-select:none;
 }
+.controls button{
+  background:#2a2a3e;border:1px solid var(--border);
+  border-radius:6px;padding:.3rem .75rem;
+  font-size:.78rem;color:var(--text);cursor:pointer;
+  transition:background .15s,border-color .15s;
+}
+.controls button:hover{background:#35354a;border-color:#555}
+.controls button:active{background:#444}
+.controls button:disabled{opacity:.3;cursor:default}
+.step-label{font-size:.78rem;color:var(--text-dim);margin-left:auto}
 
-/* Frame transition */
-.scriba-stage svg, .scriba-narration {
-  transition: opacity 0.2s ease;
-}
+/* ── Canvas area ──────────────────────────────────── */
+.canvas{padding:1.2rem;min-height:340px;position:relative}
+.step{display:none}
+.step.active{display:block}
 
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
+/* ── Narration ────────────────────────────────────── */
+.narration{
+  padding:.9rem 1.2rem;
+  border-top:1px solid var(--border);
+  font-size:.85rem;color:var(--text-dim);
+  line-height:1.6;
 }
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
-}
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
+.narration strong{color:var(--good)}
 
-/* Theme toggle */
-.theme-toggle {
-  position: fixed; top: 1rem; right: 1rem;
-  padding: 0.35rem 0.7rem; cursor: pointer;
-  border: 1px solid #ccc; border-radius: 6px; background: white;
-  font-size: 0.8rem;
-}
+/* ── SVG helpers ──────────────────────────────────── */
+svg text{font-family:inherit}
+.cell-idle{fill:#2a2a3e;stroke:var(--border);stroke-width:1}
+.cell-current{fill:var(--current);stroke:var(--current);stroke-width:1.5}
+.cell-done{fill:var(--done);stroke:var(--done);stroke-width:1.5}
+.cell-good{fill:var(--good);stroke:var(--good);stroke-width:1.5}
+.cell-dim{fill:#1e1e2e;stroke:var(--border);stroke-width:1}
+.gem-R{fill:#D55E00}
+.gem-B{fill:#0072B2}
+.label{fill:var(--text);font-size:11px;text-anchor:middle;dominant-baseline:central}
+.label-dim{fill:var(--text-dim);font-size:10px;text-anchor:middle;dominant-baseline:central}
+.val{fill:#fff;font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:central}
+.arrow{stroke:var(--good);stroke-width:1.5;fill:none;marker-end:url(#arrowG)}
+.arrow-current{stroke:var(--current);stroke-width:1.5;fill:none;marker-end:url(#arrowC)}
+.substory-frame{fill:none;stroke:var(--good);stroke-width:2;stroke-dasharray:6,3;rx:8}
 
-/* Dark mode */
-[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
-[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
-[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
-[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
-[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
-[data-theme="dark"] .scriba-dot { background: #30363d; }
-[data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
-[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
+/* ── Responsive ───────────────────────────────────── */
+@media(max-width:500px){
+  body{padding:1rem .5rem 2rem}
+  .canvas{padding:.8rem}
+  h1{font-size:1.15rem}
+  .controls{padding:.45rem .7rem}
+}
 </style>
 </head>
 <body>
-<button class="theme-toggle" onclick="
-  var t = document.documentElement.dataset.theme;
-  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
-">Toggle theme</button>
-<h1>h01_zuma_interval_dp</h1>
-<div class="scriba-widget" id="zuma-interval-dp">
-  <div class="scriba-controls">
-    <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">Step 1 / 7</span>
-    <button class="scriba-btn-next">Next</button>
-    <div class="scriba-progress">
-      <div class="scriba-dot active"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
+
+<h1>Zuma Interval DP &mdash; Xoa nhom vien da</h1>
+
+<div class="widget">
+  <!-- Controls -->
+  <div class="controls">
+    <button id="prevBtn" disabled>&laquo; Prev</button>
+    <button id="nextBtn">Next &raquo;</button>
+    <span class="step-label" id="stepLabel">Step 1 / 6</span>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas">
+
+    <!-- ============ STEP 1 ============ -->
+    <div class="step active" id="step-1">
+      <svg viewBox="0 0 680 310" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrowG" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6Z" fill="var(--good)"/>
+          </marker>
+        </defs>
+        <!-- Gems row -->
+        <text x="50" y="22" class="label-dim">Input: &quot;RBBRBR&quot;</text>
+        <g transform="translate(50,35)">
+          <rect x="0"   y="0" width="44" height="36" rx="6" class="gem-R" opacity=".85"/>
+          <text x="22"  y="18" class="val">R</text>
+          <rect x="54"  y="0" width="44" height="36" rx="6" class="gem-B" opacity=".85"/>
+          <text x="76"  y="18" class="val">B</text>
+          <rect x="108" y="0" width="44" height="36" rx="6" class="gem-B" opacity=".85"/>
+          <text x="130" y="18" class="val">B</text>
+          <rect x="162" y="0" width="44" height="36" rx="6" class="gem-R" opacity=".85"/>
+          <text x="184" y="18" class="val">R</text>
+          <rect x="216" y="0" width="44" height="36" rx="6" class="gem-B" opacity=".85"/>
+          <text x="238" y="18" class="val">B</text>
+          <rect x="270" y="0" width="44" height="36" rx="6" class="gem-R" opacity=".85"/>
+          <text x="292" y="18" class="val">R</text>
+        </g>
+        <!-- Index labels -->
+        <g transform="translate(50,80)">
+          <text x="22"  y="0" class="label-dim">0</text>
+          <text x="76"  y="0" class="label-dim">1</text>
+          <text x="130" y="0" class="label-dim">2</text>
+          <text x="184" y="0" class="label-dim">3</text>
+          <text x="238" y="0" class="label-dim">4</text>
+          <text x="292" y="0" class="label-dim">5</text>
+        </g>
+        <!-- DP table (empty) -->
+        <text x="50" y="108" class="label-dim">dp[l][r] table (6x6)</text>
+        <g transform="translate(50,115)">
+          <!-- Column headers -->
+          <text x="22" y="-5" class="label-dim">0</text>
+          <text x="66" y="-5" class="label-dim">1</text>
+          <text x="110" y="-5" class="label-dim">2</text>
+          <text x="154" y="-5" class="label-dim">3</text>
+          <text x="198" y="-5" class="label-dim">4</text>
+          <text x="242" y="-5" class="label-dim">5</text>
+          <!-- Row headers -->
+          <text x="-10" y="22"  class="label-dim">0</text>
+          <text x="-10" y="66"  class="label-dim">1</text>
+          <text x="-10" y="110" class="label-dim">2</text>
+          <text x="-10" y="154" class="label-dim">3</text>
+          <text x="-10" y="198" class="label-dim">4</text>
+          <!-- 6x6 grid of empty cells -->
+          <rect x="0"   y="0"   width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="44"  y="0"   width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="88"  y="0"   width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="132" y="0"   width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="0"   width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="0"   width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+
+          <rect x="0"   y="44"  width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="44"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="88"  y="44"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="132" y="44"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="44"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="44"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+
+          <rect x="0"   y="88"  width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="88"  width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="88"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="132" y="88"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="88"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="88"  width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+
+          <rect x="0"   y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="132" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="132" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="132" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+
+          <rect x="0"   y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="176" y="176" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="176" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+        </g>
+        <!-- Legend -->
+        <g transform="translate(420,130)">
+          <rect x="0" y="0"  width="14" height="14" rx="3" class="gem-R" opacity=".85"/>
+          <text x="22" y="11" class="label-dim" text-anchor="start">R = Do (Red)</text>
+          <rect x="0" y="22" width="14" height="14" rx="3" class="gem-B" opacity=".85"/>
+          <text x="22" y="33" class="label-dim" text-anchor="start">B = Xanh (Blue)</text>
+          <rect x="0" y="50" width="14" height="14" rx="3" class="cell-idle" opacity=".2"/>
+          <text x="22" y="61" class="label-dim" text-anchor="start">Chua dien</text>
+          <rect x="0" y="72" width="14" height="14" rx="3" class="cell-dim"/>
+          <text x="22" y="83" class="label-dim" text-anchor="start">l &gt; r (bo qua)</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 2 ============ -->
+    <div class="step" id="step-2">
+      <svg viewBox="0 0 680 310" xmlns="http://www.w3.org/2000/svg">
+        <!-- Gems row (same) -->
+        <g transform="translate(50,10)">
+          <rect x="0"   y="0" width="40" height="30" rx="5" class="gem-R" opacity=".5"/>
+          <text x="20"  y="15" class="val" font-size="10">R</text>
+          <rect x="54"  y="0" width="40" height="30" rx="5" class="gem-B" opacity=".5"/>
+          <text x="74"  y="15" class="val" font-size="10">B</text>
+          <rect x="108" y="0" width="40" height="30" rx="5" class="gem-B" opacity=".5"/>
+          <text x="128" y="15" class="val" font-size="10">B</text>
+          <rect x="162" y="0" width="40" height="30" rx="5" class="gem-R" opacity=".5"/>
+          <text x="182" y="15" class="val" font-size="10">R</text>
+          <rect x="216" y="0" width="40" height="30" rx="5" class="gem-B" opacity=".5"/>
+          <text x="236" y="15" class="val" font-size="10">B</text>
+          <rect x="270" y="0" width="40" height="30" rx="5" class="gem-R" opacity=".5"/>
+          <text x="290" y="15" class="val" font-size="10">R</text>
+        </g>
+        <!-- DP table with diagonal filled -->
+        <text x="50" y="58" class="label-dim">Base case: dp[i][i] = 1</text>
+        <g transform="translate(50,65)">
+          <!-- Col/Row headers -->
+          <text x="22" y="-5" class="label-dim">0</text>
+          <text x="66" y="-5" class="label-dim">1</text>
+          <text x="110" y="-5" class="label-dim">2</text>
+          <text x="154" y="-5" class="label-dim">3</text>
+          <text x="198" y="-5" class="label-dim">4</text>
+          <text x="242" y="-5" class="label-dim">5</text>
+          <text x="-10" y="22"  class="label-dim">0</text>
+          <text x="-10" y="66"  class="label-dim">1</text>
+          <text x="-10" y="110" class="label-dim">2</text>
+          <text x="-10" y="154" class="label-dim">3</text>
+          <text x="-10" y="198" class="label-dim">4</text>
+
+          <!-- Row 0 -->
+          <rect x="0"   y="0" width="40" height="40" rx="4" class="cell-current"/>
+          <text x="20"  y="20" class="val">1</text>
+          <rect x="44"  y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="88"  y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="132" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 1 -->
+          <rect x="0"   y="44" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="44" width="40" height="40" rx="4" class="cell-current"/>
+          <text x="64"  y="64" class="val">1</text>
+          <rect x="88"  y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="132" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 2 -->
+          <rect x="0"   y="88" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="88" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="88" width="40" height="40" rx="4" class="cell-current"/>
+          <text x="108" y="108" class="val">1</text>
+          <rect x="132" y="88" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="88" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="88" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 3 -->
+          <rect x="0"   y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="132" width="40" height="40" rx="4" class="cell-current"/>
+          <text x="152" y="152" class="val">1</text>
+          <rect x="176" y="132" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="132" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 4 -->
+          <rect x="0"   y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="176" y="176" width="40" height="40" rx="4" class="cell-current"/>
+          <text x="196" y="196" class="val">1</text>
+          <rect x="220" y="176" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 5 (single cell on diagonal) -->
+          <!-- dp[5][5] shown in legend area -->
+        </g>
+        <g transform="translate(400,80)">
+          <text x="0" y="0" class="label-dim" text-anchor="start" font-size="11">dp[5][5] = 1</text>
+          <text x="0" y="22" class="label-dim" text-anchor="start" font-size="11">Moi vien da don</text>
+          <text x="0" y="38" class="label-dim" text-anchor="start" font-size="11">can 1 buoc de xoa.</text>
+          <rect x="0" y="52" width="14" height="14" rx="3" fill="var(--current)"/>
+          <text x="22" y="63" class="label-dim" text-anchor="start">Dang dien</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 3 ============ -->
+    <div class="step" id="step-3">
+      <svg viewBox="0 0 680 310" xmlns="http://www.w3.org/2000/svg">
+        <!-- Highlighted subarray [2,3] = "BR" -->
+        <g transform="translate(50,10)">
+          <rect x="0"   y="0" width="40" height="30" rx="5" class="gem-R" opacity=".3"/>
+          <text x="20"  y="15" class="val" font-size="10" opacity=".4">R</text>
+          <rect x="54"  y="0" width="40" height="30" rx="5" class="gem-B" opacity=".3"/>
+          <text x="74"  y="15" class="val" font-size="10" opacity=".4">B</text>
+          <!-- Highlighted -->
+          <rect x="108" y="0" width="40" height="30" rx="5" class="gem-B" opacity=".3"/>
+          <text x="128" y="15" class="val" font-size="10" opacity=".4">B</text>
+          <rect x="162" y="0" width="40" height="30" rx="5" class="gem-R"/>
+          <text x="182" y="15" class="val" font-size="10">R</text>
+          <!-- bracket -->
+          <rect x="159" y="-6" width="92" height="42" rx="6" fill="none" stroke="var(--current)" stroke-width="2" stroke-dasharray="4,2"/>
+          <text x="205" y="-10" fill="var(--current)" font-size="9" text-anchor="middle">s[2..3]="BR"</text>
+
+          <rect x="216" y="0" width="40" height="30" rx="5" class="gem-B" opacity=".3"/>
+          <text x="236" y="15" class="val" font-size="10" opacity=".4">B</text>
+          <rect x="270" y="0" width="40" height="30" rx="5" class="gem-R" opacity=".3"/>
+          <text x="290" y="15" class="val" font-size="10" opacity=".4">R</text>
+        </g>
+        <!-- DP table: diagonal done, dp[2][3] being filled -->
+        <text x="50" y="58" class="label-dim">Dien dp[2][3]: s[2]=B != s[3]=R ==> dp[2][3] = dp[2][2]+dp[3][3] = 2</text>
+        <g transform="translate(50,65)">
+          <text x="22" y="-5" class="label-dim">0</text>
+          <text x="66" y="-5" class="label-dim">1</text>
+          <text x="110" y="-5" class="label-dim">2</text>
+          <text x="154" y="-5" class="label-dim">3</text>
+          <text x="198" y="-5" class="label-dim">4</text>
+          <text x="242" y="-5" class="label-dim">5</text>
+          <text x="-10" y="22"  class="label-dim">0</text>
+          <text x="-10" y="66"  class="label-dim">1</text>
+          <text x="-10" y="110" class="label-dim">2</text>
+          <text x="-10" y="154" class="label-dim">3</text>
+          <text x="-10" y="198" class="label-dim">4</text>
+
+          <!-- Row 0 -->
+          <rect x="0"   y="0" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="20"  y="20" class="val">1</text>
+          <rect x="44"  y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="88"  y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="132" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 1 -->
+          <rect x="0"   y="44" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="44" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="64"  y="64" class="val">1</text>
+          <rect x="88"  y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="132" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 2: dp[2][2]=1(done), dp[2][3]=2(current) -->
+          <rect x="0"   y="88" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="88" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="88" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="108" y="108" class="val">1</text>
+          <rect x="132" y="88" width="40" height="40" rx="4" class="cell-current"/>
+          <text x="152" y="108" class="val">2</text>
+          <rect x="176" y="88" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="88" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 3 -->
+          <rect x="0"   y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="132" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="152" y="152" class="val">1</text>
+          <rect x="176" y="132" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="132" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 4 -->
+          <rect x="0"   y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="176" y="176" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="196" y="196" class="val">1</text>
+          <rect x="220" y="176" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 4 ============ -->
+    <div class="step" id="step-4">
+      <svg viewBox="0 0 680 330" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrowG4" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+            <path d="M0,0 L8,3 L0,6Z" fill="var(--good)"/>
+          </marker>
+        </defs>
+        <!-- Highlighted subarray [1,2] = "BB" -->
+        <g transform="translate(50,10)">
+          <rect x="0"   y="0" width="40" height="30" rx="5" class="gem-R" opacity=".3"/>
+          <text x="20"  y="15" class="val" font-size="10" opacity=".4">R</text>
+          <rect x="54"  y="0" width="40" height="30" rx="5" class="gem-B"/>
+          <text x="74"  y="15" class="val" font-size="10">B</text>
+          <rect x="108" y="0" width="40" height="30" rx="5" class="gem-B"/>
+          <text x="128" y="15" class="val" font-size="10">B</text>
+          <rect x="51"  y="-6" width="100" height="42" rx="6" fill="none" stroke="var(--good)" stroke-width="2.5"/>
+          <text x="100" y="-10" fill="var(--good)" font-size="9" text-anchor="middle" font-weight="700">MERGE! s[1]=s[2]=B</text>
+          <rect x="162" y="0" width="40" height="30" rx="5" class="gem-R" opacity=".3"/>
+          <text x="182" y="15" class="val" font-size="10" opacity=".4">R</text>
+          <rect x="216" y="0" width="40" height="30" rx="5" class="gem-B" opacity=".3"/>
+          <text x="236" y="15" class="val" font-size="10" opacity=".4">B</text>
+          <rect x="270" y="0" width="40" height="30" rx="5" class="gem-R" opacity=".3"/>
+          <text x="290" y="15" class="val" font-size="10" opacity=".4">R</text>
+        </g>
+        <!-- Merge arrow -->
+        <g transform="translate(50,10)">
+          <path d="M 74,32 C 74,48 128,48 128,32" stroke="var(--good)" stroke-width="2" fill="none" marker-end="url(#arrowG4)"/>
+          <text x="101" y="52" fill="var(--good)" font-size="9" text-anchor="middle">gop!</text>
+        </g>
+        <!-- DP table: dp[1][2]=1 highlighted -->
+        <text x="50" y="73" class="label-dim">s[1]=s[2]=B => dp[1][2] = dp[1+1][2-1] + 0 ... toi uu = 1</text>
+        <g transform="translate(50,80)">
+          <text x="22" y="-5" class="label-dim">0</text>
+          <text x="66" y="-5" class="label-dim">1</text>
+          <text x="110" y="-5" class="label-dim">2</text>
+          <text x="154" y="-5" class="label-dim">3</text>
+          <text x="198" y="-5" class="label-dim">4</text>
+          <text x="242" y="-5" class="label-dim">5</text>
+          <text x="-10" y="22"  class="label-dim">0</text>
+          <text x="-10" y="66"  class="label-dim">1</text>
+          <text x="-10" y="110" class="label-dim">2</text>
+          <text x="-10" y="154" class="label-dim">3</text>
+          <text x="-10" y="198" class="label-dim">4</text>
+
+          <!-- Row 0: dp[0][0]=1, dp[0][1]=2 -->
+          <rect x="0"   y="0" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="20"  y="20" class="val">1</text>
+          <rect x="44"  y="0" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="64"  y="20" class="val">2</text>
+          <rect x="88"  y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="132" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="0" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 1: dp[1][1]=1, dp[1][2]=1 (MERGE!) -->
+          <rect x="0"   y="44" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="44" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="64"  y="64" class="val">1</text>
+          <rect x="88"  y="44" width="40" height="40" rx="4" class="cell-good"/>
+          <text x="108" y="64" class="val" font-size="14">1</text>
+          <rect x="132" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="176" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="44" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 2 -->
+          <rect x="0"   y="88" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="88" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="88" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="108" y="108" class="val">1</text>
+          <rect x="132" y="88" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="152" y="108" class="val">2</text>
+          <rect x="176" y="88" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <rect x="220" y="88" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 3 -->
+          <rect x="0"   y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="132" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="152" y="152" class="val">1</text>
+          <rect x="176" y="132" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="196" y="152" class="val">2</text>
+          <rect x="220" y="132" width="40" height="40" rx="4" class="cell-idle" opacity=".2"/>
+          <!-- Row 4 -->
+          <rect x="0"   y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="176" y="176" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="196" y="196" class="val">1</text>
+          <rect x="220" y="176" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="240" y="196" class="val">2</text>
+        </g>
+        <!-- Annotation -->
+        <g transform="translate(400,95)">
+          <rect x="0" y="0" width="14" height="14" rx="3" fill="var(--good)"/>
+          <text x="22" y="11" class="label-dim" text-anchor="start">Merge! Chi 1 buoc</text>
+          <text x="0" y="36" class="label-dim" text-anchor="start" font-size="10">Hai vien cung mau</text>
+          <text x="0" y="50" class="label-dim" text-anchor="start" font-size="10">ke nhau => gop lai</text>
+          <text x="0" y="64" class="label-dim" text-anchor="start" font-size="10">va xoa 1 lan.</text>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 5 ============ -->
+    <div class="step" id="step-5">
+      <svg viewBox="0 0 680 360" xmlns="http://www.w3.org/2000/svg">
+        <!-- Substory frame -->
+        <rect x="20" y="5" width="640" height="345" rx="10" class="substory-frame"/>
+        <text x="40" y="26" fill="var(--good)" font-size="11" font-weight="700">SUBSTORY: Tinh dp[2][5] cho chuoi con &quot;BRBR&quot;</text>
+
+        <!-- Sub-array highlighted -->
+        <g transform="translate(40,38)">
+          <rect x="0"  y="0" width="36" height="28" rx="5" class="gem-B"/>
+          <text x="18" y="14" class="val" font-size="10">B</text>
+          <rect x="44" y="0" width="36" height="28" rx="5" class="gem-R"/>
+          <text x="62" y="14" class="val" font-size="10">R</text>
+          <rect x="88" y="0" width="36" height="28" rx="5" class="gem-B"/>
+          <text x="106" y="14" class="val" font-size="10">B</text>
+          <rect x="132" y="0" width="36" height="28" rx="5" class="gem-R"/>
+          <text x="150" y="14" class="val" font-size="10">R</text>
+          <text x="0" y="-6" class="label-dim" font-size="9">idx: 2</text>
+          <text x="44" y="-6" class="label-dim" font-size="9">3</text>
+          <text x="88" y="-6" class="label-dim" font-size="9">4</text>
+          <text x="132" y="-6" class="label-dim" font-size="9">5</text>
+        </g>
+
+        <!-- Split attempts -->
+        <text x="40" y="88" class="label-dim" font-size="10">Thu tat ca diem chia k:</text>
+
+        <!-- Split k=2: dp[2][2]+dp[3][5] = 1+3 = 4 -->
+        <g transform="translate(40,98)">
+          <rect x="0" y="0" width="250" height="32" rx="5" fill="#252536" stroke="var(--border)" stroke-width="1"/>
+          <text x="8" y="20" class="label-dim" text-anchor="start" font-size="10">k=2: dp[2][2] + dp[3][5] = 1 + 3 = 4</text>
+        </g>
+        <!-- Split k=3: dp[2][3]+dp[4][5] = 2+2 = 4 -->
+        <g transform="translate(40,136)">
+          <rect x="0" y="0" width="250" height="32" rx="5" fill="#252536" stroke="var(--border)" stroke-width="1"/>
+          <text x="8" y="20" class="label-dim" text-anchor="start" font-size="10">k=3: dp[2][3] + dp[4][5] = 2 + 2 = 4</text>
+        </g>
+        <!-- Split k=4: dp[2][4]+dp[5][5] = 3+1 = 4 -->
+        <g transform="translate(40,174)">
+          <rect x="0" y="0" width="250" height="32" rx="5" fill="#252536" stroke="var(--border)" stroke-width="1"/>
+          <text x="8" y="20" class="label-dim" text-anchor="start" font-size="10">k=4: dp[2][4] + dp[5][5] = 3 + 1 = 4</text>
+        </g>
+        <!-- Also check s[2]=s[5]=? B!=R no merge at endpoints -->
+        <g transform="translate(40,216)">
+          <rect x="0" y="0" width="300" height="32" rx="5" fill="#252536" stroke="var(--error)" stroke-width="1.5"/>
+          <text x="8" y="20" fill="var(--error)" text-anchor="start" font-size="10">s[2]=B != s[5]=R => khong gop dau mut duoc</text>
+        </g>
+
+        <!-- Result -->
+        <g transform="translate(40,260)">
+          <rect x="0" y="0" width="180" height="36" rx="6" fill="var(--current)" opacity=".9"/>
+          <text x="90" y="22" class="val" font-size="12" text-anchor="middle">dp[2][5] = min = 4</text>
+        </g>
+
+        <!-- Mini DP showing sub-table -->
+        <g transform="translate(380,50)">
+          <text x="0" y="0" class="label-dim" font-size="10">Sub-table dp[2..5][2..5]:</text>
+          <g transform="translate(0,12)">
+            <text x="20" y="-4" class="label-dim" font-size="9">2</text>
+            <text x="52" y="-4" class="label-dim" font-size="9">3</text>
+            <text x="84" y="-4" class="label-dim" font-size="9">4</text>
+            <text x="116" y="-4" class="label-dim" font-size="9">5</text>
+
+            <rect x="0"  y="0"  width="36" height="36" rx="3" class="cell-done"/>
+            <text x="18" y="18" class="val" font-size="10">1</text>
+            <rect x="32" y="0"  width="36" height="36" rx="3" class="cell-done"/>
+            <text x="50" y="18" class="val" font-size="10">2</text>
+            <rect x="64" y="0"  width="36" height="36" rx="3" class="cell-idle" opacity=".2"/>
+            <rect x="96" y="0"  width="36" height="36" rx="3" class="cell-current"/>
+            <text x="114" y="18" class="val" font-size="10">4</text>
+
+            <rect x="0"  y="36" width="36" height="36" rx="3" class="cell-dim"/>
+            <rect x="32" y="36" width="36" height="36" rx="3" class="cell-done"/>
+            <text x="50" y="54" class="val" font-size="10">1</text>
+            <rect x="64" y="36" width="36" height="36" rx="3" class="cell-done"/>
+            <text x="82" y="54" class="val" font-size="10">2</text>
+            <rect x="96" y="36" width="36" height="36" rx="3" class="cell-done"/>
+            <text x="114" y="54" class="val" font-size="10">3</text>
+
+            <rect x="0"  y="72" width="36" height="36" rx="3" class="cell-dim"/>
+            <rect x="32" y="72" width="36" height="36" rx="3" class="cell-dim"/>
+            <rect x="64" y="72" width="36" height="36" rx="3" class="cell-done"/>
+            <text x="82" y="90" class="val" font-size="10">1</text>
+            <rect x="96" y="72" width="36" height="36" rx="3" class="cell-done"/>
+            <text x="114" y="90" class="val" font-size="10">2</text>
+
+            <rect x="0"  y="108" width="36" height="36" rx="3" class="cell-dim"/>
+            <rect x="32" y="108" width="36" height="36" rx="3" class="cell-dim"/>
+            <rect x="64" y="108" width="36" height="36" rx="3" class="cell-dim"/>
+            <rect x="96" y="108" width="36" height="36" rx="3" class="cell-done"/>
+            <text x="114" y="126" class="val" font-size="10">1</text>
+          </g>
+        </g>
+      </svg>
+    </div>
+
+    <!-- ============ STEP 6 ============ -->
+    <div class="step" id="step-6">
+      <svg viewBox="0 0 680 310" xmlns="http://www.w3.org/2000/svg">
+        <!-- Final result gems -->
+        <g transform="translate(50,10)">
+          <rect x="0"   y="0" width="40" height="30" rx="5" class="gem-R"/>
+          <text x="20"  y="15" class="val" font-size="10">R</text>
+          <rect x="54"  y="0" width="40" height="30" rx="5" class="gem-B"/>
+          <text x="74"  y="15" class="val" font-size="10">B</text>
+          <rect x="108" y="0" width="40" height="30" rx="5" class="gem-B"/>
+          <text x="128" y="15" class="val" font-size="10">B</text>
+          <rect x="162" y="0" width="40" height="30" rx="5" class="gem-R"/>
+          <text x="182" y="15" class="val" font-size="10">R</text>
+          <rect x="216" y="0" width="40" height="30" rx="5" class="gem-B"/>
+          <text x="236" y="15" class="val" font-size="10">B</text>
+          <rect x="270" y="0" width="40" height="30" rx="5" class="gem-R"/>
+          <text x="290" y="15" class="val" font-size="10">R</text>
+        </g>
+        <!-- Full DP table -->
+        <text x="50" y="57" class="label-dim">Bang DP hoan chinh:</text>
+        <g transform="translate(50,65)">
+          <text x="22" y="-5" class="label-dim">0</text>
+          <text x="66" y="-5" class="label-dim">1</text>
+          <text x="110" y="-5" class="label-dim">2</text>
+          <text x="154" y="-5" class="label-dim">3</text>
+          <text x="198" y="-5" class="label-dim">4</text>
+          <text x="242" y="-5" class="label-dim">5</text>
+          <text x="-10" y="22"  class="label-dim">0</text>
+          <text x="-10" y="66"  class="label-dim">1</text>
+          <text x="-10" y="110" class="label-dim">2</text>
+          <text x="-10" y="154" class="label-dim">3</text>
+          <text x="-10" y="198" class="label-dim">4</text>
+
+          <!-- Row 0: 1, 2, 2, 3, 4, 4 -->
+          <rect x="0"   y="0" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="20"  y="20" class="val">1</text>
+          <rect x="44"  y="0" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="64"  y="20" class="val">2</text>
+          <rect x="88"  y="0" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="108" y="20" class="val">2</text>
+          <rect x="132" y="0" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="152" y="20" class="val">3</text>
+          <rect x="176" y="0" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="196" y="20" class="val">4</text>
+          <!-- dp[0][5] = answer! -->
+          <rect x="220" y="0" width="40" height="40" rx="4" class="cell-good"/>
+          <text x="240" y="20" class="val" font-size="16">4</text>
+          <!-- highlight ring -->
+          <rect x="218" y="-2" width="44" height="44" rx="6" fill="none" stroke="var(--good)" stroke-width="3"/>
+
+          <!-- Row 1 -->
+          <rect x="0"   y="44" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="44" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="64"  y="64" class="val">1</text>
+          <rect x="88"  y="44" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="108" y="64" class="val">1</text>
+          <rect x="132" y="44" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="152" y="64" class="val">2</text>
+          <rect x="176" y="44" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="196" y="64" class="val">2</text>
+          <rect x="220" y="44" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="240" y="64" class="val">3</text>
+
+          <!-- Row 2 -->
+          <rect x="0"   y="88" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="88" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="88" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="108" y="108" class="val">1</text>
+          <rect x="132" y="88" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="152" y="108" class="val">2</text>
+          <rect x="176" y="88" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="196" y="108" class="val">3</text>
+          <rect x="220" y="88" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="240" y="108" class="val">4</text>
+
+          <!-- Row 3 -->
+          <rect x="0"   y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="132" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="132" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="152" y="152" class="val">1</text>
+          <rect x="176" y="132" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="196" y="152" class="val">2</text>
+          <rect x="220" y="132" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="240" y="152" class="val">3</text>
+
+          <!-- Row 4 -->
+          <rect x="0"   y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="44"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="88"  y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="132" y="176" width="40" height="40" rx="4" class="cell-dim"/>
+          <rect x="176" y="176" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="196" y="196" class="val">1</text>
+          <rect x="220" y="176" width="40" height="40" rx="4" class="cell-done"/>
+          <text x="240" y="196" class="val">2</text>
+        </g>
+        <!-- Final answer callout -->
+        <g transform="translate(380,80)">
+          <rect x="0" y="0" width="220" height="60" rx="10" fill="var(--good)" opacity=".15" stroke="var(--good)" stroke-width="1.5"/>
+          <text x="110" y="24" fill="var(--good)" font-size="14" text-anchor="middle" font-weight="700">Ket qua: dp[0][5] = 4</text>
+          <text x="110" y="44" fill="var(--text-dim)" font-size="11" text-anchor="middle">Can toi thieu 4 buoc</text>
+        </g>
+      </svg>
     </div>
   </div>
-  <div class="scriba-stage"></div>
-  <p class="scriba-narration"></p>
+
+  <!-- Narration -->
+  <div class="narration" id="narration">
+    <strong>Buoc 1:</strong> Cho mang vien da [R,B,B,R,B,R] gom 6 phan tu. Muc tieu: tim so buoc xoa it nhat de lam sach tat ca. Dung bang dp[l][r] = so buoc toi thieu de xoa chuoi con s[l..r]. Bang 6x6 ban dau trong.
+  </div>
 </div>
+
 <script>
-(function(){
-  var W=document.getElementById('zuma-interval-dp');
-  var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 354" role="img" aria-labelledby="zuma-interval-dp-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-</g>
-</g>
-<g transform="translate(16,88)">
-<g data-primitive="dptable" data-shape="dp">
-  <g data-target="dp.cell[0][0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][0]" class="scriba-state-idle">
-    <rect x="0" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][1]" class="scriba-state-idle">
-    <rect x="62" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][2]" class="scriba-state-idle">
-    <rect x="124" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][3]" class="scriba-state-idle">
-    <rect x="186" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][4]" class="scriba-state-idle">
-    <rect x="248" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][5]" class="scriba-state-idle">
-    <rect x="310" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][0]" class="scriba-state-idle">
-    <rect x="0" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][1]" class="scriba-state-idle">
-    <rect x="62" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][2]" class="scriba-state-idle">
-    <rect x="124" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][3]" class="scriba-state-idle">
-    <rect x="186" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][4]" class="scriba-state-idle">
-    <rect x="248" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][5]" class="scriba-state-idle">
-    <rect x="310" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][0]" class="scriba-state-idle">
-    <rect x="0" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][1]" class="scriba-state-idle">
-    <rect x="62" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][2]" class="scriba-state-idle">
-    <rect x="124" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][3]" class="scriba-state-idle">
-    <rect x="186" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][4]" class="scriba-state-idle">
-    <rect x="248" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][5]" class="scriba-state-idle">
-    <rect x="310" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][0]" class="scriba-state-idle">
-    <rect x="0" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][1]" class="scriba-state-idle">
-    <rect x="62" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][2]" class="scriba-state-idle">
-    <rect x="124" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][3]" class="scriba-state-idle">
-    <rect x="186" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][4]" class="scriba-state-idle">
-    <rect x="248" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][5]" class="scriba-state-idle">
-    <rect x="310" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][0]" class="scriba-state-idle">
-    <rect x="0" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][1]" class="scriba-state-idle">
-    <rect x="62" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][2]" class="scriba-state-idle">
-    <rect x="124" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][3]" class="scriba-state-idle">
-    <rect x="186" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][4]" class="scriba-state-idle">
-    <rect x="248" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][5]" class="scriba-state-idle">
-    <rect x="310" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="230" fill="#212529"></text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Bai toan Zuma: cho day bi mau "RBBRBR" (6 bi). Tim so buoc it nhat de xoa het. dp[l][r] = so buoc xoa doan [l..r].`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 354" role="img" aria-labelledby="zuma-interval-dp-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-</g>
-</g>
-<g transform="translate(16,88)">
-<g data-primitive="dptable" data-shape="dp">
-  <g data-target="dp.cell[0][0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[0][1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][0]" class="scriba-state-idle">
-    <rect x="0" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][1]" class="scriba-state-done">
-    <rect x="62" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][2]" class="scriba-state-idle">
-    <rect x="124" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][3]" class="scriba-state-idle">
-    <rect x="186" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][4]" class="scriba-state-idle">
-    <rect x="248" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][5]" class="scriba-state-idle">
-    <rect x="310" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][0]" class="scriba-state-idle">
-    <rect x="0" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][1]" class="scriba-state-idle">
-    <rect x="62" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][2]" class="scriba-state-done">
-    <rect x="124" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="104" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[2][3]" class="scriba-state-idle">
-    <rect x="186" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][4]" class="scriba-state-idle">
-    <rect x="248" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][5]" class="scriba-state-idle">
-    <rect x="310" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][0]" class="scriba-state-idle">
-    <rect x="0" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][1]" class="scriba-state-idle">
-    <rect x="62" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][2]" class="scriba-state-idle">
-    <rect x="124" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][3]" class="scriba-state-done">
-    <rect x="186" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="146" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[3][4]" class="scriba-state-idle">
-    <rect x="248" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][5]" class="scriba-state-idle">
-    <rect x="310" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][0]" class="scriba-state-idle">
-    <rect x="0" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][1]" class="scriba-state-idle">
-    <rect x="62" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][2]" class="scriba-state-idle">
-    <rect x="124" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][3]" class="scriba-state-idle">
-    <rect x="186" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][4]" class="scriba-state-done">
-    <rect x="248" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="188" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[4][5]" class="scriba-state-idle">
-    <rect x="310" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][0]" class="scriba-state-idle">
-    <rect x="0" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][1]" class="scriba-state-idle">
-    <rect x="62" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][2]" class="scriba-state-idle">
-    <rect x="124" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][3]" class="scriba-state-idle">
-    <rect x="186" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][4]" class="scriba-state-idle">
-    <rect x="248" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][5]" class="scriba-state-done">
-    <rect x="310" y="210" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="230" fill="#ffffff">1</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Co so: moi bi don le can 1 buoc de xoa. dp[i][i] = 1 voi moi i.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 354" role="img" aria-labelledby="zuma-interval-dp-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-current">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-current">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-</g>
-</g>
-<g transform="translate(16,88)">
-<g data-primitive="dptable" data-shape="dp">
-  <g data-target="dp.cell[0][0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[0][1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][0]" class="scriba-state-idle">
-    <rect x="0" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][1]" class="scriba-state-done">
-    <rect x="62" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][2]" class="scriba-state-current">
-    <rect x="124" y="42" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="154" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][3]" class="scriba-state-idle">
-    <rect x="186" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][4]" class="scriba-state-idle">
-    <rect x="248" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][5]" class="scriba-state-idle">
-    <rect x="310" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][0]" class="scriba-state-idle">
-    <rect x="0" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][1]" class="scriba-state-idle">
-    <rect x="62" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][2]" class="scriba-state-done">
-    <rect x="124" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="104" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[2][3]" class="scriba-state-idle">
-    <rect x="186" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][4]" class="scriba-state-idle">
-    <rect x="248" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][5]" class="scriba-state-idle">
-    <rect x="310" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][0]" class="scriba-state-idle">
-    <rect x="0" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][1]" class="scriba-state-idle">
-    <rect x="62" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][2]" class="scriba-state-idle">
-    <rect x="124" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][3]" class="scriba-state-done">
-    <rect x="186" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="146" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[3][4]" class="scriba-state-idle">
-    <rect x="248" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][5]" class="scriba-state-idle">
-    <rect x="310" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][0]" class="scriba-state-idle">
-    <rect x="0" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][1]" class="scriba-state-idle">
-    <rect x="62" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][2]" class="scriba-state-idle">
-    <rect x="124" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][3]" class="scriba-state-idle">
-    <rect x="186" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][4]" class="scriba-state-done">
-    <rect x="248" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="188" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[4][5]" class="scriba-state-idle">
-    <rect x="310" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][0]" class="scriba-state-idle">
-    <rect x="0" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][1]" class="scriba-state-idle">
-    <rect x="62" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][2]" class="scriba-state-idle">
-    <rect x="124" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][3]" class="scriba-state-idle">
-    <rect x="186" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][4]" class="scriba-state-idle">
-    <rect x="248" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][5]" class="scriba-state-done">
-    <rect x="310" y="210" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="230" fill="#ffffff">1</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`dp[1][2]: "BB" -- hai bi cung mau, xoa 1 lan. dp[1][2] = 1.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 354" role="img" aria-labelledby="zuma-interval-dp-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-</g>
-</g>
-<g transform="translate(16,88)">
-<g data-primitive="dptable" data-shape="dp">
-  <g data-target="dp.cell[0][0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[0][1]" class="scriba-state-current">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[0][2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][0]" class="scriba-state-idle">
-    <rect x="0" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][1]" class="scriba-state-done">
-    <rect x="62" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][2]" class="scriba-state-done">
-    <rect x="124" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][3]" class="scriba-state-idle">
-    <rect x="186" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][4]" class="scriba-state-idle">
-    <rect x="248" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][5]" class="scriba-state-idle">
-    <rect x="310" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][0]" class="scriba-state-idle">
-    <rect x="0" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][1]" class="scriba-state-idle">
-    <rect x="62" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][2]" class="scriba-state-done">
-    <rect x="124" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="104" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[2][3]" class="scriba-state-current">
-    <rect x="186" y="84" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="216" y="104" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[2][4]" class="scriba-state-idle">
-    <rect x="248" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][5]" class="scriba-state-idle">
-    <rect x="310" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][0]" class="scriba-state-idle">
-    <rect x="0" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][1]" class="scriba-state-idle">
-    <rect x="62" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][2]" class="scriba-state-idle">
-    <rect x="124" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][3]" class="scriba-state-done">
-    <rect x="186" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="146" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[3][4]" class="scriba-state-current">
-    <rect x="248" y="126" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="278" y="146" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[3][5]" class="scriba-state-idle">
-    <rect x="310" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][0]" class="scriba-state-idle">
-    <rect x="0" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][1]" class="scriba-state-idle">
-    <rect x="62" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][2]" class="scriba-state-idle">
-    <rect x="124" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][3]" class="scriba-state-idle">
-    <rect x="186" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][4]" class="scriba-state-done">
-    <rect x="248" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="188" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[4][5]" class="scriba-state-current">
-    <rect x="310" y="168" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="340" y="188" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[5][0]" class="scriba-state-idle">
-    <rect x="0" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][1]" class="scriba-state-idle">
-    <rect x="62" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][2]" class="scriba-state-idle">
-    <rect x="124" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][3]" class="scriba-state-idle">
-    <rect x="186" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][4]" class="scriba-state-idle">
-    <rect x="248" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][5]" class="scriba-state-done">
-    <rect x="310" y="210" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="230" fill="#ffffff">1</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Cac doan dai 2 khac mau: dp[0][1]=2 (RB), dp[2][3]=2 (BR), dp[3][4]=2 (RB), dp[4][5]=2 (BR).`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 354" role="img" aria-labelledby="zuma-interval-dp-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-</g>
-</g>
-<g transform="translate(16,88)">
-<g data-primitive="dptable" data-shape="dp">
-  <g data-target="dp.cell[0][0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[0][1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[0][2]" class="scriba-state-current">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[0][3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][0]" class="scriba-state-idle">
-    <rect x="0" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][1]" class="scriba-state-done">
-    <rect x="62" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][2]" class="scriba-state-done">
-    <rect x="124" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][3]" class="scriba-state-current">
-    <rect x="186" y="42" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="216" y="62" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[1][4]" class="scriba-state-idle">
-    <rect x="248" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][5]" class="scriba-state-idle">
-    <rect x="310" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][0]" class="scriba-state-idle">
-    <rect x="0" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][1]" class="scriba-state-idle">
-    <rect x="62" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][2]" class="scriba-state-done">
-    <rect x="124" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="104" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[2][3]" class="scriba-state-done">
-    <rect x="186" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="104" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[2][4]" class="scriba-state-current">
-    <rect x="248" y="84" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="278" y="104" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[2][5]" class="scriba-state-idle">
-    <rect x="310" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][0]" class="scriba-state-idle">
-    <rect x="0" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][1]" class="scriba-state-idle">
-    <rect x="62" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][2]" class="scriba-state-idle">
-    <rect x="124" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][3]" class="scriba-state-done">
-    <rect x="186" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="146" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[3][4]" class="scriba-state-done">
-    <rect x="248" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="146" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[3][5]" class="scriba-state-current">
-    <rect x="310" y="126" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="340" y="146" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[4][0]" class="scriba-state-idle">
-    <rect x="0" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][1]" class="scriba-state-idle">
-    <rect x="62" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][2]" class="scriba-state-idle">
-    <rect x="124" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][3]" class="scriba-state-idle">
-    <rect x="186" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][4]" class="scriba-state-done">
-    <rect x="248" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="188" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[4][5]" class="scriba-state-done">
-    <rect x="310" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="188" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[5][0]" class="scriba-state-idle">
-    <rect x="0" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][1]" class="scriba-state-idle">
-    <rect x="62" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][2]" class="scriba-state-idle">
-    <rect x="124" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][3]" class="scriba-state-idle">
-    <rect x="186" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][4]" class="scriba-state-idle">
-    <rect x="248" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][5]" class="scriba-state-done">
-    <rect x="310" y="210" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="230" fill="#ffffff">1</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Doan dai 3: dp[0][2]=2 (R ghep BB), dp[1][3]=2 (BBR, xoa BB roi R), dp[2][4]=2 (BRB), dp[3][5]=2 (RBR, R hai dau ghep).`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 354" role="img" aria-labelledby="zuma-interval-dp-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-current">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-current">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-current">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-current">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-</g>
-</g>
-<g transform="translate(16,88)">
-<g data-primitive="dptable" data-shape="dp">
-  <g data-target="dp.cell[0][0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[0][1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[0][2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[0][3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][0]" class="scriba-state-idle">
-    <rect x="0" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][1]" class="scriba-state-done">
-    <rect x="62" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][2]" class="scriba-state-done">
-    <rect x="124" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][3]" class="scriba-state-done">
-    <rect x="186" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="62" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[1][4]" class="scriba-state-idle">
-    <rect x="248" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][5]" class="scriba-state-idle">
-    <rect x="310" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][0]" class="scriba-state-idle">
-    <rect x="0" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][1]" class="scriba-state-idle">
-    <rect x="62" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][2]" class="scriba-state-done">
-    <rect x="124" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="104" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[2][3]" class="scriba-state-done">
-    <rect x="186" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="104" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[2][4]" class="scriba-state-done">
-    <rect x="248" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="104" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[2][5]" class="scriba-state-current">
-    <rect x="310" y="84" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="340" y="104" fill="#ffffff"></text>
-  </g>
-  <g data-target="dp.cell[3][0]" class="scriba-state-idle">
-    <rect x="0" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][1]" class="scriba-state-idle">
-    <rect x="62" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][2]" class="scriba-state-idle">
-    <rect x="124" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][3]" class="scriba-state-done">
-    <rect x="186" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="146" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[3][4]" class="scriba-state-done">
-    <rect x="248" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="146" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[3][5]" class="scriba-state-done">
-    <rect x="310" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="146" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[4][0]" class="scriba-state-idle">
-    <rect x="0" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][1]" class="scriba-state-idle">
-    <rect x="62" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][2]" class="scriba-state-idle">
-    <rect x="124" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][3]" class="scriba-state-idle">
-    <rect x="186" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][4]" class="scriba-state-done">
-    <rect x="248" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="188" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[4][5]" class="scriba-state-done">
-    <rect x="310" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="188" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[5][0]" class="scriba-state-idle">
-    <rect x="0" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][1]" class="scriba-state-idle">
-    <rect x="62" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][2]" class="scriba-state-idle">
-    <rect x="124" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][3]" class="scriba-state-idle">
-    <rect x="186" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][4]" class="scriba-state-idle">
-    <rect x="248" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][5]" class="scriba-state-done">
-    <rect x="310" y="210" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="230" fill="#ffffff">1</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Tinh dp[2][5] cho doan "BRBR". Xet tat ca cach chia va ghep bi cung mau.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 354" role="img" aria-labelledby="zuma-interval-dp-frame-9-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">B</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">R</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-</g>
-</g>
-<g transform="translate(16,88)">
-<g data-primitive="dptable" data-shape="dp">
-  <g data-target="dp.cell[0][0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[0][1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[0][2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[0][3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[0][5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[1][0]" class="scriba-state-idle">
-    <rect x="0" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][1]" class="scriba-state-done">
-    <rect x="62" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][2]" class="scriba-state-done">
-    <rect x="124" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="62" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[1][3]" class="scriba-state-done">
-    <rect x="186" y="42" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="62" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[1][4]" class="scriba-state-idle">
-    <rect x="248" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[1][5]" class="scriba-state-idle">
-    <rect x="310" y="42" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="62" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][0]" class="scriba-state-idle">
-    <rect x="0" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][1]" class="scriba-state-idle">
-    <rect x="62" y="84" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="104" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[2][2]" class="scriba-state-done">
-    <rect x="124" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="104" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[2][3]" class="scriba-state-done">
-    <rect x="186" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="104" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[2][4]" class="scriba-state-done">
-    <rect x="248" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="104" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[2][5]" class="scriba-state-done">
-    <rect x="310" y="84" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="104" fill="#ffffff"></text>
-  </g>
-  <g data-target="dp.cell[3][0]" class="scriba-state-idle">
-    <rect x="0" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][1]" class="scriba-state-idle">
-    <rect x="62" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][2]" class="scriba-state-idle">
-    <rect x="124" y="126" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="146" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[3][3]" class="scriba-state-done">
-    <rect x="186" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="146" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[3][4]" class="scriba-state-done">
-    <rect x="248" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="146" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[3][5]" class="scriba-state-done">
-    <rect x="310" y="126" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="146" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[4][0]" class="scriba-state-idle">
-    <rect x="0" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][1]" class="scriba-state-idle">
-    <rect x="62" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][2]" class="scriba-state-idle">
-    <rect x="124" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][3]" class="scriba-state-idle">
-    <rect x="186" y="168" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="188" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[4][4]" class="scriba-state-done">
-    <rect x="248" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="188" fill="#ffffff">1</text>
-  </g>
-  <g data-target="dp.cell[4][5]" class="scriba-state-done">
-    <rect x="310" y="168" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="188" fill="#ffffff">2</text>
-  </g>
-  <g data-target="dp.cell[5][0]" class="scriba-state-idle">
-    <rect x="0" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][1]" class="scriba-state-idle">
-    <rect x="62" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][2]" class="scriba-state-idle">
-    <rect x="124" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][3]" class="scriba-state-idle">
-    <rect x="186" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][4]" class="scriba-state-idle">
-    <rect x="248" y="210" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="230" fill="#212529"></text>
-  </g>
-  <g data-target="dp.cell[5][5]" class="scriba-state-done">
-    <rect x="310" y="210" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="230" fill="#ffffff">1</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`dp[0][5] = 2: toan bo day "RBBRBR" chi can 2 buoc. Ghep R dau va R cuoi, xoa BB giua, roi xoa RR. Ket qua toi uu!`}
-  ];
-  var cur=0;
-  var stage=W.querySelector('.scriba-stage');
-  var narr=W.querySelector('.scriba-narration');
-  var ctr=W.querySelector('.scriba-step-counter');
-  var prev=W.querySelector('.scriba-btn-prev');
-  var next=W.querySelector('.scriba-btn-next');
-  var dots=W.querySelectorAll('.scriba-dot');
-  function show(i){
-    cur=i;
-    stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
-    ctr.textContent='Step '+(i+1)+' / '+frames.length;
-    prev.disabled=i===0;
-    next.disabled=i===frames.length-1;
-    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
-  }
-  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
-  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
-  W.addEventListener('keydown',function(e){
-    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
-    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
+const NARRATIONS = [
+  '<strong>Buoc 1:</strong> Cho mang vien da [R,B,B,R,B,R] gom 6 phan tu. Muc tieu: tim so buoc xoa it nhat de lam sach tat ca. Dung bang dp[l][r] = so buoc toi thieu de xoa chuoi con s[l..r]. Bang 6x6 ban dau trong.',
+  '<strong>Buoc 2:</strong> Dien truong hop co so: dp[i][i] = 1. Moi vien da dung mot minh can dung 1 buoc de xoa. Duong cheo chinh cua bang duoc to mau xanh duong.',
+  '<strong>Buoc 3:</strong> Xet dp[2][3] voi chuoi con "BR". Vi s[2]=B khac s[3]=R, khong the gop duoc. dp[2][3] = dp[2][2] + dp[3][3] = 1 + 1 = 2. Can 2 buoc rieng re.',
+  '<strong>Buoc 4:</strong> Dien dp[1][2] voi chuoi con "BB". Vi s[1] = s[2] = B (cung mau!), hai vien nay gop lai va xoa chi 1 lan. dp[1][2] = 1. Day la <strong>merge</strong> &mdash; yeu to quan trong cua Zuma DP.',
+  '<strong>Buoc 5 (Substory):</strong> Drill into dp[2][5] cho chuoi con "BRBR" (4 phan tu). Thu tat ca diem chia k=2,3,4. Moi truong hop deu cho gia tri 4. Vi s[2]=B != s[5]=R nen khong gop dau mut duoc. Ket qua dp[2][5] = 4.',
+  '<strong>Buoc 6:</strong> Bang DP da dien day. Ket qua cuoi cung: dp[0][5] = <strong>4</strong>. Can toi thieu 4 buoc de xoa het day vien da "RBBRBR". O goc tren phai (dp[0][5]) duoc to mau xanh la cay.'
+];
+
+let step = 0;
+const total = NARRATIONS.length;
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const label = document.getElementById('stepLabel');
+const narration = document.getElementById('narration');
+
+function render() {
+  document.querySelectorAll('.step').forEach((el, i) => {
+    el.classList.toggle('active', i === step);
   });
-  W.setAttribute('tabindex','0');
-  show(0);
-})();
+  narration.innerHTML = NARRATIONS[step];
+  label.textContent = `Step ${step + 1} / ${total}`;
+  prevBtn.disabled = step === 0;
+  nextBtn.disabled = step === total - 1;
+}
+prevBtn.addEventListener('click', () => { if (step > 0) { step--; render(); } });
+nextBtn.addEventListener('click', () => { if (step < total - 1) { step++; render(); } });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowLeft') prevBtn.click();
+  if (e.key === 'ArrowRight') nextBtn.click();
+});
 </script>
 </body>
 </html>
