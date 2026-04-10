@@ -40,9 +40,9 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 
 ---
 
-## 2. Inner Commands (11 total)
+## 2. Inner Commands (13 total)
 
-### 2.1 Base Commands (8)
+### 2.1 Base Commands (10)
 
 | Command | Signature | Contexts | Persistence |
 |---------|-----------|----------|-------------|
@@ -54,6 +54,8 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\highlight` | `{target}` | step only (animation), anywhere (diagram) | ephemeral (animation), persistent (diagram) |
 | `\recolor` | `{target}{state=..., color=..., arrow_from=...}` | both | persistent |
 | `\annotate` | `{target}{params}` | both | persistent (default), ephemeral if `ephemeral=true` |
+| `\foreach` | `{variable}{iterable}...body...\endforeach` | prelude or step | expands to body commands |
+| `\endforeach` | (no args) | closes `\foreach` | — |
 
 ### 2.2 Extension Commands (2)
 
@@ -650,7 +652,7 @@ Print media: lines forced to `stroke: #000`.
 | E1112 | Unknown annotation position |
 | E1113 | Unknown annotation color |
 
-### Compute Errors (E1150–E1179)
+### Compute Errors (E1150–E1159)
 
 | Code | Meaning |
 |------|---------|
@@ -663,6 +665,16 @@ Print media: lines forced to `stroke: #000`.
 | E1156 | Subscript out of range |
 | E1157 | Non-integer subscript |
 | E1158 | Recursion depth exceeded (~1000 frames) |
+
+### Foreach Errors (E1170–E1179)
+
+| Code | Meaning |
+|------|---------|
+| E1170 | `\foreach` nesting exceeds max depth (3) |
+| E1171 | `\foreach` with empty body |
+| E1172 | Unclosed `\foreach` (EOF before `\endforeach`) |
+| E1173 | Invalid iterable in `\foreach` (not a range, list, or binding) |
+| E1174 | `\foreach` variable name conflicts with existing binding |
 
 ### Frame Count (E1180–E1199)
 
@@ -773,6 +785,7 @@ Print media: lines forced to `stroke: #000`.
 | Starlark wall clock | 5s | E1152 |
 | Starlark memory | 64 MB | E1151 |
 | Substory nesting depth | 3 | E1360 |
+| Foreach nesting depth | 3 | E1170 |
 | Graph stable nodes | 20 | E1501 (warning) |
 | Graph stable frames | 50 | E1502 (warning) |
 | Matrix cells | 10,000 | E1425 |

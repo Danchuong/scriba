@@ -11,21 +11,26 @@ Implements the delta rules from ``04-environments-spec.md`` section 6.1:
 
 from __future__ import annotations
 
+import ast as _ast_module
 import copy
-from dataclasses import dataclass, field
+import re
+from dataclasses import dataclass, field, fields, replace
 from typing import Any
 
 from scriba.animation.parser.ast import (
     AnnotateCommand,
     ApplyCommand,
     ComputeCommand,
+    ForeachCommand,
     FrameIR,
     HighlightCommand,
+    InterpolationRef,
     RecolorCommand,
     Selector,
     ShapeCommand,
     SubstoryBlock,
 )
+from scriba.core.errors import ValidationError
 
 __all__ = ["SceneState", "FrameSnapshot"]
 
@@ -163,7 +168,8 @@ class SceneState:
         for cb in prelude_compute:
             self._run_compute(cb, starlark_host)
 
-        for cmd in prelude_commands:
+        expanded = self._expand_commands(prelude_commands)
+        for cmd in expanded:
             self._apply_command(cmd)
 
     # ---- per-frame ----
@@ -185,8 +191,9 @@ class SceneState:
         for cb in frame_ir.compute:
             self._run_compute(cb, starlark_host)
 
-        # Apply commands in source order
-        for cmd in frame_ir.commands:
+        # Expand \foreach commands, then apply in source order
+        expanded = self._expand_commands(frame_ir.commands)
+        for cmd in expanded:
             self._apply_command(cmd)
 
         snapshot = self.snapshot(
@@ -283,6 +290,217 @@ class SceneState:
         return snapshots
 
     # ---- private ----
+
+    # ---- foreach expansion ----
+
+    _RANGE_RE = re.compile(r"^(-?\d+)\.\.(-?\d+)$")
+    _BINDING_RE = re.compile(r"^\$\{(\w+)\}$")
+    _MAX_ITERABLE_LEN = 10_000
+    _MAX_FOREACH_DEPTH = 3
+
+    def _expand_commands(
+        self,
+        commands: tuple[Any, ...] | list[Any],
+        depth: int = 0,
+    ) -> list[Any]:
+        """Expand ``ForeachCommand`` nodes into flat mutation-command lists."""
+        if depth > self._MAX_FOREACH_DEPTH:
+            raise ValidationError(
+                "foreach nesting exceeds max depth 3",
+                code="E1170",
+            )
+        expanded: list[Any] = []
+        for cmd in commands:
+            if isinstance(cmd, ForeachCommand):
+                values = self._resolve_iterable(cmd.iterable_raw, cmd.line)
+                for val in values:
+                    substituted = self._substitute_body(
+                        cmd.body, cmd.variable, val,
+                    )
+                    expanded.extend(
+                        self._expand_commands(substituted, depth + 1),
+                    )
+            else:
+                expanded.append(cmd)
+        return expanded
+
+    def _resolve_iterable(self, raw: str, line: int) -> list[Any]:
+        """Resolve an iterable specification to a concrete list of values."""
+        # Range literal: "0..5" → [0, 1, 2, 3, 4, 5]
+        m = self._RANGE_RE.match(raw.strip())
+        if m:
+            lo, hi = int(m.group(1)), int(m.group(2))
+            result = list(range(lo, hi + 1))
+            if len(result) > self._MAX_ITERABLE_LEN:
+                raise ValidationError(
+                    f"foreach iterable length {len(result)} exceeds "
+                    f"maximum {self._MAX_ITERABLE_LEN}",
+                    code="E1173",
+                    line=line,
+                )
+            return result
+
+        # Binding reference: "${path}" → lookup in self.bindings
+        bm = self._BINDING_RE.match(raw.strip())
+        if bm:
+            name = bm.group(1)
+            if name not in self.bindings:
+                raise ValidationError(
+                    f"foreach binding '${{{name}}}' not found",
+                    code="E1173",
+                    line=line,
+                )
+            value = self.bindings[name]
+            if not isinstance(value, list):
+                raise ValidationError(
+                    f"foreach binding '${{{name}}}' is not a list",
+                    code="E1173",
+                    line=line,
+                )
+            if len(value) > self._MAX_ITERABLE_LEN:
+                raise ValidationError(
+                    f"foreach iterable length {len(value)} exceeds "
+                    f"maximum {self._MAX_ITERABLE_LEN}",
+                    code="E1173",
+                    line=line,
+                )
+            return list(value)
+
+        # List literal: "[1,2,3]"
+        stripped = raw.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            try:
+                parsed = _ast_module.literal_eval(stripped)
+            except (ValueError, SyntaxError) as exc:
+                raise ValidationError(
+                    f"foreach: invalid list literal: {stripped}",
+                    code="E1173",
+                    line=line,
+                ) from exc
+            if not isinstance(parsed, list):
+                raise ValidationError(
+                    f"foreach: expected list, got {type(parsed).__name__}",
+                    code="E1173",
+                    line=line,
+                )
+            if len(parsed) > self._MAX_ITERABLE_LEN:
+                raise ValidationError(
+                    f"foreach iterable length {len(parsed)} exceeds "
+                    f"maximum {self._MAX_ITERABLE_LEN}",
+                    code="E1173",
+                    line=line,
+                )
+            return parsed
+
+        raise ValidationError(
+            f"foreach: cannot resolve iterable '{raw}'",
+            code="E1173",
+            line=line,
+        )
+
+    def _substitute_body(
+        self,
+        body: tuple[Any, ...],
+        variable: str,
+        value: Any,
+    ) -> tuple[Any, ...]:
+        """Return *body* with ``${variable}`` replaced by *value* in all string fields."""
+        placeholder = f"${{{variable}}}"
+        val_str = str(value)
+
+        def _sub_value(v: Any) -> Any:
+            """Substitute in a single value (recursive for dicts/lists)."""
+            if isinstance(v, str):
+                return v.replace(placeholder, val_str)
+            if isinstance(v, dict):
+                return {k: _sub_value(vv) for k, vv in v.items()}
+            if isinstance(v, list):
+                return [_sub_value(item) for item in v]
+            if isinstance(v, tuple):
+                return tuple(_sub_value(item) for item in v)
+            if isinstance(v, Selector):
+                return _sub_selector(v)
+            return v
+
+        def _sub_selector(sel: Selector) -> Selector:
+            """Substitute in a Selector's string-containing fields."""
+            new_name = sel.shape_name.replace(placeholder, val_str)
+            if sel.accessor is None:
+                if new_name == sel.shape_name:
+                    return sel
+                return replace(sel, shape_name=new_name)
+            new_acc = _sub_accessor(sel.accessor)
+            if new_name == sel.shape_name and new_acc is sel.accessor:
+                return sel
+            return replace(sel, shape_name=new_name, accessor=new_acc)
+
+        def _sub_accessor(acc: Any) -> Any:
+            """Substitute in accessor index expressions."""
+            # Walk all fields of the accessor dataclass, substituting
+            # any str or InterpolationRef index expressions.
+            changed = False
+            updates: dict[str, Any] = {}
+            for f in fields(acc):
+                old_val = getattr(acc, f.name)
+                new_val = _sub_index_expr(old_val)
+                if new_val is not old_val:
+                    updates[f.name] = new_val
+                    changed = True
+            if not changed:
+                return acc
+            return replace(acc, **updates)
+
+        def _sub_index_expr(expr: Any) -> Any:
+            """Substitute in an index expression (int | str | InterpolationRef | tuple)."""
+            if isinstance(expr, InterpolationRef) and expr.name == variable:
+                # Replace the interpolation ref with the concrete value
+                if isinstance(value, int):
+                    return value
+                return val_str
+            if isinstance(expr, str):
+                result = expr.replace(placeholder, val_str)
+                # Try to convert back to int if the result is purely numeric
+                try:
+                    return int(result)
+                except (ValueError, TypeError):
+                    return result
+            if isinstance(expr, tuple):
+                new_items = tuple(_sub_index_expr(item) for item in expr)
+                return new_items
+            if isinstance(expr, list):
+                return [_sub_index_expr(item) for item in expr]
+            return expr
+
+        def _sub_cmd(cmd: Any) -> Any:
+            """Substitute in a single command, returning a new copy."""
+            if isinstance(cmd, ForeachCommand):
+                # For nested foreach, substitute in iterable_raw and body
+                new_iterable = cmd.iterable_raw.replace(placeholder, val_str)
+                new_body = tuple(_sub_cmd(c) for c in cmd.body)
+                if (
+                    new_iterable == cmd.iterable_raw
+                    and new_body == cmd.body
+                ):
+                    return cmd
+                return replace(
+                    cmd,
+                    iterable_raw=new_iterable,
+                    body=new_body,
+                )
+            # Generic substitution for all other mutation commands
+            updates: dict[str, Any] = {}
+            changed = False
+            for f in fields(cmd):
+                old_val = getattr(cmd, f.name)
+                new_val = _sub_value(old_val)
+                if new_val is not old_val:
+                    updates[f.name] = new_val
+                    changed = True
+            if not changed:
+                return cmd
+            return replace(cmd, **updates)
+
+        return tuple(_sub_cmd(cmd) for cmd in body)
 
     def _apply_command(self, cmd: Any) -> None:
         """Dispatch a single command to the appropriate handler."""

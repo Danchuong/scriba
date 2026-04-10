@@ -70,6 +70,8 @@ _KNOWN_COMMANDS = frozenset(
         "annotate",
         "substory",
         "endsubstory",
+        "foreach",
+        "endforeach",
     }
 )
 

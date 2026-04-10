@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriba — frog1_dp_foreach</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  max-width: 720px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  background: #fafafa;
+  color: #212529;
+}
+h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
+
+/* Widget container */
+.scriba-widget {
+  border: 1px solid #d0d7de;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+/* Controls bar */
+.scriba-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+  user-select: none;
+}
+.scriba-controls button {
+  background: #ffffff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: #212529;
+  transition: background 0.15s, border-color 0.15s;
+}
+.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
+.scriba-controls button:active { background: #e4e4e4; }
+.scriba-controls button:disabled { opacity: 0.35; cursor: default; }
+.scriba-step-counter {
+  font: 600 0.78rem ui-monospace, "SF Mono", monospace;
+  color: #6c757d;
+  min-width: 5rem;
+  text-align: center;
+}
+
+/* Progress dots */
+.scriba-progress {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.scriba-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #d0d7de;
+  transition: background 0.2s;
+}
+.scriba-dot.active { background: #0072B2; }
+.scriba-dot.done { background: #009E73; }
+
+/* Stage */
+.scriba-stage {
+  padding: 1.25rem 1rem;
+  display: flex;
+  justify-content: center;
+  min-height: 100px;
+}
+.scriba-stage-svg { width: 100%; height: auto; }
+
+/* Narration */
+.scriba-narration {
+  padding: 0.75rem 1rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #212529;
+  border-top: 1px solid #f0f0f0;
+  min-height: 2.5rem;
+}
+
+/* SVG text */
+svg text {
+  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.idx {
+  font: 500 10px ui-monospace, monospace;
+  fill: #6c757d;
+}
+
+/* Frame transition */
+.scriba-stage svg, .scriba-narration {
+  transition: opacity 0.2s ease;
+}
+
+/* Static filmstrip layout (legacy) */
+.scriba-animation { max-width: 100%; }
+.scriba-frames {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  padding: 1rem 0;
+  scroll-snap-type: x mandatory;
+}
+.scriba-frame {
+  flex: 0 0 auto;
+  min-width: 280px;
+  max-width: 560px;
+  border: 1px solid #d0d7de;
+  border-radius: 8px;
+  background: #ffffff;
+  scroll-snap-align: start;
+  overflow: hidden;
+}
+.scriba-frame-header {
+  padding: 0.5rem 1rem;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d0d7de;
+}
+.scriba-step-label {
+  font: 600 0.72rem ui-monospace, monospace;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: fixed; top: 1rem; right: 1rem;
+  padding: 0.35rem 0.7rem; cursor: pointer;
+  border: 1px solid #ccc; border-radius: 6px; background: white;
+  font-size: 0.8rem;
+}
+
+/* Dark mode */
+[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
+[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
+[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
+[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
+[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
+[data-theme="dark"] .scriba-dot { background: #30363d; }
+[data-theme="dark"] .idx { fill: #7d8590; }
+[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
+[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
+[data-theme="dark"] .scriba-step-label { color: #7d8590; }
+[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
+</style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
+</head>
+<body>
+<button class="theme-toggle" onclick="
+  var t = document.documentElement.dataset.theme;
+  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
+">Toggle theme</button>
+<h1>frog1_dp_foreach</h1>
+<div class="scriba-widget" id="frog1-dp-foreach">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter">Step 1 / 8</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
+</div>
+<script>
+(function(){
+  var W=document.getElementById('frog1-dp-foreach');
+  var frames=[
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 250" role="img" aria-labelledby="frog1-dp-foreach-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="h">
+  <g data-target="h.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="h.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">9</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="h.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="h.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="h.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="h.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+<g transform="translate(16,150)">
+<g data-primitive="array" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+</svg>`,narration:`Bai toan Frog 1: co <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">6</span></span></span></span></span> hon da voi do cao <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">9</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">4</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">]</span></span></span></span></span>. Con ech o da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>, muon nhay den da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.10903em;">N</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>. Moi buoc nhay 1 hoac 2 da, chi phi = <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord mathnormal">h</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">i</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1.0361em;vertical-align:-0.2861em;"></span><span class="mord"><span class="mord mathnormal">h</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3117em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight" style="margin-right:0.05724em;">j</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.2861em;"><span></span></span></span></span></span></span><span class="mord">∣</span></span></span></span></span>. Tim chi phi nho nhat.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 250" role="img" aria-labelledby="frog1-dp-foreach-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="h">
+  <g data-target="h.cell[0]" class="scriba-state-current">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="h.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">9</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="h.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="h.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="h.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="h.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+<g transform="translate(16,150)">
+<g data-primitive="array" data-shape="dp">
+  <g data-target="dp.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+</svg>`,narration:`Co so: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> vi ech bat dau o da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>, chua ton chi phi nao.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 294" role="img" aria-labelledby="frog1-dp-foreach-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="h">
+  <g data-target="h.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="h.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">9</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="h.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="h.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="h.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="h.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+<g transform="translate(16,150)">
+<g data-primitive="array" data-shape="dp">
+  <g transform="translate(0, 44)">
+  <defs>
+    <marker id="scriba-arrow-good" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+  </defs>
+  <g data-target="dp.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff"></text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span></span></span></span></span></div></foreignObject>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C45,-30 76,-30 92,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="61" y="-34" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+7</text>
+  </g>
+  </g>
+</g>
+</g>
+</svg>`,narration:`<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1</span><span class="mclose">]</span></span></span></span></span>: chi co the nhay tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>. Chi phi <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.3669em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣</span><span class="mord"><span class="mord mathnormal">h</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">1</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord"><span class="mord mathnormal">h</span><span class="msupsub"><span class="vlist-t vlist-t2"><span class="vlist-r"><span class="vlist" style="height:0.3011em;"><span style="top:-2.55em;margin-left:0em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">0</span></span></span></span><span class="vlist-s">​</span></span><span class="vlist-r"><span class="vlist" style="height:0.15em;"><span></span></span></span></span></span></span><span class="mord">∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">0</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣9</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 314" role="img" aria-labelledby="frog1-dp-foreach-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="h">
+  <g data-target="h.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="h.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">9</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="h.cell[2]" class="scriba-state-current">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="h.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="h.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="h.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+<g transform="translate(16,150)">
+<g data-primitive="array" data-shape="dp">
+  <g transform="translate(0, 64)">
+  <defs>
+    <marker id="scriba-arrow-good" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <marker id="scriba-arrow-info" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
+  </defs>
+  <g data-target="dp.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-current">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff"></text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span></span></span></span></span></div></foreignObject>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C45,-30 76,-30 92,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="61" y="-34" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+7</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C61,-31 123,-31 154,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="92" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+2</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C107,-50 138,-50 154,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="123" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+5</text>
+  </g>
+  </g>
+</g>
+</g>
+</svg>`,narration:`<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">2</span><span class="mclose">]</span></span></span></span></span>: nhay tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> co chi phi <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣4</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>, tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> co chi phi <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣4</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">9∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>. Tong: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">0</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">12</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 314" role="img" aria-labelledby="frog1-dp-foreach-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="h">
+  <g data-target="h.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="h.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">9</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="h.cell[2]" class="scriba-state-dim">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="154" y="20" fill="#adb5bd">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="h.cell[3]" class="scriba-state-current">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="h.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="h.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+<g transform="translate(16,150)">
+<g data-primitive="array" data-shape="dp">
+  <g transform="translate(0, 64)">
+  <defs>
+    <marker id="scriba-arrow-good" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <marker id="scriba-arrow-info" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
+  </defs>
+  <g data-target="dp.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-current">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff"></text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-idle">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="278" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span></span></span></span></span></div></foreignObject>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C45,-30 76,-30 92,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="61" y="-34" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+7</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C61,-31 123,-31 154,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="92" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+2</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C107,-50 138,-50 154,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="123" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+5</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C123,-31 185,-31 216,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="154" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+4</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M154,0 C169,-50 200,-50 216,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="185" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+1</text>
+  </g>
+  </g>
+</g>
+</g>
+</svg>`,narration:`<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">3</span><span class="mclose">]</span></span></span></span></span>: tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣5</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">9∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4</span></span></span></span></span>, tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣5</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">4∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>. Tong: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">7</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">4</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">11</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 314" role="img" aria-labelledby="frog1-dp-foreach-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="h">
+  <g data-target="h.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="h.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">9</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="h.cell[2]" class="scriba-state-dim">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="154" y="20" fill="#adb5bd">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="h.cell[3]" class="scriba-state-dim">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="216" y="20" fill="#adb5bd">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="h.cell[4]" class="scriba-state-current">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="h.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+<g transform="translate(16,150)">
+<g data-primitive="array" data-shape="dp">
+  <g transform="translate(0, 64)">
+  <defs>
+    <marker id="scriba-arrow-good" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <marker id="scriba-arrow-info" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
+  </defs>
+  <g data-target="dp.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-current">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff"></text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-idle">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="340" y="20" fill="#212529"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span></span></span></span></span></div></foreignObject>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C45,-30 76,-30 92,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="61" y="-34" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+7</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C61,-31 123,-31 154,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="92" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+2</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C107,-50 138,-50 154,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="123" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+5</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C123,-31 185,-31 216,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="154" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+4</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M154,0 C169,-50 200,-50 216,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="185" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+1</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M154,0 C185,-31 247,-31 278,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="216" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+3</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M216,0 C231,-50 262,-50 278,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="247" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+4</text>
+  </g>
+  </g>
+</g>
+</g>
+</svg>`,narration:`<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">4</span><span class="mclose">]</span></span></span></span></span>: tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">4∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4</span></span></span></span></span>. Tong: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">4</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">5</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 314" role="img" aria-labelledby="frog1-dp-foreach-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="h">
+  <g data-target="h.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="h.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">9</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="h.cell[2]" class="scriba-state-dim">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="154" y="20" fill="#adb5bd">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="h.cell[3]" class="scriba-state-dim">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="216" y="20" fill="#adb5bd">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="h.cell[4]" class="scriba-state-dim">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="278" y="20" fill="#adb5bd">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="h.cell[5]" class="scriba-state-current">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+<g transform="translate(16,150)">
+<g data-primitive="array" data-shape="dp">
+  <g transform="translate(0, 64)">
+  <defs>
+    <marker id="scriba-arrow-good" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <marker id="scriba-arrow-info" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
+  </defs>
+  <g data-target="dp.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-done">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-current">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff"></text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span></span></span></span></span></div></foreignObject>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C45,-30 76,-30 92,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="61" y="-34" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+7</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C61,-31 123,-31 154,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="92" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+2</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C107,-50 138,-50 154,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="123" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+5</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C123,-31 185,-31 216,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="154" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+4</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M154,0 C169,-50 200,-50 216,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="185" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+1</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M154,0 C185,-31 247,-31 278,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="216" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+3</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M216,0 C231,-50 262,-50 278,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="247" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+4</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M216,0 C247,-31 309,-31 340,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="278" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+1</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M278,0 C293,-50 324,-50 340,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="309" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+5</text>
+  </g>
+  </g>
+</g>
+</g>
+</svg>`,narration:`<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">5</span><span class="mclose">]</span></span></span></span></span>: tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣6</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>, tu da <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">∣6</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1∣</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>. Tong: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">4</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">10</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4</span></span></span></span></span>.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 402 314" role="img" aria-labelledby="frog1-dp-foreach-frame-8-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="h">
+  <g data-target="h.cell[0]" class="scriba-state-path">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="30" y="20" fill="#0c4a6e">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="h.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">9</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="h.cell[2]" class="scriba-state-path">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="154" y="20" fill="#0c4a6e">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="h.cell[3]" class="scriba-state-path">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="216" y="20" fill="#0c4a6e">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="h.cell[4]" class="scriba-state-dim">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="278" y="20" fill="#adb5bd">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="h.cell[5]" class="scriba-state-path">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="340" y="20" fill="#0c4a6e">6</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">h</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+<g transform="translate(16,150)">
+<g data-primitive="array" data-shape="dp">
+  <g transform="translate(0, 64)">
+  <defs>
+    <marker id="scriba-arrow-good" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#059669"/></marker>
+    <marker id="scriba-arrow-info" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/></marker>
+    <marker id="scriba-arrow-path" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/></marker>
+  </defs>
+  <g data-target="dp.cell[0]" class="scriba-state-path">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="30" y="20" fill="#0c4a6e">0</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="dp.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">7</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="dp.cell[2]" class="scriba-state-path">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="154" y="20" fill="#0c4a6e">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="dp.cell[3]" class="scriba-state-path">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="216" y="20" fill="#0c4a6e">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="dp.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="dp.cell[5]" class="scriba-state-path">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+    <text x="340" y="20" fill="#0c4a6e">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <foreignObject x="0" y="58" width="370" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:370px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:visible"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span></span></span></span></span></div></foreignObject>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M30,0 C45,-30 76,-30 92,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="61" y="-34" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+7</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-path" opacity="1.0">
+    <path d="M30,0 C61,-31 123,-31 154,0" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#scriba-arrow-path)"/>
+    <text x="92" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#2563eb" font-weight="700" font-size="12px">+2</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C107,-50 138,-50 154,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="123" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+5</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M92,0 C123,-31 185,-31 216,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="154" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+4</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-path" opacity="1.0">
+    <path d="M154,0 C169,-50 200,-50 216,0" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#scriba-arrow-path)"/>
+    <text x="185" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#2563eb" font-weight="700" font-size="12px">+1</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-good" opacity="1.0">
+    <path d="M154,0 C185,-31 247,-31 278,0" stroke="#059669" stroke-width="2.2" fill="none" marker-end="url(#scriba-arrow-good)"/>
+    <text x="216" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#059669" font-weight="700" font-size="12px">+3</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M216,0 C231,-50 262,-50 278,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="247" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+4</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-path" opacity="1.0">
+    <path d="M216,0 C247,-31 309,-31 340,0" stroke="#2563eb" stroke-width="2.5" fill="none" marker-end="url(#scriba-arrow-path)"/>
+    <text x="278" y="-35" text-anchor="middle" dominant-baseline="auto" fill="#2563eb" font-weight="700" font-size="12px">+1</text>
+  </g>
+  <g class="scriba-annotation scriba-annotation-info" opacity="0.45">
+    <path d="M278,0 C293,-50 324,-50 340,0" stroke="#94a3b8" stroke-width="1.5" fill="none" marker-end="url(#scriba-arrow-info)"/>
+    <text x="309" y="-54" text-anchor="middle" dominant-baseline="auto" fill="#94a3b8" font-weight="500" font-size="11px">+5</text>
+  </g>
+  </g>
+</g>
+</g>
+</svg>`,narration:`<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">5</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4</span></span></span></span></span>. Duong di toi uu: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">→</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span> voi chi phi <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4</span></span></span></span></span>.`,substory:``}
+  ];
+  var cur=0;
+  var stage=W.querySelector('.scriba-stage');
+  var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
+  var ctr=W.querySelector('.scriba-step-counter');
+  var prev=W.querySelector('.scriba-btn-prev');
+  var next=W.querySelector('.scriba-btn-next');
+  var dots=W.querySelectorAll('.scriba-dot');
+  function initSub(el){
+    var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
+    var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
+    var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
+    var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
+    function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
+      sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+      sp.disabled=i===0;sx.disabled=i===fd.length-1;
+      sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+    }
+    sp.addEventListener('click',function(){if(sc>0)sh(sc-1);});
+    sx.addEventListener('click',function(){if(sc<fd.length-1)sh(sc+1);});
+    sh(0);
+  }
+  function show(i){
+    cur=i;
+    stage.innerHTML=frames[i].svg;
+    narr.innerHTML=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
+    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    prev.disabled=i===0;
+    next.disabled=i===frames.length-1;
+    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+  }
+  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
+  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
+  W.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
+    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
+  });
+  W.setAttribute('tabindex','0');
+  show(0);
+})();
+</script>
+</body>
+</html>

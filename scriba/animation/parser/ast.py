@@ -207,6 +207,17 @@ class AnnotateCommand:
     arrow_from: Selector | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class ForeachCommand:
+    """``\\foreach{variable}{iterable}...\\endforeach`` — loop that expands body commands."""
+
+    variable: str
+    iterable_raw: str
+    body: tuple["MutationCommand", ...]
+    line: int = 0
+    col: int = 0
+
+
 # ---------------------------------------------------------------------------
 # Union aliases
 # ---------------------------------------------------------------------------
@@ -217,9 +228,10 @@ MutationCommand = Union[
     HighlightCommand,
     RecolorCommand,
     AnnotateCommand,
+    ForeachCommand,
 ]
 
-# All inner commands (8 base + substory).
+# All inner commands (8 base + substory + foreach).
 Command = Union[
     ShapeCommand,
     ComputeCommand,
@@ -229,6 +241,7 @@ Command = Union[
     HighlightCommand,
     RecolorCommand,
     AnnotateCommand,
+    ForeachCommand,
     "SubstoryBlock",
 ]
 

@@ -1,0 +1,79 @@
+\begin{animation}[id="foreach-demo", label="Foreach Demo -- Loop-to-Command Bridge"]
+\shape{a}{Array}{size=8, data=[3,1,4,1,5,9,2,6], labels="0..7", label="$arr$"}
+\shape{dp}{Array}{size=8, data=["","","","","","","",""], labels="0..7", label="$dp$"}
+
+% === Step 1: Introduction ===
+\step
+\narrate{Demo cua foreach: thay vi viet 8 dong recolor, chi can 1 vong lap.}
+
+% === Step 2: Foreach with range -- mark all cells as current ===
+\step
+\foreach{i}{0..7}
+  \recolor{a.cell[${i}]}{state=current}
+\endforeach
+\narrate{Dung foreach 0..7 de recolor tat ca cell sang current chi voi 3 dong.}
+
+% === Step 3: Foreach with compute binding -- mark even indices done ===
+\step
+\compute{
+even = [i for i in range(8) if i % 2 == 0]
+}
+\foreach{i}{${even}}
+  \recolor{a.cell[${i}]}{state=done}
+\endforeach
+\foreach{i}{${even}}
+  \recolor{dp.cell[${i}]}{state=done}
+  \apply{dp.cell[${i}]}{value="E"}
+\endforeach
+\narrate{Dung compute de tinh even = [0,2,4,6], roi foreach iterate qua binding do.}
+
+% === Step 4: Foreach with list literal ===
+\step
+\foreach{i}{[1,3,5,7]}
+  \recolor{a.cell[${i}]}{state=good}
+  \recolor{dp.cell[${i}]}{state=good}
+  \apply{dp.cell[${i}]}{value="O"}
+\endforeach
+\narrate{Dung list literal [1,3,5,7] truc tiep trong foreach de danh dau cac cell le.}
+
+% === Step 5: Foreach dim all, then highlight path ===
+\step
+\foreach{i}{0..7}
+  \recolor{a.cell[${i}]}{state=dim}
+  \recolor{dp.cell[${i}]}{state=dim}
+\endforeach
+\compute{ path = [0, 2, 4, 6] }
+\foreach{i}{${path}}
+  \recolor{a.cell[${i}]}{state=path}
+  \recolor{dp.cell[${i}]}{state=path}
+\endforeach
+\narrate{Dim tat ca, roi highlight path [0,2,4,6] -- giam tu 16 dong xuong con 6 dong.}
+
+% === Step 6: Two independent foreach loops ===
+\step
+\compute{
+rows = [0, 2, 4, 6]
+cols = [1, 3, 5, 7]
+}
+\foreach{i}{${rows}}
+  \recolor{a.cell[${i}]}{state=current}
+\endforeach
+\foreach{j}{${cols}}
+  \recolor{dp.cell[${j}]}{state=error}
+\endforeach
+\narrate{Hai foreach doc lap: rows (current) va cols (error) chay tren 2 array khac nhau.}
+
+% === Step 7: Foreach with annotate ===
+\step
+\foreach{i}{0..7}
+  \recolor{a.cell[${i}]}{state=idle}
+  \recolor{dp.cell[${i}]}{state=idle}
+\endforeach
+\compute{ winners = [0, 4] }
+\foreach{i}{${winners}}
+  \recolor{a.cell[${i}]}{state=good}
+  \annotate{a.cell[${i}]}{label="win", color=good}
+\endforeach
+\narrate{Foreach ket hop voi annotate -- danh dau cac winner cells.}
+
+\end{animation}

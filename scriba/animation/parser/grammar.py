@@ -13,6 +13,7 @@ from .ast import (
     AnnotateCommand,
     ApplyCommand,
     ComputeCommand,
+    ForeachCommand,
     FrameIR,
     HighlightCommand,
     InterpolationRef,
@@ -183,6 +184,22 @@ class SceneParser:
                         prelude_commands.append(cmd)
                     else:
                         frame_commands.append(cmd)
+
+                elif cmd_name == "foreach":
+                    cmd = self._parse_foreach()
+                    if in_prelude:
+                        prelude_commands.append(cmd)
+                    else:
+                        frame_commands.append(cmd)
+
+                elif cmd_name == "endforeach":
+                    raise ValidationError(
+                        "\\endforeach without matching \\foreach",
+                        position=tok.col,
+                        code="E1172",
+                        line=tok.line,
+                        col=tok.col,
+                    )
 
                 elif cmd_name == "substory":
                     if in_prelude:
@@ -405,6 +422,103 @@ class SceneParser:
             ephemeral=ephemeral, arrow_from=arrow_from,
         )
 
+    def _parse_foreach(self) -> ForeachCommand:
+        """Parse ``\\foreach{var}{iterable}...\\endforeach`` block."""
+        tok = self._advance()  # consume \foreach
+        foreach_line = tok.line
+        foreach_col = tok.col
+
+        # Parse {variable} — single IDENT
+        variable = self._read_brace_arg(tok).strip()
+        if not variable or not variable.isidentifier():
+            raise ValidationError(
+                f"invalid foreach variable name {variable!r}",
+                position=tok.col,
+                code="E1171",
+                line=tok.line,
+                col=tok.col,
+            )
+
+        # Parse {iterable} — raw text (range, interpolation, or list literal)
+        iterable_raw = self._read_brace_arg(tok).strip()
+
+        # Collect body commands until \endforeach
+        body: list[Command] = []
+
+        while not self._at_end():
+            self._skip_newlines()
+            if self._at_end():
+                break
+
+            inner_tok = self._peek()
+
+            if inner_tok.kind == TokenKind.BACKSLASH_CMD:
+                inner_cmd = inner_tok.value
+
+                if inner_cmd == "endforeach":
+                    self._advance()  # consume \endforeach
+
+                    if not body:
+                        raise ValidationError(
+                            "\\foreach with empty body",
+                            position=foreach_col,
+                            code="E1171",
+                            line=foreach_line,
+                            col=foreach_col,
+                        )
+
+                    return ForeachCommand(
+                        variable=variable,
+                        iterable_raw=iterable_raw,
+                        body=tuple(body),
+                        line=foreach_line,
+                        col=foreach_col,
+                    )
+
+                elif inner_cmd == "recolor":
+                    body.append(self._parse_recolor())
+
+                elif inner_cmd == "apply":
+                    body.append(self._parse_apply())
+
+                elif inner_cmd == "highlight":
+                    body.append(self._parse_highlight())
+
+                elif inner_cmd == "annotate":
+                    body.append(self._parse_annotate())
+
+                elif inner_cmd == "foreach":
+                    body.append(self._parse_foreach())
+
+                elif inner_cmd in ("endsubstory", "step", "shape", "substory"):
+                    raise ValidationError(
+                        f"\\{inner_cmd} is not allowed inside \\foreach body",
+                        position=inner_tok.col,
+                        code="E1172",
+                        line=inner_tok.line,
+                        col=inner_tok.col,
+                    )
+
+                else:
+                    raise ValidationError(
+                        f"unknown command \\{inner_cmd} inside \\foreach body",
+                        position=inner_tok.col,
+                        code="E1006",
+                        line=inner_tok.line,
+                        col=inner_tok.col,
+                    )
+            else:
+                self._advance()
+
+        # EOF without \endforeach
+        raise ValidationError(
+            "unclosed \\foreach",
+            position=foreach_col,
+            code="E1172",
+            line=foreach_line,
+            col=foreach_col,
+        )
+
     def _parse_substory(self) -> SubstoryBlock:
         """Parse ``\\substory[opts]...\\endsubstory`` block."""
         tok = self._advance()  # consume \substory
@@ -608,6 +722,22 @@ class SceneParser:
                         pass
                     else:
                         sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "foreach":
+                    cmd = self._parse_foreach()
+                    if sub_in_prelude:
+                        pass
+                    else:
+                        sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "endforeach":
+                    raise ValidationError(
+                        "\\endforeach without matching \\foreach",
+                        position=inner_tok.col,
+                        code="E1172",
+                        line=inner_tok.line,
+                        col=inner_tok.col,
+                    )
 
                 elif inner_cmd == "substory":
                     if sub_in_prelude:
