@@ -47,6 +47,16 @@ class GridPrimitive:
 
         rows = int(rows)
         cols = int(cols)
+        if rows > 500:
+            raise animation_error(
+                E1103,
+                detail=f"[E1103] Grid rows {rows} exceeds maximum of 500",
+            )
+        if cols > 500:
+            raise animation_error(
+                E1103,
+                detail=f"[E1103] Grid cols {cols} exceeds maximum of 500",
+            )
 
         raw_data: Any = params.get("data", [])
         data: list[Any] = _flatten_2d(raw_data, rows, cols)

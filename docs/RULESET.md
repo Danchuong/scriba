@@ -34,6 +34,10 @@
 
 Unknown key → `E1004`
 
+### 1.3 Line Comments
+
+The `%` character starts a line comment. Everything from `%` to the end of the line is ignored by the lexer. This follows LaTeX comment convention.
+
 ---
 
 ## 2. Inner Commands (11 total)
@@ -44,7 +48,7 @@ Unknown key → `E1004`
 |---------|-----------|----------|-------------|
 | `\shape` | `{name}{Type}{params}` | prelude only (animation), anywhere (diagram) | declaration |
 | `\compute` | `{...Starlark...}` | prelude or step (animation), anywhere (diagram) | global or frame-local |
-| `\step` | (no args) | animation only | starts new frame |
+| `\step` | `[label=...]` (optional) | animation only | starts new frame |
 | `\narrate` | `{LaTeX text}` | animation step only | per-frame |
 | `\apply` | `{target}{params}` | prelude or step | persistent |
 | `\highlight` | `{target}` | step only (animation), anywhere (diagram) | ephemeral (animation), persistent (diagram) |
@@ -73,7 +77,7 @@ accessor  ::= "cell" "[" idx "]" ("[" idx "]")?
             | "all"
             | IDENT ("[" idx "]")?
 idx       ::= NUMBER | "${" IDENT "}"
-node_id   ::= NUMBER | STRING | "${" IDENT "}"
+node_id   ::= NUMBER | STRING | IDENT | "${" IDENT "}"
 ```
 
 ### Per-Primitive Selectors
@@ -87,9 +91,12 @@ node_id   ::= NUMBER | STRING | "${" IDENT "}"
 | Tree | `T` | `.node[id]`, `.node["[lo,hi]"]` (segtree), `.edge[(p,c)]`, `.all` |
 | NumberLine | `nl` | `.tick[i]`, `.range[lo:hi]`, `.axis`, `.all` |
 | Matrix | `m` | `.cell[r][c]`, `.all` |
-| Stack | `s` | `.item[i]`, `.all` |
+| Stack | `s` | `.item[i]`, `.top`, `.all` |
 | Plane2D | `p` | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]`, `.all` |
 | MetricPlot | `plot` | (whole shape only — series via `\apply` params) |
+
+**Bare IDENT as node_id:** In `node[...]` selectors, a bare identifier (e.g. `G.node[A]`) is
+treated as a string node ID. This is equivalent to `G.node["A"]` but more concise.
 
 Interpolation: `${name}` resolved from Starlark bindings at build time.
 
@@ -105,7 +112,10 @@ Interpolation: `${name}` resolved from Starlark bindings at build time.
 | `dim` | 50% opacity | — |
 | `error` | vermillion | `#D55E00` |
 | `good` | sky blue | `#56B4E9` |
-| `highlight` | yellow (ephemeral) | `#F0E442` |
+
+> **Note:** `highlight` is not a valid `\recolor` state. It is ephemeral and applied only
+> via the `\highlight` command. The CSS class `.scriba-state-highlight` exists (see §10.1)
+> but cannot be set through `\recolor`.
 
 Unknown state → `E1109`
 
@@ -131,7 +141,7 @@ Unknown state → `E1109`
 | `Matrix`/`Heatmap` | `rows`, `cols`, `data` | colorscale (`viridis`/`magma`/`plasma`/`greys`/`rdbu`), `show_values`, `vmin`/`vmax` |
 | `Stack` | `capacity` or `n` | push/pop delta semantics, horizontal/vertical |
 | `Plane2D` | `xrange`, `yrange` | lines/points/segments/polygons/regions, geometry helpers |
-| `MetricPlot` | (series via `\apply`) | up to 8 series, Wong palette, auto axes, log scale, two-axis mode |
+| `MetricPlot` | `series` (via `\shape`) | up to 8 series, Wong palette, auto axes, log scale, two-axis mode |
 | `Graph layout=stable` | (same as Graph) | SA joint-optimization, fixed positions across frames |
 
 ### 5.3 Graph Layout Modes
@@ -151,6 +161,104 @@ Unknown state → `E1109`
 | (default) | `root`, `nodes`/`edges` | No |
 | `segtree` | `data` | Yes, nodes labeled `[lo,hi]` |
 | `sparse_segtree` | `range_lo`, `range_hi` | Yes, dynamic nodes |
+
+### 5.5 Plane2D Full Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `xrange` | `[min, max]` | `[-5.0, 5.0]` | Horizontal viewport range |
+| `yrange` | `[min, max]` | `[-5.0, 5.0]` | Vertical viewport range |
+| `grid` | `bool` or `"fine"` | `true` | Grid lines. `true` = integer grid, `"fine"` = 0.2-interval sub-grid |
+| `axes` | `bool` | `true` | Show X/Y axes with arrowheads and tick labels |
+| `aspect` | `"equal"` \| `"auto"` | `"equal"` | `"equal"` computes height from width to preserve aspect ratio |
+| `width` | `int` | `320` | SVG width in pixels |
+| `height` | `int` | `320` | SVG height in pixels (overridden by `aspect="equal"` when not explicit) |
+| `points` | list | `[]` | Initial points: `[x, y]`, `[x, y, "label"]`, or `{"x":..., "y":..., "label":...}` |
+| `lines` | list | `[]` | Initial lines (see line formats below) |
+| `segments` | list | `[]` | Initial segments: `[[x1,y1],[x2,y2]]` or `{"x1":..., "y1":..., "x2":..., "y2":...}` |
+| `polygons` | list | `[]` | Initial polygons: list of `[x,y]` vertex pairs (auto-closed) |
+| `regions` | list | `[]` | Initial shaded regions: `{"polygon": [...], "fill": "rgba(...)"}` |
+
+**Line formats:**
+
+- Slope-intercept: `["label", slope, intercept]`
+- General form `ax + by = c`: `["label", {"a": a, "b": b, "c": c}]`
+- Dict form: `{"label": "...", "slope": m, "intercept": b}`
+
+**Dynamic additions via `\apply`:**
+
+| `\apply` key | Value | Description |
+|--------------|-------|-------------|
+| `add_point` | point spec | Add a point dynamically |
+| `add_line` | line spec | Add a line dynamically |
+| `add_segment` | segment spec | Add a segment dynamically |
+| `add_polygon` | polygon spec | Add a polygon dynamically |
+| `add_region` | region spec | Add a shaded region dynamically |
+
+Element cap: 500 per frame → `E1466`
+
+### 5.6 MetricPlot Full Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `series` | list (required) | — | 1--8 series. Each is a string name or `{"name":..., "color":..., "axis":..., "scale":...}` |
+| `xlabel` | `str` | `"step"` | X-axis label |
+| `ylabel` | `str` | `"value"` | Left Y-axis label |
+| `ylabel_right` | `str` | `None` | Right Y-axis label (two-axis mode) |
+| `grid` | `bool` | `true` | Show background grid lines |
+| `width` | `int` | `320` | SVG width in pixels |
+| `height` | `int` | `200` | SVG height in pixels |
+| `show_legend` | `bool` | `true` | Show series legend |
+| `show_current_marker` | `bool` | `true` | Show vertical dashed line and dots at current step |
+| `xrange` | `"auto"` or `[min, max]` | `"auto"` | X-axis range (auto = `[0, N-1]`) |
+| `yrange` | `"auto"` or `[min, max]` | `"auto"` | Left Y-axis range (auto = data min/max with 10% padding) |
+| `yrange_right` | `"auto"` or `[min, max]` | `"auto"` | Right Y-axis range (two-axis mode) |
+
+**Series config object keys:**
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `name` | `str` | (required) | Series identifier -- must be unique |
+| `color` | `str` | `"auto"` | Custom hex color or `"auto"` for Wong palette assignment |
+| `axis` | `"left"` \| `"right"` | `"left"` | Which Y-axis to bind to (enables two-axis mode) |
+| `scale` | `"linear"` \| `"log"` | `"linear"` | Axis scale; all series on the same axis must share the same scale → `E1487` |
+
+Data is fed per-frame via `\apply{plot}{series_name=value, ...}`. Max 1000 points per series → `E1483`.
+
+### 5.7 Stack Full Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `capacity` or `n` | `int` | (required) | Maximum stack capacity |
+| `items` | list | `[]` | Initial items: strings or `{"label": "...", "value": ...}` |
+| `orientation` | `"vertical"` \| `"horizontal"` | `"vertical"` | Stack growth direction |
+| `max_visible` | `int` | `10` | Max items shown before overflow indicator (`+N more`) |
+| `label` | `str` | `None` | Caption text below/beside the stack |
+
+**`\apply` operations:**
+
+| `\apply` key | Value | Description |
+|--------------|-------|-------------|
+| `push` | `"label"` or `{"label": "...", "value": ...}` | Push one item onto the top |
+| `pop` | `int` | Remove N items from the top |
+
+**`.top` selector:** Maps to the last (most recently pushed) item. Recolor/highlight on `.top` applies to `item[len-1]`.
+
+### 5.8 Matrix Full Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `rows` | `int` | (required) | Number of rows |
+| `cols` | `int` | (required) | Number of columns |
+| `data` | list (flat or 2D) | all zeros | Cell values for colorscale mapping |
+| `colorscale` | `str` | `"viridis"` | Color mapping function |
+| `show_values` | `bool` | `false` | Display numeric values inside cells |
+| `cell_size` | `int` | `24` | Cell size in pixels |
+| `vmin` | `float` | auto (data min) | Minimum value for colorscale normalization |
+| `vmax` | `float` | auto (data max) | Maximum value for colorscale normalization |
+| `row_labels` | `list[str]` | `None` | Labels displayed to the left of each row |
+| `col_labels` | `list[str]` | `None` | Labels displayed above each column |
+| `label` | `str` | `None` | Caption text below the matrix |
 
 ---
 
@@ -205,14 +313,16 @@ reversed, any, all, sum, divmod, print
 | `sample_every` | yes | ≥1; `floor(N/sample_every)` ≤ 100 → `E1341` |
 | `seed` | yes | explicit → `E1342` |
 | `label` | no | default `"ff"` |
+| `narrate_template` | no | Custom narration text for generated frames. If omitted, defaults to `"Iteration {i} / {N} (frame {k})."` |
 
+- A `\narrate{...}` immediately following `\fastforward` is consumed as the `narrate_template`.
 - Requires `iterate(scene, rng)` in preceding `\compute` → `E1343`
 - RNG methods: `random()`, `randint(lo,hi)`, `uniform(lo,hi)`, `shuffle(lst)`, `choice(lst)`
 
 ### 7.3 `\substory` / `\endsubstory` (E4)
 
 - Animation steps only → `E1362`
-- Max nesting depth: 3 → `E1364`
+- Max nesting depth: 3 → `E1360`
 - Substory mutations ephemeral (parent state saved/restored)
 - Rendered as nested `<section class="scriba-substory">` with own Prev/Next controls
 
@@ -260,6 +370,7 @@ Each frame inherits full state from previous frame, then:
 |------|----|----|
 | `interactive` (default) | ~2KB inline `<script>` | Web platforms |
 | `static` | None | Email, RSS, PDF, Codeforces |
+| `diagram` | None | Static single-frame `<figure class="scriba-diagram">` (no controls) |
 
 ### 9.2 Animation HTML (Static)
 
@@ -284,19 +395,26 @@ Each frame inherits full state from previous frame, then:
 ### 9.3 Interactive Widget HTML
 
 ```html
-<div class="scriba-widget" data-scriba-scene="{id}">
+<div class="scriba-widget" id="{id}">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter">Step 1 / N</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress"><!-- dots --></div>
+  </div>
   <div class="scriba-stage">...</div>
   <div class="scriba-narration">...</div>
   <div class="scriba-substory-container">...</div>
-  <div class="scriba-controls">
-    <button class="scriba-prev">Prev</button>
-    <span class="scriba-step-label">Step 1 / N</span>
-    <button class="scriba-next">Next</button>
-  </div>
-  <div class="scriba-progress"><!-- dots --></div>
   <script>/* ~2KB controller */</script>
 </div>
 ```
+
+**Keyboard navigation:** The widget sets `tabindex="0"` at initialization.
+
+| Key | Action |
+|-----|--------|
+| `ArrowRight` or `Space` | Advance to next frame |
+| `ArrowLeft` | Go to previous frame |
 
 ### 9.4 Substory HTML (inside interactive widget)
 
@@ -304,13 +422,14 @@ Each frame inherits full state from previous frame, then:
 <section class="scriba-substory" data-substory-id="{id}" data-substory-depth="{d}"
          aria-label="Sub-computation: {title}">
   <div class="scriba-substory-widget" data-scriba-frames='[...]'>
-    <div class="scriba-substory-stage">...</div>
-    <div class="scriba-substory-narration">...</div>
-    <div class="scriba-substory-controls">
-      <button>Prev</button>
-      <span>Sub-step 1 / M</span>
-      <button>Next</button>
+    <div class="scriba-controls scriba-substory-controls">
+      <button class="scriba-btn-prev" disabled>Prev</button>
+      <span class="scriba-step-counter">Sub-step 1 / M</span>
+      <button class="scriba-btn-next">Next</button>
+      <div class="scriba-progress"><!-- dots --></div>
     </div>
+    <div class="scriba-stage">...</div>
+    <div class="scriba-narration">...</div>
   </div>
 </section>
 ```
@@ -344,11 +463,72 @@ Each frame inherits full state from previous frame, then:
 ### 10.2 Key CSS Custom Properties
 
 ```css
---scriba-cell-size: 46px;
---scriba-cell-rx: 5px;
---scriba-node-r: 22px;
---scriba-frame-gap: 1rem;
---scriba-narration-font-size: 0.92rem;
+/* Base tokens */
+--scriba-fg:                     #212529;
+--scriba-fg-muted:               #6c757d;
+--scriba-bg:                     #ffffff;
+--scriba-bg-code:                #f6f8fa;
+--scriba-border:                 #d0d7de;
+--scriba-link:                   #0969da;
+--scriba-radius:                 6px;
+
+/* Frame layout */
+--scriba-frame-gap:              1rem;
+--scriba-frame-padding:          1rem;
+--scriba-frame-border:           1px solid var(--scriba-border);
+--scriba-frame-radius:           var(--scriba-radius);
+
+/* Stage (SVG container) */
+--scriba-stage-padding:          1.5rem 1rem;
+--scriba-stage-bg:               var(--scriba-bg-code);
+
+/* Narration */
+--scriba-narration-font-size:    0.92rem;
+--scriba-narration-line-height:  1.55;
+--scriba-narration-padding:      0.75rem 1rem;
+
+/* Step label */
+--scriba-step-label-font:        600 0.72rem ui-monospace, ...;
+--scriba-step-label-color:       var(--scriba-fg-muted);
+
+/* Primitive geometry */
+--scriba-cell-size:              46px;
+--scriba-cell-rx:                5px;
+--scriba-cell-stroke-width:      1.5;
+--scriba-node-r:                 22px;
+--scriba-node-stroke-width:      2;
+--scriba-edge-stroke-width:      1.5;
+--scriba-tick-stroke-width:      1.5;
+--scriba-tick-length:            8px;
+
+/* Primitive typography */
+--scriba-cell-font:              700 14px inherit;
+--scriba-cell-index-font:        500 10px ui-monospace, monospace;
+--scriba-cell-index-color:       var(--scriba-fg-muted);
+--scriba-node-font:              700 14px inherit;
+--scriba-label-font:             600 11px ui-monospace, monospace;
+--scriba-label-color:            var(--scriba-fg-muted);
+
+/* Annotation */
+--scriba-annotation-font:        600 11px ui-monospace, monospace;
+--scriba-annotation-arrow-width: 1.6;
+
+/* Annotation color tokens */
+--scriba-annotation-info:        #0072B2;
+--scriba-annotation-warn:        #E69F00;
+--scriba-annotation-good:        #009E73;
+--scriba-annotation-error:       #D55E00;
+--scriba-annotation-muted:       var(--scriba-fg-muted);
+
+/* Widget (interactive wrapper) */
+--scriba-widget-shadow:          0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+--scriba-widget-radius:          12px;
+--scriba-widget-focus-ring:      2px solid var(--scriba-link);
+
+/* Progress bar */
+--scriba-progress-height:        3px;
+--scriba-progress-bg:            var(--scriba-border);
+--scriba-progress-fill:          var(--scriba-link);
 ```
 
 ### 10.3 Responsive Breakpoints
@@ -362,6 +542,51 @@ Each frame inherits full state from previous frame, then:
 ### 10.4 Dark Mode
 
 Via `[data-theme="dark"]`. Wong palette works in both themes. Only `idle` and `dim` states remap.
+Dark mode overrides these base tokens: `--scriba-fg`, `--scriba-fg-muted`, `--scriba-bg`,
+`--scriba-bg-code`, `--scriba-border`, `--scriba-link`, plus `idle`/`dim`/`highlight` state tokens.
+
+### 10.5 Plane2D CSS Classes
+
+| Class | Scope | Description |
+|-------|-------|-------------|
+| `.scriba-plane-grid` | `<g>` | Container for grid lines |
+| `.scriba-plane-axes` | `<g>` | Container for X/Y axis lines and arrowheads |
+| `.scriba-plane-content` | `<g>` | Transformed group for geometric elements (math-to-SVG) |
+| `.scriba-plane-point` | `<g>` | Individual point wrapper (contains `<circle>`) |
+| `.scriba-plane-line` | `<g>` | Individual line wrapper (contains `<line>`) |
+| `.scriba-plane-segment` | `<g>` | Individual segment wrapper (contains `<line>`) |
+| `.scriba-plane-polygon` | `<g>` | Individual polygon wrapper (contains `<polygon>`) |
+| `.scriba-plane-region` | `<g>` | Individual shaded region wrapper (contains `<polygon>`) |
+| `.scriba-plane-labels` | `<g>` | Container for tick labels and element labels |
+
+CSS transitions on point `circle` (`fill`, `stroke`) and line/segment `line` (`stroke`) at 150ms ease.
+Grid uses `--scriba-border`; axes use `--scriba-fg`. Labels use `--scriba-font-mono`.
+
+### 10.6 MetricPlot CSS Classes
+
+| Class | Scope | Description |
+|-------|-------|-------------|
+| `.scriba-metricplot` | root | Top-level container |
+| `.scriba-metricplot-grid` | `<g>` | Background grid container |
+| `.scriba-metricplot-gridline-h` | `<line>` | Horizontal grid lines |
+| `.scriba-metricplot-gridline-v` | `<line>` | Vertical grid lines |
+| `.scriba-metricplot-axes` | `<g>` | Axes container (lines, ticks, labels) |
+| `.scriba-metricplot-xticks` | `<g>` | X-axis tick marks and labels |
+| `.scriba-metricplot-yticks` | `<g>` | Left Y-axis tick marks and labels |
+| `.scriba-metricplot-yticks-right` | `<g>` | Right Y-axis tick marks and labels (two-axis mode) |
+| `.scriba-metricplot-right-axis` | `<line>` | Right Y-axis line |
+| `.scriba-metricplot-right-axis-label` | `<text>` | Right Y-axis label text |
+| `.scriba-metricplot-series` | `<g>` | Container for all series polylines |
+| `.scriba-metricplot-series-{i}` | `<g>` | Individual series wrapper (0-indexed) |
+| `.scriba-metricplot-line` | `<polyline>` | Series data polyline |
+| `.scriba-metricplot-step-marker` | `<g>` | Current-step marker container |
+| `.scriba-metricplot-marker` | `<line>` | Vertical dashed marker line |
+| `.scriba-metricplot-step-dot` | `<circle>` | Dot on each series at current step |
+| `.scriba-metricplot-legend` | `<g>` | Legend container |
+| `.scriba-metricplot-legend-label` | `<text>` | Legend text label |
+
+Grid lines: `stroke: --scriba-border`, `stroke-width: 0.5`, `opacity: 0.6`.
+Print media: lines forced to `stroke: #000`.
 
 ---
 
@@ -461,15 +686,20 @@ Via `[data-theme="dark"]`. Wong palette works in both themes. Only `idle` and `d
 | E1343 | Missing `iterate()` function |
 | E1344 | Non-deterministic callback |
 | E1345 | `\fastforward` in prelude/diagram |
+| E1346 | `total_iters` is 0 or negative |
+| E1347 | `sample_every` is 0 or negative |
+| E1348 | N=1 sampled frame from `\fastforward` (warning; consider `\step` instead) |
 
 ### `\substory` Errors (E1360–E1369)
 
 | Code | Meaning |
 |------|---------|
-| E1360 | Max nesting depth exceeded |
+| E1360 | Max nesting depth exceeded (depth > 3) |
+| E1361 | Unclosed `\substory` (EOF or parent `\step` reached before `\endsubstory`) |
 | E1362 | `\substory` outside `\step` |
-| E1364 | Nesting depth > 3 |
 | E1365 | `\endsubstory` without `\substory` |
+| E1366 | Substory has zero `\step` blocks (warning) |
+| E1368 | Text on the same line as `\substory` or `\endsubstory` |
 
 ### Matrix Errors (E1420–E1429)
 
@@ -479,12 +709,41 @@ Via `[data-theme="dark"]`. Wong palette works in both themes. Only `idle` and `d
 | E1423 | Data shape mismatch |
 | E1424 | NaN in data (warning) |
 
+### Plane2D Errors (E1460–E1469)
+
+| Code | Meaning |
+|------|---------|
+| E1460 | `xrange` or `yrange` has equal endpoints (degenerate viewport) |
+| E1461 | Line has no intersection with viewport (warning) |
+| E1462 | Polygon not closed — auto-closed by emitter (warning) |
+| E1463 | Point or segment partially/fully outside viewport (warning) |
+| E1464 | `plane2d.*` helper raised a Starlark runtime error |
+| E1465 | `aspect` is not `"equal"` or `"auto"` |
+| E1466 | More than 500 elements in a single frame |
+
+### MetricPlot Errors (E1480–E1489)
+
+| Code | Meaning |
+|------|---------|
+| E1480 | No series declared (empty `series` list) |
+| E1481 | More than 8 series |
+| E1482 | Fewer than 2 data points in current frame (warning) |
+| E1483 | More than 1000 points in a single series |
+| E1484 | Log scale with non-positive value; clamped to epsilon (warning) |
+| E1485 | Duplicate series name |
+| E1486 | `xrange=[a,a]` — degenerate zero-width x range |
+| E1487 | Two series on the same axis declare different `scale` values |
+
 ### Graph Layout Errors (E1500–E1509)
 
 | Code | Meaning |
 |------|---------|
-| E1501 | `layout=stable` with N > 20 nodes |
-| E1502 | `layout=stable` with T > 50 frames |
+| E1500 | SA optimizer did not converge (warning) |
+| E1501 | `layout=stable` with N > 20 nodes (warning; falls back to force) |
+| E1502 | `layout=stable` with T > 50 frames (warning; falls back to force) |
+| E1503 | Fell back from `layout=stable` to `layout=force` (warning) |
+| E1504 | `layout_lambda` out of range `[0.01, 10]`; clamped (warning) |
+| E1505 | `layout_seed` is not a non-negative integer |
 
 ---
 
@@ -513,7 +772,7 @@ Via `[data-theme="dark"]`. Wong palette works in both themes. Only `idle` and `d
 | Starlark memory | 64 MB | E1151 |
 | Fastforward total_iters | 10^6 | E1340 |
 | Fastforward sampled frames | 100 | E1341 |
-| Substory nesting depth | 3 | E1364 |
+| Substory nesting depth | 3 | E1360 |
 | Graph stable nodes | 20 | E1501 (warning) |
 | Graph stable frames | 50 | E1502 (warning) |
 | Matrix cells | 10,000 | — |

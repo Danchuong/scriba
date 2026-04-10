@@ -97,9 +97,8 @@ class TestFunctionDef:
             })
             assert resp["ok"] is True
             assert resp["bindings"]["result"] == 10
-            # f should be serialized as __fn__ wrapper
-            assert resp["bindings"]["f"]["__fn__"] is not None
-            assert resp["bindings"]["f"]["name"] == "f"
+            # Functions are no longer serialized (__fn__ removed for security)
+            assert "f" not in resp["bindings"]
         finally:
             _close(proc)
 

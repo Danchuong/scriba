@@ -1,4 +1,4 @@
-"""Animation-specific error codes (E1001 -- E1202).
+"""Animation-specific error codes (E1001 -- E1181).
 
 These extend :mod:`scriba.core.errors` with animation domain codes.
 """
@@ -57,15 +57,15 @@ class AnimationParseError(ValidationError):
 # --- Scene errors (E1150 -- E1199) ---
 
 class FrameCountWarning:
-    """E1150: animation has >30 frames (warning, not an exception)."""
+    """E1180: animation has >30 frames (warning, not an exception)."""
 
-    code = "E1150"
+    code = "E1180"
 
 
 class FrameCountError(RendererError):
-    """E1151: animation has >100 frames (hard limit)."""
+    """E1181: animation has >100 frames (hard limit)."""
 
-    code = "E1151"
+    code = "E1181"
 
     def __init__(self, count: int) -> None:
         super().__init__(
@@ -75,12 +75,12 @@ class FrameCountError(RendererError):
         )
 
 
-# --- Starlark errors (E1200 -- E1202) ---
+# --- Starlark errors (E1150 -- E1179) ---
 
 class StarlarkEvalError(RendererError):
-    """E1200: Starlark evaluation failure."""
+    """E1151: Starlark evaluation failure (runtime error)."""
 
-    code = "E1200"
+    code = "E1151"
 
     def __init__(self, detail: str) -> None:
         super().__init__(

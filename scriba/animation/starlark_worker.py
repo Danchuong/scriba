@@ -21,34 +21,49 @@ Response (error)::
 
 from __future__ import annotations
 
+import ast
 import json
 import math
-import re
+import resource
 import signal
 import sys
+import threading
 import traceback
 from io import StringIO
 from typing import Any
 
 # ---------------------------------------------------------------------------
-# Forbidden-keyword scanner
+# Blocked attribute names (sandbox escape vectors)
 # ---------------------------------------------------------------------------
 
-_FORBIDDEN_KEYWORDS: tuple[str, ...] = (
-    "while",
-    "import",
-    "load",
-    "class",
-    "lambda",
-    "try",
-    "except",
-    "with",
-    "yield",
-    "async",
-    "await",
-    "global",
-    "nonlocal",
+_BLOCKED_ATTRIBUTES: frozenset[str] = frozenset(
+    {
+        "__class__",
+        "__subclasses__",
+        "__bases__",
+        "__mro__",
+        "__globals__",
+        "__builtins__",
+        "__import__",
+    }
 )
+
+# ---------------------------------------------------------------------------
+# Forbidden AST node types
+# ---------------------------------------------------------------------------
+
+_FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
+    ast.Import,
+    ast.ImportFrom,
+    ast.While,
+    ast.Try,
+    ast.ClassDef,
+    ast.Lambda,
+)
+
+# ---------------------------------------------------------------------------
+# Forbidden builtins
+# ---------------------------------------------------------------------------
 
 _FORBIDDEN_BUILTINS: frozenset[str] = frozenset(
     {
@@ -81,35 +96,54 @@ _FORBIDDEN_BUILTINS: frozenset[str] = frozenset(
     }
 )
 
-# Build a single regex that matches any forbidden keyword at a word boundary.
-_FORBIDDEN_PATTERN = re.compile(
-    r"\b(" + "|".join(re.escape(kw) for kw in _FORBIDDEN_KEYWORDS) + r")\b"
-)
+# Friendly names for forbidden AST nodes
+_FORBIDDEN_NODE_NAMES: dict[type, str] = {
+    ast.Import: "import",
+    ast.ImportFrom: "import",
+    ast.While: "while",
+    ast.Try: "try",
+    ast.ClassDef: "class",
+    ast.Lambda: "lambda",
+}
 
 
-def _scan_forbidden(source: str) -> tuple[str, int | None, int | None] | None:
-    """Return ``(keyword, line, col)`` of the first forbidden keyword, or *None*."""
-    for i, line in enumerate(source.splitlines(), start=1):
-        # Strip comments so that ``# while`` does not trigger.
-        code_part = line.split("#", 1)[0]
-        m = _FORBIDDEN_PATTERN.search(code_part)
-        if m:
-            return m.group(1), i, m.start() + 1
-    return None
+def _scan_ast(source: str) -> tuple[str, int | None, int | None] | None:
+    """Walk the AST and reject forbidden node types and blocked attribute access.
 
-    # Also reject forbidden builtin names used as function calls.
-    # (e.g., ``eval("code")``, ``__import__("os")``).
+    Returns ``(reason, line, col)`` on first violation, or *None* if clean.
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        # Let the actual exec handle syntax errors with better messages.
+        return None
 
+    for node in ast.walk(tree):
+        # Reject forbidden statement/expression types
+        if isinstance(node, _FORBIDDEN_NODE_TYPES):
+            name = _FORBIDDEN_NODE_NAMES.get(type(node), type(node).__name__)
+            line = getattr(node, "lineno", None)
+            col = getattr(node, "col_offset", None)
+            if col is not None:
+                col += 1  # 1-based
+            return name, line, col
 
-def _scan_forbidden_builtins(source: str) -> tuple[str, int | None, int | None] | None:
-    """Return ``(name, line, col)`` if source calls a forbidden builtin."""
-    for i, line in enumerate(source.splitlines(), start=1):
-        code_part = line.split("#", 1)[0]
-        for name in _FORBIDDEN_BUILTINS:
-            pattern = re.compile(r"\b" + re.escape(name) + r"\b")
-            m = pattern.search(code_part)
-            if m:
-                return name, i, m.start() + 1
+        # Reject access to blocked dunder attributes
+        if isinstance(node, ast.Attribute) and node.attr in _BLOCKED_ATTRIBUTES:
+            line = getattr(node, "lineno", None)
+            col = getattr(node, "col_offset", None)
+            if col is not None:
+                col += 1
+            return node.attr, line, col
+
+        # Reject forbidden builtin names used as function calls
+        if isinstance(node, ast.Name) and node.id in _FORBIDDEN_BUILTINS:
+            line = getattr(node, "lineno", None)
+            col = getattr(node, "col_offset", None)
+            if col is not None:
+                col += 1
+            return node.id, line, col
+
     return None
 
 
@@ -245,27 +279,15 @@ def _evaluate(
     debug: list[str] = []
     print_capture: list[str] = []
 
-    # --- pre-parse scan ---
-    forbidden = _scan_forbidden(source)
+    # --- AST-based pre-parse scan ---
+    forbidden = _scan_ast(source)
     if forbidden:
-        kw, line, col = forbidden
+        reason, line, col = forbidden
         return {
             "id": request_id,
             "ok": False,
             "code": "E1154",
-            "message": f"forbidden keyword '{kw}' at line {line}",
-            "line": line,
-            "col": col,
-        }
-
-    forbidden_builtin = _scan_forbidden_builtins(source)
-    if forbidden_builtin:
-        name, line, col = forbidden_builtin
-        return {
-            "id": request_id,
-            "ok": False,
-            "code": "E1154",
-            "message": f"forbidden builtin '{name}' at line {line}",
+            "message": f"forbidden construct '{reason}' at line {line}",
             "line": line,
             "col": col,
         }
@@ -274,31 +296,31 @@ def _evaluate(
     namespace: dict[str, Any] = {"__builtins__": dict(_ALLOWED_BUILTINS)}
     namespace["__builtins__"]["print"] = _make_print_fn(print_capture)
 
-    # Merge caller-provided globals (reconstruct __fn__ wrappers).
+    # Merge caller-provided globals (skip callable reconstructions).
     initial_keys: set[str] = set()
     for key, value in caller_globals.items():
-        if isinstance(value, dict) and "__fn__" in value:
-            # Re-evaluate the function source to reconstruct the callable.
-            fn_source = value["__fn__"]
-            try:
-                exec(fn_source, namespace)  # noqa: S102
-            except Exception as exc:
-                debug.append(
-                    f"warning: failed to reconstruct function from __fn__: {exc}"
-                )
-        else:
-            namespace[key] = value
+        namespace[key] = value
         initial_keys.add(key)
 
     # --- execute ---
     has_alarm = hasattr(signal, "SIGALRM")
     old_handler = None
+
+    # Set up step counter
+    _step_local.count = 0
+    _step_local.limit = _STEP_LIMIT
+
     try:
         if has_alarm:
             old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
             signal.alarm(_WALL_CLOCK_SECONDS)
 
-        exec(compile(source, "<compute>", "exec"), namespace)  # noqa: S102
+        old_trace = sys.gettrace()
+        sys.settrace(_step_trace)
+        try:
+            exec(compile(source, "<compute>", "exec"), namespace)  # noqa: S102
+        finally:
+            sys.settrace(old_trace)
 
         if has_alarm:
             signal.alarm(0)
@@ -349,14 +371,6 @@ def _evaluate(
         if key == "__builtins__":
             continue
         if not _is_serializable_binding(key, value):
-            # Serialize function definitions as __fn__ wrappers.
-            if callable(value) and hasattr(value, "__name__"):
-                # Try to extract the function source from the original source.
-                fn_name = value.__name__
-                # Look for the def in the source text.
-                fn_source = _extract_function_source(source, fn_name)
-                if fn_source is not None:
-                    bindings[key] = {"__fn__": fn_source, "name": fn_name}
             continue
         bindings[key] = _serialize_value(value, debug)
 
@@ -368,42 +382,44 @@ def _evaluate(
     }
 
 
-def _extract_function_source(source: str, fn_name: str) -> str | None:
-    """Extract the source text of a function definition from *source*."""
-    lines = source.splitlines(keepends=True)
-    start = None
-    for i, line in enumerate(lines):
-        stripped = line.lstrip()
-        if stripped.startswith(f"def {fn_name}(") or stripped.startswith(f"def {fn_name} ("):
-            start = i
-            break
-    if start is None:
-        return None
-
-    # Collect the function body (indented lines after the def).
-    result_lines = [lines[start]]
-    # Determine the indentation of the def line.
-    def_indent = len(lines[start]) - len(lines[start].lstrip())
-    for j in range(start + 1, len(lines)):
-        line = lines[j]
-        if line.strip() == "":
-            result_lines.append(line)
-            continue
-        line_indent = len(line) - len(line.lstrip())
-        if line_indent > def_indent:
-            result_lines.append(line)
-        else:
-            break
-    return "".join(result_lines).rstrip("\n")
-
-
 # ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 
 
+_STEP_LIMIT = 10**8
+_STEP_LIMIT_FASTFORWARD = 10**9
+_MEMORY_LIMIT_BYTES = 67_108_864  # 64 MB
+
+# Thread-local step counter for sys.settrace
+_step_local = threading.local()
+
+
+def _step_trace(frame: Any, event: str, arg: Any) -> Any:
+    """Trace function that counts execution steps and raises on overflow."""
+    _step_local.count += 1
+    if _step_local.count > _step_local.limit:
+        raise RuntimeError("E1153: step count exceeded")
+    return _step_trace
+
+
+def _set_memory_limit() -> None:
+    """Set process memory limit via resource.setrlimit if available."""
+    if hasattr(resource, "RLIMIT_AS"):
+        try:
+            resource.setrlimit(
+                resource.RLIMIT_AS,
+                (_MEMORY_LIMIT_BYTES, _MEMORY_LIMIT_BYTES),
+            )
+        except (ValueError, OSError):
+            # Some platforms do not support RLIMIT_AS; ignore gracefully.
+            pass
+
+
 def main() -> None:
     """Entry point for the starlark worker subprocess."""
+    _set_memory_limit()
+
     sys.stderr.write("starlark-worker ready\n")
     sys.stderr.flush()
 

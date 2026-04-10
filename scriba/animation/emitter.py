@@ -330,6 +330,8 @@ def _escape_js(text: str) -> str:
         .replace("\\", "\\\\")
         .replace("`", "\\`")
         .replace("${", "\\${")
+        .replace("</script>", r"<\/script>")
+        .replace("</style>", r"<\/style>")
     )
 
 

@@ -34,7 +34,7 @@ import warnings as _warnings_mod
 _VALID_RECOLOR_STATES = frozenset({"idle", "current", "done", "dim", "error", "good"})
 _VALID_ANNOTATE_POSITIONS = frozenset({"above", "below", "left", "right", "inside"})
 _VALID_ANNOTATE_COLORS = frozenset({"info", "warn", "good", "error", "muted"})
-_VALID_OPTION_KEYS = frozenset({"width", "height", "id", "label", "layout"})
+_VALID_OPTION_KEYS = frozenset({"width", "height", "id", "label", "layout", "grid"})
 _VALID_SUBSTORY_OPTION_KEYS = frozenset({"title", "id"})
 _MAX_SUBSTORY_DEPTH = 3
 _VALID_FF_PARAMS = frozenset({"sample_every", "seed", "label"})

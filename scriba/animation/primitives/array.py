@@ -43,6 +43,11 @@ class ArrayPrimitive:
                 detail="Array requires 'size' or 'n' parameter",
             )
         size = int(size)
+        if size > 10_000:
+            raise animation_error(
+                E1103,
+                detail=f"[E1103] Array size {size} exceeds maximum of 10,000",
+            )
 
         data: list[Any] = list(params.get("data", []))
         if data and len(data) != size:

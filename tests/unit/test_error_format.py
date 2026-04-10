@@ -144,16 +144,16 @@ class TestAnimationErrors:
     def test_frame_count_error(self) -> None:
         err = FrameCountError(count=150)
         s = str(err)
-        assert "[E1151]" in s
+        assert "[E1181]" in s
         assert "150" in s
-        assert f"{_DOCS_BASE}/E1151" in s
+        assert f"{_DOCS_BASE}/E1181" in s
 
     def test_starlark_eval_error(self) -> None:
         err = StarlarkEvalError(detail="undefined variable 'x'")
         s = str(err)
-        assert "[E1200]" in s
+        assert "[E1151]" in s
         assert "undefined variable 'x'" in s
-        assert f"{_DOCS_BASE}/E1200" in s
+        assert f"{_DOCS_BASE}/E1151" in s
 
     def test_animation_error_helper(self) -> None:
         err = animation_error("E1103", "missing required parameter 'data'")

@@ -120,6 +120,14 @@ class MatrixPrimitive:
             )
         rows = int(rows)
         cols = int(cols)
+        if rows * cols > 10_000:
+            raise animation_error(
+                E1103,
+                detail=(
+                    f"[E1103] Matrix dimensions {rows}x{cols} "
+                    f"({rows * cols} cells) exceeds maximum of 10,000"
+                ),
+            )
 
         raw_data = params.get("data", [])
         if not raw_data:

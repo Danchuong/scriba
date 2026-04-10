@@ -213,7 +213,7 @@ class TestFrameCountLimits:
 
         with pytest.raises(FrameCountError) as exc_info:
             renderer.render_block(block, ctx)
-        assert "E1151" in str(exc_info.value)
+        assert "E1181" in str(exc_info.value)
 
 
 class TestAssets:
