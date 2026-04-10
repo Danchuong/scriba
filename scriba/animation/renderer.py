@@ -269,6 +269,8 @@ class AnimationRenderer:
         starlark_host: Any | None = None,
     ) -> None:
         self._starlark_host = starlark_host
+        # Populated by _materialise; available after render_block().
+        self.last_snapshots: list[FrameSnapshot] = []
 
     # ---- Renderer protocol ----
 
@@ -311,9 +313,11 @@ class AnimationRenderer:
 
         # Produce final HTML via the emitter
         output_mode = ctx.metadata.get("output_mode", "interactive")
+        minify = ctx.metadata.get("minify", True)
         html = emit_html(
             scene_id, frames, primitives, mode=output_mode,
             render_inline_tex=ctx.render_inline_tex,
+            minify=minify,
         )
 
         # Collect CSS assets
@@ -418,9 +422,11 @@ class AnimationRenderer:
 
         total_frames = len(ir.frames)
         frame_data_list: list[FrameData] = []
+        snapshots: list[FrameSnapshot] = []
 
         for frame_ir in ir.frames:
             snap = state.apply_frame(frame_ir, starlark_host=self._starlark_host)
+            snapshots.append(snap)
 
             # Process substories for this frame
             substory_data: list[SubstoryData] | None = None
@@ -438,6 +444,7 @@ class AnimationRenderer:
             )
             frame_data_list.append(fd)
 
+        self.last_snapshots = snapshots
         return frame_data_list
 
     def _materialise_substory(
@@ -576,9 +583,11 @@ class DiagramRenderer:
         snap = state.snapshot(index=1, narration=None)
 
         frame = _snapshot_to_frame_data(snap, 1, scene_id, ctx)
+        minify = ctx.metadata.get("minify", True)
         html = emit_html(
             scene_id, [frame], primitives, mode="diagram",
             render_inline_tex=ctx.render_inline_tex,
+            minify=minify,
         )
 
         return RenderArtifact(

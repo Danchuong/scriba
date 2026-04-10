@@ -10,6 +10,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import webbrowser
 from pathlib import Path
@@ -230,11 +231,48 @@ svg text {{
 """
 
 
+def _snapshot_to_dict(snap: object) -> dict:
+    """Convert a FrameSnapshot to a plain dict for JSON serialisation."""
+    states: dict[str, str] = {}
+    for _shape_name, targets in snap.shape_states.items():
+        for target_key, ts in targets.items():
+            parts = [ts.state]
+            if ts.value is not None:
+                parts.append(f"v={ts.value}")
+            if ts.label is not None:
+                parts.append(f"l={ts.label}")
+            states[target_key] = ", ".join(parts)
+
+    annotations = [
+        {"target": a.target, "text": a.text, "color": a.color}
+        for a in snap.annotations
+    ]
+
+    # Convert bindings values to JSON-safe types
+    safe_bindings: dict[str, object] = {}
+    for k, v in snap.bindings.items():
+        try:
+            json.dumps(v)
+            safe_bindings[k] = v
+        except (TypeError, ValueError):
+            safe_bindings[k] = repr(v)
+
+    return {
+        "step": snap.index,
+        "states": states,
+        "annotations": annotations,
+        "narrate": snap.narration or "",
+        "bindings": safe_bindings,
+    }
+
+
 def render_file(
     input_path: Path,
     output_path: Path,
     *,
     output_mode: str = "interactive",
+    dump_frames: bool = False,
+    minify: bool = True,
 ) -> None:
     source = input_path.read_text()
     title = input_path.stem
@@ -254,7 +292,7 @@ def render_file(
     ctx = RenderContext(
         resource_resolver=lambda name: f"/static/{name}",
         theme="light",
-        metadata={"output_mode": output_mode},
+        metadata={"output_mode": output_mode, "minify": minify},
         render_inline_tex=inline_tex_cb,
     )
 
@@ -266,15 +304,21 @@ def render_file(
         sys.exit(1)
 
     html_parts = []
+    all_snapshots = []
     for block in anim_blocks:
         artifact = anim_renderer.render_block(block, ctx)
         html_parts.append(artifact.html)
+        all_snapshots.extend(anim_renderer.last_snapshots)
     for block in diag_blocks:
         artifact = diag_renderer.render_block(block, ctx)
         html_parts.append(artifact.html)
 
     starlark_host.close()
     worker_pool.close()
+
+    if dump_frames:
+        dump = {"frames": [_snapshot_to_dict(s) for s in all_snapshots]}
+        print(json.dumps(dump, indent=2))
 
     body = "\n\n".join(html_parts)
 
@@ -298,6 +342,16 @@ def main():
         action="store_true",
         help="Use legacy filmstrip mode instead of interactive widget",
     )
+    parser.add_argument(
+        "--dump-frames",
+        action="store_true",
+        help="Print a JSON summary of each frame's state to stdout for debugging",
+    )
+    parser.add_argument(
+        "--no-minify",
+        action="store_true",
+        help="Disable HTML minification (useful for debugging output)",
+    )
     args = parser.parse_args()
 
     if not args.input.exists():
@@ -306,7 +360,12 @@ def main():
 
     output = args.output or args.input.with_suffix(".html")
     output_mode = "static" if args.static else "interactive"
-    render_file(args.input, output, output_mode=output_mode)
+    render_file(
+        args.input, output,
+        output_mode=output_mode,
+        dump_frames=args.dump_frames,
+        minify=not args.no_minify,
+    )
 
     if args.open:
         webbrowser.open(f"file://{output.resolve()}")

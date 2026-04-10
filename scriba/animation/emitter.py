@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import html as _html
+import re as _re
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -646,6 +647,51 @@ def emit_interactive_html(
 
 
 # ---------------------------------------------------------------------------
+# HTML minification
+# ---------------------------------------------------------------------------
+
+
+def _minify_html(html: str) -> str:
+    """Basic HTML minification without external dependencies.
+
+    Removes HTML comments (except conditional comments), collapses
+    whitespace between tags, and strips leading whitespace per line.
+    Content inside ``<pre>``, ``<script>``, and ``<style>`` tags is
+    preserved verbatim.
+    """
+    # Extract preserved blocks (<pre>, <script>, <style>) and replace
+    # with placeholders so minification doesn't touch their contents.
+    preserved: list[str] = []
+
+    def _stash(m: _re.Match[str]) -> str:
+        idx = len(preserved)
+        preserved.append(m.group(0))
+        return f"\x00PRESERVE{idx}\x00"
+
+    html = _re.sub(
+        r"<(pre|script|style)\b[^>]*>.*?</\1>",
+        _stash,
+        html,
+        flags=_re.DOTALL | _re.IGNORECASE,
+    )
+
+    # Remove HTML comments (but keep conditional comments <!--[...])
+    html = _re.sub(r"<!--(?!\[).*?-->", "", html, flags=_re.DOTALL)
+    # Collapse whitespace between tags
+    html = _re.sub(r">\s+<", "><", html)
+    # Remove leading whitespace per line
+    html = _re.sub(r"^\s+", "", html, flags=_re.MULTILINE)
+
+    html = html.strip()
+
+    # Restore preserved blocks
+    for idx, block in enumerate(preserved):
+        html = html.replace(f"\x00PRESERVE{idx}\x00", block)
+
+    return html
+
+
+# ---------------------------------------------------------------------------
 # Unified entry point
 # ---------------------------------------------------------------------------
 
@@ -657,6 +703,7 @@ def emit_html(
     mode: str = "interactive",
     label: str = "",
     render_inline_tex: Callable[[str], str] | None = None,
+    minify: bool = True,
 ) -> str:
     """Produce HTML for an animation scene.
 
@@ -667,19 +714,26 @@ def emit_html(
         ``"static"`` produces the legacy filmstrip ``<figure>``.
     render_inline_tex:
         Optional callback that renders a bare TeX math fragment to HTML.
+    minify:
+        When ``True`` (default), apply basic HTML minification to the
+        output to reduce file size.
     """
     if mode == "static":
-        return emit_animation_html(
+        result = emit_animation_html(
             scene_id, frames, primitives, render_inline_tex=render_inline_tex,
         )
-    if mode == "diagram":
-        return emit_diagram_html(
+    elif mode == "diagram":
+        result = emit_diagram_html(
             scene_id, frames, primitives, render_inline_tex=render_inline_tex,
         )
-    return emit_interactive_html(
-        scene_id, frames, primitives, label=label,
-        render_inline_tex=render_inline_tex,
-    )
+    else:
+        result = emit_interactive_html(
+            scene_id, frames, primitives, label=label,
+            render_inline_tex=render_inline_tex,
+        )
+    if minify:
+        result = _minify_html(result)
+    return result
 
 
 # ---------------------------------------------------------------------------

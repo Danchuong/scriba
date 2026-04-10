@@ -100,7 +100,7 @@
 
   --scriba-state-error-fill:       #D55E00;
   --scriba-state-error-stroke:     #D55E00;
-  --scriba-state-error-text:       #ffffff;
+  --scriba-state-error-text:       #ffffff; /* 3.67:1 on #D55E00 — passes WCAG AA large text (cell/node font is 700 14px) */
 
   --scriba-state-good-fill:        #56B4E9;
   --scriba-state-good-stroke:      #3a95c9;
