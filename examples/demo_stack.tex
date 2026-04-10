@@ -1,11 +1,29 @@
-\begin{animation}[id="stack", label="Stack Operations"]
-\shape{s}{Stack}{items=["A","B","C"]}
+\begin{animation}[id="stack", label="Stack Push and Pop"]
+\shape{s}{Stack}{items=["A","B"]}
 
 \step
+\recolor{s.item[1]}{state=current}
+\narrate{Stack has 2 items: A (bottom), B (top).}
+
+\step
+\apply{s}{push="C"}
+\recolor{s.item[1]}{state=idle}
 \recolor{s.item[2]}{state=current}
-\narrate{Stack has 3 items. Top is C.}
+\narrate{Push C. Stack: A, B, C. New top is C.}
 
 \step
-\recolor{s.item[2]}{state=done}
-\narrate{Item C processed. Stack: A, B, C.}
+\apply{s}{push="D"}
+\recolor{s.item[2]}{state=idle}
+\recolor{s.item[3]}{state=current}
+\narrate{Push D. Stack: A, B, C, D. New top is D.}
+
+\step
+\apply{s}{pop=1}
+\recolor{s.item[2]}{state=current}
+\narrate{Pop D. Stack: A, B, C. Top is C again.}
+
+\step
+\apply{s}{pop=2}
+\recolor{s.item[0]}{state=done}
+\narrate{Pop C and B. Only A remains. Stack complete.}
 \end{animation}

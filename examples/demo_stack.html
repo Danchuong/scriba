@@ -169,10 +169,13 @@ svg text {
 <div class="scriba-widget" id="stack">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">Step 1 / 2</span>
+    <span class="scriba-step-counter">Step 1 / 5</span>
     <button class="scriba-btn-next">Next</button>
     <div class="scriba-progress">
       <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
       <div class="scriba-dot"></div>
     </div>
   </div>
@@ -183,16 +186,31 @@ svg text {
 (function(){
   var W=document.getElementById('stack');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 128 164" role="img" aria-labelledby="stack-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="s.item[1]" class="scriba-state-current"><rect x="8" y="8" width="80" height="36" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#ffffff">B</text></g></g>
+</g>
+</svg>`,narration:`Stack has 2 items: A (bottom), B (top).`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="88" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="106" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="s.item[2]" class="scriba-state-current"><rect x="8" y="8" width="80" height="36" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#ffffff">C</text></g></g>
 </g>
-</svg>`,narration:`Stack has 3 items. Top is C.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 128 164" role="img" aria-labelledby="stack-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+</svg>`,narration:`Push C. Stack: A, B, C. New top is C.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
-<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="88" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="106" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="s.item[2]" class="scriba-state-done"><rect x="8" y="8" width="80" height="36" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#ffffff">C</text></g></g>
+<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="128" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="146" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="88" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="106" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="s.item[2]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" text-anchor="middle" dominant-baseline="central" fill="#212529">C</text></g><g data-target="s.item[3]" class="scriba-state-current"><rect x="8" y="8" width="80" height="36" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#ffffff">D</text></g></g>
 </g>
-</svg>`,narration:`Item C processed. Stack: A, B, C.`}
+</svg>`,narration:`Push D. Stack: A, B, C, D. New top is D.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="88" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="106" text-anchor="middle" dominant-baseline="central" fill="#212529">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" text-anchor="middle" dominant-baseline="central" fill="#212529">B</text></g><g data-target="s.item[2]" class="scriba-state-current"><rect x="8" y="8" width="80" height="36" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#ffffff">C</text></g></g>
+</g>
+</svg>`,narration:`Pop D. Stack: A, B, C. Top is C again.`},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="8" width="80" height="36" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#ffffff">A</text></g></g>
+</g>
+</svg>`,narration:`Pop C and B. Only A remains. Stack complete.`}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
