@@ -25,11 +25,11 @@ from pathlib import Path
 from typing import Any
 
 from scriba.animation.detector import detect_animation_blocks
-from scriba.animation.emitter import FrameData, emit_animation_html, emit_html, scene_id_from_source
+from scriba.animation.emitter import FrameData, SubstoryData, emit_animation_html, emit_html, scene_id_from_source
 from scriba.animation.errors import FrameCountError
 from scriba.animation.extensions.hl_macro import process_hl_macros
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
-from scriba.animation.parser.ast import AnimationIR, ShapeCommand
+from scriba.animation.parser.ast import AnimationIR, FrameIR as FrameIRNode, ShapeCommand, SubstoryBlock
 from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.primitives import (
     ArrayPrimitive,
@@ -37,7 +37,9 @@ from scriba.animation.primitives import (
     Graph,
     GridPrimitive,
     MatrixPrimitive,
+    MetricPlot,
     NumberLinePrimitive,
+    Plane2D,
     Stack,
     Tree,
 )
@@ -64,7 +66,9 @@ PRIMITIVE_CATALOG: dict[str, Any] = {
     "Grid": GridPrimitive,
     "Heatmap": MatrixPrimitive,
     "Matrix": MatrixPrimitive,
+    "MetricPlot": MetricPlot,
     "NumberLine": NumberLinePrimitive,
+    "Plane2D": Plane2D,
     "Stack": Stack,
     "Tree": Tree,
 }
@@ -176,7 +180,7 @@ def _instantiate_primitive(
         )
     resolved_params = _resolve_params(shape.params, bindings)
 
-    if shape.type_name in ("Graph", "Tree", "Stack"):
+    if shape.type_name in ("Graph", "Tree", "Stack", "Plane2D", "MetricPlot"):
         return factory_cls(shape.name, resolved_params)
 
     factory = factory_cls()
@@ -188,6 +192,7 @@ def _snapshot_to_frame_data(
     total_frames: int,
     scene_id: str,
     ctx: RenderContext,
+    substories: list[SubstoryData] | None = None,
 ) -> FrameData:
     """Convert a FrameSnapshot into a FrameData for the emitter."""
     shape_states: dict[str, dict[str, dict]] = {}
@@ -232,6 +237,7 @@ def _snapshot_to_frame_data(
         narration_html=narration_html,
         shape_states=shape_states,
         annotations=annotations,
+        substories=substories,
     )
 
 
@@ -280,25 +286,21 @@ class AnimationRenderer:
         # Instantiate primitives from shape declarations
         primitives = self._instantiate_primitives(ir)
 
-        # Run the scene state machine
-        snapshots = self._materialise(ir)
+        # Run the scene state machine (includes substory processing)
+        frames = self._materialise(ir, ctx, scene_id)
 
-        frame_count = len(snapshots)
-        if frame_count > _FRAME_ERROR_THRESHOLD:
-            raise FrameCountError(frame_count)
-        if frame_count > _FRAME_WARN_THRESHOLD:
+        # Count all frames including substory frames for budget
+        frame_count = len(frames)
+        total_with_substories = frame_count + self._count_substory_frames(frames)
+        if total_with_substories > _FRAME_ERROR_THRESHOLD:
+            raise FrameCountError(total_with_substories)
+        if total_with_substories > _FRAME_WARN_THRESHOLD:
             logger.warning(
                 "animation %s has %d frames (>%d); consider splitting",
                 scene_id,
-                frame_count,
+                total_with_substories,
                 _FRAME_WARN_THRESHOLD,
             )
-
-        # Build FrameData list for the emitter
-        frames = [
-            _snapshot_to_frame_data(snap, frame_count, scene_id, ctx)
-            for snap in snapshots
-        ]
 
         # Produce final HTML via the emitter
         output_mode = ctx.metadata.get("output_mode", "interactive")
@@ -345,6 +347,17 @@ class AnimationRenderer:
         parse_input = opts_str + "\n" + body if opts_str else body
         return SceneParser().parse(parse_input)
 
+    @staticmethod
+    def _count_substory_frames(frames: list[FrameData]) -> int:
+        """Count total substory frames recursively."""
+        count = 0
+        for frame in frames:
+            if frame.substories:
+                for sub in frame.substories:
+                    count += len(sub.frames)
+                    count += AnimationRenderer._count_substory_frames(sub.frames)
+        return count
+
     def _instantiate_primitives(self, ir: AnimationIR) -> dict[str, Any]:
         """Create primitive instances from shape declarations.
 
@@ -364,8 +377,10 @@ class AnimationRenderer:
             )
         return primitives
 
-    def _materialise(self, ir: AnimationIR) -> list[FrameSnapshot]:
-        """Run the delta state machine and collect per-frame snapshots."""
+    def _materialise(
+        self, ir: AnimationIR, ctx: RenderContext, scene_id: str,
+    ) -> list[FrameData]:
+        """Run the delta state machine, process substories, return FrameData."""
         state = SceneState()
         state.apply_prelude(
             shapes=ir.shapes,
@@ -374,12 +389,66 @@ class AnimationRenderer:
             starlark_host=self._starlark_host,
         )
 
-        snapshots: list[FrameSnapshot] = []
-        for frame in ir.frames:
-            snap = state.apply_frame(frame, starlark_host=self._starlark_host)
-            snapshots.append(snap)
+        total_frames = len(ir.frames)
+        frame_data_list: list[FrameData] = []
+        for frame_ir in ir.frames:
+            snap = state.apply_frame(frame_ir, starlark_host=self._starlark_host)
 
-        return snapshots
+            # Process substories for this frame
+            substory_data: list[SubstoryData] | None = None
+            if frame_ir.substories:
+                substory_data = []
+                for sub_block in frame_ir.substories:
+                    sub_data = self._materialise_substory(
+                        state, sub_block, ctx, scene_id, depth=1,
+                    )
+                    substory_data.append(sub_data)
+
+            fd = _snapshot_to_frame_data(
+                snap, total_frames, scene_id, ctx,
+                substories=substory_data,
+            )
+            frame_data_list.append(fd)
+
+        return frame_data_list
+
+    def _materialise_substory(
+        self,
+        state: SceneState,
+        substory: SubstoryBlock,
+        ctx: RenderContext,
+        scene_id: str,
+        depth: int,
+    ) -> SubstoryData:
+        """Materialise a substory block into SubstoryData."""
+        sub_snapshots = state.apply_substory(
+            substory, starlark_host=self._starlark_host,
+        )
+        sub_total = len(sub_snapshots)
+        sub_frames: list[FrameData] = []
+        for i, sub_snap in enumerate(sub_snapshots):
+            # Check for nested substories in substory frames
+            nested_data: list[SubstoryData] | None = None
+            if i < len(substory.frames) and substory.frames[i].substories:
+                nested_data = []
+                for nested_block in substory.frames[i].substories:
+                    nd = self._materialise_substory(
+                        state, nested_block, ctx, scene_id, depth=depth + 1,
+                    )
+                    nested_data.append(nd)
+
+            fd = _snapshot_to_frame_data(
+                sub_snap, sub_total, scene_id, ctx,
+                substories=nested_data,
+            )
+            sub_frames.append(fd)
+
+        return SubstoryData(
+            title=substory.title,
+            substory_id=substory.substory_id or f"substory{depth}",
+            depth=depth,
+            frames=sub_frames,
+        )
 
 
 # ============================================================================

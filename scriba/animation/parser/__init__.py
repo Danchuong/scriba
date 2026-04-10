@@ -12,6 +12,7 @@ from .ast import (
     Command,
     ComputeCommand,
     EdgeAccessor,
+    FastForwardCommand,
     FrameIR,
     HighlightCommand,
     InterpolationRef,
@@ -23,6 +24,7 @@ from .ast import (
     Selector,
     ShapeCommand,
     StepCommand,
+    SubstoryBlock,
 )
 from .grammar import SceneParser
 from .lexer import Lexer, Token, TokenKind
@@ -38,6 +40,7 @@ __all__ = [
     "Command",
     "ComputeCommand",
     "EdgeAccessor",
+    "FastForwardCommand",
     "FrameIR",
     "HighlightCommand",
     "InterpolationRef",
@@ -51,6 +54,7 @@ __all__ = [
     "Selector",
     "ShapeCommand",
     "StepCommand",
+    "SubstoryBlock",
     "Token",
     "TokenKind",
     "parse_selector",

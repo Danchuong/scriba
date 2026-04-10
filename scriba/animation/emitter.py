@@ -17,11 +17,13 @@ from scriba.animation.primitives.base import BoundingBox
 
 __all__ = [
     "FrameData",
+    "SubstoryData",
     "compute_viewbox",
     "emit_animation_html",
     "emit_html",
     "emit_interactive_html",
     "emit_shared_defs",
+    "emit_substory_html",
     "scene_id_from_source",
 ]
 
@@ -39,6 +41,16 @@ _PRIMITIVE_GAP = 16
 
 
 @dataclass(frozen=True, slots=True)
+class SubstoryData:
+    """Nested substory rendering data."""
+
+    title: str
+    substory_id: str
+    depth: int
+    frames: list["FrameData"]
+
+
+@dataclass(frozen=True, slots=True)
 class FrameData:
     """Per-frame rendering data consumed by the emitter."""
 
@@ -48,6 +60,7 @@ class FrameData:
     shape_states: dict[str, dict[str, dict]]  # shape_name -> target -> state
     annotations: list[dict]  # annotation data
     label: str | None = None
+    substories: list[SubstoryData] | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -365,6 +378,13 @@ def emit_animation_html(
 
         svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox)
 
+        substory_html = ""
+        if frame.substories:
+            for sub in frame.substories:
+                substory_html += emit_substory_html(
+                    scene_id, frame_id, sub, primitives, viewbox,
+                )
+
         frame_items.append(
             f'    <li class="scriba-frame" id="{frame_id}" '
             f'data-step="{step}">\n'
@@ -378,6 +398,7 @@ def emit_animation_html(
             f"      </div>\n"
             f'      <p class="scriba-narration" id="{narration_id}">'
             f"{frame.narration_html}</p>\n"
+            f"{substory_html}"
             f"    </li>"
         )
 
@@ -393,6 +414,72 @@ def emit_animation_html(
         f"{frames_html}\n"
         f"  </ol>\n"
         f"</figure>"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Substory HTML
+# ---------------------------------------------------------------------------
+
+
+def emit_substory_html(
+    scene_id: str,
+    parent_frame_id: str,
+    substory: SubstoryData,
+    primitives: dict[str, Any],
+    viewbox: str,
+) -> str:
+    """Produce the ``<section class="scriba-substory">`` HTML for a substory."""
+    depth = substory.depth
+    sub_id = substory.substory_id
+    title = substory.title
+    sub_frame_count = len(substory.frames)
+
+    sub_frame_items: list[str] = []
+    for sub_frame in substory.frames:
+        sub_step = sub_frame.step_number
+        sub_frame_id = f"{parent_frame_id}-substory-{sub_id}-frame-{sub_step}"
+        narration_id = f"{sub_frame_id}-narration"
+
+        svg_html = _emit_frame_svg(sub_frame, primitives, scene_id, viewbox)
+
+        # Handle nested substories
+        nested_substory_html = ""
+        if sub_frame.substories:
+            for nested_sub in sub_frame.substories:
+                nested_substory_html += emit_substory_html(
+                    scene_id, sub_frame_id, nested_sub, primitives, viewbox,
+                )
+
+        sub_frame_items.append(
+            f'        <li class="scriba-frame scriba-substory-frame"\n'
+            f'            id="{sub_frame_id}"\n'
+            f'            data-step="{sub_step}"\n'
+            f'            data-substory-depth="{depth}">\n'
+            f'          <header class="scriba-frame-header">\n'
+            f'            <span class="scriba-step-label">'
+            f"Sub-step {sub_step} / {sub_frame_count}</span>\n"
+            f"          </header>\n"
+            f'          <div class="scriba-stage">\n'
+            f"            {svg_html}\n"
+            f"          </div>\n"
+            f'          <p class="scriba-narration" id="{narration_id}">'
+            f"{sub_frame.narration_html}</p>\n"
+            f"{nested_substory_html}"
+            f"        </li>"
+        )
+
+    sub_frames_html = "\n".join(sub_frame_items)
+
+    return (
+        f'      <section class="scriba-substory" role="group"\n'
+        f'               aria-label="Sub-computation: {_escape(title)}"\n'
+        f'               data-substory-id="{_escape(sub_id)}"\n'
+        f'               data-substory-depth="{depth}">\n'
+        f'        <ol class="scriba-substory-frames">\n'
+        f"{sub_frames_html}\n"
+        f"        </ol>\n"
+        f"      </section>\n"
     )
 
 

@@ -11,7 +11,9 @@ from scriba.animation.primitives.dptable import DPTablePrimitive
 from scriba.animation.primitives.graph import Graph
 from scriba.animation.primitives.grid import GridPrimitive
 from scriba.animation.primitives.matrix import HeatmapPrimitive, MatrixPrimitive
+from scriba.animation.primitives.metricplot import MetricPlot
 from scriba.animation.primitives.numberline import NumberLinePrimitive
+from scriba.animation.primitives.plane2d import Plane2D
 from scriba.animation.primitives.stack import Stack
 from scriba.animation.primitives.tree import Tree
 
@@ -23,7 +25,9 @@ __all__ = [
     "GridPrimitive",
     "HeatmapPrimitive",
     "MatrixPrimitive",
+    "MetricPlot",
     "NumberLinePrimitive",
+    "Plane2D",
     "Primitive",
     "PrimitiveInstance",
     "Stack",

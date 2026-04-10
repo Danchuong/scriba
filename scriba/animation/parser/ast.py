@@ -205,6 +205,19 @@ class AnnotateCommand:
     arrow_from: Selector | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class FastForwardCommand:
+    """``\\fastforward{total_iters}{sample_every=K, seed=S}``."""
+
+    line: int
+    col: int
+    total_iters: int
+    sample_every: int
+    seed: int
+    label: str = "ff"
+    narrate_template: str | None = None
+
+
 # ---------------------------------------------------------------------------
 # Union aliases
 # ---------------------------------------------------------------------------
@@ -217,7 +230,7 @@ MutationCommand = Union[
     AnnotateCommand,
 ]
 
-# All 8 inner commands.
+# All inner commands (8 base + fastforward + substory).
 Command = Union[
     ShapeCommand,
     ComputeCommand,
@@ -227,6 +240,8 @@ Command = Union[
     HighlightCommand,
     RecolorCommand,
     AnnotateCommand,
+    FastForwardCommand,
+    "SubstoryBlock",
 ]
 
 # ---------------------------------------------------------------------------
@@ -262,6 +277,19 @@ class DiagramOptions:
 
 
 @dataclass(frozen=True, slots=True)
+class SubstoryBlock:
+    """``\\substory[opts]...\\endsubstory`` — nested frame sequence."""
+
+    line: int
+    col: int
+    title: str = "Sub-computation"
+    substory_id: str | None = None
+    shapes: tuple[ShapeCommand, ...] = ()
+    compute: tuple[ComputeCommand, ...] = ()
+    frames: tuple["FrameIR", ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
 class FrameIR:
     """One ``\\step`` block inside an animation."""
 
@@ -269,6 +297,7 @@ class FrameIR:
     commands: tuple[MutationCommand, ...]
     compute: tuple[ComputeCommand, ...] = ()
     narrate_body: str | None = None
+    substories: tuple[SubstoryBlock, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

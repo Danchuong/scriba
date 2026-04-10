@@ -13,6 +13,7 @@ from .ast import (
     AnnotateCommand,
     ApplyCommand,
     ComputeCommand,
+    FastForwardCommand,
     FrameIR,
     HighlightCommand,
     InterpolationRef,
@@ -23,14 +24,22 @@ from .ast import (
     Selector,
     ShapeCommand,
     StepCommand,
+    SubstoryBlock,
 )
 from .lexer import Lexer, Token, TokenKind
 from .selectors import parse_selector
+
+import warnings as _warnings_mod
 
 _VALID_RECOLOR_STATES = frozenset({"idle", "current", "done", "dim", "error", "good"})
 _VALID_ANNOTATE_POSITIONS = frozenset({"above", "below", "left", "right", "inside"})
 _VALID_ANNOTATE_COLORS = frozenset({"info", "warn", "good", "error", "muted"})
 _VALID_OPTION_KEYS = frozenset({"width", "height", "id", "label", "layout"})
+_VALID_SUBSTORY_OPTION_KEYS = frozenset({"title", "id"})
+_MAX_SUBSTORY_DEPTH = 3
+_VALID_FF_PARAMS = frozenset({"sample_every", "seed", "label"})
+_MAX_TOTAL_ITERS = 10**6
+_MAX_FF_FRAMES = 100
 
 
 class SceneParser:
@@ -57,6 +66,8 @@ class SceneParser:
         self._source = source
         self._lexer = lexer
         self._allow_highlight_in_prelude = allow_highlight_in_prelude
+        self._substory_depth = 0
+        self._substory_counter = 0
 
         options = self._try_parse_options()
         shapes: list[ShapeCommand] = []
@@ -69,6 +80,7 @@ class SceneParser:
         frame_compute: list[ComputeCommand] = []
         frame_narrate: str | None = None
         frame_narrate_seen = False
+        frame_substories: list[SubstoryBlock] = []
 
         while not self._at_end():
             self._skip_newlines()
@@ -104,6 +116,7 @@ class SceneParser:
                                 commands=tuple(frame_commands),
                                 compute=tuple(frame_compute),
                                 narrate_body=frame_narrate,
+                                substories=tuple(frame_substories),
                             ),
                         )
                     in_prelude = False
@@ -113,6 +126,7 @@ class SceneParser:
                     frame_compute = []
                     frame_narrate = None
                     frame_narrate_seen = False
+                    frame_substories = []
                     self._check_step_trailing(step_tok.line)
 
                 elif cmd_name == "narrate":
@@ -166,6 +180,57 @@ class SceneParser:
                     else:
                         frame_commands.append(cmd)
 
+                elif cmd_name == "substory":
+                    if in_prelude:
+                        raise ValidationError(
+                            f"E1362: \\substory must be inside a \\step "
+                            f"block (line {tok.line}, col {tok.col})",
+                            position=tok.col,
+                        )
+                    block = self._parse_substory()
+                    frame_substories.append(block)
+
+                elif cmd_name == "endsubstory":
+                    raise ValidationError(
+                        f"E1365: \\endsubstory without matching "
+                        f"\\substory (line {tok.line}, col {tok.col})",
+                        position=tok.col,
+                    )
+
+                elif cmd_name == "fastforward":
+                    if in_prelude:
+                        raise ValidationError(
+                            f"E1345: \\fastforward must appear after "
+                            f"the first \\step, not in the prelude "
+                            f"(line {tok.line}, col {tok.col})",
+                            position=tok.col,
+                        )
+                    # Close the current frame before expanding
+                    frames.append(
+                        FrameIR(
+                            line=frame_line,
+                            commands=tuple(frame_commands),
+                            compute=tuple(frame_compute),
+                            narrate_body=frame_narrate,
+                            substories=tuple(frame_substories),
+                        ),
+                    )
+                    ff_cmd = self._parse_fastforward()
+                    from scriba.animation.extensions.fastforward import (
+                        expand_fastforward,
+                    )
+                    ff_frames = expand_fastforward(ff_cmd)
+                    frames.extend(ff_frames)
+                    # Reset frame state — next \step will start fresh
+                    frame_line = ff_cmd.line
+                    frame_commands = []
+                    frame_compute = []
+                    frame_narrate = None
+                    frame_narrate_seen = False
+                    frame_substories = []
+                    # Mark that we need a new \step to open the next frame
+                    in_prelude = True
+
                 else:
                     raise ValidationError(
                         f"E1006: unknown command \\{cmd_name} "
@@ -182,6 +247,7 @@ class SceneParser:
                     commands=tuple(frame_commands),
                     compute=tuple(frame_compute),
                     narrate_body=frame_narrate,
+                    substories=tuple(frame_substories),
                 ),
             )
 
@@ -308,6 +374,354 @@ class SceneParser:
             position=position, color=color, arrow=arrow,
             ephemeral=ephemeral, arrow_from=arrow_from,
         )
+
+    def _parse_fastforward(self) -> FastForwardCommand:
+        """Parse ``\\fastforward{total_iters}{sample_every=K, seed=S}``."""
+        tok = self._advance()  # consume \fastforward token
+        line, col = tok.line, tok.col
+
+        # First brace arg: total_iters
+        total_iters_str = self._read_brace_arg(tok).strip()
+        try:
+            total_iters = int(total_iters_str)
+        except ValueError:
+            raise ValidationError(
+                f"E1346: total_iters must be a positive integer, "
+                f"got {total_iters_str!r} (line {line}, col {col})",
+                position=col,
+            )
+
+        if total_iters <= 0:
+            raise ValidationError(
+                f"E1346: total_iters must be a positive integer, "
+                f"got {total_iters} (line {line}, col {col})",
+                position=col,
+            )
+
+        if total_iters > _MAX_TOTAL_ITERS:
+            raise ValidationError(
+                f"E1340: total_iters exceeds maximum of {_MAX_TOTAL_ITERS}, "
+                f"got {total_iters} (line {line}, col {col})",
+                position=col,
+            )
+
+        # Second brace arg: key=value params
+        params = self._read_param_brace()
+
+        # Extract sample_every (required)
+        sample_every_raw = params.get("sample_every")
+        if sample_every_raw is None:
+            raise ValidationError(
+                f"E1347: sample_every parameter is required "
+                f"(line {line}, col {col})",
+                position=col,
+            )
+        sample_every = int(sample_every_raw)
+        if sample_every <= 0:
+            raise ValidationError(
+                f"E1347: sample_every must be a positive integer, "
+                f"got {sample_every} (line {line}, col {col})",
+                position=col,
+            )
+
+        # Extract seed (required)
+        seed_raw = params.get("seed")
+        if seed_raw is None:
+            raise ValidationError(
+                f"E1342: seed parameter is required for deterministic "
+                f"builds (line {line}, col {col})",
+                position=col,
+            )
+        seed = int(seed_raw)
+
+        # Extract optional label
+        label = str(params.get("label", "ff"))
+
+        # Validate N = floor(total_iters / sample_every)
+        n_frames = total_iters // sample_every
+        if n_frames == 0:
+            raise ValidationError(
+                f"E1346: total_iters ({total_iters}) < sample_every "
+                f"({sample_every}) produces 0 frames "
+                f"(line {line}, col {col})",
+                position=col,
+            )
+        if n_frames > _MAX_FF_FRAMES:
+            raise ValidationError(
+                f"E1341: N = floor({total_iters}/{sample_every}) = "
+                f"{n_frames} exceeds maximum of {_MAX_FF_FRAMES} frames "
+                f"(line {line}, col {col})",
+                position=col,
+            )
+
+        # Optionally parse a following \narrate{...} as the template
+        narrate_template: str | None = None
+        self._skip_newlines()
+        if not self._at_end() and self._peek().kind == TokenKind.BACKSLASH_CMD:
+            if self._peek().value == "narrate":
+                narr = self._parse_narrate()
+                narrate_template = narr.body
+
+        # Warn if N == 1
+        if n_frames == 1:
+            import warnings
+            warnings.warn(
+                f"E1348: N=1 sampled frame from \\fastforward; "
+                f"consider using \\step instead "
+                f"(line {line}, col {col})",
+                stacklevel=2,
+            )
+
+        return FastForwardCommand(
+            line=line,
+            col=col,
+            total_iters=total_iters,
+            sample_every=sample_every,
+            seed=seed,
+            label=label,
+            narrate_template=narrate_template,
+        )
+
+    def _parse_substory(self) -> SubstoryBlock:
+        """Parse ``\\substory[opts]...\\endsubstory`` block."""
+        tok = self._advance()  # consume \substory
+        substory_line = tok.line
+        substory_col = tok.col
+
+        # Check nesting depth
+        self._substory_depth += 1
+        if self._substory_depth > _MAX_SUBSTORY_DEPTH:
+            raise ValidationError(
+                f"E1360: substory nesting depth exceeds maximum "
+                f"of {_MAX_SUBSTORY_DEPTH} "
+                f"(line {tok.line}, col {tok.col})",
+                position=tok.col,
+            )
+
+        # Check for trailing text on same line as \substory
+        self._check_substory_trailing(tok.line, "substory")
+
+        # Increment global substory counter for auto-ID
+        self._substory_counter += 1
+
+        # Parse optional [title="...", id="..."]
+        title = "Sub-computation"
+        substory_id: str | None = None
+        self._skip_newlines()
+        if not self._at_end() and self._peek().kind == TokenKind.LBRACKET:
+            self._advance()  # consume [
+            while not self._at_end() and self._peek().kind != TokenKind.RBRACKET:
+                self._skip_newlines()
+                if self._at_end() or self._peek().kind == TokenKind.RBRACKET:
+                    break
+                key_tok = self._expect(TokenKind.IDENT)
+                self._expect(TokenKind.EQUALS)
+                val_tok = self._advance()
+                key = key_tok.value
+                if key not in _VALID_SUBSTORY_OPTION_KEYS:
+                    raise ValidationError(
+                        f"E1004: unknown substory option key {key!r} "
+                        f"(line {key_tok.line}, col {key_tok.col})",
+                        position=key_tok.col,
+                    )
+                if key == "title":
+                    title = val_tok.value
+                elif key == "id":
+                    substory_id = val_tok.value
+                self._skip_newlines()
+                if not self._at_end() and self._peek().kind == TokenKind.COMMA:
+                    self._advance()
+            if not self._at_end() and self._peek().kind == TokenKind.RBRACKET:
+                self._advance()
+
+        if substory_id is None:
+            substory_id = f"substory{self._substory_counter}"
+
+        # Parse substory body: optional \shape and \compute, then \step blocks
+        sub_shapes: list[ShapeCommand] = []
+        sub_compute: list[ComputeCommand] = []
+        sub_frames: list[FrameIR] = []
+        sub_in_prelude = True
+        sub_frame_line = 0
+        sub_frame_commands: list[Command] = []
+        sub_frame_compute: list[ComputeCommand] = []
+        sub_frame_narrate: str | None = None
+        sub_frame_narrate_seen = False
+        sub_frame_substories: list[SubstoryBlock] = []
+
+        while not self._at_end():
+            self._skip_newlines()
+            if self._at_end():
+                break
+
+            inner_tok = self._peek()
+
+            if inner_tok.kind == TokenKind.BACKSLASH_CMD:
+                inner_cmd = inner_tok.value
+
+                if inner_cmd == "endsubstory":
+                    # Check for trailing text on same line
+                    end_tok = self._advance()
+                    self._check_substory_trailing(end_tok.line, "endsubstory")
+
+                    # Close current frame if any
+                    if not sub_in_prelude:
+                        sub_frames.append(
+                            FrameIR(
+                                line=sub_frame_line,
+                                commands=tuple(sub_frame_commands),
+                                compute=tuple(sub_frame_compute),
+                                narrate_body=sub_frame_narrate,
+                                substories=tuple(sub_frame_substories),
+                            ),
+                        )
+
+                    # Warn if zero steps
+                    if not sub_frames:
+                        _warnings_mod.warn(
+                            f"E1366: substory with zero steps "
+                            f"(line {substory_line}, col {substory_col})",
+                            stacklevel=2,
+                        )
+
+                    self._substory_depth -= 1
+                    return SubstoryBlock(
+                        line=substory_line,
+                        col=substory_col,
+                        title=title,
+                        substory_id=substory_id,
+                        shapes=tuple(sub_shapes),
+                        compute=tuple(sub_compute),
+                        frames=tuple(sub_frames),
+                    )
+
+                elif inner_cmd == "shape":
+                    if not sub_in_prelude:
+                        raise ValidationError(
+                            f"E1051: \\shape must appear before the first "
+                            f"\\step (line {inner_tok.line}, col {inner_tok.col})",
+                            position=inner_tok.col,
+                        )
+                    sub_shapes.append(self._parse_shape())
+
+                elif inner_cmd == "compute":
+                    cmd = self._parse_compute()
+                    if sub_in_prelude:
+                        sub_compute.append(cmd)
+                    else:
+                        sub_frame_compute.append(cmd)
+
+                elif inner_cmd == "step":
+                    if not sub_in_prelude:
+                        sub_frames.append(
+                            FrameIR(
+                                line=sub_frame_line,
+                                commands=tuple(sub_frame_commands),
+                                compute=tuple(sub_frame_compute),
+                                narrate_body=sub_frame_narrate,
+                                substories=tuple(sub_frame_substories),
+                            ),
+                        )
+                    sub_in_prelude = False
+                    step_tok = self._advance()
+                    sub_frame_line = step_tok.line
+                    sub_frame_commands = []
+                    sub_frame_compute = []
+                    sub_frame_narrate = None
+                    sub_frame_narrate_seen = False
+                    sub_frame_substories = []
+                    self._check_step_trailing(step_tok.line)
+
+                elif inner_cmd == "narrate":
+                    if sub_in_prelude:
+                        raise ValidationError(
+                            f"E1056: \\narrate must be inside a \\step block "
+                            f"(line {inner_tok.line}, col {inner_tok.col})",
+                            position=inner_tok.col,
+                        )
+                    if sub_frame_narrate_seen:
+                        raise ValidationError(
+                            f"E1055: duplicate \\narrate in the same step "
+                            f"(line {inner_tok.line}, col {inner_tok.col})",
+                            position=inner_tok.col,
+                        )
+                    narr = self._parse_narrate()
+                    sub_frame_narrate = narr.body
+                    sub_frame_narrate_seen = True
+
+                elif inner_cmd == "highlight":
+                    cmd = self._parse_highlight()
+                    if sub_in_prelude:
+                        pass  # ignore in substory prelude
+                    else:
+                        sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "apply":
+                    cmd = self._parse_apply()
+                    if sub_in_prelude:
+                        pass  # ignore in substory prelude
+                    else:
+                        sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "recolor":
+                    cmd = self._parse_recolor()
+                    if sub_in_prelude:
+                        pass
+                    else:
+                        sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "annotate":
+                    cmd = self._parse_annotate()
+                    if sub_in_prelude:
+                        pass
+                    else:
+                        sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "substory":
+                    if sub_in_prelude:
+                        raise ValidationError(
+                            f"E1362: \\substory must be inside a \\step "
+                            f"block (line {inner_tok.line}, col {inner_tok.col})",
+                            position=inner_tok.col,
+                        )
+                    nested_block = self._parse_substory()
+                    sub_frame_substories.append(nested_block)
+
+                else:
+                    raise ValidationError(
+                        f"E1006: unknown command \\{inner_cmd} "
+                        f"(line {inner_tok.line}, col {inner_tok.col})",
+                        position=inner_tok.col,
+                    )
+            else:
+                self._advance()
+
+        # If we reach EOF/end without \endsubstory
+        self._substory_depth -= 1
+        raise ValidationError(
+            f"E1361: unclosed \\substory "
+            f"(line {substory_line}, col {substory_col})",
+            position=substory_col,
+        )
+
+    def _check_substory_trailing(self, cmd_line: int, cmd_name: str) -> None:
+        """Check there is no non-whitespace on the same line after \\substory or \\endsubstory."""
+        while not self._at_end():
+            tok = self._peek()
+            if tok.kind == TokenKind.NEWLINE:
+                break
+            if tok.kind == TokenKind.EOF:
+                break
+            if tok.line == cmd_line and tok.kind not in (
+                TokenKind.NEWLINE,
+                TokenKind.LBRACKET,
+            ):
+                raise ValidationError(
+                    f"E1368: text on same line as "
+                    f"\\{cmd_name} on line {cmd_line}",
+                    position=tok.col,
+                )
+            break
 
     def _read_raw_brace_arg(self, cmd_tok: Token) -> str:
         """Read ``{balanced_text}`` from source, preserving whitespace verbatim."""

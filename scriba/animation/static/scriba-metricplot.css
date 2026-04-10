@@ -1,0 +1,19 @@
+.scriba-metricplot { font-family: inherit; }
+.scriba-metricplot-gridline-h,
+.scriba-metricplot-gridline-v {
+  stroke: var(--scriba-border, #d0d7de);
+  stroke-width: 0.5;
+  opacity: 0.6;
+}
+.scriba-metricplot-marker {
+  stroke: var(--scriba-fg, #24292f);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.6;
+}
+@media print {
+  .scriba-metricplot-line {
+    stroke: #000 !important;
+    stroke-width: 1.5;
+  }
+}

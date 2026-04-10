@@ -23,6 +23,7 @@ from scriba.animation.parser.ast import (
     RecolorCommand,
     Selector,
     ShapeCommand,
+    SubstoryBlock,
 )
 
 __all__ = ["SceneState", "FrameSnapshot"]
@@ -223,6 +224,55 @@ class SceneState:
             bindings=dict(self.bindings),
             narration=narration,
         )
+
+    # ---- substory ----
+
+    def apply_substory(
+        self,
+        substory: SubstoryBlock,
+        starlark_host: Any | None = None,
+    ) -> list[FrameSnapshot]:
+        """Apply a substory block, returning its frame snapshots.
+
+        Saves and restores parent state so substory mutations are ephemeral.
+        """
+        # Save parent state (deep copy)
+        saved_shape_states: dict[str, dict[str, ShapeTargetState]] = {}
+        for shape_name, targets in self.shape_states.items():
+            saved_shape_states[shape_name] = {
+                t: ShapeTargetState(
+                    state=s.state,
+                    value=s.value,
+                    label=s.label,
+                    apply_params=dict(s.apply_params) if s.apply_params else None,
+                )
+                for t, s in targets.items()
+            }
+        saved_highlights = set(self.highlights)
+        saved_annotations = list(self.annotations)
+        saved_bindings = dict(self.bindings)
+
+        # Register substory-local shapes
+        for shape in substory.shapes:
+            self.shape_states[shape.name] = {}
+
+        # Run substory compute
+        for cb in substory.compute:
+            self._run_compute(cb, starlark_host)
+
+        # Apply substory frames
+        snapshots: list[FrameSnapshot] = []
+        for frame in substory.frames:
+            snap = self.apply_frame(frame, starlark_host)
+            snapshots.append(snap)
+
+        # Restore parent state (substory mutations are ephemeral)
+        self.shape_states = saved_shape_states
+        self.highlights = saved_highlights
+        self.annotations = saved_annotations
+        self.bindings = saved_bindings
+
+        return snapshots
 
     # ---- private ----
 

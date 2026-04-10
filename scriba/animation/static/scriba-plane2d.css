@@ -1,0 +1,47 @@
+/* Plane2D primitive — minimal CSS for state overrides.
+ *
+ * Inline SVG attributes from svg_style_attrs() handle the primary
+ * fill/stroke colours.  This stylesheet provides structural defaults
+ * and the state-driven overrides referenced in the spec §9–§10.
+ */
+
+/* --- Grid & axes -------------------------------------------------------- */
+
+.scriba-plane-grid line {
+  stroke: var(--scriba-border, #d0d7de);
+}
+
+.scriba-plane-axes line {
+  stroke: var(--scriba-fg, #212529);
+}
+
+/* --- Point -------------------------------------------------------------- */
+
+.scriba-plane-point circle {
+  transition: fill 150ms ease, stroke 150ms ease;
+}
+
+/* --- Line / Segment ----------------------------------------------------- */
+
+.scriba-plane-line line,
+.scriba-plane-segment line {
+  transition: stroke 150ms ease;
+}
+
+/* --- Polygon / Region --------------------------------------------------- */
+
+.scriba-plane-polygon polygon {
+  transition: fill 150ms ease, stroke 150ms ease;
+}
+
+.scriba-plane-region polygon {
+  transition: fill 150ms ease;
+}
+
+/* --- Labels ------------------------------------------------------------- */
+
+.scriba-plane-labels text {
+  font-family: var(--scriba-font-mono, ui-monospace, monospace);
+  user-select: none;
+  pointer-events: none;
+}
