@@ -4,7 +4,7 @@
 \shape{low}{Array}{size=7, data=["-","-","-","-","-","-","-"], labels="1..7", label="low"}
 
 \step
-\narrate{Đồ thị có 7 đỉnh và 8 cạnh. Mục tiêu: tìm các cầu -- những cạnh mà nếu xóa đi sẽ làm đồ thị mất liên thông. Thuật toán Tarjan dùng DFS với hai mảng: disc[u] (thời điểm phát hiện) và low[u] (giá trị disc nhỏ nhất có thể đạt qua cạnh ngược). Cạnh (u,v) là cầu nếu low[v] > disc[u].}
+\narrate{Đồ thị có $7$ đỉnh và $8$ cạnh. Mục tiêu: tìm các cầu -- những cạnh mà nếu xóa đi sẽ làm đồ thị mất liên thông. Thuật toán Tarjan dùng DFS với hai mảng: $disc[u]$ (thời điểm phát hiện) và $low[u]$ (giá trị $disc$ nhỏ nhất có thể đạt qua cạnh ngược). Cạnh $(u,v)$ là cầu nếu $low[v] > disc[u]$.}
 
 \step
 \recolor{g.node[1]}{state=current}
@@ -12,7 +12,7 @@
 \apply{low.cell[0]}{value="0"}
 \recolor{disc.cell[0]}{state=current}
 \recolor{low.cell[0]}{state=current}
-\narrate{DFS bắt đầu tại đỉnh 1. Gán disc[1] = 0, low[1] = 0. Duyệt đỉnh kề 2.}
+\narrate{DFS bắt đầu tại đỉnh $1$. Gán $disc[1] = 0$, $low[1] = 0$. Duyệt đỉnh kề $2$.}
 
 \step
 \recolor{g.node[1]}{state=done}
@@ -24,7 +24,7 @@
 \recolor{low.cell[0]}{state=done}
 \recolor{disc.cell[1]}{state=current}
 \recolor{low.cell[1]}{state=current}
-\narrate{Thăm đỉnh 2. Cạnh cây 1->2. disc[2] = 1, low[2] = 1. Duyệt đỉnh kề 3.}
+\narrate{Thăm đỉnh $2$. Cạnh cây $1 \to 2$. $disc[2] = 1$, $low[2] = 1$. Duyệt đỉnh kề $3$.}
 
 \step
 \recolor{g.node[2]}{state=done}
@@ -36,13 +36,13 @@
 \recolor{low.cell[1]}{state=done}
 \recolor{disc.cell[2]}{state=current}
 \recolor{low.cell[2]}{state=current}
-\narrate{Thăm đỉnh 3. Cạnh cây 2->3. disc[3] = 2, low[3] = 2.}
+\narrate{Thăm đỉnh $3$. Cạnh cây $2 \to 3$. $disc[3] = 2$, $low[3] = 2$.}
 
 \step
 \recolor{g.edge[(3,1)]}{state=current}
 \apply{low.cell[2]}{value="0"}
 \recolor{low.cell[2]}{state=good}
-\narrate{Đỉnh 3 thấy đỉnh kề 1 -- đã thăm và không phải cha. Phát hiện cạnh ngược! low[3] = min(2, disc[1]) = min(2, 0) = 0. Cạnh ngược này cho phép cây con của 3 nối ngược lên tận đỉnh 1.}
+\narrate{Đỉnh $3$ thấy đỉnh kề $1$ -- đã thăm và không phải cha. Phát hiện cạnh ngược! $low[3] = \min(2, disc[1]) = \min(2, 0) = 0$. Cạnh ngược này cho phép cây con của $3$ nối ngược lên tận đỉnh $1$.}
 
 \step
 \recolor{g.edge[(3,1)]}{state=dim}
@@ -55,7 +55,7 @@
 \recolor{low.cell[2]}{state=done}
 \recolor{disc.cell[3]}{state=current}
 \recolor{low.cell[3]}{state=current}
-\narrate{Tiếp tục DFS từ 3 sang 4. Cạnh cây 3->4. disc[4] = 3, low[4] = 3. Đỉnh 4 không có cạnh ngược nào đi lên.}
+\narrate{Tiếp tục DFS từ $3$ sang $4$. Cạnh cây $3 \to 4$. $disc[4] = 3$, $low[4] = 3$. Đỉnh $4$ không có cạnh ngược nào đi lên.}
 
 \step
 \recolor{g.node[4]}{state=done}
@@ -67,7 +67,7 @@
 \recolor{low.cell[3]}{state=done}
 \recolor{disc.cell[4]}{state=current}
 \recolor{low.cell[4]}{state=current}
-\narrate{DFS sang đỉnh 5. Cạnh cây 4->5. disc[5] = 4, low[5] = 4.}
+\narrate{DFS sang đỉnh $5$. Cạnh cây $4 \to 5$. $disc[5] = 4$, $low[5] = 4$.}
 
 \step
 \recolor{g.node[5]}{state=done}
@@ -79,7 +79,7 @@
 \recolor{low.cell[4]}{state=done}
 \recolor{disc.cell[5]}{state=current}
 \recolor{low.cell[5]}{state=current}
-\narrate{DFS sang đỉnh 6. Cạnh cây 5->6. disc[6] = 5, low[6] = 5.}
+\narrate{DFS sang đỉnh $6$. Cạnh cây $5 \to 6$. $disc[6] = 5$, $low[6] = 5$.}
 
 \step
 \recolor{g.node[6]}{state=done}
@@ -91,13 +91,13 @@
 \recolor{low.cell[5]}{state=done}
 \recolor{disc.cell[6]}{state=current}
 \recolor{low.cell[6]}{state=current}
-\narrate{DFS sang đỉnh 7. Cạnh cây 6->7. disc[7] = 6, low[7] = 6.}
+\narrate{DFS sang đỉnh $7$. Cạnh cây $6 \to 7$. $disc[7] = 6$, $low[7] = 6$.}
 
 \step
 \recolor{g.edge[(7,5)]}{state=current}
 \apply{low.cell[6]}{value="4"}
 \recolor{low.cell[6]}{state=good}
-\narrate{Đỉnh 7 thấy đỉnh kề 5 -- đã thăm, không phải cha (cha là 6). Cạnh ngược! low[7] = min(6, disc[5]) = min(6, 4) = 4. Chu trình 5-6-7-5 đảm bảo không cạnh nào trong đó là cầu.}
+\narrate{Đỉnh $7$ thấy đỉnh kề $5$ -- đã thăm, không phải cha (cha là $6$). Cạnh ngược! $low[7] = \min(6, disc[5]) = \min(6, 4) = 4$. Chu trình $5$-$6$-$7$-$5$ đảm bảo không cạnh nào trong đó là cầu.}
 
 \step
 \recolor{g.node[7]}{state=done}
@@ -105,29 +105,29 @@
 \apply{low.cell[5]}{value="4"}
 \recolor{low.cell[5]}{state=done}
 \recolor{low.cell[6]}{state=done}
-\narrate{Quay lui 7->6. low[6] = min(5, low[7]) = min(5, 4) = 4. Kiểm tra cầu: low[7]=4 > disc[6]=5? Không. Cạnh 6-7 KHÔNG phải cầu.}
+\narrate{Quay lui $7 \to 6$. $low[6] = \min(5, low[7]) = \min(5, 4) = 4$. Kiểm tra cầu: $low[7]=4 > disc[6]=5$? Không. Cạnh $6$-$7$ KHÔNG phải cầu.}
 
 \step
 \apply{low.cell[4]}{value="4"}
 \recolor{low.cell[4]}{state=done}
-\narrate{Quay lui 6->5. low[5] = min(4, low[6]) = min(4, 4) = 4. Kiểm tra cầu: low[6]=4 > disc[5]=4? Không (không lớn hơn nghiêm ngặt). Cạnh 5-6 KHÔNG phải cầu.}
+\narrate{Quay lui $6 \to 5$. $low[5] = \min(4, low[6]) = \min(4, 4) = 4$. Kiểm tra cầu: $low[6]=4 > disc[5]=4$? Không (không lớn hơn nghiêm ngặt). Cạnh $5$-$6$ KHÔNG phải cầu.}
 
 \step
 \apply{low.cell[3]}{value="3"}
 \recolor{low.cell[3]}{state=done}
 \recolor{g.edge[(4,5)]}{state=error}
-\narrate{Quay lui 5->4. low[4] = min(3, low[5]) = min(3, 4) = 3. Kiểm tra cầu: low[5]=4 > disc[4]=3? ĐÚNG! Cạnh (4,5) là CẦU. Không có cạnh ngược nào từ {5,6,7} nối tới đỉnh 4 hoặc cao hơn.}
+\narrate{Quay lui $5 \to 4$. $low[4] = \min(3, low[5]) = \min(3, 4) = 3$. Kiểm tra cầu: $low[5]=4 > disc[4]=3$? ĐÚNG! Cạnh $(4,5)$ là CẦU. Không có cạnh ngược nào từ $\{5,6,7\}$ nối tới đỉnh $4$ hoặc cao hơn.}
 
 \step
 \recolor{g.edge[(3,4)]}{state=error}
-\narrate{Quay lui 4->3. low[3] giữ nguyên 3. Kiểm tra cầu: low[4]=3 > disc[3]=2? ĐÚNG! Cạnh (3,4) cũng là CẦU. Đỉnh 4 hoàn toàn không có cạnh ngược -- cây con của nó bị cô lập hoàn toàn khỏi các tổ tiên của 3.}
+\narrate{Quay lui $4 \to 3$. $low[3]$ giữ nguyên $3$. Kiểm tra cầu: $low[4]=3 > disc[3]=2$? ĐÚNG! Cạnh $(3,4)$ cũng là CẦU. Đỉnh $4$ hoàn toàn không có cạnh ngược -- cây con của nó bị cô lập hoàn toàn khỏi các tổ tiên của $3$.}
 
 \step
 \apply{low.cell[1]}{value="0"}
 \apply{low.cell[0]}{value="0"}
 \recolor{low.cell[1]}{state=done}
 \recolor{low.cell[0]}{state=done}
-\narrate{Quay lui 3->2. low[2] = min(1, low[3]) = min(1, 0) = 0. Kiểm tra cầu: low[3]=0 > disc[2]=1? Không. Cạnh 2-3 an toàn. Quay lui 2->1. low[1] = min(0, 0) = 0. Cạnh 1-2: low[2]=0 > disc[1]=0? Không. DFS hoàn tất.}
+\narrate{Quay lui $3 \to 2$. $low[2] = \min(1, low[3]) = \min(1, 0) = 0$. Kiểm tra cầu: $low[3]=0 > disc[2]=1$? Không. Cạnh $2$-$3$ an toàn. Quay lui $2 \to 1$. $low[1] = \min(0, 0) = 0$. Cạnh $1$-$2$: $low[2]=0 > disc[1]=0$? Không. DFS hoàn tất.}
 
 \step
 \recolor{g.node[1]}{state=good}
@@ -145,5 +145,5 @@
 \recolor{g.node[4]}{state=error}
 \recolor{disc.range[0:6]}{state=good}
 \recolor{low.range[0:6]}{state=good}
-\narrate{Kết quả: 2 cầu -- (3,4) và (4,5), tô đỏ. Đỉnh 4 là đỉnh khớp nối hai thành phần hai-liên-thông: chu trình {1,2,3} và chu trình {5,6,7}. Xóa bất kỳ cầu nào cũng làm đồ thị mất liên thông. Thuật toán Tarjan tìm tất cả các cầu trong O(n + m) chỉ với một lần duyệt DFS.}
+\narrate{Kết quả: $2$ cầu -- $(3,4)$ và $(4,5)$, tô đỏ. Đỉnh $4$ là đỉnh khớp nối hai thành phần hai-liên-thông: chu trình $\{1,2,3\}$ và chu trình $\{5,6,7\}$. Xóa bất kỳ cầu nào cũng làm đồ thị mất liên thông. Thuật toán Tarjan tìm tất cả các cầu trong $O(n + m)$ chỉ với một lần duyệt DFS.}
 \end{animation}

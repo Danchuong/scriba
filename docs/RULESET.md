@@ -52,7 +52,7 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\narrate` | `{LaTeX text}` | animation step only | per-frame |
 | `\apply` | `{target}{params}` | prelude or step | persistent |
 | `\highlight` | `{target}` | step only (animation), anywhere (diagram) | ephemeral (animation), persistent (diagram) |
-| `\recolor` | `{target}{state=...}` | both | persistent |
+| `\recolor` | `{target}{state=..., color=..., arrow_from=...}` | both | persistent |
 | `\annotate` | `{target}{params}` | both | persistent (default), ephemeral if `ephemeral=true` |
 
 ### 2.2 Extension Commands (2)
@@ -111,10 +111,18 @@ Interpolation: `${name}` resolved from Starlark bindings at build time.
 | `dim` | 50% opacity | — |
 | `error` | vermillion | `#D55E00` |
 | `good` | sky blue | `#56B4E9` |
+| `path` | blue | `#2563eb` |
 
 > **Note:** `highlight` is not a valid `\recolor` state. It is ephemeral and applied only
 > via the `\highlight` command. The CSS class `.scriba-state-highlight` exists (see §10.1)
 > but cannot be set through `\recolor`.
+
+#### Optional annotation recoloring parameters
+
+- `color` — optional, recolors annotation(s) on the target. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`.
+- `arrow_from` — optional, filters which annotation to recolor by source selector.
+- At least one of `state` or `color` must be present.
+- Example: `\recolor{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}`
 
 Unknown state → `E1109`
 

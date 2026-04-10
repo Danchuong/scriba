@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
@@ -129,13 +129,45 @@ class ArrayInstance:
     def emit_svg(
         self,
         state: dict[str, dict[str, Any]],
+        annotations: list[dict[str, Any]] | None = None,
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> str:
-        """Emit SVG ``<g>`` for the array."""
+        """Emit SVG ``<g>`` for the array.
+
+        *annotations* is an optional list of dicts with keys:
+        ``target``, ``arrow_from``, ``label``, ``color``.
+        """
+        # Compute vertical space needed above cells for arrow curves
+        arrow_above = self._arrow_height_above(annotations or [])
+
         lines: list[str] = [
             f'<g data-primitive="array" data-shape="{self.shape_name}">'
         ]
+
+        # Shift all content down so arrows curve into valid space above y=0
+        if arrow_above > 0:
+            lines.append(f'  <g transform="translate(0, {arrow_above})">')
+
+        # Emit arrowhead marker defs when annotations with arrows are present
+        arrow_anns = [a for a in (annotations or []) if a.get("arrow_from")]
+        if arrow_anns:
+            colors_used = {a.get("color", "info") for a in arrow_anns}
+            lines.append("  <defs>")
+            for color in sorted(colors_used):
+                marker_style = self._ARROW_STYLES.get(
+                    color, self._ARROW_STYLES["info"]
+                )
+                marker_fill = marker_style["stroke"]
+                lines.append(
+                    f'    <marker id="scriba-arrow-{color}" '
+                    f'viewBox="0 0 10 10" refX="10" refY="5" '
+                    f'markerWidth="6" markerHeight="6" '
+                    f'orient="auto-start-reverse">'
+                    f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{marker_fill}"/>'
+                    f"</marker>"
+                )
+            lines.append("  </defs>")
 
         for i in range(self.size):
             target = f"{self.shape_name}.cell[{i}]"
@@ -224,18 +256,212 @@ class ArrayInstance:
                 )
             )
 
+        # Arrow annotations
+        if annotations:
+            for ann in annotations:
+                self._emit_arrow(lines, ann, annotations=annotations)
+
+        # Close the translate group if we opened one for arrow space
+        if arrow_above > 0:
+            lines.append("  </g>")
+
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(self) -> tuple[float, float, float, float]:
-        """Return ``(x, y, width, height)``."""
+    def bounding_box(
+        self,
+        annotations: list[dict[str, Any]] | None = None,
+    ) -> tuple[float, float, float, float]:
+        """Return ``(x, y, width, height)``.
+
+        When *annotations* are provided the height includes vertical
+        space needed above the cells for arrow curves.
+        """
         w = self._total_width()
         h = CELL_HEIGHT
         if self.labels:
             h += INDEX_LABEL_OFFSET
         if self.label:
             h += INDEX_LABEL_OFFSET + 12 if self.labels else INDEX_LABEL_OFFSET
+        arrow_above = self._arrow_height_above(annotations or [])
+        h += arrow_above
         return (0, 0, float(w), float(h))
+
+    # -- internal: arrows ---------------------------------------------------
+
+    # Inline style map for arrow annotations — each color gets distinct
+    # stroke, width, opacity, and label styling so that winner vs loser
+    # arrows are visually differentiated without relying on CSS classes.
+    _ARROW_STYLES: ClassVar[dict[str, dict[str, str]]] = {
+        "good": {
+            "stroke": "#059669",
+            "stroke_width": "2.2",
+            "opacity": "1.0",
+            "label_fill": "#059669",
+            "label_weight": "700",
+            "label_size": "12px",
+        },
+        "info": {
+            "stroke": "#94a3b8",
+            "stroke_width": "1.5",
+            "opacity": "0.45",
+            "label_fill": "#94a3b8",
+            "label_weight": "500",
+            "label_size": "11px",
+        },
+        "warn": {
+            "stroke": "#d97706",
+            "stroke_width": "2.0",
+            "opacity": "0.8",
+            "label_fill": "#d97706",
+            "label_weight": "600",
+            "label_size": "11px",
+        },
+        "error": {
+            "stroke": "#dc2626",
+            "stroke_width": "2.0",
+            "opacity": "0.8",
+            "label_fill": "#dc2626",
+            "label_weight": "600",
+            "label_size": "11px",
+        },
+        "muted": {
+            "stroke": "#cbd5e1",
+            "stroke_width": "1.2",
+            "opacity": "0.3",
+            "label_fill": "#cbd5e1",
+            "label_weight": "500",
+            "label_size": "11px",
+        },
+        "path": {
+            "stroke": "#2563eb",
+            "stroke_width": "2.5",
+            "opacity": "1.0",
+            "label_fill": "#2563eb",
+            "label_weight": "700",
+            "label_size": "12px",
+        },
+    }
+
+    def _emit_arrow(
+        self,
+        lines: list[str],
+        ann: dict[str, Any],
+        annotations: list[dict[str, Any]] | None = None,
+    ) -> None:
+        """Emit a cubic Bezier arrow annotation."""
+        color = ann.get("color", "info")
+        label_text = ann.get("label", "")
+        target = ann.get("target", "")
+        arrow_from = ann.get("arrow_from", "")
+
+        if not arrow_from:
+            return
+
+        src_center = self._cell_center(arrow_from)
+        dst_center = self._cell_center(target)
+
+        if src_center is None or dst_center is None:
+            return
+
+        x1, y1 = src_center
+        x2, y2 = dst_center
+
+        # Compute arrow_index: how many earlier arrows target the same cell
+        arrow_index = 0
+        if annotations:
+            for other in annotations:
+                if other is ann:
+                    break
+                if (
+                    other.get("target") == target
+                    and other.get("arrow_from")
+                ):
+                    arrow_index += 1
+
+        # Control points: curve upward — scale with horizontal distance
+        # and stagger when multiple arrows target the same cell
+        base_offset = max(CELL_HEIGHT * 0.75, abs(x2 - x1) * 0.25)
+        stagger = CELL_HEIGHT * 0.5
+        total_offset = base_offset + arrow_index * stagger
+
+        mid_x = int((x1 + x2) // 2)
+        mid_y = int(min(y1, y2) - total_offset)
+        cx1 = int((x1 + mid_x) // 2)
+        cy1 = mid_y
+        cx2 = int((x2 + mid_x) // 2)
+        cy2 = mid_y
+
+        # Resolve inline style for this color
+        style = self._ARROW_STYLES.get(color, self._ARROW_STYLES["info"])
+        s_stroke = style["stroke"]
+        s_width = style["stroke_width"]
+        s_opacity = style["opacity"]
+
+        lines.append(
+            f'  <g class="scriba-annotation scriba-annotation-{color}"'
+            f' opacity="{s_opacity}">'
+        )
+        lines.append(
+            f'    <path d="M{x1},{y1} C{cx1},{cy1} {cx2},{cy2} {x2},{y2}" '
+            f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none" '
+            f'marker-end="url(#scriba-arrow-{color})"/>'
+        )
+        if label_text:
+            label_y = mid_y - 4  # slightly above the curve peak
+            l_fill = style["label_fill"]
+            l_weight = style["label_weight"]
+            l_size = style["label_size"]
+            lines.append(
+                f'    <text x="{mid_x}" y="{label_y}" '
+                f'text-anchor="middle" dominant-baseline="auto" '
+                f'fill="{l_fill}" font-weight="{l_weight}" '
+                f'font-size="{l_size}">'
+                f"{_escape_xml(label_text)}</text>"
+            )
+        lines.append("  </g>")
+
+    def _arrow_height_above(self, annotations: list[dict[str, Any]]) -> int:
+        """Compute the max vertical extent above y=0 that arrows need."""
+        if not annotations:
+            return 0
+        arrow_anns = [a for a in annotations if a.get("arrow_from")]
+        if not arrow_anns:
+            return 0
+
+        max_height = 0
+        for ann in arrow_anns:
+            src = self._cell_center(ann.get("arrow_from", ""))
+            dst = self._cell_center(ann.get("target", ""))
+            if src is None or dst is None:
+                continue
+            x1, _y1 = src
+            x2, _y2 = dst
+            # Count arrows targeting same cell before this one
+            target = ann.get("target", "")
+            arrow_index = sum(
+                1
+                for a in arrow_anns
+                if a.get("target") == target
+                and arrow_anns.index(a) < arrow_anns.index(ann)
+            )
+            base_offset = max(CELL_HEIGHT * 0.75, abs(x2 - x1) * 0.25)
+            stagger = CELL_HEIGHT * 0.5
+            total_offset = base_offset + arrow_index * stagger
+            max_height = max(max_height, int(total_offset) + 14)
+
+        return max_height
+
+    def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
+        """Return the ``(cx, cy)`` pixel center of a cell selector."""
+        m = _CELL_RE.match(selector_str)
+        if m and m.group("name") == self.shape_name:
+            i = int(m.group("idx"))
+            if 0 <= i < self.size:
+                x = int(i * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2)
+                y = 0  # top edge of cell — arrows curve above
+                return (x, y)
+        return None
 
     # -- internal -----------------------------------------------------------
 

@@ -64,7 +64,7 @@
 
   /* Annotation */
   --scriba-annotation-font:        600 11px ui-monospace, monospace;
-  --scriba-annotation-arrow-width: 1.6;
+  --scriba-annotation-arrow-width: 2.0;
 
   /* Widget (interactive wrapper) */
   --scriba-widget-shadow:          0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
@@ -110,11 +110,16 @@
   --scriba-state-highlight-stroke: currentColor;
   --scriba-state-highlight-text:   var(--scriba-fg);
 
+  --scriba-state-path-fill:        #dbeafe;
+  --scriba-state-path-stroke:      #2563eb;
+  --scriba-state-path-text:        #0c4a6e;
+
   /* Annotation color tokens */
   --scriba-annotation-info:        #0072B2;
   --scriba-annotation-warn:        #E69F00;
   --scriba-annotation-good:        #009E73;
   --scriba-annotation-error:       #D55E00;
+  --scriba-annotation-path:        #2563eb;
   --scriba-annotation-muted:       var(--scriba-fg-muted);
 }
 
@@ -246,6 +251,23 @@
   fill: var(--scriba-state-highlight-text);
 }
 
+/* -- path ------------------------------------------------- */
+.scriba-state-path > rect,
+.scriba-state-path > circle {
+  fill:         var(--scriba-state-path-fill);
+  stroke:       var(--scriba-state-path-stroke);
+  stroke-width: calc(var(--scriba-cell-stroke-width) + 1);
+}
+
+.scriba-state-path > line {
+  stroke:       var(--scriba-state-path-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
+}
+
+.scriba-state-path > text {
+  fill: var(--scriba-state-path-text);
+}
+
 /* ============================================
    Primitive base styles
    ============================================ */
@@ -360,6 +382,10 @@
 .scriba-annotation-muted > text { fill: var(--scriba-annotation-muted); }
 .scriba-annotation-muted > path,
 .scriba-annotation-muted > line { stroke: var(--scriba-annotation-muted); }
+
+.scriba-annotation-path > text  { fill: var(--scriba-annotation-path); }
+.scriba-annotation-path > path,
+.scriba-annotation-path > line  { stroke: var(--scriba-annotation-path); }
 
 /* ============================================
    Dark mode

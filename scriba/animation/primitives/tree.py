@@ -415,6 +415,7 @@ class Tree(PrimitiveBase):
                 fo_width=_NODE_RADIUS * 2,
                 fo_height=_NODE_RADIUS * 2,
                 render_inline_tex=render_inline_tex,
+                text_outline=node_colors["fill"],
             )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '

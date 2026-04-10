@@ -101,6 +101,8 @@ class AnnotationEntry:
     target: str
     text: str
     ephemeral: bool = False
+    arrow_from: str | None = None
+    color: str = "info"
 
 
 @dataclass(frozen=True)
@@ -306,10 +308,28 @@ class SceneState:
             target_state.apply_params = extra
 
     def _apply_recolor(self, cmd: RecolorCommand) -> None:
-        """\\recolor — persistent state replacement."""
+        """\\recolor — persistent state replacement and/or annotation recolor."""
         target_str = _selector_to_str(cmd.target)
-        target_state = self._ensure_target(target_str)
-        target_state.state = cmd.state
+
+        # Apply cell/node state change if specified
+        if cmd.state is not None:
+            target_state = self._ensure_target(target_str)
+            target_state.state = cmd.state
+
+        # Recolor matching annotations if annotation_color is specified
+        if cmd.annotation_color is not None:
+            new_color = cmd.annotation_color
+            annotation_from_str = cmd.annotation_from
+            for i, ann in enumerate(self.annotations):
+                if ann.target == target_str:
+                    if annotation_from_str is None or ann.arrow_from == annotation_from_str:
+                        self.annotations[i] = AnnotationEntry(
+                            target=ann.target,
+                            text=ann.text,
+                            ephemeral=ann.ephemeral,
+                            arrow_from=ann.arrow_from,
+                            color=new_color,
+                        )
 
     def _apply_highlight(self, cmd: HighlightCommand) -> None:
         """\\highlight — ephemeral, cleared at next step."""
@@ -319,11 +339,14 @@ class SceneState:
     def _apply_annotate(self, cmd: AnnotateCommand) -> None:
         """\\annotate — persistent by default, ephemeral if flagged."""
         target_str = _selector_to_str(cmd.target)
+        arrow_from_str = _selector_to_str(cmd.arrow_from) if cmd.arrow_from else None
         self.annotations.append(
             AnnotationEntry(
                 target=target_str,
                 text=cmd.label or "",
                 ephemeral=cmd.ephemeral,
+                arrow_from=arrow_from_str,
+                color=cmd.color or "info",
             )
         )
 

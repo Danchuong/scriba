@@ -16,6 +16,7 @@ from pathlib import Path
 
 from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.renderer import AnimationRenderer
+from scriba.animation.starlark_host import StarlarkHost
 from scriba.core.context import RenderContext
 from scriba.core.workers import SubprocessWorkerPool
 from scriba.tex.renderer import TexRenderer
@@ -241,11 +242,12 @@ def render_file(
     from scriba.animation.detector import detect_diagram_blocks
     from scriba.animation.renderer import DiagramRenderer
 
-    anim_renderer = AnimationRenderer()
-    diag_renderer = DiagramRenderer()
-
     # Wire up KaTeX for inline math in narration text.
     worker_pool = SubprocessWorkerPool()
+    starlark_host = StarlarkHost(worker_pool)
+
+    anim_renderer = AnimationRenderer(starlark_host=starlark_host)
+    diag_renderer = DiagramRenderer(starlark_host=starlark_host)
     tex_renderer = TexRenderer(worker_pool=worker_pool)
     inline_tex_cb = _make_inline_tex_callback(tex_renderer)
 
@@ -271,6 +273,7 @@ def render_file(
         artifact = diag_renderer.render_block(block, ctx)
         html_parts.append(artifact.html)
 
+    starlark_host.close()
     worker_pool.close()
 
     body = "\n\n".join(html_parts)

@@ -41,7 +41,7 @@ class _StubPrimitive:
     def bounding_box(self) -> tuple[float, float, float, float]:
         return self._bbox
 
-    def emit_svg(self, state: dict[str, dict[str, Any]] | None = None, *, render_inline_tex=None) -> str:
+    def emit_svg(self, state: dict[str, dict[str, Any]] | None = None, annotations: list[dict[str, Any]] | None = None, *, render_inline_tex=None) -> str:
         return f'<g data-primitive="{self.primitive_type}" data-shape="{self.shape_name}"></g>'
 
 
@@ -119,8 +119,8 @@ class TestComputeViewbox:
         p2 = _StubPrimitive(shape_name="b", _bbox=(0, 0, 300, 60))
         vb = compute_viewbox({"a": p1, "b": p2})
         # width = max(200,300) + 32 = 332
-        # height = 40 + 16(gap) + 60 + 32(padding) = 148
-        assert vb == "0 0 332 148"
+        # height = 40 + 50(gap) + 60 + 32(padding) = 182
+        assert vb == "0 0 332 182"
 
     def test_bounding_box_dataclass(self) -> None:
         """BoundingBox (from Graph) is handled correctly."""
@@ -372,7 +372,7 @@ class TestMultiplePrimitives:
         p2 = _StubPrimitive(shape_name="b", _bbox=(0, 0, 300, 60))
         frame = _frame(step=1, total=1)
         html = emit_animation_html("vb", [frame], {"a": p1, "b": p2})
-        assert 'viewBox="0 0 332 148"' in html
+        assert 'viewBox="0 0 332 182"' in html
 
 
 class TestHtmlEscaping:

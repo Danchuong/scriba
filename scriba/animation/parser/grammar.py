@@ -30,9 +30,9 @@ from .selectors import parse_selector
 
 import warnings as _warnings_mod
 
-_VALID_RECOLOR_STATES = frozenset({"idle", "current", "done", "dim", "error", "good"})
+_VALID_RECOLOR_STATES = frozenset({"idle", "current", "done", "dim", "error", "good", "path"})
 _VALID_ANNOTATE_POSITIONS = frozenset({"above", "below", "left", "right", "inside"})
-_VALID_ANNOTATE_COLORS = frozenset({"info", "warn", "good", "error", "muted"})
+_VALID_ANNOTATE_COLORS = frozenset({"info", "warn", "good", "error", "muted", "path"})
 _VALID_OPTION_KEYS = frozenset({"width", "height", "id", "label", "layout", "grid"})
 _VALID_SUBSTORY_OPTION_KEYS = frozenset({"title", "id"})
 _MAX_SUBSTORY_DEPTH = 3
@@ -320,17 +320,56 @@ class SceneParser:
         tok = self._advance()
         target_str = self._read_brace_arg(tok)
         params = self._read_param_brace()
-        state = str(params.get("state", "idle"))
-        if state not in _VALID_RECOLOR_STATES:
+
+        # state is now optional
+        state: str | None = None
+        if "state" in params:
+            state = str(params["state"])
+            if state not in _VALID_RECOLOR_STATES:
+                raise ValidationError(
+                    f"unknown recolor state {state!r}",
+                    position=tok.col,
+                    code="E1109",
+                    line=tok.line,
+                    col=tok.col,
+                )
+
+        # annotation color (optional)
+        annotation_color: str | None = None
+        if "color" in params:
+            annotation_color = str(params["color"])
+            if annotation_color not in _VALID_ANNOTATE_COLORS:
+                raise ValidationError(
+                    f"unknown annotation color {annotation_color!r}",
+                    position=tok.col,
+                    code="E1113",
+                    line=tok.line,
+                    col=tok.col,
+                )
+
+        # annotation source filter (optional)
+        annotation_from: str | None = None
+        af_raw = params.get("arrow_from")
+        if isinstance(af_raw, str):
+            annotation_from = af_raw
+
+        # At least one of state or color must be present
+        if state is None and annotation_color is None:
             raise ValidationError(
-                f"unknown recolor state {state!r}",
+                "\\recolor requires at least one of 'state' or 'color'",
                 position=tok.col,
                 code="E1109",
                 line=tok.line,
                 col=tok.col,
             )
+
         sel = parse_selector(target_str, line=tok.line, col=tok.col)
-        return RecolorCommand(tok.line, tok.col, sel, state)
+        return RecolorCommand(
+            tok.line, tok.col, sel,
+            state=state,
+            annotation_color=annotation_color,
+            annotation_from=annotation_from,
+        )
 
     def _parse_annotate(self) -> AnnotateCommand:
         tok = self._advance()

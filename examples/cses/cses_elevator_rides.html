@@ -315,7 +315,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Bài toán: 4 người có cân nặng [3, 5, 2, 7], thang máy sức chứa x = 8. Tìm số chuyến ít nhất. Ta dùng QHĐ bitmask với 16 mask, mỗi mask biểu diễn tập con người đã được chở. dp[mask] lưu (số chuyến tối thiểu, sức chứa còn lại tối đa trong chuyến cuối).`,substory:``},
+</svg>`,narration:`Bài toán: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4</span></span></span></span></span> người có cân nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mclose">]</span></span></span></span></span>, thang máy sức chứa <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">x</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>. Tìm số chuyến ít nhất. Ta dùng QHĐ bitmask với <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">16</span></span></span></span></span> mask, mỗi mask biểu diễn tập con người đã được chở. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord mathnormal">ma</span><span class="mord mathnormal">s</span><span class="mord mathnormal" style="margin-right:0.03148em;">k</span><span class="mclose">]</span></span></span></span></span> lưu (số chuyến tối thiểu, sức chứa còn lại tối đa trong chuyến cuối).`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -346,7 +346,7 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-idle">
@@ -427,7 +427,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Trường hợp cơ sở: dp[0] = (1, 8). Chưa chở ai. Ta có 1 chuyến mở sẵn với đầy đủ sức chứa 8. Mask 0 = nhị phân 0000 nghĩa là chưa chọn ai.`,substory:``},
+</svg>`,narration:`Trường hợp cơ sở: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mclose">)</span></span></span></span></span>. Chưa chở ai. Ta có <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> chuyến mở sẵn với đầy đủ sức chứa <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>. Mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> = nhị phân <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0000</span></span></span></span></span> nghĩa là chưa chọn ai.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -459,7 +459,7 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-current">
@@ -540,7 +540,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Thử thêm người 0 (nặng 3) vào mask 0000. Cân nặng 3 &lt;= 8 còn lại, vừa chuyến hiện tại. dp[0001] = (1, 8-3) = (1, 5). Một chuyến, còn trống 5.`,substory:``},
+</svg>`,narration:`Thử thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>) vào mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0000</span></span></span></span></span>. Cân nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span> còn lại, vừa chuyến hiện tại. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0001</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">3</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mclose">)</span></span></span></span></span>. Một chuyến, còn trống <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -572,12 +572,12 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-current">
@@ -653,7 +653,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Thêm người 1 (nặng 5) vào mask 0000. Cân nặng 5 &lt;= 8, vừa. dp[0010] = (1, 8-5) = (1, 3). Một chuyến, còn trống 3.`,substory:``},
+</svg>`,narration:`Thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>) vào mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0000</span></span></span></span></span>. Cân nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>, vừa. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0010</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>. Một chuyến, còn trống <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -685,17 +685,17 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-idle">
@@ -766,7 +766,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Thêm người 2 (nặng 2) vào mask 0000. Cân nặng 2 &lt;= 8, vừa. dp[0100] = (1, 8-2) = (1, 6).`,substory:``},
+</svg>`,narration:`Thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>) vào mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0000</span></span></span></span></span>. Cân nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>, vừa. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0100</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-6-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -798,17 +798,17 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-idle">
@@ -818,7 +818,7 @@ svg text {
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-idle">
@@ -879,7 +879,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Thêm người 3 (nặng 7) vào mask 0000. Cân nặng 7 &lt;= 8, vừa. dp[1000] = (1, 8-7) = (1, 1). Đã tính xong tất cả trạng thái một người từ tập rỗng.`,substory:``},
+</svg>`,narration:`Thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>) vào mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0000</span></span></span></span></span>. Cân nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>, vừa. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1000</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">7</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Đã tính xong tất cả trạng thái một người từ tập rỗng.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-7-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -911,7 +911,7 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-current">
@@ -921,7 +921,7 @@ svg text {
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-current">
@@ -931,7 +931,7 @@ svg text {
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-idle">
@@ -951,7 +951,7 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-idle">
@@ -992,7 +992,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Xử lý mask 0001 = (1,5). Thêm người 1 (nặng 5). 5 &lt;= 5 còn lại, vừa đủ! dp[0011] = (1, 5-5) = (1, 0). Người 0 và 1 chung một chuyến, vừa khít sức chứa 3+5=8.`,substory:``},
+</svg>`,narration:`Xử lý mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0001</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mclose">)</span></span></span></span></span>. Thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span> còn lại, vừa đủ! <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0011</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">5</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">0</span><span class="mclose">)</span></span></span></span></span>. Người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> và <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> chung một chuyến, vừa khít sức chứa <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-8-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1024,7 +1024,7 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-current">
@@ -1034,17 +1034,17 @@ svg text {
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-current">
@@ -1064,7 +1064,7 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-idle">
@@ -1105,7 +1105,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Từ mask 0001 = (1,5), thêm người 2 (nặng 2). 2 &lt;= 5, vừa. dp[0101] = (1, 5-2) = (1, 3). Người 0 và 2 chung chuyến (nặng 3+2=5).`,substory:``},
+</svg>`,narration:`Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0001</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>, vừa. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0101</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>. Người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> và <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> chung chuyến (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>).`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-9-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1137,7 +1137,7 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-current">
@@ -1147,22 +1147,22 @@ svg text {
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-idle">
@@ -1177,7 +1177,7 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-current">
@@ -1218,7 +1218,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Từ mask 0001 = (1,5), thêm người 3 (nặng 7). 7 &gt; 5 còn lại -- không vừa! Mở chuyến mới. dp[1001] = (1+1, 8-7) = (2, 1). Bây giờ cần 2 chuyến.`,substory:``},
+</svg>`,narration:`Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0001</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span> còn lại -- không vừa! Mở chuyến mới. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1001</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">7</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Bây giờ cần <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> chuyến.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-10-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1250,12 +1250,12 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-current">
@@ -1265,17 +1265,17 @@ svg text {
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-current">
@@ -1290,12 +1290,12 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-idle">
@@ -1331,7 +1331,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Từ mask 0010 = (1,3), thêm người 2 (nặng 2). 2 &lt;= 3, vừa. dp[0110] = (1, 3-2) = (1, 1). Người 1 và 2 chung chuyến (nặng 5+2=7).`,substory:``},
+</svg>`,narration:`Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0010</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, vừa. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0110</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> và <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> chung chuyến (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>).`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-11-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1363,37 +1363,37 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-idle">
@@ -1403,12 +1403,12 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-current">
@@ -1444,7 +1444,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Từ mask 0010 = (1,3), thêm người 3 (nặng 7). 7 &gt; 3, mở chuyến mới. dp[1010] = (2, 8-7) = (2, 1). Người 1 và 3 mỗi người cần chuyến riêng.`,substory:``},
+</svg>`,narration:`Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0010</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, mở chuyến mới. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1010</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">7</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> và <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> mỗi người cần chuyến riêng.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-12-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1476,22 +1476,22 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-current">
@@ -1501,12 +1501,12 @@ svg text {
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-idle">
@@ -1516,17 +1516,17 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-idle">
@@ -1557,7 +1557,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Từ mask 0100 = (1,6), thêm người 3 (nặng 7). 7 &gt; 6, mở chuyến mới. dp[1100] = (2, 1). Lưu ý: cũng có thể đến từ mask 1000+người 2 cho kết quả (2, 6) tốt hơn -- ta sẽ cập nhật ngay sau.`,substory:``},
+</svg>`,narration:`Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0100</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">6</span></span></span></span></span>, mở chuyến mới. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1100</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Lưu ý: cũng có thể đến từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1000</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> cho kết quả <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span> tốt hơn -- ta sẽ cập nhật ngay sau.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-13-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1588,22 +1588,22 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-current">
@@ -1613,12 +1613,12 @@ svg text {
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-idle">
@@ -1628,17 +1628,17 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-idle">
@@ -1669,7 +1669,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Cập nhật! Từ mask 1000 = (1,1), thêm người 2 (nặng 2). 2 &gt; 1, mở chuyến mới. Ứng viên = (2, 8-2) = (2, 6). Vì 6 &gt; 1 sức chứa còn lại và cùng số chuyến, dp[1100] cập nhật thành (2, 6). Còn nhiều chỗ trống hơn nghĩa là còn chỗ cho người tiếp theo.`,substory:``},
+</svg>`,narration:`Cập nhật! Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1000</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>, mở chuyến mới. Ứng viên <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.3669em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>. Vì <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">6</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> sức chứa còn lại và cùng số chuyến, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1100</span><span class="mclose">]</span></span></span></span></span> cập nhật thành <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>. Còn nhiều chỗ trống hơn nghĩa là còn chỗ cho người tiếp theo.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-14-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1701,17 +1701,17 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-current">
@@ -1721,17 +1721,17 @@ svg text {
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-current">
@@ -1741,17 +1741,17 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-idle">
@@ -1761,7 +1761,7 @@ svg text {
   <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
   <g data-target="dp.cell[12]" class="scriba-state-done">
     <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="774" y="20" fill="#ffffff">2,6</text>
+    <text x="774" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
   <g data-target="dp.cell[13]" class="scriba-state-idle">
@@ -1782,7 +1782,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Từ mask 0011 = (1,0), thêm người 2 (nặng 2). 2 &gt; 0, mở chuyến mới. dp[0111] = (2, 8-2) = (2, 6). Người 0 và 1 lấp đầy chuyến 1; người 2 bắt đầu chuyến 2 với 6 chỗ trống.`,substory:``},
+</svg>`,narration:`Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0011</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">0</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>, mở chuyến mới. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0111</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>. Người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> và <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> lấp đầy chuyến <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>; người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> bắt đầu chuyến <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> với <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">6</span></span></span></span></span> chỗ trống.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-15-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1814,57 +1814,57 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-done">
     <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">2,6</text>
+    <text x="464" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-current">
@@ -1874,7 +1874,7 @@ svg text {
   <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
   <g data-target="dp.cell[12]" class="scriba-state-done">
     <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="774" y="20" fill="#ffffff">2,6</text>
+    <text x="774" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
   <g data-target="dp.cell[13]" class="scriba-state-idle">
@@ -1895,7 +1895,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Đường tốt nhất đến mask 0011 = (1,0), thêm người 3 (nặng 7). 7 &gt; 0, mở chuyến mới. dp[1011] = (2, 8-7) = (2, 1). Cũng từ mask 0101=(1,3)+người 3: 7&gt;3, cho (2,1). Và từ mask 1001=(2,1)+người 1: 5&gt;1, cho (3,3). Tốt nhất: (2,1). Tất cả các đường đều đồng ý 2 chuyến.`,substory:``},
+</svg>`,narration:`Đường tốt nhất đến mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0011</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">0</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>, mở chuyến mới. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1011</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">7</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Cũng từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0101</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, cho <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Và từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1001</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>, cho <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>. Tốt nhất: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Tất cả các đường đều đồng ý <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> chuyến.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-16-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -1927,32 +1927,32 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-current">
@@ -1962,32 +1962,32 @@ svg text {
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-done">
     <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">2,6</text>
+    <text x="464" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-done">
     <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="712" y="20" fill="#ffffff">2,0</text>
+    <text x="712" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
   <g data-target="dp.cell[12]" class="scriba-state-done">
     <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="774" y="20" fill="#ffffff">2,6</text>
+    <text x="774" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
   <g data-target="dp.cell[13]" class="scriba-state-idle">
@@ -2008,7 +2008,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Từ mask 0110 = (1,1), thêm người 3 (nặng 7). 7 &gt; 1, mở chuyến mới. dp[1110] = (2, 8-7) = (2, 1). Từ mask 1100=(2,6)+người 1: 5&lt;=6, vừa! Ứng viên (2,1). Và từ mask 1010=(2,1)+người 2: 2&gt;1, cho (3,6). Tốt nhất: (2, 1). Tất cả cho 2 chuyến.`,substory:``},
+</svg>`,narration:`Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0110</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>, thêm người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> (nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>, mở chuyến mới. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1110</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">8</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">7</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1100</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">6</span></span></span></span></span>, vừa! Ứng viên <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Và từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1010</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>, cho <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>. Tốt nhất: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Tất cả cho <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> chuyến.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-17-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -2039,67 +2039,67 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-done">
     <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">2,6</text>
+    <text x="464" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-done">
     <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="712" y="20" fill="#ffffff">2,0</text>
+    <text x="712" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
   <g data-target="dp.cell[12]" class="scriba-state-done">
     <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="774" y="20" fill="#ffffff">2,6</text>
+    <text x="774" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
   <g data-target="dp.cell[13]" class="scriba-state-current">
@@ -2109,7 +2109,7 @@ svg text {
   <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
   <g data-target="dp.cell[14]" class="scriba-state-done">
     <rect x="868" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="898" y="20" fill="#ffffff">2,0</text>
+    <text x="898" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
   <g data-target="dp.cell[15]" class="scriba-state-idle">
@@ -2120,7 +2120,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`dp[1101] = mask chứa người {0,2,3}. Đường tốt nhất: từ mask 0101=(1,3)+người 3: 7&gt;3, cho (2,1). Từ mask 1100=(2,6)+người 0: 3&lt;=6, cho (2,3). Đường thứ hai tốt hơn -- cùng 2 chuyến nhưng còn trống 3 thay vì 1. dp[1101] = (2, 3).`,substory:``},
+</svg>`,narration:`<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1101</span><span class="mclose">]</span></span></span></span></span> = mask chứa người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">}</span></span></span></span></span>. Đường tốt nhất: từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0101</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, cho <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Từ mask <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1100</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7804em;vertical-align:-0.136em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">≤</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">6</span></span></span></span></span>, cho <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>. Đường thứ hai tốt hơn -- cùng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> chuyến nhưng còn trống <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> thay vì <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>. <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1101</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-18-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -2151,77 +2151,77 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-done">
     <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">2,6</text>
+    <text x="464" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-done">
     <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="712" y="20" fill="#ffffff">2,0</text>
+    <text x="712" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
   <g data-target="dp.cell[12]" class="scriba-state-done">
     <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="774" y="20" fill="#ffffff">2,6</text>
+    <text x="774" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
   <g data-target="dp.cell[13]" class="scriba-state-done">
     <rect x="806" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="836" y="20" fill="#ffffff">2,3</text>
+    <text x="836" y="20" fill="#00261c">2,3</text>
   </g>
   <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
   <g data-target="dp.cell[14]" class="scriba-state-done">
     <rect x="868" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="898" y="20" fill="#ffffff">2,0</text>
+    <text x="898" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
   <g data-target="dp.cell[15]" class="scriba-state-current">
@@ -2232,7 +2232,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Cuối cùng, dp[1111] -- cả 4 người. Ta kiểm tra chuyển trạng thái từ tất cả mask thiếu đúng một người. Từ dp[0111]=(2,6)+người 3 (w=7): 7&gt;6, chuyến mới, ứng viên (3,1). Từ dp[1011]=(2,1)+người 2 (w=2): 2&gt;1, chuyến mới, ứng viên (3,6). Từ dp[1101]=(2,3)+người 1 (w=5): 5&gt;3, chuyến mới, ứng viên (3,3). Từ dp[1110]=(2,1)+người 0 (w=3): 3&gt;1, chuyến mới, ứng viên (3,3).`,substory:``},
+</svg>`,narration:`Cuối cùng, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1111</span><span class="mclose">]</span></span></span></span></span> -- cả <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">4</span></span></span></span></span> người. Ta kiểm tra chuyển trạng thái từ tất cả mask thiếu đúng một người. Từ <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0111</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> (<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>): <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">6</span></span></span></span></span>, chuyến mới, ứng viên <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>. Từ <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1011</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> (<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>): <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">2</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>, chuyến mới, ứng viên <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>. Từ <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1101</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> (<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">5</span></span></span></span></span>): <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, chuyến mới, ứng viên <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>. Từ <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1110</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span> (<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>): <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>, chuyến mới, ứng viên <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">3</span><span class="mclose">)</span></span></span></span></span>.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-19-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -2263,77 +2263,77 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#0a2e42">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-done">
     <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">2,6</text>
+    <text x="464" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-done">
     <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="712" y="20" fill="#ffffff">2,0</text>
+    <text x="712" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
   <g data-target="dp.cell[12]" class="scriba-state-done">
     <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="774" y="20" fill="#ffffff">2,6</text>
+    <text x="774" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
   <g data-target="dp.cell[13]" class="scriba-state-done">
     <rect x="806" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="836" y="20" fill="#ffffff">2,3</text>
+    <text x="836" y="20" fill="#00261c">2,3</text>
   </g>
   <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
   <g data-target="dp.cell[14]" class="scriba-state-done">
     <rect x="868" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="898" y="20" fill="#ffffff">2,0</text>
+    <text x="898" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
   <g data-target="dp.cell[15]" class="scriba-state-current">
@@ -2344,7 +2344,7 @@ svg text {
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Cả bốn chuyển trạng thái đều cho 3 chuyến. Sức chứa còn lại tốt nhất là 6 (từ dp[1011]+người 2). dp[1111] = (3, 6). Nhưng đáp án chỉ là số chuyến: 3.`,substory:``},
+</svg>`,narration:`Cả bốn chuyển trạng thái đều cho <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> chuyến. Sức chứa còn lại tốt nhất là <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">6</span></span></span></span></span> (từ <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1011</span><span class="mclose">]</span></span></span></span></span>+người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>). <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1111</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">6</span><span class="mclose">)</span></span></span></span></span>. Nhưng đáp án chỉ là số chuyến: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>.`,substory:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 1022 204" role="img" aria-labelledby="elevator-rides-frame-20-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(388,16)">
 <g data-primitive="array" data-shape="w">
@@ -2375,88 +2375,88 @@ svg text {
 <g data-primitive="dptable" data-shape="dp">
   <g data-target="dp.cell[0]" class="scriba-state-done">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">1,8</text>
+    <text x="30" y="20" fill="#00261c">1,8</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="dp.cell[1]" class="scriba-state-done">
     <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">1,5</text>
+    <text x="92" y="20" fill="#00261c">1,5</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="dp.cell[2]" class="scriba-state-done">
     <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">1,3</text>
+    <text x="154" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="dp.cell[3]" class="scriba-state-done">
     <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">1,0</text>
+    <text x="216" y="20" fill="#00261c">1,0</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="dp.cell[4]" class="scriba-state-done">
     <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">1,6</text>
+    <text x="278" y="20" fill="#00261c">1,6</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="dp.cell[5]" class="scriba-state-done">
     <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">1,3</text>
+    <text x="340" y="20" fill="#00261c">1,3</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="dp.cell[6]" class="scriba-state-done">
     <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">1,1</text>
+    <text x="402" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="dp.cell[7]" class="scriba-state-done">
     <rect x="434" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">2,6</text>
+    <text x="464" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
   <g data-target="dp.cell[8]" class="scriba-state-done">
     <rect x="496" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="526" y="20" fill="#ffffff">1,1</text>
+    <text x="526" y="20" fill="#00261c">1,1</text>
   </g>
   <text class="scriba-index-label idx" x="526" y="56" fill="#6c757d">8</text>
   <g data-target="dp.cell[9]" class="scriba-state-done">
     <rect x="558" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="588" y="20" fill="#ffffff">2,1</text>
+    <text x="588" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="588" y="56" fill="#6c757d">9</text>
   <g data-target="dp.cell[10]" class="scriba-state-done">
     <rect x="620" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="650" y="20" fill="#ffffff">2,1</text>
+    <text x="650" y="20" fill="#00261c">2,1</text>
   </g>
   <text class="scriba-index-label idx" x="650" y="56" fill="#6c757d">10</text>
   <g data-target="dp.cell[11]" class="scriba-state-done">
     <rect x="682" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="712" y="20" fill="#ffffff">2,0</text>
+    <text x="712" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="712" y="56" fill="#6c757d">11</text>
   <g data-target="dp.cell[12]" class="scriba-state-done">
     <rect x="744" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="774" y="20" fill="#ffffff">2,6</text>
+    <text x="774" y="20" fill="#00261c">2,6</text>
   </g>
   <text class="scriba-index-label idx" x="774" y="56" fill="#6c757d">12</text>
   <g data-target="dp.cell[13]" class="scriba-state-done">
     <rect x="806" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="836" y="20" fill="#ffffff">2,3</text>
+    <text x="836" y="20" fill="#00261c">2,3</text>
   </g>
   <text class="scriba-index-label idx" x="836" y="56" fill="#6c757d">13</text>
   <g data-target="dp.cell[14]" class="scriba-state-done">
     <rect x="868" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="898" y="20" fill="#ffffff">2,0</text>
+    <text x="898" y="20" fill="#00261c">2,0</text>
   </g>
   <text class="scriba-index-label idx" x="898" y="56" fill="#6c757d">14</text>
   <g data-target="dp.cell[15]" class="scriba-state-good">
     <rect x="930" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="960" y="20" fill="#ffffff">3,6</text>
+    <text x="960" y="20" fill="#0a2e42">3,6</text>
   </g>
   <text class="scriba-index-label idx" x="960" y="56" fill="#6c757d">15</text>
   <text class="scriba-primitive-label" x="495" y="72" fill="#6c757d">dp[mask] = (rides, remaining)</text>
 </g>
 </g>
-</svg>`,narration:`Đáp án: dp[1111].số_chuyến = 3. Số chuyến thang máy tối thiểu cho cân nặng [3, 5, 2, 7] với sức chứa 8 là 3. Một cách phân nhóm tối ưu: chuyến 1 = {người 1, người 0} (5+3=8), chuyến 2 = {người 2} (2), chuyến 3 = {người 3} (7). QHĐ bitmask đã duyệt tất cả 2^4 = 16 tập con trong thời gian O(2^n * n).`,substory:``}
+</svg>`,narration:`Đáp án: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.2679em;vertical-align:-0.31em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1111</span><span class="mclose">]</span><span class="mord">.</span><span class="mord text"><span class="mord">s</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9579em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord">o</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.25em;"><span class="mord">ˆ</span></span></span></span></span></span></span></span><span style="top:-3.2634em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.25em;"><span class="mord">ˊ</span></span></span></span></span></span></span><span class="mord">_chuy</span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.9579em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord accent"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6944em;"><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="mord">e</span></span><span style="top:-3em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.25em;"><span class="mord">ˆ</span></span></span></span></span></span></span></span><span style="top:-3.2634em;"><span class="pstrut" style="height:3em;"></span><span class="accent-body" style="left:-0.25em;"><span class="mord">ˊ</span></span></span></span></span></span></span><span class="mord">n</span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>. Số chuyến thang máy tối thiểu cho cân nặng <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">[</span><span class="mord">3</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">5</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mclose">]</span></span></span></span></span> với sức chứa <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span> là <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>. Một cách phân nhóm tối ưu: chuyến <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span> = <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span></span></span></span></span>người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span>, người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mclose">}</span></span></span></span></span> (<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">5</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>), chuyến <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span> = <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span></span></span></span></span>người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mclose">}</span></span></span></span></span> (<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2</span></span></span></span></span>), chuyến <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span> = <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">{</span></span></span></span></span>người <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mclose">}</span></span></span></span></span> (<span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>). QHĐ bitmask đã duyệt tất cả <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8141em;"></span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.8141em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mtight">4</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">16</span></span></span></span></span> tập con trong thời gian <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">O</span><span class="mopen">(</span><span class="mord"><span class="mord">2</span><span class="msupsub"><span class="vlist-t"><span class="vlist-r"><span class="vlist" style="height:0.6644em;"><span style="top:-3.063em;margin-right:0.05em;"><span class="pstrut" style="height:2.7em;"></span><span class="sizing reset-size6 size3 mtight"><span class="mord mathnormal mtight">n</span></span></span></span></span></span></span></span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">⋅</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">n</span><span class="mclose">)</span></span></span></span></span>.`,substory:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');

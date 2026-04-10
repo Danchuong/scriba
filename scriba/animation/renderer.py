@@ -230,6 +230,8 @@ def _snapshot_to_frame_data(
             "target": a.target,
             "label": a.text,
             "ephemeral": a.ephemeral,
+            "arrow_from": a.arrow_from,
+            "color": a.color,
         }
         for a in snap.annotations
     ]

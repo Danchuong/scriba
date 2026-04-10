@@ -128,6 +128,10 @@ Declared on `:root` in `scriba-scene-primitives.css`. These are the **only** col
   --scriba-state-good-stroke:      #009E73;
   --scriba-state-good-text:        #ffffff;
 
+  --scriba-state-path-fill:        #2563eb;
+  --scriba-state-path-stroke:      #2563eb;
+  --scriba-state-path-text:        #ffffff;
+
   --scriba-state-highlight-fill:   #F0E442;
   --scriba-state-highlight-stroke: currentColor;
   --scriba-state-highlight-text:   var(--scriba-fg);
@@ -138,6 +142,7 @@ Declared on `:root` in `scriba-scene-primitives.css`. These are the **only** col
   --scriba-annotation-good:        #009E73;
   --scriba-annotation-error:       #D55E00;
   --scriba-annotation-muted:       var(--scriba-fg-muted);
+  --scriba-annotation-path:        #2563eb;
 }
 ```
 
@@ -256,6 +261,21 @@ Defined in `scriba-scene-primitives.css`. Applied to `<g data-target="...">` ele
 }
 .scriba-state-good > text {
   fill: var(--scriba-state-good-text);
+}
+
+/* ── path ─────────────────────────────────────────────── */
+.scriba-state-path > rect,
+.scriba-state-path > circle {
+  fill:   var(--scriba-state-path-fill);
+  stroke: var(--scriba-state-path-stroke);
+  stroke-width: calc(var(--scriba-cell-stroke-width) + 0.5);
+}
+.scriba-state-path > line {
+  stroke: var(--scriba-state-path-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 0.5);
+}
+.scriba-state-path > text {
+  fill: var(--scriba-state-path-text);
 }
 
 /* ── highlight (ephemeral) ─────────────────────────────── */
@@ -676,7 +696,7 @@ Labels (the `label=` parameter on `\shape`) are rendered as a `<text>` element a
 
 ## 7. Annotation styles — `scriba-scene-primitives.css`
 
-Annotations are `<g class="scriba-annotation scriba-annotation-{color}">` groups emitted inside the target's `<g data-target>`. Per `04-environments-spec.md` §3.8, the color tokens are `info`, `warn`, `good`, `error`, `muted`.
+Annotations are `<g class="scriba-annotation scriba-annotation-{color}">` groups emitted inside the target's `<g data-target>`. Per `04-environments-spec.md` §3.8, the color tokens are `info`, `warn`, `good`, `error`, `muted`, `path`.
 
 ### 7.1 Base annotation
 
@@ -720,6 +740,10 @@ Annotations are `<g class="scriba-annotation scriba-annotation-{color}">` groups
 .scriba-annotation-muted > text { fill: var(--scriba-annotation-muted); }
 .scriba-annotation-muted > path,
 .scriba-annotation-muted > line { stroke: var(--scriba-annotation-muted); }
+
+.scriba-annotation-path > text  { fill: var(--scriba-annotation-path); }
+.scriba-annotation-path > path,
+.scriba-annotation-path > line  { stroke: var(--scriba-annotation-path); }
 ```
 
 ### 7.3 Arrowhead marker
@@ -826,6 +850,8 @@ At 640px and below, the filmstrip collapses to a vertical stack. Each frame occu
   .scriba-state-error > circle   { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .scriba-state-good > rect,
   .scriba-state-good > circle    { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .scriba-state-path > rect,
+  .scriba-state-path > circle    { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .scriba-state-highlight > rect,
   .scriba-state-highlight > circle { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
@@ -891,6 +917,7 @@ Complete list of CSS classes emitted by the animation/diagram pipeline, grouped 
 | `.scriba-state-dim` | `<g data-target>` | De-emphasized (50% opacity + desaturated) |
 | `.scriba-state-error` | `<g data-target>` | Error (Wong vermillion) |
 | `.scriba-state-good` | `<g data-target>` | Positive result (Wong bluish-green) |
+| `.scriba-state-path` | `<g data-target>` | Path state (blue #2563eb) |
 | `.scriba-state-highlight` | `<g data-target>` | Ephemeral highlight (Wong yellow + 2px stroke) |
 | `.scriba-annotation` | `<g>` | Annotation group |
 | `.scriba-annotation-info` | `<g>` | Annotation in info color |
@@ -898,6 +925,7 @@ Complete list of CSS classes emitted by the animation/diagram pipeline, grouped 
 | `.scriba-annotation-good` | `<g>` | Annotation in good color |
 | `.scriba-annotation-error` | `<g>` | Annotation in error color |
 | `.scriba-annotation-muted` | `<g>` | Annotation in muted color |
+| `.scriba-annotation-path` | `<g>` | Annotation in path color |
 | `.scriba-primitive-label` | `<text>` | Primitive caption label |
 | `.scriba-graph-nodes` | `<g>` | Graph node container |
 | `.scriba-graph-edges` | `<g>` | Graph edge container |

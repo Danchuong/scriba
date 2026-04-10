@@ -35,7 +35,7 @@ class BoundingBox:
 # ---------------------------------------------------------------------------
 
 VALID_STATES: frozenset[str] = frozenset(
-    ("idle", "current", "done", "dim", "error", "good", "highlight")
+    ("idle", "current", "done", "dim", "error", "good", "highlight", "path")
 )
 
 DEFAULT_STATE = "idle"
@@ -52,6 +52,7 @@ STATE_COLORS: dict[str, dict[str, str]] = {
     "error":     {"fill": "#D55E00", "stroke": "#b34e00", "text": "#ffffff"},
     "good":      {"fill": "#56B4E9", "stroke": "#3a95c9", "text": "#ffffff"},
     "highlight": {"fill": "#F0E442", "stroke": "#d4c836", "text": "#212529"},
+    "path":      {"fill": "#dbeafe", "stroke": "#2563eb", "text": "#0c4a6e"},
 }
 
 
@@ -257,6 +258,7 @@ def _render_svg_text(
     fo_width: int = 0,
     fo_height: int = 0,
     render_inline_tex: "Callable[[str], str] | None" = None,
+    text_outline: str | None = None,
 ) -> str:
     """Render a text value as either a plain ``<text>`` or a ``<foreignObject>``.
 
@@ -294,6 +296,11 @@ def _render_svg_text(
             attrs += f' font-weight="{font_weight}"'
         if font_size:
             attrs += f' font-size="{font_size}"'
+        if text_outline:
+            attrs += (
+                f' stroke="{text_outline}" stroke-width="4"'
+                f' paint-order="stroke"'
+            )
         return f"<text {attrs}>{_escape_xml(text_str)}</text>"
 
     # Slow path — render via foreignObject

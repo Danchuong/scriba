@@ -57,6 +57,7 @@ All primitives share the same locked state set (applied via `\recolor`):
 | `dim`       | `scriba-state-dim`       | 50% opacity, desaturated   |
 | `error`     | `scriba-state-error`     | `#D55E00` (vermillion)     |
 | `good`      | `scriba-state-good`      | `#56B4E9` (sky blue)       |
+| `path`      | `scriba-state-path`      | `#2563eb` (blue)           |
 | `highlight` | `scriba-state-highlight` | `#F0E442` (yellow) + 2px stroke (ephemeral only) |
 
 ### 2.4 Common `\apply` parameters
@@ -569,11 +570,11 @@ pertain to primitive declaration and usage:
 | E1106  | Target selector references unknown shape     | Check shape name spelling.            |
 | E1107  | Value type mismatch on `\apply`              | E.g., string on numeric-declared cell.|
 | E1108  | `\highlight` target unknown                  | Target does not exist.                |
-| E1109  | Unknown state in `\recolor`                  | Must be: idle, current, done, dim, error, good. |
+| E1109  | Unknown state in `\recolor`, or missing both state and color | Must be: idle, current, done, dim, error, good, path. At least one of state or color required. |
 | E1110  | `\recolor` target unknown                    | Target does not exist.                |
 | E1111  | `\annotate` target unknown                   | Target does not exist.                |
 | E1112  | Unknown `position` in `\annotate`            | Must be: above, below, left, right, inside. |
-| E1113  | Unknown `color` token in `\annotate`         | Must be: info, warn, good, error, muted. |
+| E1113  | Unknown `color` token in `\annotate`         | Must be: info, warn, good, error, muted, path. |
 
 ### Graph layout-specific
 

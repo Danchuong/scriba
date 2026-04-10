@@ -182,12 +182,14 @@ class HighlightCommand:
 
 @dataclass(frozen=True, slots=True)
 class RecolorCommand:
-    """``\\recolor{target}{state=...}``."""
+    """``\\recolor{target}{state=..., color=..., arrow_from=...}``."""
 
     line: int
     col: int
     target: Selector
-    state: str
+    state: str | None = None
+    annotation_color: str | None = None
+    annotation_from: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

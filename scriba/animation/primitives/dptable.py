@@ -206,7 +206,10 @@ class DPTableInstance:
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(self) -> tuple[float, float, float, float]:
+    def bounding_box(
+        self,
+        annotations: list[dict] | None = None,
+    ) -> tuple[float, float, float, float]:
         """Return ``(x, y, width, height)``."""
         tw, th = self._grid_dimensions()
         h = th

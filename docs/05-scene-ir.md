@@ -216,7 +216,7 @@ prelude (`E1053`).
 
 ### 3.8 `RecolorCommand`
 
-Produced by `\recolor{target}{state=...}`.
+Produced by `\recolor{target}{state=..., color=..., arrow_from=...}`.
 
 ```python
 class RecolorCommand(BaseModel):
@@ -224,14 +224,20 @@ class RecolorCommand(BaseModel):
 
     line: int
     col: int
-    target: Selector    # parsed target selector
-    state: str          # one of the 6 locked states
+    target: Selector                    # parsed target selector
+    state: str | None = None            # one of the 7 locked states
+    annotation_color: str | None = None # recolor annotation(s) on target
+    annotation_from: str | None = None  # filter by source selector
 ```
 
-| Field    | Type       | Constraints                                                     |
-|----------|------------|-----------------------------------------------------------------|
-| `target` | `Selector` | Unknown target is `E1110`.                                      |
-| `state`  | `str`      | Must be one of: `idle`, `current`, `done`, `dim`, `error`, `good`. Unknown state is `E1109`. |
+| Field              | Type              | Constraints                                                     |
+|--------------------|-------------------|-----------------------------------------------------------------|
+| `target`           | `Selector`        | Unknown target is `E1110`.                                      |
+| `state`            | `str \| None`     | Must be one of: `idle`, `current`, `done`, `dim`, `error`, `good`, `path`. Unknown state is `E1109`. Optional if `annotation_color` is present. |
+| `annotation_color` | `str \| None`     | Recolors annotation(s) on the target. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`. |
+| `annotation_from`  | `str \| None`     | Filters which annotation to recolor by source selector string.  |
+
+At least one of `state` or `annotation_color` must be present (`E1109`).
 
 Persistence: **persistent** across frames until overwritten.
 
@@ -248,7 +254,7 @@ class AnnotateCommand(BaseModel):
     target: Selector               # parsed target selector
     label: str | None = None       # annotation text
     position: str = "above"        # above | below | left | right | inside
-    color: str = "info"            # info | warn | good | error | muted
+    color: str = "info"            # info | warn | good | error | muted | path
     arrow: bool = False            # True for graph/tree by default
     ephemeral: bool = False        # drop at next \step if True
     arrow_from: Selector | None = None  # source target for transition arrows
@@ -259,7 +265,7 @@ class AnnotateCommand(BaseModel):
 | `target`     | `Selector`        | required  | Unknown target is `E1111`.                      |
 | `label`      | `str \| None`     | `None`    | Annotation text.                                |
 | `position`   | `str`             | `"above"` | Must be: `above`, `below`, `left`, `right`, `inside`. Unknown is `E1112`. |
-| `color`      | `str`             | `"info"`  | Must be: `info`, `warn`, `good`, `error`, `muted`. Unknown is `E1113`. |
+| `color`      | `str`             | `"info"`  | Must be: `info`, `warn`, `good`, `error`, `muted`, `path`. Unknown is `E1113`. |
 | `arrow`      | `bool`            | `False`   | `True` for graph/tree edges by default.         |
 | `ephemeral`  | `bool`            | `False`   | When `True`, dropped at the next `\step`.       |
 | `arrow_from` | `Selector \| None`| `None`    | Source target for DPTable transition arrows.    |
@@ -476,7 +482,7 @@ SceneState = dict[str, TargetState]
 @dataclass
 class TargetState:
     value: Any = None
-    state: str = "idle"              # one of the 6 locked states
+    state: str = "idle"              # one of the 7 locked states
     annotations: list[Annotation] = field(default_factory=list)
     label: str | None = None
     tooltip: str | None = None
@@ -485,7 +491,7 @@ class TargetState:
 class Annotation:
     label: str | None
     position: str            # above | below | left | right | inside
-    color: str               # info | warn | good | error | muted
+    color: str               # info | warn | good | error | muted | path
     arrow: bool
     ephemeral: bool
     arrow_from: str | None   # resolved selector string, or None
@@ -596,7 +602,7 @@ The emitter never reads the IR directly for command data; it only reads
 | `NarrateCommand`    | `parser/ast.py`         | Yes    | `\narrate{...}`                                |
 | `ApplyCommand`      | `parser/ast.py`         | Yes    | `\apply{target}{params}`                       |
 | `HighlightCommand`  | `parser/ast.py`         | Yes    | `\highlight{target}`                           |
-| `RecolorCommand`    | `parser/ast.py`         | Yes    | `\recolor{target}{state=...}`                  |
+| `RecolorCommand`    | `parser/ast.py`         | Yes    | `\recolor{target}{state=..., color=..., arrow_from=...}` |
 | `AnnotateCommand`   | `parser/ast.py`         | Yes    | `\annotate{target}{params}`                    |
 | `Selector`          | `parser/ast.py`         | Yes    | Parsed target selector                         |
 | `InterpolationRef`  | `parser/ast.py`         | Yes    | `${name}` / `${name[i]}` reference             |
@@ -620,7 +626,7 @@ The parser validates constraints in this order, failing fast on the first error:
 4. **Ordering constraints.** `\shape` after `\step` (`E1051`), `\step` trailing text (`E1052`), `\highlight` in prelude (`E1053`), `\narrate` outside `\step` (`E1056`), duplicate `\narrate` (`E1055`).
 5. **Shape validation.** Duplicate name (`E1101`), unknown type (`E1102`), missing required param (`E1103`), param type mismatch (`E1104`).
 6. **Selector validation.** Unknown shape in target (`E1106`), unknown target for highlight (`E1108`), recolor (`E1110`), annotate (`E1111`).
-7. **State/color validation.** Unknown recolor state (`E1109`), unknown annotation position (`E1112`), unknown annotation color (`E1113`).
+7. **State/color validation.** Unknown recolor state or missing both state and color (`E1109`), unknown annotation position (`E1112`), unknown annotation color (`E1113`).
 8. **Frame count validation.** Zero frames (`E1057`), soft limit >30 (`E1180` warning), hard limit >100 (`E1181` error).
 9. **Narration validation.** Missing narration (`E1150` warning in strict), missing narration strict (`E1182` error).
 

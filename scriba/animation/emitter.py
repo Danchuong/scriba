@@ -32,7 +32,7 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 _PADDING = 16
-_PRIMITIVE_GAP = 16
+_PRIMITIVE_GAP = 50
 
 
 # ---------------------------------------------------------------------------
@@ -89,11 +89,17 @@ def _normalize_bbox(
     return (int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]))
 
 
-def compute_viewbox(primitives: dict[str, Any]) -> str:
+def compute_viewbox(
+    primitives: dict[str, Any],
+    annotations: list[dict[str, Any]] | None = None,
+) -> str:
     """Compute SVG viewBox from primitive bounding boxes.
 
     Primitives are stacked vertically with ``_PRIMITIVE_GAP`` px gaps
     and ``_PADDING`` px on all sides.  Returns ``"0 0 {W} {H}"``.
+
+    When *annotations* are provided, Array and DPTable primitives will
+    include vertical space for arrow curves in their bounding boxes.
     """
     if not primitives:
         return "0 0 0 0"
@@ -102,8 +108,16 @@ def compute_viewbox(primitives: dict[str, Any]) -> str:
     total_height = 0
     first = True
 
-    for prim in primitives.values():
-        bbox = prim.bounding_box()
+    for shape_name, prim in primitives.items():
+        if annotations is not None and hasattr(prim, "_arrow_height_above"):
+            prim_anns = [
+                a
+                for a in annotations
+                if a.get("target", "").startswith(shape_name + ".")
+            ]
+            bbox = prim.bounding_box(annotations=prim_anns)
+        else:
+            bbox = prim.bounding_box()
         _, _, w, h = _normalize_bbox(bbox)
 
         if not first:
@@ -244,8 +258,8 @@ def _emit_frame_svg(
                     if ap:
                         prim.apply_command(ap)
 
-    # Recompute viewbox AFTER push/pop
-    viewbox = compute_viewbox(primitives)
+    # Recompute viewbox AFTER push/pop, including arrow annotation space
+    viewbox = compute_viewbox(primitives, annotations=frame.annotations)
 
     svg_parts: list[str] = [
         f'<svg class="scriba-stage-svg" viewBox="{viewbox}" '
@@ -265,7 +279,15 @@ def _emit_frame_svg(
     vb_width = int(vb_parts[2]) if len(vb_parts) >= 3 else 0
 
     for shape_name, prim in primitives.items():
-        bbox = prim.bounding_box()
+        if hasattr(prim, "_arrow_height_above"):
+            prim_anns_for_bbox = [
+                a
+                for a in frame.annotations
+                if a.get("target", "").startswith(shape_name + ".")
+            ]
+            bbox = prim.bounding_box(annotations=prim_anns_for_bbox)
+        else:
+            bbox = prim.bounding_box()
         _, _, bw, bh = _normalize_bbox(bbox)
 
         x_offset = (vb_width - bw) // 2
@@ -278,7 +300,7 @@ def _emit_frame_svg(
         ptype = getattr(prim, "primitive_type", "")
 
         if ptype in ("array", "dptable", "grid", "numberline", "matrix"):
-            if ptype == "dptable":
+            if ptype in ("dptable", "array"):
                 prim_anns = [
                     a
                     for a in frame.annotations

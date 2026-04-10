@@ -195,16 +195,22 @@ Marks a target as the "current focus" of the frame. Ephemeral: cleared automatic
 - **Error codes:** `E1108` unknown target.
 - **Example:** `\highlight{dp.cell[3]}`
 
-### 3.7 `\recolor{target}{state=...}`
+### 3.7 `\recolor{target}{state=..., color=..., arrow_from=...}`
 
-Changes the **persistent visual state** of a target. Persists across frames until overwritten.
+Changes the **persistent visual state** of a target and/or recolors annotations on it. Persists across frames until overwritten.
 
 - **Contexts:** animation, diagram.
-- **Signature:** `\recolor{<target_selector>}{state=<state_name>}`
-- **Allowed states (locked):** `idle`, `current`, `done`, `dim`, `error`, `good`. Any other value is `E1109`.
-- **Rendering:** adds the class `scriba-state-<state>` to the targeted SVG element, replacing any previously applied state class for the same target. The Wong CVD-safe palette defined in §9 maps each state to a color pair (fill + stroke) via CSS variables.
-- **Error codes:** `E1109` unknown state; `E1110` unknown target.
-- **Example:** `\recolor{dp.cell[3]}{state=done}`
+- **Signature:** `\recolor{<target_selector>}{state=<state_name>, color=<color_token>, arrow_from=<selector>}`
+- **Parameters:**
+  - `state` — optional, sets the visual state of the target. Allowed values: `idle`, `current`, `done`, `dim`, `error`, `good`, `path`. Any other value is `E1109`.
+  - `color` — optional, recolors annotation(s) on the target. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`.
+  - `arrow_from` — optional, filters which annotation to recolor by source selector.
+  - At least one of `state` or `color` must be present (`E1109`).
+- **Rendering:** When `state` is provided, adds the class `scriba-state-<state>` to the targeted SVG element, replacing any previously applied state class for the same target. The Wong CVD-safe palette defined in §9 maps each state to a color pair (fill + stroke) via CSS variables. When `color` is provided, recolors matching annotation(s) on the target; if `arrow_from` is also provided, only annotations originating from that source are recolored.
+- **Error codes:** `E1109` unknown state or missing both state and color; `E1110` unknown target.
+- **Examples:**
+  - `\recolor{dp.cell[3]}{state=done}`
+  - `\recolor{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}`
 
 ### 3.8 `\annotate{target}{params...}`
 
@@ -212,7 +218,7 @@ Attaches an auxiliary label, arrow, or badge to a target. Persistent by default;
 
 - **Contexts:** animation, diagram.
 - **Signature:** `\annotate{<target_selector>}{<param_list>}`
-- **Parameters (locked core):** `label=<string>`, `position=<above|below|left|right|inside>` (default `above`), `color=<info|warn|good|error|muted>` (default `info`), `arrow=<bool>` (default `true` for graph/tree, `false` otherwise), `ephemeral=<bool>` (default `false`).
+- **Parameters (locked core):** `label=<string>`, `position=<above|below|left|right|inside>` (default `above`), `color=<info|warn|good|error|muted|path>` (default `info`), `arrow=<bool>` (default `true` for graph/tree, `false` otherwise), `ephemeral=<bool>` (default `false`).
 - **Error codes:** `E1111` unknown target; `E1112` unknown position; `E1113` unknown color token.
 - **Example:** `\annotate{dp.cell[2]}{label="min", color=info}`
 
@@ -612,11 +618,11 @@ All animation/diagram errors use codes in `E1001..E1299`. The ranges are reserve
 | E1106 | Target selector references unknown shape                          |                                                              |
 | E1107 | Value type mismatch on `\apply`                                   |                                                              |
 | E1108 | `\highlight` target unknown                                       |                                                              |
-| E1109 | Unknown state in `\recolor`                                       | Must be one of: idle, current, done, dim, error, good.       |
+| E1109 | Unknown state in `\recolor`, or missing both state and color      | Must be one of: idle, current, done, dim, error, good, path. At least one of state or color required. |
 | E1110 | `\recolor` target unknown                                         |                                                              |
 | E1111 | `\annotate` target unknown                                        |                                                              |
 | E1112 | Unknown annotation position                                       | above/below/left/right/inside.                               |
-| E1113 | Unknown annotation color token                                    | info/warn/good/error/muted.                                  |
+| E1113 | Unknown annotation color token                                    | info/warn/good/error/muted/path.                                  |
 
 ### 11.4 Compute errors (`E1150..E1179`)
 
