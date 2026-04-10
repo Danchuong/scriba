@@ -197,9 +197,11 @@ _ALLOWED_BUILTINS: dict[str, Any] = {
     "sum": sum,
     "divmod": divmod,
     "isinstance": isinstance,
-    "hash": hash,
     "repr": repr,
     "round": round,
+    "chr": chr,
+    "ord": ord,
+    "pow": pow,
     "map": map,
     "filter": filter,
     # print is injected per-request with a fresh capture list

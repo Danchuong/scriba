@@ -58,7 +58,7 @@ All primitives share the same locked state set (applied via `\recolor`):
 | `error`     | `scriba-state-error`     | `#D55E00` (vermillion)     |
 | `good`      | `scriba-state-good`      | `#56B4E9` (sky blue)       |
 | `path`      | `scriba-state-path`      | `#2563eb` (blue)           |
-| `highlight` | `scriba-state-highlight` | `#F0E442` (yellow) + 2px stroke (ephemeral only) |
+| `highlight` | `scriba-state-highlight` | `#F0E442` (yellow) + 2px stroke (ephemeral only; set via `\highlight` command only, not valid in `\recolor`) |
 
 ### 2.4 Common `\apply` parameters
 

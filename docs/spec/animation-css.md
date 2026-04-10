@@ -84,7 +84,7 @@ Declared on `:root` in `scriba-scene-primitives.css`:
 
   /* Annotation */
   --scriba-annotation-font:        600 11px ui-monospace, monospace;
-  --scriba-annotation-arrow-width: 1.6;
+  --scriba-annotation-arrow-width: 2.0;
 
   /* Widget (interactive wrapper — cookbook demos) */
   --scriba-widget-shadow:          0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
@@ -124,13 +124,13 @@ Declared on `:root` in `scriba-scene-primitives.css`. These are the **only** col
   --scriba-state-error-stroke:     #D55E00;
   --scriba-state-error-text:       #ffffff;
 
-  --scriba-state-good-fill:        #009E73;
-  --scriba-state-good-stroke:      #009E73;
+  --scriba-state-good-fill:        #56B4E9;
+  --scriba-state-good-stroke:      #3a95c9;
   --scriba-state-good-text:        #ffffff;
 
-  --scriba-state-path-fill:        #2563eb;
+  --scriba-state-path-fill:        #dbeafe;
   --scriba-state-path-stroke:      #2563eb;
-  --scriba-state-path-text:        #ffffff;
+  --scriba-state-path-text:        #0c4a6e;
 
   --scriba-state-highlight-fill:   #F0E442;
   --scriba-state-highlight-stroke: currentColor;
@@ -154,9 +154,10 @@ The state colors are drawn from the Wong (2011) palette, chosen because they are
 |-------|-----------|-----|------|
 | `current` | Blue | `#0072B2` | `rgb(0, 114, 178)` |
 | `done` | Bluish-green | `#009E73` | `rgb(0, 158, 115)` |
-| `good` | Bluish-green | `#009E73` | `rgb(0, 158, 115)` |
+| `good` | Sky blue | `#56B4E9` | `rgb(86, 180, 233)` |
 | `error` | Vermillion | `#D55E00` | `rgb(213, 94, 0)` |
 | `highlight` | Yellow | `#F0E442` | `rgb(240, 228, 66)` |
+| `path` | Blue (fill `#dbeafe`, stroke `#2563eb`) | `#dbeafe` / `#2563eb` | — |
 | annotation `warn` | Orange | `#E69F00` | `rgb(230, 159, 0)` |
 | annotation `info` | Blue | `#0072B2` | `rgb(0, 114, 178)` |
 
@@ -790,7 +791,7 @@ Dark mode follows the same ancestor-selector convention as `scriba-tex-content.c
 }
 ```
 
-The six Wong hues (`current` #0072B2, `done`/`good` #009E73, `error` #D55E00, `highlight` #F0E442, annotation `warn` #E69F00, annotation `info` #0072B2) are **not remapped** in dark mode. They remain perceptually distinct against both light and dark backgrounds. Consumers who need to adjust brightness for a specific dark theme may override `--scriba-state-{name}-fill` and `--scriba-state-{name}-stroke` on their own `[data-theme="dark"]` selector.
+The Wong hues (`current` #0072B2, `done` #009E73, `good` #56B4E9, `error` #D55E00, `highlight` #F0E442, `path` #dbeafe/#2563eb, annotation `warn` #E69F00, annotation `info` #0072B2) are **not remapped** in dark mode. They remain perceptually distinct against both light and dark backgrounds. Consumers who need to adjust brightness for a specific dark theme may override `--scriba-state-{name}-fill` and `--scriba-state-{name}-stroke` on their own `[data-theme="dark"]` selector.
 
 ---
 
@@ -916,8 +917,8 @@ Complete list of CSS classes emitted by the animation/diagram pipeline, grouped 
 | `.scriba-state-done` | `<g data-target>` | Completed (Wong bluish-green) |
 | `.scriba-state-dim` | `<g data-target>` | De-emphasized (50% opacity + desaturated) |
 | `.scriba-state-error` | `<g data-target>` | Error (Wong vermillion) |
-| `.scriba-state-good` | `<g data-target>` | Positive result (Wong bluish-green) |
-| `.scriba-state-path` | `<g data-target>` | Path state (blue #2563eb) |
+| `.scriba-state-good` | `<g data-target>` | Positive result (Wong sky blue #56B4E9) |
+| `.scriba-state-path` | `<g data-target>` | Path state (fill #dbeafe, stroke #2563eb) |
 | `.scriba-state-highlight` | `<g data-target>` | Ephemeral highlight (Wong yellow + 2px stroke) |
 | `.scriba-annotation` | `<g>` | Annotation group |
 | `.scriba-annotation-info` | `<g>` | Annotation in info color |

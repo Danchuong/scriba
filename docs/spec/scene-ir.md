@@ -234,8 +234,8 @@ class RecolorCommand(BaseModel):
 |--------------------|-------------------|-----------------------------------------------------------------|
 | `target`           | `Selector`        | Unknown target is `E1110`.                                      |
 | `state`            | `str \| None`     | Must be one of: `idle`, `current`, `done`, `dim`, `error`, `good`, `path`. Unknown state is `E1109`. Optional if `annotation_color` is present. |
-| `annotation_color` | `str \| None`     | Recolors annotation(s) on the target. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`. |
-| `annotation_from`  | `str \| None`     | Filters which annotation to recolor by source selector string.  |
+| `annotation_color` | `str \| None`     | Recolors annotation(s) on the target. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`. Maps to `color=` in LaTeX syntax. |
+| `annotation_from`  | `str \| None`     | Filters which annotation to recolor by source selector string. Maps to `arrow_from=` in LaTeX syntax. |
 
 At least one of `state` or `annotation_color` must be present (`E1109`).
 

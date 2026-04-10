@@ -886,6 +886,7 @@ class SceneParser:
             raise ValidationError(
                 f"expected {kind.name}, got {tok.kind.name}",
                 position=tok.col,
+                code="E1012",
                 line=tok.line,
                 col=tok.col,
             )

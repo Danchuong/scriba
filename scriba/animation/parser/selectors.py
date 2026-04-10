@@ -203,7 +203,7 @@ class SelectorParser:
                 return "".join(chars)
             chars.append(ch)
             self._pos += 1
-        raise self._error("unterminated string in selector")
+        raise self._error("unterminated string in selector", code="E1011")
 
     def _parse_number(self) -> int:
         self._skip_ws()
@@ -211,7 +211,7 @@ class SelectorParser:
         if self._pos < len(self._text) and self._text[self._pos] == "-":
             self._pos += 1
         if self._pos >= len(self._text) or not self._text[self._pos].isdigit():
-            raise self._error("expected number")
+            raise self._error("expected number", code="E1010")
         while self._pos < len(self._text) and self._text[self._pos].isdigit():
             self._pos += 1
         return int(self._text[start : self._pos])
@@ -236,7 +236,7 @@ class SelectorParser:
             ):
                 self._pos += 1
             return self._text[start : self._pos]
-        raise self._error("expected identifier")
+        raise self._error("expected identifier", code="E1010")
 
     def _expect(self, ch: str) -> None:
         self._skip_ws()
@@ -248,7 +248,7 @@ class SelectorParser:
             if self._pos < len(self._text)
             else "EOF"
         )
-        raise self._error(f"expected {ch!r}, got {actual}")
+        raise self._error(f"expected {ch!r}, got {actual}", code="E1010")
 
     def _match(self, ch: str) -> bool:
         self._skip_ws()
@@ -257,10 +257,11 @@ class SelectorParser:
             return True
         return False
 
-    def _error(self, msg: str) -> ValidationError:
+    def _error(self, msg: str, *, code: str = "E1009") -> ValidationError:
         return ValidationError(
             f"Selector parse error at position {self._pos}: {msg}",
             position=self._pos,
+            code=code,
         )
 
 

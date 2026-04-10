@@ -74,7 +74,8 @@ accessor  ::= "cell" "[" idx "]" ("[" idx "]")?
             | "range" "[" idx ":" idx "]"
             | "tick" "[" idx "]"
             | "all"
-            | IDENT ("[" idx "]")?
+            | IDENT "[" idx "]"
+            | IDENT
 idx       ::= NUMBER | "${" IDENT "}"
 node_id   ::= NUMBER | STRING | IDENT | "${" IDENT "}"
 ```
@@ -93,6 +94,11 @@ node_id   ::= NUMBER | STRING | IDENT | "${" IDENT "}"
 | Stack | `s` | `.item[i]`, `.top`, `.all` |
 | Plane2D | `p` | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]`, `.all` |
 | MetricPlot | `plot` | (whole shape only — series via `\apply` params) |
+
+**Generic indexed accessor (`IDENT "[" idx "]"`):** For extended primitives such as Stack and
+Plane2D, selectors like `s.item[0]`, `p.point[1]`, or `p.line[i]` use the `IDENT "[" idx "]"`
+production. This produces a `NamedAccessor` where the identifier is the element kind and the
+index selects a specific element of that kind.
 
 **Bare IDENT as node_id:** In `node[...]` selectors, a bare identifier (e.g. `G.node[A]`) is
 treated as a string node ID. This is equivalent to `G.node["A"]` but more concise.
@@ -284,7 +290,8 @@ Data is fed per-frame via `\apply{plot}{series_name=value, ...}`. Max 1000 point
 ```
 len, range, min, max, enumerate, zip, abs, sorted,
 list, dict, tuple, set, str, int, float, bool,
-reversed, any, all, sum, divmod, print
+reversed, any, all, sum, divmod, print,
+chr, ord, pow
 ```
 
 ### 6.4 Resource Limits
@@ -294,6 +301,13 @@ reversed, any, all, sum, divmod, print
 | Wall clock | 5s |
 | Operations | 10^8 |
 | Memory | 64 MB |
+| Recursion depth | ~1000 (Python default `sys.getrecursionlimit()`) |
+
+> **Note on recursion:** `def` and recursion are allowed (unlike `while`, which is banned).
+> However, deeply recursive functions are bounded by Python's default recursion limit (~1000
+> stack frames). Exceeding this limit raises `E1158`. The 10^8 operation cap and 5s wall clock
+> also apply, so even tail-recursive patterns that stay within the stack limit will be halted
+> if they exceed the operation or time budget.
 
 ### 6.5 Scope Rules
 
@@ -452,6 +466,7 @@ Each frame inherits full state from previous frame, then:
 | `.scriba-state-error` | `--scriba-state-error-fill` (#D55E00) | `--scriba-state-error-stroke` |
 | `.scriba-state-good` | `--scriba-state-good-fill` (#56B4E9) | `--scriba-state-good-stroke` |
 | `.scriba-state-highlight` | `--scriba-state-highlight-fill` (#F0E442) | `--scriba-state-highlight-stroke` |
+| `.scriba-state-path` | `--scriba-state-path-fill` (#dbeafe) | `--scriba-state-path-stroke` (#2563eb) |
 
 ### 10.2 Key CSS Custom Properties
 
@@ -597,6 +612,10 @@ Print media: lines forced to `stroke: #000`.
 | E1006 | Unknown inner command |
 | E1007 | Missing required brace argument |
 | E1008 | Stray text at body top level |
+| E1009 | Selector syntax error (malformed selector expression) |
+| E1010 | Unexpected token in selector |
+| E1011 | Unterminated string in selector |
+| E1012 | Expected token not found |
 
 ### Semantic Errors (E1050–E1099)
 
@@ -642,6 +661,7 @@ Print media: lines forced to `stroke: #000`.
 | E1155 | Unknown interpolation binding |
 | E1156 | Subscript out of range |
 | E1157 | Non-integer subscript |
+| E1158 | Recursion depth exceeded (~1000 frames) |
 
 ### Frame Count (E1180–E1199)
 
@@ -676,8 +696,11 @@ Print media: lines forced to `stroke: #000`.
 | E1360 | Max nesting depth exceeded (depth > 3) |
 | E1361 | Unclosed `\substory` (EOF or parent `\step` reached before `\endsubstory`) |
 | E1362 | `\substory` outside `\step` |
+| E1363 | _(reserved for future use)_ |
+| E1364 | _(reserved for future use)_ |
 | E1365 | `\endsubstory` without `\substory` |
 | E1366 | Substory has zero `\step` blocks (warning) |
+| E1367 | _(reserved for future use)_ |
 | E1368 | Text on the same line as `\substory` or `\endsubstory` |
 
 ### Matrix Errors (E1420–E1429)
@@ -687,6 +710,7 @@ Print media: lines forced to `stroke: #000`.
 | E1422 | Invalid colorscale / vmin >= vmax |
 | E1423 | Data shape mismatch |
 | E1424 | NaN in data (warning) |
+| E1425 | Matrix cell count exceeds 10,000 |
 
 ### Plane2D Errors (E1460–E1469)
 
@@ -750,7 +774,7 @@ Print media: lines forced to `stroke: #000`.
 | Substory nesting depth | 3 | E1360 |
 | Graph stable nodes | 20 | E1501 (warning) |
 | Graph stable frames | 50 | E1502 (warning) |
-| Matrix cells | 10,000 | — |
+| Matrix cells | 10,000 | E1425 |
 
 ---
 

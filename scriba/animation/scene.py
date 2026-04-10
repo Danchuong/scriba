@@ -11,6 +11,7 @@ Implements the delta rules from ``04-environments-spec.md`` section 6.1:
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -179,8 +180,8 @@ class SceneState:
         self.highlights.clear()
         self.annotations = [a for a in self.annotations if not a.ephemeral]
 
-        # Frame-local compute
-        saved_bindings = dict(self.bindings)
+        # Frame-local compute — deep-copy to prevent mutable state leakage
+        saved_bindings = copy.deepcopy(self.bindings)
         for cb in frame_ir.compute:
             self._run_compute(cb, starlark_host)
 
@@ -254,7 +255,7 @@ class SceneState:
             }
         saved_highlights = set(self.highlights)
         saved_annotations = list(self.annotations)
-        saved_bindings = dict(self.bindings)
+        saved_bindings = copy.deepcopy(self.bindings)
         saved_frame_counter = self._frame_counter
         self._frame_counter = 0  # Reset for substory-local numbering
 
