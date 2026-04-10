@@ -48,6 +48,7 @@ class SceneParser:
         source: str,
         *,
         allow_highlight_in_prelude: bool = False,
+        error_recovery: bool = False,
     ) -> AnimationIR:
         """Parse *source* into an ``AnimationIR``.
 
@@ -57,6 +58,12 @@ class SceneParser:
             If ``True``, ``\\highlight`` commands are allowed before the
             first ``\\step``.  Used by :class:`DiagramRenderer` where
             there are no steps and all commands live in the prelude.
+        error_recovery:
+            If ``True``, the parser collects errors and skips to the next
+            command or ``\\step`` instead of failing on the first error.
+            After parsing, a combined ``ValidationError`` is raised
+            containing all collected errors.  When ``False`` (default),
+            the parser is fail-fast and raises on the first error.
         """
         if len(source) > 1_000_000:
             raise ValidationError(
@@ -71,6 +78,8 @@ class SceneParser:
         self._allow_highlight_in_prelude = allow_highlight_in_prelude
         self._substory_depth = 0
         self._substory_counter = 0
+        self._error_recovery = error_recovery
+        self._recovery_errors: list[ValidationError] = []
 
         options = self._try_parse_options()
         shapes: list[ShapeCommand] = []
@@ -95,25 +104,32 @@ class SceneParser:
             if tok.kind == TokenKind.BACKSLASH_CMD:
                 cmd_name = tok.value
 
-                if cmd_name == "shape":
-                    if not in_prelude:
-                        raise ValidationError(
-                            "\\shape must appear before the first \\step",
-                            position=tok.col,
-                            code="E1051",
-                            line=tok.line,
-                            col=tok.col,
-                        )
-                    shapes.append(self._parse_shape())
+                try:
+                    result = self._dispatch_command(
+                        cmd_name,
+                        tok,
+                        in_prelude=in_prelude,
+                        frame_narrate_seen=frame_narrate_seen,
+                    )
+                except ValidationError as exc:
+                    if not self._error_recovery:
+                        raise
+                    self._recovery_errors.append(exc)
+                    self._skip_to_recovery_point()
+                    continue
 
-                elif cmd_name == "compute":
-                    cmd = self._parse_compute()
+                # Apply the parsed result to the appropriate collection.
+                if result is None:
+                    # Unknown command — already raised (or recorded in recovery).
+                    pass
+                elif isinstance(result, ShapeCommand):
+                    shapes.append(result)
+                elif isinstance(result, ComputeCommand):
                     if in_prelude:
-                        prelude_compute.append(cmd)
+                        prelude_compute.append(result)
                     else:
-                        frame_compute.append(cmd)
-
-                elif cmd_name == "step":
+                        frame_compute.append(result)
+                elif isinstance(result, StepCommand):
                     if not in_prelude:
                         frames.append(
                             FrameIR(
@@ -125,124 +141,22 @@ class SceneParser:
                             ),
                         )
                     in_prelude = False
-                    step_tok = self._advance()
-                    frame_line = step_tok.line
+                    frame_line = result.line
                     frame_commands = []
                     frame_compute = []
                     frame_narrate = None
                     frame_narrate_seen = False
                     frame_substories = []
-                    self._check_step_trailing(step_tok.line)
-
-                elif cmd_name == "narrate":
-                    if in_prelude:
-                        raise ValidationError(
-                            "\\narrate must be inside a \\step block",
-                            position=tok.col,
-                            code="E1056",
-                            line=tok.line,
-                            col=tok.col,
-                        )
-                    if frame_narrate_seen:
-                        raise ValidationError(
-                            "duplicate \\narrate in the same step",
-                            position=tok.col,
-                            code="E1055",
-                            line=tok.line,
-                            col=tok.col,
-                        )
-                    narr = self._parse_narrate()
-                    frame_narrate = narr.body
+                elif isinstance(result, NarrateCommand):
+                    frame_narrate = result.body
                     frame_narrate_seen = True
-
-                elif cmd_name == "highlight":
-                    if in_prelude and not self._allow_highlight_in_prelude:
-                        raise ValidationError(
-                            "\\highlight is not allowed in the prelude",
-                            position=tok.col,
-                            code="E1053",
-                            line=tok.line,
-                            col=tok.col,
-                        )
-                    cmd = self._parse_highlight()
+                elif isinstance(result, SubstoryBlock):
+                    frame_substories.append(result)
+                elif isinstance(result, Command):
                     if in_prelude:
-                        prelude_commands.append(cmd)
+                        prelude_commands.append(result)
                     else:
-                        frame_commands.append(cmd)
-
-                elif cmd_name == "apply":
-                    cmd = self._parse_apply()
-                    if in_prelude:
-                        prelude_commands.append(cmd)
-                    else:
-                        frame_commands.append(cmd)
-
-                elif cmd_name == "recolor":
-                    cmd = self._parse_recolor()
-                    if in_prelude:
-                        prelude_commands.append(cmd)
-                    else:
-                        frame_commands.append(cmd)
-
-                elif cmd_name == "reannotate":
-                    cmd = self._parse_reannotate()
-                    if in_prelude:
-                        prelude_commands.append(cmd)
-                    else:
-                        frame_commands.append(cmd)
-
-                elif cmd_name == "annotate":
-                    cmd = self._parse_annotate()
-                    if in_prelude:
-                        prelude_commands.append(cmd)
-                    else:
-                        frame_commands.append(cmd)
-
-                elif cmd_name == "foreach":
-                    cmd = self._parse_foreach()
-                    if in_prelude:
-                        prelude_commands.append(cmd)
-                    else:
-                        frame_commands.append(cmd)
-
-                elif cmd_name == "endforeach":
-                    raise ValidationError(
-                        "\\endforeach without matching \\foreach",
-                        position=tok.col,
-                        code="E1172",
-                        line=tok.line,
-                        col=tok.col,
-                    )
-
-                elif cmd_name == "substory":
-                    if in_prelude:
-                        raise ValidationError(
-                            "\\substory must be inside a \\step block",
-                            position=tok.col,
-                            code="E1362",
-                            line=tok.line,
-                            col=tok.col,
-                        )
-                    block = self._parse_substory()
-                    frame_substories.append(block)
-
-                elif cmd_name == "endsubstory":
-                    raise ValidationError(
-                        "\\endsubstory without matching \\substory",
-                        position=tok.col,
-                        code="E1365",
-                        line=tok.line,
-                        col=tok.col,
-                    )
-
-                else:
-                    raise ValidationError(
-                        f"unknown command \\{cmd_name}",
-                        position=tok.col,
-                        code="E1006",
-                        line=tok.line,
-                        col=tok.col,
-                    )
+                        frame_commands.append(result)
             else:
                 self._advance()
 
@@ -257,6 +171,10 @@ class SceneParser:
                 ),
             )
 
+        # If errors were collected during recovery, raise them all.
+        if self._recovery_errors:
+            self._raise_combined_errors()
+
         source_hash = hashlib.sha256(source.encode()).hexdigest()[:10]
 
         return AnimationIR(
@@ -266,6 +184,165 @@ class SceneParser:
             prelude_commands=tuple(prelude_commands),
             frames=tuple(frames),
             source_hash=source_hash,
+        )
+
+    def _dispatch_command(
+        self,
+        cmd_name: str,
+        tok: Token,
+        *,
+        in_prelude: bool,
+        frame_narrate_seen: bool,
+    ) -> Command | ShapeCommand | ComputeCommand | NarrateCommand | StepCommand | SubstoryBlock | None:
+        """Dispatch a single backslash command, returning the parsed node.
+
+        Raises ``ValidationError`` on any parse or validation failure.
+        """
+        if cmd_name == "shape":
+            if not in_prelude:
+                raise ValidationError(
+                    "\\shape must appear before the first \\step",
+                    position=tok.col,
+                    code="E1051",
+                    line=tok.line,
+                    col=tok.col,
+                )
+            return self._parse_shape()
+
+        if cmd_name == "compute":
+            return self._parse_compute()
+
+        if cmd_name == "step":
+            step_tok = self._advance()
+            self._check_step_trailing(step_tok.line)
+            return StepCommand(step_tok.line, step_tok.col)
+
+        if cmd_name == "narrate":
+            if in_prelude:
+                raise ValidationError(
+                    "\\narrate must be inside a \\step block",
+                    position=tok.col,
+                    code="E1056",
+                    line=tok.line,
+                    col=tok.col,
+                )
+            if frame_narrate_seen:
+                raise ValidationError(
+                    "duplicate \\narrate in the same step",
+                    position=tok.col,
+                    code="E1055",
+                    line=tok.line,
+                    col=tok.col,
+                )
+            return self._parse_narrate()
+
+        if cmd_name == "highlight":
+            if in_prelude and not self._allow_highlight_in_prelude:
+                raise ValidationError(
+                    "\\highlight is not allowed in the prelude",
+                    position=tok.col,
+                    code="E1053",
+                    line=tok.line,
+                    col=tok.col,
+                )
+            return self._parse_highlight()
+
+        if cmd_name == "apply":
+            return self._parse_apply()
+
+        if cmd_name == "recolor":
+            return self._parse_recolor()
+
+        if cmd_name == "reannotate":
+            return self._parse_reannotate()
+
+        if cmd_name == "annotate":
+            return self._parse_annotate()
+
+        if cmd_name == "foreach":
+            return self._parse_foreach()
+
+        if cmd_name == "endforeach":
+            raise ValidationError(
+                "\\endforeach without matching \\foreach",
+                position=tok.col,
+                code="E1172",
+                line=tok.line,
+                col=tok.col,
+            )
+
+        if cmd_name == "substory":
+            if in_prelude:
+                raise ValidationError(
+                    "\\substory must be inside a \\step block",
+                    position=tok.col,
+                    code="E1362",
+                    line=tok.line,
+                    col=tok.col,
+                )
+            return self._parse_substory()
+
+        if cmd_name == "endsubstory":
+            raise ValidationError(
+                "\\endsubstory without matching \\substory",
+                position=tok.col,
+                code="E1365",
+                line=tok.line,
+                col=tok.col,
+            )
+
+        raise ValidationError(
+            f"unknown command \\{cmd_name}",
+            position=tok.col,
+            code="E1006",
+            line=tok.line,
+            col=tok.col,
+        )
+
+    # ------------------------------------------------------------------
+    # Error recovery helpers
+    # ------------------------------------------------------------------
+
+    def _skip_to_recovery_point(self) -> None:
+        """Advance the token stream until the next command, ``\\step``, or EOF.
+
+        This is used during error recovery to skip past the failed command
+        and resume parsing at the next plausible synchronization point.
+        Any backslash command (known or unknown) is treated as a recovery
+        point so that unknown commands are dispatched and reported
+        individually.
+        """
+        # First, skip past the current token (the failed command's backslash)
+        # so we don't re-match it.
+        if not self._at_end() and self._peek().kind == TokenKind.BACKSLASH_CMD:
+            self._advance()
+
+        # Skip non-command tokens until we reach the next backslash command
+        # or EOF.
+        while not self._at_end():
+            tok = self._peek()
+            if tok.kind == TokenKind.BACKSLASH_CMD:
+                return
+            self._advance()
+
+    def _raise_combined_errors(self) -> None:
+        """Raise a single ``ValidationError`` summarizing all collected errors."""
+        assert self._recovery_errors
+
+        if len(self._recovery_errors) == 1:
+            raise self._recovery_errors[0]
+
+        parts: list[str] = [
+            f"found {len(self._recovery_errors)} errors:",
+        ]
+        for i, err in enumerate(self._recovery_errors, 1):
+            parts.append(f"  {i}. {err}")
+
+        raise ValidationError(
+            "\n".join(parts),
+            code=self._recovery_errors[0].code,
+            line=self._recovery_errors[0].line,
+            col=self._recovery_errors[0].col,
         )
 
     # ------------------------------------------------------------------

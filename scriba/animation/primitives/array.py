@@ -164,6 +164,7 @@ class ArrayInstance:
                     f'viewBox="0 0 10 10" refX="10" refY="5" '
                     f'markerWidth="6" markerHeight="6" '
                     f'orient="auto-start-reverse">'
+                    f'<title>Arrowhead ({color})</title>'
                     f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{marker_fill}"/>'
                     f"</marker>"
                 )
@@ -398,14 +399,24 @@ class ArrayInstance:
         s_width = style["stroke_width"]
         s_opacity = style["opacity"]
 
+        ann_desc = (
+            f"Arrow from {_escape_xml(str(arrow_from))} "
+            f"to {_escape_xml(str(target))}"
+        )
+        if label_text:
+            ann_desc += f": {_escape_xml(label_text)}"
+
         lines.append(
             f'  <g class="scriba-annotation scriba-annotation-{color}"'
-            f' opacity="{s_opacity}">'
+            f' opacity="{s_opacity}"'
+            f' role="graphics-symbol" aria-label="{ann_desc}">'
         )
         lines.append(
             f'    <path d="M{x1},{y1} C{cx1},{cy1} {cx2},{cy2} {x2},{y2}" '
             f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none" '
-            f'marker-end="url(#scriba-arrow-{color})"/>'
+            f'marker-end="url(#scriba-arrow-{color})">'
+            f'<title>{ann_desc}</title>'
+            f'</path>'
         )
         if label_text:
             label_y = mid_y - 4  # slightly above the curve peak

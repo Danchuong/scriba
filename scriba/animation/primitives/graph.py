@@ -127,6 +127,7 @@ def _arrow_marker_defs() -> str:
         '<defs>'
         '<marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" '
         'markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
+        '<title>Arrowhead</title>'
         '<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>'
         '</marker>'
         '</defs>'
@@ -272,12 +273,19 @@ class Graph(PrimitiveBase):
             edge_colors = svg_style_attrs(state)
             edge_stroke = edge_colors["stroke"]
             edge_sw = "1.5" if state == "idle" else "2"
+            edge_label = (
+                f"Edge from node {html_escape(str(u))} "
+                f"to node {html_escape(str(v))}"
+            )
             parts.append(
                 f'<g data-target="{html_escape(edge_target)}" '
-                f'class="scriba-state-{state}">'
+                f'class="scriba-state-{state}" '
+                f'role="graphics-symbol" aria-label="{edge_label}">'
                 f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
                 f'stroke="{edge_stroke}" stroke-width="{edge_sw}"'
-                f'{marker}/>'
+                f'{marker}>'
+                f'<title>{edge_label}</title>'
+                f'</line>'
                 f'</g>'
             )
         parts.append('</g>')

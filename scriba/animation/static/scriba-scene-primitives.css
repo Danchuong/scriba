@@ -440,3 +440,84 @@
     animation-duration:  0.01ms !important;
   }
 }
+
+/* ============================================
+   Print styles — interactive widget
+   ============================================ */
+
+@media print {
+  /* Hide playback controls: buttons, step counter, progress dots */
+  .scriba-widget > .scriba-controls {
+    display: none !important;
+  }
+
+  .scriba-substory-controls {
+    display: none !important;
+  }
+
+  /* Hide the interactive stage/narration (JS-swapped single frame) */
+  .scriba-widget > .scriba-stage,
+  .scriba-widget > .scriba-narration,
+  .scriba-widget > .scriba-substory-container {
+    display: none !important;
+  }
+
+  /* Show the print-only container with all frames stacked vertically */
+  .scriba-print-frames {
+    display: block !important;
+  }
+
+  .scriba-print-frame {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-block-end: 1.5rem;
+    border: var(--scriba-frame-border);
+    border-radius: var(--scriba-frame-radius);
+    padding: var(--scriba-frame-padding);
+  }
+
+  .scriba-print-frame + .scriba-print-frame {
+    page-break-before: auto;
+  }
+
+  .scriba-print-frame .scriba-stage {
+    background: none;
+  }
+
+  .scriba-print-frame .scriba-stage-svg {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .scriba-print-frame .scriba-narration {
+    font-size: var(--scriba-narration-font-size);
+    line-height: var(--scriba-narration-line-height);
+    padding: var(--scriba-narration-padding);
+    margin: 0;
+  }
+
+  .scriba-print-frame .scriba-step-label {
+    font: var(--scriba-step-label-font);
+    color: var(--scriba-step-label-color);
+    display: block;
+    margin-block-end: 0.5rem;
+  }
+
+  /* Substories within print frames: expand inline */
+  .scriba-print-frame .scriba-substory {
+    margin-block-start: 0.75rem;
+    padding-inline-start: 1rem;
+    border-inline-start: 2px solid var(--scriba-border);
+  }
+
+  .scriba-print-frame .scriba-substory .scriba-controls {
+    display: none !important;
+  }
+
+  /* Remove widget shadow and interactive styling for print */
+  .scriba-widget {
+    box-shadow: none !important;
+    outline: none !important;
+  }
+}

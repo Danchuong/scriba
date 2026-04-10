@@ -580,6 +580,46 @@ def emit_interactive_html(
         for i in range(frame_count)
     )
 
+    # Build print-only frames (all frames in DOM, hidden on screen,
+    # revealed by @media print in scriba-scene-primitives.css)
+    print_frame_items: list[str] = []
+    for frame in frames:
+        step = frame.step_number
+        print_svg = _emit_frame_svg(
+            frame, primitives, scene_id, viewbox, render_inline_tex,
+            narration_id_override=f"{scene_id}-print-{step}-narration",
+        )
+        print_substory = ""
+        if frame.substories:
+            for sub in frame.substories:
+                sub_prims = sub.primitives if sub.primitives else primitives
+                sub_vb = compute_viewbox(sub_prims) if sub.primitives else viewbox
+                for sub_frame in sub.frames:
+                    sub_svg = _emit_frame_svg(
+                        sub_frame, sub_prims, scene_id, sub_vb,
+                        render_inline_tex,
+                    )
+                    print_substory += (
+                        f'<div class="scriba-substory"'
+                        f' data-substory-id="{_escape(sub.substory_id)}">\n'
+                        f'  <div class="scriba-stage">{sub_svg}</div>\n'
+                        f'  <p class="scriba-narration">'
+                        f'{sub_frame.narration_html}</p>\n'
+                        f'</div>\n'
+                    )
+        print_frame_items.append(
+            f'<div class="scriba-print-frame" data-step="{step}">\n'
+            f'  <span class="scriba-step-label">'
+            f'Step {step} / {frame_count}</span>\n'
+            f'  <div class="scriba-stage">{print_svg}</div>\n'
+            f'  <p class="scriba-narration"'
+            f' id="{_escape(scene_id)}-print-{step}-narration">'
+            f'{frame.narration_html}</p>\n'
+            f'{print_substory}'
+            f'</div>'
+        )
+    print_frames_html = "\n".join(print_frame_items)
+
     widget_html = f"""\
 <div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0">
   <div class="scriba-controls">
@@ -593,6 +633,9 @@ def emit_interactive_html(
   <div class="scriba-stage"></div>
   <p class="scriba-narration" id="{_escape(scene_id)}-narration" aria-live="polite"></p>
   <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+{print_frames_html}
+  </div>
 </div>
 <script>
 (function(){{
@@ -651,16 +694,64 @@ def emit_interactive_html(
 # ---------------------------------------------------------------------------
 
 
-def _minify_html(html: str) -> str:
-    """Basic HTML minification without external dependencies.
+def _minify_css(css: str) -> str:
+    """Minify CSS content conservatively.
 
-    Removes HTML comments (except conditional comments), collapses
-    whitespace between tags, and strips leading whitespace per line.
-    Content inside ``<pre>``, ``<script>``, and ``<style>`` tags is
-    preserved verbatim.
+    Removes comments, collapses whitespace, strips trailing semicolons
+    before closing braces, and trims around punctuation.  Does not
+    attempt shorthand optimisations or value rewriting.
     """
-    # Extract preserved blocks (<pre>, <script>, <style>) and replace
-    # with placeholders so minification doesn't touch their contents.
+    # Remove CSS comments /* ... */
+    css = _re.sub(r"/\*.*?\*/", "", css, flags=_re.DOTALL)
+    # Collapse runs of whitespace to a single space
+    css = _re.sub(r"\s+", " ", css)
+    # Remove spaces around { } : ; ,
+    css = _re.sub(r"\s*([{}:;,])\s*", r"\1", css)
+    # Remove last semicolon before }
+    css = _re.sub(r";}", "}", css)
+    return css.strip()
+
+
+def _minify_js(js: str) -> str:
+    """Minify JavaScript content very conservatively.
+
+    Only removes single-line ``//`` comments that are clearly safe
+    (not inside strings) and collapses blank lines.  Does **not**
+    attempt to remove multi-line comments or rewrite tokens — the
+    risk of breaking template literals, regex, or URLs is too high.
+    """
+    lines = js.split("\n")
+    result: list[str] = []
+    for line in lines:
+        # Remove single-line comments only when they appear after code
+        # and are clearly not inside a string.  Strategy: only strip
+        # ``//`` comments on lines that don't contain quotes after the
+        # comment marker position (very conservative).
+        stripped = line.rstrip()
+        idx = stripped.find("//")
+        if idx >= 0:
+            before = stripped[:idx]
+            # Only strip if the prefix has balanced quotes (simple check)
+            single_q = before.count("'") % 2 == 0
+            double_q = before.count('"') % 2 == 0
+            backtick = before.count("`") % 2 == 0
+            # Also skip lines where // might be a URL (://)
+            is_url = idx > 0 and stripped[idx - 1] == ":"
+            if single_q and double_q and backtick and not is_url:
+                stripped = before.rstrip()
+        if stripped:
+            result.append(stripped)
+    return "\n".join(result)
+
+
+def _minify_html(html: str) -> str:
+    """HTML minification without external dependencies.
+
+    Removes HTML comments (except conditional comments ``<!--[``),
+    collapses whitespace between tags, strips leading whitespace per
+    line, minifies inline ``<style>`` CSS and ``<script>`` JavaScript.
+    Content inside ``<pre>`` tags is preserved verbatim.
+    """
     preserved: list[str] = []
 
     def _stash(m: _re.Match[str]) -> str:
@@ -668,9 +759,42 @@ def _minify_html(html: str) -> str:
         preserved.append(m.group(0))
         return f"\x00PRESERVE{idx}\x00"
 
+    # Preserve <pre> blocks verbatim
     html = _re.sub(
-        r"<(pre|script|style)\b[^>]*>.*?</\1>",
+        r"<pre\b[^>]*>.*?</pre>",
         _stash,
+        html,
+        flags=_re.DOTALL | _re.IGNORECASE,
+    )
+
+    # Minify <style> blocks, then stash them
+    def _minify_style_block(m: _re.Match[str]) -> str:
+        open_tag = m.group(1)
+        content = m.group(2)
+        minified = _minify_css(content)
+        idx = len(preserved)
+        preserved.append(f"{open_tag}{minified}</style>")
+        return f"\x00PRESERVE{idx}\x00"
+
+    html = _re.sub(
+        r"(<style\b[^>]*>)(.*?)</style>",
+        _minify_style_block,
+        html,
+        flags=_re.DOTALL | _re.IGNORECASE,
+    )
+
+    # Minify <script> blocks, then stash them
+    def _minify_script_block(m: _re.Match[str]) -> str:
+        open_tag = m.group(1)
+        content = m.group(2)
+        minified = _minify_js(content)
+        idx = len(preserved)
+        preserved.append(f"{open_tag}{minified}</script>")
+        return f"\x00PRESERVE{idx}\x00"
+
+    html = _re.sub(
+        r"(<script\b[^>]*>)(.*?)</script>",
+        _minify_script_block,
         html,
         flags=_re.DOTALL | _re.IGNORECASE,
     )

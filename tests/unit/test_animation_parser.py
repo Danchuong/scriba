@@ -420,3 +420,84 @@ class TestParserErrors:
         src = "[unknown_key=val]\n\\step\n"
         with pytest.raises(ValidationError, match="E1004"):
             parser.parse(src)
+
+
+# ===================================================================
+# Error recovery
+# ===================================================================
+
+
+class TestErrorRecovery:
+    """Tests for the error_recovery=True multi-error collection mode."""
+
+    def test_recovery_off_raises_first_error(self, parser: SceneParser) -> None:
+        """Without recovery, only the first error is reported (fail-fast)."""
+        src = "\\step\n\\recolor{a}{state=bad}\n\\recolor{b}{state=worse}"
+        with pytest.raises(ValidationError, match="E1109"):
+            parser.parse(src, error_recovery=False)
+
+    def test_recovery_collects_multiple_errors(self, parser: SceneParser) -> None:
+        """With recovery, multiple command errors are collected and reported."""
+        src = "\\step\n\\recolor{a}{state=bad}\n\\recolor{b}{state=worse}"
+        with pytest.raises(ValidationError, match="found 2 errors"):
+            parser.parse(src, error_recovery=True)
+
+    def test_recovery_single_error_raises_directly(self, parser: SceneParser) -> None:
+        """A single collected error is raised as-is, not wrapped."""
+        src = "\\step\n\\recolor{a}{state=bad}"
+        with pytest.raises(ValidationError, match="E1109") as exc_info:
+            parser.parse(src, error_recovery=True)
+        # Should not contain "found 1 errors" wrapper
+        assert "found" not in str(exc_info.value)
+
+    def test_recovery_skips_to_next_command(self, parser: SceneParser) -> None:
+        """After a bad command, the parser resumes at the next command."""
+        src = (
+            "\\shape{a}{Array}{n=5}\n"
+            "\\step\n"
+            "\\recolor{a}{state=bad}\n"
+            "\\highlight{a}\n"
+        )
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src, error_recovery=True)
+        # The highlight should have parsed successfully — only 1 error
+        assert "found" not in str(exc_info.value)
+        assert "E1109" in str(exc_info.value)
+
+    def test_recovery_reports_errors_from_different_steps(
+        self, parser: SceneParser,
+    ) -> None:
+        """Errors in different steps are all collected."""
+        src = (
+            "\\step\n"
+            "\\recolor{a}{state=bad}\n"
+            "\\step\n"
+            "\\recolor{b}{state=worse}\n"
+        )
+        with pytest.raises(ValidationError, match="found 2 errors"):
+            parser.parse(src, error_recovery=True)
+
+    def test_recovery_multiple_invalid_recolors_collected(
+        self, parser: SceneParser,
+    ) -> None:
+        """Multiple invalid recolors in the same step are all collected."""
+        src = (
+            "\\step\n"
+            "\\recolor{a}{state=invalid1}\n"
+            "\\recolor{b}{state=invalid2}\n"
+            "\\recolor{c}{state=invalid3}\n"
+        )
+        with pytest.raises(ValidationError, match="found 3 errors"):
+            parser.parse(src, error_recovery=True)
+
+    def test_recovery_valid_input_no_error(self, parser: SceneParser) -> None:
+        """Valid input with recovery enabled parses normally."""
+        src = (
+            "\\shape{a}{Array}{n=5}\n"
+            "\\step\n"
+            "\\recolor{a}{state=done}\n"
+            "\\highlight{a}\n"
+        )
+        result = parser.parse(src, error_recovery=True)
+        assert len(result.frames) == 1
+        assert len(result.frames[0].commands) == 2

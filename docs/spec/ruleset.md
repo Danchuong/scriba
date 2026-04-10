@@ -116,6 +116,132 @@ treated as a string node ID. This is equivalent to `G.node["A"]` but more concis
 
 Interpolation: `${name}` resolved from Starlark bindings at build time.
 
+### 3.1 Command Grammar BNF
+
+The complete formal grammar for the body of `\begin{animation}` and `\begin{diagram}` environments.
+
+#### Top-Level Structure
+
+```
+animation       ::= options? prelude step_block*
+diagram         ::= options? command*
+
+options         ::= "[" option_list "]"
+option_list     ::= option ("," option)*
+option          ::= IDENT "=" option_value
+option_value    ::= STRING | IDENT | NUMBER
+
+prelude         ::= (shape_cmd | compute_cmd | apply_cmd | recolor_cmd
+                     | reannotate_cmd | annotate_cmd | foreach_block)*
+step_block      ::= step_cmd command*
+command         ::= compute_cmd | narrate_cmd | apply_cmd | highlight_cmd
+                  | recolor_cmd | reannotate_cmd | annotate_cmd
+                  | foreach_block | substory_block
+```
+
+#### Shape Declaration
+
+```
+shape_cmd       ::= "\shape" brace_arg brace_arg param_brace?
+                  (* \shape{name}{Type}{params} *)
+```
+
+`\shape` is only valid in the prelude (before the first `\step`). In diagram mode it may appear anywhere.
+
+#### Step Command
+
+```
+step_cmd        ::= "\step" step_options? NEWLINE
+step_options    ::= "[" "label" "=" option_value "]"
+```
+
+`\step` must be on its own line with no trailing content.
+
+#### Mutation Commands
+
+```
+apply_cmd       ::= "\apply" "{" selector "}" param_brace
+highlight_cmd   ::= "\highlight" "{" selector "}"
+recolor_cmd     ::= "\recolor" "{" selector "}" param_brace
+                  (* param_brace must contain state= and/or color= *)
+reannotate_cmd  ::= "\reannotate" "{" selector "}" param_brace
+                  (* param_brace must contain color= *)
+annotate_cmd    ::= "\annotate" "{" selector "}" param_brace
+narrate_cmd     ::= "\narrate" "{" latex_text "}"
+compute_cmd     ::= "\compute" "{" starlark_source "}"
+```
+
+#### Parameter List
+
+```
+param_brace     ::= "{" param_list "}"
+param_list      ::= param ("," param)* ","?
+param           ::= IDENT "=" param_value
+param_value     ::= NUMBER | STRING | IDENT | BOOL | interp_ref
+                  | list_value | tuple_value
+list_value      ::= "[" (param_value ("," param_value)*)? "]"
+tuple_value     ::= "(" (param_value ("," param_value)*)? ")"
+interp_ref      ::= "${" IDENT ("[" subscript "]")* "}"
+subscript       ::= NUMBER | IDENT
+BOOL            ::= "true" | "false"
+```
+
+#### Value Types
+
+```
+NUMBER          ::= [0-9]+ ("." [0-9]+)?
+STRING          ::= '"' [^"]* '"'
+IDENT           ::= [a-zA-Z_] [a-zA-Z0-9_]*
+
+state_enum      ::= "idle" | "current" | "done" | "dim"
+                  | "error" | "good" | "path"
+color_enum      ::= "info" | "warn" | "good" | "error"
+                  | "muted" | "path"
+position_enum   ::= "above" | "below" | "left" | "right" | "inside"
+```
+
+#### Foreach Block
+
+```
+foreach_block   ::= "\foreach" "{" variable "}" "{" iterable "}"
+                    foreach_body
+                    "\endforeach"
+variable        ::= IDENT
+iterable        ::= range_lit | interp_ref | list_literal
+range_lit       ::= NUMBER ".." NUMBER
+list_literal    ::= "[" (param_value ("," param_value)*)? "]"
+foreach_body    ::= (recolor_cmd | reannotate_cmd | apply_cmd
+                     | highlight_cmd | annotate_cmd | foreach_block)+
+```
+
+The body must contain at least one command. Nesting `\foreach` inside `\foreach` is permitted. Commands `\step`, `\shape`, `\substory`, and `\endsubstory` are not allowed inside `\foreach`.
+
+#### Substory Block
+
+```
+substory_block  ::= "\substory" substory_opts? NEWLINE
+                    substory_prelude
+                    substory_step+
+                    "\endsubstory" NEWLINE
+substory_opts   ::= "[" substory_opt ("," substory_opt)* "]"
+substory_opt    ::= ("title" | "id") "=" option_value
+substory_prelude::= (shape_cmd | compute_cmd)*
+substory_step   ::= step_cmd (compute_cmd | narrate_cmd | apply_cmd
+                     | highlight_cmd | recolor_cmd | reannotate_cmd
+                     | annotate_cmd | foreach_block | substory_block)*
+```
+
+Both `\substory` and `\endsubstory` must be on their own line. Maximum nesting depth is 3. Substory mutations are ephemeral (parent state is saved and restored).
+
+#### Brace Argument (Balanced Text)
+
+```
+brace_arg       ::= "{" balanced_text "}"
+balanced_text   ::= (CHAR | brace_arg | "\\" IDENT | interp_ref)*
+```
+
+Brace arguments support arbitrary nesting of `{...}` pairs. The parser tracks brace depth and collects all content until the matching closing brace.
+
 ---
 
 ## 4. Recolor States (Locked Set)
