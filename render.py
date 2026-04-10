@@ -273,6 +273,7 @@ def render_file(
     output_mode: str = "interactive",
     dump_frames: bool = False,
     minify: bool = True,
+    dedup: bool = True,
 ) -> None:
     source = input_path.read_text()
     title = input_path.stem
@@ -292,7 +293,7 @@ def render_file(
     ctx = RenderContext(
         resource_resolver=lambda name: f"/static/{name}",
         theme="light",
-        metadata={"output_mode": output_mode, "minify": minify},
+        metadata={"output_mode": output_mode, "minify": minify, "dedup": dedup},
         render_inline_tex=inline_tex_cb,
     )
 
@@ -352,6 +353,11 @@ def main():
         action="store_true",
         help="Disable HTML minification (useful for debugging output)",
     )
+    parser.add_argument(
+        "--no-dedup",
+        action="store_true",
+        help="Disable SVG deduplication (store full SVG per frame instead of patches)",
+    )
     args = parser.parse_args()
 
     if not args.input.exists():
@@ -365,6 +371,7 @@ def main():
         output_mode=output_mode,
         dump_frames=args.dump_frames,
         minify=not args.no_minify,
+        dedup=not args.no_dedup,
     )
 
     if args.open:
