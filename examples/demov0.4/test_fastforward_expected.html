@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,16 +11,16 @@ body {
   max-width: 720px;
   margin: 2rem auto;
   padding: 0 1rem;
-  background: #fafafa;
-  color: #212529;
+  background: #0d1117;
+  color: #e6edf3;
 }
 h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 
 /* Widget container */
 .scriba-widget {
-  border: 1px solid #d0d7de;
+  border: 1px solid #30363d;
   border-radius: 10px;
-  background: #ffffff;
+  background: #161b22;
   overflow: hidden;
 }
 
@@ -30,26 +30,26 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
+  background: #1c2128;
+  border-bottom: 1px solid #30363d;
   user-select: none;
 }
 .scriba-controls button {
-  background: #ffffff;
-  border: 1px solid #d0d7de;
+  background: #21262d;
+  border: 1px solid #30363d;
   border-radius: 6px;
   padding: 0.3rem 0.7rem;
   font-size: 0.8rem;
   cursor: pointer;
-  color: #212529;
+  color: #e6edf3;
   transition: background 0.15s, border-color 0.15s;
 }
-.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
-.scriba-controls button:active { background: #e4e4e4; }
+.scriba-controls button:hover { background: #30363d; border-color: #484f58; }
+.scriba-controls button:active { background: #3d444d; }
 .scriba-controls button:disabled { opacity: 0.35; cursor: default; }
 .scriba-step-counter {
   font: 600 0.78rem ui-monospace, "SF Mono", monospace;
-  color: #6c757d;
+  color: #7d8590;
   min-width: 5rem;
   text-align: center;
 }
@@ -63,7 +63,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 .scriba-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #d0d7de;
+  background: #30363d;
   transition: background 0.2s;
 }
 .scriba-dot.active { background: #0072B2; }
@@ -83,8 +83,8 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   padding: 0.75rem 1rem;
   font-size: 0.92rem;
   line-height: 1.55;
-  color: #212529;
-  border-top: 1px solid #f0f0f0;
+  color: #e6edf3;
+  border-top: 1px solid #21262d;
   min-height: 2.5rem;
 }
 
@@ -96,7 +96,7 @@ svg text {
 }
 .idx {
   font: 500 10px ui-monospace, monospace;
-  fill: #6c757d;
+  fill: #7d8590;
 }
 
 /* Frame transition */
@@ -104,72 +104,21 @@ svg text {
   transition: opacity 0.2s ease;
 }
 
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
-}
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
-}
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
 /* Theme toggle */
 .theme-toggle {
   position: fixed; top: 1rem; right: 1rem;
   padding: 0.35rem 0.7rem; cursor: pointer;
-  border: 1px solid #ccc; border-radius: 6px; background: white;
-  font-size: 0.8rem;
+  border: 1px solid #30363d; border-radius: 6px; background: #21262d;
+  color: #e6edf3; font-size: 0.8rem;
 }
-
-/* Dark mode */
-[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
-[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
-[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
-[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
-[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
-[data-theme="dark"] .scriba-dot { background: #30363d; }
-[data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
-[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
 </head>
 <body>
-<button class="theme-toggle" onclick="
-  var t = document.documentElement.dataset.theme;
-  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
-">Toggle theme</button>
 <h1>test_fastforward</h1>
 <div class="scriba-widget" id="test-ff">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">Step 1 / 4</span>
+    <span class="scriba-step-counter">B\u01b0\u1edbc 1 / 4</span>
     <button class="scriba-btn-next">Next</button>
     <div class="scriba-progress">
       <div class="scriba-dot active"></div>
@@ -184,112 +133,49 @@ svg text {
 <script>
 (function(){
   var W=document.getElementById('test-ff');
+
+  /* Wong CVD palette — dark mode cell colors */
+  var cellFill='#21262d';
+  var cellStroke='#30363d';
+  var cellText='#e6edf3';
+
+  function arraySvg(){
+    return '<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" xmlns="http://www.w3.org/2000/svg">'
+    +'<g transform="translate(16,16)">'
+    +'<g data-primitive="array" data-shape="a">'
+    +'  <g data-target="a.cell[0]" class="scriba-state-idle">'
+    +'    <rect x="0" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
+    +'    <text x="30" y="20" fill="'+cellText+'">5</text>'
+    +'  </g>'
+    +'  <g data-target="a.cell[1]" class="scriba-state-idle">'
+    +'    <rect x="62" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
+    +'    <text x="92" y="20" fill="'+cellText+'">3</text>'
+    +'  </g>'
+    +'  <g data-target="a.cell[2]" class="scriba-state-idle">'
+    +'    <rect x="124" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
+    +'    <text x="154" y="20" fill="'+cellText+'">1</text>'
+    +'  </g>'
+    +'  <g data-target="a.cell[3]" class="scriba-state-idle">'
+    +'    <rect x="186" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
+    +'    <text x="216" y="20" fill="'+cellText+'">4</text>'
+    +'  </g>'
+    +'  <g data-target="a.cell[4]" class="scriba-state-idle">'
+    +'    <rect x="248" y="0" width="60" height="40" rx="4" fill="'+cellFill+'" stroke="'+cellStroke+'" stroke-width="1.5"/>'
+    +'    <text x="278" y="20" fill="'+cellText+'">2</text>'
+    +'  </g>'
+    +'</g>'
+    +'</g>'
+    +'</svg>';
+  }
+
+  var svg=arraySvg();
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" aria-labelledby="test-ff-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">5</text>
-  </g>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">3</text>
-  </g>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">1</text>
-  </g>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">4</text>
-  </g>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">2</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Initial array.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" aria-labelledby="test-ff-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">5</text>
-  </g>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">3</text>
-  </g>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">1</text>
-  </g>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">4</text>
-  </g>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">2</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Iteration \${iter} of 100.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" aria-labelledby="test-ff-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">5</text>
-  </g>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">3</text>
-  </g>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">1</text>
-  </g>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">4</text>
-  </g>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">2</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Iteration \${iter} of 100.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 340 72" role="img" aria-labelledby="test-ff-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">5</text>
-  </g>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">3</text>
-  </g>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">1</text>
-  </g>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">4</text>
-  </g>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">2</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Done after 100 iterations.`}
+    {svg:svg, narration:'M\u1ea3ng ban \u0111\u1ea7u.'},
+    {svg:svg, narration:'Iteration 50 / 100.'},
+    {svg:svg, narration:'Iteration 100 / 100.'},
+    {svg:svg, narration:'Ho\u00e0n t\u1ea5t sau 100 iteration.'}
   ];
+
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
@@ -297,15 +183,17 @@ svg text {
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
   var dots=W.querySelectorAll('.scriba-dot');
+
   function show(i){
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.textContent=frames[i].narration;
-    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    ctr.textContent='B\u01b0\u1edbc '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
     dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
   }
+
   prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
   next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
   W.addEventListener('keydown',function(e){

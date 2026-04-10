@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,16 +11,16 @@ body {
   max-width: 720px;
   margin: 2rem auto;
   padding: 0 1rem;
-  background: #fafafa;
-  color: #212529;
+  background: #0d1117;
+  color: #e6edf3;
 }
 h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 
 /* Widget container */
 .scriba-widget {
-  border: 1px solid #d0d7de;
+  border: 1px solid #30363d;
   border-radius: 10px;
-  background: #ffffff;
+  background: #161b22;
   overflow: hidden;
 }
 
@@ -30,26 +30,26 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
+  background: #1c2128;
+  border-bottom: 1px solid #30363d;
   user-select: none;
 }
 .scriba-controls button {
-  background: #ffffff;
-  border: 1px solid #d0d7de;
+  background: #21262d;
+  border: 1px solid #30363d;
   border-radius: 6px;
   padding: 0.3rem 0.7rem;
   font-size: 0.8rem;
   cursor: pointer;
-  color: #212529;
+  color: #e6edf3;
   transition: background 0.15s, border-color 0.15s;
 }
-.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
-.scriba-controls button:active { background: #e4e4e4; }
+.scriba-controls button:hover { background: #30363d; border-color: #484f58; }
+.scriba-controls button:active { background: #3b424a; }
 .scriba-controls button:disabled { opacity: 0.35; cursor: default; }
 .scriba-step-counter {
   font: 600 0.78rem ui-monospace, "SF Mono", monospace;
-  color: #6c757d;
+  color: #7d8590;
   min-width: 5rem;
   text-align: center;
 }
@@ -63,7 +63,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 .scriba-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #d0d7de;
+  background: #30363d;
   transition: background 0.2s;
 }
 .scriba-dot.active { background: #0072B2; }
@@ -83,81 +83,46 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   padding: 0.75rem 1rem;
   font-size: 0.92rem;
   line-height: 1.55;
-  color: #212529;
-  border-top: 1px solid #f0f0f0;
+  color: #e6edf3;
+  border-top: 1px solid #21262d;
   min-height: 2.5rem;
 }
 
-/* SVG text */
+/* SVG defaults for dark theme */
 svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: central;
+  fill: #e6edf3;
 }
-.idx {
-  font: 500 10px ui-monospace, monospace;
-  fill: #6c757d;
+.scriba-metricplot-gridline-h,
+.scriba-metricplot-gridline-v {
+  stroke: #30363d;
+  stroke-width: 0.5;
 }
-
-/* Frame transition */
-.scriba-stage svg, .scriba-narration {
-  transition: opacity 0.2s ease;
-}
-
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
-}
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
-}
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.scriba-metricplot-legend-label {
+  fill: #e6edf3;
 }
 
 /* Theme toggle */
 .theme-toggle {
   position: fixed; top: 1rem; right: 1rem;
   padding: 0.35rem 0.7rem; cursor: pointer;
-  border: 1px solid #ccc; border-radius: 6px; background: white;
-  font-size: 0.8rem;
+  border: 1px solid #30363d; border-radius: 6px; background: #21262d;
+  font-size: 0.8rem; color: #e6edf3;
 }
 
-/* Dark mode */
-[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
-[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
-[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
-[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
-[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
-[data-theme="dark"] .scriba-dot { background: #30363d; }
-[data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
-[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
+/* Light mode overrides */
+[data-theme="light"] body { background: #fafafa; color: #212529; }
+[data-theme="light"] .scriba-widget { background: #ffffff; border-color: #d0d7de; }
+[data-theme="light"] .scriba-controls { background: #f6f8fa; border-color: #d0d7de; }
+[data-theme="light"] .scriba-controls button { background: #ffffff; border-color: #d0d7de; color: #212529; }
+[data-theme="light"] .scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
+[data-theme="light"] .scriba-step-counter { color: #6c757d; }
+[data-theme="light"] .scriba-narration { color: #212529; border-color: #f0f0f0; }
+[data-theme="light"] .scriba-dot { background: #d0d7de; }
+[data-theme="light"] svg text { fill: #24292f; }
+[data-theme="light"] .scriba-metricplot-gridline-h,
+[data-theme="light"] .scriba-metricplot-gridline-v { stroke: #d0d7de; }
+[data-theme="light"] .scriba-metricplot-legend-label { fill: #24292f; }
+[data-theme="light"] .theme-toggle { background: white; color: #212529; border-color: #ccc; }
 </style>
 </head>
 <body>
@@ -182,263 +147,199 @@ svg text {
 </div>
 <script>
 (function(){
-  var W=document.getElementById('test-metricplot');
-  var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 232" role="img" aria-labelledby="test-metricplot-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="134.67" x2="304" y2="134.67"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="108.0" x2="304" y2="108.0"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="81.33" x2="304" y2="81.33"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="54.67" x2="304" y2="54.67"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="134.67" x2="48" y2="134.67" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="138.67" text-anchor="end" font-size="10">20</text>
-<line x1="44" y1="108.0" x2="48" y2="108.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="112.0" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="81.33" x2="48" y2="81.33" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="85.33" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="54.67" x2="48" y2="54.67" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="58.67" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">step</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,148.0" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="48.0" y1="16" x2="48.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="48.0" cy="148.0" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="48.0" cy="28.0" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Initial values.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 232" role="img" aria-labelledby="test-metricplot-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="158.43" x2="304" y2="158.43"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="132.35" x2="304" y2="132.35"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="106.26" x2="304" y2="106.26"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="80.17" x2="304" y2="80.17"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="54.09" x2="304" y2="54.09"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="73.6" y1="16" x2="73.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="99.2" y1="16" x2="99.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="124.8" y1="16" x2="124.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="150.4" y1="16" x2="150.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="176.0" y1="16" x2="176.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="201.6" y1="16" x2="201.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="227.2" y1="16" x2="227.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="252.8" y1="16" x2="252.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="278.4" y1="16" x2="278.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="73.6" y1="160" x2="73.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="73.6" y="174" text-anchor="middle" font-size="10">0.1</text>
-<line x1="99.2" y1="160" x2="99.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="99.2" y="174" text-anchor="middle" font-size="10">0.2</text>
-<line x1="124.8" y1="160" x2="124.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="124.8" y="174" text-anchor="middle" font-size="10">0.3</text>
-<line x1="150.4" y1="160" x2="150.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="150.4" y="174" text-anchor="middle" font-size="10">0.4</text>
-<line x1="176.0" y1="160" x2="176.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="176.0" y="174" text-anchor="middle" font-size="10">0.5</text>
-<line x1="201.6" y1="160" x2="201.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="201.6" y="174" text-anchor="middle" font-size="10">0.6</text>
-<line x1="227.2" y1="160" x2="227.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="227.2" y="174" text-anchor="middle" font-size="10">0.7</text>
-<line x1="252.8" y1="160" x2="252.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="252.8" y="174" text-anchor="middle" font-size="10">0.8</text>
-<line x1="278.4" y1="160" x2="278.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="278.4" y="174" text-anchor="middle" font-size="10">0.9</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">1</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="158.43" x2="48" y2="158.43" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="162.43" text-anchor="end" font-size="10">0</text>
-<line x1="44" y1="132.35" x2="48" y2="132.35" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="136.35" text-anchor="end" font-size="10">20</text>
-<line x1="44" y1="106.26" x2="48" y2="106.26" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="110.26" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="80.17" x2="48" y2="80.17" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="84.17" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="54.09" x2="48" y2="54.09" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="58.09" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">step</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,145.39 304.0,148.0" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 304.0,41.04" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="148.0" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="41.04" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Step 2.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 232" role="img" aria-labelledby="test-metricplot-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-metricplot" viewBox="0 0 320 200" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost,temp">
-<g class="scriba-metricplot-grid">
-<line class="scriba-metricplot-gridline-h" x1="48" y1="154.32" x2="304" y2="154.32"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="129.05" x2="304" y2="129.05"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="103.79" x2="304" y2="103.79"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="78.53" x2="304" y2="78.53"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="53.26" x2="304" y2="53.26"/>
-<line class="scriba-metricplot-gridline-h" x1="48" y1="28.0" x2="304" y2="28.0"/>
-<line class="scriba-metricplot-gridline-v" x1="48.0" y1="16" x2="48.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="73.6" y1="16" x2="73.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="99.2" y1="16" x2="99.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="124.8" y1="16" x2="124.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="150.4" y1="16" x2="150.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="176.0" y1="16" x2="176.0" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="201.6" y1="16" x2="201.6" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="227.2" y1="16" x2="227.2" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="252.8" y1="16" x2="252.8" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="278.4" y1="16" x2="278.4" y2="160"/>
-<line class="scriba-metricplot-gridline-v" x1="304.0" y1="16" x2="304.0" y2="160"/>
-</g>
-<g class="scriba-metricplot-axes">
-<line x1="48" y1="160" x2="304" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<line x1="48" y1="16" x2="48" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>
-<g class="scriba-metricplot-xticks">
-<line x1="48.0" y1="160" x2="48.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="48.0" y="174" text-anchor="middle" font-size="10">0</text>
-<line x1="73.6" y1="160" x2="73.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="73.6" y="174" text-anchor="middle" font-size="10">0.2</text>
-<line x1="99.2" y1="160" x2="99.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="99.2" y="174" text-anchor="middle" font-size="10">0.4</text>
-<line x1="124.8" y1="160" x2="124.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="124.8" y="174" text-anchor="middle" font-size="10">0.6</text>
-<line x1="150.4" y1="160" x2="150.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="150.4" y="174" text-anchor="middle" font-size="10">0.8</text>
-<line x1="176.0" y1="160" x2="176.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="176.0" y="174" text-anchor="middle" font-size="10">1</text>
-<line x1="201.6" y1="160" x2="201.6" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="201.6" y="174" text-anchor="middle" font-size="10">1.2</text>
-<line x1="227.2" y1="160" x2="227.2" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="227.2" y="174" text-anchor="middle" font-size="10">1.4</text>
-<line x1="252.8" y1="160" x2="252.8" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="252.8" y="174" text-anchor="middle" font-size="10">1.6</text>
-<line x1="278.4" y1="160" x2="278.4" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="278.4" y="174" text-anchor="middle" font-size="10">1.8</text>
-<line x1="304.0" y1="160" x2="304.0" y2="164" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="304.0" y="174" text-anchor="middle" font-size="10">2</text>
-</g>
-<g class="scriba-metricplot-yticks">
-<line x1="44" y1="154.32" x2="48" y2="154.32" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="158.32" text-anchor="end" font-size="10">0</text>
-<line x1="44" y1="129.05" x2="48" y2="129.05" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="133.05" text-anchor="end" font-size="10">20</text>
-<line x1="44" y1="103.79" x2="48" y2="103.79" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="107.79" text-anchor="end" font-size="10">40</text>
-<line x1="44" y1="78.53" x2="48" y2="78.53" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="82.53" text-anchor="end" font-size="10">60</text>
-<line x1="44" y1="53.26" x2="48" y2="53.26" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="57.26" text-anchor="end" font-size="10">80</text>
-<line x1="44" y1="28.0" x2="48" y2="28.0" stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>
-<text x="40" y="32.0" text-anchor="end" font-size="10">100</text>
-</g>
-<text x="176.0" y="194" text-anchor="middle" font-size="11">step</text>
-<text x="12" y="88.0" text-anchor="middle" font-size="11" transform="rotate(-90, 12, 88.0)">value</text>
-</g>
-<g class="scriba-metricplot-series">
-<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">
-<polyline class="scriba-metricplot-line" points="48.0,141.68 176.0,144.21 304.0,148.0" fill="none" stroke="#0072B2" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">
-<polyline class="scriba-metricplot-line" points="48.0,28.0 176.0,40.63 304.0,65.89" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>
-</g>
-</g>
-<g class="scriba-metricplot-step-marker">
-<line class="scriba-metricplot-marker" x1="304.0" y1="16" x2="304.0" y2="160" stroke="var(--scriba-fg, #24292f)" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="148.0" r="4" fill="#0072B2"/>
-<circle class="scriba-metricplot-step-dot" cx="304.0" cy="65.89" r="4" fill="#D55E00"/>
-</g>
-<g class="scriba-metricplot-legend">
-<line x1="224" y1="20" x2="244" y2="20" stroke="#0072B2" stroke-width="2"/>
-<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>
-<line x1="224" y1="36" x2="244" y2="36" stroke="#D55E00" stroke-width="2" stroke-dasharray="6 3"/>
-<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>
-</g>
-</svg>
-</g>
-</svg>`,narration:`Step 3.`}
+  /* ---- colour constants ---- */
+  var BLUE  = '#0072B2';   /* Wong blue  – cost (solid)  */
+  var RED   = '#D55E00';   /* Wong vermillion – temp (dashed 6 3) */
+  var FG    = 'var(--scriba-fg, #e6edf3)';
+  var GRID  = 'var(--scriba-grid, #30363d)';
+
+  /* ---- layout constants ---- */
+  var PX = 48, PY = 16, PW = 256, PH = 144;   /* plot area: x0=48, y0=16, w=256, h=144, y1=160 */
+  var SVG_W = 320, SVG_H = 200;
+  var OUTER_W = 352, OUTER_H = 232;
+
+  /* ---- data per step ---- */
+  var DATA = [
+    { cost: [10],       temp: [100]        },
+    { cost: [10, 8],    temp: [100, 90]    },
+    { cost: [10, 8, 5], temp: [100, 90, 70]}
   ];
-  var cur=0;
-  var stage=W.querySelector('.scriba-stage');
-  var narr=W.querySelector('.scriba-narration');
-  var ctr=W.querySelector('.scriba-step-counter');
-  var prev=W.querySelector('.scriba-btn-prev');
-  var next=W.querySelector('.scriba-btn-next');
-  var dots=W.querySelectorAll('.scriba-dot');
-  function show(i){
-    cur=i;
-    stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
-    ctr.textContent='Step '+(i+1)+' / '+frames.length;
-    prev.disabled=i===0;
-    next.disabled=i===frames.length-1;
-    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+
+  /* ---- helpers ---- */
+  function yRange(vals) {
+    var mn = Math.min.apply(null, vals);
+    var mx = Math.max.apply(null, vals);
+    if (mn === mx) { mn -= 1; mx += 1; }          /* degenerate */
+    var pad = (mx - mn) * 0.10;
+    return [mn - pad, mx + pad];
   }
-  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
-  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
-  W.addEventListener('keydown',function(e){
-    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
-    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
+
+  function mapY(v, lo, hi) {
+    return PY + PH - (v - lo) / (hi - lo) * PH;   /* y increases downward */
+  }
+
+  function mapX(i, n) {
+    if (n <= 1) return PX;                          /* single point */
+    return PX + i / (n - 1) * PW;
+  }
+
+  function niceStep(range) {
+    var rough = range / 5;
+    var pow = Math.pow(10, Math.floor(Math.log10(rough)));
+    var norm = rough / pow;
+    if (norm < 1.5) return pow;
+    if (norm < 3.5) return 2 * pow;
+    if (norm < 7.5) return 5 * pow;
+    return 10 * pow;
+  }
+
+  /* ---- build one frame SVG ---- */
+  function buildSVG(step) {
+    var d = DATA[step];
+    var allVals = d.cost.concat(d.temp);
+    var r = yRange(allVals);
+    var yLo = r[0], yHi = r[1];
+    var n = d.cost.length;
+
+    var s = '';
+
+    /* --- grid --- */
+    s += '<g class="scriba-metricplot-grid">';
+    var yStep = niceStep(yHi - yLo);
+    var yStart = Math.ceil(yLo / yStep) * yStep;
+    for (var yv = yStart; yv <= yHi; yv += yStep) {
+      var gy = mapY(yv, yLo, yHi).toFixed(2);
+      s += '<line class="scriba-metricplot-gridline-h" x1="'+PX+'" y1="'+gy+'" x2="'+(PX+PW)+'" y2="'+gy+'"/>';
+    }
+    if (n > 1) {
+      for (var gi = 0; gi < n; gi++) {
+        var gx = mapX(gi, n).toFixed(1);
+        s += '<line class="scriba-metricplot-gridline-v" x1="'+gx+'" y1="'+PY+'" x2="'+gx+'" y2="'+(PY+PH)+'"/>';
+      }
+    } else {
+      var gx0 = mapX(0, 1).toFixed(1);
+      s += '<line class="scriba-metricplot-gridline-v" x1="'+gx0+'" y1="'+PY+'" x2="'+gx0+'" y2="'+(PY+PH)+'"/>';
+    }
+    s += '</g>';
+
+    /* --- axes --- */
+    s += '<g class="scriba-metricplot-axes">';
+    s += '<line x1="'+PX+'" y1="'+(PY+PH)+'" x2="'+(PX+PW)+'" y2="'+(PY+PH)+'" stroke="'+FG+'" stroke-width="1.5"/>';
+    s += '<line x1="'+PX+'" y1="'+PY+'" x2="'+PX+'" y2="'+(PY+PH)+'" stroke="'+FG+'" stroke-width="1.5"/>';
+
+    /* x ticks */
+    s += '<g class="scriba-metricplot-xticks">';
+    for (var xi = 0; xi < n; xi++) {
+      var tx = mapX(xi, n).toFixed(1);
+      s += '<line x1="'+tx+'" y1="'+(PY+PH)+'" x2="'+tx+'" y2="'+(PY+PH+4)+'" stroke="'+FG+'" stroke-width="1"/>';
+      s += '<text x="'+tx+'" y="'+(PY+PH+14)+'" text-anchor="middle" font-size="10">'+(xi+1)+'</text>';
+    }
+    s += '</g>';
+
+    /* y ticks */
+    s += '<g class="scriba-metricplot-yticks">';
+    for (var yv2 = yStart; yv2 <= yHi; yv2 += yStep) {
+      var ty = mapY(yv2, yLo, yHi).toFixed(2);
+      s += '<line x1="'+(PX-4)+'" y1="'+ty+'" x2="'+PX+'" y2="'+ty+'" stroke="'+FG+'" stroke-width="1"/>';
+      s += '<text x="'+(PX-8)+'" y="'+(parseFloat(ty)+4).toFixed(2)+'" text-anchor="end" font-size="10">'+Math.round(yv2)+'</text>';
+    }
+    s += '</g>';
+
+    /* axis labels */
+    var xMid = (PX + PX + PW) / 2;
+    var yMid = (PY + PY + PH) / 2;
+    s += '<text x="'+xMid+'" y="'+(PY+PH+30)+'" text-anchor="middle" font-size="11">step</text>';
+    s += '<text x="12" y="'+yMid+'" text-anchor="middle" font-size="11" transform="rotate(-90, 12, '+yMid+')">value</text>';
+    s += '</g>';
+
+    /* --- series polylines --- */
+    s += '<g class="scriba-metricplot-series">';
+
+    /* cost – solid */
+    var costPts = [];
+    for (var ci = 0; ci < n; ci++) {
+      costPts.push(mapX(ci, n).toFixed(1)+','+mapY(d.cost[ci], yLo, yHi).toFixed(2));
+    }
+    s += '<g class="scriba-metricplot-series-0" data-scriba-series-name="cost">';
+    s += '<polyline class="scriba-metricplot-line" points="'+costPts.join(' ')+'" fill="none" stroke="'+BLUE+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>';
+    s += '</g>';
+
+    /* temp – dashed */
+    var tempPts = [];
+    for (var ti = 0; ti < n; ti++) {
+      tempPts.push(mapX(ti, n).toFixed(1)+','+mapY(d.temp[ti], yLo, yHi).toFixed(2));
+    }
+    s += '<g class="scriba-metricplot-series-1" data-scriba-series-name="temp">';
+    s += '<polyline class="scriba-metricplot-line" points="'+tempPts.join(' ')+'" fill="none" stroke="'+RED+'" stroke-width="1.5" stroke-dasharray="6 3" stroke-linejoin="round" stroke-linecap="round"/>';
+    s += '</g>';
+    s += '</g>';
+
+    /* --- step marker (vertical dashed line + dots at current step) --- */
+    var markerX = mapX(n - 1, n).toFixed(1);
+    var costCurY = mapY(d.cost[n - 1], yLo, yHi).toFixed(2);
+    var tempCurY = mapY(d.temp[n - 1], yLo, yHi).toFixed(2);
+    s += '<g class="scriba-metricplot-step-marker">';
+    s += '<line class="scriba-metricplot-marker" x1="'+markerX+'" y1="'+PY+'" x2="'+markerX+'" y2="'+(PY+PH)+'" stroke="'+FG+'" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>';
+    s += '<circle class="scriba-metricplot-step-dot" cx="'+markerX+'" cy="'+costCurY+'" r="4" fill="'+BLUE+'"/>';
+    s += '<circle class="scriba-metricplot-step-dot" cx="'+markerX+'" cy="'+tempCurY+'" r="4" fill="'+RED+'"/>';
+    s += '</g>';
+
+    /* --- legend --- */
+    s += '<g class="scriba-metricplot-legend">';
+    s += '<line x1="224" y1="20" x2="244" y2="20" stroke="'+BLUE+'" stroke-width="2"/>';
+    s += '<text x="250" y="24" class="scriba-metricplot-legend-label" font-size="11">cost</text>';
+    s += '<line x1="224" y1="36" x2="244" y2="36" stroke="'+RED+'" stroke-width="2" stroke-dasharray="6 3"/>';
+    s += '<text x="250" y="40" class="scriba-metricplot-legend-label" font-size="11">temp</text>';
+    s += '</g>';
+
+    return '<svg class="scriba-stage-svg" viewBox="0 0 '+OUTER_W+' '+OUTER_H+'" role="img" xmlns="http://www.w3.org/2000/svg">'
+      + '<g transform="translate(16,16)"><svg class="scriba-metricplot" viewBox="0 0 '+SVG_W+' '+SVG_H+'" data-scriba-series="cost,temp" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="MetricPlot: cost, temp">'
+      + s
+      + '</svg></g></svg>';
+  }
+
+  /* ---- narration (Vietnamese co dau) ---- */
+  var narrations = [
+    "Gi\u00e1 tr\u1ecb kh\u1edfi \u0111\u1ea7u: cost\u00a0=\u00a010, temp\u00a0=\u00a0100. M\u1ed7i chu\u1ed7i ch\u1ec9 c\u00f3 m\u1ed9t \u0111i\u1ec3m duy nh\u1ea5t.",
+    "B\u01b0\u1edbc 2: cost gi\u1ea3m xu\u1ed1ng 8, temp gi\u1ea3m xu\u1ed1ng 90. \u0110\u01b0\u1eddng n\u1ed1i hai \u0111i\u1ec3m cho m\u1ed7i chu\u1ed7i.",
+    "B\u01b0\u1edbc 3: cost ti\u1ebfp t\u1ee5c gi\u1ea3m xu\u1ed1ng 5, temp xu\u1ed1ng 70. Polyline \u0111\u1ea7y \u0111\u1ee7 ba \u0111i\u1ec3m."
+  ];
+
+  /* ---- frames ---- */
+  var frames = [];
+  for (var f = 0; f < DATA.length; f++) {
+    frames.push({ svg: buildSVG(f), narration: narrations[f] });
+  }
+
+  /* ---- widget controller ---- */
+  var W = document.getElementById('test-metricplot');
+  var cur = 0;
+  var stage = W.querySelector('.scriba-stage');
+  var narr  = W.querySelector('.scriba-narration');
+  var ctr   = W.querySelector('.scriba-step-counter');
+  var prev  = W.querySelector('.scriba-btn-prev');
+  var next  = W.querySelector('.scriba-btn-next');
+  var dots  = W.querySelectorAll('.scriba-dot');
+
+  function show(i) {
+    cur = i;
+    stage.innerHTML = frames[i].svg;
+    narr.textContent = frames[i].narration;
+    ctr.textContent = 'Step ' + (i + 1) + ' / ' + frames.length;
+    prev.disabled = i === 0;
+    next.disabled = i === frames.length - 1;
+    dots.forEach(function(d, j) {
+      d.className = 'scriba-dot' + (j === i ? ' active' : j < i ? ' done' : '');
+    });
+  }
+
+  prev.addEventListener('click', function() { if (cur > 0) show(cur - 1); });
+  next.addEventListener('click', function() { if (cur < frames.length - 1) show(cur + 1); });
+  W.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); if (cur < frames.length - 1) show(cur + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); if (cur > 0) show(cur - 1); }
   });
-  W.setAttribute('tabindex','0');
+  W.setAttribute('tabindex', '0');
   show(0);
 })();
 </script>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="vi" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,9 +11,12 @@ body {
   max-width: 720px;
   margin: 2rem auto;
   padding: 0 1rem;
-  background: #fafafa;
-  color: #212529;
 }
+
+/* Light / dark base */
+body { background: #fafafa; color: #212529; }
+[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
+
 h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 
 /* Widget container */
@@ -23,6 +26,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   background: #ffffff;
   overflow: hidden;
 }
+[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
 
 /* Controls bar */
 .scriba-controls {
@@ -34,6 +38,8 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   border-bottom: 1px solid #d0d7de;
   user-select: none;
 }
+[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
+
 .scriba-controls button {
   background: #ffffff;
   border: 1px solid #d0d7de;
@@ -47,12 +53,16 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 .scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
 .scriba-controls button:active { background: #e4e4e4; }
 .scriba-controls button:disabled { opacity: 0.35; cursor: default; }
+[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
+[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
+
 .scriba-step-counter {
   font: 600 0.78rem ui-monospace, "SF Mono", monospace;
   color: #6c757d;
   min-width: 5rem;
   text-align: center;
 }
+[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
 
 /* Progress dots */
 .scriba-progress {
@@ -68,12 +78,11 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 }
 .scriba-dot.active { background: #0072B2; }
 .scriba-dot.done { background: #009E73; }
+[data-theme="dark"] .scriba-dot { background: #30363d; }
 
 /* Stage */
 .scriba-stage {
   padding: 1.25rem 1rem;
-  display: flex;
-  justify-content: center;
   min-height: 100px;
 }
 .scriba-stage-svg { width: 100%; height: auto; }
@@ -87,6 +96,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   border-top: 1px solid #f0f0f0;
   min-height: 2.5rem;
 }
+[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
 
 /* SVG text */
 svg text {
@@ -98,43 +108,81 @@ svg text {
   font: 500 10px ui-monospace, monospace;
   fill: #6c757d;
 }
+[data-theme="dark"] .idx { fill: #7d8590; }
 
-/* Frame transition */
-.scriba-stage svg, .scriba-narration {
-  transition: opacity 0.2s ease;
+/* Substory section */
+.scriba-substory {
+  border-left: 2px solid #0072B2;
+  padding-left: 1rem;
+  margin: 0.75rem 0 0.75rem 0.5rem;
 }
+.scriba-substory-title {
+  font: 600 0.82rem -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #0072B2;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.02em;
+}
+[data-theme="dark"] .scriba-substory-title { color: #56B4E9; }
+[data-theme="dark"] .scriba-substory { border-color: #56B4E9; }
 
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
+.scriba-sub-controls {
   display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0;
+  user-select: none;
 }
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
+.scriba-sub-controls button {
   background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
+  border: 1px solid #d0d7de;
+  border-radius: 5px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+  color: #212529;
+  transition: background 0.15s;
 }
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
+.scriba-sub-controls button:hover { background: #f0f0f0; }
+.scriba-sub-controls button:disabled { opacity: 0.35; cursor: default; }
+[data-theme="dark"] .scriba-sub-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
+[data-theme="dark"] .scriba-sub-controls button:hover { background: #30363d; }
+
+.scriba-sub-step-counter {
+  font: 600 0.7rem ui-monospace, "SF Mono", monospace;
   color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  min-width: 4rem;
+  text-align: center;
 }
+[data-theme="dark"] .scriba-sub-step-counter { color: #7d8590; }
+
+.scriba-sub-progress {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+.scriba-sub-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #d0d7de;
+  transition: background 0.2s;
+}
+.scriba-sub-dot.active { background: #0072B2; }
+.scriba-sub-dot.done { background: #009E73; }
+[data-theme="dark"] .scriba-sub-dot { background: #30363d; }
+
+.scriba-sub-stage {
+  padding: 0.75rem 0;
+  min-height: 60px;
+}
+
+.scriba-sub-narration {
+  padding: 0.4rem 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #495057;
+  font-style: italic;
+}
+[data-theme="dark"] .scriba-sub-narration { color: #8b949e; }
 
 /* Theme toggle */
 .theme-toggle {
@@ -143,21 +191,13 @@ svg text {
   border: 1px solid #ccc; border-radius: 6px; background: white;
   font-size: 0.8rem;
 }
-
-/* Dark mode */
-[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
-[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
-[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
-[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
-[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
-[data-theme="dark"] .scriba-dot { background: #30363d; }
-[data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
 [data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
+
+/* Transitions */
+.scriba-stage svg, .scriba-narration,
+.scriba-sub-stage svg, .scriba-sub-narration {
+  transition: opacity 0.2s ease;
+}
 </style>
 </head>
 <body>
@@ -177,81 +217,203 @@ svg text {
     </div>
   </div>
   <div class="scriba-stage"></div>
+  <!-- Substory container — only visible on step 1 -->
+  <div class="scriba-substory-container"></div>
   <p class="scriba-narration"></p>
 </div>
 <script>
 (function(){
-  var W=document.getElementById('test-substory');
-  var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-current">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">3</text>
-  </g>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">1</text>
-  </g>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">4</text>
-  </g>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">1</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Processing element 0.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">3</text>
-  </g>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">1</text>
-  </g>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">4</text>
-  </g>
-  <g data-target="a.cell[3]" class="scriba-state-idle">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="216" y="20" fill="#212529">1</text>
-  </g>
-</g>
-</g>
-</svg>`,narration:`Element 0 processed.`}
+  var W = document.getElementById('test-substory');
+
+  /* ── Parent frames ────────────────────────────────────────────── */
+  var parentSvgStep1 = '<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img"'
+    + ' aria-labelledby="test-substory-frame-1-narration"'
+    + ' xmlns="http://www.w3.org/2000/svg">'
+    + '<g transform="translate(16,16)">'
+    + '<g data-primitive="array" data-shape="a">'
+    + '  <g data-target="a.cell[0]" class="scriba-state-current">'
+    + '    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>'
+    + '    <text x="30" y="20" fill="#ffffff">3</text>'
+    + '  </g>'
+    + '  <g data-target="a.cell[1]" class="scriba-state-idle">'
+    + '    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>'
+    + '    <text x="92" y="20" fill="#212529">1</text>'
+    + '  </g>'
+    + '  <g data-target="a.cell[2]" class="scriba-state-idle">'
+    + '    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>'
+    + '    <text x="154" y="20" fill="#212529">4</text>'
+    + '  </g>'
+    + '  <g data-target="a.cell[3]" class="scriba-state-idle">'
+    + '    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>'
+    + '    <text x="216" y="20" fill="#212529">1</text>'
+    + '  </g>'
+    + '</g>'
+    + '</g>'
+    + '</svg>';
+
+  var parentSvgStep2 = '<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img"'
+    + ' aria-labelledby="test-substory-frame-2-narration"'
+    + ' xmlns="http://www.w3.org/2000/svg">'
+    + '<g transform="translate(16,16)">'
+    + '<g data-primitive="array" data-shape="a">'
+    + '  <g data-target="a.cell[0]" class="scriba-state-done">'
+    + '    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>'
+    + '    <text x="30" y="20" fill="#ffffff">3</text>'
+    + '  </g>'
+    + '  <g data-target="a.cell[1]" class="scriba-state-idle">'
+    + '    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>'
+    + '    <text x="92" y="20" fill="#212529">1</text>'
+    + '  </g>'
+    + '  <g data-target="a.cell[2]" class="scriba-state-idle">'
+    + '    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>'
+    + '    <text x="154" y="20" fill="#212529">4</text>'
+    + '  </g>'
+    + '  <g data-target="a.cell[3]" class="scriba-state-idle">'
+    + '    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>'
+    + '    <text x="216" y="20" fill="#212529">1</text>'
+    + '  </g>'
+    + '</g>'
+    + '</g>'
+    + '</svg>';
+
+  /* ── Substory frames (only for parent step 1) ─────────────── */
+  var subSvgStep1 = '<svg class="scriba-stage-svg" viewBox="0 0 156 72" role="img"'
+    + ' aria-labelledby="test-substory-frame-1-substory-1-frame-1-narration"'
+    + ' xmlns="http://www.w3.org/2000/svg">'
+    + '<g transform="translate(16,16)">'
+    + '<g data-primitive="array" data-shape="sub">'
+    + '  <g data-target="sub.cell[0]" class="scriba-state-current">'
+    + '    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>'
+    + '    <text x="30" y="20" fill="#ffffff">3</text>'
+    + '  </g>'
+    + '  <g data-target="sub.cell[1]" class="scriba-state-idle">'
+    + '    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>'
+    + '    <text x="92" y="20" fill="#212529">1</text>'
+    + '  </g>'
+    + '</g>'
+    + '</g>'
+    + '</svg>';
+
+  var subSvgStep2 = '<svg class="scriba-stage-svg" viewBox="0 0 156 72" role="img"'
+    + ' aria-labelledby="test-substory-frame-1-substory-1-frame-2-narration"'
+    + ' xmlns="http://www.w3.org/2000/svg">'
+    + '<g transform="translate(16,16)">'
+    + '<g data-primitive="array" data-shape="sub">'
+    + '  <g data-target="sub.cell[0]" class="scriba-state-done">'
+    + '    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>'
+    + '    <text x="30" y="20" fill="#ffffff">3</text>'
+    + '  </g>'
+    + '  <g data-target="sub.cell[1]" class="scriba-state-done">'
+    + '    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>'
+    + '    <text x="92" y="20" fill="#ffffff">1</text>'
+    + '  </g>'
+    + '</g>'
+    + '</g>'
+    + '</svg>';
+
+  var parentFrames = [
+    { svg: parentSvgStep1, narration: 'Processing element 0.', hasSubstory: true },
+    { svg: parentSvgStep2, narration: 'Element 0 processed.',  hasSubstory: false }
   ];
-  var cur=0;
-  var stage=W.querySelector('.scriba-stage');
-  var narr=W.querySelector('.scriba-narration');
-  var ctr=W.querySelector('.scriba-step-counter');
-  var prev=W.querySelector('.scriba-btn-prev');
-  var next=W.querySelector('.scriba-btn-next');
-  var dots=W.querySelectorAll('.scriba-dot');
-  function show(i){
-    cur=i;
-    stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
-    ctr.textContent='Step '+(i+1)+' / '+frames.length;
-    prev.disabled=i===0;
-    next.disabled=i===frames.length-1;
-    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+
+  var subFrames = [
+    { svg: subSvgStep1, narration: 'Compare 3 and 1.' },
+    { svg: subSvgStep2, narration: 'Sub-computation complete.' }
+  ];
+
+  /* ── DOM refs ──────────────────────────────────────────────── */
+  var stage      = W.querySelector('.scriba-stage');
+  var subBox     = W.querySelector('.scriba-substory-container');
+  var narr       = W.querySelector('.scriba-narration');
+  var ctr        = W.querySelector('.scriba-step-counter');
+  var prevBtn    = W.querySelector('.scriba-btn-prev');
+  var nextBtn    = W.querySelector('.scriba-btn-next');
+  var dots       = W.querySelectorAll('.scriba-dot');
+
+  var pCur = 0;   // parent index
+  var sCur = 0;   // sub index
+
+  /* ── Substory HTML builder ─────────────────────────────────── */
+  function buildSubstoryHTML() {
+    return '<section class="scriba-substory"'
+      + ' aria-label="Substory: Sub-computation for element 0">'
+      + '<p class="scriba-substory-title">Sub-computation for element 0</p>'
+      + '<div class="scriba-sub-controls">'
+      + '  <button class="scriba-sub-prev">Prev</button>'
+      + '  <span class="scriba-sub-step-counter">Sub 1 / 2</span>'
+      + '  <button class="scriba-sub-next">Next</button>'
+      + '  <div class="scriba-sub-progress">'
+      + '    <div class="scriba-sub-dot active"></div>'
+      + '    <div class="scriba-sub-dot"></div>'
+      + '  </div>'
+      + '</div>'
+      + '<div class="scriba-sub-stage"></div>'
+      + '<p class="scriba-sub-narration"></p>'
+      + '</section>';
   }
-  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
-  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
-  W.addEventListener('keydown',function(e){
-    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
-    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
+
+  /* ── Show substory sub-step ────────────────────────────────── */
+  function showSub(i) {
+    sCur = i;
+    var sec = subBox.querySelector('.scriba-substory');
+    if (!sec) return;
+    sec.querySelector('.scriba-sub-stage').innerHTML = subFrames[i].svg;
+    sec.querySelector('.scriba-sub-narration').textContent = subFrames[i].narration;
+    sec.querySelector('.scriba-sub-step-counter').textContent = 'Sub ' + (i + 1) + ' / ' + subFrames.length;
+    sec.querySelector('.scriba-sub-prev').disabled = i === 0;
+    sec.querySelector('.scriba-sub-next').disabled = i === subFrames.length - 1;
+    var sdots = sec.querySelectorAll('.scriba-sub-dot');
+    sdots.forEach(function(d, j) {
+      d.className = 'scriba-sub-dot' + (j === i ? ' active' : j < i ? ' done' : '');
+    });
+  }
+
+  /* ── Show parent step ──────────────────────────────────────── */
+  function showParent(i) {
+    pCur = i;
+    stage.innerHTML = parentFrames[i].svg;
+    narr.textContent = parentFrames[i].narration;
+    ctr.textContent = 'Step ' + (i + 1) + ' / ' + parentFrames.length;
+    prevBtn.disabled = i === 0;
+    nextBtn.disabled = i === parentFrames.length - 1;
+    dots.forEach(function(d, j) {
+      d.className = 'scriba-dot' + (j === i ? ' active' : j < i ? ' done' : '');
+    });
+
+    if (parentFrames[i].hasSubstory) {
+      subBox.innerHTML = buildSubstoryHTML();
+      sCur = 0;
+      showSub(0);
+      // Wire sub-navigation
+      var sec = subBox.querySelector('.scriba-substory');
+      sec.querySelector('.scriba-sub-prev').addEventListener('click', function() {
+        if (sCur > 0) showSub(sCur - 1);
+      });
+      sec.querySelector('.scriba-sub-next').addEventListener('click', function() {
+        if (sCur < subFrames.length - 1) showSub(sCur + 1);
+      });
+    } else {
+      subBox.innerHTML = '';
+    }
+  }
+
+  /* ── Parent navigation ─────────────────────────────────────── */
+  prevBtn.addEventListener('click', function() { if (pCur > 0) showParent(pCur - 1); });
+  nextBtn.addEventListener('click', function() { if (pCur < parentFrames.length - 1) showParent(pCur + 1); });
+
+  W.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowRight' || e.key === ' ') {
+      e.preventDefault();
+      if (pCur < parentFrames.length - 1) showParent(pCur + 1);
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (pCur > 0) showParent(pCur - 1);
+    }
   });
-  W.setAttribute('tabindex','0');
-  show(0);
+
+  W.setAttribute('tabindex', '0');
+  showParent(0);
 })();
 </script>
 </body>

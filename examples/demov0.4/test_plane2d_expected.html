@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scriba — test_plane2d</title>
+<title>Scriba — test_plane2d (expected)</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 body {
@@ -11,17 +11,18 @@ body {
   max-width: 720px;
   margin: 2rem auto;
   padding: 0 1rem;
-  background: #fafafa;
-  color: #212529;
+  background: #0d1117;
+  color: #e6edf3;
 }
-h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
+h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; color: #e6edf3; }
 
-/* Widget container */
+/* Widget container — dark */
 .scriba-widget {
-  border: 1px solid #d0d7de;
+  border: 1px solid #30363d;
   border-radius: 10px;
-  background: #ffffff;
+  background: #1e1e2e;
   overflow: hidden;
+  outline: none;
 }
 
 /* Controls bar */
@@ -30,26 +31,26 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
+  background: #181825;
+  border-bottom: 1px solid #30363d;
   user-select: none;
 }
 .scriba-controls button {
-  background: #ffffff;
-  border: 1px solid #d0d7de;
+  background: #21262d;
+  border: 1px solid #30363d;
   border-radius: 6px;
   padding: 0.3rem 0.7rem;
   font-size: 0.8rem;
   cursor: pointer;
-  color: #212529;
+  color: #e6edf3;
   transition: background 0.15s, border-color 0.15s;
 }
-.scriba-controls button:hover { background: #f0f0f0; border-color: #bbb; }
-.scriba-controls button:active { background: #e4e4e4; }
+.scriba-controls button:hover { background: #30363d; border-color: #484f58; }
+.scriba-controls button:active { background: #3d444d; }
 .scriba-controls button:disabled { opacity: 0.35; cursor: default; }
 .scriba-step-counter {
   font: 600 0.78rem ui-monospace, "SF Mono", monospace;
-  color: #6c757d;
+  color: #7d8590;
   min-width: 5rem;
   text-align: center;
 }
@@ -63,11 +64,11 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 .scriba-dot {
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #d0d7de;
+  background: #30363d;
   transition: background 0.2s;
 }
 .scriba-dot.active { background: #0072B2; }
-.scriba-dot.done { background: #009E73; }
+.scriba-dot.done   { background: #009E73; }
 
 /* Stage */
 .scriba-stage {
@@ -83,88 +84,18 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   padding: 0.75rem 1rem;
   font-size: 0.92rem;
   line-height: 1.55;
-  color: #212529;
-  border-top: 1px solid #f0f0f0;
+  color: #cdd6f4;
+  border-top: 1px solid #30363d;
   min-height: 2.5rem;
-}
-
-/* SVG text */
-svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: central;
-}
-.idx {
-  font: 500 10px ui-monospace, monospace;
-  fill: #6c757d;
 }
 
 /* Frame transition */
 .scriba-stage svg, .scriba-narration {
   transition: opacity 0.2s ease;
 }
-
-/* Static filmstrip layout (legacy) */
-.scriba-animation { max-width: 100%; }
-.scriba-frames {
-  list-style: none;
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  padding: 1rem 0;
-  scroll-snap-type: x mandatory;
-}
-.scriba-frame {
-  flex: 0 0 auto;
-  min-width: 280px;
-  max-width: 560px;
-  border: 1px solid #d0d7de;
-  border-radius: 8px;
-  background: #ffffff;
-  scroll-snap-align: start;
-  overflow: hidden;
-}
-.scriba-frame-header {
-  padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
-}
-.scriba-step-label {
-  font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-/* Theme toggle */
-.theme-toggle {
-  position: fixed; top: 1rem; right: 1rem;
-  padding: 0.35rem 0.7rem; cursor: pointer;
-  border: 1px solid #ccc; border-radius: 6px; background: white;
-  font-size: 0.8rem;
-}
-
-/* Dark mode */
-[data-theme="dark"] body { background: #0d1117; color: #e6edf3; }
-[data-theme="dark"] .scriba-widget { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-controls button { background: #21262d; border-color: #30363d; color: #e6edf3; }
-[data-theme="dark"] .scriba-controls button:hover { background: #30363d; }
-[data-theme="dark"] .scriba-step-counter { color: #7d8590; }
-[data-theme="dark"] .scriba-narration { color: #e6edf3; border-color: #21262d; }
-[data-theme="dark"] .scriba-dot { background: #30363d; }
-[data-theme="dark"] .idx { fill: #7d8590; }
-[data-theme="dark"] .scriba-frame { background: #161b22; border-color: #30363d; }
-[data-theme="dark"] .scriba-frame-header { background: #1c2128; border-color: #30363d; }
-[data-theme="dark"] .scriba-step-label { color: #7d8590; }
-[data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
 </head>
 <body>
-<button class="theme-toggle" onclick="
-  var t = document.documentElement.dataset.theme;
-  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
-">Toggle theme</button>
 <h1>test_plane2d</h1>
 <div class="scriba-widget" id="test-plane2d">
   <div class="scriba-controls">
@@ -182,24 +113,111 @@ svg text {
 </div>
 <script>
 (function(){
-  var W=document.getElementById('test-plane2d');
+  /* ---- coordinate math ---- */
+  var xMin=-3, xMax=3, yMin=-3, yMax=3;
+  var margin=32, size=320;           // inner SVG size
+  var plotW=size-2*margin;           // 256
+  var plotH=size-2*margin;
+  var outerSize=size+32;             // 352 viewBox for outer SVG padding
+
+  function xToSvg(x){ return margin + (x-xMin)/(xMax-xMin)*plotW; }
+  function yToSvg(y){ return margin + (yMax-y)/(yMax-yMin)*plotH; } // Y flipped
+
+  /* ---- grid lines ---- */
+  var gridLines='';
+  for(var gx=xMin; gx<=xMax; gx++){
+    var sx=xToSvg(gx);
+    gridLines+='<line x1="'+sx.toFixed(2)+'" y1="'+margin+'" x2="'+sx.toFixed(2)+'" y2="'+(size-margin)+'" stroke="#3b3b4f" stroke-width="0.5" opacity="0.5"/>';
+  }
+  for(var gy=yMin; gy<=yMax; gy++){
+    var sy=yToSvg(gy);
+    gridLines+='<line x1="'+margin+'" y1="'+sy.toFixed(2)+'" x2="'+(size-margin)+'" y2="'+sy.toFixed(2)+'" stroke="#3b3b4f" stroke-width="0.5" opacity="0.5"/>';
+  }
+
+  /* ---- axes ---- */
+  var ox=xToSvg(0), oy=yToSvg(0);
+  var axes='';
+  // x-axis
+  axes+='<line x1="'+margin+'" y1="'+oy+'" x2="'+(size-margin)+'" y2="'+oy+'" stroke="#cdd6f4" stroke-width="1.5"/>';
+  axes+='<path d="M '+(size-margin)+' '+oy+' l -6 -3 l 0 6 Z" fill="#cdd6f4"/>';
+  // y-axis
+  axes+='<line x1="'+ox+'" y1="'+(size-margin)+'" x2="'+ox+'" y2="'+margin+'" stroke="#cdd6f4" stroke-width="1.5"/>';
+  axes+='<path d="M '+ox+' '+margin+' l -3 6 l 6 0 Z" fill="#cdd6f4"/>';
+
+  /* ---- tick labels ---- */
+  var labels='';
+  for(var tx=xMin; tx<=xMax; tx++){
+    if(tx===0) continue;
+    labels+='<text x="'+xToSvg(tx).toFixed(2)+'" y="'+(oy+14)+'" text-anchor="middle" font-size="10" fill="#7d8590">'+tx+'</text>';
+  }
+  for(var ty=yMin; ty<=yMax; ty++){
+    if(ty===0) continue;
+    labels+='<text x="'+(ox-8)+'" y="'+(yToSvg(ty)+3).toFixed(2)+'" text-anchor="end" font-size="10" fill="#7d8590">'+ty+'</text>';
+  }
+
+  /* ---- colors (Wong CVD palette) ---- */
+  var colCurrent='#0072B2';
+  var colDone='#009E73';
+
+  /* ---- helper: circle at math coords ---- */
+  function circle(mx,my,col){
+    return '<circle cx="'+xToSvg(mx).toFixed(2)+'" cy="'+yToSvg(my).toFixed(2)+'" r="4" fill="'+col+'" stroke="'+col+'" stroke-width="1.5"/>';
+  }
+
+  /* ---- helper: line y=mx+b clipped to viewport ---- */
+  function lineYeqX(col){
+    // y=x clipped to [-3,3] x [-3,3]: from (-3,-3) to (3,3)
+    var x1c=Math.max(xMin, yMin), y1c=x1c;
+    var x2c=Math.min(xMax, yMax), y2c=x2c;
+    return '<line x1="'+xToSvg(x1c).toFixed(2)+'" y1="'+yToSvg(y1c).toFixed(2)+'" x2="'+xToSvg(x2c).toFixed(2)+'" y2="'+yToSvg(y2c).toFixed(2)+'" stroke="'+col+'" stroke-width="1.5"/>';
+  }
+
+  /* ---- helper: line label ---- */
+  function lineLabel(text,x,y){
+    return '<text x="'+xToSvg(x).toFixed(2)+'" y="'+(yToSvg(y)-8).toFixed(2)+'" font-size="10" fill="#cdd6f4">'+text+'</text>';
+  }
+
+  /* ---- build SVG wrapper ---- */
+  function buildSvg(content, extraLabels){
+    return '<svg class="scriba-stage-svg" viewBox="0 0 '+outerSize+' '+outerSize+'" role="img" xmlns="http://www.w3.org/2000/svg">'
+      +'<g transform="translate(16,16)">'
+      +'<rect width="'+size+'" height="'+size+'" rx="4" fill="#1e1e2e"/>'
+      +'<g class="scriba-plane-grid">'+gridLines+'</g>'
+      +'<g class="scriba-plane-axes">'+axes+'</g>'
+      +'<g class="scriba-plane-content">'+content+'</g>'
+      +'<g class="scriba-plane-labels">'+labels+(extraLabels||'')+'</g>'
+      +'</g></svg>';
+  }
+
+  /* ---- frames ---- */
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 352" role="img" aria-labelledby="test-plane2d-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 320" data-scriba-xrange="-3 3" data-scriba-yrange="-3 3" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="74.67" y1="32.00" x2="74.67" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="117.33" y1="32.00" x2="117.33" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="202.67" y1="32.00" x2="202.67" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="245.33" y1="32.00" x2="245.33" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="288.00" x2="288.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="245.33" x2="288.00" y2="245.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="202.67" x2="288.00" y2="202.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="117.33" x2="288.00" y2="117.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="74.67" x2="288.00" y2="74.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 160.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="160.00" y1="288.00" x2="160.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 160.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(160.0000, 160.0000) scale(42.6667, -42.6667)"><g data-target="p.point[0]" class="scriba-plane-point scriba-state-idle"><circle cx="1.0" cy="2.0" r="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="32.00" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-3</text><text x="74.67" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-2</text><text x="117.33" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-1</text><text x="202.67" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="245.33" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="288.00" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="154.00" y="291.00" text-anchor="end" font-size="10" fill="#6c757d">-3</text><text x="154.00" y="248.33" text-anchor="end" font-size="10" fill="#6c757d">-2</text><text x="154.00" y="205.67" text-anchor="end" font-size="10" fill="#6c757d">-1</text><text x="154.00" y="120.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="154.00" y="77.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="154.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">3</text></g></svg>
-</g>
-</svg>`,narration:`Add point at (1,2).`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 352" role="img" aria-labelledby="test-plane2d-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 320" data-scriba-xrange="-3 3" data-scriba-yrange="-3 3" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="74.67" y1="32.00" x2="74.67" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="117.33" y1="32.00" x2="117.33" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="202.67" y1="32.00" x2="202.67" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="245.33" y1="32.00" x2="245.33" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="288.00" x2="288.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="245.33" x2="288.00" y2="245.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="202.67" x2="288.00" y2="202.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="117.33" x2="288.00" y2="117.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="74.67" x2="288.00" y2="74.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 160.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="160.00" y1="288.00" x2="160.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 160.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(160.0000, 160.0000) scale(42.6667, -42.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-idle"><line x1="-3" y1="-3.0" x2="3" y2="3.0" stroke="#d0d7de" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[0]" class="scriba-plane-point scriba-state-idle"><circle cx="1.0" cy="2.0" r="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="32.00" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-3</text><text x="74.67" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-2</text><text x="117.33" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-1</text><text x="202.67" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="245.33" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="288.00" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="154.00" y="291.00" text-anchor="end" font-size="10" fill="#6c757d">-3</text><text x="154.00" y="248.33" text-anchor="end" font-size="10" fill="#6c757d">-2</text><text x="154.00" y="205.67" text-anchor="end" font-size="10" fill="#6c757d">-1</text><text x="154.00" y="120.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="154.00" y="77.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="154.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="294.00" y="26.00" font-size="10" fill="#212529">y=x</text></g></svg>
-</g>
-</svg>`,narration:`Add line y=x.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 352 352" role="img" aria-labelledby="test-plane2d-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<svg class="scriba-plane2d" viewBox="0 0 320 320" data-scriba-xrange="-3 3" data-scriba-yrange="-3 3" xmlns="http://www.w3.org/2000/svg" role="img"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="74.67" y1="32.00" x2="74.67" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="117.33" y1="32.00" x2="117.33" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="160.00" y1="32.00" x2="160.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="202.67" y1="32.00" x2="202.67" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="245.33" y1="32.00" x2="245.33" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="288.00" y1="32.00" x2="288.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="288.00" x2="288.00" y2="288.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="245.33" x2="288.00" y2="245.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="202.67" x2="288.00" y2="202.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="117.33" x2="288.00" y2="117.33" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="74.67" x2="288.00" y2="74.67" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#212529" stroke-width="1.5"/><path d="M 288.00 160.00 l -6 -3 l 0 6 Z" fill="#212529"/><line x1="160.00" y1="288.00" x2="160.00" y2="32.00" stroke="#212529" stroke-width="1.5"/><path d="M 160.00 32.00 l -3 6 l 6 0 Z" fill="#212529"/></g><g class="scriba-plane-content" transform="translate(160.0000, 160.0000) scale(42.6667, -42.6667)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-idle"><line x1="-3" y1="-3.0" x2="3" y2="3.0" stroke="#d0d7de" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[0]" class="scriba-plane-point scriba-state-idle"><circle cx="1.0" cy="2.0" r="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[1]" class="scriba-plane-point scriba-state-idle"><circle cx="-1.0" cy="-1.0" r="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="32.00" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-3</text><text x="74.67" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-2</text><text x="117.33" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">-1</text><text x="202.67" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">1</text><text x="245.33" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">2</text><text x="288.00" y="172.00" text-anchor="middle" font-size="10" fill="#6c757d">3</text><text x="154.00" y="291.00" text-anchor="end" font-size="10" fill="#6c757d">-3</text><text x="154.00" y="248.33" text-anchor="end" font-size="10" fill="#6c757d">-2</text><text x="154.00" y="205.67" text-anchor="end" font-size="10" fill="#6c757d">-1</text><text x="154.00" y="120.33" text-anchor="end" font-size="10" fill="#6c757d">1</text><text x="154.00" y="77.67" text-anchor="end" font-size="10" fill="#6c757d">2</text><text x="154.00" y="35.00" text-anchor="end" font-size="10" fill="#6c757d">3</text><text x="294.00" y="26.00" font-size="10" fill="#212529">y=x</text></g></svg>
-</g>
-</svg>`,narration:`Add second point at (-1,-1).`}
+    {
+      svg: buildSvg(
+        circle(1,2,colCurrent)
+      ),
+      narration: "Th\u00EAm \u0111i\u1EC3m t\u1EA1i t\u1ECDa \u0111\u1ED9 (1,\u20092)."
+    },
+    {
+      svg: buildSvg(
+        lineYeqX(colCurrent)
+        + circle(1,2,colDone),
+        lineLabel('y=x',3,3)
+      ),
+      narration: "Th\u00EAm \u0111\u01B0\u1EDDng th\u1EB3ng y\u2009=\u2009x."
+    },
+    {
+      svg: buildSvg(
+        lineYeqX(colDone)
+        + circle(1,2,colDone)
+        + circle(-1,-1,colCurrent),
+        lineLabel('y=x',3,3)
+      ),
+      narration: "Th\u00EAm \u0111i\u1EC3m th\u1EE9 hai t\u1EA1i (\u22121,\u2009\u22121)."
+    }
   ];
+
+  /* ---- widget logic ---- */
+  var W=document.getElementById('test-plane2d');
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
@@ -207,6 +225,7 @@ svg text {
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
   var dots=W.querySelectorAll('.scriba-dot');
+
   function show(i){
     cur=i;
     stage.innerHTML=frames[i].svg;
@@ -214,13 +233,16 @@ svg text {
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
-    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+    dots.forEach(function(d,j){
+      d.className='scriba-dot'+(j===i?' active':j<i?' done':'');
+    });
   }
-  prev.addEventListener('click',function(){if(cur>0)show(cur-1);});
-  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1);});
+
+  prev.addEventListener('click',function(){ if(cur>0) show(cur-1); });
+  next.addEventListener('click',function(){ if(cur<frames.length-1) show(cur+1); });
   W.addEventListener('keydown',function(e){
-    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
-    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
+    if(e.key==='ArrowRight'||e.key===' '){ e.preventDefault(); if(cur<frames.length-1) show(cur+1); }
+    if(e.key==='ArrowLeft'){ e.preventDefault(); if(cur>0) show(cur-1); }
   });
   W.setAttribute('tabindex','0');
   show(0);
