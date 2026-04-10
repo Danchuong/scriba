@@ -1,0 +1,91 @@
+\begin{diagram}[id="fft-unit-circle"]
+\shape{p}{Plane2D}{xrange=[-1.5,1.5], yrange=[-1.5,1.5], xlabel="Re", ylabel="Im"}
+\apply{p}{add_point=(1.0, 0.0)}
+\apply{p}{add_point=(0.707, 0.707)}
+\apply{p}{add_point=(0.0, 1.0)}
+\apply{p}{add_point=(-0.707, 0.707)}
+\apply{p}{add_point=(-1.0, 0.0)}
+\apply{p}{add_point=(-0.707, -0.707)}
+\apply{p}{add_point=(0.0, -1.0)}
+\apply{p}{add_point=(0.707, -0.707)}
+\recolor{p.point[0]}{state=good}
+\recolor{p.point[1]}{state=current}
+\recolor{p.point[2]}{state=current}
+\recolor{p.point[3]}{state=current}
+\recolor{p.point[4]}{state=good}
+\recolor{p.point[5]}{state=dim}
+\recolor{p.point[6]}{state=dim}
+\recolor{p.point[7]}{state=dim}
+\end{diagram}
+
+\begin{animation}[id="fft-butterfly", label="FFT Butterfly -- Phep bien doi FFT"]
+\shape{a}{Array}{size=8, data=["a0","a1","a2","a3","a4","a5","a6","a7"], labels="0..7"}
+
+\step
+\narrate{FFT bien doi day [a0..a7] thanh [A0..A7] bang cach de quy chia doi. Vong tron don vi phia tren cho thay 8 can bac 8 cua 1: w^k = e^(2*pi*i*k/8).}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\recolor{a.cell[2]}{state=current}
+\recolor{a.cell[4]}{state=current}
+\recolor{a.cell[6]}{state=current}
+\recolor{a.cell[1]}{state=dim}
+\recolor{a.cell[3]}{state=dim}
+\recolor{a.cell[5]}{state=dim}
+\recolor{a.cell[7]}{state=dim}
+\narrate{Buoc 1: Chia thanh chi so chan (a0,a2,a4,a6) va chi so le (a1,a3,a5,a7). FFT de quy tren moi nua.}
+
+\step
+\recolor{a.cell[0]}{state=good}
+\recolor{a.cell[4]}{state=good}
+\recolor{a.cell[2]}{state=done}
+\recolor{a.cell[6]}{state=done}
+\apply{a.cell[0]}{value="E0"}
+\apply{a.cell[2]}{value="E1"}
+\apply{a.cell[4]}{value="E2"}
+\apply{a.cell[6]}{value="E3"}
+\narrate{Buoc 2: FFT nua chan cho E[k] = FFT(a0,a2,a4,a6). Voi N/2=4, dung w4 = can bac 4 cua 1.}
+
+\step
+\recolor{a.cell[1]}{state=good}
+\recolor{a.cell[5]}{state=good}
+\recolor{a.cell[3]}{state=done}
+\recolor{a.cell[7]}{state=done}
+\apply{a.cell[1]}{value="O0"}
+\apply{a.cell[3]}{value="O1"}
+\apply{a.cell[5]}{value="O2"}
+\apply{a.cell[7]}{value="O3"}
+\narrate{Buoc 3: FFT nua le cho O[k] = FFT(a1,a3,a5,a7). Tuong tu voi w4.}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\recolor{a.cell[1]}{state=current}
+\apply{a.cell[0]}{value="A0"}
+\apply{a.cell[4]}{value="A4"}
+\narrate{Butterfly k=0: A[0] = E[0] + w8^0 * O[0], A[4] = E[0] - w8^0 * O[0]. Twiddle factor w8^0 = 1.}
+
+\step
+\recolor{a.cell[0]}{state=done}
+\recolor{a.cell[4]}{state=done}
+\recolor{a.cell[2]}{state=current}
+\recolor{a.cell[3]}{state=current}
+\recolor{a.cell[5]}{state=current}
+\recolor{a.cell[6]}{state=current}
+\apply{a.cell[1]}{value="A1"}
+\apply{a.cell[2]}{value="A2"}
+\apply{a.cell[3]}{value="A3"}
+\apply{a.cell[5]}{value="A5"}
+\apply{a.cell[6]}{value="A6"}
+\apply{a.cell[7]}{value="A7"}
+\narrate{Butterfly k=1,2,3: A[k] = E[k] + w8^k * O[k], A[k+4] = E[k] - w8^k * O[k]. Twiddle factor w8^k quay tren vong tron don vi.}
+
+\step
+\recolor{a.cell[1]}{state=done}
+\recolor{a.cell[2]}{state=done}
+\recolor{a.cell[3]}{state=done}
+\recolor{a.cell[5]}{state=done}
+\recolor{a.cell[6]}{state=done}
+\recolor{a.cell[7]}{state=done}
+\recolor{a.range[0:7]}{state=good}
+\narrate{Hoan tat! FFT tinh [A0..A7] trong O(n log n) = 8*3 = 24 phep tinh, thay vi O(n^2) = 64. Day la nen tang cua nhan da thuc nhanh.}
+\end{animation}

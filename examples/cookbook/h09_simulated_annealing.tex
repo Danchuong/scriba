@@ -1,0 +1,75 @@
+\begin{animation}[id="simulated-annealing", label="Simulated Annealing -- Luyen kim mo phong cho TSP"]
+\shape{G}{Graph}{nodes=["A","B","C","D","E","F"], edges=[("A","B"),("B","C"),("C","D"),("D","E"),("E","F"),("F","A")], directed=false}
+\shape{plot}{MetricPlot}{series=["cost","temp"], xlabel="iteration", ylabel="value"}
+
+\step
+\narrate{Simulated Annealing (SA) giai bai TSP 6 thanh pho. Bat dau voi tour A-B-C-D-E-F-A. Nhiet do cao: chap nhan loi di xau. Nhiet do ha: chi nhan loi di tot.}
+
+\step
+\recolor{G.edge[(A,B)]}{state=current}
+\recolor{G.edge[(B,C)]}{state=current}
+\recolor{G.edge[(C,D)]}{state=current}
+\recolor{G.edge[(D,E)]}{state=current}
+\recolor{G.edge[(E,F)]}{state=current}
+\recolor{G.edge[(F,A)]}{state=current}
+\apply{plot}{cost=42, temp=100}
+\narrate{Tour ban dau: A->B->C->D->E->F->A. Chi phi = 42. Nhiet do T=100 (cao).}
+
+\step
+\recolor{G.edge[(B,C)]}{state=dim}
+\recolor{G.edge[(D,E)]}{state=dim}
+\recolor{G.edge[(B,D)]}{state=current}
+\recolor{G.edge[(C,E)]}{state=current}
+\apply{plot}{cost=38, temp=80}
+\narrate{Buoc 1: Dao doan [C,D] -> tour A-B-D-C-E-F-A. Chi phi giam 42->38. Chap nhan! T=80.}
+
+\step
+\recolor{G.edge[(B,D)]}{state=done}
+\recolor{G.edge[(C,E)]}{state=done}
+\recolor{G.edge[(A,B)]}{state=dim}
+\recolor{G.edge[(E,F)]}{state=dim}
+\recolor{G.edge[(A,E)]}{state=current}
+\recolor{G.edge[(B,F)]}{state=current}
+\apply{plot}{cost=41, temp=64}
+\narrate{Buoc 2: Thu dao doan [B..E] -> chi phi tang 38->41. T=64 con cao, xac suat chap nhan = e^(-3/64) = 0.95. Chap nhan de thoat cuc tri!}
+
+\step
+\recolor{G.edge[(A,E)]}{state=done}
+\recolor{G.edge[(B,F)]}{state=done}
+\recolor{G.edge[(C,D)]}{state=dim}
+\recolor{G.edge[(C,F)]}{state=current}
+\recolor{G.edge[(D,A)]}{state=current}
+\apply{plot}{cost=35, temp=51}
+\narrate{Buoc 3: Dao doan [D..F] -> chi phi giam manh 41->35. Chap nhan. T=51. Dang tien gan loi giai tot.}
+
+\step
+\recolor{G.edge[(C,F)]}{state=done}
+\recolor{G.edge[(D,A)]}{state=done}
+\recolor{G.edge[(B,D)]}{state=dim}
+\recolor{G.edge[(B,E)]}{state=current}
+\recolor{G.edge[(D,C)]}{state=current}
+\apply{plot}{cost=33, temp=41}
+\narrate{Buoc 4: Dao doan [D,E] -> chi phi 35->33. Cai thien. T=41.}
+
+\step
+\recolor{G.edge[(B,E)]}{state=done}
+\recolor{G.edge[(D,C)]}{state=done}
+\apply{plot}{cost=36, temp=33}
+\narrate{Buoc 5: Thu dao khac -> chi phi tang 33->36. T=33, xac suat = e^(-3/33) = 0.91. Van chap nhan -- nhiet do chua du thap.}
+
+\step
+\recolor{G.edge[(A,E)]}{state=current}
+\recolor{G.edge[(C,F)]}{state=current}
+\apply{plot}{cost=31, temp=26}
+\narrate{Buoc 6: Dao thanh cong -> chi phi giam 36->31. T=26. Dang hoi tu.}
+
+\step
+\recolor{G.edge[(A,E)]}{state=good}
+\recolor{G.edge[(C,F)]}{state=good}
+\recolor{G.edge[(E,B)]}{state=good}
+\recolor{G.edge[(D,C)]}{state=good}
+\recolor{G.edge[(D,A)]}{state=good}
+\recolor{G.edge[(B,F)]}{state=good}
+\apply{plot}{cost=29, temp=10}
+\narrate{Buoc 7-8: T thap, chi chap nhan cai thien. Chi phi toi uu = 29. MetricPlot cho thay cost giam dan va temp ha theo lich trinh. SA tim loi giai gan toi uu cho NP-hard!}
+\end{animation}

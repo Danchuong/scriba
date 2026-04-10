@@ -1,0 +1,51 @@
+\begin{animation}[id="li-chao-tree", label="Li Chao Tree -- Bao loi duoi"]
+\shape{p}{Plane2D}{xrange=[0,8], yrange=[0,12], xlabel="x", ylabel="y"}
+
+\step
+\narrate{Li Chao Tree quan ly tap cac duong thang y = ax + b. Ho tro them duong va truy van min/max tai x. Minh hoa chen 6 duong va tim bao loi duoi (lower envelope).}
+
+\step
+\apply{p}{add_line=("L1", 1.5, 1)}
+\recolor{p.line[0]}{state=current}
+\narrate{Chen L1: y = 1.5x + 1. Duong dau tien, tu dong la bao loi duoi tren toan mien [0,8].}
+
+\step
+\recolor{p.line[0]}{state=done}
+\apply{p}{add_line=("L2", -0.5, 10)}
+\recolor{p.line[1]}{state=current}
+\narrate{Chen L2: y = -0.5x + 10. Cat L1 tai x = 4.5. L2 nho hon ben phai, L1 nho hon ben trai. Bao loi cap nhat.}
+
+\step
+\recolor{p.line[1]}{state=done}
+\apply{p}{add_line=("L3", 0.8, 2)}
+\recolor{p.line[2]}{state=current}
+\narrate{Chen L3: y = 0.8x + 2. L3 nam duoi L1 tren [0, ~1.4] nhung tren L1 sau do. Li Chao chia doan [0,8] tai mid=4 de quyet dinh giu duong nao.}
+
+\step
+\recolor{p.line[2]}{state=done}
+\apply{p}{add_line=("L4", 0.2, 3)}
+\recolor{p.line[3]}{state=current}
+\narrate{Chen L4: y = 0.2x + 3. Duong gan ngang. Tao doan bao loi moi quanh x=2..5 noi L4 thap hon L1 va L2.}
+
+\step
+\recolor{p.line[3]}{state=done}
+\apply{p}{add_line=("L5", -1.0, 11)}
+\recolor{p.line[4]}{state=current}
+\narrate{Chen L5: y = -x + 11. Do doc am manh. Thap nhat tai x=8 (y=3). Chiem bao loi o doan phai.}
+
+\step
+\recolor{p.line[4]}{state=done}
+\apply{p}{add_line=("L6", 2.0, 0)}
+\recolor{p.line[5]}{state=current}
+\narrate{Chen L6: y = 2x. Di qua goc toa do. Thap nhat tai x=0 (y=0) nhung tang nhanh. Chi chiem bao loi o x rat nho.}
+
+\step
+\recolor{p.line[5]}{state=done}
+\recolor{p.line[0]}{state=dim}
+\recolor{p.line[1]}{state=dim}
+\recolor{p.line[2]}{state=dim}
+\recolor{p.line[3]}{state=good}
+\recolor{p.line[4]}{state=good}
+\recolor{p.line[5]}{state=good}
+\narrate{Bao loi duoi: L6 (x nho), L4 (x giua), L5 (x lon). Truy van min tai bat ky x trong O(log n). Li Chao Tree la ky thuat manh cho DP Convex Hull Trick!}
+\end{animation}

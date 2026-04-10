@@ -1,0 +1,62 @@
+\begin{animation}[id="persistent-segtree", label="Persistent Segment Tree -- Segment Tree luu tru"]
+\shape{T}{Tree}{data=[10,3,7,1,2,4,3], kind="segtree", show_sum=true}
+
+\step
+\narrate{Persistent Segment Tree cho phep luu nhieu phien ban. Moi cap nhat tao path-copy tu la den root, giu nguyen cac node khong doi. Bo nho O(n + q*log n).}
+
+\step
+\recolor{T.node["[0,6]"]}{state=done}
+\recolor{T.node["[0,3]"]}{state=done}
+\recolor{T.node["[4,6]"]}{state=done}
+\recolor{T.node["[0,1]"]}{state=done}
+\recolor{T.node["[2,3]"]}{state=done}
+\recolor{T.node["[4,5]"]}{state=done}
+\recolor{T.node["[6,6]"]}{state=done}
+\narrate{Phien ban 0 (V0): Segment Tree goc tu mang [10,3,7,1,2,4,3]. Tong = 30. Tat ca node mau xanh la (done) = phien ban goc.}
+
+\step
+\recolor{T.node["[0,6]"]}{state=current}
+\recolor{T.node["[0,3]"]}{state=current}
+\recolor{T.node["[2,3]"]}{state=current}
+\narrate{Cap nhat a[2] = 7 -> 5 (giam 2). Can tao phien ban V1. Chi cac node tren duong tu la [2,3] den root [0,6] bi anh huong.}
+
+\step
+\recolor{T.node["[0,6]"]}{state=current}
+\recolor{T.node["[0,3]"]}{state=current}
+\recolor{T.node["[2,3]"]}{state=current}
+\recolor{T.node["[0,1]"]}{state=dim}
+\recolor{T.node["[4,6]"]}{state=dim}
+\recolor{T.node["[4,5]"]}{state=dim}
+\recolor{T.node["[6,6]"]}{state=dim}
+\narrate{Path-copy: tao 3 node moi (current) cho [2,3], [0,3], [0,6]. Cac node dim tro den node cu cua V0 -- khong sao chep!}
+
+\step
+\recolor{T.node["[0,6]"]}{state=good}
+\recolor{T.node["[0,3]"]}{state=good}
+\recolor{T.node["[2,3]"]}{state=good}
+\recolor{T.node["[0,1]"]}{state=done}
+\recolor{T.node["[4,6]"]}{state=done}
+\recolor{T.node["[4,5]"]}{state=done}
+\recolor{T.node["[6,6]"]}{state=done}
+\narrate{V1 hoan tat. Node moi (good) co tong cap nhat: [2,3]=6, [0,3]=19->17, [0,6]=30->28. Node cu (done) van nguyen ven cho V0.}
+
+\step
+\recolor{T.node["[0,6]"]}{state=current}
+\recolor{T.node["[4,6]"]}{state=current}
+\recolor{T.node["[4,5]"]}{state=current}
+\recolor{T.node["[0,3]"]}{state=dim}
+\recolor{T.node["[2,3]"]}{state=dim}
+\recolor{T.node["[0,1]"]}{state=dim}
+\recolor{T.node["[6,6]"]}{state=dim}
+\narrate{V2: cap nhat a[4] = 2 -> 8 (+6) tu V1. Path-copy [4,5], [4,6], [0,6]. Cac node dim chia se voi V1. Chi 3 node moi = O(log n).}
+
+\step
+\recolor{T.node["[0,6]"]}{state=good}
+\recolor{T.node["[4,6]"]}{state=good}
+\recolor{T.node["[4,5]"]}{state=good}
+\recolor{T.node["[0,3]"]}{state=done}
+\recolor{T.node["[2,3]"]}{state=done}
+\recolor{T.node["[0,1]"]}{state=done}
+\recolor{T.node["[6,6]"]}{state=done}
+\narrate{3 phien ban cung ton tai: V0 (tong=30), V1 (tong=28), V2 (tong=34). Truy van bat ky phien ban trong O(log n). Ung dung: k-th element, version rollback, offline queries.}
+\end{animation}

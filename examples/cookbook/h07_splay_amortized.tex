@@ -1,0 +1,58 @@
+\begin{animation}[id="splay-amortized", label="Splay Tree Amortized -- Phan tich khau hao Splay"]
+\shape{T}{Tree}{root=4, nodes=[1,2,3,4,5,6,7], edges=[(4,2),(4,6),(2,1),(2,3),(6,5),(6,7)]}
+\shape{plot}{MetricPlot}{series=["phi","cost"], xlabel="operation", ylabel="value"}
+
+\step
+\narrate{Splay tree: moi truy van splay node len root. Chi phi 1 buoc co the O(n), nhung khau hao la O(log n). Theo doi ham the nang (phi) va chi phi thuc (cost).}
+
+\step
+\recolor{T.node[1]}{state=current}
+\recolor{T.edge[(2,1)]}{state=current}
+\recolor{T.edge[(4,2)]}{state=current}
+\apply{plot}{phi=8.5, cost=3}
+\narrate{Splay(1): Node 1 o sau 2. Zig-zig: xoay 2 lan. Chi phi=3 (do sau). Phi giam vi cay can bang hon.}
+
+\step
+\recolor{T.node[1]}{state=good}
+\recolor{T.node[4]}{state=done}
+\recolor{T.edge[(2,1)]}{state=done}
+\recolor{T.edge[(4,2)]}{state=done}
+\apply{plot}{phi=7.2, cost=1}
+\narrate{Sau splay, 1 la root. Cay nghieng phai. Truy van node 4 (goc root cu): chi phi=1 (con truc tiep).}
+
+\step
+\recolor{T.node[4]}{state=current}
+\recolor{T.node[1]}{state=dim}
+\apply{plot}{phi=7.8, cost=2}
+\narrate{Splay(4): xoay 1 lan len root. Phi tang nhe vi cay mat can bang cuc bo. Chi phi = 2.}
+
+\step
+\recolor{T.node[7]}{state=current}
+\recolor{T.node[4]}{state=dim}
+\apply{plot}{phi=6.5, cost=3}
+\narrate{Splay(7): o sau 3, can zig-zag + zig. Chi phi=3 nhung phi giam manh -- cay se can bang hon.}
+
+\step
+\recolor{T.node[7]}{state=good}
+\recolor{T.node[3]}{state=current}
+\apply{plot}{phi=6.8, cost=2}
+\narrate{Splay(3): chi phi=2. Node 3 o gan root sau cac splay truoc. The nang on dinh.}
+
+\step
+\recolor{T.node[3]}{state=good}
+\recolor{T.node[5]}{state=current}
+\apply{plot}{phi=6.2, cost=2}
+\narrate{Splay(5): chi phi=2. Cay ngay cang can bang. Phi giam dan, xac nhan khau hao O(log n).}
+
+\step
+\recolor{T.node[5]}{state=good}
+\recolor{T.node[6]}{state=current}
+\apply{plot}{phi=5.8, cost=1}
+\narrate{Splay(6): chi phi=1. Node 6 da gan root. Phi tiep tuc giam.}
+
+\step
+\recolor{T.node[6]}{state=good}
+\recolor{T.node[2]}{state=current}
+\apply{plot}{phi=5.5, cost=2}
+\narrate{Splay(2): chi phi=2. Sau 8 thao tac, tong chi phi=16, trung binh=2 ~ O(log 7)=2.8. MetricPlot cho thay phi giam va cost on dinh -- khau hao hoat dong!}
+\end{animation}

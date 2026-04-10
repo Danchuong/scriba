@@ -1,0 +1,98 @@
+\begin{animation}[id="dp-optimization", label="Knuth's DP Optimization -- Toi uu Knuth"]
+\shape{dp}{DPTable}{rows=7, cols=7, row_labels="i=0..6", col_labels="j=0..6"}
+\shape{nl}{NumberLine}{domain=[0,6], ticks=7, labels="0..6"}
+
+\step
+\narrate{Toi uu Knuth cho DP chia doan. opt[i][j] = diem chia toi uu. Tinh chat: opt[i][j-1] <= opt[i][j] <= opt[i+1][j]. Do phuc tap giam tu O(n^3) xuong O(n^2).}
+
+\step
+\recolor{dp.cell[0][0]}{state=done}
+\recolor{dp.cell[1][1]}{state=done}
+\recolor{dp.cell[2][2]}{state=done}
+\recolor{dp.cell[3][3]}{state=done}
+\recolor{dp.cell[4][4]}{state=done}
+\recolor{dp.cell[5][5]}{state=done}
+\recolor{dp.cell[6][6]}{state=done}
+\apply{dp.cell[0][0]}{value=0}
+\apply{dp.cell[1][1]}{value=0}
+\apply{dp.cell[2][2]}{value=0}
+\apply{dp.cell[3][3]}{value=0}
+\apply{dp.cell[4][4]}{value=0}
+\apply{dp.cell[5][5]}{value=0}
+\apply{dp.cell[6][6]}{value=0}
+\narrate{Co so: dp[i][i] = 0 cho moi i. Khong co chi phi khi doan chi co 1 phan tu.}
+
+\step
+\recolor{dp.cell[0][1]}{state=current}
+\recolor{dp.cell[1][2]}{state=current}
+\recolor{dp.cell[2][3]}{state=current}
+\recolor{dp.cell[3][4]}{state=current}
+\recolor{dp.cell[4][5]}{state=current}
+\recolor{dp.cell[5][6]}{state=current}
+\apply{dp.cell[0][1]}{value=3}
+\apply{dp.cell[1][2]}{value=5}
+\apply{dp.cell[2][3]}{value=4}
+\apply{dp.cell[3][4]}{value=6}
+\apply{dp.cell[4][5]}{value=3}
+\apply{dp.cell[5][6]}{value=7}
+\recolor{nl.tick[0]}{state=current}
+\recolor{nl.tick[1]}{state=current}
+\narrate{Doan dai 2: chi co 1 diem chia, opt[i][i+1] = i. Tinh truc tiep.}
+
+\step
+\recolor{dp.cell[0][1]}{state=done}
+\recolor{dp.cell[1][2]}{state=done}
+\recolor{dp.cell[2][3]}{state=done}
+\recolor{dp.cell[3][4]}{state=done}
+\recolor{dp.cell[4][5]}{state=done}
+\recolor{dp.cell[5][6]}{state=done}
+\recolor{nl.tick[0]}{state=idle}
+\recolor{nl.tick[1]}{state=idle}
+\recolor{dp.cell[0][2]}{state=current}
+\recolor{nl.tick[0]}{state=good}
+\recolor{nl.tick[1]}{state=dim}
+\apply{dp.cell[0][2]}{value=11}
+\narrate{dp[0][2]: Nho Knuth, chi xet opt[0][1]..opt[1][2] = 0..1. Diem chia toi uu = 0. Chi phi = 11.}
+
+\step
+\recolor{dp.cell[0][2]}{state=done}
+\recolor{nl.tick[0]}{state=idle}
+\recolor{nl.tick[1]}{state=idle}
+\recolor{dp.cell[1][3]}{state=current}
+\recolor{dp.cell[2][4]}{state=current}
+\recolor{dp.cell[3][5]}{state=current}
+\recolor{dp.cell[4][6]}{state=current}
+\apply{dp.cell[1][3]}{value=14}
+\apply{dp.cell[2][4]}{value=15}
+\apply{dp.cell[3][5]}{value=12}
+\apply{dp.cell[4][6]}{value=16}
+\recolor{nl.tick[2]}{state=good}
+\narrate{Doan dai 3: moi o chi xet vung opt thu hep. Diem chia di chuyen don dieu sang phai tren NumberLine.}
+
+\step
+\recolor{dp.cell[1][3]}{state=done}
+\recolor{dp.cell[2][4]}{state=done}
+\recolor{dp.cell[3][5]}{state=done}
+\recolor{dp.cell[4][6]}{state=done}
+\recolor{nl.tick[2]}{state=idle}
+\recolor{dp.cell[0][3]}{state=current}
+\recolor{dp.cell[1][4]}{state=current}
+\recolor{dp.cell[2][5]}{state=current}
+\recolor{dp.cell[3][6]}{state=current}
+\apply{dp.cell[0][3]}{value=22}
+\apply{dp.cell[1][4]}{value=24}
+\apply{dp.cell[2][5]}{value=20}
+\apply{dp.cell[3][6]}{value=23}
+\recolor{nl.range[0:3]}{state=current}
+\narrate{Doan dai 4: tinh chat don dieu giup moi o chi xet O(1) diem chia trung binh. Tong = O(n^2).}
+
+\step
+\recolor{dp.cell[0][3]}{state=done}
+\recolor{dp.cell[1][4]}{state=done}
+\recolor{dp.cell[2][5]}{state=done}
+\recolor{dp.cell[3][6]}{state=done}
+\recolor{nl.range[0:3]}{state=idle}
+\recolor{dp.cell[0][6]}{state=good}
+\apply{dp.cell[0][6]}{value=48}
+\narrate{dp[0][6] = 48. Toi uu Knuth giam tu ~216 phep tinh (n^3) xuong ~36 (n^2). Hieu qua gap 6 lan!}
+\end{animation}

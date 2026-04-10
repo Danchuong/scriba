@@ -1,0 +1,73 @@
+\begin{animation}[id="hld", label="Heavy-Light Decomposition -- Phan tach nang nhe"]
+\shape{T}{Tree}{root=1, nodes=[1,2,3,4,5,6,7,8,9], edges=[(1,2),(1,3),(2,4),(2,5),(3,6),(5,7),(5,8),(6,9)]}
+\shape{arr}{Array}{size=9, data=["_","_","_","_","_","_","_","_","_"], labels="0..8"}
+
+\step
+\narrate{Heavy-Light Decomposition (HLD): phan tach cay thanh cac chuoi nang (heavy chain) de truy van duong di trong O(log^2 n). Cay 9 dinh, root = 1.}
+
+\step
+\recolor{T.node[1]}{state=current}
+\recolor{T.node[2]}{state=current}
+\recolor{T.node[3]}{state=current}
+\recolor{T.node[4]}{state=dim}
+\recolor{T.node[5]}{state=current}
+\recolor{T.node[6]}{state=current}
+\recolor{T.node[7]}{state=dim}
+\recolor{T.node[8]}{state=dim}
+\recolor{T.node[9]}{state=dim}
+\narrate{Buoc 1: Tinh kich thuoc cay con (subtree size). sz[1]=9, sz[2]=5, sz[3]=3, sz[5]=3, sz[6]=2. Con nang = con co subtree lon nhat.}
+
+\step
+\recolor{T.edge[(1,2)]}{state=good}
+\recolor{T.edge[(2,5)]}{state=good}
+\recolor{T.edge[(5,7)]}{state=good}
+\recolor{T.node[1]}{state=good}
+\recolor{T.node[2]}{state=good}
+\recolor{T.node[5]}{state=good}
+\recolor{T.node[7]}{state=good}
+\narrate{Chuoi nang 1: 1 -> 2 -> 5 -> 7. Node 2 la con nang cua 1 (sz=5 > sz[3]=3). Node 5 la con nang cua 2 (sz=3 > sz[4]=1). Node 7 la con nang cua 5 (chon dau tien).}
+
+\step
+\recolor{T.edge[(1,3)]}{state=current}
+\recolor{T.edge[(3,6)]}{state=current}
+\recolor{T.edge[(6,9)]}{state=current}
+\recolor{T.node[3]}{state=current}
+\recolor{T.node[6]}{state=current}
+\recolor{T.node[9]}{state=current}
+\narrate{Chuoi nang 2: 3 -> 6 -> 9. Node 3 la con nhe cua 1, bat dau chuoi moi. Node 6 la con nang cua 3 (sz=2 > 0).}
+
+\step
+\recolor{T.node[4]}{state=done}
+\recolor{T.node[8]}{state=done}
+\recolor{T.edge[(2,4)]}{state=dim}
+\recolor{T.edge[(5,8)]}{state=dim}
+\narrate{Chuoi don: Node 4 (con nhe cua 2) va Node 8 (con nhe cua 5) la chuoi 1 node. Canh nhe = dim. Tong cong 4 chuoi.}
+
+\step
+\apply{arr.cell[0]}{value="1"}
+\apply{arr.cell[1]}{value="2"}
+\apply{arr.cell[2]}{value="5"}
+\apply{arr.cell[3]}{value="7"}
+\apply{arr.cell[4]}{value="3"}
+\apply{arr.cell[5]}{value="6"}
+\apply{arr.cell[6]}{value="9"}
+\apply{arr.cell[7]}{value="4"}
+\apply{arr.cell[8]}{value="8"}
+\recolor{arr.range[0:3]}{state=good}
+\recolor{arr.range[4:6]}{state=current}
+\recolor{arr.cell[7]}{state=done}
+\recolor{arr.cell[8]}{state=done}
+\narrate{Buoc 4: Lam phang cay thanh mang theo thu tu HLD. Chuoi 1: [1,2,5,7], Chuoi 2: [3,6,9], Don: [4], [8]. Moi chuoi la doan lien tiep!}
+
+\step
+\recolor{arr.range[0:3]}{state=good}
+\recolor{arr.range[4:6]}{state=good}
+\recolor{arr.cell[7]}{state=good}
+\recolor{arr.cell[8]}{state=good}
+\recolor{T.node[4]}{state=good}
+\recolor{T.node[8]}{state=good}
+\recolor{T.node[3]}{state=good}
+\recolor{T.node[6]}{state=good}
+\recolor{T.node[9]}{state=good}
+\narrate{Truy van duong di (vd 4 -> 9): nhay len dau chuoi O(log n) lan, moi lan truy van doan lien tiep tren Segment Tree. Tong O(log^2 n). HLD bien bai toan tren cay thanh bai toan tren doan!}
+\end{animation}
