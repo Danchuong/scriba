@@ -175,9 +175,9 @@ class TestEmitSvg:
         mp.apply_command({"phi": 3.0, "cost": 4.0})
         svg = mp.emit_svg()
 
-        assert svg.startswith("<svg")
-        assert svg.endswith("</svg>")
-        assert 'class="scriba-metricplot"' in svg
+        assert svg.startswith("<g")
+        assert svg.endswith("</g>")
+        assert 'data-primitive="metricplot"' in svg
         assert 'scriba-metricplot-grid' in svg
         assert 'scriba-metricplot-axes' in svg
         assert '<polyline' in svg

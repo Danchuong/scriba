@@ -512,8 +512,17 @@ def emit_interactive_html(
         svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox)
         svg_escaped = _escape_js(svg_html)
         narration_escaped = _escape_js(frame.narration_html)
+        # Include substory HTML if present
+        substory_html = ""
+        if frame.substories:
+            frame_id = f"{scene_id}-frame-{frame.step_number}"
+            for sub in frame.substories:
+                substory_html += emit_substory_html(
+                    scene_id, frame_id, sub, primitives, viewbox,
+                )
+        substory_escaped = _escape_js(substory_html)
         js_frames.append(
-            f'{{svg:`{svg_escaped}`,narration:`{narration_escaped}`}}'
+            f'{{svg:`{svg_escaped}`,narration:`{narration_escaped}`,substory:`{substory_escaped}`}}'
         )
 
     js_frames_str = ",\n    ".join(js_frames)
@@ -536,6 +545,7 @@ def emit_interactive_html(
   </div>
   <div class="scriba-stage"></div>
   <p class="scriba-narration"></p>
+  <div class="scriba-substory-container"></div>
 </div>
 <script>
 (function(){{
@@ -546,6 +556,7 @@ def emit_interactive_html(
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
   var ctr=W.querySelector('.scriba-step-counter');
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
@@ -554,6 +565,7 @@ def emit_interactive_html(
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.textContent=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;

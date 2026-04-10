@@ -330,12 +330,8 @@ class MetricPlot(PrimitiveBase):
 
         parts: list[str] = []
         parts.append(
-            f'<svg class="scriba-metricplot"'
-            f' viewBox="0 0 {self.width} {self.height}"'
-            f' data-scriba-series="{html.escape(series_names_str)}"'
-            f' xmlns="http://www.w3.org/2000/svg"'
-            f' role="img"'
-            f' aria-label="MetricPlot: {html.escape(series_names_str)}">'
+            f'<g data-primitive="metricplot" data-shape="{html.escape(self.name)}"'
+            f' data-scriba-series="{html.escape(series_names_str)}">'
         )
 
         # Layer 1: Grid
@@ -362,7 +358,7 @@ class MetricPlot(PrimitiveBase):
         if self.show_legend:
             parts.append(self._emit_legend())
 
-        parts.append("</svg>")
+        parts.append("</g>")
         return "\n".join(parts)
 
     # --- Layer 1: Grid ---

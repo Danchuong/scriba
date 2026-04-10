@@ -318,11 +318,9 @@ class Plane2D(PrimitiveBase):
     def emit_svg(self) -> str:
         parts: list[str] = []
         parts.append(
-            f'<svg class="scriba-plane2d" '
-            f'viewBox="0 0 {self.width} {self.height}" '
+            f'<g data-primitive="plane2d" data-shape="{html_escape(self.name)}" '
             f'data-scriba-xrange="{self.xrange[0]} {self.xrange[1]}" '
-            f'data-scriba-yrange="{self.yrange[0]} {self.yrange[1]}" '
-            f'xmlns="http://www.w3.org/2000/svg" role="img">'
+            f'data-scriba-yrange="{self.yrange[0]} {self.yrange[1]}">'
         )
 
         # Layer 1: grid and axes (SVG coordinates, no transform)
@@ -345,7 +343,7 @@ class Plane2D(PrimitiveBase):
         # Layer 3: text labels (SVG coordinates, outside transform)
         parts.append(self._emit_labels())
 
-        parts.append("</svg>")
+        parts.append("</g>")
         return "".join(parts)
 
     # ----- Grid rendering --------------------------------------------------

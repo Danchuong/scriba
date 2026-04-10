@@ -267,10 +267,11 @@ class TestEmitSvg:
             p = Plane2D("p", {"xrange": [0, 5], "yrange": [0, 5], "points": [(-10, -10)]})
         assert any("E1463" in r.message for r in caplog.records)
 
-    def test_viewbox_matches_dimensions(self) -> None:
+    def test_wrapper_has_data_attributes(self) -> None:
         p = Plane2D("p", {"width": 400, "aspect": "auto", "height": 300})
         svg = p.emit_svg()
-        assert 'viewBox="0 0 400 300"' in svg
+        assert 'data-primitive="plane2d"' in svg
+        assert 'data-shape="p"' in svg
 
     def test_line_clipping_to_viewport(self) -> None:
         p = Plane2D("p", {"xrange": [-5, 5], "yrange": [-5, 5], "lines": [("L", 1, 0)]})
