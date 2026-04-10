@@ -46,10 +46,10 @@ DEFAULT_STATE = "idle"
 
 STATE_COLORS: dict[str, dict[str, str]] = {
     "idle":      {"fill": "#f6f8fa", "stroke": "#d0d7de", "text": "#212529"},
-    "current":   {"fill": "#0072B2", "stroke": "#005a8e", "text": "#ffffff"},
-    "done":      {"fill": "#009E73", "stroke": "#007a59", "text": "#ffffff"},
+    "current":   {"fill": "#0072B2", "stroke": "#0072B2", "text": "#ffffff"},
+    "done":      {"fill": "#009E73", "stroke": "#009E73", "text": "#ffffff"},
     "dim":       {"fill": "#e9ecef", "stroke": "#dee2e6", "text": "#adb5bd"},
-    "error":     {"fill": "#D55E00", "stroke": "#b34e00", "text": "#ffffff"},
+    "error":     {"fill": "#D55E00", "stroke": "#D55E00", "text": "#ffffff"},
     "good":      {"fill": "#56B4E9", "stroke": "#3a95c9", "text": "#ffffff"},
     "highlight": {"fill": "#F0E442", "stroke": "#d4c836", "text": "#212529"},
     "path":      {"fill": "#dbeafe", "stroke": "#2563eb", "text": "#0c4a6e"},

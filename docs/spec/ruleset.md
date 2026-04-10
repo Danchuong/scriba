@@ -40,7 +40,7 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 
 ---
 
-## 2. Inner Commands (14 total)
+## 2. Inner Commands (13 total)
 
 ### 2.1 Base Commands (11)
 
@@ -120,7 +120,7 @@ Interpolation: `${name}` resolved from Starlark bindings at build time.
 | `dim` | 50% opacity | — |
 | `error` | vermillion | `#D55E00` |
 | `good` | sky blue | `#56B4E9` |
-| `path` | blue | `#2563eb` |
+| `path` | blue | `#dbeafe` (stroke `#2563eb`) |
 
 > **Note:** `highlight` is not a valid `\recolor` state. It is ephemeral and applied only
 > via the `\highlight` command. The CSS class `.scriba-state-highlight` exists (see §10.1)
@@ -298,6 +298,7 @@ Data is fed per-frame via `\apply{plot}{series_name=value, ...}`. Max 1000 point
 len, range, min, max, enumerate, zip, abs, sorted,
 list, dict, tuple, set, str, int, float, bool,
 reversed, any, all, sum, divmod, print,
+isinstance, repr, round, map, filter,
 chr, ord, pow
 ```
 
@@ -417,7 +418,7 @@ Each frame inherits full state from previous frame, then:
     <div class="scriba-progress"><!-- dots --></div>
   </div>
   <div class="scriba-stage">...</div>
-  <div class="scriba-narration">...</div>
+  <p class="scriba-narration">...</p>
   <div class="scriba-substory-container">...</div>
   <script>/* ~2KB controller */</script>
 </div>
@@ -619,7 +620,7 @@ Print media: lines forced to `stroke: #000`.
 | E1005 | Malformed option value |
 | E1006 | Unknown inner command |
 | E1007 | Missing required brace argument |
-| E1008 | Stray text at body top level |
+| E1008 | Stray text at body top level _(reserved)_ |
 | E1009 | Selector syntax error (malformed selector expression) |
 | E1010 | Unexpected token in selector |
 | E1011 | Unterminated string in selector |
@@ -636,8 +637,8 @@ Print media: lines forced to `stroke: #000`.
 | E1054 | `\narrate` in diagram |
 | E1055 | Multiple `\narrate` per `\step` |
 | E1056 | `\narrate` outside `\step` |
-| E1057 | Empty animation (no `\step`) |
-| E1058 | Duplicate `\step` label |
+| E1057 | Empty animation (no `\step`) _(reserved)_ |
+| E1058 | Duplicate `\step` label _(reserved)_ |
 
 ### Target/Type Errors (E1100–E1149)
 
@@ -679,7 +680,7 @@ Print media: lines forced to `stroke: #000`.
 | E1171 | `\foreach` with empty body |
 | E1172 | Unclosed `\foreach` (EOF before `\endforeach`) |
 | E1173 | Invalid iterable in `\foreach` (not a range, list, or binding) |
-| E1174 | `\foreach` variable name conflicts with existing binding |
+| E1174 | `\foreach` variable name conflicts with existing binding _(reserved)_ |
 
 ### Frame Count (E1180–E1199)
 
