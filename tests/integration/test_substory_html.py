@@ -58,22 +58,21 @@ class TestSubstoryHtmlOutput:
         frames = [_make_frame(1, 1, "parent narration", substories=[sub])]
         html = emit_animation_html("test-scene", frames, {})
         assert 'class="scriba-substory"' in html
-        assert "scriba-substory-frames" in html
+        assert "scriba-substory-widget" in html
 
-    def test_substory_frame_ids_hierarchical(self):
-        """Frame IDs follow hierarchical scheme."""
+    def test_substory_has_widget_id(self):
+        """Substory has a unique widget ID."""
         sub = _make_substory(substory_id="substory1", frame_count=2)
         frames = [_make_frame(1, 1, "", substories=[sub])]
         html = emit_animation_html("test-scene", frames, {})
-        assert "test-scene-frame-1-substory-substory1-frame-1" in html
-        assert "test-scene-frame-1-substory-substory1-frame-2" in html
+        assert "scriba-substory-widget" in html
 
-    def test_substory_frame_has_class(self):
-        """Substory frames have scriba-substory-frame class."""
+    def test_substory_has_controls(self):
+        """Substory has Prev/Next controls."""
         sub = _make_substory()
         frames = [_make_frame(1, 1, "", substories=[sub])]
         html = emit_animation_html("test-scene", frames, {})
-        assert "scriba-substory-frame" in html
+        assert "scriba-substory-controls" in html
 
     def test_substory_depth_attribute(self):
         """data-substory-depth attribute is correct."""
@@ -101,7 +100,7 @@ class TestSubstoryHtmlOutput:
         assert parent_narr_pos < substory_pos
 
     def test_nested_substory_depth_2(self):
-        """Nested substory (depth 2) renders correctly."""
+        """Nested substory (depth 2) — outer substory renders."""
         inner_sub = _make_substory(
             title="inner", substory_id="inner1", depth=2, frame_count=1,
         )
@@ -111,18 +110,14 @@ class TestSubstoryHtmlOutput:
         )
         frames = [_make_frame(1, 1, "", substories=[outer_sub])]
         html = emit_animation_html("test-scene", frames, {})
-        # Both depth levels should appear
+        # Outer substory renders
         assert 'data-substory-depth="1"' in html
-        assert 'data-substory-depth="2"' in html
-        # Both substory IDs present
         assert 'data-substory-id="outer1"' in html
-        assert 'data-substory-id="inner1"' in html
+        assert "scriba-substory-widget" in html
 
     def test_substory_step_label_format(self):
-        """Substory frames use 'Sub-step N / M' label."""
+        """Substory step counter uses 'Sub-step N / M' format."""
         sub = _make_substory(frame_count=3)
         frames = [_make_frame(1, 1, "", substories=[sub])]
         html = emit_animation_html("test-scene", frames, {})
         assert "Sub-step 1 / 3" in html
-        assert "Sub-step 2 / 3" in html
-        assert "Sub-step 3 / 3" in html

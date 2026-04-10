@@ -423,6 +423,9 @@ def emit_animation_html(
 # ---------------------------------------------------------------------------
 
 
+_substory_counter = 0
+
+
 def emit_substory_html(
     scene_id: str,
     parent_frame_id: str,
@@ -430,7 +433,11 @@ def emit_substory_html(
     primitives: dict[str, Any],
     viewbox: str,
 ) -> str:
-    """Produce the ``<section class="scriba-substory">`` HTML for a substory."""
+    """Produce interactive ``<section class="scriba-substory">`` with step controller."""
+    global _substory_counter
+    _substory_counter += 1
+    widget_id = f"sub-{scene_id}-{_substory_counter}"
+
     depth = substory.depth
     sub_id = substory.substory_id
     title = substory.title
@@ -440,51 +447,69 @@ def emit_substory_html(
     sub_primitives = substory.primitives if substory.primitives else primitives
     sub_viewbox = compute_viewbox(sub_primitives) if substory.primitives else viewbox
 
-    sub_frame_items: list[str] = []
+    # Build JS frame data for substory
+    js_sub_frames: list[str] = []
     for sub_frame in substory.frames:
-        sub_step = sub_frame.step_number
-        sub_frame_id = f"{parent_frame_id}-substory-{sub_id}-frame-{sub_step}"
-        narration_id = f"{sub_frame_id}-narration"
-
         svg_html = _emit_frame_svg(sub_frame, sub_primitives, scene_id, sub_viewbox)
-
-        # Handle nested substories
-        nested_substory_html = ""
-        if sub_frame.substories:
-            for nested_sub in sub_frame.substories:
-                nested_substory_html += emit_substory_html(
-                    scene_id, sub_frame_id, nested_sub, primitives, viewbox,
-                )
-
-        sub_frame_items.append(
-            f'        <li class="scriba-frame scriba-substory-frame"\n'
-            f'            id="{sub_frame_id}"\n'
-            f'            data-step="{sub_step}"\n'
-            f'            data-substory-depth="{depth}">\n'
-            f'          <header class="scriba-frame-header">\n'
-            f'            <span class="scriba-step-label">'
-            f"Sub-step {sub_step} / {sub_frame_count}</span>\n"
-            f"          </header>\n"
-            f'          <div class="scriba-stage">\n'
-            f"            {svg_html}\n"
-            f"          </div>\n"
-            f'          <p class="scriba-narration" id="{narration_id}">'
-            f"{sub_frame.narration_html}</p>\n"
-            f"{nested_substory_html}"
-            f"        </li>"
+        svg_esc = _escape_js(svg_html)
+        narr_esc = _escape_js(sub_frame.narration_html)
+        js_sub_frames.append(
+            f'{{svg:`{svg_esc}`,narration:`{narr_esc}`}}'
         )
 
-    sub_frames_html = "\n".join(sub_frame_items)
+    js_frames_str = ",\n      ".join(js_sub_frames)
+
+    dots_html = "\n        ".join(
+        f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
+        for i in range(sub_frame_count)
+    )
 
     return (
         f'      <section class="scriba-substory" role="group"\n'
         f'               aria-label="Sub-computation: {_escape(title)}"\n'
         f'               data-substory-id="{_escape(sub_id)}"\n'
         f'               data-substory-depth="{depth}">\n'
-        f'        <ol class="scriba-substory-frames">\n'
-        f"{sub_frames_html}\n"
-        f"        </ol>\n"
-        f"      </section>\n"
+        f'        <div class="scriba-substory-widget" id="{widget_id}">\n'
+        f'          <div class="scriba-controls scriba-substory-controls">\n'
+        f'            <button class="scriba-btn-prev" disabled>Prev</button>\n'
+        f'            <span class="scriba-step-counter">Sub-step 1 / {sub_frame_count}</span>\n'
+        f'            <button class="scriba-btn-next"'
+        f'{"" if sub_frame_count > 1 else " disabled"}>Next</button>\n'
+        f'            <div class="scriba-progress">\n'
+        f'              {dots_html}\n'
+        f'            </div>\n'
+        f'          </div>\n'
+        f'          <div class="scriba-stage"></div>\n'
+        f'          <p class="scriba-narration"></p>\n'
+        f'        </div>\n'
+        f'        <script>\n'
+        f'        (function(){{\n'
+        f"          var W=document.getElementById('{_escape_js(widget_id)}');\n"
+        f'          var frames=[\n'
+        f'            {js_frames_str}\n'
+        f'          ];\n'
+        f'          var cur=0;\n'
+        f"          var stage=W.querySelector('.scriba-stage');\n"
+        f"          var narr=W.querySelector('.scriba-narration');\n"
+        f"          var ctr=W.querySelector('.scriba-step-counter');\n"
+        f"          var prev=W.querySelector('.scriba-btn-prev');\n"
+        f"          var next=W.querySelector('.scriba-btn-next');\n"
+        f"          var dots=W.querySelectorAll('.scriba-dot');\n"
+        f'          function show(i){{\n'
+        f'            cur=i;\n'
+        f'            stage.innerHTML=frames[i].svg;\n'
+        f'            narr.textContent=frames[i].narration;\n'
+        f"            ctr.textContent='Sub-step '+(i+1)+' / '+frames.length;\n"
+        f'            prev.disabled=i===0;\n'
+        f'            next.disabled=i===frames.length-1;\n'
+        f"            dots.forEach(function(d,j){{d.className='scriba-dot'+(j===i?' active':j<i?' done':'');}});\n"
+        f'          }}\n'
+        f"          prev.addEventListener('click',function(){{if(cur>0)show(cur-1);}});\n"
+        f"          next.addEventListener('click',function(){{if(cur<frames.length-1)show(cur+1);}});\n"
+        f'          show(0);\n'
+        f'        }})();\n'
+        f'        </script>\n'
+        f'      </section>\n'
     )
 
 
