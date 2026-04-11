@@ -107,10 +107,11 @@ class DPTablePrimitive(PrimitiveBase):
         max_cells = dim_rows * dim_cols
         if max_cells > 250_000:
             raise animation_error(
-                E1103,
+                "E1425",
                 detail=(
-                    f"DPTable dimensions {dim_rows}x{dim_cols} "
-                    f"({max_cells} cells) exceeds maximum of 250,000"
+                    f"Matrix/DPTable cell count {max_cells} "
+                    f"exceeds maximum of 250000 "
+                    f"(rows={dim_rows}, cols={dim_cols})"
                 ),
             )
 

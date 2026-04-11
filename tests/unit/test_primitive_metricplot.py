@@ -102,6 +102,32 @@ class TestMetricPlotValidation:
                 ],
             })
 
+    def test_e1481_series_at_limit_ok(self) -> None:
+        """Exactly 8 series is permitted."""
+        mp = MetricPlot("p", {"series": [f"s{i}" for i in range(8)]})
+        assert len(mp._series) == 8
+
+    def test_e1483_points_capped_per_series(
+        self, caplog: pytest.LogCaptureFixture,
+    ) -> None:
+        """Data beyond _MAX_POINTS is dropped with an E1483 log line."""
+        import logging
+
+        mp = MetricPlot("p", {"series": ["x"]})
+        with caplog.at_level(logging.ERROR):
+            # Feed 1,001 points into the series; only 1,000 should be kept.
+            for i in range(1001):
+                mp.apply_command({"x": float(i)})
+        assert len(mp._data["x"]) == 1000
+        assert any("E1483" in r.message for r in caplog.records)
+
+    def test_e1483_points_at_limit_ok(self) -> None:
+        """Exactly 1,000 points per series is permitted without dropping."""
+        mp = MetricPlot("p", {"series": ["x"]})
+        for i in range(1000):
+            mp.apply_command({"x": float(i)})
+        assert len(mp._data["x"]) == 1000
+
 
 # ---------------------------------------------------------------
 # Data accumulation tests

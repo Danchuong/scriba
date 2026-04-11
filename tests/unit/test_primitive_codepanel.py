@@ -80,6 +80,17 @@ class TestValidateSelector:
         inst = CodePanel("code", {"lines": ["a", "b"]})
         assert inst.validate_selector("line[0]") is False
 
+    def test_line_1_is_first_line_not_second(self) -> None:
+        """line[1] addresses the first source line (not the second)."""
+        inst = CodePanel("code", {"lines": ["first", "second", "third"]})
+        # 1-based boundaries: line[1], line[2], line[3] all valid.
+        assert inst.validate_selector("line[1]") is True
+        assert inst.validate_selector("line[2]") is True
+        assert inst.validate_selector("line[3]") is True
+        # line[0] and line[4] both rejected.
+        assert inst.validate_selector("line[0]") is False
+        assert inst.validate_selector("line[4]") is False
+
     def test_line_out_of_range(self) -> None:
         inst = CodePanel("code", {"lines": ["a", "b"]})
         assert inst.validate_selector("line[3]") is False

@@ -182,12 +182,16 @@ class Graph(PrimitiveBase):
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 
+        from scriba.animation.errors import animation_error
+
         self.nodes: list[str | int] = list(params.get("nodes", []))
         if not self.nodes:
-            import warnings
-            warnings.warn(
-                f"Graph '{name}' created with empty nodes list",
-                stacklevel=2,
+            raise animation_error(
+                "E1103",
+                detail=(
+                    f"Graph '{name}' requires a non-empty 'nodes' list; "
+                    f"got an empty or missing 'nodes' parameter"
+                ),
             )
         raw_edges = params.get("edges", [])
         self.edges: list[tuple[str | int, str | int]] = [

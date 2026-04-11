@@ -74,6 +74,12 @@ class LinkedList(PrimitiveBase):
         "all": "all nodes and links",
     }
 
+    # ``link[i]`` addresses the outgoing arrow *after* ``node[i]`` — i.e.
+    # the link that points from ``node[i]`` to ``node[i+1]``. Valid
+    # indices are therefore ``0 <= i < len(values) - 1``; the last node
+    # has no outgoing link. This semantic is enforced in
+    # :meth:`validate_selector` and exposed in :meth:`addressable_parts`.
+
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 
