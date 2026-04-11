@@ -187,16 +187,26 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   font-weight: 600;
 }}
 
-/* Halo tokens — mirror of the --scriba-state-*-fill variables in
-   scriba-scene-primitives.css. Defined on :root so the halo rules below
-   can reference them via var(). ``test_css_font_sync.py`` enforces parity
-   between the two files.
-
-   β "Tonal Architecture": Radix slate + blue. Every state carries a
-   tonal neutral fill; signal is carried via the stroke layer (not
-   defined here — this template only holds the halo cascade). */
+/* β "Tonal Architecture" — complete state + cell token set.
+   scriba-scene-primitives.css holds the canonical copy; this block is
+   the standalone-CLI mirror. test_css_font_sync.py::TestHaloCascadeParity
+   enforces the halo portion; the full state/stroke/text rules below are
+   mirrored by convention because the cookbook pipeline embeds this
+   template instead of linking scriba-scene-primitives.css. */
 :root {{
+  /* Base tokens */
   --scriba-bg:                     #ffffff;
+  --scriba-fg:                     #11181c;
+  --scriba-fg-muted:               #687076;
+  --scriba-border:                 #dfe3e6;
+
+  /* Geometry */
+  --scriba-cell-rx:                6px;
+  --scriba-cell-stroke-width:      1;
+  --scriba-cell-stroke-width-signal: 2;
+  --scriba-edge-stroke-width:      1.5;
+
+  /* State fills */
   --scriba-state-idle-fill:        #f8f9fa;
   --scriba-state-current-fill:     #0090ff;
   --scriba-state-done-fill:        #e6e8eb;
@@ -205,6 +215,140 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   --scriba-state-good-fill:        #e6e8eb;
   --scriba-state-highlight-fill:   #f8f9fa;
   --scriba-state-path-fill:        #e6e8eb;
+
+  /* State strokes */
+  --scriba-state-idle-stroke:      #dfe3e6;
+  --scriba-state-current-stroke:   #0b68cb;
+  --scriba-state-done-stroke:      #c1c8cd;
+  --scriba-state-dim-stroke:       #e6e8eb;
+  --scriba-state-error-stroke:     #e5484d;
+  --scriba-state-good-stroke:      #2a7e3b;
+  --scriba-state-highlight-stroke: #0090ff;
+  --scriba-state-path-stroke:      #c1c8cd;
+
+  /* State text */
+  --scriba-state-idle-text:        #11181c;
+  --scriba-state-current-text:     #ffffff;
+  --scriba-state-done-text:        #11181c;
+  --scriba-state-dim-text:         #687076;
+  --scriba-state-error-text:       #11181c;
+  --scriba-state-good-text:        #11181c;
+  --scriba-state-highlight-text:   #0b68cb;
+  --scriba-state-path-text:        #687076;
+}}
+
+/* State class rules — applied to <g data-target="..."> wrappers. Non-signal
+   states (idle/done/dim/path) use the 1px baseline stroke; signal states
+   (current/error/good/highlight) use the 2px --scriba-cell-stroke-width-signal
+   so meaning is legible from the stroke alone. β Tonal Architecture. */
+.scriba-state-idle > rect,
+.scriba-state-idle > circle {{
+  fill: var(--scriba-state-idle-fill);
+  stroke: var(--scriba-state-idle-stroke);
+  stroke-width: var(--scriba-cell-stroke-width);
+}}
+.scriba-state-idle > line {{
+  stroke: var(--scriba-state-idle-stroke);
+  stroke-width: var(--scriba-edge-stroke-width);
+}}
+.scriba-state-idle > text {{ fill: var(--scriba-state-idle-text); }}
+
+.scriba-state-current > rect,
+.scriba-state-current > circle {{
+  fill: var(--scriba-state-current-fill);
+  stroke: var(--scriba-state-current-stroke);
+  stroke-width: var(--scriba-cell-stroke-width-signal);
+}}
+.scriba-state-current > line {{
+  stroke: var(--scriba-state-current-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
+}}
+.scriba-state-current > text {{ fill: var(--scriba-state-current-text); }}
+
+.scriba-state-done > rect,
+.scriba-state-done > circle {{
+  fill: var(--scriba-state-done-fill);
+  stroke: var(--scriba-state-done-stroke);
+  stroke-width: var(--scriba-cell-stroke-width);
+}}
+.scriba-state-done > line {{
+  stroke: var(--scriba-state-done-stroke);
+  stroke-width: var(--scriba-edge-stroke-width);
+}}
+.scriba-state-done > text {{ fill: var(--scriba-state-done-text); }}
+
+.scriba-state-dim > rect,
+.scriba-state-dim > circle {{
+  fill: var(--scriba-state-dim-fill);
+  stroke: var(--scriba-state-dim-stroke);
+  stroke-width: var(--scriba-cell-stroke-width);
+}}
+.scriba-state-dim > line {{
+  stroke: var(--scriba-state-dim-stroke);
+  stroke-width: var(--scriba-edge-stroke-width);
+}}
+.scriba-state-dim > text {{ fill: var(--scriba-state-dim-text); }}
+.scriba-state-dim {{ opacity: 0.5; filter: saturate(0.3); }}
+
+.scriba-state-error > rect,
+.scriba-state-error > circle {{
+  fill: var(--scriba-state-error-fill);
+  stroke: var(--scriba-state-error-stroke);
+  stroke-width: var(--scriba-cell-stroke-width-signal);
+}}
+.scriba-state-error > line {{
+  stroke: var(--scriba-state-error-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
+}}
+.scriba-state-error > text {{ fill: var(--scriba-state-error-text); }}
+
+.scriba-state-good > rect,
+.scriba-state-good > circle {{
+  fill: var(--scriba-state-good-fill);
+  stroke: var(--scriba-state-good-stroke);
+  stroke-width: var(--scriba-cell-stroke-width-signal);
+}}
+.scriba-state-good > line {{
+  stroke: var(--scriba-state-good-stroke);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
+}}
+.scriba-state-good > text {{ fill: var(--scriba-state-good-text); }}
+
+.scriba-state-highlight > rect,
+.scriba-state-highlight > circle {{
+  fill: var(--scriba-state-highlight-fill);
+  stroke: var(--scriba-state-highlight-stroke);
+  stroke-width: var(--scriba-cell-stroke-width-signal);
+}}
+.scriba-state-highlight > line {{
+  stroke: var(--scriba-state-highlight-stroke);
+  stroke-width: var(--scriba-cell-stroke-width-signal);
+}}
+.scriba-state-highlight > text {{ fill: var(--scriba-state-highlight-text); }}
+
+.scriba-state-path > rect,
+.scriba-state-path > circle {{
+  fill: var(--scriba-state-path-fill);
+  stroke: var(--scriba-state-path-stroke);
+  stroke-width: var(--scriba-cell-stroke-width);
+}}
+.scriba-state-path > line {{
+  stroke: var(--scriba-state-path-stroke);
+  stroke-width: var(--scriba-edge-stroke-width);
+}}
+.scriba-state-path > text {{ fill: var(--scriba-state-path-text); }}
+
+/* Primitive rect base — border-radius and round caps come from CSS so
+   Python emission only has to set x/y/width/height and the state class. */
+[data-primitive="array"] > [data-target] > rect,
+[data-primitive="grid"] > [data-target] > rect,
+[data-primitive="dptable"] > [data-target] > rect,
+[data-primitive="stack"] > [data-target] > rect,
+[data-primitive="queue"] > [data-target] > rect,
+[data-primitive="matrix"] > [data-target] > rect {{
+  rx: var(--scriba-cell-rx);
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }}
 
 /* Text halo — paint-order: stroke fill draws the stroke as a halo BEHIND
@@ -302,12 +446,15 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   }}
 }}
 
-/* Dark mode */
+/* Dark mode — β slate dark variant. Full token flip so state class
+   rules above keep resolving against live values regardless of theme. */
 [data-theme="dark"] {{
-  /* Halo variables flip with the theme via the cascade so every
-     primitive text element picks up a dark-appropriate outline
-     without any JS or Python work. Wave 9. β dark variant. */
   --scriba-bg:                     #151718;
+  --scriba-fg:                     #ecedee;
+  --scriba-fg-muted:               #9ba1a6;
+  --scriba-border:                 #313538;
+
+  /* State fills */
   --scriba-state-idle-fill:        #1a1d1e;
   --scriba-state-current-fill:     #0090ff;
   --scriba-state-done-fill:        #2b2f31;
@@ -316,6 +463,26 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   --scriba-state-good-fill:        #2b2f31;
   --scriba-state-highlight-fill:   #1a1d1e;
   --scriba-state-path-fill:        #2b2f31;
+
+  /* State strokes */
+  --scriba-state-idle-stroke:      #313538;
+  --scriba-state-current-stroke:   #70b8ff;
+  --scriba-state-done-stroke:      #4c5155;
+  --scriba-state-dim-stroke:       #2b2f31;
+  --scriba-state-error-stroke:     #ff6369;
+  --scriba-state-good-stroke:      #65ba74;
+  --scriba-state-highlight-stroke: #0090ff;
+  --scriba-state-path-stroke:      #4c5155;
+
+  /* State text */
+  --scriba-state-idle-text:        #ecedee;
+  --scriba-state-current-text:     #ffffff;
+  --scriba-state-done-text:        #ecedee;
+  --scriba-state-dim-text:         #9ba1a6;
+  --scriba-state-error-text:       #ecedee;
+  --scriba-state-good-text:        #ecedee;
+  --scriba-state-highlight-text:   #70b8ff;
+  --scriba-state-path-text:        #9ba1a6;
 }}
 [data-theme="dark"] body {{ background: #151718; color: #ecedee; }}
 [data-theme="dark"] .scriba-widget {{ background: #1a1d1e; border-color: #313538; }}
