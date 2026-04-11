@@ -220,21 +220,29 @@ class Queue(PrimitiveBase):
                 )
             )
 
+        # Compute the cell index where the rear pointer arrow is drawn.
+        # rear_idx is one past the last occupied cell; display at the last
+        # occupied cell (rear_idx - 1), clamping to 0 for an empty queue.
+        rear_display = max(self.rear_idx - 1, 0)
+        pointers_overlap = self.front_idx == rear_display
+
         # --- Render front pointer arrow ---
         self._emit_pointer(
             parts,
             index=self.front_idx,
             label="front",
             cell_y=cell_y,
+            offset_label=pointers_overlap,
             render_inline_tex=render_inline_tex,
         )
 
         # --- Render rear pointer arrow ---
         self._emit_pointer(
             parts,
-            index=self.rear_idx - 1 if self.rear_idx > 0 else 0,
+            index=rear_display,
             label="rear",
             cell_y=cell_y,
+            offset_label=pointers_overlap,
             render_inline_tex=render_inline_tex,
         )
 
@@ -270,12 +278,17 @@ class Queue(PrimitiveBase):
         index: int,
         label: str,
         cell_y: int,
+        offset_label: bool = False,
         render_inline_tex: Callable[[str], str] | None = None,
     ) -> None:
         """Emit a downward-pointing triangle arrow above a cell with a label.
 
         The pointer is rendered above the cell at *index*.  If *index* is
         out of range (can happen when queue is empty), it is clamped.
+
+        When *offset_label* is True the label is nudged horizontally so that
+        two overlapping pointers (front and rear on the same cell) remain
+        readable.  "front" is nudged left, "rear" is nudged right.
         """
         # Clamp index to valid cell range
         idx = max(0, min(index, self.capacity - 1))
@@ -310,12 +323,17 @@ class Queue(PrimitiveBase):
         )
 
         # Label text above the triangle
-        label_y = tri_top_y - 4
+        label_y = tri_top_y - 6
+        # Nudge label horizontally when front/rear share a cell
+        label_x = cell_center_x
+        if offset_label:
+            nudge = CELL_WIDTH // 3
+            label_x += -nudge if label == "front" else nudge
         parts.append(
             "    "
             + _render_svg_text(
                 label,
-                cell_center_x,
+                label_x,
                 label_y,
                 fill=pointer_color,
                 text_anchor="middle",

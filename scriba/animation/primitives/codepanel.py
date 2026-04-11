@@ -158,9 +158,11 @@ class CodePanel(PrimitiveBase):
         if not self.lines:
             parts.append(
                 f'<text x="{panel_w // 2}" y="{panel_h // 2}" '
-                f'text-anchor="middle" dominant-baseline="central" '
-                f'fill="#adb5bd" font-size="11" '
-                f'font-family="monospace">no code</text>'
+                f'style="font-family:monospace;font-size:11px;'
+                f"font-weight:400;"
+                f"text-anchor:middle;"
+                f'dominant-baseline:central" '
+                f'fill="#adb5bd">no code</text>'
             )
             parts.append("</g>")
             return "".join(parts)
@@ -197,30 +199,36 @@ class CodePanel(PrimitiveBase):
                     f'fill="{colors["fill"]}"/>'
                 )
 
-            # Line number (always dark/gray for readability)
+            # Line number — right-aligned in the gutter
+            # Use inline style to prevent global CSS from overriding
+            # monospace font and text-anchor.
             line_num_x = _PADDING_X + _LINE_NUM_WIDTH - 4
             line_num_fill = (
                 colors["text"] if line_state != "idle" else _LINE_NUM_COLOR
             )
             parts.append(
                 f'<text x="{line_num_x}" y="{text_y}" '
-                f'text-anchor="end" dominant-baseline="central" '
-                f'fill="{line_num_fill}" '
-                f'font-family="monospace" font-size="{_FONT_SIZE - 1}">'
+                f'style="font-family:monospace;font-size:{_FONT_SIZE - 1}px;'
+                f"font-weight:400;"
+                f"text-anchor:end;"
+                f'dominant-baseline:central" '
+                f'fill="{line_num_fill}">'
                 f"{line_num}</text>"
             )
 
-            # Code text — preserve leading whitespace
+            # Code text — left-aligned after gutter, preserve indentation
+            # Use inline style so global CSS cannot override monospace font.
             code_x = _PADDING_X + _LINE_NUM_WIDTH + _PADDING_X
             text_fill = colors["text"] if line_state != "idle" else _CODE_TEXT_COLOR
             escaped_text = _escape_xml(line_text)
 
-            # Use xml:space="preserve" to keep indentation
             parts.append(
                 f'<text x="{code_x}" y="{text_y}" '
-                f'dominant-baseline="central" '
+                f'style="font-family:monospace;font-size:{_FONT_SIZE}px;'
+                f"font-weight:400;"
+                f"text-anchor:start;"
+                f'dominant-baseline:central" '
                 f'fill="{text_fill}" '
-                f'font-family="monospace" font-size="{_FONT_SIZE}" '
                 f'xml:space="preserve">{escaped_text}</text>'
             )
 

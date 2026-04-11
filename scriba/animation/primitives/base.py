@@ -288,14 +288,23 @@ def _render_svg_text(
         attrs = f'x="{x}" y="{y}" fill="{fill}"'
         if css_class:
             attrs = f'class="{css_class}" {attrs}'
+        # Build inline style for properties that must override the global
+        # ``svg text { … }`` CSS rule.  SVG presentation attributes have
+        # lower specificity than stylesheet rules, so without ``style``
+        # the CSS defaults would silently win (e.g. text-anchor: middle
+        # overriding a start-aligned name column).
+        style_parts: list[str] = []
         if text_anchor:
-            attrs += f' text-anchor="{text_anchor}"'
+            style_parts.append(f"text-anchor:{text_anchor}")
         if dominant_baseline:
-            attrs += f' dominant-baseline="{dominant_baseline}"'
+            style_parts.append(f"dominant-baseline:{dominant_baseline}")
         if font_weight:
-            attrs += f' font-weight="{font_weight}"'
+            style_parts.append(f"font-weight:{font_weight}")
         if font_size:
-            attrs += f' font-size="{font_size}"'
+            fs = font_size if any(font_size.endswith(u) for u in ("px", "em", "rem", "%")) else f"{font_size}px"
+            style_parts.append(f"font-size:{fs}")
+        if style_parts:
+            attrs += f' style="{";".join(style_parts)}"'
         if text_outline:
             attrs += (
                 f' stroke="{text_outline}" stroke-width="4"'
@@ -325,7 +334,8 @@ def _render_svg_text(
     if font_weight:
         style_parts.append(f"font-weight:{font_weight}")
     if font_size:
-        style_parts.append(f"font-size:{font_size}")
+        fs = font_size if any(font_size.endswith(u) for u in ("px", "em", "rem", "%")) else f"{font_size}px"
+        style_parts.append(f"font-size:{fs}")
 
     style = ";".join(style_parts)
 

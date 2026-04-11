@@ -212,11 +212,12 @@ class LinkedList(PrimitiveBase):
             link_state = self.get_state(link_suffix)
             link_colors = svg_style_attrs(link_state)
 
-            # Arrow starts from the right edge of node[i]'s pointer area
+            # Arrow starts from the pointer dot (centred in the ptr area)
             x_start = (
                 _PADDING
                 + i * (_NODE_WIDTH + _LINK_GAP)
-                + _NODE_WIDTH
+                + _VALUE_WIDTH
+                + _PTR_WIDTH // 2
             )
             # Arrow ends at the left edge of node[i+1]
             x_end = (
@@ -360,6 +361,7 @@ class LinkedList(PrimitiveBase):
                     fill="#6c757d",
                     css_class="scriba-primitive-label",
                     text_anchor="middle",
+                    dominant_baseline="central",
                     fo_width=bbox.width,
                     fo_height=20,
                     render_inline_tex=render_inline_tex,
