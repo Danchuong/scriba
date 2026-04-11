@@ -780,6 +780,14 @@ class Tree(PrimitiveBase):
                 if override is not None
                 else self.node_labels.get(node_id, str(node_id))
             )
+            # Wave 9 — the text halo that keeps overflowing node labels
+            # readable (e.g. "[0,3]=11" inside a 22-pixel-radius circle)
+            # is now handled by the CSS cascade in
+            # scriba-scene-primitives.css. The old inline ``text_outline=``
+            # parameter burned a hex color into the SVG stroke attribute
+            # that didn't flip in dark mode; the CSS approach uses
+            # ``var(--scriba-state-*-fill)`` so the halo follows the
+            # theme and the per-state fill changes automatically.
             node_text = _render_svg_text(
                 str(display_label),
                 cx,
@@ -790,7 +798,6 @@ class Tree(PrimitiveBase):
                 fo_width=self._node_radius * 2,
                 fo_height=self._node_radius * 2,
                 render_inline_tex=render_inline_tex,
-                text_outline=node_colors["fill"],
             )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '

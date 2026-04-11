@@ -176,6 +176,62 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   dominant-baseline: central;
 }}
 
+/* Halo tokens — mirror of the --scriba-state-*-fill variables in
+   scriba-scene-primitives.css. Defined on :root so the halo rules below
+   can reference them via var(). ``test_css_font_sync.py`` enforces parity
+   between the two files. */
+:root {{
+  --scriba-bg:                     #ffffff;
+  --scriba-state-idle-fill:        #f6f8fa;
+  --scriba-state-current-fill:     #0072B2;
+  --scriba-state-done-fill:        #009E73;
+  --scriba-state-dim-fill:         #e9ecef;
+  --scriba-state-error-fill:       #D55E00;
+  --scriba-state-good-fill:        #56B4E9;
+  --scriba-state-highlight-fill:   #F0E442;
+  --scriba-state-path-fill:        #dbeafe;
+}}
+
+/* Text halo — paint-order: stroke fill draws the stroke as a halo BEHIND
+   the fill, so glyphs that overflow their container (e.g. segtree node
+   labels like "[0,3]=11" inside a 22-pixel-radius circle) stay readable
+   in the surrounding whitespace. The halo color matches the container
+   state fill when the text is inside a stateful container, and matches
+   the page background for floating labels. See Wave 9 research.
+   Wrapped in ``@media (forced-colors: none)`` so Windows High Contrast
+   mode can strip the halo cleanly. */
+@media (forced-colors: none) {{
+  [data-primitive] text {{
+    paint-order:     stroke fill markers;
+    stroke:          var(--scriba-halo, var(--scriba-bg));
+    stroke-width:    3;
+    stroke-linejoin: round;
+    stroke-linecap:  round;
+  }}
+
+  .scriba-state-idle      > text {{ --scriba-halo: var(--scriba-state-idle-fill); }}
+  .scriba-state-current   > text {{ --scriba-halo: var(--scriba-state-current-fill); }}
+  .scriba-state-done      > text {{ --scriba-halo: var(--scriba-state-done-fill); }}
+  .scriba-state-dim       > text {{ --scriba-halo: var(--scriba-state-dim-fill); }}
+  .scriba-state-error     > text {{ --scriba-halo: var(--scriba-state-error-fill); }}
+  .scriba-state-good      > text {{ --scriba-halo: var(--scriba-state-good-fill); }}
+  .scriba-state-highlight > text {{ --scriba-halo: var(--scriba-state-highlight-fill); }}
+  .scriba-state-path      > text {{ --scriba-halo: var(--scriba-state-path-fill); }}
+
+  .scriba-index-label,
+  .idx,
+  .scriba-primitive-label,
+  .scriba-graph-weight {{
+    --scriba-halo: var(--scriba-bg);
+    stroke-width:  2;
+  }}
+
+  .scriba-tree-nodes text,
+  .scriba-graph-nodes text {{
+    stroke-width: 4;
+  }}
+}}
+
 /* Frame transition */
 .scriba-stage svg, .scriba-narration {{
   transition: opacity 0.2s ease;
@@ -222,6 +278,14 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
 }}
 
 /* Dark mode */
+[data-theme="dark"] {{
+  /* Halo variables flip with the theme via the cascade so every
+     primitive text element picks up a dark-appropriate outline
+     without any JS or Python work. Wave 9. */
+  --scriba-bg:                   #0d1117;
+  --scriba-state-idle-fill:      #161b22;
+  --scriba-state-dim-fill:       #21262d;
+}}
 [data-theme="dark"] body {{ background: #0d1117; color: #e6edf3; }}
 [data-theme="dark"] .scriba-widget {{ background: #161b22; border-color: #30363d; }}
 [data-theme="dark"] .scriba-controls {{ background: #1c2128; border-color: #30363d; }}

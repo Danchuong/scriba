@@ -420,6 +420,69 @@
 .scriba-annotation-path > line  { stroke: var(--scriba-annotation-path); }
 
 /* ============================================
+   Text halo — keep labels legible when they overflow their container
+   ============================================
+
+   ``paint-order: stroke fill`` draws the stroke BEHIND the fill, turning
+   the stroke into a halo that blends the glyph edge into the surrounding
+   surface. When cell values / node labels overflow their rect or circle,
+   the halo continues into the whitespace and the glyph remains readable
+   without any clipping. See Wave 9 research (agents A/B/C) and the
+   cartography precedent (OpenStreetMap Mapnik halo technique).
+
+   Inline SVG presentation attributes (``stroke="..."`` etc.) have
+   LOWER CSS specificity than any stylesheet rule, so the block below
+   supersedes Tree's previous per-element halo at ``tree.py:793`` and
+   extends the same treatment to every other primitive in one rule set.
+
+   Wrapped in ``@media (forced-colors: none)`` so Windows High Contrast
+   Mode can strip the halo without leaving behind an unwanted outline.
+   ``stroke-linejoin: round`` kills the sub-pixel miter spikes that
+   otherwise show up on narrow curved glyphs (lowercase a, e, s). */
+@media (forced-colors: none) {
+  [data-primitive] text {
+    paint-order:       stroke fill markers;
+    stroke:            var(--scriba-halo, var(--scriba-bg));
+    stroke-width:      3;
+    stroke-linejoin:   round;
+    stroke-linecap:    round;
+  }
+
+  /* Text inside a stateful container inherits the container's fill so
+     the glyph appears to sit ON the container even when it overflows
+     the rect or circle. One override per state keeps the halo in sync
+     with the cell's rendered background. */
+  .scriba-state-idle      > text { --scriba-halo: var(--scriba-state-idle-fill); }
+  .scriba-state-current   > text { --scriba-halo: var(--scriba-state-current-fill); }
+  .scriba-state-done      > text { --scriba-halo: var(--scriba-state-done-fill); }
+  .scriba-state-dim       > text { --scriba-halo: var(--scriba-state-dim-fill); }
+  .scriba-state-error     > text { --scriba-halo: var(--scriba-state-error-fill); }
+  .scriba-state-good      > text { --scriba-halo: var(--scriba-state-good-fill); }
+  .scriba-state-highlight > text { --scriba-halo: var(--scriba-state-highlight-fill); }
+  .scriba-state-path      > text { --scriba-halo: var(--scriba-state-path-fill); }
+
+  /* Floating labels (index row under an Array cell, primitive caption,
+     Graph edge weights, Plane2D tick labels) sit in the whitespace
+     between primitives. The halo matches the stage background so
+     overlapping labels stay legible and no "color soup" forms when two
+     floating labels collide (Wave 9 Agent B visual-quality finding). */
+  .scriba-index-label,
+  .idx,
+  .scriba-primitive-label,
+  .scriba-graph-weight {
+    --scriba-halo: var(--scriba-bg);
+    stroke-width:  2;
+  }
+
+  /* Tree / Graph node text routinely overflows small circles, so the
+     halo gets an extra pixel of breathing room. */
+  .scriba-tree-nodes text,
+  .scriba-graph-nodes text {
+    stroke-width: 4;
+  }
+}
+
+/* ============================================
    Dark mode
    ============================================ */
 

@@ -49,6 +49,20 @@ def css_font_sizes() -> dict[str, int]:
     return out
 
 
+@pytest.fixture(scope="module")
+def css_text() -> str:
+    """Full stylesheet contents for substring-level assertions."""
+    return _CSS_PATH.read_text()
+
+
+def _normalize_ws(text: str) -> str:
+    """Collapse runs of whitespace for whitespace-tolerant substring
+    matching. The CSS sources use aligned multi-space formatting, so
+    tests that look for ``.scriba-state-idle > text`` would otherwise
+    miss ``.scriba-state-idle      > text``."""
+    return re.sub(r"\s+", " ", text)
+
+
 class TestCssFontParsing:
     def test_expected_fonts_declared(self, css_font_sizes: dict[str, int]) -> None:
         """Sanity-check: every font role the primitives care about is
@@ -95,6 +109,116 @@ class TestDPTableFontSync:
         assert dptable._FONT_SIZE_CAPTION == css_font_sizes["label"], (
             f"dptable._FONT_SIZE_CAPTION = {dptable._FONT_SIZE_CAPTION} but "
             f"--scriba-label-font = {css_font_sizes['label']}px."
+        )
+
+
+class TestHaloCascadeParity:
+    """Wave 9 — both CSS sources (scriba-scene-primitives.css and
+    render.py HTML_TEMPLATE) must declare the same text-halo cascade so
+    the Pipeline asset path and the standalone CLI render pipeline
+    produce visually identical output. If one side is extended without
+    the other, text overflow legibility regresses in exactly the
+    environments that don't get the updated stylesheet.
+
+    These assertions are structural (substring checks on the CSS
+    source) rather than visual — they verify the cascade is wired, not
+    that the browser renders it correctly. Cross-browser rendering is
+    left to manual QA.
+    """
+
+    @pytest.fixture(scope="class")
+    def render_template_css(self) -> str:
+        return (
+            Path(__file__).parent.parent.parent / "render.py"
+        ).read_text()
+
+    def test_stylesheet_has_halo_block(self, css_text: str) -> None:
+        """scriba-scene-primitives.css must declare the halo cascade."""
+        normalized = _normalize_ws(css_text)
+        assert "paint-order: stroke fill markers" in normalized, (
+            "Text halo cascade missing from scriba-scene-primitives.css. "
+            "The Wave 9 rollout relies on a [data-primitive] text { "
+            "paint-order: stroke fill markers; ... } rule for every "
+            "primitive. See scriba/animation/static/scriba-scene-"
+            "primitives.css Wave 9 section."
+        )
+        # The halo variable must be referenced with fallback to --scriba-bg
+        assert "--scriba-halo" in css_text
+        assert "var(--scriba-halo" in css_text
+
+    def test_stylesheet_has_state_halo_overrides(self, css_text: str) -> None:
+        """Every state class must override --scriba-halo so text inside a
+        stateful container matches the container fill. Missing overrides
+        would leave text halos stuck at the default page-background."""
+        normalized = _normalize_ws(css_text)
+        states = (
+            "idle", "current", "done", "dim",
+            "error", "good", "highlight", "path",
+        )
+        for state in states:
+            selector = f".scriba-state-{state} > text"
+            assert selector in normalized, (
+                f"State halo override missing: expected '{selector}' in "
+                "scriba-scene-primitives.css. Every state class must "
+                "define --scriba-halo so text inside that state's "
+                "container matches the container fill. Wave 9."
+            )
+
+    def test_stylesheet_has_forced_colors_guard(self, css_text: str) -> None:
+        """The halo block must be wrapped in @media (forced-colors: none)
+        so Windows High Contrast Mode can strip the halo cleanly without
+        promoting the stroke to an unwanted outline. Wave 9 Agent A
+        accessibility finding."""
+        assert "forced-colors: none" in css_text, (
+            "Halo block missing @media (forced-colors: none) guard. "
+            "Without it, Windows High Contrast Mode users will see "
+            "unwanted text outlines. Wave 9 Agent A."
+        )
+
+    def test_render_template_has_halo_block(
+        self, render_template_css: str
+    ) -> None:
+        """render.py HTML_TEMPLATE must carry the same halo cascade as
+        the standalone stylesheet so the CLI render path (used by every
+        cookbook HTML file under examples/) gets the same treatment."""
+        normalized = _normalize_ws(render_template_css)
+        assert "paint-order: stroke fill markers" in normalized, (
+            "Halo cascade missing from render.py HTML_TEMPLATE. The "
+            "standalone CLI path must carry the same rules as "
+            "scriba-scene-primitives.css."
+        )
+        assert "--scriba-halo" in render_template_css
+
+    def test_render_template_state_halo_overrides_match(
+        self, render_template_css: str
+    ) -> None:
+        normalized = _normalize_ws(render_template_css)
+        states = (
+            "idle", "current", "done", "dim",
+            "error", "good", "highlight", "path",
+        )
+        for state in states:
+            selector = f".scriba-state-{state} > text"
+            assert selector in normalized, (
+                f"State halo override missing from render.py "
+                f"HTML_TEMPLATE: expected '{selector}'. The CLI render "
+                "path must mirror scriba-scene-primitives.css."
+            )
+
+    def test_render_template_dark_mode_flips_halo(
+        self, render_template_css: str
+    ) -> None:
+        """Dark mode should override --scriba-bg so the halo cascade
+        flips automatically without any JS or Python work. Wave 9."""
+        # The [data-theme="dark"] block must set --scriba-bg.
+        dark_block_match = re.search(
+            r'\[data-theme="dark"\]\s*\{[^}]*--scriba-bg\s*:',
+            render_template_css,
+        )
+        assert dark_block_match is not None, (
+            "render.py HTML_TEMPLATE [data-theme=\"dark\"] block does "
+            "not override --scriba-bg. The halo cascade will remain "
+            "locked to the light-theme background in dark mode."
         )
 
 

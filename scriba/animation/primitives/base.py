@@ -405,6 +405,18 @@ def _render_svg_text(
     fo_width, fo_height:
         Width and height of the ``<foreignObject>``.  When zero the
         caller should supply the enclosing cell dimensions.
+    text_outline:
+        **Deprecated as of Wave 9 (v0.6.1).** Use the CSS halo cascade in
+        ``scriba-scene-primitives.css`` instead — every ``<text>`` child
+        of a ``[data-primitive]`` now gets a state-aware halo via
+        ``paint-order: stroke fill`` and per-state ``--scriba-halo`` CSS
+        custom properties. The cascade flips automatically in dark mode
+        and scales stroke width per role (cells 3px, labels 2px, node
+        text 4px). Passing this parameter still emits the old inline
+        ``stroke`` attribute for one release so external callers can
+        migrate, but the inline value has lower CSS specificity than the
+        new rules and will be silently overridden at render time in all
+        Scriba-controlled contexts. Scheduled for removal in v0.7.0.
     """
     text_str = str(text)
 
@@ -431,6 +443,22 @@ def _render_svg_text(
         if style_parts:
             attrs += f' style="{";".join(style_parts)}"'
         if text_outline:
+            # Deprecated Wave 9 — see docstring. The CSS cascade in
+            # scriba-scene-primitives.css supersedes this inline stroke
+            # in every Scriba-rendered HTML context, so the emitted
+            # attribute is effectively a no-op for pipeline and CLI
+            # users. Kept for external callers migrating to v0.6.1; to
+            # be removed in v0.7.0.
+            import warnings as _w
+            _w.warn(
+                "text_outline= is deprecated as of Wave 9 (v0.6.1); the "
+                "CSS halo cascade in scriba-scene-primitives.css handles "
+                "every <text> element automatically and overrides any "
+                "inline stroke. This parameter is scheduled for removal "
+                "in v0.7.0.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
             attrs += (
                 f' stroke="{text_outline}" stroke-width="4"'
                 f' paint-order="stroke"'
