@@ -1,0 +1,148 @@
+\begin{animation}[id="dijkstra-weighted", label="Dijkstra -- Shortest path on a weighted graph"]
+\shape{G}{Graph}{
+  nodes=["A","B","C","D","E","F"],
+  edges=[
+    ("A","B",4),
+    ("A","C",2),
+    ("B","C",1),
+    ("B","D",5),
+    ("C","D",8),
+    ("C","E",10),
+    ("D","E",2),
+    ("D","F",6),
+    ("E","F",3)
+  ],
+  show_weights=true,
+  directed=false,
+  layout="stable",
+  layout_seed=7
+}
+\shape{dist}{Array}{size=6, data=["inf","inf","inf","inf","inf","inf"], labels="0..5", label="$dist[A,B,C,D,E,F]$"}
+
+\step
+\recolor{G.node[A]}{state=current}
+\apply{dist.cell[0]}{value="0"}
+\recolor{dist.cell[0]}{state=current}
+\narrate{Dijkstra's algorithm on an undirected weighted graph. Source = $A$. Cells $0..5$ of the $dist$ array track the tentative distance to $A, B, C, D, E, F$ respectively. Initialise $dist[A] = 0$; every other node stays at $\infty$. Push $A$ into the priority queue.}
+
+\step
+\recolor{G.node[A]}{state=done}
+\recolor{dist.cell[0]}{state=done}
+\recolor{G.edge[(A,B)]}{state=current}
+\apply{dist.cell[1]}{value="4"}
+\recolor{dist.cell[1]}{state=current}
+\narrate{Settle $A$. Relax edge $A\to B$ with weight $4$: $dist[B] = \min(\infty, 0+4) = 4$. Update and keep scanning from $A$.}
+
+\step
+\recolor{G.edge[(A,B)]}{state=idle}
+\recolor{G.edge[(A,C)]}{state=current}
+\apply{dist.cell[2]}{value="2"}
+\recolor{dist.cell[2]}{state=current}
+\narrate{Relax edge $A\to C$ with weight $2$: $dist[C] = \min(\infty, 0+2) = 2$. $A$ has no more outgoing edges. The smallest tentative distance in the queue is now $dist[C] = 2$.}
+
+\step
+\recolor{G.edge[(A,C)]}{state=idle}
+\recolor{dist.cell[1]}{state=idle}
+\recolor{dist.cell[2]}{state=idle}
+\recolor{G.node[C]}{state=current}
+\recolor{dist.cell[2]}{state=current}
+\narrate{Pop $C$ (key $= 2$). Settle $C$: this is the final distance because all edge weights are non-negative.}
+
+\step
+\recolor{G.edge[(B,C)]}{state=current}
+\apply{dist.cell[1]}{value="3"}
+\recolor{dist.cell[1]}{state=current}
+\narrate{Relax edge $C\to B$ with weight $1$: $dist[B] = \min(4, 2+1) = 3$. The detour $A \to C \to B$ is cheaper than the direct $A \to B$ edge.}
+
+\step
+\recolor{G.edge[(B,C)]}{state=idle}
+\recolor{G.edge[(C,D)]}{state=current}
+\apply{dist.cell[3]}{value="10"}
+\recolor{dist.cell[3]}{state=current}
+\narrate{Relax edge $C\to D$ with weight $8$: $dist[D] = \min(\infty, 2+8) = 10$. Tentative only -- a shorter path through $B$ may appear.}
+
+\step
+\recolor{G.edge[(C,D)]}{state=idle}
+\recolor{G.edge[(C,E)]}{state=current}
+\apply{dist.cell[4]}{value="12"}
+\recolor{dist.cell[4]}{state=current}
+\narrate{Relax edge $C\to E$ with weight $10$: $dist[E] = \min(\infty, 2+10) = 12$. Still tentative.}
+
+\step
+\recolor{G.edge[(C,E)]}{state=idle}
+\recolor{G.node[C]}{state=done}
+\recolor{dist.cell[2]}{state=done}
+\recolor{dist.cell[1]}{state=idle}
+\recolor{dist.cell[3]}{state=idle}
+\recolor{dist.cell[4]}{state=idle}
+\recolor{G.node[B]}{state=current}
+\recolor{dist.cell[1]}{state=current}
+\narrate{Pop $B$ (key $= 3$). Settle $B$. The queue now holds $D=10$ and $E=12$.}
+
+\step
+\recolor{G.edge[(B,D)]}{state=current}
+\apply{dist.cell[3]}{value="8"}
+\recolor{dist.cell[3]}{state=current}
+\narrate{Relax edge $B\to D$ with weight $5$: $dist[D] = \min(10, 3+5) = 8$. The new predecessor of $D$ is $B$, not $C$.}
+
+\step
+\recolor{G.edge[(B,D)]}{state=idle}
+\recolor{G.node[B]}{state=done}
+\recolor{dist.cell[1]}{state=done}
+\recolor{dist.cell[3]}{state=idle}
+\recolor{G.node[D]}{state=current}
+\recolor{dist.cell[3]}{state=current}
+\narrate{Pop $D$ (key $= 8$). Settle $D$.}
+
+\step
+\recolor{G.edge[(D,E)]}{state=current}
+\apply{dist.cell[4]}{value="10"}
+\recolor{dist.cell[4]}{state=current}
+\narrate{Relax edge $D\to E$ with weight $2$: $dist[E] = \min(12, 8+2) = 10$. Improved via $A\to C\to B\to D\to E$.}
+
+\step
+\recolor{G.edge[(D,E)]}{state=idle}
+\recolor{G.edge[(D,F)]}{state=current}
+\apply{dist.cell[5]}{value="14"}
+\recolor{dist.cell[5]}{state=current}
+\narrate{Relax edge $D\to F$ with weight $6$: $dist[F] = \min(\infty, 8+6) = 14$. Tentative.}
+
+\step
+\recolor{G.edge[(D,F)]}{state=idle}
+\recolor{G.node[D]}{state=done}
+\recolor{dist.cell[3]}{state=done}
+\recolor{dist.cell[4]}{state=idle}
+\recolor{dist.cell[5]}{state=idle}
+\recolor{G.node[E]}{state=current}
+\recolor{dist.cell[4]}{state=current}
+\narrate{Pop $E$ (key $= 10$). Settle $E$. Only $F$ remains in the queue with key $14$.}
+
+\step
+\recolor{G.edge[(E,F)]}{state=current}
+\apply{dist.cell[5]}{value="13"}
+\recolor{dist.cell[5]}{state=current}
+\narrate{Relax edge $E\to F$ with weight $3$: $dist[F] = \min(14, 10+3) = 13$. One last improvement.}
+
+\step
+\recolor{G.edge[(E,F)]}{state=idle}
+\recolor{G.node[E]}{state=done}
+\recolor{dist.cell[4]}{state=done}
+\recolor{dist.cell[5]}{state=idle}
+\recolor{G.node[F]}{state=current}
+\recolor{dist.cell[5]}{state=current}
+\narrate{Pop $F$ (key $= 13$). Settle $F$. The priority queue is empty -- all nodes are settled.}
+
+\step
+\recolor{G.node[F]}{state=done}
+\recolor{dist.cell[5]}{state=done}
+\recolor{G.edge[(A,C)]}{state=good}
+\recolor{G.edge[(B,C)]}{state=good}
+\recolor{G.edge[(B,D)]}{state=good}
+\recolor{G.edge[(D,E)]}{state=good}
+\recolor{G.edge[(E,F)]}{state=good}
+\recolor{G.edge[(A,B)]}{state=dim}
+\recolor{G.edge[(C,D)]}{state=dim}
+\recolor{G.edge[(C,E)]}{state=dim}
+\recolor{G.edge[(D,F)]}{state=dim}
+\narrate{Shortest-path tree rooted at $A$: $A\!\to\!C$, $C\!\to\!B$, $B\!\to\!D$, $D\!\to\!E$, $E\!\to\!F$. Final distances: $dist = [0, 3, 2, 8, 10, 13]$. Non-tree edges are dimmed; each would form a longer alternative.}
+\end{animation}

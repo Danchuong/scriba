@@ -1,0 +1,108 @@
+\begin{animation}[id="kruskal-mst", label="Kruskal -- Minimum spanning tree"]
+\shape{G}{Graph}{
+  nodes=["A","B","C","D","E","F"],
+  edges=[
+    ("B","C",1),
+    ("A","C",2),
+    ("D","E",2),
+    ("E","F",3),
+    ("A","B",4),
+    ("B","D",5),
+    ("D","F",6),
+    ("C","D",8),
+    ("C","E",10)
+  ],
+  show_weights=true,
+  directed=false,
+  layout="stable",
+  layout_seed=7
+}
+\shape{queue}{Array}{size=9, data=["BC:1","AC:2","DE:2","EF:3","AB:4","BD:5","DF:6","CD:8","CE:10"], labels="0..8", label="$edges\;sorted\;by\;weight$"}
+\shape{picked}{Array}{size=5, data=["","","","",""], labels="0..4", label="$MST\;(5\;edges)$"}
+
+\step
+\recolor{G.edge[(B,C)]}{state=dim}
+\recolor{G.edge[(A,C)]}{state=dim}
+\recolor{G.edge[(D,E)]}{state=dim}
+\recolor{G.edge[(E,F)]}{state=dim}
+\recolor{G.edge[(A,B)]}{state=dim}
+\recolor{G.edge[(B,D)]}{state=dim}
+\recolor{G.edge[(D,F)]}{state=dim}
+\recolor{G.edge[(C,D)]}{state=dim}
+\recolor{G.edge[(C,E)]}{state=dim}
+\narrate{Kruskal's algorithm on the same $6$-node graph from example $h11$. Sort every edge by weight, then scan from cheapest to most expensive. Accept an edge if its two endpoints sit in different DSU components; reject it if both are already connected (a cycle would form). A spanning tree on $6$ nodes needs exactly $5$ edges. Initial DSU: $\{A\}, \{B\}, \{C\}, \{D\}, \{E\}, \{F\}$.}
+
+\step
+\recolor{queue.cell[0]}{state=done}
+\recolor{G.edge[(B,C)]}{state=good}
+\recolor{G.node[B]}{state=good}
+\recolor{G.node[C]}{state=good}
+\apply{picked.cell[0]}{value="BC"}
+\recolor{picked.cell[0]}{state=good}
+\narrate{Edge $1$: $B\!-\!C$ weight $1$. $find(B) = B$, $find(C) = C$ -- different components. Accept. Union $\to \{B, C\}$. MST weight so far $= 1$.}
+
+\step
+\recolor{queue.cell[1]}{state=done}
+\recolor{G.edge[(A,C)]}{state=good}
+\recolor{G.node[A]}{state=good}
+\apply{picked.cell[1]}{value="AC"}
+\recolor{picked.cell[1]}{state=good}
+\narrate{Edge $2$: $A\!-\!C$ weight $2$. $find(A) = A$ vs $find(C) = \{B,C\}$ -- different. Accept. Union $\to \{A, B, C\}$. MST weight $= 3$.}
+
+\step
+\recolor{queue.cell[2]}{state=done}
+\recolor{G.edge[(D,E)]}{state=good}
+\recolor{G.node[D]}{state=good}
+\recolor{G.node[E]}{state=good}
+\apply{picked.cell[2]}{value="DE"}
+\recolor{picked.cell[2]}{state=good}
+\narrate{Edge $3$: $D\!-\!E$ weight $2$. $find(D) = D$ vs $find(E) = E$ -- different. Accept. Union $\to \{D, E\}$. MST weight $= 5$. Components: $\{A,B,C\}, \{D,E\}, \{F\}$.}
+
+\step
+\recolor{queue.cell[3]}{state=done}
+\recolor{G.edge[(E,F)]}{state=good}
+\recolor{G.node[F]}{state=good}
+\apply{picked.cell[3]}{value="EF"}
+\recolor{picked.cell[3]}{state=good}
+\narrate{Edge $4$: $E\!-\!F$ weight $3$. $find(E) = \{D,E\}$ vs $find(F) = F$ -- different. Accept. Union $\to \{D, E, F\}$. MST weight $= 8$. Four edges picked; one more needed to merge $\{A,B,C\}$ with $\{D,E,F\}$.}
+
+\step
+\recolor{queue.cell[4]}{state=dim}
+\recolor{G.edge[(A,B)]}{state=current}
+\narrate{Edge $5$: $A\!-\!B$ weight $4$. $find(A) = find(B) = \{A,B,C\}$ -- same component. Reject -- adding $A\!-\!B$ would close the cycle $A\!-\!C\!-\!B\!-\!A$. MST unchanged.}
+
+\step
+\recolor{queue.cell[5]}{state=done}
+\recolor{G.edge[(A,B)]}{state=dim}
+\recolor{G.edge[(B,D)]}{state=good}
+\apply{picked.cell[4]}{value="BD"}
+\recolor{picked.cell[4]}{state=good}
+\narrate{Edge $6$: $B\!-\!D$ weight $5$. $find(B) = \{A,B,C\}$ vs $find(D) = \{D,E,F\}$ -- different. Accept. Union $\to \{A,B,C,D,E,F\}$. MST weight $= 13$. Five edges on six nodes -- the spanning tree is complete. The remaining edges will all form cycles, but we finish the scan for completeness.}
+
+\step
+\recolor{queue.cell[6]}{state=dim}
+\recolor{G.edge[(D,F)]}{state=current}
+\narrate{Edge $7$: $D\!-\!F$ weight $6$. Both endpoints already in the single component. Reject -- would close the cycle $D\!-\!E\!-\!F\!-\!D$.}
+
+\step
+\recolor{queue.cell[7]}{state=dim}
+\recolor{G.edge[(D,F)]}{state=dim}
+\recolor{G.edge[(C,D)]}{state=current}
+\narrate{Edge $8$: $C\!-\!D$ weight $8$. Same component. Reject -- would close the cycle $C\!-\!B\!-\!D\!-\!C$ inside the MST.}
+
+\step
+\recolor{queue.cell[8]}{state=dim}
+\recolor{G.edge[(C,D)]}{state=dim}
+\recolor{G.edge[(C,E)]}{state=current}
+\narrate{Edge $9$: $C\!-\!E$ weight $10$. Same component. Reject -- the cycle $C\!-\!B\!-\!D\!-\!E\!-\!C$ would form.}
+
+\step
+\recolor{G.edge[(C,E)]}{state=dim}
+\recolor{G.node[A]}{state=done}
+\recolor{G.node[B]}{state=done}
+\recolor{G.node[C]}{state=done}
+\recolor{G.node[D]}{state=done}
+\recolor{G.node[E]}{state=done}
+\recolor{G.node[F]}{state=done}
+\narrate{Kruskal terminates. MST $= \{BC, AC, DE, EF, BD\}$ with total weight $1 + 2 + 2 + 3 + 5 = 13$. Four edges were rejected because they would close a cycle inside an already-connected component. Compare to Dijkstra in $h11$: that example builds a shortest-path tree rooted at $A$ (sum of $dist$ values = $36$), whereas Kruskal builds a minimum-weight spanning tree ($13$) -- same nodes and weights, different optimisation objective.}
+\end{animation}
