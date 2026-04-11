@@ -314,22 +314,41 @@ class PersistentSubprocessWorker:
         self.close()
 
 
-# Backward-compatible alias (deprecated; remove in the next major).
+# Backward-compatible alias for ``PersistentSubprocessWorker``. Access via
+# ``from scriba.core.workers import SubprocessWorker`` emits a
+# :class:`DeprecationWarning` when invoked from outside scriba's own
+# package — scriba-internal imports are silenced so first-party code does
+# not spam end users. See ``STABILITY.md`` §Deprecation policy.
 #
-# ``SubprocessWorker`` is a direct alias of
-# :class:`PersistentSubprocessWorker` — preserving ``SubprocessWorker is
-# PersistentSubprocessWorker`` identity and ``isinstance`` compatibility
-# — and a :class:`DeprecationWarning` is emitted once at module import
-# time to signal the pending removal. See audit finding 14-H2.
-SubprocessWorker = PersistentSubprocessWorker
+# Wave 1 Cluster 3 introduced a module-import-time warning; Wave 3 Cluster 9
+# replaced it with this PEP 562 lazy hook so plain ``import scriba`` stays
+# silent. See audit finding 14-H2 and Cluster 3 handoff note.
+def __getattr__(name: str):  # PEP 562 module-level attribute access hook
+    if name == "SubprocessWorker":
+        import sys
+        import warnings
 
-warnings.warn(
-    "scriba.core.workers.SubprocessWorker is a deprecated alias of "
-    "PersistentSubprocessWorker and will be removed in a future "
-    "release. Import PersistentSubprocessWorker directly.",
-    DeprecationWarning,
-    stacklevel=2,
-)
+        caller_module = ""
+        try:
+            caller_module = sys._getframe(1).f_globals.get("__name__", "")
+        except ValueError:  # pragma: no cover - defensive
+            caller_module = ""
+
+        is_internal = caller_module == "scriba" or caller_module.startswith(
+            "scriba."
+        )
+        if not is_internal:
+            warnings.warn(
+                "SubprocessWorker is a deprecated alias for "
+                "PersistentSubprocessWorker and will be removed in 0.2.0. "
+                "Import PersistentSubprocessWorker instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return PersistentSubprocessWorker
+    raise AttributeError(
+        f"module {__name__!r} has no attribute {name!r}"
+    )
 
 
 class OneShotSubprocessWorker:
