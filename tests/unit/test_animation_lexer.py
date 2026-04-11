@@ -200,14 +200,22 @@ class TestBraceExtraction:
 
 
 class TestLexerErrors:
-    def test_unknown_backslash_emits_char(self, lexer: Lexer) -> None:
-        """Unknown backslash sequences produce CHAR tokens (not errors).
+    def test_unknown_backslash_emits_unknown_command(self, lexer: Lexer) -> None:
+        """Unknown backslash commands produce UNKNOWN_COMMAND tokens.
 
-        Validation of unknown commands happens at the grammar level,
-        not during lexing, because brace content may contain arbitrary
-        LaTeX (e.g. ``\\narrate{...}``).
+        The lexer classifies ``\\foo`` as ``UNKNOWN_COMMAND`` when ``foo``
+        is not in the whitelist so the grammar can raise ``E1006`` with
+        the source location.  Inside brace arguments the
+        ``_read_brace_arg`` path reconstructs the command verbatim, so
+        LaTeX inside ``\\narrate{\\emph{x}}`` still round-trips cleanly.
         """
         tokens = lexer.tokenize(r"\unknown")
+        assert tokens[0].kind == TokenKind.UNKNOWN_COMMAND
+        assert tokens[0].value == "unknown"
+
+    def test_bare_backslash_still_emits_char(self, lexer: Lexer) -> None:
+        """A bare backslash with no following identifier is still CHAR."""
+        tokens = lexer.tokenize("\\{")
         assert tokens[0].kind == TokenKind.CHAR
         assert tokens[0].value == "\\"
 

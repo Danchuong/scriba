@@ -4,7 +4,7 @@
 > truth for the 6 built-in primitive types usable via `\shape{name}{Type}{params}` in
 > `\begin{animation}` and `\begin{diagram}` environments.
 >
-> Cross-references: [`04-environments-spec.md`](environments.md) §3.1 for the
+> Cross-references: [`environments.md`](environments.md) §3.1 for the
 > `\shape` command grammar, §4 for target selector syntax, §3.5–3.8 for `\apply` /
 > `\highlight` / `\recolor` / `\annotate` commands.
 >
@@ -43,7 +43,7 @@ These parameters are accepted by **all** primitives unless explicitly noted othe
 
 Every addressable sub-part of a primitive is an SVG `<g>` element with a
 `data-target` attribute matching the selector grammar from
-[`04-environments-spec.md`](environments.md) §4.
+[`environments.md`](environments.md) §4.
 
 ### 2.3 State classes
 
@@ -557,7 +557,7 @@ Layout: horizontal axis with uniform tick spacing.
 
 ## 9. Error codes (primitive-specific)
 
-All error codes from [`04-environments-spec.md`](environments.md) §11 that
+All error codes from [`environments.md`](environments.md) §11 that
 pertain to primitive declaration and usage:
 
 | Code   | Condition                                    | Resolution                            |

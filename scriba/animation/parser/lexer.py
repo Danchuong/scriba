@@ -44,6 +44,10 @@ class TokenKind(Enum):
     RAW_BRACE_CONTENT = auto()
     # Single character not matched by any other rule
     CHAR = auto()
+    # Unknown backslash command — ``\foo`` where ``foo`` is not in the
+    # command whitelist.  Emitted instead of CHAR so the grammar can
+    # diagnose typos with a proper error code (E1006).
+    UNKNOWN_COMMAND = auto()
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,9 +145,23 @@ class Lexer:
                     pos += advance
                     col += advance
                     continue
-                # Not a known command — emit as CHAR so brace content
-                # can be reconstructed. Validation of unknown commands
-                # happens at the grammar level.
+                if m:
+                    # Backslash followed by an identifier that is not a
+                    # known command — emit UNKNOWN_COMMAND so the grammar
+                    # can diagnose the typo with E1006 instead of silently
+                    # treating it as a CHAR.  Inside brace arguments the
+                    # brace reconstruction path handles UNKNOWN_COMMAND as
+                    # ``\<name>`` verbatim (see ``_read_brace_arg``).
+                    cmd = m.group()
+                    tokens.append(
+                        Token(TokenKind.UNKNOWN_COMMAND, cmd, line, col),
+                    )
+                    advance = 1 + len(cmd)
+                    pos += advance
+                    col += advance
+                    continue
+                # Bare backslash with no identifier (e.g. ``\\`` or
+                # ``\{``).  Emit as CHAR so brace reconstruction works.
                 tokens.append(Token(TokenKind.CHAR, ch, line, col))
                 pos += 1
                 col += 1

@@ -125,7 +125,18 @@ Unknown keys are `E1004` (error, not warning — keep options forward-compatible
 
 ## 3. Inner commands
 
-There are 14 inner commands (8 base commands from v0.3 plus 6 added in v0.5: `\reannotate`, `\cursor`, `\foreach`, `\endforeach`, `\substory`, `\endsubstory`). Each command is listed with its full signature, allowed context, parameter grammar, error codes, and a one-line example. Parameter lists use `key=value` pairs inside the final brace group. Parameter values may be bare idents, numbers, double-quoted strings, Starlark-computed values via `${name}` / `${name[i]}` interpolation, or bracketed lists `[a,b,c]`.
+There are **12 inner command entries** in this section (including paired
+block constructs `\foreach`/`\endforeach` and `\substory`/`\endsubstory`,
+which are counted as one each since they form a single block in the AST).
+The base 8 commands from v0.3 (`\shape`, `\compute`, `\step`, `\narrate`,
+`\apply`, `\highlight`, `\recolor`, `\annotate`) are supplemented by 4
+new commands in v0.5: `\reannotate`, `\cursor`, `\foreach` (+ `\endforeach`),
+and `\substory` (+ `\endsubstory`). Each entry is listed with its full
+signature, allowed context, parameter grammar, error codes, and a one-line
+example. Parameter lists use `key=value` pairs inside the final brace
+group. Parameter values may be bare idents, numbers, double-quoted
+strings, Starlark-computed values via `${name}` / `${name[i]}`
+interpolation, or bracketed lists `[a,b,c]`.
 
 ### 3.1 `\shape{name}{Type}{params...}`
 

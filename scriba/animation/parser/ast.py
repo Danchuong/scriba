@@ -145,10 +145,17 @@ class ComputeCommand:
 
 @dataclass(frozen=True, slots=True)
 class StepCommand:
-    """``\\step`` — frame boundary delimiter."""
+    """``\\step`` — frame boundary delimiter.
+
+    The optional ``label`` attribute holds a user-supplied frame identifier
+    parsed from ``\\step[label=...]``.  See ``ruleset.md`` §7.1 (``\\hl``
+    extension) for the use case: external references can point at an
+    explicitly-named step instead of the implicit ``step{N}`` index.
+    """
 
     line: int
     col: int
+    label: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -311,13 +318,21 @@ class SubstoryBlock:
 
 @dataclass(frozen=True, slots=True)
 class FrameIR:
-    """One ``\\step`` block inside an animation."""
+    """One ``\\step`` block inside an animation.
+
+    ``label`` is the optional user-supplied identifier parsed from
+    ``\\step[label=...]``.  When present, downstream renderers should use
+    it as the frame ``id`` (e.g. ``<li id="{scene}-frame-{label}">``) so
+    that ``\\hl{label}{...}`` references resolve stably.  When absent,
+    the implicit ``step{N}`` (1-based frame index) is used.
+    """
 
     line: int
     commands: tuple[MutationCommand, ...]
     compute: tuple[ComputeCommand, ...] = ()
     narrate_body: str | None = None
     substories: tuple[SubstoryBlock, ...] = ()
+    label: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
