@@ -5,6 +5,93 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.2] - 2026-04-11 (Completeness audit — Phase 1 quick wins)
+
+Patch release landing **Wave 5** — the Phase 1 quick wins from the 14-agent
+completeness audit recorded in `docs/archive/completeness-audit-2026-04-11/`.
+Three parallel worktree agents (W5.1 Parser, W5.2 Emitter+Primitives, W5.3
+Error hints) shipped ~160 LoC of concrete, audit-backed fixes with
+`file_path:line_number` precision. `SCRIBA_VERSION` unchanged (= 2); fully
+backward compatible with 0.5.1 consumers.
+
+**Total shipped**: 3 clusters, 1747 tests passing (+50 from 0.5.1), 0
+regressions, 0 strict xfails. Convex hull (`h06_li_chao.tex`) and dijkstra
+(`demo10.tex`) cookbook examples now compile with zero `UserWarning` stderr.
+
+### Parser (Wave 5.1)
+
+- **Bare-token fallthrough in `_read_param_brace`.** `\apply{stk}{pop}` now
+  parses natively as `{"pop": True}` instead of raising E1005. Zero-churn for
+  primitives — `Stack.apply_command` already reads `pop_val` as truthy-then-int,
+  so `\apply{stk}{pop}` means "pop one" with no downstream changes. `{k=v}`
+  form still works identically. (grammar.py:~1422-1482)
+- **LBRACE branch in `_parse_param_value`.** Nested dict values like
+  `\apply{ll}{insert={index=0, value=42}}` now parse. The recursive call to
+  `_read_param_brace` makes LinkedList's `insert={dict}` reachable for the
+  first time. (grammar.py:~1527-1540)
+- **NFC normalization on identifiers.** Source is NFC-normalized at lex time
+  (grammar.py:~105-113) and `SelectorParser.__init__` defends the direct-call
+  path (selectors.py:~56). NFD-encoded shape names and selectors collapse to
+  a single NFC identifier — homograph Cyrillic/Latin detection still works.
+
+### Emitter + Primitives (Wave 5.2)
+
+- **Skip guard for bare-shape selectors.** `_validate_expanded_selectors`
+  (emitter.py:324-332) and `_emit_frame_svg`'s per-target loop
+  (emitter.py:442-456) both early-out when the target key is the shape name
+  itself. Kills the `Plane2D 'p': invalid selector 'p', ignoring set_state()`
+  warning class that polluted `h06_li_chao.tex`'s render log. Invalid
+  dot-path selectors like `arr.cell[99]` still warn — the guard only masks
+  whole-shape targets.
+- **Truthiness check for `dequeue=false`.** `Queue.apply_command` previously
+  treated `dequeue=false` as truthy and silently popped. New
+  `_is_truthy_flag` helper (queue.py:50-65) accepts only Python `True` or
+  case-insensitive `"true"`. `False`, `"false"`, `0`, `None`, `""` all
+  correctly NO-OP now. (queue.py:~162)
+- **`PrimitiveBase.set_label` wired into the emitter.** `ShapeTargetState.label`
+  was being populated by the parser but the emitter never consumed it, so
+  `\relabel`-style label mutations were dead code. `_emit_frame_svg` now
+  calls `prim.set_label(suffix, str(label_val))` when `label` is set.
+  (emitter.py:466-473)
+
+### Error UX (Wave 5.3)
+
+- **`suggest_closest` hoisted to `errors.py`.** Old private `_fuzzy_suggest`
+  in grammar.py was moved to a public `suggest_closest(needle, candidates,
+  *, cutoff=0.6)` helper in `scriba.animation.errors`. Enables cross-module
+  reuse without circular imports. The E1102 primitive-type validator was
+  updated to use it directly.
+- **`_raise_unknown_enum` helper collapses 6 enum raise sites.** A new
+  `SceneParser._raise_unknown_enum` (grammar.py:377-406) builds uniform
+  `"unknown &lt;field&gt; &lt;val&gt;; valid: a,b,c (did you mean \`X\`?)"`
+  messages. Six enum raise sites collapsed to 1-line calls — error codes
+  unchanged (E1004×3, E1109, E1112, E1113×2). Typing `\recolor{arr}{currnet}`
+  now hints "did you mean `current`?" via difflib.
+- **New `E1114` for unknown shape kwargs.** `PrimitiveBase.ACCEPTED_PARAMS:
+  ClassVar[frozenset[str]] = frozenset()` added at base.py:187-213. When
+  non-empty, unknown kwargs raise E1114 with a `suggest_closest` hint.
+  `Plane2D` populated with 12 concrete kwargs (`xrange, yrange, grid, axes,
+  aspect, width, height, points, lines, segments, polygons, regions`);
+  typing `Plane2D(xranges=...)` now raises E1114 hinting "did you mean
+  `xrange`?". Empty frozenset is the opt-out — legacy primitives are
+  unaffected. (base.py, plane2d.py:86-103)
+
+### Tests
+
+- +50 new tests across 9 new test files:
+  - `tests/unit/test_parser_bare_token_apply.py` (8)
+  - `tests/unit/test_parser_nested_dict_value.py` (5)
+  - `tests/unit/test_parser_nfc_identifier.py` (5)
+  - `tests/unit/test_queue_dequeue_false.py` (15)
+  - `tests/unit/test_emitter_bare_shape_selector.py` (5)
+  - `tests/unit/test_emitter_set_label_wired.py` (4)
+  - `tests/unit/test_suggest_closest.py` (8)
+  - `tests/unit/test_error_hints_enum.py` (5)
+  - `tests/unit/test_error_hints_kwarg.py` (4)
+- `tests/unit/test_unicode_homograph.py::test_nfc_and_nfd_shape_names_are_distinct`
+  flipped to `_collapse_to_single_nfc_identifier` per the file's own
+  pre-planned docstring directive.
+
 ## [0.5.1] - 2026-04-11 (Production audit fixes)
 
 Patch release landing **Wave 1**, **Wave 2**, **Wave 3**, **Wave 4A**,
