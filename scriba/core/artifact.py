@@ -44,17 +44,25 @@ class RenderArtifact:
     """The return value of Renderer.render_block().
 
     Carries an HTML fragment plus the CSS/JS asset filenames it requires.
-    Asset filenames are basenames only.
+    At the artifact level each asset is declared as a plain basename; the
+    Pipeline is responsible for namespacing the name as
+    ``"<renderer>/<basename>"`` before merging it into
+    :attr:`Document.required_css` / :attr:`Document.required_js`. See
+    ``STABILITY.md`` §Asset namespace format for the stable contract.
     """
 
     html: str
     """Rendered HTML fragment. Not sanitized."""
 
     css_assets: frozenset[str]
-    """Filenames (basenames) of CSS files this fragment depends on."""
+    """Filenames (basenames) of CSS files this fragment depends on. The
+    Pipeline namespaces these as ``"<renderer>/<basename>"`` on the final
+    :class:`Document`."""
 
     js_assets: frozenset[str]
-    """Filenames (basenames) of JS files this fragment depends on."""
+    """Filenames (basenames) of JS files this fragment depends on. The
+    Pipeline namespaces these as ``"<renderer>/<basename>"`` on the final
+    :class:`Document`."""
 
     inline_data: Mapping[str, Any] | None = None
     """Optional plugin-private data returned to the Pipeline but not
@@ -80,12 +88,18 @@ class Document:
     """Complete HTML fragment. Not sanitized."""
 
     required_css: frozenset[str]
-    """Union of all css_assets across all RenderArtifacts produced during
-    this render, plus each plugin's always-on CSS."""
+    """Namespaced CSS asset keys of the form ``"<renderer>/<basename>"``
+    (e.g. ``"tex/scriba-tex-content.css"``). Union of all css_assets
+    across every RenderArtifact produced during this render, plus each
+    plugin's always-on CSS. The namespace format is part of the stability
+    contract — see ``STABILITY.md``."""
 
     required_js: frozenset[str]
-    """Union of all js_assets across all RenderArtifacts produced during
-    this render, plus each plugin's always-on JS."""
+    """Namespaced JS asset keys of the form ``"<renderer>/<basename>"``
+    (e.g. ``"tex/scriba-tex-content.js"``). Union of all js_assets across
+    every RenderArtifact produced during this render, plus each plugin's
+    always-on JS. The namespace format is part of the stability contract
+    — see ``STABILITY.md``."""
 
     versions: Mapping[str, int]
     """Mapping of plugin-name -> integer version. Always contains "core"

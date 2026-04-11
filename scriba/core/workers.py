@@ -308,8 +308,37 @@ class PersistentSubprocessWorker:
         self.close()
 
 
-# Backward-compatible alias (deprecated; remove in 0.2.0).
-SubprocessWorker = PersistentSubprocessWorker
+# Backward-compatible alias for ``PersistentSubprocessWorker``. Access via
+# ``from scriba.core.workers import SubprocessWorker`` emits a
+# :class:`DeprecationWarning` when invoked from outside scriba's own
+# package — scriba-internal imports are silenced so first-party code does
+# not spam end users. See ``STABILITY.md`` §Deprecation policy.
+def __getattr__(name: str):  # PEP 562 module-level attribute access hook
+    if name == "SubprocessWorker":
+        import sys
+        import warnings
+
+        caller_module = ""
+        try:
+            caller_module = sys._getframe(1).f_globals.get("__name__", "")
+        except ValueError:  # pragma: no cover - defensive
+            caller_module = ""
+
+        is_internal = caller_module == "scriba" or caller_module.startswith(
+            "scriba."
+        )
+        if not is_internal:
+            warnings.warn(
+                "SubprocessWorker is a deprecated alias for "
+                "PersistentSubprocessWorker and will be removed in 0.2.0. "
+                "Import PersistentSubprocessWorker instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        return PersistentSubprocessWorker
+    raise AttributeError(
+        f"module {__name__!r} has no attribute {name!r}"
+    )
 
 
 class OneShotSubprocessWorker:

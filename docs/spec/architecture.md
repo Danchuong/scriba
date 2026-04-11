@@ -140,6 +140,8 @@ class RenderArtifact:
 ### `Document`
 
 ```python
+from pathlib import Path
+
 @dataclass(frozen=True)
 class Document:
     """The aggregated result of Pipeline.render().
@@ -152,21 +154,73 @@ class Document:
     """Complete HTML fragment. Not sanitized."""
 
     required_css: frozenset[str]
-    """Union of all css_assets across all RenderArtifacts produced during
-    this render, plus each plugin's always-on CSS declared via
-    Renderer.assets()."""
+    """Namespaced CSS asset keys of the form ``"<renderer>/<basename>"``
+    (e.g. ``"tex/scriba-tex-content.css"``). Union of all css_assets
+    produced by every RenderArtifact during this render, plus each
+    plugin's always-on CSS declared via Renderer.assets(). Keys are the
+    stable contract — see the §Asset namespace format section below."""
 
     required_js: frozenset[str]
-    """Union of all js_assets across all RenderArtifacts produced during
-    this render, plus each plugin's always-on JS declared via
-    Renderer.assets()."""
+    """Namespaced JS asset keys of the form ``"<renderer>/<basename>"``
+    (e.g. ``"tex/scriba-tex-content.js"``). Union of all js_assets
+    produced by every RenderArtifact during this render, plus each
+    plugin's always-on JS declared via Renderer.assets()."""
 
     versions: Mapping[str, int]
     """Mapping of plugin-name -> integer version. Always contains the key
     "core" (value == SCRIBA_VERSION) and one key per Renderer in the
     Pipeline (keyed on Renderer.name). Consumers cache keyed on this
     mapping plus a hash of the source."""
+
+    block_data: Mapping[str, Any] = field(default_factory=dict)
+    """Public per-block data payloads, keyed by ``RenderArtifact.block_id``.
+    Populated from every RenderArtifact that carries both a ``block_id``
+    and a non-None ``data`` mapping. Added in **v0.1.1**. Empty mapping
+    when no artifact exposes block-level data."""
+
+    required_assets: Mapping[str, Path] = field(default_factory=dict)
+    """Resolved filesystem paths for every namespaced asset key that
+    appears in :attr:`required_css` or :attr:`required_js`. Keys match
+    those sets exactly (i.e. ``"<renderer>/<basename>"``). Values are
+    absolute :class:`pathlib.Path` instances produced via
+    :mod:`importlib.resources`. Added in **v0.1.1**. Consumers use this
+    map when they want a direct disk path rather than resolving the
+    basename themselves."""
 ```
+
+#### Asset namespace format
+
+`Document.required_css`, `Document.required_js`, and the keys of
+`Document.required_assets` all use the form:
+
+```text
+"<renderer>/<basename>"
+```
+
+Where:
+
+* `<renderer>` is the owning plugin's stable `Renderer.name` attribute
+  (for example `tex`, `diagram`, `animation`). This is the same string
+  used as the key in `Document.versions`.
+* `<basename>` is a plain filename with no directory components
+  (e.g. `scriba-tex-content.css`, `katex.min.js`).
+* The separator is a literal forward slash (`/`) and never changes.
+
+This format lets two renderers ship assets with colliding basenames
+without clobbering one another, and it gives consumers a way to map any
+key in `required_css` / `required_js` back to the renderer that produced
+it. The namespace was introduced in **v0.1.1** as a BREAKING change and
+is a **locked contract** from that release onward — renaming a renderer
+or changing the separator is a MAJOR bump.
+
+Consumer rules:
+
+1. Do not pattern-match on the basename portion in isolation; use the
+   whole namespaced key as the cache key.
+2. The prefix plus separator plus basename is stable: consumers may
+   split on the first `/` to recover either half.
+3. A renderer whose `name` changes between releases is a BREAKING
+   change, per the stability policy in `STABILITY.md`.
 
 ### `RenderContext`
 
@@ -230,13 +284,22 @@ class Renderer(Protocol):
     """
 
     name: str
-    """Stable plugin identifier used as the key in Document.versions.
-    Examples: "tex", "diagram". Lowercase, no spaces, no dots."""
+    """Stable plugin identifier used as the key in Document.versions and
+    as the ``<renderer>`` prefix in namespaced asset keys (see
+    §Asset namespace format). Examples: "tex", "diagram", "animation".
+    Lowercase, no spaces, no dots."""
 
     version: int
     """Integer plugin version. Incremented whenever the HTML shape
     produced by this renderer changes in a way that invalidates consumer
     caches. Starts at 1."""
+
+    priority: int
+    """Integer overlap tie-breaker. When two renderers both detect blocks
+    whose ranges start at the same byte offset, the renderer with the
+    lower ``priority`` wins. The conventional default is **100**; the
+    locked default is enforced by the Pipeline when a renderer exposes
+    no ``priority`` attribute. Added in **v0.1.1**."""
 
     def detect(self, source: str) -> list[Block]:
         """Scan the source and return every Block this renderer claims.
@@ -440,6 +503,22 @@ class WorkerError(ScribaError):
         self.stderr = stderr
 
 
+class ScribaRuntimeError(ScribaError):
+    """Raised when a required external runtime dependency is missing or broken.
+
+    Typical causes: ``node`` not on PATH, or the ``katex`` npm module
+    cannot be resolved by the Node.js runtime that Scriba will spawn.
+    Added in **v0.1.1**. Carries an optional ``component`` attribute
+    naming the failing runtime (e.g. ``"node"``, ``"katex"``).
+    """
+
+    def __init__(
+        self, message: str, *, component: str | None = None
+    ) -> None:
+        super().__init__(message)
+        self.component = component
+
+
 class ValidationError(ScribaError):
     """Raised on structurally invalid input (NUL bytes, unmatched braces)."""
 
@@ -487,11 +566,17 @@ from scriba.core.artifact import Block, RenderArtifact, Document
 from scriba.core.context import RenderContext, ResourceResolver
 from scriba.core.renderer import Renderer, RendererAssets
 from scriba.core.pipeline import Pipeline
-from scriba.core.workers import SubprocessWorker, SubprocessWorkerPool
+from scriba.core.workers import (
+    OneShotSubprocessWorker,
+    PersistentSubprocessWorker,
+    SubprocessWorkerPool,
+    Worker,
+)
 from scriba.core.errors import (
     ScribaError,
     RendererError,
     WorkerError,
+    ScribaRuntimeError,
     ValidationError,
 )
 from scriba.sanitize.whitelist import ALLOWED_TAGS, ALLOWED_ATTRS
@@ -507,11 +592,15 @@ __all__ = [
     "Renderer",
     "RendererAssets",
     "Pipeline",
+    "Worker",
     "SubprocessWorker",
+    "PersistentSubprocessWorker",
+    "OneShotSubprocessWorker",
     "SubprocessWorkerPool",
     "ScribaError",
     "RendererError",
     "WorkerError",
+    "ScribaRuntimeError",
     "ValidationError",
     "ALLOWED_TAGS",
     "ALLOWED_ATTRS",
@@ -519,6 +608,30 @@ __all__ = [
 ```
 
 Plugins (`TexRenderer`, `DiagramRenderer`, `D2Engine`) are NOT re-exported from the top level. Consumers import them explicitly from `scriba.tex` / `scriba.diagram`. This keeps the top-level namespace stable and lets plugins add private symbols without polluting `scriba.*`.
+
+**Worker naming.** `Worker` is the runtime-checkable protocol every worker
+implementation satisfies. `PersistentSubprocessWorker` (long-lived
+subprocess) and `OneShotSubprocessWorker` (fresh process per request) are
+the two concrete implementations. `SubprocessWorker` remains as a
+deprecated alias for `PersistentSubprocessWorker` and is lazy-loaded via
+PEP 562 ``__getattr__`` so that ``import scriba`` never emits a
+``DeprecationWarning`` for consumers who never touch the legacy name.
+Accessing ``scriba.SubprocessWorker`` or
+``from scriba.core.workers import SubprocessWorker`` from outside the
+``scriba`` package emits a ``DeprecationWarning``. The alias is scheduled
+for removal in 0.2.0. Added in **v0.1.1**.
+
+**`ScribaRuntimeError`** joins the error hierarchy in **v0.1.1** and is
+exported alongside the other error classes. It signals a missing or
+broken external runtime dependency (for example `node` not on PATH, or
+an unresolvable `katex` npm package). See §Exception hierarchy.
+
+**Symmetric `__all__`.** Both `scriba/__init__.py.__all__` and
+`scriba/core/__init__.py.__all__` export the same core symbols. The only
+exceptions are the top-level-only `ALLOWED_TAGS` / `ALLOWED_ATTRS` and
+`__version__` / `SCRIBA_VERSION` constants, which live in
+`scriba.sanitize` and `scriba._version` respectively and are re-exported
+only from `scriba/__init__.py`.
 
 ## Sanitization policy
 
