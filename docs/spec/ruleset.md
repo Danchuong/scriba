@@ -9,6 +9,29 @@
 
 ## 1. Environment Grammar
 
+### 1.0 Normative Language
+
+The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**,
+**SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in this
+document are to be interpreted as described in [RFC 2119] when, and only when,
+they appear in all capitals.
+
+- **MUST** / **MUST NOT** / **SHALL** / **SHALL NOT** — strict requirement.
+  A violation is a grammar, semantic, or validation error and is surfaced to
+  the author via an `E1xxx` error code. Implementations MUST raise the listed
+  error code rather than silently accepting or silently rejecting the input.
+- **SHOULD** / **SHOULD NOT** / **RECOMMENDED** — recommendation. A conforming
+  implementation MAY deviate when it has a documented reason, but authors
+  SHOULD expect the default behaviour.
+- **MAY** / **OPTIONAL** — pure choice. Either behaviour is conforming.
+
+Plain lower-case uses of "must", "should", "may", etc. elsewhere in this
+document are descriptive prose, not normative requirements. Where a rule
+carries author-visible consequences it is phrased in ALL CAPS and paired with
+the applicable error code.
+
+[RFC 2119]: https://datatracker.ietf.org/doc/html/rfc2119
+
 ### 1.1 Top-Level Environments
 
 | Environment | Status | Purpose | Frames |
@@ -26,9 +49,9 @@
 > the BNF note in §3.1.
 
 **Constraints:**
-- Nesting prohibited → `E1003`
-- Must appear on own line → `E1002`
-- Cannot appear inside `$...$`, `\[...\]`, `\begin{equation}`, `\begin{tabular}`, `\begin{lstlisting}`
+- Environments MUST NOT be nested → `E1003`
+- `\begin{…}` and `\end{…}` MUST appear on their own line → `E1002`
+- An environment MUST NOT appear inside `$…$`, `\[…\]`, `\begin{equation}`, `\begin{tabular}`, or `\begin{lstlisting}`
 
 ### 1.2 Environment Options `[key=value,...]`
 
@@ -76,18 +99,18 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | Binding reference | `${name}` | Resolves to a list produced by `\compute` |
 | List literal | `[1,2,3]` | Parsed via Python `literal_eval` |
 
-> **NOTE — `\foreach` cannot emit per-iteration step boundaries.**
-> `\step`, `\shape`, `\substory`, and `\endsubstory` are **not allowed**
+> **NOTE — `\foreach` MUST NOT emit per-iteration step boundaries.**
+> `\step`, `\shape`, `\substory`, and `\endsubstory` MUST NOT appear
 > inside a `\foreach` body (→ `E1172`).  A `\foreach` block expands to a
 > flat sequence of mutation commands **within a single step**, not to
 > one step per iteration.  Algorithms whose frame structure must mirror
 > the loop structure — for example a monotonic-stack visualization that
 > wants one frame per stack operation, or an amortized-analysis walk
-> that advances the cursor once per iteration — must be **manually
+> that advances the cursor once per iteration — MUST be **manually
 > unrolled**: write one `\step` per iteration and optionally reuse
-> `\foreach` inside each `\step` for per-iteration fanout (recoloring
-> multiple cells at once, for example).  A bridge construct that
-> composes `\foreach` with `\step` is tracked for a future release.
+> `\foreach` inside each `\step` for per-iteration fanout (e.g. to
+> recolor multiple cells at once).  A bridge construct that composes
+> `\foreach` with `\step` is tracked for a future release.
 
 ### 2.2 Extension Commands (2)
 
@@ -190,7 +213,9 @@ shape_cmd       ::= "\shape" brace_arg brace_arg param_brace?
                   (* \shape{name}{Type}{params} *)
 ```
 
-`\shape` is only valid in the prelude (before the first `\step`). In diagram mode it may appear anywhere.
+`\shape` is only valid in the prelude (before the first `\step`). In diagram
+mode it MAY appear anywhere. A `\shape` encountered after the first `\step`
+in animation mode raises `E1051`.
 
 #### Step Command
 
@@ -199,11 +224,12 @@ step_cmd        ::= "\step" step_options? NEWLINE
 step_options    ::= "[" "label" "=" (IDENT | STRING) "]"
 ```
 
-`\step` must be on its own line with no trailing content (aside from the
-optional `[label=...]` bracket).  The optional `label` binds an explicit
-frame identifier used by `\hl{step-id}{...}` references (see §7.1); it
-must be a non-empty identifier-shaped string (`[a-zA-Z0-9_.-]+`).
-Unknown option keys raise `E1004`; malformed label values raise `E1005`.
+`\step` MUST appear on its own line with no trailing content other than the
+optional `[label=…]` bracket → `E1052`.  The optional `label` binds an
+explicit frame identifier that MAY be referenced by `\hl{step-id}{…}` (see
+§7.1); the value MUST be a non-empty identifier-shaped string matching
+`[a-zA-Z0-9_.-]+`.  Unknown option keys raise `E1004`; malformed label values
+raise `E1005`.
 
 #### Mutation Commands
 
@@ -251,6 +277,41 @@ color_enum      ::= "info" | "warn" | "good" | "error"
 position_enum   ::= "above" | "below" | "left" | "right" | "inside"
 ```
 
+#### Interpolation and Subscript Semantics
+
+`${name}` is a reference to a binding produced by `\compute` (see §6.5); it
+is resolved at **command-emit time** (i.e. when a frame's commands are
+materialized), not at parse time.  The BNF
+`interp_ref ::= "${" IDENT ("[" subscript "]")* "}"` permits zero or more
+trailing subscripts with the following semantics:
+
+- **Single subscript on a 1D sequence.** `${arr[0]}` where `arr` is a list,
+  tuple, or string resolves to element `0` and is type-preserving (an `int`
+  element stays an `int`; a `str` element stays a `str`).
+- **Nested subscripts.** `${grid[i][j]}` is resolved left-to-right: first
+  `grid[i]`, then `[j]` on the result. The BNF's
+  `("[" subscript "]")*` repetition is explicitly supported — implementations
+  MUST NOT restrict authors to a single bracket pair.
+- **Subscript values.** Each `subscript` is either a `NUMBER` literal or an
+  `IDENT` which MUST name another in-scope binding whose value is an integer.
+- **Out-of-range subscript** (e.g. `${arr[10]}` where `len(arr) == 3`) → raised
+  as `E1156` at frame-materialization time, **not** at parse time. Parse-time
+  accepts any syntactically valid subscript chain regardless of the target
+  length.
+- **Non-integer subscript** (e.g. `${arr[k]}` where `k` resolves to a string)
+  → `E1157`.
+- **Type error — subscriptable check.** `${x[0]}` where `x` resolves to a
+  value that does not support `__getitem__` (e.g. an `int`, `bool`, or `None`)
+  → `E1157`. The same error code covers "not subscriptable" and "non-integer
+  index" because both are type errors at the subscript boundary; the error
+  message distinguishes them.
+- **Unknown binding** (e.g. `${missing}` with no matching `\compute` name) →
+  `E1155`, raised at frame-materialization time.
+
+Interpolation inside a string literal (e.g. `label="prefix ${i}"`) uses the
+same resolution rules; the result is substituted into the surrounding string
+via `str()` on the resolved value.
+
 #### Foreach Block
 
 ```
@@ -266,7 +327,10 @@ foreach_body    ::= (recolor_cmd | reannotate_cmd | apply_cmd
                      | foreach_block)+
 ```
 
-The body must contain at least one command. Nesting `\foreach` inside `\foreach` is permitted. Commands `\step`, `\shape`, `\substory`, and `\endsubstory` are not allowed inside `\foreach`.
+The body MUST contain at least one command (→ `E1171`). Nesting `\foreach`
+inside `\foreach` is permitted up to the foreach nesting depth in §13
+(→ `E1170` on overflow). `\step`, `\shape`, `\substory`, and `\endsubstory`
+MUST NOT appear inside a `\foreach` body (→ `E1172`; see also the note in §2).
 
 #### Cursor Command
 
@@ -336,7 +400,11 @@ substory_step   ::= step_cmd (compute_cmd | narrate_cmd | apply_cmd
                      | substory_block)*
 ```
 
-Both `\substory` and `\endsubstory` must be on their own line. Maximum nesting depth is 3. Substory mutations are ephemeral (parent state is saved and restored).
+Both `\substory` and `\endsubstory` MUST appear on their own line
+(→ `E1368`). Maximum nesting depth is 3 (→ `E1360`). Substory mutations are
+ephemeral — the parent frame's state is saved before the substory opens and
+restored after `\endsubstory` closes, so nothing inside a substory leaks
+into the enclosing frame.
 
 #### Brace Argument (Balanced Text)
 
@@ -347,6 +415,39 @@ balanced_text   ::= (CHAR | brace_arg | "\\" IDENT | interp_ref)*
 
 Brace arguments support arbitrary nesting of `{...}` pairs. The parser tracks brace depth and collects all content until the matching closing brace.
 
+### 3.2 Command Evaluation Order
+
+Within a single `\step` block, commands execute in strict **source order**
+— the order in which tokens appear in the `.tex` input. There is no
+user-facing priority or reordering step. Implementations MUST preserve
+source order.
+
+Within one command's evaluation the sub-phases are fixed:
+
+1. **Compute resolution.** Any `\compute` block that textually precedes the
+   command in the same step contributes its bindings to the frame-local
+   scope. Frame-local bindings shadow globals (see §6.5).
+2. **`\apply` mutations.** `\apply{target}{params}` takes effect **after**
+   preceding `\compute` bindings are visible but **before** subsequent
+   `\recolor` / `\annotate` / `\cursor` commands on the same target see the
+   mutated state. A `\recolor` earlier in source order than an `\apply`
+   therefore operates on the *pre-apply* state.
+3. **Interpolation substitution.** `${name}` references in command arguments
+   are substituted at **command-emit time**, i.e. when the command is about
+   to be materialized into the frame's IR. Substitution reads from
+   `frame_local ∪ global` with frame-local taking precedence.
+4. **State emission.** Highlight / recolor / annotate / cursor produce IR
+   entries using the post-apply, post-interpolation values.
+
+`\foreach` expands its body into the surrounding sequence **in place**,
+with each iteration evaluated in source order before the next iteration
+begins. A `\foreach` expansion produces a flat sequence of commands that
+occupy a contiguous span in the enclosing step; the span is semantically
+indistinguishable from writing those commands out by hand.
+
+Across step boundaries, see §8 Frame Lifecycle for persistence rules and
+the snapshot timing definition.
+
 ---
 
 ## 4. Recolor States (Locked Set)
@@ -356,10 +457,20 @@ Brace arguments support arbitrary nesting of `{...}` pairs. The parser tracks br
 | `idle` | neutral gray | `#f6f8fa` |
 | `current` | blue | `#0072B2` |
 | `done` | green | `#009E73` |
-| `dim` | 50% opacity | — |
+| `dim` | theme-foreground at low alpha | fill `color-mix(in oklch, var(--scriba-fg) 10%, transparent)`; stroke `color-mix(in oklch, var(--scriba-fg) 20%, transparent)` |
 | `error` | vermillion | `#D55E00` |
 | `good` | sky blue | `#56B4E9` |
 | `path` | blue | `#dbeafe` (stroke `#2563eb`) |
+
+> **Note on `dim`.** `dim` is **not** "50% opacity of the idle color" —
+> it is a theme-aware alpha-mix against the current foreground token
+> (`--scriba-fg`). The concrete CSS is defined in
+> `scriba/animation/static/scriba-scene-primitives.css`
+> (`--scriba-state-dim-fill`, `--scriba-state-dim-stroke`,
+> `--scriba-state-dim-text`) and is re-bound under `[data-theme="dark"]`.
+> See `docs/spec/animation-css.md` for the full token table. Authors
+> targeting exact pixel values SHOULD use computed style inspection in
+> the browser rather than hard-coding a hex value.
 
 > **Note:** `highlight` is not a valid `\recolor` state. It is ephemeral and applied only
 > via the `\highlight` command. The CSS class `.scriba-state-highlight` exists (see §10.1)
@@ -571,10 +682,24 @@ chr, ord, pow
 
 ### 6.5 Scope Rules
 
-- Top-level assignments → global (persist across frames)
-- Inside `\step` → frame-local (dropped at next `\step`)
-- Frame scope shadows global scope
-- `${name}` interpolation resolves against `global ∪ frame_local`
+- Top-level assignments → **global** (persist across frames for the
+  lifetime of the animation).
+- Assignments inside a `\compute` block that lives inside a `\step` →
+  **frame-local** (dropped at the next `\step` boundary — see §8.2).
+- Frame-local scope shadows global scope for `${name}` resolution.
+- `${name}` interpolation resolves against `frame_local ∪ global`
+  (frame-local first). Unknown name → `E1155`.
+
+### 6.6 Runtime Error Context
+
+Runtime errors raised from `\compute` blocks (`E1151` Starlark runtime error,
+`E1154` forbidden feature) report the **user source line and column** at
+which the offending Starlark expression appeared. Python internal frames
+from the host runner are filtered out of the traceback — see
+`scriba/animation/errors.py::format_compute_traceback` for the concrete
+filtering rules. Authors debugging a `\compute` block SHOULD expect
+traceback output that references their `.tex` source line, not Scriba's
+internal `starlark_worker.py` path.
 
 ---
 
@@ -582,9 +707,10 @@ chr, ord, pow
 
 ### 7.1 `\hl{step-id}{tex}` (E2)
 
-- Inside `\narrate{...}` only → `E1320`
-- Zero JS: uses CSS `:target` selector
-- Step ID must match `\step[label=...]` or implicit `step{N}` → `E1321`
+- `\hl` MUST appear inside `\narrate{…}` only → `E1320`.
+- Zero JS: the selector uses the CSS `:target` pseudo-class.
+- The step ID MUST match a `\step[label=…]` value or the implicit
+  `step{N}` form → `E1321` on mismatch.
 
 ### 7.2 `\substory` / `\endsubstory` (E4)
 
@@ -608,26 +734,162 @@ SVG/PNG pass-through with DOMPurify sanitization. Requires `alt`, `caption`, `cr
 
 ## 8. Frame Lifecycle (Animation)
 
-Each frame inherits full state from previous frame, then:
+A **frame** is the rendered output of one `\step` block. Frame N is computed
+by starting from frame N−1's persistent state, running frame N's commands in
+source order (§3.2), and taking a snapshot at the end.
 
-1. Clear highlights (ephemeral)
-2. Drop annotations with `ephemeral=true`
-3. Apply frame's commands in source order
-4. Clear `apply_params` after snapshot (ephemeral per-frame)
-5. Restore frame-local compute bindings
+### 8.1 Snapshot Timing
 
-### Frame Count Limits
+A **snapshot** is the full serializable state of all declared shapes, their
+current annotations, any persistent `\apply` mutations, and the rendered
+narration HTML, captured at the **end of a `\step` block, immediately before
+ephemeral entries are cleared**. Snapshots are produced exactly one per
+`\step` and become the frames consumed by the HTML emitter. There is no
+runtime re-evaluation: the interactive widget replays pre-computed
+snapshots, it does not re-run commands on navigation.
+
+Concretely, the lifecycle of a single `\step` is:
+
+1. **Inherit** — start from the persistent snapshot of the previous frame
+   (an empty canvas for frame 1).
+2. **Clear ephemerals carried from previous frame** — `\highlight` marks
+   from frame N−1 are dropped; annotations tagged `ephemeral=true` in frame
+   N−1 are dropped.
+3. **Execute commands in source order** — apply all commands inside the
+   `\step` block per the rules in §3.2.
+4. **Take snapshot** — serialize the resulting state. This is the frame.
+5. **Post-snapshot cleanup** — release frame-local `\compute` bindings;
+   ephemeral entries created during this frame remain visible *in the
+   snapshot just taken* and are cleared from the in-memory state that will
+   be inherited by frame N+1 at step 2.
+
+### 8.2 Persistent vs. Ephemeral State
+
+This subsection is normative: it defines exactly what carries across a
+`\step` boundary and what does not.
+
+**Persistent state — survives step boundaries:**
+
+- `\shape` declarations (made once in the prelude, live for every frame).
+- `\apply` mutations (structural changes — e.g. `push`/`pop`/`add_point`
+  — persist until a later `\apply` undoes them or the animation ends).
+- `\recolor` state on any element persists until a later `\recolor`
+  changes it.
+- `\reannotate` state persists in lockstep with the annotation it targets.
+- `\annotate` with default `ephemeral=false` (i.e. no explicit
+  `ephemeral=true` param).
+- `\cursor` targets — the element currently marked `curr_state` persists
+  into the next frame, so a subsequent `\cursor` call on the same prefix
+  can correctly dim it and advance.
+- `\foreach` expansion results — `\foreach` is expanded at
+  frame-materialization time into a flat sequence of per-iteration commands
+  **in the current frame**; whatever those commands produce follows the
+  persistence rules of their own command type.
+
+**Ephemeral state — cleared at the next step boundary (step 2 above):**
+
+- `\highlight` marks (always ephemeral by design).
+- `\annotate` invocations that were emitted with `ephemeral=true`.
+- Frame-local `\compute` bindings declared inside the `\step` block.
+
+**Not propagated at all:**
+
+- Frame-local `\compute` bindings — visible only within the frame they are
+  declared in; never inherited by the next frame, never visible in the
+  snapshot. Global `\compute` bindings declared in the prelude persist for
+  the lifetime of the animation.
+- Error state — each frame is validated independently. A recoverable error
+  in frame N does not poison frame N+1 (though an unrecoverable error may
+  abort the whole build, depending on `error_recovery` mode).
+- Substory inner state — `\substory` mutations are saved/restored around
+  the substory block (see §7.2), so the enclosing frame's state is
+  unchanged after the substory closes.
+
+### 8.3 State Transition Table
+
+The table below lists every command type from §2 and states its behaviour
+at a `\step` boundary. "Persistent across step" ✓ means the effect is
+visible in every subsequent frame unless explicitly overridden. "Cleared
+automatically" means the next frame's step 2 drops the entry without the
+author writing anything.
+
+| Command | Persistent across step? | How to remove |
+|---------|-------------------------|---------------|
+| `\shape` | ✓ (declared once, lives for the whole animation) | N/A — declarations are immutable |
+| `\compute` (prelude / global) | ✓ (binding available to every frame) | redeclaration in a later frame |
+| `\compute` (inside `\step`, frame-local) | ✗ (dropped at end of frame) | automatic |
+| `\narrate` | ✓ within its own frame; frame N+1 supplies its own `\narrate` | automatic per-frame replacement |
+| `\apply` | ✓ (structural mutations persist) | a later `\apply` with the inverse mutation, or a fresh declaration |
+| `\highlight` | ✗ (ephemeral by design) | automatic at next step boundary |
+| `\recolor` | ✓ (state persists) | `\recolor{…}{state=idle}` (or any other state) |
+| `\reannotate` | ✓ (tracks the annotation it targets) | removing/replacing the annotation |
+| `\annotate` (default, `ephemeral=false`) | ✓ | `\annotate{…}{}` with an inverse call, or structural removal |
+| `\annotate` (`ephemeral=true`) | ✗ (cleared at next step boundary) | automatic |
+| `\cursor` | ✓ (`curr_state` element persists so the next `\cursor` can advance) | `\recolor` to a different state, or a new `\cursor` call |
+| `\foreach` | (see expansion rule above — each emitted command follows its own row) | depends on emitted command |
+| `\substory` / `\endsubstory` | parent frame state is saved before the substory and restored after (see §7.2) | automatic on `\endsubstory` |
+
+**Cross-reference to grammar (§3.1):**
+
+- `\step` options (`\step[label=foo]`) are parse-time metadata only; they
+  do not participate in state transition (E1052 on trailing content,
+  E1004 / E1005 on bad options). A label is a name, not a state.
+- `\foreach` cannot contain `\step`, `\shape`, `\substory`, or
+  `\endsubstory` (→ `E1172`). This means `\foreach` never crosses a step
+  boundary: its expansion is always confined to the frame it appears in,
+  so the "persistent across step" column for a `\foreach` body is
+  determined entirely by the commands it emits.
+
+### 8.4 Frame Count Limits
 
 | Threshold | Action |
 |-----------|--------|
 | > 30 frames | Warning `E1180` |
 | > 100 frames | Error `E1181` (no output) |
 
-### Narration Rules
+### 8.5 Narration Rules
 
-- Exactly one `\narrate` per `\step`
-- Zero → warning (empty `<p>` with `aria-hidden="true"`)
-- Two+ → error `E1055`
+- Exactly one `\narrate` per `\step` is RECOMMENDED.
+- Zero → warning (empty `<p>` with `aria-hidden="true"`).
+- Two or more → error `E1055`.
+
+### 8.6 Frame Clock (Timing Semantics)
+
+Scriba v0.5.x does **not** provide frame-timing semantics. Each frame is
+user-advanced via the Prev/Next controls (interactive mode) or vertically
+stacked (static mode). There are no per-frame delays, dwell times,
+auto-advance controls, or playback-rate hooks in the public DSL. A
+conforming implementation MUST NOT introduce implicit timing.
+
+Timing controls (`delay`, `transition`, `playback`, `autoplay`) are
+reserved for extension E3 and will be layered on without changing the
+core snapshot semantics defined in §8.1. Authors writing for v0.5.x
+SHOULD assume their frames will be rendered as a static sequence, read
+by a human at their own pace.
+
+### 8.7 Redraw Triggers
+
+The interactive widget (see §9.3) redraws its SVG stage on **frame
+navigation only**: user clicks Prev/Next, or presses `ArrowLeft` /
+`ArrowRight` / `Space`, or the controller is programmatically advanced.
+There is no automatic refresh, no timer-driven update, no viewport
+resize re-layout, and no live-reload hook in the stable v0.5.x surface.
+Snapshots are fully pre-computed; SVG nodes are swapped in from a frame
+cache on each navigation event.
+
+### 8.8 Layout Determinism Bounds
+
+Deterministic layouts (`Graph layout=stable`, seeded `Graph layout=force`,
+seeded `Tree`) produce byte-identical SVG across releases within the same
+**MAJOR** version when supplied with a fixed `layout_seed`. A MINOR or
+PATCH release MUST NOT re-seed or re-order a previously-shipped layout.
+A **MAJOR** version bump MAY re-seed the layout algorithm; authors
+pinning byte-identical output across a major boundary SHOULD re-capture
+reference snapshots during upgrade.
+
+This determinism bound is narrower than the general determinism contract
+in §12: §12 covers the whole HTML output, whereas §8.8 is specifically
+about the layout algorithm's seeded coordinate placement.
 
 ---
 
