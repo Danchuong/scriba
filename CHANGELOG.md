@@ -7,12 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.1] - 2026-04-11 (Production audit fixes)
 
-Patch release landing **Wave 1**, **Wave 2**, and **Wave 3** fixes from
-the 21-agent production-readiness audit recorded in
-`docs/archive/production-audit-2026-04-11/`. All changes are backward
-compatible with 0.5.0 consumers; the only behavioral diffs are stricter
-validation, structured error codes in place of opaque failures, and a
-few previously silent bugs now raising `ValidationError`.
+Patch release landing **Wave 1**, **Wave 2**, **Wave 3**, **Wave 4A**,
+and **Wave 4B** fixes from the 21-agent production-readiness audit
+recorded in `docs/archive/production-audit-2026-04-11/`. All changes are
+backward compatible with 0.5.0 consumers; the only behavioral diffs are
+stricter validation, structured error codes in place of opaque failures,
+and a few previously silent bugs now raising `ValidationError`.
+
+**Total shipped**: 24 clusters across 5 waves, 1697 tests passing
+(+386 from the 0.5.0 baseline of 1311), 86% coverage, 0 known CVEs,
+0 strict xfails.
 
 ### Security / Sandbox
 
@@ -366,6 +370,135 @@ few previously silent bugs now raising `ValidationError`.
 - **`README.md` "Coming in v0.2.0" note removed.** Animation has been
   shipping since 0.2.0; the forward-looking paragraph was factually
   stale. Replaced with a factual 16-primitive summary.
+
+### Wave 4A — Parser, emitter, sandbox, and test-surface polish
+
+- **Parser improvements (01-H2, 07-M3/M4/M6, 07-H3, 09-H4).**
+  Unknown primitive types rejected at parse with `E1102` + fuzzy
+  "did you mean?" suggestion. Negative selector indices rejected
+  with `E1010`. `\foreach` nesting depth enforced at parse time
+  via `_MAX_FOREACH_DEPTH = 3` (E1170), matching the runtime
+  check in `scene.py`. `${var}` interpolation references emit a
+  best-effort UserWarning when no known compute-scope binding is
+  declared. Selector-parse errors now carry accurate `line`/`col`.
+- **Emitter `\step[label=...]` wiring (01-H1 follow-through).**
+  Wave 3 Cluster 4 added AST+parser support for `FrameIR.label`;
+  Wave 4A Cluster 2 wired it through 5 emitter sites. Frame IDs
+  now use `{scene_id}-{label}` when the label is id-safe, else
+  `{scene_id}-frame-{N}`. Duplicate labels within a scene raise
+  `E1005`. Interactive widget and print-frame markup gain a
+  `data-label` attribute when labels are present.
+- **Starlark sandbox hardening (08-H2, 09-H3, 13-H1/H3).**
+  `_FORBIDDEN_NODE_TYPES` expanded with `ast.NamedExpr` (walrus)
+  and `ast.Match`. `format_compute_traceback()` helper now wired
+  into `_evaluate` so `E1151` runtime errors show clean
+  `<compute>` frames without Scriba-internal Python frames. Windows
+  users get a one-shot `RuntimeWarning` at `StarlarkHost` init
+  explaining that `SIGALRM` wall-clock backstop is Unix-only.
+- **Primitive limit hardening (06-H3/H4, E1505).** Plane2D
+  `_check_cap()` converted from soft-drop + log to hard-raise
+  `E1466`. MetricPlot `_MAX_POINTS = 1000` cap converted to hard
+  `E1483` with series name in message. Graph `layout_seed` now
+  validated (rejects non-int, float, bool, negative) via `E1505`;
+  `seed` accepted as alias when `layout_seed` is absent.
+- **cses cookbook content fixes.** 4 files (`cses02_missing_number`,
+  `cses03_repetitions`, `cses04_increasing_array`,
+  `cses05_permutations`) had 2-space-indented `\compute` bodies
+  that Starlark rejected as "unexpected indent". Dedented to
+  column 0; 58/58 batch compile now clean.
+- **Ruleset prose quality (03 series).** `docs/spec/ruleset.md`
+  §1 RFC 2119 compliance note. §3.1 new "Interpolation and
+  Subscript Semantics" subsection (E1155/E1156/E1157). §3.2 new
+  "Command Evaluation Order". §4 `dim` state concrete CSS formula
+  `color-mix(in oklch, var(--scriba-fg) 10%, transparent)`
+  (previously the inaccurate "50% opacity"). §6.6 "Runtime Error
+  Context". §8 frame lifecycle fully rewritten with 8 subsections
+  + 13-row state-transition table. 15 prose "must/may" occurrences
+  promoted to RFC 2119 MUST/MUST NOT/SHOULD.
+- **Docs ecosystem sweep.** `docs/guides/editorial-principles.md`
+  primitive count 6 → 16, state vocabulary corrected to canonical
+  `idle/current/done/dim/good/error/path`. `docs/guides/
+  diagram-plugin.md` + `animation-plugin.md` constructor signatures
+  corrected (`starlark_host=` kwarg, dropped fictional
+  `worker_pool`/`strict=` args). 4 primitive docs (plane2d,
+  metricplot, graph-stable-layout, variablewatch) moved from
+  "draft — Pivot #2" to "shipped in v0.5.x"; fictional error
+  codes (E1105, E1106, E1464, E1482) removed. ~22 stale
+  `04-environments-spec.md` cross-references replaced.
+- **Test coverage improvement (17-H2 target).** 117 new tests
+  bringing `scriba/tex/__init__.py` from 40% → 100%,
+  `scriba/tex/renderer.py` 79% → 95%, `scriba/tex/highlight.py`
+  49% → 87%, `scriba/core/workers.py` 71% → 82%. Overall coverage
+  86% (above the 75% fail_under gate).
+- **New test categories (17-M3).** `test_svg_injection.py` (19
+  tests), `test_unicode_homograph.py` (17), `test_recursive_dos.py`
+  (14), `test_substory_soft_limit.py` (8), and 8 new
+  `TestSecurityWave4NewVectors` cases. Flagged 4 real bugs for
+  Wave 4B (see below).
+- **Ops follow-through.** `.github/SECURITY_CONTACTS.md` stub.
+  First recorded pip-audit baseline in `docs/ops/dep-cve-baseline.md`
+  (OPS-001: pygments 2.19.2 CVE-2026-4539). Visual regression
+  scaffold `scripts/visual_regression/compare.py` (structural HTML
+  diff; Layer 1 of a 3-layer plan documented in
+  `docs/ops/visual-regression.md`).
+
+### Wave 4B — Bug fixes from Wave 4A audit findings
+
+- **Tree recursion DoS fix.** `reingold_tilford` converted from
+  recursive DFS to iterative (explicit-stack, 3-pass). 1000/1500-
+  level linear trees now build in <1s without hitting Python's
+  1000-level recursion limit. Existing 80 tree tests pass
+  unchanged — algorithm equivalence verified.
+- **Graph O(N²) layout DoS fix.** `Graph.__init__` now raises
+  `E1501` when `len(nodes) > _MAX_NODES` (100). A 1000-node cycle
+  (which took ~12s force-layout under Wave 4A) is now rejected
+  immediately with a message surfacing the offending count +
+  `layout=stable` hint.
+- **Sandbox `ast.FunctionDef` bypass fix.** `_FORBIDDEN_NODE_TYPES`
+  expanded with `ast.Yield`, `ast.YieldFrom`, `ast.AsyncFunctionDef`,
+  `ast.AsyncFor`, `ast.AsyncWith`, `ast.Await`. `def f(): yield 1`
+  is now rejected by the pre-exec AST scan (via `ast.walk` recursion
+  into function bodies), while plain `def f(): return x` helper
+  functions remain legal — preserving cookbook 05/07/08 +
+  `TestFunctionDef`/`TestRecursion`. `async def` is forbidden
+  outright (no legitimate compute use).
+- **NumberLine `ticks < 1` validation fix.** `NumberLinePrimitive`
+  now raises `E1103` with explicit valid range `1..1000` when
+  `ticks <= 0`. Previously the upper-bound check `ticks > 1000`
+  silently accepted `ticks=0`, producing a degenerate primitive.
+- **pygments CVE-2026-4539 closed.** `pyproject.toml` pin lifted
+  `<2.20` → `<2.21`, pygments 2.20.0 locked. `uv run --with
+  pip-audit pip-audit` now reports 0 known vulnerabilities.
+  `docs/ops/dep-cve-baseline.md` updated with OPS-001 RESOLVED.
+- **E1483 catalog polish.** Message updated from
+  `"Series exceeded maximum point count (truncated)."` →
+  `"MetricPlot series exceeded maximum point count (hard limit)."`
+  matching Wave 4A Cluster 4's soft-drop → hard-raise conversion.
+- **Parser source_line propagation (09-M3 follow-through).**
+  `ValidationError` has a `source_line: str | None` field since
+  0.1.1 but parser raise sites didn't populate it. Wave 4B Cluster
+  3 wired 19 grammar.py raise sites + 6 selector-parse call sites
+  via a new `SceneParser._source_line_at(line_number)` helper.
+  Error messages now render a source snippet + caret pointer at
+  the offending column:
+  ```
+  [E1053] at line 1, col 1: \highlight is not allowed in the prelude
+        \highlight{a.cell[0]}
+        ^
+    -> https://scriba.ojcloud.dev/errors/E1053
+  ```
+- **Selector parser latent bug fixed.**
+  `SelectorParser._error` was silently dropping `line`/`col`
+  parameters entirely; now forwarded alongside `source_line`.
+
+### Tests (final counts)
+
+- Baseline 0.5.0: 1311 passing
+- +227 from Wave 4A (parser, emitter, sandbox, coverage,
+  new categories, etc.)
+- +31 from Wave 4B (DoS fixes, sandbox FunctionDef gap,
+  ticks<1, E1483 catalog, source_line wiring)
+- Total: **1697 passing**, 1 skipped, 0 xfails, 0 failures
 
 ## [0.5.0] - 2026-04-10 (Phase D)
 
