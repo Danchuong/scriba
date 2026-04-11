@@ -1,6 +1,6 @@
 # 09 — `scriba.animation.AnimationRenderer`
 
-> Wave 3 plugin spec. Binds verbatim to [`01-architecture.md`](../spec/architecture.md) (`Renderer`, `Block`, `RenderArtifact`, `RenderContext`, `RendererAssets`, `SubprocessWorker`, `SubprocessWorkerPool`, `RendererError`, `WorkerError`, `ValidationError`) and to [`04-environments-spec.md`](../spec/environments.md), which is the single source of truth for the `\begin{animation}` grammar, inner command set, target selectors, Starlark host contract, frame semantics, HTML output shape, CSS class contract, and error catalog. Sibling spec: [`03-diagram-plugin.md`](diagram-plugin.md) (the single-frame counterpart).
+> Plugin spec. Binds verbatim to [`architecture.md`](../spec/architecture.md) (`Renderer`, `Block`, `RenderArtifact`, `RenderContext`, `RendererAssets`, `ValidationError`) and to [`environments.md`](../spec/environments.md), which is the single source of truth for the `\begin{animation}` grammar, inner command set, target selectors, Starlark host contract, frame semantics, HTML output shape, CSS class contract, and error catalog. Sibling shim: [`diagram-plugin.md`](diagram-plugin.md) (reserved for extension E5 in v0.5.x).
 
 ## 1. Purpose
 
@@ -29,16 +29,14 @@ Non-goals:
 ## 2. Public API
 
 ```python
-# scriba/animation/animation_renderer.py
+# scriba/animation/renderer.py
 from __future__ import annotations
 
-from pathlib import Path
+from typing import Any
 
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
-from scriba.core.errors import RendererError, ValidationError, WorkerError
-from scriba.core.renderer import Renderer
-from scriba.core.workers import SubprocessWorkerPool
+from scriba.core.errors import RendererError, ValidationError
 
 
 class AnimationRenderer:
@@ -51,22 +49,14 @@ class AnimationRenderer:
     def __init__(
         self,
         *,
-        worker_pool: SubprocessWorkerPool,
-        strict: bool = False,
+        starlark_host: Any | None = None,
     ) -> None:
         """
-        worker_pool:
-            Shared Pipeline worker pool. ``AnimationRenderer`` looks up the
-            ``"starlark"`` worker on first ``\\compute`` invocation. If not
-            yet registered, it registers one using the bundled
-            ``scriba/animation/starlark_worker`` entry point, mirroring
-            ``TexRenderer``'s ``katex`` registration in
-            ``scriba/tex/renderer.py``. ``DiagramRenderer`` and
-            ``AnimationRenderer`` share the same Starlark worker.
-        strict:
-            When ``True``, warnings (``E1180`` frame count > 30, ``E1150``
-            empty narration, ``E1182`` missing narration) are promoted to
-            ``RendererError``. Default ``False``.
+        starlark_host:
+            Optional in-process Starlark host. When ``None``, the renderer
+            uses the default host from ``scriba.animation.starlark_host``.
+            Passing an explicit host lets callers share one Starlark
+            environment with ``DiagramRenderer`` in the same Pipeline.
         """
 
     def detect(self, source: str) -> list[Block]: ...
@@ -213,7 +203,7 @@ Both limits are enforced during the frame-splitter pass (§4 step 5), before any
 
 ## 6. Shape-to-SVG dispatch
 
-`AnimationRenderer` uses the exact same primitive catalog as `DiagramRenderer` (see `03-diagram-plugin.md` §6 for the dispatch table). The 6 primitives (`Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`) emit the same `<g data-target="...">` groups with the same selector strings in both plugins. The only difference is that `AnimationRenderer` calls the emitter once per frame, producing N independent `<svg>` stages; `DiagramRenderer` calls it once.
+`AnimationRenderer` uses the exact same primitive catalog as `DiagramRenderer` (see [`diagram-plugin.md`](diagram-plugin.md) §6 for the dispatch table). All 16 primitives — the six base primitives (`Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`), the five extended primitives (`Matrix`/`Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `Graph` with `layout=stable`), and the five data-structure primitives (`CodePanel`, `HashMap`, `LinkedList`, `Queue`, `VariableWatch`) — emit the same `<g data-target="...">` groups with the same selector strings in both plugins. The only difference is that `AnimationRenderer` calls the emitter once per frame, producing N independent `<svg>` stages; `DiagramRenderer` calls it once.
 
 The primitive layout (positions, sizes, graph/tree topology) is computed **once from the prelude state** and cached across frames. Per-frame rendering only re-applies state classes and annotation overlays on top of the frozen geometry; nothing about the SVG viewBox or element positions changes between frames. This guarantees that a 30-frame filmstrip does not re-layout the same `Tree` 30 times.
 
@@ -298,18 +288,24 @@ Custom-property variables (state colors, frame gap, stage padding) live in the `
 
 ## 10. Error codes
 
-`AnimationRenderer` raises `RendererError(message, renderer="animation", code=...)` for every failure. Codes per `04-environments-spec.md` §11:
+`AnimationRenderer` raises `RendererError(message, renderer="animation", code=...)` for every failure. Codes are drawn from [`error-codes.md`](../spec/error-codes.md):
 
 | Range | Category | Notes |
 |---|---|---|
-| `E1001..E1008` | Parse errors | Brace imbalance, misplaced `\begin`/`\end`, unknown option, stray text. |
-| `E1051..E1057` | Animation semantic errors | `\shape` after `\step`, `\step` trailing text, `\highlight` in prelude, duplicate `\narrate`, `\narrate` outside `\step`, zero frames. |
-| `E1101..E1113` | Shape / target / annotation errors | Same as diagram. |
-| `E1150..E1157` | Starlark compute errors | Parse, runtime, timeout, step cap, forbidden feature, bad interpolation. |
-| `E1180..E1182` | Frame count | `E1180` soft warning (>30), `E1181` hard error (>100), `E1182` missing narration in strict mode. |
-| `E1200..E1202` | Render errors | SVG layout failure, inline-TeX delegation failure (`E1201`), scene hash collision. |
+| `E1001..E1013` | Parse / detection errors | Brace imbalance, misplaced `\begin`/`\end`, unknown option, selector/tokeniser errors, 1 MB source cap. |
+| `E1050..E1056` | Diagram-specific / environment | `\step` in diagram, `\narrate` outside `\step`, `\highlight` in prelude, duplicate narration, etc. |
+| `E1100..E1113` | Shape / target / annotation errors | Unknown primitive, unknown selector, unknown state or color token. |
+| `E1150..E1155` | Starlark compute errors | Parse, runtime, timeout, step cap, forbidden construct, memory cap (see `error-codes.md`). |
+| `E1170..E1173` | `\foreach` errors | Nesting, empty body, unclosed, iterable validation. |
+| `E1180..E1182` | Frame / cursor | `E1180` soft warning (>30), `E1181` hard error (>100), `E1182` `\cursor` state validation. |
+| `E1360..E1368` | Substory | Substory nesting, unclosed, misplaced. |
+| `E1400..E1459` | Primitive parameter validation | Split from the legacy `E1103` bucket in v0.5.1 — one code per `(primitive, check)` pair. |
+| `E1460..E1466` | Plane2D | Viewport, geometry, aspect, element cap. |
+| `E1480..E1487` | MetricPlot | Series validation, point cap, log-scale clamp, axis consistency. |
+| `E1500..E1505` | Graph layout | Stable layout convergence, node/frame caps, fallback, clamp, seed. |
 
-Warnings (`E1150`, `E1180`, `E1182`) are suppressed unless `strict=True`. `E1181` is always fatal.
+`E1181` is always fatal. `E1180` is a logged warning that does not
+abort rendering. The full catalog lives in [`error-codes.md`](../spec/error-codes.md).
 
 ## 11. Example
 

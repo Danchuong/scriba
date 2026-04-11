@@ -1,22 +1,23 @@
 # 08 — End-to-end usage example
 
 > A complete worked example showing how a `.tex` problem statement that
-> uses one `\begin{animation}` and one `\begin{diagram}` flows through the
-> `scriba.Pipeline` and becomes HTML. Uses the real Python API from
-> `packages/scriba/`. Does not re-derive the HTML/CSS contract — see
-> [`04-environments-spec.md`](../spec/environments.md) §11 for the
-> canonical output shape; this file only shows the outline you should
-> expect.
+> uses one `\begin{animation}` block flows through the `scriba.Pipeline`
+> and becomes HTML. Uses the real Python API from the `scriba/` package.
+> Does not re-derive the HTML/CSS contract — see
+> [`environments.md`](../spec/environments.md) for the canonical output
+> shape; this file only shows the outline you should expect.
+>
+> **Note (v0.5.x):** `\begin{diagram}` is reserved for extension E5 and
+> is not a first-class IR. Prefer a single-frame `\begin{animation}`
+> everywhere a "diagram" would have been used. The legacy
+> `DiagramRenderer` shim is no longer part of the public API surface.
 
 ## 1. The scenario
 
 You are `tenant-backend`. An author has submitted a Frog DP problem. They
-want two pictures in the statement:
-
-- A small **animation** showing the first three `dp` cells getting filled
-  in. This is a filmstrip: three frames, one narration sentence each.
-- A static **diagram** showing the tree-like structure of recursive
-  subproblems so learners can see the branching before they read the DP.
+want one picture in the statement: a small **animation** showing the
+first three `dp` cells getting filled in — a filmstrip with three
+frames, one narration sentence each.
 
 The author writes one `.tex` file. You run it through Scriba. You cache
 the resulting HTML by content hash and serve it.
@@ -70,22 +71,12 @@ Gọi $dp[i]$ là chi phí tối thiểu để tới hòn đá $i$. Ta có:
     \highlight{dp.cell[2]}
     \narrate{$dp[2] = \min(dp[1] + 10,\; dp[0] + 30) = 30$.}
 \end{animation}
-
-\subsection*{Cây đệ quy của $dp[3]$}
-
-\begin{diagram}[id=frog1-tree, label="Recursion tree for dp[3]"]
-  \shape{t}{Tree}{root="dp[3]"}
-  \apply{t.node[root]}{children=["dp[2]", "dp[1]"]}
-  \apply{t.node["dp[2]"]}{children=["dp[1]", "dp[0]"]}
-  \apply{t.node["dp[1]"]}{children=["dp[0]"]}
-  \highlight{t.node["dp[0]"]}
-\end{diagram}
 ```
 
 Two things to notice:
 
-1. Everything outside the two environments is plain LaTeX. It will be
-   picked up by `TexRenderer` in the usual way.
+1. Everything outside the environment is plain LaTeX. It will be picked
+   up by `TexRenderer` in the usual way.
 2. The animation uses `\compute{...}` (Starlark) to fill in actual values
    from `h`. The narration prose is hand-written — Starlark computes
    numbers, the author writes sentences.
@@ -107,22 +98,21 @@ from scriba import (
     SubprocessWorkerPool,
 )
 from scriba.tex import TexRenderer
-from scriba.animation import AnimationRenderer, DiagramRenderer  # v0.3
+from scriba.animation import AnimationRenderer
 
 
 def build_pipeline() -> Pipeline:
     """Construct a Pipeline once per process.
 
-    Order matters: AnimationRenderer and DiagramRenderer MUST precede
-    TexRenderer so that the Pipeline's first-wins overlap rule carves
-    out the environment regions before TexRenderer's detector ever
+    Order matters: AnimationRenderer MUST precede TexRenderer so that
+    the Pipeline's first-wins overlap rule carves out the
+    ``\\begin{animation}`` regions before TexRenderer's detector ever
     sees them.
     """
     pool = SubprocessWorkerPool(max_workers=4)
     return Pipeline(
         renderers=[
-            AnimationRenderer(worker_pool=pool),
-            DiagramRenderer(worker_pool=pool),
+            AnimationRenderer(),          # uses the default in-process Starlark host
             TexRenderer(worker_pool=pool),
         ]
     )
@@ -149,7 +139,7 @@ def render_problem(source_path: Path, out_path: Path) -> None:
     print("required_js :", sorted(doc.required_js))  # [] — zero runtime JS
     print("versions    :", doc.versions)
     # versions looks like:
-    #   {"core": N, "animation": 1, "diagram": 1, "tex": 1}
+    #   {"core": N, "animation": 1, "tex": 1}
     # Use this as part of your content-hash cache key.
 
 
@@ -173,10 +163,10 @@ Notes on the API surface you are actually touching:
 - `pipeline.render(source, ctx)` returns a `Document` with:
   - `html: str` — the fully substituted, sanitized HTML.
   - `required_css: frozenset[str]` — namespaced basenames like
-    `animation/filmstrip.css`, `diagram/scene.css`, `tex/katex.css`.
-    Ship these globally, once.
-  - `required_js: frozenset[str]` — always empty for `animation` and
-    `diagram`. `TexRenderer` also ships no runtime JS.
+    `animation/filmstrip.css`, `animation/scene-primitives.css`,
+    `tex/katex.css`. Ship these globally, once.
+  - `required_js: frozenset[str]` — always empty for `animation`.
+    `TexRenderer` also ships no runtime JS.
   - `versions: dict[str, int]` — include this in your cache key so a
     plugin bump invalidates exactly the right documents.
   - `block_data: dict[str, Any]` — optional per-block machine-readable
@@ -192,9 +182,9 @@ Notes on the API surface you are actually touching:
 ## 4. What the HTML looks like
 
 The exact class names, ARIA attributes, and nested structure are locked
-in [`04-environments-spec.md`](../spec/environments.md) §11. Do not
-duplicate that contract here; reference it. What your caller should
-expect in broad strokes:
+in [`environments.md`](../spec/environments.md). Do not duplicate that
+contract here; reference it. What your caller should expect in broad
+strokes:
 
 ```html
 <!-- plain LaTeX rendered by TexRenderer (the problem statement itself) -->
@@ -219,17 +209,6 @@ expect in broad strokes:
     <li class="scriba-frame" id="frog1-mini-frame-2" data-step="2">…</li>
     <li class="scriba-frame" id="frog1-mini-frame-3" data-step="3">…</li>
   </ol>
-</figure>
-
-<h3>Cây đệ quy của …</h3>
-
-<!-- DiagramRenderer output: a single <figure> with one SVG -->
-<figure class="scriba-diagram"
-        data-scriba-scene="frog1-tree"
-        aria-label="Recursion tree for dp[3]">
-  <svg class="scriba-stage-svg" role="img" aria-labelledby="…">
-    <!-- Tree primitive with highlighted leaf -->
-  </svg>
 </figure>
 ```
 
@@ -268,8 +247,8 @@ bytes. Scriba guarantees determinism so this cache is safe.
 renderers cannot recover from: grammar errors in an environment
 (`E1xxx`), Starlark timeouts (`E1152`), sandbox violations, malformed
 options. Catch it at the request boundary, log the error code, and
-present the author a line-numbered diagnostic. See `04-environments-spec.md`
-§12 for the full error catalog.
+present the author a line-numbered diagnostic. See
+[`error-codes.md`](../spec/error-codes.md) for the full error catalog.
 
 ```python
 from scriba import ScribaError

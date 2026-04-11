@@ -1,15 +1,21 @@
 # Primitive Spec: `Graph layout="stable"` Mode
 
-> Status: **draft — Pivot #2 extension**. Extends the EXISTING `Graph` primitive defined
-> in base spec `04-environments-spec.md` §5 with a new value for the `layout` parameter.
-> This is NOT a new primitive type. The base spec `Graph` primitive already handles
-> `layout="force"|"circular"|"bipartite"|"hierarchical"`. This spec adds `layout="stable"`.
+> Status: **shipped in v0.5.x**. Extends the existing `Graph` primitive
+> (see [`ruleset.md`](../spec/ruleset.md) §5 and
+> [`environments.md`](../spec/environments.md)) with a new value for
+> the `layout` parameter. This is NOT a new primitive type. The base
+> `Graph` primitive already handles
+> `layout="force"|"circular"|"bipartite"|"hierarchical"`; this spec
+> documents `layout="stable"`.
 >
-> Error codes in range **E1500–E1509**.
+> Error codes in range **E1500–E1505** — see
+> [`error-codes.md`](../spec/error-codes.md) for the canonical list.
+> Hard limits: `_MAX_NODES = 20`, `_MAX_FRAMES = 50` (defined in
+> `scriba/animation/primitives/graph_layout_stable.py`).
 
 ---
 
-## 1. Purpose
+## 1. Overview
 
 When a `Graph` primitive is used in an `\begin{animation}` and edges are added, removed,
 or reversed across frames (as in a min-cost max-flow residual graph), the standard
@@ -151,7 +157,8 @@ After 200 iterations, temperature is `T0 * 0.97^200 ≈ 0.23` (well-cooled).
 **Determinism**: the optimizer uses a seeded pseudorandom number generator initialized to
 `layout_seed`. With identical `layout_seed`, identical nodes, and identical per-frame edge
 sequences (not just union), the output is byte-identical across runs. This preserves the
-content-hash cache in `tenant-backend` (see `01-architecture.md` §Versioning). SA
+content-hash cache in consumer backends (see
+[`architecture.md`](../spec/architecture.md) §Versioning). SA
 convergence is seeded and fully reproducible.
 
 **Implementation**: pure Python in `scriba/animation/primitives/graph_layout_stable.py`.
@@ -374,18 +381,21 @@ Example pairing:
 
 ---
 
-## 10. Error code catalog (E1500–E1509)
+## 10. Error codes
 
-| Code  | Severity | Condition                                              | Hint                                                         |
-|-------|----------|--------------------------------------------------------|--------------------------------------------------------------|
-| E1500 | Warning  | SA optimizer did not converge (objective still high)   | Try a different `layout_seed` or increase `layout_lambda`.   |
-| E1501 | Warning  | N > 20 nodes with `layout="stable"`; fell back to force | Use `layout="force"` for large graphs; stable is N ≤ 20 only.|
-| E1502 | Warning  | Frame count > 50 with `layout="stable"`; fell back to force | Use `layout="force"`; stable layout is T ≤ 50 frames only.|
-| E1503 | Warning  | Fell back from `layout="stable"` to `layout="force"`   | Node positions may jump across frames.                       |
-| E1504 | Warning  | `layout_lambda` out of range `[0.01, 10]`              | Clamped to range; prefer values around 0.3.                  |
-| E1505 | Error    | `layout_seed` is not a non-negative integer            | Must be an integer ≥ 0.                                      |
+Canonical catalog in [`error-codes.md`](../spec/error-codes.md). The
+stable-layout range is **E1500–E1505**.
 
-Codes E1506–E1509 are reserved.
+| Code  | Severity | Condition                                                | Hint                                                         |
+|-------|----------|----------------------------------------------------------|--------------------------------------------------------------|
+| E1500 | Warning  | SA optimizer did not converge (objective still high)     | Try a different `layout_seed` or increase `layout_lambda`.   |
+| E1501 | Warning  | N > 20 nodes with `layout="stable"`; fell back to force  | Use `layout="force"` for large graphs; stable is N ≤ 20 only. |
+| E1502 | Warning  | Frame count > 50 with `layout="stable"`; fell back to force | Use `layout="force"`; stable layout is T ≤ 50 frames only. |
+| E1503 | Warning  | Stable layout fallback triggered                         | Informational — accompanies `E1501` or `E1502`.              |
+| E1504 | Warning  | `layout_lambda` out of range `[0.01, 10]`                | Clamped to range; prefer values around 0.3.                  |
+| E1505 | Error    | `layout_seed` is not a non-negative integer              | Must be an integer ≥ 0.                                      |
+
+Codes `E1506`–`E1509` are currently unassigned.
 
 ---
 
@@ -502,13 +512,15 @@ This test verifies the fix for audit finding 6.1 (cache key collision bug).
 ### 11.3 Fallback test — N=25 triggers E1501
 
 ```latex
-\begin{diagram}
+\begin{animation}[id=stable-fallback, label="Large graph stable-layout fallback"]
 \shape{large_g}{Graph}{
   nodes=${range(25)},
   edges=[],
   layout="stable"
 }
-\end{diagram}
+\step
+\narrate{N=25 exceeds stable-layout cap; the renderer falls back to force layout.}
+\end{animation}
 ```
 
 Expected:
@@ -519,36 +531,13 @@ Expected:
 
 ---
 
-## 12. Base-spec deltas
+## 12. Notes
 
-**§3.1 `\shape` command, Type parameter**: the primitive type list does not need updating
-(Graph is already a known type). However, the list of valid `layout=` values for `Graph`
-must be extended.
-
-In base spec §5, the `Graph` primitive parameter table entry for `layout` currently reads:
-
-> `layout`: `"force"` | `"circular"` | `"bipartite"` | `"hierarchical"` (default: `"force"`)
-
-This should be updated to:
-
-> `layout`: `"force"` | `"circular"` | `"bipartite"` | `"hierarchical"` | `"stable"`
-> (default: `"force"`). See `primitives/graph-stable-layout.md` for the `"stable"` spec.
-
-**§8 HTML output contract** — `data-layout="stable"` attribute (audit finding 4.8):
-
-The `data-layout="stable"` attribute on the SVG root is a base-spec delta. Base spec §8
-does not list `data-layout=` as a frozen data attribute. Agent 4 must add it to the
-base-spec §8 attribute table under the note: "Graph primitives with `layout=stable` emit
-`data-layout="stable"` on the root `<svg>` to signal to CSS and E2E tests that stable
-layout was applied."
-
-Per the `data-scriba-*` naming convention (audit finding 4.10), this attribute is exempt
-because `data-layout` applies to the Graph primitive's native attribute set (not a
-Scriba-specific extension attribute). However, if a consolidation pass is done, it should
-be renamed to `data-scriba-layout`. This is noted for the sanitizer whitelist.
-
-**§11** error catalog: add a note that error codes E1500–E1509 are reserved for
-`Graph layout=stable`. The existing catalog in §11 (which uses ranges E1001..E1299) does
-not need numeric changes; E1500 is outside the existing range and is compatible.
-
-Agent 4 will merge both deltas.
+- `layout="stable"` is part of the `Graph` primitive's accepted
+  `layout=` values in v0.5.x (alongside `force`, `circular`,
+  `bipartite`, `hierarchical`). The default remains `force`.
+- The SVG root carries `data-layout="stable"` when stable layout
+  succeeds (or the fallback layout name when `E1501`/`E1502` demote
+  the request).
+- Canonical error catalog: [`error-codes.md`](../spec/error-codes.md).
+- Authoritative source: `scriba/animation/primitives/graph_layout_stable.py`.

@@ -1,17 +1,19 @@
 # Primitive Spec: `Plane2D`
 
-> Status: **draft — Pivot #2 extension**. Extends base spec `04-environments-spec.md` §5
-> (primitive catalog). Error codes in range **E1460–E1469**.
+> Status: **shipped in v0.5.x** as an extended primitive. Extends the
+> base primitive catalog in [`environments.md`](../spec/environments.md)
+> and [`ruleset.md`](../spec/ruleset.md) §5. Error codes in range
+> **E1460–E1466** — see [`error-codes.md`](../spec/error-codes.md) for
+> the canonical list.
 >
-> This spec resolves the SVG coordinate convention: **all new primitives use SVG native
-> origin top-left, Y axis increases downward.** `Plane2D` provides an author-facing
-> transform so that math-convention coordinates (origin bottom-left, Y up) are the
-> authoring DSL; the emitted SVG uses native SVG coordinates internally. This section
-> documents that transform explicitly in §4.
+> Coordinate convention: **authors write math-convention coordinates
+> (origin bottom-left, Y up)**. The emitted SVG uses native SVG
+> coordinates internally (origin top-left, Y down); the transform that
+> bridges the two is documented in §4.
 
 ---
 
-## 1. Purpose
+## 1. Overview
 
 `Plane2D` renders a 2D coordinate plane with lines, points, segments, polygons, and
 shaded regions. It emits pure `<svg>` with no runtime JavaScript. It unlocks:
@@ -69,7 +71,9 @@ height = width * (yrange[1] - yrange[0]) / (xrange[1] - xrange[0])
 
 If `xrange` or `yrange` has equal endpoints (degenerate), emit **E1460** (viewport-invalid).
 
-**Unknown parameter:** emit **E1105** (base spec §11.3).
+**Unknown parameter:** surfaces through the generic parse/validation
+path — see [`error-codes.md`](../spec/error-codes.md) for the current
+mapping.
 
 ### 2.2 Line specification format
 
@@ -96,9 +100,10 @@ A line can be specified as:
 | `p.label[i]`      | Text label at 0-based index (labels are auto-created alongside points/lines) |
 | `p.all`           | Every element in the plane                          |
 
-Index is 0-based and refers to the order in which elements were added (initial `\shape`
-params fill slots 0..N-1; subsequent `add_*` operations append). Out-of-range index is
-**E1106** (unknown target, base spec §11.3).
+Index is 0-based and refers to the order in which elements were added
+(initial `\shape` params fill slots 0..N-1; subsequent `add_*` operations
+append). Out-of-range indices are reported through the shared selector
+validation path — see [`error-codes.md`](../spec/error-codes.md).
 
 ---
 
@@ -231,10 +236,15 @@ Each `add_*` operation appends the new element and assigns it the next available
 For example, if the plane has 2 lines (indices 0 and 1), `add_line` creates line index 2,
 which can subsequently be referenced as `p.line[2]`.
 
-**Element cap:** a single `Plane2D` instance may hold at most **500 elements** in total
-(across points, lines, segments, polygons, regions, labels) at any one scene frame. If
-adding an element would exceed this cap, emit **E1466** (too-many-elements) and skip the
-addition.
+**Element cap:** a single `Plane2D` instance may hold at most **500
+elements** in total (across points, lines, segments, polygons, regions)
+at any one scene frame. In v0.5.x the cap is enforced as a soft
+log-and-skip: when an `add_*` operation would cross the cap, the
+primitive logs **E1466** and silently drops the addition rather than
+aborting the render. A future Wave 4A cluster is scheduled to harden
+this into a raised `RendererError`; see
+[`error-codes.md`](../spec/error-codes.md) for the authoritative
+severity.
 
 ### 5.3 `\apply` with `all`
 
@@ -249,8 +259,9 @@ Applies the command to every element currently in the plane.
 
 ## 6. Geometric helper functions (Starlark `plane2d` namespace)
 
-The `plane2d` namespace is pre-injected into the Starlark host (base spec §5.2) when a
-`Plane2D` shape is declared in the environment. It provides pure-Python geometry helpers
+The `plane2d` namespace is pre-injected into the Starlark host (see
+[`ruleset.md`](../spec/ruleset.md) §5) when a `Plane2D` shape is
+declared in the environment. It provides pure-Python geometry helpers
 implemented in `scriba/animation/primitives/plane2d_compute.py` and exposed to `\compute`
 blocks.
 
@@ -423,9 +434,11 @@ integer intersection x-coordinates. Verify that the returned pieces are contiguo
 
 ### 6.7 Error handling in helpers
 
-Any helper that receives invalid input (e.g. `hull` with non-numeric coords) raises a
-Starlark runtime error. The `\compute` host catches it and emits **E1464**
-(compute-helper-error) with the error message and line number.
+Any helper that receives invalid input (e.g. `hull` with non-numeric
+coords) raises a Starlark runtime error. The `\compute` host catches
+it and surfaces it through the Starlark error catalog (typically
+**E1151** — Starlark runtime evaluation failure — per
+[`error-codes.md`](../spec/error-codes.md)).
 
 ---
 
@@ -647,19 +660,22 @@ The three-layer structure ensures:
 
 ---
 
-## 11. Error code catalog (E1460–E1469)
+## 11. Error codes
 
-| Code  | Severity | Condition                                              | Hint                                                        |
-|-------|----------|--------------------------------------------------------|-------------------------------------------------------------|
-| E1460 | Error    | `xrange` or `yrange` has equal endpoints (degenerate viewport) | Provide non-degenerate ranges. |
-| E1461 | Warning  | Line specified but has no intersection with viewport   | Extend viewport or move the line. Skipped.                  |
-| E1462 | Warning  | Polygon's last point ≠ first (not closed)              | Auto-closed by emitter. No data loss.                       |
-| E1463 | Warning  | Segment or point partially/fully outside viewport      | Segment clipped; out-of-viewport point still added but may be invisible. |
-| E1464 | Error    | `plane2d.*` helper raised a runtime error              | Error message includes traceback.                           |
-| E1465 | Error    | `aspect` is not `"equal"` or `"auto"`                  | Use one of the two supported values.                        |
-| E1466 | Error    | More than 500 elements in a single frame               | Split across multiple primitives or frames.                 |
+Canonical catalog in [`error-codes.md`](../spec/error-codes.md). The
+Plane2D-specific range is **E1460–E1466**.
 
-Codes E1467–E1469 are reserved.
+| Code  | Severity         | Condition                                              | Hint                                                        |
+|-------|------------------|--------------------------------------------------------|-------------------------------------------------------------|
+| E1460 | Error            | `xrange` or `yrange` has equal endpoints (degenerate viewport) | Provide non-degenerate ranges.                              |
+| E1461 | Warning          | Line has no intersection with the viewport             | Extend viewport or move the line. Skipped.                  |
+| E1462 | Warning          | Polygon's last point ≠ first (not closed)              | Auto-closed by emitter. No data loss.                       |
+| E1463 | Warning          | Point is outside viewport bounds                       | Move the point inside the viewport or expand the range.     |
+| E1465 | Error            | `aspect` is not `"equal"` or `"auto"`                  | Use one of the two supported values.                        |
+| E1466 | Soft (logged)    | Plane2D element cap (500) reached                      | Reduce the number of geometric elements. v0.5.x logs and skips; future releases will raise. |
+
+`E1464` and `E1467`–`E1469` are currently unassigned — see
+[`error-codes.md`](../spec/error-codes.md) for the canonical list.
 
 ---
 
@@ -715,7 +731,7 @@ Expected:
 ### 12.2 Andrew's monotone chain hull — 15 points
 
 ```latex
-\begin{diagram}
+\begin{animation}[id=convex-hull-demo, label="Convex hull of 15 points"]
 \compute{
   pts = [(0,0),(4,1),(3,4),(1,3),(2,2),(5,2),(1,1),(3,0),(4,3),(2,4),
          (0.5,2.5),(3.5,3.5),(1.5,0.5),(4.5,1.5),(2.5,3.0)]
@@ -726,9 +742,12 @@ Expected:
   points=${pts},
   grid=false, axes=true
 }
+
+\step
 \apply{geo}{add_polygon=${hull_pts}}
 \recolor{geo.polygon[0]}{state=current}
-\end{diagram}
+\narrate{Convex hull computed via Andrew's monotone chain.}
+\end{animation}
 ```
 
 Expected:
@@ -739,7 +758,7 @@ Expected:
 ### 12.3 FFT unit circle — 8 roots of unity
 
 ```latex
-\begin{diagram}
+\begin{animation}[id=fft-roots-of-unity, label="8th roots of unity"]
 \compute{
   # 8th roots of unity: e^(2πi k/8), pre-computed (Starlark has no math module)
   # cos(k*pi/4), sin(k*pi/4) for k=0..7
@@ -772,8 +791,11 @@ Expected:
 \apply{circ}{add_point=(-0.7071, -0.7071)}
 \apply{circ}{add_point=(0.0, -1.0)}
 \apply{circ}{add_point=(0.7071, -0.7071)}
+
+\step
 \recolor{circ.point[0]}{state=current}
-\end{diagram}
+\narrate{First root of unity highlighted.}
+\end{animation}
 ```
 
 Expected:
