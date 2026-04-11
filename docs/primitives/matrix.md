@@ -368,15 +368,19 @@ E1424 is a warning (not error) to alert the author; rendering continues.
 
 | Condition           | Code  | Severity | Behavior                                                |
 |---------------------|-------|----------|---------------------------------------------------------|
-| `rows * cols > 10000` | E1421 | Error    | Shape is not rendered. Author should use `figure-embed` with a Matplotlib-generated heatmap. |
+| `rows * cols > 250000` | **E1425** | Error | Shape is rejected at `__init__`. Author should use `figure-embed` with a Matplotlib-generated heatmap. |
 | `rows * cols > 200` and `show_values` not explicitly `true` | E1420 | Warning | Labels auto-disabled. |
 | `cell_size < 14` and `show_values=true` | E1420 | Warning | Labels auto-disabled. |
-| `rows < 1` or `cols < 1` | E1103 | Error | Missing required parameter (rows, cols must be ≥ 1). |
+| `rows < 1` or `cols < 1` | E1421 | Error | `rows` / `cols` out of range (must be ≥ 1). |
 
-The 10000-cell cap (100×100) is a hard performance budget. An editorial MCMF 200×200
-assignment heatmap should use `figure-embed` (see `extensions/figure-embed.md`) — authors
-generate it with Matplotlib and embed the resulting SVG. The 6×6 toy graph can use
-`Graph layout=stable` directly.
+The 250 000-cell cap (roughly 500×500) is the hard performance budget that
+the code enforces; a prior draft of this doc said 10 000 / E1421, which
+drifted from the implementation. DPTable enforces the same `rows * cols
+<= 250000` budget with the same `E1425` code. An editorial MCMF 600×600
+assignment heatmap still should use `figure-embed` (see
+`extensions/figure-embed.md`) — authors generate it with Matplotlib and
+embed the resulting SVG — but the 6×6 toy graph and typical 100×100
+DP tables render natively.
 
 ---
 
@@ -501,12 +505,13 @@ the meaning and no value labels are expected.
 | Code  | Severity | Condition                                    | Hint                                                     |
 |-------|----------|----------------------------------------------|----------------------------------------------------------|
 | E1420 | Warning  | `show_values` auto-disabled (N·M > 200 or cell too small) | Set `cell_size` ≥ 14 or reduce matrix size.         |
-| E1421 | Error    | `rows * cols > 10000`                        | Use `figure-embed` for large heatmaps.                   |
+| E1421 | Error    | `rows < 1` or `cols < 1`                     | `rows` / `cols` must be positive integers.               |
 | E1422 | Error    | Unknown colorscale name, or `vmin ≥ vmax`    | Use one of: viridis, magma, plasma, greys, rdbu.         |
 | E1423 | Error    | `data` length ≠ `rows * cols`; or broadcast list length mismatch | Verify data dimensions match declared rows/cols. |
 | E1424 | Warning  | Non-finite value (NaN, inf) in data          | NaN cells render grey with dashed border.                |
+| **E1425** | **Error** | **`rows * cols > 250000` (also raised by DPTable)** | **Use `figure-embed` for larger heatmaps.**        |
 
-Codes E1425–E1429 are reserved for future Matrix extensions.
+Codes E1426–E1429 are reserved for future Matrix extensions.
 
 ---
 
