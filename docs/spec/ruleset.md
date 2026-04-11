@@ -11,10 +11,19 @@
 
 ### 1.1 Top-Level Environments
 
-| Environment | Purpose | Frames |
-|-------------|---------|--------|
-| `\begin{animation}...\end{animation}` | Multi-frame step animation | N frames via `\step` |
-| `\begin{diagram}...\end{diagram}` | Single static figure | 1 implicit frame |
+| Environment | Status | Purpose | Frames |
+|-------------|--------|---------|--------|
+| `\begin{animation}...\end{animation}` | **v0.5.x — supported** | Multi-frame step animation | N frames via `\step` |
+| `\begin{diagram}...\end{diagram}` | **reserved for extension E5** | Single static figure | 1 implicit frame |
+
+> **NOTE (v0.5.x):** `\begin{diagram}` is **reserved for a future
+> extension (E5)** and is **not a first-class IR** in v0.5.x.  The parser
+> always produces an `AnimationIR`; there is no `DiagramIR` type.  A
+> `\begin{diagram}` block is rendered as a single-frame animation in
+> diagram mode (no `\step` allowed inside → `E1050`) and is treated as
+> experimental surface area.  New authoring should prefer
+> `\begin{animation}` with a single implicit frame until E5 lands.  See
+> the BNF note in §3.1.
 
 **Constraints:**
 - Nesting prohibited → `E1003`
@@ -66,6 +75,19 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | Range literal | `0..5` | Inclusive integer range `[0,1,2,3,4,5]` |
 | Binding reference | `${name}` | Resolves to a list produced by `\compute` |
 | List literal | `[1,2,3]` | Parsed via Python `literal_eval` |
+
+> **NOTE — `\foreach` cannot emit per-iteration step boundaries.**
+> `\step`, `\shape`, `\substory`, and `\endsubstory` are **not allowed**
+> inside a `\foreach` body (→ `E1172`).  A `\foreach` block expands to a
+> flat sequence of mutation commands **within a single step**, not to
+> one step per iteration.  Algorithms whose frame structure must mirror
+> the loop structure — for example a monotonic-stack visualization that
+> wants one frame per stack operation, or an amortized-analysis walk
+> that advances the cursor once per iteration — must be **manually
+> unrolled**: write one `\step` per iteration and optionally reuse
+> `\foreach` inside each `\step` for per-iteration fanout (recoloring
+> multiple cells at once, for example).  A bridge construct that
+> composes `\foreach` with `\step` is tracked for a future release.
 
 ### 2.2 Extension Commands (2)
 
@@ -123,11 +145,22 @@ index selects a specific element of that kind.
 **Bare IDENT as node_id:** In `node[...]` selectors, a bare identifier (e.g. `G.node[A]`) is
 treated as a string node ID. This is equivalent to `G.node["A"]` but more concise.
 
+> **NOTE — indexing conventions.** Most primitive indices are
+> **0-based** (`a.cell[0]` is the first cell of an `Array`, `ll.node[0]`
+> is the head of a `LinkedList`, and so on).  **`CodePanel.line[i]` is
+> 1-based** — `cp.line[1]` is the first source line, matching the line
+> numbers rendered in the gutter and the line numbers reported by editor
+> tooling and stack traces.  Authors targeting code visualizations
+> should write `cp.line[1]`, `cp.line[2]`, … and never `cp.line[0]`.
+
 Interpolation: `${name}` resolved from Starlark bindings at build time.
 
 ### 3.1 Command Grammar BNF
 
-The complete formal grammar for the body of `\begin{animation}` and `\begin{diagram}` environments.
+The complete formal grammar for the body of `\begin{animation}`
+environments.  `\begin{diagram}` shares the same inner command surface
+but is reserved for extension E5 (see the note in §1.1); v0.5.x always
+produces `AnimationIR`.
 
 #### Top-Level Structure
 
@@ -162,10 +195,15 @@ shape_cmd       ::= "\shape" brace_arg brace_arg param_brace?
 #### Step Command
 
 ```
-step_cmd        ::= "\step" NEWLINE
+step_cmd        ::= "\step" step_options? NEWLINE
+step_options    ::= "[" "label" "=" (IDENT | STRING) "]"
 ```
 
-`\step` must be on its own line with no trailing content.
+`\step` must be on its own line with no trailing content (aside from the
+optional `[label=...]` bracket).  The optional `label` binds an explicit
+frame identifier used by `\hl{step-id}{...}` references (see §7.1); it
+must be a non-empty identifier-shaped string (`[a-zA-Z0-9_.-]+`).
+Unknown option keys raise `E1004`; malformed label values raise `E1005`.
 
 #### Mutation Commands
 
@@ -360,7 +398,7 @@ Unknown state → `E1109`
 | Type | Required Params | Key Features |
 |------|----------------|-------------|
 | `Matrix`/`Heatmap` | `rows`, `cols`, `data` | colorscale (`viridis`/`magma`/`plasma`/`greys`/`rdbu`), `show_values`, `vmin`/`vmax` |
-| `Stack` | (none; all optional) | `orientation`, `max_visible`, `items`, `cell_width`, `cell_height`, `gap`, `label`; push/pop delta semantics |
+| `Stack` | (none; all optional) | `orientation`, `max_visible`, `items`, `label`; push/pop delta semantics |
 | `Plane2D` | `xrange`, `yrange` | lines/points/segments/polygons/regions, geometry helpers |
 | `MetricPlot` | `series` (via `\shape`) | up to 8 series, Wong palette, auto axes, log scale, two-axis mode |
 | `Graph layout=stable` | (same as Graph) | SA joint-optimization, fixed positions across frames |
@@ -375,7 +413,7 @@ Unknown state → `E1109`
 | `Queue` | (none; `capacity` optional, default 8) | Fixed-capacity FIFO, `.cell[i]`/`.front`/`.rear` selectors, enqueue/dequeue ops |
 | `VariableWatch` | `names` | Two-column name-value table, `.var[name]` selectors, per-variable state coloring |
 
-### 5.3 Graph Layout Modes
+### 5.4 Graph Layout Modes
 
 | Mode | Algorithm | Deterministic |
 |------|-----------|---------------|
@@ -385,7 +423,7 @@ Unknown state → `E1109`
 | `hierarchical` | Top-down layered | Yes |
 | `stable` | SA joint-optimization across all frames | Yes (seeded) |
 
-### 5.4 Tree Variants (`kind=`)
+### 5.5 Tree Variants (`kind=`)
 
 | Kind | Required | Auto-built |
 |------|----------|-----------|
@@ -393,7 +431,7 @@ Unknown state → `E1109`
 | `segtree` | `data` | Yes, nodes labeled `[lo,hi]` |
 | `sparse_segtree` | `range_lo`, `range_hi` | Yes, dynamic nodes |
 
-### 5.5 Plane2D Full Parameters
+### 5.6 Plane2D Full Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -428,7 +466,7 @@ Unknown state → `E1109`
 
 Element cap: 500 per frame → `E1466`
 
-### 5.6 MetricPlot Full Parameters
+### 5.7 MetricPlot Full Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
@@ -456,11 +494,14 @@ Element cap: 500 per frame → `E1466`
 
 Data is fed per-frame via `\apply{plot}{series_name=value, ...}`. Max 1000 points per series → `E1483`.
 
-### 5.7 Stack Full Parameters
+### 5.8 Stack Full Parameters
+
+All parameters are **optional** — `Stack` has no required fields.  Cell
+width is computed dynamically from the label widths of the current items,
+so there is no `cell_width`/`cell_height`/`gap` parameter to tune.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `capacity` or `n` | `int` | (required) | Maximum stack capacity |
 | `items` | list | `[]` | Initial items: strings or `{"label": "...", "value": ...}` |
 | `orientation` | `"vertical"` \| `"horizontal"` | `"vertical"` | Stack growth direction |
 | `max_visible` | `int` | `10` | Max items shown before overflow indicator (`+N more`) |
@@ -475,7 +516,7 @@ Data is fed per-frame via `\apply{plot}{series_name=value, ...}`. Max 1000 point
 
 **`.top` selector:** Maps to the last (most recently pushed) item. Recolor/highlight on `.top` applies to `item[len-1]`.
 
-### 5.8 Matrix Full Parameters
+### 5.9 Matrix Full Parameters
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|

@@ -501,3 +501,265 @@ class TestErrorRecovery:
         result = parser.parse(src, error_recovery=True)
         assert len(result.frames) == 1
         assert len(result.frames[0].commands) == 2
+
+
+# ===================================================================
+# Production-audit fixes — Cluster 4
+# ===================================================================
+
+
+class TestUnclosedBraceEOF:
+    """Regression tests for audit finding 07-C1.
+
+    ``_read_param_brace`` previously returned ``{}`` silently when the
+    source ended before the closing ``}``.  It now raises ``E1001`` with
+    the line/col of the opening brace so authors can locate the defect.
+    """
+
+    def test_shape_unclosed_param_brace_raises(
+        self, parser: SceneParser,
+    ) -> None:
+        """``\\shape{a}{Array}{size=5`` (EOF inside third arg) must raise E1001."""
+        src = r"\shape{a}{Array}{size=5"
+        with pytest.raises(ValidationError, match="E1001") as exc_info:
+            parser.parse(src)
+        assert "unterminated" in str(exc_info.value).lower()
+
+    def test_apply_empty_param_brace_at_eof_raises(
+        self, parser: SceneParser,
+    ) -> None:
+        """``\\apply{target}{`` with EOF immediately inside params must raise E1001."""
+        src = "\\step\n\\apply{a}{"
+        with pytest.raises(ValidationError, match="E1001"):
+            parser.parse(src)
+
+    def test_shape_unclosed_first_brace_raises(
+        self, parser: SceneParser,
+    ) -> None:
+        """``\\shape{a`` (EOF inside first arg) must raise E1001."""
+        src = r"\shape{a"
+        with pytest.raises(ValidationError, match="E1001"):
+            parser.parse(src)
+
+
+class TestEmptyParamBrace:
+    """Regression tests for audit finding 07-C2.
+
+    Empty param braces (``\\shape{a}{Array}{}``) are **valid at parse
+    time** by design — the parser cannot know which parameters a given
+    primitive requires.  Runtime primitive construction raises E1103 with
+    a clear message naming the missing parameter.
+    """
+
+    def test_empty_params_parse_successfully(
+        self, parser: SceneParser,
+    ) -> None:
+        src = r"\shape{a}{Array}{}"
+        ir = parser.parse(src)
+        assert len(ir.shapes) == 1
+        assert ir.shapes[0].params == {}
+
+    def test_empty_params_raise_e1103_at_primitive_construction(
+        self,
+    ) -> None:
+        """Array primitive raises E1103 with a descriptive message on missing 'size'."""
+        from scriba.animation.primitives.array import ArrayPrimitive
+        with pytest.raises(ValidationError) as exc_info:
+            ArrayPrimitive(name="a", params={})
+        assert exc_info.value.code == "E1103"
+        assert "size" in str(exc_info.value) or "n" in str(exc_info.value)
+
+
+class TestForeachDepthLimit:
+    """Regression tests for audit finding 07-H3.
+
+    ``\\foreach`` nesting depth is now enforced at parse time (matches
+    ``scene.py``'s runtime check).  A 5-level nested ``\\foreach``
+    must raise ``E1170`` during parsing so the error is surfaced even
+    when the outer iterable would be empty at runtime.
+    """
+
+    def test_five_level_nested_foreach_raises_e1170(
+        self, parser: SceneParser,
+    ) -> None:
+        src = (
+            "\\step\n"
+            "\\foreach{a}{0..1}\n"
+            "  \\foreach{b}{0..1}\n"
+            "    \\foreach{c}{0..1}\n"
+            "      \\foreach{d}{0..1}\n"
+            "        \\foreach{e}{0..1}\n"
+            "          \\recolor{a.cell[${e}]}{state=done}\n"
+            "        \\endforeach\n"
+            "      \\endforeach\n"
+            "    \\endforeach\n"
+            "  \\endforeach\n"
+            "\\endforeach\n"
+        )
+        with pytest.raises(ValidationError, match="E1170"):
+            parser.parse(src)
+
+    def test_three_level_nested_foreach_parses(
+        self, parser: SceneParser,
+    ) -> None:
+        """Three-level nesting is still legal (depth <= 3)."""
+        src = (
+            "\\step\n"
+            "\\foreach{a}{0..1}\n"
+            "  \\foreach{b}{0..1}\n"
+            "    \\foreach{c}{0..1}\n"
+            "      \\recolor{a.cell[${c}]}{state=done}\n"
+            "    \\endforeach\n"
+            "  \\endforeach\n"
+            "\\endforeach\n"
+        )
+        ir = parser.parse(src)
+        assert len(ir.frames) == 1
+
+    def test_foreach_depth_counter_resets_between_siblings(
+        self, parser: SceneParser,
+    ) -> None:
+        """After a sibling foreach closes, the depth counter resets so that
+        subsequent foreach blocks at the same level still parse."""
+        src = (
+            "\\step\n"
+            "\\foreach{i}{0..1}\n"
+            "  \\recolor{a.cell[${i}]}{state=done}\n"
+            "\\endforeach\n"
+            "\\foreach{j}{0..1}\n"
+            "  \\recolor{a.cell[${j}]}{state=idle}\n"
+            "\\endforeach\n"
+        )
+        ir = parser.parse(src)
+        assert len(ir.frames) == 1
+
+
+class TestUnknownCommand:
+    """Regression tests for audit finding 01-H2.
+
+    Unknown backslash commands at top level are now rejected with
+    ``E1006`` so typos are caught at parse time instead of silently
+    disappearing as CHAR tokens.
+    """
+
+    def test_unknown_top_level_command_raises_e1006(
+        self, parser: SceneParser,
+    ) -> None:
+        src = "\\fooBar{x}"
+        with pytest.raises(ValidationError, match="E1006") as exc_info:
+            parser.parse(src)
+        assert "fooBar" in str(exc_info.value)
+        assert "valid commands" in str(exc_info.value)
+
+    def test_unknown_command_inside_step_raises_e1006(
+        self, parser: SceneParser,
+    ) -> None:
+        src = "\\step\n\\typo{a}"
+        with pytest.raises(ValidationError, match="E1006"):
+            parser.parse(src)
+
+    def test_unknown_command_inside_foreach_raises_e1006(
+        self, parser: SceneParser,
+    ) -> None:
+        src = (
+            "\\step\n"
+            "\\foreach{i}{0..1}\n"
+            "  \\bogus{a}\n"
+            "\\endforeach\n"
+        )
+        with pytest.raises(ValidationError, match="E1006"):
+            parser.parse(src)
+
+    def test_unknown_command_inside_narrate_brace_is_allowed(
+        self, parser: SceneParser,
+    ) -> None:
+        """LaTeX macros inside ``\\narrate{...}`` (e.g. ``\\emph{}``) must
+        still round-trip verbatim since the narration body is handed off
+        to KaTeX/the HTML pipeline."""
+        src = "\\step\n\\narrate{\\emph{hi}}"
+        ir = parser.parse(src)
+        assert ir.frames[0].narrate_body == "\\emph{hi}"
+
+    def test_unknown_command_inside_shape_name_rejected(
+        self, parser: SceneParser,
+    ) -> None:
+        """``\\shape{\\foo}{Array}`` is treated as identifier-inside-brace,
+        so ``\\foo`` round-trips through the brace reconstructor but the
+        resulting name is rejected by later validation.  The important
+        property is that the parser does not silently lose the typo."""
+        src = r"\shape{a}{Array}{size=5}" + "\n\\typo"
+        with pytest.raises(ValidationError, match="E1006"):
+            parser.parse(src)
+
+
+class TestStepLabel:
+    """Regression tests for audit finding 01-H1.
+
+    ``\\step[label=...]`` syntax is documented in ``ruleset.md`` §7.1
+    for use with ``\\hl{step-id}{...}`` references.  The parser now
+    accepts it and stores the label on the resulting frame.
+    """
+
+    def test_step_with_label_parses(self, parser: SceneParser) -> None:
+        src = "\\step[label=foo]\n\\narrate{Hello}\n"
+        ir = parser.parse(src)
+        assert len(ir.frames) == 1
+        assert ir.frames[0].label == "foo"
+
+    def test_step_without_label_has_none(self, parser: SceneParser) -> None:
+        src = "\\step\n\\narrate{Hello}\n"
+        ir = parser.parse(src)
+        assert ir.frames[0].label is None
+
+    def test_step_label_with_string_value(
+        self, parser: SceneParser,
+    ) -> None:
+        src = '\\step[label="init-state"]\n\\narrate{Start}\n'
+        ir = parser.parse(src)
+        assert ir.frames[0].label == "init-state"
+
+    def test_multiple_labeled_steps(self, parser: SceneParser) -> None:
+        src = (
+            "\\step[label=start]\n\\narrate{A}\n"
+            "\\step[label=middle]\n\\narrate{B}\n"
+            "\\step[label=finish]\n\\narrate{C}\n"
+        )
+        ir = parser.parse(src)
+        assert [f.label for f in ir.frames] == ["start", "middle", "finish"]
+
+    def test_step_unknown_option_key_raises_e1004(
+        self, parser: SceneParser,
+    ) -> None:
+        src = "\\step[title=foo]\n"
+        with pytest.raises(ValidationError, match="E1004"):
+            parser.parse(src)
+
+    def test_step_label_invalid_shape_raises_e1005(
+        self, parser: SceneParser,
+    ) -> None:
+        src = '\\step[label="has spaces"]\n'
+        with pytest.raises(ValidationError, match="E1005"):
+            parser.parse(src)
+
+    def test_step_unterminated_options_raises(
+        self, parser: SceneParser,
+    ) -> None:
+        """Unterminated ``\\step[...]`` raises a parse error (E1001 at EOF,
+        or E1012 if the bracket body is followed by another statement)."""
+        src = "\\step[label=foo"
+        with pytest.raises(ValidationError, match="E1001"):
+            parser.parse(src)
+
+    def test_step_label_inside_substory(
+        self, parser: SceneParser,
+    ) -> None:
+        src = (
+            "\\step\n"
+            "\\substory[title=sub]\n"
+            "\\step[label=inner]\n"
+            "\\narrate{Inner}\n"
+            "\\endsubstory\n"
+        )
+        ir = parser.parse(src)
+        sub = ir.frames[0].substories[0]
+        assert sub.frames[0].label == "inner"

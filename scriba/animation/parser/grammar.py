@@ -43,6 +43,12 @@ from scriba.animation.constants import (
 
 _MAX_SUBSTORY_DEPTH = 3
 
+# Maximum ``\foreach`` nesting depth at parse time.  Mirrors the runtime
+# check in ``scene.py`` so that pathologically deep nesting is rejected at
+# parse time even when the iterable would be empty (which would otherwise
+# skip the runtime check).  Kept in sync with ``SceneState._MAX_FOREACH_DEPTH``.
+_MAX_FOREACH_DEPTH = 3
+
 
 class SceneParser:
     """Parse the body of a ``\\begin{animation}`` environment."""
@@ -82,6 +88,7 @@ class SceneParser:
         self._allow_highlight_in_prelude = allow_highlight_in_prelude
         self._substory_depth = 0
         self._substory_counter = 0
+        self._foreach_depth = 0
         self._error_recovery = error_recovery
         self._recovery_errors: list[ValidationError] = []
 
@@ -92,6 +99,7 @@ class SceneParser:
         frames: list[FrameIR] = []
         in_prelude = True
         frame_line = 0
+        frame_label: str | None = None
         frame_commands: list[Command] = []
         frame_compute: list[ComputeCommand] = []
         frame_narrate: str | None = None
@@ -104,6 +112,19 @@ class SceneParser:
                 break
 
             tok = self._peek()
+
+            if tok.kind == TokenKind.UNKNOWN_COMMAND:
+                # Typo in a backslash command (e.g. ``\fooBar``).  Report
+                # it with E1006 and its source location.
+                try:
+                    self._raise_unknown_command(tok)
+                except ValidationError as exc:
+                    if not self._error_recovery:
+                        raise
+                    self._recovery_errors.append(exc)
+                    self._advance()  # consume the bad command token
+                    self._skip_to_recovery_point()
+                    continue
 
             if tok.kind == TokenKind.BACKSLASH_CMD:
                 cmd_name = tok.value
@@ -142,10 +163,12 @@ class SceneParser:
                                 compute=tuple(frame_compute),
                                 narrate_body=frame_narrate,
                                 substories=tuple(frame_substories),
+                                label=frame_label,
                             ),
                         )
                     in_prelude = False
                     frame_line = result.line
+                    frame_label = result.label
                     frame_commands = []
                     frame_compute = []
                     frame_narrate = None
@@ -172,6 +195,7 @@ class SceneParser:
                     compute=tuple(frame_compute),
                     narrate_body=frame_narrate,
                     substories=tuple(frame_substories),
+                    label=frame_label,
                 ),
             )
 
@@ -218,8 +242,9 @@ class SceneParser:
 
         if cmd_name == "step":
             step_tok = self._advance()
+            label = self._try_parse_step_options(step_tok)
             self._check_step_trailing(step_tok.line)
-            return StepCommand(step_tok.line, step_tok.col)
+            return StepCommand(step_tok.line, step_tok.col, label=label)
 
         if cmd_name == "narrate":
             if in_prelude:
@@ -307,6 +332,27 @@ class SceneParser:
         )
 
     # ------------------------------------------------------------------
+    # Unknown-command diagnostic
+    # ------------------------------------------------------------------
+
+    _VALID_COMMANDS_LIST = (
+        "\\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, "
+        "\\recolor, \\reannotate, \\annotate, \\cursor, "
+        "\\foreach, \\endforeach, \\substory, \\endsubstory"
+    )
+
+    def _raise_unknown_command(self, tok: Token) -> None:
+        """Raise ``E1006`` for an unknown backslash command token."""
+        raise ValidationError(
+            f"unknown command \\{tok.value}; "
+            f"valid commands: {self._VALID_COMMANDS_LIST}",
+            position=tok.col,
+            code="E1006",
+            line=tok.line,
+            col=tok.col,
+        )
+
+    # ------------------------------------------------------------------
     # Error recovery helpers
     # ------------------------------------------------------------------
 
@@ -321,14 +367,17 @@ class SceneParser:
         """
         # First, skip past the current token (the failed command's backslash)
         # so we don't re-match it.
-        if not self._at_end() and self._peek().kind == TokenKind.BACKSLASH_CMD:
+        if not self._at_end() and self._peek().kind in (
+            TokenKind.BACKSLASH_CMD,
+            TokenKind.UNKNOWN_COMMAND,
+        ):
             self._advance()
 
         # Skip non-command tokens until we reach the next backslash command
         # or EOF.
         while not self._at_end():
             tok = self._peek()
-            if tok.kind == TokenKind.BACKSLASH_CMD:
+            if tok.kind in (TokenKind.BACKSLASH_CMD, TokenKind.UNKNOWN_COMMAND):
                 return
             self._advance()
 
@@ -669,6 +718,31 @@ class SceneParser:
         foreach_line = tok.line
         foreach_col = tok.col
 
+        # Enforce nesting depth at parse time (runtime check in scene.py
+        # would not fire when the outer iterable is empty).
+        self._foreach_depth += 1
+        try:
+            if self._foreach_depth > _MAX_FOREACH_DEPTH:
+                raise ValidationError(
+                    f"\\foreach nesting depth exceeds maximum ({_MAX_FOREACH_DEPTH})",
+                    position=tok.col,
+                    code="E1170",
+                    line=tok.line,
+                    col=tok.col,
+                )
+            return self._parse_foreach_body(tok, foreach_line, foreach_col)
+        finally:
+            self._foreach_depth -= 1
+
+    def _parse_foreach_body(
+        self,
+        tok: Token,
+        foreach_line: int,
+        foreach_col: int,
+    ) -> ForeachCommand:
+        """Inner body of ``\\foreach`` parsing, separated so the depth counter
+        is always decremented via ``_parse_foreach``'s ``finally`` block."""
+
         # Parse {variable} — single IDENT
         variable = self._read_brace_arg(tok).strip()
         if not variable or not variable.isidentifier():
@@ -692,6 +766,9 @@ class SceneParser:
                 break
 
             inner_tok = self._peek()
+
+            if inner_tok.kind == TokenKind.UNKNOWN_COMMAND:
+                self._raise_unknown_command(inner_tok)
 
             if inner_tok.kind == TokenKind.BACKSLASH_CMD:
                 inner_cmd = inner_tok.value
@@ -830,6 +907,7 @@ class SceneParser:
         sub_frames: list[FrameIR] = []
         sub_in_prelude = True
         sub_frame_line = 0
+        sub_frame_label: str | None = None
         sub_frame_commands: list[Command] = []
         sub_frame_compute: list[ComputeCommand] = []
         sub_frame_narrate: str | None = None
@@ -842,6 +920,9 @@ class SceneParser:
                 break
 
             inner_tok = self._peek()
+
+            if inner_tok.kind == TokenKind.UNKNOWN_COMMAND:
+                self._raise_unknown_command(inner_tok)
 
             if inner_tok.kind == TokenKind.BACKSLASH_CMD:
                 inner_cmd = inner_tok.value
@@ -860,6 +941,7 @@ class SceneParser:
                                 compute=tuple(sub_frame_compute),
                                 narrate_body=sub_frame_narrate,
                                 substories=tuple(sub_frame_substories),
+                                label=sub_frame_label,
                             ),
                         )
 
@@ -909,11 +991,13 @@ class SceneParser:
                                 compute=tuple(sub_frame_compute),
                                 narrate_body=sub_frame_narrate,
                                 substories=tuple(sub_frame_substories),
+                                label=sub_frame_label,
                             ),
                         )
                     sub_in_prelude = False
                     step_tok = self._advance()
                     sub_frame_line = step_tok.line
+                    sub_frame_label = self._try_parse_step_options(step_tok)
                     sub_frame_commands = []
                     sub_frame_compute = []
                     sub_frame_narrate = None
@@ -1086,6 +1170,12 @@ class SceneParser:
                 parts.append("}")
             elif t.kind == TokenKind.BACKSLASH_CMD:
                 parts.append("\\" + t.value)
+            elif t.kind == TokenKind.UNKNOWN_COMMAND:
+                # Unknown macros like ``\emph`` are allowed inside balanced
+                # brace arguments (e.g. inside ``\narrate{\emph{x}}``).
+                # They are reconstructed verbatim and passed through to
+                # downstream consumers (KaTeX, HTML emitter, etc.).
+                parts.append("\\" + t.value)
             elif t.kind == TokenKind.INTERP:
                 parts.append("${" + t.value + "}")
             elif t.kind == TokenKind.STRING:
@@ -1101,11 +1191,27 @@ class SceneParser:
         )
 
     def _read_param_brace(self) -> dict[str, ParamValue]:
-        """Read ``{key=value, ...}`` parameter list."""
+        """Read ``{key=value, ...}`` parameter list.
+
+        Contract:
+        - A missing param brace (no ``{`` at the current position) is
+          **valid**: it yields an empty param dict.  The primitive or command
+          implementation is responsible for enforcing required parameters at
+          construction time (e.g. ``Array`` without ``size``/``n`` raises
+          ``E1103`` from the primitive constructor, not from the parser).
+        - An empty param brace ``{}`` is likewise valid at parse time and
+          flows through as an empty dict; runtime validation catches the
+          missing parameters.
+        - An **unterminated** param brace (EOF reached before the matching
+          ``}``) is a parse error: raise ``E1001`` pointing to the opening
+          brace so the author can locate the unclosed group.
+        """
         self._skip_newlines()
         if self._at_end() or self._peek().kind != TokenKind.LBRACE:
+            # Missing param brace is valid; primitive enforces required
+            # params at runtime.
             return {}
-        self._advance()  # consume {
+        open_tok = self._advance()  # consume { — remember its line/col
         params: dict[str, ParamValue] = {}
         self._skip_newlines()
         while not self._at_end() and self._peek().kind != TokenKind.RBRACE:
@@ -1120,7 +1226,18 @@ class SceneParser:
             if not self._at_end() and self._peek().kind == TokenKind.COMMA:
                 self._advance()
             self._skip_newlines()
-        if not self._at_end() and self._peek().kind == TokenKind.RBRACE:
+        if self._at_end():
+            # EOF reached without closing brace — unterminated parameter
+            # brace.  Point the error at the opening ``{`` so the author
+            # can find it.
+            raise ValidationError(
+                "unterminated brace argument: missing '}' before end of input",
+                position=open_tok.col,
+                code="E1001",
+                line=open_tok.line,
+                col=open_tok.col,
+            )
+        if self._peek().kind == TokenKind.RBRACE:
             self._advance()
         return params
 
@@ -1240,8 +1357,92 @@ class SceneParser:
                 if depth == 0:
                     return
 
+    def _try_parse_step_options(self, step_tok: Token) -> str | None:
+        """Parse the optional ``[label=ident]`` bracket immediately after
+        ``\\step``.
+
+        Per ``ruleset.md`` §7.1, a ``\\step[label=foo]`` opts into an
+        explicit frame identifier that external references
+        (``\\hl{foo}{...}``) can target.  The only accepted option key is
+        ``label``; anything else raises ``E1004`` (unknown option) to stay
+        consistent with environment-option validation.
+
+        Returns the label string, or ``None`` if no bracket follows.
+        """
+        # ``[`` must appear on the same line as ``\step`` — it is a
+        # trailing token, not a fresh statement.
+        if self._at_end():
+            return None
+        nxt = self._peek()
+        if nxt.kind != TokenKind.LBRACKET or nxt.line != step_tok.line:
+            return None
+        self._advance()  # consume [
+
+        label: str | None = None
+        while not self._at_end() and self._peek().kind != TokenKind.RBRACKET:
+            self._skip_newlines()
+            if self._at_end() or self._peek().kind == TokenKind.RBRACKET:
+                break
+            key_tok = self._expect(TokenKind.IDENT)
+            self._expect(TokenKind.EQUALS)
+            val_tok = self._advance()
+            if val_tok.kind not in (TokenKind.IDENT, TokenKind.STRING):
+                raise ValidationError(
+                    "invalid \\step option value (expected identifier or string)",
+                    position=val_tok.col,
+                    code="E1005",
+                    line=val_tok.line,
+                    col=val_tok.col,
+                )
+            if key_tok.value != "label":
+                raise ValidationError(
+                    f"unknown \\step option key {key_tok.value!r}; valid: label",
+                    position=key_tok.col,
+                    code="E1004",
+                    line=key_tok.line,
+                    col=key_tok.col,
+                )
+            if label is not None:
+                raise ValidationError(
+                    "duplicate 'label' option in \\step",
+                    position=key_tok.col,
+                    code="E1004",
+                    line=key_tok.line,
+                    col=key_tok.col,
+                )
+            label = val_tok.value
+            # Validate label shape: identifier-friendly so it can appear
+            # in HTML ids and \hl{step-id}{...} references.
+            if not label or not label.replace("-", "_").replace(".", "_").isidentifier():
+                raise ValidationError(
+                    f"invalid \\step label {label!r}; "
+                    "must be a non-empty identifier (letters, digits, _, -, .)",
+                    position=val_tok.col,
+                    code="E1005",
+                    line=val_tok.line,
+                    col=val_tok.col,
+                )
+            self._skip_newlines()
+            if not self._at_end() and self._peek().kind == TokenKind.COMMA:
+                self._advance()
+
+        if self._at_end() or self._peek().kind != TokenKind.RBRACKET:
+            raise ValidationError(
+                "unterminated \\step options: missing ']'",
+                position=step_tok.col,
+                code="E1001",
+                line=step_tok.line,
+                col=step_tok.col,
+            )
+        self._advance()  # consume ]
+        return label
+
     def _check_step_trailing(self, step_line: int) -> None:
-        """Check there is no non-whitespace on the same line after \\step."""
+        """Check there is no non-whitespace on the same line after \\step.
+
+        The optional ``[label=...]`` bracket is already consumed by
+        ``_try_parse_step_options`` before this check runs.
+        """
         while not self._at_end():
             tok = self._peek()
             if tok.kind == TokenKind.NEWLINE:
