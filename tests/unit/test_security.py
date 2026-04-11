@@ -322,11 +322,19 @@ class TestSecurityWave4NewVectors:
             NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 0})
 
     def test_dptable_negative_rows_is_validation_error(self) -> None:
-        """Negative dimensions must be rejected."""
-        with pytest.raises(ValidationError, match="E1103"):
+        """Negative dimensions must be rejected.
+
+        Post-Wave-2 Cluster 2: E1103 was split into primitive-specific
+        codes; DPTable negative-rows now raises E1428.
+        """
+        with pytest.raises(ValidationError, match="E1428"):
             DPTablePrimitive("dp", {"rows": -1, "cols": 5})
 
     def test_grid_zero_rows_is_validation_error(self) -> None:
-        """Zero-sized grid must be rejected."""
-        with pytest.raises(ValidationError, match="E1103"):
+        """Zero-sized grid must be rejected.
+
+        Post-Wave-2 Cluster 2: Grid now raises E1411 (rows out of range)
+        rather than the mega-bucket E1103.
+        """
+        with pytest.raises(ValidationError, match="E1411"):
             GridPrimitive("g", {"rows": 0, "cols": 5})

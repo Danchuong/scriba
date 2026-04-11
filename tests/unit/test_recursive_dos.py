@@ -109,14 +109,15 @@ class TestCyclicGraph:
 
 
 class TestOversizedDimensionalCaps:
-    """Cluster 5 dimensional caps (E1103) fire at 250k cells."""
+    """Cluster 5 + Wave 2 Cluster 2 dimensional caps fire at 250k cells
+    with code E1425 (Matrix/DPTable cell count exceeded)."""
 
     def test_dptable_250k_plus_one_cells_rejected(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1425"):
             DPTablePrimitive("dp", {"rows": 501, "cols": 500})
 
     def test_dptable_1d_250k_plus_one_rejected(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1425"):
             DPTablePrimitive("dp", {"n": 250_001})
 
     def test_dptable_exactly_250k_accepted(self) -> None:
@@ -125,7 +126,7 @@ class TestOversizedDimensionalCaps:
         assert inst.rows * inst.cols == 250_000
 
     def test_matrix_250k_plus_one_rejected(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1425"):
             MatrixPrimitive("m", {"rows": 501, "cols": 500})
 
     def test_matrix_exactly_250k_accepted(self) -> None:
@@ -137,9 +138,13 @@ class TestForeachIterationCaps:
     """Foreach depth and iterable length caps fire at the right codes."""
 
     def test_foreach_depth_3_is_allowed(self) -> None:
-        """The parser allows up to _MAX_FOREACH_DEPTH=3 levels."""
+        """The parser allows up to _MAX_FOREACH_DEPTH=3 levels.
+
+        SceneParser expects the INNER content of an animation block (no
+        \\begin{animation} wrapper). That wrapper is handled upstream by
+        detect_animation_blocks.
+        """
         src = (
-            "\\begin{animation}\n"
             "\\shape{a}{Array}{size=3}\n"
             "\\step\n"
             "\\foreach{i}{0..1}\n"
@@ -149,7 +154,6 @@ class TestForeachIterationCaps:
             "\\endforeach\n"
             "\\endforeach\n"
             "\\endforeach\n"
-            "\\end{animation}\n"
         )
         ir = SceneParser().parse(src)
         assert ir is not None
@@ -160,13 +164,11 @@ class TestForeachIterationCaps:
         ``SceneState._resolve_iterable``.)"""
         from scriba.animation.scene import SceneState
         src = (
-            "\\begin{animation}\n"
             "\\shape{a}{Array}{size=3}\n"
             "\\step\n"
             "\\foreach{i}{0..10001}\n"  # 10002 elements → over cap
             "\\highlight{a.cell[0]}\n"
             "\\endforeach\n"
-            "\\end{animation}\n"
         )
         ir = SceneParser().parse(src)
         state = SceneState()
@@ -179,13 +181,11 @@ class TestForeachIterationCaps:
         in bounded time."""
         from scriba.animation.scene import SceneState
         src = (
-            "\\begin{animation}\n"
             "\\shape{a}{Array}{size=3}\n"
             "\\step\n"
             "\\foreach{i}{1..9999}\n"
             "\\highlight{a.cell[0]}\n"
             "\\endforeach\n"
-            "\\end{animation}\n"
         )
         ir = SceneParser().parse(src)
         state = SceneState()
