@@ -5,6 +5,238 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-04-11 (Production audit fixes)
+
+Patch release landing **Wave 1** and **Wave 2** fixes from the 21-agent
+production-readiness audit recorded in
+`docs/archive/production-audit-2026-04-11/`. All changes are backward
+compatible with 0.5.0 consumers; the only behavioral diffs are stricter
+validation, structured error codes in place of opaque failures, and a
+few previously silent bugs now raising `ValidationError`.
+
+### Security / Sandbox
+
+- **Starlark sandbox: 3 escape vectors closed (13-C1, 13-C2, 13-C3).**
+  - `str.format()` templates that touch attributes (`"{0.__class__}".format(x)`)
+    are now rejected with `E1154`. Plain positional/keyword `{0}`/`{name}`
+    substitution still works.
+  - F-string / recursive attribute chain bypass closed: the AST scanner
+    now walks every `.attr` in an attribute chain, so
+    `f"{[].append.__self__.__class__}"` is rejected at the `__class__`
+    link.
+  - Generator / coroutine / async-generator introspection attributes
+    (`gi_frame`, `gi_code`, `gi_yieldfrom`, `gi_running`, `cr_frame`,
+    `cr_code`, `cr_running`, `cr_await`, `ag_frame`, `ag_code`) added
+    to `BLOCKED_ATTRIBUTES`.
+- **Determinism: `hash()` removed from Starlark builtins (08-C2).** The
+  prior exposure broke the byte-identical-output guarantee because the
+  builtin is seeded by `PYTHONHASHSEED`.
+- **Memory limit aligned to spec (08-C1).** `_MEMORY_LIMIT_BYTES` and
+  `_TRACEMALLOC_PEAK_LIMIT` both pinned at 64 MB (spec §6.3). The prior
+  256 MB host / 128 MB tracemalloc drift is gone.
+- **Dunder blocklist expanded (08-M1).** `__class_getitem__`,
+  `__format__`, `__getattr__`, `__getattribute__`, `__set_name__`,
+  `__init_subclass__` added to the sandbox dunder blocklist.
+- **Walrus and `match` statements forbidden (13-H1, 13-H3).**
+  `ast.NamedExpr` and `ast.Match` added to `_FORBIDDEN_NODE_TYPES`.
+- **Recursion limit pinned (08-M2).** `sys.setrecursionlimit(1000)` is
+  now called explicitly at worker startup so the spec's 1000-frame
+  limit is enforced independent of the host interpreter default.
+- **Deterministic set iteration (08-M3).** Set serialization uses
+  `(str(x), repr(x))` as the tie-break key for stable ordering when
+  `str(x)` collides.
+- **Sanitizer allowlist expanded (06-C1, 06-H1, 06-M1).** `bleach`
+  was silently stripping attributes the emitter actually writes:
+  - `<figure>`: `data-scriba-scene`, `data-frame-count`, `data-layout`,
+    `aria-label`
+  - `<div>`: `data-scriba-frames` (substory widget)
+  - `<svg>`: `aria-labelledby`, `role`
+  - `<g>`: `data-target` (primitive shape-group selectors)
+  Each addition is documented as inert (no URL-accepting attribute, no
+  script execution, no `is_safe_url` wiring needed).
+
+### Parser
+
+- **Unclosed brace at EOF now raises `E1001` (07-C1).** Previously
+  `\shape{a}{Array}{size=5` silently parsed to an empty shape, losing
+  user data.
+- **Unknown commands rejected with `E1006` (01-H2).** `\foo` (where
+  `\foo` is not in `_KNOWN_COMMANDS`) now raises a structured error
+  listing the valid commands instead of silently becoming a CHAR token.
+  Bare backslashes (`\{`, `\\`) still parse as CHAR.
+- **`\step[label=...]` now supported at parse level (01-H1).** The
+  spec on line 546 documented step label options that the parser
+  previously rejected with `E1052`. `FrameIR.label` carries the value
+  through the AST; top-level and `\substory`-nested steps both accept
+  it. Emitter wiring will land in a follow-up.
+- **`\foreach` depth limit enforced at parse time (07-H3).** Mirrors
+  the runtime limit in `scene.py` so deep nesting now errors out at
+  parse time with a structured code rather than producing a
+  pathological IR tree.
+- **`FrameIR.label` field added** to the animation AST.
+
+### Error codes & UX
+
+- **`E1103` mega-bucket split (05-C2, 09-C2, 09-H1).** The previous
+  catch-all has been replaced with primitive-specific codes carrying
+  valid-range hints in the message:
+  - `E1400` — empty params at primitive construction
+  - `E1401` — Array size overflow (valid: 1..10000)
+  - `E1411` — Grid rows/cols overflow
+  - `E1412` — Grid data shape mismatch
+  - `E1420` — Matrix missing rows/cols
+  - `E1425` — Matrix / DPTable cell count exceeds 250 000
+  - `E1430` — Tree missing root
+  - `E1453` — NumberLine invalid domain
+  - `E1454` — NumberLine domain overflow
+  - (plus DPTable / Graph / HashMap / Queue / Stack specific codes;
+    see the error catalog for the full list)
+  - `E1103` itself is kept as a **deprecated alias** for user code that
+    catches it generically.
+- **`E1425` wired at Matrix/DPTable cell cap (06-H2, 10-C1).** The
+  spec-code drift (spec said 10 000, code allowed 250 000, the cap
+  raised generic `E1103`) is now resolved: both primitives raise
+  `E1425` with the actual `rows*cols` value and the 250 000 limit.
+- **`E1173` for foreach iterable overflow (05-C2).** `_safe_range()`
+  now raises a structured `animation_error("E1173", ...)` instead of a
+  bare `ValueError` (which previously collapsed to `E1151`).
+- **`animation_error()` factory extended (05-C3, 09-H2).** New keyword
+  arguments `line`, `col`, `hint`, `source_line` (all optional, fully
+  backward compatible) are forwarded to `ValidationError.__init__`.
+- **`ValidationError` source-snippet rendering (09-M3).** `__str__()`
+  now appends a pointer line when `source_line` is provided:
+  `at line 42, col 15:\n  <source>\n  ^` — omitted when unset, so
+  existing callers see identical output.
+- **`ValidationError.from_selector_error()` classmethod added (09-H4)**
+  for selector-position → line/col translation.
+- **`errors.format_compute_traceback()` helper added (09-H3)** — filters
+  Python internals out of Starlark tracebacks so editorial authors see
+  only their own `\compute` block stack.
+
+### Pipeline & workers
+
+- **Placeholder substitution re-entry hole closed (20-C2).** Each
+  `render()` call now allocates a fresh 128-bit hex nonce baked into
+  the placeholder prefix (`secrets.token_hex(16)`), and substitution
+  walks markers in a single `re.sub` pass keyed by block index.
+  Adversarial or buggy renderer output that happens to contain the
+  legacy `\x00SCRIBA_BLOCK_N\x00` pattern can no longer trigger
+  re-entrant substitution.
+- **Context-provider validation (20-C1).** `Pipeline._prepare_ctx()`
+  wraps each provider in `try/except` and asserts
+  `isinstance(ctx, RenderContext)` after every provider returns.
+  Provider exceptions are re-raised as `ValidationError` with provider
+  identity; missing instance check raises with the offending type.
+- **`renderer.version` coercion guarded (20-H2).** `int(renderer.version)`
+  is now wrapped: non-int-coercible values yield `ValidationError`
+  naming the renderer and the offending type instead of a bare
+  `TypeError` mid-render.
+- **Block-render error enrichment (20-M1).** Mid-loop failures are
+  re-raised with `renderer.name`, block `kind`, and byte range via
+  `__cause__` chaining so partial-failure diagnostics are actionable.
+- **`Pipeline.close()` cleanup exceptions surfaced (20-H1).** Each
+  failing `renderer.close()` now emits a `RuntimeWarning` and is
+  logged with a traceback; cleanup remains best-effort.
+- **Asset-path collision warning (20-M2).** When two renderers map the
+  same namespaced `namespace/basename` key to different paths, a
+  `UserWarning` is emitted and the first-seen path wins. Previously
+  the second path silently clobbered the first.
+- **`context_providers=[]` loud-opt-out (20-C3).** Passing an explicit
+  empty list now emits a `UserWarning` so consumers notice they have
+  opted out of every default provider (including TeX inline-rendering
+  auto-wiring). Passing `None` or omitting the argument still activates
+  the built-in defaults.
+- **Worker JSON protocol is ASCII-safe (20-H3).** Both
+  `PersistentSubprocessWorker.send` and `OneShotSubprocessWorker.send`
+  now pass `ensure_ascii=True` so zero-width joiners, BOM, and LS/PS
+  separators cannot break newline framing via adversarial Unicode in
+  request payloads.
+- **`SubprocessWorker` alias deprecated (14-H2).** The long-standing
+  alias now emits a single `DeprecationWarning` at module import time.
+  Identity is preserved (`isinstance` and `is` still match
+  `PersistentSubprocessWorker`); the warning is the only behavioral
+  change. Migrate to `PersistentSubprocessWorker`.
+- **Dead `getattr` fallback removed (20-L1).** `__init__` already
+  validates `renderer.name`, so the `getattr(renderer, "name",
+  "unknown")` fallback in asset namespacing was unreachable and masked
+  programmer errors.
+
+### Primitives & limits
+
+- **Matrix / DPTable raise `E1425` at cell cap (06-H2).** The error
+  message now includes `rows`, `cols`, and the `rows*cols` overflow
+  value so authors can see how much they were over.
+- **Graph with empty nodes now raises (10-L / prior H4).**
+  `Graph.__init__` raises `animation_error("E1103")` on missing or
+  empty `nodes=[]` (previously warn-only). Two pre-existing tests
+  updated to expect the raise.
+- **Annotation list per-frame cap (10-M1).**
+  `SceneState._MAX_ANNOTATIONS_PER_FRAME = 500`; overflow raises
+  `ValidationError(E1103)` at `_apply_annotate()`.
+- **CodePanel 1-based indexing made load-bearing (04-H4).**
+  `validate_selector()` has an explicit `idx < 1` short-circuit and a
+  docstring spelling out the one-off convention; boundary tests pin
+  that `line[1]` is the first valid line and `line[0]` is rejected.
+- **LinkedList `link[i]` semantics documented (04-M1).**
+  Class-level comment pins `link[i]` as the outgoing arrow from
+  `node[i]` to `node[i+1]`; valid indices are `0..N-2`.
+
+### Spec & docs
+
+- **Duplicate `§5.3` in `ruleset.md` renumbered (02-C1).** Former
+  `§5.3` (second copy) → `§5.4`; `5.4–5.8` cascaded to `5.5–5.9`.
+- **Stack spec drift fixed (04-C1).** `§5.2` / `§5.8` no longer
+  reference the non-existent `cell_width` / `cell_height` / `gap`
+  parameters; all remaining params clarified as optional.
+- **`\begin{diagram}` marked reserved for extension E5 (01-C1).**
+  v0.5.x treats diagram mode as unimplemented; parser still returns
+  `AnimationIR` and the spec flags the gap explicitly.
+- **`\step` forbidden inside `\foreach` documented (19-H4).** A
+  prominent note in `ruleset.md §2.1` explains that `\step`,
+  `\shape`, `\substory`, and `\endsubstory` are not allowed inside a
+  `\foreach` body (→ `E1172`) and points at the manual-unroll pattern
+  for algorithms that need per-iteration frames (monotonic stack,
+  amortized walk).
+- **CodePanel 1-based note added to `ruleset.md §3` (04-H4).**
+- **`environments.md §3` header clarified (02-C3).** 12 block
+  constructs (counted as one each).
+- **`primitives.md` stale refs fixed (02-C2).**
+  `04-environments-spec.md` → `environments.md`.
+- **Sandbox spec §6.1 / §6.3 / §7.1 / §7.3 expanded (08-M2, 13-H1).**
+  Windows SIGALRM fallback, three-layer memory enforcement,
+  intentionally-allowed AST nodes (`ListComp`, `DictComp`, `SetComp`,
+  `GeneratorExp`, `JoinedStr`, `isinstance`, generator `.send/.throw`)
+  all documented.
+- **Cookbook 06-frog1-dp `\compute{}` indentation bug fixed (18-C4).**
+  The Starlark block previously had inconsistent indent levels that
+  would fail Starlark parse. Rewritten with uniform 4-space indents;
+  algorithmic meaning unchanged.
+- **Blog post `launch-0.5.0.md` primitive count corrected (18-C3).**
+  The table now enumerates all 16 primitives including the 5
+  data-structure primitives (Queue, LinkedList, HashMap, CodePanel,
+  VariableWatch); the stale "11 primitives" / "Plus 4 extensions"
+  wording is gone.
+- **CHANGELOG 0.5.0 back-fill (18-H3).** 5 data-structure primitives
+  (Queue, LinkedList, HashMap, CodePanel, VariableWatch) are now
+  retroactively acknowledged in the 0.5.0 "Added" section.
+- **Cookbook example 11 added (19-H4):** `11-loop-to-step-manual-unroll.md`
+  walks through the monotonic-stack next-greater pattern showing how
+  to manually unroll `\step` blocks and use `\foreach` inside each
+  step for per-iteration fanout.
+- **README "Coming in v0.2.0" note removed.** The animation environment
+  has been shipping since 0.2.0 and is part of 0.5.x; the forward-looking
+  note was factually stale.
+
+### Tests
+
+- **~1311 tests passing.** 50 new Starlark red-team cases,
+  57 sanitizer-contract assertions (including 41 parametrized
+  per-tag membership snapshots pinning `ALLOWED_TAGS` /
+  `ALLOWED_ATTRS` against silent regression), 21 parser/lexer
+  cases, 20 primitive cases, and 17 pipeline/worker cases. 16 tests
+  across 8 files updated to expect the new specific error codes
+  instead of `E1103`.
+
 ## [0.5.0] - 2026-04-10 (Phase D)
 
 ### Added
@@ -14,6 +246,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   LaTeX constructs.
 - Launch blog post and documentation site.
 - Homebrew tap for CLI installation (`brew install ojcloud/tap/scriba`).
+- **Five data-structure primitives retroactively documented**
+  (`Queue`, `LinkedList`, `HashMap`, `CodePanel`, `VariableWatch`). These
+  landed across the 0.3.x–0.5.0 window without explicit CHANGELOG entries;
+  they are pinned here for provenance. `CodePanel` is the one primitive
+  in the catalog that uses **1-based** line indexing (every other
+  primitive is 0-based) so that line numbers match the displayed
+  gutter. See `docs/primitives/codepanel.md`, `queue.md`,
+  `linkedlist.md`, `hashmap.md`, `variablewatch.md`.
 
 ### Changed
 - Error UX overhaul: every user-facing error now carries a unique `E1xxx` code,
@@ -163,6 +403,7 @@ worker; diagram plugin (0.2+) reserved.
 - 71 tests: 30 snapshot + 5 XSS + 6 validator + 9 API + 7 pipeline +
   9 workers + 7 sanitize
 
+[0.5.1]: https://github.com/ojcloud/scriba/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/ojcloud/scriba/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/ojcloud/scriba/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/ojcloud/scriba/compare/v0.2.0...v0.3.0

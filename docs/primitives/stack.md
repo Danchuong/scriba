@@ -30,10 +30,7 @@ structure as a horizontal or vertical sequence of labeled cells. It unlocks:
 \shape{s}{Stack}{
   orientation="vertical",
   max_visible=10,
-  items=[],
-  cell_width=80,
-  cell_height=36,
-  gap=4
+  items=[]
 }
 ```
 
@@ -49,9 +46,14 @@ empty vertical stack.
 | `orientation`  | `"vertical"` \| `"horizontal"` | `"vertical"` | Axis along which items stack. See §9 for visual conventions.  |
 | `max_visible`  | positive integer             | 10            | Maximum items shown before overflow collapse. See §7.         |
 | `items`        | list of item specs           | `[]`          | Initial contents. Each item spec is defined in §2.3.          |
-| `cell_width`   | integer (px)                 | 80            | Width of each item cell in the SVG viewBox.                   |
-| `cell_height`  | integer (px)                 | 36            | Height of each item cell.                                     |
-| `gap`          | integer (px)                 | 4             | Pixel gap between adjacent cells.                             |
+| `label`        | string                       | none          | Optional caption rendered below the stack.                    |
+
+> **Dimensions are automatic.** `cell_width`, `cell_height`, and `gap` are
+> **not** accepted parameters; cell geometry is recomputed from the current
+> item labels on every push/pop so the shape always fits its contents. Any
+> extra keys passed to the constructor are benignly ignored (§5.2 of the
+> ruleset spec formerly listed these as options; that entry has been fixed
+> for v0.5.1).
 
 **Hard cap:** 1000 items total (across all push operations in the animation lifetime).
 Exceeding this is **E1440** (push-beyond-capacity, error).

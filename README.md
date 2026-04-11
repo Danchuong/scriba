@@ -15,11 +15,14 @@ asset basenames needed to display it.
 - **Self-contained output contract:** every render produces an HTML fragment
   plus a namespaced set of required CSS and JS basenames and a block-data
   map — consumers decide how to serve the static assets.
-- **Coming in v0.2.0:** a `\begin{animation}` environment for step-through
-  editorial walkthroughs, followed by a `\begin{diagram}` environment for
-  inline graph/tree figures. See
-  [`docs/scriba/04-environments-spec.md`](https://github.com/ojcloud/scriba/tree/main/docs)
-  <!-- TODO: update once public mirror exists -->.
+- **`\begin{animation}` environment** (shipping since 0.2.0) for step-through
+  editorial walkthroughs with 16 built-in primitives (arrays, grids, graphs,
+  trees, DP tables, number lines, matrices/heatmaps, stacks, plane-2D,
+  metric plots, and the 5 data-structure primitives: code panel, hash map,
+  linked list, queue, variable watch). `\begin{diagram}` for inline
+  static graph/tree figures is reserved under extension E5. See
+  [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
+  error catalog.
 
 ## Install
 

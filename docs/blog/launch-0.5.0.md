@@ -75,24 +75,42 @@ Scriba is a compile-time system. The pipeline is:
 
 Everything happens at build time. The output is a frozen filmstrip, not a runtime application.
 
-## 11 primitives
+## 16 primitives
 
-Scriba ships with 11 primitive types that cover the visualization vocabulary of competitive programming:
+Scriba ships with 16 primitive types that cover the visualization vocabulary of competitive programming, organized into three groups. The first six are the base catalog from 0.2.0; the next five are the 0.3.x–0.4.x extensions for geometry and plots; the last five are the data-structure primitives for visualizing algorithm traces rather than the underlying arrays.
+
+**Base (6)**
 
 | Primitive | Use case |
 |-----------|----------|
 | Array | Sorted arrays, sequences, string characters |
-| DPTable | 2D DP state tables with cell highlighting |
-| Graph | Directed/undirected graphs with edge operations |
 | Grid | 2D grids for BFS, flood fill, path problems |
+| DPTable | 1D / 2D DP state tables with cell highlighting |
+| Graph | Directed/undirected graphs with edge operations |
 | Tree | Rooted trees with Reingold-Tilford layout |
 | NumberLine | Ranges, intervals, binary search bounds |
-| Matrix / Heatmap | Dense matrices with colorscale overlays |
+
+**Extended (5)**
+
+| Primitive | Use case |
+|-----------|----------|
+| Matrix / Heatmap | Dense matrices with colorscale overlays (viridis, magma, rdbu) |
 | Stack | Push/pop sequences for monotonic stacks, matching |
 | Plane2D | 2D coordinate plane for geometry, CHT, Li Chao |
-| MetricPlot | Live scalar tracking across frames (potential, cost) |
+| MetricPlot | Live scalar tracking across frames (potential, cost, up to 8 series) |
+| Graph `layout=stable` | Deterministic node positioning across frames |
 
-Plus 4 extensions: `\hl` (step-synced LaTeX highlighting), figure-embed (SVG/PNG escape hatch), `\substory` (nested drilldown), and CSS `@keyframes` slots.
+**Data-structure (5)**
+
+| Primitive | Use case |
+|-----------|----------|
+| CodePanel | Source code display with per-line state highlighting (1-based `line[i]`) |
+| HashMap | Bucket-based hash-table visualization, `bucket[i]` selectors |
+| LinkedList | Linked list with `node[i]` and `link[i]` arrow selectors |
+| Queue | FIFO queue with `cell[i]`, `front`, `rear` selectors |
+| VariableWatch | Named-variable watch panel with `var[name]` selectors |
+
+On top of the primitive catalog, Scriba also ships four editorial directives: `\hl` (step-synced LaTeX highlighting), `\substory` (nested drilldown inside a timeline), `figure-embed` (SVG/PNG escape hatch), and CSS `@keyframes` slots for continuous-motion overlays.
 
 ## The 10 hard problems
 

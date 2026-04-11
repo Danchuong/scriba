@@ -20,37 +20,37 @@ The author writes this LaTeX environment directly in their problem statement:
     dp[0] = 0
     pred = [-1] * n
     trace = []
-  trace.append({"type": "init", "cell": 0, "value": 0, "title": "BASE CASE",
-                "narration": "$\\text{dp}[1] = 0$ (ếch bắt đầu ở đá 1, chưa tốn chi phí)."})
-  for i in range(1, n):
-    options = []
-    if i >= 1:
-      cost = abs(heights[i] - heights[i-1])
-      options.append({"src": i-1, "cost": cost, "total": dp[i-1] + cost})
-    if i >= 2:
-      cost = abs(heights[i] - heights[i-2])
-      options.append({"src": i-2, "cost": cost, "total": dp[i-2] + cost})
-    trace.append({"type": "candidates", "cell": i, "options": options,
-                  "title": "dp[%d]" % (i+1),
-                  "narration": "So sánh các candidate cho $\\text{dp}[%d]$." % (i+1)})
-    best = 0
-    for j in range(1, len(options)):
-      if options[j]["total"] < options[best]["total"]:
-        best = j
-    dp[i] = options[best]["total"]
-    pred[i] = options[best]["src"]
-    trace.append({"type": "commit", "cell": i, "value": dp[i],
-                  "winner_src": pred[i],
-                  "title": "dp[%d] = %d" % (i+1, dp[i]),
-                  "narration": "Chốt $\\text{dp}[%d] = %d$." % (i+1, dp[i])})
-  # Traceback without while — bounded for with break
-  path = [n - 1]
-  for _ in range(n):
-    last = path[-1]
-    if last == 0:
-      break
-    path.append(pred[last])
-  path = list(reversed(path))
+    trace.append({"type": "init", "cell": 0, "value": 0, "title": "BASE CASE",
+                  "narration": "$\\text{dp}[1] = 0$ (ếch bắt đầu ở đá 1, chưa tốn chi phí)."})
+    for i in range(1, n):
+        options = []
+        if i >= 1:
+            cost = abs(heights[i] - heights[i-1])
+            options.append({"src": i-1, "cost": cost, "total": dp[i-1] + cost})
+        if i >= 2:
+            cost = abs(heights[i] - heights[i-2])
+            options.append({"src": i-2, "cost": cost, "total": dp[i-2] + cost})
+        trace.append({"type": "candidates", "cell": i, "options": options,
+                      "title": "dp[%d]" % (i+1),
+                      "narration": "So sánh các candidate cho $\\text{dp}[%d]$." % (i+1)})
+        best = 0
+        for j in range(1, len(options)):
+            if options[j]["total"] < options[best]["total"]:
+                best = j
+        dp[i] = options[best]["total"]
+        pred[i] = options[best]["src"]
+        trace.append({"type": "commit", "cell": i, "value": dp[i],
+                      "winner_src": pred[i],
+                      "title": "dp[%d] = %d" % (i+1, dp[i]),
+                      "narration": "Chốt $\\text{dp}[%d] = %d$." % (i+1, dp[i])})
+    # Traceback without while — bounded for with break
+    path = [n - 1]
+    for _ in range(n):
+        last = path[-1]
+        if last == 0:
+            break
+        path.append(pred[last])
+    path = list(reversed(path))
     trace.append({"type": "traceback", "path": path, "title": "TRACEBACK",
                   "narration": "Lần ngược predecessor để dựng đường đi tối ưu."})
   }

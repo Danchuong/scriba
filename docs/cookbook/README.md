@@ -17,6 +17,7 @@
 | 07 | [`07-swap-game/`](./07-swap-game/) | `\begin{animation}` | Swap game BFS trên state space 3×3, 8 frame, `\compute` chạy BFS thật |
 | 08 | [`08-monkey-apples/`](./08-monkey-apples/) | `\begin{animation}` | Monkey & Apple-trees — sparse segtree lazy paint idempotent, 9 frame, `\compute` đệ quy |
 | 09 | [`09-zuma/`](./09-zuma/) | `\begin{animation}` | Zuma (CF 607B) — interval DP với palindrome merge, 13 frame |
+| 11 | [`11-loop-to-step-manual-unroll.md`](./11-loop-to-step-manual-unroll.md) | `\begin{animation}` | Next-greater via monotonic stack — pattern for algorithms with per-iteration frames (manual `\step` unroll around a shared `\compute` trace) |
 
 ## Structure
 
