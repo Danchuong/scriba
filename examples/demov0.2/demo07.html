@@ -88,12 +88,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   min-height: 2.5rem;
 }
 
-/* SVG text */
-svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: central;
-}
+/* SVG text — font properties are set via inline style on each <text>
+   element so primitives can use different fonts (e.g. CodePanel uses
+   monospace, Graph uses sans-serif).  No global svg text rule here. */
 .idx {
   font: 500 10px ui-monospace, monospace;
   fill: #6c757d;
@@ -159,6 +156,8 @@ svg text {
 [data-theme="dark"] .scriba-step-label { color: #7d8590; }
 [data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
 </head>
 <body>
 <button class="theme-toggle" onclick="
@@ -166,10 +165,10 @@ svg text {
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>demo07</h1>
-<div class="scriba-widget" id="kadane">
+<div class="scriba-widget" id="kadane" tabindex="0">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">Step 1 / 5</span>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 5</span>
     <button class="scriba-btn-next">Next</button>
     <div class="scriba-progress">
       <div class="scriba-dot active"></div>
@@ -180,17 +179,274 @@ svg text {
     </div>
   </div>
   <div class="scriba-stage"></div>
-  <p class="scriba-narration"></p>
+  <p class="scriba-narration" id="kadane-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+<div class="scriba-print-frame" data-step="1">
+  <span class="scriba-step-label">Step 1 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-print-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-current">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">-2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="a.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="a.cell[2]" class="scriba-state-dim">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="154" y="20" fill="#adb5bd">-3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="a.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="a.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">-1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="a.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="a.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="a.cell[7]" class="scriba-state-dim">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="464" y="20" fill="#adb5bd">-5</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="kadane-print-1-narration">Start: currentSum = -2, maxSum = -2. Negative start.</p>
+</div>
+<div class="scriba-print-frame" data-step="2">
+  <span class="scriba-step-label">Step 2 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-print-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">-2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="a.cell[1]" class="scriba-state-current">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="a.cell[2]" class="scriba-state-dim">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="154" y="20" fill="#adb5bd">-3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="a.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="a.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">-1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="a.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="a.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="a.cell[7]" class="scriba-state-dim">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="464" y="20" fill="#adb5bd">-5</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="kadane-print-2-narration">a[1]=1. Reset currentSum=1. maxSum=1.</p>
+</div>
+<div class="scriba-print-frame" data-step="3">
+  <span class="scriba-step-label">Step 3 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-print-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">-2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="a.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="a.cell[2]" class="scriba-state-current">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="154" y="20" fill="#ffffff">-3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="a.cell[3]" class="scriba-state-current">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="a.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">-1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="a.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="a.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="a.cell[7]" class="scriba-state-dim">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="464" y="20" fill="#adb5bd">-5</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="kadane-print-3-narration">a[2]=-3: currentSum=-2, reset. a[3]=4: currentSum=4, maxSum=4.</p>
+</div>
+<div class="scriba-print-frame" data-step="4">
+  <span class="scriba-step-label">Step 4 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-print-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">-2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="a.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="a.cell[2]" class="scriba-state-dim">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="154" y="20" fill="#adb5bd">-3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="a.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">4</text>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="a.cell[4]" class="scriba-state-current">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">-1</text>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="a.cell[5]" class="scriba-state-current">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="a.cell[6]" class="scriba-state-current">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="a.cell[7]" class="scriba-state-dim">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="464" y="20" fill="#adb5bd">-5</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="kadane-print-4-narration">a[4]=-1: sum=3. a[5]=2: sum=5. a[6]=1: sum=6. maxSum=6.</p>
+</div>
+<div class="scriba-print-frame" data-step="5">
+  <span class="scriba-step-label">Step 5 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-print-5-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-dim">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="30" y="20" fill="#adb5bd">-2</text>
+  </g>
+  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
+  <g data-target="a.cell[1]" class="scriba-state-dim">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="92" y="20" fill="#adb5bd">1</text>
+  </g>
+  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
+  <g data-target="a.cell[2]" class="scriba-state-dim">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="154" y="20" fill="#adb5bd">-3</text>
+  </g>
+  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
+  <g data-target="a.cell[3]" class="scriba-state-done">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="216" y="20" fill="#ffffff">4</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
+  <g data-target="a.cell[4]" class="scriba-state-done">
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="278" y="20" fill="#ffffff">-1</text>
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
+  <g data-target="a.cell[5]" class="scriba-state-done">
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="340" y="20" fill="#ffffff">2</text>
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
+  <g data-target="a.cell[6]" class="scriba-state-done">
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="402" y="20" fill="#ffffff">1</text>
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
+  <g data-target="a.cell[7]" class="scriba-state-dim">
+    <rect x="434" y="0" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="464" y="20" fill="#adb5bd">-5</text>
+  </g>
+  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="kadane-print-5-narration">a[7]=-5: sum=1. Final maxSum=6, subarray a[3..6]=[4,-1,2,1].</p>
+</div>
+  </div>
 </div>
 <script>
 (function(){
   var W=document.getElementById('kadane');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-current">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
     <text x="30" y="20" fill="#ffffff">-2</text>
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
@@ -231,8 +487,8 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>`,narration:`Start: currentSum = -2, maxSum = -2. Negative start.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+</svg>`,narration:`Start: currentSum = -2, maxSum = -2. Negative start.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-dim">
@@ -241,7 +497,7 @@ svg text {
   </g>
   <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
   <g data-target="a.cell[1]" class="scriba-state-current">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
     <text x="92" y="20" fill="#ffffff">1</text>
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
@@ -277,8 +533,8 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>`,narration:`a[1]=1. Reset currentSum=1. maxSum=1.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-frame-3-narration" xmlns="http://www.w3.org/2000/svg">
+</svg>`,narration:`a[1]=1. Reset currentSum=1. maxSum=1.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-dim">
@@ -292,12 +548,12 @@ svg text {
   </g>
   <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
   <g data-target="a.cell[2]" class="scriba-state-current">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
     <text x="154" y="20" fill="#ffffff">-3</text>
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="a.cell[3]" class="scriba-state-current">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
     <text x="216" y="20" fill="#ffffff">4</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
@@ -323,8 +579,8 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>`,narration:`a[2]=-3: currentSum=-2, reset. a[3]=4: currentSum=4, maxSum=4.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-frame-4-narration" xmlns="http://www.w3.org/2000/svg">
+</svg>`,narration:`a[2]=-3: currentSum=-2, reset. a[3]=4: currentSum=4, maxSum=4.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-dim">
@@ -343,22 +599,22 @@ svg text {
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="a.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
     <text x="216" y="20" fill="#ffffff">4</text>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="a.cell[4]" class="scriba-state-current">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
     <text x="278" y="20" fill="#ffffff">-1</text>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="a.cell[5]" class="scriba-state-current">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
     <text x="340" y="20" fill="#ffffff">2</text>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="a.cell[6]" class="scriba-state-current">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
     <text x="402" y="20" fill="#ffffff">1</text>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
@@ -369,8 +625,8 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>`,narration:`a[4]=-1: sum=3. a[5]=2: sum=5. a[6]=1: sum=6. maxSum=6.`},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-frame-5-narration" xmlns="http://www.w3.org/2000/svg">
+</svg>`,narration:`a[4]=-1: sum=3. a[5]=2: sum=5. a[6]=1: sum=6. maxSum=6.`,substory:``},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="kadane-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-dim">
@@ -389,23 +645,27 @@ svg text {
   </g>
   <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
   <g data-target="a.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
     <text x="216" y="20" fill="#ffffff">4</text>
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
   </g>
   <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
   <g data-target="a.cell[4]" class="scriba-state-done">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
     <text x="278" y="20" fill="#ffffff">-1</text>
+    <rect x="248" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
   </g>
   <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
   <g data-target="a.cell[5]" class="scriba-state-done">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
     <text x="340" y="20" fill="#ffffff">2</text>
+    <rect x="310" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
   </g>
   <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
   <g data-target="a.cell[6]" class="scriba-state-done">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
     <text x="402" y="20" fill="#ffffff">1</text>
+    <rect x="372" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
   </g>
   <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
   <g data-target="a.cell[7]" class="scriba-state-dim">
@@ -415,19 +675,36 @@ svg text {
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>`,narration:`a[7]=-5: sum=1. Final maxSum=6, subarray a[3..6]=[4,-1,2,1].`}
+</svg>`,narration:`a[7]=-5: sum=1. Final maxSum=6, subarray a[3..6]=[4,-1,2,1].`,substory:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
   var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
   var ctr=W.querySelector('.scriba-step-counter');
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
   var dots=W.querySelectorAll('.scriba-dot');
+  function initSub(el){
+    var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
+    var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
+    var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
+    var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
+    function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
+      sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+      sp.disabled=i===0;sx.disabled=i===fd.length-1;
+      sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+    }
+    sp.addEventListener('click',function(){if(sc>0)sh(sc-1);});
+    sx.addEventListener('click',function(){if(sc<fd.length-1)sh(sc+1);});
+    sh(0);
+  }
   function show(i){
     cur=i;
     stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
+    narr.innerHTML=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
+    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
@@ -439,7 +716,6 @@ svg text {
     if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
-  W.setAttribute('tabindex','0');
   show(0);
 })();
 </script>

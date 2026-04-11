@@ -88,12 +88,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   min-height: 2.5rem;
 }
 
-/* SVG text */
-svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: central;
-}
+/* SVG text — font properties are set via inline style on each <text>
+   element so primitives can use different fonts (e.g. CodePanel uses
+   monospace, Graph uses sans-serif).  No global svg text rule here. */
 .idx {
   font: 500 10px ui-monospace, monospace;
   fill: #6c757d;
@@ -168,8 +165,397 @@ svg text {
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>d08_matrix_dp</h1>
-<div class="scriba-widget" id="matrix-chain" tabindex="0"><div class="scriba-controls"><button class="scriba-btn-prev" disabled>Prev</button><span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 5</span><button class="scriba-btn-next">Next</button><div class="scriba-progress"><div class="scriba-dot active"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" id="matrix-chain-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="matrix" data-shape="m"><g data-target="m.cell[0][0]" class="scriba-state-idle"><rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][1]" class="scriba-state-idle"><rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][2]" class="scriba-state-idle"><rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][3]" class="scriba-state-idle"><rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][0]" class="scriba-state-idle"><rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][1]" class="scriba-state-idle"><rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][2]" class="scriba-state-idle"><rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][3]" class="scriba-state-idle"><rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][0]" class="scriba-state-idle"><rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][1]" class="scriba-state-idle"><rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][2]" class="scriba-state-idle"><rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][3]" class="scriba-state-idle"><rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][0]" class="scriba-state-idle"><rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][1]" class="scriba-state-idle"><rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][2]" class="scriba-state-idle"><rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][3]" class="scriba-state-idle"><rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g></g></g></svg></div><p class="scriba-narration" id="matrix-chain-print-1-narration">4x4 cost matrix for matrix chain multiplication. Diagonal is 0 (single matrix, no cost). Fill upper triangle.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-2-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="matrix" data-shape="m"><g data-target="m.cell[0][0]" class="scriba-state-done"><rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][1]" class="scriba-state-idle"><rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][2]" class="scriba-state-idle"><rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][3]" class="scriba-state-idle"><rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][0]" class="scriba-state-idle"><rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][1]" class="scriba-state-done"><rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][2]" class="scriba-state-idle"><rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][3]" class="scriba-state-idle"><rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][0]" class="scriba-state-idle"><rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][1]" class="scriba-state-idle"><rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][2]" class="scriba-state-done"><rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][3]" class="scriba-state-idle"><rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][0]" class="scriba-state-idle"><rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][1]" class="scriba-state-idle"><rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][2]" class="scriba-state-idle"><rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][3]" class="scriba-state-done"><rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g></g></g></svg></div><p class="scriba-narration" id="matrix-chain-print-2-narration">Diagonal entries are 0: multiplying one matrix costs nothing.</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">Step 3 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-3-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="matrix" data-shape="m"><g data-target="m.cell[0][0]" class="scriba-state-done"><rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][1]" class="scriba-state-current"><rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/><text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][2]" class="scriba-state-idle"><rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][3]" class="scriba-state-idle"><rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][0]" class="scriba-state-idle"><rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][1]" class="scriba-state-done"><rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][2]" class="scriba-state-current"><rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/><text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][3]" class="scriba-state-idle"><rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][0]" class="scriba-state-idle"><rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][1]" class="scriba-state-idle"><rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][2]" class="scriba-state-done"><rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][3]" class="scriba-state-current"><rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/><text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][0]" class="scriba-state-idle"><rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][1]" class="scriba-state-idle"><rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][2]" class="scriba-state-idle"><rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][3]" class="scriba-state-done"><rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g></g></g></svg></div><p class="scriba-narration" id="matrix-chain-print-3-narration">Fill length-2 chains. These are direct multiplications of adjacent matrix pairs.</p></div><div class="scriba-print-frame" data-step="4"><span class="scriba-step-label">Step 4 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-4-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="matrix" data-shape="m"><g data-target="m.cell[0][0]" class="scriba-state-done"><rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][1]" class="scriba-state-done"><rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][2]" class="scriba-state-current"><rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/><text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][3]" class="scriba-state-idle"><rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][0]" class="scriba-state-idle"><rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][1]" class="scriba-state-done"><rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][2]" class="scriba-state-done"><rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][3]" class="scriba-state-current"><rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/><text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][0]" class="scriba-state-idle"><rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][1]" class="scriba-state-idle"><rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][2]" class="scriba-state-done"><rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][3]" class="scriba-state-done"><rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][0]" class="scriba-state-idle"><rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][1]" class="scriba-state-idle"><rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][2]" class="scriba-state-idle"><rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][3]" class="scriba-state-done"><rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g></g></g></svg></div><p class="scriba-narration" id="matrix-chain-print-4-narration">Fill length-3 chains. Try all split points, keep minimum cost.</p></div><div class="scriba-print-frame" data-step="5"><span class="scriba-step-label">Step 5 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-5-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="matrix" data-shape="m"><g data-target="m.cell[0][0]" class="scriba-state-done"><rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][1]" class="scriba-state-done"><rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][2]" class="scriba-state-done"><rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[0][3]" class="scriba-state-good"><rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#3a95c9" stroke-width="2.5"/><text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][0]" class="scriba-state-idle"><rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][1]" class="scriba-state-done"><rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][2]" class="scriba-state-done"><rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[1][3]" class="scriba-state-done"><rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][0]" class="scriba-state-idle"><rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][1]" class="scriba-state-idle"><rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][2]" class="scriba-state-done"><rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[2][3]" class="scriba-state-done"><rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][0]" class="scriba-state-idle"><rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][1]" class="scriba-state-idle"><rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][2]" class="scriba-state-idle"><rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/><text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g><g data-target="m.cell[3][3]" class="scriba-state-done"><rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/><text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text></g></g></g></svg></div><p class="scriba-narration" id="matrix-chain-print-5-narration">Fill length-4 chain at (0,3). This is the final answer: minimum cost to multiply all matrices.</p></div></div></div>
-<script>(function(){
+<div class="scriba-widget" id="matrix-chain" tabindex="0">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 5</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration" id="matrix-chain-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+<div class="scriba-print-frame" data-step="1">
+  <span class="scriba-step-label">Step 1 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="matrix" data-shape="m">
+  <g data-target="m.cell[0][0]" class="scriba-state-done">
+    <rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][1]" class="scriba-state-done">
+    <rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][2]" class="scriba-state-done">
+    <rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][3]" class="scriba-state-good">
+    <rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#3a95c9" stroke-width="2.5"/>
+    <text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][0]" class="scriba-state-idle">
+    <rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][1]" class="scriba-state-done">
+    <rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][2]" class="scriba-state-done">
+    <rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][3]" class="scriba-state-done">
+    <rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][0]" class="scriba-state-idle">
+    <rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][1]" class="scriba-state-idle">
+    <rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][2]" class="scriba-state-done">
+    <rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][3]" class="scriba-state-done">
+    <rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][0]" class="scriba-state-idle">
+    <rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][1]" class="scriba-state-idle">
+    <rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][2]" class="scriba-state-idle">
+    <rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][3]" class="scriba-state-done">
+    <rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="matrix-chain-print-1-narration">4x4 cost matrix for matrix chain multiplication. Diagonal is 0 (single matrix, no cost). Fill upper triangle.</p>
+</div>
+<div class="scriba-print-frame" data-step="2">
+  <span class="scriba-step-label">Step 2 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="matrix" data-shape="m">
+  <g data-target="m.cell[0][0]" class="scriba-state-done">
+    <rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][1]" class="scriba-state-done">
+    <rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][2]" class="scriba-state-done">
+    <rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][3]" class="scriba-state-good">
+    <rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#3a95c9" stroke-width="2.5"/>
+    <text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][0]" class="scriba-state-idle">
+    <rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][1]" class="scriba-state-done">
+    <rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][2]" class="scriba-state-done">
+    <rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][3]" class="scriba-state-done">
+    <rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][0]" class="scriba-state-idle">
+    <rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][1]" class="scriba-state-idle">
+    <rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][2]" class="scriba-state-done">
+    <rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][3]" class="scriba-state-done">
+    <rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][0]" class="scriba-state-idle">
+    <rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][1]" class="scriba-state-idle">
+    <rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][2]" class="scriba-state-idle">
+    <rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][3]" class="scriba-state-done">
+    <rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="matrix-chain-print-2-narration">Diagonal entries are 0: multiplying one matrix costs nothing.</p>
+</div>
+<div class="scriba-print-frame" data-step="3">
+  <span class="scriba-step-label">Step 3 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="matrix" data-shape="m">
+  <g data-target="m.cell[0][0]" class="scriba-state-done">
+    <rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][1]" class="scriba-state-current">
+    <rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][2]" class="scriba-state-done">
+    <rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][3]" class="scriba-state-good">
+    <rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#3a95c9" stroke-width="2.5"/>
+    <text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][0]" class="scriba-state-idle">
+    <rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][1]" class="scriba-state-done">
+    <rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][2]" class="scriba-state-current">
+    <rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][3]" class="scriba-state-done">
+    <rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][0]" class="scriba-state-idle">
+    <rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][1]" class="scriba-state-idle">
+    <rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][2]" class="scriba-state-done">
+    <rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][3]" class="scriba-state-current">
+    <rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][0]" class="scriba-state-idle">
+    <rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][1]" class="scriba-state-idle">
+    <rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][2]" class="scriba-state-idle">
+    <rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][3]" class="scriba-state-done">
+    <rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="matrix-chain-print-3-narration">Fill length-2 chains. These are direct multiplications of adjacent matrix pairs.</p>
+</div>
+<div class="scriba-print-frame" data-step="4">
+  <span class="scriba-step-label">Step 4 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="matrix" data-shape="m">
+  <g data-target="m.cell[0][0]" class="scriba-state-done">
+    <rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][1]" class="scriba-state-done">
+    <rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][2]" class="scriba-state-current">
+    <rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][3]" class="scriba-state-good">
+    <rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#3a95c9" stroke-width="2.5"/>
+    <text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][0]" class="scriba-state-idle">
+    <rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][1]" class="scriba-state-done">
+    <rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][2]" class="scriba-state-done">
+    <rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][3]" class="scriba-state-current">
+    <rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][0]" class="scriba-state-idle">
+    <rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][1]" class="scriba-state-idle">
+    <rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][2]" class="scriba-state-done">
+    <rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][3]" class="scriba-state-done">
+    <rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][0]" class="scriba-state-idle">
+    <rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][1]" class="scriba-state-idle">
+    <rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][2]" class="scriba-state-idle">
+    <rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][3]" class="scriba-state-done">
+    <rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="matrix-chain-print-4-narration">Fill length-3 chains. Try all split points, keep minimum cost.</p>
+</div>
+<div class="scriba-print-frame" data-step="5">
+  <span class="scriba-step-label">Step 5 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-print-5-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="matrix" data-shape="m">
+  <g data-target="m.cell[0][0]" class="scriba-state-done">
+    <rect x="0" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="12" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][1]" class="scriba-state-done">
+    <rect x="25" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][2]" class="scriba-state-done">
+    <rect x="50" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[0][3]" class="scriba-state-good">
+    <rect x="75" y="0" width="24" height="24" fill="rgb(33,145,140)" stroke="#3a95c9" stroke-width="2.5"/>
+    <text x="87" y="12" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][0]" class="scriba-state-idle">
+    <rect x="0" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][1]" class="scriba-state-done">
+    <rect x="25" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="37" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][2]" class="scriba-state-done">
+    <rect x="50" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[1][3]" class="scriba-state-done">
+    <rect x="75" y="25" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="37" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][0]" class="scriba-state-idle">
+    <rect x="0" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][1]" class="scriba-state-idle">
+    <rect x="25" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][2]" class="scriba-state-done">
+    <rect x="50" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="62" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[2][3]" class="scriba-state-done">
+    <rect x="75" y="50" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="62" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][0]" class="scriba-state-idle">
+    <rect x="0" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="12" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][1]" class="scriba-state-idle">
+    <rect x="25" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="37" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][2]" class="scriba-state-idle">
+    <rect x="50" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="none" stroke-width="0"/>
+    <text x="62" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+  <g data-target="m.cell[3][3]" class="scriba-state-done">
+    <rect x="75" y="75" width="24" height="24" fill="rgb(33,145,140)" stroke="#009E73" stroke-width="2.5"/>
+    <text x="87" y="87" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:8px">0</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="matrix-chain-print-5-narration">Fill length-4 chain at (0,3). This is the final answer: minimum cost to multiply all matrices.</p>
+</div>
+  </div>
+</div>
+<script>
+(function(){
   var W=document.getElementById('matrix-chain');
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 131 131" role="img" aria-labelledby="matrix-chain-narration" xmlns="http://www.w3.org/2000/svg">
@@ -563,6 +949,7 @@ svg text {
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
   show(0);
-})();</script>
+})();
+</script>
 </body>
 </html>

@@ -165,8 +165,72 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>demo_stack</h1>
-<div class="scriba-widget" id="stack" tabindex="0"><div class="scriba-controls"><button class="scriba-btn-prev" disabled>Prev</button><span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 5</span><button class="scriba-btn-next">Next</button><div class="scriba-progress"><div class="scriba-dot active"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" id="stack-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 84" role="img" aria-labelledby="stack-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="8" width="80" height="36" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="48" y="26" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">A</text></g></g></g></svg></div><p class="scriba-narration" id="stack-print-1-narration">Stack has 2 items: A (bottom), B (top).</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-print-2-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="48" width="80" height="36" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="48" y="66" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">C</text></g></g></g></svg></div><p class="scriba-narration" id="stack-print-2-narration">Push C. Stack: A, B, C. New top is C.</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">Step 3 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 164" role="img" aria-labelledby="stack-print-3-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="88" width="80" height="36" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="48" y="106" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" fill="#212529" style="text-anchor:middle;dominant-baseline:central">C</text></g><g data-target="s.item[2]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">D</text></g></g></g></svg></div><p class="scriba-narration" id="stack-print-3-narration">Push D. Stack: A, B, C, D. New top is D.</p></div><div class="scriba-print-frame" data-step="4"><span class="scriba-step-label">Step 4 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-print-4-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="48" width="80" height="36" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="48" y="66" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">C</text></g></g></g></svg></div><p class="scriba-narration" id="stack-print-4-narration">Pop D. Stack: A, B, C. Top is C again.</p></div><div class="scriba-print-frame" data-step="5"><span class="scriba-step-label">Step 5 / 5</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 84" role="img" aria-labelledby="stack-print-5-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g></g></svg></div><p class="scriba-narration" id="stack-print-5-narration">Pop C and B. Only A remains. Stack complete.</p></div></div></div>
-<script>(function(){
+<div class="scriba-widget" id="stack" tabindex="0">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 5</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration" id="stack-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+<div class="scriba-print-frame" data-step="1">
+  <span class="scriba-step-label">Step 1 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 84" role="img" aria-labelledby="stack-print-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="8" width="80" height="36" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="48" y="26" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">A</text></g></g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="stack-print-1-narration">Stack has 2 items: A (bottom), B (top).</p>
+</div>
+<div class="scriba-print-frame" data-step="2">
+  <span class="scriba-step-label">Step 2 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-print-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="48" width="80" height="36" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="48" y="66" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">C</text></g></g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="stack-print-2-narration">Push C. Stack: A, B, C. New top is C.</p>
+</div>
+<div class="scriba-print-frame" data-step="3">
+  <span class="scriba-step-label">Step 3 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 164" role="img" aria-labelledby="stack-print-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="88" width="80" height="36" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="48" y="106" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" fill="#212529" style="text-anchor:middle;dominant-baseline:central">C</text></g><g data-target="s.item[2]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">D</text></g></g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="stack-print-3-narration">Push D. Stack: A, B, C, D. New top is D.</p>
+</div>
+<div class="scriba-print-frame" data-step="4">
+  <span class="scriba-step-label">Step 4 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-print-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-done"><rect x="8" y="48" width="80" height="36" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="48" y="66" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">A</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">C</text></g></g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="stack-print-4-narration">Pop D. Stack: A, B, C. Top is C again.</p>
+</div>
+<div class="scriba-print-frame" data-step="5">
+  <span class="scriba-step-label">Step 5 / 5</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 128 84" role="img" aria-labelledby="stack-print-5-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="stack-print-5-narration">Pop C and B. Only A remains. Stack complete.</p>
+</div>
+  </div>
+</div>
+<script>
+(function(){
   var W=document.getElementById('stack');
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 128 124" role="img" aria-labelledby="stack-narration" xmlns="http://www.w3.org/2000/svg">
@@ -235,6 +299,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
   show(0);
-})();</script>
+})();
+</script>
 </body>
 </html>

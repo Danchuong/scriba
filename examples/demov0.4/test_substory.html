@@ -88,12 +88,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   min-height: 2.5rem;
 }
 
-/* SVG text */
-svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: central;
-}
+/* SVG text — font properties are set via inline style on each <text>
+   element so primitives can use different fonts (e.g. CodePanel uses
+   monospace, Graph uses sans-serif).  No global svg text rule here. */
 .idx {
   font: 500 10px ui-monospace, monospace;
   fill: #6c757d;
@@ -159,6 +156,8 @@ svg text {
 [data-theme="dark"] .scriba-step-label { color: #7d8590; }
 [data-theme="dark"] .theme-toggle { background: #21262d; color: #e6edf3; border-color: #30363d; }
 </style>
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">
 </head>
 <body>
 <button class="theme-toggle" onclick="
@@ -166,10 +165,10 @@ svg text {
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>test_substory</h1>
-<div class="scriba-widget" id="test-substory">
+<div class="scriba-widget" id="test-substory" tabindex="0">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter">Step 1 / 2</span>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span>
     <button class="scriba-btn-next">Next</button>
     <div class="scriba-progress">
       <div class="scriba-dot active"></div>
@@ -177,18 +176,107 @@ svg text {
     </div>
   </div>
   <div class="scriba-stage"></div>
-  <p class="scriba-narration"></p>
+  <p class="scriba-narration" id="test-substory-narration" aria-live="polite"></p>
   <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+<div class="scriba-print-frame" data-step="1">
+  <span class="scriba-step-label">Step 1 / 2</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-print-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-current">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">3</text>
+  </g>
+  <g data-target="a.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">1</text>
+  </g>
+  <g data-target="a.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">4</text>
+  </g>
+  <g data-target="a.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">1</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="test-substory-print-1-narration">Processing element 0.</p>
+<div class="scriba-substory" data-substory-id="substory1">
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 154 72" role="img" aria-labelledby="test-substory-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="sub">
+  <g data-target="sub.cell[0]" class="scriba-state-idle">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="30" y="20" fill="#212529">3</text>
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
+  </g>
+  <g data-target="sub.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration">Compare 3 and 1.</p>
+</div>
+<div class="scriba-substory" data-substory-id="substory1">
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 154 72" role="img" aria-labelledby="test-substory-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="sub">
+  <g data-target="sub.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">3</text>
+  </g>
+  <g data-target="sub.cell[1]" class="scriba-state-done">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="92" y="20" fill="#ffffff">1</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration">Sub-computation complete.</p>
+</div>
+</div>
+<div class="scriba-print-frame" data-step="2">
+  <span class="scriba-step-label">Step 2 / 2</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-print-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-done">
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="30" y="20" fill="#ffffff">3</text>
+  </g>
+  <g data-target="a.cell[1]" class="scriba-state-idle">
+    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="92" y="20" fill="#212529">1</text>
+  </g>
+  <g data-target="a.cell[2]" class="scriba-state-idle">
+    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="154" y="20" fill="#212529">4</text>
+  </g>
+  <g data-target="a.cell[3]" class="scriba-state-idle">
+    <rect x="186" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="216" y="20" fill="#212529">1</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="test-substory-print-2-narration">Element 0 processed.</p>
+</div>
+  </div>
 </div>
 <script>
 (function(){
   var W=document.getElementById('test-substory');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-frame-1-narration" xmlns="http://www.w3.org/2000/svg">
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-current">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#005a8e" stroke-width="2"/>
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
     <text x="30" y="20" fill="#ffffff">3</text>
   </g>
   <g data-target="a.cell[1]" class="scriba-state-idle">
@@ -210,7 +298,7 @@ svg text {
                data-substory-id="substory1"
                data-substory-depth="1">
         <div class="scriba-substory-widget" id="sub-test-substory-1"
-             data-scriba-frames="[{&quot;svg&quot;: &quot;&lt;svg class=\\&quot;scriba-stage-svg\\&quot; viewBox=\\&quot;0 0 154 72\\&quot; role=\\&quot;img\\&quot; aria-labelledby=\\&quot;test-substory-frame-1-narration\\&quot; xmlns=\\&quot;http://www.w3.org/2000/svg\\&quot;&gt;\\n&lt;g transform=\\&quot;translate(16,16)\\&quot;&gt;\\n&lt;g data-primitive=\\&quot;array\\&quot; data-shape=\\&quot;sub\\&quot;&gt;\\n  &lt;g data-target=\\&quot;sub.cell[0]\\&quot; class=\\&quot;scriba-state-idle\\&quot;&gt;\\n    &lt;rect x=\\&quot;0\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;#f6f8fa\\&quot; stroke=\\&quot;#d0d7de\\&quot; stroke-width=\\&quot;1.5\\&quot;/&gt;\\n    &lt;text x=\\&quot;30\\&quot; y=\\&quot;20\\&quot; fill=\\&quot;#212529\\&quot;&gt;3&lt;/text&gt;\\n    &lt;rect x=\\&quot;0\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;none\\&quot; stroke=\\&quot;#F0E442\\&quot; stroke-width=\\&quot;3\\&quot; stroke-dasharray=\\&quot;6 3\\&quot;/&gt;\\n  &lt;/g&gt;\\n  &lt;g data-target=\\&quot;sub.cell[1]\\&quot; class=\\&quot;scriba-state-idle\\&quot;&gt;\\n    &lt;rect x=\\&quot;62\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;#f6f8fa\\&quot; stroke=\\&quot;#d0d7de\\&quot; stroke-width=\\&quot;1.5\\&quot;/&gt;\\n    &lt;text x=\\&quot;92\\&quot; y=\\&quot;20\\&quot; fill=\\&quot;#212529\\&quot;&gt;1&lt;/text&gt;\\n  &lt;/g&gt;\\n&lt;/g&gt;\\n&lt;/g&gt;\\n&lt;/svg&gt;&quot;, &quot;narration&quot;: &quot;Compare 3 and 1.&quot;}, {&quot;svg&quot;: &quot;&lt;svg class=\\&quot;scriba-stage-svg\\&quot; viewBox=\\&quot;0 0 154 72\\&quot; role=\\&quot;img\\&quot; aria-labelledby=\\&quot;test-substory-frame-2-narration\\&quot; xmlns=\\&quot;http://www.w3.org/2000/svg\\&quot;&gt;\\n&lt;g transform=\\&quot;translate(16,16)\\&quot;&gt;\\n&lt;g data-primitive=\\&quot;array\\&quot; data-shape=\\&quot;sub\\&quot;&gt;\\n  &lt;g data-target=\\&quot;sub.cell[0]\\&quot; class=\\&quot;scriba-state-done\\&quot;&gt;\\n    &lt;rect x=\\&quot;0\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;#009E73\\&quot; stroke=\\&quot;#007a59\\&quot; stroke-width=\\&quot;2\\&quot;/&gt;\\n    &lt;text x=\\&quot;30\\&quot; y=\\&quot;20\\&quot; fill=\\&quot;#ffffff\\&quot;&gt;3&lt;/text&gt;\\n  &lt;/g&gt;\\n  &lt;g data-target=\\&quot;sub.cell[1]\\&quot; class=\\&quot;scriba-state-done\\&quot;&gt;\\n    &lt;rect x=\\&quot;62\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;#009E73\\&quot; stroke=\\&quot;#007a59\\&quot; stroke-width=\\&quot;2\\&quot;/&gt;\\n    &lt;text x=\\&quot;92\\&quot; y=\\&quot;20\\&quot; fill=\\&quot;#ffffff\\&quot;&gt;1&lt;/text&gt;\\n  &lt;/g&gt;\\n&lt;/g&gt;\\n&lt;/g&gt;\\n&lt;/svg&gt;&quot;, &quot;narration&quot;: &quot;Sub-computation complete.&quot;}]">
+             data-scriba-frames="[{&quot;svg&quot;: &quot;&lt;svg class=\\&quot;scriba-stage-svg\\&quot; viewBox=\\&quot;0 0 154 72\\&quot; role=\\&quot;img\\&quot; aria-labelledby=\\&quot;test-substory-frame-1-narration\\&quot; xmlns=\\&quot;http://www.w3.org/2000/svg\\&quot;&gt;\\n&lt;g transform=\\&quot;translate(16,16)\\&quot;&gt;\\n&lt;g data-primitive=\\&quot;array\\&quot; data-shape=\\&quot;sub\\&quot;&gt;\\n  &lt;g data-target=\\&quot;sub.cell[0]\\&quot; class=\\&quot;scriba-state-idle\\&quot;&gt;\\n    &lt;rect x=\\&quot;0\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;#f6f8fa\\&quot; stroke=\\&quot;#d0d7de\\&quot; stroke-width=\\&quot;1.5\\&quot;/&gt;\\n    &lt;text x=\\&quot;30\\&quot; y=\\&quot;20\\&quot; fill=\\&quot;#212529\\&quot;&gt;3&lt;/text&gt;\\n    &lt;rect x=\\&quot;0\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;none\\&quot; stroke=\\&quot;#F0E442\\&quot; stroke-width=\\&quot;3\\&quot; stroke-dasharray=\\&quot;6 3\\&quot;/&gt;\\n  &lt;/g&gt;\\n  &lt;g data-target=\\&quot;sub.cell[1]\\&quot; class=\\&quot;scriba-state-idle\\&quot;&gt;\\n    &lt;rect x=\\&quot;62\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;#f6f8fa\\&quot; stroke=\\&quot;#d0d7de\\&quot; stroke-width=\\&quot;1.5\\&quot;/&gt;\\n    &lt;text x=\\&quot;92\\&quot; y=\\&quot;20\\&quot; fill=\\&quot;#212529\\&quot;&gt;1&lt;/text&gt;\\n  &lt;/g&gt;\\n&lt;/g&gt;\\n&lt;/g&gt;\\n&lt;/svg&gt;&quot;, &quot;narration&quot;: &quot;Compare 3 and 1.&quot;}, {&quot;svg&quot;: &quot;&lt;svg class=\\&quot;scriba-stage-svg\\&quot; viewBox=\\&quot;0 0 154 72\\&quot; role=\\&quot;img\\&quot; aria-labelledby=\\&quot;test-substory-frame-2-narration\\&quot; xmlns=\\&quot;http://www.w3.org/2000/svg\\&quot;&gt;\\n&lt;g transform=\\&quot;translate(16,16)\\&quot;&gt;\\n&lt;g data-primitive=\\&quot;array\\&quot; data-shape=\\&quot;sub\\&quot;&gt;\\n  &lt;g data-target=\\&quot;sub.cell[0]\\&quot; class=\\&quot;scriba-state-done\\&quot;&gt;\\n    &lt;rect x=\\&quot;0\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;#009E73\\&quot; stroke=\\&quot;#009E73\\&quot; stroke-width=\\&quot;2\\&quot;/&gt;\\n    &lt;text x=\\&quot;30\\&quot; y=\\&quot;20\\&quot; fill=\\&quot;#ffffff\\&quot;&gt;3&lt;/text&gt;\\n  &lt;/g&gt;\\n  &lt;g data-target=\\&quot;sub.cell[1]\\&quot; class=\\&quot;scriba-state-done\\&quot;&gt;\\n    &lt;rect x=\\&quot;62\\&quot; y=\\&quot;0\\&quot; width=\\&quot;60\\&quot; height=\\&quot;40\\&quot; rx=\\&quot;4\\&quot; fill=\\&quot;#009E73\\&quot; stroke=\\&quot;#009E73\\&quot; stroke-width=\\&quot;2\\&quot;/&gt;\\n    &lt;text x=\\&quot;92\\&quot; y=\\&quot;20\\&quot; fill=\\&quot;#ffffff\\&quot;&gt;1&lt;/text&gt;\\n  &lt;/g&gt;\\n&lt;/g&gt;\\n&lt;/g&gt;\\n&lt;/svg&gt;&quot;, &quot;narration&quot;: &quot;Sub-computation complete.&quot;}]">
           <div class="scriba-controls scriba-substory-controls">
             <button class="scriba-btn-prev" disabled>Prev</button>
             <span class="scriba-step-counter">Sub-step 1 / 2</span>
@@ -225,11 +313,11 @@ svg text {
         </div>
       </section>
 `},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-frame-2-narration" xmlns="http://www.w3.org/2000/svg">
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 278 72" role="img" aria-labelledby="test-substory-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(16,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#007a59" stroke-width="2"/>
+    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
     <text x="30" y="20" fill="#ffffff">3</text>
   </g>
   <g data-target="a.cell[1]" class="scriba-state-idle">
@@ -261,7 +349,7 @@ svg text {
     var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
     var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
     var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
-    function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.textContent=fd[i].narration;
+    function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
       sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
       sp.disabled=i===0;sx.disabled=i===fd.length-1;
       sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
@@ -273,7 +361,7 @@ svg text {
   function show(i){
     cur=i;
     stage.innerHTML=frames[i].svg;
-    narr.textContent=frames[i].narration;
+    narr.innerHTML=frames[i].narration;
     subC.innerHTML=frames[i].substory||'';
     subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
@@ -287,7 +375,6 @@ svg text {
     if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1);}
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
-  W.setAttribute('tabindex','0');
   show(0);
 })();
 </script>

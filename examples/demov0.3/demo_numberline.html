@@ -165,8 +165,139 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>demo_numberline</h1>
-<div class="scriba-widget" id="numline" tabindex="0"><div class="scriba-controls"><button class="scriba-btn-prev" disabled>Prev</button><span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span><button class="scriba-btn-next">Next</button><div class="scriba-progress"><div class="scriba-dot active"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" id="numline-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 512 88" role="img" aria-labelledby="numline-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="numberline" data-shape="nl"><g data-target="nl.axis"><line x1="20" y1="20" x2="460" y2="20" stroke="#d0d7de" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-idle"><line x1="20" y1="12" x2="20" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="20" y="42" fill="#212529">0</text></g><g data-target="nl.tick[1]" class="scriba-state-idle"><line x1="64" y1="12" x2="64" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="64" y="42" fill="#212529">1</text></g><g data-target="nl.tick[2]" class="scriba-state-idle"><line x1="108" y1="12" x2="108" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="108" y="42" fill="#212529">2</text></g><g data-target="nl.tick[3]" class="scriba-state-current"><line x1="152" y1="12" x2="152" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="152" y="42" fill="#212529">3</text></g><g data-target="nl.tick[4]" class="scriba-state-current"><line x1="196" y1="12" x2="196" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="196" y="42" fill="#212529">4</text></g><g data-target="nl.tick[5]" class="scriba-state-current"><line x1="240" y1="12" x2="240" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="240" y="42" fill="#212529">5</text></g><g data-target="nl.tick[6]" class="scriba-state-current"><line x1="284" y1="12" x2="284" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="284" y="42" fill="#212529">6</text></g><g data-target="nl.tick[7]" class="scriba-state-current"><line x1="328" y1="12" x2="328" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="328" y="42" fill="#212529">7</text></g><g data-target="nl.tick[8]" class="scriba-state-idle"><line x1="372" y1="12" x2="372" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="372" y="42" fill="#212529">8</text></g><g data-target="nl.tick[9]" class="scriba-state-idle"><line x1="416" y1="12" x2="416" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="416" y="42" fill="#212529">9</text></g><g data-target="nl.tick[10]" class="scriba-state-idle"><line x1="460" y1="12" x2="460" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="460" y="42" fill="#212529">10</text></g></g></g></svg></div><p class="scriba-narration" id="numline-print-1-narration">Query range [3, 7] highlighted.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 512 88" role="img" aria-labelledby="numline-print-2-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="numberline" data-shape="nl"><g data-target="nl.axis"><line x1="20" y1="20" x2="460" y2="20" stroke="#d0d7de" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-idle"><line x1="20" y1="12" x2="20" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="20" y="42" fill="#212529">0</text></g><g data-target="nl.tick[1]" class="scriba-state-idle"><line x1="64" y1="12" x2="64" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="64" y="42" fill="#212529">1</text></g><g data-target="nl.tick[2]" class="scriba-state-idle"><line x1="108" y1="12" x2="108" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="108" y="42" fill="#212529">2</text></g><g data-target="nl.tick[3]" class="scriba-state-done"><line x1="152" y1="12" x2="152" y2="28" stroke="#009E73" stroke-width="2.5"/><text x="152" y="42" fill="#212529">3</text></g><g data-target="nl.tick[4]" class="scriba-state-done"><line x1="196" y1="12" x2="196" y2="28" stroke="#009E73" stroke-width="2.5"/><text x="196" y="42" fill="#212529">4</text></g><g data-target="nl.tick[5]" class="scriba-state-done"><line x1="240" y1="12" x2="240" y2="28" stroke="#009E73" stroke-width="2.5"/><text x="240" y="42" fill="#212529">5</text><circle cx="240" cy="20" r="8" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="4 2"/></g><g data-target="nl.tick[6]" class="scriba-state-done"><line x1="284" y1="12" x2="284" y2="28" stroke="#009E73" stroke-width="2.5"/><text x="284" y="42" fill="#212529">6</text></g><g data-target="nl.tick[7]" class="scriba-state-done"><line x1="328" y1="12" x2="328" y2="28" stroke="#009E73" stroke-width="2.5"/><text x="328" y="42" fill="#212529">7</text></g><g data-target="nl.tick[8]" class="scriba-state-idle"><line x1="372" y1="12" x2="372" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="372" y="42" fill="#212529">8</text></g><g data-target="nl.tick[9]" class="scriba-state-idle"><line x1="416" y1="12" x2="416" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="416" y="42" fill="#212529">9</text></g><g data-target="nl.tick[10]" class="scriba-state-idle"><line x1="460" y1="12" x2="460" y2="28" stroke="#f6f8fa" stroke-width="1.5"/><text x="460" y="42" fill="#212529">10</text></g></g></g></svg></div><p class="scriba-narration" id="numline-print-2-narration">Midpoint at 5. Range [3,7] processed.</p></div></div></div>
-<script>(function(){
+<div class="scriba-widget" id="numline" tabindex="0">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration" id="numline-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+<div class="scriba-print-frame" data-step="1">
+  <span class="scriba-step-label">Step 1 / 2</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 512 88" role="img" aria-labelledby="numline-print-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="numberline" data-shape="nl">
+  <g data-target="nl.axis">
+    <line x1="20" y1="20" x2="460" y2="20" stroke="#d0d7de" stroke-width="2"/>
+  </g>
+  <g data-target="nl.tick[0]" class="scriba-state-idle">
+    <line x1="20" y1="12" x2="20" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="20" y="42" fill="#212529">0</text>
+  </g>
+  <g data-target="nl.tick[1]" class="scriba-state-idle">
+    <line x1="64" y1="12" x2="64" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="64" y="42" fill="#212529">1</text>
+  </g>
+  <g data-target="nl.tick[2]" class="scriba-state-idle">
+    <line x1="108" y1="12" x2="108" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="108" y="42" fill="#212529">2</text>
+  </g>
+  <g data-target="nl.tick[3]" class="scriba-state-current">
+    <line x1="152" y1="12" x2="152" y2="28" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="152" y="42" fill="#212529">3</text>
+  </g>
+  <g data-target="nl.tick[4]" class="scriba-state-current">
+    <line x1="196" y1="12" x2="196" y2="28" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="196" y="42" fill="#212529">4</text>
+  </g>
+  <g data-target="nl.tick[5]" class="scriba-state-current">
+    <line x1="240" y1="12" x2="240" y2="28" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="240" y="42" fill="#212529">5</text>
+  </g>
+  <g data-target="nl.tick[6]" class="scriba-state-current">
+    <line x1="284" y1="12" x2="284" y2="28" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="284" y="42" fill="#212529">6</text>
+  </g>
+  <g data-target="nl.tick[7]" class="scriba-state-current">
+    <line x1="328" y1="12" x2="328" y2="28" stroke="#0072B2" stroke-width="2.5"/>
+    <text x="328" y="42" fill="#212529">7</text>
+  </g>
+  <g data-target="nl.tick[8]" class="scriba-state-idle">
+    <line x1="372" y1="12" x2="372" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="372" y="42" fill="#212529">8</text>
+  </g>
+  <g data-target="nl.tick[9]" class="scriba-state-idle">
+    <line x1="416" y1="12" x2="416" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="416" y="42" fill="#212529">9</text>
+  </g>
+  <g data-target="nl.tick[10]" class="scriba-state-idle">
+    <line x1="460" y1="12" x2="460" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="460" y="42" fill="#212529">10</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="numline-print-1-narration">Query range [3, 7] highlighted.</p>
+</div>
+<div class="scriba-print-frame" data-step="2">
+  <span class="scriba-step-label">Step 2 / 2</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 512 88" role="img" aria-labelledby="numline-print-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="numberline" data-shape="nl">
+  <g data-target="nl.axis">
+    <line x1="20" y1="20" x2="460" y2="20" stroke="#d0d7de" stroke-width="2"/>
+  </g>
+  <g data-target="nl.tick[0]" class="scriba-state-idle">
+    <line x1="20" y1="12" x2="20" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="20" y="42" fill="#212529">0</text>
+  </g>
+  <g data-target="nl.tick[1]" class="scriba-state-idle">
+    <line x1="64" y1="12" x2="64" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="64" y="42" fill="#212529">1</text>
+  </g>
+  <g data-target="nl.tick[2]" class="scriba-state-idle">
+    <line x1="108" y1="12" x2="108" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="108" y="42" fill="#212529">2</text>
+  </g>
+  <g data-target="nl.tick[3]" class="scriba-state-done">
+    <line x1="152" y1="12" x2="152" y2="28" stroke="#009E73" stroke-width="2.5"/>
+    <text x="152" y="42" fill="#212529">3</text>
+  </g>
+  <g data-target="nl.tick[4]" class="scriba-state-done">
+    <line x1="196" y1="12" x2="196" y2="28" stroke="#009E73" stroke-width="2.5"/>
+    <text x="196" y="42" fill="#212529">4</text>
+  </g>
+  <g data-target="nl.tick[5]" class="scriba-state-done">
+    <line x1="240" y1="12" x2="240" y2="28" stroke="#009E73" stroke-width="2.5"/>
+    <text x="240" y="42" fill="#212529">5</text>
+    <circle cx="240" cy="20" r="8" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="4 2"/>
+  </g>
+  <g data-target="nl.tick[6]" class="scriba-state-done">
+    <line x1="284" y1="12" x2="284" y2="28" stroke="#009E73" stroke-width="2.5"/>
+    <text x="284" y="42" fill="#212529">6</text>
+  </g>
+  <g data-target="nl.tick[7]" class="scriba-state-done">
+    <line x1="328" y1="12" x2="328" y2="28" stroke="#009E73" stroke-width="2.5"/>
+    <text x="328" y="42" fill="#212529">7</text>
+  </g>
+  <g data-target="nl.tick[8]" class="scriba-state-idle">
+    <line x1="372" y1="12" x2="372" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="372" y="42" fill="#212529">8</text>
+  </g>
+  <g data-target="nl.tick[9]" class="scriba-state-idle">
+    <line x1="416" y1="12" x2="416" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="416" y="42" fill="#212529">9</text>
+  </g>
+  <g data-target="nl.tick[10]" class="scriba-state-idle">
+    <line x1="460" y1="12" x2="460" y2="28" stroke="#f6f8fa" stroke-width="1.5"/>
+    <text x="460" y="42" fill="#212529">10</text>
+  </g>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="numline-print-2-narration">Midpoint at 5. Range [3,7] processed.</p>
+</div>
+  </div>
+</div>
+<script>
+(function(){
   var W=document.getElementById('numline');
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 512 88" role="img" aria-labelledby="numline-narration" xmlns="http://www.w3.org/2000/svg">
@@ -317,6 +448,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
   show(0);
-})();</script>
+})();
+</script>
 </body>
 </html>

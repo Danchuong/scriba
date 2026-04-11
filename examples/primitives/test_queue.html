@@ -165,8 +165,322 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>test_queue</h1>
-<div class="scriba-widget" id="bfs-queue" tabindex="0"><div class="scriba-controls"><button class="scriba-btn-prev" disabled>Prev</button><span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 6</span><button class="scriba-btn-next">Next</button><div class="scriba-progress"><div class="scriba-dot active"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" id="bfs-queue-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 6</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="queue" data-shape="q"><g data-target="q.cell[0]" class="scriba-state-current"><rect x="20" y="34" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="50" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text><g data-target="q.cell[1]" class="scriba-state-dim"><rect x="82" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="112" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text><g data-target="q.cell[2]" class="scriba-state-dim"><rect x="144" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="174" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text><g data-target="q.cell[3]" class="scriba-state-done"><rect x="206" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">5</text></g><text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text><g data-target="q.cell[4]" class="scriba-state-done"><rect x="268" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="298" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">3</text></g><text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text><g data-target="q.cell[5]" class="scriba-state-idle"><rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text><g data-target="q.front" class="scriba-state-idle"><polygon points="228,24 244,24 236,32" fill="#6c757d" stroke="none"/><text x="236" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text></g><g data-target="q.rear" class="scriba-state-idle"><polygon points="290,24 306,24 298,32" fill="#6c757d" stroke="none"/><text x="298" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text></g><foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject></g></g></svg></div><p class="scriba-narration" id="bfs-queue-print-1-narration">BFS starts. Enqueue source node 1. Front and rear both point to cell 0.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 6</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-2-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="queue" data-shape="q"><g data-target="q.cell[0]" class="scriba-state-idle"><rect x="20" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="50" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text><g data-target="q.cell[1]" class="scriba-state-good"><rect x="82" y="34" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="112" y="54" fill="#0c4a6e" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text><g data-target="q.cell[2]" class="scriba-state-good"><rect x="144" y="34" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="174" y="54" fill="#0c4a6e" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text><g data-target="q.cell[3]" class="scriba-state-done"><rect x="206" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">5</text></g><text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text><g data-target="q.cell[4]" class="scriba-state-done"><rect x="268" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="298" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">3</text></g><text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text><g data-target="q.cell[5]" class="scriba-state-idle"><rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central">2</text></g><text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text><g data-target="q.front" class="scriba-state-idle"><polygon points="228,24 244,24 236,32" fill="#6c757d" stroke="none"/><text x="236" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text></g><g data-target="q.rear" class="scriba-state-idle"><polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/><text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text></g><foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject></g></g></svg></div><p class="scriba-narration" id="bfs-queue-print-2-narration">Discover neighbors of node 1. Enqueue nodes 2 and 4.</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">Step 3 / 6</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-3-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="queue" data-shape="q"><g data-target="q.cell[0]" class="scriba-state-dim"><rect x="20" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="50" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text><g data-target="q.cell[1]" class="scriba-state-current"><rect x="82" y="34" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="112" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text><g data-target="q.cell[2]" class="scriba-state-idle"><rect x="144" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="174" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text><g data-target="q.cell[3]" class="scriba-state-done"><rect x="206" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text><g data-target="q.cell[4]" class="scriba-state-done"><rect x="268" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="298" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">3</text></g><text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text><g data-target="q.cell[5]" class="scriba-state-idle"><rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central">2</text></g><text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text><g data-target="q.front" class="scriba-state-idle"><polygon points="290,24 306,24 298,32" fill="#6c757d" stroke="none"/><text x="298" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text></g><g data-target="q.rear" class="scriba-state-idle"><polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/><text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text></g><foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject></g></g></svg></div><p class="scriba-narration" id="bfs-queue-print-3-narration">Dequeue node 1 (done). Process node 2 next. Front pointer advances.</p></div><div class="scriba-print-frame" data-step="4"><span class="scriba-step-label">Step 4 / 6</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-4-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="queue" data-shape="q"><g data-target="q.cell[0]" class="scriba-state-dim"><rect x="20" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="50" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text><g data-target="q.cell[1]" class="scriba-state-dim"><rect x="82" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="112" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text><g data-target="q.cell[2]" class="scriba-state-current"><rect x="144" y="34" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="174" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text><g data-target="q.cell[3]" class="scriba-state-good"><rect x="206" y="34" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="236" y="54" fill="#0c4a6e" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text><g data-target="q.cell[4]" class="scriba-state-good"><rect x="268" y="34" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="298" y="54" fill="#0c4a6e" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text><g data-target="q.cell[5]" class="scriba-state-idle"><rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central">2</text></g><text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text><g data-target="q.front" class="scriba-state-idle"><polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/><text x="330" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text></g><g data-target="q.rear" class="scriba-state-idle"><polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/><text x="390" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text></g><foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject></g></g></svg></div><p class="scriba-narration" id="bfs-queue-print-4-narration">Dequeue node 2 (done). Process node 4. Enqueue its neighbors 5 and 3.</p></div><div class="scriba-print-frame" data-step="5"><span class="scriba-step-label">Step 5 / 6</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-5-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="queue" data-shape="q"><g data-target="q.cell[0]" class="scriba-state-dim"><rect x="20" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="50" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text><g data-target="q.cell[1]" class="scriba-state-dim"><rect x="82" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="112" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text><g data-target="q.cell[2]" class="scriba-state-dim"><rect x="144" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="174" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text><g data-target="q.cell[3]" class="scriba-state-current"><rect x="206" y="34" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text><g data-target="q.cell[4]" class="scriba-state-idle"><rect x="268" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="298" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text><g data-target="q.cell[5]" class="scriba-state-idle"><rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text><g data-target="q.front" class="scriba-state-idle"><polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/><text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text></g><g data-target="q.rear" class="scriba-state-idle"><polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/><text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text></g><foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject></g></g></svg></div><p class="scriba-narration" id="bfs-queue-print-5-narration">Dequeue node 4 (done). Process node 5 next. Front advances to cell 3.</p></div><div class="scriba-print-frame" data-step="6"><span class="scriba-step-label">Step 6 / 6</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-6-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16,16)"><g data-primitive="queue" data-shape="q"><g data-target="q.cell[0]" class="scriba-state-dim"><rect x="20" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="50" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text><g data-target="q.cell[1]" class="scriba-state-dim"><rect x="82" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="112" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text><g data-target="q.cell[2]" class="scriba-state-dim"><rect x="144" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/><text x="174" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text><g data-target="q.cell[3]" class="scriba-state-done"><rect x="206" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text><g data-target="q.cell[4]" class="scriba-state-done"><rect x="268" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="298" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text><g data-target="q.cell[5]" class="scriba-state-idle"><rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text></g><text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text><g data-target="q.front" class="scriba-state-idle"><polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/><text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text></g><g data-target="q.rear" class="scriba-state-idle"><polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/><text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text></g><foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject></g></g></svg></div><p class="scriba-narration" id="bfs-queue-print-6-narration">BFS complete. All reachable nodes have been visited.</p></div></div></div>
-<script>(function(){
+<div class="scriba-widget" id="bfs-queue" tabindex="0">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" disabled>Prev</button>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 6</span>
+    <button class="scriba-btn-next">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration" id="bfs-queue-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+<div class="scriba-print-frame" data-step="1">
+  <span class="scriba-step-label">Step 1 / 6</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-1-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="queue" data-shape="q">
+  <g data-target="q.cell[0]" class="scriba-state-current">
+    <rect x="20" y="34" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="50" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text>
+  <g data-target="q.cell[1]" class="scriba-state-dim">
+    <rect x="82" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="112" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text>
+  <g data-target="q.cell[2]" class="scriba-state-dim">
+    <rect x="144" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="174" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text>
+  <g data-target="q.cell[3]" class="scriba-state-done">
+    <rect x="206" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text>
+  <g data-target="q.cell[4]" class="scriba-state-done">
+    <rect x="268" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="298" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text>
+  <g data-target="q.cell[5]" class="scriba-state-idle">
+    <rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text>
+  <g data-target="q.front" class="scriba-state-idle">
+    <polygon points="228,24 244,24 236,32" fill="#6c757d" stroke="none"/>
+    <text x="236" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text>
+  </g>
+  <g data-target="q.rear" class="scriba-state-idle">
+    <polygon points="290,24 306,24 298,32" fill="#6c757d" stroke="none"/>
+    <text x="298" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text>
+  </g>
+  <foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="bfs-queue-print-1-narration">BFS starts. Enqueue source node 1. Front and rear both point to cell 0.</p>
+</div>
+<div class="scriba-print-frame" data-step="2">
+  <span class="scriba-step-label">Step 2 / 6</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-2-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="queue" data-shape="q">
+  <g data-target="q.cell[0]" class="scriba-state-idle">
+    <rect x="20" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="50" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text>
+  <g data-target="q.cell[1]" class="scriba-state-good">
+    <rect x="82" y="34" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="112" y="54" fill="#0c4a6e" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text>
+  <g data-target="q.cell[2]" class="scriba-state-good">
+    <rect x="144" y="34" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="174" y="54" fill="#0c4a6e" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text>
+  <g data-target="q.cell[3]" class="scriba-state-done">
+    <rect x="206" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">5</text>
+  </g>
+  <text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text>
+  <g data-target="q.cell[4]" class="scriba-state-done">
+    <rect x="268" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="298" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text>
+  <g data-target="q.cell[5]" class="scriba-state-idle">
+    <rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text>
+  <g data-target="q.front" class="scriba-state-idle">
+    <polygon points="228,24 244,24 236,32" fill="#6c757d" stroke="none"/>
+    <text x="236" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text>
+  </g>
+  <g data-target="q.rear" class="scriba-state-idle">
+    <polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/>
+    <text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text>
+  </g>
+  <foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="bfs-queue-print-2-narration">Discover neighbors of node 1. Enqueue nodes 2 and 4.</p>
+</div>
+<div class="scriba-print-frame" data-step="3">
+  <span class="scriba-step-label">Step 3 / 6</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-3-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="queue" data-shape="q">
+  <g data-target="q.cell[0]" class="scriba-state-dim">
+    <rect x="20" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="50" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text>
+  <g data-target="q.cell[1]" class="scriba-state-current">
+    <rect x="82" y="34" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="112" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text>
+  <g data-target="q.cell[2]" class="scriba-state-idle">
+    <rect x="144" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="174" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text>
+  <g data-target="q.cell[3]" class="scriba-state-done">
+    <rect x="206" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text>
+  <g data-target="q.cell[4]" class="scriba-state-done">
+    <rect x="268" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="298" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">3</text>
+  </g>
+  <text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text>
+  <g data-target="q.cell[5]" class="scriba-state-idle">
+    <rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text>
+  <g data-target="q.front" class="scriba-state-idle">
+    <polygon points="290,24 306,24 298,32" fill="#6c757d" stroke="none"/>
+    <text x="298" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text>
+  </g>
+  <g data-target="q.rear" class="scriba-state-idle">
+    <polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/>
+    <text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text>
+  </g>
+  <foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="bfs-queue-print-3-narration">Dequeue node 1 (done). Process node 2 next. Front pointer advances.</p>
+</div>
+<div class="scriba-print-frame" data-step="4">
+  <span class="scriba-step-label">Step 4 / 6</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-4-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="queue" data-shape="q">
+  <g data-target="q.cell[0]" class="scriba-state-dim">
+    <rect x="20" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="50" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text>
+  <g data-target="q.cell[1]" class="scriba-state-dim">
+    <rect x="82" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="112" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text>
+  <g data-target="q.cell[2]" class="scriba-state-current">
+    <rect x="144" y="34" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="174" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text>
+  <g data-target="q.cell[3]" class="scriba-state-good">
+    <rect x="206" y="34" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="236" y="54" fill="#0c4a6e" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text>
+  <g data-target="q.cell[4]" class="scriba-state-good">
+    <rect x="268" y="34" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
+    <text x="298" y="54" fill="#0c4a6e" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text>
+  <g data-target="q.cell[5]" class="scriba-state-idle">
+    <rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central">2</text>
+  </g>
+  <text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text>
+  <g data-target="q.front" class="scriba-state-idle">
+    <polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/>
+    <text x="330" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text>
+  </g>
+  <g data-target="q.rear" class="scriba-state-idle">
+    <polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/>
+    <text x="390" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text>
+  </g>
+  <foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="bfs-queue-print-4-narration">Dequeue node 2 (done). Process node 4. Enqueue its neighbors 5 and 3.</p>
+</div>
+<div class="scriba-print-frame" data-step="5">
+  <span class="scriba-step-label">Step 5 / 6</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-5-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="queue" data-shape="q">
+  <g data-target="q.cell[0]" class="scriba-state-dim">
+    <rect x="20" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="50" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text>
+  <g data-target="q.cell[1]" class="scriba-state-dim">
+    <rect x="82" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="112" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text>
+  <g data-target="q.cell[2]" class="scriba-state-dim">
+    <rect x="144" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="174" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text>
+  <g data-target="q.cell[3]" class="scriba-state-current">
+    <rect x="206" y="34" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
+    <text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text>
+  <g data-target="q.cell[4]" class="scriba-state-idle">
+    <rect x="268" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="298" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text>
+  <g data-target="q.cell[5]" class="scriba-state-idle">
+    <rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text>
+  <g data-target="q.front" class="scriba-state-idle">
+    <polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/>
+    <text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text>
+  </g>
+  <g data-target="q.rear" class="scriba-state-idle">
+    <polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/>
+    <text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text>
+  </g>
+  <foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="bfs-queue-print-5-narration">Dequeue node 4 (done). Process node 5 next. Front advances to cell 3.</p>
+</div>
+<div class="scriba-print-frame" data-step="6">
+  <span class="scriba-step-label">Step 6 / 6</span>
+  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-print-6-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16,16)">
+<g data-primitive="queue" data-shape="q">
+  <g data-target="q.cell[0]" class="scriba-state-dim">
+    <rect x="20" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="50" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="50" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[0]</text>
+  <g data-target="q.cell[1]" class="scriba-state-dim">
+    <rect x="82" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="112" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="112" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[1]</text>
+  <g data-target="q.cell[2]" class="scriba-state-dim">
+    <rect x="144" y="34" width="60" height="40" rx="4" fill="#e9ecef" stroke="#dee2e6" stroke-width="2"/>
+    <text x="174" y="54" fill="#adb5bd" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="174" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[2]</text>
+  <g data-target="q.cell[3]" class="scriba-state-done">
+    <rect x="206" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="236" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="236" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[3]</text>
+  <g data-target="q.cell[4]" class="scriba-state-done">
+    <rect x="268" y="34" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
+    <text x="298" y="54" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="298" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[4]</text>
+  <g data-target="q.cell[5]" class="scriba-state-idle">
+    <rect x="330" y="34" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
+    <text x="360" y="54" fill="#212529" style="text-anchor:middle;dominant-baseline:central"></text>
+  </g>
+  <text class="scriba-index-label idx" x="360" y="90" fill="#6c757d" style="text-anchor:middle;dominant-baseline:central;font-size:11px">[5]</text>
+  <g data-target="q.front" class="scriba-state-idle">
+    <polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/>
+    <text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">front</text>
+  </g>
+  <g data-target="q.rear" class="scriba-state-idle">
+    <polygon points="352,24 368,24 360,32" fill="#6c757d" stroke="none"/>
+    <text x="360" y="18" fill="#6c757d" style="text-anchor:middle;dominant-baseline:auto;font-weight:600;font-size:11px">rear</text>
+  </g>
+  <foreignObject x="0" y="96" width="410" height="20"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;width:410px;height:20px;color:#6c757d;text-align:center;line-height:1;overflow:hidden;text-overflow:ellipsis"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8778em;vertical-align:-0.1944em;"></span><span class="mord mathnormal">Q</span></span></span></span></span></div></foreignObject>
+</g>
+</g>
+</svg></div>
+  <p class="scriba-narration" id="bfs-queue-print-6-narration">BFS complete. All reachable nodes have been visited.</p>
+</div>
+  </div>
+</div>
+<script>
+(function(){
   var W=document.getElementById('bfs-queue');
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 442 142" role="img" aria-labelledby="bfs-queue-narration" xmlns="http://www.w3.org/2000/svg">
@@ -480,6 +794,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
   show(0);
-})();</script>
+})();
+</script>
 </body>
 </html>
