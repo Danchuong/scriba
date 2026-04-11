@@ -271,7 +271,7 @@ STRING          ::= '"' [^"]* '"'
 IDENT           ::= [a-zA-Z_] [a-zA-Z0-9_]*
 
 state_enum      ::= "idle" | "current" | "done" | "dim"
-                  | "error" | "good" | "path"
+                  | "error" | "good" | "path" | "hidden"
 color_enum      ::= "info" | "warn" | "good" | "error"
                   | "muted" | "path"
 position_enum   ::= "above" | "below" | "left" | "right" | "inside"
@@ -991,6 +991,7 @@ about the layout algorithm's seeded coordinate placement.
 | `.scriba-state-good` | `--scriba-state-good-fill` (#56B4E9) | `--scriba-state-good-stroke` |
 | `.scriba-state-highlight` | `--scriba-state-highlight-fill` (#F0E442) | `--scriba-state-highlight-stroke` |
 | `.scriba-state-path` | `--scriba-state-path-fill` (#dbeafe) | `--scriba-state-path-stroke` (#2563eb) |
+| `.scriba-state-hidden` | not rendered (element present in the document model but invisible; see `docs/guides/hidden-state-pattern.md`) | — |
 
 ### 10.2 Key CSS Custom Properties
 

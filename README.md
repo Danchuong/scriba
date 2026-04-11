@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.5.0 · MIT · Python 3.10+
+**Status:** v0.6.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -23,6 +23,34 @@ asset basenames needed to display it.
   static graph/tree figures is reserved under extension E5. See
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
+
+## What's new in v0.6.0
+
+- **Wave 8 — vstack layout.** Array, DP-table, and related primitives now
+  compose their caption, index labels, and cells through a shared
+  `scriba/animation/primitives/layout.py` vstack helper. No more hardcoded
+  Y offsets: cell, index, and caption font sizes drive the layout through
+  real font metrics.
+- **Wave 9 — CSS-first text halo cascade.** Every `[data-primitive] text`
+  element now inherits `paint-order: stroke fill markers` with a
+  `--scriba-halo` CSS variable that each state class overrides. The block is
+  wrapped in `@media (forced-colors: none)` so Windows High Contrast Mode
+  strips it cleanly. The per-call `text_outline=` parameter on primitives is
+  deprecated and scheduled for removal in v0.7.0 — authors should rely on
+  the CSS cascade instead.
+- **RFC-001 — structural mutation ops.** Tree, Graph, and Plane2D primitives
+  gained safe structural ops (`add_node`, `remove_node`, `reparent`, and
+  friends) plus a new `hidden` state for elements that are modeled but not
+  yet rendered. See `docs/guides/hidden-state-pattern.md` for the intended
+  authoring flow.
+- **RFC-002 — strict mode and document warnings.** The pipeline now
+  surfaces non-fatal issues through `Document.warnings`, and a new
+  `--strict` CLI flag promotes them to hard errors. Three new error codes
+  — `E1114`, `E1115`, and `E1200` — cover the newly introduced strict-mode
+  diagnostics.
+- **Cookbook refresh.** Ten new or rewritten editorial examples land under
+  `examples/cookbook/`: the h07 and h08 rewrites, canonical h11–h18
+  algorithm walkthroughs, and h19 (DP convex hull trick).
 
 ## Install
 

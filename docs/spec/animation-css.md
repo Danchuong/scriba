@@ -163,6 +163,59 @@ The state colors are drawn from the Wong (2011) palette, chosen because they are
 
 `idle` and `dim` derive from the consumer's `--scriba-bg-code` and `--scriba-fg` variables and therefore adapt automatically to any theme.
 
+### 2.4 Text halo cascade (Wave 9)
+
+Every `[data-primitive] text` element participates in a CSS-first text halo
+cascade declared in `scriba/animation/static/scriba-scene-primitives.css`
+(and mirrored in `scriba/render.py` `HTML_TEMPLATE` so standalone renders
+behave the same).
+
+- The cascade is declared as `paint-order: stroke fill markers` on every
+  `[data-primitive] text` element, so the halo stroke is painted **under**
+  the glyph fill.
+- The halo color is pulled from `--scriba-halo`, which defaults to
+  `var(--scriba-bg)` and is overridden per state class
+  (`scriba-state-current`, `scriba-state-done`, `scriba-state-path`, etc.)
+  so the halo always matches the surrounding fill rather than bleeding
+  into it.
+- The entire block is wrapped in `@media (forced-colors: none)` so Windows
+  High Contrast Mode strips it cleanly — HCM users see flat system colors
+  without a synthetic halo.
+- Thicker stroke (`4px`) is applied inside `.scriba-tree-nodes text` and
+  `.scriba-graph-nodes text`, where node glyphs overlap heavy circles;
+  thinner stroke (`2px`) is used on floating labels and index text.
+
+```css
+@media (forced-colors: none) {
+  [data-primitive] text {
+    paint-order: stroke fill markers;
+    stroke: var(--scriba-halo, var(--scriba-bg));
+    stroke-width: 2px;
+    stroke-linejoin: round;
+  }
+  .scriba-tree-nodes text,
+  .scriba-graph-nodes text {
+    stroke-width: 4px;
+  }
+  .scriba-state-current { --scriba-halo: var(--scriba-state-current-fill); }
+  .scriba-state-done    { --scriba-halo: var(--scriba-state-done-fill); }
+  .scriba-state-path    { --scriba-halo: var(--scriba-state-path-fill); }
+  /* …one line per state class… */
+}
+```
+
+> **Deprecated:** the per-call `text_outline=` parameter on
+> `_render_svg_text` (and the primitives that forward it) is deprecated
+> and scheduled for removal in **v0.7.0**. Authors should rely on the CSS
+> cascade above rather than passing `text_outline=` explicitly. If you
+> need a non-default halo, override `--scriba-halo` on the appropriate
+> state class (or on a wrapping element) from your theme stylesheet.
+
+Source of truth:
+- `scriba/animation/static/scriba-scene-primitives.css` — Wave 9 section.
+- `scriba/render.py` — `HTML_TEMPLATE` inline mirror used by standalone
+  render output.
+
 ---
 
 ## 3. State classes

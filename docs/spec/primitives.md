@@ -57,7 +57,8 @@ All primitives share the same locked state set (applied via `\recolor`):
 | `dim`       | `scriba-state-dim`       | 50% opacity, desaturated   |
 | `error`     | `scriba-state-error`     | `#D55E00` (vermillion)     |
 | `good`      | `scriba-state-good`      | `#56B4E9` (sky blue)       |
-| `path`      | `scriba-state-path`      | `#2563eb` (blue)           |
+| `path`      | `scriba-state-path`      | `#2563eb` (blue) — element is part of a highlighted traversal path (e.g., shortest path, optimal solution trace). |
+| `hidden`    | `scriba-state-hidden`    | not rendered — element is present in the document model but invisible. Used for pre-declared nodes/points that become visible in later frames. See [`docs/guides/hidden-state-pattern.md`](../guides/hidden-state-pattern.md). |
 | `highlight` | `scriba-state-highlight` | `#F0E442` (yellow) + 2px stroke (ephemeral only; set via `\highlight` command only, not valid in `\recolor`) |
 
 ### 2.4 Common `\apply` parameters

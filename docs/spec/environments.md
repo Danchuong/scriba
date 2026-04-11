@@ -596,6 +596,8 @@ Both files reference shared primitive styles from `scriba-scene-primitives.css` 
 .scriba-state-dim         50% opacity, desaturated
 .scriba-state-error       Wong "vermillion" (#D55E00)
 .scriba-state-good        Wong "bluish-green" (#009E73) alt tone
+.scriba-state-path        Wong "blue"   (#2563eb) — element is part of a highlighted traversal path (e.g., shortest path, optimal solution trace)
+.scriba-state-hidden      not rendered — element is present in the document model but invisible. Used for pre-declared nodes/points that become visible in later frames. See docs/guides/hidden-state-pattern.md
 .scriba-state-highlight   Wong "yellow" (#F0E442) fill + 2px current-color stroke
 ```
 
@@ -615,6 +617,10 @@ The Wong palette is chosen because it is CVD-safe (protan, deutan, tritan). Colo
   --scriba-state-error-stroke:   #D55E00;
   --scriba-state-good-fill:      #009E73;
   --scriba-state-good-stroke:    #009E73;
+  --scriba-state-path-fill:      #2563eb;
+  --scriba-state-path-stroke:    #2563eb;
+  --scriba-state-hidden-fill:    transparent;
+  --scriba-state-hidden-stroke:  transparent;
   --scriba-state-highlight-fill: #F0E442;
   --scriba-state-highlight-stroke: currentColor;
 }
