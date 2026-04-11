@@ -218,7 +218,8 @@ class SelectorParser:
         if self._pos < len(self._text) and self._text[self._pos] == "-":
             self._pos += 1
         if self._pos >= len(self._text) or not self._text[self._pos].isdigit():
-            raise self._error("expected number", code="E1010")
+            found = repr(self._text[self._pos]) if self._pos < len(self._text) else "EOF"
+            raise self._error(f"expected number, got {found}", code="E1010")
         while self._pos < len(self._text) and self._text[self._pos].isdigit():
             self._pos += 1
         return int(self._text[start : self._pos])
@@ -243,7 +244,8 @@ class SelectorParser:
             ):
                 self._pos += 1
             return self._text[start : self._pos]
-        raise self._error("expected identifier", code="E1010")
+        found = repr(self._text[self._pos]) if self._pos < len(self._text) else "EOF"
+        raise self._error(f"expected identifier, got {found}", code="E1010")
 
     def _expect(self, ch: str) -> None:
         self._skip_ws()

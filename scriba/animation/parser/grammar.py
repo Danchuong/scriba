@@ -336,11 +336,18 @@ class SceneParser:
         """Raise a single ``ValidationError`` summarizing all collected errors."""
         assert self._recovery_errors
 
-        if len(self._recovery_errors) == 1:
+        n = len(self._recovery_errors)
+        _warnings_mod.warn(
+            f"{n} parsing error(s) occurred (error_recovery=True); "
+            "animation may be incomplete.",
+            stacklevel=2,
+        )
+
+        if n == 1:
             raise self._recovery_errors[0]
 
         parts: list[str] = [
-            f"found {len(self._recovery_errors)} errors:",
+            f"found {n} errors:",
         ]
         for i, err in enumerate(self._recovery_errors, 1):
             parts.append(f"  {i}. {err}")

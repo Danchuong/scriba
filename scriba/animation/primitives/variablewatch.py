@@ -73,6 +73,12 @@ class VariableWatch(PrimitiveBase):
             # Handle comma-separated string fallback
             raw_names = [n.strip().strip('"').strip("'") for n in raw_names.split(",")]
         self.var_names: list[str] = [str(n) for n in raw_names]
+        if not self.var_names:
+            import warnings
+            warnings.warn(
+                f"VariableWatch '{name}' created with empty names list",
+                stacklevel=2,
+            )
         self.label_text: str | None = params.get("label")
 
         # Per-variable values: varname -> display string

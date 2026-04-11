@@ -8,7 +8,7 @@
 
 Scriba v0.3 ships two new LaTeX environments that let problem authors embed algorithmic visualizations directly in problem statements without leaving LaTeX:
 
-- `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 8 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8.0 for mode selection.
+- `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 14 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8.0 for mode selection.
 - `\begin{diagram} ... \end{diagram}` — a **single static figure**. Same primitive vocabulary minus `\step` and `\narrate`. Intended for standalone illustrations (trees, grids, graphs, DP tables shown at a single moment in time).
 
 Both environments plug into the existing `scriba.core.pipeline.Pipeline` from [`01-architecture.md`](architecture.md) as two additional `Renderer` implementations registered alongside `TexRenderer`:
@@ -123,9 +123,9 @@ Both environments accept an optional `[key=value,...]` block immediately after `
 
 Unknown keys are `E1004` (error, not warning — keep options forward-compatible by versioning, not by silent acceptance).
 
-## 3. The 8 inner commands
+## 3. Inner commands
 
-Each command is listed with its full signature, allowed context, parameter grammar, error codes, and a one-line example. Parameter lists use `key=value` pairs inside the final brace group. Parameter values may be bare idents, numbers, double-quoted strings, Starlark-computed values via `${name}` / `${name[i]}` interpolation, or bracketed lists `[a,b,c]`.
+There are 14 inner commands (8 base commands from v0.3 plus 6 added in v0.5: `\reannotate`, `\cursor`, `\foreach`, `\endforeach`, `\substory`, `\endsubstory`). Each command is listed with its full signature, allowed context, parameter grammar, error codes, and a one-line example. Parameter lists use `key=value` pairs inside the final brace group. Parameter values may be bare idents, numbers, double-quoted strings, Starlark-computed values via `${name}` / `${name[i]}` interpolation, or bracketed lists `[a,b,c]`.
 
 ### 3.1 `\shape{name}{Type}{params...}`
 
@@ -134,7 +134,7 @@ Declares a primitive instance bound to an identifier inside the current environm
 - **Contexts:** animation, diagram.
 - **Signature:** `\shape{<ident>}{<TypeName>}{<param_list>}`
 - **Required:** `name` (first brace), `Type` (second brace). `name` must match `[a-z][a-zA-Z0-9_]*` and must be unique within the environment (`E1101` on duplicate).
-- **Type** is one of the 6 built-in primitive type names defined in `06-primitives.md`: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`. Unknown type is `E1102`.
+- **Type** is one of the 16 primitive type names: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`, `Matrix`, `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `VariableWatch`. Unknown type is `E1102`.
 - **Parameters** are primitive-specific (see `06-primitives.md`). Common ones: `size=`, `rows=`, `cols=`, `data=`, `indices=`, `directed=`, `domain=`.
 - **Position constraint:** in `animation`, all `\shape` declarations MUST appear before the first `\step` (`E1051`). In `diagram`, order is free.
 - **Error codes:** `E1101` duplicate name; `E1102` unknown type; `E1103` missing required param for that type; `E1104` param type mismatch.
@@ -206,11 +206,12 @@ Changes the **persistent visual state** of a target and/or recolors annotations 
   - `color` — optional, recolors annotation(s) on the target. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`.
   - `arrow_from` — optional, filters which annotation to recolor by source selector.
   - At least one of `state` or `color` must be present (`E1109`).
-- **Rendering:** When `state` is provided, adds the class `scriba-state-<state>` to the targeted SVG element, replacing any previously applied state class for the same target. The Wong CVD-safe palette defined in §9 maps each state to a color pair (fill + stroke) via CSS variables. When `color` is provided, recolors matching annotation(s) on the target; if `arrow_from` is also provided, only annotations originating from that source are recolored.
-- **Error codes:** `E1109` unknown state or missing both state and color; `E1110` unknown target.
+- **Rendering:** When `state` is provided, adds the class `scriba-state-<state>` to the targeted SVG element, replacing any previously applied state class for the same target. The Wong CVD-safe palette defined in §9 maps each state to a color pair (fill + stroke) via CSS variables.
+- **Deprecation:** The `color=` and `arrow_from=` parameters on `\recolor` are deprecated as of v0.5.0. They still work but emit a `DeprecationWarning`. Use `\reannotate` (§3.9) instead for annotation recoloring.
+- **Error codes:** `E1109` unknown state or missing `state`; `E1110` unknown target.
 - **Examples:**
   - `\recolor{dp.cell[3]}{state=done}`
-  - `\recolor{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}`
+  - ~~`\recolor{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}`~~ — use `\reannotate{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}` instead.
 
 ### 3.8 `\annotate{target}{params...}`
 
@@ -221,6 +222,79 @@ Attaches an auxiliary label, arrow, or badge to a target. Persistent by default;
 - **Parameters (locked core):** `label=<string>`, `position=<above|below|left|right|inside>` (default `above`), `color=<info|warn|good|error|muted|path>` (default `info`), `arrow=<bool>` (default `true` for graph/tree, `false` otherwise), `ephemeral=<bool>` (default `false`), `arrow_from=<selector>` (optional, default none — specifies source target for arrow annotations, used for DPTable/Array transition arrows).
 - **Error codes:** `E1111` unknown target; `E1112` unknown position; `E1113` unknown color token.
 - **Example:** `\annotate{dp.cell[2]}{label="min", color=info}`
+
+### 3.9 `\reannotate{target}{color=..., arrow_from=...}`
+
+Recolors existing annotation(s) on a target. This is the primary command for changing annotation colors after they have been placed with `\annotate`.
+
+- **Contexts:** animation, diagram.
+- **Signature:** `\reannotate{<target_selector>}{color=<color_token>, arrow_from=<selector>}`
+- **Parameters:**
+  - `color` — required. Valid values: `info`, `warn`, `good`, `error`, `muted`, `path`.
+  - `arrow_from` — optional, filters which annotation to recolor by source selector.
+- **Persistence:** persistent — the new color sticks until overwritten.
+- **Error codes:** `E1109` unknown color token; `E1110` unknown target.
+- **Example:** `\reannotate{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}`
+
+> **Note:** `color=` and `arrow_from=` on `\recolor` are deprecated as of v0.5.0. They still work but emit a `DeprecationWarning`. Use `\reannotate` instead.
+
+### 3.10 `\cursor{targets}{index, prev_state=..., curr_state=...}`
+
+Moves a "current" marker through one or more arrays/primitives. Finds the element currently in `curr_state`, sets it to `prev_state`, then sets the element at `index` to `curr_state`. A convenience macro that replaces 2–3 `\recolor` calls per step.
+
+- **Contexts:** animation prelude or step, diagram.
+- **Signature:** `\cursor{<target_list>}{<index>, prev_state=<state>, curr_state=<state>}`
+- **Target list:** comma-separated accessor prefixes, e.g., `h.cell, dp.cell`.
+- **Parameters:**
+  - `index` — required. The new cursor position. Supports `${var}` interpolation.
+  - `prev_state` — optional, default `dim`. State to assign to the previously current element.
+  - `curr_state` — optional, default `current`. State to assign to the new element.
+- **Behavior:** For each accessor prefix in the target list: (1) find the element currently in `curr_state`, (2) set it to `prev_state`, (3) set `prefix[index]` to `curr_state`. If no element is currently in `curr_state` (first cursor call), steps 1–2 are skipped.
+- **Error codes:** `E1106` unknown target selector.
+- **Examples:**
+  - `\cursor{a.cell}{1}`
+  - `\cursor{h.cell, dp.cell}{3}`
+  - `\cursor{a.cell}{2, prev_state=done, curr_state=good}`
+
+### 3.11 `\foreach{variable}{iterable}...\endforeach`
+
+Loops over a range, list literal, or computed binding, expanding the enclosed body commands once per iteration. Reduces repetitive `\recolor` / `\apply` sequences.
+
+- **Contexts:** animation prelude or step, diagram.
+- **Signature:** `\foreach{<ident>}{<iterable>}` ... body ... `\endforeach`
+- **Iterable formats:**
+  - Range: `0..4` (expands to 0, 1, 2, 3, 4)
+  - List literal: `[1,3,5]`
+  - Computed binding: `${evens}` (a Starlark list from `\compute`)
+- **Body:** one or more inner commands (`\recolor`, `\reannotate`, `\apply`, `\highlight`, `\annotate`, `\cursor`, or nested `\foreach`). The loop variable is available via `${variable}` interpolation inside the body. Commands `\step`, `\shape`, `\substory`, and `\endsubstory` are NOT allowed inside `\foreach`.
+- **Nesting:** `\foreach` may be nested inside `\foreach`, up to depth 3 (`E1170` if exceeded).
+- **Error codes:** `E1170` nesting exceeds max depth (3); `E1171` empty body; `E1172` unclosed `\foreach` (EOF before `\endforeach`); `E1173` invalid iterable.
+- **Example:**
+  ```latex
+  \foreach{i}{0..4}
+    \recolor{a.cell[${i}]}{state=done}
+  \endforeach
+  ```
+
+### 3.12 `\substory` / `\endsubstory`
+
+Embeds a nested linear frame sequence inside a single parent filmstrip frame, enabling inline drilldowns for recursive sub-computations. See the full extension spec at [`substory.md`](../extensions/substory.md).
+
+- **Contexts:** animation only, inside a `\step` block. Not allowed in the prelude or in `\begin{diagram}` (`E1362`).
+- **Signature:** `\substory[title="...", id=...]` ... inner prelude + steps ... `\endsubstory`
+- **Nesting:** substories may nest up to depth 3 (`E1360` if exceeded).
+- **Scope:** shapes and `\compute` bindings inside a substory are substory-local and destroyed at `\endsubstory`. Mutations to parent-scope shapes are ephemeral (`E1363` warning).
+- **Frame budget:** substory frames count toward the parent animation's 100-frame hard limit (`E1364`).
+- **Error codes:** `E1360`–`E1369`. See [`substory.md`](../extensions/substory.md) §7 for the full catalog.
+- **Example:**
+  ```latex
+  \substory[title="Sub-problem: dp[3][4]"]
+    \shape{sub}{Array}{size=2, data=["R","B"]}
+    \step
+    \highlight{sub.all}
+    \narrate{Trace the sub-computation.}
+  \endsubstory
+  ```
 
 ## 4. Target selector syntax
 
@@ -568,9 +642,9 @@ Priority is the order passed to `Pipeline(renderers=[...])`. Per `01-architectur
 
 ### 10.3 Body parsing
 
-After `detect()` returns a `Block`, `render_block(block, ctx)` hands `block.raw` to an internal `SceneParser` that walks the 8 commands and emits an internal `SceneIR` (defined in `05-scene-ir.md`). The `SceneIR` is then fed to the Starlark host (for `\compute` evaluation), then to the primitive catalog (for `\shape` instantiation and SVG layout), then to the SVG emitter (for per-frame rendering), then to the HTML stitcher (for the `<figure>` / `<ol>` / `<li>` wrapping).
+After `detect()` returns a `Block`, `render_block(block, ctx)` hands `block.raw` to an internal `SceneParser` that walks the 14 commands and emits an internal `SceneIR` (defined in `05-scene-ir.md`). The `SceneIR` is then fed to the Starlark host (for `\compute` evaluation), then to the primitive catalog (for `\shape` instantiation and SVG layout), then to the SVG emitter (for per-frame rendering), then to the HTML stitcher (for the `<figure>` / `<ol>` / `<li>` wrapping).
 
-The `SceneParser` is a small recursive-descent parser over the 8 commands. It does not use the LaTeX parser from `scriba.tex.parser` because the inner grammar is simpler and more rigid; sharing would leak TeX-specific quirks (optional args, catcodes) into a context that does not need them. Narration bodies are the one exception: they are passed verbatim to `ctx.render_inline_tex`.
+The `SceneParser` is a small recursive-descent parser over the 14 commands. It does not use the LaTeX parser from `scriba.tex.parser` because the inner grammar is simpler and more rigid; sharing would leak TeX-specific quirks (optional args, catcodes) into a context that does not need them. Narration bodies are the one exception: they are passed verbatim to `ctx.render_inline_tex`.
 
 ### 10.4 No overlap with math / code
 
@@ -589,7 +663,7 @@ All animation/diagram errors use codes in `E1001..E1299`. The ranges are reserve
 | E1003 | Nested environment                                                | Animation and diagram do not nest.                           |
 | E1004 | Unknown environment option                                        | Supported keys: §2.4.                                        |
 | E1005 | Malformed option value                                            | Use `key=value` with ident / number / string.                |
-| E1006 | Unknown inner command                                             | Must be one of the 8 from §3.                                |
+| E1006 | Unknown inner command                                             | Must be one of the 14 from §3.                                |
 | E1007 | Missing required brace argument                                   | See §3 signature.                                            |
 | E1008 | Stray text at top level of body (outside any command)             | Wrap inside a command or remove.                             |
 
@@ -804,7 +878,7 @@ The following are explicitly **not** part of this spec. Attempting to implement 
 
 - **Runtime JavaScript of any kind.** No Lit widgets, no Motion One, no step controller buttons, no hover-to-advance, no scroll-to-step synchronization, no animated transitions between frames beyond what pure CSS `@keyframes` on a static `<li>` can produce without altering the per-frame SVG.
 - **Nested environments.** Animations inside animations, diagrams inside animations, environments inside `\begin{tabular}`: all forbidden.
-- **Custom primitive plug-ins.** Only the 6 built-ins from `06-primitives.md` are usable via `\shape`. Third-party primitive packages are a v0.4+ concern.
+- **Custom primitive plug-ins.** Only the 16 registered primitives are usable via `\shape`. Third-party primitive packages are a v0.4+ concern.
 - **Live re-compute.** `\compute` runs once at build time. There is no way to reactively recompute when a consumer toggles a prop. If the consumer wants that, they render the same source twice with different `RenderContext.metadata` keys and swap the results at the HTML level.
 - **Bidirectional click-to-scroll.** Clicking on narration does not scroll the SVG; clicking on an SVG cell does not jump to a narration line. The only navigation is the `:target` CSS selector driven by the URL fragment, which lets `#scene-id-frame-7` scroll to and highlight frame 7.
 - **i18n of `\narrate`.** One language per environment. Authors needing two languages write two `\begin{animation}` blocks and gate each on `RenderContext.metadata["locale"]` at the consumer layer.

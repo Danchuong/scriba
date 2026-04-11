@@ -209,15 +209,15 @@ expect in broad strokes:
 <figure class="scriba-animation"
         data-scriba-scene="frog1-mini"
         aria-label="Frog 1 — three base steps">
-  <ol class="scriba-filmstrip">
-    <li class="scriba-frame" data-frame="1">
-      <svg class="scriba-stage" role="img" aria-labelledby="…">
+  <ol class="scriba-frames">
+    <li class="scriba-frame" id="frog1-mini-frame-1" data-step="1">
+      <svg class="scriba-stage-svg" role="img" aria-labelledby="…">
         <!-- Array primitive, cell[0] in state=done -->
       </svg>
       <p class="scriba-narration">Khởi tạo: <span class="scriba-tex">…</span>.</p>
     </li>
-    <li class="scriba-frame" data-frame="2">…</li>
-    <li class="scriba-frame" data-frame="3">…</li>
+    <li class="scriba-frame" id="frog1-mini-frame-2" data-step="2">…</li>
+    <li class="scriba-frame" id="frog1-mini-frame-3" data-step="3">…</li>
   </ol>
 </figure>
 
@@ -227,7 +227,7 @@ expect in broad strokes:
 <figure class="scriba-diagram"
         data-scriba-scene="frog1-tree"
         aria-label="Recursion tree for dp[3]">
-  <svg class="scriba-stage" role="img" aria-labelledby="…">
+  <svg class="scriba-stage-svg" role="img" aria-labelledby="…">
     <!-- Tree primitive with highlighted leaf -->
   </svg>
 </figure>
@@ -235,7 +235,7 @@ expect in broad strokes:
 
 Every SVG is fully self-contained. No `<script>`. No `<foreignObject>`
 containing HTML. No external references beyond the one global CSS file.
-Under `@media print`, the CSS contract collapses `.scriba-filmstrip` to
+Under `@media print`, the CSS contract collapses `.scriba-frames` to
 a vertical `display: block` stack so the filmstrip prints as three
 numbered figures down the page.
 

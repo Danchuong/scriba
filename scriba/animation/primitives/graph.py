@@ -183,6 +183,12 @@ class Graph(PrimitiveBase):
         super().__init__(name, params)
 
         self.nodes: list[str | int] = list(params.get("nodes", []))
+        if not self.nodes:
+            import warnings
+            warnings.warn(
+                f"Graph '{name}' created with empty nodes list",
+                stacklevel=2,
+            )
         raw_edges = params.get("edges", [])
         self.edges: list[tuple[str | int, str | int]] = [
             (e[0], e[1]) for e in raw_edges

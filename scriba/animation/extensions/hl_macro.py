@@ -99,8 +99,9 @@ def process_hl_macros(
         else:
             rendered = _escape_html(tex_body)
 
-        # Assemble output.
-        parts.append(narration[pos : m.start()])
+        # Assemble output — HTML-escape plain text between macros to
+        # prevent injection (e.g. ``<script>`` in narration source).
+        parts.append(_escape_html(narration[pos : m.start()]))
         parts.append(
             f'<span class="scriba-hl" '
             f'data-hl-step="{_escape_attr(step_id)}">'
@@ -108,5 +109,6 @@ def process_hl_macros(
         )
         pos = after_tex
 
-    parts.append(narration[pos:])
+    # Escape trailing plain text after the last macro.
+    parts.append(_escape_html(narration[pos:]))
     return "".join(parts)

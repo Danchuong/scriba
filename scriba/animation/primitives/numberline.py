@@ -92,7 +92,7 @@ class NumberLinePrimitive(PrimitiveBase):
             if ticks > 1_000:
                 raise animation_error(
                     E1103,
-                    detail=f"[E1103] NumberLine ticks {ticks} exceeds maximum of 1,000",
+                    detail=f"NumberLine ticks {ticks} exceeds maximum of 1,000",
                 )
         else:
             # Default: max-min+1 if integer range, else 11

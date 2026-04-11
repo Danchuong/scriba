@@ -102,9 +102,17 @@ def _render_narration(
     scene_id: str,
     ctx: RenderContext,
 ) -> str:
-    """Render narration text through hl macros and optional TeX."""
+    """Render narration text through hl macros and optional TeX.
+
+    ``process_hl_macros`` already HTML-escapes plain text segments
+    between ``\\hl`` macros, so we only need to escape when the text
+    contains no macros at all (i.e. the fast path where
+    ``process_hl_macros`` returns the input unchanged).
+    """
     if text is None:
         return ""
+    # process_hl_macros now HTML-escapes all plain-text segments,
+    # so the result is safe without an additional escape pass.
     processed = process_hl_macros(
         text,
         scene_id=scene_id,
@@ -112,7 +120,7 @@ def _render_narration(
     )
     if ctx.render_inline_tex is not None:
         return ctx.render_inline_tex(processed)
-    return _html.escape(processed, quote=False)
+    return processed
 
 
 def _resolve_params(

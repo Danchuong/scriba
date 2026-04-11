@@ -106,6 +106,11 @@ node_id   ::= NUMBER | STRING | IDENT | "${" IDENT "}"
 | Stack | `s` | `.item[i]`, `.top`, `.all` |
 | Plane2D | `p` | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]`, `.all` |
 | MetricPlot | `plot` | (whole shape only — series via `\apply` params) |
+| CodePanel | `cp` | `.line[i]`, `.all` |
+| HashMap | `hm` | `.bucket[i]`, `.all` |
+| LinkedList | `ll` | `.node[i]`, `.link[i]`, `.all` |
+| Queue | `q` | `.cell[i]`, `.front`, `.rear`, `.all` |
+| VariableWatch | `vw` | `.var[name]`, `.all` |
 
 **Generic indexed accessor (`IDENT "[" idx "]"`):** For extended primitives such as Stack and
 Plane2D, selectors like `s.item[0]`, `p.point[1]`, or `p.line[i]` use the `IDENT "[" idx "]"`
@@ -334,7 +339,7 @@ Unknown state → `E1109`
 
 ---
 
-## 5. Primitives Catalog (11 types)
+## 5. Primitives Catalog (16 types)
 
 ### 5.1 Base Primitives (6)
 
@@ -356,6 +361,16 @@ Unknown state → `E1109`
 | `Plane2D` | `xrange`, `yrange` | lines/points/segments/polygons/regions, geometry helpers |
 | `MetricPlot` | `series` (via `\shape`) | up to 8 series, Wong palette, auto axes, log scale, two-axis mode |
 | `Graph layout=stable` | (same as Graph) | SA joint-optimization, fixed positions across frames |
+
+### 5.2b Data-Structure Primitives (5)
+
+| Type | Required Params | Key Features |
+|------|----------------|-------------|
+| `CodePanel` | `source` or `lines` | Line-by-line highlight, 1-based `.line[i]` selectors, monospace rendering |
+| `HashMap` | `capacity` | Bucket-based hash table, `.bucket[i]` selectors, key:value display per bucket |
+| `LinkedList` | `data` | Singly-linked node chain, `.node[i]`/`.link[i]` selectors, insert/remove ops |
+| `Queue` | (none; `capacity` optional, default 8) | Fixed-capacity FIFO, `.cell[i]`/`.front`/`.rear` selectors, enqueue/dequeue ops |
+| `VariableWatch` | `names` | Two-column name-value table, `.var[name]` selectors, per-variable state coloring |
 
 ### 5.3 Graph Layout Modes
 

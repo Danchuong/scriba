@@ -291,4 +291,43 @@ Show where a DP value comes from, then commit the result:
   - `frog1_dp.tex` -- classic DP with manual steps
   - `frog1_dp_foreach.tex` -- same DP using `foreach` for the traceback
   - `foreach_demo.tex` -- foreach patterns (range, list, compute)
-- **More primitives** -- Scriba supports `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`, `Matrix`, `Stack`, `Plane2D`, and `MetricPlot`. Each has its own selectors and apply operations documented in the ruleset.
+- **More primitives** -- Scriba supports 16 primitive types. See the complete list below.
+
+---
+
+## 10. All Primitive Types
+
+Scriba ships 16 primitive types organized in three groups.
+
+### Base Primitives (6)
+
+| Type | Description |
+|------|-------------|
+| `Array` | One-dimensional indexed array with cells addressable by `cell[i]`. |
+| `Grid` | Two-dimensional grid of cells addressable by `cell[r][c]`. |
+| `DPTable` | A DP table — 1D (`cell[i]`) or 2D (`cell[i][j]`) — with row/col labels. |
+| `Graph` | Node-and-edge graph with optional directed edges and layout algorithms. |
+| `Tree` | Rooted tree with nodes and edges; supports segtree and general trees. |
+| `NumberLine` | Horizontal number line with ticks and optional labels. |
+
+### Extended Primitives (5)
+
+| Type | Description |
+|------|-------------|
+| `Matrix` / `Heatmap` | Two-dimensional matrix with colorscale visualization (viridis, magma, etc.). |
+| `Stack` | Push/pop stack with horizontal or vertical orientation. |
+| `Plane2D` | Cartesian coordinate plane with lines, points, segments, polygons, and regions. |
+| `MetricPlot` | Time-series or metric chart with up to 8 series, auto axes, and optional log scale. |
+| `Graph layout=stable` | Graph variant with simulated-annealing joint-optimization for fixed positions across frames. |
+
+### Data-Structure Primitives (5)
+
+| Type | Description |
+|------|-------------|
+| `CodePanel` | Source code display with line-by-line highlight via `.line[i]` selectors. |
+| `HashMap` | Bucket-based hash table visualization with `.bucket[i]` selectors. |
+| `LinkedList` | Linked list with `.node[i]` and `.link[i]` selectors for nodes and pointers. |
+| `Queue` | FIFO queue with `.cell[i]`, `.front`, and `.rear` selectors. |
+| `VariableWatch` | Variable watch panel for displaying named variables via `.var[name]` selectors. |
+
+Each primitive has its own selectors and apply operations documented in the [ruleset](../spec/ruleset.md).

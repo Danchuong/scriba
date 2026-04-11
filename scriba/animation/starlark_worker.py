@@ -32,6 +32,8 @@ import tracemalloc
 from io import StringIO
 from typing import Any
 
+from scriba.animation.constants import BLOCKED_ATTRIBUTES, FORBIDDEN_BUILTINS
+
 # ---------------------------------------------------------------------------
 # AST literal limits (defence-in-depth against C-level bombs)
 # ---------------------------------------------------------------------------
@@ -46,31 +48,12 @@ _MAX_STR_LITERAL_LEN = 10_000  # characters
 _MAX_RANGE_LEN = 10**6  # 1 million elements
 
 # ---------------------------------------------------------------------------
-# Blocked attribute names (sandbox escape vectors)
+# Security sets (imported from constants.py for centralization)
 # ---------------------------------------------------------------------------
 
-_BLOCKED_ATTRIBUTES: frozenset[str] = frozenset(
-    {
-        "__class__",
-        "__subclasses__",
-        "__bases__",
-        "__mro__",
-        "__globals__",
-        "__builtins__",
-        "__import__",
-        "__code__",
-        "__func__",
-        "__dict__",
-        "__reduce__",
-        "__reduce_ex__",
-        "__init_subclass__",
-    }
-)
+_BLOCKED_ATTRIBUTES = BLOCKED_ATTRIBUTES
 
-# ---------------------------------------------------------------------------
-# Forbidden AST node types
-# ---------------------------------------------------------------------------
-
+# Forbidden AST node types (not plain strings, so kept here)
 _FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
     ast.Import,
     ast.ImportFrom,
@@ -80,40 +63,7 @@ _FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
     ast.Lambda,
 )
 
-# ---------------------------------------------------------------------------
-# Forbidden builtins
-# ---------------------------------------------------------------------------
-
-_FORBIDDEN_BUILTINS: frozenset[str] = frozenset(
-    {
-        "exec",
-        "eval",
-        "__import__",
-        "open",
-        "compile",
-        "globals",
-        "locals",
-        "vars",
-        "dir",
-        "getattr",
-        "setattr",
-        "delattr",
-        "type",
-        "object",
-        "super",
-        "classmethod",
-        "staticmethod",
-        "property",
-        "breakpoint",
-        "exit",
-        "quit",
-        "help",
-        "input",
-        "memoryview",
-        "bytearray",
-        "bytes",
-    }
-)
+_FORBIDDEN_BUILTINS = FORBIDDEN_BUILTINS
 
 # Friendly names for forbidden AST nodes
 _FORBIDDEN_NODE_NAMES: dict[type, str] = {

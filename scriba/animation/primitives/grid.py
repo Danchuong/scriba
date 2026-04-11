@@ -114,12 +114,12 @@ class GridPrimitive(PrimitiveBase):
         if rows > 500:
             raise animation_error(
                 E1103,
-                detail=f"[E1103] Grid rows {rows} exceeds maximum of 500",
+                detail=f"Grid rows {rows} exceeds maximum of 500",
             )
         if cols > 500:
             raise animation_error(
                 E1103,
-                detail=f"[E1103] Grid cols {cols} exceeds maximum of 500",
+                detail=f"Grid cols {cols} exceeds maximum of 500",
             )
 
         raw_data: Any = self.params.get("data", [])

@@ -12,6 +12,7 @@ import hashlib
 import html as _html
 import inspect
 import re as _re
+import warnings
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -240,6 +241,39 @@ def _expand_selectors(
     return expanded
 
 
+def _validate_expanded_selectors(
+    expanded_state: dict[str, dict],
+    shape_name: str,
+    prim: Any,
+) -> None:
+    """Warn about selectors that don't match any addressable part of the primitive.
+
+    Uses ``prim.validate_selector()`` when available, falling back to
+    ``prim.addressable_parts()`` membership check.  Invalid selectors
+    emit a warning but do not raise — this avoids breaking existing
+    animations that may contain harmless stale selectors.
+    """
+    for target_key in expanded_state:
+        suffix = target_key
+        if suffix.startswith(shape_name + "."):
+            suffix = suffix[len(shape_name) + 1:]
+
+        # Skip meta-selectors that are handled specially
+        if not suffix or suffix in ("all",):
+            continue
+
+        if hasattr(prim, "validate_selector"):
+            valid = prim.validate_selector(suffix)
+        else:
+            valid = suffix in prim.addressable_parts()
+
+        if not valid:
+            warnings.warn(
+                f"selector '{target_key}' does not match any "
+                f"addressable part of '{shape_name}'"
+            )
+
+
 def _emit_frame_svg(
     frame: FrameData,
     primitives: dict[str, Any],
@@ -323,6 +357,9 @@ def _emit_frame_svg(
         shape_state = _expand_selectors(
             frame.shape_states.get(shape_name, {}), shape_name, prim
         )
+
+        # Validate expanded selectors against the primitive
+        _validate_expanded_selectors(shape_state, shape_name, prim)
 
         # Unified path: apply state via set_state/set_value then emit
         highlighted_suffixes: set[str] = set()

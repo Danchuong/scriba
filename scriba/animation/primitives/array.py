@@ -70,10 +70,15 @@ class ArrayPrimitive(PrimitiveBase):
                 detail="Array requires 'size' or 'n' parameter",
             )
         size = int(size)
+        if size < 1:
+            raise animation_error(
+                E1103,
+                detail=f"Array size must be >= 1, got {size}",
+            )
         if size > 10_000:
             raise animation_error(
                 E1103,
-                detail=f"[E1103] Array size {size} exceeds maximum of 10,000",
+                detail=f"Array size {size} exceeds maximum of 10,000",
             )
 
         data: list[Any] = list(self.params.get("data", []))

@@ -142,11 +142,21 @@ class MatrixPrimitive(PrimitiveBase):
             )
         rows = int(rows)
         cols = int(cols)
+        if rows < 1:
+            raise animation_error(
+                E1103,
+                detail=f"Matrix rows must be >= 1, got {rows}",
+            )
+        if cols < 1:
+            raise animation_error(
+                E1103,
+                detail=f"Matrix cols must be >= 1, got {cols}",
+            )
         if rows * cols > 10_000:
             raise animation_error(
                 E1103,
                 detail=(
-                    f"[E1103] Matrix dimensions {rows}x{cols} "
+                    f"Matrix dimensions {rows}x{cols} "
                     f"({rows * cols} cells) exceeds maximum of 10,000"
                 ),
             )
