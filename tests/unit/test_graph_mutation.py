@@ -400,3 +400,60 @@ class TestWarmStartRelayout:
         assert "edge[(B,C)]" in g.addressable_parts()
         g.apply_command({"remove_edge": {"from": "A", "to": "B"}})
         assert "edge[(A,B)]" not in g.addressable_parts()
+
+
+# ---------------------------------------------------------------------------
+# RFC-001 §4.4 — hidden state on Graph
+# ---------------------------------------------------------------------------
+
+
+class TestHiddenState:
+    """Hidden nodes and edges must be omitted from emit_svg entirely.
+
+    W7.1 (cookbook Dijkstra/Kruskal) flagged that Graph.emit_svg did not
+    honor the 'hidden' state at v0.6.0-alpha1 time. Fixed in the v0.6.0
+    GA release commit — this test class is the regression sentinel.
+    """
+
+    def _make_triangle(self) -> Graph:
+        return Graph(
+            "G",
+            {
+                "nodes": ["A", "B", "C"],
+                "edges": [("A", "B"), ("B", "C"), ("A", "C")],
+            },
+        )
+
+    def test_hidden_node_omitted_from_svg(self) -> None:
+        g = self._make_triangle()
+        g.set_state("node[B]", "hidden")
+        svg = g.emit_svg()
+        assert 'data-target="G.node[B]"' not in svg
+        assert 'data-target="G.node[A]"' in svg
+        assert 'data-target="G.node[C]"' in svg
+
+    def test_hidden_edge_omitted_from_svg(self) -> None:
+        g = self._make_triangle()
+        g.set_state("edge[(A,B)]", "hidden")
+        svg = g.emit_svg()
+        assert 'data-target="G.edge[(A,B)]"' not in svg
+        assert 'data-target="G.edge[(B,C)]"' in svg
+
+    def test_hidden_node_also_hides_incident_edges(self) -> None:
+        """Edges incident on a hidden node are also skipped to avoid
+        dangling lines into empty space (matches Tree.emit_svg)."""
+        g = self._make_triangle()
+        g.set_state("node[B]", "hidden")
+        svg = g.emit_svg()
+        # B is hidden, so A-B and B-C both vanish; A-C remains
+        assert 'data-target="G.edge[(A,B)]"' not in svg
+        assert 'data-target="G.edge[(B,C)]"' not in svg
+        assert 'data-target="G.edge[(A,C)]"' in svg
+
+    def test_hidden_state_is_reversible(self) -> None:
+        """Toggling hidden -> idle restores rendering."""
+        g = self._make_triangle()
+        g.set_state("node[B]", "hidden")
+        assert 'data-target="G.node[B]"' not in g.emit_svg()
+        g.set_state("node[B]", "idle")
+        assert 'data-target="G.node[B]"' in g.emit_svg()

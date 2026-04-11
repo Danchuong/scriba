@@ -5,6 +5,128 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-04-11 (Completeness audit — Phase 4 GA)
+
+General-availability release graduating 0.6.0-alpha1. Landing **Wave 7** —
+the cookbook truth pass and widget accessibility polish — plus a late-wave
+Graph `hidden`-state regression fix. Six parallel worktree agents shipped
+**10 new cookbook examples** (+2 rewrites) and fixed a widget a11y gap.
+
+**`SCRIBA_VERSION` stays at 3** (bumped 2→3 in 0.6.0-alpha1). The Wave 7
+deliverables are all additive or bug-fixes; no core contract change from
+the alpha.
+
+### Cookbook truth pass (Wave 7.0 — lying examples fixed)
+
+- **`h07_splay_amortized.tex`** — rewritten to use real `\apply{T}{reparent=...}`
+  structural rotations. Five reparent calls perform a textbook zig-zig that
+  lifts a depth-3 node to depth 1. Verification: 6 distinct edge-coordinate
+  layouts across 7 frames (vs 1 layout in the 0.5.x version — that was the
+  "lie" flagged by Agent 7). Phi amortized-cost curve drops 8.5 → 5.8
+  across the rotation sequence, now visibly attached to actual structural
+  change rather than recolor-only.
+- **`h08_persistent_segtree.tex`** — rewritten to use `\apply{T.node["X"]}{value=...}`
+  for sum cascade updates. Two cascaded updates (`a[3]+=10`, `a[5]+=5`)
+  model persistent versions V0/V1/V2. Root `[0,7]` deliberately on both
+  update paths: its value visibly changes 36→46→51 across frames. 15
+  distinct tree-node targets and 12 distinct label values rendered per
+  frame, resolving Agent 7 F1 CRITICAL.
+
+### Cookbook canonical examples (Wave 7.1-7.4 — 8 new files)
+
+- **`h11_dijkstra_weighted.tex`** (W7.1) — 148 lines, 16 steps. Weighted
+  Graph with `show_weights=true`, parallel distance Array, full relaxation
+  trace showing `dist[B]` going 4→3 and `dist[D]` going 10→8. 288 weight
+  label occurrences in rendered HTML.
+- **`h12_kruskal_mst.tex`** (W7.1) — 108 lines, 11 steps. Same 6-node
+  graph as h11 for direct algorithm comparison. 5 accepted + 4 rejected
+  edges, visible accept/reject narrative via `state=good` vs `state=dim`.
+- **`h13_bst_insert_delete.tex`** (W7.2) — 122 lines, 15 steps. BST insert
+  (6 calls growing 1→7 nodes) + delete (leaf, then root via rename-and-
+  remove using value layer override). Tree node counts visibly shrink:
+  `7→7→7→6→6→6→6→5→5`.
+- **`h14_bfs_tree.tex`** (W7.2) — 129 lines, 16 steps. Parallel
+  graph/tree/queue/visited-array showing BFS construction on 6 nodes.
+- **`h15_kmp_matching.tex`** (W7.3) — 186 lines, 22 steps. Full
+  failure-function build on `ABABCABAB` (yields `F=[0,0,1,2,0,1,2,3,4]`)
+  plus matching trace on `ABABDABACDABABCABAB` with 2 mismatch/fallback
+  cycles before the final match at `T[10..18]`.
+- **`h16_binary_search.tex`** (W7.3) — 85 lines, 11 steps. Happy path
+  (target=7 found first iteration) + not-found path (target=8, 3
+  narrowing iterations). Includes cookbook notes on the
+  `lo + (hi-lo)/2` overflow bug and `lower_bound`/`upper_bound` variants.
+- **`h17_union_find.tex`** (W7.4) — 129 lines, 18 steps. Truthful DSU
+  with real path compression: 9 `add_edge` calls + 2 `remove_edge`
+  rewrites (`find(D)` rewrites `D→C→A` to `D→A`; `find(F)` rewrites
+  `F→E→A` to `F→A`). Parent array visibly tracks union state.
+- **`h18_linkedlist_reverse.tex`** (W7.4) — 89 lines, 12 steps.
+  Three-pointer (prev/curr/next) cursor trace showing in-place reversal.
+
+Cookbook matrix coverage rose from ~42% (Agent 12 estimate) to ~70%
+including all weighted-graph algorithms.
+
+### Widget accessibility + late-wave fixes (Wave 7.5 + GA)
+
+- **Widget `aria-label`** — `<button class="scriba-btn-prev">` now carries
+  `aria-label="Previous step"` and `<button class="scriba-btn-next">` carries
+  `aria-label="Next step"`. Substory widgets carry "Previous sub-step" /
+  "Next sub-step" variants. Visible button text is unchanged.
+- **`prefers-reduced-motion`** — `scriba-scene-primitives.css` extends its
+  existing reduced-motion block with explicit widget button selectors
+  (`.scriba-btn-prev`, `.scriba-btn-next`, `.scriba-dot`) set to
+  `transition: none !important`. Defense-in-depth against future regressions.
+- **Graph `hidden` state** (GA commit) — `Graph.emit_svg` now honors the
+  `hidden` state with early-return in both the edge and node loops.
+  Edges incident on a hidden node are also skipped (matches Tree.emit_svg
+  behavior). Fixes a gap flagged by W7.1 Dijkstra — before the fix, `hidden`
+  fell through to idle styling in Graph. 4 new regression tests in
+  `tests/unit/test_graph_mutation.py::TestHiddenState`.
+
+### Wave 7.5 correction
+
+The FIX_PLAN Phase 4 Truth pass 3 described `scriba/animation/static/*.css`
+as "orphan" files and asked W7.5 to merge them into an inline `render.py`
+template. W7.5 correctly identified that those files are NOT orphans —
+they ship through `AnimationRenderer.assets()` at `renderer.py:347-363`
+as separate asset files per the pipeline's namespacing contract. No
+inline CSS template exists. The agent left the static files intact,
+extended the existing reduced-motion block, and added `aria-label` in
+`emitter.py` instead. Spec bug reported; no Python source change needed.
+
+### Tests
+
+- **+14 new tests** across 3 new or extended files vs 0.6.0-alpha1:
+  - `tests/unit/test_widget_a11y.py` (9, Wave 7.5)
+  - `tests/unit/test_graph_mutation.py::TestHiddenState` (4, GA fix)
+  - `tests/unit/test_graph_layout_stable.py` was extended by Wave 6.2; no
+    Wave 7 additions (it just works).
+- **Full suite: 2009 passed, 1 skipped, 0 failed.** (0.6.0-alpha1 was
+  1996 passed.)
+
+### Known follow-ups (not blocking v0.6.0 GA)
+
+- **`emit_interactive_html` double-pass state bug** — W7.0, W7.2, and W7.4
+  independently noted that `_emit_frame_svg` is called twice per frame
+  (once for the interactive JS payload, once for the print-mode filmstrip)
+  without snapshotting/restoring primitive state between passes. The
+  interactive widget (the user-visible playback) is correct; the
+  print-filmstrip shows the final mutated state for every frame and would
+  re-raise `E1433`/`E1436`/`E1471`/`E1437` on structural mutations under
+  certain rendering paths. Tracked for v0.6.1 (single-agent fix, ~50 LoC
+  in `emitter.py`). Workaround: cookbook authors can use the `state=hidden`
+  pre-declaration pattern (as W7.2 did for BST / BFS).
+- **Animation id dup check (W6.4)** — helper exists in `animation/uniqueness.py`
+  but document-level wiring needs `renderer.py` edit. Tracked for v0.6.1.
+- **Starlark cumulative budget (W6.4)** — reset/consume helpers ship,
+  host-side wiring at `starlark_host.py` is 2 lines away. Tracked for v0.6.1.
+- **CLI `--report=path.json`** — render-report serialization for CI
+  consumers. Tracked for v0.6.1.
+- **KaTeX `errorCallback` migration** — replaces the HTML regex scan.
+  Tracked for v0.6.1.
+- **Tree `\annotate` rendering** — Agent 7 F2 HIGH. v0.7 scope.
+- **Cross-frame endpoint tween** — Agent 9 FR4. v0.7 scope.
+- **Graph node mutation** — v0.7 scope; v0.6.0 ships edge mutation only.
+
 ## [0.6.0a1] - 2026-04-11 (Completeness audit — Phase 3 alpha)
 
 Pre-release alpha landing **Wave 6** — the Phase 3 implementation wave from

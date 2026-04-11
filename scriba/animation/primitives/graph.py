@@ -557,10 +557,22 @@ class Graph(PrimitiveBase):
             parts.append(_arrow_marker_defs())
 
         # --- Edge layer (rendered first, below nodes) ---
+        # Pre-compute the set of hidden node keys so edges incident on a
+        # hidden node are also skipped (avoids orphan edges dangling into
+        # empty space, matches Tree.emit_svg behavior — RFC-001 §4.4).
+        hidden_nodes: set[str | int] = {
+            n for n in self.nodes
+            if self.get_state(self._node_key(n)) == "hidden"
+        }
         parts.append('<g class="scriba-graph-edges">')
         for u, v, weight in self.edges:
             edge_target = f"{self.name}.{self._edge_key(u, v)}"
             state = self.get_state(self._edge_key(u, v))
+            # RFC-001 §4.4 — hidden edges are not rendered at all. Also
+            # skip edges whose endpoints are hidden (would otherwise
+            # render as a line going into empty space).
+            if state == "hidden" or u in hidden_nodes or v in hidden_nodes:
+                continue
             x1, y1 = self.positions[u]
             x2, y2 = self.positions[v]
             # Capture midpoint before any directed shortening so the
@@ -612,6 +624,9 @@ class Graph(PrimitiveBase):
         for node_id in self.nodes:
             node_target = f"{self.name}.{self._node_key(node_id)}"
             state = self.get_state(self._node_key(node_id))
+            # RFC-001 §4.4 — hidden nodes are not rendered at all.
+            if state == "hidden":
+                continue
             node_colors = svg_style_attrs(state)
             cx, cy = self.positions[node_id]
             node_sw = "1.5" if state == "idle" else "2"
