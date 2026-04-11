@@ -393,7 +393,7 @@ class TestRealArrayPrimitive:
     """Integration-level: use the real ArrayInstance."""
 
     def test_emit_with_real_array(self) -> None:
-        arr = ArrayPrimitive().declare("a", {"size": 4})
+        arr = ArrayPrimitive("a", {"size": 4})
         frame = _frame(
             step=1,
             total=1,
@@ -414,7 +414,7 @@ class TestRealArrayPrimitive:
 
     def test_real_array_has_inline_fill(self) -> None:
         """SVG elements must have inline fill/stroke attributes."""
-        arr = ArrayPrimitive().declare("a", {"size": 2})
+        arr = ArrayPrimitive("a", {"size": 2})
         frame = _frame(
             step=1,
             total=1,
@@ -439,7 +439,7 @@ class TestRealArrayPrimitive:
 
     def test_real_array_interactive_mode(self) -> None:
         """Interactive mode works with real array primitives."""
-        arr = ArrayPrimitive().declare("a", {"size": 2})
+        arr = ArrayPrimitive("a", {"size": 2})
         frame = _frame(
             step=1,
             total=1,

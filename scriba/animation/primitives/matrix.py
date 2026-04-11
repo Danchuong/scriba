@@ -9,14 +9,13 @@ See ``docs/primitives/matrix.md`` for the authoritative specification.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     DEFAULT_STATE,
     THEME,
-    _escape_xml,
+    PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
     state_class,
@@ -101,21 +100,34 @@ _CELL_GAP = 1
 _LABEL_OFFSET = 14  # space for row/col labels
 
 # ---------------------------------------------------------------------------
-# Factory
+# Selector matching
+# ---------------------------------------------------------------------------
+
+_CELL_2D_RE = re.compile(
+    r"^(?P<name>\w+)\.cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$"
+)
+_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+
+# Suffix-only regex (no shape name prefix)
+_SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
+
+# ---------------------------------------------------------------------------
+# MatrixPrimitive
 # ---------------------------------------------------------------------------
 
 
-class MatrixPrimitive:
-    """Factory that creates :class:`MatrixInstance` from ``\\shape`` params."""
+class MatrixPrimitive(PrimitiveBase):
+    """A dense 2D grid with colorscale mapping.
 
-    name: str = "Matrix"
+    Extends :class:`PrimitiveBase` with self-managed state.
+    """
 
-    def declare(
-        self, shape_name: str, params: dict[str, Any],
-    ) -> MatrixInstance:
-        """Validate params and build a :class:`MatrixInstance`."""
-        rows = params.get("rows")
-        cols = params.get("cols")
+    primitive_type: str = "matrix"
+
+    def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
+        super().__init__(name, params)
+        rows = self.params.get("rows")
+        cols = self.params.get("cols")
         if rows is None or cols is None:
             raise animation_error(
                 E1103,
@@ -132,7 +144,7 @@ class MatrixPrimitive:
                 ),
             )
 
-        raw_data = params.get("data", [])
+        raw_data = self.params.get("data", [])
         if not raw_data:
             data_2d: list[list[float]] = [
                 [0.0] * cols for _ in range(rows)
@@ -155,14 +167,14 @@ class MatrixPrimitive:
                 flat[r * cols : (r + 1) * cols] for r in range(rows)
             ]
 
-        colorscale = str(params.get("colorscale", "viridis"))
-        show_values = bool(params.get("show_values", False))
-        cell_size = int(params.get("cell_size", _DEFAULT_CELL_SIZE))
-        vmin = params.get("vmin")
-        vmax = params.get("vmax")
-        row_labels = params.get("row_labels")
-        col_labels = params.get("col_labels")
-        label = params.get("label")
+        colorscale = str(self.params.get("colorscale", "viridis"))
+        show_values = bool(self.params.get("show_values", False))
+        cell_size = int(self.params.get("cell_size", _DEFAULT_CELL_SIZE))
+        vmin = self.params.get("vmin")
+        vmax = self.params.get("vmax")
+        row_labels = self.params.get("row_labels")
+        col_labels = self.params.get("col_labels")
+        label = self.params.get("label")
 
         # Dynamic label offset based on actual label content
         row_label_offset = 0
@@ -175,94 +187,49 @@ class MatrixPrimitive:
             max_col_h = max(estimate_text_width(str(c), 10) for c in col_labels)
             col_label_offset = max(_LABEL_OFFSET, max_col_h + 4)
 
-        return MatrixInstance(
-            shape_name=shape_name,
-            rows=rows,
-            cols=cols,
-            data=data_2d,
-            colorscale=colorscale,
-            show_values=show_values,
-            cell_size=cell_size,
-            vmin=float(vmin) if vmin is not None else None,
-            vmax=float(vmax) if vmax is not None else None,
-            row_labels=row_labels,
-            col_labels=col_labels,
-            label=label,
-            row_label_offset=row_label_offset,
-            col_label_offset=col_label_offset,
-        )
+        self.shape_name: str = name
+        self.rows: int = rows
+        self.cols: int = cols
+        self.data: list[list[float]] = data_2d
+        self.colorscale: str = colorscale
+        self.show_values: bool = show_values
+        self.cell_size: int = cell_size
+        self.vmin: float | None = float(vmin) if vmin is not None else None
+        self.vmax: float | None = float(vmax) if vmax is not None else None
+        self.row_labels: list[str] | None = row_labels
+        self.col_labels: list[str] | None = col_labels
+        self.label: str | None = label
+        self.row_label_offset: int = row_label_offset
+        self.col_label_offset: int = col_label_offset
 
-
-# Heatmap is an alias for Matrix
-HeatmapPrimitive = MatrixPrimitive
-HeatmapPrimitive.name = "Heatmap"
-
-# ---------------------------------------------------------------------------
-# Selector matching
-# ---------------------------------------------------------------------------
-
-_CELL_2D_RE = re.compile(
-    r"^(?P<name>\w+)\.cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$"
-)
-_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
-
-# ---------------------------------------------------------------------------
-# Instance
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class MatrixInstance:
-    """A declared Matrix instance with layout pre-computed."""
-
-    shape_name: str
-    rows: int
-    cols: int
-    data: list[list[float]] = field(default_factory=list)
-    colorscale: str = "viridis"
-    show_values: bool = False
-    cell_size: int = _DEFAULT_CELL_SIZE
-    vmin: float | None = None
-    vmax: float | None = None
-    row_labels: list[str] | None = None
-    col_labels: list[str] | None = None
-    label: str | None = None
-    row_label_offset: int = _LABEL_OFFSET
-    col_label_offset: int = _LABEL_OFFSET
-    primitive_type: str = "matrix"
-
-    # -- protocol -----------------------------------------------------------
+    # -- PrimitiveBase interface --------------------------------------------
 
     def addressable_parts(self) -> list[str]:
-        """Return all valid selector targets."""
+        """Return all valid selector suffixes."""
         parts: list[str] = []
         for r in range(self.rows):
             for c in range(self.cols):
-                parts.append(f"{self.shape_name}.cell[{r}][{c}]")
-        parts.append(f"{self.shape_name}.all")
+                parts.append(f"cell[{r}][{c}]")
+        parts.append("all")
         return parts
 
-    def validate_selector(self, selector_str: str) -> bool:
-        """Check whether *selector_str* is valid for this instance."""
-        m = _CELL_2D_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
+    def validate_selector(self, suffix: str) -> bool:
+        """Check whether *suffix* is a valid addressable part."""
+        m = _SUFFIX_CELL_2D_RE.match(suffix)
+        if m:
             row = int(m.group("row"))
             col = int(m.group("col"))
             return 0 <= row < self.rows and 0 <= col < self.cols
 
-        m = _ALL_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
-            return True
-
-        return False
+        return suffix == "all"
 
     def emit_svg(
         self,
-        state: dict[str, dict[str, Any]],
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> str:
         """Emit SVG ``<g>`` for the matrix/heatmap."""
+
         stops = COLORSCALES.get(self.colorscale, VIRIDIS)
         effective_vmin, effective_vmax = self._compute_range()
 
@@ -316,8 +283,11 @@ class MatrixInstance:
         for r in range(self.rows):
             for c in range(self.cols):
                 target = f"{self.shape_name}.cell[{r}][{c}]"
-                cell_state = state.get(target, {})
-                state_name = cell_state.get("state", DEFAULT_STATE)
+                suffix = f"cell[{r}][{c}]"
+
+                state_name = self.get_state(suffix)
+                highlighted = suffix in self._highlighted
+
                 css = state_class(state_name)
 
                 val = self.data[r][c]
@@ -373,7 +343,7 @@ class MatrixInstance:
                     )
 
                 # Highlight overlay
-                if cell_state.get("highlighted"):
+                if highlighted:
                     lines.append(
                         f'    <rect x="{x}" y="{y}" '
                         f'width="{self.cell_size}" height="{self.cell_size}" '
@@ -451,3 +421,11 @@ class MatrixInstance:
         if v == int(v):
             return str(int(v))
         return f"{v:.2f}".rstrip("0").rstrip(".")
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatible aliases
+# ---------------------------------------------------------------------------
+
+MatrixInstance = MatrixPrimitive
+HeatmapPrimitive = MatrixPrimitive

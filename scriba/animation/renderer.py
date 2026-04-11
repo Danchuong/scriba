@@ -186,23 +186,18 @@ def _instantiate_primitive(
     shape: ShapeCommand,
     bindings: dict[str, Any],
 ) -> Any:
-    """Create a primitive instance from a shape declaration."""
-    factory_cls = PRIMITIVE_CATALOG.get(shape.type_name)
-    if factory_cls is None:
+    """Create a primitive instance from a shape declaration.
+
+    All primitives use the unified ``Cls(name, params)`` constructor.
+    """
+    primitive_cls = PRIMITIVE_CATALOG.get(shape.type_name)
+    if primitive_cls is None:
         raise ValidationError(
             f"unknown primitive type {shape.type_name!r}",
             code="E1102",
         )
     resolved_params = _resolve_params(shape.params, bindings)
-
-    if shape.type_name in (
-        "Graph", "Tree", "Stack", "Plane2D", "MetricPlot",
-        "Queue", "LinkedList", "HashMap", "CodePanel", "VariableWatch",
-    ):
-        return factory_cls(shape.name, resolved_params)
-
-    factory = factory_cls()
-    return factory.declare(shape.name, resolved_params)
+    return primitive_cls(shape.name, resolved_params)
 
 
 def _snapshot_to_frame_data(

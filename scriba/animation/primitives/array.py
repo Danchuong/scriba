@@ -6,7 +6,6 @@ See ``docs/06-primitives.md`` §3 for the authoritative specification.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
@@ -14,9 +13,9 @@ from scriba.animation.primitives.base import (
     CELL_GAP,
     CELL_HEIGHT,
     CELL_WIDTH,
-    DEFAULT_STATE,
     INDEX_LABEL_OFFSET,
     THEME,
+    PrimitiveBase,
     _escape_xml,
     _render_svg_text,
     estimate_text_width,
@@ -29,20 +28,34 @@ _CAPTION_GAP = 12
 
 
 # ---------------------------------------------------------------------------
-# Factory
+# Selector matching
+# ---------------------------------------------------------------------------
+
+_CELL_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
+_RANGE_RE = re.compile(r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+
+# Suffix-only regexes (no shape name prefix)
+_SUFFIX_CELL_RE = re.compile(r"^cell\[(?P<idx>\d+)\]$")
+_SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+
+
+# ---------------------------------------------------------------------------
+# ArrayPrimitive
 # ---------------------------------------------------------------------------
 
 
-class ArrayPrimitive:
-    """Factory that creates :class:`ArrayInstance` from ``\\shape`` params."""
+class ArrayPrimitive(PrimitiveBase):
+    """A fixed-length horizontal row of indexed cells.
 
-    name: str = "Array"
+    Extends :class:`PrimitiveBase` with self-managed state.
+    """
 
-    def declare(
-        self, shape_name: str, params: dict[str, Any]
-    ) -> ArrayInstance:
-        """Validate params and build an :class:`ArrayInstance`."""
-        size = params.get("size", params.get("n"))
+    primitive_type: str = "array"
+
+    def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
+        super().__init__(name, params)
+        size = self.params.get("size", self.params.get("n"))
         if size is None:
             raise animation_error(
                 E1103,
@@ -55,7 +68,7 @@ class ArrayPrimitive:
                 detail=f"[E1103] Array size {size} exceeds maximum of 10,000",
             )
 
-        data: list[Any] = list(params.get("data", []))
+        data: list[Any] = list(self.params.get("data", []))
         if data and len(data) != size:
             raise animation_error(
                 E1103,
@@ -67,99 +80,62 @@ class ArrayPrimitive:
         if not data:
             data = [""] * size
 
-        labels: str | None = params.get("labels")
-        label: str | None = params.get("label")
+        self.shape_name: str = name
+        self.size: int = size
+        self.data: list[Any] = data
+        self.labels: str | None = self.params.get("labels")
+        self.label: str | None = self.params.get("label")
 
-        return ArrayInstance(
-            shape_name=shape_name,
-            size=size,
-            data=data,
-            labels=labels,
-            label=label,
-        )
-
-
-# ---------------------------------------------------------------------------
-# Selector matching
-# ---------------------------------------------------------------------------
-
-_CELL_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
-_RANGE_RE = re.compile(r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
-_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
-
-
-# ---------------------------------------------------------------------------
-# Instance
-# ---------------------------------------------------------------------------
-
-
-@dataclass(slots=True)
-class ArrayInstance:
-    """A declared Array instance with layout pre-computed."""
-
-    shape_name: str
-    size: int
-    data: list[Any] = field(default_factory=list)
-    labels: str | None = None
-    label: str | None = None
-    primitive_type: str = "array"
-    _cell_width: int = field(init=False, repr=False)
-
-    def __post_init__(self) -> None:
-        """Compute dynamic cell width from data and labels."""
+        # Compute dynamic cell width from data and labels
         max_content_w = max(
             (estimate_text_width(str(v), 14) for v in self.data), default=0
         )
         if self.labels:
             parsed = _parse_index_labels(self.labels, self.size)
             max_label_w = max(
-                (estimate_text_width(str(l), 11) for l in parsed), default=0
+                (estimate_text_width(str(lb), 11) for lb in parsed), default=0
             )
         else:
             max_label_w = 0
-        self._cell_width = max(CELL_WIDTH, max_content_w + 12, max_label_w + 8)
+        self._cell_width: int = max(CELL_WIDTH, max_content_w + 12, max_label_w + 8)
 
-    # -- protocol -----------------------------------------------------------
+    # -- PrimitiveBase interface --------------------------------------------
 
     def addressable_parts(self) -> list[str]:
-        """Return all valid selector targets."""
+        """Return all valid selector suffixes."""
         parts: list[str] = []
         for i in range(self.size):
-            parts.append(f"{self.shape_name}.cell[{i}]")
-        parts.append(f"{self.shape_name}.all")
+            parts.append(f"cell[{i}]")
+        parts.append("all")
         return parts
 
-    def validate_selector(self, selector_str: str) -> bool:
-        """Check whether *selector_str* is valid for this instance."""
-        m = _CELL_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
+    def validate_selector(self, suffix: str) -> bool:
+        """Check whether *suffix* is a valid addressable part."""
+        m = _SUFFIX_CELL_RE.match(suffix)
+        if m:
             return 0 <= int(m.group("idx")) < self.size
 
-        m = _RANGE_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
+        m = _SUFFIX_RANGE_RE.match(suffix)
+        if m:
             lo, hi = int(m.group("lo")), int(m.group("hi"))
             return 0 <= lo <= hi < self.size
 
-        m = _ALL_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
-            return True
-
-        return False
+        return suffix == "all"
 
     def emit_svg(
         self,
-        state: dict[str, dict[str, Any]],
-        annotations: list[dict[str, Any]] | None = None,
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> str:
         """Emit SVG ``<g>`` for the array.
 
-        *annotations* is an optional list of dicts with keys:
-        ``target``, ``arrow_from``, ``label``, ``color``.
+        Reads state from internal ``_states``/``_values``/``_annotations``
+        managed by :class:`PrimitiveBase`.
         """
+        effective_anns = self._annotations
+
         # Compute vertical space needed above cells for arrow curves
-        arrow_above = self._arrow_height_above(annotations or [])
+        arrow_above = self._arrow_height_above(effective_anns)
 
         lines: list[str] = [
             f'<g data-primitive="array" data-shape="{self.shape_name}">'
@@ -170,7 +146,7 @@ class ArrayInstance:
             lines.append(f'  <g transform="translate(0, {arrow_above})">')
 
         # Emit arrowhead marker defs when annotations with arrows are present
-        arrow_anns = [a for a in (annotations or []) if a.get("arrow_from")]
+        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
         if arrow_anns:
             colors_used = {a.get("color", "info") for a in arrow_anns}
             lines.append("  <defs>")
@@ -192,11 +168,16 @@ class ArrayInstance:
 
         for i in range(self.size):
             target = f"{self.shape_name}.cell[{i}]"
-            cell_state = state.get(target, {})
-            state_name = cell_state.get("state", DEFAULT_STATE)
+            suffix = f"cell[{i}]"
+
+            state_name = self.get_state(suffix)
+            value = self.get_value(suffix)
+            if value is None:
+                value = self.data[i]
+            highlighted = suffix in self._highlighted
+
             css = state_class(state_name)
             colors = svg_style_attrs(state_name)
-            value = cell_state.get("value", self.data[i])
 
             cw = self._cell_width
             x = int(i * (cw + CELL_GAP))
@@ -228,7 +209,7 @@ class ArrayInstance:
                 )
             )
             # Highlight overlay (additive — dashed gold border on top)
-            if cell_state.get("highlighted"):
+            if highlighted:
                 lines.append(
                     f'    <rect x="{x}" y="{y}" '
                     f'width="{cw}" height="{CELL_HEIGHT}" '
@@ -279,9 +260,9 @@ class ArrayInstance:
             )
 
         # Arrow annotations
-        if annotations:
-            for ann in annotations:
-                self._emit_arrow(lines, ann, annotations=annotations)
+        if effective_anns:
+            for ann in effective_anns:
+                self._emit_arrow(lines, ann, annotations=effective_anns)
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
@@ -290,22 +271,20 @@ class ArrayInstance:
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(
-        self,
-        annotations: list[dict[str, Any]] | None = None,
-    ) -> tuple[float, float, float, float]:
+    def bounding_box(self) -> tuple[float, float, float, float]:
         """Return ``(x, y, width, height)``.
 
-        When *annotations* are provided the height includes vertical
-        space needed above the cells for arrow curves.
+        The height includes vertical space needed above the cells
+        for arrow curves when annotations have been set.
         """
+        effective_anns = self._annotations
         w = self._total_width()
         h = CELL_HEIGHT
         if self.labels:
             h += INDEX_LABEL_OFFSET
         if self.label:
             h += INDEX_LABEL_OFFSET + _CAPTION_GAP if self.labels else INDEX_LABEL_OFFSET
-        arrow_above = self._arrow_height_above(annotations or [])
+        arrow_above = self._arrow_height_above(effective_anns)
         h += arrow_above
         return (0, 0, float(w), float(h))
 
@@ -502,6 +481,13 @@ class ArrayInstance:
         if self.size == 0:
             return 0
         return self.size * self._cell_width + (self.size - 1) * CELL_GAP
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatible alias: ArrayInstance -> ArrayPrimitive
+# ---------------------------------------------------------------------------
+
+ArrayInstance = ArrayPrimitive
 
 
 # ---------------------------------------------------------------------------

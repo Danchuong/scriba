@@ -6,7 +6,6 @@ See ``docs/06-primitives.md`` §5 for the authoritative specification.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from scriba.animation.errors import E1103, animation_error
@@ -14,9 +13,9 @@ from scriba.animation.primitives.base import (
     CELL_GAP,
     CELL_HEIGHT,
     CELL_WIDTH,
-    DEFAULT_STATE,
     INDEX_LABEL_OFFSET,
     THEME,
+    PrimitiveBase,
     _escape_xml,
     _render_svg_text,
     state_class,
@@ -25,22 +24,42 @@ from scriba.animation.primitives.base import (
 
 
 # ---------------------------------------------------------------------------
-# Factory
+# Selector matching
+# ---------------------------------------------------------------------------
+
+_CELL_1D_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
+_CELL_2D_RE = re.compile(
+    r"^(?P<name>\w+)\.cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$"
+)
+_RANGE_RE = re.compile(
+    r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$"
+)
+_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+
+# Suffix-only regexes (no shape name prefix)
+_SUFFIX_CELL_1D_RE = re.compile(r"^cell\[(?P<idx>\d+)\]$")
+_SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
+_SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+
+
+# ---------------------------------------------------------------------------
+# DPTablePrimitive
 # ---------------------------------------------------------------------------
 
 
-class DPTablePrimitive:
-    """Factory that creates :class:`DPTableInstance` from ``\\shape`` params."""
+class DPTablePrimitive(PrimitiveBase):
+    """A 1D or 2D DP table with optional transition arrows.
 
-    name: str = "DPTable"
+    Extends :class:`PrimitiveBase` with self-managed state.
+    """
 
-    def declare(
-        self, shape_name: str, params: dict[str, Any]
-    ) -> DPTableInstance:
-        """Validate params and build a :class:`DPTableInstance`."""
-        n = params.get("n")
-        rows = params.get("rows")
-        cols = params.get("cols")
+    primitive_type: str = "dptable"
+
+    def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
+        super().__init__(name, params)
+        n = self.params.get("n")
+        rows = self.params.get("rows")
+        cols = self.params.get("cols")
 
         if n is not None:
             # 1D mode
@@ -60,7 +79,7 @@ class DPTablePrimitive:
                 detail="DPTable requires 'n' (1D) or 'rows'+'cols' (2D)",
             )
 
-        data: list[Any] = list(params.get("data", []))
+        data: list[Any] = list(self.params.get("data", []))
         if data and len(data) != n:
             raise animation_error(
                 E1103,
@@ -72,114 +91,68 @@ class DPTablePrimitive:
         if not data:
             data = [""] * n
 
-        labels: str | None = params.get("labels")
-        label: str | None = params.get("label")
+        self.shape_name: str = name
+        self.is_2d: bool = is_2d
+        self.rows: int = dim_rows
+        self.cols: int = dim_cols
+        self.data: list[Any] = data
+        self.labels: str | None = self.params.get("labels")
+        self.label: str | None = self.params.get("label")
 
-        return DPTableInstance(
-            shape_name=shape_name,
-            is_2d=is_2d,
-            rows=dim_rows,
-            cols=dim_cols,
-            data=data,
-            labels=labels,
-            label=label,
-        )
-
-
-# ---------------------------------------------------------------------------
-# Selector matching
-# ---------------------------------------------------------------------------
-
-_CELL_1D_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
-_CELL_2D_RE = re.compile(
-    r"^(?P<name>\w+)\.cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$"
-)
-_RANGE_RE = re.compile(
-    r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$"
-)
-_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
-
-
-# ---------------------------------------------------------------------------
-# Instance
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class DPTableInstance:
-    """A declared DPTable instance with layout pre-computed."""
-
-    shape_name: str
-    is_2d: bool
-    rows: int
-    cols: int
-    data: list[Any] = field(default_factory=list)
-    labels: str | None = None
-    label: str | None = None
-    primitive_type: str = "dptable"
-
-    # -- protocol -----------------------------------------------------------
+    # -- PrimitiveBase interface --------------------------------------------
 
     def addressable_parts(self) -> list[str]:
-        """Return all valid selector targets."""
+        """Return all valid selector suffixes."""
         parts: list[str] = []
         if self.is_2d:
             for r in range(self.rows):
                 for c in range(self.cols):
-                    parts.append(f"{self.shape_name}.cell[{r}][{c}]")
+                    parts.append(f"cell[{r}][{c}]")
         else:
             for i in range(self.cols):
-                parts.append(f"{self.shape_name}.cell[{i}]")
-        parts.append(f"{self.shape_name}.all")
+                parts.append(f"cell[{i}]")
+        parts.append("all")
         return parts
 
-    def validate_selector(self, selector_str: str) -> bool:
-        """Check whether *selector_str* is valid for this instance."""
+    def validate_selector(self, suffix: str) -> bool:
+        """Check whether *suffix* is a valid addressable part."""
         if self.is_2d:
-            m = _CELL_2D_RE.match(selector_str)
-            if m and m.group("name") == self.shape_name:
+            m = _SUFFIX_CELL_2D_RE.match(suffix)
+            if m:
                 r, c = int(m.group("row")), int(m.group("col"))
                 return 0 <= r < self.rows and 0 <= c < self.cols
         else:
-            m = _CELL_1D_RE.match(selector_str)
-            if m and m.group("name") == self.shape_name:
+            m = _SUFFIX_CELL_1D_RE.match(suffix)
+            if m:
                 return 0 <= int(m.group("idx")) < self.cols
 
-            m = _RANGE_RE.match(selector_str)
-            if m and m.group("name") == self.shape_name:
+            m = _SUFFIX_RANGE_RE.match(suffix)
+            if m:
                 lo, hi = int(m.group("lo")), int(m.group("hi"))
                 return 0 <= lo <= hi < self.cols
 
-        m = _ALL_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
-            return True
-
-        return False
+        return suffix == "all"
 
     def emit_svg(
         self,
-        state: dict[str, dict[str, Any]],
-        annotations: list[dict[str, Any]] | None = None,
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> str:
-        """Emit SVG ``<g>`` for the DP table.
+        """Emit SVG ``<g>`` for the DP table."""
+        effective_anns = self._annotations
 
-        *annotations* is an optional list of dicts with keys:
-        ``target``, ``arrow_from``, ``label``, ``color``.
-        """
         lines: list[str] = [
             f'<g data-primitive="dptable" data-shape="{self.shape_name}">'
         ]
 
         if self.is_2d:
-            self._emit_2d_cells(lines, state, render_inline_tex=render_inline_tex)
+            self._emit_2d_cells(lines, render_inline_tex=render_inline_tex)
         else:
-            self._emit_1d_cells(lines, state, render_inline_tex=render_inline_tex)
+            self._emit_1d_cells(lines, render_inline_tex=render_inline_tex)
 
         # Arrow annotations
-        if annotations:
-            for ann in annotations:
+        if effective_anns:
+            for ann in effective_anns:
                 self._emit_arrow(lines, ann)
 
         # Caption label
@@ -207,10 +180,7 @@ class DPTableInstance:
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(
-        self,
-        annotations: list[dict] | None = None,
-    ) -> tuple[float, float, float, float]:
+    def bounding_box(self) -> tuple[float, float, float, float]:
         """Return ``(x, y, width, height)``."""
         tw, th = self._grid_dimensions()
         h = th
@@ -225,7 +195,6 @@ class DPTableInstance:
     def _emit_1d_cells(
         self,
         lines: list[str],
-        state: dict[str, dict[str, Any]],
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> None:
@@ -238,11 +207,15 @@ class DPTableInstance:
 
         for i in range(self.cols):
             target = f"{self.shape_name}.cell[{i}]"
-            cell_state = state.get(target, {})
-            state_name = cell_state.get("state", DEFAULT_STATE)
+            suffix = f"cell[{i}]"
+
+            state_name = self.get_state(suffix)
+            value = self.get_value(suffix)
+            if value is None:
+                value = self.data[i]
+
             css = state_class(state_name)
             colors = svg_style_attrs(state_name)
-            value = cell_state.get("value", self.data[i])
 
             x = int(i * (CELL_WIDTH + CELL_GAP))
             y = 0
@@ -290,7 +263,6 @@ class DPTableInstance:
     def _emit_2d_cells(
         self,
         lines: list[str],
-        state: dict[str, dict[str, Any]],
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> None:
@@ -298,12 +270,16 @@ class DPTableInstance:
         for r in range(self.rows):
             for c in range(self.cols):
                 target = f"{self.shape_name}.cell[{r}][{c}]"
-                cell_state = state.get(target, {})
-                state_name = cell_state.get("state", DEFAULT_STATE)
+                suffix = f"cell[{r}][{c}]"
+
+                state_name = self.get_state(suffix)
+                value = self.get_value(suffix)
+                if value is None:
+                    flat_idx = r * self.cols + c
+                    value = self.data[flat_idx]
+
                 css = state_class(state_name)
                 colors = svg_style_attrs(state_name)
-                flat_idx = r * self.cols + c
-                value = cell_state.get("value", self.data[flat_idx])
 
                 x = int(c * (CELL_WIDTH + CELL_GAP))
                 y = int(r * (CELL_HEIGHT + CELL_GAP))
@@ -406,6 +382,13 @@ class DPTableInstance:
         w = self.cols * CELL_WIDTH + (self.cols - 1) * CELL_GAP
         h = self.rows * CELL_HEIGHT + (self.rows - 1) * CELL_GAP
         return (w, h)
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatible alias
+# ---------------------------------------------------------------------------
+
+DPTableInstance = DPTablePrimitive
 
 
 # ---------------------------------------------------------------------------

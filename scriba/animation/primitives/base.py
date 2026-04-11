@@ -1,8 +1,8 @@
-"""Base protocol, helpers, and shared constants for animation primitives.
+"""Base class, helpers, and shared constants for animation primitives.
 
-Every primitive type (Array, Grid, DPTable, Graph, Tree, NumberLine)
-implements the :class:`Primitive` factory and the :class:`PrimitiveInstance`
-interface.
+Every primitive type (Array, Grid, DPTable, Graph, Tree, NumberLine, etc.)
+extends :class:`PrimitiveBase` and implements the unified interface:
+``Cls(name, params)`` constructor with self-managed state.
 
 See ``docs/06-primitives.md`` for the authoritative catalog.
 """
@@ -12,7 +12,7 @@ from __future__ import annotations
 import abc
 import re
 from dataclasses import dataclass
-from typing import Any, Callable, Protocol
+from typing import Any, Callable
 
 
 # ---------------------------------------------------------------------------
@@ -119,75 +119,25 @@ _ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
 
 
 # ---------------------------------------------------------------------------
-# Protocols (for cell-based primitives: Array, Grid, DPTable)
-# ---------------------------------------------------------------------------
-
-
-class PrimitiveInstance(Protocol):
-    """A declared primitive instance with layout computed."""
-
-    shape_name: str
-    primitive_type: str
-
-    def addressable_parts(self) -> list[str]:
-        """Return all valid selector targets.
-
-        Examples: ``['a.cell[0]', 'a.cell[1]', 'a.all']``
-        """
-        ...
-
-    def validate_selector(self, selector_str: str) -> bool:
-        """Check whether *selector_str* is valid for this instance."""
-        ...
-
-    def emit_svg(
-        self,
-        state: dict[str, dict[str, Any]],
-        *,
-        render_inline_tex: "Callable[[str], str] | None" = None,
-    ) -> str:
-        """Emit SVG markup for the current frame.
-
-        *state* maps ``target_str -> {state, value, label, ...}``.
-        """
-        ...
-
-    def bounding_box(self) -> tuple[float, float, float, float] | BoundingBox:
-        """Return ``(x, y, width, height)`` for viewBox computation."""
-        ...
-
-
-class Primitive(Protocol):
-    """Factory interface for animation primitives."""
-
-    name: str
-
-    def declare(self, params: dict[str, Any]) -> PrimitiveInstance:
-        r"""Create an instance from ``\shape`` params.
-
-        Validates required params and raises
-        :func:`~scriba.animation.errors.animation_error` with ``E1103``
-        on missing required fields.
-        """
-        ...
-
-
-# ---------------------------------------------------------------------------
-# Abstract base (for node/edge primitives: Graph, Tree)
+# Abstract base for all animation primitives
 # ---------------------------------------------------------------------------
 
 
 class PrimitiveBase(abc.ABC):
-    """Base class for primitives that manage their own internal state.
+    """Base class for all animation primitives.
 
-    Used by Graph, Tree, and other node/edge-based primitives.
-    Cell-based primitives (Array, DPTable) use the Protocol approach instead.
+    Every primitive manages its own internal state (CSS state classes,
+    per-part values, annotations) and renders itself via :meth:`emit_svg`.
     """
 
-    def __init__(self, name: str, params: dict[str, Any]) -> None:
+    def __init__(self, name: str = "", params: dict[str, Any] | None = None) -> None:
         self.name = name
-        self.params = params
+        self.params = params if params is not None else {}
         self._states: dict[str, str] = {}  # target suffix -> state name
+        self._values: dict[str, str] = {}  # target suffix -> display value
+        self._labels: dict[str, str] = {}  # target suffix -> display label
+        self._annotations: list[dict[str, Any]] = []
+        self._highlighted: set[str] = set()
 
     # ----- state management ------------------------------------------------
 
@@ -198,6 +148,22 @@ class PrimitiveBase(abc.ABC):
     def get_state(self, target: str) -> str:
         """Return the CSS state class for *target*, defaulting to ``idle``."""
         return self._states.get(target, "idle")
+
+    def set_value(self, suffix: str, value: str) -> None:
+        """Set display value for an addressable part."""
+        self._values[suffix] = value
+
+    def get_value(self, suffix: str) -> str | None:
+        """Return display value for *suffix*, or ``None`` if unset."""
+        return self._values.get(suffix)
+
+    def set_label(self, suffix: str, label: str) -> None:
+        """Set display label for an addressable part."""
+        self._labels[suffix] = label
+
+    def set_annotations(self, annotations: list[dict[str, Any]]) -> None:
+        """Set annotations for this primitive."""
+        self._annotations = annotations
 
     # ----- abstract interface ----------------------------------------------
 

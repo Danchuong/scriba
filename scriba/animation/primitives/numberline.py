@@ -6,15 +6,13 @@ See ``docs/06-primitives.md`` §8 for the authoritative specification.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
-    DEFAULT_STATE,
     STATE_COLORS,
     THEME,
-    _escape_xml,
+    PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
     state_class,
@@ -36,20 +34,35 @@ NL_LABEL_Y = 42
 
 
 # ---------------------------------------------------------------------------
-# Factory
+# Selector matching
+# ---------------------------------------------------------------------------
+
+_TICK_RE = re.compile(r"^(?P<name>\w+)\.tick\[(?P<idx>\d+)\]$")
+_RANGE_RE = re.compile(r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+_AXIS_RE = re.compile(r"^(?P<name>\w+)\.axis$")
+_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+
+# Suffix-only regexes (no shape name prefix)
+_SUFFIX_TICK_RE = re.compile(r"^tick\[(?P<idx>\d+)\]$")
+_SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+
+
+# ---------------------------------------------------------------------------
+# NumberLinePrimitive
 # ---------------------------------------------------------------------------
 
 
-class NumberLinePrimitive:
-    """Factory that creates :class:`NumberLineInstance` from ``\\shape`` params."""
+class NumberLinePrimitive(PrimitiveBase):
+    """A horizontal axis with evenly spaced tick marks.
 
-    name: str = "NumberLine"
+    Extends :class:`PrimitiveBase` with self-managed state.
+    """
 
-    def declare(
-        self, shape_name: str, params: dict[str, Any]
-    ) -> NumberLineInstance:
-        """Validate params and build a :class:`NumberLineInstance`."""
-        domain = params.get("domain")
+    primitive_type: str = "numberline"
+
+    def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
+        super().__init__(name, params)
+        domain = self.params.get("domain")
         if domain is None:
             raise animation_error(
                 E1103,
@@ -64,7 +77,7 @@ class NumberLinePrimitive:
         domain_min = float(domain[0])
         domain_max = float(domain[1])
 
-        ticks: int | None = params.get("ticks")
+        ticks: int | None = self.params.get("ticks")
         if ticks is not None:
             ticks = int(ticks)
             if ticks > 1_000:
@@ -79,10 +92,10 @@ class NumberLinePrimitive:
             else:
                 ticks = 11
 
-        labels: list[str] | str | None = params.get("labels")
+        labels: list[str] | str | None = self.params.get("labels")
         tick_labels = _resolve_labels(labels, ticks, domain_min, domain_max)
 
-        label: str | None = params.get("label")
+        label: str | None = self.params.get("label")
 
         # Dynamic width: ensure enough room for ticks and their labels
         min_tick_spacing = 40  # minimum pixels between ticks for readability
@@ -92,84 +105,44 @@ class NumberLinePrimitive:
             min_tick_spacing = max(min_tick_spacing, max_label_w + 8)
         width = max(NL_WIDTH, ticks * min_tick_spacing + 2 * NL_PADDING)
 
-        return NumberLineInstance(
-            shape_name=shape_name,
-            domain_min=domain_min,
-            domain_max=domain_max,
-            tick_count=ticks,
-            tick_labels=tick_labels,
-            label=label,
-            width=width,
-        )
+        self.shape_name: str = name
+        self.domain_min: float = domain_min
+        self.domain_max: float = domain_max
+        self.tick_count: int = ticks
+        self.tick_labels: list[str] = tick_labels
+        self.label: str | None = label
+        self.width: int = width
 
-
-# ---------------------------------------------------------------------------
-# Selector matching
-# ---------------------------------------------------------------------------
-
-_TICK_RE = re.compile(r"^(?P<name>\w+)\.tick\[(?P<idx>\d+)\]$")
-_RANGE_RE = re.compile(r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
-_AXIS_RE = re.compile(r"^(?P<name>\w+)\.axis$")
-_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
-
-
-# ---------------------------------------------------------------------------
-# Instance
-# ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True, slots=True)
-class NumberLineInstance:
-    """A declared NumberLine instance with layout pre-computed."""
-
-    shape_name: str
-    domain_min: float
-    domain_max: float
-    tick_count: int
-    tick_labels: list[str] = field(default_factory=list)
-    label: str | None = None
-    width: int = NL_WIDTH
-    primitive_type: str = "numberline"
-
-    # -- protocol -----------------------------------------------------------
+    # -- PrimitiveBase interface --------------------------------------------
 
     def addressable_parts(self) -> list[str]:
-        """Return all valid selector targets."""
-        parts: list[str] = []
-        parts.append(f"{self.shape_name}.axis")
+        """Return all valid selector suffixes."""
+        parts: list[str] = ["axis"]
         for i in range(self.tick_count):
-            parts.append(f"{self.shape_name}.tick[{i}]")
-        parts.append(f"{self.shape_name}.all")
+            parts.append(f"tick[{i}]")
+        parts.append("all")
         return parts
 
-    def validate_selector(self, selector_str: str) -> bool:
-        """Check whether *selector_str* is valid for this instance."""
-        m = _TICK_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
+    def validate_selector(self, suffix: str) -> bool:
+        """Check whether *suffix* is a valid addressable part."""
+        m = _SUFFIX_TICK_RE.match(suffix)
+        if m:
             return 0 <= int(m.group("idx")) < self.tick_count
 
-        m = _RANGE_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
+        m = _SUFFIX_RANGE_RE.match(suffix)
+        if m:
             lo, hi = int(m.group("lo")), int(m.group("hi"))
             return 0 <= lo <= hi < self.tick_count
 
-        m = _AXIS_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
-            return True
-
-        m = _ALL_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
-            return True
-
-        return False
+        return suffix in ("axis", "all")
 
     def emit_svg(
         self,
-        state: dict[str, dict[str, Any]],
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> str:
         """Emit SVG ``<g>`` for the number line."""
+
         lines: list[str] = [
             f'<g data-primitive="numberline" data-shape="{self.shape_name}">'
         ]
@@ -190,8 +163,11 @@ class NumberLineInstance:
         usable_width = self.width - 2 * NL_PADDING
         for i in range(self.tick_count):
             target = f"{self.shape_name}.tick[{i}]"
-            tick_state = state.get(target, {})
-            state_name = tick_state.get("state", DEFAULT_STATE)
+            suffix = f"tick[{i}]"
+
+            state_name = self.get_state(suffix)
+            highlighted = suffix in self._highlighted
+
             css = state_class(state_name)
             colors = svg_style_attrs(state_name)
 
@@ -227,7 +203,7 @@ class NumberLineInstance:
                 )
             )
             # Highlight overlay (additive — gold circle around tick)
-            if tick_state.get("highlighted"):
+            if highlighted:
                 lines.append(
                     f'    <circle cx="{x}" cy="{NL_AXIS_Y}" r="8" '
                     f'fill="none" stroke="#F0E442" stroke-width="3" '
@@ -262,6 +238,13 @@ class NumberLineInstance:
         if self.label:
             h += 16  # extra space for caption
         return (0.0, 0.0, float(self.width), float(h))
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatible alias
+# ---------------------------------------------------------------------------
+
+NumberLineInstance = NumberLinePrimitive
 
 
 # ---------------------------------------------------------------------------

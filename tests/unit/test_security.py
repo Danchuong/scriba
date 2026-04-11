@@ -153,46 +153,37 @@ class TestPrimitiveDimensionCaps:
     """Verify oversized primitives are rejected."""
 
     def test_array_rejects_oversized(self) -> None:
-        prim = ArrayPrimitive()
         with pytest.raises(ValidationError, match="E1103"):
-            prim.declare("a", {"size": 10_001})
+            ArrayPrimitive("a", {"size": 10_001})
 
     def test_array_accepts_max(self) -> None:
-        prim = ArrayPrimitive()
-        inst = prim.declare("a", {"size": 10_000})
+        inst = ArrayPrimitive("a", {"size": 10_000})
         assert inst.size == 10_000
 
     def test_grid_rejects_oversized_rows(self) -> None:
-        prim = GridPrimitive()
         with pytest.raises(ValidationError, match="E1103"):
-            prim.declare("g", {"rows": 501, "cols": 10})
+            GridPrimitive("g", {"rows": 501, "cols": 10})
 
     def test_grid_rejects_oversized_cols(self) -> None:
-        prim = GridPrimitive()
         with pytest.raises(ValidationError, match="E1103"):
-            prim.declare("g", {"rows": 10, "cols": 501})
+            GridPrimitive("g", {"rows": 10, "cols": 501})
 
     def test_grid_accepts_max(self) -> None:
-        prim = GridPrimitive()
-        inst = prim.declare("g", {"rows": 500, "cols": 500})
+        inst = GridPrimitive("g", {"rows": 500, "cols": 500})
         assert inst.rows == 500
 
     def test_matrix_rejects_oversized(self) -> None:
-        prim = MatrixPrimitive()
         with pytest.raises(ValidationError, match="E1103"):
-            prim.declare("m", {"rows": 101, "cols": 100})
+            MatrixPrimitive("m", {"rows": 101, "cols": 100})
 
     def test_matrix_accepts_max(self) -> None:
-        prim = MatrixPrimitive()
-        inst = prim.declare("m", {"rows": 100, "cols": 100})
+        inst = MatrixPrimitive("m", {"rows": 100, "cols": 100})
         assert inst.rows == 100
 
     def test_numberline_rejects_oversized(self) -> None:
-        prim = NumberLinePrimitive()
         with pytest.raises(ValidationError, match="E1103"):
-            prim.declare("nl", {"domain": [0, 100], "ticks": 1001})
+            NumberLinePrimitive("nl", {"domain": [0, 100], "ticks": 1001})
 
     def test_numberline_accepts_max(self) -> None:
-        prim = NumberLinePrimitive()
-        inst = prim.declare("nl", {"domain": [0, 100], "ticks": 1000})
+        inst = NumberLinePrimitive("nl", {"domain": [0, 100], "ticks": 1000})
         assert inst.tick_count == 1000

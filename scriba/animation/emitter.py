@@ -111,15 +111,15 @@ def compute_viewbox(
     first = True
 
     for shape_name, prim in primitives.items():
-        if annotations is not None and hasattr(prim, "_arrow_height_above"):
+        if annotations is not None:
             prim_anns = [
                 a
                 for a in annotations
                 if a.get("target", "").startswith(shape_name + ".")
             ]
-            bbox = prim.bounding_box(annotations=prim_anns)
-        else:
-            bbox = prim.bounding_box()
+            if hasattr(prim, "set_annotations"):
+                prim.set_annotations(prim_anns)
+        bbox = prim.bounding_box()
         _, _, w, h = _normalize_bbox(bbox)
 
         if not first:
@@ -230,8 +230,10 @@ def _expand_selectors(
         elif m_all:
             parts = prim.addressable_parts()
             for part in parts:
-                if ".all" not in part and ".range" not in part:
-                    _merge(part, data)
+                if part not in ("all",) and "range" not in part:
+                    # Convert suffix-only parts back to full target keys
+                    full_target = f"{shape_name}.{part}"
+                    _merge(full_target, data)
         else:
             _merge(key, data)
 
@@ -302,15 +304,16 @@ def _emit_frame_svg(
     vb_width = int(vb_parts[2]) if len(vb_parts) >= 3 else 0
 
     for shape_name, prim in primitives.items():
-        if hasattr(prim, "_arrow_height_above"):
-            prim_anns_for_bbox = [
-                a
-                for a in frame.annotations
-                if a.get("target", "").startswith(shape_name + ".")
-            ]
-            bbox = prim.bounding_box(annotations=prim_anns_for_bbox)
-        else:
-            bbox = prim.bounding_box()
+        # Set annotations before bounding box computation
+        prim_anns = [
+            a
+            for a in frame.annotations
+            if a.get("target", "").startswith(shape_name + ".")
+        ]
+        if hasattr(prim, "set_annotations"):
+            prim.set_annotations(prim_anns)
+
+        bbox = prim.bounding_box()
         _, _, bw, bh = _normalize_bbox(bbox)
 
         x_offset = (vb_width - bw) // 2
@@ -320,50 +323,24 @@ def _emit_frame_svg(
         shape_state = _expand_selectors(
             frame.shape_states.get(shape_name, {}), shape_name, prim
         )
-        ptype = getattr(prim, "primitive_type", "")
 
-        if ptype in ("array", "dptable", "grid", "numberline", "matrix"):
-            if ptype in ("dptable", "array"):
-                prim_anns = [
-                    a
-                    for a in frame.annotations
-                    if a.get("target", "").startswith(shape_name + ".")
-                ]
-                svg_parts.append(
-                    prim.emit_svg(
-                        shape_state,
-                        annotations=prim_anns,
-                        render_inline_tex=render_inline_tex,
-                    )
-                )
-            else:
-                svg_parts.append(
-                    prim.emit_svg(shape_state, render_inline_tex=render_inline_tex)
-                )
-        else:
-            # Graph / PrimitiveBase -- apply state then emit
-            highlighted_suffixes: set[str] = set()
+        # Unified path: apply state via set_state/set_value then emit
+        highlighted_suffixes: set[str] = set()
 
-            # apply_params already processed in pre-pass above
-
-            for target_key, target_data in shape_state.items():
-                if isinstance(target_data, dict):
-                    state_val = target_data.get("state", "idle")
-                    suffix = target_key
-                    if suffix.startswith(shape_name + "."):
-                        suffix = suffix[len(shape_name) + 1 :]
-                    prim.set_state(suffix, state_val)
-                    if target_data.get("highlighted"):
-                        highlighted_suffixes.add(suffix)
-                    # Pass value to primitives that track per-part values
-                    # (e.g. VariableWatch).  The scene stores ``value``
-                    # separately from ``apply_params``, so PrimitiveBase
-                    # subclasses need it delivered explicitly.
-                    val = target_data.get("value")
-                    if val is not None and hasattr(prim, "set_value"):
-                        prim.set_value(suffix, str(val))
-            prim._highlighted = highlighted_suffixes
-            svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
+        for target_key, target_data in shape_state.items():
+            if isinstance(target_data, dict):
+                state_val = target_data.get("state", "idle")
+                suffix = target_key
+                if suffix.startswith(shape_name + "."):
+                    suffix = suffix[len(shape_name) + 1:]
+                prim.set_state(suffix, state_val)
+                if target_data.get("highlighted"):
+                    highlighted_suffixes.add(suffix)
+                val = target_data.get("value")
+                if val is not None and hasattr(prim, "set_value"):
+                    prim.set_value(suffix, str(val))
+        prim._highlighted = highlighted_suffixes
+        svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
 
         svg_parts.append("</g>")
         y_cursor += bh + _PRIMITIVE_GAP
