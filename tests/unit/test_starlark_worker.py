@@ -225,6 +225,39 @@ class TestForbiddenKeywords:
         finally:
             _close(proc)
 
+    def test_yield_forbidden_inside_def(self):
+        """Wave 4B C2: ``yield`` smuggled inside a regular ``def`` is blocked
+        by ``ast.walk`` recursion visiting the inner ``Yield`` node."""
+        proc = _spawn_worker()
+        try:
+            resp = _send(proc, {
+                "op": "eval",
+                "id": "t-yield",
+                "globals": {},
+                "source": "def f():\n    yield 1\nresult = 0",
+            })
+            assert resp["ok"] is False
+            assert resp["code"] == "E1154"
+            assert "yield" in resp["message"]
+        finally:
+            _close(proc)
+
+    def test_async_def_forbidden(self):
+        """Wave 4B C2: ``async def`` is rejected outright."""
+        proc = _spawn_worker()
+        try:
+            resp = _send(proc, {
+                "op": "eval",
+                "id": "t-async",
+                "globals": {},
+                "source": "async def f():\n    pass\nresult = 0",
+            })
+            assert resp["ok"] is False
+            assert resp["code"] == "E1154"
+            assert "async def" in resp["message"]
+        finally:
+            _close(proc)
+
 
 class TestListComprehension:
     def test_list_comprehension(self):

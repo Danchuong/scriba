@@ -47,6 +47,21 @@ class TestDeclare:
         inst = NumberLinePrimitive("nl", {"domain": [0.0, 1.5]})
         assert inst.tick_count == 11
 
+    def test_ticks_zero_raises_e1103(self) -> None:
+        """ticks=0 is a validation error, not a degenerate primitive."""
+        with pytest.raises(ValidationError, match="E1103"):
+            NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 0})
+
+    def test_ticks_negative_raises_e1103(self) -> None:
+        """Negative ticks are rejected as out-of-range."""
+        with pytest.raises(ValidationError, match="E1103"):
+            NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": -5})
+
+    def test_ticks_one_is_boundary_accepted(self) -> None:
+        """ticks=1 is the minimum accepted value (single-point number line)."""
+        inst = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 1})
+        assert inst.tick_count == 1
+
 
 # ---------------------------------------------------------------------------
 # Selectors

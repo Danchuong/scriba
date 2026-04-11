@@ -54,6 +54,14 @@ _MAX_RANGE_LEN = 10**6  # 1 million elements
 _BLOCKED_ATTRIBUTES = BLOCKED_ATTRIBUTES
 
 # Forbidden AST node types (not plain strings, so kept here)
+#
+# Note: ``ast.FunctionDef`` is deliberately NOT forbidden — cookbook examples
+# (05, 07, 08) and existing tests rely on helper ``def``s inside ``\compute``
+# blocks.  However, ``ast.walk`` recurses into function bodies, so adding
+# ``ast.Yield`` / ``ast.YieldFrom`` / ``ast.Await`` here still catches
+# generator/async payloads smuggled inside a regular ``def``.  Async function
+# definitions (``async def``) are forbidden outright — they cannot contain
+# useful compute logic without ``await`` and open a coroutine attack surface.
 _FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
     ast.Import,
     ast.ImportFrom,
@@ -61,6 +69,12 @@ _FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
     ast.Try,
     ast.ClassDef,
     ast.Lambda,
+    ast.AsyncFunctionDef,
+    ast.AsyncFor,
+    ast.AsyncWith,
+    ast.Await,
+    ast.Yield,
+    ast.YieldFrom,
 )
 
 _FORBIDDEN_BUILTINS = FORBIDDEN_BUILTINS
@@ -73,6 +87,12 @@ _FORBIDDEN_NODE_NAMES: dict[type, str] = {
     ast.Try: "try",
     ast.ClassDef: "class",
     ast.Lambda: "lambda",
+    ast.AsyncFunctionDef: "async def",
+    ast.AsyncFor: "async for",
+    ast.AsyncWith: "async with",
+    ast.Await: "await",
+    ast.Yield: "yield",
+    ast.YieldFrom: "yield from",
 }
 
 

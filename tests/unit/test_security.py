@@ -200,3 +200,103 @@ class TestPrimitiveDimensionCaps:
     def test_numberline_accepts_max(self) -> None:
         inst = NumberLinePrimitive("nl", {"domain": [0, 100], "ticks": 1000})
         assert inst.tick_count == 1000
+
+
+# -----------------------------------------------------------------------
+# Wave 4B Cluster 2: Sandbox FunctionDef/Yield block + NumberLine ticks<1
+# -----------------------------------------------------------------------
+
+
+class TestSecurityWave4NewVectors:
+    """Wave 4B C2 regression tests for sandbox yield/async and NumberLine ticks<1.
+
+    Historical context: Wave 4A Cluster 9 flagged these as strict xfails. Wave 4B
+    Cluster 2 closes them by (a) adding ``ast.Yield``/``ast.YieldFrom``/
+    ``ast.AsyncFunctionDef``/``ast.Await`` to the sandbox forbidden-node set
+    (``ast.walk`` recursion catches ``yield`` inside regular ``def``s without
+    forbidding ``FunctionDef`` outright), and (b) adding a ``ticks < 1``
+    validation check to ``NumberLinePrimitive``.
+    """
+
+    def test_evaluate_rejects_yield(self) -> None:
+        """A ``def f(): yield 1`` payload must raise E1154 forbidden construct.
+
+        Before Wave 4B C2, ``yield`` inside a ``def`` slipped the AST scanner
+        because ``FunctionDef`` was allowed and ``Yield`` was not in the
+        forbidden tuple.  Now ``ast.walk`` visits the nested ``Yield`` node
+        during the pre-exec scan.
+        """
+        resp = _evaluate("def f():\n    yield 1\nresult = 0", {}, "yield-test")
+        assert resp["ok"] is False
+        assert resp["code"] == "E1154"
+        assert "yield" in resp["message"]
+
+    def test_numberline_zero_ticks_is_validation_error(self) -> None:
+        """``ticks=0`` must raise E1103 rather than produce a degenerate primitive.
+
+        Before Wave 4B C2, ``NumberLinePrimitive`` only clamped the upper bound
+        (``ticks > 1000``) and silently accepted ``ticks=0``, producing a
+        primitive with zero tick marks.
+        """
+        with pytest.raises(ValidationError, match="E1103"):
+            NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 0})
+
+    def test_numberline_negative_ticks_is_validation_error(self) -> None:
+        """``ticks=-1`` is also caught by the lower-bound guard."""
+        with pytest.raises(ValidationError, match="E1103"):
+            NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": -1})
+
+    def test_numberline_one_tick_boundary_accepted(self) -> None:
+        """``ticks=1`` is the minimum accepted value — boundary regression."""
+        inst = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 1})
+        assert inst.tick_count == 1
+
+    def test_evaluate_rejects_yield_from(self) -> None:
+        """``yield from`` inside a ``def`` must also be blocked."""
+        resp = _evaluate(
+            "def g():\n    yield from [1, 2, 3]\nresult = 0",
+            {},
+            "yield-from-test",
+        )
+        assert resp["ok"] is False
+        assert resp["code"] == "E1154"
+        assert "yield from" in resp["message"]
+
+    def test_evaluate_rejects_async_def(self) -> None:
+        """``async def`` must be rejected outright (no legitimate use)."""
+        resp = _evaluate(
+            "async def f():\n    pass\nresult = 0",
+            {},
+            "async-def-test",
+        )
+        assert resp["ok"] is False
+        assert resp["code"] == "E1154"
+        assert "async def" in resp["message"]
+
+    def test_evaluate_rejects_bare_await(self) -> None:
+        """``await`` is only syntactically legal inside an ``async`` scope,
+        but the scanner still blocks it as a defence-in-depth measure."""
+        # Wrap in async def since `await` is a syntax error at module scope.
+        # Both forbidden nodes (AsyncFunctionDef and Await) will be caught;
+        # whichever is visited first wins.
+        resp = _evaluate(
+            "async def f():\n    await f()\nresult = 0",
+            {},
+            "await-test",
+        )
+        assert resp["ok"] is False
+        assert resp["code"] == "E1154"
+        assert resp["message"] and (
+            "await" in resp["message"] or "async def" in resp["message"]
+        )
+
+    def test_regular_def_still_allowed(self) -> None:
+        """Sanity: plain ``def`` helper functions remain legal (cookbook 05/07/08
+        and TestFunctionDef/TestRecursion rely on this)."""
+        resp = _evaluate(
+            "def double(x):\n    return x * 2\nresult = double(21)",
+            {},
+            "def-ok-test",
+        )
+        assert resp["ok"] is True
+        assert resp["bindings"]["result"] == 42
