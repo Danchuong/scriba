@@ -7,8 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.5.1] - 2026-04-11 (Production audit fixes)
 
-Patch release landing **Wave 1** and **Wave 2** fixes from the 21-agent
-production-readiness audit recorded in
+Patch release landing **Wave 1**, **Wave 2**, and **Wave 3** fixes from
+the 21-agent production-readiness audit recorded in
 `docs/archive/production-audit-2026-04-11/`. All changes are backward
 compatible with 0.5.0 consumers; the only behavioral diffs are stricter
 validation, structured error codes in place of opaque failures, and a
@@ -229,13 +229,143 @@ few previously silent bugs now raising `ValidationError`.
 
 ### Tests
 
-- **~1311 tests passing.** 50 new Starlark red-team cases,
-  57 sanitizer-contract assertions (including 41 parametrized
-  per-tag membership snapshots pinning `ALLOWED_TAGS` /
-  `ALLOWED_ATTRS` against silent regression), 21 parser/lexer
-  cases, 20 primitive cases, and 17 pipeline/worker cases. 16 tests
-  across 8 files updated to expect the new specific error codes
-  instead of `E1103`.
+- **1439 tests passing** (1311 baseline + Wave 3 additions). Wave 1+2
+  contributed 50 Starlark red-team cases, 57 sanitizer-contract assertions
+  (including 41 parametrized per-tag membership snapshots pinning
+  `ALLOWED_TAGS` / `ALLOWED_ATTRS` against silent regression), 21 parser/
+  lexer cases, 20 primitive cases, and 17 pipeline/worker cases. 16 tests
+  across 8 files updated to expect the new specific error codes instead
+  of `E1103`.
+
+### Wave 3 — Test infrastructure & coverage (Cluster 7)
+
+- **pytest-cov wired (17-H2).** `pyproject.toml` gains `pytest-cov>=5.0`
+  and a `[tool.coverage.run]` / `[tool.coverage.report]` section with
+  `fail_under = 75`, branch coverage, and sensible omits. Coverage runs
+  opt-in via `uv run pytest --cov=scriba --cov-report=term-missing`;
+  baseline is **84.33%** (above the 75% gate).
+- **Hypothesis property tests (17-C1).** 10 property-based parser
+  tests in `tests/unit/test_parser_hypothesis.py` covering identifiers,
+  selectors, shape declarations, foreach iterables, unclosed-brace E1001,
+  empty bodies, `.all` / `.node[]` / `.cell[]` accessors, and
+  interpolation refs. Hypothesis is a new dev dependency.
+- **`\cursor` command tests (16-C2).** 15 integration tests in
+  `tests/unit/test_cursor_command.py` pinning E1180/E1181/E1182 and
+  frame-to-frame state transitions. Previously the command had zero
+  test coverage.
+- **`\reannotate` / `\apply` / `\compute` coverage (16-H5).** 11 tests
+  in `tests/unit/test_reannotate_apply_compute.py` covering recolor
+  semantics, multi-primitive `\apply`, and the compute → `\foreach`
+  binding bridge.
+- **Error code coverage (16-C1).** 15 regression tests in
+  `tests/unit/test_error_code_coverage.py` pinning previously-unverified
+  codes (E1003, E1013, E1051-E1056, E1102, E1400, E1150, E1154, E1172,
+  E1460, E1465, E1480). Net-new safety net against silent regression
+  of error dispatch paths.
+- **KaTeX worker stress tests (17-H3).** 2 tests in
+  `tests/unit/test_workers_stress.py` — 100 concurrent inline-math
+  requests and bad-math recovery — verifying no deadlocks and that
+  one bad request does not kill the worker.
+
+### Wave 3 — Public API surface & stability policy (Cluster 9)
+
+- **`STABILITY.md` added at repo root (15-C1/C2/C3).** Documents the
+  11 locked contracts Scriba promises to consumers: public API surface,
+  `Document` shape, asset namespace format (`<renderer>/<basename>`),
+  error code numbering (append-only in E1001–E1599), exception
+  hierarchy, `ALLOWED_TAGS`/`ALLOWED_ATTRS`, CSS class names, SVG scene
+  ID format (`scriba-<sha256[:10]>`), `SCRIBA_VERSION`, `Renderer`
+  protocol, and `SubprocessWorker` deprecation. See `STABILITY.md` for
+  SemVer/deprecation policy and the contract-change procedure.
+- **`ScribaRuntimeError` exported from `scriba` and `scriba.core`
+  (14-C1).** Previously the class existed in `scriba/core/errors.py`
+  but was missing from `__all__`, so `from scriba import
+  ScribaRuntimeError` failed. Now symmetric across both namespaces.
+- **Lazy `SubprocessWorker` deprecation via PEP 562 `__getattr__`
+  (14-H2 follow-up).** Wave 1 Cluster 3 emitted the deprecation warning
+  at module import time, which fired on every plain `import scriba`.
+  Wave 3 moved it to a lazy `__getattr__` hook so only external code
+  that actually touches `SubprocessWorker` sees the warning; scriba's
+  own internal imports and end-user `import scriba` stay silent.
+- **`docs/spec/architecture.md` refreshed (14-C2).** Now documents
+  `Document.block_data` and `Document.required_assets` (added in 0.1.1
+  but never in the locked spec), the asset namespace format, and the
+  full exception hierarchy including `ScribaRuntimeError`.
+- **68 new contract-stability tests.**
+  `tests/unit/test_public_api.py` (46) pins `__all__` membership for
+  both `scriba` and `scriba.core`, verifies every symbol imports, and
+  asserts the deprecation warning contract (silent on `import scriba`,
+  fires on attribute access). `tests/unit/test_stability.py` (22)
+  pins the `Document` field set, asset-key namespace separator,
+  `Renderer` protocol attributes, `scriba-<sha256[:10]>` SVG ID format,
+  and `ALLOWED_TAGS`/`ALLOWED_ATTRS` shape.
+
+### Wave 3 — Ops, CI, release (Cluster 10)
+
+- **GitHub Actions CI (`.github/workflows/test.yml`) (21-C2).**
+  Python 3.10/3.11/3.12 × {ubuntu, macos} matrix with Node 20. A
+  separate coverage job runs on ubuntu + Python 3.12 with
+  `--cov-fail-under=75` and uploads `coverage.xml` as an artifact.
+  Windows intentionally excluded; see `SECURITY.md` §Known limitations
+  for the SIGALRM reason.
+- **Release workflow template (`.github/workflows/release.yml`) (21-C3).**
+  Triggers on `workflow_dispatch` and `push: tags v*`. Builds wheel +
+  sdist via `uv build` and uploads as artifact. `uv publish` step is
+  commented out pending PyPI trusted-publisher configuration; GitHub
+  release job creates drafts for manual review. Clear TEMPLATE header.
+- **Dependabot (`.github/dependabot.yml`).** Pip weekly, GitHub Actions
+  monthly. KaTeX is vendored out-of-band, so no npm ecosystem entry.
+- **`SECURITY.md` refreshed (21-C1).** Supported versions updated from
+  stale `0.1.x` to `0.5.x Beta`. New "Known limitations" section
+  documenting the Windows SIGALRM gap and the vendored KaTeX 0.16.11
+  (latest upstream 0.16.22 is not yet integrated, pending a visual
+  regression suite). New "Vendored dependencies" section pointing at
+  `scripts/vendor_katex.sh` for the upgrade procedure.
+- **`CONTRIBUTING.md` prerequisites section (21-H2).** Explicitly
+  lists Python 3.10+, Node.js 18+, and `uv` as setup prereqs, with a
+  fresh-clone quickstart (`uv sync --dev && uv run pytest -q`). Notes
+  Windows is unsupported for development.
+- **Homebrew formula marked as template (21-C3/21-H1).** Prominent
+  header states SHA256 values will be populated at first PyPI release.
+  Ruby syntax verified with `ruby -c`. Added `depends_on "node"` with
+  an explanatory comment about vendored KaTeX.
+- **KaTeX upgrade procedure documented (21-H4).** Seven-step checklist
+  in `scripts/vendor_katex.sh` header covering release-note review,
+  SHA-256 verification, full test run, snapshot-diff inspection, and
+  SECURITY.md sync. The actual 0.16.11 → 0.16.22 upgrade is deferred
+  to Wave 4+ pending a visual regression suite.
+- **`scripts/check_deps.sh` helper.** Wraps `uv pip audit` / `pip-audit`
+  for CVE scanning of the dependency tree.
+
+### Wave 3 — Docs ecosystem cleanup (Cluster 8)
+
+- **`CHANGELOG.md`** (this file) received the fat 0.5.1 entry you are
+  reading, ingested from the Cluster 2 / Cluster 3 handoff file
+  `docs/archive/production-audit-2026-04-11/changelog-pending.md`
+  (now deleted).
+- **5 data-structure primitives retroactively acknowledged in 0.5.0
+  (18-H3).** The CHANGELOG had silently omitted Queue, LinkedList,
+  HashMap, CodePanel, and VariableWatch since their introduction; they
+  are now listed in the 0.5.0 "Added" section.
+- **Blog post primitive count (18-C3).** `docs/blog/launch-0.5.0.md`
+  now says "16 primitives" (was "11") and lists them in three labeled
+  groups: Base (6), Extended (5), Data-structure (5). Removed the
+  misleading "Plus 4 extensions" sentence.
+- **Cookbook 06-frog1-dp Starlark indent fix (18-C4).**
+  `docs/cookbook/06-frog1-dp/input.md` had inconsistent indentation in
+  the `\compute` block that would have failed Starlark parse. Fixed
+  to uniform 4-space style; semantics unchanged.
+- **New cookbook recipe 11 (19-H4 deferred from Cluster 4).**
+  `docs/cookbook/11-loop-to-step-manual-unroll.md` walks through the
+  monotonic-stack next-greater pattern, showing how to manually unroll
+  `\step` blocks when an algorithm needs per-iteration frames, with
+  `\foreach` used inside each step for per-iteration fanout.
+- **Primitive docs refreshed.** `docs/primitives/matrix.md` updated
+  to 250k cell cap / E1425 (was stale 10k / E1421); `docs/primitives/
+  stack.md` removed stale `cell_width`/`cell_height`/`gap` params.
+- **`README.md` "Coming in v0.2.0" note removed.** Animation has been
+  shipping since 0.2.0; the forward-looking paragraph was factually
+  stale. Replaced with a factual 16-primitive summary.
 
 ## [0.5.0] - 2026-04-10 (Phase D)
 
