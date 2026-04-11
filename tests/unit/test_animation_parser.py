@@ -501,3 +501,183 @@ class TestErrorRecovery:
         result = parser.parse(src, error_recovery=True)
         assert len(result.frames) == 1
         assert len(result.frames[0].commands) == 2
+
+
+# ===================================================================
+# Wave 4A Cluster 1 — Parser improvements
+# ===================================================================
+
+
+class TestUnknownPrimitiveAtParseTime:
+    """Fix #3 / 07-M4: reject unknown primitive types with E1102 at parse."""
+
+    def test_unknown_primitive_raises_e1102(self, parser: SceneParser) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            parser.parse("\\shape{a}{Arry}{size=5}")
+        err = excinfo.value
+        assert err.code == "E1102"
+        assert "Arry" in str(err)
+
+    def test_unknown_primitive_fuzzy_hint(self, parser: SceneParser) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            parser.parse("\\shape{a}{Arry}{size=5}")
+        err = excinfo.value
+        # Fuzzy matcher should suggest "Array"
+        assert err.hint is not None and "Array" in err.hint
+
+    def test_known_primitive_still_parses(self, parser: SceneParser) -> None:
+        result = parser.parse("\\shape{a}{Array}{size=5}")
+        assert len(result.shapes) == 1
+        assert result.shapes[0].type_name == "Array"
+
+    def test_heatmap_alias_accepted(self, parser: SceneParser) -> None:
+        # Heatmap is registered as an alias of Matrix — should not fail.
+        result = parser.parse("\\shape{a}{Heatmap}{rows=2, cols=2}")
+        assert result.shapes[0].type_name == "Heatmap"
+
+    def test_empty_type_raises_e1102(self, parser: SceneParser) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            parser.parse("\\shape{a}{}{size=5}")
+        assert excinfo.value.code == "E1102"
+
+
+class TestNegativeSelectorIndex:
+    """Fix #7 / 07-M3: reject negative indices in cell/range/tick/item."""
+
+    def test_cell_negative_index_raises_e1010(self) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            parse_selector("a.cell[-1]")
+        assert excinfo.value.code == "E1010"
+        assert "non-negative" in str(excinfo.value)
+
+    def test_cell_2d_negative_second_index_raises(self) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            parse_selector("g.cell[0][-2]")
+        assert excinfo.value.code == "E1010"
+
+    def test_range_negative_bound_raises(self) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            parse_selector("a.range[-1:3]")
+        assert excinfo.value.code == "E1010"
+
+    def test_positive_index_still_parses(self) -> None:
+        # Regression: positive indices must continue to work.
+        s = parse_selector("a.cell[0]")
+        assert s.shape_name == "a"
+
+
+class TestForeachDepthLimit:
+    """Fix #6 / 07-H3: parse-time E1170 for >3 nested \\foreach."""
+
+    def test_three_level_foreach_allowed(self, parser: SceneParser) -> None:
+        src = (
+            "\\step\n"
+            "\\foreach{a}{0..1}\n"
+            "  \\foreach{b}{0..1}\n"
+            "    \\foreach{c}{0..1}\n"
+            "      \\apply{x.cell[0]}{value=1}\n"
+            "    \\endforeach\n"
+            "  \\endforeach\n"
+            "\\endforeach\n"
+        )
+        # 3-level nesting is at the limit — no error.
+        parser.parse(src)
+
+    def test_four_level_foreach_rejected(self, parser: SceneParser) -> None:
+        src = (
+            "\\step\n"
+            "\\foreach{a}{0..1}\n"
+            "  \\foreach{b}{0..1}\n"
+            "    \\foreach{c}{0..1}\n"
+            "      \\foreach{d}{0..1}\n"
+            "        \\apply{x.cell[0]}{value=1}\n"
+            "      \\endforeach\n"
+            "    \\endforeach\n"
+            "  \\endforeach\n"
+            "\\endforeach\n"
+        )
+        with pytest.raises(ValidationError) as excinfo:
+            parser.parse(src)
+        assert excinfo.value.code == "E1170"
+
+    def test_sibling_foreach_not_nested(self, parser: SceneParser) -> None:
+        # Two sibling level-3 blocks should not accumulate depth.
+        import warnings as _w
+        nested = (
+            "\\foreach{a}{0..1}\n"
+            "  \\foreach{b}{0..1}\n"
+            "    \\foreach{c}{0..1}\n"
+            "      \\apply{x.cell[0]}{value=1}\n"
+            "    \\endforeach\n"
+            "  \\endforeach\n"
+            "\\endforeach\n"
+        )
+        src = "\\step\n" + nested + nested
+        with _w.catch_warnings():
+            _w.simplefilter("ignore")
+            parser.parse(src)  # should not raise E1170
+
+
+class TestSelectorErrorLineCol:
+    """Fix #1 / 09-H4: selector errors propagate real line/col into the source."""
+
+    def test_apply_selector_error_has_source_line(self, parser: SceneParser) -> None:
+        src = "\\step\n\\apply{a.cell[}{value=1}\n"
+        with pytest.raises(ValidationError) as excinfo:
+            parser.parse(src)
+        err = excinfo.value
+        # Selector parser ran from the \apply token on line 2.
+        assert err.line == 2
+        assert err.col is not None and err.col >= 7
+
+    def test_highlight_selector_error_has_line(self, parser: SceneParser) -> None:
+        src = "\\step\n\\highlight{a.cell[xxx}\n"
+        with pytest.raises(ValidationError) as excinfo:
+            parser.parse(src)
+        assert excinfo.value.line == 2
+
+
+class TestUndefinedInterpolationWarning:
+    """Fix #5 / 07-M6: warn on ${var} without a known compute binding."""
+
+    def test_undefined_var_warns(self, parser: SceneParser) -> None:
+        import warnings as _w
+        src = "\\step\n\\apply{a.cell[0]}{value=${nope}}\n"
+        with _w.catch_warnings(record=True) as caught:
+            _w.simplefilter("always")
+            parser.parse(src)
+        messages = [str(w.message) for w in caught if "nope" in str(w.message)]
+        assert messages, f"expected warning about 'nope', got: {[str(w.message) for w in caught]}"
+
+    def test_compute_binding_suppresses_warning(self, parser: SceneParser) -> None:
+        import warnings as _w
+        src = (
+            "\\compute{\n"
+            "dp = [1, 2, 3]\n"
+            "}\n"
+            "\\step\n"
+            "\\apply{a.cell[0]}{value=${dp}}\n"
+        )
+        with _w.catch_warnings(record=True) as caught:
+            _w.simplefilter("always")
+            parser.parse(src)
+        messages = [str(w.message) for w in caught if "no compute-scope binding" in str(w.message)]
+        assert messages == []
+
+    def test_foreach_loop_var_not_flagged(self, parser: SceneParser) -> None:
+        import warnings as _w
+        src = (
+            "\\step\n"
+            "\\foreach{i}{0..2}\n"
+            "  \\apply{a.cell[${i}]}{value=1}\n"
+            "\\endforeach\n"
+        )
+        with _w.catch_warnings(record=True) as caught:
+            _w.simplefilter("always")
+            parser.parse(src)
+        messages = [
+            str(w.message)
+            for w in caught
+            if "no compute-scope binding" in str(w.message)
+        ]
+        assert messages == [], f"foreach binding 'i' should not trigger warning, got: {messages}"

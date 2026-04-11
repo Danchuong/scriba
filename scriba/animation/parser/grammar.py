@@ -43,6 +43,30 @@ from scriba.animation.constants import (
 
 _MAX_SUBSTORY_DEPTH = 3
 
+# Maximum ``\foreach`` nesting depth enforced at parse time.  Mirrors the
+# runtime check in ``scene.py``: the runtime check only fires when the
+# iterable is non-empty, so pathologically deep nesting with empty iterables
+# would otherwise escape detection.
+_MAX_FOREACH_DEPTH = 3
+
+
+def _fuzzy_suggest(name: str, candidates: "tuple[str, ...] | list[str]") -> str | None:
+    """Return the closest candidate for *name*, or ``None`` if none are close.
+
+    Uses a simple Levenshtein-style difflib match.  Kept intentionally tiny
+    — just enough to print "did you mean: X?" hints for parser errors.
+    """
+    import difflib
+
+    close = difflib.get_close_matches(name, list(candidates), n=1, cutoff=0.6)
+    return close[0] if close else None
+
+
+def _lazy_primitive_registry() -> dict:
+    """Return the primitive registry, imported lazily to avoid circular imports."""
+    from scriba.animation.primitives import get_primitive_registry
+    return get_primitive_registry()
+
 
 class SceneParser:
     """Parse the body of a ``\\begin{animation}`` environment."""
@@ -82,8 +106,14 @@ class SceneParser:
         self._allow_highlight_in_prelude = allow_highlight_in_prelude
         self._substory_depth = 0
         self._substory_counter = 0
+        self._foreach_depth = 0
         self._error_recovery = error_recovery
         self._recovery_errors: list[ValidationError] = []
+        # Symbol table for static interpolation checks.  Populated by
+        # ``_collect_compute_bindings`` as ``\compute`` blocks are parsed.
+        # Best-effort only — Starlark can define bindings inside conditionals
+        # or comprehensions, so we emit warnings rather than errors.
+        self._known_bindings: set[str] = set()
 
         options = self._try_parse_options()
         shapes: list[ShapeCommand] = []
@@ -417,11 +447,143 @@ class SceneParser:
         tok = self._advance()
         name = self._read_brace_arg(tok)
         type_name = self._read_brace_arg(tok)
+
+        # Reject unknown primitive types at parse time so the author sees
+        # a proper line/col diagnostic instead of a bare E1103 from the
+        # primitive constructor later in the pipeline.
+        self._validate_primitive_type(type_name, tok)
+
         return ShapeCommand(tok.line, tok.col, name, type_name, self._read_param_brace())
+
+    def _validate_primitive_type(self, type_name: str, tok: Token) -> None:
+        """Raise ``E1102`` if *type_name* is not a registered primitive.
+
+        Looks the name up in the runtime primitive registry; if absent,
+        surfaces a friendly "did you mean: X?" hint based on fuzzy matching.
+        The registry is imported lazily to avoid a circular import at
+        module load (grammar.py → primitives/__init__ → grammar).
+        """
+        type_stripped = type_name.strip()
+        if not type_stripped:
+            # Empty type name — raise the standard E1102 with no suggestion.
+            raise ValidationError(
+                "\\shape type cannot be empty",
+                position=tok.col,
+                code="E1102",
+                line=tok.line,
+                col=tok.col,
+            )
+        try:
+            registry = _lazy_primitive_registry()
+        except ImportError:
+            # Graceful degradation: if the registry can't be imported
+            # (unlikely outside of tooling), defer to runtime validation.
+            return
+        if type_stripped in registry:
+            return
+        suggestion = _fuzzy_suggest(type_stripped, tuple(registry.keys()))
+        hint = f"did you mean: {suggestion}?" if suggestion else None
+        valid_list = ", ".join(sorted(registry.keys()))
+        raise ValidationError(
+            f"unknown primitive type {type_stripped!r}; valid: {valid_list}",
+            position=tok.col,
+            code="E1102",
+            line=tok.line,
+            col=tok.col,
+            hint=hint,
+        )
 
     def _parse_compute(self) -> ComputeCommand:
         tok = self._advance()
-        return ComputeCommand(tok.line, tok.col, self._read_raw_brace_arg(tok).strip())
+        body = self._read_raw_brace_arg(tok).strip()
+        # Best-effort extraction of top-level bindings for static interpolation
+        # checks.  Failures silently fall through — Starlark binding analysis
+        # is runtime-accurate only, so this is intentionally loose.
+        try:
+            self._collect_compute_bindings(body)
+        except Exception:  # noqa: BLE001 — best effort, never fail parse
+            pass
+        return ComputeCommand(tok.line, tok.col, body)
+
+    _ASSIGNMENT_RE = None  # lazy-initialised regex
+
+    def _collect_compute_bindings(self, body: str) -> None:
+        """Add top-level Starlark assignments in *body* to the symbol table.
+
+        Only very simple, unambiguous forms are recognised:
+
+            name = ...
+            name1, name2 = ...
+            def name(...):
+            for name in ...:
+
+        Anything more sophisticated (conditional binding, nested scopes,
+        comprehensions) is ignored.  Because missing bindings only trigger
+        a warning, false negatives are safer than false positives.
+        """
+        import re as _re
+        if SceneParser._ASSIGNMENT_RE is None:
+            SceneParser._ASSIGNMENT_RE = _re.compile(
+                r"""^[ \t]*            # leading indent
+                (?:
+                    def[ \t]+(?P<fn>[A-Za-z_]\w*)      # def name(...)
+                    |
+                    for[ \t]+(?P<for>[A-Za-z_]\w*(?:[ \t]*,[ \t]*[A-Za-z_]\w*)*)[ \t]+in
+                    |
+                    (?P<lhs>[A-Za-z_]\w*(?:[ \t]*,[ \t]*[A-Za-z_]\w*)*)
+                    [ \t]*=(?!=)                       # single =, not ==
+                )
+                """,
+                _re.VERBOSE,
+            )
+        for raw_line in body.splitlines():
+            # Strip comments after '#'
+            line = raw_line.split("#", 1)[0]
+            m = SceneParser._ASSIGNMENT_RE.match(line)
+            if not m:
+                continue
+            if m.group("fn"):
+                self._known_bindings.add(m.group("fn"))
+                continue
+            if m.group("for"):
+                for part in m.group("for").split(","):
+                    name = part.strip()
+                    if name.isidentifier():
+                        self._known_bindings.add(name)
+                continue
+            lhs = m.group("lhs")
+            if lhs:
+                for part in lhs.split(","):
+                    name = part.strip()
+                    if name.isidentifier():
+                        self._known_bindings.add(name)
+
+    def _check_interpolation_binding(
+        self,
+        name: str,
+        line: int,
+        col: int,
+    ) -> None:
+        """Warn if *name* is referenced by ``${name}`` without a known binding.
+
+        Called lazily from ``\\apply`` / ``\\highlight`` / selector parsing.
+        Emits a plain ``UserWarning`` so tests can filter on message shape.
+        Skipped entirely when the parser is in error-recovery mode — we
+        don't want secondary warnings cluttering a multi-error report.
+        """
+        if self._error_recovery:
+            return
+        if not name or not name.isidentifier():
+            return
+        if name in self._known_bindings:
+            return
+        _warnings_mod.warn(
+            f"${{{name}}} at line {line}, col {col}: "
+            f"no compute-scope binding named {name!r} found before this point; "
+            "runtime expansion may fail if the binding is not defined",
+            UserWarning,
+            stacklevel=3,
+        )
 
     def _parse_narrate(self) -> NarrateCommand:
         tok = self._advance()
@@ -669,6 +831,36 @@ class SceneParser:
         foreach_line = tok.line
         foreach_col = tok.col
 
+        # Enforce nesting depth at parse time.  The runtime check in
+        # ``scene.py`` only fires when the iterable is non-empty, so an
+        # empty outer range could let pathologically deep nesting through
+        # unchecked.  Increment before descending; ``finally`` restores on
+        # both success and error paths.
+        self._foreach_depth += 1
+        try:
+            if self._foreach_depth > _MAX_FOREACH_DEPTH:
+                raise ValidationError(
+                    f"\\foreach nesting depth exceeds maximum ({_MAX_FOREACH_DEPTH})",
+                    position=tok.col,
+                    code="E1170",
+                    line=tok.line,
+                    col=tok.col,
+                )
+            return self._parse_foreach_body(tok, foreach_line, foreach_col)
+        finally:
+            self._foreach_depth -= 1
+
+    def _parse_foreach_body(
+        self,
+        tok: Token,
+        foreach_line: int,
+        foreach_col: int,
+    ) -> ForeachCommand:
+        """Inner body of ``\\foreach`` parsing.
+
+        Split out from :meth:`_parse_foreach` so the depth counter is
+        restored in all paths via a ``finally`` block in the caller.
+        """
         # Parse {variable} — single IDENT
         variable = self._read_brace_arg(tok).strip()
         if not variable or not variable.isidentifier():
@@ -683,88 +875,104 @@ class SceneParser:
         # Parse {iterable} — raw text (range, interpolation, or list literal)
         iterable_raw = self._read_brace_arg(tok).strip()
 
+        # Static interpolation check for ${name} references inside iterable_raw.
+        # Looks for top-level ${ident} — subscripts are skipped (tracked below).
+        import re as _re_inner
+        for m in _re_inner.finditer(r"\$\{([A-Za-z_]\w*)", iterable_raw):
+            self._check_interpolation_binding(m.group(1), tok.line, tok.col)
+
+        # Make the loop variable visible to static interpolation checks
+        # inside the body; restore afterwards so siblings don't see it.
+        added_binding = variable not in self._known_bindings
+        if added_binding:
+            self._known_bindings.add(variable)
+
         # Collect body commands until \endforeach
         body: list[Command] = []
 
-        while not self._at_end():
-            self._skip_newlines()
-            if self._at_end():
-                break
+        try:
+            while not self._at_end():
+                self._skip_newlines()
+                if self._at_end():
+                    break
 
-            inner_tok = self._peek()
+                inner_tok = self._peek()
 
-            if inner_tok.kind == TokenKind.BACKSLASH_CMD:
-                inner_cmd = inner_tok.value
+                if inner_tok.kind == TokenKind.BACKSLASH_CMD:
+                    inner_cmd = inner_tok.value
 
-                if inner_cmd == "endforeach":
-                    self._advance()  # consume \endforeach
+                    if inner_cmd == "endforeach":
+                        self._advance()  # consume \endforeach
 
-                    if not body:
-                        raise ValidationError(
-                            "\\foreach with empty body",
-                            position=foreach_col,
-                            code="E1171",
+                        if not body:
+                            raise ValidationError(
+                                "\\foreach with empty body",
+                                position=foreach_col,
+                                code="E1171",
+                                line=foreach_line,
+                                col=foreach_col,
+                            )
+
+                        return ForeachCommand(
+                            variable=variable,
+                            iterable_raw=iterable_raw,
+                            body=tuple(body),
                             line=foreach_line,
                             col=foreach_col,
                         )
 
-                    return ForeachCommand(
-                        variable=variable,
-                        iterable_raw=iterable_raw,
-                        body=tuple(body),
-                        line=foreach_line,
-                        col=foreach_col,
-                    )
+                    elif inner_cmd == "recolor":
+                        body.append(self._parse_recolor())
 
-                elif inner_cmd == "recolor":
-                    body.append(self._parse_recolor())
+                    elif inner_cmd == "reannotate":
+                        body.append(self._parse_reannotate())
 
-                elif inner_cmd == "reannotate":
-                    body.append(self._parse_reannotate())
+                    elif inner_cmd == "apply":
+                        body.append(self._parse_apply())
 
-                elif inner_cmd == "apply":
-                    body.append(self._parse_apply())
+                    elif inner_cmd == "highlight":
+                        body.append(self._parse_highlight())
 
-                elif inner_cmd == "highlight":
-                    body.append(self._parse_highlight())
+                    elif inner_cmd == "annotate":
+                        body.append(self._parse_annotate())
 
-                elif inner_cmd == "annotate":
-                    body.append(self._parse_annotate())
+                    elif inner_cmd == "cursor":
+                        body.append(self._parse_cursor())
 
-                elif inner_cmd == "cursor":
-                    body.append(self._parse_cursor())
+                    elif inner_cmd == "foreach":
+                        body.append(self._parse_foreach())
 
-                elif inner_cmd == "foreach":
-                    body.append(self._parse_foreach())
+                    elif inner_cmd in ("endsubstory", "step", "shape", "substory"):
+                        raise ValidationError(
+                            f"\\{inner_cmd} is not allowed inside \\foreach body",
+                            position=inner_tok.col,
+                            code="E1172",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
+                        )
 
-                elif inner_cmd in ("endsubstory", "step", "shape", "substory"):
-                    raise ValidationError(
-                        f"\\{inner_cmd} is not allowed inside \\foreach body",
-                        position=inner_tok.col,
-                        code="E1172",
-                        line=inner_tok.line,
-                        col=inner_tok.col,
-                    )
-
+                    else:
+                        raise ValidationError(
+                            f"unknown command \\{inner_cmd} inside \\foreach body",
+                            position=inner_tok.col,
+                            code="E1006",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
+                        )
                 else:
-                    raise ValidationError(
-                        f"unknown command \\{inner_cmd} inside \\foreach body",
-                        position=inner_tok.col,
-                        code="E1006",
-                        line=inner_tok.line,
-                        col=inner_tok.col,
-                    )
-            else:
-                self._advance()
+                    self._advance()
 
-        # EOF without \endforeach
-        raise ValidationError(
-            "unclosed \\foreach",
-            position=foreach_col,
-            code="E1172",
-            line=foreach_line,
-            col=foreach_col,
-        )
+            # EOF without \endforeach
+            raise ValidationError(
+                "unclosed \\foreach",
+                position=foreach_col,
+                code="E1172",
+                line=foreach_line,
+                col=foreach_col,
+            )
+        finally:
+            if added_binding:
+                self._known_bindings.discard(variable)
 
     def _parse_substory(self) -> SubstoryBlock:
         """Parse ``\\substory[opts]...\\endsubstory`` block."""
@@ -1149,7 +1357,9 @@ class SceneParser:
 
         if tok.kind == TokenKind.INTERP:
             self._advance()
-            return self._parse_interp_ref(tok.value)
+            ref = self._parse_interp_ref(tok.value)
+            self._check_interpolation_binding(ref.name, tok.line, tok.col)
+            return ref
 
         if tok.kind == TokenKind.LBRACKET:
             return self._parse_list_value()
