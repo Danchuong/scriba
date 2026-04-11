@@ -8,14 +8,64 @@ registered in the Pipeline's ``SubprocessWorkerPool``.
 from __future__ import annotations
 
 import logging
+import platform
 import sys
 import uuid
+import warnings
 from typing import Any
 
 from scriba.core.errors import WorkerError
 from scriba.core.workers import SubprocessWorkerPool
 
 logger = logging.getLogger(__name__)
+
+# Module-level sentinel: ensures the Windows backstop-unavailable warning
+# fires at most once per process, regardless of how many StarlarkHost
+# instances are created.  Reset in tests via ``_reset_windows_warning()``.
+_WINDOWS_WARNING_EMITTED = False
+
+
+def _reset_windows_warning() -> None:
+    """Test hook: clear the once-per-process Windows warning sentinel.
+
+    Production code never calls this; it exists solely so the unit tests
+    that assert the warning fires can run in any order without leaking
+    state between cases.
+    """
+    global _WINDOWS_WARNING_EMITTED
+    _WINDOWS_WARNING_EMITTED = False
+
+
+def _maybe_emit_windows_warning() -> None:
+    """Emit a one-shot ``RuntimeWarning`` on Windows about the missing
+    wall-clock ``SIGALRM`` backstop.
+
+    On Windows the Starlark sandbox cannot install a ``SIGALRM`` handler
+    (the signal does not exist), so the only in-process runaway-loop
+    defence is the step counter inside ``starlark_worker._step_trace``.
+    A runaway C-extension builtin that does not tick the trace hook
+    could in theory evade the step counter, in which case the host's
+    10-second transport-level timeout remains as the outermost safety
+    net.  See ``docs/spec/starlark-worker.md`` SS6.1.
+
+    Threading.Timer fallback was deliberately not implemented because
+    interrupting the main Python thread from a timer callback requires
+    ``PyErr_SetInterrupt`` and introduces race conditions that are worse
+    than the missing backstop itself.
+    """
+    global _WINDOWS_WARNING_EMITTED
+    if _WINDOWS_WARNING_EMITTED:
+        return
+    if platform.system() != "Windows":
+        return
+    _WINDOWS_WARNING_EMITTED = True
+    warnings.warn(
+        "Scriba Starlark sandbox on Windows relies on step-counter only; "
+        "wall-clock SIGALRM backstop unavailable. "
+        "See `docs/spec/starlark-worker.md` SS6.1.",
+        RuntimeWarning,
+        stacklevel=3,
+    )
 
 # Resource limits applied to the starlark worker child process.
 #
@@ -80,6 +130,11 @@ class StarlarkHost:
     """
 
     def __init__(self, worker_pool: SubprocessWorkerPool) -> None:
+        # One-shot platform warning: on Windows the wall-clock SIGALRM
+        # backstop inside the worker is unavailable (the signal does not
+        # exist), so only the step counter protects against runaway loops.
+        # See ``docs/spec/starlark-worker.md`` SS6.1.
+        _maybe_emit_windows_warning()
         worker_pool.register(
             name="starlark",
             argv=[sys.executable, "-m", "scriba.animation.starlark_worker"],

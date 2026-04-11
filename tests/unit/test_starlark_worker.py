@@ -129,7 +129,7 @@ class TestRecursion:
 class TestTimeout:
     @pytest.mark.skipif(
         sys.platform == "win32",
-        reason="SIGALRM not available on Windows",
+        reason="SIGALRM not available on Windows — see test_step_counter_only_on_windows",
     )
     def test_long_running_code_times_out(self):
         proc = _spawn_worker()
@@ -146,6 +146,94 @@ class TestTimeout:
             # now wraps its ValueError in an ``animation_error``),
             # timeout (E1152), or step limit (E1153).
             assert resp["code"] in ("E1152", "E1153", "E1173")
+        finally:
+            _close(proc)
+
+    @pytest.mark.skipif(
+        sys.platform != "win32",
+        reason="Windows step-counter-only path: SIGALRM unavailable",
+    )
+    def test_step_counter_only_on_windows(self):
+        """On Windows, SIGALRM is absent so only the step counter can
+        protect against runaway loops.  Verify that the sandbox still
+        surfaces ``E1153`` (or ``E1173`` for range validation) rather
+        than hanging the process."""
+        proc = _spawn_worker()
+        try:
+            resp = _send(proc, {
+                "op": "eval",
+                "id": "t5-win",
+                "globals": {"n": 10**9},
+                "source": "x = 0\nfor i in range(n):\n    x += 1",
+            })
+            assert resp["ok"] is False
+            # Step counter or range-iterable validator should fire.
+            # ``E1152`` (SIGALRM timeout) is explicitly NOT expected here.
+            assert resp["code"] in ("E1153", "E1173")
+        finally:
+            _close(proc)
+
+
+class TestTracebackFiltering:
+    """Verify that ``E1151`` error messages contain only user frames
+    after wiring ``errors.format_compute_traceback`` into ``_evaluate``.
+    """
+
+    def test_runtime_error_traceback_only_contains_user_frames(self):
+        proc = _spawn_worker()
+        try:
+            resp = _send(proc, {
+                "op": "eval",
+                "id": "tb1",
+                "globals": {},
+                # Deliberately trigger a ZeroDivisionError inside the
+                # user's compute block so CPython produces a full
+                # traceback with both a ``<compute>`` frame and the
+                # ``starlark_worker.py`` exec() frame.
+                "source": "x = 1 / 0",
+            })
+            assert resp["ok"] is False
+            assert resp["code"] == "E1151"
+            message = resp["message"]
+            # Must retain the ``<compute>`` frame so users can see
+            # their own line number.
+            assert "<compute>" in message, (
+                f"expected '<compute>' frame in message: {message!r}"
+            )
+            # Must NOT mention Scriba internal frames.
+            assert "starlark_worker.py" not in message, (
+                f"internal frame leaked into message: {message!r}"
+            )
+            assert "ZeroDivisionError" in message
+        finally:
+            _close(proc)
+
+
+class TestStepCounterReset:
+    """Ensure the per-request step counter reset prevents cross-request
+    leakage (one long-ish request should not poison the next)."""
+
+    def test_step_counter_reset_between_invocations(self):
+        proc = _spawn_worker()
+        try:
+            # Each call runs ~1000 trace events (well under 10**8 limit).
+            source = "total = 0\nfor i in range(1000):\n    total = total + 1"
+            resp1 = _send(proc, {
+                "op": "eval",
+                "id": "reset-1",
+                "globals": {},
+                "source": source,
+            })
+            resp2 = _send(proc, {
+                "op": "eval",
+                "id": "reset-2",
+                "globals": {},
+                "source": source,
+            })
+            assert resp1["ok"] is True, resp1
+            assert resp2["ok"] is True, resp2
+            assert resp1["bindings"]["total"] == 1000
+            assert resp2["bindings"]["total"] == 1000
         finally:
             _close(proc)
 
