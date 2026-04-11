@@ -34,6 +34,20 @@ _PADDING = 20
 _DEFAULT_SEED = 42
 _DEFAULT_ITERATIONS = 50
 
+# Maximum node count for force-directed Graph layout.
+#
+# The Fruchterman-Reingold implementation below is O(N^2) per
+# iteration, so constructing a 1000-node graph takes ~10 seconds and
+# blocks the renderer (a DoS vector for a malicious editorial).
+#
+# 100 is a generous upper bound for visualisations — viewers cannot
+# meaningfully distinguish more than ~100 nodes in a single frame
+# anyway. Scenes needing more nodes should use ``layout="stable"``
+# (itself capped at 20 nodes) or split the graph across frames.
+#
+# See Wave 4B Cluster 1 DoS fix for the original finding.
+_MAX_NODES = 100
+
 
 # ---------------------------------------------------------------------------
 # Fruchterman-Reingold layout
@@ -188,6 +202,20 @@ class Graph(PrimitiveBase):
             warnings.warn(
                 f"Graph '{name}' created with empty nodes list",
                 stacklevel=2,
+            )
+        if len(self.nodes) > _MAX_NODES:
+            # Force-directed layout is O(N^2) per iteration; reject
+            # oversized graphs up front rather than letting a
+            # malicious editorial burn seconds of renderer time.
+            from scriba.animation.errors import animation_error
+
+            raise animation_error(
+                "E1501",
+                detail=(
+                    f"Graph '{name}' node count {len(self.nodes)} "
+                    f"exceeds maximum {_MAX_NODES}; use layout=stable "
+                    f"for larger graphs or split the visualization"
+                ),
             )
         raw_edges = params.get("edges", [])
         self.edges: list[tuple[str | int, str | int]] = [
