@@ -42,13 +42,33 @@ const KATEX_OPTIONS_BASE = {
   throwOnError: false,
   output: "html",
   strict: false,
+  // W6.4 red-team hardening (Agent 14 finding 3b).
+  //
+  // ``trust: false`` blocks KaTeX commands that could inject arbitrary
+  // URLs or raw HTML (``\href``, ``\url``, ``\htmlId``, ``\class``,
+  // ``\data``, ``\includegraphics``). None of the cookbook examples
+  // rely on these, so disabling them closes a sandbox escape vector
+  // at zero feature cost.
+  trust: false,
+  // Cap macro expansion depth. Default is 1000 which is enough to
+  // chain macro bombs together; lowering to 100 keeps the legitimate
+  // ``\def\name{...}`` use cases working while cutting the DoS
+  // headroom by an order of magnitude.
+  maxExpand: 100,
 };
 
 function renderOne(math, displayMode) {
   try {
+    // Always pass a *fresh* empty macros map so that any ``\def`` that
+    // KaTeX accepts inside ``math`` cannot persist to the next call.
+    // Historically KaTeX mutates the ``macros`` argument in place when
+    // it sees a ``\def``, which turns the options object into a
+    // stateful cache across renders. By handing it a per-call literal
+    // we guarantee each render starts from a clean slate.
     const html = katex.renderToString(math, {
       ...KATEX_OPTIONS_BASE,
       displayMode: displayMode || false,
+      macros: {},
     });
     return { html, error: null };
   } catch (e) {

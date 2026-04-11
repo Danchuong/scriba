@@ -399,7 +399,76 @@ def _timeout_handler(signum: int, frame: Any) -> None:
 # Evaluator
 # ---------------------------------------------------------------------------
 
-_WALL_CLOCK_SECONDS = 3
+# --- Wall-clock budget (W6.4 red-team hardening) ---
+#
+# Per-block wall-clock limit. Reduced from 3 s to 1 s so that a single
+# ``\compute`` block cannot monopolise the renderer for more than one
+# second. Realistic cookbook examples finish in well under 100 ms; the
+# 1-second ceiling still leaves a 10x headroom.
+_WALL_CLOCK_SECONDS = 1
+
+# Cumulative wall-clock budget across all ``\compute`` blocks in one
+# render. A single render may contain dozens of blocks; without a
+# cumulative cap an attacker could submit N blocks each hovering just
+# under the per-block limit and consume unbounded wall-clock time.
+#
+# The helpers below are module-level so the host-side caller
+# (``starlark_host.StarlarkHost`` or an adapter) can reset the budget
+# at the start of each render and consume from it after each block
+# returns. They do NOT get wired into the worker's own request loop
+# (the worker is a separate process with per-process state), they are
+# intended for the in-process host side.
+_CUMULATIVE_BUDGET_SECONDS: float = 5.0
+_cumulative_elapsed: float = 0.0
+
+
+def reset_cumulative_budget() -> None:
+    """Reset the cumulative Starlark wall-clock budget to zero.
+
+    Call this at the start of each render (before the first
+    ``\\compute`` block runs) so that budgets do not leak across
+    renders sharing the same host process.
+    """
+    global _cumulative_elapsed
+    _cumulative_elapsed = 0.0
+
+
+def get_cumulative_elapsed() -> float:
+    """Return the cumulative elapsed wall-clock time (seconds)."""
+    return _cumulative_elapsed
+
+
+def consume_cumulative_budget(elapsed: float) -> None:
+    """Charge *elapsed* seconds against the cumulative budget.
+
+    Raises an ``E1152`` animation_error when the total exceeds
+    :data:`_CUMULATIVE_BUDGET_SECONDS`.
+
+    Parameters
+    ----------
+    elapsed:
+        Wall-clock time (seconds) consumed by one ``\\compute`` block.
+        Must be non-negative; negative values are clamped to zero so a
+        clock skew cannot gift extra budget.
+    """
+    global _cumulative_elapsed
+    if elapsed < 0:
+        elapsed = 0.0
+    _cumulative_elapsed += elapsed
+    if _cumulative_elapsed > _CUMULATIVE_BUDGET_SECONDS:
+        raise animation_error(
+            "E1152",
+            detail=(
+                f"cumulative Starlark wall-clock budget exceeded "
+                f"({_cumulative_elapsed:.2f}s > "
+                f"{_CUMULATIVE_BUDGET_SECONDS}s)"
+            ),
+            hint=(
+                "reduce the number or size of \\compute blocks in this "
+                "animation, or split into multiple \\begin{animation} "
+                "blocks"
+            ),
+        )
 
 
 def _evaluate(

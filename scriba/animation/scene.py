@@ -33,6 +33,10 @@ from scriba.animation.parser.ast import (
     ShapeCommand,
     SubstoryBlock,
 )
+from scriba.animation.uniqueness import (
+    check_duplicate_shape_ids,
+    validate_shape_id_charset,
+)
 from scriba.core.errors import ValidationError
 
 __all__ = ["SceneState", "FrameSnapshot"]
@@ -164,6 +168,20 @@ class SceneState:
         starlark_host: Any | None = None,
     ) -> None:
         """Apply prelude: register shapes, run global compute, apply commands."""
+        # Uniqueness + charset validation (W6.4): enforce the stricter
+        # shape-id charset before any mutation command can reference
+        # one of these names, and fail fast on duplicate ids within the
+        # enclosing animation/substory. Both helpers raise structured
+        # AnimationErrors (E1017 / E1018) so the renderer can surface a
+        # line/col location rather than a bare ValueError.
+        for shape in shapes:
+            validate_shape_id_charset(
+                shape.name,
+                line=getattr(shape, "line", None),
+                col=getattr(shape, "col", None),
+            )
+        check_duplicate_shape_ids([shape.name for shape in shapes])
+
         for shape in shapes:
             self.shape_states[shape.name] = {}
 
@@ -269,7 +287,19 @@ class SceneState:
         saved_frame_counter = self._frame_counter
         self._frame_counter = 0  # Reset for substory-local numbering
 
-        # Register substory-local shapes
+        # Register substory-local shapes.
+        # Uniqueness + charset validation (W6.4): substories have their
+        # own id scope so we re-run the same guards rather than rely on
+        # parent-level state. This catches both illegal characters and
+        # intra-substory duplicates before the mutation commands run.
+        for shape in substory.shapes:
+            validate_shape_id_charset(
+                shape.name,
+                line=getattr(shape, "line", None),
+                col=getattr(shape, "col", None),
+            )
+        check_duplicate_shape_ids([shape.name for shape in substory.shapes])
+
         for shape in substory.shapes:
             self.shape_states[shape.name] = {}
 
