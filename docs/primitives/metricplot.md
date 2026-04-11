@@ -1,11 +1,14 @@
 # Primitive Spec: `MetricPlot`
 
-> Status: **draft — Pivot #2 extension**. Extends base spec `04-environments-spec.md` §5
-> (primitive catalog). Error codes in range **E1480–E1489**.
+> Status: **shipped in v0.5.x** as an extended primitive. Extends the
+> base primitive catalog in [`environments.md`](../spec/environments.md)
+> and [`ruleset.md`](../spec/ruleset.md) §5. Error codes in range
+> **E1480–E1487** — see [`error-codes.md`](../spec/error-codes.md) for
+> the canonical list.
 
 ---
 
-## 1. Purpose
+## 1. Overview
 
 `MetricPlot` is a compile-time SVG line chart that tracks one or more scalar values across
 the frames of an `\begin{animation}`. Each `\step` can feed new data points into the chart;
@@ -15,8 +18,10 @@ the emitter computes the full chart SVG for that frame from all accumulated data
   cost and the potential function Φ across a sequence of splay operations. Authors feed
   `phi` and `cost` values per step alongside the `Tree` primitive showing the tree shape.
 - **HARD-TO-DISPLAY #9** (Simulated Annealing): the energy (objective value) and temperature
-  curves across thousands of sampled iterations from a `\fastforward` block. Each sampled
-  frame appends one point to the chart series.
+  curves across many sampled iterations. Each sampled frame appends one
+  point to the chart series. (Previous drafts referenced a
+  `\fastforward` block; that extension has been removed — use manual
+  step unrolling instead.)
 - Any editorial that makes a convergence argument, amortization argument, or probabilistic
   analysis that benefits from showing the trajectory of a scalar quantity.
 
@@ -124,9 +129,11 @@ At each `\step`, the author feeds values for each series:
 \narrate{After splay operation 1: $\Phi = 3.2$, cost $= 5.1$.}
 ```
 
-The `\apply` command on a `MetricPlot` shape recognizes the series names declared in the
-`series` parameter as valid parameter keys. Unknown keys (i.e., names not in `series`) are
-**E1105** (unknown parameter, base spec §11.3).
+The `\apply` command on a `MetricPlot` shape recognizes the series
+names declared in the `series` parameter as valid parameter keys.
+Unknown keys (i.e., names not in `series`) surface via the shared
+selector/parameter validation path — see
+[`error-codes.md`](../spec/error-codes.md).
 
 **Accumulation:** each `\apply` to a `MetricPlot` appends one point to each named series.
 If a series name is omitted from a particular `\apply`, no point is added for that series
@@ -139,21 +146,23 @@ feed all series simultaneously to keep x-axis positions aligned.
 
 ### 3.2 Minimum data requirement
 
-A `MetricPlot` with fewer than 2 data points per series in the current frame renders as a
-degenerate chart (single point + axis), with **E1482** (insufficient-data, warning) emitted.
-Rendering is not blocked; the chart is emitted with whatever data exists.
+A `MetricPlot` with fewer than 2 data points per series in the current
+frame renders as a degenerate chart (single point + axis). Rendering is
+not blocked; the chart is emitted with whatever data exists.
 
 ### 3.3 Maximum data points
 
-Each series is capped at **1000 points** total. Appending beyond 1000 points to a series
-is **E1483** (too-many-points, error); the excess `\apply` is silently dropped.
+Each series is capped at **1000 points** total (`_MAX_POINTS = 1000` in
+`scriba/animation/primitives/metricplot.py`). Appending beyond 1000
+points to a series is logged as **E1483** (series truncated) and the
+excess `\apply` is silently dropped.
 
 ---
 
 ## 4. Series colors
 
-Up to 8 series are auto-assigned colors from the Wong CVD-safe palette (base spec §9.2),
-in this order:
+Up to 8 series (`_MAX_SERIES = 8`) are auto-assigned colors from the
+Wong CVD-safe palette, in this order:
 
 | Index | Series color        | Hex       |
 |-------|---------------------|-----------|
@@ -260,7 +269,7 @@ the viewBox height is extended accordingly.
 that frame. There is no interactivity and no runtime JS. The filmstrip therefore shows the
 chart "growing" across frames:
 
-- Frame 1: chart with 1 data point per series (degenerate, E1482 warning).
+- Frame 1: chart with 1 data point per series (degenerate single-dot; no polyline emitted).
 - Frame 2: chart with 2 points per series (minimum for a line segment).
 - Frame N: chart with N points per series.
 
@@ -443,31 +452,30 @@ in the same `<g>` with the same style.
 
 | Condition                          | Behavior                                                             |
 |------------------------------------|----------------------------------------------------------------------|
-| 0 data points in current frame     | Emit axes only; no polylines; E1482 warning.                        |
-| 1 data point in current frame      | Emit a single marker dot on each series; no polyline; E1482 warning.|
+| 0 data points in current frame     | Emit axes only; no polylines.                                        |
+| 1 data point in current frame      | Emit a single marker dot on each series; no polyline.                |
 | All y values identical (flat line) | Y range auto-extends by ±1; rendering proceeds normally.            |
 | `xrange=[a,a]` (degenerate)        | **E1486** (xrange-degenerate, error); fall back to auto.            |
 
 ---
 
-## 10. Error code catalog (E1480–E1489)
+## 10. Error codes
 
-> **Audit fix (finding 1.4 / CRITICAL, decision lock #3):** E1484 previously had two
-> conflicting meanings (log-non-positive warning AND degenerate xrange error). Split into
-> E1484 (warning only) and E1486 (error only). E1487 added for axis-scale-mismatch.
+Canonical catalog in [`error-codes.md`](../spec/error-codes.md). The
+MetricPlot range is **E1480–E1487**.
 
-| Code  | Severity | Condition                                              | Hint                                                       |
-|-------|----------|--------------------------------------------------------|------------------------------------------------------------|
-| E1480 | Error    | No series declared (empty `series` list)               | Provide at least one series name.                          |
-| E1481 | Error    | More than 8 series                                     | Reduce to 8 or fewer series.                               |
-| E1482 | Warning  | Fewer than 2 data points in current frame              | MetricPlot needs ≥ 2 points to draw a line; first frame will be degenerate. |
-| E1483 | Error    | More than 1000 points in a single series               | Use `\fastforward` with a larger `sample_every` value.     |
-| E1484 | Warning  | Log scale with non-positive value; clamped to ε=1e-9  | Adjust data range or switch to linear scale.               |
-| E1485 | Error    | Duplicate series name                                  | All series names must be unique within one MetricPlot.     |
-| E1486 | Error    | `xrange=[a,a]` — degenerate (zero-width) x range      | Provide `xrange="auto"` or a non-degenerate `[xmin, xmax]`. |
-| E1487 | Error    | Two series on the same axis declare different `scale` values | All series on a given axis must share the same scale (`"linear"` or `"log"`). |
+| Code  | Severity       | Condition                                                      | Hint                                                       |
+|-------|----------------|----------------------------------------------------------------|------------------------------------------------------------|
+| E1480 | Error          | No series declared (empty `series` list)                       | Provide at least one series name.                          |
+| E1481 | Error          | More than 8 series (`_MAX_SERIES`)                             | Reduce to 8 or fewer series.                               |
+| E1483 | Soft (logged)  | Series point count exceeds 1000 (`_MAX_POINTS`)                | Reduce the number of data points; excess values are dropped. |
+| E1484 | Warning        | Log scale with non-positive value; clamped to ε=1e-9           | Adjust data range or switch to linear scale.               |
+| E1485 | Error          | MetricPlot series data validation error (e.g. duplicate name, bad value shape) | All series names must be unique; data values must be numeric. |
+| E1486 | Error          | Degenerate `xrange=[a,a]`                                      | Provide `xrange="auto"` or a non-degenerate `[xmin, xmax]`. |
+| E1487 | Error          | Same-axis series declare different `scale` values              | All series on a given axis must share the same scale.      |
 
-Codes E1488–E1489 are reserved.
+`E1482`, `E1488`, `E1489` are currently unassigned — see
+[`error-codes.md`](../spec/error-codes.md) for the canonical list.
 
 ---
 
@@ -509,12 +517,12 @@ Codes E1488–E1489 are reserved.
 
 Expected:
 - 10 frames; each frame shows the polyline grown by one point.
-- Frame 1: E1482 warning (1 point = degenerate); single dot rendered.
+- Frame 1: 1 point per series (degenerate); single dot rendered.
 - Frame 2: clean line segment from (1,7) to (2,5) for phi series; (1,3) to (2,5) for cost.
 - Frame 10: two 10-point polylines in Wong blue and vermillion.
 - Current-step vertical marker moves rightward each frame.
 - Legend shows "phi" and "cost" in their respective colors.
-- No E148x errors beyond E1482 on frame 1.
+- No E148x errors.
 
 ### 11.2 SA energy curve (removed feature)
 

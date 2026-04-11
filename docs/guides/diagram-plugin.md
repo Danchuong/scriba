@@ -1,6 +1,19 @@
 # 03 — `scriba.animation.DiagramRenderer`
 
-> Wave 3 plugin spec. Binds verbatim to [`01-architecture.md`](../spec/architecture.md) (`Renderer`, `Block`, `RenderArtifact`, `RenderContext`, `RendererAssets`, `SubprocessWorker`, `SubprocessWorkerPool`, `RendererError`, `WorkerError`, `ValidationError`) and to [`04-environments-spec.md`](../spec/environments.md), which is the single source of truth for the `\begin{diagram}` grammar, inner command set, target selectors, Starlark host contract, HTML output, CSS class contract, and error catalog. Where this file and `04-environments-spec.md` appear to disagree, `04-environments-spec.md` wins and this file is the bug.
+> **Status (v0.5.x):** `\begin{diagram}` is **reserved for extension E5**
+> and is **not a first-class IR** in v0.5.x. The parser always produces
+> `AnimationIR`; there is no `DiagramIR` type. A `\begin{diagram}` block
+> is rendered as a single-frame animation in diagram mode (no `\step`
+> allowed inside → `E1050`) and is treated as experimental surface area.
+> New authoring should prefer `\begin{animation}` with a single implicit
+> frame until E5 lands. See [`ruleset.md`](../spec/ruleset.md) §1.1 for
+> the authoritative status notice.
+>
+> This document is retained because the `DiagramRenderer` shim still
+> ships in `scriba/animation/renderer.py` for backward compatibility with
+> legacy pipelines. Anywhere this file and
+> [`ruleset.md`](../spec/ruleset.md) / [`environments.md`](../spec/environments.md)
+> disagree, the ruleset wins and this file is the bug.
 
 ## 1. Purpose
 
@@ -24,20 +37,22 @@ Non-goals:
 ## 2. Public API
 
 ```python
-# scriba/animation/diagram_renderer.py
+# scriba/animation/renderer.py (actual location, alongside AnimationRenderer)
 from __future__ import annotations
 
-from pathlib import Path
+from typing import Any
 
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
-from scriba.core.errors import RendererError, ValidationError, WorkerError
-from scriba.core.renderer import Renderer
-from scriba.core.workers import SubprocessWorkerPool
+from scriba.core.errors import RendererError, ValidationError
 
 
 class DiagramRenderer:
-    """Render `\\begin{diagram}` environments to a self-contained SVG figure."""
+    """Render `\\begin{diagram}` environments to a self-contained SVG figure.
+
+    Status: reserved for extension E5. Retained as a backward-compat shim
+    that routes diagram blocks through the shared AnimationRenderer core.
+    """
 
     name: str = "diagram"
     version: int = 1
@@ -46,21 +61,15 @@ class DiagramRenderer:
     def __init__(
         self,
         *,
-        worker_pool: SubprocessWorkerPool,
-        strict: bool = False,
+        starlark_host: Any | None = None,
     ) -> None:
         """
-        worker_pool:
-            Shared Pipeline worker pool. ``DiagramRenderer`` looks up the
-            ``"starlark"`` worker on first ``\\compute`` invocation. If the
-            worker is not yet registered, it registers one using the bundled
-            ``scriba/animation/starlark_worker`` entry point, mirroring
-            ``TexRenderer``'s ``katex`` registration in
-            ``scriba/tex/renderer.py``.
-        strict:
-            When ``True``, warnings (e.g. ``E1180`` frame count, ``E1150``
-            empty narration) are promoted to ``RendererError``. Default
-            ``False`` matches the catalog in ``04-environments-spec.md`` §11.
+        starlark_host:
+            Optional in-process Starlark host. When ``None``, the renderer
+            uses the default host from ``scriba.animation.starlark_host``.
+            Passing an explicit host lets callers share a single Starlark
+            environment across ``DiagramRenderer`` and ``AnimationRenderer``
+            in the same Pipeline.
         """
 
     def detect(self, source: str) -> list[Block]: ...
@@ -104,7 +113,7 @@ The parse pipeline:
 3. **Brace reader.** Each brace argument is read via a balanced-brace scanner (standard LaTeX rules). Unbalanced braces raise `E1001`. The scanner is TikZ-flavored: it understands nested `{...}` but never interprets `$`, `&`, or `\` specially inside the brace body.
 4. **Parameter list parser.** The final brace of `\shape` / `\apply` / `\recolor` / `\annotate` is parsed as a `param_list`: `key=value` pairs separated by commas, values being idents, numbers, double-quoted strings, `${interp}` references, or `[list, ...]`. Grammar in `04-environments-spec.md` §2.1.
 5. **Command AST.** The result is an ordered `tuple[Command, ...]` of frozen dataclasses, one per recognized command, each carrying its source line/column for error reporting.
-6. **Scene IR build.** The command list is lowered to `DiagramIR` (see `05-scene-ir.md`), which is a frozen dataclass holding the options, the shape declarations, the compute blocks, and the state-mutation commands in source order.
+6. **Scene IR build.** The command list is lowered to the shared `AnimationIR` (see [`scene-ir.md`](../spec/scene-ir.md)) with exactly one implicit frame — `DiagramRenderer` does not have its own IR type in v0.5.x.
 
 The SceneParser is **not** reused from `scriba.tex.parser`. The inner grammar is simpler and more rigid than LaTeX, and sharing would leak TeX quirks (optional args, catcodes, math mode) into a context that does not need them. Only `\narrate` bodies in the animation plugin cross the boundary, and `DiagramRenderer` never sees `\narrate` at all.
 
@@ -112,7 +121,7 @@ The SceneParser is **not** reused from `scriba.tex.parser`. The inner grammar is
 
 ```python
 def render_block(self, block: Block, ctx: RenderContext) -> RenderArtifact:
-    # 1. Parse body to DiagramIR. Raises RendererError(code="E1xxx") on parse failure.
+    # 1. Parse body to AnimationIR (single implicit frame). Raises RendererError(code="E1xxx") on parse failure.
     ir = self._parser.parse(block.raw, block.metadata)
 
     # 2. Run every \compute block through the shared Starlark worker.
@@ -140,15 +149,16 @@ def render_block(self, block: Block, ctx: RenderContext) -> RenderArtifact:
     )
 ```
 
-Each step raises `RendererError(message, code=...)` with the code ranges from `04-environments-spec.md` §11:
+Each step raises `RendererError(message, code=...)` with codes drawn from [`error-codes.md`](../spec/error-codes.md):
 
-- Parse errors: `E1001..E1008`.
+- Parse / detection errors: `E1001..E1013`.
 - Diagram-specific semantic errors: `E1050` (`\step` forbidden), `E1054` (`\narrate` forbidden), `E1053` (`\highlight` in prelude — not applicable here since diagram has no prelude/step split).
-- Shape/target errors: `E1101..E1113`.
-- Compute errors surfaced from the Starlark worker: `E1150..E1157`.
-- Render errors from the SVG emitter: `E1200..E1202`.
+- Shape / target / annotation errors: `E1100..E1113`.
+- Primitive parameter validation (post-v0.5.1 split): `E1400..E1459`.
+- Primitive-specific errors: `E1460..E1505` (Plane2D, MetricPlot, Graph layout).
+- Compute errors surfaced from the Starlark worker: `E1150..E1155`.
 
-`WorkerError` raised by the Starlark worker is caught and re-raised as `RendererError(code="E1151" | "E1152" | "E1153", cause=...)`. The original `WorkerError.stderr` is attached as `__cause__` for logging.
+Starlark worker failures are surfaced through the shared Starlark host and re-raised as `RendererError(code="E1150" | "E1151" | "E1152" | ...)` — see [`error-codes.md`](../spec/error-codes.md) for the full mapping.
 
 `render_block` MUST NOT mutate `block`, `ctx`, or any shared instance state other than the worker pool (which is itself thread-safe).
 
@@ -244,14 +254,16 @@ The two CSS files share the `--scriba-*` custom-property namespace defined in `0
 
 | Range | Category | Notes |
 |---|---|---|
-| `E1001..E1008` | Parse errors | Unbalanced braces, misplaced `\begin`/`\end`, unknown options, stray top-level text. |
-| `E1050` | `\step` in diagram | Parser rejects immediately. |
-| `E1054` | `\narrate` in diagram | Parser rejects immediately. |
-| `E1101..E1113` | Shape / target / annotation errors | Duplicate name, unknown type, unknown selector, unknown state or color token. |
-| `E1150..E1157` | Starlark compute errors | Parse, runtime, timeout, step cap, forbidden feature, bad interpolation. |
-| `E1200..E1202` | Render errors | SVG layout failure, inline-TeX fallback (not used in diagram), scene hash collision. |
+| `E1001..E1013` | Parse / detection errors | Unbalanced braces, misplaced `\begin`/`\end`, unknown options, stray top-level text, source size cap. |
+| `E1050..E1056` | Diagram-specific | `\step` (`E1050`), `\narrate` (`E1054`), `\highlight` in prelude (`E1053`), etc. |
+| `E1100..E1113` | Shape / target / annotation errors | Unknown primitive, invalid selector, unknown state or color token. |
+| `E1150..E1155` | Starlark compute errors | Parse, runtime, timeout, step cap, forbidden construct, memory cap. |
+| `E1400..E1459` | Primitive parameter validation | Split from the legacy `E1103` bucket (see [`error-codes.md`](../spec/error-codes.md)). |
+| `E1460..E1505` | Primitive-specific | Plane2D, MetricPlot, Graph layout errors. |
 
-Warnings (e.g. `E1180` frame count — not applicable here) are suppressed unless `strict=True` was set at construction time.
+Warnings (e.g. `E1180` frame count — not applicable here) are suppressed
+unless `strict=True` is set on the surrounding AnimationRenderer. See
+[`error-codes.md`](../spec/error-codes.md) for the authoritative catalog.
 
 ## 11. Example
 

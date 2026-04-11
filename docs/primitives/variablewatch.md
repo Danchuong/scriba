@@ -1,11 +1,15 @@
 # Primitive Spec: `VariableWatch`
 
-> Status: **draft**. Extends base spec `04-environments-spec.md` SS5
-> (primitive catalog).
+> Status: **shipped in v0.5.x** as a data-structure primitive. Extends
+> the primitive catalog in
+> [`environments.md`](../spec/environments.md) and
+> [`ruleset.md`](../spec/ruleset.md) §5.
+>
+> Source: `scriba/animation/primitives/variablewatch.py`.
 
 ---
 
-## 1. Purpose
+## 1. Overview
 
 `VariableWatch` renders a two-column name-value table for displaying algorithm
 variable states as they change over time. It unlocks:
@@ -179,3 +183,31 @@ The variable watch is rendered as a bordered two-column table:
 \narrate{Found target at index 7.}
 \end{animation}
 ```
+
+---
+
+## 8. Error codes
+
+`VariableWatch` has no primitive-specific error codes. Validation goes
+through the shared parse/selector paths:
+
+- Missing or empty `names` list — emits a `UserWarning` at shape
+  construction time (the shape still renders with a placeholder).
+- Unknown variable name in a selector (`vars.var[x]` where `x` is not
+  in `names`) — rejected by the selector validator per the shared
+  `E1009`/`E1010` selector-parse path. See
+  [`error-codes.md`](../spec/error-codes.md).
+- Unknown `\apply` parameter keys (names not in `names`) are silently
+  ignored during bulk apply.
+
+---
+
+## 9. Notes
+
+- `names` may be a list (`names=["i", "j"]`) or a comma-separated
+  string (`names="i, j"`). The primitive normalizes both forms.
+- Values are stored as display strings; the primitive calls `str(...)`
+  on any numeric value passed through `\apply`.
+- Uninitialized variables display `"----"` until explicitly set.
+- Column widths scale automatically from the longest variable name and
+  the longest value currently bound.

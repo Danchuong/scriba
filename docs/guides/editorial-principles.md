@@ -3,15 +3,21 @@
 > This is a taste document, not a mechanics document. For grammar, commands,
 > primitives, states, and error codes, read
 > [`04-environments-spec.md`](../spec/environments.md). This file is about
-> *when* and *why* to reach for `\begin{animation}` or `\begin{diagram}`, and
-> how to write them so the result feels inevitable rather than decorated.
+> *when* and *why* to reach for `\begin{animation}`, and how to write it
+> so the result feels inevitable rather than decorated.
 
 The spirit is Tufte: **show the thing itself, label it honestly, remove
 anything that is not doing work.** But the mechanics have changed. You are
-no longer writing a DSL. You are writing LaTeX, and `animation` / `diagram`
-are two new environments that sit alongside `tabular`, `equation`, and
-`tikzpicture` in the same `.tex` file. Treat them with the same
-discipline.
+no longer writing a DSL. You are writing LaTeX, and `animation` is a new
+environment that sits alongside `tabular`, `equation`, and `tikzpicture`
+in the same `.tex` file. Treat it with the same discipline.
+
+> **v0.5.x status:** `\begin{animation}` is the production environment.
+> `\begin{diagram}` is **reserved for extension E5** and is not a
+> first-class IR in v0.5.x; a `\begin{diagram}` block is rendered as a
+> single-frame `AnimationIR` in diagram mode (see `ruleset.md` §1.1). New
+> authoring should prefer `\begin{animation}` with a single implicit
+> frame until E5 lands.
 
 ## 1. First, ask whether you need a picture at all
 
@@ -27,30 +33,31 @@ Before you open `\begin{animation}`, try:
    story, show the recurrence.
 3. **A small table** inside a `tabular`. If the reader only needs to
    *read values*, they do not need an animation.
-4. **One `\begin{diagram}`** — a single static figure. If the shape of
-   the structure is what matters (a binary tree, a grid, an interval),
-   you do not need frames.
-5. **Only then** consider `\begin{animation}`. Animations are for cases
-   where *the change over time* is the point: filling a DP table,
-   shrinking a binary search window, contracting a BFS frontier.
+4. **A single-frame `\begin{animation}`** — one implicit frame, one
+   figure. If the shape of the structure is what matters (a binary tree,
+   a grid, an interval), you do not need multi-step frames.
+5. **Only then** consider a multi-step `\begin{animation}`. Animations
+   earn their place when *the change over time* is the point: filling a
+   DP table, shrinking a binary search window, contracting a BFS
+   frontier.
 
 If you cannot write the caption for frame 1 without saying "this is just
-the starting state," you probably do not need frame 1 — you need a
-diagram.
+the starting state," you probably do not need multiple frames — you
+need a single-frame figure.
 
-## 2. `animation` vs `diagram`: a clean split
+## 2. Single-frame vs multi-step animations: a clean split
 
-| Use `diagram` when… | Use `animation` when… |
+| Use a single-frame animation when… | Use a multi-step animation when… |
 |---|---|
 | The structure is static and the reader only needs to *see it once*. | The structure *evolves* and the evolution is the lesson. |
 | A single well-labelled figure would suffice on paper. | Each step adds a new invariant the reader must track. |
 | You would otherwise draw it in TikZ as one picture. | You would otherwise make a GIF or a short screen recording. |
 | Examples: recursion tree, input grid, interval layout, initial graph. | Examples: DP fill order, BFS frontier, binary search shrink, segment tree query walk. |
 
-Default bias: **prefer `diagram`**. A diagram asks less of the reader's
-attention and more of your own craft. Pick `animation` only when the
-reader would genuinely need to flip back and forth between states to
-understand the algorithm.
+Default bias: **prefer fewer frames**. A static figure asks less of the
+reader's attention and more of your own craft. Reach for multi-step
+frames only when the reader would genuinely need to flip back and forth
+between states to understand the algorithm.
 
 ## 3. Narration that earns its place
 
@@ -82,9 +89,14 @@ Good narration rules:
 
 ## 4. Primitive choice: pick the one the problem is actually about
 
-Scriba ships six primitives: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`,
-`NumberLine`. Choose the one that matches *the problem's mental model*,
-not the one that is easiest to draw.
+Scriba ships 16 primitives across three groups:
+
+- **Base (6):** `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`.
+- **Extended (5):** `Matrix` / `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `Graph` with `layout=stable`.
+- **Data-structure (5):** `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `VariableWatch`.
+
+Choose the one that matches *the problem's mental model*, not the one
+that is easiest to draw.
 
 - 1-D DP over a line of stones/positions → `Array`.
 - 2-D DP (knapsack, LCS, edit distance) → `DPTable`, not `Grid`. A
@@ -94,24 +106,38 @@ not the one that is easiest to draw.
 - Recursion trees, binary trees, segment trees → `Tree`.
 - Adjacency-list graphs, shortest paths, SCC → `Graph`.
 - Binary search on the answer, sweep-line thresholds → `NumberLine`.
+- Numerical matrix heatmaps (transition matrices, distance maps) → `Matrix` / `Heatmap`.
+- LIFO push/pop walks (parenthesis matching, recursion simulation) → `Stack`.
+- Cartesian geometry (points, lines, polygons, regions) → `Plane2D`.
+- Time-series metrics (loss curves, convergence plots) → `MetricPlot`.
+- Source code with line-by-line highlight → `CodePanel`.
+- Hash buckets and collisions → `HashMap`.
+- Pointer-based sequences → `LinkedList`.
+- FIFO queues → `Queue`.
+- Ambient scalar state (variables that change over frames) → `VariableWatch`.
 
 If you find yourself faking one primitive with another (drawing a tree
 inside a `Grid`, faking a `NumberLine` with a 1×N `Grid`), stop and
-switch primitives. The spec gives you six; use the right one.
+switch primitives. The spec gives you 16; use the right one.
 
 ## 5. Semantic state discipline
 
-The six semantic states (`default`, `highlight`, `active`, `done`,
-`error`, `dim`) are a small vocabulary on purpose. Do not reinvent
+The seven `\recolor` states (`idle`, `current`, `done`, `dim`, `good`,
+`error`, `path`) are a small vocabulary on purpose. Do not reinvent
 colors. Do not stack decorations. Use states for what they mean:
 
-- `highlight` — "this is the cell/node/edge the current frame is *about*."
-  Ephemeral. One or two per frame, almost never more.
-- `active` — "this is being compared or considered right now."
+- `current` — "this is the cell/node/edge being examined in this frame."
+  One or two per frame, almost never more.
 - `done` — "this value is finalized and will not change."
+- `good` — "this is a positive / optimal choice or accepted candidate."
+- `path` — "this belongs to the chosen solution chain."
 - `error` — "this path was tried and rejected." Use sparingly.
 - `dim` — "this exists but is out of scope for the current frame."
-- `default` — everything else.
+- `idle` — everything else (the starting / default state).
+
+`highlight` is **not** a `\recolor` state. It is an ephemeral decoration
+applied by the `\highlight{target}` command and only lasts for the frame
+that emits it.
 
 Frames should look calm. If every cell is in a different state, nothing
 is highlighted. If the reader's eye does not know where to land in under
@@ -138,7 +164,7 @@ not targets.
 - **Over 30 frames:** the Scriba warning is telling you something. You
   are probably animating *data*, not *algorithm structure*. Step back
   and ask what the lesson is. Split into two smaller animations, or
-  switch to a diagram plus prose.
+  switch to a single-frame figure plus prose.
 
 A 50-frame animation is a video. If you want a video, make a video.
 Scriba is for the dense, re-readable, printable moments of insight.
@@ -185,7 +211,7 @@ time, which is what makes the downstream content-hash cache correct.
 Scriba is accessible by construction — but only if you hold up your
 half of the contract.
 
-- **Always set `label=`** on both `animation` and `diagram`. It becomes
+- **Always set `label=`** on the `animation` environment. It becomes
   the `aria-label` on the outer `<figure>`. Write a label that describes
   *what is being visualized*, not *that it is a visualization*. Good:
   `label="BFS frontier on a 4×4 maze"`. Bad: `label="animation 1"`.
@@ -231,7 +257,7 @@ half of the contract.
 ## 10. The five-question checklist before you publish
 
 Run through this list before committing a problem that uses an
-`animation` or `diagram`:
+`animation` environment:
 
 1. **Does it replace prose, or does it duplicate prose?** If the reader
    can skip the figure and still understand the problem, cut the
