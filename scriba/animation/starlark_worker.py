@@ -56,13 +56,22 @@ _MAX_RANGE_LEN = 10**6  # 1 million elements
 
 _BLOCKED_ATTRIBUTES = BLOCKED_ATTRIBUTES
 
-# Forbidden AST node types (not plain strings, so kept here)
+# Forbidden AST node types (not plain strings, so kept here).
 #
-# ``ast.NamedExpr`` (walrus ``:=``) and ``ast.Match`` are forbidden to reduce
-# the sandbox attack surface: walrus enables binding in unusual scopes
-# (comprehension leaks, clever rebinding) and match patterns can invoke
-# custom ``__match_args__`` / class-level side effects. Both are unnecessary
-# for compute-block authors and are therefore rejected at parse time.
+# Wave 4A Cluster 1 added ``ast.NamedExpr`` (walrus ``:=``) and
+# ``ast.Match`` to reduce sandbox attack surface (walrus enables binding
+# in unusual scopes; match patterns can invoke custom ``__match_args__``
+# / class-level side effects).
+#
+# Wave 4B Cluster 2 added the async/generator cluster — note that
+# ``ast.FunctionDef`` is deliberately NOT forbidden: cookbook examples
+# (05, 07, 08) and existing tests rely on helper ``def``s inside
+# ``\compute`` blocks. However, ``ast.walk`` recurses into function
+# bodies, so adding ``ast.Yield`` / ``ast.YieldFrom`` / ``ast.Await``
+# here still catches generator/async payloads smuggled inside a regular
+# ``def``. ``async def`` is forbidden outright — it cannot contain
+# useful compute logic without ``await`` and opens a coroutine attack
+# surface.
 _FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
     ast.Import,
     ast.ImportFrom,
@@ -72,6 +81,12 @@ _FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
     ast.Lambda,
     ast.NamedExpr,
     ast.Match,
+    ast.AsyncFunctionDef,
+    ast.AsyncFor,
+    ast.AsyncWith,
+    ast.Await,
+    ast.Yield,
+    ast.YieldFrom,
 )
 
 _FORBIDDEN_BUILTINS = FORBIDDEN_BUILTINS
@@ -86,6 +101,12 @@ _FORBIDDEN_NODE_NAMES: dict[type, str] = {
     ast.Lambda: "lambda",
     ast.NamedExpr: "walrus (:=)",
     ast.Match: "match",
+    ast.AsyncFunctionDef: "async def",
+    ast.AsyncFor: "async for",
+    ast.AsyncWith: "async with",
+    ast.Await: "await",
+    ast.Yield: "yield",
+    ast.YieldFrom: "yield from",
 }
 
 

@@ -244,17 +244,22 @@ class TestPrimitiveDimensionCaps:
 
 
 # -----------------------------------------------------------------------
-# Wave 4A Cluster 9 — new security vectors
+# Wave 4A Cluster 9 + Wave 4B Cluster 2 — new security vectors
+# (2 strict xfails converted to passing tests in Wave 4B C2)
 # -----------------------------------------------------------------------
 
 
 class TestSecurityWave4NewVectors:
-    """Vectors added by Wave 4A Cluster 9.
+    """Vectors added by Wave 4A Cluster 9; 2 strict xfails closed by
+    Wave 4B Cluster 2.
 
-    These vectors fill audit finding 17-M3 gaps that do not belong in
-    the dedicated test_svg_injection / test_unicode_homograph /
-    test_recursive_dos files. Each test is a one-liner defence-in-depth
-    assertion that complements the primary coverage.
+    Fills audit finding 17-M3 gaps that do not belong in the dedicated
+    test_svg_injection / test_unicode_homograph / test_recursive_dos
+    files. The sandbox yield/async guards and NumberLine ticks<1
+    boundary were strict-xfailed in Wave 4A; Wave 4B Cluster 2 shipped
+    the fixes (see ``scriba/animation/starlark_worker._FORBIDDEN_NODE_TYPES``
+    expansion with Yield/YieldFrom/AsyncFunctionDef/Await, and
+    ``scriba/animation/primitives/numberline.py`` ticks<1 check).
     """
 
     def test_escape_js_handles_unicode_line_separators(self) -> None:
@@ -286,40 +291,91 @@ class TestSecurityWave4NewVectors:
         )
         assert resp["ok"] is False
 
-    @pytest.mark.xfail(
-        reason=(
-            "Bug found Wave 4A Cluster 9: _FORBIDDEN_NODE_TYPES does "
-            "not include ast.FunctionDef, so arbitrary `def f(): ...` "
-            "is accepted. Generators (`yield`) slip through on the "
-            "back of that. Severity is low because the generator still "
-            "runs inside the step-limited sandbox, but the scanner is "
-            "not complete. Deferred to Wave 4B fix cluster (17-M3 "
-            "sandbox surface-area)."
-        ),
-        strict=True,
-    )
     def test_evaluate_rejects_yield(self) -> None:
-        """``yield`` expressions are not in the supported subset."""
-        from scriba.animation.starlark_worker import _scan_ast
-        result = _scan_ast("def f():\n  yield 1")
-        # ``def`` should be blocked; yield would be too.
-        assert result is not None
+        """``def f(): yield 1`` must raise E1154 (Wave 4B C2 fix).
 
-    @pytest.mark.xfail(
-        reason=(
-            "Bug found Wave 4A Cluster 9: NumberLine checks an upper "
-            "bound on `ticks` (>1000 → E1103) but does not check the "
-            "lower bound. `ticks=0` produces a degenerate primitive. "
-            "Deferred to Wave 4B fix cluster (17-M3 validation "
-            "completeness)."
-        ),
-        strict=True,
-    )
+        Before: ``_FORBIDDEN_NODE_TYPES`` only included ``ClassDef`` and
+        ``Lambda`` — a regular ``def`` containing ``yield`` slipped the
+        pre-exec AST scan. After: ``ast.Yield``/``ast.YieldFrom`` are
+        in the forbidden tuple, and ``ast.walk`` recurses into the
+        ``def`` body, so the scanner catches the nested ``Yield`` node.
+        Regular helper ``def`` (no yield) remains legal.
+        """
+        resp = _evaluate("def f():\n    yield 1\nresult = 0", {}, "yield-test")
+        assert resp["ok"] is False
+        assert resp["code"] == "E1154"
+        assert "yield" in resp["message"]
+
     def test_numberline_zero_ticks_is_validation_error(self) -> None:
-        """Zero ticks on a numberline must be a validation error, not a
-        silent degenerate primitive."""
+        """``ticks=0`` must raise E1103 (Wave 4B C2 fix).
+
+        Before: ``NumberLinePrimitive`` only clamped the upper bound
+        (``ticks > 1000``) and silently accepted ``ticks=0``, producing
+        a degenerate primitive with no tick marks. After: a
+        ``ticks < 1`` lower-bound check raises E1103 with an explicit
+        valid range.
+        """
         with pytest.raises(ValidationError, match="E1103"):
             NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 0})
+
+    def test_numberline_negative_ticks_is_validation_error(self) -> None:
+        """``ticks=-1`` is also caught by the lower-bound guard."""
+        with pytest.raises(ValidationError, match="E1103"):
+            NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": -1})
+
+    def test_numberline_one_tick_boundary_accepted(self) -> None:
+        """``ticks=1`` is the minimum accepted value — boundary regression."""
+        inst = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 1})
+        assert inst.tick_count == 1
+
+    def test_evaluate_rejects_yield_from(self) -> None:
+        """``yield from`` inside a ``def`` must also be blocked."""
+        resp = _evaluate(
+            "def g():\n    yield from [1, 2, 3]\nresult = 0",
+            {},
+            "yield-from-test",
+        )
+        assert resp["ok"] is False
+        assert resp["code"] == "E1154"
+        assert "yield from" in resp["message"]
+
+    def test_evaluate_rejects_async_def(self) -> None:
+        """``async def`` must be rejected outright (no legitimate use)."""
+        resp = _evaluate(
+            "async def f():\n    pass\nresult = 0",
+            {},
+            "async-def-test",
+        )
+        assert resp["ok"] is False
+        assert resp["code"] == "E1154"
+        assert "async def" in resp["message"]
+
+    def test_evaluate_rejects_bare_await(self) -> None:
+        """``await`` is only syntactically legal inside ``async`` scope;
+        the scanner blocks both the outer ``async def`` and inner
+        ``Await`` for defence-in-depth."""
+        resp = _evaluate(
+            "async def f():\n    await f()\nresult = 0",
+            {},
+            "await-test",
+        )
+        assert resp["ok"] is False
+        assert resp["code"] == "E1154"
+        assert resp["message"] and (
+            "await" in resp["message"] or "async def" in resp["message"]
+        )
+
+    def test_regular_def_still_allowed(self) -> None:
+        """Plain ``def`` helper functions remain legal — cookbook 05/07/08
+        and TestFunctionDef/TestRecursion rely on this. Wave 4B C2 chose
+        to forbid Yield/Await rather than FunctionDef to preserve this."""
+        resp = _evaluate(
+            "def double(x):\n    return x * 2\nresult = double(21)",
+            {},
+            "def-ok-test",
+        )
+        assert resp["ok"] is True
+        assert resp["bindings"]["result"] == 42
 
     def test_dptable_negative_rows_is_validation_error(self) -> None:
         """Negative dimensions must be rejected.

@@ -94,6 +94,14 @@ class NumberLinePrimitive(PrimitiveBase):
         ticks: int | None = self.params.get("ticks")
         if ticks is not None:
             ticks = int(ticks)
+            if ticks < 1:
+                raise animation_error(
+                    E1103,
+                    detail=(
+                        f"NumberLine ticks {ticks} is out of range; "
+                        "must be a positive integer (1..1000)"
+                    ),
+                )
             if ticks > 1_000:
                 raise animation_error(
                     "E1454",
