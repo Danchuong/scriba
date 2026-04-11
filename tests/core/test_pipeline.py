@@ -29,7 +29,7 @@ def test_pipeline_aggregates_js_assets(pipeline):
 
 def test_pipeline_versions_dict(pipeline, ctx):
     doc = pipeline.render("Hello", ctx)
-    assert doc.versions == {"core": 2, "tex": 1}
+    assert doc.versions == {"core": 3, "tex": 1}
 
 
 def test_pipeline_close_propagates(worker_pool):

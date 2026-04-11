@@ -14,7 +14,10 @@ Error numbering scheme (see ``errors.py`` for the full catalog):
 
 # Valid state names for \recolor and \cursor
 VALID_STATES = frozenset({
-    "idle", "current", "done", "dim", "error", "good", "highlight", "path"
+    "idle", "current", "done", "dim", "error", "good", "highlight", "path",
+    # RFC-001 §4.4 — primitive emit_svg loops skip elements in this state
+    # entirely. Distinct from "dim" (which deemphasizes but still renders).
+    "hidden",
 })
 
 # Valid annotation colors

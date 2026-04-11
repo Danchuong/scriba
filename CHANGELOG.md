@@ -5,6 +5,137 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0a1] - 2026-04-11 (Completeness audit — Phase 3 alpha)
+
+Pre-release alpha landing **Wave 6** — the Phase 3 implementation wave from
+the 14-agent completeness audit. Five parallel worktree agents (W6.1 Tree
+mutation, W6.2 Graph mutation + warm-start layout, W6.3 strict mode
+infrastructure, W6.4 uniqueness + red-team hardening, W6.5 Plane2D tombstone
+remove ops) shipped **~3900 LoC** across 17 files, with **+247 new tests**
+(1996 passing vs 1747 baseline). Two design RFCs locked the contract first:
+`docs/rfc/001-tree-graph-mutation.md` and `docs/rfc/002-strict-mode.md`.
+
+**`SCRIBA_VERSION` bumped 2 → 3** — first break since v0.1.1. The `Document`
+dataclass gained a new `warnings: tuple[CollectedWarning, ...]` field, and
+the Tree / Graph / Plane2D primitives gained structural mutation APIs.
+Consumer caches keyed on SCRIBA_VERSION must invalidate.
+
+### Primitive mutation APIs (RFC-001)
+
+- **Tree.apply_command** — `\apply{T}{add_node={id,parent}}`,
+  `\apply{T}{remove_node={id,cascade}}`, `\apply{T}{reparent={node,parent}}`.
+  Reingold-Tilford recomputes on every mutation; iterative DFS avoids
+  recursion. Cycle detection, cascade-on-remove, duplicate-id rejection.
+  Error codes E1433, E1434, E1435, E1436. (primitives/tree.py)
+- **Tree value layer** — `emit_svg` now honors `get_value(suffix)` as an
+  override for `self.node_labels`, unlocking segtree sum updates and
+  lazy-tag propagation visualizations. Resolves Agent 7 F1 CRITICAL.
+- **Graph.apply_command** — `\apply{G}{add_edge={from,to,weight}}`,
+  `\apply{G}{remove_edge={from,to}}`, `\apply{G}{set_weight={from,to,value}}`.
+  Undirected edge orientation normalized in lookup. Error codes E1471,
+  E1472, E1473, E1474. (primitives/graph.py)
+- **Graph weighted edges** — 3-tuple edge syntax `edges=[("A","B",4)]`,
+  `show_weights=true` flag renders midpoint weight text. Mixed
+  weighted/unweighted raises E1474.
+- **Graph warm-start layout** — `compute_stable_layout` gained an
+  `initial_positions` kwarg. After mutation, the new layout seeds from
+  the pre-mutation positions rather than re-rolling from RNG, keeping
+  existing nodes approximately in place. Unlocks Dijkstra, Prim, Kruskal,
+  Bellman-Ford visualizations. (primitives/graph_layout_stable.py)
+- **Plane2D.apply_command** — 4 new tombstone-based remove ops:
+  `remove_point`, `remove_line`, `remove_segment`, `remove_polygon`
+  (plus bonus `remove_region`). Indices stay stable across removes
+  (tombstone-in-place) so existing selectors don't break. Convex hull
+  pop is now authentic rather than faked with `state=dim`. Error code
+  E1437. (primitives/plane2d.py)
+- **`hidden` state** — new first-class state in `VALID_STATES`. Element
+  is skipped in emit_svg entirely (distinct from `dim` which still
+  renders). Agent 9 F2 fix. Applied to Tree nodes/edges, Graph
+  nodes/edges (implicit via state checks), Plane2D points/lines/
+  segments/polygons/regions/labels.
+
+### Strict mode and render report (RFC-002)
+
+- **`CollectedWarning` dataclass** exported from `scriba.core.artifact` —
+  `(code, message, source_line, source_col, primitive, severity)` frozen
+  record for structured warning surfacing.
+- **`Document.warnings: tuple[CollectedWarning, ...]`** — new field on
+  the return type. Always populated by the pipeline, regardless of
+  `strict` setting. Empty tuple when no warnings.
+- **`RenderContext.strict`, `strict_except`, `warnings_collector`** —
+  new fields. `strict=False` default preserves 0.5.x behavior; opting in
+  promotes DANGEROUS-class warnings to raised exceptions.
+- **9 silent-fix sites promoted** (Agent 4 inventory):
+  - **Promoted strict** (raise under `strict=True`): SF-1 polygon
+    auto-close E1462 **(with correctness fix — pts[0] now explicitly
+    appended to internal list)**, SF-3 degenerate line E1461, SF-4
+    log-scale clamp E1484, SF-6 stable-layout fallback E1501/E1502/E1503.
+  - **No opt-out** (always raise): SF-8 stray `\end{animation}` E1007,
+    SF-9 substory prelude command drop E1057.
+  - **Collector-only** (never raise): SF-2 point outside viewport E1463,
+    SF-5 `layout_lambda` clamp E1504, SF-14 emitter selector mismatch
+    E1115 (legacy `warnings.warn` path preserved for test compat).
+- **KaTeX error capture** — new E1200 code. A post-render HTML scanner
+  in `tex/renderer.py` walks the output for `<span class="katex-error">`
+  elements and populates the collector with the embedded ParseError
+  title. Resolves Agent 14 finding 3e/3f (macro bombs).
+- **`_emit_warning(ctx, code, msg, ...)` helper** in `animation/errors.py`
+  is the single surface for all primitive-level warning emission.
+  Threaded through `PrimitiveBase._ctx` class attribute assigned by the
+  pipeline.
+
+### Uniqueness + red-team hardening (W6.4)
+
+- **New module `animation/uniqueness.py`** — `validate_shape_id_charset`
+  (E1017), `check_duplicate_shape_ids` (E1018), `check_duplicate_animation_ids`
+  (E1019). Shape id charset and duplicate checks wired into
+  `scene.py::apply_prelude` and `apply_substory`. Animation id dup helper
+  ships as a standalone — document-level wiring is a follow-up.
+- **Starlark budget tightening** — per-block wall-clock reduced from 3s
+  to 1s. New cumulative budget `_CUMULATIVE_BUDGET_SECONDS = 5.0` across
+  all compute blocks in a render, with `reset_cumulative_budget()` and
+  `consume_cumulative_budget()` helpers (trip code E1152).
+- **KaTeX macro-expansion hardening** — `katex_worker.js` now passes
+  `macros: {}` (per-call, no cross-render `\def` persistence),
+  `trust: false` (blocks `\href`/`\url`/`\htmlId` and raw HTML),
+  `maxExpand: 100` (down from KaTeX default 1000). Closes Agent 14
+  finding 3b and reduces macro-bomb headroom.
+
+### Tests
+
+- **+247 new tests** across 9 new files:
+  - `tests/unit/test_tree_mutation.py` (42, Wave 6.1)
+  - `tests/unit/test_graph_mutation.py` (29, Wave 6.2)
+  - `tests/unit/test_graph_layout_stable.py` (+14, Wave 6.2)
+  - `tests/core/test_strict_mode.py` (62, Wave 6.3)
+  - `tests/unit/test_uniqueness.py` (44, Wave 6.4)
+  - `tests/unit/test_starlark_budget.py` (15, Wave 6.4)
+  - `tests/unit/test_plane2d_remove.py` (37, Wave 6.5 — 35 tests + 2 hidden-state tests now active via VALID_STATES)
+- **Full suite: 1996 passed, 1 skipped, 0 failed.**
+- `TestErrorCatalogMergeGuards` parameterized over all 16 new E-codes as
+  a cross-wave integration safety net.
+
+### Known follow-ups
+
+- **Animation id dup check** — helper exists but document-level wiring
+  needs `renderer.py` edit (outside W6.4 scope). Tracked for v0.6.0 GA.
+- **Starlark host integration** — `reset_cumulative_budget` /
+  `consume_cumulative_budget` helpers ship, but the host-side call site
+  in `starlark_host.py` is outside W6.4 scope; 2-line wiring tracked
+  for v0.6.0 GA.
+- **CLI `--report=path.json` flag** — render-report serialization for
+  CI consumers. Deferred to v0.6.1.
+- **KaTeX `errorCallback` migration** — replaces the HTML regex scan
+  in `_scan_katex_errors` with a structured worker protocol. Deferred
+  to v0.6.1.
+- **Tree annotate rendering** — Agent 7 F2 HIGH. Out of v0.6.0 scope.
+- **Cross-frame endpoint tween** — Agent 9 FR4. Deferred to v0.7.
+- **Graph node mutation** — Deferred to v0.7. v0.6 covers edges only.
+- **Cookbook truth pass** (Phase 4) — rewrite `h07_splay_amortized.tex`
+  and `h08_persistent_segtree.tex` to use the new mutation APIs; add 8
+  canonical examples (Dijkstra, Kruskal, BST insert/delete, BFS tree,
+  KMP, binary search, Union-Find, LinkedList reverse). Pre-GA.
+
 ## [0.5.2] - 2026-04-11 (Completeness audit — Phase 1 quick wins)
 
 Patch release landing **Wave 5** — the Phase 1 quick wins from the 14-agent
