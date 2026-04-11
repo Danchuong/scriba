@@ -197,22 +197,26 @@ class TestForeachIterationCaps:
 
 
 class TestPlane2dElementCap:
-    """Plane2D caps at 500 elements (E1466)."""
+    """Plane2D caps at 500 elements, E1466 raised as a hard limit.
 
-    def test_501_points_soft_caps_at_500(self) -> None:
-        """Adding 501 points via the raw list stays at whatever cap is
-        enforced — the cap is a warn-and-drop rather than a raise."""
+    Wave 4A Cluster 4 converted the cap from soft-drop+log to
+    hard-raise per audit finding 06-H3. Pre-Cluster-4 these tests
+    asserted silent truncation; they now assert E1466.
+    """
+
+    def test_501_points_raises_e1466(self) -> None:
+        """Constructing with 501 points raises E1466 (hard limit)."""
         points = [[float(i), float(i)] for i in range(501)]
-        prim = Plane2D("p", {"xrange": [0, 1000], "yrange": [0, 1000], "points": points})
-        # Either capped at 500 or accepted as-is depending on the code
-        # path. Either way, must not crash and total elements must be
-        # bounded.
-        assert len(prim.points) <= 501
+        with pytest.raises(ValidationError, match="E1466"):
+            Plane2D("p", {"xrange": [0, 1000], "yrange": [0, 1000], "points": points})
 
-    def test_2000_points_does_not_crash(self) -> None:
-        """A 4x over-cap input must not crash."""
+    def test_2000_points_raises_e1466_quickly(self) -> None:
+        """A 4x over-cap input must raise (not silently truncate) and
+        bail out in well under the time budget — no O(N) walk through
+        the oversized list before failing."""
         points = [[float(i), float(i)] for i in range(2000)]
         start = time.monotonic()
-        Plane2D("p", {"xrange": [0, 10000], "yrange": [0, 10000], "points": points})
+        with pytest.raises(ValidationError, match="E1466"):
+            Plane2D("p", {"xrange": [0, 10000], "yrange": [0, 10000], "points": points})
         elapsed = time.monotonic() - start
         assert elapsed < _TIME_BUDGET_S

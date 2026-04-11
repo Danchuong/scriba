@@ -107,19 +107,20 @@ class TestMetricPlotValidation:
         mp = MetricPlot("p", {"series": [f"s{i}" for i in range(8)]})
         assert len(mp._series) == 8
 
-    def test_e1483_points_capped_per_series(
-        self, caplog: pytest.LogCaptureFixture,
-    ) -> None:
-        """Data beyond _MAX_POINTS is dropped with an E1483 log line."""
-        import logging
+    def test_e1483_points_raises_on_overflow(self) -> None:
+        """Feeding > _MAX_POINTS raises E1483 (hard limit).
 
+        Wave 4A Cluster 4 converted the MetricPlot point-cap from
+        soft-drop+log to hard-raise per audit 06-H4.
+        """
         mp = MetricPlot("p", {"series": ["x"]})
-        with caplog.at_level(logging.ERROR):
-            # Feed 1,001 points into the series; only 1,000 should be kept.
-            for i in range(1001):
-                mp.apply_command({"x": float(i)})
+        # First 1000 points: OK.
+        for i in range(1000):
+            mp.apply_command({"x": float(i)})
         assert len(mp._data["x"]) == 1000
-        assert any("E1483" in r.message for r in caplog.records)
+        # Point 1001 raises.
+        with pytest.raises(ValidationError, match="E1483"):
+            mp.apply_command({"x": 1000.0})
 
     def test_e1483_points_at_limit_ok(self) -> None:
         """Exactly 1,000 points per series is permitted without dropping."""
