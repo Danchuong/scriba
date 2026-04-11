@@ -7,8 +7,10 @@
  * --scriba-border, etc.) are defined in scriba-tex-content.css and are
  * referenced — never redefined — by this file.
  *
- * Wong CVD-safe palette: colors are distinguishable under protanopia,
- * deuteranopia, and tritanopia.
+ * β "Tonal Architecture" palette (Radix slate + blue). Signal is carried
+ * by stroke color + stroke weight on a mostly tonal neutral background,
+ * not by filling every cell with a saturated hue. Cross-verified WCAG AA
+ * in /tmp/scriba-cell-mockups-v2.html.
  */
 
 /* ============================================
@@ -16,13 +18,15 @@
    ============================================ */
 
 :root {
-  /* Base tokens — fallbacks when scriba-tex-content.css is not loaded */
-  --scriba-fg:                     #212529;
-  --scriba-fg-muted:               #6c757d;
+  /* Base tokens — fallbacks when scriba-tex-content.css is not loaded.
+   * Aligned with the Radix slate system used by the state tokens below so
+   * the two layers cascade cleanly. */
+  --scriba-fg:                     #11181c;
+  --scriba-fg-muted:               #687076;
   --scriba-bg:                     #ffffff;
-  --scriba-bg-code:                #f6f8fa;
-  --scriba-border:                 #d0d7de;
-  --scriba-link:                   #0969da;
+  --scriba-bg-code:                #f8f9fa;
+  --scriba-border:                 #dfe3e6;
+  --scriba-link:                   #0b68cb;
   --scriba-radius:                 6px;
 
   /* Frame layout */
@@ -46,19 +50,24 @@
 
   /* Primitive geometry */
   --scriba-cell-size:              46px;
-  --scriba-cell-rx:                5px;
-  --scriba-cell-stroke-width:      1.5;
+  --scriba-cell-rx:                6px;
+  --scriba-cell-stroke-width:      1;
+  --scriba-cell-stroke-width-signal: 2;
   --scriba-node-r:                 22px;
   --scriba-node-stroke-width:      2;
   --scriba-edge-stroke-width:      1.5;
   --scriba-tick-stroke-width:      1.5;
   --scriba-tick-length:            8px;
 
-  /* Primitive typography */
-  --scriba-cell-font:              700 14px inherit;
+  /* Primitive typography.
+   * Weight is 500 (medium) — the previous 700 (bold) gave every cell
+   * the same visual weight and produced the "template look" called out in
+   * the β audit. Current/error states re-bold themselves via an explicit
+   * override below, carrying contrast where it's actually needed. */
+  --scriba-cell-font:              500 14px inherit;
   --scriba-cell-index-font:        500 10px ui-monospace, monospace;
   --scriba-cell-index-color:       var(--scriba-fg-muted);
-  --scriba-node-font:              700 14px inherit;
+  --scriba-node-font:              500 14px inherit;
   --scriba-label-font:             600 11px ui-monospace, monospace;
   --scriba-label-color:            var(--scriba-fg-muted);
 
@@ -78,48 +87,51 @@
 }
 
 /* ============================================
-   State color tokens (Wong CVD-safe palette)
+   State color tokens — β "Tonal Architecture"
+   Radix slate + blue. Signal states (current/error/good/highlight)
+   carry meaning via stroke color and a thicker stroke, not a saturated
+   fill. WCAG AA verified in /tmp/scriba-cell-mockups-v2.html.
    ============================================ */
 
 :root {
-  --scriba-state-idle-fill:        var(--scriba-bg-code);
-  --scriba-state-idle-stroke:      var(--scriba-border);
-  --scriba-state-idle-text:        var(--scriba-fg);
+  --scriba-state-idle-fill:        #f8f9fa;
+  --scriba-state-idle-stroke:      #dfe3e6;
+  --scriba-state-idle-text:        #11181c;
 
-  --scriba-state-current-fill:     #0072B2;
-  --scriba-state-current-stroke:   #0072B2;
+  --scriba-state-current-fill:     #0090ff;
+  --scriba-state-current-stroke:   #0b68cb;
   --scriba-state-current-text:     #ffffff;
 
-  --scriba-state-done-fill:        #009E73;
-  --scriba-state-done-stroke:      #009E73;
-  --scriba-state-done-text:        #ffffff;
+  --scriba-state-done-fill:        #e6e8eb;
+  --scriba-state-done-stroke:      #c1c8cd;
+  --scriba-state-done-text:        #11181c;
 
-  --scriba-state-dim-fill:         color-mix(in oklch, var(--scriba-fg) 10%, transparent);
-  --scriba-state-dim-stroke:       color-mix(in oklch, var(--scriba-fg) 20%, transparent);
-  --scriba-state-dim-text:         var(--scriba-fg-muted);
+  --scriba-state-dim-fill:         #f1f3f5;
+  --scriba-state-dim-stroke:       #e6e8eb;
+  --scriba-state-dim-text:         #687076;
 
-  --scriba-state-error-fill:       #D55E00;
-  --scriba-state-error-stroke:     #D55E00;
-  --scriba-state-error-text:       #ffffff; /* 3.67:1 on #D55E00 — passes WCAG AA large text (cell/node font is 700 14px) */
+  --scriba-state-error-fill:       #f8f9fa;
+  --scriba-state-error-stroke:     #e5484d;
+  --scriba-state-error-text:       #11181c;
 
-  --scriba-state-good-fill:        #56B4E9;
-  --scriba-state-good-stroke:      #3a95c9;
-  --scriba-state-good-text:        #0c4a6e;
+  --scriba-state-good-fill:        #e6e8eb;
+  --scriba-state-good-stroke:      #2a7e3b;
+  --scriba-state-good-text:        #11181c;
 
-  --scriba-state-highlight-fill:   #F0E442;
-  --scriba-state-highlight-stroke: currentColor;
-  --scriba-state-highlight-text:   var(--scriba-fg);
+  --scriba-state-highlight-fill:   #f8f9fa;
+  --scriba-state-highlight-stroke: #0090ff;
+  --scriba-state-highlight-text:   #0b68cb;
 
-  --scriba-state-path-fill:        #dbeafe;
-  --scriba-state-path-stroke:      #2563eb;
-  --scriba-state-path-text:        #0c4a6e;
+  --scriba-state-path-fill:        #e6e8eb;
+  --scriba-state-path-stroke:      #c1c8cd;
+  --scriba-state-path-text:        #687076;
 
-  /* Annotation color tokens */
-  --scriba-annotation-info:        #0072B2;
-  --scriba-annotation-warn:        #E69F00;
-  --scriba-annotation-good:        #009E73;
-  --scriba-annotation-error:       #D55E00;
-  --scriba-annotation-path:        #2563eb;
+  /* Annotation color tokens — aligned with β palette. */
+  --scriba-annotation-info:        #0b68cb;
+  --scriba-annotation-warn:        #f5a524;
+  --scriba-annotation-good:        #2a7e3b;
+  --scriba-annotation-error:       #e5484d;
+  --scriba-annotation-path:        #0b68cb;
   --scriba-annotation-muted:       var(--scriba-fg-muted);
 }
 
@@ -127,6 +139,11 @@
    State classes
    Applied to <g data-target="..."> elements.
    Only one scriba-state-* class per element.
+
+   β "Tonal Architecture": non-signal states use the 1px idle stroke
+   baseline; signal states (current / error / good / highlight) use the
+   2px --scriba-cell-stroke-width-signal so meaning is legible from the
+   stroke alone.
    ============================================ */
 
 /* -- idle (default) ---------------------------------------- */
@@ -151,7 +168,7 @@
 .scriba-state-current > circle {
   fill:         var(--scriba-state-current-fill);
   stroke:       var(--scriba-state-current-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 1);
+  stroke-width: var(--scriba-cell-stroke-width-signal);
 }
 
 .scriba-state-current > line {
@@ -168,12 +185,12 @@
 .scriba-state-done > circle {
   fill:         var(--scriba-state-done-fill);
   stroke:       var(--scriba-state-done-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 0.5);
+  stroke-width: var(--scriba-cell-stroke-width);
 }
 
 .scriba-state-done > line {
   stroke:       var(--scriba-state-done-stroke);
-  stroke-width: calc(var(--scriba-edge-stroke-width) + 0.5);
+  stroke-width: var(--scriba-edge-stroke-width);
 }
 
 .scriba-state-done > text {
@@ -183,12 +200,14 @@
 /* -- dim --------------------------------------------------- */
 .scriba-state-dim > rect,
 .scriba-state-dim > circle {
-  fill:   var(--scriba-state-dim-fill);
-  stroke: var(--scriba-state-dim-stroke);
+  fill:         var(--scriba-state-dim-fill);
+  stroke:       var(--scriba-state-dim-stroke);
+  stroke-width: var(--scriba-cell-stroke-width);
 }
 
 .scriba-state-dim > line {
-  stroke: var(--scriba-state-dim-stroke);
+  stroke:       var(--scriba-state-dim-stroke);
+  stroke-width: var(--scriba-edge-stroke-width);
 }
 
 .scriba-state-dim > text {
@@ -205,7 +224,7 @@
 .scriba-state-error > circle {
   fill:         var(--scriba-state-error-fill);
   stroke:       var(--scriba-state-error-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 1);
+  stroke-width: var(--scriba-cell-stroke-width-signal);
 }
 
 .scriba-state-error > line {
@@ -222,12 +241,12 @@
 .scriba-state-good > circle {
   fill:         var(--scriba-state-good-fill);
   stroke:       var(--scriba-state-good-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 0.5);
+  stroke-width: var(--scriba-cell-stroke-width-signal);
 }
 
 .scriba-state-good > line {
   stroke:       var(--scriba-state-good-stroke);
-  stroke-width: calc(var(--scriba-edge-stroke-width) + 0.5);
+  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
 }
 
 .scriba-state-good > text {
@@ -239,12 +258,12 @@
 .scriba-state-highlight > circle {
   fill:         var(--scriba-state-highlight-fill);
   stroke:       var(--scriba-state-highlight-stroke);
-  stroke-width: 2px;
+  stroke-width: var(--scriba-cell-stroke-width-signal);
 }
 
 .scriba-state-highlight > line {
   stroke:       var(--scriba-state-highlight-stroke);
-  stroke-width: 2px;
+  stroke-width: var(--scriba-cell-stroke-width-signal);
 }
 
 .scriba-state-highlight > text {
@@ -256,16 +275,26 @@
 .scriba-state-path > circle {
   fill:         var(--scriba-state-path-fill);
   stroke:       var(--scriba-state-path-stroke);
-  stroke-width: calc(var(--scriba-cell-stroke-width) + 1);
+  stroke-width: var(--scriba-cell-stroke-width);
 }
 
 .scriba-state-path > line {
   stroke:       var(--scriba-state-path-stroke);
-  stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
+  stroke-width: var(--scriba-edge-stroke-width);
 }
 
 .scriba-state-path > text {
   fill: var(--scriba-state-path-text);
+}
+
+/* Signal-state text gets a weight bump so the 500-weight baseline reads
+ * as "rest" and the bolded glyph reads as "attention". Applies to the
+ * two contrast-critical states only (white-on-blue current, dark text
+ * over neutral fill with red stroke error) — good/highlight already have
+ * enough stroke+color contrast without a weight change. */
+.scriba-state-current > text,
+.scriba-state-error > text {
+  font-weight: 600;
 }
 
 /* ============================================
@@ -276,10 +305,12 @@
 [data-primitive="array"] > [data-target] > rect,
 [data-primitive="grid"] > [data-target] > rect,
 [data-primitive="dptable"] > [data-target] > rect {
-  fill:         var(--scriba-state-idle-fill);
-  stroke:       var(--scriba-state-idle-stroke);
-  stroke-width: var(--scriba-cell-stroke-width);
-  rx:           var(--scriba-cell-rx);
+  fill:            var(--scriba-state-idle-fill);
+  stroke:          var(--scriba-state-idle-stroke);
+  stroke-width:    var(--scriba-cell-stroke-width);
+  stroke-linecap:  round;
+  stroke-linejoin: round;
+  rx:              var(--scriba-cell-rx);
 }
 
 /* Descendant combinator (space) instead of ``>`` for the outer step so an
@@ -292,15 +323,24 @@
  * ``_render_svg_text``) use ``dominant-baseline: central`` — ``middle`` and
  * ``central`` align to different reference points (font x-height vs em-box
  * center), so the CSS value is brought in line with the inline callers to
- * eliminate the 1–3 px cross-primitive drift. Bug D. */
+ * eliminate the 1–3 px cross-primitive drift. Bug D.
+ *
+ * font-variant-numeric + font-feature-settings lock tabular figures on
+ * so numeric cells align vertically across rows regardless of the glyph
+ * widths the rendering font would otherwise use. font-synthesis-weight:
+ * none prevents the browser from faux-bolding when the chosen weight
+ * isn't available — a real blank cell stays visually blank. */
 [data-primitive="array"]   [data-target] > text,
 [data-primitive="grid"]    [data-target] > text,
 [data-primitive="dptable"] [data-target] > text {
-  font:              var(--scriba-cell-font);
-  fill:              var(--scriba-fg);
-  text-anchor:       middle;
-  dominant-baseline: central;
-  pointer-events:    none;
+  font:                  var(--scriba-cell-font);
+  font-variant-numeric:  tabular-nums lining-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
+  font-synthesis-weight: none;
+  fill:                  var(--scriba-fg);
+  text-anchor:           middle;
+  dominant-baseline:     central;
+  pointer-events:        none;
 }
 
 /* Bug A — ``.scriba-index-label`` previously had zero CSS, so the
@@ -321,18 +361,23 @@
 /* -- Node (Graph, Tree) ------------------------------------ */
 [data-primitive="graph"] .scriba-graph-nodes > [data-target] > circle,
 [data-primitive="tree"] .scriba-tree-nodes > [data-target] > circle {
-  fill:         var(--scriba-state-idle-fill);
-  stroke:       var(--scriba-state-idle-stroke);
-  stroke-width: var(--scriba-node-stroke-width);
+  fill:            var(--scriba-state-idle-fill);
+  stroke:          var(--scriba-state-idle-stroke);
+  stroke-width:    var(--scriba-node-stroke-width);
+  stroke-linecap:  round;
+  stroke-linejoin: round;
 }
 
 [data-primitive="graph"] .scriba-graph-nodes > [data-target] > text,
 [data-primitive="tree"] .scriba-tree-nodes > [data-target] > text {
-  font:              var(--scriba-node-font);
-  fill:              var(--scriba-fg);
-  text-anchor:       middle;
-  dominant-baseline: middle;
-  pointer-events:    none;
+  font:                  var(--scriba-node-font);
+  font-variant-numeric:  tabular-nums lining-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
+  font-synthesis-weight: none;
+  fill:                  var(--scriba-fg);
+  text-anchor:           middle;
+  dominant-baseline:     middle;
+  pointer-events:        none;
 }
 
 /* -- Edge (Graph, Tree) ------------------------------------ */
@@ -483,33 +528,62 @@
 }
 
 /* ============================================
-   Dark mode
+   Dark mode — β "Tonal Architecture" dark variant
    ============================================ */
 
 [data-theme="dark"] {
   /* Base token overrides for dark mode */
-  --scriba-fg:                 #e6edf3;
-  --scriba-fg-muted:           #7d8590;
-  --scriba-bg:                 #0d1117;
-  --scriba-bg-code:            #161b22;
-  --scriba-border:             #30363d;
-  --scriba-link:               #58a6ff;
+  --scriba-fg:                 #ecedee;
+  --scriba-fg-muted:           #9ba1a6;
+  --scriba-bg:                 #151718;
+  --scriba-bg-code:            #1a1d1e;
+  --scriba-border:             #313538;
+  --scriba-link:               #70b8ff;
 
-  /* State overrides — only idle and dim change */
-  --scriba-state-idle-fill:    var(--scriba-bg-code);
-  --scriba-state-idle-stroke:  var(--scriba-border);
-  --scriba-state-idle-text:    var(--scriba-fg);
+  /* Full β palette dark overrides — every state gets a paired value so
+   * dark mode mirrors the "Tonal Architecture" of the light theme instead
+   * of only flipping the idle/dim neutrals. */
+  --scriba-state-idle-fill:        #1a1d1e;
+  --scriba-state-idle-stroke:      #313538;
+  --scriba-state-idle-text:        #ecedee;
 
-  --scriba-state-dim-fill:     color-mix(in oklch, var(--scriba-fg) 10%, transparent);
-  --scriba-state-dim-stroke:   color-mix(in oklch, var(--scriba-fg) 20%, transparent);
-  --scriba-state-dim-text:     var(--scriba-fg-muted);
+  --scriba-state-current-fill:     #0090ff;
+  --scriba-state-current-stroke:   #70b8ff;
+  --scriba-state-current-text:     #ffffff;
 
-  --scriba-state-highlight-text: var(--scriba-fg);
+  --scriba-state-done-fill:        #2b2f31;
+  --scriba-state-done-stroke:      #4c5155;
+  --scriba-state-done-text:        #ecedee;
+
+  --scriba-state-dim-fill:         #202425;
+  --scriba-state-dim-stroke:       #2b2f31;
+  --scriba-state-dim-text:         #9ba1a6;
+
+  --scriba-state-error-fill:       #1a1d1e;
+  --scriba-state-error-stroke:     #ff6369;
+  --scriba-state-error-text:       #ecedee;
+
+  --scriba-state-good-fill:        #2b2f31;
+  --scriba-state-good-stroke:      #65ba74;
+  --scriba-state-good-text:        #ecedee;
+
+  --scriba-state-highlight-fill:   #1a1d1e;
+  --scriba-state-highlight-stroke: #0090ff;
+  --scriba-state-highlight-text:   #70b8ff;
+
+  --scriba-state-path-fill:        #2b2f31;
+  --scriba-state-path-stroke:      #4c5155;
+  --scriba-state-path-text:        #9ba1a6;
 
   /* Layout surface overrides */
   --scriba-stage-bg:           var(--scriba-bg-code);
 
-  /* Annotation muted adjusts to dark fg-muted */
+  /* Annotation tokens — dark variant */
+  --scriba-annotation-info:    #70b8ff;
+  --scriba-annotation-warn:    #ffc53d;
+  --scriba-annotation-good:    #65ba74;
+  --scriba-annotation-error:   #ff6369;
+  --scriba-annotation-path:    #70b8ff;
   --scriba-annotation-muted:   var(--scriba-fg-muted);
 }
 
@@ -555,6 +629,16 @@
    ============================================ */
 
 @media print {
+  /* Force every browser (Chrome especially) to keep the β palette fills
+     in the printed page. Without print-color-adjust, Chrome drops most
+     background fills to save toner and cookbook HTMLs print as bare
+     outline-only rects, which destroys the "signal via tonal fill" design. */
+  .scriba-stage-svg,
+  .scriba-stage-svg * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
   /* Hide playback controls: buttons, step counter, progress dots */
   .scriba-widget > .scriba-controls {
     display: none !important;

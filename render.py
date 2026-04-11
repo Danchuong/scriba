@@ -70,13 +70,13 @@ body {{
   margin: 2rem auto;
   padding: 0 1rem;
   background: #fafafa;
-  color: #212529;
+  color: #11181c;
 }}
 h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
 
 /* Widget container */
 .scriba-widget {{
-  border: 1px solid #d0d7de;
+  border: 1px solid #dfe3e6;
   border-radius: 10px;
   background: #ffffff;
   overflow: hidden;
@@ -88,26 +88,26 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dfe3e6;
   user-select: none;
 }}
 .scriba-controls button {{
   background: #ffffff;
-  border: 1px solid #d0d7de;
+  border: 1px solid #dfe3e6;
   border-radius: 6px;
   padding: 0.3rem 0.7rem;
   font-size: 0.8rem;
   cursor: pointer;
-  color: #212529;
+  color: #11181c;
   transition: background 0.15s, border-color 0.15s;
 }}
-.scriba-controls button:hover {{ background: #f0f0f0; border-color: #bbb; }}
-.scriba-controls button:active {{ background: #e4e4e4; }}
+.scriba-controls button:hover {{ background: #f1f3f5; border-color: #c1c8cd; }}
+.scriba-controls button:active {{ background: #e6e8eb; }}
 .scriba-controls button:disabled {{ opacity: 0.35; cursor: default; }}
 .scriba-step-counter {{
   font: 600 0.78rem ui-monospace, "SF Mono", monospace;
-  color: #6c757d;
+  color: #687076;
   min-width: 5rem;
   text-align: center;
 }}
@@ -121,11 +121,11 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
 .scriba-dot {{
   width: 8px; height: 8px;
   border-radius: 50%;
-  background: #d0d7de;
+  background: #dfe3e6;
   transition: background 0.2s;
 }}
-.scriba-dot.active {{ background: #0072B2; }}
-.scriba-dot.done {{ background: #009E73; }}
+.scriba-dot.active {{ background: #0090ff; }}
+.scriba-dot.done {{ background: #c1c8cd; }}
 
 /* Stage */
 .scriba-stage {{
@@ -141,8 +141,8 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   padding: 0.75rem 1rem;
   font-size: 0.92rem;
   line-height: 1.55;
-  color: #212529;
-  border-top: 1px solid #f0f0f0;
+  color: #11181c;
+  border-top: 1px solid #e6e8eb;
   min-height: 2.5rem;
 }}
 
@@ -161,13 +161,16 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
  * defaults (``text-anchor: start, dominant-baseline: alphabetic``) so
  * text inside rects drifted right and high. See Wave 8 centering audit. */
 [data-primitive] [data-target] > text {{
-  text-anchor:       middle;
-  dominant-baseline: central;
+  font-variant-numeric:  tabular-nums lining-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
+  font-synthesis-weight: none;
+  text-anchor:           middle;
+  dominant-baseline:     central;
 }}
 .scriba-index-label,
 .idx {{
   font:              500 10px ui-monospace, monospace;
-  fill:              #6c757d;
+  fill:              #687076;
   text-anchor:       middle;
   dominant-baseline: hanging;
 }}
@@ -176,20 +179,32 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   dominant-baseline: central;
 }}
 
+/* β "Tonal Architecture" — signal-state text gets a weight bump so the
+   500-weight baseline reads as "rest". Two states only — current and
+   error — for the same reason as in scriba-scene-primitives.css. */
+.scriba-state-current > text,
+.scriba-state-error > text {{
+  font-weight: 600;
+}}
+
 /* Halo tokens — mirror of the --scriba-state-*-fill variables in
    scriba-scene-primitives.css. Defined on :root so the halo rules below
    can reference them via var(). ``test_css_font_sync.py`` enforces parity
-   between the two files. */
+   between the two files.
+
+   β "Tonal Architecture": Radix slate + blue. Every state carries a
+   tonal neutral fill; signal is carried via the stroke layer (not
+   defined here — this template only holds the halo cascade). */
 :root {{
   --scriba-bg:                     #ffffff;
-  --scriba-state-idle-fill:        #f6f8fa;
-  --scriba-state-current-fill:     #0072B2;
-  --scriba-state-done-fill:        #009E73;
-  --scriba-state-dim-fill:         #e9ecef;
-  --scriba-state-error-fill:       #D55E00;
-  --scriba-state-good-fill:        #56B4E9;
-  --scriba-state-highlight-fill:   #F0E442;
-  --scriba-state-path-fill:        #dbeafe;
+  --scriba-state-idle-fill:        #f8f9fa;
+  --scriba-state-current-fill:     #0090ff;
+  --scriba-state-done-fill:        #e6e8eb;
+  --scriba-state-dim-fill:         #f1f3f5;
+  --scriba-state-error-fill:       #f8f9fa;
+  --scriba-state-good-fill:        #e6e8eb;
+  --scriba-state-highlight-fill:   #f8f9fa;
+  --scriba-state-path-fill:        #e6e8eb;
 }}
 
 /* Text halo — paint-order: stroke fill draws the stroke as a halo BEHIND
@@ -251,7 +266,7 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   flex: 0 0 auto;
   min-width: 280px;
   max-width: 560px;
-  border: 1px solid #d0d7de;
+  border: 1px solid #dfe3e6;
   border-radius: 8px;
   background: #ffffff;
   scroll-snap-align: start;
@@ -259,12 +274,12 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
 }}
 .scriba-frame-header {{
   padding: 0.5rem 1rem;
-  background: #f6f8fa;
-  border-bottom: 1px solid #d0d7de;
+  background: #f8f9fa;
+  border-bottom: 1px solid #dfe3e6;
 }}
 .scriba-step-label {{
   font: 600 0.72rem ui-monospace, monospace;
-  color: #6c757d;
+  color: #687076;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }}
@@ -273,32 +288,48 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
 .theme-toggle {{
   position: fixed; top: 1rem; right: 1rem;
   padding: 0.35rem 0.7rem; cursor: pointer;
-  border: 1px solid #ccc; border-radius: 6px; background: white;
+  border: 1px solid #dfe3e6; border-radius: 6px; background: white;
   font-size: 0.8rem;
+}}
+
+/* Print — force the browser to preserve tonal fills so cookbook prints
+   render with the β palette instead of bare outline rects. */
+@media print {{
+  .scriba-stage-svg,
+  .scriba-stage-svg * {{
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }}
 }}
 
 /* Dark mode */
 [data-theme="dark"] {{
   /* Halo variables flip with the theme via the cascade so every
      primitive text element picks up a dark-appropriate outline
-     without any JS or Python work. Wave 9. */
-  --scriba-bg:                   #0d1117;
-  --scriba-state-idle-fill:      #161b22;
-  --scriba-state-dim-fill:       #21262d;
+     without any JS or Python work. Wave 9. β dark variant. */
+  --scriba-bg:                     #151718;
+  --scriba-state-idle-fill:        #1a1d1e;
+  --scriba-state-current-fill:     #0090ff;
+  --scriba-state-done-fill:        #2b2f31;
+  --scriba-state-dim-fill:         #202425;
+  --scriba-state-error-fill:       #1a1d1e;
+  --scriba-state-good-fill:        #2b2f31;
+  --scriba-state-highlight-fill:   #1a1d1e;
+  --scriba-state-path-fill:        #2b2f31;
 }}
-[data-theme="dark"] body {{ background: #0d1117; color: #e6edf3; }}
-[data-theme="dark"] .scriba-widget {{ background: #161b22; border-color: #30363d; }}
-[data-theme="dark"] .scriba-controls {{ background: #1c2128; border-color: #30363d; }}
-[data-theme="dark"] .scriba-controls button {{ background: #21262d; border-color: #30363d; color: #e6edf3; }}
-[data-theme="dark"] .scriba-controls button:hover {{ background: #30363d; }}
-[data-theme="dark"] .scriba-step-counter {{ color: #7d8590; }}
-[data-theme="dark"] .scriba-narration {{ color: #e6edf3; border-color: #21262d; }}
-[data-theme="dark"] .scriba-dot {{ background: #30363d; }}
-[data-theme="dark"] .idx {{ fill: #7d8590; }}
-[data-theme="dark"] .scriba-frame {{ background: #161b22; border-color: #30363d; }}
-[data-theme="dark"] .scriba-frame-header {{ background: #1c2128; border-color: #30363d; }}
-[data-theme="dark"] .scriba-step-label {{ color: #7d8590; }}
-[data-theme="dark"] .theme-toggle {{ background: #21262d; color: #e6edf3; border-color: #30363d; }}
+[data-theme="dark"] body {{ background: #151718; color: #ecedee; }}
+[data-theme="dark"] .scriba-widget {{ background: #1a1d1e; border-color: #313538; }}
+[data-theme="dark"] .scriba-controls {{ background: #202425; border-color: #313538; }}
+[data-theme="dark"] .scriba-controls button {{ background: #2b2f31; border-color: #313538; color: #ecedee; }}
+[data-theme="dark"] .scriba-controls button:hover {{ background: #313538; }}
+[data-theme="dark"] .scriba-step-counter {{ color: #9ba1a6; }}
+[data-theme="dark"] .scriba-narration {{ color: #ecedee; border-color: #2b2f31; }}
+[data-theme="dark"] .scriba-dot {{ background: #313538; }}
+[data-theme="dark"] .idx {{ fill: #9ba1a6; }}
+[data-theme="dark"] .scriba-frame {{ background: #1a1d1e; border-color: #313538; }}
+[data-theme="dark"] .scriba-frame-header {{ background: #202425; border-color: #313538; }}
+[data-theme="dark"] .scriba-step-label {{ color: #9ba1a6; }}
+[data-theme="dark"] .theme-toggle {{ background: #2b2f31; color: #ecedee; border-color: #313538; }}
 </style>
 {katex_css}
 </head>
