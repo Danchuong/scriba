@@ -34,7 +34,7 @@ from io import StringIO
 from typing import Any
 
 from scriba.animation.constants import BLOCKED_ATTRIBUTES, FORBIDDEN_BUILTINS
-from scriba.animation.errors import animation_error
+from scriba.animation.errors import animation_error, format_compute_traceback
 from scriba.core.errors import ScribaError
 
 # ---------------------------------------------------------------------------
@@ -503,17 +503,20 @@ def _evaluate(
     except Exception as exc:
         if has_alarm:
             signal.alarm(0)
-        tb_lines = traceback.format_exception(type(exc), exc, exc.__traceback__)
-        # Filter traceback to only show lines from <compute>
-        filtered = [
-            line for line in tb_lines
-            if "<compute>" in line or not line.startswith("  File")
-        ]
+        # Strip worker-internal frames from the traceback so the E1151
+        # message only contains user ``\compute{...}`` code.  The helper
+        # keeps the ``Traceback (most recent call last):`` header and the
+        # final exception line while dropping any ``File ".../starlark_worker.py"``
+        # entries that describe Scriba internals.
+        tb_text = "".join(
+            traceback.format_exception(type(exc), exc, exc.__traceback__)
+        )
+        message = format_compute_traceback(tb_text).strip()
         return {
             "id": request_id,
             "ok": False,
             "code": "E1151",
-            "message": "".join(filtered).strip(),
+            "message": message,
             "line": None,
             "col": None,
         }

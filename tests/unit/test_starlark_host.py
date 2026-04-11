@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
+import warnings
+from unittest.mock import patch
+
 import pytest
 
 from scriba.core.errors import WorkerError
 from scriba.core.workers import SubprocessWorkerPool
-from scriba.animation.starlark_host import StarlarkHost
+from scriba.animation import starlark_host as starlark_host_module
+from scriba.animation.starlark_host import StarlarkHost, _reset_windows_warning
 
 
 class TestHostRegistration:
@@ -91,3 +95,108 @@ class TestHostClose:
             result = host.eval({}, "x = 42")
             assert result["x"] == 42
         pool.close()
+
+
+class TestWindowsWarning:
+    """Verify the one-shot Windows backstop-unavailable warning.
+
+    The warning fires when a ``StarlarkHost`` is constructed on Windows
+    because ``signal.SIGALRM`` does not exist there, so the worker's
+    wall-clock timeout cannot be installed.  Only the step counter
+    protects against runaway loops.  The warning must:
+
+    * fire on Windows
+    * fire at most once per process
+    * NOT fire on Linux / macOS
+    """
+
+    def setup_method(self) -> None:
+        _reset_windows_warning()
+
+    def teardown_method(self) -> None:
+        _reset_windows_warning()
+
+    def test_warning_fires_on_windows(self) -> None:
+        pool = SubprocessWorkerPool()
+        try:
+            with patch.object(
+                starlark_host_module.platform, "system", return_value="Windows"
+            ):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
+                    _host = StarlarkHost(pool)
+                messages = [
+                    str(w.message)
+                    for w in caught
+                    if issubclass(w.category, RuntimeWarning)
+                ]
+                assert any(
+                    "SIGALRM backstop unavailable" in m for m in messages
+                ), f"expected Windows warning, got: {messages!r}"
+        finally:
+            pool.close()
+
+    def test_warning_fires_at_most_once_per_process(self) -> None:
+        pool = SubprocessWorkerPool()
+        try:
+            with patch.object(
+                starlark_host_module.platform, "system", return_value="Windows"
+            ):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
+                    _host1 = StarlarkHost(pool)
+                    _host2 = StarlarkHost(pool)
+                    _host3 = StarlarkHost(pool)
+                windows_warnings = [
+                    w
+                    for w in caught
+                    if issubclass(w.category, RuntimeWarning)
+                    and "SIGALRM backstop unavailable" in str(w.message)
+                ]
+                assert len(windows_warnings) == 1, (
+                    f"expected exactly one warning, got {len(windows_warnings)}"
+                )
+        finally:
+            pool.close()
+
+    def test_warning_does_not_fire_on_linux(self) -> None:
+        pool = SubprocessWorkerPool()
+        try:
+            with patch.object(
+                starlark_host_module.platform, "system", return_value="Linux"
+            ):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
+                    _host = StarlarkHost(pool)
+                windows_warnings = [
+                    w
+                    for w in caught
+                    if issubclass(w.category, RuntimeWarning)
+                    and "SIGALRM backstop unavailable" in str(w.message)
+                ]
+                assert windows_warnings == [], (
+                    f"warning unexpectedly fired on Linux: {windows_warnings!r}"
+                )
+        finally:
+            pool.close()
+
+    def test_warning_does_not_fire_on_darwin(self) -> None:
+        pool = SubprocessWorkerPool()
+        try:
+            with patch.object(
+                starlark_host_module.platform, "system", return_value="Darwin"
+            ):
+                with warnings.catch_warnings(record=True) as caught:
+                    warnings.simplefilter("always")
+                    _host = StarlarkHost(pool)
+                windows_warnings = [
+                    w
+                    for w in caught
+                    if issubclass(w.category, RuntimeWarning)
+                    and "SIGALRM backstop unavailable" in str(w.message)
+                ]
+                assert windows_warnings == [], (
+                    f"warning unexpectedly fired on Darwin: {windows_warnings!r}"
+                )
+        finally:
+            pool.close()
