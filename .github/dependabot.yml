@@ -1,0 +1,33 @@
+version: 2
+
+updates:
+  # Python runtime dependencies (read from pyproject.toml).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+
+  # GitHub Actions pinned in .github/workflows/*.yml.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+
+  # Note: KaTeX is vendored under scriba/tex/vendor/katex/ and is NOT
+  # managed by npm at build time, so no `npm` ecosystem entry is needed.
+  # Refresh that vendor copy manually via scripts/vendor_katex.sh.

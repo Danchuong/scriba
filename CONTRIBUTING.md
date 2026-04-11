@@ -3,22 +3,55 @@
 Thanks for your interest in Scriba! This document covers the basics for
 working on the library locally.
 
+## Prerequisites
+
+Before cloning the repo you will need:
+
+- **Python 3.10+.** Scriba's `pyproject.toml` declares `requires-python
+  = ">=3.10"`, and the CI matrix covers 3.10, 3.11, and 3.12.
+- **Node.js 18+.** Required by the KaTeX subprocess worker. Any install
+  method works — system package, [nvm](https://github.com/nvm-sh/nvm),
+  [volta](https://volta.sh/), or your OS package manager. CI pins
+  Node 20. KaTeX itself is vendored inside the wheel at
+  `scriba/tex/vendor/katex/katex.min.js`, so no `npm install` is
+  required.
+- **[`uv`](https://docs.astral.sh/uv/getting-started/installation/).**
+  Scriba uses `uv` for environment management, dependency resolution,
+  and test runs. Install with the instructions at the link above (the
+  one-line curl or Homebrew install both work).
+
+> **Platform note.** Windows is **not** supported for development.
+> The Starlark animation sandbox uses a `SIGALRM`-based wall-clock
+> timeout for step-budget enforcement, and `signal.SIGALRM` does not
+> exist on Windows. Use Linux, macOS, or WSL2. This is documented in
+> `SECURITY.md` under "Known limitations".
+
 ## Dev install
 
-Scriba uses a standard PEP 621 / Hatch layout. Clone the repo and install
-the package in editable mode with dev extras:
+Scriba uses a standard PEP 621 / Hatch layout. Fresh-clone quickstart:
 
 ```bash
 git clone https://github.com/ojcloud/scriba.git  # TODO: confirm URL
 cd scriba
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
+uv sync --dev
+uv run pytest -q
 ```
 
-You will also need Node.js 18+ on your PATH for the math worker. KaTeX
-itself is vendored inside the wheel at
-`scriba/tex/vendor/katex/katex.min.js`, so no separate `npm install` is
-required.
+`uv sync --dev` creates `.venv/` and installs runtime and dev
+dependencies in one step. Prefix every Python / pytest command with
+`uv run` to pick up that environment (e.g. `uv run pytest
+tests/tex/test_snapshots.py`).
+
+If you prefer a vanilla `venv` + `pip` workflow, the equivalent is:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+pytest -q
+```
+
+Scriba does not use `pre-commit` hooks, so there is no extra
+`pre-commit install` step.
 
 ### Bumping the vendored KaTeX version
 
