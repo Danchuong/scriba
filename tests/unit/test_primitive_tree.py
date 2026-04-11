@@ -270,15 +270,17 @@ class TestTreeEmitSvg:
         svg = t.emit_svg()
         assert 'r="20"' in svg
 
-    def test_inline_fill_stroke(self) -> None:
+    def test_idle_node_uses_state_class(self) -> None:
+        """β palette: a tree node with no explicit state carries the
+        'idle' CSS state class on its wrapping <g>; fill and stroke are
+        owned by the stylesheet, not inline."""
         t = Tree("T", {
             "root": 1,
             "nodes": [1],
             "edges": [],
         })
         svg = t.emit_svg()
-        assert 'fill="#f6f8fa"' in svg
-        assert 'stroke="#d0d7de"' in svg
+        assert "scriba-state-idle" in svg
 
     def test_label_caption_rendered(self) -> None:
         t = Tree("T", {

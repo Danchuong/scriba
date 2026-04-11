@@ -158,18 +158,19 @@ class TestRangeEntireRange:
 
 
 class TestHighlightTick:
-    def test_highlight_produces_gold_circle(self) -> None:
+    def test_highlight_produces_state_class(self) -> None:
+        """β palette: highlight is a CSS state class on the tick's
+        wrapping <g>, not a hardcoded gold dashed circle overlay."""
         inst = NumberLinePrimitive("nl", {"domain": [0, 3]})
         inst._highlighted.add("tick[1]")
         svg = inst.emit_svg()
-        assert "#F0E442" in svg
-        assert "stroke-dasharray" in svg
+        assert "scriba-state-highlight" in svg
 
     def test_highlight_idle_state(self) -> None:
         inst = NumberLinePrimitive("nl", {"domain": [0, 3]})
         inst._highlighted.add("tick[1]")
         svg = inst.emit_svg()
-        # Should still have idle class since no explicit state
+        # Non-highlighted ticks keep their idle class.
         assert "scriba-state-idle" in svg
 
 
@@ -180,13 +181,14 @@ class TestHighlightTick:
 
 class TestHighlightAndRecolor:
     def test_both_apply(self) -> None:
+        """β palette: both 'current' state and 'highlight' show up as
+        CSS state classes on the wrapping <g> (no inline colors)."""
         inst = NumberLinePrimitive("nl", {"domain": [0, 3]})
         inst.set_state("tick[1]", "current")
         inst._highlighted.add("tick[1]")
         svg = inst.emit_svg()
         assert "scriba-state-current" in svg
-        assert "#F0E442" in svg  # highlight overlay
-        assert "#0072B2" in svg  # current fill color
+        assert "scriba-state-highlight" in svg
 
 
 # ---------------------------------------------------------------------------

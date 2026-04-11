@@ -298,9 +298,9 @@ class TestTreeNodeHighlight:
         })
         t.set_state("node[1]", "highlight")
         svg = t.emit_svg()
+        # β palette: highlight is a CSS state class on the wrapping <g>,
+        # not a hardcoded #F0E442 dashed overlay rect.
         assert "scriba-state-highlight" in svg
-        # highlight fill color is #F0E442
-        assert "#F0E442" in svg
 
 
 # ---------------------------------------------------------------------------

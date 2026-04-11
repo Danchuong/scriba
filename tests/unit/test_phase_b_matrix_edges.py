@@ -185,17 +185,22 @@ class TestNegativeValues:
 
 
 class TestMatrixStateStroke:
-    def test_state_uses_stroke_not_fill(self) -> None:
+    def test_state_uses_class_fill_stays_colorscale(self) -> None:
+        """β palette: cell state is expressed via a CSS class on the
+        wrapping <g> (so the stroke comes from the stylesheet), while
+        the inline rect fill remains the Viridis colorscale value.
+        This preserves the Wave-B invariant 'state shows as border,
+        not fill' without hardcoding the hex in the SVG."""
         inst = MatrixPrimitive("m", {
             "rows": 2, "cols": 2,
             "data": [0.0, 0.5, 0.5, 1.0],
         })
         inst.set_state("cell[0][0]", "current")
         svg = inst.emit_svg()
-        # current stroke color #0072B2 should be in the SVG
-        assert "#0072B2" in svg
-        # The fill should still be the colorscale color, not the state color
-        # (the state color only affects stroke)
+        # State class drives stroke via CSS.
+        assert "scriba-state-current" in svg
+        # Colorscale fill stays inline on the rect because the colorscale
+        # is data-driven, not state-driven.
         colorscale_fill = interpolate_color(0.0, VIRIDIS)
         assert colorscale_fill in svg
 
@@ -321,17 +326,20 @@ class TestMatrixMissingParams:
 
 
 class TestMatrixHighlight:
-    def test_highlight_produces_dashed_rect(self) -> None:
+    def test_highlight_produces_state_class(self) -> None:
+        """β palette: highlight is a CSS state class on the wrapping
+        <g>, not a hardcoded gold dashed overlay rect."""
         inst = MatrixPrimitive("m", {
             "rows": 2, "cols": 2,
             "data": [0, 0.5, 0.5, 1],
         })
         inst._highlighted.add("cell[0][0]")
         svg = inst.emit_svg()
-        assert "#F0E442" in svg
-        assert "stroke-dasharray" in svg
+        assert "scriba-state-highlight" in svg
 
     def test_highlight_and_state_both_apply(self) -> None:
+        """A cell can carry both a state (current) and highlight in β;
+        both show up as CSS state classes on the wrapping <g>."""
         inst = MatrixPrimitive("m", {
             "rows": 2, "cols": 2,
             "data": [0, 0.5, 0.5, 1],
@@ -339,8 +347,8 @@ class TestMatrixHighlight:
         inst.set_state("cell[0][0]", "current")
         inst._highlighted.add("cell[0][0]")
         svg = inst.emit_svg()
-        assert "#F0E442" in svg  # highlight
-        assert "#0072B2" in svg  # current stroke
+        assert "scriba-state-highlight" in svg  # highlight
+        assert "scriba-state-current" in svg  # current state
 
 
 # ---------------------------------------------------------------------------

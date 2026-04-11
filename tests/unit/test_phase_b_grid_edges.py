@@ -113,6 +113,9 @@ class TestGridMixedTypes:
 
 class TestGridRecolorReplacement:
     def test_recolor_replaces_state(self) -> None:
+        """β palette: state fill is owned by the stylesheet; the test
+        asserts that the state class on the wrapping <g> is replaced,
+        not a specific hex value."""
         inst = GridPrimitive("g", {"rows": 2, "cols": 2})
         # First render with current state
         inst.set_state("cell[0][0]", "current")
@@ -122,7 +125,8 @@ class TestGridRecolorReplacement:
         inst.set_state("cell[0][0]", "done")
         svg2 = inst.emit_svg()
         assert "scriba-state-done" in svg2
-        assert "#009E73" in svg2  # done fill color
+        # The prior 'current' class must be gone after replacement.
+        assert "scriba-state-current" not in svg2
 
 
 # ---------------------------------------------------------------------------
@@ -164,11 +168,12 @@ class TestGridHighlight:
 
 class TestGridHighlightAndRecolor:
     def test_recolor_and_highlight_same_cell(self) -> None:
+        """β palette: state fill is owned by CSS, so the test asserts
+        the state class on the wrapping <g> is present."""
         inst = GridPrimitive("g", {"rows": 2, "cols": 2})
         inst.set_state("cell[1][1]", "current")
         svg = inst.emit_svg()
         assert "scriba-state-current" in svg
-        assert "#0072B2" in svg  # current fill color
 
 
 # ---------------------------------------------------------------------------

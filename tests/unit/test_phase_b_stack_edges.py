@@ -248,18 +248,19 @@ class TestStackRecolor:
 
 
 class TestStackHighlight:
-    def test_highlight_produces_dashed_rect(self) -> None:
+    def test_highlight_produces_state_class(self) -> None:
+        """β palette: highlight is a CSS state class on the item's
+        wrapping <g>, not a gold dashed overlay rect."""
         s = Stack("s", {"items": ["a", "b"]})
         s._highlighted = {"item[1]"}
         svg = s.emit_svg()
-        assert "#F0E442" in svg
-        assert "stroke-dasharray" in svg
+        assert "scriba-state-highlight" in svg
 
-    def test_highlight_top_produces_overlay(self) -> None:
+    def test_highlight_top_produces_state_class(self) -> None:
         s = Stack("s", {"items": ["a", "b"]})
         s._highlighted = {"top"}
         svg = s.emit_svg()
-        assert "#F0E442" in svg
+        assert "scriba-state-highlight" in svg
 
 
 # ---------------------------------------------------------------------------

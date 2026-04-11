@@ -281,14 +281,19 @@ class TestStateColors:
     def test_current_color(
         self, renderer: AnimationRenderer, ctx: RenderContext,
     ) -> None:
+        """β palette: state fills are owned by CSS classes, not inline
+        hex. The integration test asserts that the 'current' state class
+        made it all the way through the render pipeline into the HTML."""
         artifact = _render(renderer, ctx, self.SOURCE_CURRENT)
-        assert "#0072B2" in artifact.html  # current fill
+        assert "scriba-state-current" in artifact.html
 
     def test_done_color(
         self, renderer: AnimationRenderer, ctx: RenderContext,
     ) -> None:
+        """β palette: 'done' state is expressed as a CSS class, not a
+        hardcoded hex fill in the emitted SVG."""
         artifact = _render(renderer, ctx, self.SOURCE_DONE)
-        assert "#009E73" in artifact.html  # done fill
+        assert "scriba-state-done" in artifact.html
 
 
 # ---------------------------------------------------------------------------
@@ -315,9 +320,11 @@ class TestRenderRangeRecolor:
     def test_range_recolor_count(
         self, renderer: AnimationRenderer, ctx: RenderContext,
     ) -> None:
+        """β palette: range[1:3] should expand to three individual
+        'done' state classes in the emitted SVG, not three hardcoded
+        hex fills."""
         artifact = _render(renderer, ctx, self.SOURCE)
-        # done fill color should appear for cells 1-3
-        assert artifact.html.count("#009E73") >= 3
+        assert artifact.html.count("scriba-state-done") >= 3
 
 
 # ---------------------------------------------------------------------------

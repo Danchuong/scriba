@@ -414,8 +414,11 @@ class TestRealArrayPrimitive:
         assert 'viewBox="0 0' in html
         assert "Array step" in html
 
-    def test_real_array_has_inline_fill(self) -> None:
-        """SVG elements must have inline fill/stroke attributes."""
+    def test_real_array_has_state_classes(self) -> None:
+        """β palette: state-driven cell rects carry CSS state classes;
+        fill/stroke/stroke-width and rx are owned by the stylesheet, not
+        by inline attributes. Text fill remains inline because it is
+        not state-driven at the SVG node level."""
         arr = ArrayPrimitive("a", {"size": 2})
         frame = _frame(
             step=1,
@@ -429,15 +432,15 @@ class TestRealArrayPrimitive:
         )
         html = emit_animation_html("fill", [frame], {"a": arr})
 
-        # Current cell should have blue fill inline
-        assert 'fill="#0072B2"' in html
-        # Idle cell should have light fill inline
-        assert 'fill="#f6f8fa"' in html
-        # Text should have inline fill
+        # Current cell's wrapping <g> has the state class -- CSS owns fill.
+        assert "scriba-state-current" in html
+        # Idle cell's wrapping <g> has the idle state class.
+        assert "scriba-state-idle" in html
+        # Text fill stays inline (halo/color is not on the rect node).
         assert 'fill="#ffffff"' in html
         assert 'fill="#212529"' in html
-        # rx="4" for rounded corners
-        assert 'rx="4"' in html
+        # β palette: no inline rx on cell rects -- CSS owns --scriba-cell-rx.
+        assert 'rx="4"' not in html
 
     def test_real_array_interactive_mode(self) -> None:
         """Interactive mode works with real array primitives."""
@@ -456,7 +459,9 @@ class TestRealArrayPrimitive:
 
         assert 'class="scriba-widget"' in html
         assert "<script>" in html
-        assert 'fill="#f6f8fa"' in html
+        # β palette: idle cells carry scriba-state-idle class;
+        # fill is owned by the stylesheet.
+        assert "scriba-state-idle" in html
 
 
 # ---------------------------------------------------------------------------
