@@ -23,6 +23,19 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives.layout import TextBox, stack_bottom, vstack
+
+# Per-role font sizes — must match the CSS variables in
+# ``scriba-scene-primitives.css``. See the matching constants in
+# ``array.py``; a CI guard test (``test_css_font_sync.py``) asserts
+# equality for every role.
+_FONT_SIZE_INDEX: int = 10
+_FONT_SIZE_CAPTION: int = 11
+
+# Vertical whitespace between consecutive items in the bottom stack
+# (index-label row → caption row). ``vstack`` guarantees no glyph-box
+# overlap for any baseline/font-size combination; see ``layout.py``.
+_STACK_GAP: int = 9
 
 
 # ---------------------------------------------------------------------------
@@ -206,18 +219,33 @@ class DPTablePrimitive(PrimitiveBase):
         if self.label is not None:
             tw, th = self._grid_dimensions()
             center_x = int(tw // 2)
-            base_y = th
-            # With the Wave 8 CSS fix, index labels use dominant-baseline:
-            # hanging so their glyphs extend 10px BELOW base_y. The caption
-            # (central baseline) then needs its y coordinate placed 10 + 7
-            # + 5 = 22 pixels below base_y to clear the glyphs and give
-            # visual breathing room — not INDEX_LABEL_OFFSET (16) which is
-            # only enough under the pre-fix alphabetic baseline.
+            # For the 1D-with-labels layout the caption is the second
+            # item of a two-item vstack (index labels then caption) —
+            # reuse the same helper Array uses. For the 2D layout the
+            # caption sits directly below the cells with no index row
+            # to clear, so a simple translation by ``INDEX_LABEL_OFFSET``
+            # is fine. See ``layout.py`` for the Wave 8 rationale.
             if not self.is_2d and self.labels:
-                base_y += INDEX_LABEL_OFFSET
-                label_y = int(base_y + 22)
+                caption_items = [
+                    TextBox(
+                        font_size=_FONT_SIZE_INDEX,
+                        role="label",
+                        baseline="hanging",
+                    ),
+                    TextBox(
+                        font_size=_FONT_SIZE_CAPTION,
+                        role="caption",
+                        baseline="central",
+                    ),
+                ]
+                stack_ys = vstack(
+                    caption_items,
+                    start_y=th + INDEX_LABEL_OFFSET,
+                    gap=_STACK_GAP,
+                )
+                label_y = int(stack_ys[1])
             else:
-                label_y = int(base_y + INDEX_LABEL_OFFSET)
+                label_y = int(th + INDEX_LABEL_OFFSET)
             lines.append(
                 "  "
                 + _render_svg_text(
@@ -236,18 +264,39 @@ class DPTablePrimitive(PrimitiveBase):
         return "\n".join(lines)
 
     def bounding_box(self) -> BoundingBox:
-        """Return ``(x, y, width, height)``."""
+        """Return ``(x, y, width, height)``.
+
+        For the 1D-with-labels case the height is computed from
+        ``stack_bottom`` so the box is exactly tight against the
+        vstack-positioned index labels and caption. Other cases keep
+        the simpler ``INDEX_LABEL_OFFSET`` translation.
+        """
         tw, th = self._grid_dimensions()
-        h = th
+        h = float(th)
         if not self.is_2d and self.labels:
-            h += INDEX_LABEL_OFFSET
+            stack_items: list[TextBox] = [
+                TextBox(
+                    font_size=_FONT_SIZE_INDEX,
+                    role="label",
+                    baseline="hanging",
+                )
+            ]
             if self.label:
-                # Matches the label_y math in emit_svg: caption sits 22px
-                # below the index-label base_y to clear the hanging glyphs.
-                h += 22
+                stack_items.append(
+                    TextBox(
+                        font_size=_FONT_SIZE_CAPTION,
+                        role="caption",
+                        baseline="central",
+                    )
+                )
+            h = stack_bottom(
+                stack_items,
+                start_y=th + INDEX_LABEL_OFFSET,
+                gap=_STACK_GAP,
+            )
         elif self.label:
             h += INDEX_LABEL_OFFSET
-        return BoundingBox(x=0, y=0, width=float(tw), height=float(h))
+        return BoundingBox(x=0, y=0, width=float(tw), height=h)
 
     # -- internal: cell emission -------------------------------------------
 

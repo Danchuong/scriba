@@ -24,16 +24,26 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives.layout import TextBox, stack_bottom, vstack
 
-# Vertical gap between index-label row and caption row
-# Vertical distance from the index label's y coordinate (hanging baseline
-# — glyphs extend DOWNWARD from y for ~10px) to the caption's y coordinate
-# (central baseline — glyphs centered on y with half-height ~7px for the
-# 14px caption font). The sum must clear the index-label glyph descent
-# (10px) plus half the caption glyph height (7px) plus a few pixels of
-# visual breathing room. Before Wave 8 this was 12 because the labels
-# used the alphabetic baseline (glyphs ABOVE y) and overlap was impossible.
-_CAPTION_GAP = 24
+# Font sizes for each role — must match the CSS variables below. A CI
+# guard test (``tests/unit/test_css_font_sync.py``) parses the stylesheet
+# and asserts these values equal the numbers in
+# ``scriba-scene-primitives.css``::
+#
+#   --scriba-cell-font         700 14px inherit
+#   --scriba-cell-index-font   500 10px ui-monospace, monospace
+#   --scriba-label-font        600 11px ui-monospace, monospace
+_FONT_SIZE_CELL: int = 14
+_FONT_SIZE_INDEX: int = 10
+_FONT_SIZE_CAPTION: int = 11
+
+# Vertical whitespace between consecutive items in the bottom stack
+# (index-label row → caption row). Replaces the old ``_CAPTION_GAP``
+# magic number. ``vstack`` guarantees glyph boxes cannot overlap for any
+# combination of font sizes within the ±5 % cross-font drift envelope
+# absorbed by this gap. See ``layout.py`` for the invariant contract.
+_STACK_GAP: int = 9
 
 
 # ---------------------------------------------------------------------------
@@ -190,6 +200,39 @@ class ArrayPrimitive(PrimitiveBase):
                 )
             lines.append("  </defs>")
 
+        # Pre-compute the bottom stack (index labels + caption) once, via
+        # the vstack helper which guarantees glyph boxes cannot overlap
+        # regardless of baseline or font size. See ``layout.py`` for the
+        # Wave 8 rationale. The ``stack_items`` list is built in visual
+        # top-to-bottom order; the returned coordinates are keyed back to
+        # their role so the cell loop below and the caption emission
+        # after it can look them up without counting positions.
+        stack_items: list[TextBox] = []
+        if self.labels is not None:
+            stack_items.append(
+                TextBox(
+                    font_size=_FONT_SIZE_INDEX,
+                    role="label",
+                    baseline="hanging",
+                )
+            )
+        if self.label is not None:
+            stack_items.append(
+                TextBox(
+                    font_size=_FONT_SIZE_CAPTION,
+                    role="caption",
+                    baseline="central",
+                )
+            )
+        stack_ys = vstack(
+            stack_items,
+            start_y=CELL_HEIGHT + INDEX_LABEL_OFFSET,
+            gap=_STACK_GAP,
+        )
+        stack_y_by_role: dict[str, int] = {
+            box.role: int(y) for box, y in zip(stack_items, stack_ys)
+        }
+
         for i in range(self.size):
             target = f"{self.shape_name}.cell[{i}]"
             suffix = f"cell[{i}]"
@@ -243,16 +286,15 @@ class ArrayPrimitive(PrimitiveBase):
                 )
             lines.append("  </g>")
 
-            # Index labels below the cell
+            # Index labels below the cell — y computed once by vstack above
             if self.labels is not None:
                 idx_labels = _parse_index_labels(self.labels, self.size)
-                label_y = int(CELL_HEIGHT + INDEX_LABEL_OFFSET)
                 lines.append(
                     "  "
                     + _render_svg_text(
                         idx_labels[i],
                         text_x,
-                        label_y,
+                        stack_y_by_role["label"],
                         fill=THEME["fg_muted"],
                         css_class="scriba-index-label idx",
                         fo_width=cw,
@@ -261,20 +303,16 @@ class ArrayPrimitive(PrimitiveBase):
                     )
                 )
 
-        # Caption label below the array
+        # Caption label below the array — y computed once by vstack above
         if self.label is not None:
             total_width = self._total_width()
             center_x = int(total_width // 2)
-            label_y_offset = CELL_HEIGHT + (
-                INDEX_LABEL_OFFSET + _CAPTION_GAP if self.labels else INDEX_LABEL_OFFSET
-            )
-            label_y = int(label_y_offset)
             lines.append(
                 "  "
                 + _render_svg_text(
                     self.label,
                     center_x,
-                    label_y,
+                    stack_y_by_role["caption"],
                     fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     fo_width=total_width,
@@ -299,15 +337,40 @@ class ArrayPrimitive(PrimitiveBase):
         """Return ``(x, y, width, height)``.
 
         The height includes vertical space needed above the cells
-        for arrow curves when annotations have been set.
+        for arrow curves when annotations have been set, plus the
+        vstack-computed bottom stack below the cells when index labels
+        or a caption are present.
         """
         effective_anns = self._annotations
         w = self._total_width()
-        h = CELL_HEIGHT
-        if self.labels:
-            h += INDEX_LABEL_OFFSET
-        if self.label:
-            h += INDEX_LABEL_OFFSET + _CAPTION_GAP if self.labels else INDEX_LABEL_OFFSET
+
+        # Rebuild the stack descriptor used by emit_svg — must stay in
+        # sync with the branches above. ``stack_bottom`` returns the
+        # visual pixel where the last glyph box ends, so the bounding
+        # box is exactly tight against the rendered content.
+        stack_items: list[TextBox] = []
+        if self.labels is not None:
+            stack_items.append(
+                TextBox(
+                    font_size=_FONT_SIZE_INDEX,
+                    role="label",
+                    baseline="hanging",
+                )
+            )
+        if self.label is not None:
+            stack_items.append(
+                TextBox(
+                    font_size=_FONT_SIZE_CAPTION,
+                    role="caption",
+                    baseline="central",
+                )
+            )
+        h = stack_bottom(
+            stack_items,
+            start_y=CELL_HEIGHT + INDEX_LABEL_OFFSET,
+            gap=_STACK_GAP,
+        ) if stack_items else float(CELL_HEIGHT)
+
         arrow_above = self._arrow_height_above(effective_anns)
         h += arrow_above
         return BoundingBox(x=0, y=0, width=float(w), height=float(h))
