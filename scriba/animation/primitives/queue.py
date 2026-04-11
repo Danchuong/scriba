@@ -46,6 +46,22 @@ _FRONT_RE = re.compile(r"^front$")
 _REAR_RE = re.compile(r"^rear$")
 _ALL_RE = re.compile(r"^all$")
 
+
+def _is_truthy_flag(value: Any) -> bool:
+    """Return True only when *value* is an explicit truthy boolean flag.
+
+    The parser normalises ``true``/``false`` literals to Python booleans,
+    but defensive callers may still pass through raw strings.  We accept
+    ``True`` and case-insensitive ``"true"``; everything else —
+    including ``False``, ``None``, ``"false"``, ``0``, and ``""`` — is
+    treated as "not set".
+    """
+    if value is True:
+        return True
+    if isinstance(value, str) and value.strip().lower() == "true":
+        return True
+    return False
+
 # ---------------------------------------------------------------------------
 # Queue primitive
 # ---------------------------------------------------------------------------
@@ -138,7 +154,13 @@ class Queue(PrimitiveBase):
                 if new_w > self._cell_width:
                     self._cell_width = new_w
 
-        if dequeue_val is not None:
+        # ``dequeue`` must act only on an explicit truthy value.  Accept
+        # both Python ``True`` (from the parser's bool coercion) and the
+        # literal string "true" (in case a raw token ever reaches us).
+        # ``dequeue=false``, ``dequeue=0`` and ``dequeue=None`` must NOT
+        # trigger a dequeue — previously we keyed off ``is not None``
+        # which turned ``dequeue=false`` into a silent no-op bug.
+        if _is_truthy_flag(dequeue_val):
             if self.front_idx < self.rear_idx:
                 self.cells[self.front_idx] = ""
                 self.front_idx += 1

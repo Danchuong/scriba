@@ -322,6 +322,13 @@ def _validate_expanded_selectors(
     animations that may contain harmless stale selectors.
     """
     for target_key in expanded_state:
+        # Bare shape id (e.g. ``stk``, ``pq``, ``G``) with no ``.field``
+        # suffix is a whole-primitive operation (e.g. ``\apply{stk}{push=X}``
+        # or a state/label applied to the whole shape). These are not
+        # addressable parts and must not trigger selector warnings.
+        if target_key == shape_name:
+            continue
+
         suffix = target_key
         if suffix.startswith(shape_name + "."):
             suffix = suffix[len(shape_name) + 1:]
@@ -434,6 +441,17 @@ def _emit_frame_svg(
 
         for target_key, target_data in shape_state.items():
             if isinstance(target_data, dict):
+                # Bare shape id (e.g. ``\apply{p}{...}``) is a
+                # whole-primitive operation already handled by the
+                # apply_command pre-pass.  It has no addressable-part
+                # suffix so set_state/set_value/set_label would emit
+                # spurious invalid-selector warnings — skip the
+                # per-target setters but still honour ``highlighted``.
+                if target_key == shape_name:
+                    if target_data.get("highlighted"):
+                        highlighted_suffixes.add("")
+                    continue
+
                 state_val = target_data.get("state", "idle")
                 suffix = target_key
                 if suffix.startswith(shape_name + "."):
@@ -444,6 +462,13 @@ def _emit_frame_svg(
                 val = target_data.get("value")
                 if val is not None and hasattr(prim, "set_value"):
                     prim.set_value(suffix, str(val))
+                # Parser stores ``\relabel{target}{text}`` into
+                # ShapeTargetState.label, which the renderer propagates
+                # as the ``label`` key in *target_data*.  Forward it to
+                # the primitive so the label actually renders.
+                label_val = target_data.get("label")
+                if label_val is not None and hasattr(prim, "set_label"):
+                    prim.set_label(suffix, str(label_val))
         prim._highlighted = highlighted_suffixes
         svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
 
