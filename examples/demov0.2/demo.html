@@ -165,128 +165,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>demo</h1>
-<div class="scriba-widget" id="bsearch" tabindex="0">
-  <div class="scriba-controls">
-    <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span>
-    <button class="scriba-btn-next">Next</button>
-    <div class="scriba-progress">
-      <div class="scriba-dot active"></div>
-      <div class="scriba-dot"></div>
-    </div>
-  </div>
-  <div class="scriba-stage"></div>
-  <p class="scriba-narration" id="bsearch-narration" aria-live="polite"></p>
-  <div class="scriba-substory-container"></div>
-  <div class="scriba-print-frames" style="display:none">
-<div class="scriba-print-frame" data-step="1">
-  <span class="scriba-step-label">Step 1 / 2</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-print-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">1</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">3</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">5</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-current">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">7</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">9</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">11</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-idle">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="402" y="20" fill="#212529">13</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-idle">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="464" y="20" fill="#212529">15</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="bsearch-print-1-narration">Check middle element a[3]=7.</p>
-</div>
-<div class="scriba-print-frame" data-step="2">
-  <span class="scriba-step-label">Step 2 / 2</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-print-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="a">
-  <g data-target="a.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">1</text>
-  </g>
-  <text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text>
-  <g data-target="a.cell[1]" class="scriba-state-idle">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="92" y="20" fill="#212529">3</text>
-  </g>
-  <text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text>
-  <g data-target="a.cell[2]" class="scriba-state-idle">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="154" y="20" fill="#212529">5</text>
-  </g>
-  <text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text>
-  <g data-target="a.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">7</text>
-  </g>
-  <text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text>
-  <g data-target="a.cell[4]" class="scriba-state-idle">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="278" y="20" fill="#212529">9</text>
-  </g>
-  <text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text>
-  <g data-target="a.cell[5]" class="scriba-state-idle">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="340" y="20" fill="#212529">11</text>
-  </g>
-  <text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text>
-  <g data-target="a.cell[6]" class="scriba-state-idle">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="402" y="20" fill="#212529">13</text>
-  </g>
-  <text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text>
-  <g data-target="a.cell[7]" class="scriba-state-idle">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="464" y="20" fill="#212529">15</text>
-  </g>
-  <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
-</g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="bsearch-print-2-narration">Found! a[3] = 7.</p>
-</div>
-  </div>
-</div>
-<script>
-(function(){
+<div class="scriba-widget" id="bsearch" tabindex="0"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span><button class="scriba-btn-next" aria-label="Next step">Next</button><div class="scriba-progress"><div class="scriba-dot active"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" id="bsearch-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="30" y="20" fill="#212529">1</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="92" y="20" fill="#212529">3</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="154" y="20" fill="#212529">5</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text><g data-target="a.cell[3]" class="scriba-state-current"><rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="216" y="20" fill="#ffffff">7</text></g><text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text><g data-target="a.cell[4]" class="scriba-state-idle"><rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="278" y="20" fill="#212529">9</text></g><text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text><g data-target="a.cell[5]" class="scriba-state-idle"><rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="340" y="20" fill="#212529">11</text></g><text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text><g data-target="a.cell[6]" class="scriba-state-idle"><rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="402" y="20" fill="#212529">13</text></g><text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text><g data-target="a.cell[7]" class="scriba-state-idle"><rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="464" y="20" fill="#212529">15</text></g><text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text></g></g></svg></div><p class="scriba-narration" id="bsearch-print-1-narration">Check middle element a[3]=7.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-print-2-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="30" y="20" fill="#212529">1</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#6c757d">0</text><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="62" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="92" y="20" fill="#212529">3</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#6c757d">1</text><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="124" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="154" y="20" fill="#212529">5</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#6c757d">2</text><g data-target="a.cell[3]" class="scriba-state-done"><rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="216" y="20" fill="#ffffff">7</text></g><text class="scriba-index-label idx" x="216" y="56" fill="#6c757d">3</text><g data-target="a.cell[4]" class="scriba-state-idle"><rect x="248" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="278" y="20" fill="#212529">9</text></g><text class="scriba-index-label idx" x="278" y="56" fill="#6c757d">4</text><g data-target="a.cell[5]" class="scriba-state-idle"><rect x="310" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="340" y="20" fill="#212529">11</text></g><text class="scriba-index-label idx" x="340" y="56" fill="#6c757d">5</text><g data-target="a.cell[6]" class="scriba-state-idle"><rect x="372" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="402" y="20" fill="#212529">13</text></g><text class="scriba-index-label idx" x="402" y="56" fill="#6c757d">6</text><g data-target="a.cell[7]" class="scriba-state-idle"><rect x="434" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="464" y="20" fill="#212529">15</text></g><text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text></g></g></svg></div><p class="scriba-narration" id="bsearch-print-2-narration">Found! a[3] = 7.</p></div></div></div>
+<script>(function(){
   var W=document.getElementById('bsearch');
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
@@ -330,9 +214,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>`,narration:`Check middle element a[3]=7.`,substory:``},
+</svg>`,narration:`Check middle element a[3]=7.`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 88" role="img" aria-labelledby="bsearch-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
@@ -376,7 +260,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   <text class="scriba-index-label idx" x="464" y="56" fill="#6c757d">7</text>
 </g>
 </g>
-</svg>`,narration:`Found! a[3] = 7.`,substory:``}
+</svg>`,narration:`Found! a[3] = 7.`,substory:``,label:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
@@ -418,7 +302,6 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
   show(0);
-})();
-</script>
+})();</script>
 </body>
 </html>

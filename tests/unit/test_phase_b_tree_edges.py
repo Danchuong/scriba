@@ -442,7 +442,7 @@ class TestTreeLabelInSvg:
         })
         svg = t.emit_svg()
         assert "My BST" in svg
-        assert "scriba-label" in svg
+        assert "scriba-primitive-label" in svg
 
     def test_no_label_no_text(self) -> None:
         t = Tree("T", {
@@ -451,7 +451,7 @@ class TestTreeLabelInSvg:
             "edges": [],
         })
         svg = t.emit_svg()
-        assert "scriba-label" not in svg
+        assert "scriba-primitive-label" not in svg
 
 
 # ---------------------------------------------------------------------------

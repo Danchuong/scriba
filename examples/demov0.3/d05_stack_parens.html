@@ -165,487 +165,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>d05_stack_parens</h1>
-<div class="scriba-widget" id="stack-parens" tabindex="0">
-  <div class="scriba-controls">
-    <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 10</span>
-    <button class="scriba-btn-next">Next</button>
-    <div class="scriba-progress">
-      <div class="scriba-dot active"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-    </div>
-  </div>
-  <div class="scriba-stage"></div>
-  <p class="scriba-narration" id="stack-parens-narration" aria-live="polite"></p>
-  <div class="scriba-substory-container"></div>
-  <div class="scriba-print-frames" style="display:none">
-<div class="scriba-print-frame" data-step="1">
-  <span class="scriba-step-label">Step 1 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-idle">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
-    <text x="30" y="20" fill="#212529">(</text>
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-good">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="92" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-good">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="154" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-good">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="216" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-1-narration">Input: ( ( ) ) ( ( ) ). Push ( on open, pop on close match.</p>
-</div>
-<div class="scriba-print-frame" data-step="2">
-  <span class="scriba-step-label">Step 2 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-current">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-good">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="92" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-good">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="154" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-good">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="216" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-2-narration">Char 1: ( is open. PUSH. Stack: [(.]</p>
-</div>
-<div class="scriba-print-frame" data-step="3">
-  <span class="scriba-step-label">Step 3 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 214" role="img" aria-labelledby="stack-parens-print-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-current">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-good">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="154" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-good">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="216" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-3-narration">Char 2: ( is open. PUSH. Stack: [(, (.]</p>
-</div>
-<div class="scriba-print-frame" data-step="4">
-  <span class="scriba-step-label">Step 4 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-4-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-current">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-good">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="216" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-4-narration">Char 3: ) closes. POP top (. Match! Stack: [(.]</p>
-</div>
-<div class="scriba-print-frame" data-step="5">
-  <span class="scriba-step-label">Step 5 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-5-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-current">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-5-narration">Char 4: ) closes. POP top (. Match! Stack: empty.</p>
-</div>
-<div class="scriba-print-frame" data-step="6">
-  <span class="scriba-step-label">Step 6 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-6-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-current">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-6-narration">Char 5: ( is open. PUSH. Stack: [(.]</p>
-</div>
-<div class="scriba-print-frame" data-step="7">
-  <span class="scriba-step-label">Step 7 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 214" role="img" aria-labelledby="stack-parens-print-7-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-done">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-current">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-7-narration">Char 6: ( is open. PUSH. Stack: [(, (.]</p>
-</div>
-<div class="scriba-print-frame" data-step="8">
-  <span class="scriba-step-label">Step 8 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-8-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-done">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-done">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-current">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-8-narration">Char 7: ) closes. POP top (. Match! Stack: [(.]</p>
-</div>
-<div class="scriba-print-frame" data-step="9">
-  <span class="scriba-step-label">Step 9 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-9-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-done">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="30" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-done">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="92" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-done">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="154" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-done">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="216" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-done">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="278" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-done">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="340" y="20" fill="#ffffff">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-done">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
-    <text x="402" y="20" fill="#ffffff">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-current">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
-    <text x="464" y="20" fill="#ffffff">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-9-narration">Char 8: ) closes. POP top (. Match! Stack: empty.</p>
-</div>
-<div class="scriba-print-frame" data-step="10">
-  <span class="scriba-step-label">Step 10 / 10</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-10-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="array" data-shape="input">
-  <g data-target="input.cell[0]" class="scriba-state-good">
-    <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="30" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[1]" class="scriba-state-good">
-    <rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="92" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[2]" class="scriba-state-good">
-    <rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="154" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[3]" class="scriba-state-good">
-    <rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="216" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[4]" class="scriba-state-good">
-    <rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="278" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[5]" class="scriba-state-good">
-    <rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="340" y="20" fill="#0c4a6e">(</text>
-  </g>
-  <g data-target="input.cell[6]" class="scriba-state-good">
-    <rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="402" y="20" fill="#0c4a6e">)</text>
-  </g>
-  <g data-target="input.cell[7]" class="scriba-state-good">
-    <rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
-    <text x="464" y="20" fill="#0c4a6e">)</text>
-  </g>
-</g>
-</g>
-<g transform="translate(215,106)">
-<g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="stack-parens-print-10-narration">All 8 chars processed. Stack empty = BALANCED parentheses.</p>
-</div>
-  </div>
-</div>
-<script>
-(function(){
+<div class="scriba-widget" id="stack-parens" tabindex="0"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 10</span><button class="scriba-btn-next" aria-label="Next step">Next</button><div class="scriba-progress"><div class="scriba-dot active"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" id="stack-parens-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-idle"><rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="30" y="20" fill="#212529">(</text><rect x="0" y="0" width="60" height="40" rx="4" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="6 3"/></g><g data-target="input.cell[1]" class="scriba-state-good"><rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="92" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[2]" class="scriba-state-good"><rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="154" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[3]" class="scriba-state-good"><rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="216" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[4]" class="scriba-state-good"><rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="278" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[5]" class="scriba-state-good"><rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="340" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[6]" class="scriba-state-good"><rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="402" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-1-narration">Input: ( ( ) ) ( ( ) ). Push ( on open, pop on close match.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-2-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-current"><rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="30" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[1]" class="scriba-state-good"><rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="92" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[2]" class="scriba-state-good"><rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="154" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[3]" class="scriba-state-good"><rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="216" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[4]" class="scriba-state-good"><rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="278" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[5]" class="scriba-state-good"><rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="340" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[6]" class="scriba-state-good"><rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="402" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-2-narration">Char 1: ( is open. PUSH. Stack: [(.]</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">Step 3 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 214" role="img" aria-labelledby="stack-parens-print-3-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-done"><rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="30" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[1]" class="scriba-state-current"><rect x="62" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="92" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[2]" class="scriba-state-good"><rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="154" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[3]" class="scriba-state-good"><rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="216" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[4]" class="scriba-state-good"><rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="278" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[5]" class="scriba-state-good"><rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="340" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[6]" class="scriba-state-good"><rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="402" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-3-narration">Char 2: ( is open. PUSH. Stack: [(, (.]</p></div><div class="scriba-print-frame" data-step="4"><span class="scriba-step-label">Step 4 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-4-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-done"><rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="30" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[1]" class="scriba-state-done"><rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="92" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[2]" class="scriba-state-current"><rect x="124" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="154" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[3]" class="scriba-state-good"><rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="216" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[4]" class="scriba-state-good"><rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="278" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[5]" class="scriba-state-good"><rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="340" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[6]" class="scriba-state-good"><rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="402" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-4-narration">Char 3: ) closes. POP top (. Match! Stack: [(.]</p></div><div class="scriba-print-frame" data-step="5"><span class="scriba-step-label">Step 5 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-5-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-done"><rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="30" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[1]" class="scriba-state-done"><rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="92" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[2]" class="scriba-state-done"><rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="154" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[3]" class="scriba-state-current"><rect x="186" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="216" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[4]" class="scriba-state-good"><rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="278" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[5]" class="scriba-state-good"><rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="340" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[6]" class="scriba-state-good"><rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="402" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-5-narration">Char 4: ) closes. POP top (. Match! Stack: empty.</p></div><div class="scriba-print-frame" data-step="6"><span class="scriba-step-label">Step 6 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-6-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-done"><rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="30" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[1]" class="scriba-state-done"><rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="92" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[2]" class="scriba-state-done"><rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="154" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[3]" class="scriba-state-done"><rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="216" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[4]" class="scriba-state-current"><rect x="248" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="278" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[5]" class="scriba-state-good"><rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="340" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[6]" class="scriba-state-good"><rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="402" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-6-narration">Char 5: ( is open. PUSH. Stack: [(.]</p></div><div class="scriba-print-frame" data-step="7"><span class="scriba-step-label">Step 7 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 214" role="img" aria-labelledby="stack-parens-print-7-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-done"><rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="30" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[1]" class="scriba-state-done"><rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="92" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[2]" class="scriba-state-done"><rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="154" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[3]" class="scriba-state-done"><rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="216" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[4]" class="scriba-state-done"><rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="278" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[5]" class="scriba-state-current"><rect x="310" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="340" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[6]" class="scriba-state-good"><rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="402" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-7-narration">Char 6: ( is open. PUSH. Stack: [(, (.]</p></div><div class="scriba-print-frame" data-step="8"><span class="scriba-step-label">Step 8 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-8-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-done"><rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="30" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[1]" class="scriba-state-done"><rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="92" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[2]" class="scriba-state-done"><rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="154" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[3]" class="scriba-state-done"><rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="216" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[4]" class="scriba-state-done"><rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="278" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[5]" class="scriba-state-done"><rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="340" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[6]" class="scriba-state-current"><rect x="372" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="402" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-8-narration">Char 7: ) closes. POP top (. Match! Stack: [(.]</p></div><div class="scriba-print-frame" data-step="9"><span class="scriba-step-label">Step 9 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-9-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-done"><rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="30" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[1]" class="scriba-state-done"><rect x="62" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="92" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[2]" class="scriba-state-done"><rect x="124" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="154" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[3]" class="scriba-state-done"><rect x="186" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="216" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[4]" class="scriba-state-done"><rect x="248" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="278" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[5]" class="scriba-state-done"><rect x="310" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="340" y="20" fill="#ffffff">(</text></g><g data-target="input.cell[6]" class="scriba-state-done"><rect x="372" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/><text x="402" y="20" fill="#ffffff">)</text></g><g data-target="input.cell[7]" class="scriba-state-current"><rect x="434" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/><text x="464" y="20" fill="#ffffff">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-9-narration">Char 8: ) closes. POP top (. Match! Stack: empty.</p></div><div class="scriba-print-frame" data-step="10"><span class="scriba-step-label">Step 10 / 10</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-print-10-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="input"><g data-target="input.cell[0]" class="scriba-state-good"><rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="30" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[1]" class="scriba-state-good"><rect x="62" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="92" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[2]" class="scriba-state-good"><rect x="124" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="154" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[3]" class="scriba-state-good"><rect x="186" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="216" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[4]" class="scriba-state-good"><rect x="248" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="278" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[5]" class="scriba-state-good"><rect x="310" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="340" y="20" fill="#0c4a6e">(</text></g><g data-target="input.cell[6]" class="scriba-state-good"><rect x="372" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="402" y="20" fill="#0c4a6e">)</text></g><g data-target="input.cell[7]" class="scriba-state-good"><rect x="434" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/><text x="464" y="20" fill="#0c4a6e">)</text></g></g></g><g transform="translate(215,106.0)"><g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g></g></svg></div><p class="scriba-narration" id="stack-parens-print-10-narration">All 8 chars processed. Stack empty = BALANCED parentheses.</p></div></div></div>
+<script>(function(){
   var W=document.getElementById('stack-parens');
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-idle">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/>
@@ -682,12 +207,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
 </g>
-</svg>`,narration:`Input: ( ( ) ) ( ( ) ). Push ( on open, pop on close match.`,substory:``},
+</svg>`,narration:`Input: ( ( ) ) ( ( ) ). Push ( on open, pop on close match.`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-current">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#0072B2" stroke="#0072B2" stroke-width="2"/>
@@ -723,12 +248,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
 </g>
-</svg>`,narration:`Char 1: ( is open. PUSH. Stack: [(.]`,substory:``},
+</svg>`,narration:`Char 1: ( is open. PUSH. Stack: [(.]`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 214" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-done">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
@@ -764,12 +289,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
 </g>
-</svg>`,narration:`Char 2: ( is open. PUSH. Stack: [(, (.]`,substory:``},
+</svg>`,narration:`Char 2: ( is open. PUSH. Stack: [(, (.]`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-done">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
@@ -805,12 +330,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
 </g>
-</svg>`,narration:`Char 3: ) closes. POP top (. Match! Stack: [(.]`,substory:``},
+</svg>`,narration:`Char 3: ) closes. POP top (. Match! Stack: [(.]`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-done">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
@@ -846,12 +371,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
 </g>
-</svg>`,narration:`Char 4: ) closes. POP top (. Match! Stack: empty.`,substory:``},
+</svg>`,narration:`Char 4: ) closes. POP top (. Match! Stack: empty.`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-done">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
@@ -887,12 +412,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
 </g>
-</svg>`,narration:`Char 5: ( is open. PUSH. Stack: [(.]`,substory:``},
+</svg>`,narration:`Char 5: ( is open. PUSH. Stack: [(.]`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 214" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-done">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
@@ -928,12 +453,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="48" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="66" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g><g data-target="s.item[1]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
 </g>
-</svg>`,narration:`Char 6: ( is open. PUSH. Stack: [(, (.]`,substory:``},
+</svg>`,narration:`Char 6: ( is open. PUSH. Stack: [(, (.]`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-done">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
@@ -969,12 +494,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><g data-target="s.item[0]" class="scriba-state-idle"><rect x="8" y="8" width="80" height="36" rx="4" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1.5"/><text x="48" y="26" fill="#212529" style="text-anchor:middle;dominant-baseline:central">(</text></g></g>
 </g>
-</svg>`,narration:`Char 7: ) closes. POP top (. Match! Stack: [(.]`,substory:``},
+</svg>`,narration:`Char 7: ) closes. POP top (. Match! Stack: [(.]`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-done">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#009E73" stroke="#009E73" stroke-width="2"/>
@@ -1010,12 +535,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
 </g>
-</svg>`,narration:`Char 8: ) closes. POP top (. Match! Stack: empty.`,substory:``},
+</svg>`,narration:`Char 8: ) closes. POP top (. Match! Stack: empty.`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 526 174" role="img" aria-labelledby="stack-parens-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="input">
   <g data-target="input.cell[0]" class="scriba-state-good">
     <rect x="0" y="0" width="60" height="40" rx="4" fill="#56B4E9" stroke="#3a95c9" stroke-width="2"/>
@@ -1051,10 +576,10 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-<g transform="translate(215,106)">
+<g transform="translate(215,106.0)">
 <g data-primitive="stack" data-shape="s"><rect x="8" y="8" width="80" height="36" fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" stroke-dasharray="4 2" rx="4"/><text x="48" y="26" text-anchor="middle" dominant-baseline="central" fill="#adb5bd" font-size="11">empty</text></g>
 </g>
-</svg>`,narration:`All 8 chars processed. Stack empty = BALANCED parentheses.`,substory:``}
+</svg>`,narration:`All 8 chars processed. Stack empty = BALANCED parentheses.`,substory:``,label:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
@@ -1096,7 +621,6 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
   show(0);
-})();
-</script>
+})();</script>
 </body>
 </html>

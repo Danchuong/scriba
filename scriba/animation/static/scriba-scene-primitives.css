@@ -282,13 +282,39 @@
   rx:           var(--scriba-cell-rx);
 }
 
-[data-primitive="array"] > [data-target] > text,
-[data-primitive="grid"] > [data-target] > text,
-[data-primitive="dptable"] > [data-target] > text {
+/* Descendant combinator (space) instead of ``>`` for the outer step so an
+ * intermediate ``<g transform="translate(...)">`` wrapper added by
+ * ``ArrayPrimitive`` when annotations need headroom (array.py:161-163) does
+ * not break the cell text centering chain. Bug C in the Wave 8 audit.
+ *
+ * ``central`` instead of ``middle`` because the Python inline callers
+ * (Stack/Queue/HashMap/LinkedList/Matrix, plus Tree node text via
+ * ``_render_svg_text``) use ``dominant-baseline: central`` — ``middle`` and
+ * ``central`` align to different reference points (font x-height vs em-box
+ * center), so the CSS value is brought in line with the inline callers to
+ * eliminate the 1–3 px cross-primitive drift. Bug D. */
+[data-primitive="array"]   [data-target] > text,
+[data-primitive="grid"]    [data-target] > text,
+[data-primitive="dptable"] [data-target] > text {
   font:              var(--scriba-cell-font);
   fill:              var(--scriba-fg);
   text-anchor:       middle;
-  dominant-baseline: middle;
+  dominant-baseline: central;
+  pointer-events:    none;
+}
+
+/* Bug A — ``.scriba-index-label`` previously had zero CSS, so the
+ * index labels below Array/Grid/DPTable cells fell through to the SVG
+ * defaults (``text-anchor: start, dominant-baseline: alphabetic``) and
+ * appeared shifted right and too high. Array/DPTable pass the cell's
+ * horizontal center as the ``x`` coordinate, so the label must be middle
+ * anchored and hanging (baseline below the glyphs) to sit visually
+ * centered under each cell. */
+[data-primitive] .scriba-index-label {
+  font:              var(--scriba-cell-index-font);
+  fill:              var(--scriba-cell-index-color);
+  text-anchor:       middle;
+  dominant-baseline: hanging;
   pointer-events:    none;
 }
 
@@ -336,10 +362,16 @@
 }
 
 /* -- Primitive labels -------------------------------------- */
+/* Bug B — the previous rule used ``text-anchor: start`` but every caller
+ * (``array.py:259-277``, ``grid.py``, ``dptable.py``) passes the primitive's
+ * horizontal center as the ``x`` coordinate and the total width as
+ * ``fo_width``, i.e. the caller expects middle-anchored rendering. Under
+ * ``start`` the caption drifted right by half its width. */
 [data-primitive] > .scriba-primitive-label {
-  font:        var(--scriba-label-font);
-  fill:        var(--scriba-label-color);
-  text-anchor: start;
+  font:              var(--scriba-label-font);
+  fill:              var(--scriba-label-color);
+  text-anchor:       middle;
+  dominant-baseline: central;
 }
 
 /* ============================================

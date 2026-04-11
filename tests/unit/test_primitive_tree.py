@@ -289,7 +289,7 @@ class TestTreeEmitSvg:
         })
         svg = t.emit_svg()
         assert "BST Demo" in svg
-        assert "scriba-label" in svg
+        assert "scriba-primitive-label" in svg
 
     def test_empty_tree_svg(self) -> None:
         t = Tree("T", {

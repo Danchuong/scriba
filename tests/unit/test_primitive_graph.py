@@ -263,7 +263,7 @@ class TestGraphEmitSvg:
         })
         svg = g.emit_svg()
         assert "BFS Demo" in svg
-        assert "scriba-label" in svg
+        assert "scriba-primitive-label" in svg
 
 
 # ---------------------------------------------------------------

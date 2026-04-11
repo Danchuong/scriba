@@ -165,340 +165,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
 ">Toggle theme</button>
 <h1>d07_numberline_binary_search</h1>
-<div class="scriba-widget" id="binary-search" tabindex="0">
-  <div class="scriba-controls">
-    <button class="scriba-btn-prev" disabled>Prev</button>
-    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 4</span>
-    <button class="scriba-btn-next">Next</button>
-    <div class="scriba-progress">
-      <div class="scriba-dot active"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-      <div class="scriba-dot"></div>
-    </div>
-  </div>
-  <div class="scriba-stage"></div>
-  <p class="scriba-narration" id="binary-search-narration" aria-live="polite"></p>
-  <div class="scriba-substory-container"></div>
-  <div class="scriba-print-frames" style="display:none">
-<div class="scriba-print-frame" data-step="1">
-  <span class="scriba-step-label">Step 1 / 4</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-print-1-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="numberline" data-shape="nl">
-  <g data-target="nl.axis">
-    <line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/>
-  </g>
-  <g data-target="nl.tick[0]" class="scriba-state-current">
-    <line x1="20" y1="12" x2="20" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="20" y="42" fill="#212529">0</text>
-  </g>
-  <g data-target="nl.tick[1]" class="scriba-state-current">
-    <line x1="62" y1="12" x2="62" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="62" y="42" fill="#212529">1</text>
-  </g>
-  <g data-target="nl.tick[2]" class="scriba-state-current">
-    <line x1="105" y1="12" x2="105" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="105" y="42" fill="#212529">2</text>
-  </g>
-  <g data-target="nl.tick[3]" class="scriba-state-current">
-    <line x1="148" y1="12" x2="148" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="148" y="42" fill="#212529">3</text>
-  </g>
-  <g data-target="nl.tick[4]" class="scriba-state-current">
-    <line x1="190" y1="12" x2="190" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="190" y="42" fill="#212529">4</text>
-  </g>
-  <g data-target="nl.tick[5]" class="scriba-state-current">
-    <line x1="233" y1="12" x2="233" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="233" y="42" fill="#212529">5</text>
-  </g>
-  <g data-target="nl.tick[6]" class="scriba-state-current">
-    <line x1="276" y1="12" x2="276" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="276" y="42" fill="#212529">6</text>
-  </g>
-  <g data-target="nl.tick[7]" class="scriba-state-current">
-    <line x1="318" y1="12" x2="318" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="318" y="42" fill="#212529">7</text>
-  </g>
-  <g data-target="nl.tick[8]" class="scriba-state-current">
-    <line x1="361" y1="12" x2="361" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="361" y="42" fill="#212529">8</text>
-  </g>
-  <g data-target="nl.tick[9]" class="scriba-state-current">
-    <line x1="404" y1="12" x2="404" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="404" y="42" fill="#212529">9</text>
-  </g>
-  <g data-target="nl.tick[10]" class="scriba-state-current">
-    <line x1="446" y1="12" x2="446" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="446" y="42" fill="#212529">10</text>
-  </g>
-  <g data-target="nl.tick[11]" class="scriba-state-current">
-    <line x1="489" y1="12" x2="489" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="489" y="42" fill="#212529">11</text>
-  </g>
-  <g data-target="nl.tick[12]" class="scriba-state-current">
-    <line x1="532" y1="12" x2="532" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="532" y="42" fill="#212529">12</text>
-  </g>
-  <g data-target="nl.tick[13]" class="scriba-state-current">
-    <line x1="574" y1="12" x2="574" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="574" y="42" fill="#212529">13</text>
-  </g>
-  <g data-target="nl.tick[14]" class="scriba-state-current">
-    <line x1="617" y1="12" x2="617" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="617" y="42" fill="#212529">14</text>
-  </g>
-  <g data-target="nl.tick[15]" class="scriba-state-current">
-    <line x1="660" y1="12" x2="660" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="660" y="42" fill="#212529">15</text>
-  </g>
-</g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="binary-search-print-1-narration">Search for target 11 in sorted range [0,15]. Entire range is active.</p>
-</div>
-<div class="scriba-print-frame" data-step="2">
-  <span class="scriba-step-label">Step 2 / 4</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-print-2-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="numberline" data-shape="nl">
-  <g data-target="nl.axis">
-    <line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/>
-  </g>
-  <g data-target="nl.tick[0]" class="scriba-state-dim">
-    <line x1="20" y1="12" x2="20" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="20" y="42" fill="#adb5bd">0</text>
-  </g>
-  <g data-target="nl.tick[1]" class="scriba-state-dim">
-    <line x1="62" y1="12" x2="62" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="62" y="42" fill="#adb5bd">1</text>
-  </g>
-  <g data-target="nl.tick[2]" class="scriba-state-dim">
-    <line x1="105" y1="12" x2="105" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="105" y="42" fill="#adb5bd">2</text>
-  </g>
-  <g data-target="nl.tick[3]" class="scriba-state-dim">
-    <line x1="148" y1="12" x2="148" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="148" y="42" fill="#adb5bd">3</text>
-  </g>
-  <g data-target="nl.tick[4]" class="scriba-state-dim">
-    <line x1="190" y1="12" x2="190" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="190" y="42" fill="#adb5bd">4</text>
-  </g>
-  <g data-target="nl.tick[5]" class="scriba-state-dim">
-    <line x1="233" y1="12" x2="233" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="233" y="42" fill="#adb5bd">5</text>
-  </g>
-  <g data-target="nl.tick[6]" class="scriba-state-dim">
-    <line x1="276" y1="12" x2="276" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="276" y="42" fill="#adb5bd">6</text>
-  </g>
-  <g data-target="nl.tick[7]" class="scriba-state-current">
-    <line x1="318" y1="12" x2="318" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="318" y="42" fill="#212529">7</text>
-    <circle cx="318" cy="20" r="8" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="4 2"/>
-  </g>
-  <g data-target="nl.tick[8]" class="scriba-state-current">
-    <line x1="361" y1="12" x2="361" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="361" y="42" fill="#212529">8</text>
-  </g>
-  <g data-target="nl.tick[9]" class="scriba-state-current">
-    <line x1="404" y1="12" x2="404" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="404" y="42" fill="#212529">9</text>
-  </g>
-  <g data-target="nl.tick[10]" class="scriba-state-current">
-    <line x1="446" y1="12" x2="446" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="446" y="42" fill="#212529">10</text>
-  </g>
-  <g data-target="nl.tick[11]" class="scriba-state-current">
-    <line x1="489" y1="12" x2="489" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="489" y="42" fill="#212529">11</text>
-  </g>
-  <g data-target="nl.tick[12]" class="scriba-state-current">
-    <line x1="532" y1="12" x2="532" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="532" y="42" fill="#212529">12</text>
-  </g>
-  <g data-target="nl.tick[13]" class="scriba-state-current">
-    <line x1="574" y1="12" x2="574" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="574" y="42" fill="#212529">13</text>
-  </g>
-  <g data-target="nl.tick[14]" class="scriba-state-current">
-    <line x1="617" y1="12" x2="617" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="617" y="42" fill="#212529">14</text>
-  </g>
-  <g data-target="nl.tick[15]" class="scriba-state-current">
-    <line x1="660" y1="12" x2="660" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="660" y="42" fill="#212529">15</text>
-  </g>
-</g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="binary-search-print-2-narration">Mid = 7. Target 11 is greater than 7. Discard left half. Search [8,15].</p>
-</div>
-<div class="scriba-print-frame" data-step="3">
-  <span class="scriba-step-label">Step 3 / 4</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-print-3-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="numberline" data-shape="nl">
-  <g data-target="nl.axis">
-    <line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/>
-  </g>
-  <g data-target="nl.tick[0]" class="scriba-state-dim">
-    <line x1="20" y1="12" x2="20" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="20" y="42" fill="#adb5bd">0</text>
-  </g>
-  <g data-target="nl.tick[1]" class="scriba-state-dim">
-    <line x1="62" y1="12" x2="62" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="62" y="42" fill="#adb5bd">1</text>
-  </g>
-  <g data-target="nl.tick[2]" class="scriba-state-dim">
-    <line x1="105" y1="12" x2="105" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="105" y="42" fill="#adb5bd">2</text>
-  </g>
-  <g data-target="nl.tick[3]" class="scriba-state-dim">
-    <line x1="148" y1="12" x2="148" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="148" y="42" fill="#adb5bd">3</text>
-  </g>
-  <g data-target="nl.tick[4]" class="scriba-state-dim">
-    <line x1="190" y1="12" x2="190" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="190" y="42" fill="#adb5bd">4</text>
-  </g>
-  <g data-target="nl.tick[5]" class="scriba-state-dim">
-    <line x1="233" y1="12" x2="233" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="233" y="42" fill="#adb5bd">5</text>
-  </g>
-  <g data-target="nl.tick[6]" class="scriba-state-dim">
-    <line x1="276" y1="12" x2="276" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="276" y="42" fill="#adb5bd">6</text>
-  </g>
-  <g data-target="nl.tick[7]" class="scriba-state-current">
-    <line x1="318" y1="12" x2="318" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="318" y="42" fill="#212529">7</text>
-  </g>
-  <g data-target="nl.tick[8]" class="scriba-state-current">
-    <line x1="361" y1="12" x2="361" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="361" y="42" fill="#212529">8</text>
-  </g>
-  <g data-target="nl.tick[9]" class="scriba-state-current">
-    <line x1="404" y1="12" x2="404" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="404" y="42" fill="#212529">9</text>
-  </g>
-  <g data-target="nl.tick[10]" class="scriba-state-current">
-    <line x1="446" y1="12" x2="446" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="446" y="42" fill="#212529">10</text>
-  </g>
-  <g data-target="nl.tick[11]" class="scriba-state-current">
-    <line x1="489" y1="12" x2="489" y2="28" stroke="#0072B2" stroke-width="2.5"/>
-    <text x="489" y="42" fill="#212529">11</text>
-    <circle cx="489" cy="20" r="8" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="4 2"/>
-  </g>
-  <g data-target="nl.tick[12]" class="scriba-state-dim">
-    <line x1="532" y1="12" x2="532" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="532" y="42" fill="#adb5bd">12</text>
-  </g>
-  <g data-target="nl.tick[13]" class="scriba-state-dim">
-    <line x1="574" y1="12" x2="574" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="574" y="42" fill="#adb5bd">13</text>
-  </g>
-  <g data-target="nl.tick[14]" class="scriba-state-dim">
-    <line x1="617" y1="12" x2="617" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="617" y="42" fill="#adb5bd">14</text>
-  </g>
-  <g data-target="nl.tick[15]" class="scriba-state-dim">
-    <line x1="660" y1="12" x2="660" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="660" y="42" fill="#adb5bd">15</text>
-  </g>
-</g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="binary-search-print-3-narration">Mid = 11. Target 11 equals mid. Found it!</p>
-</div>
-<div class="scriba-print-frame" data-step="4">
-  <span class="scriba-step-label">Step 4 / 4</span>
-  <div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-print-4-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
-<g data-primitive="numberline" data-shape="nl">
-  <g data-target="nl.axis">
-    <line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/>
-  </g>
-  <g data-target="nl.tick[0]" class="scriba-state-dim">
-    <line x1="20" y1="12" x2="20" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="20" y="42" fill="#adb5bd">0</text>
-  </g>
-  <g data-target="nl.tick[1]" class="scriba-state-dim">
-    <line x1="62" y1="12" x2="62" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="62" y="42" fill="#adb5bd">1</text>
-  </g>
-  <g data-target="nl.tick[2]" class="scriba-state-dim">
-    <line x1="105" y1="12" x2="105" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="105" y="42" fill="#adb5bd">2</text>
-  </g>
-  <g data-target="nl.tick[3]" class="scriba-state-dim">
-    <line x1="148" y1="12" x2="148" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="148" y="42" fill="#adb5bd">3</text>
-  </g>
-  <g data-target="nl.tick[4]" class="scriba-state-dim">
-    <line x1="190" y1="12" x2="190" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="190" y="42" fill="#adb5bd">4</text>
-  </g>
-  <g data-target="nl.tick[5]" class="scriba-state-dim">
-    <line x1="233" y1="12" x2="233" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="233" y="42" fill="#adb5bd">5</text>
-  </g>
-  <g data-target="nl.tick[6]" class="scriba-state-dim">
-    <line x1="276" y1="12" x2="276" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="276" y="42" fill="#adb5bd">6</text>
-  </g>
-  <g data-target="nl.tick[7]" class="scriba-state-dim">
-    <line x1="318" y1="12" x2="318" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="318" y="42" fill="#adb5bd">7</text>
-  </g>
-  <g data-target="nl.tick[8]" class="scriba-state-dim">
-    <line x1="361" y1="12" x2="361" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="361" y="42" fill="#adb5bd">8</text>
-  </g>
-  <g data-target="nl.tick[9]" class="scriba-state-dim">
-    <line x1="404" y1="12" x2="404" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="404" y="42" fill="#adb5bd">9</text>
-  </g>
-  <g data-target="nl.tick[10]" class="scriba-state-dim">
-    <line x1="446" y1="12" x2="446" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="446" y="42" fill="#adb5bd">10</text>
-  </g>
-  <g data-target="nl.tick[11]" class="scriba-state-good">
-    <line x1="489" y1="12" x2="489" y2="28" stroke="#56B4E9" stroke-width="2.5"/>
-    <text x="489" y="42" fill="#212529">11</text>
-  </g>
-  <g data-target="nl.tick[12]" class="scriba-state-dim">
-    <line x1="532" y1="12" x2="532" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="532" y="42" fill="#adb5bd">12</text>
-  </g>
-  <g data-target="nl.tick[13]" class="scriba-state-dim">
-    <line x1="574" y1="12" x2="574" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="574" y="42" fill="#adb5bd">13</text>
-  </g>
-  <g data-target="nl.tick[14]" class="scriba-state-dim">
-    <line x1="617" y1="12" x2="617" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="617" y="42" fill="#adb5bd">14</text>
-  </g>
-  <g data-target="nl.tick[15]" class="scriba-state-dim">
-    <line x1="660" y1="12" x2="660" y2="28" stroke="#e9ecef" stroke-width="1.5"/>
-    <text x="660" y="42" fill="#adb5bd">15</text>
-  </g>
-</g>
-</g>
-</svg></div>
-  <p class="scriba-narration" id="binary-search-print-4-narration">Binary search complete. Target 11 found in 2 comparisons. O(log n) efficiency.</p>
-</div>
-  </div>
-</div>
-<script>
-(function(){
+<div class="scriba-widget" id="binary-search" tabindex="0"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 4</span><button class="scriba-btn-next" aria-label="Next step">Next</button><div class="scriba-progress"><div class="scriba-dot active"></div><div class="scriba-dot"></div><div class="scriba-dot"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" id="binary-search-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="numberline" data-shape="nl"><g data-target="nl.axis"><line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-current"><line x1="20" y1="12" x2="20" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="20" y="42" fill="#212529">0</text></g><g data-target="nl.tick[1]" class="scriba-state-current"><line x1="62" y1="12" x2="62" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="62" y="42" fill="#212529">1</text></g><g data-target="nl.tick[2]" class="scriba-state-current"><line x1="105" y1="12" x2="105" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="105" y="42" fill="#212529">2</text></g><g data-target="nl.tick[3]" class="scriba-state-current"><line x1="148" y1="12" x2="148" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="148" y="42" fill="#212529">3</text></g><g data-target="nl.tick[4]" class="scriba-state-current"><line x1="190" y1="12" x2="190" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="190" y="42" fill="#212529">4</text></g><g data-target="nl.tick[5]" class="scriba-state-current"><line x1="233" y1="12" x2="233" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="233" y="42" fill="#212529">5</text></g><g data-target="nl.tick[6]" class="scriba-state-current"><line x1="276" y1="12" x2="276" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="276" y="42" fill="#212529">6</text></g><g data-target="nl.tick[7]" class="scriba-state-current"><line x1="318" y1="12" x2="318" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="318" y="42" fill="#212529">7</text></g><g data-target="nl.tick[8]" class="scriba-state-current"><line x1="361" y1="12" x2="361" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="361" y="42" fill="#212529">8</text></g><g data-target="nl.tick[9]" class="scriba-state-current"><line x1="404" y1="12" x2="404" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="404" y="42" fill="#212529">9</text></g><g data-target="nl.tick[10]" class="scriba-state-current"><line x1="446" y1="12" x2="446" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="446" y="42" fill="#212529">10</text></g><g data-target="nl.tick[11]" class="scriba-state-current"><line x1="489" y1="12" x2="489" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="489" y="42" fill="#212529">11</text></g><g data-target="nl.tick[12]" class="scriba-state-current"><line x1="532" y1="12" x2="532" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="532" y="42" fill="#212529">12</text></g><g data-target="nl.tick[13]" class="scriba-state-current"><line x1="574" y1="12" x2="574" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="574" y="42" fill="#212529">13</text></g><g data-target="nl.tick[14]" class="scriba-state-current"><line x1="617" y1="12" x2="617" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="617" y="42" fill="#212529">14</text></g><g data-target="nl.tick[15]" class="scriba-state-current"><line x1="660" y1="12" x2="660" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="660" y="42" fill="#212529">15</text></g></g></g></svg></div><p class="scriba-narration" id="binary-search-print-1-narration">Search for target 11 in sorted range [0,15]. Entire range is active.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-print-2-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="numberline" data-shape="nl"><g data-target="nl.axis"><line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-dim"><line x1="20" y1="12" x2="20" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="20" y="42" fill="#adb5bd">0</text></g><g data-target="nl.tick[1]" class="scriba-state-dim"><line x1="62" y1="12" x2="62" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="62" y="42" fill="#adb5bd">1</text></g><g data-target="nl.tick[2]" class="scriba-state-dim"><line x1="105" y1="12" x2="105" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="105" y="42" fill="#adb5bd">2</text></g><g data-target="nl.tick[3]" class="scriba-state-dim"><line x1="148" y1="12" x2="148" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="148" y="42" fill="#adb5bd">3</text></g><g data-target="nl.tick[4]" class="scriba-state-dim"><line x1="190" y1="12" x2="190" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="190" y="42" fill="#adb5bd">4</text></g><g data-target="nl.tick[5]" class="scriba-state-dim"><line x1="233" y1="12" x2="233" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="233" y="42" fill="#adb5bd">5</text></g><g data-target="nl.tick[6]" class="scriba-state-dim"><line x1="276" y1="12" x2="276" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="276" y="42" fill="#adb5bd">6</text></g><g data-target="nl.tick[7]" class="scriba-state-current"><line x1="318" y1="12" x2="318" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="318" y="42" fill="#212529">7</text><circle cx="318" cy="20" r="8" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="4 2"/></g><g data-target="nl.tick[8]" class="scriba-state-current"><line x1="361" y1="12" x2="361" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="361" y="42" fill="#212529">8</text></g><g data-target="nl.tick[9]" class="scriba-state-current"><line x1="404" y1="12" x2="404" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="404" y="42" fill="#212529">9</text></g><g data-target="nl.tick[10]" class="scriba-state-current"><line x1="446" y1="12" x2="446" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="446" y="42" fill="#212529">10</text></g><g data-target="nl.tick[11]" class="scriba-state-current"><line x1="489" y1="12" x2="489" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="489" y="42" fill="#212529">11</text></g><g data-target="nl.tick[12]" class="scriba-state-current"><line x1="532" y1="12" x2="532" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="532" y="42" fill="#212529">12</text></g><g data-target="nl.tick[13]" class="scriba-state-current"><line x1="574" y1="12" x2="574" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="574" y="42" fill="#212529">13</text></g><g data-target="nl.tick[14]" class="scriba-state-current"><line x1="617" y1="12" x2="617" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="617" y="42" fill="#212529">14</text></g><g data-target="nl.tick[15]" class="scriba-state-current"><line x1="660" y1="12" x2="660" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="660" y="42" fill="#212529">15</text></g></g></g></svg></div><p class="scriba-narration" id="binary-search-print-2-narration">Mid = 7. Target 11 is greater than 7. Discard left half. Search [8,15].</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">Step 3 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-print-3-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="numberline" data-shape="nl"><g data-target="nl.axis"><line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-dim"><line x1="20" y1="12" x2="20" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="20" y="42" fill="#adb5bd">0</text></g><g data-target="nl.tick[1]" class="scriba-state-dim"><line x1="62" y1="12" x2="62" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="62" y="42" fill="#adb5bd">1</text></g><g data-target="nl.tick[2]" class="scriba-state-dim"><line x1="105" y1="12" x2="105" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="105" y="42" fill="#adb5bd">2</text></g><g data-target="nl.tick[3]" class="scriba-state-dim"><line x1="148" y1="12" x2="148" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="148" y="42" fill="#adb5bd">3</text></g><g data-target="nl.tick[4]" class="scriba-state-dim"><line x1="190" y1="12" x2="190" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="190" y="42" fill="#adb5bd">4</text></g><g data-target="nl.tick[5]" class="scriba-state-dim"><line x1="233" y1="12" x2="233" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="233" y="42" fill="#adb5bd">5</text></g><g data-target="nl.tick[6]" class="scriba-state-dim"><line x1="276" y1="12" x2="276" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="276" y="42" fill="#adb5bd">6</text></g><g data-target="nl.tick[7]" class="scriba-state-current"><line x1="318" y1="12" x2="318" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="318" y="42" fill="#212529">7</text></g><g data-target="nl.tick[8]" class="scriba-state-current"><line x1="361" y1="12" x2="361" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="361" y="42" fill="#212529">8</text></g><g data-target="nl.tick[9]" class="scriba-state-current"><line x1="404" y1="12" x2="404" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="404" y="42" fill="#212529">9</text></g><g data-target="nl.tick[10]" class="scriba-state-current"><line x1="446" y1="12" x2="446" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="446" y="42" fill="#212529">10</text></g><g data-target="nl.tick[11]" class="scriba-state-current"><line x1="489" y1="12" x2="489" y2="28" stroke="#0072B2" stroke-width="2.5"/><text x="489" y="42" fill="#212529">11</text><circle cx="489" cy="20" r="8" fill="none" stroke="#F0E442" stroke-width="3" stroke-dasharray="4 2"/></g><g data-target="nl.tick[12]" class="scriba-state-dim"><line x1="532" y1="12" x2="532" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="532" y="42" fill="#adb5bd">12</text></g><g data-target="nl.tick[13]" class="scriba-state-dim"><line x1="574" y1="12" x2="574" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="574" y="42" fill="#adb5bd">13</text></g><g data-target="nl.tick[14]" class="scriba-state-dim"><line x1="617" y1="12" x2="617" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="617" y="42" fill="#adb5bd">14</text></g><g data-target="nl.tick[15]" class="scriba-state-dim"><line x1="660" y1="12" x2="660" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="660" y="42" fill="#adb5bd">15</text></g></g></g></svg></div><p class="scriba-narration" id="binary-search-print-3-narration">Mid = 11. Target 11 equals mid. Found it!</p></div><div class="scriba-print-frame" data-step="4"><span class="scriba-step-label">Step 4 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-print-4-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="numberline" data-shape="nl"><g data-target="nl.axis"><line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-dim"><line x1="20" y1="12" x2="20" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="20" y="42" fill="#adb5bd">0</text></g><g data-target="nl.tick[1]" class="scriba-state-dim"><line x1="62" y1="12" x2="62" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="62" y="42" fill="#adb5bd">1</text></g><g data-target="nl.tick[2]" class="scriba-state-dim"><line x1="105" y1="12" x2="105" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="105" y="42" fill="#adb5bd">2</text></g><g data-target="nl.tick[3]" class="scriba-state-dim"><line x1="148" y1="12" x2="148" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="148" y="42" fill="#adb5bd">3</text></g><g data-target="nl.tick[4]" class="scriba-state-dim"><line x1="190" y1="12" x2="190" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="190" y="42" fill="#adb5bd">4</text></g><g data-target="nl.tick[5]" class="scriba-state-dim"><line x1="233" y1="12" x2="233" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="233" y="42" fill="#adb5bd">5</text></g><g data-target="nl.tick[6]" class="scriba-state-dim"><line x1="276" y1="12" x2="276" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="276" y="42" fill="#adb5bd">6</text></g><g data-target="nl.tick[7]" class="scriba-state-dim"><line x1="318" y1="12" x2="318" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="318" y="42" fill="#adb5bd">7</text></g><g data-target="nl.tick[8]" class="scriba-state-dim"><line x1="361" y1="12" x2="361" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="361" y="42" fill="#adb5bd">8</text></g><g data-target="nl.tick[9]" class="scriba-state-dim"><line x1="404" y1="12" x2="404" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="404" y="42" fill="#adb5bd">9</text></g><g data-target="nl.tick[10]" class="scriba-state-dim"><line x1="446" y1="12" x2="446" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="446" y="42" fill="#adb5bd">10</text></g><g data-target="nl.tick[11]" class="scriba-state-good"><line x1="489" y1="12" x2="489" y2="28" stroke="#56B4E9" stroke-width="2.5"/><text x="489" y="42" fill="#212529">11</text></g><g data-target="nl.tick[12]" class="scriba-state-dim"><line x1="532" y1="12" x2="532" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="532" y="42" fill="#adb5bd">12</text></g><g data-target="nl.tick[13]" class="scriba-state-dim"><line x1="574" y1="12" x2="574" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="574" y="42" fill="#adb5bd">13</text></g><g data-target="nl.tick[14]" class="scriba-state-dim"><line x1="617" y1="12" x2="617" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="617" y="42" fill="#adb5bd">14</text></g><g data-target="nl.tick[15]" class="scriba-state-dim"><line x1="660" y1="12" x2="660" y2="28" stroke="#e9ecef" stroke-width="1.5"/><text x="660" y="42" fill="#adb5bd">15</text></g></g></g></svg></div><p class="scriba-narration" id="binary-search-print-4-narration">Binary search complete. Target 11 found in 2 comparisons. O(log n) efficiency.</p></div></div></div>
+<script>(function(){
   var W=document.getElementById('binary-search');
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="numberline" data-shape="nl">
   <g data-target="nl.axis">
     <line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/>
@@ -569,9 +241,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-</svg>`,narration:`Search for target 11 in sorted range [0,15]. Entire range is active.`,substory:``},
+</svg>`,narration:`Search for target 11 in sorted range [0,15]. Entire range is active.`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="numberline" data-shape="nl">
   <g data-target="nl.axis">
     <line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/>
@@ -643,9 +315,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-</svg>`,narration:`Mid = 7. Target 11 is greater than 7. Discard left half. Search [8,15].`,substory:``},
+</svg>`,narration:`Mid = 7. Target 11 is greater than 7. Discard left half. Search [8,15].`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="numberline" data-shape="nl">
   <g data-target="nl.axis">
     <line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/>
@@ -717,9 +389,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-</svg>`,narration:`Mid = 11. Target 11 equals mid. Found it!`,substory:``},
+</svg>`,narration:`Mid = 11. Target 11 equals mid. Found it!`,substory:``,label:``},
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 712 88" role="img" aria-labelledby="binary-search-narration" xmlns="http://www.w3.org/2000/svg">
-<g transform="translate(16,16)">
+<g transform="translate(16.0,16)">
 <g data-primitive="numberline" data-shape="nl">
   <g data-target="nl.axis">
     <line x1="20" y1="20" x2="660" y2="20" stroke="#d0d7de" stroke-width="2"/>
@@ -790,7 +462,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   </g>
 </g>
 </g>
-</svg>`,narration:`Binary search complete. Target 11 found in 2 comparisons. O(log n) efficiency.`,substory:``}
+</svg>`,narration:`Binary search complete. Target 11 found in 2 comparisons. O(log n) efficiency.`,substory:``,label:``}
   ];
   var cur=0;
   var stage=W.querySelector('.scriba-stage');
@@ -832,7 +504,6 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1);}
   });
   show(0);
-})();
-</script>
+})();</script>
 </body>
 </html>

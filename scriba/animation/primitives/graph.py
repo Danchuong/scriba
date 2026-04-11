@@ -544,7 +544,7 @@ class Graph(PrimitiveBase):
                     self.width // 2,
                     14,
                     fill=THEME["fg_muted"],
-                    css_class="scriba-label",
+                    css_class="scriba-primitive-label",
                     text_anchor="middle",
                     fo_width=self.width,
                     fo_height=24,
