@@ -192,7 +192,7 @@ class TestPrimitiveDimensionCaps:
     """Verify oversized primitives are rejected."""
 
     def test_array_rejects_oversized(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1401"):
             ArrayPrimitive("a", {"size": 10_001})
 
     def test_array_accepts_max(self) -> None:
@@ -200,11 +200,11 @@ class TestPrimitiveDimensionCaps:
         assert inst.size == 10_000
 
     def test_grid_rejects_oversized_rows(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1411"):
             GridPrimitive("g", {"rows": 501, "cols": 10})
 
     def test_grid_rejects_oversized_cols(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1411"):
             GridPrimitive("g", {"rows": 10, "cols": 501})
 
     def test_grid_accepts_max(self) -> None:
@@ -235,7 +235,7 @@ class TestPrimitiveDimensionCaps:
         assert inst.rows == 500
 
     def test_numberline_rejects_oversized(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1454"):
             NumberLinePrimitive("nl", {"domain": [0, 100], "ticks": 1001})
 
     def test_numberline_accepts_max(self) -> None:

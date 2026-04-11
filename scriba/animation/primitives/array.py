@@ -67,28 +67,31 @@ class ArrayPrimitive(PrimitiveBase):
         size = self.params.get("size", self.params.get("n"))
         if size is None:
             raise animation_error(
-                E1103,
+                "E1400",
                 detail="Array requires 'size' or 'n' parameter",
+                hint="example: \\shape{a}{Array}{size=10}",
             )
         size = int(size)
         if size < 1:
             raise animation_error(
-                E1103,
-                detail=f"Array size must be >= 1, got {size}",
+                "E1401",
+                detail=f"Array size {size} is out of range; valid: 1..10000",
             )
         if size > 10_000:
             raise animation_error(
-                E1103,
-                detail=f"Array size {size} exceeds maximum of 10,000",
+                "E1401",
+                detail=(
+                    f"Array size {size} exceeds maximum; valid: 1..10000"
+                ),
             )
 
         data: list[Any] = list(self.params.get("data", []))
         if data and len(data) != size:
             raise animation_error(
-                E1103,
+                "E1402",
                 detail=(
-                    f"Array 'data' length ({len(data)}) "
-                    f"does not match size ({size})"
+                    f"Array 'data' length ({len(data)}) does not match "
+                    f"size ({size}); valid: len(data) == size or omit data"
                 ),
             )
         if not data:

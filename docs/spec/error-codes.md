@@ -39,7 +39,7 @@
 |------|-------------|------------|
 | E1100 | General parse failure inside animation body. | Check syntax around the reported position. |
 | E1102 | Unknown primitive type in `\shape` declaration. | Use a valid type: Array, Grid, DPTable, Graph, Tree, NumberLine, Matrix, Stack, etc. |
-| E1103 | Primitive validation error (invalid size, dimensions, or parameters). | Check required params and dimension limits for the primitive type. |
+| E1103 | **DEPRECATED** — legacy primitive validation mega-bucket. New code raises one of the specific `E14xx` codes below. Retained for backward compat (`scene.annotate` cap and some legacy call sites still use it). | See `E14xx` below. |
 | E1109 | Invalid `\recolor` state or missing required state/color parameter. | Use a valid state: idle, current, done, dim, error, good, highlight, path. |
 | E1112 | Unknown annotation position. | Use: above, below, left, right, inside. |
 | E1113 | Invalid or missing annotation color. | Use: info, warn, good, error, muted, path. |
@@ -82,6 +82,73 @@
 | E1365 | `\endsubstory` without matching `\substory`. | Remove the orphan `\endsubstory` or add the opening `\substory`. |
 | E1366 | Substory with zero steps (warning). | Add at least one `\step` inside the substory. |
 | E1368 | Non-whitespace text on same line as `\substory`/`\endsubstory`. | Put these commands on their own line. |
+
+## Primitive Parameter Validation (E1400--E1459)
+
+Introduced in v0.5.1 to replace the legacy `E1103` mega-bucket with one
+code per `(primitive, validation)` pair. Existing code that caught
+`E1103` continues to work because catalog entry `E1103` is retained as a
+documented deprecated alias.
+
+### Array (E1400--E1409)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1400 | Array requires `size` or `n` parameter. | Add `size=N` where `1 <= N <= 10000`. |
+| E1401 | Array `size` out of range; valid: 1..10000. | Pick an integer between 1 and 10000. |
+| E1402 | Array `data` length does not match `size`. | Either drop `data` or ensure `len(data) == size`. |
+
+### Grid (E1410--E1419)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1410 | Grid requires both `rows` and `cols`. | `Grid{g}{rows=R, cols=C}` with `1 <= R,C <= 500`. |
+| E1411 | Grid `rows`/`cols` out of range; valid: 1..500. | Pick positive integers no greater than 500. |
+| E1412 | Grid `data` length does not match `rows*cols`. | Supply a flat list of length `rows*cols` or a 2D list with `R` rows of `C` items each. |
+
+### Matrix / DPTable (E1420--E1429)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1420 | Matrix requires `rows` and `cols`. | `Matrix{m}{rows=R, cols=C}`. |
+| E1421 | Matrix `rows`/`cols` must be a positive integer. | Use a positive integer for both. |
+| E1422 | Matrix `data` length does not match `rows*cols`. | Supply a flat list of length `rows*cols`. |
+| E1425 | Matrix/DPTable cell count exceeds maximum. | Ensure `rows*cols <= 250000`. |
+| E1426 | DPTable requires `n` (1D) or both `rows` and `cols` (2D). | `DPTable{t}{n=10}` or `DPTable{t}{rows=5, cols=5}`. |
+| E1427 | DPTable `n` must be a positive integer. | Use a positive integer for `n`. |
+| E1428 | DPTable `rows`/`cols` must be a positive integer. | Use positive integers for both. |
+| E1429 | DPTable `data` length does not match expected size. | `len(data)` must equal `n` (1D) or `rows*cols` (2D). |
+
+### Tree (E1430--E1439)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1430 | Tree requires `root` parameter. | `Tree{t}{root="A", nodes=[...], edges=[...]}`. |
+| E1431 | Tree (kind=segtree) requires `data` parameter. | Supply `data=[v0, v1, ...]` of leaf values. |
+| E1432 | Tree (kind=sparse_segtree) requires `range_lo` and `range_hi`. | Specify the valid index bounds. |
+
+### Queue / Stack (E1440--E1449)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1440 | Queue `capacity` must be a positive integer. | Use a positive integer for `capacity`. |
+| E1441 | Stack `max_visible` must be a positive integer. | Use a positive integer for `max_visible`. |
+
+### HashMap / NumberLine (E1450--E1459)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1450 | HashMap requires `capacity`. | `HashMap{h}{capacity=N}` where `N >= 1`. |
+| E1451 | HashMap `capacity` must be a positive integer. | Use a positive integer for `capacity`. |
+| E1452 | NumberLine requires `domain`. | `NumberLine{n}{domain=[min, max]}`. |
+| E1453 | NumberLine `domain` must be a two-element [min, max] list. | Supply exactly two numbers. |
+| E1454 | NumberLine `ticks` exceeds maximum (1000). | Reduce the tick count. |
+
+### Graph (E1470--E1479)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1470 | Graph requires a non-empty `nodes` list. | `Graph{g}{nodes=[...], edges=[...]}`. |
 
 ## Plane2D Errors (E1460--E1466)
 

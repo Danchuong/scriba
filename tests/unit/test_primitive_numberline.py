@@ -39,8 +39,9 @@ class TestDeclare:
         inst = NumberLinePrimitive("nl", {"domain": [0, 5], "label": "My Axis"})
         assert inst.label == "My Axis"
 
-    def test_missing_domain_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_missing_domain_raises_e1452(self) -> None:
+        # v0.5.1: E1452 (NumberLine missing domain)
+        with pytest.raises(ValidationError, match="E1452"):
             NumberLinePrimitive("nl", {})
 
     def test_float_domain_defaults_to_11_ticks(self) -> None:

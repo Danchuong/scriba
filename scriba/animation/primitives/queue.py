@@ -77,8 +77,11 @@ class Queue(PrimitiveBase):
         self.capacity: int = int(params.get("capacity", _DEFAULT_CAPACITY))
         if self.capacity < 1:
             raise animation_error(
-                E1103,
-                detail=f"Queue capacity must be >= 1, got {self.capacity}",
+                "E1440",
+                detail=(
+                    f"Queue capacity {self.capacity} is out of range; "
+                    "valid: positive integer"
+                ),
             )
         self.label_text: str | None = params.get("label")
 

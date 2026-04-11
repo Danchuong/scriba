@@ -50,23 +50,25 @@ class TestDeclare:
         assert inst.data == [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]
 
     def test_missing_rows_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        # v0.5.1: E1420 (Matrix missing rows/cols)
+        with pytest.raises(ValidationError, match="E1420"):
             MatrixPrimitive("m", {"cols": 3, "data": [1, 2, 3]})
 
     def test_missing_cols_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1420"):
             MatrixPrimitive("m", {"rows": 3, "data": [1, 2, 3]})
 
     def test_data_length_mismatch(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        # v0.5.1: E1422 (Matrix data length mismatch)
+        with pytest.raises(ValidationError, match="E1422"):
             MatrixPrimitive("m", {"rows": 2, "cols": 2, "data": [1, 2, 3]})
 
-    def test_zero_rows_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_zero_rows_raises_e1421(self) -> None:
+        with pytest.raises(ValidationError, match="E1421"):
             MatrixPrimitive("m", {"rows": 0, "cols": 4})
 
-    def test_zero_cols_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_zero_cols_raises_e1421(self) -> None:
+        with pytest.raises(ValidationError, match="E1421"):
             MatrixPrimitive("m", {"rows": 4, "cols": 0})
 
     def test_cell_count_limit_raises_e1425(self) -> None:

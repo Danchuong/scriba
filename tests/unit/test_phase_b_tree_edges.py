@@ -194,11 +194,11 @@ class TestSparseSegtree:
         assert len(t.nodes) == 1
 
     def test_sparse_missing_range_hi_raises(self) -> None:
-        with pytest.raises(Exception, match="E1103"):
+        with pytest.raises(Exception, match="E1432"):
             Tree("st", {"kind": "sparse_segtree", "range_lo": 0})
 
     def test_sparse_missing_range_lo_raises(self) -> None:
-        with pytest.raises(Exception, match="E1103"):
+        with pytest.raises(Exception, match="E1432"):
             Tree("st", {"kind": "sparse_segtree", "range_hi": 100})
 
 
@@ -381,17 +381,17 @@ class TestReingoldTilfordCentered:
 
 
 # ---------------------------------------------------------------------------
-# 15. Missing root param without segtree kind -> E1103
+# 15. Missing root param without segtree kind -> E1430
 # ---------------------------------------------------------------------------
 
 
 class TestTreeMissingRoot:
-    def test_missing_root_raises_e1103(self) -> None:
-        with pytest.raises(Exception, match="E1103"):
+    def test_missing_root_raises_e1430(self) -> None:
+        with pytest.raises(Exception, match="E1430"):
             Tree("T", {"nodes": [1, 2], "edges": [(1, 2)]})
 
     def test_missing_root_with_edges_only(self) -> None:
-        with pytest.raises(Exception, match="E1103"):
+        with pytest.raises(Exception, match="E1430"):
             Tree("T", {"edges": [(1, 2)]})
 
 

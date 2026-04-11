@@ -9,7 +9,13 @@ _DOCS_BASE_URL = "https://scriba.ojcloud.dev/errors"
 
 
 class ScribaError(Exception):
-    """Base exception for all Scriba failures."""
+    """Base exception for all Scriba failures.
+
+    All Scriba exceptions carry an optional machine-readable ``code`` and
+    a structured location (``line``/``col``). When a ``source_line`` is
+    supplied the renderer prints a carat-pointer snippet beneath the
+    location header for easier debugging.
+    """
 
     code: str | None = None
 
@@ -21,11 +27,13 @@ class ScribaError(Exception):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self._raw_message = message
         self.line = line
         self.col = col
         self.hint = hint
+        self.source_line = source_line
         if code is not None:
             self.code = code
         super().__init__(str(self))
@@ -50,6 +58,17 @@ class ScribaError(Exception):
         parts.append(self._raw_message)
         result = " ".join(parts)
 
+        # Source snippet: when callers supply the offending source line
+        # we underline the column with a carat. Keeps backward compat
+        # (rendering is unchanged when source_line is None).
+        if self.source_line is not None:
+            snippet = self.source_line.rstrip("\n")
+            result += f"\n      {snippet}"
+            if self.col is not None and self.col >= 0:
+                # Render a carat pointer under the offending column.
+                # ``col`` is 0-indexed relative to source_line.
+                result += "\n      " + (" " * self.col) + "^"
+
         # Hint
         if self.hint:
             result += f"\n  hint: {self.hint}"
@@ -73,9 +92,17 @@ class RendererError(ScribaError):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self.renderer = renderer
-        super().__init__(message, code=code, line=line, col=col, hint=hint)
+        super().__init__(
+            message,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )
 
 
 class WorkerError(ScribaError):
@@ -90,9 +117,17 @@ class WorkerError(ScribaError):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self.stderr = stderr
-        super().__init__(message, code=code, line=line, col=col, hint=hint)
+        super().__init__(
+            message,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )
 
 
 class ScribaRuntimeError(ScribaError):
@@ -111,9 +146,17 @@ class ScribaRuntimeError(ScribaError):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self.component = component
-        super().__init__(message, code=code, line=line, col=col, hint=hint)
+        super().__init__(
+            message,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )
 
 
 class ValidationError(ScribaError):
@@ -128,6 +171,14 @@ class ValidationError(ScribaError):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self.position = position
-        super().__init__(message, code=code, line=line, col=col, hint=hint)
+        super().__init__(
+            message,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )

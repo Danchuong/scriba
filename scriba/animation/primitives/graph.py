@@ -187,11 +187,12 @@ class Graph(PrimitiveBase):
         self.nodes: list[str | int] = list(params.get("nodes", []))
         if not self.nodes:
             raise animation_error(
-                "E1103",
+                "E1470",
                 detail=(
                     f"Graph '{name}' requires a non-empty 'nodes' list; "
-                    f"got an empty or missing 'nodes' parameter"
+                    "got an empty or missing 'nodes' parameter"
                 ),
+                hint="example: Graph{g}{nodes=[\"a\", \"b\"], edges=[(\"a\", \"b\")]}",
             )
         raw_edges = params.get("edges", [])
         self.edges: list[tuple[str | int, str | int]] = [

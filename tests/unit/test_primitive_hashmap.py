@@ -33,15 +33,17 @@ class TestDeclare:
         assert inst.label_text == "Hash Table"
 
     def test_missing_capacity_raises_error(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        # v0.5.1: E1450 (HashMap missing capacity)
+        with pytest.raises(ValidationError, match="E1450"):
             HashMap("hm", {})
 
     def test_zero_capacity_raises_error(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        # v0.5.1: E1451 (HashMap capacity out of range)
+        with pytest.raises(ValidationError, match="E1451"):
             HashMap("hm", {"capacity": 0})
 
     def test_negative_capacity_raises_error(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1451"):
             HashMap("hm", {"capacity": -1})
 
 

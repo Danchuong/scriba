@@ -219,11 +219,11 @@ class TestGridBoundingBoxComparison:
 
 class TestGridDataMismatch:
     def test_flat_data_wrong_length_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1412"):
             GridPrimitive("g", {"rows": 2, "cols": 2, "data": [1, 2, 3]})
 
     def test_2d_data_wrong_size_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1412"):
             GridPrimitive("g", {"rows": 2, "cols": 2, "data": [[1, 2], [3]]})
 
 

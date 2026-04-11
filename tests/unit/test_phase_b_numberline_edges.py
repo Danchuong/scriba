@@ -298,13 +298,13 @@ class TestBoundingBoxCorrect:
 
 class TestInvalidDomain:
     def test_non_list_domain_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1453"):
             NumberLinePrimitive("nl", {"domain": 5})
 
     def test_single_element_domain_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1453"):
             NumberLinePrimitive("nl", {"domain": [5]})
 
     def test_three_element_domain_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1453"):
             NumberLinePrimitive("nl", {"domain": [0, 5, 10]})

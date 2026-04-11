@@ -90,8 +90,11 @@ class Stack(PrimitiveBase):
         self.max_visible: int = int(params.get("max_visible", _DEFAULT_MAX_VISIBLE))
         if self.max_visible < 1:
             raise animation_error(
-                E1103,
-                detail=f"Stack max_visible must be >= 1, got {self.max_visible}",
+                "E1441",
+                detail=(
+                    f"Stack max_visible {self.max_visible} is out of "
+                    "range; valid: positive integer"
+                ),
             )
         self.label_text: str | None = params.get("label")
 
