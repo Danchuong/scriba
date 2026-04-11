@@ -22,8 +22,9 @@ coordinate directly with the OJCloud maintainers through an existing
 private channel. Once the public GitHub mirror is live, open a
 [GitHub Security Advisory](https://docs.github.com/en/code-security/security-advisories/guide-to-privately-reporting-a-security-vulnerability)
 on the mirror repository instead of an issue or PR. The maintainer
-contact list will be tracked in `.github/SECURITY_CONTACTS.md` on the
-public mirror.
+contact list is tracked in
+[`.github/SECURITY_CONTACTS.md`](.github/SECURITY_CONTACTS.md) (a
+pre-release stub until the public mirror goes live).
 
 Include a clear description, reproduction steps, affected version, and
 any proof-of-concept input. We aim to acknowledge reports within a few
