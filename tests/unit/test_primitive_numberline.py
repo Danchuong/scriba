@@ -138,7 +138,8 @@ class TestEmitSvg:
     def test_axis_uses_idle_stroke(self) -> None:
         inst = NumberLinePrimitive("nl", {"domain": [0, 3]})
         svg = inst.emit_svg()
-        assert 'stroke="#d0d7de"' in svg
+        # β slate-6 idle border
+        assert 'stroke="#dfe3e6"' in svg
 
     def test_caption_rendered(self) -> None:
         inst = NumberLinePrimitive("nl", {"domain": [0, 5], "label": "Scale"})

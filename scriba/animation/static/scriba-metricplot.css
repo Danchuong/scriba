@@ -6,7 +6,7 @@
   opacity: 0.6;
 }
 .scriba-metricplot-marker {
-  stroke: var(--scriba-fg, #24292f);
+  stroke: var(--scriba-fg, #11181c);
   stroke-width: 1;
   stroke-dasharray: 4 3;
   opacity: 0.6;

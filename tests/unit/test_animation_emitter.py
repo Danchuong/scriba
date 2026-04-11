@@ -438,7 +438,7 @@ class TestRealArrayPrimitive:
         assert "scriba-state-idle" in html
         # Text fill stays inline (halo/color is not on the rect node).
         assert 'fill="#ffffff"' in html
-        assert 'fill="#212529"' in html
+        assert 'fill="#11181c"' in html
         # β palette: no inline rx on cell rects -- CSS owns --scriba-cell-rx.
         assert 'rx="4"' not in html
 

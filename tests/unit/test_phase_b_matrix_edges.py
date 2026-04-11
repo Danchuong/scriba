@@ -77,7 +77,7 @@ class TestColorscaleMapping:
 
     def test_text_color_dark_for_bright_bg(self) -> None:
         text_color = _text_color_for_background(1.0, VIRIDIS)
-        assert text_color == "#212529"  # dark text for yellow bg
+        assert text_color == "#11181c"  # β slate-12 dark text for yellow bg
 
     def test_text_color_white_for_dark_bg(self) -> None:
         text_color = _text_color_for_background(0.0, VIRIDIS)

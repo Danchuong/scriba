@@ -90,7 +90,7 @@ def _text_color_for_background(
             g = c0[1] + frac * (c1[1] - c0[1])
             b = c0[2] + frac * (c1[2] - c0[2])
             lum = 0.299 * r + 0.587 * g + 0.114 * b
-            return "#212529" if lum > 140 else "#ffffff"
+            return "#11181c" if lum > 140 else "#ffffff"
     return "#ffffff"
 
 

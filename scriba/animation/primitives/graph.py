@@ -627,18 +627,13 @@ class Graph(PrimitiveBase):
             # RFC-001 §4.4 — hidden nodes are not rendered at all.
             if state == "hidden":
                 continue
-            node_colors = svg_style_attrs(state)
             cx, cy = self.positions[node_id]
-            node_sw = "1.5" if state == "idle" else "2"
             hl_suffixes = getattr(self, "_highlighted", set())
             is_hl = self._node_key(node_id) in hl_suffixes
-            hl_overlay = ""
-            if is_hl:
-                hl_overlay = (
-                    f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}" '
-                    f'fill="none" stroke="#F0E442" stroke-width="3" '
-                    f'stroke-dasharray="6 3"/>'
-                )
+            # β: highlight is a state, not a dashed overlay. Promote only
+            # when the node is otherwise idle; keep current/error/good alive.
+            effective_state = "highlight" if (is_hl and state == "idle") else state
+            node_colors = svg_style_attrs(effective_state)
             node_text = _render_svg_text(
                 str(node_id),
                 cx,
@@ -649,17 +644,13 @@ class Graph(PrimitiveBase):
                 fo_width=self._node_radius * 2,
                 fo_height=self._node_radius * 2,
                 render_inline_tex=render_inline_tex,
-                text_outline=node_colors["fill"],
+                # Wave 9: no inline text_outline — CSS halo cascade owns it.
             )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
-                f'class="scriba-state-{state}">'
-                f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}" '
-                f'fill="{node_colors["fill"]}" '
-                f'stroke="{node_colors["stroke"]}" '
-                f'stroke-width="{node_sw}"/>'
+                f'class="scriba-state-{effective_state}">'
+                f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}"/>'
                 f'{node_text}'
-                f'{hl_overlay}'
                 f'</g>'
             )
         parts.append('</g>')

@@ -23,18 +23,22 @@ __all__ = ["MetricPlot"]
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Wong CVD-safe palette (§4 of metricplot.md)
+# β "Tonal Architecture" categorical series palette.
+# Radix step-9 accents with staggered lightness so adjacent series differ
+# in *both* hue and lightness (ColorBrewer schemeTableau10 discipline).
+# Seven discrete hues + one neutral ink for 8-series plots; dash patterns
+# below disambiguate when more series are stacked than hues.
 # ---------------------------------------------------------------------------
 
 _WONG_COLORS: list[str] = [
-    "#0072B2",
-    "#D55E00",
-    "#009E73",
-    "#F0E442",
-    "#56B4E9",
-    "#E69F00",
-    "#009E73",
-    "#000000",
+    "#0b68cb",  # Radix blue-11  — series 1 (primary)
+    "#e5484d",  # Radix red-9    — series 2
+    "#2a7e3b",  # Radix grass-11 — series 3
+    "#f5a524",  # Radix amber-9  — series 4
+    "#8e4ec6",  # Radix violet-9 — series 5
+    "#0d74b5",  # Radix cyan-11  — series 6
+    "#d6409f",  # Radix pink-9   — series 7
+    "#11181c",  # slate-12       — series 8 (neutral ink)
 ]
 
 _DASH_PATTERNS: list[str] = [
@@ -432,13 +436,13 @@ class MetricPlot(PrimitiveBase):
         parts.append(
             f'<line x1="{pl}" y1="{H - pb}"'
             f' x2="{W - pr}" y2="{H - pb}"'
-            f' stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>'
+            f' stroke="var(--scriba-fg, #11181c)" stroke-width="1.5"/>'
         )
         # left y-axis line
         parts.append(
             f'<line x1="{pl}" y1="{pt}"'
             f' x2="{pl}" y2="{H - pb}"'
-            f' stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>'
+            f' stroke="var(--scriba-fg, #11181c)" stroke-width="1.5"/>'
         )
         # right y-axis line (two-axis mode)
         if self.two_axis:
@@ -446,7 +450,7 @@ class MetricPlot(PrimitiveBase):
                 f'<line x1="{W - pr}" y1="{pt}"'
                 f' x2="{W - pr}" y2="{H - pb}"'
                 f' class="scriba-metricplot-right-axis"'
-                f' stroke="var(--scriba-fg, #24292f)" stroke-width="1.5"/>'
+                f' stroke="var(--scriba-fg, #11181c)" stroke-width="1.5"/>'
             )
 
         # x-axis ticks and labels
@@ -457,7 +461,7 @@ class MetricPlot(PrimitiveBase):
             parts.append(
                 f'<line x1="{sx}" y1="{H - pb}"'
                 f' x2="{sx}" y2="{H - pb + 4}"'
-                f' stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>'
+                f' stroke="var(--scriba-fg, #11181c)" stroke-width="1"/>'
             )
             label = self._format_tick(xt)
             parts.append(
@@ -474,7 +478,7 @@ class MetricPlot(PrimitiveBase):
             parts.append(
                 f'<line x1="{pl - 4}" y1="{sy}"'
                 f' x2="{pl}" y2="{sy}"'
-                f' stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>'
+                f' stroke="var(--scriba-fg, #11181c)" stroke-width="1"/>'
             )
             label = self._format_tick(yt)
             parts.append(
@@ -492,7 +496,7 @@ class MetricPlot(PrimitiveBase):
                 parts.append(
                     f'<line x1="{W - pr}" y1="{sy}"'
                     f' x2="{W - pr + 4}" y2="{sy}"'
-                    f' stroke="var(--scriba-fg, #24292f)" stroke-width="1"/>'
+                    f' stroke="var(--scriba-fg, #11181c)" stroke-width="1"/>'
                 )
                 label = self._format_tick(yt)
                 parts.append(
@@ -631,7 +635,7 @@ class MetricPlot(PrimitiveBase):
             f'<line class="scriba-metricplot-marker"'
             f' x1="{sx}" y1="{self.pad_top}"'
             f' x2="{sx}" y2="{self.height - self.pad_bottom}"'
-            f' stroke="var(--scriba-fg, #24292f)" stroke-width="1"'
+            f' stroke="var(--scriba-fg, #11181c)" stroke-width="1"'
             f' stroke-dasharray="4 3" opacity="0.6"/>'
         )
 

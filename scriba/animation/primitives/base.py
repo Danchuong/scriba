@@ -45,18 +45,21 @@ class BoundingBox:
 from scriba.animation.constants import DEFAULT_STATE, VALID_STATES  # noqa: F401 — re-exported
 
 # ---------------------------------------------------------------------------
-# Wong CVD-safe color map for inline SVG styling
+# β "Tonal Architecture" color map — Radix slate + blue.
+# These values are the inline fallback when CSS custom properties are not
+# yet applied (test snapshots, raw emitter output, non-browser consumers).
+# They must stay in lockstep with ``scriba-scene-primitives.css`` :root.
 # ---------------------------------------------------------------------------
 
 STATE_COLORS: dict[str, dict[str, str]] = {
-    "idle":      {"fill": "#f6f8fa", "stroke": "#d0d7de", "text": "#212529"},
-    "current":   {"fill": "#0072B2", "stroke": "#0072B2", "text": "#ffffff"},
-    "done":      {"fill": "#009E73", "stroke": "#009E73", "text": "#ffffff"},
-    "dim":       {"fill": "#e9ecef", "stroke": "#dee2e6", "text": "#adb5bd"},
-    "error":     {"fill": "#D55E00", "stroke": "#D55E00", "text": "#ffffff"},
-    "good":      {"fill": "#56B4E9", "stroke": "#3a95c9", "text": "#0c4a6e"},
-    "highlight": {"fill": "#F0E442", "stroke": "#d4c836", "text": "#212529"},
-    "path":      {"fill": "#dbeafe", "stroke": "#2563eb", "text": "#0c4a6e"},
+    "idle":      {"fill": "#f8f9fa", "stroke": "#dfe3e6", "text": "#11181c"},
+    "current":   {"fill": "#0090ff", "stroke": "#0b68cb", "text": "#ffffff"},
+    "done":      {"fill": "#e6e8eb", "stroke": "#c1c8cd", "text": "#11181c"},
+    "dim":       {"fill": "#f1f3f5", "stroke": "#e6e8eb", "text": "#687076"},
+    "error":     {"fill": "#f8f9fa", "stroke": "#e5484d", "text": "#11181c"},
+    "good":      {"fill": "#e6e8eb", "stroke": "#2a7e3b", "text": "#11181c"},
+    "highlight": {"fill": "#f8f9fa", "stroke": "#0090ff", "text": "#0b68cb"},
+    "path":      {"fill": "#e6e8eb", "stroke": "#c1c8cd", "text": "#687076"},
 }
 
 
@@ -65,29 +68,30 @@ def svg_style_attrs(state_name: str) -> dict[str, str]:
     return STATE_COLORS.get(state_name, STATE_COLORS["idle"])
 
 # ---------------------------------------------------------------------------
-# Theme colors — single source of truth for non-state colors
+# Theme colors — single source of truth for non-state colors.
+# β slate system; must match scriba-scene-primitives.css base tokens.
 # ---------------------------------------------------------------------------
 
 THEME = {
-    "bg": "#f6f8fa",         # panel / cell idle background
-    "bg_alt": "#f1f3f5",     # alternate row / index column background
-    "border": "#d0d7de",     # borders, dividers, outlines
-    "border_light": "#dee2e6",  # lighter borders
-    "fg": "#212529",         # primary text
-    "fg_muted": "#6c757d",   # secondary text (labels, indices, captions)
-    "fg_dim": "#adb5bd",     # placeholder / disabled text
-    "empty_bg": "#f6f8fa",   # empty state dashed background
+    "bg": "#f8f9fa",         # slate-2 — panel / cell idle background
+    "bg_alt": "#f1f3f5",     # slate-3 — alternate row / index column
+    "border": "#dfe3e6",     # slate-6 — borders, dividers, outlines
+    "border_light": "#e6e8eb",  # slate-5 — lighter borders
+    "fg": "#11181c",         # slate-12 — primary text
+    "fg_muted": "#687076",   # slate-11 — labels, indices, captions
+    "fg_dim": "#9ba1a6",     # slate-10 — placeholder / disabled text
+    "empty_bg": "#f1f3f5",   # slate-3 — empty state dashed background
 }
 
 DARK_THEME = {
-    "bg": "#161b22",
-    "bg_alt": "#1c2128",
-    "border": "#30363d",
-    "border_light": "#21262d",
-    "fg": "#c9d1d9",
-    "fg_muted": "#8b949e",
-    "fg_dim": "#484f58",
-    "empty_bg": "#0d1117",
+    "bg": "#1a1d1e",         # slate-1 dark
+    "bg_alt": "#202425",     # slate-2 dark
+    "border": "#313538",     # slate-6 dark
+    "border_light": "#2b2f31",  # slate-5 dark
+    "fg": "#ecedee",         # slate-12 dark
+    "fg_muted": "#9ba1a6",   # slate-11 dark
+    "fg_dim": "#687076",     # slate-10 dark
+    "empty_bg": "#202425",
 }
 
 # ---------------------------------------------------------------------------
@@ -396,7 +400,7 @@ def _render_svg_text(
     x: int,
     y: int,
     *,
-    fill: str = "#212529",
+    fill: str = "#11181c",
     css_class: str | None = None,
     font_weight: str | None = None,
     font_size: str | None = None,

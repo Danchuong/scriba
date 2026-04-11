@@ -270,8 +270,8 @@ class TestTreeEdgeRecolor:
         })
         t.set_state("edge[(1,2)]", "current")
         svg = t.emit_svg()
-        # current state stroke is #0072B2
-        assert "#0072B2" in svg
+        # β current stroke is #0b68cb (Radix slate+blue Tonal Architecture)
+        assert "#0b68cb" in svg
 
     def test_edge_recolor_class(self) -> None:
         t = Tree("T", {

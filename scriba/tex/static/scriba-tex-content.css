@@ -9,41 +9,41 @@
    ============================================ */
 
 :root {
-  /* Text and background */
-  --scriba-fg: #1f2328;
-  --scriba-fg-muted: #656d76;
+  /* Text and background — β slate */
+  --scriba-fg: #11181c;
+  --scriba-fg-muted: #687076;
   --scriba-bg: #ffffff;
-  --scriba-bg-code: #f6f8fa;
-  --scriba-bg-inline-code: rgba(175, 184, 193, 0.2);
+  --scriba-bg-code: #f8f9fa;
+  --scriba-bg-inline-code: rgba(17, 24, 28, 0.08);
 
   /* Borders and lines */
-  --scriba-border: #d0d7de;
-  --scriba-border-strong: #8c959f;
+  --scriba-border: #dfe3e6;
+  --scriba-border-strong: #889096;
 
-  /* Links */
-  --scriba-link: #0969da;
-  --scriba-link-hover: #0550ae;
+  /* Links — β blue */
+  --scriba-link: #0b68cb;
+  --scriba-link-hover: #0954a5;
 
-  /* Errors */
-  --scriba-error: #cf222e;
-  --scriba-error-bg: #ffebe9;
+  /* Errors — β red */
+  --scriba-error: #e5484d;
+  --scriba-error-bg: #feecee;
 
   /* Epigraph */
-  --scriba-epigraph-border: #6b7280;
+  --scriba-epigraph-border: #687076;
 
   /* Copy button */
-  --scriba-copy-btn-bg: #f6f8fa;
-  --scriba-copy-btn-fg: #1f2328;
-  --scriba-copy-btn-bg-hover: #eaeef2;
-  --scriba-copy-btn-fg-hover: #0969da;
-  --scriba-copy-btn-bg-copied: #dafbe1;
-  --scriba-copy-btn-fg-copied: #1a7f37;
+  --scriba-copy-btn-bg: #f8f9fa;
+  --scriba-copy-btn-fg: #11181c;
+  --scriba-copy-btn-bg-hover: #e6e8eb;
+  --scriba-copy-btn-fg-hover: #0b68cb;
+  --scriba-copy-btn-bg-copied: #e4f6ea;
+  --scriba-copy-btn-fg-copied: #2a7e3b;
 
   /* Diagram */
   --scriba-diagram-dim-opacity: 0.2;
   --scriba-diagram-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  --scriba-diagram-active-fill: #0969da;
-  --scriba-diagram-active-stroke: #0969da;
+  --scriba-diagram-active-fill: #0b68cb;
+  --scriba-diagram-active-stroke: #0b68cb;
 
   /* Geometry and typography */
   --scriba-radius: 6px;
@@ -63,26 +63,27 @@
 }
 
 [data-theme="dark"] {
-  --scriba-fg: #e6edf3;
-  --scriba-fg-muted: #7d8590;
-  --scriba-bg: #0d1117;
-  --scriba-bg-code: #161b22;
-  --scriba-bg-inline-code: rgba(110, 118, 129, 0.4);
-  --scriba-border: #30363d;
-  --scriba-border-strong: #6e7681;
-  --scriba-link: #2f81f7;
-  --scriba-link-hover: #58a6ff;
-  --scriba-error: #ff7b72;
-  --scriba-error-bg: rgba(248, 81, 73, 0.15);
-  --scriba-epigraph-border: #8b949e;
-  --scriba-copy-btn-bg: #21262d;
-  --scriba-copy-btn-fg: #e6edf3;
-  --scriba-copy-btn-bg-hover: #30363d;
-  --scriba-copy-btn-fg-hover: #58a6ff;
-  --scriba-copy-btn-bg-copied: rgba(46, 160, 67, 0.2);
-  --scriba-copy-btn-fg-copied: #56d364;
-  --scriba-diagram-active-fill: #58a6ff;
-  --scriba-diagram-active-stroke: #58a6ff;
+  /* β slate dark */
+  --scriba-fg: #ecedee;
+  --scriba-fg-muted: #9ba1a6;
+  --scriba-bg: #151718;
+  --scriba-bg-code: #1a1d1e;
+  --scriba-bg-inline-code: rgba(236, 237, 238, 0.08);
+  --scriba-border: #313538;
+  --scriba-border-strong: #6e767d;
+  --scriba-link: #70b8ff;
+  --scriba-link-hover: #a2ceff;
+  --scriba-error: #ff6369;
+  --scriba-error-bg: rgba(229, 72, 77, 0.15);
+  --scriba-epigraph-border: #9ba1a6;
+  --scriba-copy-btn-bg: #202425;
+  --scriba-copy-btn-fg: #ecedee;
+  --scriba-copy-btn-bg-hover: #2b2f31;
+  --scriba-copy-btn-fg-hover: #70b8ff;
+  --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
+  --scriba-copy-btn-fg-copied: #65ba74;
+  --scriba-diagram-active-fill: #70b8ff;
+  --scriba-diagram-active-stroke: #70b8ff;
 }
 
 /* ============================================

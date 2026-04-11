@@ -670,22 +670,15 @@ class Plane2D(PrimitiveBase):
             r_px = pt.get("radius", _POINT_RADIUS)
             r_math = r_px / scale_factor
             is_hl = suffix in hl_suffixes
-            hl_overlay = ""
-            if is_hl:
-                r_hl = (r_px + 2) / scale_factor
-                hl_overlay = (
-                    f'<circle cx="{pt["x"]}" cy="{pt["y"]}" r="{r_hl:.4f}" '
-                    f'fill="none" stroke="#F0E442" stroke-width="3" '
-                    f'stroke-dasharray="6 3" '
-                    f'vector-effect="non-scaling-stroke"/>'
-                )
+            # β: highlight is a state, not a dashed overlay. Promote to the
+            # highlight state class when the point is otherwise idle; leave
+            # non-idle states alone so current/error/good keep their signal.
+            effective_state = "highlight" if (is_hl and state == "idle") else state
             parts.append(
                 f'<g data-target="{html_escape(target)}" '
-                f'class="scriba-plane-point scriba-state-{state}">'
+                f'class="scriba-plane-point scriba-state-{effective_state}">'
                 f'<circle cx="{pt["x"]}" cy="{pt["y"]}" r="{r_math:.4f}" '
-                f'fill="{colors["fill"]}" stroke="{colors["stroke"]}" '
-                f'stroke-width="1.5" vector-effect="non-scaling-stroke"/>'
-                f'{hl_overlay}'
+                f'vector-effect="non-scaling-stroke"/>'
                 f'</g>'
             )
         return "".join(parts)
