@@ -422,6 +422,78 @@ class TestParserErrors:
             parser.parse(src)
 
 
+class TestParserSourceLinePropagation:
+    """Parser raises populate ValidationError.source_line with the offending line.
+
+    Wave 4B Cluster 3: ``SceneParser._source_line_at`` wires the raw source
+    text through every user-visible raise site so the formatter can render
+    a caret pointer under the offending character.
+    """
+
+    def test_e1001_unclosed_brace_has_source_line(
+        self, parser: SceneParser,
+    ) -> None:
+        # Opening brace on \shape name never closes before EOF.
+        src = "\\shape{a"
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src)
+        err = exc_info.value
+        assert err.code == "E1001"
+        assert err.source_line is not None
+        assert "\\shape{a" in err.source_line
+        rendered = str(err)
+        assert "\\shape{a" in rendered
+        assert "^" in rendered
+
+    def test_e1012_unexpected_token_has_source_line(
+        self, parser: SceneParser,
+    ) -> None:
+        """A missing LBRACE after \\shape triggers E1012 with source_line.
+
+        This exercises the ``_expect`` raise site used throughout the
+        parser for structural token mismatches.
+        """
+        src = "\\shape{a}{Array}\n\\step\n\\shape nope\n"
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src)
+        err = exc_info.value
+        # This is the \shape must appear before \step error (E1051).
+        assert err.code == "E1051"
+        assert err.source_line is not None
+        assert "\\shape" in err.source_line
+
+    def test_e1053_highlight_in_prelude_has_source_line(
+        self, parser: SceneParser,
+    ) -> None:
+        src = "\\highlight{a.cell[0]}\n"
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src)
+        err = exc_info.value
+        assert err.code == "E1053"
+        assert err.source_line is not None
+        assert "\\highlight{a.cell[0]}" in err.source_line
+        # Caret pointer must be rendered into str(err)
+        assert "^" in str(err)
+
+    def test_e1055_duplicate_narrate_has_source_line(
+        self, parser: SceneParser,
+    ) -> None:
+        src = "\\step\n\\narrate{first}\n\\narrate{second}\n"
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src)
+        err = exc_info.value
+        assert err.code == "E1055"
+        assert err.source_line is not None
+        assert "\\narrate{second}" in err.source_line
+
+    def test_source_line_none_when_no_parser_source(self) -> None:
+        """Direct ValidationError without source_line still works (backwards compat)."""
+        err = ValidationError("no ctx", code="E1001")
+        assert err.source_line is None
+        # str() must not include a caret block.
+        assert "^" not in str(err)
+
+
 # ===================================================================
 # Error recovery
 # ===================================================================

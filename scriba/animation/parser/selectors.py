@@ -44,11 +44,19 @@ from .ast import (
 class SelectorParser:
     """Recursive-descent parser for a selector string."""
 
-    def __init__(self, text: str, *, line: int = 0, col: int = 0) -> None:
+    def __init__(
+        self,
+        text: str,
+        *,
+        line: int = 0,
+        col: int = 0,
+        source_line: str | None = None,
+    ) -> None:
         self._text = text
         self._pos = 0
         self._line = line
         self._col = col
+        self._source_line = source_line
 
     # ------------------------------------------------------------------
     # Public API
@@ -271,6 +279,9 @@ class SelectorParser:
             f"Selector parse error at position {self._pos}: {msg}",
             position=self._pos,
             code=code,
+            line=self._line or None,
+            col=(self._col + self._pos) if self._col else None,
+            source_line=self._source_line,
         )
 
 
@@ -284,6 +295,9 @@ def parse_selector(
     *,
     line: int = 0,
     col: int = 0,
+    source_line: str | None = None,
 ) -> Selector:
     """Parse a selector string into a ``Selector`` AST node."""
-    return SelectorParser(text, line=line, col=col).parse()
+    return SelectorParser(
+        text, line=line, col=col, source_line=source_line,
+    ).parse()

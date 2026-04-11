@@ -87,7 +87,7 @@ ERROR_CATALOG: dict[str, str] = {
     # --- MetricPlot errors (E1480 -- E1489) ---
     "E1480": "MetricPlot requires at least one series.",
     "E1481": "MetricPlot series validation failure.",
-    "E1483": "Series exceeded maximum point count (truncated).",
+    "E1483": "MetricPlot series exceeded maximum point count (hard limit).",
     "E1484": "Log scale: non-positive value clamped.",
     "E1485": "MetricPlot series data validation error.",
     "E1486": "Degenerate xrange in MetricPlot.",

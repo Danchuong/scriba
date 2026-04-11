@@ -21,11 +21,13 @@ class ScribaError(Exception):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self._raw_message = message
         self.line = line
         self.col = col
         self.hint = hint
+        self.source_line = source_line
         if code is not None:
             self.code = code
         super().__init__(str(self))
@@ -50,6 +52,14 @@ class ScribaError(Exception):
         parts.append(self._raw_message)
         result = " ".join(parts)
 
+        # Source line pointer (only when we know a source line)
+        if self.source_line is not None:
+            stripped = self.source_line.rstrip("\n")
+            result += f"\n      {stripped}"
+            if self.col is not None and self.col >= 1:
+                # Caret column is 1-based; place it under the offending char.
+                result += "\n      " + " " * (self.col - 1) + "^"
+
         # Hint
         if self.hint:
             result += f"\n  hint: {self.hint}"
@@ -73,9 +83,17 @@ class RendererError(ScribaError):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self.renderer = renderer
-        super().__init__(message, code=code, line=line, col=col, hint=hint)
+        super().__init__(
+            message,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )
 
 
 class WorkerError(ScribaError):
@@ -90,9 +108,17 @@ class WorkerError(ScribaError):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self.stderr = stderr
-        super().__init__(message, code=code, line=line, col=col, hint=hint)
+        super().__init__(
+            message,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )
 
 
 class ScribaRuntimeError(ScribaError):
@@ -111,9 +137,17 @@ class ScribaRuntimeError(ScribaError):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self.component = component
-        super().__init__(message, code=code, line=line, col=col, hint=hint)
+        super().__init__(
+            message,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )
 
 
 class ValidationError(ScribaError):
@@ -128,6 +162,14 @@ class ValidationError(ScribaError):
         line: int | None = None,
         col: int | None = None,
         hint: str | None = None,
+        source_line: str | None = None,
     ) -> None:
         self.position = position
-        super().__init__(message, code=code, line=line, col=col, hint=hint)
+        super().__init__(
+            message,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )
