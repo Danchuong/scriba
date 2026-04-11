@@ -20,9 +20,11 @@ from scriba.animation.emitter import (
     emit_interactive_html,
     emit_shared_defs,
     scene_id_from_source,
+    validate_frame_labels_unique,
 )
 from scriba.animation.primitives.array import ArrayPrimitive
 from scriba.animation.primitives.base import BoundingBox
+from scriba.core.errors import ValidationError
 
 
 # ---------------------------------------------------------------------------
@@ -455,3 +457,206 @@ class TestRealArrayPrimitive:
         assert 'class="scriba-widget"' in html
         assert "<script>" in html
         assert 'fill="#f6f8fa"' in html
+
+
+# ---------------------------------------------------------------------------
+# Wave 4A Cluster 2 — FrameData.label → frame id wiring
+# ---------------------------------------------------------------------------
+
+
+class TestFrameIdFromLabel:
+    """Verify that ``FrameData.label`` becomes the frame HTML id token."""
+
+    def test_static_id_uses_label_when_set(self) -> None:
+        """``\\step[label=foo]`` produces ``id="{scene}-foo"`` in static mode."""
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1, label="foo")
+        html = emit_animation_html("scene", [frame], {"a": prim})
+        assert 'id="scene-foo"' in html
+        # Narration id should also use the label token.
+        assert 'id="scene-foo-narration"' in html
+        # And the legacy ``frame-N`` id must NOT appear.
+        assert 'id="scene-frame-1"' not in html
+
+    def test_static_id_falls_back_to_step_when_no_label(self) -> None:
+        """Unlabeled frames keep the ``frame-N`` id."""
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1)
+        html = emit_animation_html("scene", [frame], {"a": prim})
+        assert 'id="scene-frame-1"' in html
+        assert 'id="scene-frame-1-narration"' in html
+
+    def test_mixed_labeled_and_unlabeled_frames(self) -> None:
+        """Labeled + unlabeled frames coexist without collision."""
+        prim = _StubPrimitive(shape_name="a")
+        frames = [
+            _frame(step=1, total=3, label="intro"),
+            _frame(step=2, total=3),  # no label
+            _frame(step=3, total=3, label="conclusion"),
+        ]
+        html = emit_animation_html("scene", frames, {"a": prim})
+        # Labeled frames resolve to {scene}-{label}.
+        assert 'id="scene-intro"' in html
+        assert 'id="scene-conclusion"' in html
+        # Unlabeled frame keeps the ``frame-N`` id.
+        assert 'id="scene-frame-2"' in html
+        # Cross-check: narration ids track frame ids.
+        assert 'id="scene-intro-narration"' in html
+        assert 'id="scene-frame-2-narration"' in html
+        assert 'id="scene-conclusion-narration"' in html
+        # data-step is always present for backward compat.
+        assert 'data-step="1"' in html
+        assert 'data-step="2"' in html
+        assert 'data-step="3"' in html
+
+    def test_label_namespaced_by_scene_id(self) -> None:
+        """Two scenes with the same label must not collide."""
+        prim1 = _StubPrimitive(shape_name="a")
+        prim2 = _StubPrimitive(shape_name="b")
+        frame_a = _frame(step=1, total=1, label="pivot")
+        frame_b = _frame(step=1, total=1, label="pivot")
+        html_a = emit_animation_html("scene-alpha", [frame_a], {"a": prim1})
+        html_b = emit_animation_html("scene-beta", [frame_b], {"b": prim2})
+        assert 'id="scene-alpha-pivot"' in html_a
+        assert 'id="scene-beta-pivot"' in html_b
+        assert "scene-alpha" not in html_b
+        assert "scene-beta" not in html_a
+
+    def test_unsafe_label_falls_back_to_step_id(self) -> None:
+        """Free-form label text is NOT used as an HTML id.
+
+        Labels containing spaces or other non-id-safe characters (which
+        the parser would reject) must not be embedded as HTML ids.
+        This guards legacy ``FrameData`` callers that used ``label``
+        as a free-form aria-label string.
+        """
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1, label="Binary search demo")
+        html = emit_animation_html("scene", [frame], {"a": prim})
+        # Fallback id used.
+        assert 'id="scene-frame-1"' in html
+        # But aria-label derivation (legacy behaviour) still kicks in.
+        assert 'aria-label="Binary search demo"' in html
+
+
+class TestDuplicateFrameLabelRaises:
+    """Duplicate ``\\step[label=...]`` values must raise E1005 at emit time."""
+
+    def test_duplicate_labels_raise_e1005(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frames = [
+            _frame(step=1, total=2, label="foo"),
+            _frame(step=2, total=2, label="foo"),
+        ]
+        with pytest.raises(ValidationError) as exc_info:
+            emit_html("scene", frames, {"a": prim})
+        assert exc_info.value.code == "E1005"
+        # Both colliding step numbers should appear in the message.
+        msg = str(exc_info.value)
+        assert "foo" in msg
+        assert "step 1" in msg
+        assert "step 2" in msg
+
+    def test_unique_labels_do_not_raise(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frames = [
+            _frame(step=1, total=2, label="foo"),
+            _frame(step=2, total=2, label="bar"),
+        ]
+        # Should not raise — and both labels should surface as
+        # ``data-label`` on the print frames.
+        html = emit_html("scene", frames, {"a": prim})
+        assert 'data-label="foo"' in html
+        assert 'data-label="bar"' in html
+        # Static mode exposes the frame-id directly.
+        html_static = emit_html("scene", frames, {"a": prim}, mode="static")
+        assert 'id="scene-foo"' in html_static
+        assert 'id="scene-bar"' in html_static
+
+    def test_unsafe_duplicate_labels_do_not_raise(self) -> None:
+        """Duplicates amongst non-id-safe labels are harmless."""
+        prim = _StubPrimitive(shape_name="a")
+        frames = [
+            _frame(step=1, total=2, label="Free form text"),
+            _frame(step=2, total=2, label="Free form text"),
+        ]
+        # Should not raise — these labels never become frame ids.
+        validate_frame_labels_unique(frames)
+
+
+class TestInteractiveWidgetDataLabel:
+    """Interactive widget should emit ``data-label`` on labeled print frames."""
+
+    def test_labeled_frame_has_data_label(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1, label="intro", narration="hi")
+        html = emit_interactive_html("scene", [frame], {"a": prim})
+        # data-label appears in the print-frame DOM.
+        assert 'data-label="intro"' in html
+        # JS frame object also carries label field.
+        assert "label:`intro`" in html
+
+    def test_unlabeled_frame_has_no_data_label(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1, narration="hi")
+        html = emit_interactive_html("scene", [frame], {"a": prim})
+        assert "data-label=" not in html
+        # JS frame object still has label field but empty.
+        assert "label:``" in html
+
+    def test_static_mode_labeled_frame_has_data_label(self) -> None:
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1, label="intro")
+        html = emit_animation_html("scene", [frame], {"a": prim})
+        assert 'data-label="intro"' in html
+
+
+class TestSubstoryFrameLabelPropagation:
+    """Labels inside ``\\substory`` must also influence substory frame ids."""
+
+    def test_substory_frame_label_end_to_end(self) -> None:
+        """Parse → render a substory with a labeled inner ``\\step``.
+
+        This is an integration check that the renderer threads
+        ``FrameIR.label`` through substory frames as well as top-level
+        frames.
+        """
+        from scriba.animation.parser.grammar import SceneParser
+        from scriba.animation.renderer import _snapshot_to_frame_data  # noqa: F401
+        from scriba.animation.scene import SceneState
+
+        src = (
+            "\\shape{a}{Array}{size=5}\n"
+            "\\step\n"
+            "\\narrate{outer}\n"
+            "\\substory[title=\"Sub\"]\n"
+            "\\step[label=inner_step]\n"
+            "\\narrate{inside}\n"
+            "\\endsubstory\n"
+        )
+        ir = SceneParser().parse(src)
+        outer_frame = ir.frames[0]
+        inner_frame = outer_frame.substories[0].frames[0]
+        assert inner_frame.label == "inner_step"
+
+
+class TestValidateFrameLabelsUniqueHelper:
+    """Direct tests for the ``validate_frame_labels_unique`` helper."""
+
+    def test_empty_list_is_ok(self) -> None:
+        validate_frame_labels_unique([])
+
+    def test_all_unlabeled_is_ok(self) -> None:
+        validate_frame_labels_unique([_frame(step=1), _frame(step=2)])
+
+    def test_label_collision_across_non_adjacent_frames(self) -> None:
+        frames = [
+            _frame(step=1, label="x"),
+            _frame(step=2, label="y"),
+            _frame(step=3, label="x"),
+        ]
+        with pytest.raises(ValidationError) as exc_info:
+            validate_frame_labels_unique(frames)
+        assert exc_info.value.code == "E1005"
+        assert "step 1" in str(exc_info.value)
+        assert "step 3" in str(exc_info.value)

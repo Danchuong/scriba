@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from typing import Any, Callable
 
 from scriba.animation.primitives.base import BoundingBox
+from scriba.core.errors import ValidationError
 
 __all__ = [
     "FrameData",
@@ -28,7 +29,17 @@ __all__ = [
     "emit_shared_defs",
     "emit_substory_html",
     "scene_id_from_source",
+    "validate_frame_labels_unique",
 ]
+
+# Regex for a label that is safe to embed in an HTML id token. The
+# parser (``grammar._try_parse_step_options``) already enforces this
+# shape for ``\\step[label=...]`` values, but the emitter double-checks
+# before using a label as a frame identifier so that programmatically
+# constructed ``FrameData`` instances with free-form labels (used by
+# older tests that repurposed ``FrameData.label`` as an aria-label
+# string) fall back gracefully to the index-based ``frame-N`` id.
+_LABEL_ID_RE = _re.compile(r"^[A-Za-z_][A-Za-z0-9._-]*$")
 
 # ---------------------------------------------------------------------------
 # Layout constants
@@ -76,6 +87,63 @@ def scene_id_from_source(source: str) -> str:
     """Deterministic scene ID: ``scriba-`` + first 10 hex of SHA-256."""
     digest = hashlib.sha256(source.encode()).hexdigest()[:10]
     return f"scriba-{digest}"
+
+
+# ---------------------------------------------------------------------------
+# Frame ID + label helpers
+# ---------------------------------------------------------------------------
+
+
+def _is_id_safe_label(label: str | None) -> bool:
+    """Return True when *label* can be embedded in an HTML id attribute.
+
+    Parser-produced labels from ``\\step[label=...]`` always satisfy
+    this; the check exists so that programmatically constructed
+    ``FrameData`` with free-form aria-label text (legacy usage) do not
+    inadvertently produce broken ids.
+    """
+    if not label:
+        return False
+    return _LABEL_ID_RE.match(label) is not None
+
+
+def _frame_id(scene_id: str, frame: FrameData) -> str:
+    """Return the frame id token.
+
+    Labeled frames resolve to ``{scene_id}-{label}``; unlabeled (or
+    unsafe-labeled) frames fall back to ``{scene_id}-frame-{step}``.
+    The namespace includes ``scene_id`` so that two scenes in the same
+    document cannot collide on the same label.
+    """
+    if _is_id_safe_label(frame.label):
+        return f"{scene_id}-{frame.label}"
+    return f"{scene_id}-frame-{frame.step_number}"
+
+
+def validate_frame_labels_unique(frames: list[FrameData]) -> None:
+    """Raise ``ValidationError`` E1005 if two frames share the same label.
+
+    Only identifier-safe labels participate in the uniqueness check —
+    non-id-safe labels never become frame ids so a duplicate amongst
+    them is harmless.  The error message names both offending frames by
+    ``step_number`` so the user can locate them even though the emitter
+    does not have direct access to source line numbers.
+    """
+    seen: dict[str, int] = {}
+    for frame in frames:
+        label = frame.label
+        if not _is_id_safe_label(label):
+            continue
+        assert label is not None  # narrowed by _is_id_safe_label
+        if label in seen:
+            first_step = seen[label]
+            raise ValidationError(
+                f"duplicate \\step label {label!r}: "
+                f"first used at step {first_step}, "
+                f"reused at step {frame.step_number}",
+                code="E1005",
+            )
+        seen[label] = frame.step_number
 
 
 # ---------------------------------------------------------------------------
@@ -283,7 +351,7 @@ def _emit_frame_svg(
     narration_id_override: str | None = None,
 ) -> str:
     """Produce the ``<svg>`` element for one frame."""
-    narration_id = narration_id_override or f"{scene_id}-frame-{frame.step_number}-narration"
+    narration_id = narration_id_override or f"{_frame_id(scene_id, frame)}-narration"
 
     # Pre-pass: apply push/pop commands so bounding boxes are correct
     for shape_name, prim in primitives.items():
@@ -450,8 +518,15 @@ def emit_animation_html(
     frame_items: list[str] = []
     for frame in frames:
         step = frame.step_number
-        frame_id = f"{scene_id}-frame-{step}"
+        frame_id = _frame_id(scene_id, frame)
         narration_id = f"{frame_id}-narration"
+        # Emit data-label="{label}" only when the label is id-safe (so
+        # JS can route by label token as well as by step index).
+        data_label_attr = (
+            f' data-label="{_escape(frame.label)}"'
+            if _is_id_safe_label(frame.label)
+            else ""
+        )
 
         svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex)
 
@@ -465,7 +540,7 @@ def emit_animation_html(
 
         frame_items.append(
             f'    <li class="scriba-frame" id="{frame_id}" '
-            f'data-step="{step}">\n'
+            f'data-step="{step}"{data_label_attr}>\n'
             f'      <header class="scriba-frame-header">\n'
             f"        "
             f'<span class="scriba-step-label">'
@@ -600,10 +675,15 @@ def emit_interactive_html(
         svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex, narration_id_override=narration_id)
         svg_escaped = _escape_js(svg_html)
         narration_escaped = _escape_js(frame.narration_html)
+        # Label token (empty when frame has no id-safe label) — consumed
+        # by the JS navigator so callers can route by name:
+        # ``widget.showByLabel('intro')``.
+        label_token = frame.label if _is_id_safe_label(frame.label) else ""
+        label_escaped = _escape_js(label_token)
         # Include substory HTML if present
         substory_html = ""
         if frame.substories:
-            frame_id = f"{scene_id}-frame-{frame.step_number}"
+            frame_id = _frame_id(scene_id, frame)
             for sub in frame.substories:
                 substory_html += emit_substory_html(
                     scene_id, frame_id, sub, primitives, viewbox,
@@ -611,7 +691,8 @@ def emit_interactive_html(
                 )
         substory_escaped = _escape_js(substory_html)
         js_frames.append(
-            f'{{svg:`{svg_escaped}`,narration:`{narration_escaped}`,substory:`{substory_escaped}`}}'
+            f'{{svg:`{svg_escaped}`,narration:`{narration_escaped}`,'
+            f'substory:`{substory_escaped}`,label:`{label_escaped}`}}'
         )
 
     js_frames_str = ",\n    ".join(js_frames)
@@ -630,6 +711,11 @@ def emit_interactive_html(
         print_svg = _emit_frame_svg(
             frame, primitives, scene_id, viewbox, render_inline_tex,
             narration_id_override=f"{scene_id}-print-{step}-narration",
+        )
+        data_label_attr = (
+            f' data-label="{_escape(frame.label)}"'
+            if _is_id_safe_label(frame.label)
+            else ""
         )
         print_substory = ""
         if frame.substories:
@@ -650,7 +736,7 @@ def emit_interactive_html(
                         f'</div>\n'
                     )
         print_frame_items.append(
-            f'<div class="scriba-print-frame" data-step="{step}">\n'
+            f'<div class="scriba-print-frame" data-step="{step}"{data_label_attr}>\n'
             f'  <span class="scriba-step-label">'
             f'Step {step} / {frame_count}</span>\n'
             f'  <div class="scriba-stage">{print_svg}</div>\n'
@@ -884,6 +970,11 @@ def emit_html(
         When ``True`` (default), apply basic HTML minification to the
         output to reduce file size.
     """
+    # Enforce frame-label uniqueness before emission. Duplicates would
+    # produce colliding HTML ids which break hash-navigation and
+    # screen-reader focus, so fail fast with E1005.
+    validate_frame_labels_unique(frames)
+
     if mode == "static":
         result = emit_animation_html(
             scene_id, frames, primitives, render_inline_tex=render_inline_tex,
