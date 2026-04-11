@@ -217,7 +217,7 @@ Goal: 5 high-engineering-effort Pivot #2 items shipped; docs site live; 9 HARD-T
 - [ ] `tests/unit/test_substory.py` — 8 cases: basic substory, multiple substories per frame, nested inside prelude, `\narrate` inside substory, missing `\endsubstory` error (`E1xxx`), substory inside diagram (should reject). (3 h)
 - [ ] `tests/integration/snapshots/substory/` — 2 snapshot fixtures: Zuma interval-DP drilldown, single-substory frame. (2 h)
 
-**`\fastforward` extension (Extension E3, spec: `docs/scriba/extensions/fastforward.md`)**
+**`\fastforward` extension (Extension E3, spec removed)**
 - [ ] `scriba/animation/extensions/fastforward.py` — `\fastforward{N}{sample_every=K, seed=42}` parser: validate `N > 0`, `K > 0`, `K ≤ N`, `seed` is int. (2 h)
 - [ ] `scriba/animation/extensions/fastforward.py` — Starlark worker elevated limits: for a `\fastforward` block, set `step_cap = N × 10^8` and inject the seeded RNG into the worker globals as `rand = Rand(seed)`; restore default cap after the block. (3 h)
 - [ ] `scriba/animation/extensions/fastforward.py` — frame sampling: run the `@compute` block `N` times, emit one filmstrip frame every `K` iterations; enforce the 100-frame hard limit across the sampled frames (`E1181`). (3 h)
@@ -319,7 +319,7 @@ Goal: production-grade error UX, Homebrew tap, PyPI final, launch, and formal
 - [`docs/scriba/extensions/keyframe-animation.md`](../extensions/keyframe-animation.md) — E5 spec.
 - [`docs/scriba/extensions/figure-embed.md`](../extensions/figure-embed.md) — E1 spec.
 - [`docs/scriba/extensions/substory.md`](../extensions/substory.md) — E4 spec.
-- [`docs/scriba/extensions/fastforward.md`](../extensions/fastforward.md) — E3 spec.
+- `docs/scriba/extensions/fastforward.md` — E3 spec (removed).
 - [`docs/scriba/primitives/matrix.md`](../primitives/matrix.md) — P1 spec.
 - [`docs/scriba/primitives/stack.md`](../primitives/stack.md) — P2 spec.
 - [`docs/scriba/primitives/plane2d.md`](../primitives/plane2d.md) — P3 spec.

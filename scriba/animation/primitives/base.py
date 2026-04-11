@@ -4,13 +4,14 @@ Every primitive type (Array, Grid, DPTable, Graph, Tree, NumberLine, etc.)
 extends :class:`PrimitiveBase` and implements the unified interface:
 ``Cls(name, params)`` constructor with self-managed state.
 
-See ``docs/06-primitives.md`` for the authoritative catalog.
+See ``docs/spec/primitives.md`` for the authoritative catalog.
 """
 
 from __future__ import annotations
 
 import abc
 import re
+import warnings
 from dataclasses import dataclass
 from typing import Any, Callable, ClassVar
 
@@ -29,9 +30,13 @@ class BoundingBox:
     width: int
     height: int
 
+    def __iter__(self):
+        """Support tuple unpacking: ``x, y, w, h = bbox``."""
+        return iter((self.x, self.y, self.width, self.height))
+
 
 # ---------------------------------------------------------------------------
-# Valid state names (§2.3 in 06-primitives.md)
+# Valid state names (§2.3 in primitives.md)
 # ---------------------------------------------------------------------------
 
 from scriba.animation.constants import DEFAULT_STATE, VALID_STATES  # noqa: F401 — re-exported
@@ -185,6 +190,20 @@ class PrimitiveBase(abc.ABC):
 
     def set_state(self, target: str, state: str) -> None:
         """Set the CSS state class for an addressable target."""
+        if not self.validate_selector(target):
+            warnings.warn(
+                f"{self.__class__.__name__} '{self.name}': "
+                f"invalid selector '{target}', ignoring set_state()",
+                stacklevel=2,
+            )
+            return
+        if state not in VALID_STATES:
+            warnings.warn(
+                f"{self.__class__.__name__} '{self.name}': "
+                f"invalid state '{state}', ignoring set_state()",
+                stacklevel=2,
+            )
+            return
         self._states[target] = state
 
     def get_state(self, target: str) -> str:
@@ -193,6 +212,13 @@ class PrimitiveBase(abc.ABC):
 
     def set_value(self, suffix: str, value: str) -> None:
         """Set display value for an addressable part."""
+        if not self.validate_selector(suffix):
+            warnings.warn(
+                f"{self.__class__.__name__} '{self.name}': "
+                f"invalid selector '{suffix}', ignoring set_value()",
+                stacklevel=2,
+            )
+            return
         self._values[suffix] = value
 
     def get_value(self, suffix: str) -> str | None:
@@ -201,6 +227,13 @@ class PrimitiveBase(abc.ABC):
 
     def set_label(self, suffix: str, label: str) -> None:
         """Set display label for an addressable part."""
+        if not self.validate_selector(suffix):
+            warnings.warn(
+                f"{self.__class__.__name__} '{self.name}': "
+                f"invalid selector '{suffix}', ignoring set_label()",
+                stacklevel=2,
+            )
+            return
         self._labels[suffix] = label
 
     def set_annotations(self, annotations: list[dict[str, Any]]) -> None:

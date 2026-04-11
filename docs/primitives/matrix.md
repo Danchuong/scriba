@@ -598,7 +598,7 @@ all deltas into the base spec.**
 
 **In §3.1** (`\shape` command), the `Type` parameter table and the sentence:
 
-> **Type** is one of the 6 built-in primitive type names defined in `06-primitives.md`:
+> **Type** is one of the 6 built-in primitive type names defined in `primitives.md`:
 > `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`. Unknown type is `E1102`.
 
 should be updated to add `Matrix` and `Heatmap`:

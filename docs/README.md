@@ -46,7 +46,7 @@ renderers that sit in front of it**, and nothing else. No CLI, no custom
 element, no runtime step controller, no mini-language with its own parser.
 
 - `AnimationRenderer` claims every `\begin{animation} … \end{animation}`
-  region and expands it to an `<ol class="scriba-filmstrip">` of
+  region and expands it to an `<ol class="scriba-frames">` of
   pre-rendered SVG frames plus narration paragraphs.
 - `DiagramRenderer` claims every `\begin{diagram} … \end{diagram}` region
   and emits a single static `<figure>` with one SVG inside.
@@ -155,6 +155,7 @@ else in this folder is spec, cookbook, and taste.
 | [`animation-css.md`](spec/animation-css.md) | CSS stylesheet specification. |
 | [`starlark-worker.md`](spec/starlark-worker.md) | Starlark worker wire protocol. |
 | [`ruleset.md`](spec/ruleset.md) | Comprehensive ruleset derived from specs. |
+| [`error-codes.md`](spec/error-codes.md) | Unified error code reference (E10xx--E15xx) with descriptions and common fixes. |
 
 ### `guides/` — How-to and plugin docs
 
@@ -195,13 +196,19 @@ else in this folder is spec, cookbook, and taste.
 | [`verify-2026-04-09.md`](archive/verify-2026-04-09.md) | Verification report (2026-04-09). |
 | [`v020-verify.md`](archive/v020-verify.md) | v0.2.0 verification report. |
 
+### `tutorial/` — Getting started
+
+| File | Purpose |
+|---|---|
+| [`getting-started.md`](tutorial/getting-started.md) | First-time walkthrough: install, write your first animation, render to HTML. |
+
 ### Other directories (unchanged)
 
 | Directory | Purpose |
 |---|---|
 | [`cookbook/`](cookbook/) | Worked problems. Frog DP, 0/1 Knapsack, BFS on a grid, segment tree query, binary search on the answer. Copy-paste starters. |
 | [`extensions/`](extensions/) | Extension specs (figure-embed, hl-macro, fastforward, substory, keyframe-animation). |
-| [`primitives/`](primitives/) | Draft primitive extension specs (matrix, stack, plane2d, metricplot, graph-stable-layout). |
+| [`primitives/`](primitives/) | Draft primitive extension specs (matrix, stack, plane2d, metricplot, graph-stable-layout, codepanel, hashmap, linkedlist, queue, variablewatch). |
 | [`blog/`](blog/) | Launch blog posts and community thread templates. |
 | [`oss/`](oss/) | Notes on the open-source pipeline: what ships publicly, what stays in-tree. |
 | [`legacy/`](legacy/) | Earlier drafts preserved for context. Do not cite from implementation code. |

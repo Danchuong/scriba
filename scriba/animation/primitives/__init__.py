@@ -1,6 +1,6 @@
 """Primitive catalog package for Scriba animation environments.
 
-See ``docs/06-primitives.md`` for the authoritative specification.
+See ``docs/spec/primitives.md`` for the authoritative specification.
 """
 
 from __future__ import annotations

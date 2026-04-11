@@ -8,13 +8,13 @@
 >
 > Cross-references: [`04-environments-spec.md`](environments.md) §8 for the frozen
 > HTML output shape, §9 for the CSS class contract and state variables;
-> [`06-primitives.md`](primitives.md) for the per-primitive SVG output templates and
+> [`primitives.md`](primitives.md) for the per-primitive SVG output templates and
 > selector grammar; [`09-animation-plugin.md`](../guides/animation-plugin.md) §5–6 for how the
 > emitter is invoked per frame; [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §5–6 for
 > the single-frame invocation path.
 >
 > This file does **not** define: the Scene IR datatypes (`05-scene-ir.md`), the primitive
-> shape catalog (`06-primitives.md`), the Starlark worker (`07-starlark-worker.md`), or the
+> shape catalog (`primitives.md`), the Starlark worker (`07-starlark-worker.md`), or the
 > CSS stylesheet contents (`09-animation-css.md`). Where this file and
 > `04-environments-spec.md` appear to disagree, `04-environments-spec.md` wins and this
 > file is the bug.
@@ -192,7 +192,7 @@ keeps the emitter decoupled from the HTML shell contract.
 
 Each primitive type maps to a layout algorithm and an SVG template. The dispatch is by
 primitive type name (case-insensitive match against the 6 built-in types from
-[`06-primitives.md`](primitives.md)).
+[`primitives.md`](primitives.md)).
 
 | Primitive    | Layout algorithm          | SVG root group                    | §reference |
 |--------------|---------------------------|-----------------------------------|------------|
@@ -490,7 +490,7 @@ addressable group always carries exactly one state class (or two when highlight 
 ### 7.1 Contract
 
 Every addressable sub-part of every primitive MUST carry a `data-target` attribute whose
-value is the canonical selector string from [`06-primitives.md`](primitives.md) §10.
+value is the canonical selector string from [`primitives.md`](primitives.md) §10.
 This is the same string an author writes in `\recolor{...}`, `\apply{...}`,
 `\highlight{...}`, or `\annotate{...}`.
 

@@ -1,6 +1,6 @@
 """Array primitive — a fixed-length horizontal row of indexed cells.
 
-See ``docs/06-primitives.md`` §3 for the authoritative specification.
+See ``docs/spec/primitives.md`` §3 for the authoritative specification.
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ from scriba.animation.primitives.base import (
     CELL_WIDTH,
     INDEX_LABEL_OFFSET,
     THEME,
+    BoundingBox,
     PrimitiveBase,
     _escape_xml,
     _render_svg_text,
@@ -284,7 +285,7 @@ class ArrayPrimitive(PrimitiveBase):
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(self) -> tuple[float, float, float, float]:
+    def bounding_box(self) -> BoundingBox:
         """Return ``(x, y, width, height)``.
 
         The height includes vertical space needed above the cells
@@ -299,7 +300,7 @@ class ArrayPrimitive(PrimitiveBase):
             h += INDEX_LABEL_OFFSET + _CAPTION_GAP if self.labels else INDEX_LABEL_OFFSET
         arrow_above = self._arrow_height_above(effective_anns)
         h += arrow_above
-        return (0, 0, float(w), float(h))
+        return BoundingBox(x=0, y=0, width=float(w), height=float(h))
 
     # -- internal: arrows ---------------------------------------------------
 

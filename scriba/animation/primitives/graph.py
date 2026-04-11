@@ -3,7 +3,7 @@
 Implements ``\\shape{name}{Graph}{nodes=..., edges=..., ...}`` for BFS/DFS,
 flow networks, and general graph algorithm visualizations.
 
-See ``docs/06-primitives.md`` section 6 for the authoritative specification.
+See ``docs/spec/primitives.md`` section 6 for the authoritative specification.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 import random
 from html import escape as html_escape
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
     BoundingBox,
@@ -173,7 +173,7 @@ class Graph(PrimitiveBase):
         ``layout``, ``layout_seed``, ``label``.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",
         "edge[({u},{v})]": "edge by endpoints",
         "all": "all nodes and edges",

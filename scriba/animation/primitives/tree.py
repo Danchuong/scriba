@@ -3,14 +3,14 @@
 Implements ``\\shape{name}{Tree}{root=..., nodes=..., edges=...}`` for BSTs,
 segment trees, recursive DP, and tree traversal visualizations.
 
-See ``docs/06-primitives.md`` section 7 for the authoritative specification.
+See ``docs/spec/primitives.md`` section 7 for the authoritative specification.
 """
 
 from __future__ import annotations
 
 import math
 from html import escape as html_escape
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
     BoundingBox,
@@ -209,7 +209,7 @@ class Tree(PrimitiveBase):
         Dictionary of parameters from the ``\\shape`` command.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",
         "edge[({u},{v})]": "edge by endpoints",
         "all": "all nodes and edges",
@@ -272,7 +272,7 @@ class Tree(PrimitiveBase):
 
         root = params.get("root")
         if root is None:
-            raise animation_error("E1103", "Tree requires 'root' parameter")
+            raise animation_error("E1103", detail="Tree requires 'root' parameter")
 
         self.root: str | int = root
         self.nodes: list[str | int] = list(params.get("nodes", []))
@@ -303,7 +303,7 @@ class Tree(PrimitiveBase):
 
         data = params.get("data")
         if data is None:
-            raise animation_error("E1103", "segtree requires 'data' parameter")
+            raise animation_error("E1103", detail="Tree (kind=segtree) requires 'data' parameter")
 
         data = list(data)
         root_id, nodes, edges, sums = build_segtree(data)
@@ -328,7 +328,7 @@ class Tree(PrimitiveBase):
         if range_lo is None or range_hi is None:
             raise animation_error(
                 "E1103",
-                "sparse_segtree requires 'range_lo' and 'range_hi' parameters",
+                detail="Tree (kind=sparse_segtree) requires 'range_lo' and 'range_hi' parameters",
             )
 
         self.range_lo: int = int(range_lo)

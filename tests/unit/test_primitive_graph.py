@@ -156,8 +156,8 @@ class TestGraphBoundingBox:
         bb = g.bounding_box()
         assert bb.x == 0
         assert bb.y == 0
-        assert bb.width == 400
-        assert bb.height == 300
+        assert bb.width == 440   # 400 + 2 * node_radius(20)
+        assert bb.height == 340  # 300 + 2 * node_radius(20)
 
 
 # ---------------------------------------------------------------

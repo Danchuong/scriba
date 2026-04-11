@@ -48,7 +48,7 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 |---------|-----------|----------|-------------|
 | `\shape` | `{name}{Type}{params}` | prelude only (animation), anywhere (diagram) | declaration |
 | `\compute` | `{...Starlark...}` | prelude or step (animation), anywhere (diagram) | global or frame-local |
-| `\step` | `[label=...]` (optional) | animation only | starts new frame |
+| `\step` | (no args) | animation only | starts new frame |
 | `\narrate` | `{LaTeX text}` | animation step only | per-frame |
 | `\apply` | `{target}{params}` | prelude or step | persistent |
 | `\highlight` | `{target}` | step only (animation), anywhere (diagram) | ephemeral (animation), persistent (diagram) |
@@ -74,6 +74,8 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\substory` | `[title=..., id=...]` | animation step only | E4 |
 | `\endsubstory` | (no args) | closes `\substory` | E4 |
 
+> **Note:** `\substory`/`\endsubstory` form a block construct (`SubstoryBlock` in the AST), not individual commands.
+
 ---
 
 ## 3. Target Selector Syntax
@@ -85,6 +87,7 @@ accessor  ::= "cell" "[" idx "]" ("[" idx "]")?
             | "edge" "[" "(" id "," id ")" "]"
             | "range" "[" idx ":" idx "]"
             | "tick" "[" idx "]"
+            | "item" "[" idx "]"
             | "all"
             | IDENT "[" idx "]"
             | IDENT
@@ -130,7 +133,8 @@ The complete formal grammar for the body of `\begin{animation}` and `\begin{diag
 
 ```
 animation       ::= options? prelude step_block*
-diagram         ::= options? command*
+
+(* Diagram mode is reserved for future implementation. *)
 
 options         ::= "[" option_list "]"
 option_list     ::= option ("," option)*
@@ -158,8 +162,7 @@ shape_cmd       ::= "\shape" brace_arg brace_arg param_brace?
 #### Step Command
 
 ```
-step_cmd        ::= "\step" step_options? NEWLINE
-step_options    ::= "[" "label" "=" option_value "]"
+step_cmd        ::= "\step" NEWLINE
 ```
 
 `\step` must be on its own line with no trailing content.
@@ -357,12 +360,12 @@ Unknown state → `E1109`
 | Type | Required Params | Key Features |
 |------|----------------|-------------|
 | `Matrix`/`Heatmap` | `rows`, `cols`, `data` | colorscale (`viridis`/`magma`/`plasma`/`greys`/`rdbu`), `show_values`, `vmin`/`vmax` |
-| `Stack` | `capacity` or `n` | push/pop delta semantics, horizontal/vertical |
+| `Stack` | (none; all optional) | `orientation`, `max_visible`, `items`, `cell_width`, `cell_height`, `gap`, `label`; push/pop delta semantics |
 | `Plane2D` | `xrange`, `yrange` | lines/points/segments/polygons/regions, geometry helpers |
 | `MetricPlot` | `series` (via `\shape`) | up to 8 series, Wong palette, auto axes, log scale, two-axis mode |
 | `Graph layout=stable` | (same as Graph) | SA joint-optimization, fixed positions across frames |
 
-### 5.2b Data-Structure Primitives (5)
+### 5.3 Data-Structure Primitives (5)
 
 | Type | Required Params | Key Features |
 |------|----------------|-------------|

@@ -1,8 +1,7 @@
 """Frozen dataclasses for the Scene IR (Intermediate Representation).
 
-Every ``\\begin{animation}`` or ``\\begin{diagram}`` environment is parsed
-into exactly one :class:`AnimationIR` or :class:`DiagramIR`.  All types are
-immutable after construction.
+Every ``\\begin{animation}`` environment is parsed into exactly one
+:class:`AnimationIR`.  All types are immutable after construction.
 
 See ``docs/05-scene-ir.md`` for the authoritative specification.
 """
@@ -292,17 +291,6 @@ class AnimationOptions:
     layout: Literal["filmstrip", "stack"] = "filmstrip"
 
 
-@dataclass(frozen=True, slots=True)
-class DiagramOptions:
-    """Parsed ``[key=value,...]`` header for ``\\begin{diagram}``."""
-
-    width: str | None = None
-    height: str | None = None
-    id: str | None = None
-    label: str | None = None
-    grid: Literal["on", "off"] = "off"
-
-
 # ---------------------------------------------------------------------------
 # Container IR types  (§6)
 # ---------------------------------------------------------------------------
@@ -344,12 +332,3 @@ class AnimationIR:
     source_hash: str
 
 
-@dataclass(frozen=True, slots=True)
-class DiagramIR:
-    """Top-level IR for ``\\begin{diagram}``."""
-
-    options: DiagramOptions
-    shapes: tuple[ShapeCommand, ...]
-    compute_blocks: tuple[ComputeCommand, ...]
-    commands: tuple[MutationCommand, ...]
-    source_hash: str

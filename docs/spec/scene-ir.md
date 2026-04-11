@@ -8,7 +8,7 @@
 > parser-to-IR contract, §3 for the 8 inner commands, §4 for target selector syntax,
 > §6 for frame semantics. [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §4 step 6 for
 > `DiagramIR`. [`09-animation-plugin.md`](../guides/animation-plugin.md) §4 for `AnimationIR`
-> and `FrameIR`. [`06-primitives.md`](primitives.md) for the primitive catalog that
+> and `FrameIR`. [`primitives.md`](primitives.md) for the primitive catalog that
 > interprets `ShapeCommand` parameters.
 >
 > Type safety: Scene IR types are Pydantic v2 `BaseModel` subclasses throughout (see
@@ -109,7 +109,7 @@ class ShapeCommand(BaseModel):
 |-------------|---------------------------|------------------------------------------------------------|
 | `name`      | `str`                     | Matches `[a-z][a-zA-Z0-9_]*`. Unique per environment (`E1101`). |
 | `type_name` | `str`                     | One of the 6 built-in primitives (`E1102` on unknown).     |
-| `params`    | `dict[str, ParamValue]`   | Primitive-specific. See [`06-primitives.md`](primitives.md). Missing required param is `E1103`; type mismatch is `E1104`. |
+| `params`    | `dict[str, ParamValue]`   | Primitive-specific. See [`primitives.md`](primitives.md). Missing required param is `E1103`; type mismatch is `E1104`. |
 
 `ParamValue` is a union type:
 
@@ -571,7 +571,7 @@ The primitive catalog reads `ShapeCommand` values from `AnimationIR.shapes` or
 
 1. Look up `ShapeCommand.type_name` in the primitive registry (`E1102` on miss).
 2. Resolve `InterpolationRef` values in `ShapeCommand.params` against the Starlark scope.
-3. Validate required and optional parameters per [`06-primitives.md`](primitives.md).
+3. Validate required and optional parameters per [`primitives.md`](primitives.md).
 4. Instantiate the primitive, computing layout (positions, sizes, topology) once.
 5. Register addressable parts as valid selector targets for downstream command validation.
 
@@ -705,7 +705,7 @@ AnimationIR(
 
 ---
 
-**End of Scene IR spec.** All downstream specs (`06-primitives.md`, `07-starlark-worker.md`,
+**End of Scene IR spec.** All downstream specs (`primitives.md`, `07-starlark-worker.md`,
 `08-svg-emitter.md`, `03-diagram-plugin.md`, `09-animation-plugin.md`) bind to the types
 defined here. Adding a new field to any IR type is a MINOR version bump. Removing or
 renaming a field is a MAJOR version bump.

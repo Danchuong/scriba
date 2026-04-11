@@ -1,4 +1,16 @@
-"""Centralized constants for the Scriba animation system."""
+"""Centralized constants for the Scriba animation system.
+
+Error numbering scheme (see ``errors.py`` for the full catalog):
+
+    E10xx       Detection / structural errors
+    E1050-E1059 Diagram-specific errors
+    E11xx       Parse / validation errors
+    E1150-E1179 Starlark sandbox and foreach errors
+    E1180-E1199 Frame / cursor errors
+    E13xx       Substory errors
+    E14xx       Primitive-specific errors (Plane2D, MetricPlot)
+    E15xx       Graph layout errors
+"""
 
 # Valid state names for \recolor and \cursor
 VALID_STATES = frozenset({

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import re
 from html import escape as html_escape
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
     THEME,
@@ -68,7 +68,7 @@ class LinkedList(PrimitiveBase):
         Recognised keys: ``data`` (list of values), ``label``.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{i}]": "node by index",
         "link[{i}]": "link arrow by index",
         "all": "all nodes and links",

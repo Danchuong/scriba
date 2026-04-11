@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import re
 from html import escape as html_escape
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
+from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     CELL_GAP,
     CELL_HEIGHT,
@@ -63,7 +64,7 @@ class Queue(PrimitiveBase):
         Recognised keys: ``capacity``, ``data``, ``label``.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index",
         "front": "front pointer",
         "rear": "rear pointer",
@@ -74,6 +75,11 @@ class Queue(PrimitiveBase):
         super().__init__(name, params)
 
         self.capacity: int = int(params.get("capacity", _DEFAULT_CAPACITY))
+        if self.capacity < 1:
+            raise animation_error(
+                E1103,
+                detail=f"Queue capacity must be >= 1, got {self.capacity}",
+            )
         self.label_text: str | None = params.get("label")
 
         # Internal data store — one slot per capacity position

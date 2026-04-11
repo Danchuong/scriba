@@ -14,6 +14,7 @@ from __future__ import annotations
 import ast as _ast_module
 import copy
 import re
+import warnings
 from dataclasses import dataclass, field, fields, replace
 from typing import Any
 
@@ -590,6 +591,16 @@ class SceneState:
     def _apply_annotate(self, cmd: AnnotateCommand) -> None:
         """\\annotate — persistent by default, ephemeral if flagged."""
         target_str = _selector_to_str(cmd.target)
+
+        # Validate that the target shape exists
+        shape_name = target_str.split(".", 1)[0]
+        if shape_name not in self.shape_states:
+            warnings.warn(
+                f"\\annotate target shape '{shape_name}' not found "
+                f"in declared shapes, annotation may be invalid",
+                stacklevel=2,
+            )
+
         arrow_from_str = _selector_to_str(cmd.arrow_from) if cmd.arrow_from else None
         self.annotations.append(
             AnnotationEntry(

@@ -1,17 +1,18 @@
 """NumberLine primitive — a horizontal axis with evenly spaced tick marks.
 
-See ``docs/06-primitives.md`` §8 for the authoritative specification.
+See ``docs/spec/primitives.md`` §8 for the authoritative specification.
 """
 
 from __future__ import annotations
 
 import re
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     STATE_COLORS,
     THEME,
+    BoundingBox,
     PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
@@ -62,7 +63,7 @@ class NumberLinePrimitive(PrimitiveBase):
 
     primitive_type: str = "numberline"
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "tick[{i}]": "tick mark by index",
         "range[{lo}:{hi}]": "contiguous range of ticks",
         "axis": "the axis line",
@@ -241,12 +242,12 @@ class NumberLinePrimitive(PrimitiveBase):
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(self) -> tuple[float, float, float, float]:
+    def bounding_box(self) -> BoundingBox:
         """Return ``(x, y, width, height)``."""
         h = NL_HEIGHT
         if self.label:
             h += 16  # extra space for caption
-        return (0.0, 0.0, float(self.width), float(h))
+        return BoundingBox(x=0.0, y=0.0, width=float(self.width), height=float(h))
 
 
 # ---------------------------------------------------------------------------

@@ -9,6 +9,7 @@ import pytest
 
 from scriba.animation.emitter import _escape_js
 from scriba.animation.primitives.array import ArrayPrimitive
+from scriba.animation.primitives.dptable import DPTablePrimitive
 from scriba.animation.primitives.grid import GridPrimitive
 from scriba.animation.primitives.matrix import MatrixPrimitive
 from scriba.animation.primitives.numberline import NumberLinePrimitive
@@ -174,11 +175,23 @@ class TestPrimitiveDimensionCaps:
 
     def test_matrix_rejects_oversized(self) -> None:
         with pytest.raises(ValidationError, match="E1103"):
-            MatrixPrimitive("m", {"rows": 101, "cols": 100})
+            MatrixPrimitive("m", {"rows": 501, "cols": 500})
 
     def test_matrix_accepts_max(self) -> None:
-        inst = MatrixPrimitive("m", {"rows": 100, "cols": 100})
-        assert inst.rows == 100
+        inst = MatrixPrimitive("m", {"rows": 500, "cols": 500})
+        assert inst.rows == 500
+
+    def test_dptable_rejects_oversized_1d(self) -> None:
+        with pytest.raises(ValidationError, match="E1103"):
+            DPTablePrimitive("dp", {"n": 250_001})
+
+    def test_dptable_rejects_oversized_2d(self) -> None:
+        with pytest.raises(ValidationError, match="E1103"):
+            DPTablePrimitive("dp", {"rows": 501, "cols": 500})
+
+    def test_dptable_accepts_max_2d(self) -> None:
+        inst = DPTablePrimitive("dp", {"rows": 500, "cols": 500})
+        assert inst.rows == 500
 
     def test_numberline_rejects_oversized(self) -> None:
         with pytest.raises(ValidationError, match="E1103"):

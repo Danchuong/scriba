@@ -273,7 +273,7 @@ By the end of Phase C, 9/10 HARD-TO-DISPLAY problems are covered.
 - **Pivot #2 — Extension E3:** `scriba/animation/extensions/fastforward.py` —
   `\fastforward{N}{sample_every=K, seed=42}` meta-step: elevated Starlark worker
   step cap for the block, seeded RNG, frame sampling.
-  Spec: [`docs/scriba/extensions/fastforward.md`](../extensions/fastforward.md).
+  Spec: `docs/scriba/extensions/fastforward.md` (removed).
 - `docs-site/` — Astro Starlight project; sidebar from `docs/scriba/`; error
   catalog and primitive reference auto-generated.
 - `examples/plain-html/`, `examples/nextjs/`, `examples/astro/`, `examples/mdbook/`.
@@ -373,7 +373,7 @@ step mode, and Manim-class continuous animation.
 | [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) | 10-problem stress test that motivated Pivot #2. |
 | [`extensions/figure-embed.md`](../extensions/figure-embed.md) | E1 spec (written by Agent 2). |
 | [`extensions/hl-macro.md`](../extensions/hl-macro.md) | E2 spec (written by Agent 2). |
-| [`extensions/fastforward.md`](../extensions/fastforward.md) | E3 spec (written by Agent 2). |
+| `extensions/fastforward.md` | E3 spec (removed). |
 | [`extensions/substory.md`](../extensions/substory.md) | E4 spec (written by Agent 2). |
 | [`extensions/keyframe-animation.md`](../extensions/keyframe-animation.md) | E5 spec (written by Agent 2). |
 | [`primitives/matrix.md`](../primitives/matrix.md) | P1 spec (written by Agent 3). |

@@ -206,7 +206,6 @@ _ALLOWED_BUILTINS: dict[str, Any] = {
     "all": all,
     "sum": sum,
     "divmod": divmod,
-    "isinstance": isinstance,
     "repr": repr,
     "round": round,
     "chr": chr,
@@ -269,6 +268,10 @@ def _is_serializable_binding(key: str, value: Any) -> bool:
 
 class _TimeoutError(Exception):
     """Raised when a Starlark evaluation exceeds the wall-clock limit."""
+
+
+class _StepCountExceededError(Exception):
+    """E1153: Raised when Starlark execution exceeds the step count limit."""
 
 
 def _timeout_handler(signum: int, frame: Any) -> None:
@@ -363,6 +366,17 @@ def _evaluate(
             "line": exc.lineno,
             "col": exc.offset,
         }
+    except _StepCountExceededError:
+        if has_alarm:
+            signal.alarm(0)
+        return {
+            "id": request_id,
+            "ok": False,
+            "code": "E1153",
+            "message": "step count exceeded",
+            "line": None,
+            "col": None,
+        }
     except MemoryError as exc:
         if has_alarm:
             signal.alarm(0)
@@ -431,7 +445,7 @@ def _step_trace(frame: Any, event: str, arg: Any) -> Any:
     """Trace function that counts execution steps and raises on overflow."""
     _step_local.count += 1
     if _step_local.count > _step_local.limit:
-        raise RuntimeError("E1153: step count exceeded")
+        raise _StepCountExceededError("step count exceeded")
     # Periodic memory check via tracemalloc (catches string multiplication etc.)
     if (
         _step_local.count % _MEMORY_CHECK_INTERVAL == 0

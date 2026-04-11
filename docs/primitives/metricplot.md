@@ -137,50 +137,13 @@ Multiple `\apply` calls to the same `MetricPlot` in a single `\step` block each 
 point. This is intentional: it allows feeding sub-step data. However, each `\apply` should
 feed all series simultaneously to keep x-axis positions aligned.
 
-### 3.2 `\fastforward` integration
-
-When `\fastforward{N}{sample_every=K}` (see `extensions/fastforward.md`) is active, the
-Starlark `@compute` callback's return dict is inspected for keys matching the series names.
-Each sampled iteration that produces a matching key appends a point to that series
-automatically — the author does not need to write explicit `\apply` commands inside the
-fastforward loop.
-
-Example:
-
-```latex
-\shape{energy_plot}{MetricPlot}{
-  series=["energy", "temperature"],
-  xlabel="iteration",
-  ylabel="value",
-  yscale="log"
-}
-
-\fastforward{10000}{sample_every=200}
-\compute{
-  def sa_step(state, T):
-      # ... simulated annealing logic ...
-      return new_state, new_energy, T * 0.97
-
-  energy = initial_energy
-  T = 100.0
-  for i in range(n_iterations):
-      state, energy, T = sa_step(state, T)
-      # return dict for fastforward sampling:
-      if i % sample_every == 0:
-          result = {"energy": energy, "temperature": T}
-}
-```
-
-The `fastforward` extension specification defines the exact return-dict protocol; this spec
-documents that `MetricPlot` consumes it.
-
-### 3.3 Minimum data requirement
+### 3.2 Minimum data requirement
 
 A `MetricPlot` with fewer than 2 data points per series in the current frame renders as a
 degenerate chart (single point + axis), with **E1482** (insufficient-data, warning) emitted.
 Rendering is not blocked; the chart is emitted with whatever data exists.
 
-### 3.4 Maximum data points
+### 3.3 Maximum data points
 
 Each series is capped at **1000 points** total. Appending beyond 1000 points to a series
 is **E1483** (too-many-points, error); the excess `\apply` is silently dropped.
@@ -476,40 +439,7 @@ in the same `<g>` with the same style.
 
 ---
 
-## 9. Interaction with `\fastforward`
-
-When `\fastforward{N}{sample_every=K}` precedes a `MetricPlot` in the same environment,
-the fastforward extension (see `extensions/fastforward.md`) automatically calls `\apply`
-on the `MetricPlot` shape using the return dict from each sampled `\compute` invocation.
-
-The author declares the series names to match the keys in the return dict:
-
-```latex
-\shape{convergence}{MetricPlot}{
-  series=["energy", "temp"],
-  xlabel="iteration (×200)",
-  yscale="log",
-  width=360, height=220
-}
-
-\fastforward{10000}{sample_every=200}
-\compute{
-  # after each sample, return dict includes "energy" and "temp"
-}
-```
-
-The `fastforward` extension injects the equivalent of:
-
-```latex
-\apply{convergence}{energy=${sampled_energy}, temp=${sampled_temp}}
-```
-
-for each sampled iteration. The `MetricPlot` accumulates these as normal per-step data
-points, one per sampled frame.
-
----
-
-## 10. Degenerate states
+## 9. Degenerate states
 
 | Condition                          | Behavior                                                             |
 |------------------------------------|----------------------------------------------------------------------|
@@ -520,7 +450,7 @@ points, one per sampled frame.
 
 ---
 
-## 11. Error code catalog (E1480–E1489)
+## 10. Error code catalog (E1480–E1489)
 
 > **Audit fix (finding 1.4 / CRITICAL, decision lock #3):** E1484 previously had two
 > conflicting meanings (log-non-positive warning AND degenerate xrange error). Split into
@@ -541,9 +471,9 @@ Codes E1488–E1489 are reserved.
 
 ---
 
-## 12. Acceptance tests
+## 11. Acceptance tests
 
-### 12.1 Splay tree potential + amortized cost — 10 operations (HARD-TO-DISPLAY #7)
+### 11.1 Splay tree potential + amortized cost — 10 operations (HARD-TO-DISPLAY #7)
 
 ```latex
 \begin{animation}[id=splay-amortized]
@@ -586,39 +516,14 @@ Expected:
 - Legend shows "phi" and "cost" in their respective colors.
 - No E148x errors beyond E1482 on frame 1.
 
-### 12.2 SA energy curve — 50 sampled iterations from `\fastforward`
+### 11.2 SA energy curve (removed feature)
 
-```latex
-\begin{animation}[id=sa-energy]
-\compute{
-  initial_energy = 1000.0
-  initial_temp   = 100.0
-}
-\shape{conv}{MetricPlot}{
-  series=["energy", "temperature"],
-  xlabel="iteration (×200)",
-  ylabel="value",
-  yscale="log",
-  width=360, height=220
-}
-
-\fastforward{10000}{sample_every=200}
-\compute{
-  # iteration logic produces return dict
-  # {"energy": current_energy, "temperature": current_temp}
-}
-\end{animation}
-```
-
-Expected (after fastforward expansion to 50 frames):
-- 50 `\apply` operations injected by fastforward extension.
-- Final frame: energy polyline descending, temperature polyline showing exponential decay.
-- Log scale on y-axis.
-- No E1483 (50 ≤ 1000 points per series).
+> This acceptance test previously relied on the `\fastforward` extension, which has been
+> removed. The test is retained as a placeholder for a future replacement.
 
 ---
 
-## 13. Base-spec deltas
+## 12. Base-spec deltas
 
 **§3.1** primitive type registration: add `MetricPlot` (Agent 4 merges with all five).
 

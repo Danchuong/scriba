@@ -13,8 +13,9 @@ from __future__ import annotations
 
 import re
 from html import escape as html_escape
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
+from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
@@ -63,7 +64,7 @@ class HashMap(PrimitiveBase):
         Optional keys: ``label``.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "bucket[{i}]": "bucket by index",
         "all": "all buckets",
     }
@@ -73,13 +74,15 @@ class HashMap(PrimitiveBase):
 
         raw_cap = params.get("capacity")
         if raw_cap is None:
-            raise ValueError(
-                f"HashMap '{name}' requires a 'capacity' parameter"
+            raise animation_error(
+                E1103,
+                detail=f"HashMap '{name}' requires a 'capacity' parameter",
             )
         self.capacity: int = int(raw_cap)
         if self.capacity < 1:
-            raise ValueError(
-                f"HashMap '{name}' capacity must be >= 1, got {self.capacity}"
+            raise animation_error(
+                E1103,
+                detail=f"HashMap '{name}' capacity must be >= 1, got {self.capacity}",
             )
 
         self.label_text: str | None = params.get("label")

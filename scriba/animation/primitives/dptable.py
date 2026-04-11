@@ -1,12 +1,12 @@
 """DPTable primitive — 1D or 2D table with optional transition arrows.
 
-See ``docs/06-primitives.md`` §5 for the authoritative specification.
+See ``docs/spec/primitives.md`` §5 for the authoritative specification.
 """
 
 from __future__ import annotations
 
 import re
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
@@ -15,6 +15,7 @@ from scriba.animation.primitives.base import (
     CELL_WIDTH,
     INDEX_LABEL_OFFSET,
     THEME,
+    BoundingBox,
     PrimitiveBase,
     _escape_xml,
     _render_svg_text,
@@ -57,7 +58,7 @@ class DPTablePrimitive(PrimitiveBase):
 
     primitive_type: str = "dptable"
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index (1D mode)",
         "cell[{r}][{c}]": "cell by row,col (2D mode)",
         "range[{lo}:{hi}]": "contiguous range of cells (1D mode)",
@@ -73,6 +74,11 @@ class DPTablePrimitive(PrimitiveBase):
         if n is not None:
             # 1D mode
             n = int(n)
+            if n < 1:
+                raise animation_error(
+                    E1103,
+                    detail=f"DPTable n must be >= 1, got {n}",
+                )
             is_2d = False
             dim_rows = 1
             dim_cols = n
@@ -81,11 +87,31 @@ class DPTablePrimitive(PrimitiveBase):
             is_2d = True
             dim_rows = int(rows)
             dim_cols = int(cols)
+            if dim_rows < 1:
+                raise animation_error(
+                    E1103,
+                    detail=f"DPTable rows must be >= 1, got {dim_rows}",
+                )
+            if dim_cols < 1:
+                raise animation_error(
+                    E1103,
+                    detail=f"DPTable cols must be >= 1, got {dim_cols}",
+                )
             n = dim_rows * dim_cols
         else:
             raise animation_error(
                 E1103,
                 detail="DPTable requires 'n' (1D) or 'rows'+'cols' (2D)",
+            )
+
+        max_cells = dim_rows * dim_cols
+        if max_cells > 250_000:
+            raise animation_error(
+                E1103,
+                detail=(
+                    f"DPTable dimensions {dim_rows}x{dim_cols} "
+                    f"({max_cells} cells) exceeds maximum of 250,000"
+                ),
             )
 
         data: list[Any] = list(self.params.get("data", []))
@@ -189,7 +215,7 @@ class DPTablePrimitive(PrimitiveBase):
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(self) -> tuple[float, float, float, float]:
+    def bounding_box(self) -> BoundingBox:
         """Return ``(x, y, width, height)``."""
         tw, th = self._grid_dimensions()
         h = th
@@ -197,7 +223,7 @@ class DPTablePrimitive(PrimitiveBase):
             h += INDEX_LABEL_OFFSET
         if self.label:
             h += INDEX_LABEL_OFFSET
-        return (0, 0, float(tw), float(h))
+        return BoundingBox(x=0, y=0, width=float(tw), height=float(h))
 
     # -- internal: cell emission -------------------------------------------
 

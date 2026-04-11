@@ -4,7 +4,7 @@
 
 ## 1. Purpose
 
-Port the existing `services/tenant/backend/app/utils/tex_renderer.py` (1686 lines) into `scriba/tex/*`, stripping every implicit frontend coupling identified in [`docs/TEX-RENDERER-BACKEND-ONLY.md`](../TEX-RENDERER-BACKEND-ONLY.md). The resulting module implements the `Renderer` protocol from `01-architecture.md` §"Renderer protocol" and produces a self-contained `RenderArtifact` whose HTML fragment depends only on `scriba/tex/static/*` assets — no Tailwind classes, no hardcoded `/api/problems/{id}/...` URLs, no `@_traced_render` imports, no frontend regex that rewrites the HTML after the fact.
+Port the existing `services/tenant/backend/app/utils/tex_renderer.py` (1686 lines) into `scriba/tex/*`, stripping every implicit frontend coupling. The resulting module implements the `Renderer` protocol from `01-architecture.md` §"Renderer protocol" and produces a self-contained `RenderArtifact` whose HTML fragment depends only on `scriba/tex/static/*` assets — no Tailwind classes, no hardcoded `/api/problems/{id}/...` URLs, no `@_traced_render` imports, no frontend regex that rewrites the HTML after the fact.
 
 The current renderer does three things backwards for a shipping library:
 

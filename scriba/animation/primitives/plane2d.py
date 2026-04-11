@@ -15,7 +15,7 @@ import logging
 import math
 import re
 from html import escape as html_escape
-from typing import Any, Callable, Sequence
+from typing import Any, Callable, ClassVar, Sequence
 
 from scriba.animation.errors import animation_error
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, THEME, _render_svg_text, register_primitive, svg_style_attrs
@@ -74,7 +74,7 @@ class Plane2D(PrimitiveBase):
         Dictionary of parameters from the ``\\shape`` command.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "point[{i}]": "point by index",
         "line[{i}]": "line by index",
         "segment[{i}]": "segment by index",

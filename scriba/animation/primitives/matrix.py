@@ -9,12 +9,13 @@ See ``docs/primitives/matrix.md`` for the authoritative specification.
 from __future__ import annotations
 
 import re
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     DEFAULT_STATE,
     THEME,
+    BoundingBox,
     PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
@@ -126,7 +127,7 @@ class MatrixPrimitive(PrimitiveBase):
 
     primitive_type: str = "matrix"
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{r}][{c}]": "cell by row,col",
         "all": "all cells",
     }
@@ -152,12 +153,12 @@ class MatrixPrimitive(PrimitiveBase):
                 E1103,
                 detail=f"Matrix cols must be >= 1, got {cols}",
             )
-        if rows * cols > 10_000:
+        if rows * cols > 250_000:
             raise animation_error(
                 E1103,
                 detail=(
                     f"Matrix dimensions {rows}x{cols} "
-                    f"({rows * cols} cells) exceeds maximum of 10,000"
+                    f"({rows * cols} cells) exceeds maximum of 250,000"
                 ),
             )
 
@@ -393,13 +394,13 @@ class MatrixPrimitive(PrimitiveBase):
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(self) -> tuple[float, float, float, float]:
+    def bounding_box(self) -> BoundingBox:
         """Return ``(x, y, width, height)``."""
         w = self._total_width()
         h = self._total_height()
         if self.label:
             h += 20
-        return (0, 0, float(w), float(h))
+        return BoundingBox(x=0, y=0, width=float(w), height=float(h))
 
     # -- internal -----------------------------------------------------------
 

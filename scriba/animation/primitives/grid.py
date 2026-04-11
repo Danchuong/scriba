@@ -1,12 +1,12 @@
 """Grid primitive -- a 2D rows x cols matrix of uniform cells.
 
-See ``docs/06-primitives.md`` section 4 for the authoritative specification.
+See ``docs/spec/primitives.md`` section 4 for the authoritative specification.
 """
 
 from __future__ import annotations
 
 import re
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
@@ -15,6 +15,7 @@ from scriba.animation.primitives.base import (
     CELL_WIDTH,
     INDEX_LABEL_OFFSET,
     THEME,
+    BoundingBox,
     PrimitiveBase,
     _render_svg_text,
     register_primitive,
@@ -93,7 +94,7 @@ class GridPrimitive(PrimitiveBase):
 
     primitive_type: str = "grid"
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{r}][{c}]": "cell by row,col",
         "all": "all cells",
     }
@@ -111,6 +112,16 @@ class GridPrimitive(PrimitiveBase):
 
         rows = int(rows)
         cols = int(cols)
+        if rows < 1:
+            raise animation_error(
+                E1103,
+                detail=f"Grid rows must be >= 1, got {rows}",
+            )
+        if cols < 1:
+            raise animation_error(
+                E1103,
+                detail=f"Grid cols must be >= 1, got {cols}",
+            )
         if rows > 500:
             raise animation_error(
                 E1103,
@@ -227,13 +238,13 @@ class GridPrimitive(PrimitiveBase):
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(self) -> tuple[float, float, float, float]:
-        """Return ``(x, y, width, height)``."""
+    def bounding_box(self) -> BoundingBox:
+        """Return the bounding box of this grid."""
         tw, th = self._grid_dimensions()
         h = th
         if self.label:
             h += INDEX_LABEL_OFFSET
-        return (0, 0, float(tw), float(h))
+        return BoundingBox(x=0, y=0, width=tw, height=h)
 
     # -- internal -----------------------------------------------------------
 

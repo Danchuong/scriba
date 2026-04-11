@@ -400,7 +400,7 @@ Mitigation:
 | [`primitives/plane2d.md`](../primitives/plane2d.md) | P3 spec |
 | [`primitives/metricplot.md`](../primitives/metricplot.md) | P4 spec |
 | [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) | P5 spec |
-| [`extensions/fastforward.md`](../extensions/fastforward.md) | E3 spec |
+| `extensions/fastforward.md` | E3 spec (removed) |
 | [`extensions/substory.md`](../extensions/substory.md) | E4 spec |
 | [`PHASE-A-PLAN.md`](phase-a.md) | Phase A (predecessor) |
 | [`PHASE-B-PLAN.md`](phase-b.md) | Phase B (predecessor) |

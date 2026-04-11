@@ -7,7 +7,7 @@
 >
 > Cross-references: [`04-environments-spec.md`](environments.md) §8 for the
 > frozen HTML output shape, §9 for the CSS class contract and state-class palette;
-> [`06-primitives.md`](primitives.md) §2.3 for the state-class table and §2.5 for
+> [`primitives.md`](primitives.md) §2.3 for the state-class table and §2.5 for
 > SVG output conventions; [`09-animation-plugin.md`](../guides/animation-plugin.md) §9 for
 > `AnimationRenderer.assets()`; [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §9 for
 > `DiagramRenderer.assets()`. Where this file and `04-environments-spec.md` appear to
@@ -658,7 +658,7 @@ All primitive styling uses the `<g data-primitive="...">` and `<g data-target=".
 }
 ```
 
-Edge rendering order: edges are rendered before nodes (per `06-primitives.md` §6.3 and §7.5) so that nodes visually sit on top.
+Edge rendering order: edges are rendered before nodes (per `primitives.md` §6.3 and §7.5) so that nodes visually sit on top.
 
 ### 6.4 Tick mark (`NumberLine`)
 

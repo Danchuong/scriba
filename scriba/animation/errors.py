@@ -9,16 +9,30 @@ from scriba.core.errors import RendererError, ValidationError
 
 
 # ---------------------------------------------------------------------------
+# Animation error base class
+# ---------------------------------------------------------------------------
+
+
+class AnimationError(ValidationError):
+    """Base class for all animation-specific errors.
+
+    Inherits from :class:`ValidationError` so that existing ``except
+    ValidationError`` handlers continue to work while also allowing callers
+    to do ``except AnimationError`` for animation-only errors.
+    """
+
+
+# ---------------------------------------------------------------------------
 # Comprehensive error code catalog
 # ---------------------------------------------------------------------------
 
 ERROR_CATALOG: dict[str, str] = {
     # --- Detection / structural errors (E1001 -- E1099) ---
-    "E1001": "Unclosed \\begin{animation} or unbalanced braces/strings/interpolation.",
+    "E1001": "Unclosed \\begin{animation} or unbalanced braces/strings/interpolation. Fix: Check for matching \\end{animation} and balanced braces.",
     "E1003": "Nested \\begin{animation} or \\begin{diagram} detected.",
     "E1004": "Unknown environment or substory option key.",
     "E1005": "Invalid option or parameter value.",
-    "E1006": "Unknown backslash command.",
+    "E1006": "Unknown backslash command. Fix: Check command spelling. Valid commands: \\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, \\recolor, \\annotate, \\reannotate, \\cursor, \\foreach, \\substory.",
     "E1007": "Expected opening brace '{' after command.",
     "E1009": "Selector parse error (general).",
     "E1010": "Selector parse error: expected number, identifier, or specific character.",
@@ -35,8 +49,8 @@ ERROR_CATALOG: dict[str, str] = {
     "E1056": "\\narrate must be inside a \\step block.",
     # --- Parse errors (E1100 -- E1149) ---
     "E1100": "General parse failure inside animation body.",
-    "E1102": "Unknown primitive type in \\shape declaration.",
-    "E1103": "Primitive validation error (invalid size, dimensions, or parameters).",
+    "E1102": "Unknown primitive type in \\shape declaration. Fix: Check primitive type spelling. Valid types: Array, Grid, DPTable, Graph, Tree, NumberLine, Matrix, Heatmap, Stack, Plane2D, MetricPlot, CodePanel, HashMap, LinkedList, Queue, VariableWatch.",
+    "E1103": "Primitive parameter validation error. The detail message identifies the specific primitive, parameter, and constraint. Fix: Check the parameter name and value against the primitive's documentation.",
     "E1109": "Invalid \\recolor state or missing required state/color parameter.",
     "E1112": "Unknown annotation position.",
     "E1113": "Invalid or missing annotation color.",
@@ -90,7 +104,7 @@ ERROR_CATALOG: dict[str, str] = {
 
 # --- Detection errors (E1001 -- E1099) ---
 
-class UnclosedAnimationError(ValidationError):
+class UnclosedAnimationError(AnimationError):
     """E1001: ``\\begin{animation}`` without matching ``\\end{animation}``."""
 
     code = "E1001"
@@ -103,7 +117,7 @@ class UnclosedAnimationError(ValidationError):
         )
 
 
-class NestedAnimationError(ValidationError):
+class NestedAnimationError(AnimationError):
     """E1003: nested ``\\begin{animation}`` detected."""
 
     code = "E1003"
@@ -121,14 +135,14 @@ class NestedAnimationError(ValidationError):
 E1103 = "E1103"
 
 
-def animation_error(code: str, detail: str) -> ValidationError:
-    """Create a validation error with the given animation error code."""
-    return ValidationError(detail, code=code)
+def animation_error(code: str, detail: str) -> AnimationError:
+    """Create an animation error with the given animation error code."""
+    return AnimationError(detail, code=code)
 
 
 # --- Parse errors (E1100 -- E1149) ---
 
-class AnimationParseError(ValidationError):
+class AnimationParseError(AnimationError):
     """E1100: general parse failure inside animation body."""
 
     code = "E1100"
@@ -136,8 +150,12 @@ class AnimationParseError(ValidationError):
 
 # --- Scene errors (E1150 -- E1199) ---
 
-class FrameCountWarning:
-    """E1180: animation has >30 frames (warning, not an exception)."""
+class FrameCountWarning(UserWarning):
+    """E1180: animation has >30 frames (warning, not an exception).
+
+    Inherits from :class:`UserWarning` so it can be caught by
+    ``warnings.catch_warnings()`` and ``warnings.filterwarnings()``.
+    """
 
     code = "E1180"
 

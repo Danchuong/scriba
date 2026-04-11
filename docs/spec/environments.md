@@ -8,7 +8,7 @@
 
 Scriba v0.3 ships two new LaTeX environments that let problem authors embed algorithmic visualizations directly in problem statements without leaving LaTeX:
 
-- `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 14 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8.0 for mode selection.
+- `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 14 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8 for mode selection.
 - `\begin{diagram} ... \end{diagram}` — a **single static figure**. Same primitive vocabulary minus `\step` and `\narrate`. Intended for standalone illustrations (trees, grids, graphs, DP tables shown at a single moment in time).
 
 Both environments plug into the existing `scriba.core.pipeline.Pipeline` from [`01-architecture.md`](architecture.md) as two additional `Renderer` implementations registered alongside `TexRenderer`:
@@ -29,7 +29,7 @@ pipeline = Pipeline(renderers=[
 
 ### Philosophy
 
-1. **Dual output modes.** In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small (~2KB) inline script — suitable for ojcloud tenant and any web platform. In **static mode**, the output is fully static HTML/SVG/CSS with zero runtime JavaScript — an `<ol>` of pre-rendered `<svg>` frames that works in email, RSS, print, PDF, and Codeforces embed. See §8.0 for mode selection.
+1. **Dual output modes.** In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small (~2KB) inline script — suitable for ojcloud tenant and any web platform. In **static mode**, the output is fully static HTML/SVG/CSS with zero runtime JavaScript — an `<ol>` of pre-rendered `<svg>` frames that works in email, RSS, print, PDF, and Codeforces embed. See §8 for mode selection.
 2. **LaTeX-native authoring.** Authors stay in the `.tex` mental model: environments, commands, brace-delimited arguments. No YAML, no JSON, no mini-DSL with its own parser.
 3. **Build-time determinism.** `\compute{...}` (Starlark) runs once at build time inside a `SubprocessWorkerPool` worker. No randomness, no I/O, no time. Identical source + identical Scriba version produce byte-identical HTML — the consumer's content-hash cache (see `01-architecture.md` §Versioning) continues to work.
 4. **Accessible by construction.** Each frame is semantic HTML (`<figure>`, `<ol>`, `<li>`, `<p>`). Narration is real text, not baked into an image. Screen readers walk frames in order.
@@ -37,7 +37,7 @@ pipeline = Pipeline(renderers=[
 
 ### Scope boundaries
 
-This spec defines the **environment grammar, inner command set, Starlark host contract, HTML output shape, CSS class contract, and error catalog**. It does **not** define: the internal Scene IR datatypes (that is `05-scene-ir.md`), the primitive shape catalog (`06-primitives.md`), the Starlark worker wire protocol (`07-starlark-worker.md`), the SVG emitter (`08-svg-emitter.md`), or the CSS stylesheet contents (`09-animation-css.md`). Those six downstream docs all bind to this file.
+This spec defines the **environment grammar, inner command set, Starlark host contract, HTML output shape, CSS class contract, and error catalog**. It does **not** define: the internal Scene IR datatypes (that is `05-scene-ir.md`), the primitive shape catalog (`primitives.md`), the Starlark worker wire protocol (`07-starlark-worker.md`), the SVG emitter (`08-svg-emitter.md`), or the CSS stylesheet contents (`09-animation-css.md`). Those six downstream docs all bind to this file.
 
 ## 2. Environment grammar
 
@@ -134,8 +134,8 @@ Declares a primitive instance bound to an identifier inside the current environm
 - **Contexts:** animation, diagram.
 - **Signature:** `\shape{<ident>}{<TypeName>}{<param_list>}`
 - **Required:** `name` (first brace), `Type` (second brace). `name` must match `[a-z][a-zA-Z0-9_]*` and must be unique within the environment (`E1101` on duplicate).
-- **Type** is one of the 16 primitive type names: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`, `Matrix`, `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `VariableWatch`. Unknown type is `E1102`.
-- **Parameters** are primitive-specific (see `06-primitives.md`). Common ones: `size=`, `rows=`, `cols=`, `data=`, `indices=`, `directed=`, `domain=`.
+- **Type** is one of the 16 primitive type names: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`, `Matrix`, `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `VariableWatch`. (`Heatmap` is an alias for `Matrix` — both resolve to the same underlying class, registered via `@register_primitive("Matrix", "Heatmap")`.) Unknown type is `E1102`.
+- **Parameters** are primitive-specific (see `primitives.md`). Common ones: `size=`, `rows=`, `cols=`, `data=`, `indices=`, `directed=`, `domain=`.
 - **Position constraint:** in `animation`, all `\shape` declarations MUST appear before the first `\step` (`E1051`). In `diagram`, order is free.
 - **Error codes:** `E1101` duplicate name; `E1102` unknown type; `E1103` missing required param for that type; `E1104` param type mismatch.
 - **Example:** `\shape{dp}{Array}{size=7, labels="0..6"}`
@@ -449,7 +449,7 @@ Constraints:
 
 Downstream consumers (tenant-frontend, static-site generators, email templates) will bind to the exact HTML shape below. Wave-3 implementation MUST emit this shape verbatim. Class names, data attributes, element order, and nesting are frozen.
 
-### 8.0 Output modes
+### 8 Output modes
 
 `AnimationRenderer` supports two output modes controlled by `RenderContext.metadata["output_mode"]`:
 
@@ -522,7 +522,7 @@ Notes:
 - `data-step` is 1-indexed. `data-frame-count` matches the number of `<li>` children.
 - Each `<g>` inside the SVG MUST carry `data-target="<selector>"` so that the CSS contract in §9 can address it generically (without per-scene class explosion).
 - `role="img"` + `aria-labelledby` point each frame's SVG at its own narration paragraph, making the figure accessible to screen readers.
-- In static mode, there is no `<button>`, no `data-step-current`, no step controller. The animation is a pure filmstrip. In interactive mode (default), the renderer wraps this in a `.scriba-widget` with controls — see §8.0.
+- In static mode, there is no `<button>`, no `data-step-current`, no step controller. The animation is a pure filmstrip. In interactive mode (default), the renderer wraps this in a `.scriba-widget` with controls — see §8.
 
 ### 8.2 Diagram output
 
@@ -685,7 +685,7 @@ All animation/diagram errors use codes in `E1001..E1299`. The ranges are reserve
 | Code  | Meaning                                                           | Hint                                                         |
 |-------|-------------------------------------------------------------------|--------------------------------------------------------------|
 | E1101 | Duplicate `\shape` name                                           | Names must be unique per environment.                        |
-| E1102 | Unknown primitive type                                            | See `06-primitives.md`.                                      |
+| E1102 | Unknown primitive type                                            | See `primitives.md`.                                      |
 | E1103 | Missing required primitive parameter                              | Error message names the parameter.                           |
 | E1104 | Primitive parameter type mismatch                                 |                                                              |
 | E1105 | Unknown parameter on `\apply`                                     |                                                              |

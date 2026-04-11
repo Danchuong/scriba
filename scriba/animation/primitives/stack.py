@@ -10,8 +10,9 @@ from __future__ import annotations
 
 import re
 from html import escape as html_escape
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
+from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -76,7 +77,7 @@ class Stack(PrimitiveBase):
         Optional keys: ``items``, ``orientation``, ``max_visible``, ``label``.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "item[{i}]": "item by index",
         "top": "top of stack",
         "all": "all items",
@@ -87,6 +88,11 @@ class Stack(PrimitiveBase):
 
         self.orientation: str = str(params.get("orientation", "vertical"))
         self.max_visible: int = int(params.get("max_visible", _DEFAULT_MAX_VISIBLE))
+        if self.max_visible < 1:
+            raise animation_error(
+                E1103,
+                detail=f"Stack max_visible must be >= 1, got {self.max_visible}",
+            )
         self.label_text: str | None = params.get("label")
 
         # Initialize items from params

@@ -13,7 +13,7 @@ from __future__ import annotations
 import html
 import logging
 import math
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import animation_error
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, register_primitive
@@ -95,7 +95,7 @@ class MetricPlot(PrimitiveBase):
         Dictionary of parameters from the ``\\shape`` command.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "all": "the entire plot",
     }
 

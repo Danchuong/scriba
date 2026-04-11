@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 from html import escape as html_escape
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
     THEME,
@@ -63,7 +63,7 @@ class CodePanel(PrimitiveBase):
         (list of strings). Optional: ``label``.
     """
 
-    SELECTOR_PATTERNS: dict[str, str] = {
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "line[{i}]": "line by number (1-based)",
         "all": "all lines",
     }
