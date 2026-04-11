@@ -46,6 +46,31 @@ class TestDeclare:
         s = Stack("s", {"max_visible": 5})
         assert s.max_visible == 5
 
+    def test_max_visible_zero_rejected(self) -> None:
+        """max_visible must be >= 1 (E1103)."""
+        from scriba.core.errors import ValidationError
+
+        with pytest.raises(ValidationError, match="E1103"):
+            Stack("s", {"max_visible": 0})
+
+    def test_unknown_kwargs_ignored(self) -> None:
+        """Stack has no ``cell_width`` / ``cell_height`` / ``gap`` params.
+
+        Passing these extra keys must not raise — the spec §5.7 and the
+        code signature both omit them. They are silently ignored so that
+        stale spec examples do not break existing scenes.
+        """
+        s = Stack("s", {
+            "items": ["A"],
+            "cell_width": 999,
+            "cell_height": 999,
+            "gap": 99,
+        })
+        assert len(s.items) == 1
+        # The extras must not bleed into any Stack attribute.
+        assert not hasattr(s, "cell_width")
+        assert not hasattr(s, "gap")
+
 
 # ---------------------------------------------------------------------------
 # Push / Pop

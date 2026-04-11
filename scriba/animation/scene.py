@@ -300,6 +300,7 @@ class SceneState:
     _BINDING_RE = re.compile(r"^\$\{(\w+)\}$")
     _MAX_ITERABLE_LEN = 10_000
     _MAX_FOREACH_DEPTH = 3
+    _MAX_ANNOTATIONS_PER_FRAME = 500
 
     def _expand_commands(
         self,
@@ -599,6 +600,17 @@ class SceneState:
                 f"\\annotate target shape '{shape_name}' not found "
                 f"in declared shapes, annotation may be invalid",
                 stacklevel=2,
+            )
+
+        # Cap total active annotations to guard against pathological
+        # \foreach-generated explosions. Ephemeral annotations count
+        # against the cap but are cleared before the next frame.
+        if len(self.annotations) >= self._MAX_ANNOTATIONS_PER_FRAME:
+            raise ValidationError(
+                f"annotation count {len(self.annotations) + 1} "
+                f"exceeds maximum of {self._MAX_ANNOTATIONS_PER_FRAME} "
+                f"per frame",
+                code="E1103",
             )
 
         arrow_from_str = _selector_to_str(cmd.arrow_from) if cmd.arrow_from else None

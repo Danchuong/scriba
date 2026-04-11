@@ -61,6 +61,28 @@ class TestDeclare:
         with pytest.raises(ValidationError, match="E1103"):
             MatrixPrimitive("m", {"rows": 2, "cols": 2, "data": [1, 2, 3]})
 
+    def test_zero_rows_raises_e1103(self) -> None:
+        with pytest.raises(ValidationError, match="E1103"):
+            MatrixPrimitive("m", {"rows": 0, "cols": 4})
+
+    def test_zero_cols_raises_e1103(self) -> None:
+        with pytest.raises(ValidationError, match="E1103"):
+            MatrixPrimitive("m", {"rows": 4, "cols": 0})
+
+    def test_cell_count_limit_raises_e1425(self) -> None:
+        """A 251x1000 matrix (251,000 cells) exceeds the 250,000 limit."""
+        with pytest.raises(ValidationError, match="E1425") as exc_info:
+            MatrixPrimitive("m", {"rows": 251, "cols": 1000})
+        # Error message must name the actual count and the 250000 limit.
+        msg = str(exc_info.value)
+        assert "251000" in msg
+        assert "250000" in msg
+
+    def test_cell_count_at_limit_ok(self) -> None:
+        """Exactly 250,000 cells is still permitted."""
+        inst = MatrixPrimitive("m", {"rows": 500, "cols": 500})
+        assert inst.rows == 500 and inst.cols == 500
+
     def test_empty_data_fills_zeros(self) -> None:
         inst = MatrixPrimitive("m", {"rows": 2, "cols": 2})
         assert inst.data == [[0.0, 0.0], [0.0, 0.0]]

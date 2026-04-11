@@ -134,13 +134,22 @@ class CodePanel(PrimitiveBase):
         return parts
 
     def validate_selector(self, suffix: str) -> bool:
+        """Validate a selector suffix (e.g. ``line[3]`` or ``all``).
+
+        CodePanel uses **1-based** line numbering: ``line[1]`` refers
+        to the first line. ``line[0]`` is explicitly rejected as
+        invalid. Valid indices satisfy ``1 <= idx <= len(lines)``.
+        """
         if suffix == "all":
             return True
 
         m = _LINE_RE.match(suffix)
         if m:
             idx = int(m.group("idx"))
-            return 1 <= idx <= len(self.lines)
+            # Reject 0-based indexing explicitly; CodePanel is 1-based.
+            if idx < 1:
+                return False
+            return idx <= len(self.lines)
 
         return False
 

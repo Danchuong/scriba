@@ -189,6 +189,29 @@ class TestAnnotate:
         assert len(snap1.annotations) == 1
         assert len(snap2.annotations) == 0
 
+    def test_annotation_cap_per_frame_raises_e1103(self) -> None:
+        """Adding more than _MAX_ANNOTATIONS_PER_FRAME annotations raises."""
+        from scriba.core.errors import ValidationError
+
+        state = SceneState()
+        cap = SceneState._MAX_ANNOTATIONS_PER_FRAME
+        # Build a single frame with 600 annotation commands (> cap = 500).
+        cmds = tuple(
+            _annotate(f"arr.{i}", text=f"n{i}") for i in range(cap + 100)
+        )
+        with pytest.raises(ValidationError, match="E1103") as exc_info:
+            state.apply_frame(_frame(commands=cmds))
+        assert "annotation count" in str(exc_info.value)
+        assert str(cap) in str(exc_info.value)
+
+    def test_annotation_at_cap_ok(self) -> None:
+        """Exactly _MAX_ANNOTATIONS_PER_FRAME annotations is permitted."""
+        state = SceneState()
+        cap = SceneState._MAX_ANNOTATIONS_PER_FRAME
+        cmds = tuple(_annotate(f"arr.{i}", text=f"n{i}") for i in range(cap))
+        snap = state.apply_frame(_frame(commands=cmds))
+        assert len(snap.annotations) == cap
+
 
 class TestCompute:
     """\\compute — frame-scoped vs. global."""

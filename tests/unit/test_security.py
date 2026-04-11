@@ -174,7 +174,8 @@ class TestPrimitiveDimensionCaps:
         assert inst.rows == 500
 
     def test_matrix_rejects_oversized(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        # Cell-count cap raises E1425 (not generic E1103).
+        with pytest.raises(ValidationError, match="E1425"):
             MatrixPrimitive("m", {"rows": 501, "cols": 500})
 
     def test_matrix_accepts_max(self) -> None:
@@ -182,11 +183,13 @@ class TestPrimitiveDimensionCaps:
         assert inst.rows == 500
 
     def test_dptable_rejects_oversized_1d(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        # Cell-count cap raises E1425 (not generic E1103).
+        with pytest.raises(ValidationError, match="E1425"):
             DPTablePrimitive("dp", {"n": 250_001})
 
     def test_dptable_rejects_oversized_2d(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        # Cell-count cap raises E1425 (not generic E1103).
+        with pytest.raises(ValidationError, match="E1425"):
             DPTablePrimitive("dp", {"rows": 501, "cols": 500})
 
     def test_dptable_accepts_max_2d(self) -> None:

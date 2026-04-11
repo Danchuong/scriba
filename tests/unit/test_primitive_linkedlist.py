@@ -59,6 +59,25 @@ class TestAddressableParts:
         assert "link[0]" not in parts
         assert "all" in parts
 
+    def test_link_i_refers_to_arrow_after_node_i(self) -> None:
+        """``link[i]`` addresses the outgoing arrow *after* ``node[i]``.
+
+        For a list with N values, the valid link indices are
+        ``0..N-2`` (one per gap between adjacent nodes).
+        """
+        inst = LinkedList("ll", {"data": [10, 20, 30, 40]})
+        # Four nodes -> three gaps -> link[0..2] valid.
+        assert inst.validate_selector("node[0]") is True
+        assert inst.validate_selector("node[3]") is True
+        assert inst.validate_selector("link[0]") is True
+        assert inst.validate_selector("link[2]") is True
+        # link[3] would be after the last node — rejected.
+        assert inst.validate_selector("link[3]") is False
+        # The addressable parts list reflects the same semantics.
+        parts = inst.addressable_parts()
+        assert parts.count("link[0]") == 1
+        assert "link[3]" not in parts
+
     def test_empty_list_only_all(self) -> None:
         inst = LinkedList("ll", {})
         parts = inst.addressable_parts()

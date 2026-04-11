@@ -161,6 +161,34 @@ class TestElementCap:
         p.apply_command({"add_point": (1, 1)})
         assert len(p.points) == 500
 
+    def test_e1466_construction_cap(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Cap is enforced at constructor time, not just \\apply time."""
+        import logging
+
+        initial_points = [(0, 0)] * 600  # 100 over the cap
+        with caplog.at_level(logging.ERROR):
+            p = Plane2D("p", {"points": initial_points})
+        # Only the first 500 should be kept.
+        assert len(p.points) == 500
+        # At least one E1466 log line must have been emitted.
+        assert any("E1466" in r.message for r in caplog.records)
+
+    def test_e1466_mixed_element_types_share_cap(self) -> None:
+        """Total element count across all types is capped at 500."""
+        p = Plane2D("p", {
+            "points": [(0, 0)] * 250,
+            "segments": [((0, 0), (1, 1))] * 250,
+        })
+        # 250 + 250 = 500, right at the cap
+        total = (
+            len(p.points) + len(p.segments)
+            + len(p.lines) + len(p.polygons) + len(p.regions)
+        )
+        assert total == 500
+        # Adding one more via apply must be rejected.
+        p.apply_command({"add_point": (9, 9)})
+        assert len(p.points) == 250
+
 
 # ---------------------------------------------------------------
 # Addressable parts / selectors

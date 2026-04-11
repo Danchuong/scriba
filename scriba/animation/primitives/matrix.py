@@ -155,10 +155,11 @@ class MatrixPrimitive(PrimitiveBase):
             )
         if rows * cols > 250_000:
             raise animation_error(
-                E1103,
+                "E1425",
                 detail=(
-                    f"Matrix dimensions {rows}x{cols} "
-                    f"({rows * cols} cells) exceeds maximum of 250,000"
+                    f"Matrix/DPTable cell count {rows * cols} "
+                    f"exceeds maximum of 250000 "
+                    f"(rows={rows}, cols={cols})"
                 ),
             )
 
