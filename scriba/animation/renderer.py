@@ -104,21 +104,32 @@ def _render_narration(
 ) -> str:
     """Render narration text through hl macros and optional TeX.
 
-    ``process_hl_macros`` already HTML-escapes plain text segments
-    between ``\\hl`` macros, so we only need to escape when the text
-    contains no macros at all (i.e. the fast path where
-    ``process_hl_macros`` returns the input unchanged).
+    When ``ctx.render_inline_tex`` is available (normal path), the text
+    makes two passes:
+      1. ``process_hl_macros`` expands ``\\hl{step}{tex}`` macros and
+         wraps their TeX bodies in ``<span class="scriba-hl">``.
+      2. ``ctx.render_inline_tex`` extracts and renders every bare
+         ``$...$`` math block in the remaining plain text, then
+         HTML-escapes the non-math remainder.
+
+    Plain-text escape is deferred to the TeX renderer so ``<`` inside
+    math delimiters (e.g. ``$\\min_{j<1}$``) survives intact — escaping
+    it first would feed ``\\min_{j&lt;1}`` to KaTeX and produce a parse
+    error. See ``process_hl_macros(escape_plain_text=...)``.
+
+    When ``ctx.render_inline_tex`` is ``None``, we must escape plain text
+    ourselves because no downstream renderer will.
     """
     if text is None:
         return ""
-    # process_hl_macros now HTML-escapes all plain-text segments,
-    # so the result is safe without an additional escape pass.
+    has_tex = ctx.render_inline_tex is not None
     processed = process_hl_macros(
         text,
         scene_id=scene_id,
         render_inline_tex=ctx.render_inline_tex,
+        escape_plain_text=not has_tex,
     )
-    if ctx.render_inline_tex is not None:
+    if has_tex:
         return ctx.render_inline_tex(processed)
     return processed
 

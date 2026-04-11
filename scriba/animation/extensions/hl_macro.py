@@ -52,6 +52,7 @@ def process_hl_macros(
     narration: str,
     scene_id: str,
     render_inline_tex: Callable[[str], str] | None = None,
+    escape_plain_text: bool = True,
 ) -> str:
     r"""Replace ``\hl{step-id}{tex}`` macros with highlighted ``<span>`` elements.
 
@@ -64,12 +65,23 @@ def process_hl_macros(
     render_inline_tex:
         Optional callback that converts a TeX string to HTML (e.g. KaTeX).
         When *None*, the tex body is HTML-escaped instead.
+    escape_plain_text:
+        When ``True`` (default), plain-text segments between ``\hl``
+        macros are HTML-escaped for safe embedding.  When ``False``, the
+        caller is responsible for downstream escaping — used by
+        ``_render_narration`` which passes the result through the TeX
+        renderer immediately afterwards.  The TeX renderer does its own
+        math-aware escape (extract ``$...$`` first, then escape free
+        text), so pre-escaping here would double-process the ``<`` inside
+        math delimiters and break KaTeX parsing (e.g. ``$\min_{j<1}$``
+        becomes ``$\min_{j&lt;1}$`` which KaTeX rejects).
 
     Returns
     -------
     str
         The narration with all ``\hl`` macros replaced by ``<span>`` tags.
     """
+    escape_fn = _escape_html if escape_plain_text else (lambda s: s)
     parts: list[str] = []
     pos = 0
 
@@ -99,9 +111,9 @@ def process_hl_macros(
         else:
             rendered = _escape_html(tex_body)
 
-        # Assemble output — HTML-escape plain text between macros to
-        # prevent injection (e.g. ``<script>`` in narration source).
-        parts.append(_escape_html(narration[pos : m.start()]))
+        # Assemble output. Plain-text escape is conditional — see
+        # ``escape_plain_text`` doc above.
+        parts.append(escape_fn(narration[pos : m.start()]))
         parts.append(
             f'<span class="scriba-hl" '
             f'data-hl-step="{_escape_attr(step_id)}">'
@@ -109,6 +121,6 @@ def process_hl_macros(
         )
         pos = after_tex
 
-    # Escape trailing plain text after the last macro.
-    parts.append(_escape_html(narration[pos:]))
+    # Trailing plain text after the last macro — same conditional escape.
+    parts.append(escape_fn(narration[pos:]))
     return "".join(parts)
