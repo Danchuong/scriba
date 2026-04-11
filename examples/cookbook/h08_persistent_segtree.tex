@@ -1,62 +1,83 @@
-\begin{animation}[id="persistent-segtree", label="Persistent Segment Tree -- Segment Tree luu tru"]
-\shape{T}{Tree}{data=[10,3,7,1,2,4,3], kind="segtree", show_sum=true}
+\begin{animation}[id="persistent-segtree", label="Persistent Segment Tree -- Cap nhat sum that qua value-layer"]
+\shape{T}{Tree}{data=[1,2,3,4,5,6,7,8], kind="segtree", show_sum=true, label="Segment tree — sums hien tren moi node"}
 
 \step
-\narrate{Persistent Segment Tree cho phep luu nhieu phien ban. Moi cap nhat tao path-copy tu la den root, giu nguyen cac node khong doi. Bo nho O(n + q*log n).}
+\apply{T.node["[0,7]"]}{value="36"}
+\apply{T.node["[0,3]"]}{value="10"}
+\apply{T.node["[0,1]"]}{value="3"}
+\apply{T.node["[0,0]"]}{value="1"}
+\apply{T.node["[1,1]"]}{value="2"}
+\apply{T.node["[2,3]"]}{value="7"}
+\apply{T.node["[2,2]"]}{value="3"}
+\apply{T.node["[3,3]"]}{value="4"}
+\apply{T.node["[4,7]"]}{value="26"}
+\apply{T.node["[4,5]"]}{value="11"}
+\apply{T.node["[4,4]"]}{value="5"}
+\apply{T.node["[5,5]"]}{value="6"}
+\apply{T.node["[6,7]"]}{value="15"}
+\apply{T.node["[6,6]"]}{value="7"}
+\apply{T.node["[7,7]"]}{value="8"}
+\narrate{\textbf{Phien ban V0}: segment tree xay tu mang \texttt{[1,2,3,4,5,6,7,8]}. Moi node hien tong cua doan $[lo, hi]$ ma no dai dien. Tong cua ca mang = 36 (tai node \texttt{[0,7]}). Day la trang thai goc ma persistent segment tree se giu nguyen mai mai, bat ke co bao nhieu ban cap nhat sau nay.}
 
 \step
-\recolor{T.node["[0,6]"]}{state=done}
-\recolor{T.node["[0,3]"]}{state=done}
-\recolor{T.node["[4,6]"]}{state=done}
-\recolor{T.node["[0,1]"]}{state=done}
-\recolor{T.node["[2,3]"]}{state=done}
-\recolor{T.node["[4,5]"]}{state=done}
-\recolor{T.node["[6,6]"]}{state=done}
-\narrate{Phien ban 0 (V0): Segment Tree goc tu mang [10,3,7,1,2,4,3]. Tong = 30. Tat ca node mau xanh la (done) = phien ban goc.}
-
-\step
-\recolor{T.node["[0,6]"]}{state=current}
-\recolor{T.node["[0,3]"]}{state=current}
+\recolor{T.node["[3,3]"]}{state=current}
 \recolor{T.node["[2,3]"]}{state=current}
-\narrate{Cap nhat a[2] = 7 -> 5 (giam 2). Can tao phien ban V1. Chi cac node tren duong tu la [2,3] den root [0,6] bi anh huong.}
-
-\step
-\recolor{T.node["[0,6]"]}{state=current}
 \recolor{T.node["[0,3]"]}{state=current}
-\recolor{T.node["[2,3]"]}{state=current}
+\recolor{T.node["[0,7]"]}{state=current}
 \recolor{T.node["[0,1]"]}{state=dim}
-\recolor{T.node["[4,6]"]}{state=dim}
+\recolor{T.node["[0,0]"]}{state=dim}
+\recolor{T.node["[1,1]"]}{state=dim}
+\recolor{T.node["[2,2]"]}{state=dim}
+\recolor{T.node["[4,7]"]}{state=dim}
 \recolor{T.node["[4,5]"]}{state=dim}
+\recolor{T.node["[4,4]"]}{state=dim}
+\recolor{T.node["[5,5]"]}{state=dim}
+\recolor{T.node["[6,7]"]}{state=dim}
 \recolor{T.node["[6,6]"]}{state=dim}
-\narrate{Path-copy: tao 3 node moi (current) cho [2,3], [0,3], [0,6]. Cac node dim tro den node cu cua V0 -- khong sao chep!}
+\recolor{T.node["[7,7]"]}{state=dim}
+\apply{T.node["[3,3]"]}{value="14"}
+\apply{T.node["[2,3]"]}{value="17"}
+\apply{T.node["[0,3]"]}{value="20"}
+\apply{T.node["[0,7]"]}{value="46"}
+\narrate{\textbf{V1 — cap nhat $a[3]$ += 10}. Chi cac node tren \textbf{path-copy} tu la \texttt{[3,3]} len root moi phai tao ban sao moi: \texttt{[3,3]} 4 → 14, \texttt{[2,3]} 7 → 17, \texttt{[0,3]} 10 → 20, \texttt{[0,7]} 36 → 46. Cac node dim van chia se voi V0 (nguyen ven) — persistent khong nhan ban nhung node khong doi. Chi phi: $O(\log n)$ node moi moi cap nhat. Day la cap nhat \textbf{that}: value-layer ghi de len label tinh, nen so hien thi thay doi qua tung frame.}
 
 \step
-\recolor{T.node["[0,6]"]}{state=good}
-\recolor{T.node["[0,3]"]}{state=good}
+\recolor{T.node["[3,3]"]}{state=good}
 \recolor{T.node["[2,3]"]}{state=good}
-\recolor{T.node["[0,1]"]}{state=done}
-\recolor{T.node["[4,6]"]}{state=done}
-\recolor{T.node["[4,5]"]}{state=done}
-\recolor{T.node["[6,6]"]}{state=done}
-\narrate{V1 hoan tat. Node moi (good) co tong cap nhat: [2,3]=6, [0,3]=19->17, [0,6]=30->28. Node cu (done) van nguyen ven cho V0.}
-
-\step
-\recolor{T.node["[0,6]"]}{state=current}
-\recolor{T.node["[4,6]"]}{state=current}
+\recolor{T.node["[0,3]"]}{state=good}
+\recolor{T.node["[0,7]"]}{state=current}
+\recolor{T.node["[5,5]"]}{state=current}
 \recolor{T.node["[4,5]"]}{state=current}
-\recolor{T.node["[0,3]"]}{state=dim}
-\recolor{T.node["[2,3]"]}{state=dim}
+\recolor{T.node["[4,7]"]}{state=current}
 \recolor{T.node["[0,1]"]}{state=dim}
+\recolor{T.node["[0,0]"]}{state=dim}
+\recolor{T.node["[1,1]"]}{state=dim}
+\recolor{T.node["[2,2]"]}{state=dim}
+\recolor{T.node["[4,4]"]}{state=dim}
+\recolor{T.node["[6,7]"]}{state=dim}
 \recolor{T.node["[6,6]"]}{state=dim}
-\narrate{V2: cap nhat a[4] = 2 -> 8 (+6) tu V1. Path-copy [4,5], [4,6], [0,6]. Cac node dim chia se voi V1. Chi 3 node moi = O(log n).}
+\recolor{T.node["[7,7]"]}{state=dim}
+\apply{T.node["[5,5]"]}{value="11"}
+\apply{T.node["[4,5]"]}{value="16"}
+\apply{T.node["[4,7]"]}{value="31"}
+\apply{T.node["[0,7]"]}{value="51"}
+\narrate{\textbf{V2 — cap nhat $a[5]$ += 5} tiep tu V1. Path moi la \texttt{[5,5]} → \texttt{[4,5]} → \texttt{[4,7]} → \texttt{[0,7]}. Gia tri moi: 6 → 11, 11 → 16, 26 → 31, 46 → 51. Luu y root \texttt{[0,7]} la node duy nhat nam tren \textbf{ca hai} path nen gia tri cua no thay doi cho lan thu hai (46 → 51). Cac node trong nhanh V1 cu (\texttt{[3,3], [2,3], [0,3]}) gio duoc to mau \texttt{good} — chung thuoc V1 va van duoc giu nguyen ven cho truy van V1.}
 
 \step
-\recolor{T.node["[0,6]"]}{state=good}
-\recolor{T.node["[4,6]"]}{state=good}
+\recolor{T.node["[3,3]"]}{state=good}
+\recolor{T.node["[2,3]"]}{state=good}
+\recolor{T.node["[0,3]"]}{state=good}
+\recolor{T.node["[5,5]"]}{state=good}
 \recolor{T.node["[4,5]"]}{state=good}
-\recolor{T.node["[0,3]"]}{state=done}
-\recolor{T.node["[2,3]"]}{state=done}
+\recolor{T.node["[4,7]"]}{state=good}
+\recolor{T.node["[0,7]"]}{state=good}
 \recolor{T.node["[0,1]"]}{state=done}
+\recolor{T.node["[0,0]"]}{state=done}
+\recolor{T.node["[1,1]"]}{state=done}
+\recolor{T.node["[2,2]"]}{state=done}
+\recolor{T.node["[4,4]"]}{state=done}
+\recolor{T.node["[6,7]"]}{state=done}
 \recolor{T.node["[6,6]"]}{state=done}
-\narrate{3 phien ban cung ton tai: V0 (tong=30), V1 (tong=28), V2 (tong=34). Truy van bat ky phien ban trong O(log n). Ung dung: k-th element, version rollback, offline queries.}
+\recolor{T.node["[7,7]"]}{state=done}
+\narrate{Tong ket: ba phien ban cung ton tai. V0 co root=36 (mang goc), V1 co root=46 ($a[3]=14$), V2 co root=51 ($a[3]=14, a[5]=11$). Truy van bat ky phien ban nao chi ton $O(\log n)$. Bo nho tong: $O(n + q \log n)$ thay vi $O(nq)$ nho viec chia se cac node khong nam tren path. Ung dung: k-th smallest trong range (Chairman tree), offline queries, version rollback, time-travel data structures.}
 \end{animation}

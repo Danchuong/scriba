@@ -1,58 +1,44 @@
-\begin{animation}[id="splay-amortized", label="Splay Tree Amortized -- Phan tich khau hao Splay"]
-\shape{T}{Tree}{root=4, nodes=[1,2,3,4,5,6,7], edges=[(4,2),(4,6),(2,1),(2,3),(6,5),(6,7)]}
-\shape{plot}{MetricPlot}{series=["phi","cost"], xlabel="operation", ylabel="value"}
-
-\step
-\narrate{Splay tree: moi truy van splay node len root. Chi phi 1 buoc co the O(n), nhung khau hao la O(log n). Theo doi ham the nang (phi) va chi phi thuc (cost).}
+\begin{animation}[id="splay-amortized", label="Splay Tree -- Zig-zig rotation qua reparent"]
+\shape{T}{Tree}{root=7, nodes=[1,2,3,4,5,6,7], edges=[(7,4),(7,6),(4,2),(4,5),(2,1),(2,3)], label="Splay tree"}
+\shape{plot}{MetricPlot}{series=["phi","cost"], xlabel="operation", ylabel="amortized value"}
 
 \step
 \recolor{T.node[1]}{state=current}
-\recolor{T.edge[(2,1)]}{state=current}
-\recolor{T.edge[(4,2)]}{state=current}
-\apply{plot}{phi=8.5, cost=3}
-\narrate{Splay(1): Node 1 o sau 2. Zig-zig: xoay 2 lan. Chi phi=3 (do sau). Phi giam vi cay can bang hon.}
+\apply{plot}{phi=8.5, cost=0}
+\narrate{Splay tree: moi truy van dua node duoc truy cap len gan root qua cac phep xoay (rotation). Muc tieu: splay node \textbf{1} (hien dang o do sau 3, tren truc trai). Ta can mot zig-zig vi 1 la con trai cua 2, va 2 la con trai cua 4 — hai canh cung huong. Chi phi thuc = do sau = 3. Hamm the nang (phi) se giam sau khi cay can bang hon.}
+
+\step
+\recolor{T.node[2]}{state=current}
+\recolor{T.node[4]}{state=current}
+\apply{T}{reparent={node=2, parent=7}}
+\apply{plot}{phi=8.2, cost=1}
+\narrate{\textbf{Zig-zig phase A, buoc 1}: nang cha (p=2) len vi tri cua ong (g=4) duoi root. Dung \texttt{reparent\{node=2, parent=7\}} — 2 tro thanh con truc tiep cua 7. Toan bo subtree cua 2 (gom 1 va 3) duoc mang theo — reparent dich chuyen ca cum.}
+
+\step
+\apply{T}{reparent={node=4, parent=2}}
+\apply{plot}{phi=7.9, cost=2}
+\narrate{\textbf{Zig-zig phase A, buoc 2}: day ong (g=4) xuong thanh con cua p=2. \texttt{reparent\{node=4, parent=2\}}. Kiem tra cycle: 2 khong con la hau due cua 4 (vua duoc tach o buoc truoc), nen phep chuyen an toan. Reingold-Tilford tinh lai layout — do sau cua 1 giam tu 3 xuong 2.}
+
+\step
+\apply{T}{reparent={node=3, parent=4}}
+\apply{plot}{phi=7.6, cost=2}
+\narrate{\textbf{Zig-zig phase A, buoc 3}: chuyen C (=3, ban chat la sub-tree giua cua p) sang lam con trai moi cua g=4. \texttt{reparent\{node=3, parent=4\}}. Sau buoc nay cay da hoan thanh phase A cua zig-zig: p=2 ngoi tren, g=4 la con phai cua p, va node 1 da san sang tro len lop cao hon.}
+
+\step
+\recolor{T.node[1]}{state=current}
+\apply{T}{reparent={node=1, parent=7}}
+\apply{plot}{phi=7.0, cost=3}
+\narrate{\textbf{Zig-zig phase B, buoc 1}: nang x=1 len vi tri cua p=2 duoi root. \texttt{reparent\{node=1, parent=7\}}. Tu do sau 4 (tinh ca root), node 1 da nhay len do sau 1 — day chinh la tac dung rut ngan cua splay.}
+
+\step
+\apply{T}{reparent={node=2, parent=1}}
+\apply{plot}{phi=6.2, cost=3}
+\narrate{\textbf{Zig-zig phase B, buoc 2}: day p=2 xuong thanh con phai cua x=1. \texttt{reparent\{node=2, parent=1\}}. Layout cuoi cung: 1 sat root 7, va toan bo chuoi 2 → 4 → (3,5) tro thanh subtree cua 1. Do sau cua 1 = 1 (thay vi 3 ban dau).}
 
 \step
 \recolor{T.node[1]}{state=good}
-\recolor{T.node[4]}{state=done}
-\recolor{T.edge[(2,1)]}{state=done}
-\recolor{T.edge[(4,2)]}{state=done}
-\apply{plot}{phi=7.2, cost=1}
-\narrate{Sau splay, 1 la root. Cay nghieng phai. Truy van node 4 (goc root cu): chi phi=1 (con truc tiep).}
-
-\step
-\recolor{T.node[4]}{state=current}
-\recolor{T.node[1]}{state=dim}
-\apply{plot}{phi=7.8, cost=2}
-\narrate{Splay(4): xoay 1 lan len root. Phi tang nhe vi cay mat can bang cuc bo. Chi phi = 2.}
-
-\step
-\recolor{T.node[7]}{state=current}
+\recolor{T.node[2]}{state=dim}
 \recolor{T.node[4]}{state=dim}
-\apply{plot}{phi=6.5, cost=3}
-\narrate{Splay(7): o sau 3, can zig-zag + zig. Chi phi=3 nhung phi giam manh -- cay se can bang hon.}
-
-\step
-\recolor{T.node[7]}{state=good}
-\recolor{T.node[3]}{state=current}
-\apply{plot}{phi=6.8, cost=2}
-\narrate{Splay(3): chi phi=2. Node 3 o gan root sau cac splay truoc. The nang on dinh.}
-
-\step
-\recolor{T.node[3]}{state=good}
-\recolor{T.node[5]}{state=current}
-\apply{plot}{phi=6.2, cost=2}
-\narrate{Splay(5): chi phi=2. Cay ngay cang can bang. Phi giam dan, xac nhan khau hao O(log n).}
-
-\step
-\recolor{T.node[5]}{state=good}
-\recolor{T.node[6]}{state=current}
-\apply{plot}{phi=5.8, cost=1}
-\narrate{Splay(6): chi phi=1. Node 6 da gan root. Phi tiep tuc giam.}
-
-\step
-\recolor{T.node[6]}{state=good}
-\recolor{T.node[2]}{state=current}
-\apply{plot}{phi=5.5, cost=2}
-\narrate{Splay(2): chi phi=2. Sau 8 thao tac, tong chi phi=16, trung binh=2 ~ O(log 7)=2.8. MetricPlot cho thay phi giam va cost on dinh -- khau hao hoat dong!}
+\apply{plot}{phi=5.8, cost=2}
+\narrate{Ket thuc splay(1). Tong chi phi thuc = 3 (ngang voi do sau ban dau). Theo phan tich khau hao, moi truy van splay co chi phi khau hao $O(\log n)$ — phi giam bu tru cho cac lan truy van tuong lai. MetricPlot cho thay phi giam tu 8.5 → 5.8, xac nhan hieu ung can bang hoa cua splay. Luu y: moi \texttt{reparent} goi Reingold-Tilford tinh lai toa do, nen vi tri cac node thuc su \textbf{dich chuyen} giua cac frame — day la rotation that, khong phai to mau gia.}
 \end{animation}
