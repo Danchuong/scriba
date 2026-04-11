@@ -1,0 +1,129 @@
+\begin{animation}[id="union-find", label="Union-Find (DSU) with Path Compression -- truthful edge rewrites"]
+\shape{G}{Graph}{nodes=["A","B","C","D","E","F","G"], edges=[], directed=true, layout="stable", layout_seed=17}
+\shape{parent}{Array}{size=7, data=["A","B","C","D","E","F","G"], labels="0..6", label="$parent[]$ (0:A 1:B 2:C 3:D 4:E 5:F 6:G)"}
+
+\step
+\narrate{Disjoint-Set Union (DSU) on 7 elements. Each node is its own parent initially: $parent[x] = x$ for all $x$. No parent edges yet. We track parent pointers as a directed edge $child \to parent$ in the graph, and as a value in the $parent[]$ array. A find walks child-edges to the root; path compression rewrites the edge so the child points directly at the root. Scriba $v0.6$ Graph mutation via $add\_edge$/$remove\_edge$ lets us show this truthfully.}
+
+\step
+\recolor{G.node[A]}{state=current}
+\recolor{G.node[B]}{state=current}
+\apply{G}{add_edge={from="B", to="A"}}
+\apply{parent.cell[1]}{value="A"}
+\recolor{parent.cell[1]}{state=good}
+\narrate{$union(A, B)$: roots are $A$ and $B$. Link $B$ under $A$ by adding the directed edge $B \to A$. $parent[B] = A$. Component: $\{A, B\}$ with root $A$. Graph edge count: $0 \to 1$.}
+
+\step
+\recolor{G.node[A]}{state=done}
+\recolor{G.node[B]}{state=done}
+\recolor{G.node[C]}{state=current}
+\recolor{G.node[D]}{state=current}
+\apply{G}{add_edge={from="D", to="C"}}
+\apply{parent.cell[3]}{value="C"}
+\recolor{parent.cell[3]}{state=good}
+\narrate{$union(C, D)$: link $D$ under $C$: add directed edge $D \to C$. $parent[D] = C$. Components now: $\{A,B\}, \{C,D\}, \{E\}, \{F\}, \{G\}$. Graph edge count: $1 \to 2$.}
+
+\step
+\recolor{G.node[C]}{state=done}
+\recolor{G.node[D]}{state=done}
+\recolor{G.node[E]}{state=current}
+\recolor{G.node[F]}{state=current}
+\apply{G}{add_edge={from="F", to="E"}}
+\apply{parent.cell[5]}{value="E"}
+\recolor{parent.cell[5]}{state=good}
+\narrate{$union(E, F)$: link $F$ under $E$. Edge $F \to E$, $parent[F] = E$. Components: $\{A,B\}, \{C,D\}, \{E,F\}, \{G\}$. Graph edge count: $2 \to 3$.}
+
+\step
+\recolor{G.node[E]}{state=done}
+\recolor{G.node[F]}{state=done}
+\recolor{G.node[A]}{state=current}
+\recolor{G.node[C]}{state=current}
+\narrate{$union(A, C)$: we need the roots first. $find(A) = A$ (root, no outgoing parent edge). $find(C) = C$ (root). Distinct roots, so we link one tree under the other.}
+
+\step
+\apply{G}{add_edge={from="C", to="A"}}
+\apply{parent.cell[2]}{value="A"}
+\recolor{parent.cell[2]}{state=good}
+\narrate{Link root $C$ under root $A$: add edge $C \to A$, set $parent[C] = A$. Tree is now $A \leftarrow B$, $A \leftarrow C \leftarrow D$. Finding the root of $D$ now requires walking $D \to C \to A$: two hops. This is the chain that path compression will collapse next. Graph edge count: $3 \to 4$.}
+
+\step
+\recolor{G.node[A]}{state=done}
+\recolor{G.node[B]}{state=dim}
+\recolor{G.node[C]}{state=dim}
+\recolor{G.node[D]}{state=current}
+\narrate{$find(D)$ with path compression, step 1: start at $D$. $parent[D] = C$, so walk edge $D \to C$. Remember $D$ as a node that will be reparented after we reach the root.}
+
+\step
+\recolor{G.node[D]}{state=dim}
+\recolor{G.node[C]}{state=current}
+\narrate{From $C$: $parent[C] = A$, so walk edge $C \to A$. $C$'s parent is already the root, so $C$ itself does not need compression.}
+
+\step
+\recolor{G.node[C]}{state=dim}
+\recolor{G.node[A]}{state=good}
+\narrate{Reached $A$: $parent[A] = A$, this is the root. $find(D)$ returns $A$. Now compress the path: rewrite $D$'s parent edge so it points directly at $A$ instead of going through $C$.}
+
+\step
+\apply{G}{remove_edge={from="D", to="C"}}
+\apply{G}{add_edge={from="D", to="A"}}
+\apply{parent.cell[3]}{value="A"}
+\recolor{parent.cell[3]}{state=good}
+\narrate{Path compression: $remove\_edge(D \to C)$ then $add\_edge(D \to A)$. $parent[D] = A$. Subsequent $find(D)$ calls are now $O(1)$. Graph edge count: $4 \to 3 \to 4$ (the remove/add pair). Note: $C$ still points to $A$. Truthful DSU requires this edge rewrite -- Scriba $v0.6$ Graph mutation makes it possible.}
+
+\step
+\recolor{G.node[D]}{state=done}
+\recolor{G.node[E]}{state=current}
+\recolor{G.node[G]}{state=current}
+\apply{G}{add_edge={from="G", to="E"}}
+\apply{parent.cell[6]}{value="E"}
+\recolor{parent.cell[6]}{state=good}
+\narrate{$union(E, G)$: $find(E) = E$, $find(G) = G$. Link $G$ under $E$: add $G \to E$, $parent[G] = E$. Component: $\{E, F, G\}$ rooted at $E$. Graph edge count: $4 \to 5$.}
+
+\step
+\recolor{G.node[G]}{state=dim}
+\recolor{G.node[F]}{state=dim}
+\recolor{G.node[A]}{state=current}
+\recolor{G.node[E]}{state=current}
+\narrate{$union(A, E)$: find roots. $find(A) = A$. $find(E) = E$. Distinct. Link the smaller tree (rooted at $E$, size 3) under the larger (rooted at $A$, size 4).}
+
+\step
+\apply{G}{add_edge={from="E", to="A"}}
+\apply{parent.cell[4]}{value="A"}
+\recolor{parent.cell[4]}{state=good}
+\narrate{Link: add edge $E \to A$, $parent[E] = A$. Now $A$ is the root of everything except $G$ (whose root path is $G \to E \to A$) and $F$ (whose path is $F \to E \to A$). Both still need compression. Graph edge count: $5 \to 6$.}
+
+\step
+\recolor{G.node[A]}{state=done}
+\recolor{G.node[E]}{state=dim}
+\recolor{G.node[F]}{state=current}
+\narrate{$find(F)$ with path compression, step 1: start at $F$. $parent[F] = E$, walk edge $F \to E$.}
+
+\step
+\recolor{G.node[F]}{state=dim}
+\recolor{G.node[E]}{state=current}
+\narrate{From $E$: $parent[E] = A$, walk edge $E \to A$. $E$'s parent is already the root, no compression needed for $E$ itself.}
+
+\step
+\recolor{G.node[E]}{state=dim}
+\recolor{G.node[A]}{state=good}
+\narrate{Reached root $A$. $find(F)$ returns $A$. Compress: rewrite $F$'s parent edge to point straight at $A$.}
+
+\step
+\apply{G}{remove_edge={from="F", to="E"}}
+\apply{G}{add_edge={from="F", to="A"}}
+\apply{parent.cell[5]}{value="A"}
+\recolor{parent.cell[5]}{state=good}
+\narrate{$remove\_edge(F \to E)$ then $add\_edge(F \to A)$. $parent[F] = A$. Scriba's Graph warm-start layout keeps $F$ in roughly the same visual location -- only the arrow endpoint moves. This is the truthful reparent: the old edge is gone, the new one is in its place. Graph edge count: $6 \to 5 \to 6$.}
+
+\step
+\recolor{G.node[A]}{state=good}
+\recolor{G.node[B]}{state=done}
+\recolor{G.node[C]}{state=done}
+\recolor{G.node[D]}{state=done}
+\recolor{G.node[E]}{state=done}
+\recolor{G.node[F]}{state=done}
+\recolor{G.node[G]}{state=done}
+\recolor{parent.all}{state=done}
+\recolor{parent.cell[0]}{state=good}
+\narrate{Final state: all seven elements are in one component with root $A$. $parent[] = [A, A, A, A, A, A, E]$. Note: $G$ still points to $E$, not $A$, because $find(G)$ was never called -- DSU only compresses paths touched by $find$, which is exactly why the amortized cost is $O(\alpha(n))$ per operation rather than $O(1)$. A future $find(G)$ would rewrite $G \to A$ on the spot. Edge count changed $0 \to 1 \to 2 \to 3 \to 4 \to 3 \to 4 \to 5 \to 6 \to 5 \to 6$ via 2 remove/add rewrites -- truthful, not cosmetic.}
+\end{animation}
