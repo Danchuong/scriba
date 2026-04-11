@@ -9,4 +9,6 @@ build/
 coverage.xml
 htmlcov/
 .hypothesis/
-.claude/
+.claude/*
+!.claude/skills/
+.gitnexus
