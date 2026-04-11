@@ -142,10 +142,12 @@ class TestPrimitiveCodes:
             animation_renderer.render_block(_make_block(src), ctx)
         assert exc_info.value.code == "E1102"
 
-    def test_e1103_array_missing_required_param(
+    def test_e1400_array_missing_required_param(
         self, animation_renderer: AnimationRenderer, ctx: RenderContext,
     ) -> None:
         # ``Array`` requires ``size`` / ``n`` / ``values``; ``values=0`` is not a list.
+        # Post-Wave-2 (Cluster 2): E1103 was split into primitive-specific codes;
+        # Array invalid-param now raises E1400 (empty/invalid params at construction).
         src = (
             "\\begin{animation}\n"
             "\\shape{a}{Array}{values=0}\n"
@@ -153,7 +155,7 @@ class TestPrimitiveCodes:
         )
         with pytest.raises(ValidationError) as exc_info:
             animation_renderer.render_block(_make_block(src), ctx)
-        assert exc_info.value.code == "E1103"
+        assert exc_info.value.code == "E1400"
 
     def test_e1460_plane2d_degenerate_xrange(
         self, animation_renderer: AnimationRenderer, ctx: RenderContext,
