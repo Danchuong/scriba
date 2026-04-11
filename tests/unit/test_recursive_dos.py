@@ -1,16 +1,20 @@
 """Recursive / deep-nesting denial-of-service regression tests.
 
-Covers audit findings 17-M3 and 10 related (performance / DoS) — the
-dimensional caps land in Wave 4A Clusters 1/4/5, and these tests
-verify they fire or that well-formed-but-large inputs complete in
-bounded time.
+Originally written Wave 4A Cluster 9 to cover audit findings 17-M3
+and 10 (performance / DoS) — dimensional caps (Matrix/DPTable 250k,
+Plane2D 500-per-frame, foreach 10k×3-deep) plus a pair of xfailed
+tests for Tree recursion + Graph O(N^2) that were fixed in Wave 4B
+Cluster 1 (iterative reingold_tilford + Graph._MAX_NODES=100). The
+two strict xfails are now converted into passing regression tests
+in ``TestTreeRecursionDoS`` and ``TestGraphQuadraticLayoutDoS``.
 
-Written Wave 4A Cluster 9 to cover 17-M3 residuals.  Update when:
+Update when:
 
 * Primitive element caps are tightened or relaxed (update the
   assertions with the new limit).
 * A new deep-recursion surface is added (e.g., nested segment trees).
 * The foreach iterable cap (``_MAX_ITERABLE_LEN``) changes.
+* ``Graph._MAX_NODES`` or ``_MAX_FOREACH_DEPTH`` is retuned.
 
 Each test must either complete in <5s or raise a specific E-code.
 No test in this file should time out the suite.
@@ -18,6 +22,7 @@ No test in this file should time out the suite.
 
 from __future__ import annotations
 
+import sys
 import time
 
 import pytest
@@ -26,41 +31,31 @@ from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.primitives.dptable import DPTablePrimitive
 from scriba.animation.primitives.matrix import MatrixPrimitive
 from scriba.animation.primitives.plane2d import Plane2D
-from scriba.animation.primitives.tree import Tree
-from scriba.animation.primitives.graph import Graph
+from scriba.animation.primitives.tree import Tree, reingold_tilford
+from scriba.animation.primitives.graph import Graph, _MAX_NODES
 from scriba.core.errors import ValidationError
 
 
 _TIME_BUDGET_S = 5.0
 
 
-class TestDeeplyNestedTree:
-    """Deeply nested tree structures must not blow the stack."""
+# Wave 4B Cluster 1 replaced the 2 strict-xfailed tests in
+# TestDeeplyNestedTree and TestCyclicGraph with passing regression
+# tests in TestTreeRecursionDoS and TestGraphQuadraticLayoutDoS at the
+# bottom of this file. The remaining smaller-boundary tests
+# (100-level tree, 100 self-loops) are preserved below as
+# TestDeeplyNestedTreeBaseline / TestCyclicGraphBaseline to keep the
+# small-input happy-path pinned.
 
-    @pytest.mark.xfail(
-        reason=(
-            "Bug found Wave 4A Cluster 9: Tree._compute_depth uses "
-            "unbounded recursion, blowing Python's default stack on "
-            "trees >~900 nodes deep. Deferred to Wave 4B fix cluster "
-            "(17-M3 / DoS hardening). Expected fix: iterative DFS or "
-            "sys.setrecursionlimit at construction."
-        ),
-        strict=True,
-    )
-    def test_1000_level_linear_tree_constructs(self) -> None:
-        """A tree with 1000 single-child nodes constructs in bounded time."""
-        depth = 1000
-        nodes = [f"n{i}" for i in range(depth)]
-        edges = [[f"n{i}", f"n{i + 1}"] for i in range(depth - 1)]
-        start = time.monotonic()
-        prim = Tree("t", {"root": "n0", "nodes": nodes, "edges": edges})
-        elapsed = time.monotonic() - start
-        assert elapsed < _TIME_BUDGET_S
-        assert len(prim.nodes) == depth
+
+class TestDeeplyNestedTreeBaseline:
+    """Small-input happy paths (kept after Wave 4B C1 rewrote the
+    oversized cases into TestTreeRecursionDoS below)."""
 
     def test_100_level_linear_tree_constructs(self) -> None:
-        """At depth 100 the recursive layout still succeeds — this is
-        the ceiling we document as "supported" for now."""
+        """At depth 100 the layout succeeds quickly — this is the
+        baseline happy-path that kept the non-xfailed slot alive
+        through Wave 4A."""
         depth = 100
         nodes = [f"n{i}" for i in range(depth)]
         edges = [[f"n{i}", f"n{i + 1}"] for i in range(depth - 1)]
@@ -71,30 +66,9 @@ class TestDeeplyNestedTree:
         assert len(prim.nodes) == depth
 
 
-class TestCyclicGraph:
-    """Graph with self-referencing edges must not recurse infinitely."""
-
-    @pytest.mark.xfail(
-        reason=(
-            "Bug found Wave 4A Cluster 9: Graph layout for 1000-node "
-            "cycle takes ~12s (over 5s budget). There is no primitive "
-            "node-count cap and the force-directed layout is O(n^2) "
-            "per iteration. Deferred to Wave 4B fix cluster (17-M3 / "
-            "10 DoS). Expected fix: add node_count cap or switch to a "
-            "sparse-layout algorithm."
-        ),
-        strict=True,
-    )
-    def test_graph_with_cycle_of_1000_nodes_constructs(self) -> None:
-        """1000-node cycle: construction must terminate quickly."""
-        n = 1000
-        nodes = [f"n{i}" for i in range(n)]
-        edges = [[f"n{i}", f"n{(i + 1) % n}"] for i in range(n)]
-        start = time.monotonic()
-        prim = Graph("g", {"nodes": nodes, "edges": edges})
-        elapsed = time.monotonic() - start
-        assert elapsed < _TIME_BUDGET_S
-        assert len(prim.nodes) == n
+class TestCyclicGraphBaseline:
+    """Graph small-input happy path (the 1000-node cycle is now in
+    TestGraphQuadraticLayoutDoS below)."""
 
     def test_graph_with_100_self_loops_completes(self) -> None:
         """100 self-loops must not cause infinite recursion and must
@@ -220,3 +194,163 @@ class TestPlane2dElementCap:
             Plane2D("p", {"xrange": [0, 10000], "yrange": [0, 10000], "points": points})
         elapsed = time.monotonic() - start
         assert elapsed < _TIME_BUDGET_S
+
+
+# ---------------------------------------------------------------------------
+# Wave 4B Cluster 1: Tree iterative DFS + Graph _MAX_NODES cap
+# (converted from strict xfails in Wave 4A Cluster 9)
+# ---------------------------------------------------------------------------
+
+
+class TestTreeRecursionDoS:
+    """``reingold_tilford`` must stay iterative for deeply nested trees."""
+
+    def test_1000_level_linear_tree_constructs(self) -> None:
+        """A 1000-level linear tree must construct without RecursionError.
+
+        Wave 4B fix: ``reingold_tilford`` uses iterative DFS so depth
+        and layout passes no longer push the Python call stack.
+        """
+        n = 1000
+        nodes = list(range(n))
+        edges = [(i, i + 1) for i in range(n - 1)]
+
+        start = time.perf_counter()
+        tree = Tree(
+            "T",
+            {
+                "root": 0,
+                "nodes": nodes,
+                "edges": edges,
+            },
+        )
+        elapsed = time.perf_counter() - start
+
+        assert len(tree.nodes) == n
+        assert tree._compute_max_depth() == n - 1
+        # Every node gets a position.
+        assert len(tree.positions) == n
+        # Bounded time: the iterative algorithm is O(N) and should
+        # complete comfortably under 1 second on commodity hardware.
+        assert elapsed < 1.0, (
+            f"Tree construction took {elapsed:.2f}s; "
+            f"expected < 1.0s (iterative layout)"
+        )
+
+    def test_1500_level_linear_tree_exceeds_stack_limit(self) -> None:
+        """Safety margin: a 1500-level tree must still construct.
+
+        The default recursion limit is 1000; a naive recursive
+        implementation would fail here.
+        """
+        n = 1500
+        assert n > sys.getrecursionlimit() * 1.4
+        nodes = list(range(n))
+        edges = [(i, i + 1) for i in range(n - 1)]
+        tree = Tree(
+            "T",
+            {
+                "root": 0,
+                "nodes": nodes,
+                "edges": edges,
+            },
+        )
+        assert len(tree.positions) == n
+
+    def test_reingold_tilford_direct_deep_chain(self) -> None:
+        """Direct ``reingold_tilford`` call must handle deep chains.
+
+        Separated from the ``Tree`` wrapper so future regressions in
+        the layout function itself are isolated.
+        """
+        n = 1200
+        children_map: dict[str | int, list[str | int]] = {
+            i: [i + 1] for i in range(n - 1)
+        }
+        children_map[n - 1] = []
+        positions = reingold_tilford(0, children_map)
+        assert len(positions) == n
+        # Y-coordinates should strictly increase with depth.
+        y_values = [positions[i][1] for i in range(n)]
+        assert y_values == sorted(y_values)
+
+    def test_deep_tree_depth_reported_correctly(self) -> None:
+        """Iterative depth computation must match tree height."""
+        n = 800
+        nodes = list(range(n))
+        edges = [(i, i + 1) for i in range(n - 1)]
+        tree = Tree(
+            "T",
+            {
+                "root": 0,
+                "nodes": nodes,
+                "edges": edges,
+            },
+        )
+        assert tree._compute_max_depth() == n - 1
+
+
+# ---------------------------------------------------------------------------
+# Bug 2: Graph O(N^2) layout DoS
+# ---------------------------------------------------------------------------
+
+
+class TestGraphQuadraticLayoutDoS:
+    """``Graph`` must reject oversized node sets before running layout."""
+
+    def test_graph_with_cycle_of_1000_nodes_raises_e1501(self) -> None:
+        """A 1000-node cycle must be rejected, not silently rendered.
+
+        Wave 4B fix: ``Graph.__init__`` now raises ``E1501`` when
+        ``len(nodes) > _MAX_NODES`` so a malicious editorial cannot
+        burn seconds of renderer time on O(N^2) force-layout.
+        """
+        n = 1000
+        nodes = list(range(n))
+        edges = [(i, (i + 1) % n) for i in range(n)]
+        with pytest.raises(Exception, match="E1501"):
+            Graph("G", {"nodes": nodes, "edges": edges})
+
+    def test_graph_at_exactly_max_nodes_succeeds(self) -> None:
+        """A graph with exactly ``_MAX_NODES`` nodes must still build."""
+        nodes = list(range(_MAX_NODES))
+        edges = [(i, (i + 1) % _MAX_NODES) for i in range(_MAX_NODES)]
+        g = Graph("G", {"nodes": nodes, "edges": edges})
+        assert len(g.nodes) == _MAX_NODES
+        assert len(g.positions) == _MAX_NODES
+
+    def test_graph_one_above_cap_raises(self) -> None:
+        """One node above the cap must raise ``E1501``."""
+        n = _MAX_NODES + 1
+        nodes = list(range(n))
+        edges: list[tuple[int, int]] = []
+        with pytest.raises(Exception, match="E1501"):
+            Graph("G", {"nodes": nodes, "edges": edges})
+
+    def test_graph_cap_error_message_mentions_stable_layout(self) -> None:
+        """Error message should hint at the ``layout=stable`` workaround."""
+        n = _MAX_NODES + 50
+        nodes = list(range(n))
+        with pytest.raises(Exception) as excinfo:
+            Graph("G", {"nodes": nodes, "edges": []})
+        msg = str(excinfo.value)
+        assert "E1501" in msg
+        # Message must surface both the offending count and the
+        # maximum so users can understand and fix.
+        assert str(n) in msg
+        assert str(_MAX_NODES) in msg
+        assert "stable" in msg.lower() or "split" in msg.lower()
+
+    def test_graph_construction_fast_for_reasonable_size(self) -> None:
+        """Graphs under the cap should construct in bounded time."""
+        nodes = list(range(50))
+        edges = [(i, (i + 1) % 50) for i in range(50)]
+        start = time.perf_counter()
+        Graph("G", {"nodes": nodes, "edges": edges})
+        elapsed = time.perf_counter() - start
+        # 50 nodes × 50 iters ≈ 125k force-pair ops; should be well
+        # under a second.
+        assert elapsed < 2.0, (
+            f"50-node graph construction took {elapsed:.2f}s; "
+            f"expected < 2.0s"
+        )
