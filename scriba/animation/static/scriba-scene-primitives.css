@@ -439,6 +439,20 @@
     transition-duration: 0.01ms !important;
     animation-duration:  0.01ms !important;
   }
+
+  /* Explicit override for widget stage and interactive controls.
+     Kills transitions/animations outright (not just duration) so that
+     assistive tech consuming the widget sees no residual motion. */
+  .scriba-widget,
+  .scriba-widget .scriba-stage,
+  .scriba-widget .scriba-narration,
+  .scriba-widget .scriba-substory-container,
+  .scriba-btn-prev,
+  .scriba-btn-next,
+  .scriba-dot {
+    transition: none !important;
+    animation: none !important;
+  }
 }
 
 /* ============================================

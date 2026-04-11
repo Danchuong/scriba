@@ -677,9 +677,9 @@ def emit_substory_html(
         f'        <div class="scriba-substory-widget" id="{widget_id}"\n'
         f'             data-scriba-frames="{frames_json}">\n'
         f'          <div class="scriba-controls scriba-substory-controls">\n'
-        f'            <button class="scriba-btn-prev" disabled>Prev</button>\n'
+        f'            <button class="scriba-btn-prev" aria-label="Previous sub-step" disabled>Prev</button>\n'
         f'            <span class="scriba-step-counter">Sub-step 1 / {sub_frame_count}</span>\n'
-        f'            <button class="scriba-btn-next"'
+        f'            <button class="scriba-btn-next" aria-label="Next sub-step"'
         f'{"" if sub_frame_count > 1 else " disabled"}>Next</button>\n'
         f'            <div class="scriba-progress">\n'
         f'              {dots_html}\n'
@@ -799,9 +799,9 @@ def emit_interactive_html(
     widget_html = f"""\
 <div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0">
   <div class="scriba-controls">
-    <button class="scriba-btn-prev" disabled>Prev</button>
+    <button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button>
     <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / {frame_count}</span>
-    <button class="scriba-btn-next"{"" if frame_count > 1 else " disabled"}>Next</button>
+    <button class="scriba-btn-next" aria-label="Next step"{"" if frame_count > 1 else " disabled"}>Next</button>
     <div class="scriba-progress">
       {dots_html}
     </div>
