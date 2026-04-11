@@ -148,13 +148,37 @@ class TestApplyCommand:
         mp.apply_command({"x": 3.0})
         assert mp._data["x"] == [1.0, 2.0, 3.0]
 
-    def test_e1483_too_many_points(self) -> None:
+    def test_e1483_raises_on_overflow(self) -> None:
+        """1001st append must raise E1483 (hard limit, not soft-drop)."""
         mp = MetricPlot("p", {"series": ["x"]})
         for i in range(1000):
             mp.apply_command({"x": float(i)})
         assert len(mp._data["x"]) == 1000
-        # 1001st point should be dropped
-        mp.apply_command({"x": 9999.0})
+        with pytest.raises(ValidationError) as excinfo:
+            mp.apply_command({"x": 9999.0})
+        assert "E1483" in str(excinfo.value)
+        # The offending series name appears in the message.
+        assert "'x'" in str(excinfo.value)
+        assert "1000" in str(excinfo.value)
+        # Storage is unchanged — no silent growth past the cap.
+        assert len(mp._data["x"]) == 1000
+
+    def test_e1483_identifies_offending_series(self) -> None:
+        """Error message must name the series that overflowed."""
+        mp = MetricPlot("p", {"series": ["loss", "acc"]})
+        for i in range(1000):
+            mp.apply_command({"loss": float(i)})
+        with pytest.raises(ValidationError) as excinfo:
+            mp.apply_command({"loss": 9999.0})
+        msg = str(excinfo.value)
+        assert "'loss'" in msg
+        assert "acc" not in msg or "'loss'" in msg  # loss identified
+
+    def test_e1483_under_limit_succeeds(self) -> None:
+        """Exactly 1000 points must be allowed without raising."""
+        mp = MetricPlot("p", {"series": ["x"]})
+        for i in range(1000):
+            mp.apply_command({"x": float(i)})
         assert len(mp._data["x"]) == 1000
 
     def test_unknown_series_ignored(self) -> None:

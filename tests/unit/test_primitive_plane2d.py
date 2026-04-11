@@ -147,47 +147,63 @@ class TestAddElements:
 
 
 # ---------------------------------------------------------------
-# Element cap test
+# Element cap tests (hard-limit E1466)
 # ---------------------------------------------------------------
 
 
 class TestElementCap:
-    def test_e1466_element_cap(self) -> None:
+    def test_e1466_raises_on_incremental_apply(self) -> None:
+        """501st ``add_point`` via apply_command must raise E1466."""
         p = Plane2D("p", {})
-        for i in range(500):
+        for _ in range(500):
             p.apply_command({"add_point": (0, 0)})
         assert len(p.points) == 500
-        # 501st should be rejected
-        p.apply_command({"add_point": (1, 1)})
+        with pytest.raises(ValidationError) as excinfo:
+            p.apply_command({"add_point": (1, 1)})
+        assert "E1466" in str(excinfo.value)
+        assert "501" in str(excinfo.value)
+        assert "500" in str(excinfo.value)
+        # State is unchanged (hard limit: no silent growth).
         assert len(p.points) == 500
 
-    def test_e1466_construction_cap(self, caplog: pytest.LogCaptureFixture) -> None:
-        """Cap is enforced at constructor time, not just \\apply time."""
-        import logging
+    # NOTE: Pre-Wave-4A HEAD had two tests asserting SOFT-DROP behavior
+    # (logger.error + silent keep-first-500). Wave 4A Cluster 4 converted
+    # Plane2D cap enforcement from soft-drop to hard-raise per audit
+    # finding 06-H3. The old tests have been replaced with the new
+    # hard-raise assertions below.
 
-        initial_points = [(0, 0)] * 600  # 100 over the cap
-        with caplog.at_level(logging.ERROR):
-            p = Plane2D("p", {"points": initial_points})
-        # Only the first 500 should be kept.
-        assert len(p.points) == 500
-        # At least one E1466 log line must have been emitted.
-        assert any("E1466" in r.message for r in caplog.records)
+    def test_e1466_raises_at_construction(self) -> None:
+        """Supplying 501 points via ``\\shape`` params must raise E1466."""
+        too_many = [(0.0, 0.0)] * 501
+        with pytest.raises(ValidationError) as excinfo:
+            Plane2D("p", {"points": too_many})
+        assert "E1466" in str(excinfo.value)
 
-    def test_e1466_mixed_element_types_share_cap(self) -> None:
-        """Total element count across all types is capped at 500."""
-        p = Plane2D("p", {
-            "points": [(0, 0)] * 250,
-            "segments": [((0, 0), (1, 1))] * 250,
-        })
-        # 250 + 250 = 500, right at the cap
-        total = (
-            len(p.points) + len(p.segments)
-            + len(p.lines) + len(p.polygons) + len(p.regions)
-        )
-        assert total == 500
-        # Adding one more via apply must be rejected.
-        p.apply_command({"add_point": (9, 9)})
-        assert len(p.points) == 250
+    def test_e1466_cap_is_per_frame_across_element_types(self) -> None:
+        """Cap is shared across points/lines/segments/polygons/regions."""
+        p = Plane2D("p", {})
+        # 499 points + 1 segment = 500 total — still OK.
+        for _ in range(499):
+            p.apply_command({"add_point": (0, 0)})
+        p.apply_command({"add_segment": ((0.0, 0.0), (1.0, 1.0))})
+        assert len(p.points) + len(p.segments) == 500
+        # One more of ANY kind should raise.
+        with pytest.raises(ValidationError) as excinfo:
+            p.apply_command({"add_line": ("L", 1.0, 0.0)})
+        assert "E1466" in str(excinfo.value)
+
+    def test_e1466_message_format(self) -> None:
+        """Error message should identify offender and valid range."""
+        p = Plane2D("p", {})
+        for _ in range(500):
+            p.apply_command({"add_point": (0, 0)})
+        with pytest.raises(ValidationError) as excinfo:
+            p.apply_command({"add_point": (1, 1)})
+        msg = str(excinfo.value)
+        # Concrete offender (501) + valid range (500) + guidance.
+        assert "Plane2D element count 501" in msg
+        assert "maximum 500" in msg
+        assert "per frame" in msg
 
 
 # ---------------------------------------------------------------

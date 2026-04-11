@@ -93,6 +93,14 @@ class MetricPlot(PrimitiveBase):
         Shape name used in selectors (e.g. ``plot``).
     params:
         Dictionary of parameters from the ``\\shape`` command.
+
+    Limits
+    ------
+    * At most ``8`` series per plot (``E1481``).
+    * At most ``1000`` data points per series (``E1483``).  Appending beyond
+      this limit raises rather than silently truncating, so authors see the
+      overflow instead of getting a plot that is missing data.  If you need
+      more points, down-sample the source data or split into multiple plots.
     """
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
@@ -214,16 +222,25 @@ class MetricPlot(PrimitiveBase):
     # -----------------------------------------------------------------
 
     def apply_command(self, params: dict[str, Any]) -> None:
-        """Process data feeding from ``\\apply{plot}{phi=3.2, cost=5.1}``."""
+        """Process data feeding from ``\\apply{plot}{phi=3.2, cost=5.1}``.
+
+        Raises
+        ------
+        AnimationError
+            ``E1483`` if appending would push any series beyond the
+            ``_MAX_POINTS`` hard limit.  Previously a soft-drop with a log
+            message; converted to a hard limit so data loss is visible.
+        """
         for series_name, value in params.items():
             if series_name in self._series_names:
                 if len(self._data[series_name]) >= _MAX_POINTS:
-                    logger.error(
-                        "[E1483] series %r exceeded %d points; dropping",
-                        series_name,
-                        _MAX_POINTS,
+                    raise animation_error(
+                        "E1483",
+                        f"MetricPlot series {series_name!r} exceeded "
+                        f"maximum {_MAX_POINTS} points per series; "
+                        f"down-sample the source data or split into "
+                        f"multiple plots",
                     )
-                    continue
                 self._data[series_name].append(float(value))
         self._step_index += 1
 

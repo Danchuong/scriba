@@ -168,15 +168,23 @@ class Plane2D(PrimitiveBase):
             + len(self.regions)
         )
 
-    def _check_cap(self) -> bool:
-        if self._total_elements() >= _ELEMENT_CAP:
-            logger.error("[E1466] element cap of %d reached", _ELEMENT_CAP)
-            return False
-        return True
+    def _check_cap(self) -> None:
+        """Raise E1466 if adding one more element would exceed the cap.
+
+        Converts the previous soft-drop behaviour to a hard limit so users
+        see data loss instead of silently receiving a truncated plane.
+        """
+        current = self._total_elements()
+        if current >= _ELEMENT_CAP:
+            raise animation_error(
+                "E1466",
+                f"Plane2D element count {current + 1} exceeds maximum "
+                f"{_ELEMENT_CAP} per frame; remove elements or split into "
+                f"multiple \\step frames",
+            )
 
     def _add_point_internal(self, pt: Any) -> None:
-        if not self._check_cap():
-            return
+        self._check_cap()
         if isinstance(pt, (list, tuple)) and len(pt) >= 2:
             x, y = float(pt[0]), float(pt[1])
             label = pt[2] if len(pt) > 2 else None
@@ -191,8 +199,7 @@ class Plane2D(PrimitiveBase):
         self.points.append({"x": x, "y": y, "label": label, "radius": _POINT_RADIUS})
 
     def _add_line_internal(self, ln: Any) -> None:
-        if not self._check_cap():
-            return
+        self._check_cap()
         if isinstance(ln, (list, tuple)):
             if len(ln) == 3 and not isinstance(ln[1], dict):
                 label, slope, intercept_val = ln[0], float(ln[1]), float(ln[2])
@@ -221,8 +228,7 @@ class Plane2D(PrimitiveBase):
         self.lines.append({"label": label, "slope": slope, "intercept": intercept_val})
 
     def _add_segment_internal(self, seg: Any) -> None:
-        if not self._check_cap():
-            return
+        self._check_cap()
         if isinstance(seg, (list, tuple)) and len(seg) == 2:
             p1, p2 = seg
             x1, y1 = float(p1[0]), float(p1[1])
@@ -235,8 +241,7 @@ class Plane2D(PrimitiveBase):
         self.segments.append({"x1": x1, "y1": y1, "x2": x2, "y2": y2, "label": None})
 
     def _add_polygon_internal(self, poly: Any) -> None:
-        if not self._check_cap():
-            return
+        self._check_cap()
         if isinstance(poly, (list, tuple)):
             pts = [(float(p[0]), float(p[1])) for p in poly]
             if len(pts) >= 2 and pts[0] != pts[-1]:
@@ -249,8 +254,7 @@ class Plane2D(PrimitiveBase):
             self.polygons.append({"points": pts})
 
     def _add_region_internal(self, reg: Any) -> None:
-        if not self._check_cap():
-            return
+        self._check_cap()
         if isinstance(reg, dict):
             pts = [(float(p[0]), float(p[1])) for p in reg.get("polygon", [])]
             fill = reg.get("fill", "rgba(0,114,178,0.2)")
