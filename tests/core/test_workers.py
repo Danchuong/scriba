@@ -163,3 +163,138 @@ def test_subprocess_worker_max_requests_restart():
             assert r.get("echo") == str(i)
     finally:
         w.close()
+
+
+# =========================================================================
+# Cluster 3 — audit finding 20-H3 / 14-H2 regression tests
+# =========================================================================
+
+
+def test_persistent_worker_send_uses_ensure_ascii_true():
+    """20-H3: ``json.dumps(..., ensure_ascii=True)`` must escape
+    zero-width, BOM, LS/PS, and combining characters so they cannot
+    corrupt the newline-delimited protocol.
+    """
+    import json
+    import sys
+
+    captured: dict[str, str] = {}
+
+    class FakeStdin:
+        def write(self, line: str) -> None:
+            captured["line"] = line
+
+        def flush(self) -> None:
+            pass
+
+    class FakeStdout:
+        def __init__(self) -> None:
+            self._calls = 0
+
+        def readline(self) -> str:
+            # Echo back a no-op response.
+            self._calls += 1
+            return json.dumps({"ok": True}) + "\n"
+
+    class FakeStderr:
+        def readline(self) -> str:
+            return ""
+
+    class FakeProc:
+        def __init__(self) -> None:
+            self.stdin = FakeStdin()
+            self.stdout = FakeStdout()
+            self.stderr = FakeStderr()
+
+        def poll(self):
+            return None
+
+    w = PersistentSubprocessWorker("fake-asciitest", ["/bin/true"])
+    # Bypass _ensure_started by planting a fake process.
+    w._process = FakeProc()  # type: ignore[assignment]
+    w._request_count = 0
+
+    # Unicode pile with zero-width joiners and LS/PS separators.
+    payload = {
+        "tex": "a\u200bb\u200cc\u200dd\ufeffe",
+        "sep": "x\u2028y\u2029z",
+    }
+    try:
+        # select.select on the fake stdout will fail on darwin; skip the
+        # readable check by patching select.select.
+        import select as _select
+        real_select = _select.select
+
+        def fake_select(rlist, wlist, xlist, timeout):
+            return (rlist, [], [])
+
+        _select.select = fake_select  # type: ignore[assignment]
+        try:
+            w.send(payload)
+        finally:
+            _select.select = real_select  # type: ignore[assignment]
+    finally:
+        # Avoid _kill() trying to terminate the fake.
+        w._process = None  # type: ignore[assignment]
+        w._closed = True
+
+    line = captured["line"]
+    # The wire line is pure ASCII (so every non-ASCII codepoint is escaped).
+    assert line.endswith("\n")
+    assert all(ord(ch) < 128 for ch in line), (
+        f"non-ASCII leaked onto the wire: {line!r}"
+    )
+    # Decoding round-trips the original payload.
+    assert json.loads(line) == payload
+
+
+def test_oneshot_worker_uses_ensure_ascii_true():
+    """20-H3: OneShotSubprocessWorker also escapes every non-ASCII byte.
+    We verify by pointing the worker at a python -c that echoes the raw
+    stdin line back on stdout.
+    """
+    import json
+
+    argv = [
+        sys.executable,
+        "-c",
+        (
+            "import sys;"
+            "line=sys.stdin.readline();"
+            "sys.stdout.write(line)"
+        ),
+    ]
+    w = OneShotSubprocessWorker("ascii-echo", argv)
+    try:
+        payload = {"x": "a\u200bb\u2028c"}
+        result = w.send(payload)
+        # round-trips correctly
+        assert result == payload
+    finally:
+        w.close()
+
+
+def test_subprocess_worker_alias_emits_deprecation_on_import():
+    """14-H2: The module-level ``SubprocessWorker`` alias emits a single
+    DeprecationWarning at module import time.
+    """
+    import importlib
+    import sys
+    import warnings
+
+    # Force a re-import so the module body runs again.
+    mod_name = "scriba.core.workers"
+    if mod_name in sys.modules:
+        del sys.modules[mod_name]
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        importlib.import_module(mod_name)
+    dep = [
+        w for w in caught
+        if issubclass(w.category, DeprecationWarning)
+        and "SubprocessWorker" in str(w.message)
+    ]
+    assert dep, (
+        f"expected DeprecationWarning for SubprocessWorker alias, "
+        f"got {[str(w.message) for w in caught]}"
+    )
