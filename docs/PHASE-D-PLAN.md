@@ -1,10 +1,17 @@
-# Phase D: Generality Refactoring Plan
+# Phase D: Generality Refactoring Plan ✅ COMPLETE
 
 Based on 6-agent generality audit (2026-04-11). Fixes 4 systemic issues.
 
+All phases completed 2026-04-11:
+- S1 ✅ `0185173d` — Unified primitive interface
+- S2 ✅ `88db77b8` — Theme colors + CSS cleanup
+- S3 ✅ `3e1ecbfc` — Dynamic sizing recalc
+- S4.1+S4.2 ✅ `6465dd3b` — Registry catalog + selector patterns
+- S4.3 ✅ `88db77b8` — Centralize enums
+
 ---
 
-## S1: Unified Primitive Interface
+## S1: Unified Primitive Interface ✅
 
 **Problem:** emit_svg() has 3 signatures, constructor has 2 patterns, emitter uses if/elif on type names.
 
@@ -46,7 +53,7 @@ Based on 6-agent generality audit (2026-04-11). Fixes 4 systemic issues.
 
 ---
 
-## S2: Theme-Aware Colors (Dark Mode)
+## S2: Theme-Aware Colors (Dark Mode) ✅
 
 **Problem:** All primitives hardcode light-theme hex colors (`#f6f8fa`, `#d0d7de`, `#212529`, `#6c757d`). CSS variables exist but are ignored because inline styles have higher specificity.
 
@@ -120,7 +127,7 @@ Based on 6-agent generality audit (2026-04-11). Fixes 4 systemic issues.
 
 ---
 
-## S4: Parser Generalization
+## S4: Parser Generalization ✅
 
 **Problem:** Hardcoded command list, selector accessor dispatch, validation enums scattered.
 
