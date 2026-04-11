@@ -1,0 +1,301 @@
+% Convex Hull — Andrew's Monotone Chain
+%
+% Walks 8 sorted points left-to-right building the lower hull via
+% stack + cross-product turn check, then (compressed) upper hull,
+% then highlights the final hull polygon.
+%
+% Points (sorted by x):
+%   A(0,1)  B(1,0)  C(2,2)  D(3,1)  E(4,3)  F(5,0)  G(6,4)  H(7,2)
+%
+% Expected result:
+%   Lower hull: A B F H    Upper hull: H G A
+%   Full hull (CCW): A B F H G    Interior: C D E
+%
+% Demonstrates the loop-to-step manual-unroll pattern (ruleset §2.1).
+
+\begin{animation}[id="convex-hull-andrew", label="Convex Hull — Andrew's Monotone Chain"]
+
+\shape{plane}{Plane2D}{
+  xrange=[-1, 8],
+  yrange=[-1, 5],
+  width=480,
+  aspect=equal,
+  grid=on,
+  points=[
+    [0, 1, "A"],
+    [1, 0, "B"],
+    [2, 2, "C"],
+    [3, 1, "D"],
+    [4, 3, "E"],
+    [5, 0, "F"],
+    [6, 4, "G"],
+    [7, 2, "H"]
+  ]
+}
+
+\shape{stk}{Stack}{
+  orientation=horizontal,
+  max_visible=6,
+  label="Lower hull stack"
+}
+
+% =====================================================================
+% Frame 1 — Introduction
+% =====================================================================
+\step
+\narrate{
+  Andrew's monotone chain duyệt $n$ điểm đã sắp theo $x$ (ties by $y$)
+  và build lower hull via stack. Với mỗi điểm mới $p$: while top-2 của
+  stack plus $p$ tạo right turn (cross product $\le 0$), pop. Sau đó
+  push $p$. Cross product:
+  $\text{cross}(O, P, Q) = (P_x - O_x)(Q_y - O_y) - (P_y - O_y)(Q_x - O_x)$.
+  Sign $> 0$: left turn (counterclockwise). Sign $< 0$: right turn. Sign
+  $= 0$: collinear.
+}
+
+% =====================================================================
+% Frame 2 — Push A
+% =====================================================================
+\step
+\highlight{plane.point[0]}
+\apply{stk}{push="A"}
+\narrate{
+  Process $A(0,1)$. Stack rỗng, không có gì để check. Push $A$.
+}
+
+% =====================================================================
+% Frame 3 — Push B, draw segment A-B
+% =====================================================================
+\step
+\highlight{plane.point[1]}
+\apply{stk}{push="B"}
+\apply{plane}{add_segment=[[0, 1], [1, 0]]}
+\recolor{plane.segment[0]}{state=current}
+\narrate{
+  Process $B(1,0)$. Stack $=[A]$, chỉ 1 phần tử nên không check turn.
+  Push $B$. Vẽ tentative segment $A \to B$.
+}
+
+% =====================================================================
+% Frame 4 — Check A,B,C: left turn, push C
+% =====================================================================
+\step
+\recolor{plane.segment[0]}{state=done}
+\highlight{plane.point[2]}
+\narrate{
+  Process $C(2,2)$. Check triple $(A, B, C)$:
+  $\text{cross}(A,B,C) = (1-0)(2-1) - (0-1)(2-0) = 1 - (-2) = 3 > 0$.
+  Left turn — keep $B$ on the stack.
+}
+
+\step
+\apply{stk}{push="C"}
+\apply{plane}{add_segment=[[1, 0], [2, 2]]}
+\recolor{plane.segment[1]}{state=current}
+\narrate{
+  Push $C$. Stack $=[A, B, C]$. Vẽ tentative segment $B \to C$.
+}
+
+% =====================================================================
+% Frame 5 — Check B,C,D: right turn, POP C
+% =====================================================================
+\step
+\recolor{plane.segment[1]}{state=done}
+\highlight{plane.point[3]}
+\narrate{
+  Process $D(3,1)$. Check triple $(B, C, D)$:
+  $\text{cross}(B,C,D) = (2-1)(1-0) - (2-0)(3-1) = 1 - 4 = -3 \le 0$.
+  Right turn — pop $C$ from stack.
+}
+
+\step
+\apply{stk}{pop=1}
+\recolor{plane.point[2]}{state=dim}
+\recolor{plane.segment[1]}{state=dim}
+\narrate{
+  $C$ popped. Stack $=[A, B]$. Segment $B \to C$ dimmed (discarded,
+  nhưng giữ trên canvas để author thấy algorithm progression).
+  Now check triple $(A, B, D)$:
+  $\text{cross}(A,B,D) = (1-0)(1-1) - (0-1)(3-0) = 0 - (-3) = 3 > 0$.
+  Left turn — stop popping, push $D$.
+}
+
+\step
+\apply{stk}{push="D"}
+\apply{plane}{add_segment=[[1, 0], [3, 1]]}
+\recolor{plane.segment[2]}{state=current}
+\narrate{
+  Stack $=[A, B, D]$. Vẽ segment $B \to D$.
+}
+
+% =====================================================================
+% Frame 6 — Check B,D,E: left turn, push E
+% =====================================================================
+\step
+\recolor{plane.segment[2]}{state=done}
+\highlight{plane.point[4]}
+\narrate{
+  Process $E(4,3)$. Check triple $(B, D, E)$:
+  $\text{cross}(B,D,E) = (3-1)(3-0) - (1-0)(4-1) = 6 - 3 = 3 > 0$.
+  Left turn — push $E$.
+}
+
+\step
+\apply{stk}{push="E"}
+\apply{plane}{add_segment=[[3, 1], [4, 3]]}
+\recolor{plane.segment[3]}{state=current}
+\narrate{
+  Stack $=[A, B, D, E]$. Vẽ segment $D \to E$.
+}
+
+% =====================================================================
+% Frame 7 — Check D,E,F: right turn, POP E; then B,D,F: right turn, POP D
+% =====================================================================
+\step
+\recolor{plane.segment[3]}{state=done}
+\highlight{plane.point[5]}
+\narrate{
+  Process $F(5,0)$. Check triple $(D, E, F)$:
+  $\text{cross}(D,E,F) = (4-3)(0-1) - (3-1)(5-3) = -1 - 4 = -5 \le 0$.
+  Right turn — pop $E$.
+}
+
+\step
+\apply{stk}{pop=1}
+\recolor{plane.point[4]}{state=dim}
+\recolor{plane.segment[3]}{state=dim}
+\narrate{
+  $E$ popped. Stack $=[A, B, D]$. Check triple $(B, D, F)$:
+  $\text{cross}(B,D,F) = (3-1)(0-0) - (1-0)(5-1) = 0 - 4 = -4 \le 0$.
+  Right turn again — pop $D$.
+}
+
+\step
+\apply{stk}{pop=1}
+\recolor{plane.point[3]}{state=dim}
+\recolor{plane.segment[2]}{state=dim}
+\narrate{
+  $D$ popped. Stack $=[A, B]$. Check triple $(A, B, F)$:
+  $\text{cross}(A,B,F) = (1-0)(0-1) - (0-1)(5-0) = -1 - (-5) = 4 > 0$.
+  Left turn — stop popping, push $F$.
+}
+
+\step
+\apply{stk}{push="F"}
+\apply{plane}{add_segment=[[1, 0], [5, 0]]}
+\recolor{plane.segment[4]}{state=current}
+\narrate{
+  Stack $=[A, B, F]$. Vẽ segment $B \to F$. Hull đang hình thành
+  ở bottom — $A$, $B$, $F$ đều là phần của final hull.
+}
+
+% =====================================================================
+% Frame 8 — Push G (left turn), then pop G on H (right turn)
+% =====================================================================
+\step
+\recolor{plane.segment[4]}{state=done}
+\highlight{plane.point[6]}
+\narrate{
+  Process $G(6,4)$. Check triple $(B, F, G)$:
+  $\text{cross}(B,F,G) = (5-1)(4-0) - (0-0)(6-1) = 20 - 0 = 20 > 0$.
+  Left turn — push $G$.
+}
+
+\step
+\apply{stk}{push="G"}
+\apply{plane}{add_segment=[[5, 0], [6, 4]]}
+\recolor{plane.segment[5]}{state=current}
+\narrate{
+  Stack $=[A, B, F, G]$. Vẽ segment $F \to G$.
+}
+
+\step
+\recolor{plane.segment[5]}{state=done}
+\highlight{plane.point[7]}
+\narrate{
+  Process $H(7,2)$. Check triple $(F, G, H)$:
+  $\text{cross}(F,G,H) = (6-5)(2-0) - (4-0)(7-5) = 2 - 8 = -6 \le 0$.
+  Right turn — pop $G$.
+}
+
+\step
+\apply{stk}{pop=1}
+\recolor{plane.point[6]}{state=dim}
+\recolor{plane.segment[5]}{state=dim}
+\narrate{
+  $G$ popped. Stack $=[A, B, F]$. Check triple $(B, F, H)$:
+  $\text{cross}(B,F,H) = (5-1)(2-0) - (0-0)(7-1) = 8 - 0 = 8 > 0$.
+  Left turn — push $H$.
+}
+
+\step
+\apply{stk}{push="H"}
+\apply{plane}{add_segment=[[5, 0], [7, 2]]}
+\recolor{plane.segment[6]}{state=current}
+\narrate{
+  Stack $=[A, B, F, H]$. Vẽ segment $F \to H$. Lower hull walk done.
+  Final lower hull: $A \to B \to F \to H$.
+}
+
+% =====================================================================
+% Frame 9 — Lower hull complete
+% =====================================================================
+\step
+\recolor{plane.segment[6]}{state=done}
+\narrate{
+  Lower hull complete. 4 points: $A, B, F, H$. Time complexity:
+  $O(n)$ amortized cho stack walk (mỗi point push tối đa một lần và
+  pop tối đa một lần).
+}
+
+% =====================================================================
+% Frame 10 — Upper hull (compressed — skip the walk, show result)
+% =====================================================================
+\step
+\apply{plane}{add_segment=[[7, 2], [6, 4]]}
+\apply{plane}{add_segment=[[6, 4], [0, 1]]}
+\recolor{plane.segment[7]}{state=current}
+\recolor{plane.segment[8]}{state=current}
+\recolor{plane.point[6]}{state=current}
+\narrate{
+  Upper hull: walk tương tự nhưng reverse sorted ($H, G, F, E, D, C, B, A$).
+  Để ngắn gọn, mình skip the walk và show kết quả: upper hull có 3 điểm
+  $H, G, A$. $G(6,4)$ giờ chính thức thuộc hull sau khi được reviewed từ
+  phía upper side — trước đó bị popped ở lower walk vì wrong direction.
+}
+
+% =====================================================================
+% Frame 11 — Final convex hull polygon
+% =====================================================================
+\step
+\recolor{plane.segment[7]}{state=good}
+\recolor{plane.segment[8]}{state=good}
+\recolor{plane.segment[0]}{state=good}
+\recolor{plane.segment[4]}{state=good}
+\recolor{plane.segment[6]}{state=good}
+\recolor{plane.point[0]}{state=good}
+\recolor{plane.point[1]}{state=good}
+\recolor{plane.point[5]}{state=good}
+\recolor{plane.point[7]}{state=good}
+\recolor{plane.point[6]}{state=good}
+\narrate{
+  Convex hull hoàn chỉnh: 5 đỉnh $\{A, B, F, H, G\}$ theo thứ tự
+  counterclockwise. 3 interior points $\{C, D, E\}$ bị pop trong
+  quá trình walk. Total complexity: $O(n \log n)$ cho sort + $O(n)$
+  amortized cho hai stack walks.
+}
+
+% =====================================================================
+% Frame 12 — Final with polygon fill
+% =====================================================================
+\step
+\apply{plane}{add_polygon=[[0, 1], [1, 0], [5, 0], [7, 2], [6, 4]]}
+\recolor{plane.polygon[0]}{state=good}
+\narrate{
+  Hull as filled polygon. Thuật toán Andrew's monotone chain ngắn gọn
+  hơn Graham scan (không cần sort theo angle, không cần pivot) và
+  robust với collinear points (chỉ cần thay $\le$ bằng $<$ trong
+  cross-product check nếu muốn giữ collinear points trên hull).
+}
+
+\end{animation}
