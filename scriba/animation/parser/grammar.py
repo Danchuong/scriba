@@ -259,6 +259,7 @@ class SceneParser:
                     code="E1051",
                     line=tok.line,
                     col=tok.col,
+                    source_line=self._source_line_at(tok.line),
                 )
             return self._parse_shape()
 
@@ -279,6 +280,7 @@ class SceneParser:
                     code="E1056",
                     line=tok.line,
                     col=tok.col,
+                    source_line=self._source_line_at(tok.line),
                 )
             if frame_narrate_seen:
                 raise ValidationError(
@@ -287,6 +289,7 @@ class SceneParser:
                     code="E1055",
                     line=tok.line,
                     col=tok.col,
+                    source_line=self._source_line_at(tok.line),
                 )
             return self._parse_narrate()
 
@@ -298,6 +301,7 @@ class SceneParser:
                     code="E1053",
                     line=tok.line,
                     col=tok.col,
+                    source_line=self._source_line_at(tok.line),
                 )
             return self._parse_highlight()
 
@@ -326,6 +330,7 @@ class SceneParser:
                 code="E1172",
                 line=tok.line,
                 col=tok.col,
+                source_line=self._source_line_at(tok.line),
             )
 
         if cmd_name == "substory":
@@ -336,6 +341,7 @@ class SceneParser:
                     code="E1362",
                     line=tok.line,
                     col=tok.col,
+                    source_line=self._source_line_at(tok.line),
                 )
             return self._parse_substory()
 
@@ -346,6 +352,7 @@ class SceneParser:
                 code="E1365",
                 line=tok.line,
                 col=tok.col,
+                source_line=self._source_line_at(tok.line),
             )
 
         raise ValidationError(
@@ -354,6 +361,7 @@ class SceneParser:
             code="E1006",
             line=tok.line,
             col=tok.col,
+            source_line=self._source_line_at(tok.line),
         )
 
     # ------------------------------------------------------------------
@@ -470,6 +478,7 @@ class SceneParser:
                     code="E1004",
                     line=key_tok.line,
                     col=key_tok.col,
+                    source_line=self._source_line_at(key_tok.line),
                 )
             opts[key] = val
             self._skip_newlines()
@@ -635,12 +644,22 @@ class SceneParser:
 
     def _parse_apply(self) -> ApplyCommand:
         tok = self._advance()
-        sel = parse_selector(self._read_brace_arg(tok), line=tok.line, col=tok.col)
+        sel = parse_selector(
+            self._read_brace_arg(tok),
+            line=tok.line,
+            col=tok.col,
+            source_line=self._source_line_at(tok.line),
+        )
         return ApplyCommand(tok.line, tok.col, sel, self._read_param_brace())
 
     def _parse_highlight(self) -> HighlightCommand:
         tok = self._advance()
-        sel = parse_selector(self._read_brace_arg(tok), line=tok.line, col=tok.col)
+        sel = parse_selector(
+            self._read_brace_arg(tok),
+            line=tok.line,
+            col=tok.col,
+            source_line=self._source_line_at(tok.line),
+        )
         return HighlightCommand(tok.line, tok.col, sel)
 
     def _parse_recolor(self) -> RecolorCommand:
@@ -703,7 +722,12 @@ class SceneParser:
                 col=tok.col,
             )
 
-        sel = parse_selector(target_str, line=tok.line, col=tok.col)
+        sel = parse_selector(
+            target_str,
+            line=tok.line,
+            col=tok.col,
+            source_line=self._source_line_at(tok.line),
+        )
         return RecolorCommand(
             tok.line, tok.col, sel,
             state=state,
@@ -741,7 +765,12 @@ class SceneParser:
         if isinstance(af_raw, str):
             arrow_from = af_raw
 
-        sel = parse_selector(target_str, line=tok.line, col=tok.col)
+        sel = parse_selector(
+            target_str,
+            line=tok.line,
+            col=tok.col,
+            source_line=self._source_line_at(tok.line),
+        )
         return ReannotateCommand(
             target=sel,
             color=color,
@@ -754,7 +783,12 @@ class SceneParser:
         tok = self._advance()
         target_str = self._read_brace_arg(tok)
         params = self._read_param_brace()
-        sel = parse_selector(target_str, line=tok.line, col=tok.col)
+        sel = parse_selector(
+            target_str,
+            line=tok.line,
+            col=tok.col,
+            source_line=self._source_line_at(tok.line),
+        )
         position = str(params.get("position", "above"))
         if position not in VALID_ANNOTATION_POSITIONS:
             raise ValidationError(
@@ -776,7 +810,16 @@ class SceneParser:
         arrow = params.get("arrow", False) in (True, "true")
         ephemeral = params.get("ephemeral", False) in (True, "true")
         af_raw = params.get("arrow_from")
-        arrow_from = parse_selector(af_raw, line=tok.line, col=tok.col) if isinstance(af_raw, str) else None
+        arrow_from = (
+            parse_selector(
+                af_raw,
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+            if isinstance(af_raw, str)
+            else None
+        )
         return AnnotateCommand(
             tok.line, tok.col, sel,
             label=str(params["label"]) if "label" in params else None,
@@ -914,6 +957,7 @@ class SceneParser:
                 code="E1173",
                 line=tok.line,
                 col=tok.col,
+                source_line=self._source_line_at(tok.line),
             )
 
         # Parse {iterable} — raw text (range, interpolation, or list literal)
@@ -996,6 +1040,7 @@ class SceneParser:
                             code="E1172",
                             line=inner_tok.line,
                             col=inner_tok.col,
+                            source_line=self._source_line_at(inner_tok.line),
                         )
 
                     else:
@@ -1005,6 +1050,7 @@ class SceneParser:
                             code="E1006",
                             line=inner_tok.line,
                             col=inner_tok.col,
+                            source_line=self._source_line_at(inner_tok.line),
                         )
                 else:
                     self._advance()
@@ -1016,6 +1062,7 @@ class SceneParser:
                 code="E1172",
                 line=foreach_line,
                 col=foreach_col,
+                source_line=self._source_line_at(foreach_line),
             )
         finally:
             if added_binding:
@@ -1281,6 +1328,7 @@ class SceneParser:
                         code="E1006",
                         line=inner_tok.line,
                         col=inner_tok.col,
+                        source_line=self._source_line_at(inner_tok.line),
                     )
             else:
                 self._advance()
@@ -1293,6 +1341,7 @@ class SceneParser:
             code="E1361",
             line=substory_line,
             col=substory_col,
+            source_line=self._source_line_at(substory_line),
         )
 
     def _check_substory_trailing(self, cmd_line: int, cmd_name: str) -> None:
@@ -1366,6 +1415,7 @@ class SceneParser:
             code="E1001",
             line=cmd_tok.line,
             col=cmd_tok.col,
+            source_line=self._source_line_at(cmd_tok.line),
         )
 
     def _read_param_brace(self) -> dict[str, ParamValue]:
@@ -1636,8 +1686,25 @@ class SceneParser:
                     code="E1052",
                     line=step_line,
                     col=tok.col,
+                    source_line=self._source_line_at(step_line),
                 )
             break
+
+    def _source_line_at(self, line_number: int) -> str | None:
+        """Return the raw source text for 1-based ``line_number``.
+
+        Used to populate ``ValidationError.source_line`` so the formatter
+        can render a caret pointer under the offending character. Returns
+        ``None`` if the line number is out of range or the parser has no
+        recorded source (defensive — always set in :meth:`parse`).
+        """
+        source = getattr(self, "_source", None)
+        if source is None or line_number <= 0:
+            return None
+        lines = source.splitlines()
+        if line_number > len(lines):
+            return None
+        return lines[line_number - 1]
 
     def _peek(self) -> Token:
         return self._tokens[self._pos]
@@ -1661,6 +1728,7 @@ class SceneParser:
                 code="E1012",
                 line=tok.line,
                 col=tok.col,
+                source_line=self._source_line_at(tok.line),
             )
         return self._advance()
 

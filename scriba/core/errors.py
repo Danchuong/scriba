@@ -58,16 +58,15 @@ class ScribaError(Exception):
         parts.append(self._raw_message)
         result = " ".join(parts)
 
-        # Source snippet: when callers supply the offending source line
-        # we underline the column with a carat. Keeps backward compat
-        # (rendering is unchanged when source_line is None).
+        # Source line pointer (only when we know a source line).
+        # Parser raise sites pass col as 1-based (matching tok.col
+        # convention in the lexer); place the caret under the offending
+        # char by subtracting 1.
         if self.source_line is not None:
-            snippet = self.source_line.rstrip("\n")
-            result += f"\n      {snippet}"
-            if self.col is not None and self.col >= 0:
-                # Render a carat pointer under the offending column.
-                # ``col`` is 0-indexed relative to source_line.
-                result += "\n      " + (" " * self.col) + "^"
+            stripped = self.source_line.rstrip("\n")
+            result += f"\n      {stripped}"
+            if self.col is not None and self.col >= 1:
+                result += "\n      " + " " * (self.col - 1) + "^"
 
         # Hint
         if self.hint:

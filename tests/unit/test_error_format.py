@@ -162,6 +162,55 @@ class TestAnimationErrors:
         assert f"{_DOCS_BASE}/E1103" in s
 
 
+class TestErrorCatalog:
+    """Assertions on the ERROR_CATALOG entries themselves."""
+
+    def test_e1483_mentions_hard_limit_not_truncated(self) -> None:
+        """Wave 4B Cluster 3: E1483 wording reflects raise-on-overflow behavior.
+
+        Wave 4A Cluster 4 converted MetricPlot from soft-truncate to
+        hard-raise; the catalog text was stale ("truncated") until this
+        cluster aligned it with the current behavior.
+        """
+        from scriba.animation.errors import ERROR_CATALOG
+
+        msg = ERROR_CATALOG["E1483"]
+        assert "hard limit" in msg
+        assert "truncated" not in msg
+        assert "MetricPlot" in msg
+
+
+class TestValidationErrorSourceLine:
+    """ValidationError.source_line field (Wave 4B Cluster 3)."""
+
+    def test_source_line_field_defaults_none(self) -> None:
+        err = ValidationError("boom", code="E1001")
+        assert err.source_line is None
+
+    def test_source_line_preserved_as_attribute(self) -> None:
+        err = ValidationError(
+            "bad token",
+            code="E1006",
+            line=3,
+            col=5,
+            source_line="\\fooBar{x}",
+        )
+        assert err.source_line == "\\fooBar{x}"
+
+    def test_source_line_rendered_with_caret(self) -> None:
+        err = ValidationError(
+            "unknown command",
+            code="E1006",
+            line=2,
+            col=1,
+            source_line="\\fooBar{x}",
+        )
+        s = str(err)
+        # The offending line and a caret pointer appear in the rendered form.
+        assert "\\fooBar{x}" in s
+        assert "^" in s
+
+
 class TestBackwardsCompatibility:
     """Existing exception handling patterns must still work."""
 
