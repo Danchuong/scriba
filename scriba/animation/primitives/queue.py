@@ -133,6 +133,10 @@ class Queue(PrimitiveBase):
             idx = int(m.group("idx"))
             if 0 <= idx < self.capacity:
                 self.cells[idx] = value
+                # Recalc cell width if new value is wider
+                needed = estimate_text_width(str(value), 14) + 12
+                if needed > self._cell_width:
+                    self._cell_width = needed
 
     # ----- Primitive interface ---------------------------------------------
 

@@ -140,6 +140,7 @@ class LinkedList(PrimitiveBase):
             idx = int(m.group("idx"))
             if 0 <= idx < len(self.values):
                 self.values[idx] = value
+                self._recalc_widths()
 
     # ----- Primitive interface ---------------------------------------------
 

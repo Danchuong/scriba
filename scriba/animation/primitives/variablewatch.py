@@ -79,9 +79,22 @@ class VariableWatch(PrimitiveBase):
         else:
             self._name_col_width = _MIN_NAME_COL_WIDTH
         self._value_col_width = _MIN_VALUE_COL_WIDTH
+        self._recalc_value_col()
         self._total_width = self._name_col_width + self._value_col_width
 
         self.primitive_type: str = "VariableWatch"
+
+    def _recalc_value_col(self) -> None:
+        """Recompute value column width from current values."""
+        if self._values:
+            max_val_w = max(
+                (estimate_text_width(str(v), 13) + 16 for v in self._values.values()),
+                default=0,
+            )
+            self._value_col_width = max(_MIN_VALUE_COL_WIDTH, max_val_w)
+        else:
+            self._value_col_width = _MIN_VALUE_COL_WIDTH
+        self._total_width = self._name_col_width + self._value_col_width
 
     # ----- apply commands --------------------------------------------------
 
@@ -98,12 +111,17 @@ class VariableWatch(PrimitiveBase):
                 varname = m.group("varname")
                 if varname in self._values and "value" in params:
                     self._values[varname] = str(params["value"])
+                    self._recalc_value_col()
                 return
 
         # Bulk apply: iterate params looking for variable names
+        changed = False
         for vn in self.var_names:
             if vn in params:
                 self._values[vn] = str(params[vn])
+                changed = True
+        if changed:
+            self._recalc_value_col()
 
     def set_value(self, suffix: str, value: str) -> None:
         """Set a variable's display value (called by emitter)."""
@@ -112,6 +130,7 @@ class VariableWatch(PrimitiveBase):
             varname = m.group("varname")
             if varname in self._values:
                 self._values[varname] = value
+                self._recalc_value_col()
 
     # ----- Primitive interface ---------------------------------------------
 
