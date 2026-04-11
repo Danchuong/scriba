@@ -207,9 +207,17 @@ class DPTablePrimitive(PrimitiveBase):
             tw, th = self._grid_dimensions()
             center_x = int(tw // 2)
             base_y = th
+            # With the Wave 8 CSS fix, index labels use dominant-baseline:
+            # hanging so their glyphs extend 10px BELOW base_y. The caption
+            # (central baseline) then needs its y coordinate placed 10 + 7
+            # + 5 = 22 pixels below base_y to clear the glyphs and give
+            # visual breathing room — not INDEX_LABEL_OFFSET (16) which is
+            # only enough under the pre-fix alphabetic baseline.
             if not self.is_2d and self.labels:
                 base_y += INDEX_LABEL_OFFSET
-            label_y = int(base_y + INDEX_LABEL_OFFSET)
+                label_y = int(base_y + 22)
+            else:
+                label_y = int(base_y + INDEX_LABEL_OFFSET)
             lines.append(
                 "  "
                 + _render_svg_text(
@@ -233,7 +241,11 @@ class DPTablePrimitive(PrimitiveBase):
         h = th
         if not self.is_2d and self.labels:
             h += INDEX_LABEL_OFFSET
-        if self.label:
+            if self.label:
+                # Matches the label_y math in emit_svg: caption sits 22px
+                # below the index-label base_y to clear the hanging glyphs.
+                h += 22
+        elif self.label:
             h += INDEX_LABEL_OFFSET
         return BoundingBox(x=0, y=0, width=float(tw), height=float(h))
 

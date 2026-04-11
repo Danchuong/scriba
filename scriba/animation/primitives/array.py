@@ -26,7 +26,14 @@ from scriba.animation.primitives.base import (
 )
 
 # Vertical gap between index-label row and caption row
-_CAPTION_GAP = 12
+# Vertical distance from the index label's y coordinate (hanging baseline
+# — glyphs extend DOWNWARD from y for ~10px) to the caption's y coordinate
+# (central baseline — glyphs centered on y with half-height ~7px for the
+# 14px caption font). The sum must clear the index-label glyph descent
+# (10px) plus half the caption glyph height (7px) plus a few pixels of
+# visual breathing room. Before Wave 8 this was 12 because the labels
+# used the alphabetic baseline (glyphs ABOVE y) and overlap was impossible.
+_CAPTION_GAP = 24
 
 
 # ---------------------------------------------------------------------------
