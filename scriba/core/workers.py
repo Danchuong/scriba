@@ -24,6 +24,7 @@ import select
 import subprocess
 import sys
 import threading
+import warnings
 from typing import Callable, Literal, Optional, Protocol, runtime_checkable
 
 from scriba.core.errors import WorkerError
@@ -239,7 +240,12 @@ class PersistentSubprocessWorker:
             )
 
             try:
-                line = json.dumps(request, ensure_ascii=False) + "\n"
+                # ensure_ascii=True escapes every non-ASCII byte (including
+                # zero-width joiners, BOM, LS/PS separators, and combining
+                # marks) so the line-oriented JSON protocol cannot be
+                # corrupted by adversarial Unicode in payloads. See audit
+                # finding 20-H3.
+                line = json.dumps(request, ensure_ascii=True) + "\n"
                 proc.stdin.write(line)
                 proc.stdin.flush()
             except (BrokenPipeError, OSError) as e:
@@ -308,8 +314,22 @@ class PersistentSubprocessWorker:
         self.close()
 
 
-# Backward-compatible alias (deprecated; remove in 0.2.0).
+# Backward-compatible alias (deprecated; remove in the next major).
+#
+# ``SubprocessWorker`` is a direct alias of
+# :class:`PersistentSubprocessWorker` — preserving ``SubprocessWorker is
+# PersistentSubprocessWorker`` identity and ``isinstance`` compatibility
+# — and a :class:`DeprecationWarning` is emitted once at module import
+# time to signal the pending removal. See audit finding 14-H2.
 SubprocessWorker = PersistentSubprocessWorker
+
+warnings.warn(
+    "scriba.core.workers.SubprocessWorker is a deprecated alias of "
+    "PersistentSubprocessWorker and will be removed in a future "
+    "release. Import PersistentSubprocessWorker directly.",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 
 class OneShotSubprocessWorker:
@@ -342,7 +362,9 @@ class OneShotSubprocessWorker:
         effective_timeout = (
             timeout if timeout is not None else self._default_timeout
         )
-        line = json.dumps(request, ensure_ascii=False) + "\n"
+        # ensure_ascii=True — see PersistentSubprocessWorker.send for the
+        # rationale (audit finding 20-H3).
+        line = json.dumps(request, ensure_ascii=True) + "\n"
         try:
             proc = subprocess.Popen(
                 self._argv,

@@ -14,6 +14,10 @@ from __future__ import annotations
 
 import dataclasses
 import html as _html
+import logging
+import re
+import secrets
+import warnings
 from pathlib import Path
 from typing import Any, Callable
 
@@ -23,7 +27,7 @@ from scriba.core.context import RenderContext
 from scriba.core.errors import ScribaError, ValidationError
 from scriba.core.renderer import Renderer
 
-_PLACEHOLDER_FMT = "\x00SCRIBA_BLOCK_{i}\x00"
+logger = logging.getLogger(__name__)
 
 ContextProvider = Callable[[RenderContext, list[Renderer]], RenderContext]
 
@@ -59,8 +63,36 @@ _DEFAULT_CONTEXT_PROVIDERS: tuple[ContextProvider, ...] = (
 )
 
 
+def _provider_identity(provider: ContextProvider) -> str:
+    """Return a human-readable identity string for a context provider."""
+    module = getattr(provider, "__module__", "?")
+    qualname = getattr(provider, "__qualname__", None) or getattr(
+        provider, "__name__", repr(provider)
+    )
+    return f"{module}.{qualname}"
+
+
 class Pipeline:
-    """The top-level entry point. Construct one per process at startup."""
+    """The top-level entry point. Construct one per process at startup.
+
+    Parameters
+    ----------
+    renderers
+        Ordered list of renderers. Must be non-empty; every renderer must
+        expose a unique string ``name``.
+    context_providers
+        Optional override for per-request context-preparation hooks.
+
+        * ``None`` (omitted): use the built-in defaults (currently the
+          TeX-inline provider). This is the recommended setting for almost
+          all consumers.
+        * ``[]`` (explicit empty list): use **no** providers at all. This
+          disables auto-wiring of ``ctx.render_inline_tex`` and any future
+          default provider; callers that pick this are responsible for
+          populating the context themselves. A ``UserWarning`` is emitted
+          as a reminder.
+        * A non-empty list: use exactly those providers, in order.
+    """
 
     def __init__(
         self,
@@ -81,18 +113,42 @@ class Pipeline:
                 raise ValueError(f"duplicate renderer name: {name!r}")
             seen.add(name)
         self._renderers: list[Renderer] = list(renderers)
-        self._context_providers: tuple[ContextProvider, ...] = (
-            tuple(context_providers)
-            if context_providers is not None
-            else _DEFAULT_CONTEXT_PROVIDERS
-        )
+        if context_providers is None:
+            self._context_providers: tuple[ContextProvider, ...] = (
+                _DEFAULT_CONTEXT_PROVIDERS
+            )
+        else:
+            self._context_providers = tuple(context_providers)
+            if not self._context_providers:
+                # Explicit empty list: loud warning about disabled defaults.
+                warnings.warn(
+                    "Pipeline(context_providers=[]) disables ALL default "
+                    "context providers, including TeX inline-rendering "
+                    "auto-wiring. Pass context_providers=None (or omit the "
+                    "argument) to keep defaults, or populate "
+                    "ctx.render_inline_tex manually.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         self._closed = False
 
     # ----- helpers -----
 
     def _prepare_ctx(self, ctx: RenderContext) -> RenderContext:
         for provider in self._context_providers:
-            ctx = provider(ctx, self._renderers)
+            ident = _provider_identity(provider)
+            try:
+                new_ctx = provider(ctx, self._renderers)
+            except Exception as e:
+                raise ValidationError(
+                    f"context provider {ident!r} raised {type(e).__name__}: {e}",
+                ) from e
+            if not isinstance(new_ctx, RenderContext):
+                raise ValidationError(
+                    f"context provider {ident!r} returned "
+                    f"{type(new_ctx).__name__} instead of RenderContext"
+                )
+            ctx = new_ctx
         return ctx
 
     # ----- main entry -----
@@ -129,12 +185,24 @@ class Pipeline:
             last_end = block.end
 
         # 3. Build output buffer with placeholders for accepted blocks.
+        #
+        # Placeholder safety: we generate a fresh, unforgeable nonce per
+        # render() call. Artifact HTML produced by renderer plugins cannot
+        # forge the full placeholder string because it doesn't know the
+        # nonce, so a naive substring match is safe against re-entry.
+        nonce = secrets.token_hex(16)
+        placeholder_prefix = f"\x00SCRIBA_BLOCK_{nonce}_"
+        placeholder_suffix = "\x00"
+
+        def _make_placeholder(i: int) -> str:
+            return f"{placeholder_prefix}{i}{placeholder_suffix}"
+
         out_parts: list[str] = []
         cursor = 0
         for i, (block, _r) in enumerate(accepted):
             if block.start > cursor:
                 out_parts.append(_html.escape(source[cursor:block.start]))
-            out_parts.append(_PLACEHOLDER_FMT.format(i=i))
+            out_parts.append(_make_placeholder(i))
             cursor = block.end
         if cursor < len(source):
             out_parts.append(_html.escape(source[cursor:]))
@@ -143,14 +211,32 @@ class Pipeline:
         # 4. Render each accepted block.
         artifacts: list[RenderArtifact] = []
         for block, renderer in accepted:
-            artifact = renderer.render_block(block, ctx)
+            try:
+                artifact = renderer.render_block(block, ctx)
+            except Exception as e:
+                # Enrich mid-loop failures with which block crashed.
+                raise type(e)(
+                    f"renderer {renderer.name!r} failed on block "
+                    f"kind={block.kind!r} at [{block.start}:{block.end}]: {e}"
+                ) from e
             artifacts.append(artifact)
 
-        # 5. Substitute placeholders.
-        rendered_html = scaffold
-        for i, artifact in enumerate(artifacts):
-            placeholder = _PLACEHOLDER_FMT.format(i=i)
-            rendered_html = rendered_html.replace(placeholder, artifact.html)
+        # 5. Substitute placeholders in a single pass via regex. Using
+        # re.sub with a callback guarantees each marker is replaced exactly
+        # once and prevents artifact HTML that happens to contain another
+        # (valid) marker from triggering a re-entry substitution.
+        pattern = re.compile(
+            re.escape(placeholder_prefix) + r"(\d+)" + re.escape(placeholder_suffix)
+        )
+        by_index: dict[int, str] = {i: a.html for i, a in enumerate(artifacts)}
+
+        def _sub(match: re.Match[str]) -> str:
+            idx = int(match.group(1))
+            # Fall back to the literal match (shouldn't happen because we
+            # only emit indices we know). This is belt-and-braces only.
+            return by_index.get(idx, match.group(0))
+
+        rendered_html = pattern.sub(_sub, scaffold)
 
         # 6. Aggregate assets, namespaced by renderer name to avoid
         #    basename collisions between plugins.
@@ -160,24 +246,42 @@ class Pipeline:
         # Artifacts still return bare basenames on their asset frozensets
         # (backwards compatible). We namespace them by the owning renderer.
         for artifact, (_block, renderer) in zip(artifacts, accepted):
-            ns = getattr(renderer, "name", "unknown")
+            ns = renderer.name  # __init__ guarantees this exists.
             for basename in artifact.css_assets:
                 css_set.add(f"{ns}/{basename}")
             for basename in artifact.js_assets:
                 js_set.add(f"{ns}/{basename}")
         for renderer in self._renderers:
-            ns = getattr(renderer, "name", "unknown")
+            ns = renderer.name
             assets = renderer.assets()
             for path in assets.css_files:
                 basename = getattr(path, "name", str(path))
                 key = f"{ns}/{basename}"
                 css_set.add(key)
-                asset_paths[key] = path if isinstance(path, Path) else Path(str(path))
+                resolved = path if isinstance(path, Path) else Path(str(path))
+                if key in asset_paths and asset_paths[key] != resolved:
+                    warnings.warn(
+                        f"asset path collision for {key!r}: keeping "
+                        f"{asset_paths[key]!s}, ignoring {resolved!s}",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                else:
+                    asset_paths[key] = resolved
             for path in assets.js_files:
                 basename = getattr(path, "name", str(path))
                 key = f"{ns}/{basename}"
                 js_set.add(key)
-                asset_paths[key] = path if isinstance(path, Path) else Path(str(path))
+                resolved = path if isinstance(path, Path) else Path(str(path))
+                if key in asset_paths and asset_paths[key] != resolved:
+                    warnings.warn(
+                        f"asset path collision for {key!r}: keeping "
+                        f"{asset_paths[key]!s}, ignoring {resolved!s}",
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                else:
+                    asset_paths[key] = resolved
 
         # 7. Aggregate public block_data.
         block_data: dict[str, Any] = {}
@@ -188,7 +292,15 @@ class Pipeline:
         # 8. Versions.
         versions: dict[str, int] = {"core": SCRIBA_VERSION}
         for renderer in self._renderers:
-            versions[renderer.name] = int(renderer.version)
+            raw_version = getattr(renderer, "version", None)
+            try:
+                versions[renderer.name] = int(raw_version)
+            except (TypeError, ValueError) as e:
+                raise ValidationError(
+                    f"renderer {renderer.name!r} has non-int-coercible "
+                    f"version {raw_version!r} (type "
+                    f"{type(raw_version).__name__}): {e}"
+                ) from e
 
         # 9. Build Document.
         return Document(
@@ -201,17 +313,27 @@ class Pipeline:
         )
 
     def close(self) -> None:
-        """Shut down all renderers owned by this pipeline. Idempotent."""
+        """Shut down all renderers owned by this pipeline. Idempotent.
+
+        Exceptions raised by individual renderer ``close()`` methods are
+        caught so one broken renderer cannot block cleanup of the rest,
+        but each failure is surfaced via :mod:`warnings` and the standard
+        logger so resource leaks are visible instead of silent.
+        """
         if self._closed:
             return
         self._closed = True
         for renderer in self._renderers:
             close = getattr(renderer, "close", None)
-            if callable(close):
-                try:
-                    close()
-                except Exception:
-                    pass
+            if not callable(close):
+                continue
+            name = getattr(renderer, "name", "<unnamed>")
+            try:
+                close()
+            except Exception as e:  # noqa: BLE001 - defensive cleanup
+                msg = f"renderer {name!r} close() raised: {e}"
+                warnings.warn(msg, RuntimeWarning, stacklevel=2)
+                logger.warning(msg, exc_info=True)
 
     def __enter__(self) -> "Pipeline":
         return self
