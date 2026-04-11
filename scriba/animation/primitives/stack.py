@@ -16,6 +16,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    estimate_text_width,
     svg_style_attrs,
 )
 
@@ -94,6 +95,17 @@ class Stack(PrimitiveBase):
                 self.items.append(StackItem(label=str(item)))
 
         self.primitive_type: str = "stack"
+        self._cell_width: int = self._compute_cell_width()
+
+    # ----- internal: dynamic sizing ----------------------------------------
+
+    def _compute_cell_width(self) -> int:
+        """Compute cell width from current item labels."""
+        max_w = max(
+            (estimate_text_width(str(item.label), 14) for item in self.items),
+            default=0,
+        )
+        return max(_CELL_WIDTH, max_w + 16)
 
     # ----- apply commands --------------------------------------------------
 
@@ -122,6 +134,9 @@ class Stack(PrimitiveBase):
             count = int(pop_val)
             for _ in range(min(count, len(self.items))):
                 self.items.pop()
+
+        # Recalculate after any push/pop
+        self._cell_width = self._compute_cell_width()
 
     # ----- Primitive interface ---------------------------------------------
 
@@ -152,11 +167,12 @@ class Stack(PrimitiveBase):
         if visible == 0:
             visible = 1  # minimum space
 
+        cw = self._cell_width
         if self.orientation == "horizontal":
-            w = visible * (_CELL_WIDTH + _CELL_GAP) - _CELL_GAP + 2 * _PADDING
+            w = visible * (cw + _CELL_GAP) - _CELL_GAP + 2 * _PADDING
             h = _CELL_HEIGHT + 2 * _PADDING
         else:
-            w = _CELL_WIDTH + 2 * _PADDING
+            w = cw + 2 * _PADDING
             h = visible * (_CELL_HEIGHT + _CELL_GAP) - _CELL_GAP + 2 * _PADDING
 
         if self.label_text:
@@ -170,16 +186,17 @@ class Stack(PrimitiveBase):
             f'<g data-primitive="stack" data-shape="{html_escape(self.name)}">'
         )
 
+        cw = self._cell_width
         if not self.items:
             # Empty stack placeholder
             parts.append(
                 f'<rect x="{_PADDING}" y="{_PADDING}" '
-                f'width="{_CELL_WIDTH}" height="{_CELL_HEIGHT}" '
+                f'width="{cw}" height="{_CELL_HEIGHT}" '
                 f'fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" '
                 f'stroke-dasharray="4 2" rx="4"/>'
             )
             parts.append(
-                f'<text x="{_PADDING + _CELL_WIDTH // 2}" '
+                f'<text x="{_PADDING + cw // 2}" '
                 f'y="{_PADDING + _CELL_HEIGHT // 2}" '
                 f'text-anchor="middle" dominant-baseline="central" '
                 f'fill="#adb5bd" font-size="11">empty</text>'
@@ -209,7 +226,7 @@ class Stack(PrimitiveBase):
             stroke_w = "1.5" if state == "idle" else "2"
 
             if self.orientation == "horizontal":
-                x = _PADDING + vi * (_CELL_WIDTH + _CELL_GAP)
+                x = _PADDING + vi * (cw + _CELL_GAP)
                 y = _PADDING
             else:
                 # Vertical: top of stack (most recent) at the top
@@ -228,11 +245,11 @@ class Stack(PrimitiveBase):
             )
             parts.append(
                 f'<rect x="{x}" y="{y}" '
-                f'width="{_CELL_WIDTH}" height="{_CELL_HEIGHT}" '
+                f'width="{cw}" height="{_CELL_HEIGHT}" '
                 f'rx="4" fill="{colors["fill"]}" '
                 f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
             )
-            tx = x + _CELL_WIDTH // 2
+            tx = x + cw // 2
             ty = y + _CELL_HEIGHT // 2
             parts.append(
                 _render_svg_text(
@@ -242,7 +259,7 @@ class Stack(PrimitiveBase):
                     fill=colors["text"],
                     text_anchor="middle",
                     dominant_baseline="central",
-                    fo_width=_CELL_WIDTH,
+                    fo_width=cw,
                     fo_height=_CELL_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )
@@ -251,7 +268,7 @@ class Stack(PrimitiveBase):
             if is_hl:
                 parts.append(
                     f'<rect x="{x}" y="{y}" '
-                    f'width="{_CELL_WIDTH}" height="{_CELL_HEIGHT}" '
+                    f'width="{cw}" height="{_CELL_HEIGHT}" '
                     f'rx="4" fill="none" stroke="#F0E442" stroke-width="3" '
                     f'stroke-dasharray="6 3"/>'
                 )
@@ -262,10 +279,10 @@ class Stack(PrimitiveBase):
         if len(self.items) > self.max_visible:
             overflow = len(self.items) - self.max_visible
             if self.orientation == "horizontal":
-                ox = _PADDING + visible_count * (_CELL_WIDTH + _CELL_GAP)
+                ox = _PADDING + visible_count * (cw + _CELL_GAP)
                 oy = _PADDING + _CELL_HEIGHT // 2
             else:
-                ox = _PADDING + _CELL_WIDTH // 2
+                ox = _PADDING + cw // 2
                 oy = _PADDING + visible_count * (_CELL_HEIGHT + _CELL_GAP)
             parts.append(
                 f'<text x="{ox}" y="{oy}" '

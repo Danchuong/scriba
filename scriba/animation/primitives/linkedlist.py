@@ -23,6 +23,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    estimate_text_width,
     svg_style_attrs,
 )
 
@@ -30,15 +31,14 @@ from scriba.animation.primitives.base import (
 # Layout constants
 # ---------------------------------------------------------------------------
 
-_VALUE_WIDTH = 50  # left half of the node (value display)
+_VALUE_WIDTH_MIN = 50  # minimum left half of the node (value display)
 _PTR_WIDTH = 30  # right half of the node (pointer indicator)
-_NODE_WIDTH = _VALUE_WIDTH + _PTR_WIDTH  # total node width = 80
 _NODE_HEIGHT = 40
 _LINK_GAP = 30  # horizontal gap between nodes (arrow space)
 _PADDING = 12
 _INDEX_LABEL_OFFSET = 16  # vertical offset below the node for index labels
 _CORNER_RADIUS = 4
-_ARROWHEAD_SIZE = 8
+_NULL_INDICATOR_PAD = 4  # inset for the null diagonal line in the pointer area
 
 # ---------------------------------------------------------------------------
 # Selector regexes (applied against the suffix after ``name.``)
@@ -83,6 +83,23 @@ class LinkedList(PrimitiveBase):
         self.label_text: str | None = params.get("label")
         self.primitive_type: str = "linkedlist"
 
+        # Dynamic sizing based on actual content
+        self._recalc_widths()
+
+    # ----- layout helpers --------------------------------------------------
+
+    def _recalc_widths(self) -> None:
+        """Recompute dynamic node widths from current values."""
+        if self.values:
+            self._value_width = max(
+                _VALUE_WIDTH_MIN,
+                max(estimate_text_width(str(v), 14) + 12 for v in self.values),
+            )
+        else:
+            self._value_width = _VALUE_WIDTH_MIN
+        self._node_width = self._value_width + _PTR_WIDTH
+        self._arrowhead_size = max(4, min(8, _LINK_GAP // 4))
+
     # ----- apply commands --------------------------------------------------
 
     def apply_command(self, params: dict[str, Any]) -> None:
@@ -111,6 +128,10 @@ class LinkedList(PrimitiveBase):
             idx = int(remove_val)
             if 0 <= idx < len(self.values):
                 self.values.pop(idx)
+
+        # Recompute widths whenever values change
+        if insert_val is not None or remove_val is not None:
+            self._recalc_widths()
 
     def set_value(self, suffix: str, value: str) -> None:
         """Set a node's display value (called by emitter)."""
@@ -150,7 +171,7 @@ class LinkedList(PrimitiveBase):
         n = max(len(self.values), 1)
         w = (
             2 * _PADDING
-            + n * _NODE_WIDTH
+            + n * self._node_width
             + (n - 1) * _LINK_GAP
         )
         h = 2 * _PADDING + _NODE_HEIGHT + _INDEX_LABEL_OFFSET
@@ -172,15 +193,16 @@ class LinkedList(PrimitiveBase):
         )
 
         # --- Arrowhead marker definition ---
+        ah = self._arrowhead_size
         marker_id = f"arrowhead-{html_escape(self.name)}"
         parts.append("<defs>")
         parts.append(
-            f'<marker id="{marker_id}" markerWidth="{_ARROWHEAD_SIZE}"'
-            f' markerHeight="{_ARROWHEAD_SIZE}" refX="{_ARROWHEAD_SIZE}"'
-            f' refY="{_ARROWHEAD_SIZE // 2}" orient="auto"'
+            f'<marker id="{marker_id}" markerWidth="{ah}"'
+            f' markerHeight="{ah}" refX="{ah}"'
+            f' refY="{ah // 2}" orient="auto"'
             f' markerUnits="userSpaceOnUse">'
-            f'<path d="M0,0 L{_ARROWHEAD_SIZE},{_ARROWHEAD_SIZE // 2}'
-            f" L0,{_ARROWHEAD_SIZE} Z\""
+            f'<path d="M0,0 L{ah},{ah // 2}'
+            f" L0,{ah} Z\""
             f' fill="#d0d7de" class="scriba-ll-arrowhead"/>'
             f"</marker>"
         )
@@ -190,12 +212,12 @@ class LinkedList(PrimitiveBase):
             # Empty list placeholder
             parts.append(
                 f'<rect x="{_PADDING}" y="{_PADDING}"'
-                f' width="{_NODE_WIDTH}" height="{_NODE_HEIGHT}"'
+                f' width="{self._node_width}" height="{_NODE_HEIGHT}"'
                 f' fill="#f6f8fa" stroke="#d0d7de" stroke-width="1"'
                 f' stroke-dasharray="4 2" rx="{_CORNER_RADIUS}"/>'
             )
             parts.append(
-                f'<text x="{_PADDING + _NODE_WIDTH // 2}"'
+                f'<text x="{_PADDING + self._node_width // 2}"'
                 f' y="{_PADDING + _NODE_HEIGHT // 2}"'
                 f' text-anchor="middle" dominant-baseline="central"'
                 f' fill="#adb5bd" font-size="11">empty</text>'
@@ -215,14 +237,14 @@ class LinkedList(PrimitiveBase):
             # Arrow starts from the pointer dot (centred in the ptr area)
             x_start = (
                 _PADDING
-                + i * (_NODE_WIDTH + _LINK_GAP)
-                + _VALUE_WIDTH
+                + i * (self._node_width + _LINK_GAP)
+                + self._value_width
                 + _PTR_WIDTH // 2
             )
             # Arrow ends at the left edge of node[i+1]
             x_end = (
                 _PADDING
-                + (i + 1) * (_NODE_WIDTH + _LINK_GAP)
+                + (i + 1) * (self._node_width + _LINK_GAP)
             )
             y_mid = _PADDING + _NODE_HEIGHT // 2
 
@@ -234,14 +256,14 @@ class LinkedList(PrimitiveBase):
                 link_marker_id = f"arrowhead-{html_escape(self.name)}-{i}"
                 parts.append(
                     f'<defs><marker id="{link_marker_id}"'
-                    f' markerWidth="{_ARROWHEAD_SIZE}"'
-                    f' markerHeight="{_ARROWHEAD_SIZE}"'
-                    f' refX="{_ARROWHEAD_SIZE}"'
-                    f' refY="{_ARROWHEAD_SIZE // 2}" orient="auto"'
+                    f' markerWidth="{ah}"'
+                    f' markerHeight="{ah}"'
+                    f' refX="{ah}"'
+                    f' refY="{ah // 2}" orient="auto"'
                     f' markerUnits="userSpaceOnUse">'
-                    f'<path d="M0,0 L{_ARROWHEAD_SIZE},'
-                    f"{_ARROWHEAD_SIZE // 2}"
-                    f" L0,{_ARROWHEAD_SIZE} Z\""
+                    f'<path d="M0,0 L{ah},'
+                    f"{ah // 2}"
+                    f" L0,{ah} Z\""
                     f' fill="{stroke_color}"/>'
                     f"</marker></defs>"
                 )
@@ -255,7 +277,7 @@ class LinkedList(PrimitiveBase):
             )
             parts.append(
                 f'<line x1="{x_start}" y1="{y_mid}"'
-                f' x2="{x_end - _ARROWHEAD_SIZE}" y2="{y_mid}"'
+                f' x2="{x_end - ah}" y2="{y_mid}"'
                 f' stroke="{stroke_color}" stroke-width="{stroke_w}"'
                 f' marker-end="{arrow_marker}"/>'
             )
@@ -269,7 +291,7 @@ class LinkedList(PrimitiveBase):
             colors = svg_style_attrs(node_state)
             stroke_w = "1" if node_state == "idle" else "2"
 
-            nx = _PADDING + i * (_NODE_WIDTH + _LINK_GAP)
+            nx = _PADDING + i * (self._node_width + _LINK_GAP)
             ny = _PADDING
 
             parts.append(
@@ -280,13 +302,13 @@ class LinkedList(PrimitiveBase):
             # Full node outline
             parts.append(
                 f'<rect x="{nx}" y="{ny}"'
-                f' width="{_NODE_WIDTH}" height="{_NODE_HEIGHT}"'
+                f' width="{self._node_width}" height="{_NODE_HEIGHT}"'
                 f' rx="{_CORNER_RADIUS}" fill="{colors["fill"]}"'
                 f' stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
             )
 
             # Divider between value and pointer areas
-            div_x = nx + _VALUE_WIDTH
+            div_x = nx + self._value_width
             parts.append(
                 f'<line x1="{div_x}" y1="{ny}"'
                 f' x2="{div_x}" y2="{ny + _NODE_HEIGHT}"'
@@ -294,7 +316,7 @@ class LinkedList(PrimitiveBase):
             )
 
             # Value text (centered in the left half)
-            val_cx = nx + _VALUE_WIDTH // 2
+            val_cx = nx + self._value_width // 2
             val_cy = ny + _NODE_HEIGHT // 2
             display_value = self.values[i]
 
@@ -309,14 +331,14 @@ class LinkedList(PrimitiveBase):
                     fill=colors["text"],
                     text_anchor="middle",
                     dominant_baseline="central",
-                    fo_width=_VALUE_WIDTH,
+                    fo_width=self._value_width,
                     fo_height=_NODE_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )
             )
 
             # Pointer area (right half)
-            ptr_cx = nx + _VALUE_WIDTH + _PTR_WIDTH // 2
+            ptr_cx = nx + self._value_width + _PTR_WIDTH // 2
             ptr_cy = ny + _NODE_HEIGHT // 2
 
             if i < node_count - 1:
@@ -327,10 +349,10 @@ class LinkedList(PrimitiveBase):
                 )
             else:
                 # Null indicator — diagonal line through the pointer area
-                null_x1 = nx + _VALUE_WIDTH + 4
-                null_y1 = ny + _NODE_HEIGHT - 4
-                null_x2 = nx + _NODE_WIDTH - 4
-                null_y2 = ny + 4
+                null_x1 = nx + self._value_width + _NULL_INDICATOR_PAD
+                null_y1 = ny + _NODE_HEIGHT - _NULL_INDICATOR_PAD
+                null_x2 = nx + self._node_width - _NULL_INDICATOR_PAD
+                null_y2 = ny + _NULL_INDICATOR_PAD
                 parts.append(
                     f'<line x1="{null_x1}" y1="{null_y1}"'
                     f' x2="{null_x2}" y2="{null_y2}"'
@@ -338,7 +360,7 @@ class LinkedList(PrimitiveBase):
                 )
 
             # Index label below the node
-            label_x = nx + _NODE_WIDTH // 2
+            label_x = nx + self._node_width // 2
             label_y = ny + _NODE_HEIGHT + _INDEX_LABEL_OFFSET
             parts.append(
                 f'<text x="{label_x}" y="{label_y}"'

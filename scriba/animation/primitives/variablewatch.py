@@ -16,6 +16,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    estimate_text_width,
     svg_style_attrs,
 )
 
@@ -23,13 +24,13 @@ from scriba.animation.primitives.base import (
 # Constants
 # ---------------------------------------------------------------------------
 
-_NAME_COL_WIDTH = 100
-_VALUE_COL_WIDTH = 100
+_MIN_NAME_COL_WIDTH = 100
+_MIN_VALUE_COL_WIDTH = 100
 _ROW_HEIGHT = 40
 _PADDING = 4
-_TOTAL_WIDTH = _NAME_COL_WIDTH + _VALUE_COL_WIDTH
 _FONT_SIZE = "13"
 _NAME_FONT_SIZE = "12"
+_NAME_FONT_SIZE_INT = 12
 
 # ---------------------------------------------------------------------------
 # Selector regex
@@ -68,6 +69,17 @@ class VariableWatch(PrimitiveBase):
 
         # Per-variable values: varname -> display string
         self._values: dict[str, str] = {vn: "----" for vn in self.var_names}
+
+        # Dynamic column widths based on variable names
+        if self.var_names:
+            self._name_col_width = max(
+                _MIN_NAME_COL_WIDTH,
+                max(estimate_text_width(vn, _NAME_FONT_SIZE_INT) + 20 for vn in self.var_names),
+            )
+        else:
+            self._name_col_width = _MIN_NAME_COL_WIDTH
+        self._value_col_width = _MIN_VALUE_COL_WIDTH
+        self._total_width = self._name_col_width + self._value_col_width
 
         self.primitive_type: str = "VariableWatch"
 
@@ -123,7 +135,7 @@ class VariableWatch(PrimitiveBase):
     def bounding_box(self) -> BoundingBox:
         row_count = max(len(self.var_names), 1)
         h = row_count * _ROW_HEIGHT + 2 * _PADDING
-        w = _TOTAL_WIDTH + 2 * _PADDING
+        w = self._total_width + 2 * _PADDING
 
         if self.label_text:
             h += 20
@@ -140,12 +152,12 @@ class VariableWatch(PrimitiveBase):
             # Empty placeholder
             parts.append(
                 f'<rect x="{_PADDING}" y="{_PADDING}" '
-                f'width="{_TOTAL_WIDTH}" height="{_ROW_HEIGHT}" '
+                f'width="{self._total_width}" height="{_ROW_HEIGHT}" '
                 f'fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" '
                 f'stroke-dasharray="4 2" rx="4"/>'
             )
             parts.append(
-                f'<text x="{_PADDING + _TOTAL_WIDTH // 2}" '
+                f'<text x="{_PADDING + self._total_width // 2}" '
                 f'y="{_PADDING + _ROW_HEIGHT // 2}" '
                 f'text-anchor="middle" dominant-baseline="central" '
                 f'fill="#adb5bd" font-size="11">no variables</text>'
@@ -158,12 +170,12 @@ class VariableWatch(PrimitiveBase):
         table_h = row_count * _ROW_HEIGHT
         parts.append(
             f'<rect x="{_PADDING}" y="{_PADDING}" '
-            f'width="{_TOTAL_WIDTH}" height="{table_h}" '
+            f'width="{self._total_width}" height="{table_h}" '
             f'fill="none" stroke="#d0d7de" stroke-width="1" rx="4"/>'
         )
 
         # Column divider
-        divider_x = _PADDING + _NAME_COL_WIDTH
+        divider_x = _PADDING + self._name_col_width
         parts.append(
             f'<line x1="{divider_x}" y1="{_PADDING}" '
             f'x2="{divider_x}" y2="{_PADDING + table_h}" '
@@ -193,19 +205,20 @@ class VariableWatch(PrimitiveBase):
             if row_idx > 0:
                 parts.append(
                     f'<line x1="{_PADDING}" y1="{row_y}" '
-                    f'x2="{_PADDING + _TOTAL_WIDTH}" y2="{row_y}" '
+                    f'x2="{_PADDING + self._total_width}" y2="{row_y}" '
                     f'stroke="#d0d7de" stroke-width="0.5"/>'
                 )
 
             # Value cell background (right column)
-            value_x = _PADDING + _NAME_COL_WIDTH
+            value_x = _PADDING + self._name_col_width
             parts.append(
                 f'<rect x="{value_x}" y="{row_y}" '
-                f'width="{_VALUE_COL_WIDTH}" height="{_ROW_HEIGHT}" '
+                f'width="{self._value_col_width}" height="{_ROW_HEIGHT}" '
                 f'fill="{colors["fill"]}" stroke="none"/>'
             )
 
-            # Name text (left column, monospace, gray)
+            # Name text (left column, left-aligned, gray)
+            name_fo_width = self._name_col_width - 12
             name_tx = _PADDING + 8
             name_ty = row_y + _ROW_HEIGHT // 2
             parts.append(
@@ -217,16 +230,17 @@ class VariableWatch(PrimitiveBase):
                     font_size=_NAME_FONT_SIZE,
                     text_anchor="start",
                     dominant_baseline="central",
-                    fo_width=_NAME_COL_WIDTH - 12,
+                    fo_width=name_fo_width,
                     fo_height=_ROW_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )
             )
 
             # Value text (right column, centered, state-colored)
-            value_tx = value_x + _VALUE_COL_WIDTH // 2
+            value_tx = value_x + self._value_col_width // 2
             value_ty = row_y + _ROW_HEIGHT // 2
             display_value = self._values.get(vn, "----")
+            value_fo_width = self._value_col_width - 8
             parts.append(
                 _render_svg_text(
                     display_value,
@@ -236,7 +250,7 @@ class VariableWatch(PrimitiveBase):
                     font_size=_FONT_SIZE,
                     text_anchor="middle",
                     dominant_baseline="central",
-                    fo_width=_VALUE_COL_WIDTH - 8,
+                    fo_width=value_fo_width,
                     fo_height=_ROW_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )

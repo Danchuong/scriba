@@ -186,6 +186,15 @@ class Graph(PrimitiveBase):
         self.width: int = _DEFAULT_WIDTH
         self.height: int = _DEFAULT_HEIGHT
 
+        # Scale node radius with density so dense graphs don't overlap
+        self._node_radius: int = max(
+            12,
+            min(
+                _NODE_RADIUS,
+                int(min(self.width, self.height) / (2 * max(len(self.nodes), 1))),
+            ),
+        )
+
         # Compute positions
         self.positions: dict[str | int, tuple[int, int]] = (
             fruchterman_reingold(
@@ -223,7 +232,13 @@ class Graph(PrimitiveBase):
         return suffix in set(self.addressable_parts())
 
     def bounding_box(self) -> BoundingBox:
-        return BoundingBox(x=0, y=0, width=self.width, height=self.height)
+        r = self._node_radius
+        return BoundingBox(
+            x=0,
+            y=0,
+            width=self.width + 2 * r,
+            height=self.height + 2 * r,
+        )
 
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         if not self.nodes:
@@ -232,9 +247,12 @@ class Graph(PrimitiveBase):
                 '</g>'
             )
 
+        r = self._node_radius
         parts: list[str] = []
+        # Offset by node radius so nodes at edge positions don't clip
         parts.append(
-            f'<g data-primitive="graph" data-shape="{html_escape(self.name)}">'
+            f'<g data-primitive="graph" data-shape="{html_escape(self.name)}"'
+            f' transform="translate({r},{r})">'
         )
 
         # Optional label / caption
@@ -267,7 +285,7 @@ class Graph(PrimitiveBase):
 
             if self.directed:
                 # Shorten line so arrowhead stops at circle boundary
-                x2, y2 = _shorten_line_to_circle(x1, y1, x2, y2, _NODE_RADIUS)
+                x2, y2 = _shorten_line_to_circle(x1, y1, x2, y2, self._node_radius)
 
             marker = ' marker-end="url(#scriba-arrow)"' if self.directed else ""
             edge_colors = svg_style_attrs(state)
@@ -303,7 +321,7 @@ class Graph(PrimitiveBase):
             hl_overlay = ""
             if is_hl:
                 hl_overlay = (
-                    f'<circle cx="{cx}" cy="{cy}" r="{_NODE_RADIUS}" '
+                    f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}" '
                     f'fill="none" stroke="#F0E442" stroke-width="3" '
                     f'stroke-dasharray="6 3"/>'
                 )
@@ -314,15 +332,15 @@ class Graph(PrimitiveBase):
                 fill=node_colors["text"],
                 text_anchor="middle",
                 dominant_baseline="central",
-                fo_width=_NODE_RADIUS * 2,
-                fo_height=_NODE_RADIUS * 2,
+                fo_width=self._node_radius * 2,
+                fo_height=self._node_radius * 2,
                 render_inline_tex=render_inline_tex,
                 text_outline=node_colors["fill"],
             )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
                 f'class="scriba-state-{state}">'
-                f'<circle cx="{cx}" cy="{cy}" r="{_NODE_RADIUS}" '
+                f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}" '
                 f'fill="{node_colors["fill"]}" '
                 f'stroke="{node_colors["stroke"]}" '
                 f'stroke-width="{node_sw}"/>'

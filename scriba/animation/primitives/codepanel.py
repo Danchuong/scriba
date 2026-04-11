@@ -27,8 +27,7 @@ from scriba.animation.primitives.base import (
 _LINE_HEIGHT = 24
 _PADDING_X = 12
 _PADDING_Y = 8
-_LINE_NUM_WIDTH = 30
-_CHAR_WIDTH = 9.6  # approximate monospace character width at 14px
+_CHAR_WIDTH = 8.4  # approximate monospace character width at 14px (Menlo/Monaco/Consolas)
 _FONT_SIZE = 14
 _BORDER_RADIUS = 6
 _CODE_TEXT_COLOR = "#212529"
@@ -87,7 +86,16 @@ class CodePanel(PrimitiveBase):
         self.label_text: str | None = params.get("label")
         self.primitive_type: str = "codepanel"
 
+        # Pre-compute dynamic gutter width based on line count
+        self._gutter_width: int = self._line_num_gutter_width()
+
     # ----- helpers ---------------------------------------------------------
+
+    def _line_num_gutter_width(self) -> int:
+        """Compute gutter width dynamically based on number of lines."""
+        max_line = len(self.lines)
+        digit_count = len(str(max_line)) if max_line > 0 else 1
+        return max(30, digit_count * 10 + 8)  # 10px per digit + padding
 
     def _longest_line_chars(self) -> int:
         """Return the character count of the longest source line."""
@@ -98,7 +106,7 @@ class CodePanel(PrimitiveBase):
     def _panel_width(self) -> int:
         """Compute total panel width from longest line."""
         code_width = max(int(self._longest_line_chars() * _CHAR_WIDTH), 100)
-        return _PADDING_X + _LINE_NUM_WIDTH + _PADDING_X + code_width + _PADDING_X
+        return _PADDING_X + self._gutter_width + _PADDING_X + code_width + _PADDING_X
 
     def _panel_height(self) -> int:
         """Compute total panel height from line count."""
@@ -194,15 +202,15 @@ class CodePanel(PrimitiveBase):
             # Background rect for the line (colored when state != idle)
             if line_state != "idle":
                 parts.append(
-                    f'<rect x="1" y="{line_y}" '
-                    f'width="{panel_w - 2}" height="{_LINE_HEIGHT}" '
+                    f'<rect x="0" y="{line_y}" '
+                    f'width="{panel_w}" height="{_LINE_HEIGHT}" '
                     f'fill="{colors["fill"]}"/>'
                 )
 
             # Line number — right-aligned in the gutter
             # Use inline style to prevent global CSS from overriding
             # monospace font and text-anchor.
-            line_num_x = _PADDING_X + _LINE_NUM_WIDTH - 4
+            line_num_x = _PADDING_X + self._gutter_width - 4
             line_num_fill = (
                 colors["text"] if line_state != "idle" else _LINE_NUM_COLOR
             )
@@ -218,7 +226,7 @@ class CodePanel(PrimitiveBase):
 
             # Code text — left-aligned after gutter, preserve indentation
             # Use inline style so global CSS cannot override monospace font.
-            code_x = _PADDING_X + _LINE_NUM_WIDTH + _PADDING_X
+            code_x = _PADDING_X + self._gutter_width + _PADDING_X
             text_fill = colors["text"] if line_state != "idle" else _CODE_TEXT_COLOR
             escaped_text = _escape_xml(line_text)
 

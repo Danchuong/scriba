@@ -69,6 +69,19 @@ CELL_HEIGHT = 40
 CELL_GAP = 2
 INDEX_LABEL_OFFSET = 16  # vertical offset below the cell for index labels
 
+
+def estimate_text_width(text: str, font_size: int = 14) -> int:
+    """Estimate rendered text width in pixels using conservative heuristics.
+
+    Uses a simple character-count model tuned for common monospace and
+    sans-serif fonts.  Callers should add padding on top of this estimate.
+    """
+    s = str(text)
+    # Average character width ≈ 0.6 × font_size for sans-serif,
+    # ≈ 0.62 × font_size for monospace.  Use 0.62 (conservative).
+    avg_char_w = font_size * 0.62
+    return int(len(s) * avg_char_w + 0.5)
+
 # ---------------------------------------------------------------------------
 # Selector regex helpers
 # ---------------------------------------------------------------------------
@@ -317,19 +330,42 @@ def _render_svg_text(
 
     w = fo_width if fo_width > 0 else 80
     h = fo_height if fo_height > 0 else 30
-    fo_x = x - w // 2
+
+    # Position the foreignObject so that ``x`` has the same meaning as
+    # for the plain ``<text>`` path — i.e. it respects *text_anchor*:
+    #   "start"  → x is the LEFT edge
+    #   "end"    → x is the RIGHT edge
+    #   "middle" → x is the CENTER  (default)
+    if text_anchor == "start":
+        fo_x = x
+    elif text_anchor == "end":
+        fo_x = x - w
+    else:
+        fo_x = x - w // 2
     fo_y = y - h // 2
+
+    # Match text alignment inside the div to the requested anchor
+    if text_anchor == "start":
+        h_align = "flex-start"
+        t_align = "left"
+    elif text_anchor == "end":
+        h_align = "flex-end"
+        t_align = "right"
+    else:
+        h_align = "center"
+        t_align = "center"
 
     style_parts: list[str] = [
         "display:flex",
         "align-items:center",
-        "justify-content:center",
+        f"justify-content:{h_align}",
         f"width:{w}px",
         f"height:{h}px",
         f"color:{fill}",
-        "text-align:center",
+        f"text-align:{t_align}",
         "line-height:1",
-        "overflow:visible",
+        "overflow:hidden",
+        "text-overflow:ellipsis",
     ]
     if font_weight:
         style_parts.append(f"font-weight:{font_weight}")

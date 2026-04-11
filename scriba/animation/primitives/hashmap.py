@@ -19,6 +19,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    estimate_text_width,
     svg_style_attrs,
 )
 
@@ -26,13 +27,13 @@ from scriba.animation.primitives.base import (
 # Constants
 # ---------------------------------------------------------------------------
 
-_INDEX_COL_WIDTH = 40
-_ENTRIES_COL_WIDTH = 200
+_MIN_INDEX_COL_WIDTH = 40
+_MIN_ENTRIES_COL_WIDTH = 200
 _ROW_HEIGHT = 40
 _PADDING = 4
-_TOTAL_WIDTH = _INDEX_COL_WIDTH + _ENTRIES_COL_WIDTH
 _INDEX_FONT_SIZE = "13"
 _ENTRIES_FONT_SIZE = "13"
+_ENTRIES_FONT_SIZE_INT = 13
 
 # ---------------------------------------------------------------------------
 # Selector regex
@@ -80,6 +81,31 @@ class HashMap(PrimitiveBase):
         self._bucket_values: dict[int, str] = {
             i: "" for i in range(self.capacity)
         }
+
+    # ----- dynamic column widths ------------------------------------------
+
+    def _index_col_width(self) -> int:
+        """Compute index column width based on the number of digits needed."""
+        max_idx = self.capacity - 1
+        digit_count = len(str(max_idx))
+        # For 1-2 digits the default is fine; for 3+ digits widen
+        needed = estimate_text_width(str(max_idx), font_size=int(_INDEX_FONT_SIZE)) + 16
+        return max(_MIN_INDEX_COL_WIDTH, needed)
+
+    def _entries_col_width(self) -> int:
+        """Compute entries column width from the longest bucket value."""
+        max_text_w = 0
+        for value in self._bucket_values.values():
+            if value:
+                w = estimate_text_width(value, font_size=_ENTRIES_FONT_SIZE_INT)
+                max_text_w = max(max_text_w, w)
+        # Add horizontal padding (8px left + 8px right)
+        needed = max_text_w + 16
+        return max(_MIN_ENTRIES_COL_WIDTH, needed)
+
+    def _panel_width(self) -> int:
+        """Total width of the index + entries columns."""
+        return self._index_col_width() + self._entries_col_width()
 
     # ----- apply commands --------------------------------------------------
 
@@ -133,7 +159,7 @@ class HashMap(PrimitiveBase):
 
     def bounding_box(self) -> BoundingBox:
         h = self.capacity * _ROW_HEIGHT + 2 * _PADDING
-        w = _TOTAL_WIDTH + 2 * _PADDING
+        w = self._panel_width() + 2 * _PADDING
 
         if self.label_text:
             h += 20
@@ -143,6 +169,10 @@ class HashMap(PrimitiveBase):
     def emit_svg(
         self, *, render_inline_tex: Callable[[str], str] | None = None
     ) -> str:
+        index_col_w = self._index_col_width()
+        entries_col_w = self._entries_col_width()
+        total_w = index_col_w + entries_col_w
+
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="HashMap" '
@@ -154,12 +184,12 @@ class HashMap(PrimitiveBase):
         # Outer border
         parts.append(
             f'<rect x="{_PADDING}" y="{_PADDING}" '
-            f'width="{_TOTAL_WIDTH}" height="{table_h}" '
+            f'width="{total_w}" height="{table_h}" '
             f'fill="none" stroke="#d0d7de" stroke-width="1" rx="4"/>'
         )
 
         # Column divider between index and entries
-        divider_x = _PADDING + _INDEX_COL_WIDTH
+        divider_x = _PADDING + index_col_w
         parts.append(
             f'<line x1="{divider_x}" y1="{_PADDING}" '
             f'x2="{divider_x}" y2="{_PADDING + table_h}" '
@@ -187,27 +217,27 @@ class HashMap(PrimitiveBase):
             if row_idx > 0:
                 parts.append(
                     f'<line x1="{_PADDING}" y1="{row_y}" '
-                    f'x2="{_PADDING + _TOTAL_WIDTH}" y2="{row_y}" '
+                    f'x2="{_PADDING + total_w}" y2="{row_y}" '
                     f'stroke="#d0d7de" stroke-width="0.5"/>'
                 )
 
             # Index column background (always gray)
             parts.append(
                 f'<rect x="{_PADDING}" y="{row_y}" '
-                f'width="{_INDEX_COL_WIDTH}" height="{_ROW_HEIGHT}" '
+                f'width="{index_col_w}" height="{_ROW_HEIGHT}" '
                 f'fill="#f1f3f5" stroke="none"/>'
             )
 
             # Entries column background (state-colored)
-            entries_x = _PADDING + _INDEX_COL_WIDTH
+            entries_x = _PADDING + index_col_w
             parts.append(
                 f'<rect x="{entries_x}" y="{row_y}" '
-                f'width="{_ENTRIES_COL_WIDTH}" height="{_ROW_HEIGHT}" '
+                f'width="{entries_col_w}" height="{_ROW_HEIGHT}" '
                 f'fill="{colors["fill"]}" stroke="none"/>'
             )
 
             # Index text (centered in index column)
-            idx_tx = _PADDING + _INDEX_COL_WIDTH // 2
+            idx_tx = _PADDING + index_col_w // 2
             idx_ty = row_y + _ROW_HEIGHT // 2
             parts.append(
                 _render_svg_text(
@@ -218,7 +248,7 @@ class HashMap(PrimitiveBase):
                     font_size=_INDEX_FONT_SIZE,
                     text_anchor="middle",
                     dominant_baseline="central",
-                    fo_width=_INDEX_COL_WIDTH - 4,
+                    fo_width=index_col_w - 4,
                     fo_height=_ROW_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )
@@ -226,6 +256,7 @@ class HashMap(PrimitiveBase):
 
             # Entries text (left-aligned in entries column)
             entry_tx = entries_x + 8
+            fo_w = entries_col_w - 16
             entry_ty = row_y + _ROW_HEIGHT // 2
             display_value = self._bucket_values.get(row_idx, "")
             if display_value:
@@ -238,7 +269,7 @@ class HashMap(PrimitiveBase):
                         font_size=_ENTRIES_FONT_SIZE,
                         text_anchor="start",
                         dominant_baseline="central",
-                        fo_width=_ENTRIES_COL_WIDTH - 16,
+                        fo_width=fo_w,
                         fo_height=_ROW_HEIGHT,
                         render_inline_tex=render_inline_tex,
                     )

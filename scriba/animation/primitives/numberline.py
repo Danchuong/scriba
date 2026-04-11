@@ -15,6 +15,7 @@ from scriba.animation.primitives.base import (
     STATE_COLORS,
     _escape_xml,
     _render_svg_text,
+    estimate_text_width,
     state_class,
     svg_style_attrs,
 )
@@ -82,6 +83,14 @@ class NumberLinePrimitive:
 
         label: str | None = params.get("label")
 
+        # Dynamic width: ensure enough room for ticks and their labels
+        min_tick_spacing = 40  # minimum pixels between ticks for readability
+        # Ensure tick spacing can accommodate the widest label
+        if tick_labels:
+            max_label_w = max(estimate_text_width(str(tl), 10) for tl in tick_labels)
+            min_tick_spacing = max(min_tick_spacing, max_label_w + 8)
+        width = max(NL_WIDTH, ticks * min_tick_spacing + 2 * NL_PADDING)
+
         return NumberLineInstance(
             shape_name=shape_name,
             domain_min=domain_min,
@@ -89,6 +98,7 @@ class NumberLinePrimitive:
             tick_count=ticks,
             tick_labels=tick_labels,
             label=label,
+            width=width,
         )
 
 
@@ -117,6 +127,7 @@ class NumberLineInstance:
     tick_count: int
     tick_labels: list[str] = field(default_factory=list)
     label: str | None = None
+    width: int = NL_WIDTH
     primitive_type: str = "numberline"
 
     # -- protocol -----------------------------------------------------------
@@ -169,13 +180,13 @@ class NumberLineInstance:
         )
         lines.append(
             f'    <line x1="{NL_PADDING}" y1="{NL_AXIS_Y}" '
-            f'x2="{NL_WIDTH - NL_PADDING}" y2="{NL_AXIS_Y}" '
+            f'x2="{self.width - NL_PADDING}" y2="{NL_AXIS_Y}" '
             f'stroke="{idle_colors["stroke"]}" stroke-width="2"/>'
         )
         lines.append("  </g>")
 
         # Ticks
-        usable_width = NL_WIDTH - 2 * NL_PADDING
+        usable_width = self.width - 2 * NL_PADDING
         for i in range(self.tick_count):
             target = f"{self.shape_name}.tick[{i}]"
             tick_state = state.get(target, {})
@@ -225,7 +236,7 @@ class NumberLineInstance:
 
         # Caption label
         if self.label is not None:
-            center_x = int(NL_WIDTH // 2)
+            center_x = int(self.width // 2)
             label_y = NL_HEIGHT
             lines.append(
                 "  "
@@ -235,7 +246,7 @@ class NumberLineInstance:
                     label_y,
                     fill="#6c757d",
                     css_class="scriba-primitive-label",
-                    fo_width=NL_WIDTH,
+                    fo_width=self.width,
                     fo_height=20,
                     render_inline_tex=render_inline_tex,
                 )
@@ -249,7 +260,7 @@ class NumberLineInstance:
         h = NL_HEIGHT
         if self.label:
             h += 16  # extra space for caption
-        return (0.0, 0.0, float(NL_WIDTH), float(h))
+        return (0.0, 0.0, float(self.width), float(h))
 
 
 # ---------------------------------------------------------------------------

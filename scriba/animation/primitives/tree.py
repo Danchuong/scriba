@@ -8,6 +8,7 @@ See ``docs/06-primitives.md`` section 7 for the authoritative specification.
 
 from __future__ import annotations
 
+import math
 from html import escape as html_escape
 from typing import Any, Callable
 
@@ -29,6 +30,28 @@ _LAYER_GAP = 60
 _MIN_H_GAP = 50
 _EDGE_STROKE_WIDTH = 1.5
 _PADDING = 30
+
+
+# ---------------------------------------------------------------------------
+# SVG helpers
+# ---------------------------------------------------------------------------
+
+
+def _shorten_line_to_circle(
+    x1: int,
+    y1: int,
+    x2: int,
+    y2: int,
+    radius: int,
+) -> tuple[int, int]:
+    """Move ``(x2, y2)`` back along the line by *radius* pixels.
+
+    Used so edges stop at the circle boundary rather than at the centre.
+    """
+    dx = x2 - x1
+    dy = y2 - y1
+    d = max(math.sqrt(dx * dx + dy * dy), 0.01)
+    return (round(x2 - radius * dx / d), round(y2 - radius * dy / d))
 
 
 # ---------------------------------------------------------------------------
@@ -212,6 +235,15 @@ class Tree(PrimitiveBase):
         self.width: int = max(_DEFAULT_WIDTH, node_count * _MIN_H_GAP + 2 * _PADDING)
         self.height: int = max(_DEFAULT_HEIGHT, (depth + 1) * _LAYER_GAP + 2 * _PADDING)
 
+        # Scale node radius with density so dense trees don't overlap
+        self._node_radius: int = max(
+            12,
+            min(
+                _NODE_RADIUS,
+                int(min(self.width, self.height) / (2 * max(len(self.nodes), 1))),
+            ),
+        )
+
         # Compute positions
         if self.nodes:
             self.positions: dict[str | int, tuple[int, int]] = reingold_tilford(
@@ -342,7 +374,13 @@ class Tree(PrimitiveBase):
         return suffix in set(self.addressable_parts())
 
     def bounding_box(self) -> BoundingBox:
-        return BoundingBox(x=0, y=0, width=self.width, height=self.height)
+        r = self._node_radius
+        return BoundingBox(
+            x=0,
+            y=0,
+            width=self.width + 2 * r,
+            height=self.height + 2 * r,
+        )
 
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         if not self.nodes:
@@ -351,9 +389,12 @@ class Tree(PrimitiveBase):
                 "</g>"
             )
 
+        r = self._node_radius
         parts: list[str] = []
+        # Offset by node radius so nodes at edge positions don't clip
         parts.append(
-            f'<g data-primitive="tree" data-shape="{html_escape(self.name)}">'
+            f'<g data-primitive="tree" data-shape="{html_escape(self.name)}"'
+            f' transform="translate({r},{r})">'
         )
 
         # Optional label / caption
@@ -382,8 +423,11 @@ class Tree(PrimitiveBase):
             edge_sw = "1.5" if state == "idle" else "2"
 
             if parent in self.positions and child in self.positions:
-                x1, y1 = self.positions[parent]
-                x2, y2 = self.positions[child]
+                px, py = self.positions[parent]
+                cx, cy = self.positions[child]
+                # Shorten both ends so lines stop at circle boundaries
+                x1, y1 = _shorten_line_to_circle(cx, cy, px, py, self._node_radius)
+                x2, y2 = _shorten_line_to_circle(px, py, cx, cy, self._node_radius)
                 parts.append(
                     f'<g data-target="{html_escape(edge_target)}" '
                     f'class="scriba-state-{state}">'
@@ -412,15 +456,15 @@ class Tree(PrimitiveBase):
                 fill=node_colors["text"],
                 text_anchor="middle",
                 dominant_baseline="central",
-                fo_width=_NODE_RADIUS * 2,
-                fo_height=_NODE_RADIUS * 2,
+                fo_width=self._node_radius * 2,
+                fo_height=self._node_radius * 2,
                 render_inline_tex=render_inline_tex,
                 text_outline=node_colors["fill"],
             )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
                 f'class="scriba-state-{state}">'
-                f'<circle cx="{cx}" cy="{cy}" r="{_NODE_RADIUS}" '
+                f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}" '
                 f'fill="{node_colors["fill"]}" '
                 f'stroke="{node_colors["stroke"]}" '
                 f'stroke-width="{node_sw}"/>'

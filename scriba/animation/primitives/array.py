@@ -18,9 +18,13 @@ from scriba.animation.primitives.base import (
     INDEX_LABEL_OFFSET,
     _escape_xml,
     _render_svg_text,
+    estimate_text_width,
     state_class,
     svg_style_attrs,
 )
+
+# Vertical gap between index-label row and caption row
+_CAPTION_GAP = 12
 
 
 # ---------------------------------------------------------------------------
@@ -88,7 +92,7 @@ _ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
 # ---------------------------------------------------------------------------
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(slots=True)
 class ArrayInstance:
     """A declared Array instance with layout pre-computed."""
 
@@ -98,6 +102,21 @@ class ArrayInstance:
     labels: str | None = None
     label: str | None = None
     primitive_type: str = "array"
+    _cell_width: int = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        """Compute dynamic cell width from data and labels."""
+        max_content_w = max(
+            (estimate_text_width(str(v), 14) for v in self.data), default=0
+        )
+        if self.labels:
+            parsed = _parse_index_labels(self.labels, self.size)
+            max_label_w = max(
+                (estimate_text_width(str(l), 11) for l in parsed), default=0
+            )
+        else:
+            max_label_w = 0
+        self._cell_width = max(CELL_WIDTH, max_content_w + 12, max_label_w + 8)
 
     # -- protocol -----------------------------------------------------------
 
@@ -178,7 +197,8 @@ class ArrayInstance:
             colors = svg_style_attrs(state_name)
             value = cell_state.get("value", self.data[i])
 
-            x = int(i * (CELL_WIDTH + CELL_GAP))
+            cw = self._cell_width
+            x = int(i * (cw + CELL_GAP))
             y = 0
 
             stroke_w = "1.5" if state_name == "idle" else "2"
@@ -188,11 +208,11 @@ class ArrayInstance:
             )
             lines.append(
                 f'    <rect x="{x}" y="{y}" '
-                f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" '
+                f'width="{cw}" height="{CELL_HEIGHT}" '
                 f'rx="4" fill="{colors["fill"]}" '
                 f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
             )
-            text_x = int(x + CELL_WIDTH // 2)
+            text_x = int(x + cw // 2)
             text_y = int(y + CELL_HEIGHT // 2)
             lines.append(
                 "    "
@@ -201,7 +221,7 @@ class ArrayInstance:
                     text_x,
                     text_y,
                     fill=colors["text"],
-                    fo_width=CELL_WIDTH,
+                    fo_width=cw,
                     fo_height=CELL_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )
@@ -210,7 +230,7 @@ class ArrayInstance:
             if cell_state.get("highlighted"):
                 lines.append(
                     f'    <rect x="{x}" y="{y}" '
-                    f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" '
+                    f'width="{cw}" height="{CELL_HEIGHT}" '
                     f'rx="4" fill="none" '
                     f'stroke="#F0E442" stroke-width="3" '
                     f'stroke-dasharray="6 3"/>'
@@ -229,7 +249,7 @@ class ArrayInstance:
                         label_y,
                         fill="#6c757d",
                         css_class="scriba-index-label idx",
-                        fo_width=CELL_WIDTH,
+                        fo_width=cw,
                         fo_height=20,
                         render_inline_tex=render_inline_tex,
                     )
@@ -240,7 +260,7 @@ class ArrayInstance:
             total_width = self._total_width()
             center_x = int(total_width // 2)
             label_y_offset = CELL_HEIGHT + (
-                INDEX_LABEL_OFFSET + 12 if self.labels else INDEX_LABEL_OFFSET
+                INDEX_LABEL_OFFSET + _CAPTION_GAP if self.labels else INDEX_LABEL_OFFSET
             )
             label_y = int(label_y_offset)
             lines.append(
@@ -283,7 +303,7 @@ class ArrayInstance:
         if self.labels:
             h += INDEX_LABEL_OFFSET
         if self.label:
-            h += INDEX_LABEL_OFFSET + 12 if self.labels else INDEX_LABEL_OFFSET
+            h += INDEX_LABEL_OFFSET + _CAPTION_GAP if self.labels else INDEX_LABEL_OFFSET
         arrow_above = self._arrow_height_above(annotations or [])
         h += arrow_above
         return (0, 0, float(w), float(h))
@@ -469,7 +489,8 @@ class ArrayInstance:
         if m and m.group("name") == self.shape_name:
             i = int(m.group("idx"))
             if 0 <= i < self.size:
-                x = int(i * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2)
+                cw = self._cell_width
+                x = int(i * (cw + CELL_GAP) + cw // 2)
                 y = 0  # top edge of cell — arrows curve above
                 return (x, y)
         return None
@@ -479,7 +500,7 @@ class ArrayInstance:
     def _total_width(self) -> int:
         if self.size == 0:
             return 0
-        return self.size * CELL_WIDTH + (self.size - 1) * CELL_GAP
+        return self.size * self._cell_width + (self.size - 1) * CELL_GAP
 
 
 # ---------------------------------------------------------------------------

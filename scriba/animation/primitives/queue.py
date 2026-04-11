@@ -20,6 +20,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    estimate_text_width,
     svg_style_attrs,
 )
 
@@ -31,6 +32,7 @@ _POINTER_HEIGHT = 20  # vertical space for pointer arrows above cells
 _POINTER_LABEL_GAP = 14  # gap between pointer triangle and its label text
 _POINTER_TRIANGLE_SIZE = 8  # half-width of the pointer triangle
 _DEFAULT_CAPACITY = 8
+_LABEL_PADDING = 20  # horizontal padding for pointer labels extending beyond cells
 
 # ---------------------------------------------------------------------------
 # Selector regexes (suffix-only, without shape name prefix)
@@ -77,6 +79,15 @@ class Queue(PrimitiveBase):
         self.front_idx: int = 0
         self.rear_idx: int = len(raw_data)  # points one past the last element
 
+        # Dynamic cell width: at least CELL_WIDTH, wider if content requires it
+        self._cell_width: int = max(
+            CELL_WIDTH,
+            max(
+                (estimate_text_width(str(v), 14) + 12 for v in raw_data),
+                default=CELL_WIDTH,
+            ),
+        )
+
         self.primitive_type: str = "queue"
 
     # ----- apply commands --------------------------------------------------
@@ -103,6 +114,10 @@ class Queue(PrimitiveBase):
             if self.rear_idx < self.capacity:
                 self.cells[self.rear_idx] = enqueue_val
                 self.rear_idx += 1
+                # Widen cells if the new value is wider than current cell width
+                new_w = estimate_text_width(str(enqueue_val), 14) + 12
+                if new_w > self._cell_width:
+                    self._cell_width = new_w
 
         if dequeue_val is not None:
             if self.front_idx < self.rear_idx:
@@ -142,7 +157,7 @@ class Queue(PrimitiveBase):
         return False
 
     def bounding_box(self) -> BoundingBox:
-        w = self._total_width()
+        w = self._total_width() + 2 * _LABEL_PADDING
         h = _POINTER_HEIGHT + _POINTER_LABEL_GAP + CELL_HEIGHT + INDEX_LABEL_OFFSET
         if self.label_text:
             h += 20
@@ -173,7 +188,7 @@ class Queue(PrimitiveBase):
             colors = svg_style_attrs(state_name)
             stroke_w = "1.5" if state_name == "idle" else "2"
 
-            x = i * (CELL_WIDTH + CELL_GAP)
+            x = _LABEL_PADDING + i * (self._cell_width + CELL_GAP)
             value = self.cells[i]
 
             parts.append(
@@ -182,11 +197,11 @@ class Queue(PrimitiveBase):
             )
             parts.append(
                 f'    <rect x="{x}" y="{cell_y}" '
-                f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" '
+                f'width="{self._cell_width}" height="{CELL_HEIGHT}" '
                 f'rx="4" fill="{colors["fill"]}" '
                 f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
             )
-            text_x = x + CELL_WIDTH // 2
+            text_x = x + self._cell_width // 2
             text_y = cell_y + CELL_HEIGHT // 2
             parts.append(
                 "    "
@@ -197,7 +212,7 @@ class Queue(PrimitiveBase):
                     fill=colors["text"],
                     text_anchor="middle",
                     dominant_baseline="central",
-                    fo_width=CELL_WIDTH,
+                    fo_width=self._cell_width,
                     fo_height=CELL_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )
@@ -297,7 +312,7 @@ class Queue(PrimitiveBase):
         state_name = self.get_state(label)
         colors = svg_style_attrs(state_name)
 
-        cell_center_x = idx * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2
+        cell_center_x = _LABEL_PADDING + idx * (self._cell_width + CELL_GAP) + self._cell_width // 2
 
         # Triangle tip points down, touching the top of the cell
         tip_y = cell_y - 2
@@ -327,7 +342,7 @@ class Queue(PrimitiveBase):
         # Nudge label horizontally when front/rear share a cell
         label_x = cell_center_x
         if offset_label:
-            nudge = CELL_WIDTH // 3
+            nudge = self._cell_width // 2
             label_x += -nudge if label == "front" else nudge
         parts.append(
             "    "
@@ -348,4 +363,4 @@ class Queue(PrimitiveBase):
     def _total_width(self) -> int:
         if self.capacity == 0:
             return 0
-        return self.capacity * CELL_WIDTH + (self.capacity - 1) * CELL_GAP
+        return self.capacity * self._cell_width + (self.capacity - 1) * CELL_GAP

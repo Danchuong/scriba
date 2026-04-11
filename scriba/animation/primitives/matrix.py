@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     DEFAULT_STATE,
     _escape_xml,
     _render_svg_text,
+    estimate_text_width,
     state_class,
     svg_style_attrs,
 )
@@ -162,6 +163,17 @@ class MatrixPrimitive:
         col_labels = params.get("col_labels")
         label = params.get("label")
 
+        # Dynamic label offset based on actual label content
+        row_label_offset = 0
+        if row_labels:
+            max_label_w = max(estimate_text_width(str(l), 10) for l in row_labels)
+            row_label_offset = max(_LABEL_OFFSET, max_label_w + 4)
+
+        col_label_offset = 0
+        if col_labels:
+            # Column labels are rendered horizontally at font_size=10
+            col_label_offset = max(_LABEL_OFFSET, 14)
+
         return MatrixInstance(
             shape_name=shape_name,
             rows=rows,
@@ -175,6 +187,8 @@ class MatrixPrimitive:
             row_labels=row_labels,
             col_labels=col_labels,
             label=label,
+            row_label_offset=row_label_offset,
+            col_label_offset=col_label_offset,
         )
 
 
@@ -212,6 +226,8 @@ class MatrixInstance:
     row_labels: list[str] | None = None
     col_labels: list[str] | None = None
     label: str | None = None
+    row_label_offset: int = _LABEL_OFFSET
+    col_label_offset: int = _LABEL_OFFSET
     primitive_type: str = "matrix"
 
     # -- protocol -----------------------------------------------------------
@@ -253,9 +269,9 @@ class MatrixInstance:
             f'<g data-primitive="matrix" data-shape="{self.shape_name}">'
         ]
 
-        # Compute offsets for row/col labels
-        x_offset = _LABEL_OFFSET if self.row_labels else 0
-        y_offset = _LABEL_OFFSET if self.col_labels else 0
+        # Compute offsets for row/col labels (use dynamic values)
+        x_offset = self.row_label_offset if self.row_labels else 0
+        y_offset = self.col_label_offset if self.col_labels else 0
 
         # Column labels
         if self.col_labels:
@@ -271,7 +287,7 @@ class MatrixInstance:
                         text_anchor="middle",
                         font_size="10",
                         fo_width=self.cell_size,
-                        fo_height=_LABEL_OFFSET,
+                        fo_height=self.col_label_offset,
                         render_inline_tex=render_inline_tex,
                     )
                 )
@@ -290,7 +306,7 @@ class MatrixInstance:
                         text_anchor="end",
                         dominant_baseline="central",
                         font_size="10",
-                        fo_width=_LABEL_OFFSET,
+                        fo_width=self.row_label_offset,
                         fo_height=self.cell_size,
                         render_inline_tex=render_inline_tex,
                     )
@@ -417,13 +433,13 @@ class MatrixInstance:
         )
 
     def _total_width(self) -> int:
-        label_offset = _LABEL_OFFSET if self.row_labels else 0
+        label_offset = self.row_label_offset if self.row_labels else 0
         if self.cols == 0:
             return label_offset
         return label_offset + self.cols * self.cell_size + (self.cols - 1) * _CELL_GAP
 
     def _total_height(self) -> int:
-        label_offset = _LABEL_OFFSET if self.col_labels else 0
+        label_offset = self.col_label_offset if self.col_labels else 0
         if self.rows == 0:
             return label_offset
         return label_offset + self.rows * self.cell_size + (self.rows - 1) * _CELL_GAP
