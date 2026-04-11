@@ -18,6 +18,8 @@ BNF (from 04-environments-spec.md §4.1):
 
 from __future__ import annotations
 
+import unicodedata
+
 from scriba.core.errors import ValidationError
 
 from .ast import (
@@ -52,7 +54,16 @@ class SelectorParser:
         col: int = 0,
         source_line: str | None = None,
     ) -> None:
-        self._text = text
+        # Normalize the incoming selector text to Unicode NFC so that
+        # authors using combining-form editors (which emit NFD) see their
+        # identifiers match NFC-form shape names declared elsewhere in
+        # the document.  Without this, ``\shape{café}{...}`` (NFC) and
+        # ``\apply{café.cell[0]}{...}`` (NFD ``cafe`` + combining acute)
+        # round-trip to byte-different identifiers and fail to match at
+        # scene-state lookup time.  Normalization is idempotent and
+        # preserves byte length for ASCII input, so the column offsets
+        # reported by _error() remain accurate for typical use.
+        self._text = unicodedata.normalize("NFC", text)
         self._pos = 0
         self._line = line
         self._col = col

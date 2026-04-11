@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import unicodedata
 from typing import Any, Union
 
 from scriba.core.errors import ValidationError
@@ -100,6 +101,13 @@ class SceneParser:
                 "source exceeds maximum size of 1MB",
                 code="E1013",
             )
+        # Normalize the source to Unicode NFC before lexing so that
+        # identifiers written in NFD form (e.g. a combining-diacritic
+        # ``café``) produce the same IDENT tokens as the NFC form.
+        # Without this, ``\shape{café}{...}`` declared with NFC bytes
+        # and ``\apply{café.cell[0]}{...}`` typed with NFD bytes would
+        # fail cross-reference at scene-state lookup time.
+        source = unicodedata.normalize("NFC", source)
         lexer = Lexer()
         self._tokens = lexer.tokenize(source)
         self._pos = 0
@@ -1433,6 +1441,13 @@ class SceneParser:
         - An **unterminated** param brace (EOF reached before the matching
           ``}``) is a parse error: raise ``E1001`` pointing to the opening
           brace so the author can locate the unclosed group.
+        - A **bare-token** body such as ``{pop}`` or ``{push}`` (a single
+          identifier with no ``=``) is sugar for an action flag: it yields
+          ``{"<ident>": True}``.  This lets authors write
+          ``\\apply{stk}{pop}`` in place of the more verbose
+          ``\\apply{stk}{pop=1}``.  The primitive's ``apply_command`` then
+          sees ``pop=True``; ``int(True) == 1`` so a single element is
+          popped, matching the idiomatic intent of the bare form.
         """
         self._skip_newlines()
         if self._at_end() or self._peek().kind != TokenKind.LBRACE:
@@ -1442,6 +1457,23 @@ class SceneParser:
         open_tok = self._advance()  # consume { — remember its line/col
         params: dict[str, ParamValue] = {}
         self._skip_newlines()
+
+        # Bare-token fallthrough: ``{identifier}`` with no ``=`` is sugar
+        # for ``{identifier=True}``.  This keeps ``\apply{stk}{pop}`` and
+        # similar action-flag forms working without requiring the author
+        # to spell out a redundant ``=1`` or ``=true``.  We only apply the
+        # shortcut when the brace body is exactly ``IDENT RBRACE`` — any
+        # ``key=value`` content still takes the normal path below.
+        if (
+            not self._at_end()
+            and self._peek().kind == TokenKind.IDENT
+            and self._pos + 1 < len(self._tokens)
+            and self._tokens[self._pos + 1].kind == TokenKind.RBRACE
+        ):
+            ident_tok = self._advance()
+            self._advance()  # consume }
+            return {ident_tok.value: True}
+
         while not self._at_end() and self._peek().kind != TokenKind.RBRACE:
             self._skip_newlines()
             if self._at_end() or self._peek().kind == TokenKind.RBRACE:
@@ -1503,6 +1535,15 @@ class SceneParser:
 
         if tok.kind == TokenKind.LPAREN:
             return self._parse_tuple_value()
+
+        if tok.kind == TokenKind.LBRACE:
+            # Nested dict value, e.g. ``insert={index=0, value=42}``.
+            # Reuse _read_param_brace which starts at the ``{`` and reads
+            # through the matching ``}``.  The resulting dict is returned
+            # as the parameter value; primitives that accept structured
+            # parameters (LinkedList.insert, Stack.push with {label, value},
+            # etc.) consume it directly.
+            return self._read_param_brace()
 
         raise ValidationError(
             f"unexpected token {tok.kind.name}",

@@ -4,19 +4,21 @@ Covers audit finding 17-M3 (fuzz/regression adequacy) for Unicode
 attacks on labels, narration, shape names, and URL-like attribute
 values.
 
-Written Wave 4A Cluster 9 to cover 17-M3 residuals.  Update when:
+Written Wave 4A Cluster 9 to cover 17-M3 residuals, then updated in
+Wave 5.1 when the parser gained NFC normalization for identifiers
+(see ``SceneParser.parse`` and ``SelectorParser.__init__``).
 
-* NFC/NFD normalization is introduced anywhere in the pipeline — these
-  tests will need to flip from "verify distinct" to "verify
-  canonicalized".
-* ``is_safe_url`` or the sanitizer adds new invisible-character
-  rejections.
+Current policy:
 
-These tests document **observed** behaviour rather than assert an
-ideal Unicode security posture.  The policy is: the sanitizer is the
-last line of defence, and Scriba's job is not to normalize labels.
-Where current behaviour is "pass-through", that is acceptable as long
-as the output is not structurally broken.
+* **Shape names and selectors** are NFC-normalized by the parser, so
+  NFC ``café`` and NFD ``café`` collide into a single identifier.
+  This prevents silent mismatches where a shape declared in one form
+  cannot be found by an apply/selector written in the other form.
+* **Labels and narration text** are still pass-through (not
+  normalized) — the sanitizer is the last line of defence and
+  preserves author-visible bytes.
+* Cyrillic/Latin visual look-alikes are still treated as distinct
+  identifiers: NFC normalization does not collapse homograph codepoints.
 """
 
 from __future__ import annotations
@@ -184,16 +186,33 @@ class TestNfcNfdConsistency:
         assert nfc in svg_nfc
         assert nfd in svg_nfd
 
-    def test_nfc_and_nfd_shape_names_are_distinct(self) -> None:
-        """If the parser normalized NFC/NFD it would cause silent
-        collisions. Verify they stay distinct."""
+    def test_nfc_and_nfd_shape_names_collapse_to_single_nfc_identifier(
+        self,
+    ) -> None:
+        """Wave 5.1: the parser normalizes identifiers to NFC so NFC
+        ``café`` and NFD ``café`` collide into a single shape name.
+        This prevents silent mismatches where a shape declared in one
+        form cannot be found by a selector written in the other form.
+        """
         nfc = unicodedata.normalize("NFC", "café")
         nfd = unicodedata.normalize("NFD", "café")
+        assert nfc != nfd  # sanity: the source bytes really are different
         src = (
             f"\\shape{{{nfc}}}{{Array}}{{size=3}}\n"
             f"\\shape{{{nfd}}}{{Array}}{{size=3}}\n"
             "\\step\n"
         )
-        ir = SceneParser().parse(src)
-        assert len(ir.shapes) == 2
-        assert ir.shapes[0].name != ir.shapes[1].name
+        # Both declarations canonicalize to the same NFC identifier.
+        # The parser raises E1007 on duplicate shape names; catching
+        # that here would confirm the normalization is wired end to
+        # end.  We accept either the duplicate-shape error or a
+        # successful parse that collapses the two into one name.
+        try:
+            ir = SceneParser().parse(src)
+        except Exception as exc:  # noqa: BLE001 — explicit contract check
+            assert "E1007" in str(exc) or "duplicate" in str(exc).lower()
+            return
+        # If parse succeeded, both entries share a single NFC name.
+        assert ir.shapes[0].name == nfc
+        if len(ir.shapes) == 2:
+            assert ir.shapes[0].name == ir.shapes[1].name == nfc
