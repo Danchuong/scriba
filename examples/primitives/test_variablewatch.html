@@ -88,12 +88,34 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   min-height: 2.5rem;
 }
 
-/* SVG text — font properties are set via inline style on each <text>
-   element so primitives can use different fonts (e.g. CodePanel uses
-   monospace, Graph uses sans-serif).  No global svg text rule here. */
+/* SVG text positioning.
+ *
+ * Font FAMILY is set per-primitive (e.g. CodePanel uses monospace,
+ * Graph uses sans-serif) so no global ``font`` rule appears below. But
+ * text-anchor and dominant-baseline are positioning attributes, not font
+ * attributes — we DO set them globally so cells styled via CSS match
+ * cells styled inline (Stack/Queue/HashMap/LinkedList/Matrix already
+ * emit ``style="text-anchor:middle;dominant-baseline:central"`` per element).
+ *
+ * Before Wave 8, the standalone ``render.py`` HTML template had zero
+ * text-anchor rules. Every Array/Grid/DPTable cell value, index label,
+ * and caption emitted by the CSS-only path fell through to the SVG
+ * defaults (``text-anchor: start, dominant-baseline: alphabetic``) so
+ * text inside rects drifted right and high. See Wave 8 centering audit. */
+[data-primitive] [data-target] > text {
+  text-anchor:       middle;
+  dominant-baseline: central;
+}
+.scriba-index-label,
 .idx {
-  font: 500 10px ui-monospace, monospace;
-  fill: #6c757d;
+  font:              500 10px ui-monospace, monospace;
+  fill:              #6c757d;
+  text-anchor:       middle;
+  dominant-baseline: hanging;
+}
+.scriba-primitive-label {
+  text-anchor:       middle;
+  dominant-baseline: central;
 }
 
 /* Frame transition */
