@@ -19,6 +19,29 @@
 | 09 | [`09-zuma/`](./09-zuma/) | `\begin{animation}` | Zuma (CF 607B) — interval DP với palindrome merge, 13 frame |
 | 11 | [`11-loop-to-step-manual-unroll.md`](./11-loop-to-step-manual-unroll.md) | `\begin{animation}` | Next-greater via monotonic stack — pattern for algorithms with per-iteration frames (manual `\step` unroll around a shared `\compute` trace) |
 
+## Canonical algorithms (h-series, v0.6.0)
+
+The h-series lives under `examples/cookbook/` (not in per-folder subdirectories). Each entry is a single `.tex` source plus the compiled `.html` rendering. These are the canonical, end-to-end algorithm editorials shipped with Scriba v0.6.0, and they double as the regression corpus for the animation environment.
+
+| ID | Algorithm | Source | Rendered |
+|----|-----------|--------|----------|
+| h07 | Splay tree — zig-zig rotation via `reparent` (rewrite) | `examples/cookbook/h07_splay_amortized.tex` | `examples/cookbook/h07_splay_amortized.html` |
+| h08 | Persistent segment tree — sum updates via value layer (rewrite) | `examples/cookbook/h08_persistent_segtree.tex` | `examples/cookbook/h08_persistent_segtree.html` |
+| h11 | Dijkstra — shortest path on a weighted graph | `examples/cookbook/h11_dijkstra_weighted.tex` | `examples/cookbook/h11_dijkstra_weighted.html` |
+| h12 | Kruskal — minimum spanning tree | `examples/cookbook/h12_kruskal_mst.tex` | `examples/cookbook/h12_kruskal_mst.html` |
+| h13 | BST insert / delete | `examples/cookbook/h13_bst_insert_delete.tex` | `examples/cookbook/h13_bst_insert_delete.html` |
+| h14 | BFS tree construction | `examples/cookbook/h14_bfs_tree.tex` | `examples/cookbook/h14_bfs_tree.html` |
+| h15 | KMP — Knuth–Morris–Pratt string matching | `examples/cookbook/h15_kmp_matching.tex` | `examples/cookbook/h15_kmp_matching.html` |
+| h16 | Binary search on a sorted array | `examples/cookbook/h16_binary_search.tex` | `examples/cookbook/h16_binary_search.html` |
+| h17 | Union-Find (DSU) with path compression | `examples/cookbook/h17_union_find.tex` | `examples/cookbook/h17_union_find.html` |
+| h18 | Linked list in-place reversal (three-pointer trace) | `examples/cookbook/h18_linkedlist_reverse.tex` | `examples/cookbook/h18_linkedlist_reverse.html` |
+| h19 | DP with convex hull trick (minimum cost jumps) | `examples/cookbook/h19_dp_convex_hull_trick.tex` | `examples/cookbook/h19_dp_convex_hull_trick.html` |
+
+### Authoring patterns
+
+- **Hidden-state pre-declaration** — required when you need structural mutation (`add_node`, `remove_node`, `add_point`, etc.) inside `emit_interactive_html`. Pre-declare every symbol the compute pass may later add so the initial IR validates cleanly. See [`docs/guides/hidden-state-pattern.md`](../guides/hidden-state-pattern.md). Example: h19.
+- **Strict mode** — use `scriba compile foo.tex --strict` in CI to catch deprecated params and unknown attributes early. Strict mode turns warnings into hard failures, which keeps the h-series regression corpus clean as the schema evolves. See [`docs/guides/strict-mode.md`](../guides/strict-mode.md).
+
 ## Structure
 
 Mỗi folder có 2 file:
