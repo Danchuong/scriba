@@ -12,7 +12,7 @@ from __future__ import annotations
 import abc
 import re
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any, Callable, ClassVar
 
 
 # ---------------------------------------------------------------------------
@@ -119,6 +119,35 @@ _ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
 
 
 # ---------------------------------------------------------------------------
+# Primitive registry — auto-populated by @register_primitive decorator
+# ---------------------------------------------------------------------------
+
+_PRIMITIVE_REGISTRY: dict[str, type["PrimitiveBase"]] = {}
+
+
+def register_primitive(*type_names: str):
+    """Decorator to register a primitive class under one or more type names.
+
+    Usage:
+        @register_primitive("Queue")
+        class Queue(PrimitiveBase): ...
+
+        @register_primitive("Matrix", "Heatmap")  # aliases
+        class MatrixPrimitive(PrimitiveBase): ...
+    """
+    def decorator(cls):
+        for name in type_names:
+            _PRIMITIVE_REGISTRY[name] = cls
+        return cls
+    return decorator
+
+
+def get_primitive_registry() -> dict[str, type["PrimitiveBase"]]:
+    """Return a copy of the registered primitive catalog."""
+    return dict(_PRIMITIVE_REGISTRY)
+
+
+# ---------------------------------------------------------------------------
 # Abstract base for all animation primitives
 # ---------------------------------------------------------------------------
 
@@ -129,6 +158,19 @@ class PrimitiveBase(abc.ABC):
     Every primitive manages its own internal state (CSS state classes,
     per-part values, annotations) and renders itself via :meth:`emit_svg`.
     """
+
+    # Subclasses override to declare their selector patterns as metadata.
+    # Format: {"suffix_pattern": description}
+    # Special patterns:
+    #   "cell[{i}]"        — integer-indexed (validated against size/capacity)
+    #   "cell[{r}][{c}]"   — 2D indexed
+    #   "node[{i}]"        — integer-indexed
+    #   "link[{i}]"        — integer-indexed
+    #   "tick[{i}]"        — integer-indexed
+    #   "var[{name}]"      — named variable
+    #   "all"              — select all parts
+    #   "front", "rear", "top" — named parts (no index)
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {}
 
     def __init__(self, name: str = "", params: dict[str, Any] | None = None) -> None:
         self.name = name

@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     THEME,
     _render_svg_text,
+    register_primitive,
     svg_style_attrs,
 )
 
@@ -196,6 +197,7 @@ def reingold_tilford(
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("Tree")
 class Tree(PrimitiveBase):
     """Rooted tree primitive with Reingold-Tilford layout.
 
@@ -206,6 +208,12 @@ class Tree(PrimitiveBase):
     params:
         Dictionary of parameters from the ``\\shape`` command.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "node[{id}]": "node by id",
+        "edge[({u},{v})]": "edge by endpoints",
+        "all": "all nodes and edges",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)

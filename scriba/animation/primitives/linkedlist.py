@@ -25,6 +25,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
+    register_primitive,
     svg_style_attrs,
 )
 
@@ -54,6 +55,7 @@ _ALL_RE = re.compile(r"^all$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("LinkedList")
 class LinkedList(PrimitiveBase):
     """Singly-linked list visualisation primitive.
 
@@ -65,6 +67,12 @@ class LinkedList(PrimitiveBase):
         Dictionary of parameters from the ``\\shape`` command.
         Recognised keys: ``data`` (list of values), ``label``.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "node[{i}]": "node by index",
+        "link[{i}]": "link arrow by index",
+        "all": "all nodes and links",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)

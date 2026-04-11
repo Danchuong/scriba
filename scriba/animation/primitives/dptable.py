@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _escape_xml,
     _render_svg_text,
+    register_primitive,
     state_class,
     svg_style_attrs,
 )
@@ -47,6 +48,7 @@ _SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("DPTable")
 class DPTablePrimitive(PrimitiveBase):
     """A 1D or 2D DP table with optional transition arrows.
 
@@ -54,6 +56,13 @@ class DPTablePrimitive(PrimitiveBase):
     """
 
     primitive_type: str = "dptable"
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "cell[{i}]": "cell by index (1D mode)",
+        "cell[{r}][{c}]": "cell by row,col (2D mode)",
+        "range[{lo}:{hi}]": "contiguous range of cells (1D mode)",
+        "all": "all cells",
+    }
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)

@@ -19,6 +19,7 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_svg_text,
     estimate_text_width,
+    register_primitive,
     state_class,
     svg_style_attrs,
 )
@@ -45,6 +46,7 @@ _SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("Array")
 class ArrayPrimitive(PrimitiveBase):
     """A fixed-length horizontal row of indexed cells.
 
@@ -52,6 +54,12 @@ class ArrayPrimitive(PrimitiveBase):
     """
 
     primitive_type: str = "array"
+
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
+        "cell[{i}]": "cell by index",
+        "range[{lo}:{hi}]": "contiguous range of cells",
+        "all": "all cells",
+    }
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)

@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     THEME,
     _render_svg_text,
     estimate_text_width,
+    register_primitive,
     svg_style_attrs,
 )
 
@@ -62,6 +63,7 @@ _ALL_RE = re.compile(r"^all$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("Stack")
 class Stack(PrimitiveBase):
     """Variable-length LIFO stack primitive.
 
@@ -73,6 +75,12 @@ class Stack(PrimitiveBase):
         Dictionary of parameters from the ``\\shape`` command.
         Optional keys: ``items``, ``orientation``, ``max_visible``, ``label``.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "item[{i}]": "item by index",
+        "top": "top of stack",
+        "all": "all items",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)

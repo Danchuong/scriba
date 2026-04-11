@@ -35,23 +35,7 @@ from scriba.animation.parser.ast import (
     SubstoryBlock,
 )
 from scriba.animation.parser.grammar import SceneParser
-from scriba.animation.primitives import (
-    ArrayPrimitive,
-    CodePanel,
-    DPTablePrimitive,
-    Graph,
-    GridPrimitive,
-    HashMap,
-    LinkedList,
-    MatrixPrimitive,
-    MetricPlot,
-    NumberLinePrimitive,
-    Plane2D,
-    Queue,
-    Stack,
-    Tree,
-    VariableWatch,
-)
+from scriba.animation.primitives import get_primitive_registry  # noqa: F401 — triggers registration
 from scriba.animation.scene import FrameSnapshot, SceneState
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
@@ -65,27 +49,17 @@ _FRAME_WARN_THRESHOLD = 30
 _FRAME_ERROR_THRESHOLD = 100
 
 # ---------------------------------------------------------------------------
-# Primitive catalog
+# Primitive catalog — populated by @register_primitive decorators
 # ---------------------------------------------------------------------------
 
-PRIMITIVE_CATALOG: dict[str, Any] = {
-    "Array": ArrayPrimitive,
-    "CodePanel": CodePanel,
-    "DPTable": DPTablePrimitive,
-    "Graph": Graph,
-    "Grid": GridPrimitive,
-    "HashMap": HashMap,
-    "Heatmap": MatrixPrimitive,
-    "LinkedList": LinkedList,
-    "Matrix": MatrixPrimitive,
-    "MetricPlot": MetricPlot,
-    "NumberLine": NumberLinePrimitive,
-    "Plane2D": Plane2D,
-    "Queue": Queue,
-    "Stack": Stack,
-    "Tree": Tree,
-    "VariableWatch": VariableWatch,
-}
+def _get_catalog() -> dict[str, Any]:
+    """Return the registry-based primitive catalog.
+
+    Importing :mod:`scriba.animation.primitives` triggers all
+    ``@register_primitive`` decorators, so the registry is fully
+    populated by the time this function is called.
+    """
+    return get_primitive_registry()
 
 
 # ---------------------------------------------------------------------------
@@ -190,7 +164,7 @@ def _instantiate_primitive(
 
     All primitives use the unified ``Cls(name, params)`` constructor.
     """
-    primitive_cls = PRIMITIVE_CATALOG.get(shape.type_name)
+    primitive_cls = _get_catalog().get(shape.type_name)
     if primitive_cls is None:
         raise ValidationError(
             f"unknown primitive type {shape.type_name!r}",

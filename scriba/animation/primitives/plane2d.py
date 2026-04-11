@@ -18,7 +18,7 @@ from html import escape as html_escape
 from typing import Any, Callable, Sequence
 
 from scriba.animation.errors import animation_error
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, THEME, _render_svg_text, svg_style_attrs
+from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, THEME, _render_svg_text, register_primitive, svg_style_attrs
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
 
 __all__ = ["Plane2D"]
@@ -62,6 +62,7 @@ _REGION_RE = re.compile(r"^region\[(?P<idx>\d+)\]$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("Plane2D")
 class Plane2D(PrimitiveBase):
     """2D coordinate plane primitive.
 
@@ -72,6 +73,15 @@ class Plane2D(PrimitiveBase):
     params:
         Dictionary of parameters from the ``\\shape`` command.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "point[{i}]": "point by index",
+        "line[{i}]": "line by index",
+        "segment[{i}]": "segment by index",
+        "polygon[{i}]": "polygon by index",
+        "region[{i}]": "shaded region by index",
+        "all": "all elements",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)

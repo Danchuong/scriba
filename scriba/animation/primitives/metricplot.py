@@ -16,7 +16,7 @@ import math
 from typing import Any, Callable
 
 from scriba.animation.errors import animation_error
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase
+from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, register_primitive
 
 __all__ = ["MetricPlot"]
 
@@ -83,6 +83,7 @@ class _SeriesInfo:
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("MetricPlot")
 class MetricPlot(PrimitiveBase):
     """Compile-time SVG line chart primitive.
 
@@ -93,6 +94,10 @@ class MetricPlot(PrimitiveBase):
     params:
         Dictionary of parameters from the ``\\shape`` command.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "all": "the entire plot",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)

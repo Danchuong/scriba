@@ -21,6 +21,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
+    register_primitive,
     svg_style_attrs,
 )
 
@@ -48,6 +49,7 @@ _ALL_RE = re.compile(r"^all$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("HashMap")
 class HashMap(PrimitiveBase):
     """Bucket-based hash table visualization.
 
@@ -60,6 +62,11 @@ class HashMap(PrimitiveBase):
         Required keys: ``capacity`` (int).
         Optional keys: ``label``.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "bucket[{i}]": "bucket by index",
+        "all": "all buckets",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)

@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
+    register_primitive,
     state_class,
     svg_style_attrs,
 )
@@ -116,6 +117,7 @@ _SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("Matrix", "Heatmap")
 class MatrixPrimitive(PrimitiveBase):
     """A dense 2D grid with colorscale mapping.
 
@@ -123,6 +125,11 @@ class MatrixPrimitive(PrimitiveBase):
     """
 
     primitive_type: str = "matrix"
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "cell[{r}][{c}]": "cell by row,col",
+        "all": "all cells",
+    }
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)

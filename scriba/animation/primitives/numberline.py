@@ -15,6 +15,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
+    register_primitive,
     state_class,
     svg_style_attrs,
 )
@@ -52,6 +53,7 @@ _SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("NumberLine")
 class NumberLinePrimitive(PrimitiveBase):
     """A horizontal axis with evenly spaced tick marks.
 
@@ -59,6 +61,13 @@ class NumberLinePrimitive(PrimitiveBase):
     """
 
     primitive_type: str = "numberline"
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "tick[{i}]": "tick mark by index",
+        "range[{lo}:{hi}]": "contiguous range of ticks",
+        "axis": "the axis line",
+        "all": "all ticks and axis",
+    }
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)

@@ -6,7 +6,7 @@ See ``docs/06-primitives.md`` for the authoritative specification.
 from __future__ import annotations
 
 from scriba.animation.primitives.array import ArrayInstance, ArrayPrimitive
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase
+from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, get_primitive_registry, register_primitive
 from scriba.animation.primitives.codepanel import CodePanel
 from scriba.animation.primitives.dptable import DPTableInstance, DPTablePrimitive
 from scriba.animation.primitives.graph import Graph
@@ -46,4 +46,6 @@ __all__ = [
     "Stack",
     "Tree",
     "VariableWatch",
+    "get_primitive_registry",
+    "register_primitive",
 ]

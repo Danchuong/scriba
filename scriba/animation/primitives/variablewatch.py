@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _render_svg_text,
     estimate_text_width,
+    register_primitive,
     svg_style_attrs,
 )
 
@@ -45,6 +46,7 @@ _ALL_RE = re.compile(r"^all$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("VariableWatch")
 class VariableWatch(PrimitiveBase):
     """Two-column name-value table for algorithm variable inspection.
 
@@ -57,6 +59,11 @@ class VariableWatch(PrimitiveBase):
         Required keys: ``names`` (list of variable name strings).
         Optional keys: ``label``.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "var[{name}]": "variable by name",
+        "all": "all variables",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)

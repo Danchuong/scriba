@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     THEME,
     PrimitiveBase,
     _render_svg_text,
+    register_primitive,
     state_class,
     svg_style_attrs,
 )
@@ -83,6 +84,7 @@ _SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("Grid")
 class GridPrimitive(PrimitiveBase):
     """A 2D rows x cols matrix of uniform cells.
 
@@ -90,6 +92,11 @@ class GridPrimitive(PrimitiveBase):
     """
 
     primitive_type: str = "grid"
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "cell[{r}][{c}]": "cell by row,col",
+        "all": "all cells",
+    }
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)

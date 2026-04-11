@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _escape_xml,
+    register_primitive,
     svg_style_attrs,
 )
 
@@ -48,6 +49,7 @@ _ALL_RE = re.compile(r"^all$")
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("CodePanel")
 class CodePanel(PrimitiveBase):
     """Source code display with line numbers and per-line state highlighting.
 
@@ -60,6 +62,11 @@ class CodePanel(PrimitiveBase):
         Accepts ``source`` (newline-separated string) or ``lines``
         (list of strings). Optional: ``label``.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "line[{i}]": "line by number (1-based)",
+        "all": "all lines",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)

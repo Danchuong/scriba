@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     THEME,
     _render_svg_text,
+    register_primitive,
     svg_style_attrs,
 )
 
@@ -158,6 +159,7 @@ def _shorten_line_to_circle(
 # ---------------------------------------------------------------------------
 
 
+@register_primitive("Graph")
 class Graph(PrimitiveBase):
     """Force-directed graph primitive.
 
@@ -170,6 +172,12 @@ class Graph(PrimitiveBase):
         are ``nodes`` and ``edges``.  Optional keys: ``directed``,
         ``layout``, ``layout_seed``, ``label``.
     """
+
+    SELECTOR_PATTERNS: dict[str, str] = {
+        "node[{id}]": "node by id",
+        "edge[({u},{v})]": "edge by endpoints",
+        "all": "all nodes and edges",
+    }
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
