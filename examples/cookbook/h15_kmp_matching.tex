@@ -1,0 +1,186 @@
+\begin{animation}[id="kmp", label="KMP -- Knuth-Morris-Pratt string matching"]
+\shape{P}{Array}{size=9, data=["A","B","A","B","C","A","B","A","B"], labels="0..8", label="pattern $P$"}
+\shape{F}{Array}{size=9, data=[0,0,0,0,0,0,0,0,0], labels="0..8", label="failure $F[i]$"}
+\shape{T}{Array}{size=19, data=["A","B","A","B","D","A","B","A","C","D","A","B","A","B","C","A","B","A","B"], labels="0..18", label="text $T$"}
+
+\step
+\narrate{KMP tim mau $P$ = ABABCABAB trong chuoi $T$ = ABABDABACDABABCABAB. Hai pha: (1) dung bang that bai $F[i]$ tren $P$, (2) duyet $T$ mot lan, dung $F$ de nhay lui $j$ khi khong khop -- khong bao gio lui $i$.}
+
+\step
+\cursor{P.cell}{0}
+\recolor{F.cell[0]}{state=done}
+\narrate{Pha 1 -- xay $F$. Quy uoc $F[0] = 0$: khong co tien to that su nao co the la hau to cua chinh ky tu dau.}
+
+\step
+\cursor{P.cell}{1}
+\recolor{P.cell[0]}{state=dim}
+\narrate{$i=1$: so sanh $P[1]=$ B voi $P[0]=$ A. Khac nhau, khong co tien to nao trung -- $F[1]=0$.}
+
+\step
+\apply{F.cell[1]}{value=0}
+\recolor{F.cell[1]}{state=done}
+\cursor{P.cell}{2}
+\recolor{P.cell[0]}{state=good}
+\narrate{$i=2$: $P[2]=$ A = $P[0]=$ A. Do dai tien to trung dai nhat tang tu 0 len 1 -- $F[2]=1$.}
+
+\step
+\apply{F.cell[2]}{value=1}
+\recolor{F.cell[2]}{state=done}
+\cursor{P.cell}{3}
+\recolor{P.cell[0]}{state=dim}
+\recolor{P.cell[1]}{state=good}
+\narrate{$i=3$: mo rong tien to dai 1 -- so sanh $P[3]=$ B voi $P[F[2]]=P[1]=$ B. Khop, do dai len 2 -- $F[3]=2$.}
+
+\step
+\apply{F.cell[3]}{value=2}
+\recolor{F.cell[3]}{state=done}
+\cursor{P.cell}{4}
+\recolor{P.cell[1]}{state=dim}
+\recolor{P.cell[2]}{state=current}
+\narrate{$i=4$: $P[4]=$ C vs $P[F[3]]=P[2]=$ A. Khong khop -- lui $j \leftarrow F[1]=0$, thu lai $P[4]$ vs $P[0]=$ A: van lech. $j$ da ve 0, dung -- $F[4]=0$.}
+
+\step
+\apply{F.cell[4]}{value=0}
+\recolor{F.cell[4]}{state=done}
+\cursor{P.cell}{5}
+\recolor{P.cell[0]}{state=good}
+\narrate{$i=5$: $P[5]=$ A = $P[0]=$ A. $F[5]=1$.}
+
+\step
+\apply{F.cell[5]}{value=1}
+\recolor{F.cell[5]}{state=done}
+\cursor{P.cell}{6}
+\recolor{P.cell[0]}{state=dim}
+\recolor{P.cell[1]}{state=good}
+\narrate{$i=6$: $P[6]=$ B = $P[1]=$ B. $F[6]=2$.}
+
+\step
+\apply{F.cell[6]}{value=2}
+\recolor{F.cell[6]}{state=done}
+\cursor{P.cell}{7}
+\recolor{P.cell[1]}{state=dim}
+\recolor{P.cell[2]}{state=good}
+\narrate{$i=7$: $P[7]=$ A = $P[2]=$ A. $F[7]=3$.}
+
+\step
+\apply{F.cell[7]}{value=3}
+\recolor{F.cell[7]}{state=done}
+\cursor{P.cell}{8}
+\recolor{P.cell[2]}{state=dim}
+\recolor{P.cell[3]}{state=good}
+\narrate{$i=8$: $P[8]=$ B = $P[3]=$ B. $F[8]=4$. Bang that bai hoan tat: $F = [0,0,1,2,0,1,2,3,4]$.}
+
+\step
+\apply{F.cell[8]}{value=4}
+\recolor{F.cell[8]}{state=done}
+\recolor{P.cell[3]}{state=dim}
+\recolor{P.cell[0]}{state=idle}
+\recolor{P.cell[1]}{state=idle}
+\recolor{P.cell[2]}{state=idle}
+\recolor{P.cell[3]}{state=idle}
+\recolor{P.cell[4]}{state=idle}
+\recolor{P.cell[5]}{state=idle}
+\recolor{P.cell[6]}{state=idle}
+\recolor{P.cell[7]}{state=idle}
+\recolor{P.cell[8]}{state=idle}
+\highlight{F.range[0:8]}
+\narrate{Pha 2 -- quet $T$. Con tro $i$ chay tren $T$, $j$ chay tren $P$. Khi khop: ca hai tien. Khi lech: $j \leftarrow F[j-1]$ (khong bao gio lui $i$).}
+
+\step
+\cursor{T.cell}{0}
+\cursor{P.cell}{0}
+\narrate{$i=0, j=0$: $T[0]=$ A = $P[0]=$ A. Ca hai tien.}
+
+\step
+\cursor{T.cell}{3}
+\cursor{P.cell}{3}
+\recolor{T.cell[0]}{state=good}
+\recolor{T.cell[1]}{state=good}
+\recolor{T.cell[2]}{state=good}
+\recolor{P.cell[0]}{state=good}
+\recolor{P.cell[1]}{state=good}
+\recolor{P.cell[2]}{state=good}
+\narrate{Bon vong khop lien tiep ABAB. Bay gio $i=3, j=3$ va $T[3]=$ B = $P[3]=$ B -- chuan bi kiem $T[4]$.}
+
+\step
+\cursor{T.cell}{4}
+\cursor{P.cell}{4}
+\recolor{T.cell[3]}{state=good}
+\recolor{P.cell[3]}{state=good}
+\recolor{P.cell[4]}{state=current}
+\narrate{$i=4, j=4$: $T[4]=$ D vs $P[4]=$ C. Lech! Lui $j \leftarrow F[j-1] = F[3] = 2$, giu $i=4$.}
+
+\step
+\cursor{P.cell}{2}
+\recolor{P.cell[0]}{state=dim}
+\recolor{P.cell[1]}{state=dim}
+\recolor{P.cell[2]}{state=current}
+\recolor{P.cell[3]}{state=dim}
+\recolor{P.cell[4]}{state=dim}
+\narrate{$j=2$: thu lai $T[4]=$ D vs $P[2]=$ A. Van lech -- $j \leftarrow F[1] = 0$.}
+
+\step
+\cursor{P.cell}{0}
+\recolor{P.cell[2]}{state=dim}
+\recolor{P.cell[0]}{state=current}
+\narrate{$j=0$: $T[4]=$ D vs $P[0]=$ A. Lech, $j$ da 0 -- tien $i$, giu $j=0$.}
+
+\step
+\cursor{T.cell}{5}
+\recolor{T.cell[4]}{state=dim}
+\narrate{$i=5, j=0$: $T[5]=$ A = $P[0]=$ A. Bat dau khop lai.}
+
+\step
+\cursor{T.cell}{8}
+\cursor{P.cell}{3}
+\recolor{T.cell[5]}{state=good}
+\recolor{T.cell[6]}{state=good}
+\recolor{T.cell[7]}{state=good}
+\recolor{P.cell[0]}{state=good}
+\recolor{P.cell[1]}{state=good}
+\recolor{P.cell[2]}{state=good}
+\narrate{Khop them ABA. Bay gio $i=8, j=3$: $T[8]=$ C vs $P[3]=$ B. Lech! $j \leftarrow F[2] = 1$.}
+
+\step
+\cursor{P.cell}{1}
+\recolor{P.cell[0]}{state=dim}
+\recolor{P.cell[1]}{state=current}
+\recolor{P.cell[2]}{state=dim}
+\narrate{$j=1$: $T[8]=$ C vs $P[1]=$ B. Lech -- $j \leftarrow F[0] = 0$.}
+
+\step
+\cursor{P.cell}{0}
+\recolor{P.cell[1]}{state=dim}
+\recolor{P.cell[0]}{state=current}
+\narrate{$j=0$: $T[8]=$ C vs $P[0]=$ A. Lech, tien $i$, giu $j=0$.}
+
+\step
+\cursor{T.cell}{10}
+\recolor{T.cell[8]}{state=dim}
+\recolor{T.cell[9]}{state=dim}
+\narrate{$i=9$: D vs A, lech, tien $i$. $i=10, j=0$: $T[10]=$ A = $P[0]$. Bat dau lai. Lan nay se la phat an: tu $i=10$ toan bo 9 ky tu $T[10..18]$ se khop voi $P[0..8]$.}
+
+\step
+\cursor{T.cell}{18}
+\cursor{P.cell}{8}
+\recolor{T.cell[10]}{state=good}
+\recolor{T.cell[11]}{state=good}
+\recolor{T.cell[12]}{state=good}
+\recolor{T.cell[13]}{state=good}
+\recolor{T.cell[14]}{state=good}
+\recolor{T.cell[15]}{state=good}
+\recolor{T.cell[16]}{state=good}
+\recolor{T.cell[17]}{state=good}
+\recolor{T.cell[18]}{state=good}
+\recolor{P.cell[0]}{state=good}
+\recolor{P.cell[1]}{state=good}
+\recolor{P.cell[2]}{state=good}
+\recolor{P.cell[3]}{state=good}
+\recolor{P.cell[4]}{state=good}
+\recolor{P.cell[5]}{state=good}
+\recolor{P.cell[6]}{state=good}
+\recolor{P.cell[7]}{state=good}
+\recolor{P.cell[8]}{state=good}
+\highlight{T.range[10:18]}
+\narrate{Khop toan bo $P$ voi $T[10..18]$. KMP tim thay mau tai vi tri 10, tong cong $O(|T| + |P|)$ phep so sanh -- con tro $i$ khong bao gio lui lai.}
+\end{animation}

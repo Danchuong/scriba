@@ -1,0 +1,85 @@
+\begin{animation}[id="binary-search", label="Binary Search -- tim kiem nhi phan tren mang da sap xep"]
+\shape{A}{Array}{size=9, data=[1,3,4,6,7,9,11,13,15], labels="0..8", label="sorted $A$"}
+
+\step
+\narrate{Tim kiem nhi phan tren $A = [1,3,4,6,7,9,11,13,15]$ (da sap xep tang dan, $n=9$). Muc tieu: tim $target=7$ trong $O(\log n)$. Quy uoc: $lo$ la bien trai, $hi$ la bien phai (ca hai cung dong), $mid = (lo+hi)/2$ la chi so giua. Vong lap ket thuc khi $lo > hi$ hoac tim thay $A[mid] = target$.}
+
+\step
+\recolor{A.cell[0]}{state=current}
+\recolor{A.cell[8]}{state=current}
+\cursor{A.cell}{4}
+\highlight{A.range[0:8]}
+\narrate{Vong 1 (tim 7): $lo=0$, $hi=8$, $mid=(0+8)/2=4$. Ca so luong phan tu va $mid$ deu ro: ca so $[0,8]$ phu toan bo mang.}
+
+\step
+\narrate{Kiem tra $A[4] = 7$ vs $target = 7$. Trung! Tra ve chi so $4$. Truong hop tot nhat gap ngay o lan so sanh dau tien.}
+
+\step
+\recolor{A.cell[4]}{state=good}
+\recolor{A.cell[0]}{state=dim}
+\recolor{A.cell[8]}{state=dim}
+\narrate{Tim thay $target=7$ tai chi so $4$. Tong so phep so sanh: $1$. De minh hoa day du qua trinh thu hep cua so, ta chay them mot vi du khong may man: tim $target=8$ tren cung mang -- $8$ khong nam trong $A$.}
+
+\step
+\recolor{A.cell[0]}{state=idle}
+\recolor{A.cell[1]}{state=idle}
+\recolor{A.cell[2]}{state=idle}
+\recolor{A.cell[3]}{state=idle}
+\recolor{A.cell[4]}{state=idle}
+\recolor{A.cell[5]}{state=idle}
+\recolor{A.cell[6]}{state=idle}
+\recolor{A.cell[7]}{state=idle}
+\recolor{A.cell[8]}{state=idle}
+\recolor{A.cell[0]}{state=current}
+\recolor{A.cell[8]}{state=current}
+\cursor{A.cell}{4}
+\highlight{A.range[0:8]}
+\narrate{Reset. Vong 1 (tim 8): $lo=0$, $hi=8$, $mid=4$. So sanh $A[4]=7$ voi $8$. Vi $7 < 8$, $target$ phai nam o nua phai -- loai nua trai va chinh $mid$.}
+
+\step
+\recolor{A.cell[0]}{state=done}
+\recolor{A.cell[1]}{state=done}
+\recolor{A.cell[2]}{state=done}
+\recolor{A.cell[3]}{state=done}
+\recolor{A.cell[4]}{state=done}
+\recolor{A.cell[5]}{state=current}
+\recolor{A.cell[8]}{state=current}
+\cursor{A.cell}{6}
+\highlight{A.range[5:8]}
+\narrate{Vong 2: $lo \leftarrow mid+1 = 5$, $hi = 8$, $mid = (5+8)/2 = 6$. Cua so con $[5,8]$ co $4$ phan tu. So sanh $A[6]=11$ voi $8$. Vi $11 > 8$, $target$ (neu ton tai) phai nam o nua trai cua $mid$ -- loai nua phai va chinh $mid$.}
+
+\step
+\recolor{A.cell[6]}{state=done}
+\recolor{A.cell[7]}{state=done}
+\recolor{A.cell[8]}{state=done}
+\recolor{A.cell[5]}{state=current}
+\cursor{A.cell}{5}
+\highlight{A.range[5:5]}
+\narrate{Vong 3: $lo=5$, $hi \leftarrow mid-1 = 5$, $mid = (5+5)/2 = 5$. Cua so con chi gom mot phan tu duy nhat: $A[5]=9$. So sanh $9$ voi $8$: $9 > 8$ -- loai nua phai.}
+
+\step
+\recolor{A.cell[5]}{state=done}
+\narrate{Vong 4: $lo = 5$, $hi \leftarrow mid-1 = 4$. Vi $lo=5 > hi=4$, pham vi tim kiem rong -- thoat vong lap. Tong cong $3$ phep so sanh, phu hop voi $\lceil \log_2 9 \rceil = 4$ ranh gioi.}
+
+\step
+\recolor{A.cell[0]}{state=dim}
+\recolor{A.cell[1]}{state=dim}
+\recolor{A.cell[2]}{state=dim}
+\recolor{A.cell[3]}{state=dim}
+\recolor{A.cell[4]}{state=dim}
+\recolor{A.cell[5]}{state=dim}
+\recolor{A.cell[6]}{state=dim}
+\recolor{A.cell[7]}{state=dim}
+\recolor{A.cell[8]}{state=dim}
+\narrate{Ket luan: $8$ nam giua $A[4]=7$ va $A[5]=9$ -- khong ton tai trong mang, tra ve $-1$. Moi vong lap cat doi pham vi con lai, nen so vong lap toi da la $\lceil \log_2 n \rceil + 1$. Truy vet $(lo, hi, mid)$ qua cac vong: $(0,8,4) \to (5,8,6) \to (5,5,5) \to lo > hi$.}
+
+\step
+\recolor{A.cell[3]}{state=good}
+\recolor{A.cell[4]}{state=good}
+\narrate{Luu y cai dat: su dung $mid = lo + (hi - lo)/2$ thay cho $(lo + hi)/2$ de tranh tran so nguyen khi $lo$ va $hi$ lon (bug noi tieng cua \texttt{java.util.Arrays.binarySearch} truoc Java 1.6). Cac bien the pho bien: \texttt{lower\_bound} tra ve chi so dau tien co $A[i] \geq target$, \texttt{upper\_bound} tra ve chi so dau tien co $A[i] > target$.}
+
+\step
+\recolor{A.cell[3]}{state=dim}
+\recolor{A.cell[4]}{state=dim}
+\narrate{Binh luan chung: binary search yeu cau mang da sap xep va mot quan he thu tu nhat quan. Lua chon bien $[lo, hi]$ (dong ca hai dau, thoat khi $lo > hi$) nhu o day la mau pho bien; lua chon nua mo $[lo, hi)$ cung thong dung voi dieu kien thoat $lo \geq hi$ -- chon mot va dung nhat quan trong toan bo code base.}
+\end{animation}
