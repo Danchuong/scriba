@@ -15,6 +15,7 @@ from typing import Any, Callable
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
+    THEME,
     _render_svg_text,
     estimate_text_width,
     svg_style_attrs,
@@ -192,14 +193,14 @@ class Stack(PrimitiveBase):
             parts.append(
                 f'<rect x="{_PADDING}" y="{_PADDING}" '
                 f'width="{cw}" height="{_CELL_HEIGHT}" '
-                f'fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" '
+                f'fill="{THEME["bg"]}" stroke="{THEME["border"]}" stroke-width="1" '
                 f'stroke-dasharray="4 2" rx="4"/>'
             )
             parts.append(
                 f'<text x="{_PADDING + cw // 2}" '
                 f'y="{_PADDING + _CELL_HEIGHT // 2}" '
                 f'text-anchor="middle" dominant-baseline="central" '
-                f'fill="#adb5bd" font-size="11">empty</text>'
+                f'fill="{THEME["fg_dim"]}" font-size="11">empty</text>'
             )
             parts.append("</g>")
             return "".join(parts)
@@ -287,7 +288,7 @@ class Stack(PrimitiveBase):
             parts.append(
                 f'<text x="{ox}" y="{oy}" '
                 f'text-anchor="middle" dominant-baseline="central" '
-                f'fill="#6c757d" font-size="11">+{overflow} more</text>'
+                f'fill="{THEME["fg_muted"]}" font-size="11">+{overflow} more</text>'
             )
 
         # Caption
@@ -300,7 +301,7 @@ class Stack(PrimitiveBase):
                     str(self.label_text),
                     cx,
                     cy,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     text_anchor="middle",
                     fo_width=bbox.width,

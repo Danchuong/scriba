@@ -14,6 +14,7 @@ from html import escape as html_escape
 from typing import Any, Callable
 
 from scriba.animation.primitives.base import (
+    THEME,
     BoundingBox,
     PrimitiveBase,
     _escape_xml,
@@ -30,10 +31,10 @@ _PADDING_Y = 8
 _CHAR_WIDTH = 8.4  # approximate monospace character width at 14px (Menlo/Monaco/Consolas)
 _FONT_SIZE = 14
 _BORDER_RADIUS = 6
-_CODE_TEXT_COLOR = "#212529"
-_LINE_NUM_COLOR = "#8b949e"
-_PANEL_BG = "#f6f8fa"
-_PANEL_BORDER = "#d0d7de"
+_CODE_TEXT_COLOR = THEME["fg"]
+_LINE_NUM_COLOR = THEME["fg_muted"]
+_PANEL_BG = THEME["bg"]
+_PANEL_BORDER = THEME["border"]
 
 # ---------------------------------------------------------------------------
 # Selector regex
@@ -170,7 +171,7 @@ class CodePanel(PrimitiveBase):
                 f"font-weight:400;"
                 f"text-anchor:middle;"
                 f'dominant-baseline:central" '
-                f'fill="#adb5bd">no code</text>'
+                f'fill="{THEME["fg_dim"]}">no code</text>'
             )
             parts.append("</g>")
             return "".join(parts)
@@ -248,7 +249,7 @@ class CodePanel(PrimitiveBase):
             label_x = panel_w // 2
             parts.append(
                 f'<text x="{label_x}" y="{label_y}" '
-                f'text-anchor="middle" fill="#6c757d" '
+                f'text-anchor="middle" fill="{THEME["fg_muted"]}" '
                 f'class="scriba-primitive-label" '
                 f'font-size="12">{_escape_xml(self.label_text)}</text>'
             )

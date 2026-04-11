@@ -88,12 +88,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   min-height: 2.5rem;
 }
 
-/* SVG text */
-svg text {
-  font: 700 14px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  text-anchor: middle;
-  dominant-baseline: central;
-}
+/* SVG text — font properties are set via inline style on each <text>
+   element so primitives can use different fonts (e.g. CodePanel uses
+   monospace, Graph uses sans-serif).  No global svg text rule here. */
 .idx {
   font: 500 10px ui-monospace, monospace;
   fill: #6c757d;

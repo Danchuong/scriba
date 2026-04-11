@@ -13,6 +13,7 @@ from html import escape as html_escape
 from typing import Any, Callable
 
 from scriba.animation.primitives.base import (
+    THEME,
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
@@ -172,14 +173,14 @@ class VariableWatch(PrimitiveBase):
             parts.append(
                 f'<rect x="{_PADDING}" y="{_PADDING}" '
                 f'width="{self._total_width}" height="{_ROW_HEIGHT}" '
-                f'fill="#f6f8fa" stroke="#d0d7de" stroke-width="1" '
+                f'fill="{THEME["bg"]}" stroke="{THEME["border"]}" stroke-width="1" '
                 f'stroke-dasharray="4 2" rx="4"/>'
             )
             parts.append(
                 f'<text x="{_PADDING + self._total_width // 2}" '
                 f'y="{_PADDING + _ROW_HEIGHT // 2}" '
                 f'text-anchor="middle" dominant-baseline="central" '
-                f'fill="#adb5bd" font-size="11">no variables</text>'
+                f'fill="{THEME["fg_dim"]}" font-size="11">no variables</text>'
             )
             parts.append("</g>")
             return "".join(parts)
@@ -190,7 +191,7 @@ class VariableWatch(PrimitiveBase):
         parts.append(
             f'<rect x="{_PADDING}" y="{_PADDING}" '
             f'width="{self._total_width}" height="{table_h}" '
-            f'fill="none" stroke="#d0d7de" stroke-width="1" rx="4"/>'
+            f'fill="none" stroke="{THEME["border"]}" stroke-width="1" rx="4"/>'
         )
 
         # Column divider
@@ -198,7 +199,7 @@ class VariableWatch(PrimitiveBase):
         parts.append(
             f'<line x1="{divider_x}" y1="{_PADDING}" '
             f'x2="{divider_x}" y2="{_PADDING + table_h}" '
-            f'stroke="#d0d7de" stroke-width="1"/>'
+            f'stroke="{THEME["border"]}" stroke-width="1"/>'
         )
 
         for row_idx, vn in enumerate(self.var_names):
@@ -225,7 +226,7 @@ class VariableWatch(PrimitiveBase):
                 parts.append(
                     f'<line x1="{_PADDING}" y1="{row_y}" '
                     f'x2="{_PADDING + self._total_width}" y2="{row_y}" '
-                    f'stroke="#d0d7de" stroke-width="0.5"/>'
+                    f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
                 )
 
             # Value cell background (right column)
@@ -245,7 +246,7 @@ class VariableWatch(PrimitiveBase):
                     vn,
                     name_tx,
                     name_ty,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     font_size=_NAME_FONT_SIZE,
                     text_anchor="start",
                     dominant_baseline="central",
@@ -287,7 +288,7 @@ class VariableWatch(PrimitiveBase):
                     str(self.label_text),
                     cx,
                     cy,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     text_anchor="middle",
                     fo_width=bbox.width,

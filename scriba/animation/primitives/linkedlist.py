@@ -20,6 +20,7 @@ from html import escape as html_escape
 from typing import Any, Callable
 
 from scriba.animation.primitives.base import (
+    THEME,
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
@@ -204,7 +205,7 @@ class LinkedList(PrimitiveBase):
             f' markerUnits="userSpaceOnUse">'
             f'<path d="M0,0 L{ah},{ah // 2}'
             f" L0,{ah} Z\""
-            f' fill="#d0d7de" class="scriba-ll-arrowhead"/>'
+            f' fill="{THEME["border"]}" class="scriba-ll-arrowhead"/>'
             f"</marker>"
         )
         parts.append("</defs>")
@@ -214,14 +215,14 @@ class LinkedList(PrimitiveBase):
             parts.append(
                 f'<rect x="{_PADDING}" y="{_PADDING}"'
                 f' width="{self._node_width}" height="{_NODE_HEIGHT}"'
-                f' fill="#f6f8fa" stroke="#d0d7de" stroke-width="1"'
+                f' fill="{THEME["bg"]}" stroke="{THEME["border"]}" stroke-width="1"'
                 f' stroke-dasharray="4 2" rx="{_CORNER_RADIUS}"/>'
             )
             parts.append(
                 f'<text x="{_PADDING + self._node_width // 2}"'
                 f' y="{_PADDING + _NODE_HEIGHT // 2}"'
                 f' text-anchor="middle" dominant-baseline="central"'
-                f' fill="#adb5bd" font-size="11">empty</text>'
+                f' fill="{THEME["fg_dim"]}" font-size="11">empty</text>'
             )
             parts.append("</g>")
             return "".join(parts)
@@ -366,7 +367,7 @@ class LinkedList(PrimitiveBase):
             parts.append(
                 f'<text x="{label_x}" y="{label_y}"'
                 f' text-anchor="middle" dominant-baseline="central"'
-                f' fill="#6c757d" font-size="10">node[{i}]</text>'
+                f' fill="{THEME["fg_muted"]}" font-size="10">node[{i}]</text>'
             )
 
             parts.append("</g>")
@@ -381,7 +382,7 @@ class LinkedList(PrimitiveBase):
                     str(self.label_text),
                     cx,
                     cy,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     text_anchor="middle",
                     dominant_baseline="central",

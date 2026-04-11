@@ -33,11 +33,14 @@ from .selectors import parse_selector
 
 import warnings as _warnings_mod
 
-_VALID_RECOLOR_STATES = frozenset({"idle", "current", "done", "dim", "error", "good", "path"})
-_VALID_ANNOTATE_POSITIONS = frozenset({"above", "below", "left", "right", "inside"})
-_VALID_ANNOTATE_COLORS = frozenset({"info", "warn", "good", "error", "muted", "path"})
-_VALID_OPTION_KEYS = frozenset({"width", "height", "id", "label", "layout", "grid"})
-_VALID_SUBSTORY_OPTION_KEYS = frozenset({"title", "id"})
+from scriba.animation.constants import (
+    VALID_ANNOTATION_COLORS,
+    VALID_ANNOTATION_POSITIONS,
+    VALID_OPTION_KEYS,
+    VALID_STATES,
+    VALID_SUBSTORY_OPTION_KEYS,
+)
+
 _MAX_SUBSTORY_DEPTH = 3
 
 
@@ -379,9 +382,9 @@ class SceneParser:
                     col=val_tok.col,
                 )
             key = key_tok.value
-            if key not in _VALID_OPTION_KEYS:
+            if key not in VALID_OPTION_KEYS:
                 raise ValidationError(
-                    f"unknown option key {key!r}",
+                    f"unknown option key {key!r}; valid: {', '.join(sorted(VALID_OPTION_KEYS))}",
                     position=key_tok.col,
                     code="E1004",
                     line=key_tok.line,
@@ -436,9 +439,9 @@ class SceneParser:
         state: str | None = None
         if "state" in params:
             state = str(params["state"])
-            if state not in _VALID_RECOLOR_STATES:
+            if state not in VALID_STATES:
                 raise ValidationError(
-                    f"unknown recolor state {state!r}",
+                    f"unknown recolor state {state!r}; valid: {', '.join(sorted(VALID_STATES))}",
                     position=tok.col,
                     code="E1109",
                     line=tok.line,
@@ -455,9 +458,9 @@ class SceneParser:
                 stacklevel=2,
             )
             annotation_color = str(params["color"])
-            if annotation_color not in _VALID_ANNOTATE_COLORS:
+            if annotation_color not in VALID_ANNOTATION_COLORS:
                 raise ValidationError(
-                    f"unknown annotation color {annotation_color!r}",
+                    f"unknown annotation color {annotation_color!r}; valid: {', '.join(sorted(VALID_ANNOTATION_COLORS))}",
                     position=tok.col,
                     code="E1113",
                     line=tok.line,
@@ -510,9 +513,9 @@ class SceneParser:
                 col=tok.col,
             )
         color = str(params["color"])
-        if color not in _VALID_ANNOTATE_COLORS:
+        if color not in VALID_ANNOTATION_COLORS:
             raise ValidationError(
-                f"unknown annotation color {color!r}",
+                f"unknown annotation color {color!r}; valid: {', '.join(sorted(VALID_ANNOTATION_COLORS))}",
                 position=tok.col,
                 code="E1113",
                 line=tok.line,
@@ -540,18 +543,18 @@ class SceneParser:
         params = self._read_param_brace()
         sel = parse_selector(target_str, line=tok.line, col=tok.col)
         position = str(params.get("position", "above"))
-        if position not in _VALID_ANNOTATE_POSITIONS:
+        if position not in VALID_ANNOTATION_POSITIONS:
             raise ValidationError(
-                f"unknown annotation position {position!r}",
+                f"unknown annotation position {position!r}; valid: {', '.join(sorted(VALID_ANNOTATION_POSITIONS))}",
                 position=tok.col,
                 code="E1112",
                 line=tok.line,
                 col=tok.col,
             )
         color = str(params.get("color", "info"))
-        if color not in _VALID_ANNOTATE_COLORS:
+        if color not in VALID_ANNOTATION_COLORS:
             raise ValidationError(
-                f"unknown annotation color {color!r}",
+                f"unknown annotation color {color!r}; valid: {', '.join(sorted(VALID_ANNOTATION_COLORS))}",
                 position=tok.col,
                 code="E1113",
                 line=tok.line,
@@ -624,9 +627,9 @@ class SceneParser:
             key = key.strip()
             val = val.strip()
             if key == "prev_state":
-                if val not in _VALID_RECOLOR_STATES:
+                if val not in VALID_STATES:
                     raise ValidationError(
-                        f"unknown cursor prev_state {val!r}",
+                        f"unknown cursor prev_state {val!r}; valid: {', '.join(sorted(VALID_STATES))}",
                         position=tok.col,
                         code="E1182",
                         line=tok.line,
@@ -634,9 +637,9 @@ class SceneParser:
                     )
                 prev_state = val
             elif key == "curr_state":
-                if val not in _VALID_RECOLOR_STATES:
+                if val not in VALID_STATES:
                     raise ValidationError(
-                        f"unknown cursor curr_state {val!r}",
+                        f"unknown cursor curr_state {val!r}; valid: {', '.join(sorted(VALID_STATES))}",
                         position=tok.col,
                         code="E1182",
                         line=tok.line,
@@ -793,9 +796,9 @@ class SceneParser:
                 self._expect(TokenKind.EQUALS)
                 val_tok = self._advance()
                 key = key_tok.value
-                if key not in _VALID_SUBSTORY_OPTION_KEYS:
+                if key not in VALID_SUBSTORY_OPTION_KEYS:
                     raise ValidationError(
-                        f"unknown substory option key {key!r}",
+                        f"unknown substory option key {key!r}; valid: {', '.join(sorted(VALID_SUBSTORY_OPTION_KEYS))}",
                         position=key_tok.col,
                         code="E1004",
                         line=key_tok.line,

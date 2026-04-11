@@ -15,6 +15,7 @@ from typing import Any, Callable
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
+    THEME,
     _render_svg_text,
     svg_style_attrs,
 )
@@ -404,7 +405,7 @@ class Tree(PrimitiveBase):
                     str(self.label),
                     self.width // 2,
                     14,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-label",
                     text_anchor="middle",
                     fo_width=self.width,

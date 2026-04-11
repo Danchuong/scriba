@@ -15,6 +15,7 @@ from typing import Any, Callable
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     DEFAULT_STATE,
+    THEME,
     _escape_xml,
     _render_svg_text,
     estimate_text_width,
@@ -171,8 +172,8 @@ class MatrixPrimitive:
 
         col_label_offset = 0
         if col_labels:
-            # Column labels are rendered horizontally at font_size=10
-            col_label_offset = max(_LABEL_OFFSET, 14)
+            max_col_h = max(estimate_text_width(str(c), 10) for c in col_labels)
+            col_label_offset = max(_LABEL_OFFSET, max_col_h + 4)
 
         return MatrixInstance(
             shape_name=shape_name,
@@ -283,7 +284,7 @@ class MatrixInstance:
                         str(cl),
                         cx,
                         y_offset - 3,
-                        fill="#6c757d",
+                        fill=THEME["fg_muted"],
                         text_anchor="middle",
                         font_size="10",
                         fo_width=self.cell_size,
@@ -302,7 +303,7 @@ class MatrixInstance:
                         str(rl),
                         x_offset - 3,
                         ry,
-                        fill="#6c757d",
+                        fill=THEME["fg_muted"],
                         text_anchor="end",
                         dominant_baseline="central",
                         font_size="10",
@@ -393,7 +394,7 @@ class MatrixInstance:
                     self.label,
                     center_x,
                     label_y,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     text_anchor="middle",
                     fo_width=total_w,

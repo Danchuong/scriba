@@ -16,6 +16,7 @@ from html import escape as html_escape
 from typing import Any, Callable
 
 from scriba.animation.primitives.base import (
+    THEME,
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
@@ -185,7 +186,7 @@ class HashMap(PrimitiveBase):
         parts.append(
             f'<rect x="{_PADDING}" y="{_PADDING}" '
             f'width="{total_w}" height="{table_h}" '
-            f'fill="none" stroke="#d0d7de" stroke-width="1" rx="4"/>'
+            f'fill="none" stroke="{THEME["border"]}" stroke-width="1" rx="4"/>'
         )
 
         # Column divider between index and entries
@@ -193,7 +194,7 @@ class HashMap(PrimitiveBase):
         parts.append(
             f'<line x1="{divider_x}" y1="{_PADDING}" '
             f'x2="{divider_x}" y2="{_PADDING + table_h}" '
-            f'stroke="#d0d7de" stroke-width="1"/>'
+            f'stroke="{THEME["border"]}" stroke-width="1"/>'
         )
 
         for row_idx in range(self.capacity):
@@ -218,14 +219,14 @@ class HashMap(PrimitiveBase):
                 parts.append(
                     f'<line x1="{_PADDING}" y1="{row_y}" '
                     f'x2="{_PADDING + total_w}" y2="{row_y}" '
-                    f'stroke="#d0d7de" stroke-width="0.5"/>'
+                    f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
                 )
 
             # Index column background (always gray)
             parts.append(
                 f'<rect x="{_PADDING}" y="{row_y}" '
                 f'width="{index_col_w}" height="{_ROW_HEIGHT}" '
-                f'fill="#f1f3f5" stroke="none"/>'
+                f'fill="{THEME["bg_alt"]}" stroke="none"/>'
             )
 
             # Entries column background (state-colored)
@@ -244,7 +245,7 @@ class HashMap(PrimitiveBase):
                     str(row_idx),
                     idx_tx,
                     idx_ty,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     font_size=_INDEX_FONT_SIZE,
                     text_anchor="middle",
                     dominant_baseline="central",
@@ -287,7 +288,7 @@ class HashMap(PrimitiveBase):
                     str(self.label_text),
                     cx,
                     cy,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     text_anchor="middle",
                     fo_width=bbox.width,

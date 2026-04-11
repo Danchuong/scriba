@@ -34,11 +34,7 @@ class BoundingBox:
 # Valid state names (§2.3 in 06-primitives.md)
 # ---------------------------------------------------------------------------
 
-VALID_STATES: frozenset[str] = frozenset(
-    ("idle", "current", "done", "dim", "error", "good", "highlight", "path")
-)
-
-DEFAULT_STATE = "idle"
+from scriba.animation.constants import DEFAULT_STATE, VALID_STATES  # noqa: F401 — re-exported
 
 # ---------------------------------------------------------------------------
 # Wong CVD-safe color map for inline SVG styling
@@ -59,6 +55,32 @@ STATE_COLORS: dict[str, dict[str, str]] = {
 def svg_style_attrs(state_name: str) -> dict[str, str]:
     """Return fill, stroke, text-fill for a state."""
     return STATE_COLORS.get(state_name, STATE_COLORS["idle"])
+
+# ---------------------------------------------------------------------------
+# Theme colors — single source of truth for non-state colors
+# ---------------------------------------------------------------------------
+
+THEME = {
+    "bg": "#f6f8fa",         # panel / cell idle background
+    "bg_alt": "#f1f3f5",     # alternate row / index column background
+    "border": "#d0d7de",     # borders, dividers, outlines
+    "border_light": "#dee2e6",  # lighter borders
+    "fg": "#212529",         # primary text
+    "fg_muted": "#6c757d",   # secondary text (labels, indices, captions)
+    "fg_dim": "#adb5bd",     # placeholder / disabled text
+    "empty_bg": "#f6f8fa",   # empty state dashed background
+}
+
+DARK_THEME = {
+    "bg": "#161b22",
+    "bg_alt": "#1c2128",
+    "border": "#30363d",
+    "border_light": "#21262d",
+    "fg": "#c9d1d9",
+    "fg_muted": "#8b949e",
+    "fg_dim": "#484f58",
+    "empty_bg": "#0d1117",
+}
 
 # ---------------------------------------------------------------------------
 # Layout constants shared across cell-based primitives

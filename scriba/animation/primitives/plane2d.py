@@ -18,7 +18,7 @@ from html import escape as html_escape
 from typing import Any, Callable, Sequence
 
 from scriba.animation.errors import animation_error
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, _render_svg_text, svg_style_attrs
+from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, THEME, _render_svg_text, svg_style_attrs
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
 
 __all__ = ["Plane2D"]
@@ -368,7 +368,7 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<line x1="{sx:.2f}" y1="{sy_top:.2f}" '
                 f'x2="{sx:.2f}" y2="{sy_bot:.2f}" '
-                f'stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/>'
+                f'stroke="{THEME["border"]}" stroke-width="0.5" opacity="0.6"/>'
             )
 
         for yi in range(y_start, y_end + 1):
@@ -377,7 +377,7 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<line x1="{sx_left:.2f}" y1="{sy:.2f}" '
                 f'x2="{sx_right:.2f}" y2="{sy:.2f}" '
-                f'stroke="#d0d7de" stroke-width="0.5" opacity="0.6"/>'
+                f'stroke="{THEME["border"]}" stroke-width="0.5" opacity="0.6"/>'
             )
 
         # Fine grid (0.2 intervals)
@@ -392,7 +392,7 @@ class Plane2D(PrimitiveBase):
                     parts.append(
                         f'<line x1="{sx:.2f}" y1="{sy_top:.2f}" '
                         f'x2="{sx:.2f}" y2="{sy_bot:.2f}" '
-                        f'stroke="#d0d7de" stroke-width="0.25" opacity="0.3"/>'
+                        f'stroke="{THEME["border"]}" stroke-width="0.25" opacity="0.3"/>'
                     )
                 x_fine += step
 
@@ -404,7 +404,7 @@ class Plane2D(PrimitiveBase):
                     parts.append(
                         f'<line x1="{sx_left:.2f}" y1="{sy:.2f}" '
                         f'x2="{sx_right:.2f}" y2="{sy:.2f}" '
-                        f'stroke="#d0d7de" stroke-width="0.25" opacity="0.3"/>'
+                        f'stroke="{THEME["border"]}" stroke-width="0.25" opacity="0.3"/>'
                     )
                 y_fine += step
 
@@ -428,7 +428,7 @@ class Plane2D(PrimitiveBase):
         parts.append(
             f'<line x1="{sx_left:.2f}" y1="{sy_xaxis:.2f}" '
             f'x2="{sx_right:.2f}" y2="{sy_xaxis:.2f}" '
-            f'stroke="#212529" stroke-width="1.5"/>'
+            f'stroke="{THEME["fg"]}" stroke-width="1.5"/>'
         )
 
         # X-axis arrowhead at positive end
@@ -436,7 +436,7 @@ class Plane2D(PrimitiveBase):
             f'<path d="M {sx_right:.2f} {sy_xaxis:.2f} '
             f'l -{_ARROWHEAD_LEN} -{_ARROWHEAD_HALF_W} '
             f'l 0 {_ARROWHEAD_HALF_W * 2} Z" '
-            f'fill="#212529"/>'
+            f'fill="{THEME["fg"]}"/>'
         )
 
         # Y-axis: x = 0 (or clamped to viewport boundary)
@@ -446,7 +446,7 @@ class Plane2D(PrimitiveBase):
         parts.append(
             f'<line x1="{sx_yaxis:.2f}" y1="{sy_bottom:.2f}" '
             f'x2="{sx_yaxis:.2f}" y2="{sy_top:.2f}" '
-            f'stroke="#212529" stroke-width="1.5"/>'
+            f'stroke="{THEME["fg"]}" stroke-width="1.5"/>'
         )
 
         # Y-axis arrowhead at positive end (top in SVG = small y)
@@ -454,7 +454,7 @@ class Plane2D(PrimitiveBase):
             f'<path d="M {sx_yaxis:.2f} {sy_top:.2f} '
             f'l -{_ARROWHEAD_HALF_W} {_ARROWHEAD_LEN} '
             f'l {_ARROWHEAD_HALF_W * 2} 0 Z" '
-            f'fill="#212529"/>'
+            f'fill="{THEME["fg"]}"/>'
         )
 
         parts.append("</g>")
@@ -607,7 +607,7 @@ class Plane2D(PrimitiveBase):
                 parts.append(
                     f'<text x="{sx + _LABEL_OFFSET:.2f}" '
                     f'y="{sy - _LABEL_OFFSET:.2f}" '
-                    f'font-size="{_TICK_FONT_SIZE}" fill="#212529">'
+                    f'font-size="{_TICK_FONT_SIZE}" fill="{THEME["fg"]}">'
                     f'{html_escape(str(pt["label"]))}</text>'
                 )
 
@@ -627,7 +627,7 @@ class Plane2D(PrimitiveBase):
                 parts.append(
                     f'<text x="{label_x + _LABEL_OFFSET:.2f}" '
                     f'y="{label_y - _LABEL_OFFSET:.2f}" '
-                    f'font-size="{_TICK_FONT_SIZE}" fill="#212529">'
+                    f'font-size="{_TICK_FONT_SIZE}" fill="{THEME["fg"]}">'
                     f'{html_escape(str(ln["label"]))}</text>'
                 )
 
@@ -658,7 +658,7 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<text x="{sx:.2f}" y="{sy + _TICK_FONT_SIZE + 2:.2f}" '
                 f'text-anchor="middle" font-size="{_TICK_FONT_SIZE}" '
-                f'fill="#6c757d">{xi}</text>'
+                f'fill="{THEME["fg_muted"]}">{xi}</text>'
             )
 
         # Y-axis tick labels
@@ -673,7 +673,7 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<text x="{sx - _LABEL_OFFSET:.2f}" y="{sy + 3:.2f}" '
                 f'text-anchor="end" font-size="{_TICK_FONT_SIZE}" '
-                f'fill="#6c757d">{yi}</text>'
+                f'fill="{THEME["fg_muted"]}">{yi}</text>'
             )
 
         return "".join(parts)

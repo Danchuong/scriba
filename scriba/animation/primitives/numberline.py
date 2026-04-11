@@ -13,6 +13,7 @@ from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
     DEFAULT_STATE,
     STATE_COLORS,
+    THEME,
     _escape_xml,
     _render_svg_text,
     estimate_text_width,
@@ -212,7 +213,7 @@ class NumberLineInstance:
                 f'stroke="{colors["fill"]}" stroke-width="{sw}"/>'
             )
             # Text always uses dark color (no background rect to contrast against)
-            text_color = "#212529" if state_name != "dim" else "#adb5bd"
+            text_color = THEME["fg"] if state_name != "dim" else THEME["fg_dim"]
             lines.append(
                 "    "
                 + _render_svg_text(
@@ -244,7 +245,7 @@ class NumberLineInstance:
                     self.label,
                     center_x,
                     label_y,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     fo_width=self.width,
                     fo_height=20,

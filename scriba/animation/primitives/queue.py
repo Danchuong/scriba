@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     CELL_HEIGHT,
     CELL_WIDTH,
     INDEX_LABEL_OFFSET,
+    THEME,
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
@@ -231,7 +232,7 @@ class Queue(PrimitiveBase):
                     f"[{i}]",
                     text_x,
                     idx_label_y,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-index-label idx",
                     text_anchor="middle",
                     dominant_baseline="central",
@@ -276,7 +277,7 @@ class Queue(PrimitiveBase):
                     str(self.label_text),
                     cx,
                     cy,
-                    fill="#6c757d",
+                    fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     text_anchor="middle",
                     fo_width=bbox.width,
@@ -330,7 +331,7 @@ class Queue(PrimitiveBase):
             f"{cell_center_x},{tip_y}"
         )
 
-        pointer_color = colors["stroke"] if state_name != "idle" else "#6c757d"
+        pointer_color = colors["stroke"] if state_name != "idle" else THEME["fg_muted"]
 
         parts.append(
             f'  <g data-target="{html_escape(target)}" '
