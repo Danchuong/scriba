@@ -30,6 +30,39 @@ _MAX_FRAMES = 50
 _LAMBDA_MIN = 0.01
 _LAMBDA_MAX = 10.0
 
+# ---------------------------------------------------------------------------
+# SF-5 / SF-6 promotion scaffold (RFC-002)
+# ---------------------------------------------------------------------------
+#
+# W6.3 owns the real RenderContext warning collector. To avoid touching
+# core/context.py from this worktree, we stage warnings in a module-level
+# list here. W6.3's merge will drain them via ``_drain_collected`` into
+# the real report collector and replace the ``_collect`` calls with
+# ``_emit_warning(ctx, ...)``.
+_collected: list[dict[str, Any]] = []
+
+
+def _collect(code: str, message: str, severity: str) -> None:
+    """Append a structured warning entry for W6.3's collector to drain."""
+    _collected.append(
+        {
+            "code": code,
+            "message": message,
+            "severity": severity,
+        }
+    )
+
+
+def _drain_collected() -> list[dict[str, Any]]:
+    """Drain and return pending warning entries.
+
+    Called from the merged RenderContext path once W6.3 lands.
+    Resets the module-level buffer so subsequent renders start clean.
+    """
+    global _collected
+    out, _collected = _collected, []
+    return out
+
 
 def _segments_intersect(
     p1: tuple[float, float],
@@ -148,6 +181,7 @@ def compute_stable_layout(
     width: int = 400,
     height: int = 300,
     node_radius: int = 16,
+    initial_positions: dict[str, tuple[float, float]] | None = None,
 ) -> dict[str, tuple[float, float]] | None:
     """Compute stable node positions across all frames via simulated annealing.
 
@@ -163,6 +197,11 @@ def compute_stable_layout(
         width: SVG canvas width in pixels.
         height: SVG canvas height in pixels.
         node_radius: Node circle radius for padding computation.
+        initial_positions: Optional warm-start positions in SVG coordinates.
+            When supplied, nodes already present skip the random
+            initialization and use the normalized version of these
+            coordinates as SA starting points. Unknown nodes get random
+            init as before. Used by ``Graph`` mutation warm-start.
 
     Returns:
         Mapping of node_id to (svg_x, svg_y), or None on fallback.
@@ -185,6 +224,14 @@ def compute_stable_layout(
             _LAMBDA_MIN,
             _LAMBDA_MAX,
         )
+        _collect(
+            "E1504",
+            (
+                f"layout_lambda={lambda_weight} outside "
+                f"[{_LAMBDA_MIN},{_LAMBDA_MAX}], clamping"
+            ),
+            "hidden",
+        )
         lambda_weight = max(_LAMBDA_MIN, min(_LAMBDA_MAX, lambda_weight))
 
     # --- Guard: too many nodes ---
@@ -193,6 +240,16 @@ def compute_stable_layout(
             "E1501: %d nodes exceeds limit of %d", len(nodes), _MAX_NODES
         )
         logger.warning("E1503: falling back to force layout")
+        _collect(
+            "E1501",
+            f"{len(nodes)} nodes exceeds limit of {_MAX_NODES}",
+            "dangerous",
+        )
+        _collect(
+            "E1503",
+            "stable layout fallback triggered (force layout)",
+            "dangerous",
+        )
         return None
 
     # --- Guard: too many frames ---
@@ -203,13 +260,44 @@ def compute_stable_layout(
             _MAX_FRAMES,
         )
         logger.warning("E1503: falling back to force layout")
+        _collect(
+            "E1502",
+            f"{len(frame_edge_sets)} frames exceeds limit of {_MAX_FRAMES}",
+            "dangerous",
+        )
+        _collect(
+            "E1503",
+            "stable layout fallback triggered (force layout)",
+            "dangerous",
+        )
         return None
 
-    # --- Initialize positions randomly in [0,1]^2 ---
+    # --- Initialize positions in [0,1]^2 ---
     rng = random.Random(seed)
-    positions: dict[str, tuple[float, float]] = {
-        node: (rng.random(), rng.random()) for node in nodes
-    }
+    if initial_positions is not None:
+        # Warm-start: denormalize caller-provided SVG coords back into
+        # the unit square the SA loop works in. Any node missing from
+        # ``initial_positions`` falls back to a fresh random init so
+        # partial coverage (e.g. a freshly-added node) still works.
+        pad = node_radius + 8
+        norm_width = max(width - 2 * pad, 1)
+        norm_height = max(height - 2 * pad, 1)
+        positions: dict[str, tuple[float, float]] = {}
+        for node in nodes:
+            if node in initial_positions:
+                sx, sy = initial_positions[node]
+                nx = (sx - pad) / norm_width
+                ny = (sy - pad) / norm_height
+                # Clamp back into [0, 1] so stale SVG coords from a
+                # previous render with different canvas dimensions
+                # cannot throw the SA loop off-grid.
+                nx = max(0.0, min(1.0, nx))
+                ny = max(0.0, min(1.0, ny))
+                positions[node] = (nx, ny)
+            else:
+                positions[node] = (rng.random(), rng.random())
+    else:
+        positions = {node: (rng.random(), rng.random()) for node in nodes}
 
     # --- SA parameters ---
     t0 = 10.0
@@ -258,6 +346,14 @@ def compute_stable_layout(
             "E1500: final objective (%.4f) exceeds 10x initial (%.4f)",
             current_obj,
             initial_obj,
+        )
+        _collect(
+            "E1500",
+            (
+                f"final objective ({current_obj:.4f}) exceeds 10x initial "
+                f"({initial_obj:.4f})"
+            ),
+            "hidden",
         )
 
     # --- Denormalize to SVG coordinates ---

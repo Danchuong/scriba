@@ -151,6 +151,18 @@ def _arrow_marker_defs() -> str:
     )
 
 
+def _format_weight(weight: float) -> str:
+    """Format an edge weight for SVG display.
+
+    Integers render without a decimal (``"3"``); floats keep up to
+    three significant digits and trim trailing zeros (``"1.5"``).
+    """
+    if weight == int(weight):
+        return str(int(weight))
+    formatted = f"{weight:.3g}"
+    return formatted
+
+
 def _shorten_line_to_circle(
     x1: int,
     y1: int,
@@ -231,11 +243,30 @@ class Graph(PrimitiveBase):
                 ),
             )
         raw_edges = params.get("edges", [])
-        self.edges: list[tuple[str | int, str | int]] = [
-            (e[0], e[1]) for e in raw_edges
-        ]
+        parsed_edges: list[tuple[str | int, str | int, float | None]] = []
+        has_weighted = False
+        has_unweighted = False
+        for e in raw_edges:
+            if len(e) == 3:
+                parsed_edges.append((e[0], e[1], float(e[2])))
+                has_weighted = True
+            elif len(e) == 2:
+                parsed_edges.append((e[0], e[1], None))
+                has_unweighted = True
+            else:
+                raise animation_error(
+                    "E1474",
+                    detail=f"edge must be 2-tuple or 3-tuple, got {e!r}",
+                )
+        if has_weighted and has_unweighted:
+            raise animation_error(
+                "E1474",
+                detail="edges list mixes weighted and unweighted entries",
+            )
+        self.edges: list[tuple[str | int, str | int, float | None]] = parsed_edges
         self.directed: bool = bool(params.get("directed", False))
         self.layout: str = str(params.get("layout", "force"))
+        self.show_weights: bool = bool(params.get("show_weights", False))
 
         # --- layout_seed validation (E1505) ---
         #
@@ -285,12 +316,176 @@ class Graph(PrimitiveBase):
         self.positions: dict[str | int, tuple[int, int]] = (
             fruchterman_reingold(
                 self.nodes,
-                self.edges,
+                [(u, v) for u, v, _w in self.edges],
                 width=self.width,
                 height=self.height,
                 seed=self.layout_seed,
             )
         )
+
+    # ----- mutation API ----------------------------------------------------
+
+    def apply_command(self, params: dict[str, Any]) -> None:
+        """Apply a mutation command from the animation pipeline.
+
+        Supported ops (one per call):
+            - ``add_edge``: {"from": u, "to": v, "weight": w?}
+            - ``remove_edge``: {"from": u, "to": v}
+            - ``set_weight``: {"from": u, "to": v, "value": w}
+
+        Raises
+        ------
+        AnimationError
+            - ``E1471`` if ``add_edge`` references an unknown endpoint or
+              the spec dict is missing required keys.
+            - ``E1472`` if ``remove_edge`` targets a non-existent edge.
+            - ``E1473`` if ``set_weight`` targets a non-existent edge.
+        """
+        from scriba.animation.errors import animation_error
+
+        if "add_edge" in params:
+            spec = params["add_edge"]
+            if not isinstance(spec, dict):
+                raise animation_error(
+                    "E1471",
+                    detail=f"add_edge requires a dict {{from, to}}, got {type(spec).__name__}",
+                )
+            u = spec.get("from")
+            v = spec.get("to")
+            weight = spec.get("weight")
+            if u is None or v is None:
+                raise animation_error(
+                    "E1471",
+                    detail="add_edge requires {from, to}",
+                )
+            self._add_edge_internal(u, v, weight)
+            return
+        if "remove_edge" in params:
+            spec = params["remove_edge"]
+            if not isinstance(spec, dict):
+                raise animation_error(
+                    "E1472",
+                    detail=f"remove_edge requires a dict {{from, to}}, got {type(spec).__name__}",
+                )
+            self._remove_edge_internal(spec.get("from"), spec.get("to"))
+            return
+        if "set_weight" in params:
+            spec = params["set_weight"]
+            if not isinstance(spec, dict):
+                raise animation_error(
+                    "E1473",
+                    detail=f"set_weight requires a dict {{from, to, value}}, got {type(spec).__name__}",
+                )
+            self._set_weight_internal(
+                spec.get("from"), spec.get("to"), spec.get("value")
+            )
+            return
+
+    def _add_edge_internal(
+        self,
+        u: str | int,
+        v: str | int,
+        weight: float | int | None,
+    ) -> None:
+        from scriba.animation.errors import animation_error
+
+        if u not in self.nodes:
+            raise animation_error(
+                "E1471",
+                detail=f"add_edge source node {u!r} is not in graph",
+            )
+        if v not in self.nodes:
+            raise animation_error(
+                "E1471",
+                detail=f"add_edge target node {v!r} is not in graph",
+            )
+        w: float | None = float(weight) if weight is not None else None
+        self.edges.append((u, v, w))
+        self._relayout_with_warm_start()
+
+    def _remove_edge_internal(self, u: str | int, v: str | int) -> None:
+        from scriba.animation.errors import animation_error
+
+        idx = self._find_edge_index(u, v)
+        if idx is None:
+            raise animation_error(
+                "E1472",
+                detail=f"remove_edge: no edge between {u!r} and {v!r}",
+            )
+        self.edges.pop(idx)
+        self._relayout_with_warm_start()
+
+    def _set_weight_internal(
+        self,
+        u: str | int,
+        v: str | int,
+        value: float | int | None,
+    ) -> None:
+        from scriba.animation.errors import animation_error
+
+        if value is None:
+            raise animation_error(
+                "E1473",
+                detail="set_weight requires a numeric 'value'",
+            )
+        idx = self._find_edge_index(u, v)
+        if idx is None:
+            raise animation_error(
+                "E1473",
+                detail=f"set_weight: no edge between {u!r} and {v!r}",
+            )
+        eu, ev, _old = self.edges[idx]
+        self.edges[idx] = (eu, ev, float(value))
+        # No relayout: weight does not affect geometry.
+
+    def _find_edge_index(
+        self,
+        u: str | int,
+        v: str | int,
+    ) -> int | None:
+        """Return the index of the edge (u,v); treat undirected as unordered."""
+        for i, (eu, ev, _w) in enumerate(self.edges):
+            if eu == u and ev == v:
+                return i
+            if not self.directed and eu == v and ev == u:
+                return i
+        return None
+
+    def _relayout_with_warm_start(self) -> None:
+        """Recompute positions after a mutation using warm-start layout."""
+        from scriba.animation.primitives.graph_layout_stable import (
+            compute_stable_layout,
+        )
+
+        old_positions: dict[str, tuple[float, float]] = {
+            str(n): (float(self.positions[n][0]), float(self.positions[n][1]))
+            for n in self.nodes
+            if n in self.positions
+        }
+        frame_edges = [[(str(u), str(v)) for u, v, _w in self.edges]]
+        result = compute_stable_layout(
+            [str(n) for n in self.nodes],
+            frame_edges,
+            seed=self.layout_seed,
+            initial_positions=old_positions,
+            width=self.width,
+            height=self.height,
+            node_radius=self._node_radius,
+        )
+        if result is not None:
+            self.positions = {
+                n: (round(result[str(n)][0]), round(result[str(n)][1]))
+                for n in self.nodes
+            }
+        else:
+            # Size guard tripped — fall back to force layout.
+            self.positions = fruchterman_reingold(
+                self.nodes,
+                [(u, v) for u, v, _w in self.edges],
+                width=self.width,
+                height=self.height,
+                seed=self.layout_seed,
+            )
 
     # ----- selector helpers ------------------------------------------------
 
@@ -308,7 +503,7 @@ class Graph(PrimitiveBase):
         parts: list[str] = []
         for node_id in self.nodes:
             parts.append(self._node_key(node_id))
-        for u, v in self.edges:
+        for u, v, _w in self.edges:
             parts.append(self._edge_key(u, v))
         return parts
 
@@ -363,11 +558,15 @@ class Graph(PrimitiveBase):
 
         # --- Edge layer (rendered first, below nodes) ---
         parts.append('<g class="scriba-graph-edges">')
-        for u, v in self.edges:
+        for u, v, weight in self.edges:
             edge_target = f"{self.name}.{self._edge_key(u, v)}"
             state = self.get_state(self._edge_key(u, v))
             x1, y1 = self.positions[u]
             x2, y2 = self.positions[v]
+            # Capture midpoint before any directed shortening so the
+            # weight label stays centered on the visible segment.
+            mid_x = (x1 + x2) / 2
+            mid_y = (y1 + y2) / 2 - 4
 
             if self.directed:
                 # Shorten line so arrowhead stops at circle boundary
@@ -381,6 +580,19 @@ class Graph(PrimitiveBase):
                 f"Edge from node {html_escape(str(u))} "
                 f"to node {html_escape(str(v))}"
             )
+            weight_text = ""
+            if (
+                self.show_weights
+                and not self.directed
+                and weight is not None
+            ):
+                weight_str = html_escape(_format_weight(weight))
+                weight_text = (
+                    f'<text x="{mid_x}" y="{mid_y}" '
+                    f'text-anchor="middle" '
+                    f'fill="{THEME["fg_muted"]}" '
+                    f'class="scriba-graph-weight">{weight_str}</text>'
+                )
             parts.append(
                 f'<g data-target="{html_escape(edge_target)}" '
                 f'class="scriba-state-{state}" '
@@ -390,6 +602,7 @@ class Graph(PrimitiveBase):
                 f'{marker}>'
                 f'<title>{edge_label}</title>'
                 f'</line>'
+                f'{weight_text}'
                 f'</g>'
             )
         parts.append('</g>')

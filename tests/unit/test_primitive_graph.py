@@ -66,7 +66,9 @@ class TestGraphConstruction:
         })
         assert g.name == "G"
         assert g.nodes == ["A", "B", "C"]
-        assert g.edges == [("A", "B"), ("A", "C")]
+        # Wave 6.2: edges are stored as 3-tuples (u, v, weight).
+        # Unweighted edges have weight=None.
+        assert g.edges == [("A", "B", None), ("A", "C", None)]
         assert g.directed is False
         assert g.layout == "force"
         assert g.layout_seed == 42
