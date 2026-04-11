@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import hashlib
 import unicodedata
-from typing import Any, Union
+from typing import Any, Iterable, NoReturn, Union
 
+from scriba.animation.errors import suggest_closest
 from scriba.core.errors import ValidationError
 
 from .ast import (
@@ -50,18 +51,6 @@ _MAX_SUBSTORY_DEPTH = 3
 # would otherwise escape detection.  Kept in sync with
 # ``SceneState._MAX_FOREACH_DEPTH``.
 _MAX_FOREACH_DEPTH = 3
-
-
-def _fuzzy_suggest(name: str, candidates: "tuple[str, ...] | list[str]") -> str | None:
-    """Return the closest candidate for *name*, or ``None`` if none are close.
-
-    Uses a simple Levenshtein-style difflib match.  Kept intentionally tiny
-    — just enough to print "did you mean: X?" hints for parser errors.
-    """
-    import difflib
-
-    close = difflib.get_close_matches(name, list(candidates), n=1, cutoff=0.6)
-    return close[0] if close else None
 
 
 def _lazy_primitive_registry() -> dict:
@@ -393,6 +382,37 @@ class SceneParser:
             col=tok.col,
         )
 
+    def _raise_unknown_enum(
+        self,
+        field_name: str,
+        value: str,
+        valid: Iterable[str],
+        *,
+        code: str,
+        line: int,
+        col: int,
+        source_line: str | None = None,
+    ) -> NoReturn:
+        """Raise a ``ValidationError`` for an unknown enum-value parameter.
+
+        Builds a uniform ``"unknown <field_name> <value>; valid: a, b, c"``
+        message and attaches a fuzzy "did you mean `X`?" hint whenever
+        :func:`suggest_closest` finds a close candidate. Used by the
+        E1004/E1006/E1109/E1112/E1113 raise sites to keep hinting consistent.
+        """
+        valid_sorted = sorted(valid)
+        suggestion = suggest_closest(value, valid_sorted)
+        hint = f"did you mean `{suggestion}`?" if suggestion else None
+        raise ValidationError(
+            f"unknown {field_name} {value!r}; valid: {', '.join(valid_sorted)}",
+            position=col,
+            code=code,
+            line=line,
+            col=col,
+            hint=hint,
+            source_line=source_line,
+        )
+
     # ------------------------------------------------------------------
     # Error recovery helpers
     # ------------------------------------------------------------------
@@ -480,9 +500,10 @@ class SceneParser:
                 )
             key = key_tok.value
             if key not in VALID_OPTION_KEYS:
-                raise ValidationError(
-                    f"unknown option key {key!r}; valid: {', '.join(sorted(VALID_OPTION_KEYS))}",
-                    position=key_tok.col,
+                self._raise_unknown_enum(
+                    "option key",
+                    key,
+                    VALID_OPTION_KEYS,
                     code="E1004",
                     line=key_tok.line,
                     col=key_tok.col,
@@ -542,7 +563,7 @@ class SceneParser:
             return
         if type_stripped in registry:
             return
-        suggestion = _fuzzy_suggest(type_stripped, tuple(registry.keys()))
+        suggestion = suggest_closest(type_stripped, tuple(registry.keys()))
         hint = f"did you mean: {suggestion}?" if suggestion else None
         valid_list = ", ".join(sorted(registry.keys()))
         raise ValidationError(
@@ -680,9 +701,10 @@ class SceneParser:
         if "state" in params:
             state = str(params["state"])
             if state not in VALID_STATES:
-                raise ValidationError(
-                    f"unknown recolor state {state!r}; valid: {', '.join(sorted(VALID_STATES))}",
-                    position=tok.col,
+                self._raise_unknown_enum(
+                    "recolor state",
+                    state,
+                    VALID_STATES,
                     code="E1109",
                     line=tok.line,
                     col=tok.col,
@@ -699,9 +721,10 @@ class SceneParser:
             )
             annotation_color = str(params["color"])
             if annotation_color not in VALID_ANNOTATION_COLORS:
-                raise ValidationError(
-                    f"unknown annotation color {annotation_color!r}; valid: {', '.join(sorted(VALID_ANNOTATION_COLORS))}",
-                    position=tok.col,
+                self._raise_unknown_enum(
+                    "annotation color",
+                    annotation_color,
+                    VALID_ANNOTATION_COLORS,
                     code="E1113",
                     line=tok.line,
                     col=tok.col,
@@ -759,9 +782,10 @@ class SceneParser:
             )
         color = str(params["color"])
         if color not in VALID_ANNOTATION_COLORS:
-            raise ValidationError(
-                f"unknown annotation color {color!r}; valid: {', '.join(sorted(VALID_ANNOTATION_COLORS))}",
-                position=tok.col,
+            self._raise_unknown_enum(
+                "annotation color",
+                color,
+                VALID_ANNOTATION_COLORS,
                 code="E1113",
                 line=tok.line,
                 col=tok.col,
@@ -799,18 +823,20 @@ class SceneParser:
         )
         position = str(params.get("position", "above"))
         if position not in VALID_ANNOTATION_POSITIONS:
-            raise ValidationError(
-                f"unknown annotation position {position!r}; valid: {', '.join(sorted(VALID_ANNOTATION_POSITIONS))}",
-                position=tok.col,
+            self._raise_unknown_enum(
+                "annotation position",
+                position,
+                VALID_ANNOTATION_POSITIONS,
                 code="E1112",
                 line=tok.line,
                 col=tok.col,
             )
         color = str(params.get("color", "info"))
         if color not in VALID_ANNOTATION_COLORS:
-            raise ValidationError(
-                f"unknown annotation color {color!r}; valid: {', '.join(sorted(VALID_ANNOTATION_COLORS))}",
-                position=tok.col,
+            self._raise_unknown_enum(
+                "annotation color",
+                color,
+                VALID_ANNOTATION_COLORS,
                 code="E1113",
                 line=tok.line,
                 col=tok.col,
@@ -1114,9 +1140,10 @@ class SceneParser:
                 val_tok = self._advance()
                 key = key_tok.value
                 if key not in VALID_SUBSTORY_OPTION_KEYS:
-                    raise ValidationError(
-                        f"unknown substory option key {key!r}; valid: {', '.join(sorted(VALID_SUBSTORY_OPTION_KEYS))}",
-                        position=key_tok.col,
+                    self._raise_unknown_enum(
+                        "substory option key",
+                        key,
+                        VALID_SUBSTORY_OPTION_KEYS,
                         code="E1004",
                         line=key_tok.line,
                         col=key_tok.col,
@@ -1666,9 +1693,10 @@ class SceneParser:
                     col=val_tok.col,
                 )
             if key_tok.value != "label":
-                raise ValidationError(
-                    f"unknown \\step option key {key_tok.value!r}; valid: label",
-                    position=key_tok.col,
+                self._raise_unknown_enum(
+                    "\\step option key",
+                    key_tok.value,
+                    ("label",),
                     code="E1004",
                     line=key_tok.line,
                     col=key_tok.col,

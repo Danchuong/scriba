@@ -177,14 +177,53 @@ class PrimitiveBase(abc.ABC):
     #   "front", "rear", "top" — named parts (no index)
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {}
 
+    # Subclasses override to declare the set of accepted keyword parameters
+    # for the ``\\shape`` command. When non-empty, unknown keys are rejected
+    # at construction time with ``E1114`` and a fuzzy "did you mean" hint.
+    # An empty frozenset preserves backward compatibility for primitives
+    # that have not yet migrated to the strict-params regime.
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset()
+
     def __init__(self, name: str = "", params: dict[str, Any] | None = None) -> None:
         self.name = name
         self.params = params if params is not None else {}
+        if self.ACCEPTED_PARAMS:
+            self._validate_accepted_params(self.params)
         self._states: dict[str, str] = {}  # target suffix -> state name
         self._values: dict[str, str] = {}  # target suffix -> display value
         self._labels: dict[str, str] = {}  # target suffix -> display label
         self._annotations: list[dict[str, Any]] = []
         self._highlighted: set[str] = set()
+
+    @classmethod
+    def _validate_accepted_params(cls, params: dict[str, Any]) -> None:
+        """Reject keyword parameters not in ``ACCEPTED_PARAMS``.
+
+        Raises ``E1114`` with a fuzzy "did you mean `X`?" hint whenever a
+        close candidate exists in the accepted set. This import is local
+        to sidestep the circular ``errors.py ↔ primitives`` dependency.
+        """
+        # Local import to avoid the ``errors.py`` <-> primitives cycle.
+        from scriba.animation.errors import animation_error, suggest_closest
+
+        accepted = cls.ACCEPTED_PARAMS
+        for key in params:
+            if key in accepted:
+                continue
+            suggestion = suggest_closest(key, accepted)
+            hint = (
+                f"did you mean `{suggestion}`?"
+                if suggestion
+                else f"valid: {', '.join(sorted(accepted))}"
+            )
+            raise animation_error(
+                "E1114",
+                (
+                    f"unknown {cls.__name__} parameter {key!r}; "
+                    f"valid: {', '.join(sorted(accepted))}"
+                ),
+                hint=hint,
+            )
 
     # ----- state management ------------------------------------------------
 

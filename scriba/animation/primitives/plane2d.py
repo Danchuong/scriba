@@ -83,6 +83,26 @@ class Plane2D(PrimitiveBase):
         "all": "all elements",
     }
 
+    # Accepted keyword parameters for ``\\shape{name}{Plane2D}{...}``.
+    # Unknown keys raise E1114 with a fuzzy "did you mean" hint via
+    # :meth:`PrimitiveBase._validate_accepted_params`.
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset(
+        {
+            "xrange",
+            "yrange",
+            "grid",
+            "axes",
+            "aspect",
+            "width",
+            "height",
+            "points",
+            "lines",
+            "segments",
+            "polygons",
+            "regions",
+        }
+    )
+
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 

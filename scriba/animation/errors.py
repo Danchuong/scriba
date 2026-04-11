@@ -26,7 +26,42 @@ to work.
 
 from __future__ import annotations
 
+from typing import Iterable
+
 from scriba.core.errors import RendererError, ValidationError
+
+
+# ---------------------------------------------------------------------------
+# Fuzzy-match suggestion helper
+# ---------------------------------------------------------------------------
+
+
+def suggest_closest(
+    needle: str,
+    candidates: Iterable[str],
+    *,
+    cutoff: float = 0.6,
+) -> str | None:
+    """Return the closest candidate for *needle*, or ``None`` if none are close.
+
+    Uses a simple Levenshtein-style ``difflib`` match. Kept intentionally
+    tiny — just enough to print "did you mean: X?" hints for parser and
+    validation errors across the codebase.
+
+    Parameters
+    ----------
+    needle:
+        The (likely typo-ed) string to look up.
+    candidates:
+        An iterable of valid candidate strings to compare against.
+    cutoff:
+        Minimum similarity ratio (0.0–1.0) required to return a match.
+        Defaults to ``0.6`` to match :mod:`difflib` defaults.
+    """
+    import difflib
+
+    close = difflib.get_close_matches(needle, list(candidates), n=1, cutoff=cutoff)
+    return close[0] if close else None
 
 
 # ---------------------------------------------------------------------------
@@ -101,6 +136,12 @@ ERROR_CATALOG: dict[str, str] = {
     "E1109": "Invalid \\recolor state or missing required state/color parameter.",
     "E1112": "Unknown annotation position.",
     "E1113": "Invalid or missing annotation color.",
+    "E1114": (
+        "Unknown keyword parameter for shape primitive. "
+        "Fix: Check the parameter name against the primitive's accepted "
+        "kwargs; a fuzzy 'did you mean' suggestion is included when a "
+        "close match exists."
+    ),
     # --- Starlark sandbox errors (E1150 -- E1179) ---
     "E1150": "Starlark parse/syntax error.",
     "E1151": "Starlark runtime evaluation failure.",
