@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _escape_xml,
+    _inset_rect_attrs,
     _render_svg_text,
     estimate_text_width,
     register_primitive,
@@ -243,23 +244,34 @@ class ArrayPrimitive(PrimitiveBase):
                 value = self.data[i]
             highlighted = suffix in self._highlighted
 
-            css = state_class(state_name)
-            colors = svg_style_attrs(state_name)
+            # β redesign — highlight becomes a state rather than an
+            # additive dashed overlay. A plain cell that is marked
+            # highlighted becomes ``highlight``; a cell already in a
+            # stronger signal state (current/error/good/etc.) keeps its
+            # state so the two signals don't visually compete.
+            if highlighted and state_name == "idle":
+                effective_state = "highlight"
+            else:
+                effective_state = state_name
+
+            css = state_class(effective_state)
+            # ``svg_style_attrs`` is still used for <text> fill until the
+            # CSS text rule ships; rect fill/stroke/stroke-width are owned
+            # by the state class in scriba-scene-primitives.css.
+            colors = svg_style_attrs(effective_state)
 
             cw = self._cell_width
             x = int(i * (cw + CELL_GAP))
             y = 0
 
-            stroke_w = "1.5" if state_name == "idle" else "2"
-
             lines.append(
                 f'  <g data-target="{target}" class="{css}">'
             )
+            rect_attrs = _inset_rect_attrs(x, y, cw, CELL_HEIGHT)
             lines.append(
-                f'    <rect x="{x}" y="{y}" '
-                f'width="{cw}" height="{CELL_HEIGHT}" '
-                f'rx="4" fill="{colors["fill"]}" '
-                f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
+                f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
+                f'width="{rect_attrs["width"]}" '
+                f'height="{rect_attrs["height"]}"/>'
             )
             text_x = int(x + cw // 2)
             text_y = int(y + CELL_HEIGHT // 2)
@@ -275,15 +287,6 @@ class ArrayPrimitive(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
-            # Highlight overlay (additive — dashed gold border on top)
-            if highlighted:
-                lines.append(
-                    f'    <rect x="{x}" y="{y}" '
-                    f'width="{cw}" height="{CELL_HEIGHT}" '
-                    f'rx="4" fill="none" '
-                    f'stroke="#F0E442" stroke-width="3" '
-                    f'stroke-dasharray="6 3"/>'
-                )
             lines.append("  </g>")
 
             # Index labels below the cell — y computed once by vstack above

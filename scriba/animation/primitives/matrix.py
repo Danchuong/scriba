@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
     PrimitiveBase,
+    _inset_rect_attrs,
     _render_svg_text,
     estimate_text_width,
     register_primitive,
@@ -308,7 +309,14 @@ class MatrixPrimitive(PrimitiveBase):
                 state_name = self.get_state(suffix)
                 highlighted = suffix in self._highlighted
 
-                css = state_class(state_name)
+                # β redesign — highlight is a standalone state; only
+                # promote an ``idle`` cell so stronger signals still win.
+                if highlighted and state_name == "idle":
+                    effective_state = "highlight"
+                else:
+                    effective_state = state_name
+
+                css = state_class(effective_state)
 
                 val = self.data[r][c]
                 # Normalize value to [0, 1] for colorscale
@@ -317,17 +325,13 @@ class MatrixPrimitive(PrimitiveBase):
                 else:
                     t = (val - effective_vmin) / (effective_vmax - effective_vmin)
 
+                # Matrix is the one cell primitive where ``fill`` is
+                # data-driven (colorscale) and CANNOT be owned by CSS.
+                # The state class still owns ``stroke``/``stroke-width``;
+                # idle cells get no stroke, signal states get the
+                # palette-defined stroke via scriba-scene-primitives.css.
                 fill = interpolate_color(t, stops)
                 text_fill = _text_color_for_background(t, stops)
-
-                # State overrides stroke, not fill (preserve colorscale)
-                if state_name != DEFAULT_STATE:
-                    colors = svg_style_attrs(state_name)
-                    stroke = colors["stroke"]
-                    stroke_w = "2.5"
-                else:
-                    stroke = "none"
-                    stroke_w = "0"
 
                 x = x_offset + c * (self.cell_size + _CELL_GAP)
                 y = y_offset + r * (self.cell_size + _CELL_GAP)
@@ -335,11 +339,14 @@ class MatrixPrimitive(PrimitiveBase):
                 lines.append(
                     f'  <g data-target="{target}" class="{css}">'
                 )
+                rect_attrs = _inset_rect_attrs(
+                    x, y, self.cell_size, self.cell_size
+                )
                 lines.append(
-                    f'    <rect x="{x}" y="{y}" '
-                    f'width="{self.cell_size}" height="{self.cell_size}" '
-                    f'fill="{fill}" '
-                    f'stroke="{stroke}" stroke-width="{stroke_w}"/>'
+                    f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
+                    f'width="{rect_attrs["width"]}" '
+                    f'height="{rect_attrs["height"]}" '
+                    f'fill="{fill}"/>'
                 )
 
                 if self.show_values:
@@ -360,15 +367,6 @@ class MatrixPrimitive(PrimitiveBase):
                             fo_height=self.cell_size,
                             render_inline_tex=render_inline_tex,
                         )
-                    )
-
-                # Highlight overlay
-                if highlighted:
-                    lines.append(
-                        f'    <rect x="{x}" y="{y}" '
-                        f'width="{self.cell_size}" height="{self.cell_size}" '
-                        f'fill="none" stroke="#F0E442" stroke-width="3" '
-                        f'stroke-dasharray="6 3"/>'
                     )
 
                 lines.append("  </g>")

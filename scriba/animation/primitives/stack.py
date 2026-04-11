@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     THEME,
+    _inset_rect_attrs,
     _render_svg_text,
     estimate_text_width,
     register_primitive,
@@ -240,8 +241,17 @@ class Stack(PrimitiveBase):
                 if top_state != "idle":
                     state = top_state
 
-            colors = svg_style_attrs(state)
-            stroke_w = "1.5" if state == "idle" else "2"
+            is_hl = suffix in hl_suffixes or (
+                idx == len(self.items) - 1 and "top" in hl_suffixes
+            )
+            # β redesign — highlight becomes a standalone state; it only
+            # promotes an ``idle`` cell so a ``current`` item still wins.
+            if is_hl and state == "idle":
+                effective_state = "highlight"
+            else:
+                effective_state = state
+
+            colors = svg_style_attrs(effective_state)
 
             if self.orientation == "horizontal":
                 x = _PADDING + vi * (cw + _CELL_GAP)
@@ -253,19 +263,15 @@ class Stack(PrimitiveBase):
                 x = _PADDING
                 y = _PADDING + rev_vi * (_CELL_HEIGHT + _CELL_GAP)
 
-            is_hl = suffix in hl_suffixes or (
-                idx == len(self.items) - 1 and "top" in hl_suffixes
-            )
-
             parts.append(
                 f'<g data-target="{html_escape(target)}" '
-                f'class="scriba-state-{state}">'
+                f'class="scriba-state-{effective_state}">'
             )
+            rect_attrs = _inset_rect_attrs(x, y, cw, _CELL_HEIGHT)
             parts.append(
-                f'<rect x="{x}" y="{y}" '
-                f'width="{cw}" height="{_CELL_HEIGHT}" '
-                f'rx="4" fill="{colors["fill"]}" '
-                f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
+                f'<rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
+                f'width="{rect_attrs["width"]}" '
+                f'height="{rect_attrs["height"]}"/>'
             )
             tx = x + cw // 2
             ty = y + _CELL_HEIGHT // 2
@@ -282,14 +288,6 @@ class Stack(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
-
-            if is_hl:
-                parts.append(
-                    f'<rect x="{x}" y="{y}" '
-                    f'width="{cw}" height="{_CELL_HEIGHT}" '
-                    f'rx="4" fill="none" stroke="#F0E442" stroke-width="3" '
-                    f'stroke-dasharray="6 3"/>'
-                )
 
             parts.append("</g>")
 

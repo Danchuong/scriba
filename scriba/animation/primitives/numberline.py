@@ -193,8 +193,16 @@ class NumberLinePrimitive(PrimitiveBase):
             state_name = self.get_state(suffix)
             highlighted = suffix in self._highlighted
 
-            css = state_class(state_name)
-            colors = svg_style_attrs(state_name)
+            # β redesign — highlight becomes a standalone state so the
+            # marker inherits its styling from scriba-scene-primitives.css
+            # instead of emitting a hardcoded dashed gold circle overlay.
+            if highlighted and state_name == "idle":
+                effective_state = "highlight"
+            else:
+                effective_state = state_name
+
+            css = state_class(effective_state)
+            colors = svg_style_attrs(effective_state)
 
             if self.tick_count > 1:
                 x = int(NL_PADDING + i * usable_width / (self.tick_count - 1))
@@ -207,14 +215,14 @@ class NumberLinePrimitive(PrimitiveBase):
                 f'  <g data-target="{target}" class="{css}">'
             )
             # Tick line uses state color, but thicker when active
-            sw = "2.5" if state_name not in ("idle", "dim") else "1.5"
+            sw = "2.5" if effective_state not in ("idle", "dim") else "1.5"
             lines.append(
                 f'    <line x1="{x}" y1="{NL_TICK_TOP}" '
                 f'x2="{x}" y2="{NL_TICK_BOTTOM}" '
                 f'stroke="{colors["fill"]}" stroke-width="{sw}"/>'
             )
             # Text always uses dark color (no background rect to contrast against)
-            text_color = THEME["fg"] if state_name != "dim" else THEME["fg_dim"]
+            text_color = THEME["fg"] if effective_state != "dim" else THEME["fg_dim"]
             lines.append(
                 "    "
                 + _render_svg_text(
@@ -227,13 +235,6 @@ class NumberLinePrimitive(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
-            # Highlight overlay (additive — gold circle around tick)
-            if highlighted:
-                lines.append(
-                    f'    <circle cx="{x}" cy="{NL_AXIS_Y}" r="8" '
-                    f'fill="none" stroke="#F0E442" stroke-width="3" '
-                    f'stroke-dasharray="4 2"/>'
-                )
             lines.append("  </g>")
 
         # Caption label

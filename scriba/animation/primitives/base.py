@@ -99,6 +99,28 @@ CELL_HEIGHT = 40
 CELL_GAP = 2
 INDEX_LABEL_OFFSET = 16  # vertical offset below the cell for index labels
 
+# β redesign — half-pixel stroke inset for crisp 1-2px strokes at DPR=1.
+# The worst-case (2px signal states) is applied uniformly so the cell
+# bounding box stays deterministic regardless of state.
+_CELL_STROKE_INSET: float = 1.0
+
+
+def _inset_rect_attrs(
+    x: float, y: float, width: float, height: float
+) -> dict[str, str]:
+    """Return SVG rect attributes inset for half-pixel stroke alignment.
+
+    Used by cell primitives (array, grid, dptable, stack, queue, matrix,
+    numberline) to keep 1-2px strokes crisp at DPR=1. Does NOT emit rx,
+    fill, stroke, or stroke-width — those come from CSS state classes.
+    """
+    return {
+        "x": f"{x + _CELL_STROKE_INSET}",
+        "y": f"{y + _CELL_STROKE_INSET}",
+        "width": f"{width - 2 * _CELL_STROKE_INSET}",
+        "height": f"{height - 2 * _CELL_STROKE_INSET}",
+    }
+
 
 def estimate_text_width(text: str, font_size: int = 14) -> int:
     """Estimate rendered text width in pixels using conservative heuristics.

@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
     PrimitiveBase,
+    _inset_rect_attrs,
     _render_svg_text,
     register_primitive,
     state_class,
@@ -186,21 +187,29 @@ class GridPrimitive(PrimitiveBase):
                     flat_idx = r * self.cols + c
                     value = self.data[flat_idx]
 
-                css = state_class(state_name)
-                colors = svg_style_attrs(state_name)
+                # β redesign — highlight is a state, not an overlay.
+                highlighted = suffix in self._highlighted
+                if highlighted and state_name == "idle":
+                    effective_state = "highlight"
+                else:
+                    effective_state = state_name
+
+                css = state_class(effective_state)
+                colors = svg_style_attrs(effective_state)
 
                 x = int(c * (CELL_WIDTH + CELL_GAP))
                 y = int(r * (CELL_HEIGHT + CELL_GAP))
-                stroke_w = "1.5" if state_name == "idle" else "2"
 
                 lines.append(
                     f'  <g data-target="{target}" class="{css}">'
                 )
+                rect_attrs = _inset_rect_attrs(
+                    x, y, CELL_WIDTH, CELL_HEIGHT
+                )
                 lines.append(
-                    f'    <rect x="{x}" y="{y}" '
-                    f'width="{CELL_WIDTH}" height="{CELL_HEIGHT}" '
-                    f'rx="4" fill="{colors["fill"]}" '
-                    f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
+                    f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
+                    f'width="{rect_attrs["width"]}" '
+                    f'height="{rect_attrs["height"]}"/>'
                 )
                 text_x = int(x + CELL_WIDTH // 2)
                 text_y = int(y + CELL_HEIGHT // 2)

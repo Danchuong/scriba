@@ -21,6 +21,7 @@ from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
     PrimitiveBase,
+    _inset_rect_attrs,
     _render_svg_text,
     estimate_text_width,
     register_primitive,
@@ -230,21 +231,29 @@ class Queue(PrimitiveBase):
             if all_state != "idle" and state_name == "idle":
                 state_name = all_state
 
-            colors = svg_style_attrs(state_name)
-            stroke_w = "1.5" if state_name == "idle" else "2"
+            # β redesign — highlight is a standalone state.
+            highlighted = suffix in self._highlighted
+            if highlighted and state_name == "idle":
+                effective_state = "highlight"
+            else:
+                effective_state = state_name
+
+            colors = svg_style_attrs(effective_state)
 
             x = _LABEL_PADDING + i * (self._cell_width + CELL_GAP)
             value = self.cells[i]
 
             parts.append(
                 f'  <g data-target="{html_escape(target)}" '
-                f'class="scriba-state-{state_name}">'
+                f'class="scriba-state-{effective_state}">'
+            )
+            rect_attrs = _inset_rect_attrs(
+                x, cell_y, self._cell_width, CELL_HEIGHT
             )
             parts.append(
-                f'    <rect x="{x}" y="{cell_y}" '
-                f'width="{self._cell_width}" height="{CELL_HEIGHT}" '
-                f'rx="4" fill="{colors["fill"]}" '
-                f'stroke="{colors["stroke"]}" stroke-width="{stroke_w}"/>'
+                f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
+                f'width="{rect_attrs["width"]}" '
+                f'height="{rect_attrs["height"]}"/>'
             )
             text_x = x + self._cell_width // 2
             text_y = cell_y + CELL_HEIGHT // 2
