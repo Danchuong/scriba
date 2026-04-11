@@ -1,0 +1,233 @@
+\begin{animation}[id="dp-convex-hull-trick", label="DP Convex Hull Trick -- minimum cost jumps"]
+
+% -----------------------------------------------------------------------
+% Problem
+% -----------------------------------------------------------------------
+% Given heights h[0..n-1], compute the minimum total cost to reach the
+% last position from the first, where the cost of jumping directly from
+% index j to index i > j is (h[i] - h[j])^2.
+%
+%   dp[0] = 0
+%   dp[i] = min over j < i of ( dp[j] + (h[i] - h[j])^2 )
+%
+% Naively this is O(n^2). The convex-hull trick rewrites the inner term:
+%
+%   dp[i] = min_j ( dp[j] + h[i]^2 - 2 h[i] h[j] + h[j]^2 )
+%         = h[i]^2 + min_j ( (-2 h[j]) * h[i] + (h[j]^2 + dp[j]) )
+%
+% Each j contributes a LINE f_j(x) = (-2 h[j]) x + (h[j]^2 + dp[j]).
+% To compute dp[i] we query the lower envelope of {f_0, f_1, ..., f_{i-1}}
+% at x = h[i], add h[i]^2, and we have dp[i] in O(log n).
+%
+% -----------------------------------------------------------------------
+% Input
+% -----------------------------------------------------------------------
+% h = [0, 2, 3, 4, 5] (5 positions). The slopes -2 h[j] are monotone
+% decreasing, so each new line joins the envelope on the right side
+% without ever being dominated — the ideal textbook case.
+%
+% Lines:
+%   L0 : y =  0 x +  0      (from j=0: slope=-2*0=0, intercept=0+0=0)
+%   L1 : y = -4 x +  8      (from j=1: slope=-2*2, intercept=4+dp[1]=4+4=8)
+%   L2 : y = -6 x + 14      (from j=2: slope=-2*3, intercept=9+dp[2]=9+5=14)
+%   L3 : y = -8 x + 22      (from j=3: slope=-2*4, intercept=16+dp[3]=16+6=22)
+%
+% Envelope pieces:
+%   L0 wins on x in [0, 2]   (L0=L1 at x=2)
+%   L1 wins on x in [2, 3]   (L1=L2 at x=3)
+%   L2 wins on x in [3, 4]   (L2=L3 at x=4)
+%   L3 wins on x in [4, +inf)
+%
+% Final dp = [0, 4, 5, 6, 7].
+
+% -----------------------------------------------------------------------
+% Shapes
+% -----------------------------------------------------------------------
+%
+% Plane2D holds all candidate lines and the query points. Every line,
+% query, and envelope segment is pre-declared at shape time and hidden
+% by default; we toggle them on as the algorithm progresses. This is
+% the canonical workaround for the Wave 7 interactive/print double-pass
+% bug in the renderer (structural mutation ops raise E1437 on the
+% second pass; hidden-state toggles are replay-safe).
+\shape{p}{Plane2D}{
+  xrange=[-0.5, 6],
+  yrange=[-22, 20],
+  grid=true,
+  axes=true,
+  width=440,
+  aspect="auto",
+  xlabel="x = h[i]",
+  ylabel="f_j(x)",
+  lines=[
+    ("L0",  0.0,  0.0),
+    ("L1", -4.0,  8.0),
+    ("L2", -6.0, 14.0),
+    ("L3", -8.0, 22.0)
+  ],
+  points=[
+    (2, 0, "h[1]"),
+    (3, 0, "h[2]"),
+    (4, 0, "h[3]"),
+    (5, 0, "h[4]")
+  ],
+  segments=[
+    ((0, 0),   (2, 0)),
+    ((2, 0),   (3, -4)),
+    ((3, -4),  (4, -10)),
+    ((4, -10), (5, -18))
+  ]
+}
+
+% Parallel DP table. Starts with dp[0] = 0 and unknowns elsewhere.
+\shape{dp}{Array}{
+  size=5,
+  data=["0", "?", "?", "?", "?"],
+  labels="0..4",
+  label="$dp[i]$"
+}
+
+% Heights input, immutable for the whole animation.
+\shape{h}{Array}{
+  size=5,
+  data=[0, 2, 3, 4, 5],
+  labels="0..4",
+  label="$h[i]$"
+}
+
+% =======================================================================
+% Step 1 -- prelude hides every future line, query point, and envelope
+% segment. Only L0 stays visible because it is the base case. dp[0] = 0
+% is pre-filled and marked done.
+% =======================================================================
+\step
+\recolor{p.line[1]}{state=hidden}
+\recolor{p.line[2]}{state=hidden}
+\recolor{p.line[3]}{state=hidden}
+\recolor{p.point[0]}{state=hidden}
+\recolor{p.point[1]}{state=hidden}
+\recolor{p.point[2]}{state=hidden}
+\recolor{p.point[3]}{state=hidden}
+\recolor{p.segment[0]}{state=hidden}
+\recolor{p.segment[1]}{state=hidden}
+\recolor{p.segment[2]}{state=hidden}
+\recolor{p.segment[3]}{state=hidden}
+\recolor{dp.cell[0]}{state=done}
+\recolor{h.cell[0]}{state=current}
+\recolor{p.line[0]}{state=current}
+\narrate{Base case: $dp[0]=0$. Each j < i contributes a line $f_j(x) = -2h[j] x + (h[j]^2 + dp[j])$. Starting line $L_0$ from $j=0$: slope $= -2 \cdot 0 = 0$, intercept $= 0^2 + 0 = 0$, so $L_0: y = 0$. The horizontal axis coincides with L0 for this base case.}
+
+% =======================================================================
+% Step 2 -- query at x = h[1] = 2. Only L0 is in the hull, so the query
+% is trivial: f_0(2) = 0, dp[1] = h[1]^2 + 0 = 4.
+% =======================================================================
+\step
+\recolor{p.line[0]}{state=good}
+\recolor{h.cell[0]}{state=done}
+\recolor{h.cell[1]}{state=current}
+\recolor{p.point[0]}{state=current}
+\narrate{Query $x = h[1] = 2$. Only $L_0$ is in the envelope so far, so $\min_{j<1} f_j(2) = L_0(2) = 0$. Therefore $dp[1] = h[1]^2 + 0 = 4 + 0 = 4$.}
+
+% =======================================================================
+% Step 3 -- commit dp[1] = 4 and insert L1 into the line set.
+% L1: slope = -2*h[1] = -4, intercept = h[1]^2 + dp[1] = 4 + 4 = 8.
+% =======================================================================
+\step
+\apply{dp.cell[1]}{value="4"}
+\recolor{dp.cell[1]}{state=done}
+\recolor{p.line[0]}{state=done}
+\recolor{p.point[0]}{state=done}
+\recolor{p.line[1]}{state=current}
+\narrate{Insert $L_1$ for $j=1$: slope $= -2 \cdot h[1] = -4$, intercept $= h[1]^2 + dp[1] = 4 + 4 = 8$. $L_1: y = -4x + 8$. Note $L_1(2) = 0$, exactly where $L_0$ stands: $L_1$ joins the envelope from $x = 2$ onward.}
+
+% =======================================================================
+% Step 4 -- query at x = h[2] = 3. Now L0 and L1 are both active.
+% L0(3) = 0, L1(3) = -4*3 + 8 = -4. min is L1. dp[2] = 9 + (-4) = 5.
+% =======================================================================
+\step
+\recolor{p.line[0]}{state=dim}
+\recolor{p.line[1]}{state=good}
+\recolor{h.cell[1]}{state=done}
+\recolor{h.cell[2]}{state=current}
+\recolor{p.point[0]}{state=hidden}
+\recolor{p.point[1]}{state=current}
+\narrate{Query $x = h[2] = 3$. $L_0(3) = 0$ and $L_1(3) = -4 \cdot 3 + 8 = -4$. The minimum is $L_1(3) = -4$. Therefore $dp[2] = h[2]^2 + (-4) = 9 - 4 = 5$.}
+
+% =======================================================================
+% Step 5 -- commit dp[2] = 5 and insert L2.
+% L2: slope = -6, intercept = 9 + 5 = 14. L2(3) = -4 = L1(3) --
+% L2 joins the envelope exactly at the current query point.
+% =======================================================================
+\step
+\apply{dp.cell[2]}{value="5"}
+\recolor{dp.cell[2]}{state=done}
+\recolor{p.line[0]}{state=done}
+\recolor{p.line[1]}{state=done}
+\recolor{p.point[1]}{state=done}
+\recolor{p.line[2]}{state=current}
+\narrate{Insert $L_2$ for $j=2$: slope $= -2 \cdot h[2] = -6$, intercept $= h[2]^2 + dp[2] = 9 + 5 = 14$. $L_2: y = -6x + 14$. Check: $L_2(3) = -4 = L_1(3)$. The new line touches the envelope at the next query point and becomes the winner for $x \ge 3$.}
+
+% =======================================================================
+% Step 6 -- query at x = h[3] = 4.
+% L0(4) = 0, L1(4) = -8, L2(4) = -10. Min is L2. dp[3] = 16 + (-10) = 6.
+% =======================================================================
+\step
+\recolor{p.line[0]}{state=dim}
+\recolor{p.line[1]}{state=dim}
+\recolor{p.line[2]}{state=good}
+\recolor{h.cell[2]}{state=done}
+\recolor{h.cell[3]}{state=current}
+\recolor{p.point[1]}{state=hidden}
+\recolor{p.point[2]}{state=current}
+\narrate{Query $x = h[3] = 4$. $L_0(4)=0$, $L_1(4)=-16+8=-8$, $L_2(4)=-24+14=-10$. The minimum is $L_2(4) = -10$. $L_2$ now dominates the envelope near the query. $dp[3] = 16 + (-10) = 6$.}
+
+% =======================================================================
+% Step 7 -- commit dp[3] = 6 and insert L3.
+% L3: slope = -8, intercept = 16 + 6 = 22. L3(4) = -10 = L2(4).
+% =======================================================================
+\step
+\apply{dp.cell[3]}{value="6"}
+\recolor{dp.cell[3]}{state=done}
+\recolor{p.line[0]}{state=done}
+\recolor{p.line[1]}{state=done}
+\recolor{p.line[2]}{state=done}
+\recolor{p.point[2]}{state=done}
+\recolor{p.line[3]}{state=current}
+\narrate{Insert $L_3$ for $j=3$: slope $= -8$, intercept $= 16 + 6 = 22$. $L_3: y = -8x + 22$. Again $L_3(4) = -10 = L_2(4)$: the new line joins at the next query. Monotone slopes mean no line ever gets removed from the envelope in this input.}
+
+% =======================================================================
+% Step 8 -- query at x = h[4] = 5.
+% L0(5)=0, L1(5)=-12, L2(5)=-16, L3(5)=-18. Min is L3. dp[4] = 25 + (-18) = 7.
+% =======================================================================
+\step
+\recolor{p.line[0]}{state=dim}
+\recolor{p.line[1]}{state=dim}
+\recolor{p.line[2]}{state=dim}
+\recolor{p.line[3]}{state=good}
+\recolor{h.cell[3]}{state=done}
+\recolor{h.cell[4]}{state=current}
+\recolor{p.point[2]}{state=hidden}
+\recolor{p.point[3]}{state=current}
+\narrate{Query $x = h[4] = 5$. $L_0(5) = 0$, $L_1(5) = -12$, $L_2(5) = -16$, $L_3(5) = -18$. The minimum is $L_3(5) = -18$. $dp[4] = 25 + (-18) = 7$, the final answer.}
+
+% =======================================================================
+% Step 9 -- commit dp[4] = 7 and reveal the full lower envelope as four
+% good-state segments. Each segment clips its line to the (x1, x2) range
+% on which that line is the minimum.
+% =======================================================================
+\step
+\apply{dp.cell[4]}{value="7"}
+\recolor{dp.cell[4]}{state=done}
+\recolor{h.cell[4]}{state=done}
+\recolor{p.point[3]}{state=done}
+\recolor{p.line[0]}{state=dim}
+\recolor{p.line[1]}{state=dim}
+\recolor{p.line[2]}{state=dim}
+\recolor{p.line[3]}{state=dim}
+\recolor{p.segment[0]}{state=good}
+\recolor{p.segment[1]}{state=good}
+\recolor{p.segment[2]}{state=good}
+\recolor{p.segment[3]}{state=good}
+\narrate{Done. $dp = [0, 4, 5, 6, 7]$. The lower envelope (highlighted) consists of four pieces: $L_0$ on $[0, 2]$, $L_1$ on $[2, 3]$, $L_2$ on $[3, 4]$, $L_3$ on $[4, +\infty)$. Each CHT query at $x = h[i]$ drops to the current envelope in $O(\log n)$ total, so the DP runs in $O(n \log n)$ instead of $O(n^2)$. The classic application: Batch Scheduling, Train Plans, and CEOI 2004 Two-Sawmills.}
+
+\end{animation}
