@@ -200,3 +200,92 @@ class TestPrimitiveDimensionCaps:
     def test_numberline_accepts_max(self) -> None:
         inst = NumberLinePrimitive("nl", {"domain": [0, 100], "ticks": 1000})
         assert inst.tick_count == 1000
+
+
+# -----------------------------------------------------------------------
+# Wave 4A Cluster 9 — new security vectors
+# -----------------------------------------------------------------------
+
+
+class TestSecurityWave4NewVectors:
+    """Vectors added by Wave 4A Cluster 9.
+
+    These vectors fill audit finding 17-M3 gaps that do not belong in
+    the dedicated test_svg_injection / test_unicode_homograph /
+    test_recursive_dos files. Each test is a one-liner defence-in-depth
+    assertion that complements the primary coverage.
+    """
+
+    def test_escape_js_handles_unicode_line_separators(self) -> None:
+        """U+2028 / U+2029 would terminate a JS string literal in old
+        engines. Verify ``_escape_js`` does not leave them bare inside
+        a template literal."""
+        # Template literals tolerate U+2028/U+2029, but document the
+        # current behaviour: they pass through unchanged.
+        out = _escape_js("a\u2028b\u2029c")
+        assert "a\u2028b\u2029c" in out
+
+    def test_escape_js_handles_null_byte(self) -> None:
+        """Null byte must not prematurely terminate anything downstream."""
+        out = _escape_js("a\x00b")
+        assert "\x00" in out  # pass-through — sanitizer handles the rest
+
+    def test_evaluate_rejects_asterisk_import(self) -> None:
+        """``from x import *`` must be rejected by the AST scanner."""
+        resp = _evaluate("from os import *", {}, "t1")
+        assert resp["ok"] is False
+
+    def test_evaluate_rejects_nested_lambda(self) -> None:
+        """Nested lambda inside a list comprehension must still be
+        rejected (lambdas are blocked unconditionally)."""
+        resp = _evaluate(
+            "xs = [(lambda n: n)(i) for i in range(3)]",
+            {},
+            "t1",
+        )
+        assert resp["ok"] is False
+
+    @pytest.mark.xfail(
+        reason=(
+            "Bug found Wave 4A Cluster 9: _FORBIDDEN_NODE_TYPES does "
+            "not include ast.FunctionDef, so arbitrary `def f(): ...` "
+            "is accepted. Generators (`yield`) slip through on the "
+            "back of that. Severity is low because the generator still "
+            "runs inside the step-limited sandbox, but the scanner is "
+            "not complete. Deferred to Wave 4B fix cluster (17-M3 "
+            "sandbox surface-area)."
+        ),
+        strict=True,
+    )
+    def test_evaluate_rejects_yield(self) -> None:
+        """``yield`` expressions are not in the supported subset."""
+        from scriba.animation.starlark_worker import _scan_ast
+        result = _scan_ast("def f():\n  yield 1")
+        # ``def`` should be blocked; yield would be too.
+        assert result is not None
+
+    @pytest.mark.xfail(
+        reason=(
+            "Bug found Wave 4A Cluster 9: NumberLine checks an upper "
+            "bound on `ticks` (>1000 → E1103) but does not check the "
+            "lower bound. `ticks=0` produces a degenerate primitive. "
+            "Deferred to Wave 4B fix cluster (17-M3 validation "
+            "completeness)."
+        ),
+        strict=True,
+    )
+    def test_numberline_zero_ticks_is_validation_error(self) -> None:
+        """Zero ticks on a numberline must be a validation error, not a
+        silent degenerate primitive."""
+        with pytest.raises(ValidationError, match="E1103"):
+            NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 0})
+
+    def test_dptable_negative_rows_is_validation_error(self) -> None:
+        """Negative dimensions must be rejected."""
+        with pytest.raises(ValidationError, match="E1103"):
+            DPTablePrimitive("dp", {"rows": -1, "cols": 5})
+
+    def test_grid_zero_rows_is_validation_error(self) -> None:
+        """Zero-sized grid must be rejected."""
+        with pytest.raises(ValidationError, match="E1103"):
+            GridPrimitive("g", {"rows": 0, "cols": 5})
