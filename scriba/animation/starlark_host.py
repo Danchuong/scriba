@@ -18,7 +18,11 @@ from scriba.core.workers import SubprocessWorkerPool
 logger = logging.getLogger(__name__)
 
 # Resource limits applied to the starlark worker child process.
-_MEMORY_LIMIT_BYTES = 256 * 1024 * 1024  # 256 MB
+#
+# Aligned with ``docs/spec/starlark-worker.md`` SS6 which promises a 64 MB
+# memory cap. A prior drift allowed 256 MB at the RLIMIT level and 128 MB at
+# the tracemalloc level, undermining the DoS guarantee the spec advertises.
+_MEMORY_LIMIT_BYTES = 64 * 1024 * 1024  # 64 MB
 _CPU_LIMIT_SECONDS = 5
 
 

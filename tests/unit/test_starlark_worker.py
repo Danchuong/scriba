@@ -142,8 +142,10 @@ class TestTimeout:
                 "source": "x = 0\nfor i in range(n):\n    x += 1",
             })
             assert resp["ok"] is False
-            # May hit range limit (E1151), timeout (E1152), or step limit (E1153)
-            assert resp["code"] in ("E1151", "E1152", "E1153")
+            # May hit range iterable validation (E1173 — ``_safe_range``
+            # now wraps its ValueError in an ``animation_error``),
+            # timeout (E1152), or step limit (E1153).
+            assert resp["code"] in ("E1152", "E1153", "E1173")
         finally:
             _close(proc)
 

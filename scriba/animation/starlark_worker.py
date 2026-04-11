@@ -24,6 +24,7 @@ from __future__ import annotations
 import ast
 import json
 import math
+import re
 import signal
 import sys
 import threading
@@ -33,6 +34,8 @@ from io import StringIO
 from typing import Any
 
 from scriba.animation.constants import BLOCKED_ATTRIBUTES, FORBIDDEN_BUILTINS
+from scriba.animation.errors import animation_error
+from scriba.core.errors import ScribaError
 
 # ---------------------------------------------------------------------------
 # AST literal limits (defence-in-depth against C-level bombs)
@@ -54,6 +57,12 @@ _MAX_RANGE_LEN = 10**6  # 1 million elements
 _BLOCKED_ATTRIBUTES = BLOCKED_ATTRIBUTES
 
 # Forbidden AST node types (not plain strings, so kept here)
+#
+# ``ast.NamedExpr`` (walrus ``:=``) and ``ast.Match`` are forbidden to reduce
+# the sandbox attack surface: walrus enables binding in unusual scopes
+# (comprehension leaks, clever rebinding) and match patterns can invoke
+# custom ``__match_args__`` / class-level side effects. Both are unnecessary
+# for compute-block authors and are therefore rejected at parse time.
 _FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
     ast.Import,
     ast.ImportFrom,
@@ -61,6 +70,8 @@ _FORBIDDEN_NODE_TYPES: tuple[type, ...] = (
     ast.Try,
     ast.ClassDef,
     ast.Lambda,
+    ast.NamedExpr,
+    ast.Match,
 )
 
 _FORBIDDEN_BUILTINS = FORBIDDEN_BUILTINS
@@ -73,7 +84,69 @@ _FORBIDDEN_NODE_NAMES: dict[type, str] = {
     ast.Try: "try",
     ast.ClassDef: "class",
     ast.Lambda: "lambda",
+    ast.NamedExpr: "walrus (:=)",
+    ast.Match: "match",
 }
+
+
+# Regex that scans ``str.format(...)`` template strings for attribute
+# references of the form ``{0.attr}`` / ``{name.attr}`` / ``{.attr}``.
+# Any template that includes ``.`` inside a field produces an attribute
+# access at runtime (bypassing the AST scanner), so we reject it entirely.
+_FORMAT_ATTR_PATTERN = re.compile(r"\{[^{}]*\.[A-Za-z_]")
+
+
+def _position(node: ast.AST) -> tuple[int | None, int | None]:
+    """Return (line, col) for *node* with 1-based column."""
+    line = getattr(node, "lineno", None)
+    col = getattr(node, "col_offset", None)
+    if col is not None:
+        col += 1
+    return line, col
+
+
+def _attribute_chain_names(node: ast.Attribute) -> list[str]:
+    """Return every ``.attr`` name in an attribute chain.
+
+    For ``a.b.c.d`` this returns ``["b", "c", "d"]`` regardless of which
+    ``Attribute`` node in the chain is passed in.  This lets the scanner
+    reject ``[].append.__self__.__class__`` even though the immediate
+    ``.__self__`` is not in ``BLOCKED_ATTRIBUTES`` — the later
+    ``.__class__`` inside the same chain still triggers rejection, and we
+    additionally catch cases where an allowed intermediate attribute is
+    used as a stepping stone toward a blocked one.
+    """
+    names: list[str] = []
+    cur: ast.AST = node
+    while isinstance(cur, ast.Attribute):
+        names.append(cur.attr)
+        cur = cur.value
+    return names
+
+
+def _scan_format_call(node: ast.Call) -> tuple[str, int | None, int | None] | None:
+    """Detect ``"...{x.attr}...".format(...)`` patterns and reject them.
+
+    The Python runtime parses format-field attributes at ``.format()``
+    call time, which completely bypasses the AST scanner.  An attacker
+    can therefore do ``"{0.append.__self__.__class__}".format([])`` to
+    leak a class object.  Blocking any format string that contains a
+    ``.attr`` field closes the hole without disabling ``.format`` itself.
+    """
+    # Must be ``<something>.format(...)``
+    if not isinstance(node.func, ast.Attribute):
+        return None
+    if node.func.attr != "format":
+        return None
+
+    receiver = node.func.value
+    # Only care about string-literal receivers — other receivers cannot
+    # carry a format-spec the author controls at parse time.
+    if isinstance(receiver, ast.Constant) and isinstance(receiver.value, str):
+        if _FORMAT_ATTR_PATTERN.search(receiver.value):
+            line, col = _position(node)
+            return "format-with-attribute", line, col
+    return None
 
 
 def _scan_ast(source: str) -> tuple[str, int | None, int | None] | None:
@@ -91,35 +164,39 @@ def _scan_ast(source: str) -> tuple[str, int | None, int | None] | None:
         # Reject forbidden statement/expression types
         if isinstance(node, _FORBIDDEN_NODE_TYPES):
             name = _FORBIDDEN_NODE_NAMES.get(type(node), type(node).__name__)
-            line = getattr(node, "lineno", None)
-            col = getattr(node, "col_offset", None)
-            if col is not None:
-                col += 1  # 1-based
+            line, col = _position(node)
             return name, line, col
 
-        # Reject access to blocked dunder attributes
-        if isinstance(node, ast.Attribute) and node.attr in _BLOCKED_ATTRIBUTES:
-            line = getattr(node, "lineno", None)
-            col = getattr(node, "col_offset", None)
-            if col is not None:
-                col += 1
-            return node.attr, line, col
+        # Reject dunder access anywhere in an attribute chain.  A leaf
+        # ``Attribute`` node is a sub-expression of its parent, but
+        # because ``ast.walk`` visits every ``Attribute`` we only need to
+        # inspect each node's own ``.attr`` — the crucial change from the
+        # previous version is that we *also* check every ancestor name
+        # within the chain to catch ``x.append.__self__.__class__``,
+        # where ``__self__`` itself is not blocked but leads to a blocked
+        # name further down.
+        if isinstance(node, ast.Attribute):
+            for name in _attribute_chain_names(node):
+                if name in _BLOCKED_ATTRIBUTES:
+                    line, col = _position(node)
+                    return name, line, col
 
         # Reject forbidden builtin names used as function calls
         if isinstance(node, ast.Name) and node.id in _FORBIDDEN_BUILTINS:
-            line = getattr(node, "lineno", None)
-            col = getattr(node, "col_offset", None)
-            if col is not None:
-                col += 1
+            line, col = _position(node)
             return node.id, line, col
+
+        # Reject ``"...{x.attr}...".format(...)`` — format-spec attribute
+        # access happens at runtime and bypasses the AST walker.
+        if isinstance(node, ast.Call):
+            hit = _scan_format_call(node)
+            if hit is not None:
+                return hit
 
         # Cap integer literals to prevent memory/CPU bombs like "x" * 10**8
         if isinstance(node, ast.Constant) and isinstance(node.value, int):
             if abs(node.value) > _MAX_INT_LITERAL:
-                line = getattr(node, "lineno", None)
-                col = getattr(node, "col_offset", None)
-                if col is not None:
-                    col += 1
+                line, col = _position(node)
                 return (
                     f"integer literal too large (max {_MAX_INT_LITERAL})",
                     line,
@@ -129,10 +206,7 @@ def _scan_ast(source: str) -> tuple[str, int | None, int | None] | None:
         # Cap string literal length
         if isinstance(node, ast.Constant) and isinstance(node.value, str):
             if len(node.value) > _MAX_STR_LITERAL_LEN:
-                line = getattr(node, "lineno", None)
-                col = getattr(node, "col_offset", None)
-                if col is not None:
-                    col += 1
+                line, col = _position(node)
                 return (
                     f"string literal too long (max {_MAX_STR_LITERAL_LEN} chars)",
                     line,
@@ -164,16 +238,25 @@ def _make_print_fn(capture_list: list[str]):
 
 
 def _safe_range(*args: int) -> range:
-    """Wrapper around built-in ``range()`` that caps length to _MAX_RANGE_LEN."""
+    """Wrapper around built-in ``range()`` that caps length to _MAX_RANGE_LEN.
+
+    Any violation is surfaced as an ``E1173`` animation_error (foreach /
+    iterable validation) rather than a bare :class:`ValueError`, so callers
+    get a structured error code per the error catalog.
+    """
     for a in args:
         if abs(a) > _MAX_RANGE_LEN:
-            raise ValueError(
-                f"range() argument too large (max {_MAX_RANGE_LEN})"
+            raise animation_error(
+                "E1173",
+                f"range() argument too large "
+                f"(max {_MAX_RANGE_LEN})",
             )
     r = range(*args)
     if len(r) > _MAX_RANGE_LEN:
-        raise ValueError(
-            f"range() would produce {len(r)} elements (max {_MAX_RANGE_LEN})"
+        raise animation_error(
+            "E1173",
+            f"range() would produce {len(r)} elements "
+            f"(max {_MAX_RANGE_LEN})",
         )
     return r
 
@@ -213,6 +296,13 @@ _ALLOWED_BUILTINS: dict[str, Any] = {
     "pow": pow,
     "map": map,
     "filter": filter,
+    # Type probing.  Intentionally exposed: compute blocks routinely need
+    # ``isinstance(x, (int, float))``-style checks and ``type`` is
+    # forbidden.  ``isinstance`` cannot by itself reach a blocked class
+    # object because ``__class__``/``__mro__``/``__subclasses__`` are
+    # already rejected by the AST scan.  See ``docs/spec/starlark-worker.md``
+    # SS7.3.
+    "isinstance": isinstance,
     # print is injected per-request with a fresh capture list
 }
 
@@ -240,7 +330,13 @@ def _serialize_value(value: Any, debug: list[str]) -> Any:
     if isinstance(value, (list, tuple)):
         return [_serialize_value(v, debug) for v in value]
     if isinstance(value, set):
-        return [_serialize_value(v, debug) for v in sorted(value, key=str)]
+        # Stable ordering across equal ``str(x)`` values: use ``repr`` as a
+        # tie-break so two elements that stringify identically still produce
+        # a deterministic order across runs.
+        return [
+            _serialize_value(v, debug)
+            for v in sorted(value, key=lambda x: (str(x), repr(x)))
+        ]
     if isinstance(value, dict):
         return {
             str(k): _serialize_value(v, debug) for k, v in value.items()
@@ -389,6 +485,21 @@ def _evaluate(
             "line": None,
             "col": None,
         }
+    except ScribaError as exc:
+        # Structured error raised by host-side helpers (e.g. _safe_range
+        # when range() arguments exceed the sandbox cap).  Surface the
+        # original E-code rather than collapsing into the generic E1151
+        # runtime-error bucket.
+        if has_alarm:
+            signal.alarm(0)
+        return {
+            "id": request_id,
+            "ok": False,
+            "code": exc.code or "E1151",
+            "message": exc._raw_message,
+            "line": getattr(exc, "line", None),
+            "col": getattr(exc, "col", None),
+        }
     except Exception as exc:
         if has_alarm:
             signal.alarm(0)
@@ -434,8 +545,16 @@ def _evaluate(
 
 _STEP_LIMIT = 10**8
 _STEP_LIMIT_FASTFORWARD = 10**9
-_TRACEMALLOC_PEAK_LIMIT = 128 * 1024 * 1024  # 128 MB
+# Aligned with ``docs/spec/starlark-worker.md`` SS6 which promises 64 MB.
+# This is the soft, tracemalloc-based check that fires before the OS
+# ``RLIMIT_AS`` / ``RLIMIT_DATA`` hard limit (both set to 64 MB in
+# ``starlark_host._starlark_preexec``) gets a chance to SIGKILL us.
+_TRACEMALLOC_PEAK_LIMIT = 64 * 1024 * 1024  # 64 MB
 _MEMORY_CHECK_INTERVAL = 1000  # check every N steps
+
+# Recursion depth ceiling promised by the spec (SS6 line 210).  Lock it
+# explicitly so we do not drift with Python's default interpreter limit.
+_RECURSION_DEPTH_LIMIT = 1000
 
 # Thread-local step counter for sys.settrace
 _step_local = threading.local()
@@ -467,6 +586,11 @@ def main() -> None:
     parent process via ``preexec_fn`` before this code runs.  See
     ``starlark_host._starlark_preexec``.
     """
+    # Lock the recursion limit to the value promised by the spec.  Without
+    # this the cap would float with the Python interpreter default, which
+    # has been observed to differ across CPython builds and OSes.
+    sys.setrecursionlimit(_RECURSION_DEPTH_LIMIT)
+
     sys.stderr.flush()  # flush any logging output before ready signal
 
     sys.stderr.write("starlark-worker ready\n")
