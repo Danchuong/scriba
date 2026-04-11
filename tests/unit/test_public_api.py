@@ -23,6 +23,7 @@ EXPECTED_SCRIBA_ALL: frozenset[str] = frozenset(
         "__version__",
         "SCRIBA_VERSION",
         "Block",
+        "CollectedWarning",
         "RenderArtifact",
         "Document",
         "RenderContext",
@@ -48,6 +49,7 @@ EXPECTED_SCRIBA_ALL: frozenset[str] = frozenset(
 EXPECTED_SCRIBA_CORE_ALL: frozenset[str] = frozenset(
     {
         "Block",
+        "CollectedWarning",
         "RenderArtifact",
         "Document",
         "RenderContext",

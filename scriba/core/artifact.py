@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Literal, Mapping
 
 
 @dataclass(frozen=True)
@@ -78,6 +78,44 @@ class RenderArtifact:
 
 
 @dataclass(frozen=True)
+class CollectedWarning:
+    """A structured warning emitted during a render and collected on
+    :class:`Document`.
+
+    Strict mode (RFC-002) introduces a structured warning channel so that
+    silent ``logger.warning(...)`` or ``warnings.warn(...)`` calls made by
+    primitives and parsers can be surfaced on the aggregated
+    :class:`Document` — and optionally promoted to errors when the
+    consumer asks for strict rendering.
+
+    Fields
+    ------
+    code:
+        E-code (e.g. ``"E1462"``). Must match a key in
+        :data:`scriba.animation.errors.ERROR_CATALOG` whenever possible.
+    message:
+        Human-readable description. Usually the same string the helper
+        would have passed to ``animation_error(..., detail=...)``.
+    source_line, source_col:
+        Optional 1-indexed source location where the problem originated.
+    primitive:
+        Optional name of the primitive instance that raised the warning
+        (e.g. ``"plane2d_demo"``).
+    severity:
+        One of ``"dangerous"``, ``"hidden"``, ``"info"``. ``"dangerous"``
+        codes are the ones that may be promoted to raised errors in
+        strict mode.
+    """
+
+    code: str
+    message: str
+    source_line: int | None = None
+    source_col: int | None = None
+    primitive: str | None = None
+    severity: Literal["dangerous", "hidden", "info"] = "hidden"
+
+
+@dataclass(frozen=True)
 class Document:
     """The aggregated result of Pipeline.render().
 
@@ -111,6 +149,15 @@ class Document:
     required_assets: Mapping[str, Path] = field(default_factory=dict)
     """Resolved filesystem paths for every namespaced asset key present in
     ``required_css`` and ``required_js``. Keys match those sets exactly."""
+
+    warnings: tuple[CollectedWarning, ...] = ()
+    """Structured warnings collected during this render.
+
+    Populated by the strict-mode warning collector (RFC-002). Always a
+    tuple — empty when nothing was collected. Callers that want to
+    surface issues without failing the render can inspect this field.
+    Order is insertion order. See :class:`CollectedWarning`.
+    """
 
 
 @dataclass(frozen=True)

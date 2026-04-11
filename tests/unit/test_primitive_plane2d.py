@@ -137,7 +137,11 @@ class TestAddElements:
         p = Plane2D("p", {})
         p.apply_command({"add_polygon": [(0, 0), (3, 0), (3, 3), (0, 3)]})
         assert len(p.polygons) == 1
-        assert len(p.polygons[0]["points"]) == 4
+        # RFC-002 / SF-1: auto-close now explicitly appends the first
+        # point so the internal list matches the rendered SVG path. A
+        # 4-vertex polygon becomes a 5-element list (closing copy).
+        assert len(p.polygons[0]["points"]) == 5
+        assert p.polygons[0]["points"][0] == p.polygons[0]["points"][-1]
 
     def test_add_region(self) -> None:
         p = Plane2D("p", {})

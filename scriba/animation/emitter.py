@@ -343,10 +343,33 @@ def _validate_expanded_selectors(
             valid = suffix in prim.addressable_parts()
 
         if not valid:
+            # Legacy channel: keep the plain UserWarning so tests that
+            # use ``pytest.warns(UserWarning)`` continue to pass.
             warnings.warn(
                 f"selector '{target_key}' does not match any "
                 f"addressable part of '{shape_name}'"
             )
+            # SF-14 (RFC-002): additionally route through the structured
+            # warning channel so Document.warnings sees it. ``_ctx`` is
+            # set on primitives by the animation renderer when available;
+            # we fall back to ``None`` which triggers warnings.warn again
+            # from _emit_warning (duplicate but harmless — the legacy
+            # channel already fired above).
+            try:
+                from scriba.animation.errors import _emit_warning
+
+                ctx = getattr(prim, "_ctx", None)
+                if ctx is not None and ctx.warnings_collector is not None:
+                    _emit_warning(
+                        ctx,
+                        "E1115",
+                        f"selector {target_key!r} does not match any "
+                        f"addressable part of {shape_name!r}",
+                        primitive=shape_name,
+                        severity="hidden",
+                    )
+            except Exception:  # noqa: BLE001 - best-effort collector
+                pass
 
 
 def _emit_frame_svg(

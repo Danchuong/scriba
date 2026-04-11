@@ -17,7 +17,7 @@ import re
 from html import escape as html_escape
 from typing import Any, Callable, ClassVar, Sequence
 
-from scriba.animation.errors import animation_error
+from scriba.animation.errors import _emit_warning, animation_error
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, THEME, _render_svg_text, register_primitive, svg_style_attrs
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
 
@@ -213,9 +213,19 @@ class Plane2D(PrimitiveBase):
             label = pt.get("label")
         else:
             return
-        # Warn if outside viewport
+        # Warn if outside viewport — SF-2 (RFC-002): hidden severity,
+        # never auto-raised, always observable via Document.warnings.
         if not (self.xrange[0] <= x <= self.xrange[1] and self.yrange[0] <= y <= self.yrange[1]):
             logger.warning("[E1463] point (%.2f, %.2f) is outside viewport", x, y)
+            _emit_warning(
+                self._ctx,
+                "E1463",
+                f"point ({x:.2f}, {y:.2f}) is outside viewport "
+                f"[{self.xrange[0]}, {self.xrange[1]}] x "
+                f"[{self.yrange[0]}, {self.yrange[1]}]",
+                primitive=self.name,
+                severity="hidden",
+            )
         self.points.append({"x": x, "y": y, "label": label, "radius": _POINT_RADIUS})
 
     def _add_line_internal(self, ln: Any) -> None:
@@ -229,6 +239,14 @@ class Plane2D(PrimitiveBase):
                 a, b, c = float(d.get("a", 0)), float(d.get("b", 0)), float(d.get("c", 0))
                 if abs(a) < 1e-12 and abs(b) < 1e-12:
                     logger.warning("[E1461] degenerate line (a=0, b=0)")
+                    _emit_warning(
+                        self._ctx,
+                        "E1461",
+                        "degenerate line: both a and b are zero "
+                        "(ax + by = c has no well-defined direction)",
+                        primitive=self.name,
+                        severity="dangerous",
+                    )
                     return
                 if abs(b) < 1e-12:
                     # Vertical line x = c/a — store as special case
@@ -266,11 +284,31 @@ class Plane2D(PrimitiveBase):
             pts = [(float(p[0]), float(p[1])) for p in poly]
             if len(pts) >= 2 and pts[0] != pts[-1]:
                 logger.warning("[E1462] polygon not closed — auto-closing")
+                _emit_warning(
+                    self._ctx,
+                    "E1462",
+                    "polygon not closed — auto-closing by appending the "
+                    "first point to the end of the list",
+                    primitive=self.name,
+                    severity="dangerous",
+                )
+                # SF-1 correctness fix: explicitly append the first point
+                # so the internal list matches what the emitter draws.
+                pts.append(pts[0])
             self.polygons.append({"points": pts})
         elif isinstance(poly, dict):
             pts = [(float(p[0]), float(p[1])) for p in poly.get("points", [])]
             if len(pts) >= 2 and pts[0] != pts[-1]:
                 logger.warning("[E1462] polygon not closed — auto-closing")
+                _emit_warning(
+                    self._ctx,
+                    "E1462",
+                    "polygon not closed — auto-closing by appending the "
+                    "first point to the end of the list",
+                    primitive=self.name,
+                    severity="dangerous",
+                )
+                pts.append(pts[0])
             self.polygons.append({"points": pts})
 
     def _add_region_internal(self, reg: Any) -> None:

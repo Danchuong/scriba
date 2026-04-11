@@ -48,6 +48,45 @@ from scriba.tex.validate import validate as _validate
 
 logger = logging.getLogger(__name__)
 
+# RFC-002 / SF KaTeX scan: match inline KaTeX ParseError spans in the
+# rendered HTML and report them through the structured warning collector.
+# KaTeX emits ``<span class="katex-error" title="...">`` when an input
+# fragment fails to parse and strict-math is off.
+_KATEX_ERROR_RE = re.compile(
+    r'<span\s+class="katex-error"[^>]*?title="([^"]*)"',
+    re.IGNORECASE,
+)
+
+
+def _scan_katex_errors(html: str, ctx: RenderContext | None) -> None:
+    """Surface every ``<span class="katex-error">`` in *html* via the
+    structured warning channel on *ctx*.
+
+    Quiet no-op when *ctx* is ``None``. When *ctx* is present but has no
+    ``warnings_collector`` hooked up, :func:`_emit_warning` falls back to
+    a plain :func:`warnings.warn`, preserving visibility for legacy
+    callers that do not opt into the collector.
+    """
+    if ctx is None:
+        return
+    from scriba.animation.errors import _emit_warning
+
+    for m in _KATEX_ERROR_RE.finditer(html):
+        title = (
+            m.group(1)
+            .replace("&quot;", '"')
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+        )
+        _emit_warning(
+            ctx,
+            "E1200",
+            f"KaTeX inline error: {title}",
+            severity="hidden",
+        )
+
+
 MAX_SOURCE_SIZE = 1_048_576
 """Maximum raw source bytes accepted by TexRenderer (1 MiB)."""
 
@@ -434,6 +473,10 @@ class TexRenderer:
                 }
             for placeholder, html in substitutions.items():
                 text = text.replace(placeholder, html)
+
+            # SF KaTeX scan (RFC-002): surface any inline error spans
+            # KaTeX produced to Document.warnings via ctx.
+            _scan_katex_errors(text, ctx)
 
         # 9. Restore inline placeholders. Block placeholders stay as opaque
         #    sentinels so the paragraph wrapper does not try to peek inside

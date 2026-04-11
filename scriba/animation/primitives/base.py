@@ -13,7 +13,10 @@ import abc
 import re
 import warnings
 from dataclasses import dataclass
-from typing import Any, Callable, ClassVar
+from typing import TYPE_CHECKING, Any, Callable, ClassVar
+
+if TYPE_CHECKING:  # pragma: no cover - type checking only
+    from scriba.core.context import RenderContext
 
 
 # ---------------------------------------------------------------------------
@@ -183,6 +186,13 @@ class PrimitiveBase(abc.ABC):
     # An empty frozenset preserves backward compatibility for primitives
     # that have not yet migrated to the strict-params regime.
     ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset()
+
+    # RFC-002 strict-mode hook. Set per-instance by the Pipeline (via the
+    # animation renderer) so primitives can route silent-fix warnings
+    # through :func:`scriba.animation.errors._emit_warning`. Defaults to
+    # ``None`` so direct unit-test instantiation still works without any
+    # RenderContext in scope.
+    _ctx: "RenderContext | None" = None
 
     def __init__(self, name: str = "", params: dict[str, Any] | None = None) -> None:
         self.name = name

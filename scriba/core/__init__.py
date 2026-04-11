@@ -6,7 +6,7 @@ a ``DeprecationWarning`` for consumers who never touch the legacy name.
 See ``STABILITY.md``.
 """
 
-from scriba.core.artifact import Block, RenderArtifact, Document
+from scriba.core.artifact import Block, CollectedWarning, Document, RenderArtifact
 from scriba.core.context import RenderContext, ResourceResolver
 from scriba.core.renderer import Renderer, RendererAssets
 from scriba.core.pipeline import Pipeline
@@ -26,6 +26,7 @@ from scriba.core.errors import (
 
 __all__ = [
     "Block",
+    "CollectedWarning",
     "RenderArtifact",
     "Document",
     "RenderContext",

@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from scriba._version import SCRIBA_VERSION
-from scriba.core.artifact import Block, Document, RenderArtifact
+from scriba.core.artifact import Block, CollectedWarning, Document, RenderArtifact
 from scriba.core.context import RenderContext
 from scriba.core.errors import ScribaError, ValidationError
 from scriba.core.renderer import Renderer
@@ -165,6 +165,17 @@ class Pipeline:
             )
 
         ctx = self._prepare_ctx(ctx)
+
+        # RFC-002 strict-mode wiring. Ensure there is a mutable collector
+        # bound to the context so downstream renderers and primitives can
+        # push structured warnings through _emit_warning. Callers may
+        # have supplied their own list (e.g. to accumulate across
+        # multi-render sessions); we honour that.
+        if ctx.warnings_collector is None:
+            internal_collector: list[CollectedWarning] = []
+            ctx = dataclasses.replace(ctx, warnings_collector=internal_collector)
+        else:
+            internal_collector = ctx.warnings_collector
 
         # 1. Detect blocks per renderer.
         all_blocks: list[tuple[Block, int, int, Renderer]] = []
@@ -310,6 +321,7 @@ class Pipeline:
             versions=versions,
             block_data=block_data,
             required_assets=asset_paths,
+            warnings=tuple(internal_collector),
         )
 
     def close(self) -> None:

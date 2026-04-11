@@ -38,6 +38,8 @@ EXPECTED_DOCUMENT_FIELDS: frozenset[str] = frozenset(
         "versions",
         "block_data",
         "required_assets",
+        # RFC-002 (Wave 6.3): structured warning channel
+        "warnings",
     }
 )
 

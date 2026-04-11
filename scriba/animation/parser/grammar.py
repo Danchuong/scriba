@@ -1287,25 +1287,44 @@ class SceneParser:
                     sub_frame_narrate_seen = True
 
                 elif inner_cmd == "highlight":
-                    cmd = self._parse_highlight()
                     if sub_in_prelude:
-                        pass  # ignore in substory prelude
-                    else:
-                        sub_frame_commands.append(cmd)
+                        # SF-9 (RFC-002): substory prelude commands are no
+                        # longer silently dropped. Raising E1057 surfaces
+                        # the bug to the author instead of producing
+                        # zero-effect renders. No strict-mode opt-out.
+                        raise ValidationError(
+                            "\\highlight is not allowed in a substory "
+                            "prelude before the first \\step",
+                            code="E1057",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
+                        )
+                    cmd = self._parse_highlight()
+                    sub_frame_commands.append(cmd)
 
                 elif inner_cmd == "apply":
-                    cmd = self._parse_apply()
                     if sub_in_prelude:
-                        pass  # ignore in substory prelude
-                    else:
-                        sub_frame_commands.append(cmd)
+                        raise ValidationError(
+                            "\\apply is not allowed in a substory prelude "
+                            "before the first \\step",
+                            code="E1057",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
+                        )
+                    cmd = self._parse_apply()
+                    sub_frame_commands.append(cmd)
 
                 elif inner_cmd == "recolor":
-                    cmd = self._parse_recolor()
                     if sub_in_prelude:
-                        pass
-                    else:
-                        sub_frame_commands.append(cmd)
+                        raise ValidationError(
+                            "\\recolor is not allowed in a substory "
+                            "prelude before the first \\step",
+                            code="E1057",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
+                        )
+                    cmd = self._parse_recolor()
+                    sub_frame_commands.append(cmd)
 
                 elif inner_cmd == "reannotate":
                     cmd = self._parse_reannotate()

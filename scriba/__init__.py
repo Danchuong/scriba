@@ -11,7 +11,7 @@ The deprecated alias :class:`SubprocessWorker` is lazy-loaded via PEP 562
 """
 
 from scriba._version import __version__, SCRIBA_VERSION
-from scriba.core.artifact import Block, RenderArtifact, Document
+from scriba.core.artifact import Block, CollectedWarning, Document, RenderArtifact
 from scriba.core.context import RenderContext, ResourceResolver
 from scriba.core.renderer import Renderer, RendererAssets
 from scriba.core.pipeline import Pipeline
@@ -34,6 +34,7 @@ __all__ = [
     "__version__",
     "SCRIBA_VERSION",
     "Block",
+    "CollectedWarning",
     "RenderArtifact",
     "Document",
     "RenderContext",

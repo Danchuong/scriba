@@ -14,7 +14,11 @@ from __future__ import annotations
 
 import re
 
-from scriba.animation.errors import NestedAnimationError, UnclosedAnimationError
+from scriba.animation.errors import (
+    NestedAnimationError,
+    UnclosedAnimationError,
+    animation_error,
+)
 from scriba.core.artifact import Block
 
 __all__ = ["detect_animation_blocks", "detect_diagram_blocks"]
@@ -91,8 +95,16 @@ def detect_animation_blocks(source: str) -> list[Block]:
             open_options_raw = _parse_options_raw(match.group(1))
         elif kind == "end":
             if open_start is None:
-                # Stray \end{animation} — silently ignore (no matching open).
-                continue
+                # Stray \end{animation} — SF-8 (RFC-002): ALWAYS an error.
+                # There is no strict-mode opt-out for this case; the
+                # document is structurally malformed.
+                raise animation_error(
+                    "E1007",
+                    detail=(
+                        "stray \\end{animation} without a matching "
+                        "\\begin{animation}"
+                    ),
+                )
             block_end = match.end()
             raw = source[open_start:block_end]
             metadata: dict[str, str | None] = {

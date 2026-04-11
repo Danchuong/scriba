@@ -26,9 +26,13 @@ to work.
 
 from __future__ import annotations
 
-from typing import Iterable
+from typing import TYPE_CHECKING, Iterable, Literal
 
 from scriba.core.errors import RendererError, ValidationError
+
+if TYPE_CHECKING:  # pragma: no cover - type checking only
+    from scriba.core.artifact import CollectedWarning
+    from scriba.core.context import RenderContext
 
 
 # ---------------------------------------------------------------------------
@@ -98,12 +102,29 @@ ERROR_CATALOG: dict[str, str] = {
         "\\highlight, \\recolor, \\annotate, \\reannotate, \\cursor, "
         "\\foreach, \\substory."
     ),
-    "E1007": "Expected opening brace '{' after command.",
+    "E1007": (
+        "Stray \\end{animation} without matching \\begin, or expected "
+        "opening brace '{' after a command. The detail message disambiguates."
+    ),
     "E1009": "Selector parse error (general).",
     "E1010": "Selector parse error: expected number, identifier, or specific character.",
     "E1011": "Unterminated string literal in selector.",
     "E1012": "Unexpected token kind (expected a different token type).",
     "E1013": "Source exceeds maximum size limit (1 MB).",
+    # --- Uniqueness errors (E1017 -- E1019) ---
+    # Reserved for W6.4 — shape/animation id validation and dedup checks.
+    "E1017": (
+        "Shape id contains invalid characters. Valid ids match "
+        "[A-Za-z_][A-Za-z0-9_]*."
+    ),
+    "E1018": (
+        "Duplicate shape id within scope. Each shape must have a unique "
+        "name inside its enclosing animation block."
+    ),
+    "E1019": (
+        "Duplicate animation id within document. Each \\begin{animation} "
+        "block must declare a unique id= option."
+    ),
     # --- Diagram-specific errors (E1050 -- E1059) ---
     # reserved: diagram mode (not production-ready; raised only via lexer E1003
     # / parser E1050-E1056 once diagram mode ships. Catalog documents the
@@ -115,6 +136,11 @@ ERROR_CATALOG: dict[str, str] = {
     "E1054": "\\narrate is not allowed inside a diagram environment.",
     "E1055": "Duplicate \\narrate in the same step.",
     "E1056": "\\narrate must be inside a \\step block.",
+    "E1057": (
+        "Substory prelude command error: \\highlight, \\apply and "
+        "\\recolor are not allowed in a substory prelude before the first "
+        "\\step."
+    ),
     # --- Parse errors (E1100 -- E1149) ---
     # reserved: E1100 is the generic parse-failure bucket surfaced by
     # `AnimationParseError`. Kept in catalog so that `except AnimationError`
@@ -141,6 +167,16 @@ ERROR_CATALOG: dict[str, str] = {
         "Fix: Check the parameter name against the primitive's accepted "
         "kwargs; a fuzzy 'did you mean' suggestion is included when a "
         "close match exists."
+    ),
+    "E1115": (
+        "Selector does not match any addressable part of the target "
+        "primitive (warning — the command is silently dropped)."
+    ),
+    # --- Render errors (E1200 -- E1249) ---
+    "E1200": (
+        "KaTeX inline error embedded in rendered output (ParseError from "
+        "the KaTeX worker). The detail message carries the underlying "
+        "error title."
     ),
     # --- Starlark sandbox errors (E1150 -- E1179) ---
     "E1150": "Starlark parse/syntax error.",
@@ -259,6 +295,27 @@ ERROR_CATALOG: dict[str, str] = {
         "Tree (kind=sparse_segtree) requires 'range_lo' and 'range_hi' "
         "parameters. hint: specify the valid index bounds."
     ),
+    # Wave 6 — tree mutation guards (W6.1)
+    "E1433": (
+        "Cannot remove tree node that still has children without "
+        "cascade=true. Pass cascade=true to delete the subtree."
+    ),
+    "E1434": (
+        "Cannot remove the tree root without cascade=true. Pass "
+        "cascade=true to delete the entire tree."
+    ),
+    "E1435": (
+        "Tree reparent would create a cycle (the new parent is a "
+        "descendant of the target node)."
+    ),
+    "E1436": (
+        "Tree node or parent does not exist. Check that both ids are "
+        "present in the current tree state."
+    ),
+    # Wave 6 — plane2d remove (W6.5)
+    "E1437": (
+        "Plane2D remove: index out of range or element already removed."
+    ),
     # E1440-E1449: Queue and Stack
     "E1440": (
         "Queue 'capacity' parameter out of range; must be a positive "
@@ -302,6 +359,21 @@ ERROR_CATALOG: dict[str, str] = {
     "E1470": (
         "Graph requires a non-empty 'nodes' list. "
         "hint: Graph{name}{nodes=[...], edges=[...]}."
+    ),
+    # Wave 6 — graph mutation guards (W6.2)
+    "E1471": (
+        "Graph add_edge: one or both endpoints not found in the current "
+        "node set."
+    ),
+    "E1472": (
+        "Graph remove_edge: the referenced edge does not exist."
+    ),
+    "E1473": (
+        "Graph set_weight: the referenced edge does not exist."
+    ),
+    "E1474": (
+        "Graph edges list mixes weighted and unweighted entries, or "
+        "contains a bad shape. Each edge must be (u, v) or (u, v, w)."
     ),
     # --- MetricPlot errors (E1480 -- E1489) ---
     "E1480": "MetricPlot requires at least one series.",
@@ -594,3 +666,81 @@ def validation_error_from_selector(
         line=line,
         col=source_line_offset + position,
     )
+
+
+# ---------------------------------------------------------------------------
+# Strict mode — dangerous codes and _emit_warning helper (RFC-002, Wave 6.3)
+# ---------------------------------------------------------------------------
+
+_DANGEROUS_CODES: frozenset[str] = frozenset(
+    {
+        # Plane2D silent-fix promotions
+        "E1461",  # degenerate line
+        "E1462",  # polygon auto-close
+        "E1463",  # point outside viewport (hidden severity — not auto-raised
+                  # but listed so explicit strict opt-in works)
+        # MetricPlot log-scale clamp
+        "E1484",
+        # Stable graph layout fallbacks
+        "E1501",
+        "E1502",
+        "E1503",
+    }
+)
+"""Codes eligible for auto-promotion to raised errors when strict mode is
+active. A call to :func:`_emit_warning` with a code in this set *and*
+``ctx.strict=True`` will raise :class:`AnimationError` unless the code is
+also listed in ``ctx.strict_except``."""
+
+
+def _emit_warning(
+    ctx: "RenderContext | None",
+    code: str,
+    message: str,
+    *,
+    source_line: int | None = None,
+    source_col: int | None = None,
+    primitive: str | None = None,
+    severity: Literal["dangerous", "hidden", "info"] = "hidden",
+) -> None:
+    """Emit a structured warning, routed through the RenderContext.
+
+    RFC-002 introduces a structured warning channel so silent fixups
+    (polygon auto-close, log-scale clamp, etc.) become visible to the
+    consumer via :attr:`Document.warnings`. Behaviour:
+
+    1. If *ctx* is ``None`` (no context available at the call site), a
+       plain :func:`warnings.warn` is emitted so legacy callers still see
+       the message.
+    2. If *ctx* has a non-None ``warnings_collector``, a
+       :class:`CollectedWarning` is appended to it.
+    3. If *ctx.strict* is truthy AND *code* is in :data:`_DANGEROUS_CODES`
+       AND *code* is NOT in ``ctx.strict_except``, the helper raises an
+       :class:`AnimationError` immediately.
+
+    Parameters are a near-superset of :class:`CollectedWarning`.
+    """
+    from scriba.core.artifact import CollectedWarning
+
+    entry = CollectedWarning(
+        code=code,
+        message=message,
+        source_line=source_line,
+        source_col=source_col,
+        primitive=primitive,
+        severity=severity,
+    )
+    if ctx is not None and ctx.warnings_collector is not None:
+        ctx.warnings_collector.append(entry)
+    elif ctx is None:
+        import warnings as _warnings
+
+        _warnings.warn(f"[{code}] {message}", stacklevel=3)
+
+    if (
+        ctx is not None
+        and getattr(ctx, "strict", False)
+        and code in _DANGEROUS_CODES
+        and code not in getattr(ctx, "strict_except", frozenset())
+    ):
+        raise animation_error(code, detail=message)

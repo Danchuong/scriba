@@ -15,7 +15,7 @@ import logging
 import math
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import animation_error
+from scriba.animation.errors import _emit_warning, animation_error
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, register_primitive
 
 __all__ = ["MetricPlot"]
@@ -591,6 +591,14 @@ class MetricPlot(PrimitiveBase):
                     logger.warning(
                         "[E1484] log scale: non-positive value %s in series %r clamped to 1e-9",
                         val, series.name,
+                    )
+                    _emit_warning(
+                        self._ctx,
+                        "E1484",
+                        f"log scale: non-positive value {val} in series "
+                        f"{series.name!r} clamped to 1e-9",
+                        primitive=self.name,
+                        severity="dangerous",
                     )
                     val = 1e-9
                 sy = self._data_to_svg_y(math.log10(val), ymin, ymax)
