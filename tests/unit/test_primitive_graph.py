@@ -5,6 +5,7 @@ from __future__ import annotations
 import pytest
 
 from scriba.animation.primitives.graph import Graph, fruchterman_reingold
+from scriba.core.errors import ValidationError
 
 
 # ---------------------------------------------------------------
@@ -286,3 +287,98 @@ class TestGraphStateApplication:
         assert g.get_state("node[A]") == "idle"
         svg = g.emit_svg()
         assert 'class="scriba-state-idle"' in svg
+
+
+# ---------------------------------------------------------------
+# Seed validation (E1505)
+# ---------------------------------------------------------------
+
+
+class TestGraphSeedValidation:
+    def test_valid_positive_seed(self) -> None:
+        g = Graph("G", {
+            "nodes": ["A", "B"],
+            "edges": [("A", "B")],
+            "layout_seed": 123,
+        })
+        assert g.layout_seed == 123
+
+    def test_valid_zero_seed(self) -> None:
+        g = Graph("G", {
+            "nodes": ["A"],
+            "edges": [],
+            "layout_seed": 0,
+        })
+        assert g.layout_seed == 0
+
+    def test_negative_seed_raises_e1505(self) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            Graph("G", {
+                "nodes": ["A", "B"],
+                "edges": [("A", "B")],
+                "layout_seed": -1,
+            })
+        assert "E1505" in str(excinfo.value)
+        assert "-1" in str(excinfo.value)
+
+    def test_string_seed_raises_e1505(self) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            Graph("G", {
+                "nodes": ["A"],
+                "edges": [],
+                "layout_seed": "abc",
+            })
+        assert "E1505" in str(excinfo.value)
+
+    def test_float_seed_raises_e1505(self) -> None:
+        with pytest.raises(ValidationError) as excinfo:
+            Graph("G", {
+                "nodes": ["A"],
+                "edges": [],
+                "layout_seed": 3.14,
+            })
+        assert "E1505" in str(excinfo.value)
+
+    def test_bool_seed_rejected(self) -> None:
+        """``True`` is technically an ``int`` subclass but should be rejected."""
+        with pytest.raises(ValidationError) as excinfo:
+            Graph("G", {
+                "nodes": ["A"],
+                "edges": [],
+                "layout_seed": True,
+            })
+        assert "E1505" in str(excinfo.value)
+
+    def test_seed_alias_accepted(self) -> None:
+        """Bare ``seed`` key is accepted as an alias for ``layout_seed``."""
+        g = Graph("G", {
+            "nodes": ["A", "B"],
+            "edges": [("A", "B")],
+            "seed": 7,
+        })
+        assert g.layout_seed == 7
+
+    def test_seed_alias_also_validated(self) -> None:
+        """Invalid ``seed`` alias is rejected with E1505 too."""
+        with pytest.raises(ValidationError) as excinfo:
+            Graph("G", {
+                "nodes": ["A"],
+                "edges": [],
+                "seed": -5,
+            })
+        assert "E1505" in str(excinfo.value)
+
+    def test_layout_seed_wins_over_seed_alias(self) -> None:
+        """When both keys present, ``layout_seed`` is canonical and wins."""
+        g = Graph("G", {
+            "nodes": ["A"],
+            "edges": [],
+            "layout_seed": 111,
+            "seed": 222,
+        })
+        assert g.layout_seed == 111
+
+    def test_default_seed_when_omitted(self) -> None:
+        g = Graph("G", {"nodes": ["A"], "edges": []})
+        # _DEFAULT_SEED is 42 per the module.
+        assert g.layout_seed == 42

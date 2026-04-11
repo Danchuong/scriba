@@ -147,19 +147,57 @@ class TestAddElements:
 
 
 # ---------------------------------------------------------------
-# Element cap test
+# Element cap tests (hard-limit E1466)
 # ---------------------------------------------------------------
 
 
 class TestElementCap:
-    def test_e1466_element_cap(self) -> None:
+    def test_e1466_raises_on_incremental_apply(self) -> None:
+        """501st ``add_point`` via apply_command must raise E1466."""
         p = Plane2D("p", {})
-        for i in range(500):
+        for _ in range(500):
             p.apply_command({"add_point": (0, 0)})
         assert len(p.points) == 500
-        # 501st should be rejected
-        p.apply_command({"add_point": (1, 1)})
+        with pytest.raises(ValidationError) as excinfo:
+            p.apply_command({"add_point": (1, 1)})
+        assert "E1466" in str(excinfo.value)
+        assert "501" in str(excinfo.value)
+        assert "500" in str(excinfo.value)
+        # State is unchanged (hard limit: no silent growth).
         assert len(p.points) == 500
+
+    def test_e1466_raises_at_construction(self) -> None:
+        """Supplying 501 points via ``\\shape`` params must raise E1466."""
+        too_many = [(0.0, 0.0)] * 501
+        with pytest.raises(ValidationError) as excinfo:
+            Plane2D("p", {"points": too_many})
+        assert "E1466" in str(excinfo.value)
+
+    def test_e1466_cap_is_per_frame_across_element_types(self) -> None:
+        """Cap is shared across points/lines/segments/polygons/regions."""
+        p = Plane2D("p", {})
+        # 499 points + 1 segment = 500 total — still OK.
+        for _ in range(499):
+            p.apply_command({"add_point": (0, 0)})
+        p.apply_command({"add_segment": ((0.0, 0.0), (1.0, 1.0))})
+        assert len(p.points) + len(p.segments) == 500
+        # One more of ANY kind should raise.
+        with pytest.raises(ValidationError) as excinfo:
+            p.apply_command({"add_line": ("L", 1.0, 0.0)})
+        assert "E1466" in str(excinfo.value)
+
+    def test_e1466_message_format(self) -> None:
+        """Error message should identify offender and valid range."""
+        p = Plane2D("p", {})
+        for _ in range(500):
+            p.apply_command({"add_point": (0, 0)})
+        with pytest.raises(ValidationError) as excinfo:
+            p.apply_command({"add_point": (1, 1)})
+        msg = str(excinfo.value)
+        # Concrete offender (501) + valid range (500) + guidance.
+        assert "Plane2D element count 501" in msg
+        assert "maximum 500" in msg
+        assert "per frame" in msg
 
 
 # ---------------------------------------------------------------

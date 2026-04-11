@@ -13,6 +13,7 @@ import random
 from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
+from scriba.animation.errors import animation_error
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -171,6 +172,13 @@ class Graph(PrimitiveBase):
         Dictionary of parameters from the ``\\shape`` command.  Required keys
         are ``nodes`` and ``edges``.  Optional keys: ``directed``,
         ``layout``, ``layout_seed``, ``label``.
+
+    Seed canonicalization
+    ---------------------
+    The spec canonical key is ``layout_seed`` (see ``docs/spec/primitives.md``
+    §6).  A bare ``seed`` key is accepted as a convenience alias when
+    ``layout_seed`` is absent.  The value must be a non-negative ``int``;
+    anything else raises ``E1505``.
     """
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
@@ -195,7 +203,37 @@ class Graph(PrimitiveBase):
         ]
         self.directed: bool = bool(params.get("directed", False))
         self.layout: str = str(params.get("layout", "force"))
-        self.layout_seed: int = int(params.get("layout_seed", _DEFAULT_SEED))
+
+        # --- layout_seed validation (E1505) ---
+        #
+        # The spec canonical name is ``layout_seed``.  We also accept a bare
+        # ``seed`` as an alias if ``layout_seed`` was not supplied (for
+        # convenience and because ``fruchterman_reingold`` itself uses
+        # ``seed=``).  If both are present, ``layout_seed`` wins.
+        if "layout_seed" in params:
+            raw_seed: Any = params["layout_seed"]
+        elif "seed" in params:
+            raw_seed = params["seed"]
+        else:
+            raw_seed = _DEFAULT_SEED
+
+        # Reject ``bool`` explicitly: in Python ``bool`` is a subclass of
+        # ``int`` but ``True``/``False`` as a seed is almost certainly a
+        # programming mistake.
+        if isinstance(raw_seed, bool) or not isinstance(raw_seed, int):
+            raise animation_error(
+                "E1505",
+                f"Graph layout_seed must be a non-negative integer, "
+                f"got {type(raw_seed).__name__} {raw_seed!r}",
+            )
+        if raw_seed < 0:
+            raise animation_error(
+                "E1505",
+                f"Graph layout_seed must be a non-negative integer, "
+                f"got {raw_seed}",
+            )
+        self.layout_seed: int = raw_seed
+
         self.label: str | None = params.get("label")
 
         self.width: int = _DEFAULT_WIDTH
