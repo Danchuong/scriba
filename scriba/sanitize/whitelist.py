@@ -5,6 +5,23 @@ SVG additions come from ``docs/scriba/03-diagram-plugin.md`` §11.
 
 Scriba does not run bleach itself — it exposes these constants so the
 consumer can sanitize once at the edge.
+
+Safety note for ``data-*`` and ``aria-*`` additions
+---------------------------------------------------
+All ``data-scriba-*``, ``data-frame-count``, ``data-layout``, ``data-target``
+and ``aria-label`` / ``aria-labelledby`` entries below are safe to allow
+because:
+
+* ``data-*`` attributes are inert — no browser executes script from a
+  ``data-*`` value, and they do not accept URLs in a navigable context,
+  so there is no ``javascript:`` / ``data:`` XSS vector to worry about.
+* ``aria-*`` attributes are accessibility hints consumed by AT and the
+  DOM; they do not trigger script execution and do not navigate.
+* None of the values we allow are URLs, so no ``is_safe_url`` wiring is
+  required. Bleach's default attribute filter already strips any
+  attribute whose value it cannot validate for tags/attrs it knows
+  about; the additions here merely opt these attributes into the
+  passthrough on the specific elements Scriba's emitters produce.
 """
 
 from __future__ import annotations
@@ -53,10 +70,17 @@ ALLOWED_ATTRS: Mapping[str, frozenset[str]] = {
     "div": frozenset({
         "class", "id", "style",
         "data-step", "data-step-current", "data-step-count", "data-step-mode",
+        # Substory widget: JSON-encoded frame data payload (emitter.py l.555).
+        # Safe: string attribute, not a URL, not script-executable.
+        "data-scriba-frames",
     }),
     "figure": frozenset({
         "class", "id",
         "data-step", "data-step-current", "data-step-count", "data-step-mode",
+        # Animation figure metadata (emitter.py lines 432–435, 487–490).
+        # Safe: all values are scene IDs, integers, enums, or plain labels.
+        "data-scriba-scene", "data-frame-count", "data-layout",
+        "aria-label",
     }),
     "span": frozenset({"class", "id", "style"}),
     "a": frozenset({"href", "target", "rel", "title"}),
@@ -88,6 +112,10 @@ ALLOWED_ATTRS: Mapping[str, frozenset[str]] = {
     "svg": frozenset({
         "viewBox", "xmlns", "xmlns:xlink", "width", "height",
         "fill", "focusable", "preserveAspectRatio",
+        # Accessibility: animation frames point the SVG at their narration
+        # element (emitter.py line 326). Safe: value is an element id, not
+        # a URL, and aria-* is not a script-execution surface.
+        "role", "aria-labelledby",
     }),
     "path": frozenset({
         "d", "fill", "stroke", "stroke-width", "stroke-dasharray",
@@ -126,6 +154,9 @@ ALLOWED_ATTRS: Mapping[str, frozenset[str]] = {
     "g": frozenset({
         "transform", "fill", "stroke", "clip-path", "mask", "opacity",
         "data-step", "data-scriba-action",
+        # Primitive shape-group target selector (e.g. "arr.cell.3").
+        # Safe: used as a CSS/JS selector key, not a URL; inert attribute.
+        "data-target",
     }),
     "defs": frozenset(),
     "use": frozenset({"href", "xlink:href", "x", "y", "width", "height"}),
