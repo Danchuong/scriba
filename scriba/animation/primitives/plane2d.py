@@ -46,6 +46,16 @@ _POLYGON_RE = re.compile(r"^polygon\[(?P<idx>\d+)\]$")
 _REGION_RE = re.compile(r"^region\[(?P<idx>\d+)\]$")
 
 # ---------------------------------------------------------------------------
+# Tombstone sentinel (RFC-001 §4.3 — dynamic remove ops)
+# ---------------------------------------------------------------------------
+
+_TOMBSTONE: Any = object()
+"""Sentinel marking a slot that has been removed. ``addressable_parts``,
+``validate_selector``, and the per-element ``_emit_*`` loops skip tombstoned
+slots, but the index positions remain stable across later frames so existing
+selectors (e.g. ``point[5]``) remain valid when ``point[2]`` is removed."""
+
+# ---------------------------------------------------------------------------
 # Internal data holders (plain dicts for immutability-friendliness)
 # ---------------------------------------------------------------------------
 
@@ -338,21 +348,114 @@ class Plane2D(PrimitiveBase):
         if "add_region" in params:
             self._add_region_internal(params["add_region"])
             return
+        # Dynamic removals (RFC-001 §4.3 — tombstone semantics)
+        if "remove_point" in params:
+            self._remove_point_internal(int(params["remove_point"]))
+            return
+        if "remove_line" in params:
+            self._remove_line_internal(int(params["remove_line"]))
+            return
+        if "remove_segment" in params:
+            self._remove_segment_internal(int(params["remove_segment"]))
+            return
+        if "remove_polygon" in params:
+            self._remove_polygon_internal(int(params["remove_polygon"]))
+            return
+        if "remove_region" in params:
+            self._remove_region_internal(int(params["remove_region"]))
+            return
+
+    # ----- internal remove helpers (RFC-001 §4.3) --------------------------
+
+    def _remove_point_internal(self, idx: int) -> None:
+        if not (0 <= idx < len(self.points)):
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no point[{idx}] "
+                f"(valid: 0..{len(self.points) - 1 if self.points else -1})",
+            )
+        if self.points[idx] is _TOMBSTONE:
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' point[{idx}] already removed",
+            )
+        self.points[idx] = _TOMBSTONE
+
+    def _remove_line_internal(self, idx: int) -> None:
+        if not (0 <= idx < len(self.lines)):
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no line[{idx}] "
+                f"(valid: 0..{len(self.lines) - 1 if self.lines else -1})",
+            )
+        if self.lines[idx] is _TOMBSTONE:
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' line[{idx}] already removed",
+            )
+        self.lines[idx] = _TOMBSTONE
+
+    def _remove_segment_internal(self, idx: int) -> None:
+        if not (0 <= idx < len(self.segments)):
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no segment[{idx}] "
+                f"(valid: 0..{len(self.segments) - 1 if self.segments else -1})",
+            )
+        if self.segments[idx] is _TOMBSTONE:
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' segment[{idx}] already removed",
+            )
+        self.segments[idx] = _TOMBSTONE
+
+    def _remove_polygon_internal(self, idx: int) -> None:
+        if not (0 <= idx < len(self.polygons)):
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no polygon[{idx}] "
+                f"(valid: 0..{len(self.polygons) - 1 if self.polygons else -1})",
+            )
+        if self.polygons[idx] is _TOMBSTONE:
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' polygon[{idx}] already removed",
+            )
+        self.polygons[idx] = _TOMBSTONE
+
+    def _remove_region_internal(self, idx: int) -> None:
+        if not (0 <= idx < len(self.regions)):
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no region[{idx}] "
+                f"(valid: 0..{len(self.regions) - 1 if self.regions else -1})",
+            )
+        if self.regions[idx] is _TOMBSTONE:
+            raise animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' region[{idx}] already removed",
+            )
+        self.regions[idx] = _TOMBSTONE
 
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:
         parts: list[str] = []
-        for i in range(len(self.points)):
-            parts.append(f"point[{i}]")
-        for i in range(len(self.lines)):
-            parts.append(f"line[{i}]")
-        for i in range(len(self.segments)):
-            parts.append(f"segment[{i}]")
-        for i in range(len(self.polygons)):
-            parts.append(f"polygon[{i}]")
-        for i in range(len(self.regions)):
-            parts.append(f"region[{i}]")
+        for i, p in enumerate(self.points):
+            if p is not _TOMBSTONE:
+                parts.append(f"point[{i}]")
+        for i, ln in enumerate(self.lines):
+            if ln is not _TOMBSTONE:
+                parts.append(f"line[{i}]")
+        for i, s in enumerate(self.segments):
+            if s is not _TOMBSTONE:
+                parts.append(f"segment[{i}]")
+        for i, poly in enumerate(self.polygons):
+            if poly is not _TOMBSTONE:
+                parts.append(f"polygon[{i}]")
+        for i, reg in enumerate(self.regions):
+            if reg is not _TOMBSTONE:
+                parts.append(f"region[{i}]")
         parts.append("all")
         return parts
 
@@ -362,23 +465,28 @@ class Plane2D(PrimitiveBase):
 
         m = _POINT_RE.match(suffix)
         if m:
-            return int(m.group("idx")) < len(self.points)
+            idx = int(m.group("idx"))
+            return idx < len(self.points) and self.points[idx] is not _TOMBSTONE
 
         m = _LINE_RE.match(suffix)
         if m:
-            return int(m.group("idx")) < len(self.lines)
+            idx = int(m.group("idx"))
+            return idx < len(self.lines) and self.lines[idx] is not _TOMBSTONE
 
         m = _SEGMENT_RE.match(suffix)
         if m:
-            return int(m.group("idx")) < len(self.segments)
+            idx = int(m.group("idx"))
+            return idx < len(self.segments) and self.segments[idx] is not _TOMBSTONE
 
         m = _POLYGON_RE.match(suffix)
         if m:
-            return int(m.group("idx")) < len(self.polygons)
+            idx = int(m.group("idx"))
+            return idx < len(self.polygons) and self.polygons[idx] is not _TOMBSTONE
 
         m = _REGION_RE.match(suffix)
         if m:
-            return int(m.group("idx")) < len(self.regions)
+            idx = int(m.group("idx"))
+            return idx < len(self.regions) and self.regions[idx] is not _TOMBSTONE
 
         return False
 
@@ -541,9 +649,13 @@ class Plane2D(PrimitiveBase):
         # at the desired pixel size after the transform is applied.
         scale_factor = abs(self._sx) if self._sx != 0 else 1
         for i, pt in enumerate(self.points):
+            if pt is _TOMBSTONE:
+                continue
             suffix = f"point[{i}]"
             target = f"{self.name}.{suffix}"
             state = self.get_state(suffix)
+            if state == "hidden":
+                continue
             colors = svg_style_attrs(state)
             r_px = pt.get("radius", _POINT_RADIUS)
             r_math = r_px / scale_factor
@@ -571,9 +683,13 @@ class Plane2D(PrimitiveBase):
     def _emit_lines(self) -> str:
         parts: list[str] = []
         for i, ln in enumerate(self.lines):
+            if ln is _TOMBSTONE:
+                continue
             suffix = f"line[{i}]"
             target = f"{self.name}.{suffix}"
             state = self.get_state(suffix)
+            if state == "hidden":
+                continue
             colors = svg_style_attrs(state)
             slope = ln["slope"]
             intercept_val = ln["intercept"]
@@ -608,9 +724,13 @@ class Plane2D(PrimitiveBase):
     def _emit_segments(self) -> str:
         parts: list[str] = []
         for i, seg in enumerate(self.segments):
+            if seg is _TOMBSTONE:
+                continue
             suffix = f"segment[{i}]"
             target = f"{self.name}.{suffix}"
             state = self.get_state(suffix)
+            if state == "hidden":
+                continue
             colors = svg_style_attrs(state)
             sw = "2" if state != "idle" else "1.5"
             parts.append(
@@ -627,9 +747,13 @@ class Plane2D(PrimitiveBase):
     def _emit_polygons(self) -> str:
         parts: list[str] = []
         for i, poly in enumerate(self.polygons):
+            if poly is _TOMBSTONE:
+                continue
             suffix = f"polygon[{i}]"
             target = f"{self.name}.{suffix}"
             state = self.get_state(suffix)
+            if state == "hidden":
+                continue
             colors = svg_style_attrs(state)
             pts = poly["points"]
             # Auto-close: SVG <polygon> auto-closes, but ensure the points list
@@ -648,9 +772,13 @@ class Plane2D(PrimitiveBase):
     def _emit_regions(self) -> str:
         parts: list[str] = []
         for i, reg in enumerate(self.regions):
+            if reg is _TOMBSTONE:
+                continue
             suffix = f"region[{i}]"
             target = f"{self.name}.{suffix}"
             state = self.get_state(suffix)
+            if state == "hidden":
+                continue
             pts = reg["polygon"]
             fill = reg["fill"]
             points_str = " ".join(f"{p[0]},{p[1]}" for p in pts)
@@ -674,6 +802,10 @@ class Plane2D(PrimitiveBase):
 
         # Point labels
         for i, pt in enumerate(self.points):
+            if pt is _TOMBSTONE:
+                continue
+            if self.get_state(f"point[{i}]") == "hidden":
+                continue
             if pt.get("label"):
                 sx, sy = self.math_to_svg(pt["x"], pt["y"])
                 parts.append(
@@ -685,6 +817,10 @@ class Plane2D(PrimitiveBase):
 
         # Line labels
         for i, ln in enumerate(self.lines):
+            if ln is _TOMBSTONE:
+                continue
+            if self.get_state(f"line[{i}]") == "hidden":
+                continue
             if ln.get("label"):
                 slope = ln["slope"]
                 intercept_val = ln["intercept"]
