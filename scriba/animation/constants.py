@@ -48,8 +48,16 @@ assert DEFAULT_STATE in VALID_STATES, (
 # ---------------------------------------------------------------------------
 
 # Blocked attribute names (sandbox escape vectors)
+#
+# Includes:
+#  * Standard introspection dunders (__class__, __mro__, __globals__, ...)
+#  * Dunder getters/setters that can leak internals via operator overloading
+#    (__format__, __getattr__, __getattribute__, __class_getitem__, ...)
+#  * Generator / coroutine / async generator frame introspection attributes
+#    (gi_*, cr_*, ag_*) — these expose bytecode objects and live frames.
 BLOCKED_ATTRIBUTES: frozenset[str] = frozenset(
     {
+        # Class / type introspection
         "__class__",
         "__subclasses__",
         "__bases__",
@@ -63,6 +71,24 @@ BLOCKED_ATTRIBUTES: frozenset[str] = frozenset(
         "__reduce__",
         "__reduce_ex__",
         "__init_subclass__",
+        "__class_getitem__",
+        "__format__",
+        "__getattr__",
+        "__getattribute__",
+        "__set_name__",
+        # Generator frame / code introspection
+        "gi_frame",
+        "gi_code",
+        "gi_yieldfrom",
+        "gi_running",
+        # Coroutine frame / code introspection
+        "cr_frame",
+        "cr_code",
+        "cr_running",
+        "cr_await",
+        # Async generator frame / code introspection
+        "ag_frame",
+        "ag_code",
     }
 )
 
@@ -99,5 +125,7 @@ FORBIDDEN_BUILTINS: frozenset[str] = frozenset(
         "memoryview",
         "bytearray",
         "bytes",
+        # Determinism break: hash() is seeded by PYTHONHASHSEED
+        "hash",
     }
 )

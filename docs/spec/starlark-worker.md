@@ -154,12 +154,9 @@ The worker maps internal Starlark interpreter exceptions to the error codes defi
 | E1151  | Starlark runtime error (including memory cap exceeded) | Return error response with traceback in `message`. If the process was killed by OOM, the host receives a `WorkerError` (broken pipe / empty response) and maps it to E1151. |
 | E1152  | Wall-clock timeout (>5s)                               | The worker runs a 5s internal alarm. If the alarm fires, it writes an E1152 error response and resets the interpreter. If the worker is unresponsive, the host's transport-level timeout (10s) kills the process and raises `WorkerError`, which the plugin maps to E1152. |
 | E1153  | Step-count cap exceeded (>10^8 ops) | The interpreter's step counter callback raises an internal exception. The worker catches it and returns an E1153 error response. |
-| E1154  | Forbidden feature detected (`while`, `import`, `class`, `lambda`, `try`) | The worker's pre-parse scanner detects forbidden keywords before evaluation. Returns E1154 with the offending line/col. |
-| E1155  | Interpolation references unknown binding               | Raised by the host (Python side) during `${name}` resolution, not by the worker. Included here for completeness. |
-| E1156  | Interpolation subscript out of range                   | Raised by the host (Python side). Included here for completeness.       |
-| E1157  | Interpolation non-integer index                        | Raised by the host (Python side). Included here for completeness.       |
-
-Note: E1155--E1157 are raised by the host's interpolation engine after receiving bindings from the worker. They are not wire-protocol errors but are listed for cross-reference with the error catalog.
+| E1154  | Forbidden feature detected (`while`, `import`, `class`, `lambda`, `try`, `match`, `:=`, `hash()`, `.format()` with attribute fields, blocked attribute chain) | The worker's pre-parse AST scanner rejects the construct before evaluation. Returns E1154 with the offending line/col. See SS7.1 for the full list. |
+| E1155  | Sandbox memory soft-cap exceeded (tracemalloc, 64 MB) | The worker's `_step_trace` tracemalloc check catches allocation peaks above 64 MB and raises `MemoryError` with the `E1155` code prefix. |
+| E1173  | `range()` argument exceeds the 10^6 cap                | `_safe_range` rejects requests that would produce more than 1 000 000 elements, raising an `animation_error("E1173", ...)` instead of a bare `ValueError`. Historically this escaped as E1151 (see audit 05-C2). |
 
 ## 4. Binding serialization
 
@@ -206,8 +203,8 @@ The worker enforces resource limits per-evaluation to prevent runaway Starlark c
 |-------------------|---------------|----------------------------------------------------------------|
 | Wall clock        | 5 s           | Internal alarm (SIGALRM on Unix) plus host transport timeout.  |
 | Starlark ops      | 10^8          | Interpreter step-counter callback. Raises internal exception on breach. |
-| Memory            | 64 MB         | Process-level `RLIMIT_AS` / `RLIMIT_DATA` set at startup.     |
-| Recursion depth   | 1000 frames   | Starlark interpreter `MaxRecursionDepth` setting.              |
+| Memory            | 64 MB         | Process-level `RLIMIT_AS` (Linux) / `RLIMIT_DATA` (macOS) plus in-process tracemalloc peak-check at the same 64 MB budget. See SS6.4. |
+| Recursion depth   | 1000 frames   | Explicit `sys.setrecursionlimit(1000)` at worker startup. See SS6.5. |
 
 ### 6.1 Wall-clock timeout
 
@@ -219,6 +216,12 @@ The worker sets a 5-second alarm before each evaluation. If the alarm fires mid-
 
 If the worker is entirely unresponsive (e.g., stuck in a C extension or the interpreter does not honor the interrupt), the host's transport-level `select()` timeout (10s) expires, the host kills the process via `_kill()`, and raises `WorkerError`. The plugin maps this to `E1152`.
 
+#### Windows limitation
+
+`SIGALRM` is not available on Windows, so the wall-clock alarm is a **Unix-only** enforcement mechanism. On Windows the only in-process backstop is the step-counter (SS6.2) — a runaway C-extension builtin that does not tick the trace hook could in theory evade both. The host's 10-second transport-level timeout (see SS8.3) remains as the outermost safety net.
+
+Because Scriba does not currently ship a `threading.Timer` fallback on Windows, this is a **documented known limitation**. Operators running the pipeline on Windows SHOULD either (a) accept the transport timeout as the only wall-clock bound, or (b) run the worker inside a short-lived container that enforces CPU quotas at the OS level. This will be revisited if Windows becomes a primary deployment target.
+
 ### 6.2 Step-count cap
 
 The Starlark interpreter's step counter is configured via a callback that fires every N operations. When the counter exceeds the cap:
@@ -227,11 +230,21 @@ The Starlark interpreter's step counter is configured via a callback that fires 
 2. The worker catches it and writes an `E1153` error response.
 3. The worker resets and returns to the request loop.
 
-### 6.3 Memory cap
+### 6.3 Memory cap: three layers
 
-The worker sets `resource.setrlimit(resource.RLIMIT_AS, (64 * 1024 * 1024, ...))` at startup (Unix only). When the process exceeds the limit, the OS kills it. The host detects the crash (empty response / broken pipe) and maps it to `E1151` (runtime error).
+Memory is enforced at three layers (strongest to weakest), all pinned to the same 64 MB budget:
 
-On platforms where `RLIMIT_AS` is not available (e.g., macOS with certain configurations), the worker logs a warning to stderr and proceeds without the memory cap. The host's transport timeout remains as the safety net.
+1. **OS-level hard cap** — `RLIMIT_AS` on Linux, `RLIMIT_DATA` on macOS, set to **64 MB** in `starlark_host._starlark_preexec` (Unix only). When this is exceeded the kernel SIGKILLs the worker; the host observes a broken pipe and maps it to `E1151`.
+2. **In-process tracemalloc check** — fires on every `_MEMORY_CHECK_INTERVAL` (1000 steps) inside `_step_trace`. Peak memory above **64 MB** raises `MemoryError` which the worker converts into an `E1155` response.
+3. **Integer- and string-literal pre-scan** — `_MAX_INT_LITERAL` = 10⁷ and `_MAX_STR_LITERAL_LEN` = 10 000 reject the usual `"x" * 10**8` style blowups before evaluation even starts.
+
+Historically these drifted (`RLIMIT_AS` was 256 MB and tracemalloc was 128 MB while the spec already promised 64 MB). Drift between the three layers was the subject of finding 08-C1 of the 2026-04-11 production audit.
+
+On platforms where the `preexec_fn` cannot set the limit (Windows, or certain macOS configurations), the tracemalloc check remains the primary enforcement path. The host's transport-level timeout is the outermost safety net.
+
+### 6.4 Recursion depth
+
+The spec promises a hard cap of 1000 frames. The worker enforces this explicitly by calling `sys.setrecursionlimit(1000)` during `main()` startup, which pins the ceiling independently of the Python interpreter default. Implementations MUST NOT rely on the default limit.
 
 ## 7. Security sandboxing
 
@@ -239,19 +252,36 @@ The worker enforces the sandbox constraints from `04-environments-spec.md` SS5.1
 
 ### 7.1 Pre-parse scan
 
-Before evaluating any source, the worker scans the source text for forbidden keywords. The scan is a simple token-level check (not a full AST walk) that detects:
+Before evaluating any source, the worker performs a full **AST walk** (`_scan_ast` in `scriba/animation/starlark_worker.py`). A simple token-level substring match would mis-flag `meanwhile = 3` and miss constructs that do not appear as identifiers (e.g. `match` statements or walrus expressions inside comprehensions), so the walk MUST visit every node produced by `ast.parse`.
 
-| Keyword    | Error  | Rationale                                                     |
-|------------|--------|---------------------------------------------------------------|
-| `while`    | E1154  | Unbounded loops. Authors use `for _ in range(N): ... break`.  |
-| `import`   | E1154  | No external modules. All APIs are pre-injected.               |
-| `load`     | E1154  | Starlark's module loading. Disabled for isolation.            |
-| `class`    | E1154  | No class definitions. Use dicts or tuples.                    |
-| `lambda`   | E1154  | No anonymous functions. Use `def`.                            |
-| `try`      | E1154  | No exception handling. Errors propagate to the host.          |
-| `except`   | E1154  | Companion to `try`.                                           |
+The walk rejects the following node types and names:
 
-The scan MUST distinguish keywords from identifiers containing the keyword as a substring (e.g., `while_loop = 5` is forbidden, but `meanwhile = 3` is allowed). The implementation uses word-boundary matching.
+| Construct                        | Error  | Rationale                                                         |
+|----------------------------------|--------|-------------------------------------------------------------------|
+| `while`                          | E1154  | Unbounded loops. Authors use `for _ in range(N): ... break`.      |
+| `import` / `from ... import`     | E1154  | No external modules. All APIs are pre-injected.                   |
+| `load` (Starlark module loading) | E1154  | Disabled for isolation (tracked via the `import` node family).    |
+| `class`                          | E1154  | No class definitions. Use dicts or tuples.                        |
+| `lambda`                         | E1154  | No anonymous functions. Use `def`.                                |
+| `try` / `except`                 | E1154  | No exception handling. Errors propagate to the host.              |
+| `match` / `case`                 | E1154  | Custom `__match_args__` can invoke class-level side effects.      |
+| walrus `:=` (`ast.NamedExpr`)    | E1154  | Unusual binding scopes and comprehension leaks.                   |
+| `hash(...)` builtin              | E1154  | Seeded by `PYTHONHASHSEED` — breaks byte-identical determinism.   |
+| `"...{x.attr}...".format(...)`   | E1154  | Format-field attribute lookups are resolved at runtime and bypass the AST scanner entirely. Reported as `forbidden construct 'format-with-attribute'`. |
+
+The walk also blocks attribute access to any name in `BLOCKED_ATTRIBUTES` (see `scriba/animation/constants.py`). The check is **recursive over attribute chains**: `x.append.__self__.__class__` is rejected even though the immediate `.__self__` is not itself dunder-prefixed. The audit found that the previous direct-match scan allowed f-strings like `f"{[].append.__self__.__class__}"` to leak class references; the recursive walk closes that hole.
+
+`BLOCKED_ATTRIBUTES` covers:
+
+- Standard introspection dunders (`__class__`, `__mro__`, `__subclasses__`, `__globals__`, `__builtins__`, `__import__`, `__code__`, `__func__`, `__dict__`, `__reduce__`, `__reduce_ex__`).
+- Operator-overloading dunders that can leak internals via indirect lookup (`__class_getitem__`, `__format__`, `__getattr__`, `__getattribute__`, `__set_name__`, `__init_subclass__`).
+- Generator / coroutine / async-generator frame-introspection slots (`gi_frame`, `gi_code`, `gi_yieldfrom`, `gi_running`, `cr_frame`, `cr_code`, `cr_running`, `cr_await`, `ag_frame`, `ag_code`).
+
+#### Comprehensions and f-strings are intentionally allowed
+
+`ast.ListComp`, `ast.DictComp`, `ast.SetComp`, `ast.GeneratorExp`, and `ast.JoinedStr` (f-strings) are **intentionally permitted** for compute-block ergonomics — they are idiomatic Python and authors routinely reach for them when manipulating array state for animation primitives. The recursive AST walk descends into their bodies, so any blocked node type, blocked attribute, or forbidden builtin nested inside a comprehension or f-string is still rejected.
+
+If future hardening ever restricts comprehensions, the change MUST bump the spec revision and ship with a migration note for any cookbook recipe that uses them.
 
 ### 7.2 Interpreter configuration
 
@@ -263,16 +293,24 @@ The scan MUST distinguish keywords from identifiers containing the keyword as a 
 
 ### 7.3 Pre-injected builtins
 
-The worker pre-binds exactly the names from `04-environments-spec.md` SS5.2 into the global environment:
+The worker pre-binds exactly these names into the global environment:
 
 ```text
 len, range, min, max, enumerate, zip, abs, sorted,
 list, dict, tuple, set, str, int, float, bool,
-reversed, any, all, sum, divmod,
+reversed, any, all, sum, divmod, repr, round,
+chr, ord, pow, map, filter,
+isinstance,
 print
 ```
 
 `print(*args)` is captured into the `debug` array of the response. It never writes to the worker's stdout (which is reserved for JSON responses) or stderr.
+
+`range` is replaced with `_safe_range`, which caps its arguments at `_MAX_RANGE_LEN` (1 000 000). Overflows raise an `E1173` animation_error so the host sees a structured response rather than a bare `ValueError`.
+
+`isinstance` is **intentionally allowed**. Compute blocks routinely need `isinstance(x, (int, float))`-style checks, and `type()` is forbidden. `isinstance` cannot by itself reach a blocked class object because `__class__`, `__mro__`, and `__subclasses__` are already rejected by the AST scanner (SS7.1). If this ever changes, update the spec before the sandbox.
+
+Generator `.send(...)` / `.throw(...)` are **intentionally allowed** — they are native attributes of the generator object type, and the red-team audit could not construct an escape using them. They are documented here so future hardening does not silently remove them.
 
 No other names are pre-bound. Authors cannot access Python stdlib, Starlark stdlib extensions, or any host-injected objects beyond this set.
 

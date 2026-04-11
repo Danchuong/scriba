@@ -88,6 +88,44 @@ class TestSandboxAST:
         assert resp["ok"] is False
         assert resp["code"] == "E1154"
 
+    # --- New 2026-04-11 audit regressions ---
+
+    def test_rejects_format_attribute_bypass(self) -> None:
+        """13-C1: ``.format()`` templates with ``.attr`` leak class refs."""
+        result = _scan_ast("'{0.__class__}'.format([])")
+        assert result is not None
+        assert result[0] == "format-with-attribute"
+
+    def test_rejects_fstring_attribute_chain(self) -> None:
+        """13-C2: f-string attribute chains leak class references."""
+        result = _scan_ast('s = f"{[].append.__self__.__class__}"')
+        assert result is not None
+        assert result[0] == "__class__"
+
+    def test_rejects_gi_frame_attribute(self) -> None:
+        """13-C3: generator frame/code objects must be blocked."""
+        result = _scan_ast("f = gen.gi_frame")
+        assert result is not None
+        assert result[0] == "gi_frame"
+
+    def test_rejects_hash_builtin(self) -> None:
+        """08-C2: ``hash()`` must be forbidden (PYTHONHASHSEED non-determinism)."""
+        result = _scan_ast("x = hash('a')")
+        assert result is not None
+        assert result[0] == "hash"
+
+    def test_rejects_walrus_operator(self) -> None:
+        """13-H3: walrus ``:=`` is forbidden."""
+        result = _scan_ast("if (y := 1):\n    pass")
+        assert result is not None
+        assert "walrus" in result[0]
+
+    def test_rejects_match_statement(self) -> None:
+        """13-H1: ``match``/``case`` is forbidden."""
+        result = _scan_ast("match x:\n    case _:\n        y = 1")
+        assert result is not None
+        assert "match" in result[0]
+
 
 # -----------------------------------------------------------------------
 # CRITICAL-2: Memory / ops limits
