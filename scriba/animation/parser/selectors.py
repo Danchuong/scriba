@@ -215,14 +215,27 @@ class SelectorParser:
     def _parse_number(self) -> int:
         self._skip_ws()
         start = self._pos
+        negative = False
         if self._pos < len(self._text) and self._text[self._pos] == "-":
+            negative = True
             self._pos += 1
         if self._pos >= len(self._text) or not self._text[self._pos].isdigit():
             found = repr(self._text[self._pos]) if self._pos < len(self._text) else "EOF"
             raise self._error(f"expected number, got {found}", code="E1010")
         while self._pos < len(self._text) and self._text[self._pos].isdigit():
             self._pos += 1
-        return int(self._text[start : self._pos])
+        value = int(self._text[start : self._pos])
+        if negative:
+            # Python-style negative indexing (a.cell[-1]) is intentionally
+            # rejected at parse time.  Primitive accessors index from 0
+            # upward; negative indices would silently mean different things
+            # per primitive, so surface the problem to the author instead
+            # of deferring to the runtime.  May be revisited in >=0.6.
+            raise self._error(
+                f"expected non-negative index, got {value}",
+                code="E1010",
+            )
+        return value
 
     # ------------------------------------------------------------------
     # Low-level helpers
@@ -267,10 +280,26 @@ class SelectorParser:
         return False
 
     def _error(self, msg: str, *, code: str = "E1009") -> ValidationError:
+        # Combine the originating source line with the intra-selector offset
+        # so downstream error handlers can point at the actual column in the
+        # original animation body, not just the substring index.  ``_line``
+        # and ``_col`` are populated by the grammar when constructing the
+        # SelectorParser from a source token; both default to 0 for bare
+        # invocations from tests or tooling.
+        origin_line = self._line or None
+        origin_col: int | None
+        if self._col:
+            origin_col = self._col + self._pos
+        elif self._line:
+            origin_col = self._pos + 1
+        else:
+            origin_col = None
         return ValidationError(
             f"Selector parse error at position {self._pos}: {msg}",
             position=self._pos,
             code=code,
+            line=origin_line,
+            col=origin_col,
         )
 
 
