@@ -44,13 +44,19 @@ asset basenames needed to display it.
   yet rendered. See `docs/guides/hidden-state-pattern.md` for the intended
   authoring flow.
 - **RFC-002 — strict mode and document warnings.** The pipeline now
-  surfaces non-fatal issues through `Document.warnings`, and a new
-  `--strict` CLI flag promotes them to hard errors. Three new error codes
-  — `E1114`, `E1115`, and `E1200` — cover the newly introduced strict-mode
-  diagnostics.
-- **Cookbook refresh.** Ten new or rewritten editorial examples land under
-  `examples/cookbook/`: the h07 and h08 rewrites, canonical h11–h18
-  algorithm walkthroughs, and h19 (DP convex hull trick).
+  surfaces non-fatal issues on `Document.warnings` as a tuple of typed
+  `CollectedWarning` entries (code, message, source line/col, primitive,
+  severity). Setting `RenderContext(strict=True)` promotes a designated
+  set of dangerous codes (`E1461`, `E1462`, `E1463`, `E1484`, `E1501`,
+  `E1502`, `E1503`) into hard render errors; `strict_except` opts specific
+  codes back out. Strict mode is a `RenderContext` field, not a core CLI
+  flag — CLIs wrap it themselves. See
+  [`docs/guides/strict-mode.md`](docs/guides/strict-mode.md).
+- **Cookbook refresh.** Eleven new or rewritten editorial examples land
+  under `examples/cookbook/`: the h07 and h08 rewrites, canonical h11–h18
+  algorithm walkthroughs, and h19 (DP convex hull trick). See
+  [`docs/cookbook/README.md`](docs/cookbook/README.md) for the full
+  index.
 
 ## Install
 

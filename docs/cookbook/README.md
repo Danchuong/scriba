@@ -40,7 +40,7 @@ The h-series lives under `examples/cookbook/` (not in per-folder subdirectories)
 ### Authoring patterns
 
 - **Hidden-state pre-declaration** — required when you need structural mutation (`add_node`, `remove_node`, `add_point`, etc.) inside `emit_interactive_html`. Pre-declare every symbol the compute pass may later add so the initial IR validates cleanly. See [`docs/guides/hidden-state-pattern.md`](../guides/hidden-state-pattern.md). Example: h19.
-- **Strict mode** — use `scriba compile foo.tex --strict` in CI to catch deprecated params and unknown attributes early. Strict mode turns warnings into hard failures, which keeps the h-series regression corpus clean as the schema evolves. See [`docs/guides/strict-mode.md`](../guides/strict-mode.md).
+- **Strict mode** — set `RenderContext(strict=True)` in your CI wrapper (no core `--strict` CLI flag per RFC-002) to promote dangerous warning codes (`E1461`–`E1503` subset) into hard render errors. Strict mode keeps the h-series regression corpus clean as the schema evolves by catching silent auto-fixes (polygon auto-close, log-scale clamps, stable-layout fallbacks) that would otherwise mutate output without signaling. See [`docs/guides/strict-mode.md`](../guides/strict-mode.md).
 
 ## Structure
 
