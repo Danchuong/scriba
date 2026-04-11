@@ -338,8 +338,10 @@ class TestMatrixHighlight:
         assert "scriba-state-highlight" in svg
 
     def test_highlight_and_state_both_apply(self) -> None:
-        """A cell can carry both a state (current) and highlight in β;
-        both show up as CSS state classes on the wrapping <g>."""
+        """β is either-or: when a cell already has a non-idle state
+        (``current``), the state wins and ``highlight`` is suppressed —
+        ``current`` is itself a stronger "look here" signal than
+        ``highlight`` and they must not compete visually."""
         inst = MatrixPrimitive("m", {
             "rows": 2, "cols": 2,
             "data": [0, 0.5, 0.5, 1],
@@ -347,8 +349,9 @@ class TestMatrixHighlight:
         inst.set_state("cell[0][0]", "current")
         inst._highlighted.add("cell[0][0]")
         svg = inst.emit_svg()
-        assert "scriba-state-highlight" in svg  # highlight
-        assert "scriba-state-current" in svg  # current state
+        # current wins over highlight (state != idle)
+        assert 'class="scriba-state-current"' in svg
+        assert "scriba-state-highlight" not in svg
 
 
 # ---------------------------------------------------------------------------

@@ -181,14 +181,15 @@ class TestHighlightTick:
 
 class TestHighlightAndRecolor:
     def test_both_apply(self) -> None:
-        """β palette: both 'current' state and 'highlight' show up as
-        CSS state classes on the wrapping <g> (no inline colors)."""
+        """β is either-or: when a tick already has a non-idle state
+        (``current``), the state wins and ``highlight`` is suppressed."""
         inst = NumberLinePrimitive("nl", {"domain": [0, 3]})
         inst.set_state("tick[1]", "current")
         inst._highlighted.add("tick[1]")
         svg = inst.emit_svg()
+        # current wins over highlight (state != idle)
         assert "scriba-state-current" in svg
-        assert "scriba-state-highlight" in svg
+        assert "scriba-state-highlight" not in svg
 
 
 # ---------------------------------------------------------------------------
