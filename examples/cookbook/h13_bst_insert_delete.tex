@@ -1,0 +1,122 @@
+\begin{animation}[id="bst-insert-delete", label="BST Insert / Delete -- Cay nhi phan tim kiem"]
+\shape{T}{Tree}{root="5", nodes=["5","3","8","1","4","7","9"], edges=[("5","3"),("5","8"),("3","1"),("3","4"),("8","7"),("8","9")], label="BST"}
+
+\step
+\recolor{T.node[3]}{state=hidden}
+\recolor{T.node[8]}{state=hidden}
+\recolor{T.node[1]}{state=hidden}
+\recolor{T.node[4]}{state=hidden}
+\recolor{T.node[7]}{state=hidden}
+\recolor{T.node[9]}{state=hidden}
+\recolor{T.edge[(5,3)]}{state=hidden}
+\recolor{T.edge[(5,8)]}{state=hidden}
+\recolor{T.edge[(3,1)]}{state=hidden}
+\recolor{T.edge[(3,4)]}{state=hidden}
+\recolor{T.edge[(8,7)]}{state=hidden}
+\recolor{T.edge[(8,9)]}{state=hidden}
+\recolor{T.node[5]}{state=current}
+\narrate{Cay nhi phan tim kiem (BST): moi node thoa man khoa con trai < khoa cha < khoa con phai. Bat dau voi root = 5. Se lan luot chen 3, 8, 1, 4, 7, 9 (cau truc tuong lai bi an bang state=hidden).}
+
+\step
+\recolor{T.node[3]}{state=good}
+\recolor{T.edge[(5,3)]}{state=good}
+\recolor{T.node[5]}{state=dim}
+\narrate{Insert 3: so sanh 3 vs 5. 3 < 5 nen di trai. Con trai cua 5 rong --> dat 3 lam con trai cua 5. Canh (5,3) lo dien.}
+
+\step
+\recolor{T.node[8]}{state=good}
+\recolor{T.edge[(5,8)]}{state=good}
+\recolor{T.node[3]}{state=dim}
+\narrate{Insert 8: so sanh 8 vs 5. 8 > 5 nen di phai. Con phai cua 5 rong --> dat 8 lam con phai cua 5. Cay gio co hai con truc tiep cua root.}
+
+\step
+\recolor{T.node[5]}{state=current}
+\recolor{T.node[3]}{state=current}
+\recolor{T.node[8]}{state=dim}
+\recolor{T.node[1]}{state=good}
+\recolor{T.edge[(3,1)]}{state=good}
+\narrate{Insert 1: 1 < 5 di trai toi 3; 1 < 3 di trai tiep; rong --> dat 1 lam con trai cua 3. Duong di so sanh: 5 -> 3 -> rong.}
+
+\step
+\recolor{T.node[5]}{state=dim}
+\recolor{T.node[1]}{state=dim}
+\recolor{T.node[3]}{state=current}
+\recolor{T.node[4]}{state=good}
+\recolor{T.edge[(3,4)]}{state=good}
+\narrate{Insert 4: 4 < 5 di trai toi 3; 4 > 3 di phai; con phai cua 3 rong --> dat 4 lam con phai cua 3. Node 3 gio co ca hai con.}
+
+\step
+\recolor{T.node[3]}{state=dim}
+\recolor{T.node[4]}{state=dim}
+\recolor{T.node[5]}{state=current}
+\recolor{T.node[8]}{state=current}
+\recolor{T.node[7]}{state=good}
+\recolor{T.edge[(8,7)]}{state=good}
+\narrate{Insert 7: 7 > 5 di phai toi 8; 7 < 8 di trai; rong --> dat 7 lam con trai cua 8. Lich su so sanh: 5 -> 8 -> rong.}
+
+\step
+\recolor{T.node[5]}{state=dim}
+\recolor{T.node[7]}{state=dim}
+\recolor{T.node[8]}{state=current}
+\recolor{T.node[9]}{state=good}
+\recolor{T.edge[(8,9)]}{state=good}
+\narrate{Insert 9: 9 > 5 di phai toi 8; 9 > 8 di phai; rong --> dat 9 lam con phai cua 8. BST hoan chinh voi 7 node. Bat buoc khoa tuan thu: con trai < cha < con phai.}
+
+\step
+\recolor{T.node[5]}{state=good}
+\recolor{T.node[3]}{state=good}
+\recolor{T.node[8]}{state=good}
+\recolor{T.node[1]}{state=good}
+\recolor{T.node[4]}{state=good}
+\recolor{T.node[7]}{state=good}
+\recolor{T.node[9]}{state=good}
+\narrate{BST sau 6 lan chen: in-order traversal = 1, 3, 4, 5, 7, 8, 9 (tang dan). Day chinh la ly do BST ho tro tim kiem O(log n) trung binh. Gio sang phan xoa.}
+
+\step
+\recolor{T.node[5]}{state=idle}
+\recolor{T.node[3]}{state=idle}
+\recolor{T.node[8]}{state=idle}
+\recolor{T.node[4]}{state=idle}
+\recolor{T.node[7]}{state=idle}
+\recolor{T.node[9]}{state=idle}
+\recolor{T.node[1]}{state=current}
+\narrate{Delete 1 (truong hop de nhat: node la la). Tim 1: 5 -> 3 -> 1. Vi 1 khong co con nao --> chi can go bo khoi cay. Khong can chinh sua cau truc phia tren.}
+
+\step
+\recolor{T.node[1]}{state=hidden}
+\recolor{T.edge[(3,1)]}{state=hidden}
+\narrate{Da xoa 1 (mo phong bang state=hidden, hieu qua tuong duong remove_node). Cay hien con 6 node: 5, 3, 8, 4, 7, 9. Node 3 hien gio chi con mot con (4).}
+
+\step
+\recolor{T.node[5]}{state=current}
+\recolor{T.node[3]}{state=dim}
+\recolor{T.node[4]}{state=dim}
+\recolor{T.node[8]}{state=dim}
+\recolor{T.node[7]}{state=dim}
+\recolor{T.node[9]}{state=dim}
+\narrate{Delete 5 (root) -- day la truong hop kho: node noi bo co hai con. BST delete co 3 cach kinh dien: (a) la -> chi go; (b) mot con -> thay bang con duy nhat; (c) hai con -> thay bang successor hoac predecessor.}
+
+\step
+\recolor{T.node[8]}{state=current}
+\recolor{T.node[7]}{state=good}
+\narrate{Buoc 1 cua delete 5: tim in-order successor. Successor = node nho nhat trong cay con phai. Cay con phai cua 5 goc tai 8; leftmost cua cay nay la 7. Vay successor(5) = 7.}
+
+\step
+\apply{T.node[5]}{value="7"}
+\recolor{T.node[5]}{state=good}
+\recolor{T.node[7]}{state=current}
+\narrate{Buoc 2: ghi de gia tri root bang successor. value layer --> root hien thi "7" thay vi "5". Ve cau truc, node root van o nguyen cho; chi value visual doi. Day la ly do Wave 6 bat buoc co value-layer override tren Tree.}
+
+\step
+\recolor{T.node[7]}{state=hidden}
+\recolor{T.edge[(8,7)]}{state=hidden}
+\narrate{Buoc 3: xoa ban sao cu cua 7 (la, gio la con trai cua 8). Vi 7 la la, xoa truc tiep. Cay gio co 5 node hien thi, root hien thi "7", va invariant BST van duoc bao toan: 3 < 4 < 7 < 8 < 9.}
+
+\step
+\recolor{T.node[5]}{state=good}
+\recolor{T.node[3]}{state=good}
+\recolor{T.node[4]}{state=good}
+\recolor{T.node[8]}{state=good}
+\recolor{T.node[9]}{state=good}
+\narrate{Trang thai cuoi: in-order traversal = 3, 4, 7, 8, 9 (van tang dan). BST property duoc bao toan sau moi insert/delete. Dung cach nay, delete mot internal node luon rut ve delete mot la (successor la la hoac chi co con phai).}
+\end{animation}

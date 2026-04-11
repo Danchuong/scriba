@@ -1,0 +1,129 @@
+\begin{animation}[id="bfs-tree", label="BFS Tree Construction -- Xay dung cay BFS"]
+\shape{G}{Graph}{nodes=["A","B","C","D","E","F"], edges=[("A","B"),("A","C"),("B","D"),("C","D"),("C","E"),("D","F"),("E","F")], directed=false, layout="stable", layout_seed=7}
+\shape{T}{Tree}{root="A", nodes=["A","B","C","D","E","F"], edges=[("A","B"),("A","C"),("B","D"),("C","E"),("D","F")], label="BFS tree"}
+\shape{Q}{Queue}{capacity=6, data=[], label="Frontier"}
+\shape{V}{Array}{size=6, data=["_","_","_","_","_","_"], labels="0..5"}
+
+\step
+\recolor{T.node[B]}{state=hidden}
+\recolor{T.node[C]}{state=hidden}
+\recolor{T.node[D]}{state=hidden}
+\recolor{T.node[E]}{state=hidden}
+\recolor{T.node[F]}{state=hidden}
+\recolor{T.edge[(A,B)]}{state=hidden}
+\recolor{T.edge[(A,C)]}{state=hidden}
+\recolor{T.edge[(B,D)]}{state=hidden}
+\recolor{T.edge[(C,E)]}{state=hidden}
+\recolor{T.edge[(D,F)]}{state=hidden}
+\narrate{BFS (Breadth-First Search) tu dinh nguon A tren do thi vo huong 6 dinh. Duy tri song song: graph G, cay BFS T (ban dau chi co root A, phan con lai "hidden"), queue Q (frontier), va mang visited V voi nhan 0..5 anh xa A..F.}
+
+\step
+\apply{Q}{enqueue="A"}
+\apply{V.cell[0]}{value="A"}
+\recolor{V.cell[0]}{state=current}
+\recolor{G.node[A]}{state=current}
+\recolor{T.node[A]}{state=current}
+\narrate{Khoi dau: enqueue A vao Q, danh dau V[0] = A visited. Cay BFS hien chi co root A (cac node con bi hidden). Frontier = [A]. Tree SVG node count = 1.}
+
+\step
+\apply{Q}{dequeue=true}
+\recolor{G.node[A]}{state=good}
+\recolor{T.node[A]}{state=good}
+\narrate{Vong 1: dequeue A. Thuc hien danh gia hang xom cua A trong G: B va C. Ca hai chua visited --> se revive chung trong cay BFS (doi state tu hidden thanh visible).}
+
+\step
+\recolor{T.node[B]}{state=current}
+\recolor{T.edge[(A,B)]}{state=good}
+\apply{Q}{enqueue="B"}
+\apply{V.cell[1]}{value="B"}
+\recolor{V.cell[1]}{state=current}
+\recolor{G.node[B]}{state=current}
+\recolor{G.edge[(A,B)]}{state=good}
+\narrate{Tham B: revive T.node[B] (hidden -> current) va canh cay A-B. Enqueue B, mark visited. Canh A-B trong G to "good" vi day la tree edge. Tree SVG node count = 2.}
+
+\step
+\recolor{T.node[C]}{state=current}
+\recolor{T.edge[(A,C)]}{state=good}
+\apply{Q}{enqueue="C"}
+\apply{V.cell[2]}{value="C"}
+\recolor{V.cell[2]}{state=current}
+\recolor{G.node[C]}{state=current}
+\recolor{G.edge[(A,C)]}{state=good}
+\narrate{Tham C: revive T.node[C] va canh cay A-C. Enqueue C, mark visited. Frontier sau vong 1 = [B, C]. Tree BFS co 3 node, do sau 1.}
+
+\step
+\apply{Q}{dequeue=true}
+\recolor{G.node[B]}{state=good}
+\recolor{T.node[B]}{state=good}
+\recolor{V.cell[1]}{state=good}
+\narrate{Vong 2: dequeue B. Hang xom cua B trong G: A (da visited, bo qua) va D. D chua visited --> se revive trong cay lam con cua B.}
+
+\step
+\recolor{T.node[D]}{state=current}
+\recolor{T.edge[(B,D)]}{state=good}
+\apply{Q}{enqueue="D"}
+\apply{V.cell[3]}{value="D"}
+\recolor{V.cell[3]}{state=current}
+\recolor{G.node[D]}{state=current}
+\recolor{G.edge[(B,D)]}{state=good}
+\narrate{Tham D: revive T.node[D] va canh cay B-D. Enqueue D. Frontier = [C, D]. Cay BFS gio sau 2 tang. Tree SVG node count = 4.}
+
+\step
+\apply{Q}{dequeue=true}
+\recolor{G.node[C]}{state=good}
+\recolor{T.node[C]}{state=good}
+\recolor{V.cell[2]}{state=good}
+\narrate{Vong 3: dequeue C. Hang xom cua C: A (visited), D (visited!), E (chua). Canh C-D la canh cho (non-tree edge) -- BFS khong them no vao cay BFS vi D da co cha la B.}
+
+\step
+\recolor{G.edge[(C,D)]}{state=dim}
+\narrate{Canh (C,D) bi "dim" trong G -- day la canh khong thuoc cay BFS. Trong do thi vo huong, cac non-tree edge chi co the la canh cho (cross edge) trong cung tang +/- 1. Day la mot tinh chat quan trong cua BFS tree.}
+
+\step
+\recolor{T.node[E]}{state=current}
+\recolor{T.edge[(C,E)]}{state=good}
+\apply{Q}{enqueue="E"}
+\apply{V.cell[4]}{value="E"}
+\recolor{V.cell[4]}{state=current}
+\recolor{G.node[E]}{state=current}
+\recolor{G.edge[(C,E)]}{state=good}
+\narrate{Tham E: revive T.node[E] va canh cay C-E. Enqueue E. Frontier = [D, E]. Tree SVG node count = 5 sau vong 3.}
+
+\step
+\apply{Q}{dequeue=true}
+\recolor{G.node[D]}{state=good}
+\recolor{T.node[D]}{state=good}
+\recolor{V.cell[3]}{state=good}
+\narrate{Vong 4: dequeue D. Hang xom cua D: B (visited), C (visited), F (chua). Chi F duoc them vao cay.}
+
+\step
+\recolor{T.node[F]}{state=current}
+\recolor{T.edge[(D,F)]}{state=good}
+\apply{Q}{enqueue="F"}
+\apply{V.cell[5]}{value="F"}
+\recolor{V.cell[5]}{state=current}
+\recolor{G.node[F]}{state=current}
+\recolor{G.edge[(D,F)]}{state=good}
+\narrate{Tham F: revive T.node[F] va canh cay D-F. Enqueue F. Frontier = [E, F]. Tree SVG node count = 6 -- day du moi dinh cua G.}
+
+\step
+\apply{Q}{dequeue=true}
+\recolor{G.node[E]}{state=good}
+\recolor{T.node[E]}{state=good}
+\recolor{V.cell[4]}{state=good}
+\narrate{Vong 5: dequeue E. Hang xom cua E: C (visited) va F (visited). Khong them canh cay nao. Canh E-F la canh cho trong cung tang 3.}
+
+\step
+\recolor{G.edge[(E,F)]}{state=dim}
+\narrate{Canh (E,F) bi "dim" -- non-tree edge thu hai. Trong BFS tree voi 6 dinh, co 5 tree edge (cay spanning) va 2 canh du thua trong 7 canh ban dau. Cay BFS luon la spanning tree neu G lien thong.}
+
+\step
+\apply{Q}{dequeue=true}
+\recolor{G.node[F]}{state=good}
+\recolor{T.node[F]}{state=good}
+\recolor{V.cell[5]}{state=good}
+\narrate{Vong 6: dequeue F. Hang xom: D (visited), E (visited). Khong co node moi. Queue rong --> BFS ket thuc.}
+
+\step
+\narrate{Ket thuc: cay BFS hoan chinh co 6 node (A la root, B/C tang 1, D/E tang 2, F tang 3 qua D). Toan bo canh "good" trong G tao thanh spanning tree; canh "dim" la cross edge. Khoang cach BFS(v) = do sau cua v trong cay. Day la tinh chat quan trong nhat cua BFS: duong di ngan nhat tren do thi khong trong so.}
+\end{animation}
