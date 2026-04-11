@@ -45,10 +45,11 @@ def _flatten_2d(raw: Any, rows: int, cols: int) -> list[Any]:
         expected = rows * cols
         if len(flat) != expected:
             raise animation_error(
-                E1103,
+                "E1412",
                 detail=(
                     f"Grid 'data' flattened length ({len(flat)}) "
-                    f"does not match rows*cols ({expected})"
+                    f"does not match rows*cols ({expected}); "
+                    "valid: 2D list with rows rows of cols items each"
                 ),
             )
         return flat
@@ -58,10 +59,10 @@ def _flatten_2d(raw: Any, rows: int, cols: int) -> list[Any]:
     expected = rows * cols
     if len(flat_list) != expected:
         raise animation_error(
-            E1103,
+            "E1412",
             detail=(
-                f"Grid 'data' length ({len(flat_list)}) "
-                f"does not match rows*cols ({expected})"
+                f"Grid 'data' length ({len(flat_list)}) does not match "
+                f"rows*cols ({expected}); valid: flat list of rows*cols items"
             ),
         )
     return flat_list
@@ -106,31 +107,32 @@ class GridPrimitive(PrimitiveBase):
 
         if rows is None or cols is None:
             raise animation_error(
-                E1103,
+                "E1410",
                 detail="Grid requires both 'rows' and 'cols' parameters",
+                hint="example: \\shape{g}{Grid}{rows=4, cols=5}",
             )
 
         rows = int(rows)
         cols = int(cols)
         if rows < 1:
             raise animation_error(
-                E1103,
-                detail=f"Grid rows must be >= 1, got {rows}",
+                "E1411",
+                detail=f"Grid rows {rows} is out of range; valid: 1..500",
             )
         if cols < 1:
             raise animation_error(
-                E1103,
-                detail=f"Grid cols must be >= 1, got {cols}",
+                "E1411",
+                detail=f"Grid cols {cols} is out of range; valid: 1..500",
             )
         if rows > 500:
             raise animation_error(
-                E1103,
-                detail=f"Grid rows {rows} exceeds maximum of 500",
+                "E1411",
+                detail=f"Grid rows {rows} exceeds maximum; valid: 1..500",
             )
         if cols > 500:
             raise animation_error(
-                E1103,
-                detail=f"Grid cols {cols} exceeds maximum of 500",
+                "E1411",
+                detail=f"Grid cols {cols} exceeds maximum; valid: 1..500",
             )
 
         raw_data: Any = self.params.get("data", [])

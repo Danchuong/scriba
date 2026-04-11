@@ -75,14 +75,18 @@ class HashMap(PrimitiveBase):
         raw_cap = params.get("capacity")
         if raw_cap is None:
             raise animation_error(
-                E1103,
+                "E1450",
                 detail=f"HashMap '{name}' requires a 'capacity' parameter",
+                hint="example: HashMap{h}{capacity=8}",
             )
         self.capacity: int = int(raw_cap)
         if self.capacity < 1:
             raise animation_error(
-                E1103,
-                detail=f"HashMap '{name}' capacity must be >= 1, got {self.capacity}",
+                "E1451",
+                detail=(
+                    f"HashMap '{name}' capacity {self.capacity} is out "
+                    "of range; valid: positive integer"
+                ),
             )
 
         self.label_text: str | None = params.get("label")

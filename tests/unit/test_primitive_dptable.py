@@ -29,24 +29,26 @@ class TestDeclare:
         assert inst.cols == 3
         assert inst.is_2d is True
 
-    def test_missing_n_and_rows_cols_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_missing_n_and_rows_cols_raises_e1426(self) -> None:
+        # v0.5.1: E1426 (DPTable requires n or rows+cols)
+        with pytest.raises(ValidationError, match="E1426"):
             DPTablePrimitive("dp", {})
 
-    def test_missing_cols_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_missing_cols_raises_e1426(self) -> None:
+        # only `rows` → 2D mode cannot start → "requires n or rows+cols"
+        with pytest.raises(ValidationError, match="E1426"):
             DPTablePrimitive("dp", {"rows": 3})
 
-    def test_zero_n_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_zero_n_raises_e1427(self) -> None:
+        with pytest.raises(ValidationError, match="E1427"):
             DPTablePrimitive("dp", {"n": 0})
 
-    def test_zero_rows_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_zero_rows_raises_e1428(self) -> None:
+        with pytest.raises(ValidationError, match="E1428"):
             DPTablePrimitive("dp", {"rows": 0, "cols": 5})
 
-    def test_zero_cols_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_zero_cols_raises_e1428(self) -> None:
+        with pytest.raises(ValidationError, match="E1428"):
             DPTablePrimitive("dp", {"rows": 5, "cols": 0})
 
     def test_cell_count_limit_raises_e1425(self) -> None:

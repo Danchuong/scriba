@@ -297,21 +297,21 @@ class TestLargeMatrix:
 
 
 # ---------------------------------------------------------------------------
-# 13. Missing rows/cols -- E1103
+# 13. Missing rows/cols -- E1420
 # ---------------------------------------------------------------------------
 
 
 class TestMatrixMissingParams:
     def test_missing_rows_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1420"):
             MatrixPrimitive("m", {"cols": 3})
 
     def test_missing_cols_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1420"):
             MatrixPrimitive("m", {"rows": 3})
 
     def test_missing_both_raises(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1420"):
             MatrixPrimitive("m", {})
 
 

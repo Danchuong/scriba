@@ -28,8 +28,9 @@ class TestDeclare:
         assert inst.size == 3
         assert inst.data == [1, 2, 3]
 
-    def test_missing_size_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_missing_size_raises_e1400(self) -> None:
+        # v0.5.1 split E1103 into per-primitive codes.
+        with pytest.raises(ValidationError, match="E1400"):
             ArrayPrimitive("a", {})
 
     def test_labels_parameter(self) -> None:

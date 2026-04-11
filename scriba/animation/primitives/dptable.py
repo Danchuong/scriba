@@ -76,8 +76,11 @@ class DPTablePrimitive(PrimitiveBase):
             n = int(n)
             if n < 1:
                 raise animation_error(
-                    E1103,
-                    detail=f"DPTable n must be >= 1, got {n}",
+                    "E1427",
+                    detail=(
+                        f"DPTable n {n} is out of range; valid: "
+                        "positive integer"
+                    ),
                 )
             is_2d = False
             dim_rows = 1
@@ -89,19 +92,26 @@ class DPTablePrimitive(PrimitiveBase):
             dim_cols = int(cols)
             if dim_rows < 1:
                 raise animation_error(
-                    E1103,
-                    detail=f"DPTable rows must be >= 1, got {dim_rows}",
+                    "E1428",
+                    detail=(
+                        f"DPTable rows {dim_rows} is out of range; "
+                        "valid: positive integer"
+                    ),
                 )
             if dim_cols < 1:
                 raise animation_error(
-                    E1103,
-                    detail=f"DPTable cols must be >= 1, got {dim_cols}",
+                    "E1428",
+                    detail=(
+                        f"DPTable cols {dim_cols} is out of range; "
+                        "valid: positive integer"
+                    ),
                 )
             n = dim_rows * dim_cols
         else:
             raise animation_error(
-                E1103,
+                "E1426",
                 detail="DPTable requires 'n' (1D) or 'rows'+'cols' (2D)",
+                hint="example: \\shape{t}{DPTable}{n=10}",
             )
 
         max_cells = dim_rows * dim_cols
@@ -109,19 +119,20 @@ class DPTablePrimitive(PrimitiveBase):
             raise animation_error(
                 "E1425",
                 detail=(
-                    f"Matrix/DPTable cell count {max_cells} "
-                    f"exceeds maximum of 250000 "
-                    f"(rows={dim_rows}, cols={dim_cols})"
+                    f"DPTable cell count {max_cells} (rows={dim_rows}, "
+                    f"cols={dim_cols}) exceeds maximum; valid: "
+                    f"rows*cols <= 250000"
                 ),
             )
 
         data: list[Any] = list(self.params.get("data", []))
         if data and len(data) != n:
             raise animation_error(
-                E1103,
+                "E1429",
                 detail=(
-                    f"DPTable 'data' length ({len(data)}) "
-                    f"does not match expected size ({n})"
+                    f"DPTable 'data' length ({len(data)}) does not match "
+                    f"expected size ({n}); valid: len(data) == "
+                    f"{'rows*cols' if is_2d else 'n'}"
                 ),
             )
         if not data:

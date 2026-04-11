@@ -138,28 +138,28 @@ class MatrixPrimitive(PrimitiveBase):
         cols = self.params.get("cols")
         if rows is None or cols is None:
             raise animation_error(
-                E1103,
+                "E1420",
                 detail="Matrix requires 'rows' and 'cols' parameters",
+                hint="example: \\shape{m}{Matrix}{rows=3, cols=3}",
             )
         rows = int(rows)
         cols = int(cols)
         if rows < 1:
             raise animation_error(
-                E1103,
-                detail=f"Matrix rows must be >= 1, got {rows}",
+                "E1421",
+                detail=f"Matrix rows {rows} is out of range; valid: positive integer",
             )
         if cols < 1:
             raise animation_error(
-                E1103,
-                detail=f"Matrix cols must be >= 1, got {cols}",
+                "E1421",
+                detail=f"Matrix cols {cols} is out of range; valid: positive integer",
             )
         if rows * cols > 250_000:
             raise animation_error(
                 "E1425",
                 detail=(
-                    f"Matrix/DPTable cell count {rows * cols} "
-                    f"exceeds maximum of 250000 "
-                    f"(rows={rows}, cols={cols})"
+                    f"Matrix cell count {rows * cols} (rows={rows}, "
+                    f"cols={cols}) exceeds maximum; valid: rows*cols <= 250000"
                 ),
             )
 
@@ -176,10 +176,11 @@ class MatrixPrimitive(PrimitiveBase):
             flat = [float(v) for v in raw_data]
             if len(flat) != rows * cols:
                 raise animation_error(
-                    E1103,
+                    "E1422",
                     detail=(
-                        f"Matrix data length ({len(flat)}) does not match "
-                        f"rows*cols ({rows * cols})"
+                        f"Matrix 'data' length ({len(flat)}) does not match "
+                        f"rows*cols ({rows * cols}); valid: flat list of "
+                        f"length rows*cols"
                     ),
                 )
             data_2d = [

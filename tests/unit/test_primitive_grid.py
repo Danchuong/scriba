@@ -33,16 +33,16 @@ class TestDeclare:
         inst = GridPrimitive("g", {"rows": 2, "cols": 2, "data": [1, 2, 3, 4]})
         assert inst.data == [1, 2, 3, 4]
 
-    def test_missing_rows_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_missing_rows_raises_e1410(self) -> None:
+        with pytest.raises(ValidationError, match="E1410"):
             GridPrimitive("g", {"cols": 3})
 
-    def test_missing_cols_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_missing_cols_raises_e1410(self) -> None:
+        with pytest.raises(ValidationError, match="E1410"):
             GridPrimitive("g", {"rows": 3})
 
-    def test_missing_both_raises_e1103(self) -> None:
-        with pytest.raises(ValidationError, match="E1103"):
+    def test_missing_both_raises_e1410(self) -> None:
+        with pytest.raises(ValidationError, match="E1410"):
             GridPrimitive("g", {})
 
     def test_label_parameter(self) -> None:

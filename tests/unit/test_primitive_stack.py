@@ -47,10 +47,10 @@ class TestDeclare:
         assert s.max_visible == 5
 
     def test_max_visible_zero_rejected(self) -> None:
-        """max_visible must be >= 1 (E1103)."""
+        """max_visible must be >= 1 (v0.5.1: E1441)."""
         from scriba.core.errors import ValidationError
 
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1441"):
             Stack("s", {"max_visible": 0})
 
     def test_unknown_kwargs_ignored(self) -> None:

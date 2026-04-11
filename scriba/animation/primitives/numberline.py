@@ -75,13 +75,17 @@ class NumberLinePrimitive(PrimitiveBase):
         domain = self.params.get("domain")
         if domain is None:
             raise animation_error(
-                E1103,
+                "E1452",
                 detail="NumberLine requires 'domain' parameter",
+                hint="example: NumberLine{n}{domain=[0, 10]}",
             )
         if not isinstance(domain, (list, tuple)) or len(domain) != 2:
             raise animation_error(
-                E1103,
-                detail="NumberLine 'domain' must be a [min, max] list",
+                "E1453",
+                detail=(
+                    "NumberLine 'domain' must be a two-element "
+                    f"[min, max] list, got {domain!r}"
+                ),
             )
 
         domain_min = float(domain[0])
@@ -92,8 +96,11 @@ class NumberLinePrimitive(PrimitiveBase):
             ticks = int(ticks)
             if ticks > 1_000:
                 raise animation_error(
-                    E1103,
-                    detail=f"NumberLine ticks {ticks} exceeds maximum of 1,000",
+                    "E1454",
+                    detail=(
+                        f"NumberLine ticks {ticks} exceeds maximum; "
+                        "valid: 1..1000"
+                    ),
                 )
         else:
             # Default: max-min+1 if integer range, else 11

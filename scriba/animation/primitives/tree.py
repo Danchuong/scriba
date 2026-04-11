@@ -272,7 +272,11 @@ class Tree(PrimitiveBase):
 
         root = params.get("root")
         if root is None:
-            raise animation_error("E1103", detail="Tree requires 'root' parameter")
+            raise animation_error(
+                "E1430",
+                detail="Tree requires 'root' parameter",
+                hint="example: Tree{t}{root=\"A\", nodes=[...], edges=[...]}",
+            )
 
         self.root: str | int = root
         self.nodes: list[str | int] = list(params.get("nodes", []))
@@ -303,7 +307,11 @@ class Tree(PrimitiveBase):
 
         data = params.get("data")
         if data is None:
-            raise animation_error("E1103", detail="Tree (kind=segtree) requires 'data' parameter")
+            raise animation_error(
+                "E1431",
+                detail="Tree (kind=segtree) requires 'data' parameter",
+                hint="example: Tree{t}{kind=\"segtree\", data=[1, 2, 3, 4]}",
+            )
 
         data = list(data)
         root_id, nodes, edges, sums = build_segtree(data)
@@ -327,8 +335,12 @@ class Tree(PrimitiveBase):
         range_hi = params.get("range_hi")
         if range_lo is None or range_hi is None:
             raise animation_error(
-                "E1103",
-                detail="Tree (kind=sparse_segtree) requires 'range_lo' and 'range_hi' parameters",
+                "E1432",
+                detail=(
+                    "Tree (kind=sparse_segtree) requires 'range_lo' and "
+                    "'range_hi' parameters"
+                ),
+                hint="example: Tree{t}{kind=\"sparse_segtree\", range_lo=0, range_hi=1000}",
             )
 
         self.range_lo: int = int(range_lo)

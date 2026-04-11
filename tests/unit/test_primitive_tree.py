@@ -145,16 +145,17 @@ class TestTreeConstruction:
         assert "[0,7]" in t.nodes
         assert t.kind == "sparse_segtree"
 
-    def test_missing_root_raises_e1103(self) -> None:
-        with pytest.raises(Exception, match="E1103"):
+    def test_missing_root_raises_e1430(self) -> None:
+        # v0.5.1: E1430 (Tree missing root)
+        with pytest.raises(Exception, match="E1430"):
             Tree("T", {"nodes": [1, 2], "edges": [(1, 2)]})
 
-    def test_segtree_missing_data_raises_e1103(self) -> None:
-        with pytest.raises(Exception, match="E1103"):
+    def test_segtree_missing_data_raises_e1431(self) -> None:
+        with pytest.raises(Exception, match="E1431"):
             Tree("st", {"kind": "segtree"})
 
-    def test_sparse_segtree_missing_range_raises_e1103(self) -> None:
-        with pytest.raises(Exception, match="E1103"):
+    def test_sparse_segtree_missing_range_raises_e1432(self) -> None:
+        with pytest.raises(Exception, match="E1432"):
             Tree("st", {"kind": "sparse_segtree", "range_lo": 0})
 
     def test_label_parameter(self) -> None:

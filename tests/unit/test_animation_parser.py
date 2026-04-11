@@ -559,14 +559,14 @@ class TestEmptyParamBrace:
         assert len(ir.shapes) == 1
         assert ir.shapes[0].params == {}
 
-    def test_empty_params_raise_e1103_at_primitive_construction(
+    def test_empty_params_raise_e1400_at_primitive_construction(
         self,
     ) -> None:
-        """Array primitive raises E1103 with a descriptive message on missing 'size'."""
+        """Array primitive raises E1400 with a descriptive message on missing 'size'."""
         from scriba.animation.primitives.array import ArrayPrimitive
         with pytest.raises(ValidationError) as exc_info:
             ArrayPrimitive(name="a", params={})
-        assert exc_info.value.code == "E1103"
+        assert exc_info.value.code == "E1400"
         assert "size" in str(exc_info.value) or "n" in str(exc_info.value)
 
 

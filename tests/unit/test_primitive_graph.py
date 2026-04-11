@@ -97,16 +97,16 @@ class TestGraphConstruction:
         assert g.label == "My Graph"
 
     def test_empty_nodes_list_raises(self) -> None:
-        """Graph with empty nodes must raise E1103 (not silently render)."""
+        """Graph with empty nodes must raise E1470 (not silently render)."""
         from scriba.core.errors import ValidationError
 
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1470"):
             Graph("G", {"nodes": [], "edges": []})
 
     def test_missing_nodes_raises(self) -> None:
         from scriba.core.errors import ValidationError
 
-        with pytest.raises(ValidationError, match="E1103"):
+        with pytest.raises(ValidationError, match="E1470"):
             Graph("G", {})
 
 
