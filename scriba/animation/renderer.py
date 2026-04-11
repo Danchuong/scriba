@@ -188,8 +188,17 @@ def _snapshot_to_frame_data(
     scene_id: str,
     ctx: RenderContext,
     substories: list[SubstoryData] | None = None,
+    label: str | None = None,
 ) -> FrameData:
-    """Convert a FrameSnapshot into a FrameData for the emitter."""
+    """Convert a FrameSnapshot into a FrameData for the emitter.
+
+    Parameters
+    ----------
+    label:
+        Optional user-supplied frame identifier from ``\\step[label=...]``.
+        Propagated into :class:`FrameData.label` so the emitter can use
+        it as the frame HTML ``id`` and ``data-label`` attribute.
+    """
     shape_states: dict[str, dict[str, dict]] = {}
     for shape_name, targets in snap.shape_states.items():
         shape_states[shape_name] = {}
@@ -235,6 +244,7 @@ def _snapshot_to_frame_data(
         shape_states=shape_states,
         annotations=annotations,
         substories=substories,
+        label=label,
     )
 
 
@@ -431,6 +441,7 @@ class AnimationRenderer:
             fd = _snapshot_to_frame_data(
                 snap, total_frames, scene_id, ctx,
                 substories=substory_data,
+                label=frame_ir.label,
             )
             frame_data_list.append(fd)
 
@@ -472,9 +483,15 @@ class AnimationRenderer:
                     )
                     nested_data.append(nd)
 
+            sub_label = (
+                substory.frames[i].label
+                if i < len(substory.frames)
+                else None
+            )
             fd = _snapshot_to_frame_data(
                 sub_snap, sub_total, scene_id, ctx,
                 substories=nested_data,
+                label=sub_label,
             )
             sub_frames.append(fd)
 
