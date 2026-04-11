@@ -183,37 +183,60 @@ def test_scriba_version_string_is_non_empty() -> None:
 # ---------------------------------------------------------------------------
 
 
-def _reload_module(name: str) -> None:
-    import sys
-
-    to_drop = [k for k in sys.modules if k == name or k.startswith(name + ".")]
-    for key in to_drop:
-        del sys.modules[key]
+# NOTE: Do NOT delete scriba.* entries from sys.modules in this test file.
+# An earlier version of these tests used a `_reload_module` helper that
+# invalidated cached references other test modules (notably
+# tests/unit/test_security.py) rely on — monkey-patches on
+# `scriba.animation.starlark_worker._STEP_LIMIT` silently targeted a
+# dead module reference, and step-counter tests started failing in the
+# full suite while passing in isolation. Use subprocess isolation for
+# anything that needs a clean import state.
 
 
 def test_import_scriba_does_not_emit_deprecation_warning() -> None:
-    _reload_module("scriba")
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        import scriba  # noqa: F401
+    """Plain `import scriba` must not fire DeprecationWarning.
 
-    dep = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-    assert dep == [], (
-        "import scriba must not emit DeprecationWarning, got: "
-        f"{[str(w.message) for w in dep]}"
+    Runs in a subprocess so the check is hermetic and does not pollute
+    the parent test process's sys.modules cache.
+    """
+    import subprocess
+    import sys
+
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-W",
+            "error::DeprecationWarning",
+            "-c",
+            "import scriba",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, (
+        f"`import scriba` raised a warning-as-error:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
 
 
 def test_import_scriba_core_does_not_emit_deprecation_warning() -> None:
-    _reload_module("scriba")
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        from scriba.core import Pipeline  # noqa: F401
+    import subprocess
+    import sys
 
-    dep = [w for w in caught if issubclass(w.category, DeprecationWarning)]
-    assert dep == [], (
-        "from scriba.core import Pipeline must not emit DeprecationWarning, "
-        f"got: {[str(w.message) for w in dep]}"
+    result = subprocess.run(
+        [
+            sys.executable,
+            "-W",
+            "error::DeprecationWarning",
+            "-c",
+            "from scriba.core import Pipeline",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, (
+        f"`from scriba.core import Pipeline` raised a warning-as-error:\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
     )
 
 
@@ -223,22 +246,24 @@ def test_import_scriba_core_does_not_emit_deprecation_warning() -> None:
 
 
 def test_subprocess_worker_alias_emits_deprecation_warning() -> None:
-    _reload_module("scriba")
+    # The lazy PEP 562 __getattr__ fires the warning every time external
+    # code touches the alias, so no fresh-import dance is needed — just
+    # access the attribute through the already-imported module.
+    import scriba.core.workers as workers_mod
 
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
-        from scriba.core.workers import SubprocessWorker  # noqa: F401
+        _ = workers_mod.SubprocessWorker
 
     dep = [w for w in caught if issubclass(w.category, DeprecationWarning)]
     assert dep, (
-        "from scriba.core.workers import SubprocessWorker must emit "
+        "accessing scriba.core.workers.SubprocessWorker must emit "
         "DeprecationWarning"
     )
     assert any("SubprocessWorker" in str(w.message) for w in dep)
 
 
 def test_scriba_subprocess_worker_attr_emits_deprecation_warning() -> None:
-    _reload_module("scriba")
     import scriba
 
     with warnings.catch_warnings(record=True) as caught:

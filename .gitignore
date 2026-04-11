@@ -6,3 +6,7 @@ build/
 *.pyc
 .pytest_cache/
 .coverage
+coverage.xml
+htmlcov/
+.hypothesis/
+.claude/

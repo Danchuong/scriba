@@ -274,27 +274,37 @@ def test_oneshot_worker_uses_ensure_ascii_true():
         w.close()
 
 
-def test_subprocess_worker_alias_emits_deprecation_on_import():
-    """14-H2: The module-level ``SubprocessWorker`` alias emits a single
-    DeprecationWarning at module import time.
+def test_subprocess_worker_alias_emits_deprecation_on_external_access():
+    """14-H2: The ``SubprocessWorker`` alias emits a DeprecationWarning on
+    attribute access from external (non-scriba) callers.
+
+    Wave 3 Cluster 9 moved the warning from import time to PEP 562
+    ``__getattr__`` so plain ``import scriba`` stays silent. The warning
+    now fires only when external code reaches for the alias. This test
+    pins the new behavior; parallel coverage lives in
+    ``tests/unit/test_public_api.py``.
+
+    Note: intentionally does NOT manipulate ``sys.modules`` to avoid
+    reloading the module mid-test-run, which was observed to trigger
+    step-limit flakes in tests that monkey-patch module attributes.
     """
-    import importlib
-    import sys
     import warnings
 
-    # Force a re-import so the module body runs again.
-    mod_name = "scriba.core.workers"
-    if mod_name in sys.modules:
-        del sys.modules[mod_name]
-    with warnings.catch_warnings(record=True) as caught:
+    import scriba.core.workers as workers_mod
+
+    # Reaching for the attribute from this external test module DOES fire.
+    with warnings.catch_warnings(record=True) as on_access:
         warnings.simplefilter("always")
-        importlib.import_module(mod_name)
+        alias = workers_mod.SubprocessWorker
     dep = [
-        w for w in caught
+        w for w in on_access
         if issubclass(w.category, DeprecationWarning)
         and "SubprocessWorker" in str(w.message)
     ]
     assert dep, (
-        f"expected DeprecationWarning for SubprocessWorker alias, "
-        f"got {[str(w.message) for w in caught]}"
+        f"expected DeprecationWarning on SubprocessWorker access, "
+        f"got {[str(w.message) for w in on_access]}"
     )
+    # Alias still resolves to the real class for backward compat.
+    from scriba.core.workers import PersistentSubprocessWorker
+    assert alias is PersistentSubprocessWorker
