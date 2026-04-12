@@ -554,9 +554,23 @@ Notes:
 
 ### 8.3 Narration rendering
 
-Each `\narrate{...}` body is passed to `ctx.render_inline_tex(body)` at render time. The result is a string of HTML (KaTeX MathML + sanitized inline tags) that the Pipeline promises is safe to splice into a `<p>` container. This delegation is the **only** place inside animation/diagram rendering that calls back into `TexRenderer`. No other Scriba plugin is consulted.
+Each `\narrate{...}` body is passed to `ctx.render_inline_tex(body)` at render time. The result is a string of HTML (KaTeX MathML + sanitized inline tags) that the Pipeline promises is safe to splice into a `<p>` container. No other Scriba plugin is consulted.
 
-If `ctx.render_inline_tex is None` (i.e., no `TexRenderer` was registered in the Pipeline), `\narrate` body is HTML-escaped and emitted as plain text with a `data-scriba-tex-fallback="true"` attribute so consumers can detect the degraded state.
+### 8.4 Inline math in all user-authored text (v0.6.1+)
+
+As of v0.6.1, all user-visible text sites pass through `ctx.render_inline_tex` when a TeX renderer is available, so `$...$` inline math works everywhere — not just in `\narrate`. The complete list of KaTeX-enabled text sites:
+
+1. `\narrate{...}` body (original, §8.3)
+2. `\annotate{...}{label="$...$"}` — annotation labels
+3. Plane2D point labels
+4. Plane2D line labels
+5. MetricPlot `xlabel`
+6. MetricPlot `ylabel` and `ylabel_right`
+7. MetricPlot legend series names
+8. Graph edge weights
+9. CodePanel `caption` label
+
+When `ctx.render_inline_tex is None`, all sites fall back to HTML-escaped plain text.
 
 ## 9. CSS contract
 

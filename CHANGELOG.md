@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-04-11
+
+### Fixed
+
+- **Double-pass rendering bug eliminated** (`9f433db`) — `emit_interactive_html` now renders each frame's SVG in a single pass. Previously, the two-loop design (JS + print) caused structural mutations (`add_edge`/`remove_edge`/`add_node`/`remove_node`/`reparent`) to accumulate across passes, breaking every animation using mutation ops. The hidden-state pre-declaration pattern is no longer required (but remains a valid best practice).
+- **Graph node collision resolution** (`1ecca61`) — Added `_resolve_overlaps()` post-pass to `fruchterman_reingold()` and `compute_stable_layout()`, guaranteeing minimum node separation of `2 * radius + 12px`. No two graph nodes overlap visually.
+- **Narration math escape** (`4c386ee`) — `$\min_{j<1}$` inside `\narrate{...}` no longer fails. `process_hl_macros` now defers plain-text escaping when a TeX renderer is available, so `<` reaches KaTeX intact.
+- **KaTeX support in 8 text sites** (`c12b2fb`, `06b0362`, `7b319f1`) — All user-authored text now supports `$...$` inline math via KaTeX. Previously literal in: annotation labels, Plane2D point labels, Plane2D line labels, MetricPlot xlabel, MetricPlot ylabel, MetricPlot ylabel_right, MetricPlot legend series names, Graph edge weights, and CodePanel caption labels.
+
 ## [0.6.0] - 2026-04-11 (Completeness audit — Phase 4 GA)
 
 General-availability release graduating 0.6.0-alpha1. Landing **Wave 7** —
