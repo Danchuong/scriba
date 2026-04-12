@@ -999,8 +999,15 @@ def emit_interactive_html(
         if(src){{
           var clone=document.importNode(src,true);
           clone.style.opacity='0';
-          var svg=stage.querySelector('svg');
-          if(svg){{svg.appendChild(clone);
+          var srcP=src.parentNode;
+          var pShape=null;
+          while(srcP&&srcP.nodeType===1){{
+            var ds2=srcP.getAttribute&&srcP.getAttribute('data-shape');
+            if(ds2){{pShape=stage.querySelector('[data-shape="'+CSS.escape(ds2)+'"]');break;}}
+            srcP=srcP.parentNode;
+          }}
+          var ct=pShape||stage.querySelector('svg');
+          if(ct){{ct.appendChild(clone);
             var a6=clone.animate([{{opacity:0}},{{opacity:1}}],
               {{duration:DUR,easing:'ease-in',fill:'forwards'}});
             _anims.push(a6);pending.push(a6.finished);hasWaapi=true;
@@ -1031,8 +1038,20 @@ def emit_interactive_html(
         if(src8){{
           var clone8=document.importNode(src8,true);
           clone8.style.opacity='0';
-          var svg8=stage.querySelector('svg');
-          if(svg8){{svg8.appendChild(clone8);
+          /* Find the matching parent primitive group in the current DOM
+             so the annotation inherits the correct coordinate transform.
+             The parsed (new frame) SVG has the annotation inside its
+             primitive <g data-primitive="..." data-shape="...">, so we
+             locate the same shape group in the live stage. */
+          var srcParent=src8.parentNode;
+          var parentShape=null;
+          while(srcParent&&srcParent.nodeType===1){{
+            var ds=srcParent.getAttribute&&srcParent.getAttribute('data-shape');
+            if(ds){{parentShape=stage.querySelector('[data-shape="'+CSS.escape(ds)+'"]');break;}}
+            srcParent=srcParent.parentNode;
+          }}
+          var container=parentShape||stage.querySelector('svg');
+          if(container){{container.appendChild(clone8);
             var a8=clone8.animate([{{opacity:0}},{{opacity:1}}],
               {{duration:DUR,easing:'ease-in',fill:'forwards'}});
             _anims.push(a8);pending.push(a8.finished);hasWaapi=true;
@@ -1040,17 +1059,19 @@ def emit_interactive_html(
         }}
       }}
     }}
-    function _finish(){{
+    function _finish(fullSync){{
       cur=toIdx;
-      stage.innerHTML=frames[toIdx].svg;
+      if(fullSync){{
+        stage.innerHTML=frames[toIdx].svg;
+      }}
       subC.innerHTML=frames[toIdx].substory||'';
       subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
       _anims=[];_animState='idle';
     }}
     if(hasWaapi){{
-      Promise.all(pending).then(_finish).catch(_finish);
+      Promise.all(pending).then(function(){{_finish(true);}}).catch(function(){{_finish(true);}});
     }}else{{
-      setTimeout(_finish,DUR+20);
+      _finish(false);
     }}
   }}
   function show(i,animate){{

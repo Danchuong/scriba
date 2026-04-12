@@ -297,6 +297,19 @@ class TexRenderer:
     def __exit__(self, exc_type, exc, tb) -> None:
         self.close()
 
+    # ----- inline text API -----
+
+    def render_inline_text(self, raw: str) -> str:
+        """Render an inline TeX fragment to safe HTML.
+
+        Runs the same passes as ``_render_cell``: inline math via KaTeX,
+        text-style commands, size commands, dashes and smart quotes, and
+        HTML escape.  Suitable for narration text, labels, and any short
+        TeX string that should not go through the full block-level
+        pipeline (no sections, lists, tables, or paragraph wrapping).
+        """
+        return self._render_cell(raw)
+
     # ----- private API -----
 
     def _render_cell(self, raw: str) -> str:

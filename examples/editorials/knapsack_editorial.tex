@@ -1,0 +1,279 @@
+\section{0/1 Knapsack}
+
+\subsection{De bai}
+
+Cho $N$ vat pham, vat thu $i$ co trong luong $w[i]$ va gia tri $v[i]$.
+Ban co mot ba lo voi suc chua toi da $W$.
+Hay chon mot tap con cac vat pham sao cho tong trong luong khong vuot qua $W$
+va tong gia tri la lon nhat.
+
+Rang buoc: moi vat pham chi duoc chon hoac khong chon (0/1), khong duoc chia nho.
+
+\textbf{Input mau:} $N = 4$, $W = 5$, trong luong $w = [2, 3, 4, 5]$, gia tri $v = [3, 4, 5, 6]$.
+
+\subsection{Cong thuc truy hoi}
+
+Goi $dp[i][j]$ la gia tri lon nhat khi xet $i$ vat pham dau tien voi suc chua $j$.
+Ta co cong thuc truy hoi:
+
+$$
+dp[i][j] = \max\bigl(dp[i-1][j],\; dp[i-1][j - w[i]] + v[i]\bigr)
+$$
+
+Truong hop co so: $dp[0][j] = 0$ voi moi $j$ (khong chon vat nao thi gia tri bang $0$).
+
+Dieu kien: chi co the lay vat $i$ khi $j \geq w[i]$. Neu $j < w[i]$ thi $dp[i][j] = dp[i-1][j]$.
+
+\subsection{So do bang DP -- trang thai ban dau}
+
+\begin{diagram}[id="knapsack-init"]
+\shape{dp}{DPTable}{rows=5, cols=6, row_labels="i=0..4", col_labels="j=0..5", label="dp[i][j]"}
+\apply{dp.cell[0][0]}{value=0}
+\apply{dp.cell[0][1]}{value=0}
+\apply{dp.cell[0][2]}{value=0}
+\apply{dp.cell[0][3]}{value=0}
+\apply{dp.cell[0][4]}{value=0}
+\apply{dp.cell[0][5]}{value=0}
+\recolor{dp.cell[0][0]}{state=done}
+\recolor{dp.cell[0][1]}{state=done}
+\recolor{dp.cell[0][2]}{state=done}
+\recolor{dp.cell[0][3]}{state=done}
+\recolor{dp.cell[0][4]}{state=done}
+\recolor{dp.cell[0][5]}{state=done}
+\end{diagram}
+
+Hang $i = 0$ tuong ung voi viec khong chon vat nao. Moi o $dp[0][j] = 0$.
+Cac hang tiep theo se duoc dien bang cach ap dung cong thuc truy hoi,
+xet tung vat pham mot tu trai sang phai.
+
+\subsection{Giai thich trang thai DP}
+
+Moi o $dp[i][j]$ dai dien cho bai toan con: \textit{gia tri lon nhat co the dat duoc
+khi chi xet $i$ vat pham dau va suc chua la $j$}. Tai moi o, ta co hai lua chon:
+
+\begin{itemize}
+\item \textbf{Bo qua} vat $i$: lay gia tri tu hang tren cung cot, $dp[i-1][j]$.
+\item \textbf{Lay} vat $i$: lay gia tri $dp[i-1][j - w[i]] + v[i]$, chi khi $j \geq w[i]$.
+\end{itemize}
+
+Gia tri lon hon trong hai lua chon se duoc ghi vao $dp[i][j]$.
+
+\subsection{Qua trinh dien bang DP}
+
+\begin{animation}[id="knapsack-fill", label="0/1 Knapsack -- Dien bang DP"]
+\shape{items}{Array}{size=4, data=["w=2,v=3","w=3,v=4","w=4,v=5","w=5,v=6"], labels="1..4", label="Vat pham"}
+\shape{dp}{DPTable}{rows=5, cols=6, row_labels="i=0..4", col_labels="j=0..5", label="dp[i][j]"}
+
+\step
+\apply{dp.cell[0][0]}{value=0}
+\apply{dp.cell[0][1]}{value=0}
+\apply{dp.cell[0][2]}{value=0}
+\apply{dp.cell[0][3]}{value=0}
+\apply{dp.cell[0][4]}{value=0}
+\apply{dp.cell[0][5]}{value=0}
+\recolor{dp.cell[0][0]}{state=done}
+\recolor{dp.cell[0][1]}{state=done}
+\recolor{dp.cell[0][2]}{state=done}
+\recolor{dp.cell[0][3]}{state=done}
+\recolor{dp.cell[0][4]}{state=done}
+\recolor{dp.cell[0][5]}{state=done}
+\narrate{Co so: $dp[0][j] = 0$ voi moi $j$. Khong co vat pham nao duoc xet nen gia tri luon bang $0$.}
+
+\step
+\recolor{items.cell[0]}{state=current}
+\recolor{dp.cell[1][0]}{state=current}
+\recolor{dp.cell[1][1]}{state=current}
+\annotate{dp.cell[1][0]}{label="skip", arrow_from="dp.cell[0][0]", color=info}
+\annotate{dp.cell[1][1]}{label="skip", arrow_from="dp.cell[0][1]", color=info}
+\apply{dp.cell[1][0]}{value=0}
+\apply{dp.cell[1][1]}{value=0}
+\narrate{Vat $1$ ($w=2, v=3$). Voi $j=0$ va $j=1$: suc chua khong du ($j < 2$), chi co the bo qua. $dp[1][0] = 0$, $dp[1][1] = 0$.}
+
+\step
+\recolor{dp.cell[1][0]}{state=done}
+\recolor{dp.cell[1][1]}{state=done}
+\recolor{dp.cell[1][2]}{state=current}
+\annotate{dp.cell[1][2]}{label="skip: 0", arrow_from="dp.cell[0][2]", color=muted}
+\annotate{dp.cell[1][2]}{label="take: 0+3=3", arrow_from="dp.cell[0][0]", color=good}
+\narrate{$j=2$: bo qua cho $dp[0][2]=0$. Lay vat $1$: $dp[0][2-2]+3 = 0+3 = 3$. $\max(0, 3) = 3$. \textbf{Lay!}}
+
+\step
+\apply{dp.cell[1][2]}{value=3}
+\recolor{dp.cell[1][2]}{state=done}
+\recolor{dp.cell[1][3]}{state=current}
+\annotate{dp.cell[1][3]}{label="skip: 0", arrow_from="dp.cell[0][3]", color=muted}
+\annotate{dp.cell[1][3]}{label="take: 0+3=3", arrow_from="dp.cell[0][1]", color=good}
+\narrate{$j=3$: bo qua cho $0$, lay cho $dp[0][1]+3 = 3$. $\max(0,3) = 3$. \textbf{Lay!}}
+
+\step
+\apply{dp.cell[1][3]}{value=3}
+\recolor{dp.cell[1][3]}{state=done}
+\recolor{dp.cell[1][4]}{state=current}
+\recolor{dp.cell[1][5]}{state=current}
+\annotate{dp.cell[1][4]}{label="take: 3", arrow_from="dp.cell[0][2]", color=good}
+\annotate{dp.cell[1][5]}{label="take: 3", arrow_from="dp.cell[0][3]", color=good}
+\apply{dp.cell[1][4]}{value=3}
+\apply{dp.cell[1][5]}{value=3}
+\narrate{$j=4$: $\max(0, dp[0][2]+3) = 3$. $j=5$: $\max(0, dp[0][3]+3) = 3$. Hang $i=1$ hoan thanh. Vat $1$ duoc lay khi $j \geq 2$.}
+
+\step
+\recolor{dp.cell[1][4]}{state=done}
+\recolor{dp.cell[1][5]}{state=done}
+\recolor{items.cell[0]}{state=done}
+\recolor{items.cell[1]}{state=current}
+\recolor{dp.cell[2][0]}{state=current}
+\recolor{dp.cell[2][1]}{state=current}
+\recolor{dp.cell[2][2]}{state=current}
+\apply{dp.cell[2][0]}{value=0}
+\apply{dp.cell[2][1]}{value=0}
+\apply{dp.cell[2][2]}{value=3}
+\annotate{dp.cell[2][2]}{label="skip: 3", arrow_from="dp.cell[1][2]", color=good}
+\narrate{Vat $2$ ($w=3, v=4$). $j=0,1,2$: suc chua khong du de lay vat $2$. Bo qua, sao chep tu hang tren: $dp[2][0..2] = [0, 0, 3]$.}
+
+\step
+\recolor{dp.cell[2][0]}{state=done}
+\recolor{dp.cell[2][1]}{state=done}
+\recolor{dp.cell[2][2]}{state=done}
+\recolor{dp.cell[2][3]}{state=current}
+\annotate{dp.cell[2][3]}{label="skip: 3", arrow_from="dp.cell[1][3]", color=muted}
+\annotate{dp.cell[2][3]}{label="take: 0+4=4", arrow_from="dp.cell[1][0]", color=good}
+\narrate{$j=3$: bo qua cho $3$. Lay vat $2$: $dp[1][0]+4 = 0+4 = 4$. $\max(3, 4) = 4$. \textbf{Lay!}}
+
+\step
+\apply{dp.cell[2][3]}{value=4}
+\recolor{dp.cell[2][3]}{state=done}
+\recolor{dp.cell[2][4]}{state=current}
+\annotate{dp.cell[2][4]}{label="skip: 3", arrow_from="dp.cell[1][4]", color=muted}
+\annotate{dp.cell[2][4]}{label="take: 0+4=4", arrow_from="dp.cell[1][1]", color=good}
+\narrate{$j=4$: bo qua cho $3$. Lay vat $2$: $dp[1][1]+4 = 0+4 = 4$. $\max(3, 4) = 4$. \textbf{Lay!}}
+
+\step
+\apply{dp.cell[2][4]}{value=4}
+\recolor{dp.cell[2][4]}{state=done}
+\recolor{dp.cell[2][5]}{state=current}
+\annotate{dp.cell[2][5]}{label="skip: 3", arrow_from="dp.cell[1][5]", color=muted}
+\annotate{dp.cell[2][5]}{label="take: 3+4=7", arrow_from="dp.cell[1][2]", color=good}
+\narrate{$j=5$: bo qua cho $3$. Lay vat $2$: $dp[1][2]+4 = 3+4 = 7$. $\max(3, 7) = 7$. \textbf{Lay!} Ca hai vat $1$ va $2$ deu duoc chon.}
+
+\step
+\apply{dp.cell[2][5]}{value=7}
+\recolor{dp.cell[2][5]}{state=done}
+\recolor{items.cell[1]}{state=done}
+\recolor{items.cell[2]}{state=current}
+\apply{dp.cell[3][0]}{value=0}
+\apply{dp.cell[3][1]}{value=0}
+\apply{dp.cell[3][2]}{value=3}
+\apply{dp.cell[3][3]}{value=4}
+\recolor{dp.cell[3][0]}{state=done}
+\recolor{dp.cell[3][1]}{state=done}
+\recolor{dp.cell[3][2]}{state=done}
+\recolor{dp.cell[3][3]}{state=done}
+\recolor{dp.cell[3][4]}{state=current}
+\annotate{dp.cell[3][4]}{label="skip: 4", arrow_from="dp.cell[2][4]", color=good}
+\annotate{dp.cell[3][4]}{label="take: 0+5=5", arrow_from="dp.cell[2][0]", color=muted}
+\narrate{Vat $3$ ($w=4, v=5$). $j=0..3$: khong du suc chua hoac bo qua tot hon, sao chep tu hang tren. $j=4$: bo qua cho $4$, lay cho $dp[2][0]+5=5$. $\max(4,5) = 5$. \textbf{Lay!}}
+
+\step
+\apply{dp.cell[3][4]}{value=5}
+\recolor{dp.cell[3][4]}{state=done}
+\recolor{dp.cell[3][5]}{state=current}
+\annotate{dp.cell[3][5]}{label="skip: 7", arrow_from="dp.cell[2][5]", color=good}
+\annotate{dp.cell[3][5]}{label="take: 0+5=5", arrow_from="dp.cell[2][1]", color=muted}
+\narrate{$j=5$: bo qua cho $7$, lay cho $dp[2][1]+5 = 0+5 = 5$. $\max(7, 5) = 7$. \textbf{Bo qua!} Giu nguyen to hop vat $1+2$ tot hon.}
+
+\step
+\apply{dp.cell[3][5]}{value=7}
+\recolor{dp.cell[3][5]}{state=done}
+\recolor{items.cell[2]}{state=done}
+\recolor{items.cell[3]}{state=current}
+\apply{dp.cell[4][0]}{value=0}
+\apply{dp.cell[4][1]}{value=0}
+\apply{dp.cell[4][2]}{value=3}
+\apply{dp.cell[4][3]}{value=4}
+\apply{dp.cell[4][4]}{value=5}
+\recolor{dp.cell[4][0]}{state=done}
+\recolor{dp.cell[4][1]}{state=done}
+\recolor{dp.cell[4][2]}{state=done}
+\recolor{dp.cell[4][3]}{state=done}
+\recolor{dp.cell[4][4]}{state=done}
+\recolor{dp.cell[4][5]}{state=current}
+\annotate{dp.cell[4][5]}{label="skip: 7", arrow_from="dp.cell[3][5]", color=good}
+\annotate{dp.cell[4][5]}{label="take: 0+6=6", arrow_from="dp.cell[3][0]", color=muted}
+\narrate{Vat $4$ ($w=5, v=6$). $j=0..4$: sao chep tu hang tren (khong du suc chua hoac bo qua tot hon). $j=5$: bo qua cho $7$, lay cho $dp[3][0]+6 = 6$. $\max(7, 6) = 7$. \textbf{Bo qua!}}
+
+\step
+\apply{dp.cell[4][5]}{value=7}
+\recolor{dp.cell[4][5]}{state=good}
+\recolor{items.cell[3]}{state=done}
+\recolor{dp.cell[2][5]}{state=path}
+\recolor{dp.cell[1][2]}{state=path}
+\recolor{dp.cell[0][0]}{state=path}
+\reannotate{dp.cell[2][5]}{color=path, arrow_from="dp.cell[1][2]"}
+\reannotate{dp.cell[1][2]}{color=path, arrow_from="dp.cell[0][0]"}
+\narrate{$dp[4][5] = 7$. Dap an: gia tri lon nhat la $7$. Truy vet: $dp[4][5] = dp[3][5] = dp[2][5]$ (lay vat $2$ tai day) $\to dp[1][2]$ (lay vat $1$ tai day) $\to dp[0][0]$. Chon vat $1$ va $2$, tong trong $2+3=5$, tong gia tri $3+4=7$.}
+\end{animation}
+
+\subsection{Truy vet loi giai}
+
+Sau khi dien xong bang DP, dap an nam o $dp[N][W]$.
+De biet nhung vat nao duoc chon, ta truy vet tu $dp[N][W]$ nguoc ve $dp[0][0]$:
+
+\begin{enumerate}
+\item Bat dau tai $i = N$, $j = W$.
+\item Neu $dp[i][j] \neq dp[i-1][j]$, thi vat $i$ duoc chon. Giam $j$ di $w[i]$, giam $i$ di $1$.
+\item Neu $dp[i][j] = dp[i-1][j]$, thi vat $i$ khong duoc chon. Chi giam $i$ di $1$.
+\item Lap lai cho den khi $i = 0$.
+\end{enumerate}
+
+Trong vi du tren: $dp[4][5] = 7 = dp[3][5]$ (khong lay vat $4$),
+$dp[3][5] = 7 = dp[2][5]$ (khong lay vat $3$),
+$dp[2][5] = 7 \neq dp[1][5] = 3$ (lay vat $2$, $j$ giam tu $5$ ve $2$),
+$dp[1][2] = 3 \neq dp[0][2] = 0$ (lay vat $1$, $j$ giam tu $2$ ve $0$).
+Vay tap vat duoc chon la $\{1, 2\}$ voi tong gia tri $3 + 4 = 7$.
+
+\subsection{Cai dat}
+
+\begin{lstlisting}[language=C++]
+#include <bits/stdc++.h>
+using namespace std;
+
+int main() {
+    int n, W;
+    cin >> n >> W;
+    vector<int> w(n + 1), v(n + 1);
+    for (int i = 1; i <= n; i++)
+        cin >> w[i] >> v[i];
+
+    // dp[i][j] = max value using items 1..i with capacity j
+    vector<vector<int>> dp(n + 1, vector<int>(W + 1, 0));
+
+    for (int i = 1; i <= n; i++) {
+        for (int j = 0; j <= W; j++) {
+            dp[i][j] = dp[i - 1][j]; // skip item i
+            if (j >= w[i])
+                dp[i][j] = max(dp[i][j], dp[i - 1][j - w[i]] + v[i]);
+        }
+    }
+
+    cout << dp[n][W] << "\n";
+
+    // Backtrack to find chosen items
+    vector<int> chosen;
+    for (int i = n, j = W; i >= 1; i--) {
+        if (dp[i][j] != dp[i - 1][j]) {
+            chosen.push_back(i);
+            j -= w[i];
+        }
+    }
+
+    reverse(chosen.begin(), chosen.end());
+    for (int x : chosen)
+        cout << x << " ";
+    cout << "\n";
+
+    return 0;
+}
+\end{lstlisting}
+
+Do phuc tap: $O(N \cdot W)$ thoi gian va bo nho.
+Co the toi uu bo nho xuong $O(W)$ bang cach chi giu mot hang DP va duyet $j$ giam dan.

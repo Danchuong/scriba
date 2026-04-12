@@ -1,0 +1,167 @@
+\section{Segment Tree}
+
+\textbf{Bai toan.}
+Cho mang $a[0 \ldots n-1]$ gom $n$ so nguyen. Ho tro hai thao tac:
+\begin{itemize}
+  \item \texttt{update(i, v)}: gan $a[i] = v$.
+  \item \texttt{query(l, r)}: tinh $\displaystyle\sum_{k=l}^{r} a[k]$.
+\end{itemize}
+Yeu cau: moi thao tac phai chay trong $O(\log n)$.
+
+\subsection{Cau truc cay}
+
+Segment tree la cay nhi phan day du, trong do moi node dai dien cho mot doan $[lo, hi]$ cua mang.
+Node la luu $a[i]$, con node trong luu tong cua hai con:
+
+\[
+  \text{node}[k] = \text{node}[2k] + \text{node}[2k+1]
+\]
+
+Voi $n = 6$ va $a = [1, 3, 5, 7, 9, 2]$, cay co dang:
+
+\begin{diagram}[id="segtree-static"]
+\shape{T}{Tree}{
+  data=[1,3,5,7,9,2],
+  kind="segtree",
+  show_sum=true,
+  label="Segment tree cho a = [1,3,5,7,9,2]"
+}
+\recolor{T.node["[0,5]"]}{state=good}
+\recolor{T.node["[0,2]"]}{state=idle}
+\recolor{T.node["[3,5]"]}{state=idle}
+\end{diagram}
+
+\subsection{Phan tich do phuc tap}
+
+Xay cay (\texttt{build}): duyet toan bo $2n - 1$ node, moi node thuc hien phep cong hang so
+$\Rightarrow O(n)$.
+
+Truy van tong (\texttt{query}): tai moi tang cua cay, ta chi di vao toi da $2$ nhanh.
+Cay co chieu cao $\lceil \log_2 n \rceil$, nen moi truy van ton $O(\log n)$.
+
+Cap nhat diem (\texttt{update}): di tu la len root, cap nhat tong doc duong di.
+Duong di co do dai $O(\log n)$.
+
+\subsection{Minh hoa: truy van sum(1, 4)}
+
+\begin{animation}[id="segtree-query", label="Segment Tree -- Range sum query(1,4)"]
+\shape{a}{Array}{size=6, data=[1,3,5,7,9,2], labels="0..5", label="$a$"}
+\shape{T}{Tree}{
+  data=[1,3,5,7,9,2],
+  kind="segtree",
+  show_sum=true,
+  label="Segment tree"
+}
+
+\step
+\narrate{Mang $a = [1, 3, 5, 7, 9, 2]$. Segment tree da duoc xay: moi node luu tong doan ma no dai dien. Root \texttt{[0,5]} = 27. Ta can tinh $\text{sum}(1, 4) = a[1] + a[2] + a[3] + a[4] = 3 + 5 + 7 + 9 = 24$.}
+
+\step
+\recolor{T.node["[0,5]"]}{state=current}
+\narrate{Bat dau tu root \texttt{[0,5]}. Doan $[0,5]$ khong nam hoan toan trong $[1,4]$, nen ta phai di xuong ca hai nhanh con.}
+
+\step
+\recolor{T.node["[0,5]"]}{state=dim}
+\recolor{T.node["[0,2]"]}{state=current}
+\narrate{Di xuong nhanh trai: node \texttt{[0,2]}. Doan $[0,2]$ khong nam hoan toan trong $[1,4]$ (vi co phan tu $0$), nen tiep tuc chia.}
+
+\step
+\recolor{T.node["[0,2]"]}{state=dim}
+\recolor{T.node["[0,0]"]}{state=current}
+\narrate{Di xuong nhanh trai cua \texttt{[0,2]}: node \texttt{[0,0]}. Doan $[0,0]$ nam hoan toan ngoai $[1,4]$ -- bo qua node nay, tra ve $0$.}
+
+\step
+\recolor{T.node["[0,0]"]}{state=dim}
+\recolor{T.node["[1,2]"]}{state=current}
+\narrate{Di xuong nhanh phai cua \texttt{[0,2]}: node \texttt{[1,2]}. Doan $[1,2]$ nam hoan toan trong $[1,4]$ -- lay ngay gia tri $3 + 5 = 8$. Khong can di xuong sau hon.}
+
+\step
+\recolor{T.node["[1,2]"]}{state=good}
+\recolor{T.edge[("[0,2]","[1,2]")]}{state=good}
+\narrate{Node \texttt{[1,2]} dong gop $8$ vao ket qua. Danh dau \texttt{good}. Quay lai root de di sang nhanh phai.}
+
+\step
+\recolor{T.node["[3,5]"]}{state=current}
+\narrate{Di xuong nhanh phai cua root: node \texttt{[3,5]}. Doan $[3,5]$ khong nam hoan toan trong $[1,4]$ (vi co phan tu $5$), nen tiep tuc chia.}
+
+\step
+\recolor{T.node["[3,5]"]}{state=dim}
+\recolor{T.node["[3,4]"]}{state=current}
+\narrate{Di xuong nhanh trai cua \texttt{[3,5]}: node \texttt{[3,4]}. Doan $[3,4]$ nam hoan toan trong $[1,4]$ -- lay ngay gia tri $7 + 9 = 16$.}
+
+\step
+\recolor{T.node["[3,4]"]}{state=good}
+\recolor{T.edge[("[3,5]","[3,4]")]}{state=good}
+\recolor{T.node["[5,5]"]}{state=current}
+\narrate{Node \texttt{[3,4]} dong gop $16$. Di sang nhanh phai cua \texttt{[3,5]}: node \texttt{[5,5]}. Doan $[5,5]$ nam hoan toan ngoai $[1,4]$ -- bo qua, tra ve $0$.}
+
+\step
+\recolor{T.node["[5,5]"]}{state=dim}
+\recolor{T.node["[0,5]"]}{state=done}
+\recolor{T.node["[1,2]"]}{state=good}
+\recolor{T.node["[3,4]"]}{state=good}
+\recolor{T.node["[0,0]"]}{state=dim}
+\recolor{T.node["[0,2]"]}{state=dim}
+\recolor{T.node["[3,5]"]}{state=dim}
+\recolor{T.node["[5,5]"]}{state=dim}
+\narrate{Ket qua: $\text{sum}(1,4) = 8 + 16 = 24$. Chi co $2$ node (\texttt{[1,2]} va \texttt{[3,4]}, to \texttt{good}) thuc su dong gop vao ket qua. Cac node con lai hoac bi bo qua hoac chi la trung gian. Tong so node tham: $O(\log n)$.}
+\end{animation}
+
+\subsection{Cap nhat diem}
+
+Khi thay doi $a[i] = v$, ta chi can cap nhat node la tuong ung va truyen nguoc len root.
+Cu the, tu la $[i, i]$, di len cha $[lo, hi]$, tinh lai:
+\[
+  \text{node}[\text{cha}] = \text{node}[\text{con\_trai}] + \text{node}[\text{con\_phai}]
+\]
+Do cay co chieu cao $O(\log n)$, thao tac update cung ton $O(\log n)$.
+
+\subsection{Cai dat}
+
+\begin{lstlisting}[language=C++]
+const int MAXN = 200005;
+int n, a[MAXN], tree[4 * MAXN];
+
+void build(int node, int lo, int hi) {
+    if (lo == hi) {
+        tree[node] = a[lo];
+        return;
+    }
+    int mid = (lo + hi) / 2;
+    build(2 * node, lo, mid);
+    build(2 * node + 1, mid + 1, hi);
+    tree[node] = tree[2 * node] + tree[2 * node + 1];
+}
+
+int query(int node, int lo, int hi, int l, int r) {
+    if (r < lo || hi < l) return 0;       // hoan toan ngoai
+    if (l <= lo && hi <= r) return tree[node]; // hoan toan trong
+    int mid = (lo + hi) / 2;
+    return query(2 * node, lo, mid, l, r)
+         + query(2 * node + 1, mid + 1, hi, l, r);
+}
+
+void update(int node, int lo, int hi, int pos, int val) {
+    if (lo == hi) {
+        tree[node] = val;
+        return;
+    }
+    int mid = (lo + hi) / 2;
+    if (pos <= mid)
+        update(2 * node, lo, mid, pos, val);
+    else
+        update(2 * node + 1, mid + 1, hi, pos, val);
+    tree[node] = tree[2 * node] + tree[2 * node + 1];
+}
+
+// Su dung:
+// build(1, 0, n - 1);
+// query(1, 0, n - 1, l, r);
+// update(1, 0, n - 1, i, v);
+\end{lstlisting}
+
+\textbf{Luu y:}
+Kich thuoc mang \texttt{tree} can $4n$ phan tu (khong phai $2n$) do cach danh so $1$-indexed
+va padding khi $n$ khong phai luy thua cua $2$.
+Do phuc tap bo nho: $O(n)$.
+Do phuc tap tong the: build $O(n)$, query $O(\log n)$, update $O(\log n)$.

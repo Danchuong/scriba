@@ -15,44 +15,11 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.renderer import AnimationRenderer
 from scriba.animation.starlark_host import StarlarkHost
 from scriba.core.context import RenderContext
 from scriba.core.workers import SubprocessWorkerPool
 from scriba.tex.renderer import TexRenderer
-
-
-def _make_inline_tex_callback(
-    tex_renderer: TexRenderer,
-) -> callable:
-    """Build a callback that extracts $...$ from text and renders via KaTeX."""
-    import html as _html
-    import re
-
-    def render_inline_tex(text: str) -> str:
-        if "$" not in text:
-            return _html.escape(text, quote=False)
-        placeholders: list[tuple[str, str]] = []
-
-        def _stash(html_fragment: str) -> str:
-            ph = f"\x00MATH{len(placeholders)}\x00"
-            placeholders.append((ph, html_fragment))
-            return ph
-
-        def _math_sub(m: re.Match[str]) -> str:
-            inner = m.group(1)
-            if not inner.strip():
-                return m.group(0)
-            return _stash(tex_renderer._render_inline(inner))
-
-        result = re.sub(r"\$([^\$]+?)\$", _math_sub, text)
-        result = _html.escape(result, quote=False)
-        for ph, html_fragment in placeholders:
-            result = result.replace(_html.escape(ph, quote=False), html_fragment)
-        return result
-
-    return render_inline_tex
 
 
 HTML_TEMPLATE = """\
@@ -586,41 +553,79 @@ def render_file(
     source = input_path.read_text()
     title = input_path.stem
 
-    from scriba.animation.detector import detect_diagram_blocks
+    from scriba.animation.detector import detect_animation_blocks, detect_diagram_blocks
     from scriba.animation.renderer import DiagramRenderer
 
-    # Wire up KaTeX for inline math in narration text.
+    # Build renderers.
     worker_pool = SubprocessWorkerPool()
     starlark_host = StarlarkHost(worker_pool)
 
     anim_renderer = AnimationRenderer(starlark_host=starlark_host)
     diag_renderer = DiagramRenderer(starlark_host=starlark_host)
-    tex_renderer = TexRenderer(worker_pool=worker_pool)
-    inline_tex_cb = _make_inline_tex_callback(tex_renderer)
+    tex_renderer = TexRenderer(worker_pool=worker_pool, enable_copy_buttons=False)
+
+    # Wire up inline TeX callback for narration/labels.
+    # TexRenderer.render_inline_text() is the mini-pipeline: math via
+    # KaTeX, text commands, size commands, smart quotes, dashes, HTML
+    # escape — everything except block-level processing.
+    def _inline_tex(text: str) -> str:
+        return tex_renderer.render_inline_text(text)
 
     ctx = RenderContext(
         resource_resolver=lambda name: f"/static/{name}",
         theme="light",
         metadata={"output_mode": output_mode, "minify": minify},
-        render_inline_tex=inline_tex_cb,
+        render_inline_tex=_inline_tex,
     )
 
+    # 1. Detect animation and diagram blocks (they carve out regions).
     anim_blocks = detect_animation_blocks(source)
     diag_blocks = detect_diagram_blocks(source)
 
-    if not anim_blocks and not diag_blocks:
-        print(f"No \\begin{{animation}} or \\begin{{diagram}} blocks found in {input_path}")
-        sys.exit(1)
+    # 2. Merge and sort all special blocks by start position.
+    special_blocks: list[tuple[int, int, str, object]] = []
+    for b in anim_blocks:
+        special_blocks.append((b.start, b.end, "animation", b))
+    for b in diag_blocks:
+        special_blocks.append((b.start, b.end, "diagram", b))
+    special_blocks.sort(key=lambda t: t[0])
 
-    html_parts = []
-    all_snapshots = []
-    for block in anim_blocks:
-        artifact = anim_renderer.render_block(block, ctx)
-        html_parts.append(artifact.html)
-        all_snapshots.extend(anim_renderer.last_snapshots)
-    for block in diag_blocks:
-        artifact = diag_renderer.render_block(block, ctx)
-        html_parts.append(artifact.html)
+    # 3. Render in source order: TeX gaps + animation/diagram blocks.
+    html_parts: list[str] = []
+    all_snapshots: list[object] = []
+    cursor = 0
+
+    for start, end, kind, block in special_blocks:
+        # Render the TeX gap before this block.
+        if start > cursor:
+            gap_source = source[cursor:start]
+            if gap_source.strip():
+                from scriba.core.artifact import Block as CoreBlock
+                gap_block = CoreBlock(start=0, end=len(gap_source),
+                                      kind="tex", raw=gap_source)
+                gap_artifact = tex_renderer.render_block(gap_block, ctx)
+                html_parts.append(gap_artifact.html)
+
+        # Render the special block.
+        if kind == "animation":
+            artifact = anim_renderer.render_block(block, ctx)
+            html_parts.append(artifact.html)
+            all_snapshots.extend(anim_renderer.last_snapshots)
+        else:
+            artifact = diag_renderer.render_block(block, ctx)
+            html_parts.append(artifact.html)
+
+        cursor = end
+
+    # Render trailing TeX after the last special block.
+    if cursor < len(source):
+        trailing = source[cursor:]
+        if trailing.strip():
+            from scriba.core.artifact import Block as CoreBlock
+            gap_block = CoreBlock(start=0, end=len(trailing),
+                                  kind="tex", raw=trailing)
+            gap_artifact = tex_renderer.render_block(gap_block, ctx)
+            html_parts.append(gap_artifact.html)
 
     starlark_host.close()
     worker_pool.close()
@@ -631,14 +636,15 @@ def render_file(
 
     body = "\n\n".join(html_parts)
 
-    # Include KaTeX CSS for math rendering in narration (CDN for font support).
+    # Include KaTeX CSS for math rendering (CDN for font support).
     katex_css = '\n<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">'
 
     full_html = HTML_TEMPLATE.format(title=title, body=body, katex_css=katex_css)
 
     output_path.write_text(full_html)
-    total = len(anim_blocks) + len(diag_blocks)
-    print(f"Rendered {total} block(s) -> {output_path}")
+    block_count = len(anim_blocks) + len(diag_blocks)
+    tex_gaps = len([p for p in html_parts if p]) - block_count
+    print(f"Rendered {block_count} block(s) + {tex_gaps} TeX region(s) -> {output_path}")
 
 
 def main():

@@ -1,0 +1,208 @@
+\section{BFS on Grid}
+
+Cho mot luoi (grid) kich thuoc $N \times M$, trong do mot so o la vat can (obstacle) khong the di qua. Tim duong di ngan nhat tu o tren-trai $(0, 0)$ den o duoi-phai $(N-1, M-1)$, chi di chuyen theo 4 huong (len, xuong, trai, phai). Moi buoc di chuyen ton chi phi $1$.
+
+\subsection{Phat bieu bai toan}
+
+Cho luoi $G$ co $N$ hang va $M$ cot. O $(r, c)$ co the la trong (``.'') hoac vat can (``X''). Xuat phat tu $(0, 0)$, tim so buoc it nhat de den $(N-1, M-1)$. Neu khong co duong di, tra ve $-1$.
+
+\subsection{Cong thuc BFS}
+
+Voi BFS tren do thi khong trong so (moi canh co trong so $1$), khoang cach ngan nhat den moi o duoc dam bao boi:
+
+$$ dist[r][c] = \min_{(r',c') \in \text{adj}(r,c)} dist[r'][c'] + 1 $$
+
+trong do $\text{adj}(r,c)$ la tap cac o ke co the di duoc cua $(r,c)$.
+
+\subsection{Vi du dau vao}
+
+Xet luoi $4 \times 5$ sau:
+
+\begin{diagram}[id="bfs-grid-input"]
+\shape{g}{Grid}{rows=4, cols=5, data=[["S",".",".",".","."],[".","X","X",".","."],[".",".",".","X","."],[".","X",".",".","G"]]}
+\recolor{g.cell[0][0]}{state=current}
+\recolor{g.cell[1][1]}{state=error}
+\recolor{g.cell[1][2]}{state=error}
+\recolor{g.cell[2][3]}{state=error}
+\recolor{g.cell[3][1]}{state=error}
+\recolor{g.cell[3][4]}{state=good}
+\end{diagram}
+
+O xanh la (current) la diem xuat phat $S = (0,0)$. Cac o do (error) la vat can. O xanh duong (good) la dich $G = (3,4)$.
+
+\subsection{Tai sao BFS hoat dong?}
+
+BFS (Breadth-First Search) kham pha cac o theo tung ``lop song'' (wavefront). Lop $k$ gom tat ca cac o co khoang cach dung bang $k$ tu nguon. Vi moi buoc di chuyen co chi phi bang nhau ($= 1$), khi BFS lan dau tien den mot o, do chinh la khoang cach ngan nhat. Day la tinh chat co ban cua BFS tren do thi khong trong so -- khong can thuat toan phuc tap hon nhu Dijkstra.
+
+Cau truc du lieu queue (hang doi) dam bao thu tu FIFO: cac o o lop $k$ luon duoc xu ly truoc cac o o lop $k+1$.
+
+\subsection{Mo phong BFS}
+
+\begin{animation}[id="bfs-grid-wavefront", label="BFS tren luoi 4x5 -- tim duong ngan nhat"]
+\shape{g}{Grid}{rows=4, cols=5, data=[["S",".",".",".","."],[".","X","X",".","."],[".",".",".","X","."],[".","X",".",".","G"]]}
+\shape{q}{Queue}{capacity=10, label="$Q$"}
+
+\step
+\recolor{g.cell[1][1]}{state=error}
+\recolor{g.cell[1][2]}{state=error}
+\recolor{g.cell[2][3]}{state=error}
+\recolor{g.cell[3][1]}{state=error}
+\narrate{Khoi tao luoi $4 \times 5$. Cac o ``X'' la vat can (do). Bat dau BFS tu $S = (0,0)$, can tim duong ngan nhat den $G = (3,4)$.}
+
+\step
+\recolor{g.cell[0][0]}{state=current}
+\apply{g.cell[0][0]}{value=0}
+\apply{q}{enqueue="0,0"}
+\narrate{Buoc 1: Dat $dist[0][0] = 0$ va dua $(0,0)$ vao hang doi. Day la lop song $0$.}
+
+\step
+\apply{q}{dequeue=true}
+\recolor{g.cell[0][0]}{state=done}
+\recolor{g.cell[0][1]}{state=current}
+\recolor{g.cell[1][0]}{state=current}
+\apply{g.cell[0][1]}{value=1}
+\apply{g.cell[1][0]}{value=1}
+\apply{q}{enqueue="0,1"}
+\apply{q}{enqueue="1,0"}
+\narrate{Buoc 2: Dequeue $(0,0)$. Mo rong sang cac o ke: $(0,1)$ va $(1,0)$ duoc danh dau $dist = 1$. Day la lop song $1$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{q}{dequeue=true}
+\recolor{g.cell[0][1]}{state=done}
+\recolor{g.cell[1][0]}{state=done}
+\recolor{g.cell[0][2]}{state=current}
+\recolor{g.cell[2][0]}{state=current}
+\apply{g.cell[0][2]}{value=2}
+\apply{g.cell[2][0]}{value=2}
+\apply{q}{enqueue="0,2"}
+\apply{q}{enqueue="2,0"}
+\narrate{Buoc 3: Dequeue $(0,1)$ va $(1,0)$. Mo rong: $(0,2)$ va $(2,0)$ co $dist = 2$. O $(1,1)$ va $(1,2)$ la vat can -- bo qua. Lop song $2$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{q}{dequeue=true}
+\recolor{g.cell[0][2]}{state=done}
+\recolor{g.cell[2][0]}{state=done}
+\recolor{g.cell[0][3]}{state=current}
+\recolor{g.cell[2][1]}{state=current}
+\recolor{g.cell[2][2]}{state=current}
+\apply{g.cell[0][3]}{value=3}
+\apply{g.cell[2][1]}{value=3}
+\apply{g.cell[2][2]}{value=3}
+\apply{q}{enqueue="0,3"}
+\apply{q}{enqueue="2,1"}
+\apply{q}{enqueue="2,2"}
+\narrate{Buoc 4: Mo rong tu lop $2$. Dat $(0,3)$, $(2,1)$, $(2,2)$ voi $dist = 3$. Lop song $3$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{q}{dequeue=true}
+\apply{q}{dequeue=true}
+\recolor{g.cell[0][3]}{state=done}
+\recolor{g.cell[2][1]}{state=done}
+\recolor{g.cell[2][2]}{state=done}
+\recolor{g.cell[0][4]}{state=current}
+\recolor{g.cell[1][3]}{state=current}
+\recolor{g.cell[3][0]}{state=current}
+\apply{g.cell[0][4]}{value=4}
+\apply{g.cell[1][3]}{value=4}
+\apply{g.cell[3][0]}{value=4}
+\apply{q}{enqueue="0,4"}
+\apply{q}{enqueue="1,3"}
+\apply{q}{enqueue="3,0"}
+\narrate{Buoc 5: Mo rong tu lop $3$. Dat $(0,4)$, $(1,3)$, $(3,0)$ voi $dist = 4$. O $(2,3)$ la vat can. Lop song $4$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{q}{dequeue=true}
+\apply{q}{dequeue=true}
+\recolor{g.cell[0][4]}{state=done}
+\recolor{g.cell[1][3]}{state=done}
+\recolor{g.cell[3][0]}{state=done}
+\recolor{g.cell[1][4]}{state=current}
+\recolor{g.cell[3][2]}{state=current}
+\apply{g.cell[1][4]}{value=5}
+\apply{g.cell[3][2]}{value=5}
+\apply{q}{enqueue="1,4"}
+\apply{q}{enqueue="3,2"}
+\narrate{Buoc 6: Mo rong tu lop $4$. Dat $(1,4)$ va $(3,2)$ voi $dist = 5$. O $(3,1)$ la vat can. Lop song $5$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{q}{dequeue=true}
+\recolor{g.cell[1][4]}{state=done}
+\recolor{g.cell[3][2]}{state=done}
+\recolor{g.cell[2][4]}{state=current}
+\recolor{g.cell[3][3]}{state=current}
+\apply{g.cell[2][4]}{value=6}
+\apply{g.cell[3][3]}{value=6}
+\apply{q}{enqueue="2,4"}
+\apply{q}{enqueue="3,3"}
+\narrate{Buoc 7: Mo rong tu lop $5$. Dat $(2,4)$ va $(3,3)$ voi $dist = 6$. Gan den dich! Lop song $6$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{q}{dequeue=true}
+\recolor{g.cell[2][4]}{state=done}
+\recolor{g.cell[3][3]}{state=done}
+\recolor{g.cell[3][4]}{state=good}
+\apply{g.cell[3][4]}{value=7}
+\apply{q}{enqueue="3,4"}
+\narrate{Buoc 8: Mo rong tu lop $6$. Dat $(3,4) = G$ voi $dist = 7$. Da tim thay dich! Duong di ngan nhat co do dai $7$.}
+
+\step
+\recolor{g.cell[0][0]}{state=path}
+\recolor{g.cell[0][1]}{state=path}
+\recolor{g.cell[0][2]}{state=path}
+\recolor{g.cell[0][3]}{state=path}
+\recolor{g.cell[1][3]}{state=path}
+\recolor{g.cell[1][4]}{state=path}
+\recolor{g.cell[2][4]}{state=path}
+\recolor{g.cell[3][4]}{state=path}
+\narrate{Truy vet duong di ngan nhat: $(0,0) \to (0,1) \to (0,2) \to (0,3) \to (1,3) \to (1,4) \to (2,4) \to (3,4)$. Tong cong $7$ buoc. Day la mot trong nhieu duong di ngan nhat co the.}
+\end{animation}
+
+\subsection{Do phuc tap}
+
+Do phuc tap thoi gian: $O(N \times M)$ -- moi o duoc tham nhieu nhat mot lan.
+
+Do phuc tap khong gian: $O(N \times M)$ -- cho mang $dist$ va hang doi.
+
+Voi $N, M \leq 1000$, BFS xu ly toi da $10^6$ o, hoan toan du nhanh trong gioi han thoi gian cua hau het cac bai thi.
+
+\subsection{Cai dat}
+
+\begin{lstlisting}[language=Python]
+from collections import deque
+
+def bfs_grid(grid: list[list[str]]) -> int:
+    """Tim duong di ngan nhat tu (0,0) den (N-1,M-1) tren luoi 2D.
+
+    grid[r][c] = '.' (trong) hoac 'X' (vat can).
+    Tra ve do dai duong di ngan nhat, hoac -1 neu khong co duong di.
+    """
+    n, m = len(grid), len(grid[0])
+    if grid[0][0] == 'X' or grid[n - 1][m - 1] == 'X':
+        return -1
+
+    dist = [[-1] * m for _ in range(n)]
+    dist[0][0] = 0
+    queue = deque([(0, 0)])
+
+    dx = [-1, 1, 0, 0]
+    dy = [0, 0, -1, 1]
+
+    while queue:
+        r, c = queue.popleft()
+        for i in range(4):
+            nr, nc = r + dx[i], c + dy[i]
+            if 0 <= nr < n and 0 <= nc < m:
+                if grid[nr][nc] != 'X' and dist[nr][nc] == -1:
+                    dist[nr][nc] = dist[r][c] + 1
+                    queue.append((nr, nc))
+                    if nr == n - 1 and nc == m - 1:
+                        return dist[nr][nc]
+
+    return dist[n - 1][m - 1]
+\end{lstlisting}
