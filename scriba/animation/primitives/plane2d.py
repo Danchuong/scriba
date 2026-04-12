@@ -531,7 +531,7 @@ class Plane2D(PrimitiveBase):
         parts.append("</g>")
 
         # Layer 3: text labels (SVG coordinates, outside transform)
-        parts.append(self._emit_labels())
+        parts.append(self._emit_labels(render_inline_tex=render_inline_tex))
 
         parts.append("</g>")
         return "".join(parts)
@@ -796,7 +796,7 @@ class Plane2D(PrimitiveBase):
 
     # ----- Label layer (SVG coordinates, outside transform) ----------------
 
-    def _emit_labels(self) -> str:
+    def _emit_labels(self, *, render_inline_tex: "Callable[[str], str] | None" = None) -> str:
         parts: list[str] = ['<g class="scriba-plane-labels">']
 
         # Tick labels on axes
@@ -812,10 +812,14 @@ class Plane2D(PrimitiveBase):
             if pt.get("label"):
                 sx, sy = self.math_to_svg(pt["x"], pt["y"])
                 parts.append(
-                    f'<text x="{sx + _LABEL_OFFSET:.2f}" '
-                    f'y="{sy - _LABEL_OFFSET:.2f}" '
-                    f'font-size="{_TICK_FONT_SIZE}" fill="{THEME["fg"]}">'
-                    f'{html_escape(str(pt["label"]))}</text>'
+                    _render_svg_text(
+                        str(pt["label"]),
+                        round(sx + _LABEL_OFFSET),
+                        round(sy - _LABEL_OFFSET),
+                        fill=THEME["fg"],
+                        font_size=str(_TICK_FONT_SIZE),
+                        render_inline_tex=render_inline_tex,
+                    )
                 )
 
         # Line labels
@@ -836,10 +840,14 @@ class Plane2D(PrimitiveBase):
                     (_, _), (x2, y2) = result
                     label_x, label_y = self.math_to_svg(x2, y2)
                 parts.append(
-                    f'<text x="{label_x + _LABEL_OFFSET:.2f}" '
-                    f'y="{label_y - _LABEL_OFFSET:.2f}" '
-                    f'font-size="{_TICK_FONT_SIZE}" fill="{THEME["fg"]}">'
-                    f'{html_escape(str(ln["label"]))}</text>'
+                    _render_svg_text(
+                        str(ln["label"]),
+                        round(label_x + _LABEL_OFFSET),
+                        round(label_y - _LABEL_OFFSET),
+                        fill=THEME["fg"],
+                        font_size=str(_TICK_FONT_SIZE),
+                        render_inline_tex=render_inline_tex,
+                    )
                 )
 
         parts.append("</g>")

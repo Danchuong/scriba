@@ -18,6 +18,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _escape_xml,
+    _render_svg_text,
     register_primitive,
     svg_style_attrs,
 )
@@ -264,10 +265,16 @@ class CodePanel(PrimitiveBase):
             label_y = panel_h - 4
             label_x = panel_w // 2
             parts.append(
-                f'<text x="{label_x}" y="{label_y}" '
-                f'text-anchor="middle" fill="{THEME["fg_muted"]}" '
-                f'class="scriba-primitive-label" '
-                f'font-size="12">{_escape_xml(self.label_text)}</text>'
+                _render_svg_text(
+                    self.label_text,
+                    label_x,
+                    label_y,
+                    fill=THEME["fg_muted"],
+                    font_size="12",
+                    text_anchor="middle",
+                    css_class="scriba-primitive-label",
+                    render_inline_tex=render_inline_tex,
+                )
             )
 
         parts.append("</g>")

@@ -214,7 +214,7 @@ class DPTablePrimitive(PrimitiveBase):
         # Arrow annotations
         if effective_anns:
             for ann in effective_anns:
-                self._emit_arrow(lines, ann)
+                self._emit_arrow(lines, ann, render_inline_tex=render_inline_tex)
 
         # Caption label
         if self.label is not None:
@@ -443,6 +443,7 @@ class DPTablePrimitive(PrimitiveBase):
         self,
         lines: list[str],
         ann: dict[str, Any],
+        render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> None:
         """Emit a cubic Bezier arrow annotation."""
         color = ann.get("color", "info")
@@ -477,8 +478,14 @@ class DPTablePrimitive(PrimitiveBase):
         )
         if label_text:
             lines.append(
-                f'    <text x="{mid_x}" y="{mid_y}">'
-                f"{_escape_xml(label_text)}</text>"
+                "    "
+                + _render_svg_text(
+                    label_text,
+                    mid_x,
+                    mid_y,
+                    text_anchor="middle",
+                    render_inline_tex=render_inline_tex,
+                )
             )
         lines.append("  </g>")
 

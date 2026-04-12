@@ -327,7 +327,7 @@ class ArrayPrimitive(PrimitiveBase):
         # Arrow annotations
         if effective_anns:
             for ann in effective_anns:
-                self._emit_arrow(lines, ann, annotations=effective_anns)
+                self._emit_arrow(lines, ann, annotations=effective_anns, render_inline_tex=render_inline_tex)
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
@@ -439,6 +439,7 @@ class ArrayPrimitive(PrimitiveBase):
         lines: list[str],
         ann: dict[str, Any],
         annotations: list[dict[str, Any]] | None = None,
+        render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> None:
         """Emit a cubic Bezier arrow annotation."""
         color = ann.get("color", "info")
@@ -514,11 +515,18 @@ class ArrayPrimitive(PrimitiveBase):
             l_weight = style["label_weight"]
             l_size = style["label_size"]
             lines.append(
-                f'    <text x="{mid_x}" y="{label_y}" '
-                f'text-anchor="middle" dominant-baseline="auto" '
-                f'fill="{l_fill}" font-weight="{l_weight}" '
-                f'font-size="{l_size}">'
-                f"{_escape_xml(label_text)}</text>"
+                "    "
+                + _render_svg_text(
+                    label_text,
+                    mid_x,
+                    label_y,
+                    fill=l_fill,
+                    font_weight=l_weight,
+                    font_size=l_size,
+                    text_anchor="middle",
+                    dominant_baseline="auto",
+                    render_inline_tex=render_inline_tex,
+                )
             )
         lines.append("  </g>")
 
