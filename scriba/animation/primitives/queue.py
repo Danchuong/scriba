@@ -338,7 +338,11 @@ class Queue(PrimitiveBase):
         # rear_idx is one past the last occupied cell; display at the last
         # occupied cell (rear_idx - 1), clamping to 0 for an empty queue.
         rear_display = max(self.rear_idx - 1, 0)
-        pointers_overlap = self.front_idx == rear_display
+        # Clamp front_idx the same way _emit_pointer does before comparing,
+        # so we detect overlap when both pointers land on the same cell
+        # (e.g., empty queue where front_idx >= capacity).
+        front_display = max(0, min(self.front_idx, self.capacity - 1))
+        pointers_overlap = front_display == rear_display
 
         # --- Render front pointer arrow ---
         self._emit_pointer(
