@@ -123,8 +123,8 @@
 \step
 \recolor{T.node[7]}{state=idle}
 \recolor{T.edge[(8,7)]}{state=idle}
-\apply{T}{add_node={id=10, parent=7}}
-\apply{T}{add_node={id=11, parent=7}}
+\apply{T}{add_node={id="10", parent="7"}}
+\apply{T}{add_node={id="11", parent="7"}}
 \recolor{T.node[5]}{state=idle}
 \recolor{T.node[3]}{state=idle}
 \recolor{T.node[4]}{state=idle}
@@ -136,17 +136,17 @@
 \narrate{Right rotation tai Y=8. Hien tai: Y=8 co con trai X=7 (voi con A=10 va B=11) va con phai C=9. Phep xoay phai se nang X len vi tri cua Y, day Y xuong lam con phai cua X, va chuyen B tu con phai cua X sang con trai cua Y.}
 
 \step
-\recolor{T.node[8]}{state=bad}
+\recolor{T.node[8]}{state=error}
 \recolor{T.node[7]}{state=good}
 \recolor{T.node[11]}{state=current}
 \narrate{Danh dau cac node tham gia xoay: X=7 (xanh, se di len) va Y=8 (do, se di xuong). Node B=11 (con phai cua X) se chuyen sang lam con trai cua Y. Ba buoc reparent tiep theo thuc hien xoay that -- cau truc cay thay doi, khong chi doi mau.}
 
 \step
-\apply{T}{reparent={node=7, parent=5}}
-\apply{T}{reparent={node=8, parent=7}}
-\apply{T}{reparent={node=11, parent=8}}
+\apply{T}{reparent={node="7", parent="5"}}
+\apply{T}{reparent={node="8", parent="7"}}
+\apply{T}{reparent={node="11", parent="8"}}
 \recolor{T.node[7]}{state=good}
-\recolor{T.node[8]}{state=bad}
+\recolor{T.node[8]}{state=error}
 \recolor{T.node[11]}{state=current}
 \narrate{Thuc hien xoay phai bang 3 lenh reparent: (1) reparent X=7 len lam con cua root 5 (tach khoi Y); (2) reparent Y=8 xuong lam con cua X=7; (3) reparent B=11 tu X sang Y (B tro thanh con trai cua Y). Reingold-Tilford tu dong tinh lai layout -- cac node thuc su di chuyen.}
 
