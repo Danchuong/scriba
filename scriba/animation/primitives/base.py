@@ -10,6 +10,7 @@ See ``docs/spec/primitives.md`` for the authoritative catalog.
 from __future__ import annotations
 
 import abc
+import math
 import re
 import warnings
 from dataclasses import dataclass
@@ -623,6 +624,9 @@ def emit_arrow_svg(
     arrow_index: int,
     cell_height: float,
     render_inline_tex: "Callable[[str], str] | None" = None,
+    layout: str = "horizontal",
+    shorten_src: float = 0.0,
+    shorten_dst: float = 0.0,
 ) -> None:
     """Emit a cubic Bezier arrow annotation into *lines*.
 
@@ -649,27 +653,79 @@ def emit_arrow_svg(
         Cell height used for curve offset calculation.
     render_inline_tex:
         Optional callback for rendering ``$...$`` math in labels.
+    layout:
+        ``"horizontal"`` (default) curves upward for Array/DPTable etc.
+        ``"2d"`` curves perpendicular to the source-destination line,
+        suitable for Graph, Tree, Grid, and Plane2D.
+    shorten_src:
+        Pull the path start point toward the destination by this many
+        pixels.  Useful for circular nodes so the arrow starts at the
+        circle edge rather than the center.
+    shorten_dst:
+        Pull the path end point toward the source by this many pixels.
+        Useful for circular nodes so the arrowhead stops at the circle
+        edge rather than piercing into the node.
     """
     color = ann.get("color", "info")
     label_text = ann.get("label", "")
     target = ann.get("target", "")
     arrow_from = ann.get("arrow_from", "")
 
-    x1, y1 = src_point
-    x2, y2 = dst_point
+    x1, y1 = float(src_point[0]), float(src_point[1])
+    x2, y2 = float(dst_point[0]), float(dst_point[1])
 
-    # Control points: curve upward -- scale with horizontal distance
-    # and stagger when multiple arrows target the same cell
+    # Shorten endpoints toward each other (for circle-edge arrows)
+    dx = x2 - x1
+    dy = y2 - y1
+    dist = math.sqrt(dx * dx + dy * dy) or 1.0
+
+    if shorten_src > 0 and dist > 0:
+        x1 = x1 + (dx / dist) * shorten_src
+        y1 = y1 + (dy / dist) * shorten_src
+    if shorten_dst > 0 and dist > 0:
+        x2 = x2 - (dx / dist) * shorten_dst
+        y2 = y2 - (dy / dist) * shorten_dst
+
+    # Recompute after shortening
+    dx = x2 - x1
+    dy = y2 - y1
+    dist = math.sqrt(dx * dx + dy * dy) or 1.0
+
+    # Control points: scale with distance and stagger for multiple arrows
     base_offset = max(cell_height * 0.75, abs(x2 - x1) * 0.25)
     stagger = cell_height * 0.5
     total_offset = base_offset + arrow_index * stagger
 
-    mid_x = int((x1 + x2) // 2)
-    mid_y = int(min(y1, y2) - total_offset)
-    cx1 = int((x1 + mid_x) // 2)
-    cy1 = mid_y
-    cx2 = int((x2 + mid_x) // 2)
-    cy2 = mid_y
+    if layout == "2d":
+        # Perpendicular Bezier: curve away from the connecting line
+        perp_x = -dy / dist
+        perp_y = dx / dist
+
+        mid_x_f = (x1 + x2) / 2
+        mid_y_f = (y1 + y2) / 2
+
+        cx1 = int((x1 + mid_x_f) / 2 + perp_x * total_offset)
+        cy1 = int((y1 + mid_y_f) / 2 + perp_y * total_offset)
+        cx2 = int((x2 + mid_x_f) / 2 + perp_x * total_offset)
+        cy2 = int((y2 + mid_y_f) / 2 + perp_y * total_offset)
+
+        label_ref_x = int(mid_x_f + perp_x * (total_offset + 8))
+        label_ref_y = int(mid_y_f + perp_y * (total_offset + 8))
+    else:
+        # Horizontal layout: curve upward (original formula)
+        mid_x_f = (x1 + x2) / 2
+        mid_y_val = int(min(y1, y2) - total_offset)
+
+        cx1 = int((x1 + mid_x_f) / 2)
+        cy1 = mid_y_val
+        cx2 = int((x2 + mid_x_f) / 2)
+        cy2 = mid_y_val
+
+        label_ref_x = int(mid_x_f)
+        label_ref_y = mid_y_val - 4  # slightly above the curve peak
+
+    ix1, iy1 = int(x1), int(y1)
+    ix2, iy2 = int(x2), int(y2)
 
     # Resolve inline style for this color
     style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
@@ -692,14 +748,13 @@ def emit_arrow_svg(
         f' role="graphics-symbol" aria-label="{ann_desc}">'
     )
     lines.append(
-        f'    <path d="M{x1},{y1} C{cx1},{cy1} {cx2},{cy2} {x2},{y2}" '
+        f'    <path d="M{ix1},{iy1} C{cx1},{cy1} {cx2},{cy2} {ix2},{iy2}" '
         f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none" '
         f'marker-end="url(#scriba-arrow-{color})">'
         f'<title>{ann_desc}</title>'
         f'</path>'
     )
     if label_text:
-        label_y = mid_y - 4  # slightly above the curve peak
         l_fill = style["label_fill"]
         l_weight = style["label_weight"]
         l_size = style["label_size"]
@@ -707,8 +762,8 @@ def emit_arrow_svg(
             "    "
             + _render_svg_text(
                 label_text,
-                mid_x,
-                label_y,
+                label_ref_x,
+                label_ref_y,
                 fill=l_fill,
                 font_weight=l_weight,
                 font_size=l_size,
@@ -724,6 +779,7 @@ def arrow_height_above(
     annotations: list[dict[str, Any]],
     cell_center_resolver: "Callable[[str], tuple[float, float] | None]",
     cell_height: float = CELL_HEIGHT,
+    layout: str = "horizontal",
 ) -> int:
     """Compute the max vertical extent above y=0 that arrows need.
 
@@ -736,6 +792,10 @@ def arrow_height_above(
         to ``(x, y)`` SVG coordinates, or ``None`` if unresolvable.
     cell_height:
         Cell height used for curve offset calculation.
+    layout:
+        ``"horizontal"`` (default) assumes upward-curving arrows.
+        ``"2d"`` computes based on perpendicular offset from the
+        source-destination line.
     """
     if not annotations:
         return 0
@@ -749,8 +809,8 @@ def arrow_height_above(
         dst = cell_center_resolver(ann.get("target", ""))
         if src is None or dst is None:
             continue
-        x1, _y1 = src
-        x2, _y2 = dst
+        x1, y1 = src
+        x2, y2 = dst
         # Count arrows targeting same cell before this one
         target = ann.get("target", "")
         arrow_index = sum(
@@ -762,7 +822,26 @@ def arrow_height_above(
         base_offset = max(cell_height * 0.75, abs(x2 - x1) * 0.25)
         stagger = cell_height * 0.5
         total_offset = base_offset + arrow_index * stagger
-        max_height = max(max_height, int(total_offset) + 14)
+
+        if layout == "2d":
+            # For 2D layouts the curve bows perpendicular to the line
+            # between source and destination.  The vertical component
+            # above the topmost endpoint depends on the perpendicular
+            # direction.
+            dx = x2 - x1
+            dy = y2 - y1
+            dist = math.sqrt(dx * dx + dy * dy) or 1.0
+            perp_y = dx / dist  # perpendicular y-component
+            # The control points sit at roughly mid_y + perp_y * offset.
+            # The worst-case vertical extent above the topmost point is
+            # how far above min(y1, y2) the curve can reach.
+            mid_y = (y1 + y2) / 2
+            ctrl_y = mid_y + perp_y * total_offset
+            extent_above = max(0, min(y1, y2) - ctrl_y)
+            max_height = max(max_height, int(extent_above) + 14)
+        else:
+            # Horizontal: the curve peaks at min(y1, y2) - total_offset
+            max_height = max(max_height, int(total_offset) + 14)
 
     return max_height
 

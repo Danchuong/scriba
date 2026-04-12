@@ -722,10 +722,10 @@ class Tree(PrimitiveBase):
                 except ValueError:
                     return None
             if node_id in self.positions:
-                r = self._node_radius
                 cx, cy = self.positions[node_id]
-                # Add the translate(r, r) offset from emit_svg
-                return (float(cx + r), float(cy + r))
+                # Coordinates are in the local space of the translated
+                # group emitted by emit_svg; no extra offset needed.
+                return (float(cx), float(cy))
         return None
 
     def bounding_box(self) -> BoundingBox:
@@ -915,6 +915,9 @@ class Tree(PrimitiveBase):
             arrow_index=arrow_index,
             cell_height=float(self._node_radius * 2),
             render_inline_tex=render_inline_tex,
+            layout="2d",
+            shorten_src=float(self._node_radius),
+            shorten_dst=float(self._node_radius),
         )
 
     def _arrow_height_above(self) -> int:
@@ -923,4 +926,5 @@ class Tree(PrimitiveBase):
             self._annotations,
             self.resolve_annotation_point,
             cell_height=float(self._node_radius * 2),
+            layout="2d",
         )

@@ -180,7 +180,7 @@ class GridPrimitive(PrimitiveBase):
             c = int(m.group("col"))
             if 0 <= r < self.rows and 0 <= c < self.cols:
                 x = c * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2
-                y = r * (CELL_HEIGHT + CELL_GAP)  # top edge of cell
+                y = r * (CELL_HEIGHT + CELL_GAP) + CELL_HEIGHT // 2  # cell center
                 return (float(x), float(y))
         return None
 
@@ -194,7 +194,8 @@ class GridPrimitive(PrimitiveBase):
 
         # Compute vertical space needed above cells for arrow curves
         arrow_above = arrow_height_above(
-            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
+            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT,
+            layout="2d",
         )
 
         lines: list[str] = [
@@ -292,6 +293,7 @@ class GridPrimitive(PrimitiveBase):
                 emit_arrow_svg(
                     lines, ann, src, dst, arrow_index,
                     CELL_HEIGHT, render_inline_tex,
+                    layout="2d",
                 )
 
         # Close the translate group if we opened one for arrow space
@@ -310,6 +312,7 @@ class GridPrimitive(PrimitiveBase):
         arrow_above = arrow_height_above(
             self._annotations, self.resolve_annotation_point,
             cell_height=CELL_HEIGHT,
+            layout="2d",
         )
         h += arrow_above
         return BoundingBox(x=0, y=0, width=tw, height=h)

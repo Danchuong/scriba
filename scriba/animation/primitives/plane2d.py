@@ -698,6 +698,7 @@ class Plane2D(PrimitiveBase):
             arrow_index=arrow_index,
             cell_height=_ARROW_CELL_HEIGHT,
             render_inline_tex=render_inline_tex,
+            layout="2d",
         )
 
     def _arrow_height_above(self) -> int:
@@ -706,6 +707,7 @@ class Plane2D(PrimitiveBase):
             self._annotations,
             self.resolve_annotation_point,
             cell_height=_ARROW_CELL_HEIGHT,
+            layout="2d",
         )
 
     # ----- Grid rendering --------------------------------------------------
