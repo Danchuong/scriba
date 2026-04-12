@@ -625,6 +625,20 @@
 }
 
 /* ============================================
+   MetricPlot supplementary classes
+   ============================================ */
+
+.scriba-metricplot-legend-label {
+  font-size: 11px;
+  fill: var(--scriba-fg);
+}
+
+.scriba-metricplot-right-axis-label {
+  font-size: 11px;
+  fill: var(--scriba-fg-muted);
+}
+
+/* ============================================
    Print styles — interactive widget
    ============================================ */
 
