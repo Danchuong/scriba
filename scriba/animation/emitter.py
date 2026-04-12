@@ -845,25 +845,38 @@ def emit_interactive_html(
             f'</div>'
         )
 
-    # Compute transition manifests for consecutive frame pairs
+    # Compute transition manifests for consecutive frame pairs.
+    # Also detect when the SVG changed structurally (add_edge, remove_edge,
+    # add_node, etc.) but the differ only captured CSS-level transitions
+    # (recolor, value_change).  In that case we mark the frame as needing
+    # a full innerHTML sync (fs:1) so the JS runtime doesn't skip it.
     _manifests: list[str] = ["null"]  # Frame 0 has no previous frame
+    _needs_sync: list[bool] = [False]
     for i in range(1, len(frames)):
         _m = compute_transitions(frames[i - 1], frames[i])
         if not _m.transitions or _m.skip_animation:
             _manifests.append("null")
+            _needs_sync.append(False)
         else:
             _manifests.append(
                 _json.dumps(_m.to_compact(), separators=(",", ":"))
             )
+            # If the SVG actually changed between frames, we need a full
+            # innerHTML sync after CSS/WAAPI transitions complete.  The
+            # differ may not capture all structural changes (e.g. add_edge
+            # in Graph), so we always sync when the SVG differs.
+            svg_changed = _frame_parts[i][0] != _frame_parts[i - 1][0]
+            _needs_sync.append(svg_changed)
 
     # Build JS frames array with transition manifests
     js_frames: list[str] = []
     for idx, (sve, ne, se, le) in enumerate(_frame_parts):
         tr = _manifests[idx]
+        fs = "1" if _needs_sync[idx] else "0"
         js_frames.append(
             f'{{svg:`{sve}`,narration:`{ne}`,'
             f'substory:`{se}`,label:`{le}`,'
-            f'tr:{tr}}}'
+            f'tr:{tr},fs:{fs}}}'
         )
 
     js_frames_str = ",\n    ".join(js_frames)
@@ -1059,6 +1072,7 @@ def emit_interactive_html(
         }}
       }}
     }}
+    var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){{
       cur=toIdx;
       if(fullSync){{
@@ -1069,7 +1083,9 @@ def emit_interactive_html(
       _anims=[];_animState='idle';
     }}
     if(hasWaapi){{
-      Promise.all(pending).then(function(){{_finish(true);}}).catch(function(){{_finish(true);}});
+      Promise.all(pending).then(function(){{_finish(needsSync||true);}}).catch(function(){{_finish(true);}});
+    }}else if(needsSync){{
+      setTimeout(function(){{_finish(true);}},DUR+20);
     }}else{{
       _finish(false);
     }}

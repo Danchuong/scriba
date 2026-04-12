@@ -6,7 +6,7 @@ Scriba is a rendering pipeline that compiles a single `.tex` file into self-cont
 
 Three renderers work together:
 
-- **TexRenderer** -- handles all standard LaTeX: `\section`, `\textbf`, inline math `$...$`, display math `\[...\]`, lists (`\begin{itemize}`), code listings (`\begin{lstlisting}`), tables (`\begin{tabular}`), hyperlinks (`\href`, `\url`), figures, and more. This renderer claims the entire source file, but yields regions to the other two renderers.
+- **TexRenderer** -- handles all standard LaTeX: `\section`, `\textbf`, inline math `$...$`, display math `$$...$$`, lists (`\begin{itemize}`), code listings (`\begin{lstlisting}`), tables (`\begin{tabular}`), hyperlinks (`\href`, `\url`), images, and more. This renderer claims the entire source file, but yields regions to the other two renderers. See [`spec/tex-ruleset.md`](../spec/tex-ruleset.md) for the full list of supported commands.
 - **AnimationRenderer** -- handles `\begin{animation}...\end{animation}` blocks, producing interactive step-through SVG frames with prev/next controls and narration.
 - **DiagramRenderer** -- handles `\begin{diagram}...\end{diagram}` blocks, producing static single-frame SVG figures with zero JavaScript.
 
@@ -23,9 +23,9 @@ Here is a complete `.tex` file that mixes all three content types:
 
 Binary search finds a target value in a sorted array $a[0..n{-}1]$
 by repeatedly halving the search interval. The running time is
-\[
+$$
   T(n) = O(\log n)
-\]
+$$
 
 Below is a static diagram of the input array:
 
@@ -68,7 +68,7 @@ def binary_search(a, target):
 **How the Pipeline processes this:**
 
 1. AnimationRenderer and DiagramRenderer scan the source and claim their `\begin{animation}` and `\begin{diagram}` regions.
-2. TexRenderer handles everything else -- the `\section` heading, paragraphs, inline math (`$a[0..n{-}1]$`), display math (`\[...\]`), and the `\begin{lstlisting}` code block.
+2. TexRenderer handles everything else -- the `\section` heading, paragraphs, inline math (`$a[0..n{-}1]$`), display math (`$$...$$`), and the `\begin{lstlisting}` code block.
 3. The Pipeline stitches all rendered fragments back together in source order, producing a single HTML file where LaTeX prose, the static diagram, the interactive animation, and the code listing all appear seamlessly.
 
 You write one `.tex` file. You get one `.html` output.

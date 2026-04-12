@@ -158,7 +158,8 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 | [`svg-emitter.md`](spec/svg-emitter.md) | SVG emitter specification. |
 | [`animation-css.md`](spec/animation-css.md) | CSS stylesheet specification. |
 | [`starlark-worker.md`](spec/starlark-worker.md) | Starlark worker wire protocol. |
-| [`ruleset.md`](spec/ruleset.md) | Comprehensive ruleset derived from specs. |
+| [`ruleset.md`](spec/ruleset.md) | Comprehensive ruleset for `animation` and `diagram` environments. |
+| [`tex-ruleset.md`](spec/tex-ruleset.md) | Normative reference for every LaTeX command and environment that TexRenderer supports. |
 | [`error-codes.md`](spec/error-codes.md) | Unified error code reference (E10xx--E15xx) with descriptions and common fixes. |
 
 ### `guides/` — How-to and plugin docs

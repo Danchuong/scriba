@@ -1,0 +1,113 @@
+\begin{animation}[id="union-find-tree", label="Union-Find (DSU) -- Tree primitive voi virtual root"]
+\shape{T}{Tree}{root="R", nodes=["R","A","B","C","D","E","F","G"], edges=[("R","A"),("R","B"),("R","C"),("R","D"),("R","E"),("R","F"),("R","G")]}
+\shape{parent}{Array}{size=7, data=["A","B","C","D","E","F","G"], labels="0..6", label="$parent[]$"}
+
+\step
+\recolor{T.node[R]}{state=hidden}
+\recolor{T.edge[(R,A)]}{state=hidden}
+\recolor{T.edge[(R,B)]}{state=hidden}
+\recolor{T.edge[(R,C)]}{state=hidden}
+\recolor{T.edge[(R,D)]}{state=hidden}
+\recolor{T.edge[(R,E)]}{state=hidden}
+\recolor{T.edge[(R,F)]}{state=hidden}
+\recolor{T.edge[(R,G)]}{state=hidden}
+\narrate{Disjoint-Set Union (DSU) tren 7 phan tu A..G. Moi phan tu la root cua chinh no: $parent[x] = x$. Ta dung Tree primitive voi virtual root R (an di) de quan ly cau truc rung (forest). Tat ca 7 node ban dau la con truc tiep cua R -- tuong duong 7 tap doc lap.}
+
+\step
+\recolor{T.node[A]}{state=current}
+\recolor{T.node[B]}{state=current}
+\apply{T}{reparent={node="B", parent="A"}}
+\recolor{T.edge[(R,B)]}{state=hidden}
+\apply{parent.cell[1]}{value="A"}
+\recolor{parent.cell[1]}{state=good}
+\narrate{$union(A, B)$: root cua A la A, root cua B la B. Gan B lam con cua A bang reparent. Canh (R,B) bi an vi B khong con la root doc lap. $parent[B] = A$. Thanh phan: $\{A,B\}$ voi root A.}
+
+\step
+\recolor{T.node[A]}{state=done}
+\recolor{T.node[B]}{state=done}
+\recolor{T.node[C]}{state=current}
+\recolor{T.node[D]}{state=current}
+\apply{T}{reparent={node="D", parent="C"}}
+\recolor{T.edge[(R,D)]}{state=hidden}
+\apply{parent.cell[3]}{value="C"}
+\recolor{parent.cell[3]}{state=good}
+\narrate{$union(C, D)$: gan D lam con cua C. An canh (R,D). $parent[D] = C$. Cac thanh phan hien tai: $\{A,B\}, \{C,D\}, \{E\}, \{F\}, \{G\}$.}
+
+\step
+\recolor{T.node[C]}{state=done}
+\recolor{T.node[D]}{state=done}
+\recolor{T.node[E]}{state=current}
+\recolor{T.node[F]}{state=current}
+\apply{T}{reparent={node="F", parent="E"}}
+\recolor{T.edge[(R,F)]}{state=hidden}
+\apply{parent.cell[5]}{value="E"}
+\recolor{parent.cell[5]}{state=good}
+\narrate{$union(E, F)$: gan F lam con cua E. An canh (R,F). $parent[F] = E$. Cac thanh phan: $\{A,B\}, \{C,D\}, \{E,F\}, \{G\}$. Bay gio co 4 thanh phan.}
+
+\step
+\recolor{T.node[E]}{state=done}
+\recolor{T.node[F]}{state=done}
+\recolor{T.node[A]}{state=current}
+\recolor{T.node[C]}{state=current}
+\apply{T}{reparent={node="C", parent="A"}}
+\recolor{T.edge[(R,C)]}{state=hidden}
+\apply{parent.cell[2]}{value="A"}
+\recolor{parent.cell[2]}{state=good}
+\narrate{$union(A, C)$: $find(A) = A$, $find(C) = C$. Hai root khac nhau, gan cay C lam con cua A. Thao tac nay hop nhat $\{A,B\}$ va $\{C,D\}$ thanh $\{A,B,C,D\}$. An canh (R,C). Cay cua A gio co: A la root, B va C la con truc tiep, D la con cua C. Tim D can di $D \to C \to A$ (2 buoc).}
+
+\step
+\recolor{T.node[A]}{state=done}
+\recolor{T.node[C]}{state=dim}
+\recolor{T.node[D]}{state=current}
+\narrate{$find(D)$ voi path compression -- buoc 1: bat dau tai D. $parent[D] = C$, di len C. Ghi nho D la node can reparent truc tiep ve root sau khi tim duoc root.}
+
+\step
+\recolor{T.node[D]}{state=path}
+\recolor{T.node[C]}{state=current}
+\narrate{$find(D)$ -- buoc 2: tai C, $parent[C] = A$. Di len A. C da la con truc tiep cua A nen khong can nen duong cho C.}
+
+\step
+\recolor{T.node[C]}{state=dim}
+\recolor{T.node[A]}{state=good}
+\narrate{$find(D)$ -- buoc 3: dat den A, $parent[A] = A$ (root). Ket qua: $find(D) = A$. Bay gio thuc hien path compression: reparent D truc tiep lam con cua A, bo qua C.}
+
+\step
+\apply{T}{reparent={node="D", parent="A"}}
+\apply{parent.cell[3]}{value="A"}
+\recolor{parent.cell[3]}{state=good}
+\recolor{T.node[D]}{state=good}
+\recolor{T.node[A]}{state=good}
+\narrate{Path compression hoan tat: reparent D tu C len A. $parent[D] = A$. Lan goi $find(D)$ tiep theo se la $O(1)$ vi D tro truc tiep vao root. Day la co che giup DSU dat do phuc tap $O(\alpha(n))$ thay vi $O(\log n)$. Reingold-Tilford tu dong tinh lai layout cay.}
+
+\step
+\recolor{T.node[D]}{state=done}
+\recolor{T.node[A]}{state=current}
+\recolor{T.node[E]}{state=current}
+\apply{T}{reparent={node="E", parent="A"}}
+\recolor{T.edge[(R,E)]}{state=hidden}
+\apply{parent.cell[4]}{value="A"}
+\recolor{parent.cell[4]}{state=good}
+\narrate{$union(A, E)$: $find(A) = A$, $find(E) = E$. Gan cay E (gom $\{E,F\}$) lam con cua A. An canh (R,E). $parent[E] = A$. Bay gio chi con 2 thanh phan: $\{A,B,C,D,E,F\}$ va $\{G\}$.}
+
+\step
+\recolor{T.node[E]}{state=done}
+\recolor{T.node[A]}{state=current}
+\recolor{T.node[G]}{state=current}
+\apply{T}{reparent={node="G", parent="A"}}
+\recolor{T.edge[(R,G)]}{state=hidden}
+\apply{parent.cell[6]}{value="A"}
+\recolor{parent.cell[6]}{state=good}
+\narrate{$union(A, G)$: $find(A) = A$, $find(G) = G$. Gan G lam con truc tiep cua A. An canh (R,G). $parent[G] = A$. Tat ca 7 phan tu gio thuoc cung mot thanh phan.}
+
+\step
+\recolor{T.node[A]}{state=good}
+\recolor{T.node[B]}{state=done}
+\recolor{T.node[C]}{state=done}
+\recolor{T.node[D]}{state=done}
+\recolor{T.node[E]}{state=done}
+\recolor{T.node[F]}{state=done}
+\recolor{T.node[G]}{state=done}
+\recolor{parent.all}{state=done}
+\recolor{parent.cell[0]}{state=good}
+\narrate{Trang thai cuoi cung: tat ca 7 phan tu trong mot thanh phan duy nhat, root = A. $parent[] = [A, A, A, A, A, E, A]$. Luu y: F van tro vao E ($parent[F] = E$) vi $find(F)$ chua bao gio duoc goi -- DSU chi nen duong khi find duoc thuc thi. Goi $find(F)$ se reparent F truc tiep ve A. Virtual root R van an hoan toan, Tree primitive xu ly layout tu dong qua Reingold-Tilford.}
+\end{animation}
