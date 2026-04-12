@@ -716,19 +716,43 @@ def emit_interactive_html(
 
     viewbox = compute_viewbox(primitives)
 
-    # Build frame data list for JS
+    # ----------------------------------------------------------------
+    # Single-pass frame rendering.
+    #
+    # Before this fix (Wave 7 double-pass bug), JS frames and print
+    # frames were built in TWO separate loops that each called
+    # ``_emit_frame_svg``.  That function has a side effect: it calls
+    # ``prim.apply_command()`` for structural mutations (add_edge,
+    # remove_edge, add_node, etc.).  After the first loop finished,
+    # ALL mutations from every step had accumulated in the live
+    # primitives dict, so the second loop re-applied them — making
+    # step 1's print render show the graph's *final* edge set instead
+    # of step 1's.  Any animation using structural mutation was broken.
+    #
+    # Fix: render each frame's SVG ONCE and reuse it for both the JS
+    # frame data and the print frame.  The only difference between the
+    # two outputs is the ``aria-labelledby`` attribute, which we patch
+    # via string replacement.
+    # ----------------------------------------------------------------
+
     narration_id = f"{scene_id}-narration"
     js_frames: list[str] = []
+    print_frame_items: list[str] = []
+
     for frame in frames:
-        svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex, narration_id_override=narration_id)
+        step = frame.step_number
+
+        # Render the SVG exactly once — mutations accumulate correctly.
+        svg_html = _emit_frame_svg(
+            frame, primitives, scene_id, viewbox, render_inline_tex,
+            narration_id_override=narration_id,
+        )
+
+        # --- JS frame data ---
         svg_escaped = _escape_js(svg_html)
         narration_escaped = _escape_js(frame.narration_html)
-        # Label token (empty when frame has no id-safe label) — consumed
-        # by the JS navigator so callers can route by name:
-        # ``widget.showByLabel('intro')``.
         label_token = frame.label if _is_id_safe_label(frame.label) else ""
         label_escaped = _escape_js(label_token)
-        # Include substory HTML if present
         substory_html = ""
         if frame.substories:
             frame_id = _frame_id(scene_id, frame)
@@ -743,22 +767,11 @@ def emit_interactive_html(
             f'substory:`{substory_escaped}`,label:`{label_escaped}`}}'
         )
 
-    js_frames_str = ",\n    ".join(js_frames)
-
-    # Build progress dots
-    dots_html = "\n      ".join(
-        f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
-        for i in range(frame_count)
-    )
-
-    # Build print-only frames (all frames in DOM, hidden on screen,
-    # revealed by @media print in scriba-scene-primitives.css)
-    print_frame_items: list[str] = []
-    for frame in frames:
-        step = frame.step_number
-        print_svg = _emit_frame_svg(
-            frame, primitives, scene_id, viewbox, render_inline_tex,
-            narration_id_override=f"{scene_id}-print-{step}-narration",
+        # --- Print frame (reuse the same SVG, swap aria-labelledby) ---
+        print_narration_id = f"{scene_id}-print-{step}-narration"
+        print_svg = svg_html.replace(
+            f'aria-labelledby="{_escape(narration_id)}"',
+            f'aria-labelledby="{_escape(print_narration_id)}"',
         )
         data_label_attr = (
             f' data-label="{_escape(frame.label)}"'
@@ -789,12 +802,20 @@ def emit_interactive_html(
             f'Step {step} / {frame_count}</span>\n'
             f'  <div class="scriba-stage">{print_svg}</div>\n'
             f'  <p class="scriba-narration"'
-            f' id="{_escape(scene_id)}-print-{step}-narration">'
+            f' id="{_escape(print_narration_id)}">'
             f'{frame.narration_html}</p>\n'
             f'{print_substory}'
             f'</div>'
         )
+
+    js_frames_str = ",\n    ".join(js_frames)
     print_frames_html = "\n".join(print_frame_items)
+
+    # Build progress dots
+    dots_html = "\n      ".join(
+        f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
+        for i in range(frame_count)
+    )
 
     widget_html = f"""\
 <div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0">
