@@ -1,6 +1,6 @@
 # Primitive Spec: `Stack`
 
-> Status: **draft — Pivot #2 extension**. Extends base spec `04-environments-spec.md` §5
+> Status: **draft — Pivot #2 extension**. Extends base spec `environments.md` §5
 > (primitive catalog). Error codes in range **E1440–E1449**.
 
 ---
@@ -502,7 +502,7 @@ Expected:
 ## 13. Base-spec deltas
 
 **§3.1 primitive type registration**: add `Stack` to the primitive type list in
-`04-environments-spec.md` §3.1. Agent 4 will merge.
+`environments.md` §3.1. Agent 4 will merge.
 
 **§4.1 BNF — negative index extension** (audit finding 2.1, decision lock applied):
 

@@ -13,7 +13,7 @@ Scriba is now **two new LaTeX environments** that plug into the existing `packag
 
 Authors write regular LaTeX and embed these environments the same way they embed TikZ. The toolchain compiles them to zero-JS static SVG output (animations become SVG filmstrips). There is no custom DSL parser, no widget runtime, and no client-side JavaScript.
 
-See `../04-environments-spec.md` for the current source of truth.
+See `../environments.md` for the current source of truth.
 
 ## Why these files are archived (not deleted)
 
@@ -42,4 +42,4 @@ Treat everything in this directory as:
 
 ## If you are implementing the new Scriba
 
-Do not read these files as spec. Read `../04-environments-spec.md` and the sibling numbered docs (`01-architecture.md`, `03-diagram-plugin.md`, `09-animation-plugin.md`, etc.). Use this directory only when you need to understand *why* a given visual or pedagogical choice was originally made.
+Do not read these files as spec. Read `../environments.md` and the sibling numbered docs (`01-architecture.md`, `03-diagram-plugin.md`, `09-animation-plugin.md`, etc.). Use this directory only when you need to understand *why* a given visual or pedagogical choice was originally made.

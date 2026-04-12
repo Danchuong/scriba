@@ -5,7 +5,7 @@
 > for rationale and [`04-roadmap.md`](roadmap.md) for the milestone view.
 >
 > This file refines the roadmap into a week-by-week task breakdown. Every task
-> binds to the contracts in [`04-environments-spec.md`](../spec/environments.md),
+> binds to the contracts in [`environments.md`](../spec/environments.md),
 > [`01-architecture.md`](../spec/architecture.md), and the current
 > `packages/scriba/` source tree (v0.1.1-alpha). Extension tasks bind to their
 > spec files in `docs/scriba/extensions/`; primitive tasks bind to their spec
@@ -30,7 +30,7 @@ Goal: `\begin{animation}` works end-to-end with `Array`, `DPTable`, `Graph`;
 - [ ] Delete pre-pivot `scriba/diagram/` directory and its tests. (1 h)
 
 **Carve-out detector**
-- [ ] `scriba/animation/detector.py` — scan source for `\begin{animation}` at start of line, match `\end{animation}`, return `Block` instances per `04-environments-spec.md` §2.2. (3 h)
+- [ ] `scriba/animation/detector.py` — scan source for `\begin{animation}` at start of line, match `\end{animation}`, return `Block` instances per `environments.md` §2.2. (3 h)
 - [ ] `tests/unit/test_animation_detector.py` — 12 cases: happy path, trailing text on begin line (`E1002`), nested begin (`E1003`), unclosed env, adjacent envs, env inside `lstlisting`, options block present, unknown key (`E1004`). (3 h)
 
 **Renderer skeleton**
@@ -40,8 +40,8 @@ Goal: `\begin{animation}` works end-to-end with `Array`, `DPTable`, `Graph`;
 **Inner-command parser**
 - [ ] `scriba/animation/parser/lexer.py` — tokenize brace-matched args, identifiers, numbers, strings, `%` comments, `${interp}`, `[list]`. (4 h)
 - [ ] `scriba/animation/parser/ast.py` — frozen dataclasses: `ShapeCmd`, `ComputeCmd`, `StepMarker`, `NarrateCmd`, `ApplyCmd`, `HighlightCmd`, `RecolorCmd`, `AnnotateCmd`, `Selector`. (2 h)
-- [ ] `scriba/animation/parser/grammar.py` — recursive-descent parser following the BNF in `04-environments-spec.md` §2.1; raises `ValidationError` with position + `E1xxx` code. (5 h)
-- [ ] `scriba/animation/parser/selectors.py` — selector parser for `name.cell[i]`, `name.node[${u}]`, `name.edge[(a,b)]`, `name.range[lo:hi]`, `name.all` per `04-environments-spec.md` §4. (3 h)
+- [ ] `scriba/animation/parser/grammar.py` — recursive-descent parser following the BNF in `environments.md` §2.1; raises `ValidationError` with position + `E1xxx` code. (5 h)
+- [ ] `scriba/animation/parser/selectors.py` — selector parser for `name.cell[i]`, `name.node[${u}]`, `name.edge[(a,b)]`, `name.range[lo:hi]`, `name.all` per `environments.md` §4. (3 h)
 - [ ] `scriba/animation/parser/selectors.py` — extend base spec §4.1 selector grammar to accept `range[(NUMBER,NUMBER):(NUMBER,NUMBER)]` tuple-range form for 2D primitives (`Matrix`, `Plane2D` polygon); emit E1062 invalid-tuple-range on malformed tuple. Add 1 day to this Week. (1 d)
 - [ ] `tests/unit/test_animation_parser.py` — 30 cases across all 8 commands, every error code `E10xx`/`E11xx` reachable from the parser; add tuple-range happy-path and E1062 error cases. (5 h)
 
@@ -54,7 +54,7 @@ Goal: `\begin{animation}` works end-to-end with `Array`, `DPTable`, `Graph`;
 ### Week A2 — scene, primitives, emitter, CSS, wiring
 
 **Scene materializer**
-- [ ] `scriba/animation/scene.py` — `SceneState` dict, delta application rules from `04-environments-spec.md` §6.1: inherit prev frame, clear highlights, drop ephemeral annotations, apply commands in source order. (4 h)
+- [ ] `scriba/animation/scene.py` — `SceneState` dict, delta application rules from `environments.md` §6.1: inherit prev frame, clear highlights, drop ephemeral annotations, apply commands in source order. (4 h)
 - [ ] `tests/unit/test_animation_scene.py` — 15 cases: persistence rules, highlight ephemerality, annotation ephemerality, frame-1 prelude inheritance, frame-local `\compute` scoping. (3 h)
 
 **Primitives — Array, DPTable, Graph**
@@ -65,13 +65,13 @@ Goal: `\begin{animation}` works end-to-end with `Array`, `DPTable`, `Graph`;
 - [ ] `tests/integration/snapshots/animation/` — 18 snapshot SVGs covering every addressable part of the 3 primitives under every state class. (4 h)
 
 **SVG stage emitter**
-- [ ] `scriba/animation/emitter.py` — produces the HTML tree from `04-environments-spec.md` §8.1 verbatim: `<figure class="scriba-animation" ...>` → `<ol class="scriba-frames">` → `<li class="scriba-frame" data-step>` → `<header>` + `<div class="scriba-stage">` + `<p class="scriba-narration">`. (5 h)
+- [ ] `scriba/animation/emitter.py` — produces the HTML tree from `environments.md` §8.1 verbatim: `<figure class="scriba-animation" ...>` → `<ol class="scriba-frames">` → `<li class="scriba-frame" data-step>` → `<header>` + `<div class="scriba-stage">` + `<p class="scriba-narration">`. (5 h)
 - [ ] `scriba/animation/emitter.py` — auto-hashed scene id: `"scriba-" + sha256(env_body)[:10]`. (30 min)
 - [ ] `scriba/animation/emitter.py` — `<defs>` extraction: deduplicate arrow markers and gradient defs across frames via shared `<defs>` on frame 1 + `<use>` references on frames 2..N. (3 h)
 
 **CSS**
-- [ ] `scriba/animation/static/scriba-scene-primitives.css` — base cell, node, edge, label styles using `--scriba-*` variables per `04-environments-spec.md` §9.1. (3 h)
-- [ ] `scriba/animation/static/scriba-animation.css` — `.scriba-animation` filmstrip grid, `@media (max-width: 640px)` and `@media print` vertical-stack fallbacks, `.scriba-frame:target` outline, Wong CVD-safe state classes per `04-environments-spec.md` §9.2. (5 h)
+- [ ] `scriba/animation/static/scriba-scene-primitives.css` — base cell, node, edge, label styles using `--scriba-*` variables per `environments.md` §9.1. (3 h)
+- [ ] `scriba/animation/static/scriba-animation.css` — `.scriba-animation` filmstrip grid, `@media (max-width: 640px)` and `@media print` vertical-stack fallbacks, `.scriba-frame:target` outline, Wong CVD-safe state classes per `environments.md` §9.2. (5 h)
 - [ ] Verify contrast in light and dark themes with axe-core CLI. (1 h)
 
 **Wiring + narration**
@@ -115,7 +115,7 @@ Goal: `\begin{diagram}` works; 6 base primitives complete; `figure-embed`, `Matr
 **DiagramRenderer**
 - [ ] `scriba/animation/renderer.py` — add `DiagramRenderer` class sharing parser + scene + emitter with `AnimationRenderer`; reject `\step` (`E1050`), reject `\narrate` (`E1054`), allow `\compute` and `\highlight` (persistent in diagram). (4 h)
 - [ ] `scriba/animation/detector.py` — add `\begin{diagram}` carve-out alongside `\begin{animation}`. (1 h)
-- [ ] `scriba/animation/emitter.py` — diagram HTML shape per `04-environments-spec.md` §8.2. (2 h)
+- [ ] `scriba/animation/emitter.py` — diagram HTML shape per `environments.md` §8.2. (2 h)
 - [ ] `scriba/animation/static/scriba-diagram.css` — diagram-only overrides, optional `grid=on` debug overlay. (2 h)
 - [ ] `tests/integration/test_diagram_end_to_end.py` — 6 fixtures: static tree, static DP table, static graph, `\compute`-precomputed sort, `\highlight` persistence, `grid=on` overlay. (3 h)
 
@@ -227,7 +227,7 @@ Goal: 5 high-engineering-effort Pivot #2 items shipped; docs site live; 9 HARD-T
 ### Week C4 — docs site + integration examples
 
 - [ ] Scaffold `docs-site/` with Astro Starlight; configure sidebar from `docs/scriba/` file order. (3 h)
-- [ ] Port `01-architecture.md`, `02-tex-plugin.md`, `04-environments-spec.md`, `04-roadmap.md`, `06-out-of-scope.md`, `07-open-questions.md` to `docs-site/src/content/docs/`. (3 h)
+- [ ] Port `01-architecture.md`, `02-tex-plugin.md`, `environments.md`, `04-roadmap.md`, `06-out-of-scope.md`, `07-open-questions.md` to `docs-site/src/content/docs/`. (3 h)
 - [ ] Error catalog page auto-generated from `scriba/animation/errors.py`. (2 h)
 - [ ] Primitive reference page auto-generated from docstrings (all 11 primitives). (3 h)
 - [ ] Extension reference page auto-generated from docstrings (all 5 extensions). (2 h)
@@ -313,7 +313,7 @@ Goal: production-grade error UX, Homebrew tap, PyPI final, launch, and formal
 
 - [`04-roadmap.md`](roadmap.md) — milestone-level view; phase allocation rationale; Pivot #2 feature list.
 - [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md) — HARD-TO-DISPLAY coverage matrix; rejected alternatives.
-- [`04-environments-spec.md`](../spec/environments.md) — source of truth for grammar, selectors, HTML shape, error codes referenced in every task above.
+- [`environments.md`](../spec/environments.md) — source of truth for grammar, selectors, HTML shape, error codes referenced in every task above.
 - [`07-open-questions.md`](open-questions.md) — Q21 on Starlark host choice may reshape Week A1 tasks.
 - [`docs/scriba/extensions/hl-macro.md`](../extensions/hl-macro.md) — E2 spec.
 - [`docs/scriba/extensions/keyframe-animation.md`](../extensions/keyframe-animation.md) — E5 spec.

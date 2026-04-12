@@ -8,7 +8,7 @@
 
 Three facts forced a decision:
 
-1. **Locked spec covers 1/10 HARD-TO-DISPLAY problems.** `04-environments-spec.md` defines a solid foundation — `Array`, `DPTable`, `Graph`, `Grid`, `Tree`, `NumberLine`, `\begin{animation}`, `\begin{diagram}`, Starlark worker, filmstrip HTML. That primitive set is sufficient for ~70% of everyday CP editorials but handles only one of the ten pathological cases catalogued in `cookbook/HARD-TO-DISPLAY.md` (Problem #1 Zuma, partially, via DPTable).
+1. **Locked spec covers 1/10 HARD-TO-DISPLAY problems.** `environments.md` defines a solid foundation — `Array`, `DPTable`, `Graph`, `Grid`, `Tree`, `NumberLine`, `\begin{animation}`, `\begin{diagram}`, Starlark worker, filmstrip HTML. That primitive set is sufficient for ~70% of everyday CP editorials but handles only one of the ten pathological cases catalogued in `cookbook/HARD-TO-DISPLAY.md` (Problem #1 Zuma, partially, via DPTable).
 
 2. **Pre-pivot research A1–A8 covers 9/10 but kills portability.** The research documents in `legacy/pivot-1-research/` proposed augmenting Scriba with Lit 3 custom elements, Motion One animations, uPlot charts, ELK.js graph layout, and a Graphviz WASM runtime. That architecture would cover 9 of the 10 hard problems. It was **rejected** because runtime JavaScript is stripped by Codeforces, AtCoder, GitHub Markdown, email clients, PDF renderers, and Notion — the exact platforms where CP editorials live. Shipping a Scriba that requires a JS runtime defeats the purpose.
 
@@ -18,7 +18,7 @@ Three facts forced a decision:
 
 ## Decision
 
-Extend the zero-JS locked spec (`04-environments-spec.md`) with 10 new features grouped in two batches. The `\begin{animation}` and `\begin{diagram}` environments, Starlark worker, and filmstrip HTML shape are **unchanged**. All additions are pure Python, compile-time, zero runtime JS.
+Extend the zero-JS locked spec (`environments.md`) with 10 new features grouped in two batches. The `\begin{animation}` and `\begin{diagram}` environments, Starlark worker, and filmstrip HTML shape are **unchanged**. All additions are pure Python, compile-time, zero runtime JS.
 
 ### Extensions (5) — new environments and macros
 
@@ -95,7 +95,7 @@ Extend the zero-JS locked spec (`04-environments-spec.md`) with 10 new features 
 
 | Document | Role |
 |----------|------|
-| [`04-environments-spec.md`](../spec/environments.md) | Base locked spec. Still the single source of truth for `\begin{animation}`, `\begin{diagram}`, inner commands, Starlark host, filmstrip HTML shape. EXTENDED by this decision, not replaced. |
+| [`environments.md`](../spec/environments.md) | Base locked spec. Still the single source of truth for `\begin{animation}`, `\begin{diagram}`, inner commands, Starlark host, filmstrip HTML shape. EXTENDED by this decision, not replaced. |
 | [`04-roadmap.md`](roadmap.md) | Will be rewritten by Agent 4 to reflect the 12-week revised timeline. |
 | [`05-implementation-phases.md`](implementation-phases.md) | Will be rewritten by Agent 4 with revised phases incorporating 10 new features. |
 | [`extensions/`](../extensions/) | Agent 2 will write 5 spec files: `figure-embed.md`, `hl-macro.md`, `fastforward.md`, `substory.md`, `keyframe-animation.md`. |

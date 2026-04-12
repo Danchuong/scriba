@@ -1,10 +1,10 @@
 # Extension E1 — `\begin{figure-embed}` Environment
 
-> **Status:** Accepted extension to `04-environments-spec.md`. This document defines
+> **Status:** Accepted extension to `environments.md`. This document defines
 > a compile-time SVG/PNG escape-hatch environment. It does not modify the base spec;
 > any required base-spec changes are listed in §12 (Base-spec deltas).
 >
-> Cross-references: `04-environments-spec.md` §2 (grammar carve-out rules), §8 (HTML
+> Cross-references: `environments.md` §2 (grammar carve-out rules), §8 (HTML
 > shape conventions), §9 (CSS contract), §10 (error catalog ranges); `00-ARCHITECTURE-
 > DECISION-2026-04-09.md` for the pivot decision that accepted Problem #10 as
 > "author-provides-SVG".
@@ -37,7 +37,7 @@ for the rest is better than an editorial that distorts a primitive to fit.
 ## 2. Grammar / BNF
 
 `\begin{figure-embed}` is recognized by `FigureEmbedRenderer` as a top-level
-environment. It follows the carve-out rules of `04-environments-spec.md` §2.2:
+environment. It follows the carve-out rules of `environments.md` §2.2:
 both tags MUST appear on their own lines. It does NOT nest inside
 `\begin{animation}` or `\begin{diagram}` (E1003 from the base spec).
 
@@ -216,7 +216,7 @@ Event handler attributes (`onclick`, `onmouseover`, `onload`, etc.) are REMOVED.
 ### 4.3 DOMPurify configuration object
 
 The Python implementation invokes DOMPurify via the same `katex_worker.js`-style
-node subprocess (see `04-environments-spec.md` §5.5 for the SubprocessWorkerPool
+node subprocess (see `environments.md` §5.5 for the SubprocessWorkerPool
 pattern). The worker receives the raw SVG string and returns the sanitized string.
 The configuration object passed to `DOMPurify.sanitize`:
 
@@ -388,7 +388,7 @@ Notes:
 ```
 
 No new CSS variables are introduced. The `--scriba-state-*` variables from
-`04-environments-spec.md` §9.2 are reused for `\highlight` overlays.
+`environments.md` §9.2 are reused for `\highlight` overlays.
 
 ---
 
@@ -513,7 +513,7 @@ FIGURE_EMBED_RE = re.compile(
 
 ## 12. Base-spec deltas
 
-The following changes to `04-environments-spec.md` are REQUIRED to support this
+The following changes to `environments.md` are REQUIRED to support this
 extension. Agent 4 (roadmap/phases rewrite) will merge them.
 
 1. **§2.3 Nesting**: Add `\begin{figure-embed}` to the list of environments that

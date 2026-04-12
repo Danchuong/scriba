@@ -8,7 +8,7 @@
 
 Scriba v0.3 ships two new LaTeX environments that let problem authors embed algorithmic visualizations directly in problem statements without leaving LaTeX:
 
-- `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 14 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8 for mode selection.
+- `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 12 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8 for mode selection.
 - `\begin{diagram} ... \end{diagram}` — a **single static figure**. Same primitive vocabulary minus `\step` and `\narrate`. Intended for standalone illustrations (trees, grids, graphs, DP tables shown at a single moment in time).
 
 Both environments plug into the existing `scriba.core.pipeline.Pipeline` from [`01-architecture.md`](architecture.md) as two additional `Renderer` implementations registered alongside `TexRenderer`:
@@ -673,9 +673,9 @@ Priority is the order passed to `Pipeline(renderers=[...])`. Per `01-architectur
 
 ### 10.3 Body parsing
 
-After `detect()` returns a `Block`, `render_block(block, ctx)` hands `block.raw` to an internal `SceneParser` that walks the 14 commands and emits an internal `SceneIR` (defined in `05-scene-ir.md`). The `SceneIR` is then fed to the Starlark host (for `\compute` evaluation), then to the primitive catalog (for `\shape` instantiation and SVG layout), then to the SVG emitter (for per-frame rendering), then to the HTML stitcher (for the `<figure>` / `<ol>` / `<li>` wrapping).
+After `detect()` returns a `Block`, `render_block(block, ctx)` hands `block.raw` to an internal `SceneParser` that walks the 12 commands and emits an internal `SceneIR` (defined in `05-scene-ir.md`). The `SceneIR` is then fed to the Starlark host (for `\compute` evaluation), then to the primitive catalog (for `\shape` instantiation and SVG layout), then to the SVG emitter (for per-frame rendering), then to the HTML stitcher (for the `<figure>` / `<ol>` / `<li>` wrapping).
 
-The `SceneParser` is a small recursive-descent parser over the 14 commands. It does not use the LaTeX parser from `scriba.tex.parser` because the inner grammar is simpler and more rigid; sharing would leak TeX-specific quirks (optional args, catcodes) into a context that does not need them. Narration bodies are the one exception: they are passed verbatim to `ctx.render_inline_tex`.
+The `SceneParser` is a small recursive-descent parser over the 12 commands. It does not use the LaTeX parser from `scriba.tex.parser` because the inner grammar is simpler and more rigid; sharing would leak TeX-specific quirks (optional args, catcodes) into a context that does not need them. Narration bodies are the one exception: they are passed verbatim to `ctx.render_inline_tex`.
 
 ### 10.4 No overlap with math / code
 
@@ -694,7 +694,7 @@ All animation/diagram errors use codes in `E1001..E1299`. The ranges are reserve
 | E1003 | Nested environment                                                | Animation and diagram do not nest.                           |
 | E1004 | Unknown environment option                                        | Supported keys: §2.4.                                        |
 | E1005 | Malformed option value                                            | Use `key=value` with ident / number / string.                |
-| E1006 | Unknown inner command                                             | Must be one of the 14 from §3.                                |
+| E1006 | Unknown inner command                                             | Must be one of the 12 from §3.                                |
 | E1007 | Missing required brace argument                                   | See §3 signature.                                            |
 | E1008 | Stray text at top level of body (outside any command)             | Wrap inside a command or remove.                             |
 

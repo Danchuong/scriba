@@ -3,7 +3,7 @@
 > **Target:** Complete 6/6 base primitives + `\begin{diagram}` + `figure-embed` + Matrix + Stack.
 > **Effort:** ~2.5 weeks solo, ~1.5 weeks with 2 engineers.
 > **Prerequisite:** v0.2.0 complete (animation + Array/DPTable/Graph + interactive widget).
-> **Binds to:** [`04-environments-spec.md`](../spec/environments.md),
+> **Binds to:** [`environments.md`](../spec/environments.md),
 > [`06-primitives.md`](../spec/primitives.md), [`primitives/matrix.md`](../primitives/matrix.md),
 > [`primitives/stack.md`](../primitives/stack.md).
 
@@ -14,7 +14,7 @@
 | Category | Deliverable | Spec |
 |----------|-------------|------|
 | Primitives | **Grid**, **Tree** (+ segtree variants), **NumberLine** | `06-primitives.md` §4, §7, §8 |
-| Environment | `\begin{diagram}` (static, no steps) | `04-environments-spec.md` §8.2 |
+| Environment | `\begin{diagram}` (static, no steps) | `environments.md` §8.2 |
 | Extension E1 | `\begin{figure-embed}` (SVG/PNG embed) | `extensions/figure-embed.md` |
 | Primitive P1 | **Matrix** / **Heatmap** (2D colorscale) | `primitives/matrix.md` |
 | Primitive P2 | **Stack** (push/pop LIFO) | `primitives/stack.md` |

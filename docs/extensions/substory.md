@@ -1,10 +1,10 @@
 # Extension E4 — `\substory` / `\endsubstory` Inline Drilldown
 
-> **Status:** Accepted extension to `04-environments-spec.md`. This document
+> **Status:** Accepted extension to `environments.md`. This document
 > specifies the `\substory` / `\endsubstory` block, which embeds a nested linear
 > frame sequence inside a single parent filmstrip frame.
 >
-> Cross-references: `04-environments-spec.md` §2 (grammar), §3.3 (`\step`), §6
+> Cross-references: `environments.md` §2 (grammar), §3.3 (`\step`), §6
 > (frame semantics and frame count limits), §8.1 (HTML output shape), §9 (CSS
 > contract); `00-ARCHITECTURE-DECISION-2026-04-09.md` E4 and coverage row #1.
 
@@ -38,7 +38,7 @@ sub-problems.
 
 `\substory` / `\endsubstory` are inner commands recognised by `SceneParser`
 **only inside `\begin{animation}`** (E1362 if used at top level or inside
-`\begin{diagram}`). See `04-environments-spec.md` §6 for scene-scoping semantics
+`\begin{diagram}`). See `environments.md` §6 for scene-scoping semantics
 that govern how substory-local bindings interact with the parent scope.
 
 ```
@@ -402,7 +402,7 @@ Expected: frame 1 (`fill-dp25`) contains a nested `<section class="scriba-substo
 
 ## 9. Base-spec deltas
 
-The following changes to `04-environments-spec.md` are REQUIRED.
+The following changes to `environments.md` are REQUIRED.
 
 1. **§2.1 BNF**: Update `step_block` to allow an optional `substory_block`
    following the `narrate_cmd`:

@@ -7,10 +7,6 @@
 > [`environments.md`](../spec/environments.md) for the canonical output
 > shape; this file only shows the outline you should expect.
 >
-> **Note (v0.5.x):** `\begin{diagram}` is reserved for extension E5 and
-> is not a first-class IR. Prefer a single-frame `\begin{animation}`
-> everywhere a "diagram" would have been used. The legacy
-> `DiagramRenderer` shim is no longer part of the public API surface.
 
 ## 1. The scenario
 
@@ -39,6 +35,11 @@ Gọi $dp[i]$ là chi phí tối thiểu để tới hòn đá $i$. Ta có:
 \]
 
 \subsection*{Minh hoạ với $h = [10, 30, 40, 20]$}
+
+\begin{diagram}[id="frog-heights"]
+\shape{h}{Array}{size=4, data=[10,30,40,20], labels="0..3", label="$h$"}
+\recolor{h.cell[0]}{state=current}
+\end{diagram}
 
 \begin{animation}[id=frog1-mini, label="Frog 1 — three base steps"]
   % Precompute the small table so we don't hand-write frame values.
@@ -73,11 +74,13 @@ Gọi $dp[i]$ là chi phí tối thiểu để tới hòn đá $i$. Ta có:
 \end{animation}
 ```
 
-Two things to notice:
+Three things to notice:
 
-1. Everything outside the environment is plain LaTeX. It will be picked
+1. Everything outside the environments is plain LaTeX. It will be picked
    up by `TexRenderer` in the usual way.
-2. The animation uses `\compute{...}` (Starlark) to fill in actual values
+2. The `\begin{diagram}` block is a static visualisation handled by
+   `DiagramRenderer`. No frames, no `\step` — just shapes and styling.
+3. The animation uses `\compute{...}` (Starlark) to fill in actual values
    from `h`. The narration prose is hand-written — Starlark computes
    numbers, the author writes sentences.
 
@@ -98,21 +101,22 @@ from scriba import (
     SubprocessWorkerPool,
 )
 from scriba.tex import TexRenderer
-from scriba.animation import AnimationRenderer
+from scriba.animation import AnimationRenderer, DiagramRenderer
 
 
 def build_pipeline() -> Pipeline:
     """Construct a Pipeline once per process.
 
-    Order matters: AnimationRenderer MUST precede TexRenderer so that
-    the Pipeline's first-wins overlap rule carves out the
-    ``\\begin{animation}`` regions before TexRenderer's detector ever
-    sees them.
+    Order matters: AnimationRenderer and DiagramRenderer MUST precede
+    TexRenderer so that the Pipeline's first-wins overlap rule carves
+    out the ``\\begin{animation}`` and ``\\begin{diagram}`` regions
+    before TexRenderer's detector ever sees them.
     """
     pool = SubprocessWorkerPool(max_workers=4)
     return Pipeline(
         renderers=[
             AnimationRenderer(),          # uses the default in-process Starlark host
+            DiagramRenderer(),            # static diagrams — no frames, no Starlark
             TexRenderer(worker_pool=pool),
         ]
     )
@@ -165,8 +169,8 @@ Notes on the API surface you are actually touching:
   - `required_css: frozenset[str]` — namespaced basenames like
     `animation/filmstrip.css`, `animation/scene-primitives.css`,
     `tex/katex.css`. Ship these globally, once.
-  - `required_js: frozenset[str]` — always empty for `animation`.
-    `TexRenderer` also ships no runtime JS.
+  - `required_js: frozenset[str]` — always empty for `animation` and
+    `diagram`. `TexRenderer` also ships no runtime JS.
   - `versions: dict[str, int]` — include this in your cache key so a
     plugin bump invalidates exactly the right documents.
   - `block_data: dict[str, Any]` — optional per-block machine-readable
@@ -194,6 +198,15 @@ strokes:
 <div class="scriba-tex-display">…</div>
 
 <h3>Minh hoạ với …</h3>
+
+<!-- DiagramRenderer output: a single static <figure> with one SVG -->
+<figure class="scriba-diagram"
+        data-scriba-scene="frog-heights"
+        aria-label="frog-heights">
+  <svg class="scriba-stage-svg" role="img" aria-labelledby="…">
+    <!-- Array primitive for h, cell[0] in state=current -->
+  </svg>
+</figure>
 
 <!-- AnimationRenderer output: one <figure> wrapping an <ol> of frames -->
 <figure class="scriba-animation"
@@ -226,7 +239,8 @@ numbered figures down the page.
   plain `<link rel="stylesheet">`. They are versioned by
   `doc.versions`, not per-request.
 - Nothing else. No `<script>` tag. No polyfill. No web component
-  upgrade. The page is fully rendered the moment the HTML parser
+  upgrade. Both `AnimationRenderer` and `DiagramRenderer` ship zero
+  runtime JS. The page is fully rendered the moment the HTML parser
   finishes.
 
 ## 6. Caching
@@ -260,5 +274,6 @@ except ScribaError as exc:
     return render_author_error_page(exc)
 ```
 
-That is the whole pipeline, end to end. One `.tex` file in, one HTML
-string plus a CSS asset manifest out, no JavaScript anywhere.
+That is the whole pipeline, end to end. One `.tex` file in — with plain
+LaTeX, diagrams, and animations freely mixed — one HTML string plus a
+CSS asset manifest out, no JavaScript anywhere.

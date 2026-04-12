@@ -1,8 +1,8 @@
 # 07 -- Starlark Worker Wire Protocol
 
-> Status: **locked foundation spec** for Scriba v0.3. This file is the single source of truth for the Starlark worker subprocess wire protocol -- how the main Python process communicates with the Starlark execution host over stdin/stdout. `04-environments-spec.md` SS5 defines the **language contract** (allowed features, scope rules, determinism); this file defines the **transport and lifecycle**.
+> Status: **locked foundation spec** for Scriba v0.3. This file is the single source of truth for the Starlark worker subprocess wire protocol -- how the main Python process communicates with the Starlark execution host over stdin/stdout. `environments.md` SS5 defines the **language contract** (allowed features, scope rules, determinism); this file defines the **transport and lifecycle**.
 >
-> Cross-references: [`04-environments-spec.md`](environments.md) SS5 (Starlark host contract, scope rules, sandboxing), [`01-architecture.md`](architecture.md) SS`SubprocessWorkerPool`, [`03-diagram-plugin.md`](../guides/diagram-plugin.md) SS7 (diagram compute usage), [`09-animation-plugin.md`](../guides/animation-plugin.md) SS7 (animation compute usage, frame-local vs global scope).
+> Cross-references: [`environments.md`](environments.md) SS5 (Starlark host contract, scope rules, sandboxing), [`01-architecture.md`](architecture.md) SS`SubprocessWorkerPool`, [`03-diagram-plugin.md`](../guides/diagram-plugin.md) SS7 (diagram compute usage), [`09-animation-plugin.md`](../guides/animation-plugin.md) SS7 (animation compute usage, frame-local vs global scope).
 
 ## 1. Overview
 
@@ -15,7 +15,7 @@ The worker evaluates Starlark source blocks on behalf of `\compute{...}` command
 1. **One worker, shared across plugins.** `AnimationRenderer` and `DiagramRenderer` share a single `"starlark"` worker instance. The `SubprocessWorkerPool` ensures only one registration (idempotent `register()`; see `workers.py` line 406).
 2. **No state between requests.** Each `eval` request is self-contained. The worker does not cache bindings, environments, or function definitions across requests. This simplifies crash recovery and makes the worker trivially restartable.
 3. **Deterministic output.** Identical `(source, globals)` pairs MUST produce identical `bindings` maps. The worker does not inject randomness, time, or I/O.
-4. **Fail-fast error reporting.** Every error is surfaced as a structured JSON response with an error code from `04-environments-spec.md` SS11.4 (`E1150`--`E1157`). The worker never writes unstructured text to stdout.
+4. **Fail-fast error reporting.** Every error is surfaced as a structured JSON response with an error code from `environments.md` SS11.4 (`E1150`--`E1157`). The worker never writes unstructured text to stdout.
 
 ## 2. Worker registration
 
@@ -47,7 +47,7 @@ pool.register(
 
 The worker entry point is `scriba/animation/starlark_worker/__main__.py`. It:
 
-1. Initializes the Starlark interpreter with the pre-injected builtins from `04-environments-spec.md` SS5.2.
+1. Initializes the Starlark interpreter with the pre-injected builtins from `environments.md` SS5.2.
 2. Configures resource limits (SS6).
 3. Emits `"starlark-worker ready\n"` on stderr.
 4. Enters the request loop: read one JSON line from stdin, evaluate, write one JSON line to stdout.
@@ -139,14 +139,14 @@ The host uses `ping` to verify the worker is alive after crash recovery. The `Pe
 | Field     | Type            | Description                                                                     |
 |-----------|-----------------|---------------------------------------------------------------------------------|
 | `ok`      | boolean         | `false` on error.                                                               |
-| `code`    | string          | Error code from `04-environments-spec.md` SS11.4. One of `E1150`--`E1157`.      |
+| `code`    | string          | Error code from `environments.md` SS11.4. One of `E1150`--`E1157`.      |
 | `message` | string          | Human-readable description. Includes the Starlark traceback for runtime errors. |
 | `line`    | integer or null | 1-indexed line number within the `source` where the error occurred. `null` if not applicable (e.g., timeout). |
 | `col`     | integer or null | 1-indexed column number. `null` if not available.                               |
 
 ### 3.4 Error code mapping
 
-The worker maps internal Starlark interpreter exceptions to the error codes defined in `04-environments-spec.md` SS11.4:
+The worker maps internal Starlark interpreter exceptions to the error codes defined in `environments.md` SS11.4:
 
 | Code   | Condition                                              | Worker behavior                                                         |
 |--------|--------------------------------------------------------|-------------------------------------------------------------------------|
@@ -248,7 +248,7 @@ The spec promises a hard cap of 1000 frames. The worker enforces this explicitly
 
 ## 7. Security sandboxing
 
-The worker enforces the sandbox constraints from `04-environments-spec.md` SS5.1 and SS5.4 at two levels:
+The worker enforces the sandbox constraints from `environments.md` SS5.1 and SS5.4 at two levels:
 
 ### 7.1 Pre-parse scan
 
@@ -426,7 +426,7 @@ Host (Python)                          Worker (subprocess)
 
 The worker uses `starlark-go` compiled as a Python extension (via cgo + cffi) or as a standalone binary. The exact interpreter is an implementation detail not locked by this spec. The requirements are:
 
-- Supports all features in `04-environments-spec.md` SS5.1 (including recursion).
+- Supports all features in `environments.md` SS5.1 (including recursion).
 - Exposes a step-counter callback for enforcing the ops cap.
 - Supports interruption for timeout enforcement.
 - Pre-injection of custom builtins.
@@ -439,4 +439,4 @@ The worker subprocess is single-threaded. Concurrent requests from multiple `ren
 
 ---
 
-**End of wire protocol spec.** Implementation MUST conform to the request/response schemas in SS3, the error code mapping in SS3.4, the resource limits in SS6, and the security constraints in SS7. The language contract (what Starlark features are allowed and what builtins are injected) is owned by `04-environments-spec.md` SS5; this file defers to it.
+**End of wire protocol spec.** Implementation MUST conform to the request/response schemas in SS3, the error code mapping in SS3.4, the resource limits in SS6, and the security constraints in SS7. The language contract (what Starlark features are allowed and what builtins are injected) is owned by `environments.md` SS5; this file defers to it.

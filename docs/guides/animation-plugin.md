@@ -9,7 +9,7 @@
 Concrete goals:
 
 1. Claim every top-level `\begin{animation}[opts]\n ... \n\end{animation}` region at priority `10`, before `TexRenderer.detect()` sees it.
-2. Parse the body with the shared `SceneParser` over the 8 inner commands from `04-environments-spec.md` §3.
+2. Parse the body with the shared `SceneParser` over the 8 inner commands from `environments.md` §3.
 3. Evaluate every `\compute{...}` block in the shared Starlark subprocess worker, tracking global vs frame-local scope.
 4. Maintain a delta-based `SceneState` across frames: each frame inherits the previous frame's state, drops ephemeral overlays (`\highlight`, `\annotate{ephemeral=true}`), and applies its own commands on top.
 5. Render each frame's final `SceneState` as one inline `<svg>` via the shared SVG emitter.
@@ -18,7 +18,7 @@ Concrete goals:
 
 Non-goals:
 
-- Any runtime JavaScript (step controller, play/pause, auto-advance, hover-to-step, scroll-sync). All of these are out of scope per `04-environments-spec.md` §13 and require an ADR to add.
+- Any runtime JavaScript (step controller, play/pause, auto-advance, hover-to-step, scroll-sync). All of these are out of scope per `environments.md` §13 and require an ADR to add.
 - Parsing or detecting code fences, Markdown, or any format other than the LaTeX environment.
 - Transitions between frames beyond what pure CSS `@keyframes` on a static `<li>` can produce.
 - Rasterization to PNG, OG image generation, GIF export. The output is SVG-in-HTML only.
@@ -85,13 +85,13 @@ ANIMATION_RE = re.compile(
 - `block.metadata["options_raw"]` — the optional `[key=value,...]` capture group, or `None`.
 - `block.metadata["body"]` — the inner body with whitespace preserved (so line numbers in error messages are accurate).
 
-The regex is deliberately line-anchored. Per `04-environments-spec.md` §2.2, `\begin{animation}` and `\end{animation}` must each live on their own line (enforced as `E1002`). The lazy body capture does not attempt to count braces inside `\compute{...}`; it relies on the closing-tag anchor. Authors who need to write literal `\end{animation}` inside narration or compute must escape the backslash (`\char92end{animation}`), a documented known limitation in `04-environments-spec.md` §13.
+The regex is deliberately line-anchored. Per `environments.md` §2.2, `\begin{animation}` and `\end{animation}` must each live on their own line (enforced as `E1002`). The lazy body capture does not attempt to count braces inside `\compute{...}`; it relies on the closing-tag anchor. Authors who need to write literal `\end{animation}` inside narration or compute must escape the backslash (`\char92end{animation}`), a documented known limitation in `environments.md` §13.
 
 The detector is separate from and does not interact with `DiagramRenderer.detect()`. The Pipeline's `(start, priority, list-index)` overlap resolver handles any pathological overlap between the two environment families; in practice, a `\begin{animation}` region and a `\begin{diagram}` region cannot overlap because neither nests inside the other.
 
 ## 4. Parse contract
 
-After `detect()`, `render_block` hands `block.raw` to the shared `SceneParser` with animation mode enabled (allowing `\step` and `\narrate`). The parser walks the 8 commands from `04-environments-spec.md` §3 and emits an ordered `AnimationIR` carrying:
+After `detect()`, `render_block` hands `block.raw` to the shared `SceneParser` with animation mode enabled (allowing `\step` and `\narrate`). The parser walks the 8 commands from `environments.md` §3 and emits an ordered `AnimationIR` carrying:
 
 - `options: AnimationOptions` — validated `[key=value,...]` header.
 - `prelude: tuple[Command, ...]` — everything before the first `\step`: `\shape`, global `\compute`, and optionally `\apply` / `\recolor` / `\annotate` for initial state. `\highlight` in the prelude is `E1053`.
@@ -99,7 +99,7 @@ After `detect()`, `render_block` hands `block.raw` to the shared `SceneParser` w
 
 Parse pipeline:
 
-1. **Option lexer.** Parse `[key=value,...]` into `AnimationOptions`. Valid keys per `04-environments-spec.md` §2.4: `width`, `height`, `id`, `label`, `layout` (`filmstrip` | `stack`). Unknown keys raise `E1004`.
+1. **Option lexer.** Parse `[key=value,...]` into `AnimationOptions`. Valid keys per `environments.md` §2.4: `width`, `height`, `id`, `label`, `layout` (`filmstrip` | `stack`). Unknown keys raise `E1004`.
 2. **Command lexer.** Walk line-by-line. Strip `% ...` comments. Ignore blank lines. `\step` must appear at the start of a line (`E1052` on trailing text).
 3. **Brace reader.** Balanced-brace scanner over each argument (`E1001` on imbalance).
 4. **Parameter list parser.** Final brace group parsed as `key=value` pairs, same grammar as `DiagramRenderer` (see `03-diagram-plugin.md` §4).
@@ -154,7 +154,7 @@ def render_block(self, block: Block, ctx: RenderContext) -> RenderArtifact:
 
 ### 5.1 Delta-based state propagation
 
-The core invariant of animation rendering is that **frame k inherits everything from frame k-1, then applies its own deltas**. Concretely, per `04-environments-spec.md` §6.1, at the start of each frame:
+The core invariant of animation rendering is that **frame k inherits everything from frame k-1, then applies its own deltas**. Concretely, per `environments.md` §6.1, at the start of each frame:
 
 1. Start from the end-of-previous-frame `SceneState` (or the prelude state for frame 1).
 2. Clear any target whose state class includes `highlight` (highlights are ephemeral).
@@ -211,20 +211,20 @@ If an author wants geometry to change across frames (e.g., a growing array), the
 
 ## 7. Starlark subprocess
 
-`\compute{...}` blocks run in the shared Starlark worker (`worker_pool.get("starlark")`). The worker, protocol, language contract, determinism rules, and caps are identical to `DiagramRenderer` — see `03-diagram-plugin.md` §7 and `04-environments-spec.md` §5. Animation adds one scope wrinkle: **frame-local vs global bindings**.
+`\compute{...}` blocks run in the shared Starlark worker (`worker_pool.get("starlark")`). The worker, protocol, language contract, determinism rules, and caps are identical to `DiagramRenderer` — see `03-diagram-plugin.md` §7 and `environments.md` §5. Animation adds one scope wrinkle: **frame-local vs global bindings**.
 
-Per `04-environments-spec.md` §5.3:
+Per `environments.md` §5.3:
 
 - A `\compute` block in the prelude populates the **global scope**. Global bindings persist across all frames and are visible to every later command.
 - A `\compute` block inside a `\step` creates a **frame-local scope**. Frame-local bindings are dropped at the next `\step`. Interpolation `${name}` in a frame-local context resolves against `global ∪ frame_local`, with frame-local shadowing global.
 
 `AnimationRenderer` implements this by sending two distinct Starlark eval requests per frame when needed: one for the frame's own `\compute` block (parent = global scope) and one merged scope dict passed into `_apply_commands` for interpolation. Global scope is computed once before the frame loop; frame-local scope is recomputed per frame.
 
-Worker failures surface as `RendererError(code="E1150" | "E1151" | "E1152" | "E1153" | "E1154" | "E1155" | "E1156" | "E1157")` per `04-environments-spec.md` §11.4.
+Worker failures surface as `RendererError(code="E1150" | "E1151" | "E1152" | "E1153" | "E1154" | "E1155" | "E1156" | "E1157")` per `environments.md` §11.4.
 
 ## 8. HTML output shape
 
-The emitted `RenderArtifact.html` matches `04-environments-spec.md` §8.1 byte-for-byte:
+The emitted `RenderArtifact.html` matches `environments.md` §8.1 byte-for-byte:
 
 ```html
 <figure class="scriba-animation"
@@ -263,7 +263,7 @@ Frozen contracts:
 - `scene-id` from the `id=` option, or `"scriba-" + sha256(block.raw)[:10]` when absent. Must match `[a-z][a-z0-9-]*`.
 - `data-frame-count` matches the number of `<li>` children.
 - `data-step` is 1-indexed.
-- `data-layout` is `"filmstrip"` by default; `"stack"` is the only other permitted value. Print media always falls back to `stack` via CSS (see `04-environments-spec.md` §9.1).
+- `data-layout` is `"filmstrip"` by default; `"stack"` is the only other permitted value. Print media always falls back to `stack` via CSS (see `environments.md` §9.1).
 - Each frame's `<svg>` has `role="img"` and `aria-labelledby` pointing at that frame's narration `<p>`, so screen readers speak the narration when they land on the figure.
 - No `<button>`, no `data-step-current`, no controller element. The filmstrip is pure markup.
 - The outer `<figure>` has `aria-label` set from the `label=` option when present; otherwise it is omitted (the child frames' `aria-labelledby` provides accessible names).
@@ -284,7 +284,7 @@ def assets(self) -> RendererAssets:
 
 Both CSS files are always-on for any Pipeline that registers `AnimationRenderer`. `scriba-scene-primitives.css` is shared with `DiagramRenderer` — the Pipeline's asset aggregator (see `scriba/core/pipeline.py` step 6) namespaces basenames by owning renderer name, so both plugins can contribute the same file without collision. No JavaScript asset is emitted under any configuration.
 
-Custom-property variables (state colors, frame gap, stage padding) live in the `--scriba-*` namespace from `01-architecture.md` §"CSS variable naming convention", extended in `04-environments-spec.md` §9. Dark mode is a single ancestor selector `[data-theme="dark"]`, consistent with `TexRenderer`.
+Custom-property variables (state colors, frame gap, stage padding) live in the `--scriba-*` namespace from `01-architecture.md` §"CSS variable naming convention", extended in `environments.md` §9. Dark mode is a single ancestor selector `[data-theme="dark"]`, consistent with `TexRenderer`.
 
 ## 10. Error codes
 
@@ -343,7 +343,7 @@ abort rendering. The full catalog lives in [`error-codes.md`](../spec/error-code
 \end{animation}
 ```
 
-Produces a `<figure class="scriba-animation">` wrapping an `<ol class="scriba-frames">` with one `<li class="scriba-frame">` per `\step`, each holding a `NumberLine` + `Array` SVG stage and a narration paragraph with KaTeX-rendered inline math. Full worked example in `04-environments-spec.md` §12.2.
+Produces a `<figure class="scriba-animation">` wrapping an `<ol class="scriba-frames">` with one `<li class="scriba-frame">` per `\step`, each holding a `NumberLine` + `Array` SVG stage and a narration paragraph with KaTeX-rendered inline math. Full worked example in `environments.md` §12.2.
 
 ## 12. Relationship to `DiagramRenderer`
 
@@ -369,4 +369,4 @@ Any change that touches shared code is landed in one PR against `scriba/animatio
 
 ---
 
-**End of plugin spec.** Bind to this file + `04-environments-spec.md` verbatim. Bump `AnimationRenderer.version` whenever the HTML shape in §8 or the class-name contract in `04-environments-spec.md` §9 changes.
+**End of plugin spec.** Bind to this file + `environments.md` verbatim. Bump `AnimationRenderer.version` whenever the HTML shape in §8 or the class-name contract in `environments.md` §9 changes.

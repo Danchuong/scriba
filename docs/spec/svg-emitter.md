@@ -6,7 +6,7 @@
 > the only difference is that `AnimationRenderer` calls it once per frame while
 > `DiagramRenderer` calls it once.
 >
-> Cross-references: [`04-environments-spec.md`](environments.md) §8 for the frozen
+> Cross-references: [`environments.md`](environments.md) §8 for the frozen
 > HTML output shape, §9 for the CSS class contract and state variables;
 > [`primitives.md`](primitives.md) for the per-primitive SVG output templates and
 > selector grammar; [`09-animation-plugin.md`](../guides/animation-plugin.md) §5–6 for how the
@@ -16,7 +16,7 @@
 > This file does **not** define: the Scene IR datatypes (`05-scene-ir.md`), the primitive
 > shape catalog (`primitives.md`), the Starlark worker (`07-starlark-worker.md`), or the
 > CSS stylesheet contents (`09-animation-css.md`). Where this file and
-> `04-environments-spec.md` appear to disagree, `04-environments-spec.md` wins and this
+> `environments.md` appear to disagree, `environments.md` wins and this
 > file is the bug.
 
 ---
@@ -470,10 +470,10 @@ entry for that selector.
   `highlight`. In this case, both classes are applied:
   `class="scriba-state-done scriba-state-highlight"`.
 - The `highlight` state is ephemeral in animations: it is cleared at the start of each
-  new frame (per `04-environments-spec.md` §6.1). In diagrams, `highlight` is persistent.
+  new frame (per `environments.md` §6.1). In diagrams, `highlight` is persistent.
 - State classes are applied to the `<g data-target="...">` group element, **not** to inner
   `<rect>`, `<circle>`, `<line>`, or `<text>` elements. The CSS contract in
-  `04-environments-spec.md` §9 uses descendant selectors (e.g.,
+  `environments.md` §9 uses descendant selectors (e.g.,
   `.scriba-state-current rect { fill: ... }`) so that a single class on the group
   controls all child shapes.
 
@@ -583,7 +583,7 @@ intermediate cells. For horizontal arrows in 1D structures, the arc curves upwar
 | `error` | `--scriba-annotation-error`       | `#D55E00` (vermillion) |
 | `muted` | `--scriba-annotation-muted`       | `#94A3B8` (slate)  |
 
-These colors are Wong CVD-safe and match the state palette from `04-environments-spec.md`
+These colors are Wong CVD-safe and match the state palette from `environments.md`
 §9.2.
 
 ### 8.5 Ephemeral annotations
@@ -840,6 +840,6 @@ no data races.
 
 ---
 
-**End of spec.** Bind to this file + `04-environments-spec.md` verbatim. The SVG emitter
+**End of spec.** Bind to this file + `environments.md` verbatim. The SVG emitter
 is a shared internal component; changes to its output shape affect both `AnimationRenderer`
 and `DiagramRenderer` and MUST bump both plugin versions.

@@ -4,7 +4,7 @@
 > existing ojcloud content and backend code to use Scriba. The authoritative
 > contracts it references are [`01-architecture.md`](../spec/architecture.md),
 > [`02-tex-plugin.md`](../guides/tex-plugin.md), and
-> [`04-environments-spec.md`](../spec/environments.md). When this guide and a
+> [`environments.md`](../spec/environments.md). When this guide and a
 > locked spec disagree, the spec wins.
 
 ## 1. Migration scope
@@ -517,7 +517,7 @@ The migration is phased to align with the Scriba release roadmap
 |---|---|
 | **v0.1.1-alpha** (shipped) | Backend render path migrated. TeX content renders through `Pipeline` / `TexRenderer`. Frontend updated to `scriba-tex-*` classes. Sanitization wired with `ALLOWED_TAGS` / `ALLOWED_ATTRS`. |
 | **v0.2.0** (Phase A) | `\begin{animation}` environment available. No migration needed -- new feature, not a replacement. Update `ALLOWED_TAGS` / `ALLOWED_ATTRS` if new tags/attributes are added. |
-| **v0.3.0** (Phase B) | `\begin{diagram}` environment ships. Pre-pivot `d2` blocks migrated via script. `scriba.ALLOWED_TAGS` updated for animation/diagram elements. Tenant frontend sanitizer whitelist updated per [`04-environments-spec.md` 8](../spec/environments.md). |
+| **v0.3.0** (Phase B) | `\begin{diagram}` environment ships. Pre-pivot `d2` blocks migrated via script. `scriba.ALLOWED_TAGS` updated for animation/diagram elements. Tenant frontend sanitizer whitelist updated per [`environments.md` 8](../spec/environments.md). |
 | **v0.4.0** (Phase C) | New primitives and extensions. No migration -- additive only. |
 | **v0.5.0 GA** (Phase D) | Migration complete. Old renderer code fully removed from the monorepo. Legacy branch archived. |
 

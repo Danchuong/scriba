@@ -4,7 +4,7 @@
 > truth for the internal Scene IR datatypes emitted by `SceneParser` and consumed by
 > the Starlark host, primitive catalog, SVG emitter, and HTML stitcher.
 >
-> Cross-references: [`04-environments-spec.md`](environments.md) §10.3 for the
+> Cross-references: [`environments.md`](environments.md) §10.3 for the
 > parser-to-IR contract, §3 for the 8 inner commands, §4 for target selector syntax,
 > §6 for frame semantics. [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §4 step 6 for
 > `DiagramIR`. [`09-animation-plugin.md`](../guides/animation-plugin.md) §4 for `AnimationIR`
@@ -75,7 +75,7 @@ All IR types are defined in `scriba/animation/parser/ast.py` and re-exported fro
 
 ## 3. Command IR types
 
-Each of the 8 inner commands from [`04-environments-spec.md`](environments.md) §3
+Each of the 8 inner commands from [`environments.md`](environments.md) §3
 is represented by a frozen dataclass. All command types share a common base.
 
 ### 3.1 Base fields
@@ -275,7 +275,7 @@ class AnnotateCommand(BaseModel):
 ## 4. Selector type
 
 The `Selector` type represents a parsed target selector per
-[`04-environments-spec.md`](environments.md) §4.
+[`environments.md`](environments.md) §4.
 
 ```python
 class Selector(BaseModel):
@@ -402,7 +402,7 @@ class FrameIR(BaseModel):
 | Field          | Type                       | Description                                            |
 |----------------|----------------------------|--------------------------------------------------------|
 | `commands`     | `tuple[Command, ...]`      | State-mutation commands in source order: `\apply`, `\highlight`, `\recolor`, `\annotate`. |
-| `compute`      | `tuple[ComputeCommand, ...]`| Frame-local `\compute` blocks. Bindings are scoped to this frame only (per `04-environments-spec.md` §5.3). |
+| `compute`      | `tuple[ComputeCommand, ...]`| Frame-local `\compute` blocks. Bindings are scoped to this frame only (per `environments.md` §5.3). |
 | `narrate_body` | `str \| None`              | The raw LaTeX body of the `\narrate` command, or `None` if absent (`E1150` warning). |
 | `line`         | `int`                      | Line number of the `\step` that opens this frame.      |
 
@@ -501,7 +501,7 @@ Keys are resolved selector strings (e.g., `"dp.cell[0]"`, `"G.node[A]"`).
 
 ### 7.1 Delta application rules
 
-Per [`04-environments-spec.md`](environments.md) §6.1, the scene materializer
+Per [`environments.md`](environments.md) §6.1, the scene materializer
 applies `AnimationIR` to produce one `SceneState` per frame:
 
 1. **Initial state.** Instantiate shapes from `AnimationIR.shapes`. Apply

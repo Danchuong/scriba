@@ -1,6 +1,6 @@
 # Primitive Spec: `Queue`
 
-> Status: **draft**. Extends base spec `04-environments-spec.md` SS5
+> Status: **draft**. Extends base spec `environments.md` SS5
 > (primitive catalog).
 
 ---

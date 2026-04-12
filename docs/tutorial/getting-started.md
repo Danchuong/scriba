@@ -2,11 +2,80 @@
 
 ## 1. What is Scriba?
 
-Scriba is a LaTeX-like DSL for authoring step-by-step algorithm animations. You declare data structures (arrays, graphs, trees, etc.), then describe how they change frame by frame -- colors, values, annotations, and narration. Scriba compiles your `.tex` file into an interactive HTML visualization with no JavaScript required from you.
+Scriba is a rendering pipeline that compiles a single `.tex` file into self-contained HTML. Your `.tex` file can mix plain LaTeX content with interactive animations and static diagrams -- Scriba handles all of it and produces one unified HTML output.
+
+Three renderers work together:
+
+- **TexRenderer** -- handles all standard LaTeX: `\section`, `\textbf`, inline math `$...$`, display math `\[...\]`, lists (`\begin{itemize}`), code listings (`\begin{lstlisting}`), tables (`\begin{tabular}`), hyperlinks (`\href`, `\url`), figures, and more. This renderer claims the entire source file, but yields regions to the other two renderers.
+- **AnimationRenderer** -- handles `\begin{animation}...\end{animation}` blocks, producing interactive step-through SVG frames with prev/next controls and narration.
+- **DiagramRenderer** -- handles `\begin{diagram}...\end{diagram}` blocks, producing static single-frame SVG figures with zero JavaScript.
+
+The Pipeline resolves overlaps automatically: AnimationRenderer and DiagramRenderer have higher priority, so they carve out their regions first. Everything outside those blocks goes to TexRenderer. The result is one HTML file from one `.tex` file.
 
 ---
 
-## 2. Your First Animation
+## 2. The Big Picture: One File, One Output
+
+Here is a complete `.tex` file that mixes all three content types:
+
+```tex
+\section{Binary Search Overview}
+
+Binary search finds a target value in a sorted array $a[0..n{-}1]$
+by repeatedly halving the search interval. The running time is
+\[
+  T(n) = O(\log n)
+\]
+
+Below is a static diagram of the input array:
+
+\begin{diagram}[id="input-array"]
+\shape{a}{Array}{size=8, data=[2,5,8,12,16,23,38,56], labels="0..7", label="$a$"}
+\recolor{a.cell[3]}{state=current}
+\end{diagram}
+
+Now let's walk through the algorithm step by step:
+
+\begin{animation}[id="bsearch", label="Binary Search"]
+\shape{a}{Array}{size=8, data=[2,5,8,12,16,23,38,56], labels="0..7", label="$a$"}
+
+\step
+\narrate{We search for target $= 12$. The entire array is active.}
+
+\step
+\recolor{a.cell[3]}{state=current}
+\narrate{Mid $= 3$. $a[3] = 12$ -- found!}
+\recolor{a.cell[3]}{state=done}
+\end{animation}
+
+Here is the Python implementation:
+
+\begin{lstlisting}[language=Python]
+def binary_search(a, target):
+    lo, hi = 0, len(a) - 1
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if a[mid] == target:
+            return mid
+        elif a[mid] < target:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return -1
+\end{lstlisting}
+```
+
+**How the Pipeline processes this:**
+
+1. AnimationRenderer and DiagramRenderer scan the source and claim their `\begin{animation}` and `\begin{diagram}` regions.
+2. TexRenderer handles everything else -- the `\section` heading, paragraphs, inline math (`$a[0..n{-}1]$`), display math (`\[...\]`), and the `\begin{lstlisting}` code block.
+3. The Pipeline stitches all rendered fragments back together in source order, producing a single HTML file where LaTeX prose, the static diagram, the interactive animation, and the code listing all appear seamlessly.
+
+You write one `.tex` file. You get one `.html` output.
+
+---
+
+## 3. Your First Animation
 
 Every animation lives inside a `\begin{animation}...\end{animation}` block. You declare shapes in the **prelude** (before the first `\step`), then use `\step` to advance frames.
 
@@ -35,7 +104,7 @@ Key rules:
 
 ---
 
-## 3. States and Colors
+## 4. States and Colors
 
 Every cell, node, or edge has a **state** that controls its color. Use `\recolor` to change it.
 
@@ -62,7 +131,7 @@ States are **persistent** -- once you recolor a cell, it stays that color until 
 
 ---
 
-## 4. Annotations
+## 5. Annotations
 
 Annotations add arrows and labels to cells. They are useful for showing data flow, comparisons, or DP transitions.
 
@@ -92,7 +161,7 @@ After you pick the best transition, recolor the winning arrow:
 
 ---
 
-## 5. Applying Values
+## 6. Applying Values
 
 Use `\apply` to write a value into a cell. This is how you fill in DP tables, update counters, or record results.
 
@@ -121,7 +190,7 @@ Values are persistent -- once applied, they stay until overwritten.
 
 ---
 
-## 6. Loops with foreach
+## 7. Loops with foreach
 
 Writing repetitive recolor/apply commands by hand gets tedious. `\foreach` lets you loop over a range, a list literal, or a computed binding.
 
@@ -164,7 +233,7 @@ evens = [i for i in range(6) if i % 2 == 0]
 
 ---
 
-## 7. Common Patterns
+## 8. Common Patterns
 
 ### Cursor advance
 
@@ -245,7 +314,7 @@ Show where a DP value comes from, then commit the result:
 
 ---
 
-## 8. Cheat Sheet
+## 9. Cheat Sheet
 
 ### Declare an array
 
@@ -284,7 +353,7 @@ Show where a DP value comes from, then commit the result:
 
 ---
 
-## 9. Static Diagrams
+## 10. Static Diagrams
 
 Not every visualization needs step-by-step animation. Use `\begin{diagram}...\end{diagram}` for **static, single-frame figures** — data structure snapshots, problem illustrations, or reference diagrams.
 
@@ -331,7 +400,7 @@ Not every visualization needs step-by-step animation. Use `\begin{diagram}...\en
 
 ---
 
-## 10. Next Steps
+## 11. Next Steps
 
 - **Full reference** -- see [ruleset.md](../spec/ruleset.md) for every command, primitive type, selector syntax, error code, and CSS contract.
 - **Examples** -- browse `examples/` for complete worked animations:
@@ -345,7 +414,7 @@ Not every visualization needs step-by-step animation. Use `\begin{diagram}...\en
 
 ---
 
-## 11. All Primitive Types
+## 12. All Primitive Types
 
 Scriba ships 16 primitive types organized in three groups.
 

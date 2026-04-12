@@ -20,7 +20,7 @@
 ruleset.md contains two subsections both labeled "### 5.3": "Data-Structure Primitives (5)" at line 368 and "Graph Layout Modes" at line 378. Second should be renumbered to "### 5.4". Cascading: all subsequent subsections (5.4 Tree Variants, 5.5 Plane2D, etc.) are one level off.
 
 ### C2: Broken file reference in primitives.md (primitives.md:7,46,560)
-Three cross-references cite `04-environments-spec.md` by old name. Should be `environments.md`. Link target exists but label is stale (v0.5.0 renamed file).
+Three cross-references cite `environments.md` by old name. Should be `environments.md`. Link target exists but label is stale (v0.5.0 renamed file).
 
 ### C3: Command count mismatch (environments.md:128)
 Header claims "14 inner commands" but §3 defines only 12 subsections (§3.1–3.12). Breakdown: base 8 (shape, compute, step, narrate, apply, highlight, recolor, annotate) + 4 new in v0.5.0 (reannotate, cursor, foreach/endforeach, substory/endsubstory) = 12 total. Comment is aspirational or incomplete; clarify the actual inventory.

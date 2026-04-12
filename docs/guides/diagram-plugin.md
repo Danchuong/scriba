@@ -22,17 +22,17 @@
 Concrete goals:
 
 1. Claim every top-level `\begin{diagram}[opts]\n ... \n\end{diagram}` region at priority `10`, before `TexRenderer` sees it.
-2. Parse the body with the recursive-descent `SceneParser` over the 8 inner commands from `04-environments-spec.md` §3.
+2. Parse the body with the recursive-descent `SceneParser` over the 8 inner commands from `environments.md` §3.
 3. Evaluate every `\compute{...}` block in the shared Starlark subprocess worker.
 4. Instantiate each `\shape{name}{Type}{params}` against the primitive catalog, and apply `\apply` / `\highlight` / `\recolor` / `\annotate` commands against the resulting `SceneState`.
-5. Emit exactly one SVG stage via the shared SVG emitter, wrapped in the frozen `<figure class="scriba-diagram">` shell from `04-environments-spec.md` §8.2.
+5. Emit exactly one SVG stage via the shared SVG emitter, wrapped in the frozen `<figure class="scriba-diagram">` shell from `environments.md` §8.2.
 6. Return a `RenderArtifact` whose `html` is the full `<figure>`, whose `css_assets` includes `scriba-diagram.css` and `scriba-scene-primitives.css`, and whose `js_assets` is **empty** — diagrams ship zero runtime JavaScript.
 
 Non-goals:
 
 - Frame semantics, delta propagation, narration, `\step` handling — all live in `AnimationRenderer`.
 - Detecting or parsing raw ` ```d2 ` fenced blocks. The previous D2-first edition of this document is withdrawn; Scriba no longer ships a D2 code path. Diagrams are authored in LaTeX environments, not fences.
-- Rendering anything inside a `\begin{tabular}`, `lstlisting`, or `$...$`. Per `04-environments-spec.md` §2.3, those are top-level-only.
+- Rendering anything inside a `\begin{tabular}`, `lstlisting`, or `$...$`. Per `environments.md` §2.3, those are top-level-only.
 
 ## 2. Public API
 
@@ -104,14 +104,14 @@ Returned blocks are guaranteed non-overlapping by construction (`DIAGRAM_RE` is 
 
 ## 4. Parse contract
 
-After `detect()`, `render_block` hands `block.raw` (minus the already-matched `\begin`/`\end` lines) to an internal `SceneParser`. The parser is a small recursive-descent walker over exactly the 8 inner commands from `04-environments-spec.md` §3: `\shape`, `\compute`, `\apply`, `\highlight`, `\recolor`, `\annotate`, `\step`, `\narrate`. In the diagram context, `\step` (`E1050`) and `\narrate` (`E1054`) are parse-time errors.
+After `detect()`, `render_block` hands `block.raw` (minus the already-matched `\begin`/`\end` lines) to an internal `SceneParser`. The parser is a small recursive-descent walker over exactly the 8 inner commands from `environments.md` §3: `\shape`, `\compute`, `\apply`, `\highlight`, `\recolor`, `\annotate`, `\step`, `\narrate`. In the diagram context, `\step` (`E1050`) and `\narrate` (`E1054`) are parse-time errors.
 
 The parse pipeline:
 
 1. **Option lexer.** Parse the optional `[key=value,...]` header into a `DiagramOptions` frozen dataclass. Unknown keys raise `RendererError` with code `E1004`.
 2. **Command lexer.** Walk the body line by line. A command starts with `\` followed by one of the 8 command names; everything else on that line (up to its closing brace) is the command. Comments (`% ...` to end of line) are stripped. Blank lines are ignored.
 3. **Brace reader.** Each brace argument is read via a balanced-brace scanner (standard LaTeX rules). Unbalanced braces raise `E1001`. The scanner is TikZ-flavored: it understands nested `{...}` but never interprets `$`, `&`, or `\` specially inside the brace body.
-4. **Parameter list parser.** The final brace of `\shape` / `\apply` / `\recolor` / `\annotate` is parsed as a `param_list`: `key=value` pairs separated by commas, values being idents, numbers, double-quoted strings, `${interp}` references, or `[list, ...]`. Grammar in `04-environments-spec.md` §2.1.
+4. **Parameter list parser.** The final brace of `\shape` / `\apply` / `\recolor` / `\annotate` is parsed as a `param_list`: `key=value` pairs separated by commas, values being idents, numbers, double-quoted strings, `${interp}` references, or `[list, ...]`. Grammar in `environments.md` §2.1.
 5. **Command AST.** The result is an ordered `tuple[Command, ...]` of frozen dataclasses, one per recognized command, each carrying its source line/column for error reporting.
 6. **Scene IR build.** The command list is lowered to the shared `AnimationIR` (see [`scene-ir.md`](../spec/scene-ir.md)) with exactly one implicit frame — `DiagramRenderer` does not have its own IR type in v0.5.x.
 
@@ -164,7 +164,7 @@ Starlark worker failures are surfaced through the shared Starlark host and re-ra
 
 ## 6. Shape-to-SVG dispatch
 
-Each primitive type from `04-environments-spec.md` §3.1 compiles to a fixed SVG template maintained in `scriba.animation.primitives`. The dispatch table below is the authoritative mapping for v0.3. Templates live in a single module so animation and diagram share them.
+Each primitive type from `environments.md` §3.1 compiles to a fixed SVG template maintained in `scriba.animation.primitives`. The dispatch table below is the authoritative mapping for v0.3. Templates live in a single module so animation and diagram share them.
 
 | Scriba type | SVG root | Addressable parts emitted as `<g data-target="...">` | Layout strategy |
 |---|---|---|---|
@@ -181,7 +181,7 @@ If a future v0.4 re-introduces D2 for very large graphs, it will be an optional 
 
 ## 7. Starlark subprocess
 
-Every `\compute{...}` block evaluates in a persistent Starlark worker registered on the shared `SubprocessWorkerPool` under the name `"starlark"`. The worker follows the exact same subprocess protocol as `scriba/tex/katex_worker.js`: newline-delimited JSON on stdin/stdout, a `ready_signal` line on stderr before the first request, transparent respawn on crash, and a `max_requests` ceiling. See `04-environments-spec.md` §5 for the locked language contract (allowed features, injected API, determinism rules, 5-second timeout, 10^8 step cap, 64 MB memory cap) and `07-starlark-worker.md` for the wire schema.
+Every `\compute{...}` block evaluates in a persistent Starlark worker registered on the shared `SubprocessWorkerPool` under the name `"starlark"`. The worker follows the exact same subprocess protocol as `scriba/tex/katex_worker.js`: newline-delimited JSON on stdin/stdout, a `ready_signal` line on stderr before the first request, transparent respawn on crash, and a `max_requests` ceiling. See `environments.md` §5 for the locked language contract (allowed features, injected API, determinism rules, 5-second timeout, 10^8 step cap, 64 MB memory cap) and `07-starlark-worker.md` for the wire schema.
 
 `DiagramRenderer` calls `worker_pool.get("starlark")` lazily on first `\compute` invocation. Each call sends one JSON request:
 
@@ -205,7 +205,7 @@ Diagram compute scope is a single flat dict (no frame-local vs global distinctio
 
 ## 8. HTML output shape
 
-The emitted `RenderArtifact.html` matches `04-environments-spec.md` §8.2 byte-for-byte:
+The emitted `RenderArtifact.html` matches `environments.md` §8.2 byte-for-byte:
 
 ```html
 <figure class="scriba-diagram"
@@ -225,8 +225,8 @@ The emitted `RenderArtifact.html` matches `04-environments-spec.md` §8.2 byte-f
 Frozen contracts:
 
 - `scene-id` comes from the `id=` option, or `"scriba-" + sha256(block.raw)[:10]` when absent. Must match `[a-z][a-z0-9-]*`.
-- Every addressable part of every shape is emitted as a `<g data-target="{selector}">` group. The selector string matches exactly the grammar in `04-environments-spec.md` §4, and is the same string an author would write in `\recolor{...}`.
-- State classes (`scriba-state-idle` / `-current` / `-done` / `-dim` / `-error` / `-good` / `-highlight`) are applied to the `<g>` element, not to inner shapes, so the CSS contract in `04-environments-spec.md` §9 matches with a single selector per state.
+- Every addressable part of every shape is emitted as a `<g data-target="{selector}">` group. The selector string matches exactly the grammar in `environments.md` §4, and is the same string an author would write in `\recolor{...}`.
+- State classes (`scriba-state-idle` / `-current` / `-done` / `-dim` / `-error` / `-good` / `-highlight`) are applied to the `<g>` element, not to inner shapes, so the CSS contract in `environments.md` §9 matches with a single selector per state.
 - Annotations emit a nested `<g class="scriba-annotation scriba-annotation-{color}">` inside the target group.
 - `role="img"` is set unconditionally. Diagrams have no `aria-labelledby` (no narration exists); an `aria-label` on the outer `<figure>` is the only accessible name.
 
@@ -246,11 +246,11 @@ def assets(self) -> RendererAssets:
 
 `scriba-diagram.css` and `scriba-scene-primitives.css` are always-on for any Pipeline that registers `DiagramRenderer`, regardless of whether a diagram was actually detected. This matches `TexRenderer`'s unconditional `scriba-tex-content.css` behavior and keeps consumer asset manifests stable across cache hits and misses. There is no JavaScript asset — diagrams are entirely static.
 
-The two CSS files share the `--scriba-*` custom-property namespace defined in `01-architecture.md` §"CSS variable naming convention" and extended in `04-environments-spec.md` §9. Consumers override colors by redefining those variables on `[data-theme="dark"]` (or any other theme selector); no per-plugin theme plumbing exists.
+The two CSS files share the `--scriba-*` custom-property namespace defined in `01-architecture.md` §"CSS variable naming convention" and extended in `environments.md` §9. Consumers override colors by redefining those variables on `[data-theme="dark"]` (or any other theme selector); no per-plugin theme plumbing exists.
 
 ## 10. Error codes
 
-`DiagramRenderer` raises `RendererError(message, renderer="diagram", code=...)` for every failure. Codes are drawn from the ranges locked in `04-environments-spec.md` §11:
+`DiagramRenderer` raises `RendererError(message, renderer="diagram", code=...)` for every failure. Codes are drawn from the ranges locked in `environments.md` §11:
 
 | Range | Category | Notes |
 |---|---|---|
@@ -277,7 +277,7 @@ unless `strict=True` is set on the surrounding AnimationRenderer. See
 \end{diagram}
 ```
 
-Produces the HTML fragment in `04-environments-spec.md` §12.3 — a single `<figure class="scriba-diagram">` wrapping one inline `<svg>` with `<g data-target="T.node[8]">`, `<g data-target="T.edge[(3,6)]">`, and so on.
+Produces the HTML fragment in `environments.md` §12.3 — a single `<figure class="scriba-diagram">` wrapping one inline `<svg>` with `<g data-target="T.node[8]">`, `<g data-target="T.edge[(3,6)]">`, and so on.
 
 ## 12. Relationship to `AnimationRenderer`
 
@@ -300,4 +300,4 @@ Any change that affects both plugins is landed in one PR against `scriba/animati
 
 ---
 
-**End of plugin spec.** Bind to this file + `04-environments-spec.md` verbatim. Bump `DiagramRenderer.version` whenever the HTML shape in §8 or the class-name contract in `04-environments-spec.md` §9 changes.
+**End of plugin spec.** Bind to this file + `environments.md` verbatim. Bump `DiagramRenderer.version` whenever the HTML shape in §8 or the class-name contract in `environments.md` §9 changes.

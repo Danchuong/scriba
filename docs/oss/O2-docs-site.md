@@ -1,6 +1,6 @@
 # O2 — Docs Site: Tool Selection & IA
 
-> Picks the docs site stack and locks an information architecture for the v0.3 launch. Source of truth for environments, commands, primitives, and error codes is [`../04-environments-spec.md`](../spec/environments.md).
+> Picks the docs site stack and locks an information architecture for the v0.3 launch. Source of truth for environments, commands, primitives, and error codes is [`../environments.md`](../spec/environments.md).
 
 ## 1. Winner: Astro Starlight on Cloudflare Pages + Pagefind
 
@@ -94,7 +94,7 @@ Pagefind indexes all MDX content including the literal SVG labels inside cookboo
 ## 5. Performance budget
 
 - Zero JS on cold load for every page except a tiny `pagefind` bundle loaded on `/search` focus.
-- CSS budget: < 15 KB gzipped for `/scriba.css` (the one stylesheet that realizes the CSS contract in `../04-environments-spec.md` §9).
+- CSS budget: < 15 KB gzipped for `/scriba.css` (the one stylesheet that realizes the CSS contract in `../environments.md` §9).
 - No web fonts beyond the system stack unless a cookbook page explicitly opts in.
 - LCP < 1.5s on every page on the Cloudflare edge.
 

@@ -2,7 +2,7 @@
 
 > This is a taste document, not a mechanics document. For grammar, commands,
 > primitives, states, and error codes, read
-> [`04-environments-spec.md`](../spec/environments.md). This file is about
+> [`environments.md`](../spec/environments.md). This file is about
 > *when* and *why* to reach for `\begin{animation}`, and how to write it
 > so the result feels inevitable rather than decorated.
 
@@ -275,6 +275,6 @@ back to the prose.
 
 ---
 
-*Mechanics in [`04-environments-spec.md`](../spec/environments.md).
+*Mechanics in [`environments.md`](../spec/environments.md).
 Starter problems in [`cookbook/`](../cookbook/). Integration examples in
 [`08-usage-example.md`](usage-example.md).*

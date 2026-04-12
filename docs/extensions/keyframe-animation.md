@@ -1,10 +1,10 @@
 # Extension E5 — CSS `@keyframes` Animation Slots in Primitives
 
-> **Status:** Accepted extension to `04-environments-spec.md`. This document
+> **Status:** Accepted extension to `environments.md`. This document
 > specifies how SVG primitives may declare compile-time CSS `@keyframes`
 > animations for continuous motion effects independent of step navigation.
 >
-> Cross-references: `04-environments-spec.md` §3.5 (`\apply`), §8 (HTML output
+> Cross-references: `environments.md` §3.5 (`\apply`), §8 (HTML output
 > shape), §9 (CSS contract); `00-ARCHITECTURE-DECISION-2026-04-09.md` E5 and
 > coverage row #4 (FFT twiddle factors); `primitives/plane2d.md` §8.6 (orbit
 > coordinates in Plane2D math space); `primitives/graph-stable-layout.md` §8
@@ -89,7 +89,7 @@ DURATION_STRING ::= NUMBER "s" | NUMBER "ms"
 ```
 
 The `animate` and `duration` parameters are added to the existing `\apply` command
-parameter vocabulary (see `04-environments-spec.md` §3.5). They are valid on any
+parameter vocabulary (see `environments.md` §3.5). They are valid on any
 `\apply` target that selects a single element (not `*.all` or `*.range`):
 
 ```latex
@@ -497,7 +497,7 @@ position `(cos(-π/4), sin(-π/4))`. Print renders the point static.
 
 ## 12. Base-spec deltas
 
-The following changes to `04-environments-spec.md` are REQUIRED.
+The following changes to `environments.md` are REQUIRED.
 
 1. **§3.5 `\apply`**: Document two new universal parameters for the `\apply`
    command:

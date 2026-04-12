@@ -9,7 +9,7 @@ check this file. If the feature is listed here, read the rationale first. If
 you still believe the exclusion is wrong, follow the proposal process in §3.
 
 The items below were re-derived for the v0.3 LaTeX-environments model locked
-in [`04-environments-spec.md`](../spec/environments.md) and the editorial
+in [`environments.md`](../spec/environments.md) and the editorial
 genres catalogued in [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md).
 
 ---
@@ -20,7 +20,7 @@ genres catalogued in [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY
 
 No Lit 3 widget, no Motion One timeline, no step controller, no keyboard
 navigation, no `<script>` emitted by any renderer in the `animation` or
-`diagram` plugins. The HTML output per `04-environments-spec.md` §8 is a
+`diagram` plugins. The HTML output per `environments.md` §8 is a
 pure `<figure>` + `<ol>` + inline `<svg>` tree that renders identically in
 email, print, PDF export, RSS, and any sanitizer-aware HTML consumer. An
 interactive runtime may return in v0.6+ as an **opt-in** layer behind a
@@ -61,13 +61,13 @@ ecosystem and breaks editor support.
 `\begin{animation}` cannot contain another `\begin{animation}` or
 `\begin{diagram}`. A `\begin{diagram}` cannot appear inside
 `\begin{animation}`. Parser raises `E1003`. Rationale: the scene-state
-model in `04-environments-spec.md` §6.1 is flat; nesting would require a
+model in `environments.md` §6.1 is flat; nesting would require a
 stack of `SceneState` contexts and a selector-resolution rule for crossing
 scopes. The complexity is not justified by any cookbook use case.
 
 ### 6. User-provided custom primitives in v0.3
 
-Only the 6 built-in primitive types from `04-environments-spec.md` §3.1 are
+Only the 6 built-in primitive types from `environments.md` §3.1 are
 available: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`. There
 is no `register_primitive()` API, no plugin registry, no entry-point
 discovery mechanism. Rationale: primitives are the visual vocabulary; a
@@ -77,7 +77,7 @@ not via third-party code.
 
 ### 7. 4D / tensor primitive
 
-`04-environments-spec.md` §3.1 locks primitives to 1D and 2D layouts. A 4D
+`environments.md` §3.1 locks primitives to 1D and 2D layouts. A 4D
 or higher-rank tensor primitive with a slice scrubber is **deferred** —
 see [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) §3.
 Rationale: honest 4D visualization requires runtime interaction (slice
@@ -122,7 +122,7 @@ animations on the same page scroll independently.
 Scriba emits plain CSS referencing `--scriba-*` custom properties. No
 Sass, no Less, no Stylus, no CSS-in-JS, no styled-components. Rationale:
 consumers already use their own styling strategy; Scriba's job is to
-expose a stable variable contract (see `04-environments-spec.md` §9) that
+expose a stable variable contract (see `environments.md` §9) that
 every styling strategy can override with one rule.
 
 ### 13. i18n helpers for narration
@@ -206,7 +206,7 @@ asset pipeline.
 `\usepackage{...}`, `\newcommand`, `\def`, `\let` in document content are
 not supported. Math-mode macros are provided via the `katex_macros`
 constructor argument on `TexRenderer`. Inside a `\begin{animation}` body,
-authors use the 8 inner commands from `04-environments-spec.md` §3, not
+authors use the 8 inner commands from `environments.md` §3, not
 arbitrary LaTeX macros.
 
 ### 25. Internationalization of error messages
@@ -218,7 +218,7 @@ at the display layer.
 
 No Tailwind utility class appears in Scriba's emitted HTML. All visual
 tokens live under `--scriba-*` CSS variables per
-`04-environments-spec.md` §9. Consumers using Tailwind add a bridging
+`environments.md` §9. Consumers using Tailwind add a bridging
 stylesheet.
 
 ### 27. Font bundling
@@ -254,7 +254,7 @@ releases. A stable third-party plugin API is a post-1.0 consideration.
 ### 32. Continuous sub-step scrubbing and Starlark randomness
 
 `\compute{...}` Starlark has no `random`, no `time`, no `print` to stdout.
-See `04-environments-spec.md` §5.4. Randomized algorithms like simulated
+See `environments.md` §5.4. Randomized algorithms like simulated
 annealing (`HARD-TO-DISPLAY.md` §9) can be authored with a seeded RNG
 injected via `RenderContext.metadata` in v0.6+, but not in v0.3.
 

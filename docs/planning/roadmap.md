@@ -3,7 +3,7 @@
 > **Revised 2026-04-09 for Pivot #2. Supersedes the prior roadmap.**
 > See [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md)
 > for rationale. The source of truth for the base environments model remains
-> [`04-environments-spec.md`](../spec/environments.md); all milestones below bind
+> [`environments.md`](../spec/environments.md); all milestones below bind
 > to the class names, environment grammar, HTML output shape, error codes, and CSS
 > contract defined there. Do not relitigate locked decisions in this file; open an
 > entry in [`07-open-questions.md`](open-questions.md) instead.
@@ -24,7 +24,7 @@ Scriba `0.1.1-alpha` is live on the ojcloud tenant and published internally. It 
 - Namespaced `required_css` / `required_js` / `required_assets` keyed by
   `"<renderer>/<basename>"`.
 
-The base locked spec (`04-environments-spec.md`) is frozen: `\begin{animation}`,
+The base locked spec (`environments.md`) is frozen: `\begin{animation}`,
 `\begin{diagram}`, the 6 original primitives (`Array`, `DPTable`, `Graph`, `Grid`,
 `Tree`, `NumberLine`), Starlark worker, filmstrip HTML shape, CSS contract, and error
 codes are **unchanged**. Pivot #2 ADDS 10 features — 5 extensions and 5 primitives —
@@ -52,7 +52,7 @@ in [`docs/scriba/primitives/`](../primitives/).
 
 ### Dual output modes (interactive default, static for portability)
 
-`AnimationRenderer` supports two output modes (see `04-environments-spec.md` §8.0):
+`AnimationRenderer` supports two output modes (see `environments.md` §8.0):
 
 - **Interactive mode** (default): renders a single widget with step controller,
   keyboard navigation, progress dots, and frame transitions. Includes a small
@@ -133,16 +133,16 @@ Starlark host.
   `version = 1`, `priority = 10` (per base spec §10.2; earlier = higher priority,
   first-wins).
 - `scriba/animation/detector.py` — regex carve-out scanner per
-  `04-environments-spec.md` §2.2.
+  `environments.md` §2.2.
 - `scriba/animation/parser/` — lexer, AST, grammar, selector parser for the 8
-  inner commands per `04-environments-spec.md` §3–4.
+  inner commands per `environments.md` §3–4.
 - `scriba/animation/scene.py` — `SceneState` delta materializer per
-  `04-environments-spec.md` §6.1.
+  `environments.md` §6.1.
 - `scriba/animation/starlark_worker.{go|py}` + `scriba/animation/starlark_host.py`.
 - `scriba/animation/primitives/array.py`, `dptable.py`, `graph.py`.
-- `scriba/animation/emitter.py` — frozen HTML shape from `04-environments-spec.md` §8.1.
+- `scriba/animation/emitter.py` — frozen HTML shape from `environments.md` §8.1.
 - `scriba/animation/static/scriba-animation.css` + `scriba-scene-primitives.css`
-  per `04-environments-spec.md` §9.
+  per `environments.md` §9.
 - `scriba/animation/errors.py` — error code table `E10xx`/`E11xx`.
 - **Pivot #2 — Extension E2:** `scriba/animation/extensions/hl_macro.py` —
   `\hl{step-id}{tex}` macro integration with `TexRenderer`; CSS `:target` sibling
@@ -195,7 +195,7 @@ v0.3 locked spec is implemented and 5/10 HARD-TO-DISPLAY problems are covered.
 - `scriba/animation/renderer.py` — add `DiagramRenderer` (`name = "diagram"`,
   `version = 1`). Reuses parser, Starlark host, emitter from Phase A. Differences:
   `\step`/`\narrate` forbidden (`E1050`, `E1054`), `\highlight` persistent.
-  HTML shape per `04-environments-spec.md` §8.2.
+  HTML shape per `environments.md` §8.2.
 - `scriba/animation/primitives/grid.py`, `tree.py`, `numberline.py`.
 - `scriba/animation/static/scriba-diagram.css`.
 - `docs/scriba/cookbook/` rewrites (5 editorials: binary search, DP knapsack,
@@ -225,7 +225,7 @@ v0.3 locked spec is implemented and 5/10 HARD-TO-DISPLAY problems are covered.
       matching the `viridis` palette reference snapshots.
 - [ ] `Stack` push/pop operations animate via CSS state classes.
 - [ ] Tenant frontend sanitizer whitelist updated for new classes and data
-      attributes per `04-environments-spec.md` §8.
+      attributes per `environments.md` §8.
 - [ ] Cookbook editorials pass axe-core accessibility audit.
 - [ ] Pre-pivot `scriba.diagram` module deleted.
 
@@ -366,7 +366,7 @@ step mode, and Manim-class continuous animation.
 | [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md) | Pivot #2 rationale, coverage matrix, rejected alternatives. |
 | [`01-architecture.md`](../spec/architecture.md) | Locks `Pipeline`, `Renderer`, `SubprocessWorkerPool`. |
 | [`02-tex-plugin.md`](../guides/tex-plugin.md) | v0.1 TeX internals. Still current. |
-| [`04-environments-spec.md`](../spec/environments.md) | Locked grammar, HTML shape, CSS contract, error codes for v0.2–v0.3. Extended by Pivot #2, not replaced. |
+| [`environments.md`](../spec/environments.md) | Locked grammar, HTML shape, CSS contract, error codes for v0.2–v0.3. Extended by Pivot #2, not replaced. |
 | [`05-implementation-phases.md`](implementation-phases.md) | Week-by-week task breakdown refining this roadmap. |
 | [`06-out-of-scope.md`](out-of-scope.md) | Explicit non-goals. |
 | [`07-open-questions.md`](open-questions.md) | Deferred decisions (Q21: Starlark host choice). |

@@ -1,6 +1,4 @@
-> **Active pivot in progress (2026-04-09): Pivot #2 — Zero-JS maxed out for HARD-TO-DISPLAY coverage.**
->
-> See [`architecture-decision.md`](planning/architecture-decision.md) for the decision. New feature specs are being written under `extensions/` and `primitives/`. Current locked spec in `spec/environments.md` remains the base and will be EXTENDED, not replaced.
+> **Scriba v0.6.0** — 3 renderers (TexRenderer, AnimationRenderer, DiagramRenderer), 16 primitive types, zero-JS output.
 
 ---
 
@@ -40,9 +38,11 @@ sanitized HTML. The Pipeline resolves overlaps with a first-wins rule
 (`start`, then `priority`, then list order), substitutes placeholders, and
 aggregates the CSS/JS assets each plugin needs.
 
-`TexRenderer` is what you already have. It calls a KaTeX worker, sanitizes,
-and emits `<span class="scriba-tex">…</span>`. **Scriba v0.3 adds two more
-renderers that sit in front of it**, and nothing else. No CLI, no custom
+`TexRenderer` is the richest renderer. It calls a KaTeX worker for inline
+and display math, handles sections, lists, tables, code blocks, figures,
+and `\href`/`\url` links, sanitizes, and emits
+`<span class="scriba-tex">…</span>`. **AnimationRenderer and
+DiagramRenderer sit in front of it**, and nothing else. No CLI, no custom
 element, no runtime step controller, no mini-language with its own parser.
 
 - `AnimationRenderer` claims every `\begin{animation} … \end{animation}`
@@ -143,6 +143,10 @@ else in this folder is spec, cookbook, and taste.
 
 ## Table of contents
 
+### Reading order
+
+First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-started.md), then browse [`guides/`](guides/) for specific topics, then consult [`spec/`](spec/) for the authoritative reference.
+
 ### `spec/` — Locked specs (source of truth)
 
 | File | Purpose |
@@ -150,7 +154,7 @@ else in this folder is spec, cookbook, and taste.
 | [`architecture.md`](spec/architecture.md) | The Pipeline, Renderer, RenderContext, and Document contracts. Read this first if you are implementing a renderer or integrating Scriba into a service. |
 | [`environments.md`](spec/environments.md) | **Locked** spec for the `animation` and `diagram` environments: grammar, the 8 inner commands, the 6 primitives, the 6 semantic states, the Starlark host, the HTML/CSS contract, and the error catalog. Single source of truth for implementation. |
 | [`scene-ir.md`](spec/scene-ir.md) | Scene IR datatype definitions. |
-| [`primitives.md`](spec/primitives.md) | Primitive catalog (Array, DPTable, Graph, Grid, Tree, NumberLine). |
+| [`primitives.md`](spec/primitives.md) | Primitive catalog — all 16 primitive types (6 base, 5 extended, 5 data-structure). |
 | [`svg-emitter.md`](spec/svg-emitter.md) | SVG emitter specification. |
 | [`animation-css.md`](spec/animation-css.md) | CSS stylesheet specification. |
 | [`starlark-worker.md`](spec/starlark-worker.md) | Starlark worker wire protocol. |
@@ -166,6 +170,13 @@ else in this folder is spec, cookbook, and taste.
 | [`animation-plugin.md`](guides/animation-plugin.md) | How `AnimationRenderer` parses, runs Starlark, drives the scene IR, and emits the filmstrip HTML. |
 | [`usage-example.md`](guides/usage-example.md) | A full end-to-end worked example: a real `.tex` problem with one `animation` and one `diagram`, the exact Python to run it, and the resulting HTML shape. |
 | [`editorial-principles.md`](guides/editorial-principles.md) | Authoring principles. When to reach for `animation` vs `diagram`, how to budget frames, how to write narration that earns its place, and how to stay accessible by construction. |
+| [`how-to-use-diagrams.md`](guides/how-to-use-diagrams.md) | How to author `\begin{diagram}` blocks: primitives, layout, and styling. |
+| [`how-to-animate-dp.md`](guides/how-to-animate-dp.md) | Animating DP problems: Array, DPTable, step-by-step fills. |
+| [`how-to-animate-graphs.md`](guides/how-to-animate-graphs.md) | Animating graph algorithms: BFS, DFS, shortest-path walkthroughs. |
+| [`how-to-debug-errors.md`](guides/how-to-debug-errors.md) | Troubleshooting Scriba error codes and common authoring mistakes. |
+| [`hidden-state-pattern.md`](guides/hidden-state-pattern.md) | The hidden-state pattern for complex multi-step animations. |
+| [`strict-mode.md`](guides/strict-mode.md) | Strict mode: validation, warnings, and enforced authoring constraints. |
+| [`tex-authoring.md`](guides/tex-authoring.md) | What LaTeX commands TexRenderer supports: sections, math, code, tables, links, images, and more. |
 
 ### `planning/` — Roadmap, phases, decisions
 
@@ -206,12 +217,12 @@ else in this folder is spec, cookbook, and taste.
 
 | Directory | Purpose |
 |---|---|
-| [`cookbook/`](cookbook/) | Worked problems. Frog DP, 0/1 Knapsack, BFS on a grid, segment tree query, binary search on the answer. Copy-paste starters. |
+| [`cookbook/`](cookbook/) | Worked problems. Frog 1 DP, animated BFS, segment tree query, sparse segtree lazy, small multiples, side-by-side, swap game, monkey apples, Zuma. Copy-paste starters. |
 | [`extensions/`](extensions/) | Extension specs (figure-embed, hl-macro, fastforward, substory, keyframe-animation). |
-| [`primitives/`](primitives/) | Draft primitive extension specs (matrix, stack, plane2d, metricplot, graph-stable-layout, codepanel, hashmap, linkedlist, queue, variablewatch). |
+| [`primitives/`](primitives/) | Primitive extension specs (production) (matrix, stack, plane2d, metricplot, graph-stable-layout, codepanel, hashmap, linkedlist, queue, variablewatch). |
 | [`blog/`](blog/) | Launch blog posts and community thread templates. |
 | [`oss/`](oss/) | Notes on the open-source pipeline: what ships publicly, what stays in-tree. |
-| [`legacy/`](legacy/) | Earlier drafts preserved for context. Do not cite from implementation code. |
+| [`legacy/`](legacy/) | Historical drafts from earlier design phases. Not current — see `spec/` and `planning/` for authoritative docs. |
 
 ## Design commitments, in one breath
 

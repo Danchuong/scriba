@@ -1,6 +1,6 @@
 # O3 — Reference Integrations
 
-> How consumers wire Scriba into an existing system. Source of truth: [`../04-environments-spec.md`](../spec/environments.md).
+> How consumers wire Scriba into an existing system. Source of truth: [`../environments.md`](../spec/environments.md).
 
 ## 1. Integration model
 
@@ -178,6 +178,6 @@ No `packages/scriba-runtime/`. No `packages/scriba-astro/` (Astro consumers use 
 Instead of a runtime contract, the cross-cutting work is:
 
 - **Deterministic output guarantee** — snapshot-tested in CI
-- **CSS class contract** (`../04-environments-spec.md` §9) — frozen part of the public API
+- **CSS class contract** (`../environments.md` §9) — frozen part of the public API
 - **`scriba.css`** — a single canonical stylesheet that realizes the class contract; consumers ship it unchanged or theme via CSS custom properties
 - **Versioned cache key helper** — `scriba.cache_key(tex_source) -> str`, exported so integrations do not have to invent their own hashing

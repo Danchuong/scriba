@@ -9,7 +9,7 @@ and will be resolved during or before the implementation phase that needs
 it. When a question is resolved, the answer is written into the
 authoritative file ([`01-architecture.md`](../spec/architecture.md),
 [`02-tex-plugin.md`](../guides/tex-plugin.md),
-[`04-environments-spec.md`](../spec/environments.md), or a new contract
+[`environments.md`](../spec/environments.md), or a new contract
 file) **and** this entry is updated with a `RESOLVED` note and the commit
 SHA where the decision landed.
 
@@ -23,13 +23,13 @@ it before making a unilateral choice.
 ### ~~Q-old-1. Should Scriba have its own `.scriba` file format?~~
 
 **RESOLVED:** No. Environments live inside regular `.tex` files; see
-`04-environments-spec.md` §1. Closed by the v0.3 pivot.
+`environments.md` §1. Closed by the v0.3 pivot.
 
 ### ~~Q-old-2. Where do diagram per-step descriptions live (D2 fenced-block design)?~~
 
 **RESOLVED:** Obsolete. The D2-based diagram plugin is cancelled. Narration
 for `\begin{animation}` lives inside `\narrate{...}` per
-`04-environments-spec.md` §3.4. The `\begin{diagram}` environment is
+`environments.md` §3.4. The `\begin{diagram}` environment is
 single-frame and has no narration.
 
 ### ~~Q-old-3. D2 version pinning strategy~~
@@ -126,7 +126,7 @@ wheel. To be written into `01-architecture.md` §subprocess workers and
 #### Historical options (kept for context)
 
 
-**Context.** `04-environments-spec.md` §5 locks the Starlark language
+**Context.** `environments.md` §5 locks the Starlark language
 contract but leaves the host implementation open. The worker must run
 out-of-process, honor a 5 s wall-clock timeout, a 10^8 step cap, a 64 MB
 memory rlimit, and expose the JSON-line protocol from §5.5.
@@ -147,7 +147,7 @@ tree-DP test case.
 
 ### Q22. Frame-count hard limit: configurable per project or truly hardcoded at 100?
 
-**Context.** `04-environments-spec.md` §6.3 locks the hard limit at 100
+**Context.** `environments.md` §6.3 locks the hard limit at 100
 frames (`E1181`) and the soft warning at 30 (`E1180`).
 
 **Options.**
@@ -171,7 +171,7 @@ needs 101+ frames.
 ### Q24. `RendererError.code` field — add to base class or subclass-specific?
 
 **Context.** Animation/diagram parsing raises `ValidationError` with
-`E1xxx` codes per `04-environments-spec.md`. The existing
+`E1xxx` codes per `environments.md`. The existing
 `scriba.core.errors.RendererError` has `message` and `renderer` but no
 `code` field.
 
@@ -209,7 +209,7 @@ a contrast failure in dark mode during Phase A week A2.
 
 ### Q26. Wong palette exhaustion: what if an author's algorithm needs a 7th semantic state?
 
-**Context.** `04-environments-spec.md` §3.7 locks the allowed states to six:
+**Context.** `environments.md` §3.7 locks the allowed states to six:
 `idle`, `current`, `done`, `dim`, `error`, `good`. `\recolor` with any
 other value is `E1109`.
 
@@ -271,7 +271,7 @@ pre-pivot D2), switch to (b).
 
 ### Q29. Per-environment `id=` collision detection
 
-**Context.** `04-environments-spec.md` §2.4 allows authors to set
+**Context.** `environments.md` §2.4 allows authors to set
 `id=my-scene` on an environment; the auto-fallback is
 `"scriba-" + sha256(env_body)[:10]`. Two environments with the same
 explicit `id=` in the same `Document` produce colliding HTML `id`s and
@@ -290,7 +290,7 @@ better than mysterious CSS targeting bugs. **Revisit trigger:** none.
 
 ### Q30. `\narrate{}` with zero-body: `E1150` warning vs silent empty paragraph?
 
-**Context.** `04-environments-spec.md` §3.4 and §6.2 already specify
+**Context.** `environments.md` §3.4 and §6.2 already specify
 `E1150` (warning) for zero narration and emit an empty
 `<p aria-hidden="true">`. This question is about whether `E1150` should
 escalate to error at frame-count > 10 (an animation with 10+ empty
@@ -302,7 +302,7 @@ authors systematically leave narration empty and miss the warning in CI.
 
 ### Q31. Accessibility: is one `aria-labelledby` per frame enough, or do addressable parts (`cell[i]`, `node[u]`) need individual `aria-label`s?
 
-**Context.** `04-environments-spec.md` §8.1 wires frame-level
+**Context.** `environments.md` §8.1 wires frame-level
 `aria-labelledby` pointing at the narration paragraph. Individual SVG
 `<g data-target="...">` groups are semantically inert to screen readers.
 
@@ -349,7 +349,7 @@ becomes a concern (currently a non-issue at ~275 KB).
    not work for the case at hand.
 4. **Write down the decision.** Once consensus is reached (or after 48
    hours of no objection to the default), write the decision into the
-   authoritative file (`01-architecture.md`, `04-environments-spec.md`, or
+   authoritative file (`01-architecture.md`, `environments.md`, or
    a new contract file).
 5. **Update this file.** Add a `RESOLVED: <answer>. Written into <file> in
    commit <sha>.` line to the relevant question section.

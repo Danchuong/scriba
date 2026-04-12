@@ -11,7 +11,7 @@
 
 | Category | Deliverable | Reference |
 |----------|-------------|-----------|
-| Error UX | Structured error messages with `E1xxx` codes, source line/column, docs site link | `04-environments-spec.md` §11, `04-roadmap.md` §7.2 |
+| Error UX | Structured error messages with `E1xxx` codes, source line/column, docs site link | `environments.md` §11, `04-roadmap.md` §7.2 |
 | PyPI final | Publish `scriba 0.5.0` (non-alpha) to PyPI with full changelog | `04-roadmap.md` §7.2 |
 | Homebrew tap | `brew tap ojcloud/tap` + `brew install scriba` formula (arm64 + x86_64) | `04-roadmap.md` §7.2 |
 | Launch messaging | Blog post + community thread drafts (HN, Lobsters, CP Discord) | `04-roadmap.md` §7.2 |

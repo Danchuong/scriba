@@ -1,10 +1,10 @@
 # Extension E2 — `\hl{step-id}{tex-expr}` Highlight Macro
 
-> **Status:** Accepted extension to `04-environments-spec.md`. This document
+> **Status:** Accepted extension to `environments.md`. This document
 > specifies the `\hl` macro, which highlights a LaTeX term inside `\narrate{...}`
 > in sync with the filmstrip frame via CSS `:target` and zero JavaScript.
 >
-> Cross-references: `04-environments-spec.md` §3.4 (`\narrate`), §5 (Starlark
+> Cross-references: `environments.md` §3.4 (`\narrate`), §5 (Starlark
 > host), §8.1 (HTML output shape), §9 (CSS contract, `:target` rule), §10.4
 > (`ctx.render_inline_tex`); `02-tex-plugin.md` for `TexRenderer` KaTeX trust
 > configuration.
@@ -367,7 +367,7 @@ All highlighting is CSS-only, no JS.
 
 ## 10. Base-spec deltas
 
-The following changes to `04-environments-spec.md` are REQUIRED.
+The following changes to `environments.md` are REQUIRED.
 
 1. **§3.3 `\step`**: Add an optional `[label=<ident>]` argument:
    > `\step` optionally accepts `[label=<ident>]` where `<ident>` matches

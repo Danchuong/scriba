@@ -1,6 +1,6 @@
 # Scriba OSS Launch Plan — v0.3
 
-> Unified launch plan for Scriba v0.3 after the LaTeX-environments pivot. Source of truth for the environments, commands, primitives, and error codes is [`../04-environments-spec.md`](../spec/environments.md). Each sub-report (O1–O6) drills into one dimension; this file is the ranked synthesis.
+> Unified launch plan for Scriba v0.3 after the LaTeX-environments pivot. Source of truth for the environments, commands, primitives, and error codes is [`../environments.md`](../spec/environments.md). Each sub-report (O1–O6) drills into one dimension; this file is the ranked synthesis.
 
 ---
 
@@ -90,7 +90,7 @@ Unchanged in spirit, rewritten for the new surface:
 | Dimension | Target |
 |---|---|
 | Testing | pytest + syrupy snapshots on HTML+SVG output, 80% line coverage on parser / Starlark host / SVG emitter |
-| Error messages | Rust-style with source caret + hint + docs link. Codes `E1001–E1299` (see `../04-environments-spec.md` §12) |
+| Error messages | Rust-style with source caret + hint + docs link. Codes `E1001–E1299` (see `../environments.md` §12) |
 | Type safety | mypy `--strict`, Pydantic v2 for Scene IR, `Protocol` for `Renderer` |
 | CLI | Optional Typer helper (`scriba compile file.tex`) for debugging only. Not the primary surface. |
 | Semver | Strict from v0.3. Public API = `from scriba import …` and the two environments. |
@@ -202,4 +202,4 @@ Full spec: [`O6-usp.md`](O6-usp.md)
 
 ---
 
-**Status**: Ready for implementation against `../04-environments-spec.md`. Zero-runtime, LaTeX-native, static-SVG-only.
+**Status**: Ready for implementation against `../environments.md`. Zero-runtime, LaTeX-native, static-SVG-only.

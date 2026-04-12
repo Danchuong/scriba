@@ -3,7 +3,7 @@
 > **Target:** `\begin{animation}` end-to-end with 3 base primitives + 2 extensions.
 > **Effort:** ~3 weeks solo, ~2 weeks with 2 engineers.
 > **Prerequisite:** v0.1.1-alpha shipped (TeX plugin complete, 71 tests passing).
-> **Binds to:** [`04-environments-spec.md`](../spec/environments.md),
+> **Binds to:** [`environments.md`](../spec/environments.md),
 > [`05-scene-ir.md`](../spec/scene-ir.md), [`07-starlark-worker.md`](../spec/starlark-worker.md),
 > [`08-svg-emitter.md`](../spec/svg-emitter.md), [`09-animation-css.md`](../spec/animation-css.md).
 
@@ -13,7 +13,7 @@
 
 | Category | Deliverable | Spec |
 |----------|-------------|------|
-| Environment | `\begin{animation}` / `\end{animation}` | `04-environments-spec.md` §2, §8.1 |
+| Environment | `\begin{animation}` / `\end{animation}` | `environments.md` §2, §8.1 |
 | Primitives | `Array`, `DPTable`, `Graph` | `06-primitives.md` §3, §5, §6 |
 | Extension E2 | `\hl{step-id}{tex}` macro | `extensions/hl-macro.md` |
 | Extension E5 | CSS `@keyframes` named slots | `extensions/keyframe-animation.md` |
@@ -148,7 +148,7 @@ LaTeX source with \begin{animation}...\end{animation}
 - Container types: `FrameIR`, `AnimationIR`.
 
 **Grammar** (`parser/grammar.py`):
-- Recursive-descent following BNF in `04-environments-spec.md` §2.1.
+- Recursive-descent following BNF in `environments.md` §2.1.
 - Validates position constraints (e.g., `\shape` before first `\step`).
 - Emits `ValidationError` with position + E-code.
 
@@ -181,7 +181,7 @@ LaTeX source with \begin{animation}...\end{animation}
 #### 3.6 Scene materializer
 
 - `SceneState`: mutable dict tracking per-shape state across frames.
-- Delta application rules per `04-environments-spec.md` §6.1:
+- Delta application rules per `environments.md` §6.1:
   - Each frame inherits full state from previous frame.
   - `\highlight` ephemeral — cleared at each `\step`.
   - `\annotate` with `ephemeral=true` — cleared at each `\step`.
@@ -231,7 +231,7 @@ Primitive (Protocol):
 - Scene ID: `"scriba-" + sha256(env_body)[:10]`.
 
 **HTML stitcher** (also in `emitter.py`):
-- Frozen HTML shape from `04-environments-spec.md` §8.1:
+- Frozen HTML shape from `environments.md` §8.1:
   ```html
   <figure class="scriba-animation" data-scriba-scene="{id}" data-frame-count="{N}">
     <ol class="scriba-frames">
@@ -384,7 +384,7 @@ Primitive (Protocol):
 |----------|--------------|
 | [`04-roadmap.md`](roadmap.md) §4 | Phase A milestone definition |
 | [`05-implementation-phases.md`](implementation-phases.md) | Week-by-week task breakdown (source of truth for task list) |
-| [`04-environments-spec.md`](../spec/environments.md) | Locked grammar, HTML shape, CSS contract, error codes |
+| [`environments.md`](../spec/environments.md) | Locked grammar, HTML shape, CSS contract, error codes |
 | [`05-scene-ir.md`](../spec/scene-ir.md) | Scene IR datatype definitions |
 | [`06-primitives.md`](../spec/primitives.md) | Primitive catalog (Array, DPTable, Graph for Phase A) |
 | [`07-starlark-worker.md`](../spec/starlark-worker.md) | Starlark worker wire protocol |

@@ -1,6 +1,6 @@
 # O5 — Onboarding: Add Scriba to Your Existing LaTeX Pipeline
 
-> The first 15 minutes a new user spends with Scriba. Source of truth: [`../04-environments-spec.md`](../spec/environments.md).
+> The first 15 minutes a new user spends with Scriba. Source of truth: [`../environments.md`](../spec/environments.md).
 
 ## 1. Framing
 

@@ -1,6 +1,6 @@
 # O1 — API Surface
 
-> Source of truth: [`../04-environments-spec.md`](../spec/environments.md). This file ranks and freezes the **public** surface that Scriba v0.3 ships. Anything not listed here is internal and may change between patch releases.
+> Source of truth: [`../environments.md`](../spec/environments.md). This file ranks and freezes the **public** surface that Scriba v0.3 ships. Anything not listed here is internal and may change between patch releases.
 
 ## 1. What is "the API"?
 
@@ -28,7 +28,7 @@ There is **no standalone CLI** (`scriba init/build/dev/check` are all cut). Ther
 \end{diagram}
 ```
 
-Both accept an optional `[key=value,...]` block. Keys are defined in `../04-environments-spec.md` §2.4: `width`, `height`, `id`, `label`.
+Both accept an optional `[key=value,...]` block. Keys are defined in `../environments.md` §2.4: `width`, `height`, `id`, `label`.
 
 - `animation` — ordered filmstrip of N frames, each a pre-rendered static SVG + narration paragraph.
 - `diagram` — a single static figure. Same primitive vocabulary as `animation` minus `\step` and `\narrate`.
@@ -46,15 +46,15 @@ Both accept an optional `[key=value,...]` block. Keys are defined in `../04-envi
 | `\recolor{selector}{params}` | 2 | anim prelude, `\step`, diagram | Override the palette token for members |
 | `\annotate{selector}{params}` | 2 | anim prelude, `\step`, diagram | Attach a short label/arrow/caption |
 
-Precedence, selector grammar, parameter types, and validation rules live in `../04-environments-spec.md` §§3–6.
+Precedence, selector grammar, parameter types, and validation rules live in `../environments.md` §§3–6.
 
 ### 2.3 Six primitives (for `\shape`)
 
-`array`, `grid`, `graph`, `tree`, `dptable`, `code`. Each primitive has a fixed parameter schema and selector vocabulary. Full catalog in `../04-environments-spec.md` §4.
+`array`, `grid`, `graph`, `tree`, `dptable`, `code`. Each primitive has a fixed parameter schema and selector vocabulary. Full catalog in `../environments.md` §4.
 
 ### 2.4 Six semantic states (for `\highlight`)
 
-`default`, `active`, `visited`, `candidate`, `rejected`, `accepted`. These map to CSS classes and are the only way to express "what is this element doing right now" without hardcoding colors. Full table in `../04-environments-spec.md` §6.
+`default`, `active`, `visited`, `candidate`, `rejected`, `accepted`. These map to CSS classes and are the only way to express "what is this element doing right now" without hardcoding colors. Full table in `../environments.md` §6.
 
 ### 2.5 Starlark host rules (`\compute{}`)
 
@@ -62,7 +62,7 @@ Precedence, selector grammar, parameter types, and validation rules live in `../
 - Allowed builtins: `range`, `len`, `min`, `max`, `enumerate`, `zip`
 - Hard CPU and memory caps
 - Same input + same `scriba` version ⇒ byte-identical output
-- Full contract in `../04-environments-spec.md` §5
+- Full contract in `../environments.md` §5
 
 ---
 
@@ -131,7 +131,7 @@ Every `\begin{animation}` expands to:
 
 Every `\begin{diagram}` expands to the same outer `<figure>` with a single `<div class="scriba-stage"><svg>…</svg></div>` and no `<ol>` / `<p>`.
 
-No `<script>`. No custom elements. No hydration. The CSS class contract is frozen in `../04-environments-spec.md` §9 and is part of the public API — consumers may style against `.scriba-stage`, `.state-active`, etc.
+No `<script>`. No custom elements. No hydration. The CSS class contract is frozen in `../environments.md` §9 and is part of the public API — consumers may style against `.scriba-stage`, `.state-active`, etc.
 
 ---
 

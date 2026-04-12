@@ -5,13 +5,13 @@
 > It defines every class, custom property, color value, layout rule, and dark-mode
 > override that the three static CSS files contain.
 >
-> Cross-references: [`04-environments-spec.md`](environments.md) §8 for the
+> Cross-references: [`environments.md`](environments.md) §8 for the
 > frozen HTML output shape, §9 for the CSS class contract and state-class palette;
 > [`primitives.md`](primitives.md) §2.3 for the state-class table and §2.5 for
 > SVG output conventions; [`09-animation-plugin.md`](../guides/animation-plugin.md) §9 for
 > `AnimationRenderer.assets()`; [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §9 for
-> `DiagramRenderer.assets()`. Where this file and `04-environments-spec.md` appear to
-> disagree, `04-environments-spec.md` wins and this file is the bug.
+> `DiagramRenderer.assets()`. Where this file and `environments.md` appear to
+> disagree, `environments.md` wins and this file is the bug.
 
 ---
 
@@ -460,7 +460,7 @@ Only one `scriba-state-*` class is applied per `<g data-target>` at any time. Th
 
 ### 4.7 Widget classes (interactive mode)
 
-The widget classes style the interactive controller emitted by `AnimationRenderer` in **interactive output mode** (the default). In static mode these classes are not emitted. See `04-environments-spec.md` §8.0 for mode selection.
+The widget classes style the interactive controller emitted by `AnimationRenderer` in **interactive output mode** (the default). In static mode these classes are not emitted. See `environments.md` §8.0 for mode selection.
 
 Additional interactive-mode classes:
 
@@ -750,7 +750,7 @@ Labels (the `label=` parameter on `\shape`) are rendered as a `<text>` element a
 
 ## 7. Annotation styles — `scriba-scene-primitives.css`
 
-Annotations are `<g class="scriba-annotation scriba-annotation-{color}">` groups emitted inside the target's `<g data-target>`. Per `04-environments-spec.md` §3.8, the color tokens are `info`, `warn`, `good`, `error`, `muted`, `path`.
+Annotations are `<g class="scriba-annotation scriba-annotation-{color}">` groups emitted inside the target's `<g data-target>`. Per `environments.md` §3.8, the color tokens are `info`, `warn`, `good`, `error`, `muted`, `path`.
 
 ### 7.1 Base annotation
 
@@ -911,13 +911,13 @@ At 640px and below, the filmstrip collapses to a vertical stack. Each frame occu
 }
 ```
 
-Per `04-environments-spec.md` §9.1, print media always falls back to a vertical stack so that a multi-frame animation prints as labelled figures down the page.
+Per `environments.md` §9.1, print media always falls back to a vertical stack so that a multi-frame animation prints as labelled figures down the page.
 
 ---
 
 ## 10. JavaScript policy
 
-`AnimationRenderer` supports two output modes (see `04-environments-spec.md` §8.0):
+`AnimationRenderer` supports two output modes (see `environments.md` §8.0):
 
 - **Interactive mode** (default): emits a small (~2KB) inline `<script>` that powers the step controller, keyboard navigation, and frame transitions. The widget classes in §4.7 (`.scriba-widget`, `.scriba-controls`, `.scriba-step-counter`, `.scriba-progress`, `.scriba-dot`) are used in this mode.
 - **Static mode**: emits zero JavaScript. All visual states are applied as CSS classes at build time. The filmstrip's only navigation affordance is the `:target` CSS selector driven by URL fragments (`#{scene-id}-frame-N`). This guarantees the output works in email clients, RSS readers, PDF print, Codeforces embed, and any consumer that supports SVG + CSS.
@@ -1002,4 +1002,4 @@ Complete list of CSS classes emitted by the animation/diagram pipeline, grouped 
 
 ---
 
-**End of CSS spec.** Bind to this file + `04-environments-spec.md` §9 verbatim. Bump file version whenever the class-name contract or custom-property set changes.
+**End of CSS spec.** Bind to this file + `environments.md` §9 verbatim. Bump file version whenever the class-name contract or custom-property set changes.

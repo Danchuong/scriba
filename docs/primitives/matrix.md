@@ -1,6 +1,6 @@
 # Primitive Spec: `Matrix` / `Heatmap`
 
-> Status: **draft — Pivot #2 extension**. Extends base spec `04-environments-spec.md` §5
+> Status: **draft — Pivot #2 extension**. Extends base spec `environments.md` §5
 > (primitive catalog). Follows the same contract as `Array`, `DPTable`, `Graph`, `Grid`,
 > `Tree`, `NumberLine` defined there. Error codes in range **E1420–E1429**.
 
@@ -598,7 +598,7 @@ Expected:
 
 ## 14. Base-spec deltas
 
-The following changes are required in `04-environments-spec.md`. **Agent 4 will merge
+The following changes are required in `environments.md`. **Agent 4 will merge
 all deltas into the base spec.**
 
 **In §3.1** (`\shape` command), the `Type` parameter table and the sentence:

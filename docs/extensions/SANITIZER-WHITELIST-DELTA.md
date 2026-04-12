@@ -11,7 +11,7 @@
 >
 > Cross-references: `extensions/figure-embed.md` §4, `extensions/substory.md` §4,
 > `extensions/keyframe-animation.md` §4–§5, `extensions/hl-macro.md` §5,
-> `04-environments-spec.md` §8.1.
+> `environments.md` §8.1.
 
 ---
 

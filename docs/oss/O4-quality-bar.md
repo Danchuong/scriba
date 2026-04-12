@@ -1,6 +1,6 @@
 # O4 — Quality Bar (v0.3)
 
-> The standards a Scriba v0.3 release must meet before it ships. Source of truth for environments, commands, and error codes: [`../04-environments-spec.md`](../spec/environments.md).
+> The standards a Scriba v0.3 release must meet before it ships. Source of truth for environments, commands, and error codes: [`../environments.md`](../spec/environments.md).
 
 ## 1. Targets at a glance
 
@@ -20,7 +20,7 @@
 ## 2. Testing
 
 ### 2.1 Unit tests
-- Parser: every production in the BNF from `../04-environments-spec.md` §2, positive and negative cases.
+- Parser: every production in the BNF from `../environments.md` §2, positive and negative cases.
 - Each of the 8 inner commands: valid forms, invalid forms, each error code it can emit.
 - Each of the 6 primitives: parameter validation, selector resolution.
 - Starlark host: sandbox rules (no `time`, no `random`, no I/O), CPU/memory caps, deterministic re-runs.
@@ -52,7 +52,7 @@ error[E1118]: unknown primitive 'heap'
   = docs: https://scriba.dev/errors/E1118
 ```
 
-- All codes live in the `E1001–E1299` range defined in `../04-environments-spec.md` §12.
+- All codes live in the `E1001–E1299` range defined in `../environments.md` §12.
 - Every code has a stable URL `https://scriba.dev/errors/EXXXX`.
 - Every code has a dedicated docs page (see [`O2-docs-site.md`](O2-docs-site.md) §3).
 - `ScribaError.__str__` emits the full formatted block; `ScribaError.code` exposes the numeric code; `ScribaError.spans` exposes source locations for programmatic tooling.
@@ -73,7 +73,7 @@ error[E1118]: unknown primitive 'heap'
 ## 6. Semver and public API
 
 - The public API is exactly what [`O1-api-surface.md`](O1-api-surface.md) §3.3 lists. Adding a new public name is a MINOR bump. Changing a signature is a MAJOR bump.
-- The HTML / CSS contract in `../04-environments-spec.md` §9 is **also** part of the public API — changing a class name is a MAJOR bump.
+- The HTML / CSS contract in `../environments.md` §9 is **also** part of the public API — changing a class name is a MAJOR bump.
 - Error codes are append-only within `E1001–E1299`. Removing a code is a MAJOR bump; changing its message text is not.
 
 ## 7. Changelog and release
