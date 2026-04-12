@@ -17,6 +17,9 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    arrow_height_above,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
     estimate_text_width,
     register_primitive,
     svg_style_attrs,
@@ -165,6 +168,23 @@ class VariableWatch(PrimitiveBase):
 
         return False
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Map ``'V.var[name]'`` to the SVG center of that variable row."""
+        prefix = f"{self.name}."
+        local = selector[len(prefix):] if selector.startswith(prefix) else selector
+        m = _VAR_RE.match(local)
+        if m:
+            varname = m.group("varname")
+            if varname in self._values:
+                try:
+                    row_idx = self.var_names.index(varname)
+                except ValueError:
+                    return None
+                cx = _PADDING + self._total_width / 2
+                cy = _PADDING + row_idx * _ROW_HEIGHT + _ROW_HEIGHT / 2
+                return (cx, cy)
+        return None
+
     def bounding_box(self) -> BoundingBox:
         row_count = max(len(self.var_names), 1)
         h = row_count * _ROW_HEIGHT + 2 * _PADDING
@@ -173,13 +193,34 @@ class VariableWatch(PrimitiveBase):
         if self.label_text:
             h += 20
 
+        arrow_above = arrow_height_above(
+            self._annotations,
+            self.resolve_annotation_point,
+            cell_height=_ROW_HEIGHT,
+        )
+        h += arrow_above
+
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
+        effective_anns = self._annotations
+        arrow_above = arrow_height_above(
+            effective_anns,
+            self.resolve_annotation_point,
+            cell_height=_ROW_HEIGHT,
+        )
+
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="VariableWatch" data-shape="{html_escape(self.name)}">'
         )
+
+        # Shift content down so arrows curve into valid space above y=0
+        if arrow_above > 0:
+            parts.append(f'<g transform="translate(0, {arrow_above})">')
+
+        # Emit arrowhead marker defs
+        emit_arrow_marker_defs(parts, effective_anns)
 
         if not self.var_names:
             # Empty placeholder
@@ -195,6 +236,8 @@ class VariableWatch(PrimitiveBase):
                 f'text-anchor="middle" dominant-baseline="central" '
                 f'fill="{THEME["fg_dim"]}" font-size="11">no variables</text>'
             )
+            if arrow_above > 0:
+                parts.append("</g>")
             parts.append("</g>")
             return "".join(parts)
 
@@ -309,6 +352,26 @@ class VariableWatch(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
+
+        # Arrow annotations
+        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        for idx, ann in enumerate(arrow_anns):
+            src = self.resolve_annotation_point(ann.get("arrow_from", ""))
+            dst = self.resolve_annotation_point(ann.get("target", ""))
+            if src and dst:
+                target = ann.get("target", "")
+                arrow_index = sum(
+                    1 for j, a in enumerate(arrow_anns)
+                    if a.get("target") == target and j < idx
+                )
+                emit_arrow_svg(
+                    parts, ann, src, dst, arrow_index,
+                    _ROW_HEIGHT, render_inline_tex,
+                )
+
+        # Close translate group if opened for arrow space
+        if arrow_above > 0:
+            parts.append("</g>")
 
         parts.append("</g>")
         return "".join(parts)

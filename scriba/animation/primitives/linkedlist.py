@@ -24,6 +24,9 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    arrow_height_above,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
     estimate_text_width,
     register_primitive,
     svg_style_attrs,
@@ -49,6 +52,9 @@ _NULL_INDICATOR_PAD = 4  # inset for the null diagonal line in the pointer area
 _NODE_RE = re.compile(r"^node\[(?P<idx>\d+)\]$")
 _LINK_RE = re.compile(r"^link\[(?P<idx>\d+)\]$")
 _ALL_RE = re.compile(r"^all$")
+
+# Full-qualified selector regex (with shape name prefix) for annotation points
+_FULL_NODE_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<idx>\d+)\]$")
 
 # ---------------------------------------------------------------------------
 # LinkedList primitive
@@ -183,6 +189,22 @@ class LinkedList(PrimitiveBase):
 
         return False
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Return SVG (x, y) center for an annotation selector.
+
+        Supports ``"<name>.node[<i>]"`` selectors.
+        Returns the top-center of the node so arrows curve above.
+        """
+        m = _FULL_NODE_RE.match(selector)
+        if m and m.group("name") == self.name:
+            idx = int(m.group("idx"))
+            if 0 <= idx < len(self.values):
+                nx = _PADDING + idx * (self._node_width + _LINK_GAP)
+                x = nx + self._node_width // 2
+                y = _PADDING  # top edge of node
+                return (float(x), float(y))
+        return None
+
     def bounding_box(self) -> BoundingBox:
         n = max(len(self.values), 1)
         w = (
@@ -193,6 +215,11 @@ class LinkedList(PrimitiveBase):
         h = 2 * _PADDING + _NODE_HEIGHT + _INDEX_LABEL_OFFSET
         if self.label_text:
             h += 20
+        arrow_above = arrow_height_above(
+            self._annotations, self.resolve_annotation_point,
+            cell_height=_NODE_HEIGHT,
+        )
+        h += arrow_above
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     # ----- SVG rendering ---------------------------------------------------
@@ -202,11 +229,28 @@ class LinkedList(PrimitiveBase):
         *,
         render_inline_tex: Callable[[str], str] | None = None,
     ) -> str:
+        effective_anns = self._annotations
+
+        # Compute vertical space needed above nodes for arrow curves
+        arrow_above = arrow_height_above(
+            effective_anns, self.resolve_annotation_point,
+            cell_height=_NODE_HEIGHT,
+        )
+
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="linkedlist"'
             f' data-shape="{html_escape(self.name)}">'
         )
+
+        # Shift all content down so arrows curve into valid space above y=0
+        if arrow_above > 0:
+            parts.append(f'<g transform="translate(0, {arrow_above})">')
+
+        # Emit arrowhead marker defs for annotation arrows
+        ann_arrow_lines: list[str] = []
+        emit_arrow_marker_defs(ann_arrow_lines, effective_anns)
+        parts.extend(ann_arrow_lines)
 
         # --- Arrowhead marker definition ---
         ah = self._arrowhead_size
@@ -405,6 +449,29 @@ class LinkedList(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
+
+        # Annotation arrow rendering
+        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        if arrow_anns:
+            arrow_lines: list[str] = []
+            for idx, ann in enumerate(arrow_anns):
+                src = self.resolve_annotation_point(ann.get("arrow_from", ""))
+                dst = self.resolve_annotation_point(ann.get("target", ""))
+                if src and dst:
+                    arrow_index = sum(
+                        1
+                        for prev in arrow_anns[:idx]
+                        if prev.get("target") == ann.get("target")
+                    )
+                    emit_arrow_svg(
+                        arrow_lines, ann, src, dst, arrow_index,
+                        _NODE_HEIGHT, render_inline_tex,
+                    )
+            parts.extend(arrow_lines)
+
+        # Close the translate group if we opened one for arrow space
+        if arrow_above > 0:
+            parts.append("</g>")
 
         parts.append("</g>")
         return "".join(parts)

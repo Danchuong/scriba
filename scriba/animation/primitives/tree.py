@@ -9,6 +9,7 @@ See ``docs/spec/primitives.md`` section 7 for the authoritative specification.
 from __future__ import annotations
 
 import math
+import re
 from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
@@ -17,6 +18,9 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     THEME,
     _render_svg_text,
+    arrow_height_above,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
     register_primitive,
     svg_style_attrs,
 )
@@ -32,6 +36,9 @@ _LAYER_GAP = 60
 _MIN_H_GAP = 50
 _EDGE_STROKE_WIDTH = 1.5
 _PADDING = 30
+
+# Regex to parse annotation selectors like "T.node[5]" or "T.node[[0,3]]"
+_TREE_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
 
 
 # ---------------------------------------------------------------------------
@@ -669,6 +676,20 @@ class Tree(PrimitiveBase):
     def _edge_key(u: str | int, v: str | int) -> str:
         return f"edge[({u},{v})]"
 
+    # ----- Position tracking ------------------------------------------------
+
+    def get_node_positions(self) -> dict[str, tuple[int, int]]:
+        """Return a mapping of fully-qualified node targets to ``(x, y)`` positions.
+
+        Keys use the form ``"{name}.node[{id}]"`` so they align with the
+        ``data-target`` attributes emitted by :meth:`emit_svg`.
+        """
+        result: dict[str, tuple[int, int]] = {}
+        for node_id, pos in self.positions.items():
+            target = f"{self.name}.{self._node_key(node_id)}"
+            result[target] = pos
+        return result
+
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:
@@ -684,13 +705,37 @@ class Tree(PrimitiveBase):
             return True
         return suffix in set(self.addressable_parts())
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Map ``"T.node[5]"`` to the SVG ``(x, y)`` center of that node.
+
+        Coordinates include the ``translate(r, r)`` offset applied by
+        :meth:`emit_svg` so arrow endpoints line up with rendered nodes.
+        """
+        m = _TREE_NODE_SEL_RE.match(selector)
+        if m and m.group("name") == self.name:
+            raw_id = m.group("id")
+            # Try to match as-is first (string node ids), then as int
+            node_id: str | int = raw_id
+            if node_id not in self.positions:
+                try:
+                    node_id = int(raw_id)
+                except ValueError:
+                    return None
+            if node_id in self.positions:
+                r = self._node_radius
+                cx, cy = self.positions[node_id]
+                # Add the translate(r, r) offset from emit_svg
+                return (float(cx + r), float(cy + r))
+        return None
+
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
+        arrow_above = self._arrow_height_above()
         return BoundingBox(
             x=0,
             y=0,
             width=self.width + 2 * r,
-            height=self.height + 2 * r,
+            height=self.height + 2 * r + arrow_above,
         )
 
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
@@ -701,11 +746,17 @@ class Tree(PrimitiveBase):
             )
 
         r = self._node_radius
+        effective_anns = self._annotations
+        arrow_above = self._arrow_height_above()
+
         parts: list[str] = []
-        # Offset by node radius so nodes at edge positions don't clip
+        # Offset by node radius so nodes at edge positions don't clip.
+        # When annotations with arrows exist, shift content down by
+        # arrow_above so curves have room above the tree.
+        ty = r + arrow_above
         parts.append(
             f'<g data-primitive="tree" data-shape="{html_escape(self.name)}"'
-            f' transform="translate({r},{r})">'
+            f' transform="translate({r},{ty})">'
         )
 
         # Optional label / caption
@@ -801,6 +852,7 @@ class Tree(PrimitiveBase):
             )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
+                f'data-node-x="{cx}" data-node-y="{cy}" '
                 f'class="scriba-state-{state}">'
                 f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}" '
                 f'fill="{node_colors["fill"]}" '
@@ -811,5 +863,64 @@ class Tree(PrimitiveBase):
             )
         parts.append("</g>")
 
+        # --- Annotation arrows (rendered on top of everything) ---
+        if effective_anns:
+            arrow_lines: list[str] = []
+            emit_arrow_marker_defs(arrow_lines, effective_anns)
+            for ann in effective_anns:
+                self._emit_arrow(
+                    arrow_lines, ann,
+                    annotations=effective_anns,
+                    render_inline_tex=render_inline_tex,
+                )
+            parts.extend(arrow_lines)
+
         parts.append("</g>")
         return "".join(parts)
+
+    # -- internal: arrows ---------------------------------------------------
+
+    def _emit_arrow(
+        self,
+        lines: list[str],
+        ann: dict[str, Any],
+        annotations: list[dict[str, Any]] | None = None,
+        render_inline_tex: Callable[[str], str] | None = None,
+    ) -> None:
+        """Emit a cubic Bezier arrow annotation between two tree nodes."""
+        arrow_from = ann.get("arrow_from", "")
+        if not arrow_from:
+            return
+
+        src_point = self.resolve_annotation_point(arrow_from)
+        dst_point = self.resolve_annotation_point(ann.get("target", ""))
+        if src_point is None or dst_point is None:
+            return
+
+        # Compute arrow_index: how many earlier arrows target the same cell
+        target = ann.get("target", "")
+        arrow_index = 0
+        if annotations:
+            for other in annotations:
+                if other is ann:
+                    break
+                if other.get("target") == target and other.get("arrow_from"):
+                    arrow_index += 1
+
+        emit_arrow_svg(
+            lines,
+            ann,
+            src_point=src_point,
+            dst_point=dst_point,
+            arrow_index=arrow_index,
+            cell_height=float(self._node_radius * 2),
+            render_inline_tex=render_inline_tex,
+        )
+
+    def _arrow_height_above(self) -> int:
+        """Compute the max vertical extent above the tree that arrows need."""
+        return arrow_height_above(
+            self._annotations,
+            self.resolve_annotation_point,
+            cell_height=float(self._node_radius * 2),
+        )

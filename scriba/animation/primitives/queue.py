@@ -23,6 +23,9 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _inset_rect_attrs,
     _render_svg_text,
+    arrow_height_above,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
     estimate_text_width,
     register_primitive,
     svg_style_attrs,
@@ -46,6 +49,9 @@ _CELL_RE = re.compile(r"^cell\[(?P<idx>\d+)\]$")
 _FRONT_RE = re.compile(r"^front$")
 _REAR_RE = re.compile(r"^rear$")
 _ALL_RE = re.compile(r"^all$")
+
+# Full-qualified selector regex (with shape name prefix) for annotation points
+_FULL_CELL_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
 
 
 def _is_truthy_flag(value: Any) -> bool:
@@ -202,20 +208,59 @@ class Queue(PrimitiveBase):
 
         return False
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Return SVG (x, y) center for an annotation selector.
+
+        Supports ``"<name>.cell[<i>]"`` selectors.
+        Returns the top-center of the cell so arrows curve above.
+        """
+        m = _FULL_CELL_RE.match(selector)
+        if m and m.group("name") == self.name:
+            idx = int(m.group("idx"))
+            if 0 <= idx < self.capacity:
+                cell_y = _POINTER_HEIGHT + _POINTER_LABEL_GAP
+                x = _LABEL_PADDING + idx * (self._cell_width + CELL_GAP) + self._cell_width // 2
+                y = cell_y  # top edge of cell
+                return (float(x), float(y))
+        return None
+
     def bounding_box(self) -> BoundingBox:
         w = self._total_width() + 2 * _LABEL_PADDING
         h = _POINTER_HEIGHT + _POINTER_LABEL_GAP + CELL_HEIGHT + INDEX_LABEL_OFFSET
         if self.label_text:
             h += 20
+        arrow_above = arrow_height_above(
+            self._annotations, self.resolve_annotation_point,
+            cell_height=CELL_HEIGHT,
+        )
+        h += arrow_above
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     def emit_svg(
         self, *, render_inline_tex: Callable[[str], str] | None = None
     ) -> str:
+        effective_anns = self._annotations
+
+        # Compute vertical space needed above content for arrow curves
+        arrow_above = arrow_height_above(
+            effective_anns, self.resolve_annotation_point,
+            cell_height=CELL_HEIGHT,
+        )
+
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="queue" data-shape="{html_escape(self.name)}">'
         )
+
+        # Shift all content down so arrows curve into valid space above y=0
+        if arrow_above > 0:
+            parts.append(f'  <g transform="translate(0, {arrow_above})">')
+
+        # Emit arrowhead marker defs for annotation arrows
+        ann_arrow_lines: list[str] = []
+        emit_arrow_marker_defs(ann_arrow_lines, effective_anns)
+        if ann_arrow_lines:
+            parts.append("\n".join(ann_arrow_lines))
 
         # Y offset: leave room for pointer arrows above cells
         cell_y = _POINTER_HEIGHT + _POINTER_LABEL_GAP
@@ -334,6 +379,29 @@ class Queue(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
+
+        # Annotation arrow rendering
+        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        if arrow_anns:
+            arrow_lines: list[str] = []
+            for idx, ann in enumerate(arrow_anns):
+                src = self.resolve_annotation_point(ann.get("arrow_from", ""))
+                dst = self.resolve_annotation_point(ann.get("target", ""))
+                if src and dst:
+                    arrow_index = sum(
+                        1
+                        for prev in arrow_anns[:idx]
+                        if prev.get("target") == ann.get("target")
+                    )
+                    emit_arrow_svg(
+                        arrow_lines, ann, src, dst, arrow_index,
+                        CELL_HEIGHT, render_inline_tex,
+                    )
+            parts.extend(arrow_lines)
+
+        # Close the translate group if we opened one for arrow space
+        if arrow_above > 0:
+            parts.append("  </g>")
 
         parts.append("</g>")
         return "\n".join(parts)

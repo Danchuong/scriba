@@ -19,6 +19,9 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _inset_rect_attrs,
     _render_svg_text,
+    arrow_height_above,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -165,16 +168,45 @@ class GridPrimitive(PrimitiveBase):
 
         return suffix == "all"
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Return SVG (x, y) center for an annotation selector.
+
+        Supports ``"<name>.cell[<row>][<col>]"`` selectors.
+        Returns the top-center of the cell (y=top edge) so arrows curve above.
+        """
+        m = _CELL_2D_RE.match(selector)
+        if m and m.group("name") == self.shape_name:
+            r = int(m.group("row"))
+            c = int(m.group("col"))
+            if 0 <= r < self.rows and 0 <= c < self.cols:
+                x = c * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2
+                y = r * (CELL_HEIGHT + CELL_GAP)  # top edge of cell
+                return (float(x), float(y))
+        return None
+
     def emit_svg(
         self,
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> str:
         """Emit SVG ``<g>`` for the grid."""
+        effective_anns = self._annotations
+
+        # Compute vertical space needed above cells for arrow curves
+        arrow_above = arrow_height_above(
+            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
+        )
 
         lines: list[str] = [
             f'<g data-primitive="grid" data-shape="{self.shape_name}">'
         ]
+
+        # Shift all content down so arrows curve into valid space above y=0
+        if arrow_above > 0:
+            lines.append(f'  <g transform="translate(0, {arrow_above})">')
+
+        # Emit arrowhead marker defs when annotations with arrows are present
+        emit_arrow_marker_defs(lines, effective_anns)
 
         for r in range(self.rows):
             for c in range(self.cols):
@@ -246,6 +278,26 @@ class GridPrimitive(PrimitiveBase):
                 )
             )
 
+        # Arrow annotations
+        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        for idx, ann in enumerate(arrow_anns):
+            src = self.resolve_annotation_point(ann.get("arrow_from", ""))
+            dst = self.resolve_annotation_point(ann.get("target", ""))
+            if src and dst:
+                arrow_index = sum(
+                    1
+                    for prev in arrow_anns[:idx]
+                    if prev.get("target") == ann.get("target")
+                )
+                emit_arrow_svg(
+                    lines, ann, src, dst, arrow_index,
+                    CELL_HEIGHT, render_inline_tex,
+                )
+
+        # Close the translate group if we opened one for arrow space
+        if arrow_above > 0:
+            lines.append("  </g>")
+
         lines.append("</g>")
         return "\n".join(lines)
 
@@ -255,6 +307,11 @@ class GridPrimitive(PrimitiveBase):
         h = th
         if self.label:
             h += INDEX_LABEL_OFFSET
+        arrow_above = arrow_height_above(
+            self._annotations, self.resolve_annotation_point,
+            cell_height=CELL_HEIGHT,
+        )
+        h += arrow_above
         return BoundingBox(x=0, y=0, width=tw, height=h)
 
     # -- internal -----------------------------------------------------------

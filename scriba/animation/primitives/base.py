@@ -333,6 +333,15 @@ class PrimitiveBase(abc.ABC):
     def emit_svg(self, *, render_inline_tex: "Callable[[str], str] | None" = None) -> str:
         """Return the SVG fragment (``<g data-primitive="...">...</g>``)."""
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Return SVG (x, y) center coordinates for an annotation selector.
+
+        Primitives that support arrow annotations override this to map
+        selectors like ``'arr.cell[3]'`` or ``'G.node[A]'`` to pixel
+        coordinates.  Returns ``None`` if the selector cannot be resolved.
+        """
+        return None
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -548,3 +557,249 @@ def _render_svg_text(
         f"</div>"
         f"</foreignObject>"
     )
+
+
+# ---------------------------------------------------------------------------
+# Shared arrow annotation infrastructure
+# ---------------------------------------------------------------------------
+
+ARROW_STYLES: dict[str, dict[str, str]] = {
+    "good": {
+        "stroke": "#059669",
+        "stroke_width": "2.2",
+        "opacity": "1.0",
+        "label_fill": "#059669",
+        "label_weight": "700",
+        "label_size": "12px",
+    },
+    "info": {
+        "stroke": "#94a3b8",
+        "stroke_width": "1.5",
+        "opacity": "0.45",
+        "label_fill": "#94a3b8",
+        "label_weight": "500",
+        "label_size": "11px",
+    },
+    "warn": {
+        "stroke": "#d97706",
+        "stroke_width": "2.0",
+        "opacity": "0.8",
+        "label_fill": "#d97706",
+        "label_weight": "600",
+        "label_size": "11px",
+    },
+    "error": {
+        "stroke": "#dc2626",
+        "stroke_width": "2.0",
+        "opacity": "0.8",
+        "label_fill": "#dc2626",
+        "label_weight": "600",
+        "label_size": "11px",
+    },
+    "muted": {
+        "stroke": "#cbd5e1",
+        "stroke_width": "1.2",
+        "opacity": "0.3",
+        "label_fill": "#cbd5e1",
+        "label_weight": "500",
+        "label_size": "11px",
+    },
+    "path": {
+        "stroke": "#2563eb",
+        "stroke_width": "2.5",
+        "opacity": "1.0",
+        "label_fill": "#2563eb",
+        "label_weight": "700",
+        "label_size": "12px",
+    },
+}
+
+
+def emit_arrow_svg(
+    lines: list[str],
+    ann: dict[str, Any],
+    src_point: tuple[float, float],
+    dst_point: tuple[float, float],
+    arrow_index: int,
+    cell_height: float,
+    render_inline_tex: "Callable[[str], str] | None" = None,
+) -> None:
+    """Emit a cubic Bezier arrow annotation into *lines*.
+
+    This is the shared arrow rendering used by Array, DPTable, and any
+    future primitive that supports annotation arrows.  Each primitive is
+    responsible for resolving selectors to SVG coordinates (via its own
+    ``_cell_center`` / ``resolve_annotation_point``) and passing the
+    results here.
+
+    Parameters
+    ----------
+    lines:
+        Output buffer -- SVG markup is appended in-place.
+    ann:
+        Annotation dict with keys ``target``, ``arrow_from``, and
+        optional ``color`` and ``label``.
+    src_point:
+        ``(x, y)`` SVG coordinates of the arrow source.
+    dst_point:
+        ``(x, y)`` SVG coordinates of the arrow destination.
+    arrow_index:
+        Stagger index for multiple arrows targeting the same cell.
+    cell_height:
+        Cell height used for curve offset calculation.
+    render_inline_tex:
+        Optional callback for rendering ``$...$`` math in labels.
+    """
+    color = ann.get("color", "info")
+    label_text = ann.get("label", "")
+    target = ann.get("target", "")
+    arrow_from = ann.get("arrow_from", "")
+
+    x1, y1 = src_point
+    x2, y2 = dst_point
+
+    # Control points: curve upward -- scale with horizontal distance
+    # and stagger when multiple arrows target the same cell
+    base_offset = max(cell_height * 0.75, abs(x2 - x1) * 0.25)
+    stagger = cell_height * 0.5
+    total_offset = base_offset + arrow_index * stagger
+
+    mid_x = int((x1 + x2) // 2)
+    mid_y = int(min(y1, y2) - total_offset)
+    cx1 = int((x1 + mid_x) // 2)
+    cy1 = mid_y
+    cx2 = int((x2 + mid_x) // 2)
+    cy2 = mid_y
+
+    # Resolve inline style for this color
+    style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    s_stroke = style["stroke"]
+    s_width = style["stroke_width"]
+    s_opacity = style["opacity"]
+
+    ann_desc = (
+        f"Arrow from {_escape_xml(str(arrow_from))} "
+        f"to {_escape_xml(str(target))}"
+    )
+    if label_text:
+        ann_desc += f": {_escape_xml(label_text)}"
+
+    ann_key = f"{target}-{arrow_from}" if arrow_from else f"{target}-solo"
+    lines.append(
+        f'  <g class="scriba-annotation scriba-annotation-{color}"'
+        f' data-annotation="{_escape_xml(ann_key)}"'
+        f' opacity="{s_opacity}"'
+        f' role="graphics-symbol" aria-label="{ann_desc}">'
+    )
+    lines.append(
+        f'    <path d="M{x1},{y1} C{cx1},{cy1} {cx2},{cy2} {x2},{y2}" '
+        f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none" '
+        f'marker-end="url(#scriba-arrow-{color})">'
+        f'<title>{ann_desc}</title>'
+        f'</path>'
+    )
+    if label_text:
+        label_y = mid_y - 4  # slightly above the curve peak
+        l_fill = style["label_fill"]
+        l_weight = style["label_weight"]
+        l_size = style["label_size"]
+        lines.append(
+            "    "
+            + _render_svg_text(
+                label_text,
+                mid_x,
+                label_y,
+                fill=l_fill,
+                font_weight=l_weight,
+                font_size=l_size,
+                text_anchor="middle",
+                dominant_baseline="auto",
+                render_inline_tex=render_inline_tex,
+            )
+        )
+    lines.append("  </g>")
+
+
+def arrow_height_above(
+    annotations: list[dict[str, Any]],
+    cell_center_resolver: "Callable[[str], tuple[float, float] | None]",
+    cell_height: float = CELL_HEIGHT,
+) -> int:
+    """Compute the max vertical extent above y=0 that arrows need.
+
+    Parameters
+    ----------
+    annotations:
+        Full list of annotations for the primitive.
+    cell_center_resolver:
+        Callable that maps a selector string (e.g. ``"arr.cell[3]"``)
+        to ``(x, y)`` SVG coordinates, or ``None`` if unresolvable.
+    cell_height:
+        Cell height used for curve offset calculation.
+    """
+    if not annotations:
+        return 0
+    arrow_anns = [a for a in annotations if a.get("arrow_from")]
+    if not arrow_anns:
+        return 0
+
+    max_height = 0
+    for idx, ann in enumerate(arrow_anns):
+        src = cell_center_resolver(ann.get("arrow_from", ""))
+        dst = cell_center_resolver(ann.get("target", ""))
+        if src is None or dst is None:
+            continue
+        x1, _y1 = src
+        x2, _y2 = dst
+        # Count arrows targeting same cell before this one
+        target = ann.get("target", "")
+        arrow_index = sum(
+            1
+            for j, a in enumerate(arrow_anns)
+            if a.get("target") == target
+            and j < idx
+        )
+        base_offset = max(cell_height * 0.75, abs(x2 - x1) * 0.25)
+        stagger = cell_height * 0.5
+        total_offset = base_offset + arrow_index * stagger
+        max_height = max(max_height, int(total_offset) + 14)
+
+    return max_height
+
+
+def emit_arrow_marker_defs(
+    lines: list[str],
+    annotations: list[dict[str, Any]],
+) -> None:
+    """Emit ``<defs>`` with ``<marker>`` elements for arrow colors.
+
+    Only emits markers for colors actually used in *annotations*.
+    Does nothing when no arrow annotations are present.
+
+    Parameters
+    ----------
+    lines:
+        Output buffer -- SVG markup is appended in-place.
+    annotations:
+        Full list of annotations; only those with ``arrow_from`` are
+        considered.
+    """
+    arrow_anns = [a for a in annotations if a.get("arrow_from")]
+    if not arrow_anns:
+        return
+
+    colors_used = {a.get("color", "info") for a in arrow_anns}
+    lines.append("  <defs>")
+    for color in sorted(colors_used):
+        marker_style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+        marker_fill = marker_style["stroke"]
+        lines.append(
+            f'    <marker id="scriba-arrow-{color}" '
+            f'viewBox="0 0 10 10" refX="10" refY="5" '
+            f'markerWidth="6" markerHeight="6" '
+            f'orient="auto-start-reverse">'
+            f'<title>Arrowhead ({color})</title>'
+            f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{marker_fill}"/>'
+            f"</marker>"
+        )
+    lines.append("  </defs>")

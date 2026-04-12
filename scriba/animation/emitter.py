@@ -149,6 +149,40 @@ def validate_frame_labels_unique(frames: list[FrameData]) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Tree position injection
+# ---------------------------------------------------------------------------
+
+
+def _inject_tree_positions(frame: FrameData, primitives: dict[str, Any]) -> None:
+    """Copy node ``(x, y)`` positions from Tree primitives into *frame.shape_states*.
+
+    Called after ``_emit_frame_svg`` so that ``apply_command`` mutations
+    (reparent, add_node, etc.) have already updated ``Tree.positions``.
+    The differ then compares positions between consecutive frames and
+    emits ``position_move`` transitions for smooth animation.
+    """
+    for shape_name, prim in primitives.items():
+        if not hasattr(prim, "get_node_positions"):
+            continue
+        node_positions = prim.get_node_positions()
+        if not node_positions:
+            continue
+        shape_dict = frame.shape_states.get(shape_name)
+        if shape_dict is None:
+            shape_dict = {}
+            frame.shape_states[shape_name] = shape_dict
+        for target, (x, y) in node_positions.items():
+            entry = shape_dict.get(target)
+            if entry is None:
+                # Node exists in the tree but has no state changes this
+                # frame — create a minimal entry with position only.
+                shape_dict[target] = {"state": "idle", "x": x, "y": y}
+            else:
+                entry["x"] = x
+                entry["y"] = y
+
+
+# ---------------------------------------------------------------------------
 # ViewBox computation
 # ---------------------------------------------------------------------------
 
@@ -750,6 +784,10 @@ def emit_interactive_html(
             narration_id_override=narration_id,
         )
 
+        # Inject node positions from Tree primitives into shape_states
+        # so the differ can detect position changes between frames.
+        _inject_tree_positions(frame, primitives)
+
         # --- JS frame data ---
         svg_escaped = _escape_js(svg_html)
         narration_escaped = _escape_js(frame.narration_html)
@@ -967,6 +1005,19 @@ def emit_interactive_html(
               {{duration:DUR,easing:'ease-in',fill:'forwards'}});
             _anims.push(a6);pending.push(a6.finished);hasWaapi=true;
           }}
+        }}
+      }}else if(kind==='position_move'){{
+        var el9=stage.querySelector(sel);
+        if(el9){{
+          var pf=fromVal.split(',');
+          var pt=toVal.split(',');
+          var dx=parseFloat(pf[0])-parseFloat(pt[0]);
+          var dy=parseFloat(pf[1])-parseFloat(pt[1]);
+          var a9=el9.animate([
+            {{transform:'translate('+dx+'px,'+dy+'px)'}},
+            {{transform:'translate(0,0)'}}
+          ],{{duration:DUR,easing:'ease-out',fill:'forwards'}});
+          _anims.push(a9);pending.push(a9.finished);hasWaapi=true;
         }}
       }}else if(kind==='annotation_remove'){{
         var el7=stage.querySelector('[data-annotation="'+CSS.escape(target)+'"]');

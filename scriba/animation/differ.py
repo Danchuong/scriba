@@ -22,6 +22,7 @@ class Transition:
     kind: str  # "recolor" | "value_change" | "element_add" | "element_remove"
     # | "highlight_on" | "highlight_off"
     # | "annotation_add" | "annotation_remove" | "annotation_recolor"
+    # | "position_move"
 
 
 @dataclass(frozen=True, slots=True)
@@ -207,6 +208,26 @@ def _diff_shape_states(
                             kind="highlight_off",
                         )
                     )
+
+            # Position change (Tree node movement after structural mutations)
+            prev_x = prev_cell.get("x")
+            curr_x = curr_cell.get("x")
+            prev_y = prev_cell.get("y")
+            curr_y = curr_cell.get("y")
+            if (
+                prev_x is not None
+                and curr_x is not None
+                and (prev_x != curr_x or prev_y != curr_y)
+            ):
+                transitions.append(
+                    Transition(
+                        target=target,
+                        prop="position",
+                        from_val=f"{prev_x},{prev_y}",
+                        to_val=f"{curr_x},{curr_y}",
+                        kind="position_move",
+                    )
+                )
 
     return transitions
 

@@ -15,6 +15,9 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    arrow_height_above,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -138,7 +141,29 @@ class NumberLinePrimitive(PrimitiveBase):
         self.label: str | None = label
         self.width: int = width
 
+    # -- internal: tick position ---------------------------------------------
+
+    def _tick_x(self, i: int) -> int:
+        """Return the x coordinate for tick index *i*."""
+        usable_width = self.width - 2 * NL_PADDING
+        if self.tick_count > 1:
+            return int(NL_PADDING + i * usable_width / (self.tick_count - 1))
+        return int(NL_PADDING + usable_width // 2)
+
     # -- PrimitiveBase interface --------------------------------------------
+
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Map ``'N.tick[3]'`` to the SVG center of that tick mark."""
+        prefix = f"{self.shape_name}."
+        local = selector[len(prefix):] if selector.startswith(prefix) else selector
+        m = _SUFFIX_TICK_RE.match(local)
+        if m:
+            idx = int(m.group("idx"))
+            if 0 <= idx < self.tick_count:
+                x = float(self._tick_x(idx))
+                y = float(NL_TICK_TOP)  # top of tick — arrows curve above
+                return (x, y)
+        return None
 
     def addressable_parts(self) -> list[str]:
         """Return all valid selector suffixes."""
@@ -168,9 +193,23 @@ class NumberLinePrimitive(PrimitiveBase):
     ) -> str:
         """Emit SVG ``<g>`` for the number line."""
 
+        effective_anns = self._annotations
+        arrow_above = arrow_height_above(
+            effective_anns,
+            self.resolve_annotation_point,
+            cell_height=NL_TICK_BOTTOM - NL_TICK_TOP,
+        )
+
         lines: list[str] = [
             f'<g data-primitive="numberline" data-shape="{self.shape_name}">'
         ]
+
+        # Shift content down so arrows curve into valid space above y=0
+        if arrow_above > 0:
+            lines.append(f'  <g transform="translate(0, {arrow_above})">')
+
+        # Emit arrowhead marker defs
+        emit_arrow_marker_defs(lines, effective_anns)
 
         # Axis line — always idle color
         idle_colors = STATE_COLORS["idle"]
@@ -185,7 +224,6 @@ class NumberLinePrimitive(PrimitiveBase):
         lines.append("  </g>")
 
         # Ticks
-        usable_width = self.width - 2 * NL_PADDING
         for i in range(self.tick_count):
             target = f"{self.shape_name}.tick[{i}]"
             suffix = f"tick[{i}]"
@@ -204,10 +242,7 @@ class NumberLinePrimitive(PrimitiveBase):
             css = state_class(effective_state)
             colors = svg_style_attrs(effective_state)
 
-            if self.tick_count > 1:
-                x = int(NL_PADDING + i * usable_width / (self.tick_count - 1))
-            else:
-                x = int(NL_PADDING + usable_width // 2)
+            x = self._tick_x(i)
 
             tick_label = self.tick_labels[i] if i < len(self.tick_labels) else str(i)
 
@@ -255,6 +290,27 @@ class NumberLinePrimitive(PrimitiveBase):
                 )
             )
 
+        # Arrow annotations
+        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        tick_height = NL_TICK_BOTTOM - NL_TICK_TOP
+        for idx, ann in enumerate(arrow_anns):
+            src = self.resolve_annotation_point(ann.get("arrow_from", ""))
+            dst = self.resolve_annotation_point(ann.get("target", ""))
+            if src and dst:
+                target = ann.get("target", "")
+                arrow_index = sum(
+                    1 for j, a in enumerate(arrow_anns)
+                    if a.get("target") == target and j < idx
+                )
+                emit_arrow_svg(
+                    lines, ann, src, dst, arrow_index,
+                    tick_height, render_inline_tex,
+                )
+
+        # Close translate group if opened for arrow space
+        if arrow_above > 0:
+            lines.append("  </g>")
+
         lines.append("</g>")
         return "\n".join(lines)
 
@@ -263,6 +319,15 @@ class NumberLinePrimitive(PrimitiveBase):
         h = NL_HEIGHT
         if self.label:
             h += 16  # extra space for caption
+
+        tick_height = NL_TICK_BOTTOM - NL_TICK_TOP
+        arrow_above = arrow_height_above(
+            self._annotations,
+            self.resolve_annotation_point,
+            cell_height=tick_height,
+        )
+        h += arrow_above
+
         return BoundingBox(x=0.0, y=0.0, width=float(self.width), height=float(h))
 
 

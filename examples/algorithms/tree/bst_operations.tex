@@ -118,5 +118,46 @@
 \recolor{T.node[4]}{state=good}
 \recolor{T.node[8]}{state=good}
 \recolor{T.node[9]}{state=good}
-\narrate{Trang thai cuoi: in-order traversal = 3, 4, 7, 8, 9 (van tang dan). BST property duoc bao toan sau moi insert/delete. Dung cach nay, delete mot internal node luon rut ve delete mot la (successor la la hoac chi co con phai).}
+\narrate{Trang thai cuoi: in-order traversal = 3, 4, 7, 8, 9 (van tang dan). BST property duoc bao toan sau moi insert/delete. Dung cach nay, delete mot internal node luon rut ve delete mot la (successor la la hoac chi co con phai). Tiep theo: minh hoa phep xoay phai (right rotation).}
+
+\step
+\recolor{T.node[7]}{state=idle}
+\recolor{T.edge[(8,7)]}{state=idle}
+\apply{T}{add_node={id=10, parent=7}}
+\apply{T}{add_node={id=11, parent=7}}
+\recolor{T.node[5]}{state=idle}
+\recolor{T.node[3]}{state=idle}
+\recolor{T.node[4]}{state=idle}
+\recolor{T.node[8]}{state=current}
+\recolor{T.node[7]}{state=current}
+\recolor{T.node[9]}{state=idle}
+\recolor{T.node[10]}{state=idle}
+\recolor{T.node[11]}{state=idle}
+\narrate{Right rotation tai Y=8. Hien tai: Y=8 co con trai X=7 (voi con A=10 va B=11) va con phai C=9. Phep xoay phai se nang X len vi tri cua Y, day Y xuong lam con phai cua X, va chuyen B tu con phai cua X sang con trai cua Y.}
+
+\step
+\recolor{T.node[8]}{state=bad}
+\recolor{T.node[7]}{state=good}
+\recolor{T.node[11]}{state=current}
+\narrate{Danh dau cac node tham gia xoay: X=7 (xanh, se di len) va Y=8 (do, se di xuong). Node B=11 (con phai cua X) se chuyen sang lam con trai cua Y. Ba buoc reparent tiep theo thuc hien xoay that -- cau truc cay thay doi, khong chi doi mau.}
+
+\step
+\apply{T}{reparent={node=7, parent=5}}
+\apply{T}{reparent={node=8, parent=7}}
+\apply{T}{reparent={node=11, parent=8}}
+\recolor{T.node[7]}{state=good}
+\recolor{T.node[8]}{state=bad}
+\recolor{T.node[11]}{state=current}
+\narrate{Thuc hien xoay phai bang 3 lenh reparent: (1) reparent X=7 len lam con cua root 5 (tach khoi Y); (2) reparent Y=8 xuong lam con cua X=7; (3) reparent B=11 tu X sang Y (B tro thanh con trai cua Y). Reingold-Tilford tu dong tinh lai layout -- cac node thuc su di chuyen.}
+
+\step
+\recolor{T.node[5]}{state=done}
+\recolor{T.node[3]}{state=done}
+\recolor{T.node[4]}{state=done}
+\recolor{T.node[7]}{state=done}
+\recolor{T.node[8]}{state=done}
+\recolor{T.node[9]}{state=done}
+\recolor{T.node[10]}{state=done}
+\recolor{T.node[11]}{state=done}
+\narrate{Xoay phai hoan tat. Cay truoc: 8(7,9) voi 7(10,11). Cay sau: 7(10,8) voi 8(11,9). In-order traversal khong doi: 10, 7, 11, 8, 9 -- BST invariant duoc bao toan. Do sau cay con giam tu 3 xuong 2. Day la phep xoay co ban trong AVL tree va Red-Black tree.}
 \end{animation}

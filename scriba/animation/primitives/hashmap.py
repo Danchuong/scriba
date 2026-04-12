@@ -21,6 +21,9 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
+    arrow_height_above,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
     estimate_text_width,
     register_primitive,
     svg_style_attrs,
@@ -172,12 +175,35 @@ class HashMap(PrimitiveBase):
 
         return False
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Map ``'hm.bucket[2]'`` to the SVG center of that bucket row."""
+        # Strip shape-name prefix if present
+        prefix = f"{self.name}."
+        local = selector[len(prefix):] if selector.startswith(prefix) else selector
+        m = _BUCKET_RE.match(local)
+        if m:
+            idx = int(m.group("idx"))
+            if 0 <= idx < self.capacity:
+                index_col_w = self._index_col_width()
+                entries_col_w = self._entries_col_width()
+                cx = _PADDING + index_col_w + entries_col_w / 2
+                cy = _PADDING + idx * _ROW_HEIGHT + _ROW_HEIGHT / 2
+                return (cx, cy)
+        return None
+
     def bounding_box(self) -> BoundingBox:
         h = self.capacity * _ROW_HEIGHT + 2 * _PADDING
         w = self._panel_width() + 2 * _PADDING
 
         if self.label_text:
             h += 20
+
+        arrow_above = arrow_height_above(
+            self._annotations,
+            self.resolve_annotation_point,
+            cell_height=_ROW_HEIGHT,
+        )
+        h += arrow_above
 
         return BoundingBox(x=0, y=0, width=w, height=h)
 
@@ -188,11 +214,25 @@ class HashMap(PrimitiveBase):
         entries_col_w = self._entries_col_width()
         total_w = index_col_w + entries_col_w
 
+        effective_anns = self._annotations
+        arrow_above = arrow_height_above(
+            effective_anns,
+            self.resolve_annotation_point,
+            cell_height=_ROW_HEIGHT,
+        )
+
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="HashMap" '
             f'data-shape="{html_escape(self.name)}">'
         )
+
+        # Shift content down so arrows curve into valid space above y=0
+        if arrow_above > 0:
+            parts.append(f'<g transform="translate(0, {arrow_above})">')
+
+        # Emit arrowhead marker defs
+        emit_arrow_marker_defs(parts, effective_anns)
 
         table_h = self.capacity * _ROW_HEIGHT
 
@@ -310,6 +350,26 @@ class HashMap(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
+
+        # Arrow annotations
+        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        for idx, ann in enumerate(arrow_anns):
+            src = self.resolve_annotation_point(ann.get("arrow_from", ""))
+            dst = self.resolve_annotation_point(ann.get("target", ""))
+            if src and dst:
+                target = ann.get("target", "")
+                arrow_index = sum(
+                    1 for j, a in enumerate(arrow_anns)
+                    if a.get("target") == target and j < idx
+                )
+                emit_arrow_svg(
+                    parts, ann, src, dst, arrow_index,
+                    _ROW_HEIGHT, render_inline_tex,
+                )
+
+        # Close translate group if opened for arrow space
+        if arrow_above > 0:
+            parts.append("</g>")
 
         parts.append("</g>")
         return "".join(parts)

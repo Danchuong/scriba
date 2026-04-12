@@ -20,6 +20,8 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -206,6 +208,9 @@ class DPTablePrimitive(PrimitiveBase):
             f'<g data-primitive="dptable" data-shape="{self.shape_name}">'
         ]
 
+        # Emit arrowhead marker defs when annotations with arrows are present
+        emit_arrow_marker_defs(lines, effective_anns)
+
         if self.is_2d:
             self._emit_2d_cells(lines, render_inline_tex=render_inline_tex)
         else:
@@ -214,7 +219,7 @@ class DPTablePrimitive(PrimitiveBase):
         # Arrow annotations
         if effective_anns:
             for ann in effective_anns:
-                self._emit_arrow(lines, ann, render_inline_tex=render_inline_tex)
+                self._emit_arrow(lines, ann, annotations=effective_anns, render_inline_tex=render_inline_tex)
 
         # Caption label
         if self.label is not None:
@@ -443,53 +448,42 @@ class DPTablePrimitive(PrimitiveBase):
         self,
         lines: list[str],
         ann: dict[str, Any],
+        annotations: list[dict[str, Any]] | None = None,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> None:
         """Emit a cubic Bezier arrow annotation."""
-        color = ann.get("color", "info")
-        label_text = ann.get("label", "")
-        target = ann.get("target", "")
         arrow_from = ann.get("arrow_from", "")
+        if not arrow_from:
+            return
 
         src_center = self._cell_center(arrow_from)
-        dst_center = self._cell_center(target)
+        dst_center = self._cell_center(ann.get("target", ""))
 
         if src_center is None or dst_center is None:
             return
 
-        x1, y1 = src_center
-        x2, y2 = dst_center
+        # Compute arrow_index: how many earlier arrows target the same cell
+        target = ann.get("target", "")
+        arrow_index = 0
+        if annotations:
+            for other in annotations:
+                if other is ann:
+                    break
+                if (
+                    other.get("target") == target
+                    and other.get("arrow_from")
+                ):
+                    arrow_index += 1
 
-        # Control points: curve upward
-        mid_x = int((x1 + x2) // 2)
-        mid_y = int(min(y1, y2) - 30)
-        cx1 = int((x1 + mid_x) // 2)
-        cy1 = mid_y
-        cx2 = int((x2 + mid_x) // 2)
-        cy2 = mid_y
-
-        ann_key = f"{target}-{arrow_from}" if arrow_from else f"{target}-solo"
-        lines.append(
-            f'  <g class="scriba-annotation scriba-annotation-{color}"'
-            f' data-annotation="{_escape_xml(ann_key)}">'
+        emit_arrow_svg(
+            lines,
+            ann,
+            src_point=src_center,
+            dst_point=dst_center,
+            arrow_index=arrow_index,
+            cell_height=CELL_HEIGHT,
+            render_inline_tex=render_inline_tex,
         )
-        lines.append(
-            f'    <path d="M{x1},{y1} C{cx1},{cy1} {cx2},{cy2} {x2},{y2}" '
-            f'stroke="currentColor" fill="none" '
-            f'marker-end="url(#scriba-arrow-{color})"/>'
-        )
-        if label_text:
-            lines.append(
-                "    "
-                + _render_svg_text(
-                    label_text,
-                    mid_x,
-                    mid_y,
-                    text_anchor="middle",
-                    render_inline_tex=render_inline_tex,
-                )
-            )
-        lines.append("  </g>")
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
         """Return the ``(cx, cy)`` pixel center of a cell selector."""

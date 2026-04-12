@@ -18,7 +18,17 @@ from html import escape as html_escape
 from typing import Any, Callable, ClassVar, Sequence
 
 from scriba.animation.errors import _emit_warning, animation_error
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, THEME, _render_svg_text, register_primitive, svg_style_attrs
+from scriba.animation.primitives.base import (
+    BoundingBox,
+    PrimitiveBase,
+    THEME,
+    _render_svg_text,
+    arrow_height_above,
+    emit_arrow_marker_defs,
+    emit_arrow_svg,
+    register_primitive,
+    svg_style_attrs,
+)
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
 
 __all__ = ["Plane2D"]
@@ -37,6 +47,7 @@ _TICK_FONT_SIZE = 10
 _MIN_TICK_SPACING_PX = 12
 _ARROWHEAD_LEN = 6
 _ARROWHEAD_HALF_W = 3
+_ARROW_CELL_HEIGHT = 35  # virtual cell height for arrow curve offset calculation
 
 # Selector regexes
 _POINT_RE = re.compile(r"^point\[(?P<idx>\d+)\]$")
@@ -500,18 +511,116 @@ class Plane2D(PrimitiveBase):
 
         return False
 
+    # ----- annotation point resolution -------------------------------------
+
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Return SVG ``(x, y)`` for an annotation selector.
+
+        Supported selector forms (``P`` is the shape name):
+        - ``P.point[i]``   — center of point *i*
+        - ``P.line[i]``    — midpoint of the visible line segment
+        - ``P.segment[i]`` — midpoint of the segment
+
+        Returns ``None`` when the selector does not match this primitive
+        or the referenced element does not exist / is tombstoned.
+        """
+        # Strip the ``<name>.`` prefix if present
+        prefix = f"{self.name}."
+        if selector.startswith(prefix):
+            suffix = selector[len(prefix):]
+        else:
+            return None
+
+        # --- point ---
+        m = _POINT_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if idx < len(self.points) and self.points[idx] is not _TOMBSTONE:
+                pt = self.points[idx]
+                return self.math_to_svg(pt["x"], pt["y"])
+            return None
+
+        # --- line (use visible midpoint) ---
+        m = _LINE_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if idx < len(self.lines) and self.lines[idx] is not _TOMBSTONE:
+                ln = self.lines[idx]
+                slope = ln["slope"]
+                intercept_val = ln["intercept"]
+                if math.isinf(slope):
+                    x_val = intercept_val
+                    if self.xrange[0] <= x_val <= self.xrange[1]:
+                        mid_y = (self.yrange[0] + self.yrange[1]) / 2
+                        return self.math_to_svg(x_val, mid_y)
+                    return None
+                result = clip_line_to_viewport(
+                    slope, intercept_val, self.xrange, self.yrange,
+                )
+                if result is None:
+                    return None
+                (x1, y1), (x2, y2) = result
+                return self.math_to_svg((x1 + x2) / 2, (y1 + y2) / 2)
+            return None
+
+        # --- segment (midpoint) ---
+        m = _SEGMENT_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if idx < len(self.segments) and self.segments[idx] is not _TOMBSTONE:
+                seg = self.segments[idx]
+                mid_x = (seg["x1"] + seg["x2"]) / 2
+                mid_y = (seg["y1"] + seg["y2"]) / 2
+                return self.math_to_svg(mid_x, mid_y)
+            return None
+
+        # --- polygon (centroid) ---
+        m = _POLYGON_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if idx < len(self.polygons) and self.polygons[idx] is not _TOMBSTONE:
+                pts = self.polygons[idx]["points"]
+                if pts:
+                    cx = sum(p[0] for p in pts) / len(pts)
+                    cy = sum(p[1] for p in pts) / len(pts)
+                    return self.math_to_svg(cx, cy)
+            return None
+
+        return None
+
+    # ----- bounding box ----------------------------------------------------
+
     def bounding_box(self) -> BoundingBox:
-        return BoundingBox(x=0, y=0, width=self.width, height=self.height)
+        arrow_above = self._arrow_height_above()
+        return BoundingBox(
+            x=0,
+            y=0,
+            width=self.width,
+            height=self.height + arrow_above,
+        )
 
     # ----- SVG emission ----------------------------------------------------
 
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
+        effective_anns = self._annotations
+        arrow_above = self._arrow_height_above()
+
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="plane2d" data-shape="{html_escape(self.name)}" '
             f'data-scriba-xrange="{self.xrange[0]} {self.xrange[1]}" '
             f'data-scriba-yrange="{self.yrange[0]} {self.yrange[1]}">'
         )
+
+        # Shift all content down when arrows need space above the plot
+        if arrow_above > 0:
+            parts.append(f'<g transform="translate(0, {arrow_above})">')
+
+        # Emit arrowhead marker defs when annotations with arrows exist
+        arrow_lines: list[str] = []
+        emit_arrow_marker_defs(arrow_lines, effective_anns)
+        if arrow_lines:
+            parts.extend(arrow_lines)
 
         # Layer 1: grid and axes (SVG coordinates, no transform)
         parts.append(self._emit_grid())
@@ -533,8 +642,71 @@ class Plane2D(PrimitiveBase):
         # Layer 3: text labels (SVG coordinates, outside transform)
         parts.append(self._emit_labels(render_inline_tex=render_inline_tex))
 
+        # Layer 4: arrow annotations (SVG coordinates, outside transform)
+        if effective_anns:
+            for ann in effective_anns:
+                self._emit_arrow(
+                    parts, ann,
+                    annotations=effective_anns,
+                    render_inline_tex=render_inline_tex,
+                )
+
+        # Close the translate group if we opened one for arrow space
+        if arrow_above > 0:
+            parts.append("</g>")
+
         parts.append("</g>")
         return "".join(parts)
+
+    # ----- Arrow annotation helpers ----------------------------------------
+
+    def _emit_arrow(
+        self,
+        lines: list[str],
+        ann: dict[str, Any],
+        annotations: list[dict[str, Any]] | None = None,
+        render_inline_tex: Callable[[str], str] | None = None,
+    ) -> None:
+        """Emit a single arrow annotation using the shared infrastructure."""
+        arrow_from = ann.get("arrow_from", "")
+        if not arrow_from:
+            return
+
+        src_center = self.resolve_annotation_point(arrow_from)
+        dst_center = self.resolve_annotation_point(ann.get("target", ""))
+        if src_center is None or dst_center is None:
+            return
+
+        # Compute stagger index: count earlier arrows targeting the same cell
+        target = ann.get("target", "")
+        arrow_index = 0
+        if annotations:
+            for other in annotations:
+                if other is ann:
+                    break
+                if (
+                    other.get("target") == target
+                    and other.get("arrow_from")
+                ):
+                    arrow_index += 1
+
+        emit_arrow_svg(
+            lines,
+            ann,
+            src_point=src_center,
+            dst_point=dst_center,
+            arrow_index=arrow_index,
+            cell_height=_ARROW_CELL_HEIGHT,
+            render_inline_tex=render_inline_tex,
+        )
+
+    def _arrow_height_above(self) -> int:
+        """Compute the max vertical extent above y=0 that arrows need."""
+        return arrow_height_above(
+            self._annotations,
+            self.resolve_annotation_point,
+            cell_height=_ARROW_CELL_HEIGHT,
+        )
 
     # ----- Grid rendering --------------------------------------------------
 

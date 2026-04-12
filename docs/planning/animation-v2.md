@@ -1,7 +1,7 @@
 # Animation V2 — Implementation Plan
 
 **Date:** 2026-04-12
-**Status:** Complete (G2 deferred to V3)
+**Status:** Complete (all gaps resolved including G2 + G8)
 **Depends on:** Animation V1 (differ.py, emitter.py `<script>`, CSS transitions)
 
 ---
@@ -317,3 +317,55 @@ Waves 2, 3, 4 can all run in parallel after Wave 1.
 | **Total** | **8** | | **20 files** | **2 files** |
 
 **Estimated agent count:** 8 agents across 2 sequential rounds (Wave 1, then Waves 2+3+4 parallel).
+
+---
+
+## Resolved (originally deferred, completed in V2 extended waves)
+
+### G2 — Annotation Rendering for Non-Array/DPTable Primitives (DONE)
+
+**Problem:** `\annotate` with `arrow_from` only renders visual arrows on Array and DPTable. The other 9 primitives (Graph, Tree, Grid, NumberLine, Plane2D, LinkedList, HashMap, Queue, VariableWatch) accept `\annotate` commands at the scene level and store them in `self._annotations`, but their `emit_svg()` methods never read `_annotations` — no arrows or labels appear in the SVG output.
+
+**Why it matters:** Authors writing graph/tree algorithm editorials cannot show transition arrows (e.g., "this edge relaxation came from node X"). They must rely on `\recolor` state changes and `\narrate` text to convey the same information, which is less visual.
+
+**Why it's XL effort:**
+- Each primitive has a different coordinate system and layout algorithm. Array cells are evenly spaced on a horizontal line — computing Bezier control points is straightforward. But Graph nodes use force-directed layout (positions vary per frame), Tree nodes use hierarchical layout, Grid cells are 2D, Plane2D uses Cartesian coordinates, etc.
+- Arrow routing must avoid overlapping existing elements (nodes, edges, cells). Array arrows curve upward above the cells — this strategy doesn't generalize to 2D layouts.
+- Each primitive needs: (1) a `_cell_center()` / `_node_center()` method mapping selector strings to SVG coordinates, (2) a `_emit_arrow()` method computing Bezier paths in that coordinate space, (3) bounding box adjustments to account for arrow vertical extent, (4) `data-annotation` attributes on the `<g>` wrappers.
+- The `_ARROW_STYLES` dict and arrowhead marker defs could be shared (extract from `array.py` to `base.py`), but the geometry is per-primitive.
+
+**Suggested approach (when V3 is prioritized):**
+1. Extract `_ARROW_STYLES`, `_emit_arrow()` base logic, and `<marker>` defs into `base.py` as a mixin or helper.
+2. Each primitive implements a `_resolve_annotation_endpoints(target: str, arrow_from: str) -> tuple[Point, Point] | None` method that maps selector strings to SVG coordinates.
+3. The base `_emit_arrow()` takes endpoints and renders the Bezier path — each primitive only needs to provide the coordinate mapping.
+4. Start with Graph and Tree (highest demand), then Grid, then the rest.
+
+**Primitives by priority:**
+1. **Graph** — node center coordinates available from layout. Arrow routing needs to avoid edge lines.
+2. **Tree** ��� node positions from hierarchical layout. Arrows between non-adjacent nodes need multi-level curve.
+3. **Grid** — cell centers trivially computable (row * cell_height, col * cell_width). Similar to Array but 2D.
+4. **LinkedList** — node positions are sequential. Arrows similar to Array.
+5. **Queue** — cell positions sequential. Trivial once LinkedList is done.
+6. **HashMap** — bucket positions. Similar to Array but vertical.
+7. **NumberLine** — tick positions on a line. Straightforward.
+8. **Plane2D** — Cartesian coordinates map directly to SVG. Arrows are just lines.
+9. **VariableWatch** — variable rows. Simple vertical layout.
+
+### G8 — BST Rotation Visualization (DONE)
+
+**Problem:** `examples/algorithms/tree/bst_operations.tex` demonstrates insert and delete but cannot show AVL/splay rotations (zig, zig-zig, zig-zag). The Tree primitive computes node positions from the tree structure at shape declaration time — there is no mechanism to animate position changes when the tree structure mutates mid-animation.
+
+**Why it matters:** Rotations are the core visual insight for balanced BST algorithms. Without them, splay tree and AVL tree editorials can only show before/after snapshots, not the rotation motion itself.
+
+**Why it's L effort:**
+- The Tree primitive's `_compute_layout()` runs once during `__init__`. After `add_node` or `remove_node`, the layout is recomputed from scratch for the next frame. There is no interpolation between old and new positions.
+- To animate a rotation, the system would need: (1) preserve old node positions, (2) compute new positions after structural change, (3) emit both position sets so the JS runtime can interpolate (CSS transform or WAAPI).
+- This requires a new transition kind (`position_change`) in `differ.py` and corresponding JS animation logic.
+- The differ currently only tracks state/value/highlight changes on existing targets — it does not track coordinate changes.
+
+**Suggested approach (when prioritized):**
+1. Add `position` field to `FrameData.shape_states` entries for Tree nodes (x, y coordinates).
+2. In `differ.py`, detect when a target's position changes between frames → emit `Transition(kind="position_move", from_val="x1,y1", to_val="x2,y2")`.
+3. In the JS runtime, handle `position_move` by applying a CSS `transform: translate()` animation from old to new position, then snap to final layout.
+4. Tree primitive needs `data-node-x` and `data-node-y` attributes on node `<g>` elements so JS can read current positions.
+5. Scope initially to Tree only — Graph would benefit too but its force-directed layout makes position tracking more complex.
