@@ -36,6 +36,7 @@ _LAYER_GAP = 60
 _MIN_H_GAP = 50
 _EDGE_STROKE_WIDTH = 1.5
 _PADDING = 30
+_LABEL_HEIGHT = 28  # vertical space reserved for the caption when label is set
 
 # Regex to parse annotation selectors like "T.node[5]" or "T.node[[0,3]]"
 _TREE_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
@@ -731,11 +732,12 @@ class Tree(PrimitiveBase):
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
         arrow_above = self._arrow_height_above()
+        label_h = _LABEL_HEIGHT if self.label is not None else 0
         return BoundingBox(
             x=0,
             y=0,
             width=self.width + 2 * r,
-            height=self.height + 2 * r + arrow_above,
+            height=self.height + 2 * r + arrow_above + label_h,
         )
 
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
@@ -760,7 +762,9 @@ class Tree(PrimitiveBase):
         )
 
         # Optional label / caption
+        label_offset = 0
         if self.label is not None:
+            label_offset = _LABEL_HEIGHT
             parts.append(
                 _render_svg_text(
                     str(self.label),
@@ -774,6 +778,10 @@ class Tree(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
+
+        # Shift edges + nodes below the label when present
+        if label_offset:
+            parts.append(f'<g transform="translate(0,{label_offset})">')
 
         # --- Edge layer (rendered first, below nodes) ---
         parts.append('<g class="scriba-tree-edges">')
@@ -874,6 +882,10 @@ class Tree(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             parts.extend(arrow_lines)
+
+        # Close the label-offset group if present
+        if label_offset:
+            parts.append("</g>")
 
         parts.append("</g>")
         return "".join(parts)
