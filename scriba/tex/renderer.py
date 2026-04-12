@@ -32,6 +32,7 @@ from scriba.tex.parser.environments import (
     apply_epigraph,
     apply_sections,
     apply_urls,
+    strip_validation_environments,
 )
 from scriba.tex.parser.escape import PlaceholderManager, html_escape_text
 from scriba.tex.parser.images import apply_includegraphics
@@ -423,6 +424,11 @@ class TexRenderer:
             placeholders,
             resource_resolver=ctx.resource_resolver,
         )
+
+        # 0c. Strip \begin/\end delimiters for validation-only environments
+        #     (verbatim, quote, quotation, figure, table, description,
+        #     minipage) so they don't leak as literal text into HTML.
+        text = strip_validation_environments(text)
 
         # 1. Extract math next so we don't HTML-escape KaTeX output later.
         text, math_items = extract_math(text, placeholders)

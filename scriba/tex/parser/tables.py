@@ -2,10 +2,10 @@
 
 See ``docs/scriba/02-tex-plugin.md`` §3 (tabular HTML contract).
 
-Cells in Phase 2d are treated as opaque text and HTML-escaped. Inline math
-and text commands inside cells are out of scope for the initial port —
-the legacy renderer's recursive cell processing can be added incrementally
-without changing the wrapper structure emitted here.
+Cell content is processed through inline TeX via the ``cell_renderer``
+callback, which applies math, text commands, and other inline formatting.
+The wrapper structure (table/row/cell tags) is emitted here; the callback
+handles recursive inline expansion within each cell.
 """
 
 from __future__ import annotations

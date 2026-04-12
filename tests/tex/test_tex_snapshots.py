@@ -229,3 +229,73 @@ def test_very_long_input_10k_chars(pipeline, ctx):
     assert len(tex) >= 10_000
     doc = pipeline.render(tex, ctx)
     assert_snapshot_match(doc.html, "very_long_input_10k_chars")
+
+
+# ---------------------------------------------------------------------------
+# Negative tests: unsupported math delimiters (P1 audit gap)
+# ---------------------------------------------------------------------------
+# Scriba only recognises $...$, $$...$$, and $$$...$$$  as math delimiters.
+# LaTeX-style \[...\] and \(...\) must NOT be extracted as math — they should
+# pass through as literal text.
+
+
+# 31
+def test_backslash_bracket_not_extracted_as_display_math(pipeline, ctx):
+    r"""``\[x^2\]`` is not a supported display-math delimiter.
+
+    The output must NOT contain a KaTeX-rendered math block.
+    """
+    tex = r"\[x^2\]"
+    doc = pipeline.render(tex, ctx)
+    html = doc.html
+    assert "scriba-tex-math-display" not in html, (
+        r"\[...\] should not be parsed as display math"
+    )
+    assert "katex" not in html.lower(), (
+        r"\[...\] should not produce KaTeX output"
+    )
+
+
+# 32
+def test_backslash_paren_not_extracted_as_inline_math(pipeline, ctx):
+    r"""``\(x^2\)`` is not a supported inline-math delimiter.
+
+    The output must NOT contain a KaTeX-rendered math span.
+    """
+    tex = r"\(x^2\)"
+    doc = pipeline.render(tex, ctx)
+    html = doc.html
+    assert "scriba-tex-math-inline" not in html, (
+        r"\(...\) should not be parsed as inline math"
+    )
+    assert "katex" not in html.lower(), (
+        r"\(...\) should not produce KaTeX output"
+    )
+
+
+# 33
+def test_dollar_inline_math_positive_control(pipeline, ctx):
+    r"""Positive control: ``$x^2$`` IS correctly extracted as inline math."""
+    tex = r"$x^2$"
+    doc = pipeline.render(tex, ctx)
+    html = doc.html
+    assert "scriba-tex-math-inline" in html, (
+        "$...$ should be parsed as inline math"
+    )
+    assert "katex" in html.lower(), (
+        "$...$ should produce KaTeX output"
+    )
+
+
+# 34
+def test_double_dollar_display_math_positive_control(pipeline, ctx):
+    r"""Positive control: ``$$x^2$$`` IS correctly extracted as display math."""
+    tex = r"$$x^2$$"
+    doc = pipeline.render(tex, ctx)
+    html = doc.html
+    assert "scriba-tex-math-display" in html, (
+        "$$...$$ should be parsed as display math"
+    )
+    assert "katex" in html.lower(), (
+        "$$...$$ should produce KaTeX output"
+    )

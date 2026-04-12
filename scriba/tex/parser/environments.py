@@ -58,6 +58,48 @@ def apply_sections(text: str, slug_counts: dict[str, int]) -> str:
     return text
 
 
+# Environments accepted by the validator that have no dedicated rendering
+# pass.  Their ``\begin{…}`` / ``\end{…}`` delimiters must be stripped so
+# they do not leak as literal text into the HTML output.
+_VALIDATION_ONLY_ENVS: frozenset[str] = frozenset(
+    {
+        "verbatim",
+        "quote",
+        "quotation",
+        "figure",
+        "table",
+        "description",
+        "minipage",
+    }
+)
+
+# Matches \begin{env} with an optional brace argument like {0.5\textwidth}
+# and \end{env} for each validation-only environment.
+_STRIP_ENV_RE = re.compile(
+    r"\\begin\{"
+    + r"("
+    + r"|".join(re.escape(e) for e in sorted(_VALIDATION_ONLY_ENVS))
+    + r")"
+    + r"\}"
+    + r"(?:\{[^}]*\})?"  # optional argument like {0.5\textwidth}
+    + r"|"
+    + r"\\end\{"
+    + r"("
+    + r"|".join(re.escape(e) for e in sorted(_VALIDATION_ONLY_ENVS))
+    + r")"
+    + r"\}"
+)
+
+
+def strip_validation_environments(text: str) -> str:
+    """Remove ``\\begin``/``\\end`` delimiters for validation-only environments.
+
+    Keeps the content between the delimiters intact; only the tags themselves
+    (and any optional brace argument on ``\\begin``) are removed.
+    """
+    return _STRIP_ENV_RE.sub("", text)
+
+
 def apply_center(text: str) -> str:
     """Wrap ``\\begin{center}...\\end{center}`` in ``scriba-tex-center`` div."""
     return re.sub(
@@ -70,8 +112,9 @@ def apply_center(text: str) -> str:
 def apply_epigraph(text: str) -> str:
     """Convert ``\\epigraph{quote}{attribution}`` to a blockquote.
 
-    Phase 2c emits a basic version that HTML-escapes the quote and the
-    attribution text. Inline LaTeX inside attribution is deferred to 2d.
+    Called after HTML-escape (step 2) and text-style commands (step 4) in
+    the main pipeline, so the brace bodies already contain safe HTML with
+    inline TeX rendered.  We must NOT re-escape them.
     """
     out_parts: list[str] = []
     cursor = 0
@@ -91,8 +134,8 @@ def apply_epigraph(text: str) -> str:
         if after2 == after1:
             out_parts.append(text[idx:])
             break
-        quote = html_escape_text(body1).strip()
-        attr = html_escape_text(body2).strip()
+        quote = body1.strip()
+        attr = body2.strip()
         out_parts.append(
             '<blockquote class="scriba-tex-epigraph">'
             f'<p class="scriba-tex-epigraph-quote">{quote}</p>'
@@ -111,9 +154,10 @@ def apply_urls(text: str) -> str:
         if not _is_safe_url(raw):
             return f'<span class="scriba-tex-link-disabled">{html_escape_text(raw)}</span>'
         href = html_escape_attr(raw)
+        display = html_escape_text(raw)
         return (
             f'<a class="scriba-tex-link" href="{href}" '
-            f'rel="noopener noreferrer">{href}</a>'
+            f'rel="noopener noreferrer">{display}</a>'
         )
 
     def _href_sub(m: re.Match[str]) -> str:

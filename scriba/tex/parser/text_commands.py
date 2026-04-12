@@ -92,6 +92,13 @@ def apply_size_commands(text: str) -> str:
     # Switch form: ``\large foo`` consumes ``foo`` until the next size cmd
     # or another backslash command. Implemented as one combined regex over
     # all nine commands so order isn't fragile.
+    #
+    # NOTE: The [^\\] in the body group stops at ANY backslash, not just
+    # known TeX commands. This is intentional — by the time size commands
+    # run, text commands (\\textbf, \\emph, etc.) have already been expanded
+    # to HTML tags (which use ``<``/``>`` not ``\``). So any remaining ``\``
+    # genuinely marks the start of another TeX command and is a correct
+    # termination point.
     cmd_alt = "|".join(re.escape(c) for c in SIZE_COMMANDS)
     switch_re = re.compile(
         r"\\(" + cmd_alt + r")\b\s*"

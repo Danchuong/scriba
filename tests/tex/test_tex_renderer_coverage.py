@@ -554,6 +554,26 @@ def test_url_and_href_and_includegraphics(pipeline, ctx):
     assert "<img" in doc.html or "<figure" in doc.html
 
 
+def test_url_display_text_does_not_over_escape_quotes(pipeline, ctx):
+    """\\url{} display text must use html_escape_text, not html_escape_attr.
+
+    A URL containing a quote should show the raw quote in the visible text
+    (``&amp;`` etc.) but NOT ``&quot;`` which is attribute escaping.
+    """
+    src = r'\url{https://example.com/q?a="hello"}'
+    doc = pipeline.render(src, ctx)
+    # The href attribute should use attr escaping (quote → &quot;)
+    assert 'href="https://example.com/q?a=&quot;hello&quot;"' in doc.html
+    # The visible display text should NOT contain &quot;
+    # Extract the anchor text between > and </a>
+    import re
+    m = re.search(r'rel="noopener noreferrer">(.*?)</a>', doc.html)
+    assert m is not None
+    display = m.group(1)
+    assert "&quot;" not in display
+    assert '"hello"' in display or "&amp;" in display
+
+
 def test_includegraphics_with_missing_resource(pipeline, ctx_missing_resource):
     doc = pipeline.render(r"\includegraphics{nope.png}", ctx_missing_resource)
     # Missing resource renders a placeholder — the HTML must not error.
@@ -601,6 +621,16 @@ def test_epigraph_renders(pipeline, ctx):
     src = r"\epigraph{Short quote here.}{Author}"
     doc = pipeline.render(src, ctx)
     assert "Author" in doc.html or "Short quote here" in doc.html
+
+
+def test_epigraph_inline_tex(pipeline, ctx):
+    """Inline TeX commands and math inside epigraph must be rendered."""
+    src = r"\epigraph{\textbf{bold} and $x^2$}{An \textit{Author}}"
+    doc = pipeline.render(src, ctx)
+    assert "<strong>bold</strong>" in doc.html
+    assert "<em>Author</em>" in doc.html
+    # Math should be rendered via KaTeX, not left as literal $x^2$
+    assert "$x^2$" not in doc.html
 
 
 def test_center_environment_renders(pipeline, ctx):
@@ -660,3 +690,91 @@ def test_html_escape_angle_brackets_in_free_text(pipeline, ctx):
     doc = pipeline.render(src, ctx)
     assert "<script>" not in doc.html
     assert "&lt;script&gt;" in doc.html
+
+
+# -----------------------------------------------------------------------------
+# Validation-only environment delimiter stripping (P8 bug fix)
+# -----------------------------------------------------------------------------
+
+
+def test_verbatim_delimiters_stripped(pipeline, ctx):
+    src = r"\begin{verbatim}Hello world\end{verbatim}"
+    doc = pipeline.render(src, ctx)
+    assert "Hello world" in doc.html
+    assert r"\begin{verbatim}" not in doc.html
+    assert r"\end{verbatim}" not in doc.html
+
+
+def test_quote_delimiters_stripped(pipeline, ctx):
+    src = r"\begin{quote}A famous quote.\end{quote}"
+    doc = pipeline.render(src, ctx)
+    assert "A famous quote." in doc.html
+    assert r"\begin{quote}" not in doc.html
+    assert r"\end{quote}" not in doc.html
+
+
+def test_quotation_delimiters_stripped(pipeline, ctx):
+    src = r"\begin{quotation}Long quotation here.\end{quotation}"
+    doc = pipeline.render(src, ctx)
+    assert "Long quotation here." in doc.html
+    assert r"\begin{quotation}" not in doc.html
+    assert r"\end{quotation}" not in doc.html
+
+
+def test_figure_delimiters_stripped(pipeline, ctx):
+    src = r"\begin{figure}Figure content\end{figure}"
+    doc = pipeline.render(src, ctx)
+    assert "Figure content" in doc.html
+    assert r"\begin{figure}" not in doc.html
+    assert r"\end{figure}" not in doc.html
+
+
+def test_table_delimiters_stripped(pipeline, ctx):
+    src = r"\begin{table}Table content\end{table}"
+    doc = pipeline.render(src, ctx)
+    assert "Table content" in doc.html
+    assert r"\begin{table}" not in doc.html
+    assert r"\end{table}" not in doc.html
+
+
+def test_description_delimiters_stripped(pipeline, ctx):
+    src = r"\begin{description}Description content\end{description}"
+    doc = pipeline.render(src, ctx)
+    assert "Description content" in doc.html
+    assert r"\begin{description}" not in doc.html
+    assert r"\end{description}" not in doc.html
+
+
+def test_minipage_delimiters_stripped(pipeline, ctx):
+    src = r"\begin{minipage}Minipage content\end{minipage}"
+    doc = pipeline.render(src, ctx)
+    assert "Minipage content" in doc.html
+    assert r"\begin{minipage}" not in doc.html
+    assert r"\end{minipage}" not in doc.html
+
+
+def test_minipage_with_optional_arg_stripped(pipeline, ctx):
+    src = r"\begin{minipage}{0.5\textwidth}Minipage with arg\end{minipage}"
+    doc = pipeline.render(src, ctx)
+    assert "Minipage with arg" in doc.html
+    assert r"\begin{minipage}" not in doc.html
+    assert r"0.5" not in doc.html
+    assert r"\end{minipage}" not in doc.html
+
+
+def test_validation_env_stripping_preserves_surrounding_content(pipeline, ctx):
+    src = r"Before \begin{quote}inside\end{quote} after."
+    doc = pipeline.render(src, ctx)
+    assert "Before" in doc.html
+    assert "inside" in doc.html
+    assert "after." in doc.html
+    assert r"\begin{quote}" not in doc.html
+    assert r"\end{quote}" not in doc.html
+
+
+def test_validation_env_stripping_does_not_affect_center(pipeline, ctx):
+    """The center environment has its own renderer and must not be stripped."""
+    src = r"\begin{center}Centered text\end{center}"
+    doc = pipeline.render(src, ctx)
+    assert "scriba-tex-center" in doc.html
+    assert "Centered text" in doc.html
