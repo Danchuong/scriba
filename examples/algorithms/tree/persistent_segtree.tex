@@ -35,11 +35,29 @@
 \recolor{T.node["[6,7]"]}{state=dim}
 \recolor{T.node["[6,6]"]}{state=dim}
 \recolor{T.node["[7,7]"]}{state=dim}
+\narrate{\textbf{V1 — xac dinh path cap nhat: $a[3]$ += 10}. Tu root \texttt{[0,7]} di xuong la \texttt{[3,3]}: path can copy la \texttt{[0,7]} → \texttt{[0,3]} → \texttt{[2,3]} → \texttt{[3,3]} (4 node, to mau \texttt{current}). Tat ca node \textbf{khong} nam tren path nay (to \texttt{dim}) se duoc \textbf{chia se nguyen ven} — copy-on-write chi tao ban sao cho nhung node bi anh huong.}
+
+\step
+\recolor{T.node["[3,3]"]}{state=good}
+\recolor{T.node["[2,3]"]}{state=good}
+\recolor{T.node["[0,3]"]}{state=good}
+\recolor{T.node["[0,7]"]}{state=good}
+\recolor{T.node["[0,1]"]}{state=dim}
+\recolor{T.node["[0,0]"]}{state=dim}
+\recolor{T.node["[1,1]"]}{state=dim}
+\recolor{T.node["[2,2]"]}{state=dim}
+\recolor{T.node["[4,7]"]}{state=dim}
+\recolor{T.node["[4,5]"]}{state=dim}
+\recolor{T.node["[4,4]"]}{state=dim}
+\recolor{T.node["[5,5]"]}{state=dim}
+\recolor{T.node["[6,7]"]}{state=dim}
+\recolor{T.node["[6,6]"]}{state=dim}
+\recolor{T.node["[7,7]"]}{state=dim}
 \apply{T.node["[3,3]"]}{value="14"}
 \apply{T.node["[2,3]"]}{value="17"}
 \apply{T.node["[0,3]"]}{value="20"}
 \apply{T.node["[0,7]"]}{value="46"}
-\narrate{\textbf{V1 — cap nhat $a[3]$ += 10}. Chi cac node tren \textbf{path-copy} tu la \texttt{[3,3]} len root moi phai tao ban sao moi: \texttt{[3,3]} 4 → 14, \texttt{[2,3]} 7 → 17, \texttt{[0,3]} 10 → 20, \texttt{[0,7]} 36 → 46. Cac node dim van chia se voi V0 (nguyen ven) — persistent khong nhan ban nhung node khong doi. Chi phi: $O(\log n)$ node moi moi cap nhat. Day la cap nhat \textbf{that}: value-layer ghi de len label tinh, nen so hien thi thay doi qua tung frame.}
+\narrate{\textbf{V1 — copy-on-write hoan tat}. 4 node moi duoc tao (to \texttt{good}): \texttt{[3,3]} 4 → 14, \texttt{[2,3]} 7 → 17, \texttt{[0,3]} 10 → 20, \texttt{[0,7]} 36 → 46. 11 node con lai (to \texttt{dim}) la \textbf{node chia se} — V1 tro vao chinh nhung node goc cua V0, khong tao ban sao. Chi phi: $O(\log n)$ node moi = 4 node thay vi nhan ban toan bo cay 15 node.}
 
 \step
 \recolor{T.node["[3,3]"]}{state=good}
@@ -57,11 +75,47 @@
 \recolor{T.node["[6,7]"]}{state=dim}
 \recolor{T.node["[6,6]"]}{state=dim}
 \recolor{T.node["[7,7]"]}{state=dim}
+\narrate{\textbf{V2 — xac dinh path cap nhat: $a[5]$ += 5} (tiep tu V1). Path tu root xuong la \texttt{[5,5]}: \texttt{[0,7]} → \texttt{[4,7]} → \texttt{[4,5]} → \texttt{[5,5]} (4 node, to \texttt{current}). Cac node V1 (\texttt{[0,3], [2,3], [3,3]}, to \texttt{good}) khong bi anh huong — chung se duoc chia se nguyen ven sang V2. Root \texttt{[0,7]} nam tren ca hai path nen se bi copy lai.}
+
+\step
+\recolor{T.node["[3,3]"]}{state=dim}
+\recolor{T.node["[2,3]"]}{state=dim}
+\recolor{T.node["[0,3]"]}{state=dim}
+\recolor{T.node["[5,5]"]}{state=good}
+\recolor{T.node["[4,5]"]}{state=good}
+\recolor{T.node["[4,7]"]}{state=good}
+\recolor{T.node["[0,7]"]}{state=good}
+\recolor{T.node["[0,1]"]}{state=dim}
+\recolor{T.node["[0,0]"]}{state=dim}
+\recolor{T.node["[1,1]"]}{state=dim}
+\recolor{T.node["[2,2]"]}{state=dim}
+\recolor{T.node["[4,4]"]}{state=dim}
+\recolor{T.node["[6,7]"]}{state=dim}
+\recolor{T.node["[6,6]"]}{state=dim}
+\recolor{T.node["[7,7]"]}{state=dim}
 \apply{T.node["[5,5]"]}{value="11"}
 \apply{T.node["[4,5]"]}{value="16"}
 \apply{T.node["[4,7]"]}{value="31"}
 \apply{T.node["[0,7]"]}{value="51"}
-\narrate{\textbf{V2 — cap nhat $a[5]$ += 5} tiep tu V1. Path moi la \texttt{[5,5]} → \texttt{[4,5]} → \texttt{[4,7]} → \texttt{[0,7]}. Gia tri moi: 6 → 11, 11 → 16, 26 → 31, 46 → 51. Luu y root \texttt{[0,7]} la node duy nhat nam tren \textbf{ca hai} path nen gia tri cua no thay doi cho lan thu hai (46 → 51). Cac node trong nhanh V1 cu (\texttt{[3,3], [2,3], [0,3]}) gio duoc to mau \texttt{good} — chung thuoc V1 va van duoc giu nguyen ven cho truy van V1.}
+\narrate{\textbf{V2 — copy-on-write hoan tat}. 4 node moi (to \texttt{good}): \texttt{[5,5]} 6 → 11, \texttt{[4,5]} 11 → 16, \texttt{[4,7]} 26 → 31, \texttt{[0,7]} 46 → 51. Tat ca node khac (to \texttt{dim}) la \textbf{node chia se}: V2 tro vao node V1 cho nhanh trai (\texttt{[0,3], [2,3], [3,3]}) va node V0 cho phan con lai. Moi phien ban chi "so huu" $O(\log n)$ node rieng, phan con lai la con tro den phien ban cu.}
+
+\step
+\recolor{T.node["[0,7]"]}{state=path}
+\recolor{T.node["[0,3]"]}{state=path}
+\recolor{T.node["[2,3]"]}{state=path}
+\recolor{T.node["[2,2]"]}{state=path}
+\recolor{T.node["[3,3]"]}{state=path}
+\recolor{T.node["[4,7]"]}{state=dim}
+\recolor{T.node["[4,5]"]}{state=dim}
+\recolor{T.node["[4,4]"]}{state=dim}
+\recolor{T.node["[5,5]"]}{state=dim}
+\recolor{T.node["[6,7]"]}{state=dim}
+\recolor{T.node["[6,6]"]}{state=dim}
+\recolor{T.node["[7,7]"]}{state=dim}
+\recolor{T.node["[0,1]"]}{state=dim}
+\recolor{T.node["[0,0]"]}{state=dim}
+\recolor{T.node["[1,1]"]}{state=dim}
+\narrate{\textbf{Truy van V1: sum([2,3])}. Di tu root V1 (\texttt{[0,7]}=46) xuong \texttt{[0,3]} → \texttt{[2,3]}: ket qua = 17 (path to \texttt{path}). Luu y: node \texttt{[0,7]} la cua V1 (gia tri 46, khong phai V2=51), con \texttt{[2,2]} va \texttt{[3,3]} la node con cua \texttt{[2,3]} de minh hoa thanh phan. Truy van dung phien ban nao thi di tu root cua phien ban do — cac node chia se tu dong cho gia tri dung vi chung khong bao gio bi thay doi.}
 
 \step
 \recolor{T.node["[3,3]"]}{state=good}
@@ -79,5 +133,5 @@
 \recolor{T.node["[6,7]"]}{state=done}
 \recolor{T.node["[6,6]"]}{state=done}
 \recolor{T.node["[7,7]"]}{state=done}
-\narrate{Tong ket: ba phien ban cung ton tai. V0 co root=36 (mang goc), V1 co root=46 ($a[3]=14$), V2 co root=51 ($a[3]=14, a[5]=11$). Truy van bat ky phien ban nao chi ton $O(\log n)$. Bo nho tong: $O(n + q \log n)$ thay vi $O(nq)$ nho viec chia se cac node khong nam tren path. Ung dung: k-th smallest trong range (Chairman tree), offline queries, version rollback, time-travel data structures.}
+\narrate{Tong ket: ba phien ban cung ton tai. V0 root=36 (mang goc), V1 root=46 ($a[3]=14$), V2 root=51 ($a[3]=14, a[5]=11$). Moi cap nhat tao dung $O(\log n)$ = 4 node moi; tat ca node khac duoc \textbf{chia se} giua cac phien ban nho copy-on-write. Truy van bat ky phien ban chi ton $O(\log n)$. Bo nho tong: $O(n + q \log n)$ thay vi $O(nq)$. Ung dung: k-th smallest trong range (Chairman tree), offline queries, version rollback, time-travel data structures.}
 \end{animation}

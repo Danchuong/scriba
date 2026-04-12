@@ -126,6 +126,7 @@
 \recolor{h.cell[0]}{state=done}
 \recolor{h.cell[1]}{state=current}
 \recolor{p.point[0]}{state=current}
+\annotate{dp.cell[1]}{label="$+h[1]^2$", arrow_from="dp.cell[0]", color=info}
 \narrate{Query $x = h[1] = 2$. Only $L_0$ is in the envelope so far, so $\min_{j<1} f_j(2) = L_0(2) = 0$. Therefore $dp[1] = h[1]^2 + 0 = 4 + 0 = 4$.}
 
 % =======================================================================
@@ -151,6 +152,8 @@
 \recolor{h.cell[2]}{state=current}
 \recolor{p.point[0]}{state=hidden}
 \recolor{p.point[1]}{state=current}
+\annotate{dp.cell[2]}{label="$L_0(3)=0$", arrow_from="dp.cell[0]", color=dim}
+\annotate{dp.cell[2]}{label="$L_1(3)=-4$ win", arrow_from="dp.cell[1]", color=good}
 \narrate{Query $x = h[2] = 3$. $L_0(3) = 0$ and $L_1(3) = -4 \cdot 3 + 8 = -4$. The minimum is $L_1(3) = -4$. Therefore $dp[2] = h[2]^2 + (-4) = 9 - 4 = 5$.}
 
 % =======================================================================
@@ -179,6 +182,7 @@
 \recolor{h.cell[3]}{state=current}
 \recolor{p.point[1]}{state=hidden}
 \recolor{p.point[2]}{state=current}
+\annotate{dp.cell[3]}{label="$L_2(4)=-10$ win", arrow_from="dp.cell[2]", color=good}
 \narrate{Query $x = h[3] = 4$. $L_0(4)=0$, $L_1(4)=-16+8=-8$, $L_2(4)=-24+14=-10$. The minimum is $L_2(4) = -10$. $L_2$ now dominates the envelope near the query. $dp[3] = 16 + (-10) = 6$.}
 
 % =======================================================================

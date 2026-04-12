@@ -10,8 +10,8 @@
 \recolor{g.node[1]}{state=current}
 \apply{disc.cell[0]}{value="0"}
 \apply{low.cell[0]}{value="0"}
-\recolor{disc.cell[0]}{state=current}
-\recolor{low.cell[0]}{state=current}
+\cursor{disc.cell}{0}
+\cursor{low.cell}{0}
 \narrate{DFS bắt đầu tại đỉnh $1$. Gán $disc[1] = 0$, $low[1] = 0$. Duyệt đỉnh kề $2$.}
 
 \step
@@ -20,10 +20,8 @@
 \recolor{g.edge[(1,2)]}{state=done}
 \apply{disc.cell[1]}{value="1"}
 \apply{low.cell[1]}{value="1"}
-\recolor{disc.cell[0]}{state=done}
-\recolor{low.cell[0]}{state=done}
-\recolor{disc.cell[1]}{state=current}
-\recolor{low.cell[1]}{state=current}
+\cursor{disc.cell}{1}
+\cursor{low.cell}{1}
 \narrate{Thăm đỉnh $2$. Cạnh cây $1 \to 2$. $disc[2] = 1$, $low[2] = 1$. Duyệt đỉnh kề $3$.}
 
 \step
@@ -115,11 +113,17 @@
 \step
 \apply{low.cell[3]}{value="3"}
 \recolor{low.cell[3]}{state=done}
+\recolor{low.cell[4]}{state=error}
+\recolor{disc.cell[3]}{state=error}
 \recolor{g.edge[(4,5)]}{state=error}
+\annotate{low.cell[4]}{label="4 > 3", arrow_from="disc.cell[3]", color=error}
 \narrate{Quay lui $5 \to 4$. $low[4] = \min(3, low[5]) = \min(3, 4) = 3$. Kiểm tra cầu: $low[5]=4 > disc[4]=3$? ĐÚNG! Cạnh $(4,5)$ là CẦU. Không có cạnh ngược nào từ $\{5,6,7\}$ nối tới đỉnh $4$ hoặc cao hơn.}
 
 \step
 \recolor{g.edge[(3,4)]}{state=error}
+\recolor{low.cell[3]}{state=error}
+\recolor{disc.cell[2]}{state=error}
+\annotate{low.cell[3]}{label="3 > 2", arrow_from="disc.cell[2]", color=error}
 \narrate{Quay lui $4 \to 3$. $low[3]$ giữ nguyên $3$. Kiểm tra cầu: $low[4]=3 > disc[3]=2$? ĐÚNG! Cạnh $(3,4)$ cũng là CẦU. Đỉnh $4$ hoàn toàn không có cạnh ngược -- cây con của nó bị cô lập hoàn toàn khỏi các tổ tiên của $3$.}
 
 \step

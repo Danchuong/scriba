@@ -13,6 +13,7 @@
 \narrate{Phiên bản $0$ hoàn tất. Segment tree có $7$ nút: gốc $[0,3]$ $sum=11$, con trái $[0,1]$ $sum=4$, con phải $[2,3]$ $sum=7$, và $4$ lá. Tất cả nút tô xanh lá (hoàn tất) thuộc V0.}
 
 \step
+\cursor{arr.cell}{0}
 \highlight{st.node["[0,3]"]}
 \narrate{Truy vấn: $sum(0, 3)$ trên Phiên bản $0$. Bắt đầu từ gốc $[0,3]$. Đoạn truy vấn $[0,3]$ phủ toàn bộ đoạn nút $[0,3]$, nên trả về $sum=11$ ngay lập tức. Không cần đệ quy.}
 
@@ -20,6 +21,7 @@
 \recolor{st.node["[0,3]"]}{state=idle}
 \recolor{st.node["[0,1]"]}{state=idle}
 \recolor{st.node["[2,3]"]}{state=idle}
+\cursor{arr.cell}{1}
 \highlight{st.node["[0,3]"]}
 \narrate{Truy vấn: $sum(1, 2)$ trên Phiên bản $0$. Bắt đầu từ gốc $[0,3]$. Đoạn truy vấn $[1,2]$ chồng lấn một phần, nên phải đệ quy vào cả hai con.}
 
@@ -49,6 +51,7 @@
 \narrate{Bây giờ là thao tác quan trọng: Cập nhật $a[1] = 7$ trên Phiên bản $0$. Trong segment tree bền vững, ta KHÔNG sửa nút cũ. Thay vào đó, ta tạo các nút MỚI dọc theo đường từ gốc đến lá (sao chép đường đi). Các nút cũ giữ nguyên cho V0.}
 
 \step
+\cursor{arr.cell}{1}
 \highlight{st.node["[1,1]"]}
 \recolor{st.node["[1,1]"]}{state=current}
 \narrate{Mục tiêu: lá $[1,1]$. Đường đi từ gốc đến lá này là: $[0,3] \to [0,1] \to [1,1]$. Ta sẽ tạo $3$ nút mới (mỗi tầng một nút) cho Phiên bản $1$. Các nút cũ vẫn thuộc V0.}
@@ -109,6 +112,7 @@
 \narrate{Bây giờ cập nhật $a[3] = 10$ trên Phiên bản $2$. Đường đi từ gốc đến lá $[3,3]$: $[0,3] \to [2,3] \to [3,3]$. Tạo $3$ nút mới qua sao chép đường đi.}
 
 \step
+\cursor{arr.cell}{3}
 \recolor{st.node["[0,3]"]}{state=current}
 \recolor{st.node["[2,3]"]}{state=current}
 \recolor{st.node["[3,3]"]}{state=current}
@@ -131,10 +135,29 @@
 \narrate{Phiên bản $2$ đã cập nhật. Các nút mới (xanh nhạt): gốc $sum=20$, $[2,3]$ $sum=12$, $[3,3]=10$. Các nút chia sẻ (xanh lá): $[0,1]$ $sum=8$, $[0,0]=1$, $[1,1]=7$, $[2,2]=2$. Tổng nút qua tất cả phiên bản: $7$ (V0) $+ 3$ (cập nhật V1) $+ 3$ (cập nhật V2) $= 13$. Nếu không dùng bền vững, $3$ cây đầy đủ $= 21$ nút.}
 
 \step
+\cursor{arr.cell}{0}
 \highlight{st.node["[0,3]"]}
 \narrate{Truy vấn: $sum(0, 3)$ trên Phiên bản $2$. Bắt đầu từ gốc V2 ($sum=20$). Đoạn $[0,3]$ phủ toàn bộ $[0,3]$, trả về $20$. Mảng của V2 là $[1, 7, 2, 10]$.}
 
 \step
+\cursor{arr.cell}{1}
+\recolor{st.node["[0,3]"]}{state=dim}
+\recolor{st.node["[0,1]"]}{state=current}
+\recolor{st.node["[2,3]"]}{state=dim}
+\recolor{st.node["[1,1]"]}{state=good}
+\recolor{st.node["[0,0]"]}{state=dim}
+\narrate{Truy vấn: $sum(1, 2)$ trên Phiên bản $2$. Đệ quy vào $[0,1]$, rồi tìm lá $[1,1]=7$ và $[2,2]=2$. Kết quả $= 7 + 2 = 9$. So với V0 cùng truy vấn cho $3 + 2 = 5$ -- thay đổi chỉ ảnh hưởng vị trí $1$.}
+
+\step
+\recolor{st.node["[0,3]"]}{state=idle}
+\recolor{st.node["[0,1]"]}{state=idle}
+\recolor{st.node["[2,3]"]}{state=idle}
+\recolor{st.node["[1,1]"]}{state=idle}
+\recolor{st.node["[0,0]"]}{state=idle}
+\recolor{st.node["[2,2]"]}{state=idle}
+\recolor{st.node["[3,3]"]}{state=idle}
+\recolor{arr.cell[0]}{state=idle}
+\recolor{arr.cell[1]}{state=idle}
 \recolor{st.node["[0,3]"]}{state=good}
 \recolor{st.node["[0,1]"]}{state=good}
 \recolor{st.node["[2,3]"]}{state=good}

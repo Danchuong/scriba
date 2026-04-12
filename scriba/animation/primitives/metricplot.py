@@ -362,6 +362,7 @@ class MetricPlot(PrimitiveBase):
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="metricplot" data-shape="{html.escape(self.name)}"'
+            f' data-target="{html.escape(self.name)}"'
             f' data-scriba-series="{html.escape(series_names_str)}">'
         )
 

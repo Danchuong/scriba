@@ -51,6 +51,8 @@
 \recolor{dp.cell[0][2]}{state=current}
 \recolor{nl.tick[0]}{state=good}
 \recolor{nl.tick[1]}{state=dim}
+\annotate{dp.cell[0][2]}{label="dp[0][0]+dp[1][2]", arrow_from="dp.cell[0][0]", color=info}
+\annotate{dp.cell[0][2]}{label="+cost", arrow_from="dp.cell[1][2]", color=info}
 \apply{dp.cell[0][2]}{value=11}
 \narrate{dp[0][2]: Nho Knuth, chi xet opt[0][1]..opt[1][2] = 0..1. Diem chia toi uu = 0. Chi phi = 11.}
 
@@ -67,6 +69,8 @@
 \apply{dp.cell[3][5]}{value=12}
 \apply{dp.cell[4][6]}{value=16}
 \recolor{nl.tick[2]}{state=good}
+\annotate{dp.cell[1][3]}{label="opt split", arrow_from="dp.cell[1][1]", color=good}
+\annotate{dp.cell[1][3]}{label="opt split", arrow_from="dp.cell[2][3]", color=good}
 \narrate{Doan dai 3: moi o chi xet vung opt thu hep. Diem chia di chuyen don dieu sang phai tren NumberLine.}
 
 \step
@@ -93,6 +97,8 @@
 \recolor{dp.cell[3][6]}{state=done}
 \recolor{nl.range[0:3]}{state=idle}
 \recolor{dp.cell[0][6]}{state=good}
+\annotate{dp.cell[0][6]}{label="final merge", arrow_from="dp.cell[0][3]", color=good}
+\annotate{dp.cell[0][6]}{label="final merge", arrow_from="dp.cell[4][6]", color=good}
 \apply{dp.cell[0][6]}{value=48}
 \narrate{dp[0][6] = 48. Toi uu Knuth giam tu ~216 phep tinh (n^3) xuong ~36 (n^2). Hieu qua gap 6 lan!}
 \end{animation}

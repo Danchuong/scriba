@@ -24,6 +24,8 @@
 \recolor{dp.cell[1][2]}{state=current}
 \recolor{a.cell[1]}{state=current}
 \recolor{a.cell[2]}{state=current}
+\annotate{dp.cell[1][2]}{label="same color", arrow_from="dp.cell[1][1]", color=good}
+\annotate{dp.cell[1][2]}{label="same color", arrow_from="dp.cell[2][2]", color=good}
 \apply{dp.cell[1][2]}{value=1}
 \narrate{dp[1][2]: "BB" -- hai bi cung mau, xoa 1 lan. dp[1][2] = 1.}
 
@@ -72,6 +74,8 @@
 \step
 \recolor{dp.cell[2][3]}{state=current}
 \recolor{dp.cell[4][5]}{state=current}
+\annotate{dp.cell[2][5]}{label="split k=3", arrow_from="dp.cell[2][3]", color=info}
+\annotate{dp.cell[2][5]}{label="split k=3", arrow_from="dp.cell[4][5]", color=info}
 \narrate{Chia tai k=3: dp[2][3] + dp[4][5] = 2 + 2 = 4. Hoac ghep a[2]=B voi a[4]=B: dp[3][3] + dp[2][4 voi B ghep] = 1 + 1 = 2.}
 
 \step
@@ -88,6 +92,7 @@
 \recolor{a.cell[4]}{state=idle}
 \recolor{a.cell[5]}{state=idle}
 \recolor{dp.cell[0][5]}{state=good}
+\annotate{dp.cell[0][5]}{label="merge R+R", arrow_from="dp.cell[1][4]", color=good}
 \apply{dp.cell[0][5]}{value=2}
 \narrate{dp[0][5] = 2: toan bo day "RBBRBR" chi can 2 buoc. Ghep R dau va R cuoi, xoa BB giua, roi xoa RR. Ket qua toi uu!}
 \end{animation}

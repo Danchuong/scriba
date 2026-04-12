@@ -90,7 +90,7 @@ To animate DFS instead of BFS:
 
 - Sort edges by weight. In each step, add the cheapest edge that does not form a cycle.
 - Use `state=good` for MST edges and `state=dim` for rejected edges.
-- See `examples/demov0.3/d04_graph_mst.tex` for a complete Kruskal example.
+- See `examples/algorithms/graph/kruskal_mst.tex` for a complete Kruskal example.
 
 ---
 

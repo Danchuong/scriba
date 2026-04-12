@@ -16,6 +16,7 @@
 \highlight{a.cell[0]}
 \apply{dp.cell[1][1]}{value=0}
 \apply{cost_val.cell[0]}{value=0}
+\annotate{dp.cell[1][1]}{label="cost(1,1)=0", arrow_from="dp.cell[0][0]", color=good}
 \narrate{$dp[1][1] = cost(1,1) = 0$. Một trường tại nhà $1$ chỉ phục vụ nhà $1$. Không cần đi bộ.}
 
 \step
@@ -24,6 +25,7 @@
 \highlight{a.range[0:1]}
 \apply{dp.cell[1][2]}{value=2}
 \apply{cost_val.cell[0]}{value=2}
+\annotate{dp.cell[1][2]}{label="cost(1,2)=2", arrow_from="dp.cell[0][0]", color=good}
 \narrate{$dp[1][2] = cost(1,2) = 2$. Một trường cho nhà $1$-$2$: trung vị có trọng số tại nhà $2$ (trọng số $3 \geq$ nửa của $5$). Chi phí $= 2 \times 1 + 3 \times 0 = 2$.}
 
 \step
@@ -32,6 +34,7 @@
 \highlight{a.range[0:2]}
 \apply{dp.cell[1][3]}{value=7}
 \apply{cost_val.cell[0]}{value=7}
+\annotate{dp.cell[1][3]}{label="cost(1,3)=7", arrow_from="dp.cell[0][0]", color=good}
 \narrate{$dp[1][3] = cost(1,3) = 7$. Trung vị có trọng số tại nhà $3$. Chi phí $= 2 \times 2 + 3 \times 1 + 5 \times 0 = 7$.}
 
 \step
@@ -60,59 +63,81 @@
 
 \step
 \recolor{dp.cell[1][6]}{state=done}
+\recolor{dp.cell[1][1]}{state=dim}
+\recolor{dp.cell[1][2]}{state=dim}
+\recolor{dp.cell[1][3]}{state=dim}
+\recolor{dp.cell[1][4]}{state=dim}
+\recolor{dp.cell[1][5]}{state=dim}
+\recolor{dp.cell[1][6]}{state=dim}
 \narrate{Hàng $j=1$ hoàn thành. Với một trường, chi phí tăng nhanh khi đoạn mở rộng. Bây giờ ta tính hàng $j=2$: đặt hai trường. Công thức truy hồi là $dp[2][i] = \min_m (dp[1][m] + cost(m+1, i))$.}
 
 \step
 \recolor{dp.cell[2][2]}{state=current}
+\recolor{dp.cell[1][1]}{state=current}
 \highlight{a.cell[0]}
 \apply{dp.cell[2][2]}{value=0}
 \apply{cost_val.cell[0]}{value=0}
+\annotate{dp.cell[2][2]}{label="m=1: 0+0", arrow_from="dp.cell[1][1]", color=good}
 \narrate{$dp[2][2] = dp[1][1] + cost(2,2) = 0 + 0 = 0$. Chia tại $m=1$: trường thứ nhất phục vụ nhà $1$, trường thứ hai phục vụ nhà $2$. Cả hai đều không cần đi bộ.}
 
 \step
 \recolor{dp.cell[2][2]}{state=done}
+\recolor{dp.cell[1][1]}{state=dim}
 \recolor{dp.cell[2][3]}{state=current}
+\recolor{dp.cell[1][2]}{state=current}
 \highlight{a.range[1:2]}
 \apply{cost_val.cell[0]}{value=3}
+\annotate{dp.cell[2][3]}{label="m=1: 0+3", arrow_from="dp.cell[1][1]", color=info}
+\annotate{dp.cell[2][3]}{label="m=2: 2+0", arrow_from="dp.cell[1][2]", color=good}
 \narrate{$dp[2][3]$: thử $m=1$: $dp[1][1] + cost(2,3) = 0 + 3 = 3$ (trung vị tại $3$, chi phí $= 3 \times 1 + 5 \times 0 = 3$). Thử $m=2$: $dp[1][2] + cost(3,3) = 2 + 0 = 2$. Tốt nhất là $m=2$.}
 
 \step
 \apply{dp.cell[2][3]}{value=2}
 \recolor{dp.cell[2][3]}{state=done}
+\recolor{dp.cell[1][2]}{state=dim}
 \apply{cost_val.cell[0]}{value=0}
 \narrate{$dp[2][3] = 2$. Chia tối ưu: trường thứ nhất phục vụ nhà $1$-$2$ (chi phí $2$), trường thứ hai tại nhà $3$ (chi phí $0$). Tối ưu chia để trị khai thác tính đơn điệu của $opt(j,i)$.}
 
 \step
 \recolor{dp.cell[2][4]}{state=current}
+\recolor{dp.cell[1][2]}{state=current}
 \highlight{a.range[2:3]}
 \apply{cost_val.cell[0]}{value=1}
+\annotate{dp.cell[2][4]}{label="m=2: 2+1", arrow_from="dp.cell[1][2]", color=good}
 \narrate{$dp[2][4]$: thử $m=1$ cho $4$, $m=2$ cho $dp[1][2]+cost(3,4) = 2+1 = 3$ (trung vị tại $3$, chi phí $= 5 \times 0 + 1 \times 1 = 1$), $m=3$ cho $7$. Tốt nhất tại $m=2$.}
 
 \step
 \apply{dp.cell[2][4]}{value=3}
 \recolor{dp.cell[2][4]}{state=done}
+\recolor{dp.cell[1][2]}{state=dim}
 \narrate{$dp[2][4] = 3$. Chia tại $m=2$: trường $1$ phục vụ nhà $1$-$2$ (chi phí $2$), trường $2$ phục vụ nhà $3$-$4$ (chi phí $1$). Tính đơn điệu được giữ: $opt(2,4) = 2 \geq opt(2,3) = 2$.}
 
 \step
 \recolor{dp.cell[2][5]}{state=current}
+\recolor{dp.cell[1][3]}{state=current}
 \highlight{a.range[3:4]}
 \apply{cost_val.cell[0]}{value=1}
+\annotate{dp.cell[2][5]}{label="m=3: 7+1", arrow_from="dp.cell[1][3]", color=good}
 \narrate{$dp[2][5]$: $m=3$ cho $dp[1][3]+cost(4,5) = 7+1 = 8$ (trường tại $5$, chi phí $= 1 \times 1 + 4 \times 0 = 1$). $m=4$ cũng cho $8+0=8$. Tốt nhất là $8$.}
 
 \step
 \apply{dp.cell[2][5]}{value=8}
 \recolor{dp.cell[2][5]}{state=done}
+\recolor{dp.cell[1][3]}{state=dim}
 \narrate{$dp[2][5] = 8$. Với $2$ trường cho $5$ nhà, chia tại $m=3$ hay $m=4$ đều cho chi phí $8$. Điểm chia tối ưu đã dịch sang phải, xác nhận tính đơn điệu.}
 
 \step
 \recolor{dp.cell[2][6]}{state=current}
+\recolor{dp.cell[1][4]}{state=current}
 \highlight{a.range[4:5]}
 \apply{cost_val.cell[0]}{value=4}
+\annotate{dp.cell[2][6]}{label="m=4: 8+4", arrow_from="dp.cell[1][4]", color=good}
 \narrate{$dp[2][6]$: $m=4$ cho $dp[1][4]+cost(5,6) = 8+4 = 12$ (trường tại $6$, chi phí $= 4 \times 1 + 6 \times 0 = 4$). Các cách chia khác: $m=3$ cho $13$, $m=5$ cho $16$. Tốt nhất tại $m=4$.}
 
 \step
 \apply{dp.cell[2][6]}{value=12}
 \recolor{dp.cell[2][6]}{state=done}
+\recolor{dp.cell[1][4]}{state=dim}
 \narrate{$dp[2][6] = 12$. Chia tại $m=4$: trường $1$ tại nhà $3$ phục vụ nhà $1$-$4$ (chi phí $8$), trường $2$ tại nhà $6$ phục vụ nhà $5$-$6$ (chi phí $4$). Tổng $= 12$.}
 
 \step

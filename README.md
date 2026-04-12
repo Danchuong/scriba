@@ -52,11 +52,10 @@ asset basenames needed to display it.
   codes back out. Strict mode is a `RenderContext` field, not a core CLI
   flag — CLIs wrap it themselves. See
   [`docs/guides/strict-mode.md`](docs/guides/strict-mode.md).
-- **Cookbook refresh.** Eleven new or rewritten editorial examples land
-  under `examples/cookbook/`: the h07 and h08 rewrites, canonical h11–h18
-  algorithm walkthroughs, and h19 (DP convex hull trick). See
-  [`docs/cookbook/README.md`](docs/cookbook/README.md) for the full
-  index.
+- **Examples reorganized.** 50 `.tex` examples across `examples/quickstart/`,
+  `examples/algorithms/`, `examples/cses/`, and `examples/primitives/`.
+  HTML outputs are now build artifacts (`./examples/build.sh`), not
+  checked into git. See [`docs/cookbook/README.md`](docs/cookbook/README.md).
 
 ## Install
 

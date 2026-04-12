@@ -28,6 +28,7 @@ from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.emitter import FrameData, SubstoryData, emit_animation_html, emit_html, scene_id_from_source
 from scriba.animation.errors import FrameCountError
 from scriba.animation.extensions.hl_macro import process_hl_macros
+from scriba.tex.parser.text_commands import apply_text_commands
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
 from scriba.animation.parser.ast import (
     AnimationIR,
@@ -130,8 +131,10 @@ def _render_narration(
         escape_plain_text=not has_tex,
     )
     if has_tex:
-        return ctx.render_inline_tex(processed)
-    return processed
+        processed = ctx.render_inline_tex(processed)
+    # Expand \textbf{...}, \texttt{...}, etc. AFTER TeX rendering so the
+    # produced HTML tags are not HTML-escaped by the TeX renderer.
+    return apply_text_commands(processed)
 
 
 def _resolve_params(

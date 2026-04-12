@@ -107,23 +107,26 @@
 \cursor{P.cell}{4}
 \recolor{T.cell[3]}{state=good}
 \recolor{P.cell[3]}{state=good}
-\recolor{P.cell[4]}{state=current}
-\narrate{$i=4, j=4$: $T[4]=$ D vs $P[4]=$ C. Lech! Lui $j \leftarrow F[j-1] = F[3] = 2$, giu $i=4$.}
+\recolor{T.cell[4]}{state=error}
+\recolor{P.cell[4]}{state=error}
+\annotate{F.cell[3]}{label="j=F[3]=2", arrow_from="F.cell[3]", color=warn}
+\narrate{$i=4, j=4$: $T[4]=$ D vs $P[4]=$ C. Lech! Tra $F[j-1] = F[3] = 2$: con tro $j$ nhay lui ve vi tri $2$, giu $i=4$.}
 
 \step
 \cursor{P.cell}{2}
 \recolor{P.cell[0]}{state=dim}
 \recolor{P.cell[1]}{state=dim}
-\recolor{P.cell[2]}{state=current}
+\recolor{P.cell[2]}{state=error}
 \recolor{P.cell[3]}{state=dim}
 \recolor{P.cell[4]}{state=dim}
-\narrate{$j=2$: thu lai $T[4]=$ D vs $P[2]=$ A. Van lech -- $j \leftarrow F[1] = 0$.}
+\annotate{F.cell[1]}{label="j=F[1]=0", arrow_from="F.cell[1]", color=warn}
+\narrate{$j=2$: thu lai $T[4]=$ D vs $P[2]=$ A. Van lech -- tra $F[1] = 0$: $j$ nhay ve $0$.}
 
 \step
 \cursor{P.cell}{0}
 \recolor{P.cell[2]}{state=dim}
-\recolor{P.cell[0]}{state=current}
-\narrate{$j=0$: $T[4]=$ D vs $P[0]=$ A. Lech, $j$ da 0 -- tien $i$, giu $j=0$.}
+\recolor{P.cell[0]}{state=error}
+\narrate{$j=0$: $T[4]=$ D vs $P[0]=$ A. Lech, $j$ da $0$ -- tien $i$, giu $j=0$.}
 
 \step
 \cursor{T.cell}{5}
@@ -139,20 +142,25 @@
 \recolor{P.cell[0]}{state=good}
 \recolor{P.cell[1]}{state=good}
 \recolor{P.cell[2]}{state=good}
-\narrate{Khop them ABA. Bay gio $i=8, j=3$: $T[8]=$ C vs $P[3]=$ B. Lech! $j \leftarrow F[2] = 1$.}
+\recolor{T.cell[8]}{state=error}
+\recolor{P.cell[3]}{state=error}
+\annotate{F.cell[2]}{label="j=F[2]=1", arrow_from="F.cell[2]", color=warn}
+\narrate{Khop them ABA. Bay gio $i=8, j=3$: $T[8]=$ C vs $P[3]=$ B. Lech! Tra $F[j-1] = F[2] = 1$: $j$ nhay lui ve $1$.}
 
 \step
 \cursor{P.cell}{1}
 \recolor{P.cell[0]}{state=dim}
-\recolor{P.cell[1]}{state=current}
+\recolor{P.cell[1]}{state=error}
 \recolor{P.cell[2]}{state=dim}
-\narrate{$j=1$: $T[8]=$ C vs $P[1]=$ B. Lech -- $j \leftarrow F[0] = 0$.}
+\recolor{P.cell[3]}{state=dim}
+\annotate{F.cell[0]}{label="j=F[0]=0", arrow_from="F.cell[0]", color=warn}
+\narrate{$j=1$: $T[8]=$ C vs $P[1]=$ B. Lech -- tra $F[0] = 0$: $j$ nhay ve $0$.}
 
 \step
 \cursor{P.cell}{0}
 \recolor{P.cell[1]}{state=dim}
-\recolor{P.cell[0]}{state=current}
-\narrate{$j=0$: $T[8]=$ C vs $P[0]=$ A. Lech, tien $i$, giu $j=0$.}
+\recolor{P.cell[0]}{state=error}
+\narrate{$j=0$: $T[8]=$ C vs $P[0]=$ A. Lech, $j$ da ve $0$ -- tien $i$, giu $j=0$.}
 
 \step
 \cursor{T.cell}{10}
@@ -161,26 +169,40 @@
 \narrate{$i=9$: D vs A, lech, tien $i$. $i=10, j=0$: $T[10]=$ A = $P[0]$. Bat dau lai. Lan nay se la phat an: tu $i=10$ toan bo 9 ky tu $T[10..18]$ se khop voi $P[0..8]$.}
 
 \step
-\cursor{T.cell}{18}
-\cursor{P.cell}{8}
+\cursor{T.cell}{14}
+\cursor{P.cell}{4}
 \recolor{T.cell[10]}{state=good}
 \recolor{T.cell[11]}{state=good}
 \recolor{T.cell[12]}{state=good}
 \recolor{T.cell[13]}{state=good}
+\recolor{P.cell[0]}{state=good}
+\recolor{P.cell[1]}{state=good}
+\recolor{P.cell[2]}{state=good}
+\recolor{P.cell[3]}{state=good}
+\narrate{$i=10..14$, $j=0..4$: khop lien tiep ABABC. Bay gio $i=14, j=4$: $T[14]=$ C = $P[4]=$ C. Tiep tuc khop -- lan nay vuot qua vi tri truoc do bi lech.}
+
+\step
+\cursor{T.cell}{18}
+\cursor{P.cell}{8}
 \recolor{T.cell[14]}{state=good}
 \recolor{T.cell[15]}{state=good}
 \recolor{T.cell[16]}{state=good}
 \recolor{T.cell[17]}{state=good}
 \recolor{T.cell[18]}{state=good}
-\recolor{P.cell[0]}{state=good}
-\recolor{P.cell[1]}{state=good}
-\recolor{P.cell[2]}{state=good}
-\recolor{P.cell[3]}{state=good}
 \recolor{P.cell[4]}{state=good}
 \recolor{P.cell[5]}{state=good}
 \recolor{P.cell[6]}{state=good}
 \recolor{P.cell[7]}{state=good}
 \recolor{P.cell[8]}{state=good}
+\narrate{Khop tiep ABAB. $j$ dat $9 = |P|$ -- tim thay mau hoan chinh! Vi tri bat dau: $i - |P| + 1 = 18 - 9 + 1 = 10$.}
+
+\step
 \highlight{T.range[10:18]}
+\foreach{k}{0..8}
+  \recolor{P.cell[${k}]}{state=done}
+\endforeach
+\foreach{k}{10..18}
+  \recolor{T.cell[${k}]}{state=done}
+\endforeach
 \narrate{Khop toan bo $P$ voi $T[10..18]$. KMP tim thay mau tai vi tri 10, tong cong $O(|T| + |P|)$ phep so sanh -- con tro $i$ khong bao gio lui lai.}
 \end{animation}

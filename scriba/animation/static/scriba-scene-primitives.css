@@ -646,6 +646,11 @@
   }
 }
 
+/* -- MetricPlot container transition ---------- */
+[data-primitive="metricplot"] {
+    transition: opacity 200ms ease-out;
+}
+
 /* ============================================
    MetricPlot supplementary classes
    ============================================ */

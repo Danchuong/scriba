@@ -120,7 +120,7 @@ This pattern is not free. Know what you are trading.
 
 ## Reference example
 
-See `examples/cookbook/h19_dp_convex_hull_trick.tex` for a complete production example. It pre-declares four lines, four query points, and four envelope segments on a single `Plane2D`, then walks through a convex-hull-trick DP by revealing them across nine steps.
+See `examples/algorithms/dp/convex_hull_trick.tex` for a complete production example. It pre-declares four lines, four query points, and four envelope segments on a single `Plane2D`, then walks through a convex-hull-trick DP by revealing them across nine steps.
 
 To study the pattern specifically, grep the file for `state=hidden` — every place the pattern hides a future element is marked with that literal, and the step comments explain why each element is held back until its moment.
 

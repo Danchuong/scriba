@@ -287,10 +287,11 @@ Show where a DP value comes from, then commit the result:
 ## 9. Next Steps
 
 - **Full reference** -- see [ruleset.md](../spec/ruleset.md) for every command, primitive type, selector syntax, error code, and CSS contract.
-- **Cookbook examples** -- browse `examples/cookbook/` for complete worked animations:
-  - `frog1_dp.tex` -- classic DP with manual steps
-  - `frog1_dp_foreach.tex` -- same DP using `foreach` for the traceback
-  - `foreach_demo.tex` -- foreach patterns (range, list, compute)
+- **Examples** -- browse `examples/` for complete worked animations:
+  - `quickstart/hello.tex` -- minimal first animation
+  - `quickstart/binary_search.tex` -- classic binary search
+  - `algorithms/dp/frog.tex` -- DP with manual steps
+  - `algorithms/graph/dijkstra.tex` -- weighted shortest path
 - **More primitives** -- Scriba supports 16 primitive types. See the complete list below.
 
 ---

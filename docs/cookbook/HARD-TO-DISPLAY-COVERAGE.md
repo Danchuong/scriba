@@ -65,42 +65,18 @@ final implementations:
 
 ## Artifacts Inventory
 
-All files are under `examples/cookbook/`:
+Files have been reorganized under `examples/algorithms/`:
 
 ```
-h01_zuma_interval_dp.tex           (93 lines)
-h01_zuma_interval_dp.html          (compiled)
-h01_zuma_interval_dp_expected.html (golden)
-
-h02_dp_optimization.tex            (98 lines)
-h02_dp_optimization.html           (compiled)
-h02_dp_optimization_expected.html  (golden)
-
-h04_fft_butterfly.tex              (91 lines)
-h04_fft_butterfly.html             (compiled)
-h04_fft_butterfly_expected.html    (golden)
-
-h05_mcmf.tex                       (58 lines)
-h05_mcmf.html                      (compiled)
-h05_mcmf_expected.html             (golden)
-
-h06_li_chao.tex                    (51 lines)
-h06_li_chao.html                   (compiled)
-h06_li_chao_expected.html          (golden)
-
-h07_splay_amortized.tex            (58 lines)
-h07_splay_amortized.html           (compiled)
-h07_splay_amortized_expected.html  (golden)
-
-h08_persistent_segtree.tex         (62 lines)
-h08_persistent_segtree.html        (compiled)
-h08_persistent_segtree_expected.html (golden)
-
-h09_simulated_annealing.tex        (75 lines)
-h09_simulated_annealing.html       (compiled)
-h09_simulated_annealing_expected.html (golden)
-
-h10_hld.tex                        (73 lines)
-h10_hld.html                       (compiled)
-h10_hld_expected.html              (golden)
+examples/algorithms/dp/interval_dp.tex          (was h01_zuma_interval_dp)
+examples/algorithms/dp/dp_optimization.tex       (was h02_dp_optimization)
+examples/algorithms/misc/fft_butterfly.tex       (was h04_fft_butterfly)
+examples/algorithms/graph/mcmf.tex               (was h05_mcmf)
+examples/algorithms/misc/li_chao.tex             (was h06_li_chao)
+examples/algorithms/tree/splay.tex               (was h07_splay_amortized)
+examples/algorithms/tree/persistent_segtree.tex  (was h08_persistent_segtree)
+examples/algorithms/misc/simulated_annealing.tex (was h09_simulated_annealing)
+examples/algorithms/tree/hld.tex                 (was h10_hld)
 ```
+
+HTML outputs are build artifacts (gitignored). Run `./examples/build.sh` to compile.
