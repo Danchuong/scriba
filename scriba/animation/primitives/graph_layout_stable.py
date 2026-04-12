@@ -364,4 +364,20 @@ def compute_stable_layout(
         svg_y = pad + ny * (height - 2 * pad)
         result[node] = (svg_x, svg_y)
 
+    # Post-pass: resolve any remaining node overlaps that the annealing
+    # optimizer didn't eliminate.  Imports the shared helper from graph.py.
+    from scriba.animation.primitives.graph import (
+        _NODE_OVERLAP_GAP,
+        _PADDING,
+        _resolve_overlaps,
+    )
+
+    node_list = list(result.keys())
+    # result values are (float, float) — _resolve_overlaps mutates in-place
+    pos_mut: dict[str | int, tuple[float, float]] = dict(result)  # type: ignore[arg-type]
+    min_sep = 2.0 * node_radius + _NODE_OVERLAP_GAP
+    _resolve_overlaps(pos_mut, node_list, min_sep, width, height)
+    for node in node_list:
+        result[node] = pos_mut[node]  # type: ignore[assignment]
+
     return result

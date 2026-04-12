@@ -49,10 +49,61 @@ _DEFAULT_ITERATIONS = 50
 # See Wave 4B Cluster 1 DoS fix for the original finding.
 _MAX_NODES = 100
 
+# Minimum gap (in px) between the outer edges of two node circles after
+# the collision-resolution post-pass.  The actual minimum center-to-center
+# distance is ``2 * _NODE_RADIUS + _NODE_OVERLAP_GAP``.
+_NODE_OVERLAP_GAP = 12
+
 
 # ---------------------------------------------------------------------------
 # Fruchterman-Reingold layout
 # ---------------------------------------------------------------------------
+
+
+def _resolve_overlaps(
+    pos: dict[str | int, tuple[float, float]],
+    nodes: list[str | int],
+    min_sep: float,
+    width: int,
+    height: int,
+    passes: int = 10,
+) -> None:
+    """Push apart any node pair closer than *min_sep* (in-place).
+
+    A simple iterative collision-resolution post-pass.  For each pair
+    within *min_sep*, both nodes are displaced by half the deficit along
+    the line connecting them.  Multiple passes handle cascades where
+    resolving one collision creates another.
+
+    Clamped to ``[_PADDING, width/height - _PADDING]`` so nodes stay
+    inside the canvas.
+    """
+    for _ in range(passes):
+        moved = False
+        for i, u in enumerate(nodes):
+            for v in nodes[i + 1:]:
+                dx = pos[u][0] - pos[v][0]
+                dy = pos[u][1] - pos[v][1]
+                d = math.sqrt(dx * dx + dy * dy)
+                if d < min_sep:
+                    moved = True
+                    # Push apart along the connecting line (or along x
+                    # if they're at the exact same position).
+                    if d < 0.01:
+                        dx, dy, d = 1.0, 0.0, 1.0
+                    deficit = (min_sep - d) / 2.0 + 0.5
+                    shift_x = deficit * dx / d
+                    shift_y = deficit * dy / d
+                    pos[u] = (
+                        max(_PADDING, min(width - _PADDING, pos[u][0] + shift_x)),
+                        max(_PADDING, min(height - _PADDING, pos[u][1] + shift_y)),
+                    )
+                    pos[v] = (
+                        max(_PADDING, min(width - _PADDING, pos[v][0] - shift_x)),
+                        max(_PADDING, min(height - _PADDING, pos[v][1] - shift_y)),
+                    )
+        if not moved:
+            break
 
 
 def fruchterman_reingold(
@@ -63,11 +114,16 @@ def fruchterman_reingold(
     height: int = _DEFAULT_HEIGHT,
     seed: int = _DEFAULT_SEED,
     iterations: int = _DEFAULT_ITERATIONS,
+    node_radius: int = _NODE_RADIUS,
 ) -> dict[str | int, tuple[int, int]]:
     """Compute force-directed node positions.
 
     Returns a dict mapping each node identifier to an ``(x, y)`` integer
     coordinate pair.  Layout is deterministic for a given *seed*.
+
+    After force-directed convergence, a collision-resolution post-pass
+    guarantees no two nodes overlap (minimum separation =
+    ``2 * node_radius + _NODE_OVERLAP_GAP``).
     """
     n = len(nodes)
     if n == 0:
@@ -129,6 +185,13 @@ def fruchterman_reingold(
             pos[node] = (new_x, new_y)
 
         t -= dt
+
+    # Post-pass: guarantee no two nodes overlap.  The force-directed
+    # algorithm converges to an equilibrium that can leave nodes within
+    # 2*radius of each other when repulsion is balanced by attractive
+    # edge forces or boundary constraints.
+    min_sep = 2.0 * node_radius + _NODE_OVERLAP_GAP
+    _resolve_overlaps(pos, nodes, min_sep, width, height)
 
     return {node: (round(x), round(y)) for node, (x, y) in pos.items()}
 
