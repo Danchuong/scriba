@@ -598,6 +598,21 @@
 }
 
 /* ============================================
+   State-change transitions (animation v1)
+   ============================================ */
+
+[data-target] > rect,
+[data-target] > circle {
+  transition: fill 180ms ease-out, stroke 180ms ease-out, stroke-width 180ms ease-out;
+}
+[data-target] > line {
+  transition: stroke 180ms ease-out, stroke-width 180ms ease-out, opacity 200ms ease-out;
+}
+[data-target] > text {
+  transition: fill 180ms ease-out, stroke 180ms ease-out;
+}
+
+/* ============================================
    Accessibility — reduced motion
    ============================================ */
 
@@ -621,6 +636,13 @@
   .scriba-dot {
     transition: none !important;
     animation: none !important;
+  }
+
+  [data-target] > rect,
+  [data-target] > circle,
+  [data-target] > line,
+  [data-target] > text {
+    transition-duration: 0ms !important;
   }
 }
 
@@ -651,6 +673,13 @@
   .scriba-stage-svg * {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }
+
+  [data-target] > rect,
+  [data-target] > circle,
+  [data-target] > line,
+  [data-target] > text {
+    transition: none !important;
   }
 
   /* Hide playback controls: buttons, step counter, progress dots */

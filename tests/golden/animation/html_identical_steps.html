@@ -1,0 +1,38 @@
+<!-- Golden file: html_identical_steps.html
+     Source: 2-step Array with no changes between steps.
+     Step 1: narration only
+     Step 2: narration only (no recolor, no apply)
+
+     No shape_states changes between frames means no transitions.
+
+     Expected tr: fields:
+       Frame 0: tr:null (no previous frame)
+       Frame 1: tr:null (no changes = no manifest)
+-->
+<div class="scriba-widget" id="test-identical" tabindex="0">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span>
+    <button class="scriba-btn-next" aria-label="Next step">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration" id="test-identical-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+    <!-- print frames omitted for brevity -->
+  </div>
+</div>
+<script>
+(function(){
+  var W=document.getElementById('test-identical');
+  var frames=[
+    {svg:`<svg><!-- frame 0 SVG --></svg>`,narration:`Step one.`,substory:``,label:``,tr:null},
+    {svg:`<svg><!-- frame 1 SVG --></svg>`,narration:`Step two.`,substory:``,label:``,tr:null}
+  ];
+  // ... runtime functions
+})();
+</script>

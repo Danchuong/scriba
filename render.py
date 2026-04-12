@@ -391,6 +391,18 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   }}
 }}
 
+/* State-change transitions (animation v1) */
+[data-target] > rect,
+[data-target] > circle {{
+  transition: fill 180ms ease-out, stroke 180ms ease-out, stroke-width 180ms ease-out;
+}}
+[data-target] > line {{
+  transition: stroke 180ms ease-out, stroke-width 180ms ease-out, opacity 200ms ease-out;
+}}
+[data-target] > text {{
+  transition: fill 180ms ease-out, stroke 180ms ease-out;
+}}
+
 /* Frame transition */
 .scriba-stage svg, .scriba-narration {{
   transition: opacity 0.2s ease;
@@ -436,6 +448,16 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   font-size: 0.8rem;
 }}
 
+/* Accessibility — reduced motion */
+@media (prefers-reduced-motion: reduce) {{
+  [data-target] > rect,
+  [data-target] > circle,
+  [data-target] > line,
+  [data-target] > text {{
+    transition-duration: 0ms !important;
+  }}
+}}
+
 /* Print — force the browser to preserve tonal fills so cookbook prints
    render with the β palette instead of bare outline rects. */
 @media print {{
@@ -443,6 +465,12 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
   .scriba-stage-svg * {{
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+  }}
+  [data-target] > rect,
+  [data-target] > circle,
+  [data-target] > line,
+  [data-target] > text {{
+    transition: none !important;
   }}
 }}
 

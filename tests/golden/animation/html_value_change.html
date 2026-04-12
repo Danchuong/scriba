@@ -1,0 +1,40 @@
+<!-- Golden file: html_value_change.html
+     Source: 2-step Array with \apply{a.cell[0]}{value="X"} in step 2.
+     Step 1: no mutations (initial idle state, data=[1,2,3] rendered via primitive)
+     Step 2: a.cell[0] value changed to "X"
+
+     Note: Array data=[1,2,3] is rendered by the primitive's emit_svg(),
+     NOT via shape_states value field.  The shape_states "value" for
+     cell[0] is None in frame 0 (never set) and "X" in frame 1.
+
+     Expected tr: fields:
+       Frame 0: tr:null (no previous frame)
+       Frame 1: tr:[["a.cell[0]","value",null,"X","value_change"]]
+-->
+<div class="scriba-widget" id="test-value" tabindex="0">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span>
+    <button class="scriba-btn-next" aria-label="Next step">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration" id="test-value-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+    <!-- print frames omitted for brevity -->
+  </div>
+</div>
+<script>
+(function(){
+  var W=document.getElementById('test-value');
+  var frames=[
+    {svg:`<svg><!-- frame 0 SVG --></svg>`,narration:`Initial.`,substory:``,label:``,tr:null},
+    {svg:`<svg><!-- frame 1 SVG --></svg>`,narration:`Changed.`,substory:``,label:``,tr:[["a.cell[0]","value",null,"X","value_change"]]}
+  ];
+  // ... runtime functions
+})();
+</script>

@@ -1,0 +1,7 @@
+[
+  ["G.node[A]", "add", null, "idle", "element_add"],
+  ["arr.cell[0]", "state", "idle", "current", "recolor"],
+  ["arr.cell[1]", "state", "current", "done", "recolor"],
+  ["dp.cell[3]", "state", "pending", "done", "recolor"],
+  ["dp.cell[3]", "value", "?", "7", "value_change"]
+]

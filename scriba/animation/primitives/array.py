@@ -497,8 +497,10 @@ class ArrayPrimitive(PrimitiveBase):
         if label_text:
             ann_desc += f": {_escape_xml(label_text)}"
 
+        ann_key = f"{target}-{arrow_from}" if arrow_from else f"{target}-solo"
         lines.append(
             f'  <g class="scriba-annotation scriba-annotation-{color}"'
+            f' data-annotation="{_escape_xml(ann_key)}"'
             f' opacity="{s_opacity}"'
             f' role="graphics-symbol" aria-label="{ann_desc}">'
         )

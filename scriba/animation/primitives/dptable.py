@@ -468,8 +468,10 @@ class DPTablePrimitive(PrimitiveBase):
         cx2 = int((x2 + mid_x) // 2)
         cy2 = mid_y
 
+        ann_key = f"{target}-{arrow_from}" if arrow_from else f"{target}-solo"
         lines.append(
-            f'  <g class="scriba-annotation scriba-annotation-{color}">'
+            f'  <g class="scriba-annotation scriba-annotation-{color}"'
+            f' data-annotation="{_escape_xml(ann_key)}">'
         )
         lines.append(
             f'    <path d="M{x1},{y1} C{cx1},{cy1} {cx2},{cy2} {x2},{y2}" '

@@ -11,11 +11,13 @@ from __future__ import annotations
 import hashlib
 import html as _html
 import inspect
+import json as _json
 import re as _re
 import warnings
 from dataclasses import dataclass
 from typing import Any, Callable
 
+from scriba.animation.differ import compute_transitions
 from scriba.animation.primitives.base import BoundingBox
 from scriba.core.errors import ValidationError
 
@@ -736,7 +738,7 @@ def emit_interactive_html(
     # ----------------------------------------------------------------
 
     narration_id = f"{scene_id}-narration"
-    js_frames: list[str] = []
+    _frame_parts: list[tuple[str, str, str, str]] = []
     print_frame_items: list[str] = []
 
     for frame in frames:
@@ -762,10 +764,7 @@ def emit_interactive_html(
                     render_inline_tex=render_inline_tex,
                 )
         substory_escaped = _escape_js(substory_html)
-        js_frames.append(
-            f'{{svg:`{svg_escaped}`,narration:`{narration_escaped}`,'
-            f'substory:`{substory_escaped}`,label:`{label_escaped}`}}'
-        )
+        _frame_parts.append((svg_escaped, narration_escaped, substory_escaped, label_escaped))
 
         # --- Print frame (reuse the same SVG, swap aria-labelledby) ---
         print_narration_id = f"{scene_id}-print-{step}-narration"
@@ -808,6 +807,27 @@ def emit_interactive_html(
             f'</div>'
         )
 
+    # Compute transition manifests for consecutive frame pairs
+    _manifests: list[str] = ["null"]  # Frame 0 has no previous frame
+    for i in range(1, len(frames)):
+        _m = compute_transitions(frames[i - 1], frames[i])
+        if not _m.transitions or _m.skip_animation:
+            _manifests.append("null")
+        else:
+            _manifests.append(
+                _json.dumps(_m.to_compact(), separators=(",", ":"))
+            )
+
+    # Build JS frames array with transition manifests
+    js_frames: list[str] = []
+    for idx, (sve, ne, se, le) in enumerate(_frame_parts):
+        tr = _manifests[idx]
+        js_frames.append(
+            f'{{svg:`{sve}`,narration:`{ne}`,'
+            f'substory:`{se}`,label:`{le}`,'
+            f'tr:{tr}}}'
+        )
+
     js_frames_str = ",\n    ".join(js_frames)
     print_frames_html = "\n".join(print_frame_items)
 
@@ -848,6 +868,15 @@ def emit_interactive_html(
   var prev=W.querySelector('.scriba-btn-prev');
   var next=W.querySelector('.scriba-btn-next');
   var dots=W.querySelectorAll('.scriba-dot');
+  var _anims=[];
+  var _animState='idle';
+  var _canAnim=(typeof Element.prototype.animate==='function')
+    &&!window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var DUR=180;
+  function _cancelAnims(){{
+    for(var k=0;k<_anims.length;k++)try{{_anims[k].finish();}}catch(e){{}}
+    _anims=[];_animState='idle';
+  }}
   function initSub(el){{
     var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
     var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
@@ -862,24 +891,135 @@ def emit_interactive_html(
     sx.addEventListener('click',function(){{if(sc<fd.length-1)sh(sc+1);}});
     sh(0);
   }}
-  function show(i){{
-    cur=i;
-    stage.innerHTML=frames[i].svg;
-    narr.innerHTML=frames[i].narration;
-    subC.innerHTML=frames[i].substory||'';
-    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+  function _updateControls(i){{
     ctr.textContent='Step '+(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
     dots.forEach(function(d,j){{d.className='scriba-dot'+(j===i?' active':j<i?' done':'');}});
   }}
-  prev.addEventListener('click',function(){{if(cur>0)show(cur-1);}});
-  next.addEventListener('click',function(){{if(cur<frames.length-1)show(cur+1);}});
+  function snapToFrame(i){{
+    _cancelAnims();
+    cur=i;
+    stage.innerHTML=frames[i].svg;
+    narr.innerHTML=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
+    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+    _updateControls(i);
+  }}
+  function animateTransition(toIdx){{
+    if(_animState==='animating'){{_cancelAnims();snapToFrame(toIdx);return;}}
+    var tr=frames[toIdx]&&frames[toIdx].tr;
+    if(!tr||!tr.length||!_canAnim){{snapToFrame(toIdx);return;}}
+    _animState='animating';
+    narr.innerHTML=frames[toIdx].narration;
+    _updateControls(toIdx);
+    var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
+    var pending=[];
+    var hasWaapi=false;
+    for(var t=0;t<tr.length;t++){{
+      var rec=tr[t];
+      var target=rec[0],prop=rec[1],fromVal=rec[2],toVal=rec[3],kind=rec[4];
+      var sel='[data-target="'+CSS.escape(target)+'"]';
+      if(kind==='recolor'){{
+        var el=stage.querySelector(sel);
+        if(el){{
+          var cls=el.className.baseVal||el.className||'';
+          cls=cls.replace('scriba-state-'+fromVal,'scriba-state-'+toVal);
+          if(el.className.baseVal!==undefined)el.className.baseVal=cls;
+          else el.className=cls;
+        }}
+      }}else if(kind==='value_change'){{
+        var el2=stage.querySelector(sel);
+        if(el2){{var txt=el2.querySelector('text');if(txt)txt.textContent=toVal;}}
+      }}else if(kind==='highlight_on'){{
+        var el3=stage.querySelector(sel);
+        if(el3){{
+          var c3=el3.className.baseVal||el3.className||'';
+          if(c3.indexOf('scriba-highlighted')===-1){{
+            c3+=' scriba-highlighted';
+            if(el3.className.baseVal!==undefined)el3.className.baseVal=c3;
+            else el3.className=c3;
+          }}
+        }}
+      }}else if(kind==='highlight_off'){{
+        var el4=stage.querySelector(sel);
+        if(el4){{
+          var c4=el4.className.baseVal||el4.className||'';
+          c4=c4.replace(/\\s*scriba-highlighted/g,'');
+          if(el4.className.baseVal!==undefined)el4.className.baseVal=c4;
+          else el4.className=c4;
+        }}
+      }}else if(kind==='element_remove'){{
+        var el5=stage.querySelector(sel);
+        if(el5){{
+          var a5=el5.animate([{{opacity:1}},{{opacity:0}}],
+            {{duration:DUR,easing:'ease-out',fill:'forwards'}});
+          _anims.push(a5);pending.push(a5.finished);hasWaapi=true;
+        }}
+      }}else if(kind==='element_add'){{
+        var src=parsed.querySelector(sel);
+        if(src){{
+          var clone=document.importNode(src,true);
+          clone.style.opacity='0';
+          var svg=stage.querySelector('svg');
+          if(svg){{svg.appendChild(clone);
+            var a6=clone.animate([{{opacity:0}},{{opacity:1}}],
+              {{duration:DUR,easing:'ease-in',fill:'forwards'}});
+            _anims.push(a6);pending.push(a6.finished);hasWaapi=true;
+          }}
+        }}
+      }}else if(kind==='annotation_remove'){{
+        var el7=stage.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
+        if(el7){{
+          var a7=el7.animate([{{opacity:1}},{{opacity:0}}],
+            {{duration:DUR,easing:'ease-out',fill:'forwards'}});
+          _anims.push(a7);pending.push(a7.finished);hasWaapi=true;
+        }}
+      }}else if(kind==='annotation_add'){{
+        var src8=parsed.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
+        if(src8){{
+          var clone8=document.importNode(src8,true);
+          clone8.style.opacity='0';
+          var svg8=stage.querySelector('svg');
+          if(svg8){{svg8.appendChild(clone8);
+            var a8=clone8.animate([{{opacity:0}},{{opacity:1}}],
+              {{duration:DUR,easing:'ease-in',fill:'forwards'}});
+            _anims.push(a8);pending.push(a8.finished);hasWaapi=true;
+          }}
+        }}
+      }}
+    }}
+    function _finish(){{
+      cur=toIdx;
+      stage.innerHTML=frames[toIdx].svg;
+      subC.innerHTML=frames[toIdx].substory||'';
+      subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+      _anims=[];_animState='idle';
+    }}
+    if(hasWaapi){{
+      Promise.all(pending).then(_finish).catch(_finish);
+    }}else{{
+      setTimeout(_finish,DUR+20);
+    }}
+  }}
+  function show(i,animate){{
+    if(animate&&i===cur+1&&frames[i]&&frames[i].tr&&_canAnim){{
+      animateTransition(i);
+    }}else{{
+      snapToFrame(i);
+    }}
+  }}
+  prev.addEventListener('click',function(){{if(cur>0)show(cur-1,false);}});
+  next.addEventListener('click',function(){{if(cur<frames.length-1)show(cur+1,true);}});
   W.addEventListener('keydown',function(e){{
-    if(e.key==='ArrowRight'||e.key===' '){{e.preventDefault();if(cur<frames.length-1)show(cur+1);}}
-    if(e.key==='ArrowLeft'){{e.preventDefault();if(cur>0)show(cur-1);}}
+    if(e.key==='ArrowRight'||e.key===' '){{e.preventDefault();if(cur<frames.length-1)show(cur+1,true);}}
+    if(e.key==='ArrowLeft'){{e.preventDefault();if(cur>0)show(cur-1,false);}}
   }});
-  show(0);
+  if(typeof MutationObserver!=='undefined'){{
+    new MutationObserver(function(){{_cancelAnims();if(cur>=0)snapToFrame(cur);}})
+      .observe(document.documentElement,{{attributes:true,attributeFilter:['data-theme']}});
+  }}
+  show(0,false);
 }})();
 </script>"""
 

@@ -1,0 +1,26 @@
+<!-- Golden file: html_static_mode.html
+     Source: same 2-step Array recolor, compiled with output_mode="static"
+
+     Static mode produces a filmstrip <figure> with <ol>, no <script>.
+     There are NO tr: fields anywhere in the output.
+     There is no JS animation runtime.
+
+     Expected: no tr: fields, no <script> block, no animation functions.
+-->
+<figure class="scriba-animation" data-scriba-scene="test-static"
+        data-layout="filmstrip" data-frame-count="2">
+  <ol class="scriba-filmstrip">
+    <li class="scriba-frame" data-step="1">
+      <div class="scriba-stage">
+        <svg><!-- frame 0 SVG --></svg>
+      </div>
+      <p class="scriba-narration">Initial state.</p>
+    </li>
+    <li class="scriba-frame" data-step="2">
+      <div class="scriba-stage">
+        <svg><!-- frame 1 SVG --></svg>
+      </div>
+      <p class="scriba-narration">Recolored.</p>
+    </li>
+  </ol>
+</figure>

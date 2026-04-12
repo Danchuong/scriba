@@ -1,0 +1,39 @@
+<!-- Golden file: html_element_add.html
+     Source: 2-step Stack with \apply{s}{push=42} in step 2.
+     Step 1: empty stack, no mutations
+     Step 2: push=42 creates a new stack item (structural addition)
+
+     The \apply{s}{push=42} stores apply_params=[{"push": 42}] on target "s",
+     which the differ classifies as element_add because apply_params is present.
+
+     Expected tr: fields:
+       Frame 0: tr:null (no previous frame)
+       Frame 1: tr:[["s","add",null,"idle","element_add"]]
+-->
+<div class="scriba-widget" id="test-push" tabindex="0">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button>
+    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span>
+    <button class="scriba-btn-next" aria-label="Next step">Next</button>
+    <div class="scriba-progress">
+      <div class="scriba-dot active"></div>
+      <div class="scriba-dot"></div>
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration" id="test-push-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+    <!-- print frames omitted for brevity -->
+  </div>
+</div>
+<script>
+(function(){
+  var W=document.getElementById('test-push');
+  var frames=[
+    {svg:`<svg><!-- frame 0 SVG --></svg>`,narration:`Empty.`,substory:``,label:``,tr:null},
+    {svg:`<svg><!-- frame 1 SVG --></svg>`,narration:`Pushed.`,substory:``,label:``,tr:[["s","add",null,"idle","element_add"]]}
+  ];
+  // ... runtime functions
+})();
+</script>
