@@ -284,7 +284,54 @@ Show where a DP value comes from, then commit the result:
 
 ---
 
-## 9. Next Steps
+## 9. Static Diagrams
+
+Not every visualization needs step-by-step animation. Use `\begin{diagram}...\end{diagram}` for **static, single-frame figures** — data structure snapshots, problem illustrations, or reference diagrams.
+
+### Basic syntax
+
+```tex
+\begin{diagram}[id="my-diagram"]
+\shape{T}{Tree}{root=1, nodes=[1,2,3,4,5], edges=[(1,2),(1,3),(2,4),(2,5)]}
+\recolor{T.node[1]}{state=current}
+\recolor{T.node[2]}{state=done}
+\recolor{T.node[3]}{state=done}
+\end{diagram}
+```
+
+**Key differences from animation:**
+
+| | `\begin{animation}` | `\begin{diagram}` |
+|---|---|---|
+| Frames | Multiple (via `\step`) | Single (no `\step` allowed) |
+| Controls | Prev/Next buttons, narration | None — static SVG |
+| JavaScript | Animation runtime (~1.1KB) | Zero JS |
+| Use case | Algorithm walkthroughs | Problem illustrations, snapshots |
+
+### What works in diagrams
+
+- `\shape` — declare any of the 16 primitive types
+- `\recolor` — set visual states (current, done, dim, etc.)
+- `\apply` — set cell/node values
+- `\highlight` — persistent highlight (not ephemeral like in animation)
+- `\annotate` — annotation arrows between elements
+
+### What does NOT work in diagrams
+
+- `\step` — error E1050
+- `\narrate` — error E1054
+- `\cursor` — requires steps
+- `\foreach` / `\compute` — requires steps
+- `\substory` — requires steps
+
+### When to use diagram vs animation
+
+- **Diagram**: problem statement illustrations, "here is the input graph", data structure snapshots, reference figures alongside text
+- **Animation**: algorithm walkthroughs, step-by-step explanations, DP filling, graph traversals
+
+---
+
+## 10. Next Steps
 
 - **Full reference** -- see [ruleset.md](../spec/ruleset.md) for every command, primitive type, selector syntax, error code, and CSS contract.
 - **Examples** -- browse `examples/` for complete worked animations:
@@ -292,11 +339,13 @@ Show where a DP value comes from, then commit the result:
   - `quickstart/binary_search.tex` -- classic binary search
   - `algorithms/dp/frog.tex` -- DP with manual steps
   - `algorithms/graph/dijkstra.tex` -- weighted shortest path
+  - `primitives/diagram.tex` -- static tree diagram
+- **Diagrams guide** -- see [how-to-use-diagrams.md](../guides/how-to-use-diagrams.md) for static diagram patterns and examples.
 - **More primitives** -- Scriba supports 16 primitive types. See the complete list below.
 
 ---
 
-## 10. All Primitive Types
+## 11. All Primitive Types
 
 Scriba ships 16 primitive types organized in three groups.
 

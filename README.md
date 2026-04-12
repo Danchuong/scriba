@@ -52,7 +52,7 @@ asset basenames needed to display it.
   codes back out. Strict mode is a `RenderContext` field, not a core CLI
   flag — CLIs wrap it themselves. See
   [`docs/guides/strict-mode.md`](docs/guides/strict-mode.md).
-- **Examples reorganized.** 50 `.tex` examples across `examples/quickstart/`,
+- **Examples reorganized.** 53 `.tex` examples across `examples/quickstart/`,
   `examples/algorithms/`, `examples/cses/`, and `examples/primitives/`.
   HTML outputs are now build artifacts (`./examples/build.sh`), not
   checked into git. See [`docs/cookbook/README.md`](docs/cookbook/README.md).

@@ -23,7 +23,7 @@ Full worked algorithm animations live under `examples/`:
 
 ```
 examples/
-  quickstart/         3 files   (hello, binary_search, foreach_demo)
+  quickstart/         4 files   (hello, binary_search, foreach_demo, diagram_intro)
   algorithms/
     graph/            5 files   (dijkstra, kruskal_mst, bfs, mcmf, union_find)
     tree/             4 files   (bst_operations, persistent_segtree, hld, splay)
@@ -31,7 +31,7 @@ examples/
     string/           1 file    (kmp)
     misc/             5 files   (simulated_annealing, fft_butterfly, li_chao, convex_hull_andrew, linkedlist_reverse)
   cses/              10 files   (competitive programming editorials)
-  primitives/        17 files   (one demo per primitive type)
+  primitives/        19 files   (one demo per primitive type + diagram demos)
 ```
 
 Build all examples: `./examples/build.sh`
@@ -42,6 +42,7 @@ HTML outputs are gitignored -- treat as build artifacts.
 
 - **Hidden-state pre-declaration** -- see [`docs/guides/hidden-state-pattern.md`](../guides/hidden-state-pattern.md). Example: `examples/algorithms/dp/convex_hull_trick.tex`.
 - **Strict mode** -- see [`docs/guides/strict-mode.md`](../guides/strict-mode.md).
+- **Static diagrams** -- see [`docs/guides/how-to-use-diagrams.md`](../guides/how-to-use-diagrams.md). Example: `examples/primitives/diagram.tex`.
 
 ## Relationship to specs
 
