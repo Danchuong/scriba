@@ -69,6 +69,7 @@
 \step
 \recolor{queue.cell[4]}{state=dim}
 \recolor{G.edge[(A,B)]}{state=current}
+\annotate{G.node[B]}{label="w=4 cycle!", arrow_from="G.node[A]", color=error}
 \narrate{Edge $5$: $A\!-\!B$ weight $4$. $find(A) = find(B) = \{A,B,C\}$ -- same component. Reject -- adding $A\!-\!B$ would close the cycle $A\!-\!C\!-\!B\!-\!A$. MST unchanged.}
 
 \step
@@ -77,11 +78,13 @@
 \recolor{G.edge[(B,D)]}{state=good}
 \apply{picked.cell[4]}{value="BD"}
 \recolor{picked.cell[4]}{state=good}
+\annotate{G.node[D]}{label="w=5 bridge", arrow_from="G.node[B]", color=good}
 \narrate{Edge $6$: $B\!-\!D$ weight $5$. $find(B) = \{A,B,C\}$ vs $find(D) = \{D,E,F\}$ -- different. Accept. Union $\to \{A,B,C,D,E,F\}$. MST weight $= 13$. Five edges on six nodes -- the spanning tree is complete. The remaining edges will all form cycles, but we finish the scan for completeness.}
 
 \step
 \recolor{queue.cell[6]}{state=dim}
 \recolor{G.edge[(D,F)]}{state=current}
+\annotate{G.node[F]}{label="w=6 cycle!", arrow_from="G.node[D]", color=error}
 \narrate{Edge $7$: $D\!-\!F$ weight $6$. Both endpoints already in the single component. Reject -- would close the cycle $D\!-\!E\!-\!F\!-\!D$.}
 
 \step

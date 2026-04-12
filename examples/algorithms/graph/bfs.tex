@@ -39,6 +39,7 @@
 \recolor{V.cell[1]}{state=current}
 \recolor{G.node[B]}{state=current}
 \recolor{G.edge[(A,B)]}{state=good}
+\annotate{G.node[B]}{label="d+1", arrow_from="G.node[A]", color=good}
 \narrate{Tham B: revive T.node[B] (hidden -> current) va canh cay A-B. Enqueue B, mark visited. Canh A-B trong G to "good" vi day la tree edge. Tree SVG node count = 2.}
 
 \step
@@ -49,6 +50,7 @@
 \recolor{V.cell[2]}{state=current}
 \recolor{G.node[C]}{state=current}
 \recolor{G.edge[(A,C)]}{state=good}
+\annotate{G.node[C]}{label="d+1", arrow_from="G.node[A]", color=good}
 \narrate{Tham C: revive T.node[C] va canh cay A-C. Enqueue C, mark visited. Frontier sau vong 1 = [B, C]. Tree BFS co 3 node, do sau 1.}
 
 \step
@@ -66,6 +68,7 @@
 \recolor{V.cell[3]}{state=current}
 \recolor{G.node[D]}{state=current}
 \recolor{G.edge[(B,D)]}{state=good}
+\annotate{G.node[D]}{label="d+1", arrow_from="G.node[B]", color=good}
 \narrate{Tham D: revive T.node[D] va canh cay B-D. Enqueue D. Frontier = [C, D]. Cay BFS gio sau 2 tang. Tree SVG node count = 4.}
 
 \step

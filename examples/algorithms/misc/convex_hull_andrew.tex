@@ -71,6 +71,7 @@
 \apply{stk}{push="B"}
 \apply{plane}{add_segment=[[0, 1], [1, 0]]}
 \recolor{plane.segment[0]}{state=current}
+\annotate{plane.point[1]}{label="hull", arrow_from="plane.point[0]", color=good}
 \narrate{
   Process $B(1,0)$. Stack $=[A]$, chỉ 1 phần tử nên không check turn.
   Push $B$. Vẽ tentative segment $A \to B$.
@@ -112,6 +113,7 @@
 \apply{stk}{pop=1}
 \recolor{plane.point[2]}{state=dim}
 \recolor{plane.segment[1]}{state=dim}
+\annotate{plane.point[2]}{label="reject", arrow_from="plane.point[1]", color=error}
 \narrate{
   $C$ popped. Stack $=[A, B]$. Segment $B \to C$ dimmed (discarded,
   nhưng giữ trên canvas để author thấy algorithm progression).
@@ -232,6 +234,7 @@
 \apply{stk}{push="H"}
 \apply{plane}{add_segment=[[5, 0], [7, 2]]}
 \recolor{plane.segment[6]}{state=current}
+\annotate{plane.point[7]}{label="hull", arrow_from="plane.point[5]", color=good}
 \narrate{
   Stack $=[A, B, F, H]$. Vẽ segment $F \to H$. Lower hull walk done.
   Final lower hull: $A \to B \to F \to H$.

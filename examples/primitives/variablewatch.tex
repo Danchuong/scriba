@@ -22,5 +22,7 @@
 \recolor{vars.var[min_val]}{state=good}
 \apply{vars.var[result]}{value=42}
 \recolor{vars.var[result]}{state=current}
+\annotate{vars.var[result]}{label="=i*min_val", arrow_from="vars.var[i]", color=info}
+\annotate{vars.var[min_val]}{label="min(i,j)", arrow_from="vars.var[j]", color=good}
 \narrate{After iteration: i=3, j=1, min_val=7, result=42. Result is newly set.}
 \end{animation}

@@ -7,11 +7,15 @@
 \recolor{g.cell[0][0]}{state=done}
 \recolor{g.cell[0][1]}{state=current}
 \recolor{g.cell[1][0]}{state=current}
+\annotate{g.cell[0][1]}{label="flow", arrow_from="g.cell[0][0]", color=good}
+\annotate{g.cell[1][0]}{label="flow", arrow_from="g.cell[0][0]", color=good}
 \narrate{Explore neighbors. Cell (1,1)=1 is blocked.}
 \step
 \recolor{g.cell[0][1]}{state=done}
 \recolor{g.cell[1][0]}{state=done}
 \recolor{g.cell[0][2]}{state=current}
 \recolor{g.cell[2][0]}{state=current}
+\annotate{g.cell[0][2]}{label="flow", arrow_from="g.cell[0][1]", color=good}
+\annotate{g.cell[2][0]}{label="flow", arrow_from="g.cell[1][0]", color=good}
 \narrate{Continue expanding. Approaching goal at (2,2).}
 \end{animation}

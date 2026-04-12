@@ -13,6 +13,7 @@
 \recolor{L.node[0]}{state=current}
 \recolor{L.link[0]}{state=current}
 \recolor{L.node[1]}{state=dim}
+\annotate{L.node[0]}{label="flip", arrow_from="L.node[1]", color=muted}
 \cursor{L.node}{1}
 \narrate{Iteration 1, substep a: read $next = curr.next = B$. The link $A \to B$ is highlighted -- that's the pointer we are about to flip. Substep b: $curr.next = prev = nil$. In the reversed list $A$ becomes the new tail, so $A.next = nil$.}
 
@@ -27,6 +28,8 @@
 \recolor{L.node[1]}{state=current}
 \recolor{L.link[1]}{state=current}
 \recolor{L.node[2]}{state=dim}
+\annotate{L.node[1]}{label="next", arrow_from="L.node[0]", color=good}
+\annotate{L.node[1]}{label="old", arrow_from="L.node[2]", color=muted}
 \cursor{L.node}{2}
 \narrate{Iteration 2, substep a: $next = curr.next = C$. Substep b: $curr.next = prev = A$. The link $B \to C$ is being rewritten to $B \to A$. Visually, we show the link $B \to C$ highlighted because that is the original forward pointer we are consuming; once the iteration completes the logical direction is $B \to A$ in the reversed list.}
 
@@ -43,6 +46,7 @@
 \recolor{L.node[2]}{state=current}
 \recolor{L.link[2]}{state=current}
 \recolor{L.node[3]}{state=dim}
+\annotate{L.node[2]}{label="next", arrow_from="L.node[1]", color=good}
 \cursor{L.node}{3}
 \narrate{Iteration 3, substep a: $next = curr.next = D$. Substep b: $curr.next = prev = B$. We flip $C \to D$ into $C \to B$ in the reversed list.}
 

@@ -11,6 +11,8 @@
 \recolor{q.cell[0]}{state=idle}
 \recolor{q.cell[1]}{state=good}
 \recolor{q.cell[2]}{state=good}
+\annotate{q.cell[1]}{label="enq", arrow_from="q.cell[0]", color=good}
+\annotate{q.cell[2]}{label="enq", arrow_from="q.cell[1]", color=good}
 \narrate{Discover neighbors of node 1. Enqueue nodes 2 and 4.}
 
 \step
@@ -18,6 +20,7 @@
 \recolor{q.cell[0]}{state=dim}
 \recolor{q.cell[1]}{state=current}
 \recolor{q.cell[2]}{state=idle}
+\annotate{q.cell[0]}{label="deq", arrow_from="q.cell[1]", color=error}
 \narrate{Dequeue node 1 (done). Process node 2 next. Front pointer advances.}
 
 \step

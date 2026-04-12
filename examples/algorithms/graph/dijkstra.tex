@@ -52,6 +52,7 @@
 \recolor{G.edge[(B,C)]}{state=current}
 \apply{dist.cell[1]}{value="3"}
 \recolor{dist.cell[1]}{state=current}
+\annotate{G.node[B]}{label="2+1=3", arrow_from="G.node[C]", color=good}
 \narrate{Relax edge $C\to B$ with weight $1$: $dist[B] = \min(4, 2+1) = 3$. The detour $A \to C \to B$ is cheaper than the direct $A \to B$ edge.}
 
 \step
@@ -83,6 +84,7 @@
 \recolor{G.edge[(B,D)]}{state=current}
 \apply{dist.cell[3]}{value="8"}
 \recolor{dist.cell[3]}{state=current}
+\annotate{G.node[D]}{label="3+5=8", arrow_from="G.node[B]", color=good}
 \narrate{Relax edge $B\to D$ with weight $5$: $dist[D] = \min(10, 3+5) = 8$. The new predecessor of $D$ is $B$, not $C$.}
 
 \step
@@ -98,6 +100,7 @@
 \recolor{G.edge[(D,E)]}{state=current}
 \apply{dist.cell[4]}{value="10"}
 \recolor{dist.cell[4]}{state=current}
+\annotate{G.node[E]}{label="8+2=10", arrow_from="G.node[D]", color=good}
 \narrate{Relax edge $D\to E$ with weight $2$: $dist[E] = \min(12, 8+2) = 10$. Improved via $A\to C\to B\to D\to E$.}
 
 \step

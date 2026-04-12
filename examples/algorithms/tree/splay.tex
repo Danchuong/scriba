@@ -10,6 +10,7 @@
 \step
 \recolor{T.node[2]}{state=current}
 \recolor{T.node[4]}{state=current}
+\annotate{T.node[2]}{label="pull up", arrow_from="T.node[4]", color=good}
 \apply{T}{reparent={node=2, parent=7}}
 \apply{plot}{phi=8.2, cost=1}
 \narrate{\textbf{Zig-zig phase A, buoc 1}: nang cha (p=2) len vi tri cua ong (g=4) duoi root. Dung \texttt{reparent\{node=2, parent=7\}} — 2 tro thanh con truc tiep cua 7. Toan bo subtree cua 2 (gom 1 va 3) duoc mang theo — reparent dich chuyen ca cum.}
@@ -26,6 +27,7 @@
 
 \step
 \recolor{T.node[1]}{state=current}
+\annotate{T.node[1]}{label="zig", arrow_from="T.node[2]", color=good}
 \apply{T}{reparent={node=1, parent=7}}
 \apply{plot}{phi=7.0, cost=3}
 \narrate{\textbf{Zig-zig phase B, buoc 1}: nang x=1 len vi tri cua p=2 duoi root. \texttt{reparent\{node=1, parent=7\}}. Tu do sau 4 (tinh ca root), node 1 da nhay len do sau 1 — day chinh la tac dung rut ngan cua splay.}

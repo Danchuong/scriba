@@ -19,5 +19,7 @@
 \recolor{hm.bucket[2]}{state=done}
 \recolor{hm.bucket[0]}{state=error}
 \apply{hm.bucket[0]}{value="cat:3  car:7"}
+\annotate{hm.bucket[0]}{label="collision", arrow_from="hm.bucket[2]", color=warn}
+\annotate{hm.bucket[0]}{label="rehash probe", arrow_from="hm.bucket[1]", color=info}
 \narrate{Insert key "car" with value 7. hash("car") mod 4 = 0 -- collision! Bucket 0 chains both entries: cat:3 and car:7.}
 \end{animation}

@@ -25,6 +25,8 @@
 \recolor{T.node[2]}{state=good}
 \recolor{T.node[5]}{state=good}
 \recolor{T.node[7]}{state=good}
+\annotate{T.node[2]}{label="heavy", arrow_from="T.node[1]", color=good}
+\annotate{T.node[5]}{label="heavy", arrow_from="T.node[2]", color=good}
 \narrate{Chuoi nang 1: 1 -> 2 -> 5 -> 7. Node 2 la con nang cua 1 (sz=5 > sz[3]=3). Node 5 la con nang cua 2 (sz=3 > sz[4]=1). Node 7 la con nang cua 5 (chon dau tien).}
 
 \step
@@ -34,6 +36,8 @@
 \recolor{T.node[3]}{state=current}
 \recolor{T.node[6]}{state=current}
 \recolor{T.node[9]}{state=current}
+\annotate{T.node[3]}{label="light", arrow_from="T.node[1]", color=info}
+\annotate{T.node[6]}{label="heavy", arrow_from="T.node[3]", color=good}
 \narrate{Chuoi nang 2: 3 -> 6 -> 9. Node 3 la con nhe cua 1, bat dau chuoi moi. Node 6 la con nang cua 3 (sz=2 > 0).}
 
 \step
