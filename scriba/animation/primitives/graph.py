@@ -661,12 +661,12 @@ class Graph(PrimitiveBase):
                 and not self.directed
                 and weight is not None
             ):
-                weight_str = html_escape(_format_weight(weight))
-                weight_text = (
-                    f'<text x="{mid_x}" y="{mid_y}" '
-                    f'text-anchor="middle" '
-                    f'fill="{THEME["fg_muted"]}" '
-                    f'class="scriba-graph-weight">{weight_str}</text>'
+                weight_text = _render_svg_text(
+                    _format_weight(weight), mid_x, mid_y,
+                    fill=THEME["fg_muted"],
+                    text_anchor="middle",
+                    css_class="scriba-graph-weight",
+                    render_inline_tex=render_inline_tex,
                 )
             parts.append(
                 f'<g data-target="{html_escape(edge_target)}" '

@@ -16,7 +16,12 @@ import math
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _emit_warning, animation_error
-from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, register_primitive
+from scriba.animation.primitives.base import (
+    BoundingBox,
+    PrimitiveBase,
+    _render_svg_text,
+    register_primitive,
+)
 
 __all__ = ["MetricPlot"]
 
@@ -366,7 +371,10 @@ class MetricPlot(PrimitiveBase):
 
         # Layer 2: Axes
         parts.append(
-            self._emit_axes(xmin, xmax, ymin_left, ymax_left, ymin_right, ymax_right)
+            self._emit_axes(
+                xmin, xmax, ymin_left, ymax_left, ymin_right, ymax_right,
+                render_inline_tex=render_inline_tex,
+            )
         )
 
         # Layer 3: Series polylines
@@ -382,7 +390,7 @@ class MetricPlot(PrimitiveBase):
 
         # Layer 5: Legend
         if self.show_legend:
-            parts.append(self._emit_legend())
+            parts.append(self._emit_legend(render_inline_tex=render_inline_tex))
 
         parts.append("</g>")
         return "\n".join(parts)
@@ -426,6 +434,8 @@ class MetricPlot(PrimitiveBase):
         xmin: float, xmax: float,
         ymin_left: float, ymax_left: float,
         ymin_right: float, ymax_right: float,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
     ) -> str:
         parts: list[str] = ['<g class="scriba-metricplot-axes">']
         W = self.width
@@ -508,22 +518,33 @@ class MetricPlot(PrimitiveBase):
         # Axis labels
         cx = round((pl + W - pr) / 2, 2)
         parts.append(
-            f'<text x="{cx}" y="{H - 6}"'
-            f' text-anchor="middle" font-size="11">{html.escape(self.xlabel)}</text>'
+            _render_svg_text(
+                self.xlabel, cx, H - 6,
+                font_size="11",
+                text_anchor="middle",
+                render_inline_tex=render_inline_tex,
+            )
         )
         cy = round((pt + H - pb) / 2, 2)
+        ylabel_svg = _render_svg_text(
+            self.ylabel, 12, cy,
+            font_size="11",
+            text_anchor="middle",
+            render_inline_tex=render_inline_tex,
+        )
         parts.append(
-            f'<text x="12" y="{cy}"'
-            f' text-anchor="middle" font-size="11"'
-            f' transform="rotate(-90, 12, {cy})">{html.escape(self.ylabel)}</text>'
+            f'<g transform="rotate(-90, 12, {cy})">{ylabel_svg}</g>'
         )
         if self.two_axis and self.ylabel_right:
+            ylabel_right_svg = _render_svg_text(
+                self.ylabel_right, W - 10, cy,
+                font_size="11",
+                text_anchor="middle",
+                css_class="scriba-metricplot-right-axis-label",
+                render_inline_tex=render_inline_tex,
+            )
             parts.append(
-                f'<text x="{W - 10}" y="{cy}"'
-                f' text-anchor="middle" font-size="11"'
-                f' class="scriba-metricplot-right-axis-label"'
-                f' transform="rotate(90, {W - 10}, {cy})">'
-                f'{html.escape(self.ylabel_right)}</text>'
+                f'<g transform="rotate(90, {W - 10}, {cy})">{ylabel_right_svg}</g>'
             )
 
         parts.append("</g>")
@@ -667,7 +688,11 @@ class MetricPlot(PrimitiveBase):
 
     # --- Layer 5: Legend ---
 
-    def _emit_legend(self) -> str:
+    def _emit_legend(
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+    ) -> str:
         parts: list[str] = ['<g class="scriba-metricplot-legend">']
 
         legend_x = self.width - self.pad_right - 80
@@ -682,9 +707,12 @@ class MetricPlot(PrimitiveBase):
                 f' stroke="{s.color}" stroke-width="2"{dash_attr}/>'
             )
             parts.append(
-                f'<text x="{legend_x + 26}" y="{round(y + 4, 2)}"'
-                f' class="scriba-metricplot-legend-label"'
-                f' font-size="11">{html.escape(s.name)}</text>'
+                _render_svg_text(
+                    s.name, legend_x + 26, round(y + 4, 2),
+                    css_class="scriba-metricplot-legend-label",
+                    font_size="11",
+                    render_inline_tex=render_inline_tex,
+                )
             )
 
         parts.append("</g>")
