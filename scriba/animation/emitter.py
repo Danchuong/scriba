@@ -1057,17 +1057,27 @@ def emit_interactive_html(
         var clone8=document.importNode(src8,true);
         var srcParent=src8.parentNode;
         var parentShape=null;
+        var _midTransforms=[];
         while(srcParent&&srcParent.nodeType===1){{
           var ds=srcParent.getAttribute&&srcParent.getAttribute('data-shape');
           if(ds){{parentShape=stage.querySelector('[data-shape="'+CSS.escape(ds)+'"]');break;}}
+          var _tr=srcParent.getAttribute('transform');
+          if(_tr)_midTransforms.push(_tr);
           srcParent=srcParent.parentNode;
         }}
         var container=parentShape||stage.querySelector('svg');
         if(container){{
+          var _insertNode=clone8;
+          for(var _ti=0;_ti<_midTransforms.length;_ti++){{
+            var _wg=document.createElementNS('http://www.w3.org/2000/svg','g');
+            _wg.setAttribute('transform',_midTransforms[_ti]);
+            _wg.appendChild(_insertNode);
+            _insertNode=_wg;
+          }}
           var pathEl=clone8.querySelector('path');
           if(pathEl&&typeof pathEl.getTotalLength==='function'){{
             clone8.style.opacity='1';
-            container.appendChild(clone8);
+            container.appendChild(_insertNode);
             var len=pathEl.getTotalLength();
             pathEl.style.strokeDasharray=len;
             pathEl.style.strokeDashoffset=len+'px';
@@ -1109,7 +1119,7 @@ def emit_interactive_html(
             pending.push(drawDone);
           }}else{{
             clone8.style.opacity='0';
-            container.appendChild(clone8);
+            container.appendChild(_insertNode);
             var a8=clone8.animate([{{opacity:0}},{{opacity:1}}],
               {{duration:_dur(DUR),easing:'ease-in',fill:'forwards'}});
             _anims.push(a8);pending.push(a8.finished);

@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-04-13
+
+### Added
+
+- **Arrow draw-on animation** — Annotation arrows now draw progressively via `stroke-dashoffset` rAF animation (120ms, ease-out) instead of fading in. Arrowhead polygon computed via `getPointAtLength()` appears at 70% progress. Falls back to 180ms opacity fade when `<path>` is absent or `getTotalLength` unavailable.
+- **Value change pulse** — `value_change` transitions now fire a non-blocking WAAPI scale pulse (`1 → 1.15 → 1`, 100ms) on the `<text>` element, drawing the eye to which cell changed.
+- **2-phase micro-sequencing** — Transitions are split into two phases: annotations and highlights fire at t=0, everything else fires at t=50ms. Arrows are visible before the state changes they explain. Total worst-case per step: ~230ms.
+
+### Fixed
+
+- **Annotation position flash on draw-on** — Annotation clones inserted during `annotation_add` animation now preserve intermediate SVG `transform` groups between the annotation and its `data-shape` ancestor. Previously, clones were appended directly to the `data-shape` container, skipping transforms like `translate(0, 44)` and causing a visible position jump until the full-frame sync corrected it.
+
 ## [0.6.2] - 2026-04-12
 
 ### Fixed
