@@ -889,7 +889,7 @@ def emit_interactive_html(
     )
 
     widget_html = f"""\
-<div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0">
+<div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1">
   <div class="scriba-controls">
     <button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button>
     <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / {frame_count}</span>
@@ -924,6 +924,8 @@ def emit_interactive_html(
   var _canAnim=(typeof Element.prototype.animate==='function')
     &&!window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   var DUR=180;
+  var _speed=parseFloat(W.getAttribute('data-scriba-speed'))||1;
+  function _dur(ms){{return Math.round(ms/_speed);}}
   function _cancelAnims(){{
     for(var k=0;k<_anims.length;k++)try{{_anims[k].finish();}}catch(e){{}}
     _anims=[];_animState='idle';
@@ -957,6 +959,165 @@ def emit_interactive_html(
     subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
     _updateControls(i);
   }}
+  function _arrowheadAt(path,size){{
+    var len=path.getTotalLength();
+    var tip=path.getPointAtLength(len);
+    var back=path.getPointAtLength(Math.max(0,len-size*1.5));
+    var dx=tip.x-back.x,dy=tip.y-back.y;
+    var d=Math.sqrt(dx*dx+dy*dy)||1;
+    var ux=dx/d,uy=dy/d,px=-uy,py=ux;
+    var hw=size*0.5;
+    return tip.x+','+tip.y+' '+(tip.x-ux*size+px*hw)+','+(tip.y-uy*size+py*hw)+' '+(tip.x-ux*size-px*hw)+','+(tip.y-uy*size-py*hw);
+  }}
+  function _applyTransition(rec,parsed,pending){{
+    var target=rec[0],prop=rec[1],fromVal=rec[2],toVal=rec[3],kind=rec[4];
+    var sel='[data-target="'+CSS.escape(target)+'"]';
+    if(kind==='recolor'){{
+      var el=stage.querySelector(sel);
+      if(el){{
+        var cls=el.className.baseVal||el.className||'';
+        cls=cls.replace('scriba-state-'+fromVal,'scriba-state-'+toVal);
+        if(el.className.baseVal!==undefined)el.className.baseVal=cls;
+        else el.className=cls;
+      }}
+    }}else if(kind==='value_change'){{
+      var el2=stage.querySelector(sel);
+      if(el2){{var txt=el2.querySelector('text');if(txt){{
+        txt.textContent=toVal;
+        if(_canAnim){{txt.animate([{{transform:'scale(1)'}},{{transform:'scale(1.15)'}},{{transform:'scale(1)'}}],
+          {{duration:_dur(100),easing:'ease-out'}});}}
+      }}}}
+    }}else if(kind==='highlight_on'){{
+      var el3=stage.querySelector(sel);
+      if(el3){{
+        var c3=el3.className.baseVal||el3.className||'';
+        if(c3.indexOf('scriba-highlighted')===-1){{
+          c3+=' scriba-highlighted';
+          if(el3.className.baseVal!==undefined)el3.className.baseVal=c3;
+          else el3.className=c3;
+        }}
+      }}
+    }}else if(kind==='highlight_off'){{
+      var el4=stage.querySelector(sel);
+      if(el4){{
+        var c4=el4.className.baseVal||el4.className||'';
+        c4=c4.replace(/\\s*scriba-highlighted/g,'');
+        if(el4.className.baseVal!==undefined)el4.className.baseVal=c4;
+        else el4.className=c4;
+      }}
+    }}else if(kind==='element_remove'){{
+      var el5=stage.querySelector(sel);
+      if(el5){{
+        var a5=el5.animate([{{opacity:1}},{{opacity:0}}],
+          {{duration:_dur(DUR),easing:'ease-out',fill:'forwards'}});
+        _anims.push(a5);pending.push(a5.finished);
+      }}
+    }}else if(kind==='element_add'){{
+      var src=parsed.querySelector(sel);
+      if(src){{
+        var clone=document.importNode(src,true);
+        clone.style.opacity='0';
+        var srcP=src.parentNode;
+        var pShape=null;
+        while(srcP&&srcP.nodeType===1){{
+          var ds2=srcP.getAttribute&&srcP.getAttribute('data-shape');
+          if(ds2){{pShape=stage.querySelector('[data-shape="'+CSS.escape(ds2)+'"]');break;}}
+          srcP=srcP.parentNode;
+        }}
+        var ct=pShape||stage.querySelector('svg');
+        if(ct){{ct.appendChild(clone);
+          var a6=clone.animate([{{opacity:0}},{{opacity:1}}],
+            {{duration:_dur(DUR),easing:'ease-in',fill:'forwards'}});
+          _anims.push(a6);pending.push(a6.finished);
+        }}
+      }}
+    }}else if(kind==='position_move'){{
+      var el9=stage.querySelector(sel);
+      if(el9){{
+        var pf=fromVal.split(',');
+        var pt=toVal.split(',');
+        var dx=parseFloat(pf[0])-parseFloat(pt[0]);
+        var dy=parseFloat(pf[1])-parseFloat(pt[1]);
+        var a9=el9.animate([
+          {{transform:'translate('+dx+'px,'+dy+'px)'}},
+          {{transform:'translate(0,0)'}}
+        ],{{duration:_dur(DUR),easing:'ease-out',fill:'forwards'}});
+        _anims.push(a9);pending.push(a9.finished);
+      }}
+    }}else if(kind==='annotation_remove'){{
+      var el7=stage.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
+      if(el7){{
+        var a7=el7.animate([{{opacity:1}},{{opacity:0}}],
+          {{duration:_dur(DUR),easing:'ease-out',fill:'forwards'}});
+        _anims.push(a7);pending.push(a7.finished);
+      }}
+    }}else if(kind==='annotation_add'){{
+      var src8=parsed.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
+      if(src8){{
+        var clone8=document.importNode(src8,true);
+        var srcParent=src8.parentNode;
+        var parentShape=null;
+        while(srcParent&&srcParent.nodeType===1){{
+          var ds=srcParent.getAttribute&&srcParent.getAttribute('data-shape');
+          if(ds){{parentShape=stage.querySelector('[data-shape="'+CSS.escape(ds)+'"]');break;}}
+          srcParent=srcParent.parentNode;
+        }}
+        var container=parentShape||stage.querySelector('svg');
+        if(container){{
+          var pathEl=clone8.querySelector('path');
+          if(pathEl&&typeof pathEl.getTotalLength==='function'){{
+            clone8.style.opacity='1';
+            container.appendChild(clone8);
+            var len=pathEl.getTotalLength();
+            pathEl.style.strokeDasharray=len;
+            pathEl.style.strokeDashoffset=len+'px';
+            var savedMarker=pathEl.getAttribute('marker-end');
+            if(savedMarker)pathEl.removeAttribute('marker-end');
+            var textEl=clone8.querySelector('text');
+            if(textEl)textEl.setAttribute('opacity','0');
+            var drawDone=new Promise(function(resolve){{
+              var start=performance.now();
+              var headShown=false;
+              function tick(now){{
+                var t=Math.min((now-start)/_dur(120),1);
+                var eased=1-Math.pow(1-t,3);
+                pathEl.style.strokeDashoffset=(len*(1-eased))+'px';
+                if(!headShown&&t>=0.7){{
+                  headShown=true;
+                  var pts=_arrowheadAt(pathEl,12);
+                  var ns='http://www.w3.org/2000/svg';
+                  var poly=document.createElementNS(ns,'polygon');
+                  poly.setAttribute('points',pts);
+                  poly.setAttribute('fill',pathEl.getAttribute('stroke')||'currentColor');
+                  poly.setAttribute('opacity','0');
+                  clone8.appendChild(poly);
+                  poly.animate([{{opacity:0}},{{opacity:1}}],
+                    {{duration:_dur(36),easing:'ease-out',fill:'forwards'}});
+                  if(textEl){{
+                    textEl.animate([{{opacity:0}},{{opacity:1}}],
+                      {{duration:_dur(36),easing:'ease-out',fill:'forwards'}});
+                  }}
+                }}
+                if(t<1){{requestAnimationFrame(tick);}}
+                else{{
+                  pathEl.style.strokeDashoffset='0';
+                  resolve();
+                }}
+              }}
+              requestAnimationFrame(tick);
+            }});
+            pending.push(drawDone);
+          }}else{{
+            clone8.style.opacity='0';
+            container.appendChild(clone8);
+            var a8=clone8.animate([{{opacity:0}},{{opacity:1}}],
+              {{duration:_dur(DUR),easing:'ease-in',fill:'forwards'}});
+            _anims.push(a8);pending.push(a8.finished);
+          }}
+        }}
+      }}
+    }}
+  }}
   function animateTransition(toIdx){{
     if(_animState==='animating'){{_cancelAnims();snapToFrame(toIdx);return;}}
     var tr=frames[toIdx]&&frames[toIdx].tr;
@@ -966,112 +1127,13 @@ def emit_interactive_html(
     _updateControls(toIdx);
     var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
     var pending=[];
-    var hasWaapi=false;
+    var phase1=[],phase2=[];
     for(var t=0;t<tr.length;t++){{
-      var rec=tr[t];
-      var target=rec[0],prop=rec[1],fromVal=rec[2],toVal=rec[3],kind=rec[4];
-      var sel='[data-target="'+CSS.escape(target)+'"]';
-      if(kind==='recolor'){{
-        var el=stage.querySelector(sel);
-        if(el){{
-          var cls=el.className.baseVal||el.className||'';
-          cls=cls.replace('scriba-state-'+fromVal,'scriba-state-'+toVal);
-          if(el.className.baseVal!==undefined)el.className.baseVal=cls;
-          else el.className=cls;
-        }}
-      }}else if(kind==='value_change'){{
-        var el2=stage.querySelector(sel);
-        if(el2){{var txt=el2.querySelector('text');if(txt)txt.textContent=toVal;}}
-      }}else if(kind==='highlight_on'){{
-        var el3=stage.querySelector(sel);
-        if(el3){{
-          var c3=el3.className.baseVal||el3.className||'';
-          if(c3.indexOf('scriba-highlighted')===-1){{
-            c3+=' scriba-highlighted';
-            if(el3.className.baseVal!==undefined)el3.className.baseVal=c3;
-            else el3.className=c3;
-          }}
-        }}
-      }}else if(kind==='highlight_off'){{
-        var el4=stage.querySelector(sel);
-        if(el4){{
-          var c4=el4.className.baseVal||el4.className||'';
-          c4=c4.replace(/\\s*scriba-highlighted/g,'');
-          if(el4.className.baseVal!==undefined)el4.className.baseVal=c4;
-          else el4.className=c4;
-        }}
-      }}else if(kind==='element_remove'){{
-        var el5=stage.querySelector(sel);
-        if(el5){{
-          var a5=el5.animate([{{opacity:1}},{{opacity:0}}],
-            {{duration:DUR,easing:'ease-out',fill:'forwards'}});
-          _anims.push(a5);pending.push(a5.finished);hasWaapi=true;
-        }}
-      }}else if(kind==='element_add'){{
-        var src=parsed.querySelector(sel);
-        if(src){{
-          var clone=document.importNode(src,true);
-          clone.style.opacity='0';
-          var srcP=src.parentNode;
-          var pShape=null;
-          while(srcP&&srcP.nodeType===1){{
-            var ds2=srcP.getAttribute&&srcP.getAttribute('data-shape');
-            if(ds2){{pShape=stage.querySelector('[data-shape="'+CSS.escape(ds2)+'"]');break;}}
-            srcP=srcP.parentNode;
-          }}
-          var ct=pShape||stage.querySelector('svg');
-          if(ct){{ct.appendChild(clone);
-            var a6=clone.animate([{{opacity:0}},{{opacity:1}}],
-              {{duration:DUR,easing:'ease-in',fill:'forwards'}});
-            _anims.push(a6);pending.push(a6.finished);hasWaapi=true;
-          }}
-        }}
-      }}else if(kind==='position_move'){{
-        var el9=stage.querySelector(sel);
-        if(el9){{
-          var pf=fromVal.split(',');
-          var pt=toVal.split(',');
-          var dx=parseFloat(pf[0])-parseFloat(pt[0]);
-          var dy=parseFloat(pf[1])-parseFloat(pt[1]);
-          var a9=el9.animate([
-            {{transform:'translate('+dx+'px,'+dy+'px)'}},
-            {{transform:'translate(0,0)'}}
-          ],{{duration:DUR,easing:'ease-out',fill:'forwards'}});
-          _anims.push(a9);pending.push(a9.finished);hasWaapi=true;
-        }}
-      }}else if(kind==='annotation_remove'){{
-        var el7=stage.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
-        if(el7){{
-          var a7=el7.animate([{{opacity:1}},{{opacity:0}}],
-            {{duration:DUR,easing:'ease-out',fill:'forwards'}});
-          _anims.push(a7);pending.push(a7.finished);hasWaapi=true;
-        }}
-      }}else if(kind==='annotation_add'){{
-        var src8=parsed.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
-        if(src8){{
-          var clone8=document.importNode(src8,true);
-          clone8.style.opacity='0';
-          /* Find the matching parent primitive group in the current DOM
-             so the annotation inherits the correct coordinate transform.
-             The parsed (new frame) SVG has the annotation inside its
-             primitive <g data-primitive="..." data-shape="...">, so we
-             locate the same shape group in the live stage. */
-          var srcParent=src8.parentNode;
-          var parentShape=null;
-          while(srcParent&&srcParent.nodeType===1){{
-            var ds=srcParent.getAttribute&&srcParent.getAttribute('data-shape');
-            if(ds){{parentShape=stage.querySelector('[data-shape="'+CSS.escape(ds)+'"]');break;}}
-            srcParent=srcParent.parentNode;
-          }}
-          var container=parentShape||stage.querySelector('svg');
-          if(container){{container.appendChild(clone8);
-            var a8=clone8.animate([{{opacity:0}},{{opacity:1}}],
-              {{duration:DUR,easing:'ease-in',fill:'forwards'}});
-            _anims.push(a8);pending.push(a8.finished);hasWaapi=true;
-          }}
-        }}
-      }}
+      var k=tr[t][4];
+      if(k==='annotation_add'||k==='highlight_on')phase1.push(tr[t]);
+      else phase2.push(tr[t]);
     }}
+    for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
     var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){{
       cur=toIdx;
@@ -1082,12 +1144,22 @@ def emit_interactive_html(
       subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
       _anims=[];_animState='idle';
     }}
-    if(hasWaapi){{
-      Promise.all(pending).then(function(){{_finish(needsSync||true);}}).catch(function(){{_finish(true);}});
-    }}else if(needsSync){{
-      setTimeout(function(){{_finish(true);}},DUR+20);
+    function _runPhase2(){{
+      for(var j=0;j<phase2.length;j++){{
+        _applyTransition(phase2[j],parsed,pending);
+      }}
+      if(pending.length>0){{
+        Promise.all(pending).then(function(){{_finish(needsSync||true);}}).catch(function(){{_finish(true);}});
+      }}else if(needsSync){{
+        setTimeout(function(){{_finish(true);}},_dur(DUR)+20);
+      }}else{{
+        _finish(false);
+      }}
+    }}
+    if(phase1.length>0&&phase2.length>0){{
+      setTimeout(_runPhase2,_dur(50));
     }}else{{
-      _finish(false);
+      _runPhase2();
     }}
   }}
   function show(i,animate){{
