@@ -12,6 +12,6 @@ htmlcov/
 .claude/*
 !.claude/skills/
 .gitnexus
-
+.opencode
 # Build artifacts — compiled examples
 examples/**/*.html
