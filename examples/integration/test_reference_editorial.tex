@@ -1,0 +1,129 @@
+\section{Two Sum}
+
+Given an array of integers $nums$ and an integer $target$, find two indices $i$ and $j$ such that
+$nums[i] + nums[j] = target$. You may assume that each input has exactly one solution, and you
+may not use the same element twice.
+
+\subsection{Input / Output}
+
+\textbf{Input:} An array $nums$ of $n$ integers and an integer $target$.
+
+\textbf{Output:} Two indices $i, j$ with $i \neq j$ such that $nums[i] + nums[j] = target$.
+
+\subsection{Constraints}
+
+$$2 \leq n \leq 10^4, \quad -10^9 \leq nums[i] \leq 10^9$$
+
+\begin{diagram}[id="input-array", label="Input array visualization"]
+\shape{nums}{Array}{size=5, data=[2,7,11,15,1], labels="0..4", label="$nums$"}
+\end{diagram}
+
+\begin{animation}[id="two-sum-brute", label="Two Sum -- Brute Force O(n^2)"]
+\shape{data}{Array}{size=5, data=[2,7,11,15,1], labels="0..4", label="$nums$"}
+\shape{status}{Array}{size=5, data=["","","","",""], labels="0..4", label="status"}
+\compute{ target = 9 }
+
+\step
+\narrate{We want to find two numbers that sum to $target = 9$. We use the brute-force approach: try every pair $(i, j)$ with $i < j$.}
+
+\step
+\recolor{data.cell[0]}{state=current}
+\recolor{status.cell[0]}{state=current}
+\apply{status.cell[0]}{value="i=0"}
+\annotate{data.cell[0]}{label="i", position=above, color=info}
+\narrate{Outer loop: set $i = 0$. The value at index 0 is $nums[0] = 2$.}
+
+\step
+\recolor{data.cell[1]}{state=current}
+\recolor{status.cell[1]}{state=current}
+\apply{status.cell[1]}{value="j=1"}
+\annotate{data.cell[1]}{label="j", position=above, color=info}
+\annotate{data.cell[0]}{label="2+7=9?", position=below, color=warn}
+\narrate{Inner loop: $j = 1$. Check pair $(0, 1)$: $nums[0] + nums[1] = 2 + 7 = 9$. That equals our target!}
+
+\step
+\recolor{data.cell[0]}{state=good}
+\recolor{data.cell[1]}{state=good}
+\recolor{status.cell[0]}{state=good}
+\recolor{status.cell[1]}{state=good}
+\apply{status.cell[0]}{value="found"}
+\apply{status.cell[1]}{value="found"}
+\annotate{data.cell[0]}{label="ans[0]", position=above, color=good}
+\annotate{data.cell[1]}{label="ans[1]", position=above, color=good}
+\annotate{data.cell[0]}{label="2+7=9", position=below, color=good}
+\narrate{Match found! $nums[0] + nums[1] = 2 + 7 = 9 = target$. Return indices $[0, 1]$.}
+
+\step
+\recolor{data.cell[2]}{state=dim}
+\recolor{data.cell[3]}{state=dim}
+\recolor{data.cell[4]}{state=dim}
+\recolor{status.cell[2]}{state=dim}
+\recolor{status.cell[3]}{state=dim}
+\recolor{status.cell[4]}{state=dim}
+\apply{status.cell[2]}{value="skip"}
+\apply{status.cell[3]}{value="skip"}
+\apply{status.cell[4]}{value="skip"}
+\narrate{The remaining elements are never checked because we already found our answer. In the worst case, though, we would continue the nested loop.}
+
+\step
+\narrate{Now let us trace what the \textbf{worst case} looks like. Consider $target = 16$ with the same array $[2, 7, 11, 15, 1]$.}
+
+\step
+\recolor{data.cell[0]}{state=current}
+\recolor{data.cell[1]}{state=idle}
+\recolor{data.cell[2]}{state=idle}
+\recolor{data.cell[3]}{state=idle}
+\recolor{data.cell[4]}{state=idle}
+\recolor{status.cell[0]}{state=current}
+\recolor{status.cell[1]}{state=idle}
+\recolor{status.cell[2]}{state=idle}
+\recolor{status.cell[3]}{state=idle}
+\recolor{status.cell[4]}{state=idle}
+\apply{status.cell[0]}{value="i=0"}
+\apply{status.cell[1]}{value=""}
+\apply{status.cell[2]}{value=""}
+\apply{status.cell[3]}{value=""}
+\apply{status.cell[4]}{value=""}
+\annotate{data.cell[0]}{label="i", position=above, color=info}
+\narrate{Worst-case trace with $target = 16$. Outer loop: $i = 0$. We must check $j = 1, 2, 3, 4$ before moving on.}
+
+\step
+\recolor{data.cell[1]}{state=current}
+\apply{status.cell[1]}{value="2+7=9"}
+\annotate{data.cell[1]}{label="j", position=above, color=warn}
+\annotate{data.cell[1]}{label="9 != 16", position=below, color=error}
+\narrate{$j=1$: $2 + 7 = 9 \neq 16$. No match. The cursor for $j$ advances.}
+
+\step
+\recolor{data.cell[1]}{state=dim}
+\recolor{data.cell[2]}{state=current}
+\apply{status.cell[1]}{value="x"}
+\apply{status.cell[2]}{value="2+11=13"}
+\annotate{data.cell[2]}{label="j", position=above, color=warn}
+\annotate{data.cell[2]}{label="13 != 16", position=below, color=error}
+\narrate{$j=2$: $2 + 11 = 13 \neq 16$. Still no match. Continue.}
+
+\step
+\recolor{data.cell[2]}{state=dim}
+\recolor{data.cell[3]}{state=current}
+\apply{status.cell[2]}{value="x"}
+\apply{status.cell[3]}{value="2+15=17"}
+\annotate{data.cell[3]}{label="j", position=above, color=warn}
+\annotate{data.cell[3]}{label="17 != 16", position=below, color=error}
+\narrate{$j=3$: $2 + 15 = 17 \neq 16$. Close but not equal. One more to check for $i = 0$.}
+
+\end{animation}
+
+\subsection{Complexity Analysis}
+
+The brute-force algorithm uses two nested loops over the array:
+
+$$T(n) = \sum_{i=0}^{n-2} \sum_{j=i+1}^{n-1} O(1) = \frac{n(n-1)}{2} = O(n^2)$$
+
+\textbf{Time complexity:} $O(n^2)$ --- we examine every pair exactly once.
+
+\textbf{Space complexity:} $O(1)$ --- no additional data structures are used.
+
+A hash-map approach improves time to $O(n)$ at the cost of $O(n)$ space:
+
+$$T_{hash}(n) = \sum_{i=0}^{n-1} O(1) = O(n)$$

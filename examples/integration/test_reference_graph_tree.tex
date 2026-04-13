@@ -1,0 +1,153 @@
+\section{Dijkstra-like Graph Exploration with Tree}
+
+\subsection{Weighted Directed Graph}
+
+Consider a directed weighted graph where we want to find shortest paths from node S.
+
+\begin{diagram}[id="weighted-graph", label="Directed weighted graph"]
+\shape{G}{Graph}{nodes=["S","A","B","C","D","T"], edges=[("S","A",2),("S","B",5),("A","B",1),("A","C",4),("B","D",2),("C","T",3),("D","T",1)], directed=true, show_weights=true, layout="stable"}
+\recolor{G.node[S]}{state=current}
+\recolor{G.node[T]}{state=good}
+\end{diagram}
+
+\subsection{Dijkstra Exploration}
+
+We explore the graph greedily, visiting the nearest unvisited node at each step.
+
+\begin{animation}[id="dijkstra-explore", label="Dijkstra-like graph exploration"]
+\shape{G}{Graph}{nodes=["S","A","B","C","D","T"], edges=[("S","A",2),("S","B",5),("A","B",1),("A","C",4),("B","D",2),("C","T",3),("D","T",1)], directed=true, show_weights=true, layout="stable"}
+\shape{dist}{Array}{size=6, data=["0","?","?","?","?","?"], labels="0..5", label="$dist$"}
+\shape{vars}{VariableWatch}{names=["current","cost"], label="State"}
+
+\step
+\recolor{G.node[S]}{state=current}
+\apply{vars.var[current]}{value="S"}
+\apply{vars.var[cost]}{value="0"}
+\narrate{Start Dijkstra from source node S with $dist[S]=0$. All other distances are unknown.}
+
+\step
+\recolor{G.node[S]}{state=done}
+\recolor{G.edge[(S,A)]}{state=good}
+\recolor{G.edge[(S,B)]}{state=current}
+\recolor{G.node[A]}{state=current}
+\apply{dist.cell[1]}{value="2"}
+\recolor{dist.cell[1]}{state=current}
+\apply{dist.cell[2]}{value="5"}
+\recolor{dist.cell[2]}{state=current}
+\apply{vars.var[current]}{value="A"}
+\apply{vars.var[cost]}{value="2"}
+\narrate{Process S: relax edges. $dist[A]=2$ via S$\to$A, $dist[B]=5$ via S$\to$B. Pick A (cost 2).}
+
+\step
+\recolor{G.node[A]}{state=done}
+\recolor{dist.cell[1]}{state=done}
+\recolor{G.edge[(A,B)]}{state=good}
+\recolor{G.edge[(A,C)]}{state=current}
+\apply{dist.cell[2]}{value="3"}
+\apply{dist.cell[3]}{value="6"}
+\recolor{dist.cell[3]}{state=current}
+\recolor{G.node[B]}{state=current}
+\apply{vars.var[current]}{value="B"}
+\apply{vars.var[cost]}{value="3"}
+\narrate{Process A: relax edges. $dist[B]=\min(5, 2+1)=3$, $dist[C]=2+4=6$. Pick B (cost 3).}
+
+\step
+\recolor{G.node[B]}{state=done}
+\recolor{dist.cell[2]}{state=done}
+\recolor{G.edge[(B,D)]}{state=good}
+\apply{dist.cell[4]}{value="5"}
+\recolor{dist.cell[4]}{state=current}
+\recolor{G.node[D]}{state=current}
+\apply{vars.var[current]}{value="D"}
+\apply{vars.var[cost]}{value="5"}
+\narrate{Process B: relax edge B$\to$D. $dist[D]=3+2=5$. Pick D (cost 5).}
+
+\step
+\recolor{G.node[D]}{state=done}
+\recolor{dist.cell[4]}{state=done}
+\recolor{G.edge[(D,T)]}{state=good}
+\apply{dist.cell[5]}{value="6"}
+\recolor{dist.cell[5]}{state=current}
+\recolor{G.edge[(S,B)]}{state=dim}
+\recolor{G.edge[(A,C)]}{state=dim}
+\recolor{G.node[C]}{state=current}
+\apply{vars.var[current]}{value="C"}
+\apply{vars.var[cost]}{value="6"}
+\narrate{Process D: $dist[T]=5+1=6$. Now $C$ and $T$ both have cost 6. Pick C next.}
+
+\step
+\recolor{G.node[C]}{state=done}
+\recolor{dist.cell[3]}{state=done}
+\recolor{G.edge[(C,T)]}{state=dim}
+\recolor{G.node[T]}{state=current}
+\apply{vars.var[current]}{value="T"}
+\apply{vars.var[cost]}{value="6"}
+\narrate{Process C: $dist[T]=\min(6, 6+3)=6$ unchanged. Pick T (cost 6).}
+
+\step
+\recolor{G.node[T]}{state=good}
+\recolor{dist.cell[5]}{state=good}
+\apply{vars.var[current]}{value="done"}
+\narrate{Dijkstra complete. Shortest path S$\to$A$\to$B$\to$D$\to$T with cost $6$.}
+\end{animation}
+
+\subsection{Shortest Path Tree (Hidden State Pattern)}
+
+We reveal the shortest path tree incrementally, starting with all nodes hidden.
+
+\begin{animation}[id="spt-reveal", label="Shortest path tree with hidden state"]
+\shape{T}{Tree}{root="S", nodes=["S","A","B","C","D","T"], edges=[("S","A"),("A","B"),("A","C"),("B","D"),("D","T")]}
+
+\step
+\recolor{T.node[A]}{state=hidden}
+\recolor{T.node[B]}{state=hidden}
+\recolor{T.node[C]}{state=hidden}
+\recolor{T.node[D]}{state=hidden}
+\recolor{T.node[T]}{state=hidden}
+\recolor{T.edge[(S,A)]}{state=hidden}
+\recolor{T.edge[(A,B)]}{state=hidden}
+\recolor{T.edge[(A,C)]}{state=hidden}
+\recolor{T.edge[(B,D)]}{state=hidden}
+\recolor{T.edge[(D,T)]}{state=hidden}
+\recolor{T.node[S]}{state=current}
+\narrate{The shortest path tree starts with only the root S visible.}
+
+\step
+\recolor{T.node[A]}{state=current}
+\recolor{T.edge[(S,A)]}{state=good}
+\narrate{Discover A via edge S$\to$A with cost 2.}
+
+\step
+\recolor{T.node[A]}{state=done}
+\recolor{T.node[B]}{state=current}
+\recolor{T.edge[(A,B)]}{state=good}
+\narrate{Discover B via edge A$\to$B with cost 3.}
+
+\step
+\recolor{T.node[B]}{state=done}
+\recolor{T.node[D]}{state=current}
+\recolor{T.edge[(B,D)]}{state=good}
+\narrate{Discover D via edge B$\to$D with cost 5.}
+
+\step
+\recolor{T.node[D]}{state=done}
+\recolor{T.node[T]}{state=current}
+\recolor{T.edge[(D,T)]}{state=good}
+\narrate{Discover T via edge D$\to$T with cost 6. Target reached!}
+
+\step
+\recolor{T.node[C]}{state=current}
+\recolor{T.edge[(A,C)]}{state=good}
+\narrate{Discover C via edge A$\to$C with cost 6 (explored but not on shortest path to T).}
+
+\step
+\recolor{T.node[S]}{state=good}
+\recolor{T.node[A]}{state=good}
+\recolor{T.node[B]}{state=good}
+\recolor{T.node[D]}{state=good}
+\recolor{T.node[T]}{state=good}
+\recolor{T.node[C]}{state=dim}
+\recolor{T.edge[(A,C)]}{state=dim}
+\highlight{T.node[T]}
+\narrate{Final shortest path tree. The path S$\to$A$\to$B$\to$D$\to$T (cost 6) is highlighted. Node C is dimmed as it is not on the optimal path.}
+\end{animation}

@@ -1,0 +1,316 @@
+\section{DPTable Feature Test}
+
+This file exercises DPTable-specific features: 1D with transition arrows, traceback
+via \texttt{foreach} + \texttt{reannotate}, and 2D interval DP with \texttt{compute}.
+
+\subsection{Part A --- Longest Increasing Subsequence (1D DPTable)}
+
+Given sequence $a = [3, 1, 8, 2, 5, 4, 7, 6]$ of length $n = 8$.
+$$dp[i] = 1 + \max_{j < i,\; a[j] < a[i]} dp[j]$$
+
+\begin{animation}[id="lis-dptable", label="LIS with 1D DPTable"]
+
+\shape{a}{Array}{size=8, data=[3,1,8,2,5,4,7,6], labels="0..7", label="$a$"}
+\shape{dp}{DPTable}{n=8, data=["","","","","","","",""], labels="0..7", label="$dp$"}
+\shape{vars}{VariableWatch}{names=["i","best_j","lis"], label="Variables"}
+
+% --- Step 1: Introduce the problem ---
+\step
+\narrate{Sequence $a = [3, 1, 8, 2, 5, 4, 7, 6]$. Compute $dp[i]$ = length of LIS ending at index $i$.}
+
+% --- Step 2: Base case dp[0] = 1 ---
+\step
+\recolor{a.cell[0]}{state=current}
+\recolor{dp.cell[0]}{state=done}
+\apply{dp.cell[0]}{value=1}
+\apply{vars.var[i]}{value=0}
+\narrate{Base case: $dp[0] = 1$. Any single element is an increasing subsequence of length 1.}
+
+% --- Step 3: dp[1] = 1 (a[1]=1, no predecessor smaller) ---
+\step
+\recolor{a.cell[0]}{state=dim}
+\recolor{a.cell[1]}{state=current}
+\recolor{dp.cell[1]}{state=current}
+\apply{vars.var[i]}{value=1}
+\narrate{$i=1$: $a[1]=1$. Check $a[0]=3 > 1$, so no valid predecessor. $dp[1] = 1$.}
+
+\step
+\apply{dp.cell[1]}{value=1}
+\recolor{dp.cell[1]}{state=done}
+\narrate{$dp[1] = 1$. No transition arrow needed.}
+
+% --- Step 4: dp[2] = 2 (extends from dp[0] since a[0]=3 < a[2]=8) ---
+\step
+\recolor{a.cell[1]}{state=dim}
+\recolor{a.cell[2]}{state=current}
+\recolor{dp.cell[2]}{state=current}
+\apply{vars.var[i]}{value=2}
+\annotate{dp.cell[2]}{label="+1", arrow_from="dp.cell[0]", color=good}
+\annotate{dp.cell[2]}{label="+1", arrow_from="dp.cell[1]", color=info}
+\narrate{$i=2$: $a[2]=8$. Both $a[0]=3$ and $a[1]=1$ are smaller. Best is $dp[0]=1$. So $dp[2] = 2$.}
+
+\step
+\apply{dp.cell[2]}{value=2}
+\recolor{dp.cell[2]}{state=done}
+\apply{vars.var[best_j]}{value=0}
+\narrate{$dp[2] = 2$, coming from index 0.}
+
+% --- Step 5: dp[3] = 2 (extends from dp[1]) ---
+\step
+\recolor{a.cell[2]}{state=dim}
+\recolor{a.cell[3]}{state=current}
+\recolor{dp.cell[3]}{state=current}
+\apply{vars.var[i]}{value=3}
+\annotate{dp.cell[3]}{label="+1", arrow_from="dp.cell[1]", color=good}
+\narrate{$i=3$: $a[3]=2$. Only $a[1]=1 < 2$. $dp[3] = dp[1] + 1 = 2$.}
+
+\step
+\apply{dp.cell[3]}{value=2}
+\recolor{dp.cell[3]}{state=done}
+\apply{vars.var[best_j]}{value=1}
+\narrate{$dp[3] = 2$, extending from index 1.}
+
+% --- Step 6: dp[4] = 3 (extends from dp[0] or dp[3]) ---
+\step
+\recolor{a.cell[3]}{state=dim}
+\recolor{a.cell[4]}{state=current}
+\recolor{dp.cell[4]}{state=current}
+\apply{vars.var[i]}{value=4}
+\annotate{dp.cell[4]}{label="+1", arrow_from="dp.cell[0]", color=info}
+\annotate{dp.cell[4]}{label="+1", arrow_from="dp.cell[3]", color=good}
+\narrate{$i=4$: $a[4]=5$. Predecessors: $a[0]=3, a[1]=1, a[3]=2$ are smaller. Best is $dp[3]=2$. $dp[4] = 3$.}
+
+\step
+\apply{dp.cell[4]}{value=3}
+\recolor{dp.cell[4]}{state=done}
+\apply{vars.var[best_j]}{value=3}
+\narrate{$dp[4] = 3$, extending the subsequence $[1, 2, 5]$.}
+
+% --- Step 7: dp[5] = 3 (extends from dp[3]) ---
+\step
+\recolor{a.cell[4]}{state=dim}
+\recolor{a.cell[5]}{state=current}
+\recolor{dp.cell[5]}{state=current}
+\apply{vars.var[i]}{value=5}
+\annotate{dp.cell[5]}{label="+1", arrow_from="dp.cell[0]", color=info}
+\annotate{dp.cell[5]}{label="+1", arrow_from="dp.cell[3]", color=good}
+\narrate{$i=5$: $a[5]=4$. Predecessors: $a[0]=3, a[1]=1, a[3]=2$ are smaller. Best is $dp[3]=2$. $dp[5] = 3$.}
+
+\step
+\apply{dp.cell[5]}{value=3}
+\recolor{dp.cell[5]}{state=done}
+\apply{vars.var[best_j]}{value=3}
+\narrate{$dp[5] = 3$, extending subsequence $[1, 2, 4]$.}
+
+% --- Step 8: dp[6] = 4 (extends from dp[4]) ---
+\step
+\recolor{a.cell[5]}{state=dim}
+\recolor{a.cell[6]}{state=current}
+\recolor{dp.cell[6]}{state=current}
+\apply{vars.var[i]}{value=6}
+\annotate{dp.cell[6]}{label="+1", arrow_from="dp.cell[4]", color=good}
+\annotate{dp.cell[6]}{label="+1", arrow_from="dp.cell[5]", color=info}
+\narrate{$i=6$: $a[6]=7$. Many predecessors. Best is $dp[4]=3$ (via $a[4]=5 < 7$). $dp[6] = 4$.}
+
+\step
+\apply{dp.cell[6]}{value=4}
+\recolor{dp.cell[6]}{state=done}
+\apply{vars.var[best_j]}{value=4}
+\narrate{$dp[6] = 4$, extending subsequence $[1, 2, 5, 7]$.}
+
+% --- Step 9: dp[7] = 4 (extends from dp[5]) ---
+\step
+\recolor{a.cell[6]}{state=dim}
+\recolor{a.cell[7]}{state=current}
+\recolor{dp.cell[7]}{state=current}
+\apply{vars.var[i]}{value=7}
+\annotate{dp.cell[7]}{label="+1", arrow_from="dp.cell[4]", color=info}
+\annotate{dp.cell[7]}{label="+1", arrow_from="dp.cell[5]", color=good}
+\narrate{$i=7$: $a[7]=6$. Predecessors with smaller value: $a[4]=5, a[3]=2, a[1]=1, a[0]=3$. Best is $dp[5]=3$ (via $a[5]=4 < 6$). $dp[7] = 4$.}
+
+\step
+\apply{dp.cell[7]}{value=4}
+\recolor{dp.cell[7]}{state=done}
+\apply{vars.var[best_j]}{value=5}
+\apply{vars.var[lis]}{value=4}
+\narrate{$dp[7] = 4$. The LIS length is $\max(dp) = 4$.}
+
+% --- Step 10: Traceback with foreach ---
+\step
+\compute{ path = [1, 3, 4, 6] }
+\foreach{i}{${path}}
+  \recolor{dp.cell[${i}]}{state=path}
+  \recolor{a.cell[${i}]}{state=path}
+\endforeach
+\narrate{Traceback: one optimal LIS is $a[1], a[3], a[4], a[6] = [1, 2, 5, 7]$.}
+
+% --- Step 11: Reannotate arrows on optimal path ---
+\step
+\reannotate{dp.cell[3]}{color=path, arrow_from="dp.cell[1]"}
+\reannotate{dp.cell[4]}{color=path, arrow_from="dp.cell[3]"}
+\reannotate{dp.cell[6]}{color=path, arrow_from="dp.cell[4]"}
+\narrate{Recolor transition arrows along the optimal path: $1 \to 3 \to 4 \to 6$.}
+
+% --- Step 12: Dim non-path cells with foreach ---
+\step
+\compute{ non_path = [0, 2, 5, 7] }
+\foreach{i}{${non_path}}
+  \recolor{dp.cell[${i}]}{state=dim}
+  \recolor{a.cell[${i}]}{state=dim}
+\endforeach
+\narrate{Dim the non-path cells to emphasize the solution: LIS = $[1, 2, 5, 7]$, length 4.}
+
+\end{animation}
+
+
+\subsection{Part B --- Matrix Chain Multiplication (2D DPTable)}
+
+Given $n = 5$ matrices with dimensions $p = [30, 35, 15, 5, 10, 20]$.
+$$dp[i][j] = \min_{i \leq k < j} \left( dp[i][k] + dp[k+1][j] + p_i \cdot p_{k+1} \cdot p_{j+1} \right)$$
+
+\begin{animation}[id="mcm-dptable", label="Matrix Chain Multiplication (2D DPTable)"]
+
+\compute{
+p = [30, 35, 15, 5, 10, 20]
+n = 5
+
+dp_vals = [[0 for _ in range(n)] for _ in range(n)]
+
+for i in range(n):
+    dp_vals[i][i] = 0
+
+for length in range(2, n + 1):
+    for i in range(n - length + 1):
+        j = i + length - 1
+        dp_vals[i][j] = 9999999
+        for k in range(i, j):
+            cost = dp_vals[i][k] + dp_vals[k+1][j] + p[i] * p[k+1] * p[j+1]
+            if cost < dp_vals[i][j]:
+                dp_vals[i][j] = cost
+
+diag0 = [i for i in range(n)]
+diag1_i = [i for i in range(n - 1)]
+diag1_j = [i + 1 for i in range(n - 1)]
+diag2_i = [i for i in range(n - 2)]
+diag2_j = [i + 2 for i in range(n - 2)]
+diag3_i = [i for i in range(n - 3)]
+diag3_j = [i + 3 for i in range(n - 3)]
+}
+
+\shape{dims}{Array}{size=6, data=[30,35,15,5,10,20], labels="0..5", label="$p$ (dimensions)"}
+\shape{dp}{DPTable}{rows=5, cols=5, row_labels="i=0..4", col_labels="j=0..4", label="$dp[i][j]$"}
+
+% --- Step 1: Introduce problem ---
+\step
+\narrate{Matrix Chain Multiplication: 5 matrices $M_0 \ldots M_4$ with dimension array $p = [30,35,15,5,10,20]$. Matrix $M_i$ has dimensions $p_i \times p_{i+1}$.}
+
+% --- Step 2: Fill diagonal 0 (base cases) ---
+\step
+\foreach{i}{${diag0}}
+  \apply{dp.cell[${i}][${i}]}{value=0}
+  \recolor{dp.cell[${i}][${i}]}{state=done}
+\endforeach
+\narrate{Base case: $dp[i][i] = 0$ for all $i$. Multiplying a single matrix costs nothing.}
+
+% --- Step 3: Fill diagonal 1 (length-2 chains) ---
+\step
+\recolor{dp.cell[0][1]}{state=current}
+\apply{dp.cell[0][1]}{value=15750}
+\annotate{dp.cell[0][1]}{label="30*35*15", arrow_from="dp.cell[0][0]", color=info}
+\annotate{dp.cell[0][1]}{label="30*35*15", arrow_from="dp.cell[1][1]", color=info}
+\narrate{$dp[0][1]$: only split $k=0$. Cost $= 0 + 0 + 30 \cdot 35 \cdot 15 = 15750$.}
+
+\step
+\recolor{dp.cell[0][1]}{state=done}
+\recolor{dp.cell[1][2]}{state=current}
+\apply{dp.cell[1][2]}{value=2625}
+\annotate{dp.cell[1][2]}{label="35*15*5", arrow_from="dp.cell[1][1]", color=info}
+\narrate{$dp[1][2] = 35 \cdot 15 \cdot 5 = 2625$.}
+
+\step
+\recolor{dp.cell[1][2]}{state=done}
+\recolor{dp.cell[2][3]}{state=current}
+\apply{dp.cell[2][3]}{value=750}
+\annotate{dp.cell[2][3]}{label="15*5*10", arrow_from="dp.cell[2][2]", color=info}
+\narrate{$dp[2][3] = 15 \cdot 5 \cdot 10 = 750$.}
+
+\step
+\recolor{dp.cell[2][3]}{state=done}
+\recolor{dp.cell[3][4]}{state=current}
+\apply{dp.cell[3][4]}{value=1000}
+\annotate{dp.cell[3][4]}{label="5*10*20", arrow_from="dp.cell[3][3]", color=info}
+\narrate{$dp[3][4] = 5 \cdot 10 \cdot 20 = 1000$.}
+
+\step
+\recolor{dp.cell[3][4]}{state=done}
+\narrate{Diagonal 1 complete. All length-2 chains computed.}
+
+% --- Step 4: Fill diagonal 2 (length-3 chains) ---
+\step
+\recolor{dp.cell[0][2]}{state=current}
+\annotate{dp.cell[0][2]}{label="k=0", arrow_from="dp.cell[0][0]", color=info}
+\annotate{dp.cell[0][2]}{label="k=0", arrow_from="dp.cell[1][2]", color=info}
+\narrate{$dp[0][2]$: try $k=0$: $dp[0][0] + dp[1][2] + 30 \cdot 35 \cdot 5 = 0 + 2625 + 5250 = 7875$. Try $k=1$: $dp[0][1] + dp[2][2] + 30 \cdot 15 \cdot 5 = 15750 + 0 + 2250 = 18000$. Min: $7875$.}
+
+\step
+\apply{dp.cell[0][2]}{value=7875}
+\recolor{dp.cell[0][2]}{state=done}
+\recolor{dp.cell[1][3]}{state=current}
+\annotate{dp.cell[1][3]}{label="k=1", arrow_from="dp.cell[1][1]", color=good}
+\annotate{dp.cell[1][3]}{label="k=1", arrow_from="dp.cell[2][3]", color=good}
+\narrate{$dp[1][3]$: $k=1$: $0+750+35 \cdot 15 \cdot 10 = 6000$. $k=2$: $2625+0+35 \cdot 5 \cdot 10 = 4375$. Min: $4375$.}
+
+\step
+\apply{dp.cell[1][3]}{value=4375}
+\recolor{dp.cell[1][3]}{state=done}
+\recolor{dp.cell[2][4]}{state=current}
+\annotate{dp.cell[2][4]}{label="k=2", arrow_from="dp.cell[2][2]", color=good}
+\annotate{dp.cell[2][4]}{label="k=2", arrow_from="dp.cell[3][4]", color=good}
+\narrate{$dp[2][4]$: $k=2$: $0 + 1000 + 15 \cdot 5 \cdot 20 = 2500$. $k=3$: $750 + 0 + 15 \cdot 10 \cdot 20 = 3750$. Min: $2500$.}
+
+\step
+\apply{dp.cell[2][4]}{value=2500}
+\recolor{dp.cell[2][4]}{state=done}
+\narrate{Diagonal 2 complete. All length-3 chains computed.}
+
+% --- Step 5: Fill diagonal 3 (length-4 chains) ---
+\step
+\recolor{dp.cell[0][3]}{state=current}
+\annotate{dp.cell[0][3]}{label="best k", arrow_from="dp.cell[0][0]", color=good}
+\annotate{dp.cell[0][3]}{label="best k", arrow_from="dp.cell[1][3]", color=good}
+\narrate{$dp[0][3]$: check $k=0,1,2$. Best: $k=0$ gives $0 + 4375 + 30 \cdot 35 \cdot 10 = 14875$. But $k=2$ gives $7875 + 0 + 30 \cdot 5 \cdot 10 = 9375$. Min: $9375$.}
+
+\step
+\apply{dp.cell[0][3]}{value=9375}
+\recolor{dp.cell[0][3]}{state=done}
+\recolor{dp.cell[1][4]}{state=current}
+\annotate{dp.cell[1][4]}{label="best k", arrow_from="dp.cell[1][1]", color=good}
+\annotate{dp.cell[1][4]}{label="best k", arrow_from="dp.cell[2][4]", color=good}
+\narrate{$dp[1][4]$: check $k=1,2,3$. $k=1$: $0+2500+35 \cdot 15 \cdot 20 = 13000$. $k=2$: $2625+1000+35 \cdot 5 \cdot 20 = 7125$. $k=3$: $4375+0+35 \cdot 10 \cdot 20 = 11375$. Min: $7125$.}
+
+\step
+\apply{dp.cell[1][4]}{value=7125}
+\recolor{dp.cell[1][4]}{state=done}
+\narrate{Diagonal 3 complete. All length-4 chains computed.}
+
+% --- Step 6: Fill the final cell dp[0][4] ---
+\step
+\recolor{dp.cell[0][4]}{state=current}
+\annotate{dp.cell[0][4]}{label="k=2", arrow_from="dp.cell[0][2]", color=good}
+\annotate{dp.cell[0][4]}{label="k=2", arrow_from="dp.cell[3][4]", color=good}
+\narrate{$dp[0][4]$: check all splits $k=0..3$. $k=2$: $7875 + 1000 + 30 \cdot 5 \cdot 20 = 11875$. This is the minimum.}
+
+\step
+\apply{dp.cell[0][4]}{value=11875}
+\recolor{dp.cell[0][4]}{state=good}
+\narrate{$dp[0][4] = 11875$. The minimum number of scalar multiplications to compute the matrix chain $M_0 M_1 M_2 M_3 M_4$ is $\textbf{11875}$.}
+
+% --- Step 7: Highlight the optimal parenthesization ---
+\step
+\recolor{dp.cell[0][2]}{state=path}
+\recolor{dp.cell[3][4]}{state=path}
+\recolor{dp.cell[0][0]}{state=path}
+\recolor{dp.cell[1][2]}{state=path}
+\narrate{Optimal split: $(M_0 (M_1 M_2)) ((M_3 M_4))$. The path cells are highlighted.}
+
+\end{animation}

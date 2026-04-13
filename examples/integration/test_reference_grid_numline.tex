@@ -1,0 +1,189 @@
+\section{Grid and NumberLine Primitives}
+
+\subsection{BFS on a 5x5 Grid Maze}
+
+We run BFS on a 5x5 grid where 1 represents walls and 0 represents open cells.
+Starting from $(0,0)$, we search for a path to $(4,4)$.
+
+\begin{animation}[id="grid-bfs", label="BFS on 5x5 Grid Maze"]
+\compute{
+maze = [
+  0, 1, 0, 0, 0,
+  0, 1, 0, 1, 0,
+  0, 0, 0, 1, 0,
+  1, 1, 0, 0, 0,
+  0, 0, 0, 1, 0
+]
+}
+\shape{g}{Grid}{rows=5, cols=5, data=${maze}, label="Maze"}
+\shape{vars}{VariableWatch}{names=["frontier","visited"], label="BFS State"}
+
+% Step 1: Show the maze with walls dimmed
+\step
+\recolor{g.cell[0][1]}{state=dim}
+\recolor{g.cell[1][1]}{state=dim}
+\recolor{g.cell[1][3]}{state=dim}
+\recolor{g.cell[2][3]}{state=dim}
+\recolor{g.cell[3][0]}{state=dim}
+\recolor{g.cell[3][1]}{state=dim}
+\recolor{g.cell[4][3]}{state=dim}
+\apply{vars.var[frontier]}{value="[]"}
+\apply{vars.var[visited]}{value="0"}
+\narrate{The maze: 0 = open, 1 = wall (dimmed). We start BFS from cell $(0,0)$.}
+
+% Step 2: Start BFS from (0,0)
+\step
+\recolor{g.cell[0][0]}{state=current}
+\apply{vars.var[frontier]}{value="[(0,0)]"}
+\apply{vars.var[visited]}{value="1"}
+\narrate{Initialize BFS. Mark $(0,0)$ as the starting cell (blue = current frontier).}
+
+% Step 3: Expand (0,0), visit (1,0)
+\step
+\recolor{g.cell[0][0]}{state=done}
+\recolor{g.cell[1][0]}{state=current}
+\apply{vars.var[frontier]}{value="[(1,0)]"}
+\apply{vars.var[visited]}{value="2"}
+\narrate{Dequeue $(0,0)$ (green = visited). Expand south to $(1,0)$. Wall at $(0,1)$ blocks east.}
+
+% Step 4: Expand (1,0), visit (2,0)
+\step
+\recolor{g.cell[1][0]}{state=done}
+\recolor{g.cell[2][0]}{state=current}
+\apply{vars.var[frontier]}{value="[(2,0)]"}
+\apply{vars.var[visited]}{value="3"}
+\narrate{Dequeue $(1,0)$. Expand south to $(2,0)$. Walls block east at $(1,1)$.}
+
+% Step 5: Expand (2,0), visit (2,1) and (2,2) -- note (2,0) can go east
+\step
+\recolor{g.cell[2][0]}{state=done}
+\recolor{g.cell[2][1]}{state=current}
+\recolor{g.cell[2][2]}{state=current}
+\apply{vars.var[frontier]}{value="[(2,1),(2,2)]"}
+\apply{vars.var[visited]}{value="5"}
+\narrate{Dequeue $(2,0)$. Expand east to $(2,1)$ and $(2,2)$. Wall at $(3,0)$ blocks south.}
+
+% Step 6: Expand (2,1) and (2,2), visit (3,2) and (1,2)
+\step
+\recolor{g.cell[2][1]}{state=done}
+\recolor{g.cell[2][2]}{state=done}
+\recolor{g.cell[3][2]}{state=current}
+\recolor{g.cell[1][2]}{state=current}
+\apply{vars.var[frontier]}{value="[(3,2),(1,2)]"}
+\apply{vars.var[visited]}{value="7"}
+\narrate{Dequeue $(2,1)$ and $(2,2)$. Discover $(3,2)$ southward and $(1,2)$ northward.}
+
+% Step 7: Expand frontier, visit (3,3), (3,4), (0,2)
+\step
+\recolor{g.cell[3][2]}{state=done}
+\recolor{g.cell[1][2]}{state=done}
+\recolor{g.cell[3][3]}{state=current}
+\recolor{g.cell[3][4]}{state=current}
+\recolor{g.cell[0][2]}{state=current}
+\apply{vars.var[frontier]}{value="[(3,3),(3,4),(0,2)]"}
+\apply{vars.var[visited]}{value="10"}
+\narrate{Expand further. Discover $(3,3)$, $(3,4)$, and $(0,2)$. Getting closer to the goal.}
+
+% Step 8: Expand (3,4), visit (4,4) and (2,4)
+\step
+\recolor{g.cell[3][3]}{state=done}
+\recolor{g.cell[3][4]}{state=done}
+\recolor{g.cell[0][2]}{state=done}
+\recolor{g.cell[4][4]}{state=current}
+\recolor{g.cell[2][4]}{state=current}
+\recolor{g.cell[0][3]}{state=current}
+\recolor{g.cell[0][4]}{state=current}
+\apply{vars.var[frontier]}{value="[(4,4),(2,4),(0,3),(0,4)]"}
+\apply{vars.var[visited]}{value="14"}
+\narrate{Expand frontier. We reach $(4,4)$ --- the goal! BFS guarantees shortest path.}
+
+% Step 9: Mark the shortest path
+\step
+\recolor{g.cell[4][4]}{state=good}
+\recolor{g.cell[2][4]}{state=done}
+\recolor{g.cell[0][3]}{state=done}
+\recolor{g.cell[0][4]}{state=done}
+\recolor{g.cell[0][0]}{state=good}
+\recolor{g.cell[1][0]}{state=good}
+\recolor{g.cell[2][0]}{state=good}
+\recolor{g.cell[2][1]}{state=good}
+\recolor{g.cell[2][2]}{state=good}
+\recolor{g.cell[3][2]}{state=good}
+\recolor{g.cell[3][3]}{state=good}
+\recolor{g.cell[3][4]}{state=good}
+\apply{vars.var[frontier]}{value="done"}
+\apply{vars.var[visited]}{value="14"}
+\narrate{Shortest path found (sky blue): $(0,0) \to (1,0) \to (2,0) \to (2,1) \to (2,2) \to (3,2) \to (3,3) \to (3,4) \to (4,4)$. BFS finds the shortest path in an unweighted grid.}
+\end{animation}
+
+\subsection{Binary Search on a NumberLine}
+
+Binary search for target value $10$ in the sorted range $[0, 15]$.
+
+\begin{animation}[id="binary-search", label="Binary Search on NumberLine"]
+\shape{nl}{NumberLine}{domain=[0,15], ticks=16, label="Search Range"}
+\shape{vars}{VariableWatch}{names=["lo","hi","mid","target","result"], label="Variables"}
+\apply{vars.var[target]}{value="10"}
+\apply{vars.var[result]}{value="?"}
+
+% Step 1: Initial full range
+\step
+\recolor{nl.range[0:15]}{state=current}
+\apply{vars.var[lo]}{value="0"}
+\apply{vars.var[hi]}{value="15"}
+\apply{vars.var[mid]}{value="7"}
+\recolor{nl.tick[7]}{state=current}
+\narrate{Start binary search for target $= 10$. Full range $[0, 15]$. Compute $mid = \lfloor(0+15)/2\rfloor = 7$.}
+
+% Step 2: mid=7 < 10, go right
+\step
+\recolor{nl.range[0:15]}{state=idle}
+\recolor{nl.tick[7]}{state=done}
+\recolor{nl.range[0:6]}{state=dim}
+\recolor{nl.range[8:15]}{state=current}
+\apply{vars.var[lo]}{value="8"}
+\apply{vars.var[hi]}{value="15"}
+\apply{vars.var[mid]}{value="11"}
+\recolor{nl.tick[11]}{state=current}
+\narrate{$mid = 7 < 10$, so target is in the right half. Narrow to $[8, 15]$. New $mid = \lfloor(8+15)/2\rfloor = 11$.}
+
+% Step 3: mid=11 > 10, go left
+\step
+\recolor{nl.range[8:15]}{state=idle}
+\recolor{nl.tick[11]}{state=done}
+\recolor{nl.range[12:15]}{state=dim}
+\recolor{nl.range[8:10]}{state=current}
+\apply{vars.var[lo]}{value="8"}
+\apply{vars.var[hi]}{value="10"}
+\apply{vars.var[mid]}{value="9"}
+\recolor{nl.tick[9]}{state=current}
+\narrate{$mid = 11 > 10$, so target is in the left half. Narrow to $[8, 10]$. New $mid = \lfloor(8+10)/2\rfloor = 9$.}
+
+% Step 4: mid=9 < 10, go right
+\step
+\recolor{nl.range[8:10]}{state=idle}
+\recolor{nl.tick[9]}{state=done}
+\recolor{nl.tick[8]}{state=dim}
+\recolor{nl.range[10:10]}{state=current}
+\apply{vars.var[lo]}{value="10"}
+\apply{vars.var[hi]}{value="10"}
+\apply{vars.var[mid]}{value="10"}
+\recolor{nl.tick[10]}{state=current}
+\narrate{$mid = 9 < 10$, go right. Narrow to $[10, 10]$. New $mid = 10$.}
+
+% Step 5: mid=10 == target, found!
+\step
+\recolor{nl.range[10:10]}{state=good}
+\recolor{nl.tick[10]}{state=good}
+\apply{vars.var[result]}{value="found at 10"}
+\annotate{nl.tick[10]}{label="Found!", position=above, color=good}
+\narrate{$mid = 10 = $ target. Found! Binary search completes in $O(\log n)$ steps.}
+
+% Step 6: Summary
+\step
+\recolor{nl.tick[7]}{state=dim}
+\recolor{nl.tick[11]}{state=dim}
+\recolor{nl.tick[9]}{state=dim}
+\recolor{nl.tick[10]}{state=good}
+\narrate{Summary: we checked $mid = 7, 11, 9, 10$ --- only 4 comparisons to find the target in a range of 16 values. This is $\lceil\log_2 16\rceil = 4$ steps.}
+\end{animation}

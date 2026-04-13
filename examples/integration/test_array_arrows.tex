@@ -1,0 +1,31 @@
+\begin{animation}[id="array_arrows", label="Array Arrow Annotations"]
+\shape{dp}{Array}{size=6, data=[0,7,2,3,5,4], labels="0..5"}
+
+% Step 1: Show array with no annotations
+\step
+\recolor{dp.cell[0]}{state=good}
+\narrate{Initialize dp[0] = 0. Base case.}
+
+% Step 2: Single annotation with arrow_from
+\step
+\recolor{dp.cell[1]}{state=current}
+\annotate{dp.cell[1]}{label="+7", arrow_from="dp.cell[0]", color=good}
+\narrate{dp[1] = dp[0] + 7. Single arrow from cell 0 to cell 1.}
+
+% Step 3: Multiple annotations on same target with different arrow_from
+\step
+\recolor{dp.cell[1]}{state=done}
+\recolor{dp.cell[2]}{state=current}
+\annotate{dp.cell[2]}{label="+2", arrow_from="dp.cell[0]", color=good}
+\annotate{dp.cell[2]}{label="+5", arrow_from="dp.cell[1]", color=info}
+\narrate{dp[2]: from cell 0 cost +2, from cell 1 cost +5. Two arrows into same target.}
+
+% Step 4: Reannotate to change arrow color (dp transition path highlight)
+\step
+\recolor{dp.cell[0]}{state=path}
+\recolor{dp.cell[1]}{state=path}
+\recolor{dp.cell[2]}{state=path}
+\reannotate{dp.cell[1]}{color=path, arrow_from="dp.cell[0]"}
+\reannotate{dp.cell[2]}{color=path, arrow_from="dp.cell[1]"}
+\narrate{Highlight optimal path: 0 -> 1 -> 2. Arrows recolored to path.}
+\end{animation}

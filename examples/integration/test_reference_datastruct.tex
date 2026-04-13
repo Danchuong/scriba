@@ -1,0 +1,292 @@
+\section{Data Structure Primitives Test}
+
+This file tests all data-structure primitives from the Scriba reference:
+CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.
+
+\subsection{CodePanel with Line Highlighting}
+
+\begin{animation}[id="codepanel-demo", label="CodePanel with line highlighting"]
+\shape{code}{CodePanel}{lines=["def binary_search(arr, target):", "  lo, hi = 0, len(arr)-1", "  while lo <= hi:", "    mid = (lo + hi) // 2", "    if arr[mid] == target:", "      return mid", "    elif arr[mid] < target:", "      lo = mid + 1", "    else:", "      hi = mid - 1", "  return -1"], label="Binary Search"}
+
+\step
+\narrate{We have a binary search function. Let us trace through it step by step.}
+
+\step
+\recolor{code.line[1]}{state=current}
+\narrate{Line 1: define the function signature $binary\_search(arr, target)$.}
+
+\step
+\recolor{code.line[1]}{state=done}
+\recolor{code.line[2]}{state=current}
+\narrate{Line 2: initialize $lo = 0$ and $hi = len(arr) - 1$.}
+
+\step
+\recolor{code.line[2]}{state=done}
+\recolor{code.line[3]}{state=current}
+\narrate{Line 3: enter the while loop --- check $lo \leq hi$.}
+
+\step
+\recolor{code.line[3]}{state=done}
+\recolor{code.line[4]}{state=current}
+\narrate{Line 4: compute $mid = \lfloor (lo + hi) / 2 \rfloor$.}
+
+\step
+\recolor{code.line[4]}{state=done}
+\recolor{code.line[5]}{state=current}
+\recolor{code.line[6]}{state=current}
+\narrate{Lines 5--6: if $arr[mid] = target$, return $mid$. Found!}
+\end{animation}
+
+\subsection{HashMap with Bucket Insertion}
+
+\begin{animation}[id="hashmap-demo", label="HashMap bucket insertion"]
+\shape{hm}{HashMap}{capacity=4, label="$map$"}
+\shape{vars}{VariableWatch}{names=["key","hash","bucket"], label="Hashing"}
+
+\step
+\narrate{We have a hash map with 4 buckets, initially empty.}
+
+\step
+\apply{vars.var[key]}{value="cat"}
+\apply{vars.var[hash]}{value="hash('cat')=7"}
+\apply{vars.var[bucket]}{value="7 mod 4 = 3"}
+\recolor{hm.bucket[3]}{state=current}
+\narrate{Insert key \texttt{"cat"}: $hash = 7$, bucket $= 7 \bmod 4 = 3$.}
+
+\step
+\apply{hm.bucket[3]}{value="cat:meow"}
+\recolor{hm.bucket[3]}{state=done}
+\narrate{Place \texttt{cat:meow} into bucket 3.}
+
+\step
+\apply{vars.var[key]}{value="dog"}
+\apply{vars.var[hash]}{value="hash('dog')=12"}
+\apply{vars.var[bucket]}{value="12 mod 4 = 0"}
+\recolor{hm.bucket[0]}{state=current}
+\narrate{Insert key \texttt{"dog"}: $hash = 12$, bucket $= 12 \bmod 4 = 0$.}
+
+\step
+\apply{hm.bucket[0]}{value="dog:woof"}
+\recolor{hm.bucket[0]}{state=done}
+\narrate{Place \texttt{dog:woof} into bucket 0.}
+
+\step
+\apply{vars.var[key]}{value="ant"}
+\apply{vars.var[hash]}{value="hash('ant')=11"}
+\apply{vars.var[bucket]}{value="11 mod 4 = 3"}
+\recolor{hm.bucket[3]}{state=current}
+\narrate{Insert key \texttt{"ant"}: $hash = 11$, bucket $= 11 \bmod 4 = 3$. Collision with \texttt{cat}!}
+
+\step
+\apply{hm.bucket[3]}{value="cat:meow, ant:tiny"}
+\recolor{hm.bucket[3]}{state=error}
+\narrate{Bucket 3 now has two entries --- a hash collision resolved by chaining.}
+\end{animation}
+
+\subsection{LinkedList with Traversal}
+
+\begin{animation}[id="linkedlist-demo", label="LinkedList traversal"]
+\shape{ll}{LinkedList}{data=[3,7,1,9,4], label="$list$"}
+\shape{vars}{VariableWatch}{names=["current","value","found"], label="Search State"}
+
+\step
+\apply{vars.var[current]}{value="0"}
+\apply{vars.var[found]}{value="false"}
+\narrate{We search for value 9 in the linked list $[3, 7, 1, 9, 4]$.}
+
+\step
+\recolor{ll.node[0]}{state=current}
+\apply{vars.var[value]}{value="3"}
+\narrate{Visit node 0: value $= 3 \neq 9$. Move to next.}
+
+\step
+\recolor{ll.node[0]}{state=dim}
+\recolor{ll.node[1]}{state=current}
+\apply{vars.var[current]}{value="1"}
+\apply{vars.var[value]}{value="7"}
+\narrate{Visit node 1: value $= 7 \neq 9$. Move to next.}
+
+\step
+\recolor{ll.node[1]}{state=dim}
+\recolor{ll.node[2]}{state=current}
+\apply{vars.var[current]}{value="2"}
+\apply{vars.var[value]}{value="1"}
+\narrate{Visit node 2: value $= 1 \neq 9$. Move to next.}
+
+\step
+\recolor{ll.node[2]}{state=dim}
+\recolor{ll.node[3]}{state=current}
+\apply{vars.var[current]}{value="3"}
+\apply{vars.var[value]}{value="9"}
+\apply{vars.var[found]}{value="true"}
+\narrate{Visit node 3: value $= 9$. Found! Mark as good.}
+
+\step
+\recolor{ll.node[3]}{state=good}
+\narrate{Search complete. The target value 9 was found at index 3.}
+\end{animation}
+
+\subsection{Queue with Enqueue and Dequeue}
+
+\begin{animation}[id="queue-demo", label="Queue enqueue and dequeue"]
+\shape{q}{Queue}{capacity=6, data=[], label="$Q$"}
+\shape{vars}{VariableWatch}{names=["op","size"], label="Queue State"}
+
+\step
+\apply{vars.var[op]}{value="init"}
+\apply{vars.var[size]}{value="0"}
+\narrate{Start with an empty queue of capacity 6.}
+
+\step
+\apply{q}{enqueue=10}
+\apply{vars.var[op]}{value="enqueue(10)"}
+\apply{vars.var[size]}{value="1"}
+\narrate{Enqueue 10. It enters at the back of the queue.}
+
+\step
+\apply{q}{enqueue=20}
+\apply{vars.var[op]}{value="enqueue(20)"}
+\apply{vars.var[size]}{value="2"}
+\narrate{Enqueue 20. The queue now has $[10, 20]$.}
+
+\step
+\apply{q}{enqueue=30}
+\apply{vars.var[op]}{value="enqueue(30)"}
+\apply{vars.var[size]}{value="3"}
+\narrate{Enqueue 30. The queue now has $[10, 20, 30]$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{vars.var[op]}{value="dequeue -> 10"}
+\apply{vars.var[size]}{value="2"}
+\narrate{Dequeue: 10 leaves from the front. FIFO order. Queue is now $[20, 30]$.}
+
+\step
+\apply{q}{enqueue=40}
+\apply{vars.var[op]}{value="enqueue(40)"}
+\apply{vars.var[size]}{value="3"}
+\narrate{Enqueue 40. Queue becomes $[20, 30, 40]$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{vars.var[op]}{value="dequeue -> 20"}
+\apply{vars.var[size]}{value="2"}
+\narrate{Dequeue: 20 leaves. Queue is now $[30, 40]$.}
+
+\step
+\apply{q}{dequeue=true}
+\apply{vars.var[op]}{value="dequeue -> 30"}
+\apply{vars.var[size]}{value="1"}
+\narrate{Dequeue: 30 leaves. Only 40 remains.}
+\end{animation}
+
+\subsection{VariableWatch with Value Updates}
+
+\begin{animation}[id="varwatch-demo", label="VariableWatch value updates"]
+\shape{vars}{VariableWatch}{names=["i","j","min_val","result","swap_count"], label="Selection Sort Variables"}
+
+\step
+\narrate{Track variables during a selection sort iteration.}
+
+\step
+\apply{vars.var[i]}{value="0"}
+\apply{vars.var[j]}{value="0"}
+\apply{vars.var[min_val]}{value="inf"}
+\apply{vars.var[result]}{value="[]"}
+\apply{vars.var[swap_count]}{value="0"}
+\recolor{vars.var[i]}{state=current}
+\narrate{Initialize: $i = 0$, $j = 0$, $min = \infty$, no swaps yet.}
+
+\step
+\apply{vars.var[j]}{value="1"}
+\apply{vars.var[min_val]}{value="3"}
+\recolor{vars.var[j]}{state=current}
+\recolor{vars.var[min_val]}{state=current}
+\narrate{Scan: $j = 1$, found new minimum $= 3$.}
+
+\step
+\apply{vars.var[j]}{value="2"}
+\apply{vars.var[min_val]}{value="1"}
+\narrate{Continue scan: $j = 2$, new minimum $= 1$.}
+
+\step
+\apply{vars.var[j]}{value="3"}
+\narrate{$j = 3$: value $= 5 > 1$, minimum unchanged.}
+
+\step
+\apply{vars.var[swap_count]}{value="1"}
+\apply{vars.var[result]}{value="[1]"}
+\recolor{vars.var[swap_count]}{state=good}
+\recolor{vars.var[result]}{state=good}
+\narrate{End of pass: swap element at $i = 0$ with minimum. Swap count $= 1$.}
+
+\step
+\apply{vars.var[i]}{value="1"}
+\apply{vars.var[j]}{value="1"}
+\apply{vars.var[min_val]}{value="inf"}
+\recolor{vars.var[i]}{state=current}
+\recolor{vars.var[swap_count]}{state=idle}
+\recolor{vars.var[result]}{state=idle}
+\narrate{Next outer loop: $i = 1$, reset $j$ and $min$.}
+\end{animation}
+
+\subsection{Stack with Push and Pop}
+
+\begin{animation}[id="stack-demo", label="Stack push and pop"]
+\shape{s}{Stack}{items=["A"], label="$S$"}
+\shape{vars}{VariableWatch}{names=["op","top","size"], label="Stack State"}
+
+\step
+\apply{vars.var[op]}{value="init"}
+\apply{vars.var[top]}{value="A"}
+\apply{vars.var[size]}{value="1"}
+\narrate{Stack initialized with one element: $A$ at the bottom.}
+
+\step
+\apply{s}{push="B"}
+\apply{vars.var[op]}{value="push(B)"}
+\apply{vars.var[top]}{value="B"}
+\apply{vars.var[size]}{value="2"}
+\recolor{s.item[1]}{state=current}
+\narrate{Push $B$ onto the stack. $B$ is now on top.}
+
+\step
+\recolor{s.item[1]}{state=done}
+\apply{s}{push="C"}
+\apply{vars.var[op]}{value="push(C)"}
+\apply{vars.var[top]}{value="C"}
+\apply{vars.var[size]}{value="3"}
+\recolor{s.item[2]}{state=current}
+\narrate{Push $C$. Stack is now $[A, B, C]$ with $C$ on top.}
+
+\step
+\recolor{s.item[2]}{state=done}
+\apply{s}{push="D"}
+\apply{vars.var[op]}{value="push(D)"}
+\apply{vars.var[top]}{value="D"}
+\apply{vars.var[size]}{value="4"}
+\recolor{s.item[3]}{state=current}
+\narrate{Push $D$. Stack grows: $[A, B, C, D]$.}
+
+\step
+\apply{s}{pop=1}
+\apply{vars.var[op]}{value="pop -> D"}
+\apply{vars.var[top]}{value="C"}
+\apply{vars.var[size]}{value="3"}
+\narrate{Pop: $D$ is removed. LIFO order. Top is now $C$.}
+
+\step
+\apply{s}{pop=1}
+\apply{vars.var[op]}{value="pop -> C"}
+\apply{vars.var[top]}{value="B"}
+\apply{vars.var[size]}{value="2"}
+\narrate{Pop again: $C$ removed. Top is now $B$.}
+
+\step
+\apply{s}{push="E"}
+\apply{vars.var[op]}{value="push(E)"}
+\apply{vars.var[top]}{value="E"}
+\apply{vars.var[size]}{value="3"}
+\recolor{s.item[2]}{state=good}
+\narrate{Push $E$. Stack is $[A, B, E]$. The stack flexibly grows and shrinks.}
+\end{animation}

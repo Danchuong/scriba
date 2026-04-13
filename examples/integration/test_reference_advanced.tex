@@ -1,0 +1,126 @@
+\section{Advanced Feature Test}
+
+This file tests advanced Scriba features based solely on the reference document.
+
+\subsection{Longest Increasing Subsequence (DP)}
+
+Given array $a = [3, 1, 4, 1, 5]$, compute the LIS length at each index.
+$$dp[i] = 1 + \max_{j < i,\; a[j] < a[i]} dp[j]$$
+
+\begin{animation}[id="lis-advanced", label="LIS DP with advanced features"]
+
+% --- PRELUDE: compute + shapes ---
+\compute{
+n = 5
+arr = [3, 1, 4, 1, 5]
+dp_init = ["" for _ in range(n)]
+indices = [i for i in range(n)]
+even_indices = [i for i in range(n) if i % 2 == 0]
+}
+
+\shape{a}{Array}{size=5, data=[3,1,4,1,5], labels="0..4", label="$a$"}
+\shape{dp}{DPTable}{n=5, label="$dp$", labels="0..4"}
+\shape{vars}{VariableWatch}{names=["i","best","lis_len"], label="Variables"}
+
+% --- STEP 1: Show problem ---
+\step
+\narrate{Array $a = [3,1,4,1,5]$. We compute $dp[i]$ = LIS length ending at index $i$.}
+
+% --- STEP 2: Initialize dp with foreach using range ---
+\step
+\apply{dp.cell[0]}{value=1}
+\recolor{dp.cell[0]}{state=done}
+\foreach{i}{1..4}
+  \apply{dp.cell[${i}]}{value="?"}
+  \recolor{dp.cell[${i}]}{state=idle}
+\endforeach
+\narrate{Base case: $dp[0] = 1$. All others start unknown.}
+
+% --- STEP 3: Cursor demo on the array ---
+\step
+\cursor{a.cell}{0}
+\apply{vars.var[i]}{value=0}
+\narrate{Start scanning from index 0. The cursor highlights the current cell.}
+
+\step
+\cursor{a.cell}{1, prev_state=done}
+\apply{vars.var[i]}{value=1}
+\narrate{Move cursor to index 1. Previous cell marked done.}
+
+\step
+\cursor{a.cell}{2, prev_state=done}
+\apply{vars.var[i]}{value=2}
+\narrate{Move cursor to index 2.}
+
+% --- STEP 6: DP transition arrows with annotate ---
+\step
+\recolor{dp.cell[2]}{state=current}
+\apply{dp.cell[2]}{value=2}
+\annotate{dp.cell[2]}{label="from 1", arrow_from="dp.cell[1]", color=info}
+\annotate{dp.cell[2]}{label="from 0", arrow_from="dp.cell[0]", color=good}
+\apply{vars.var[best]}{value=2}
+\narrate{$dp[2] = 2$: we can extend from $dp[0]$ since $a[0]=3 < a[2]=4$.}
+
+\step
+\recolor{dp.cell[2]}{state=done}
+\cursor{a.cell}{3, prev_state=done}
+\apply{vars.var[i]}{value=3}
+\apply{dp.cell[3]}{value=1}
+\recolor{dp.cell[3]}{state=done}
+\narrate{$dp[3] = 1$: no previous element is smaller than $a[3]=1$.}
+
+\step
+\cursor{a.cell}{4, prev_state=done}
+\apply{vars.var[i]}{value=4}
+\recolor{dp.cell[4]}{state=current}
+\apply{dp.cell[4]}{value=3}
+\annotate{dp.cell[4]}{label="+1", arrow_from="dp.cell[2]", color=good}
+\annotate{dp.cell[4]}{label="+1", arrow_from="dp.cell[0]", color=info}
+\narrate{$dp[4] = 3$: extend from $dp[2]$ since $a[2]=4 < a[4]=5$.}
+
+% --- STEP 9: foreach with list literal ---
+\step
+\foreach{i}{[0,2,4]}
+  \recolor{a.cell[${i}]}{state=good}
+\endforeach
+\apply{vars.var[lis_len]}{value=3}
+\narrate{Mark even-indexed elements. The LIS length is 3.}
+
+% --- STEP 10: foreach with computed binding ---
+\step
+\compute{ path = [0, 2, 4] }
+\foreach{i}{${path}}
+  \recolor{dp.cell[${i}]}{state=path}
+\endforeach
+\narrate{Traceback: highlight the optimal LIS path in the DP table.}
+
+% --- STEP 11: reannotate for traceback pattern ---
+\step
+\reannotate{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}
+\reannotate{dp.cell[4]}{color=path, arrow_from="dp.cell[2]"}
+\narrate{Recolor transition arrows along the optimal path.}
+
+% --- STEP 12: substory for sub-computation ---
+\step
+\narrate{Let us verify the sub-problem for index 2 in detail.}
+\substory[title="Verify dp[2]"]
+\shape{sub}{Array}{size=2, data=[3,4], labels="0..1", label="sub-check"}
+
+\step
+\recolor{sub.cell[0]}{state=current}
+\narrate{Compare $a[0]=3$ with $a[2]=4$: since $3 < 4$, we can extend.}
+
+\step
+\recolor{sub.cell[0]}{state=done}
+\recolor{sub.cell[1]}{state=good}
+\narrate{Confirmed: $dp[2] = dp[0] + 1 = 2$.}
+\endsubstory
+
+% --- STEP 13: interpolation in selectors ---
+\step
+\compute{ target_idx = 4 }
+\recolor{dp.cell[${target_idx}]}{state=good}
+\recolor{a.cell[${target_idx}]}{state=good}
+\narrate{Final answer at index $${target\_idx} = 4$: LIS length is $dp[4] = 3$.}
+
+\end{animation}

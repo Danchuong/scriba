@@ -1,0 +1,160 @@
+\section{Segment Tree Animations}
+
+\subsection{Standard Segment Tree -- Query and Update}
+
+Build a segment tree from $a = [2, 5, 1, 3, 7, 4]$ with sum aggregation.
+First we query the range $[1, 4]$, then perform a point update at index 2.
+
+\begin{animation}[id="segtree-query-update", label="Segment tree query and point update"]
+\shape{st}{Tree}{data=[2,5,1,3,7,4], kind="segtree", show_sum=true}
+\shape{arr}{Array}{size=6, data=[2,5,1,3,7,4], labels="0..5", label="$a$"}
+
+\step
+\narrate{Segment tree built from $a = [2, 5, 1, 3, 7, 4]$. Each internal node stores the sum of its range. Tree nodes: $[0,5] \to [0,2],[3,5] \to [0,1],[2,2],[3,4],[5,5] \to [0,0],[1,1],[3,3],[4,4]$.}
+
+\step
+\highlight{arr.range[1:4]}
+\narrate{Query: compute $\text{sum}(1, 4)$. The query range $[1, 4]$ is highlighted in the source array.}
+
+\step
+\recolor{st.node["[0,5]"]}{state=current}
+\narrate{Start at root $[0,5]$. The query $[1,4]$ partially overlaps, so we recurse into both children.}
+
+\step
+\recolor{st.node["[0,2]"]}{state=current}
+\recolor{st.node["[0,0]"]}{state=dim}
+\narrate{Left subtree $[0,2]$: recurse down. Node $[0,0]$ is outside query range -- skip it.}
+
+\step
+\recolor{st.node["[0,1]"]}{state=current}
+\recolor{st.node["[1,1]"]}{state=good}
+\recolor{st.node["[2,2]"]}{state=good}
+\narrate{Node $[1,1]$ fully inside $[1,4]$ -- take value $5$. Node $[2,2]$ fully inside -- take value $1$.}
+
+\step
+\recolor{st.node["[3,5]"]}{state=current}
+\recolor{st.node["[3,4]"]}{state=good}
+\recolor{st.node["[5,5]"]}{state=dim}
+\narrate{Right subtree $[3,5]$: node $[3,4]$ fully covered -- take sum $= 10$. Node $[5,5]$ outside range -- skip.}
+
+\step
+\highlight{st.node["[1,1]"]}
+\highlight{st.node["[2,2]"]}
+\highlight{st.node["[3,4]"]}
+\annotate{st.node["[0,5]"]}{label="ans = 16", color=good}
+\narrate{Result: $5 + 1 + 10 = 16$. Three nodes contributed -- this is why queries are $O(\log n)$.}
+
+\step
+\recolor{st.node["[0,5]"]}{state=idle}
+\recolor{st.node["[0,2]"]}{state=idle}
+\recolor{st.node["[3,5]"]}{state=idle}
+\recolor{st.node["[0,0]"]}{state=idle}
+\recolor{st.node["[0,1]"]}{state=idle}
+\recolor{st.node["[1,1]"]}{state=idle}
+\recolor{st.node["[2,2]"]}{state=idle}
+\recolor{st.node["[3,4]"]}{state=idle}
+\recolor{st.node["[3,3]"]}{state=idle}
+\recolor{st.node["[4,4]"]}{state=idle}
+\recolor{st.node["[5,5]"]}{state=idle}
+\narrate{Now perform a point update: set $a[2] = 10$ (was 1). We walk from the leaf up to root.}
+
+\step
+\recolor{arr.cell[2]}{state=current}
+\apply{arr.cell[2]}{value=10}
+\recolor{st.node["[2,2]"]}{state=current}
+\apply{st.node["[2,2]"]}{value=10}
+\narrate{Update leaf $[2,2]$: value changes from 1 to 10.}
+
+\step
+\recolor{st.node["[2,2]"]}{state=done}
+\recolor{st.node["[0,2]"]}{state=current}
+\apply{st.node["[0,2]"]}{value=17}
+\narrate{Update $[0,2]$: new sum $= [0,1]\text{.sum} + 10 = 7 + 10 = 17$.}
+
+\step
+\recolor{st.node["[0,2]"]}{state=done}
+\recolor{st.node["[0,5]"]}{state=current}
+\apply{st.node["[0,5]"]}{value=31}
+\narrate{Update root $[0,5]$: new sum $= 17 + 14 = 31$. Point update complete in $O(\log n)$.}
+
+\step
+\recolor{st.node["[0,5]"]}{state=done}
+\recolor{arr.cell[2]}{state=done}
+\narrate{Final tree reflects the updated array $a = [2, 5, 10, 3, 7, 4]$ with root sum $= 31$.}
+\end{animation}
+
+
+\subsection{Sparse Segment Tree -- Dynamic Node Allocation}
+
+A sparse segment tree over range $[0, 7]$. Nodes are allocated on-demand as values are inserted.
+
+\begin{animation}[id="sparse-segtree-demo", label="Sparse segment tree dynamic allocation"]
+\shape{sst}{Tree}{kind="sparse_segtree", range_lo=0, range_hi=7}
+
+\step
+\narrate{Sparse segment tree on range $[0, 7]$. Initially only the root $[0,7]$ exists. All other nodes are virtual.}
+
+\step
+\recolor{sst.node["[0,7]"]}{state=current}
+\narrate{Insert value 5 at position 2. Root $[0,7]$ partially covers -- recurse left.}
+
+\step
+\apply{sst}{add_node={id="[0,3]", parent="[0,7]"}}
+\recolor{sst.node["[0,3]"]}{state=idle}
+\narrate{Allocate left child $[0,3]$ on-demand. This node did not exist before.}
+
+\step
+\recolor{sst.node["[0,3]"]}{state=current}
+\apply{sst}{add_node={id="[2,3]", parent="[0,3]"}}
+\narrate{Recurse into $[0,3]$: position 2 is in the right half. Allocate $[2,3]$.}
+
+\step
+\recolor{sst.node["[2,3]"]}{state=current}
+\apply{sst}{add_node={id="[2,2]", parent="[2,3]"}}
+\narrate{Allocate leaf $[2,2]$ for position 2.}
+
+\step
+\apply{sst.node["[2,2]"]}{value=5}
+\recolor{sst.node["[2,2]"]}{state=good}
+\recolor{sst.node["[2,3]"]}{state=done}
+\apply{sst.node["[2,3]"]}{value=5}
+\recolor{sst.node["[0,3]"]}{state=done}
+\apply{sst.node["[0,3]"]}{value=5}
+\recolor{sst.node["[0,7]"]}{state=done}
+\apply{sst.node["[0,7]"]}{value=5}
+\narrate{Set leaf $[2,2] = 5$, bubble sums up: $[2,3]=5$, $[0,3]=5$, $[0,7]=5$.}
+
+\step
+\recolor{sst.node["[0,7]"]}{state=current}
+\narrate{Insert value 3 at position 6. Root recurses right this time.}
+
+\step
+\apply{sst}{add_node={id="[4,7]", parent="[0,7]"}}
+\recolor{sst.node["[4,7]"]}{state=idle}
+\narrate{Allocate right child $[4,7]$.}
+
+\step
+\recolor{sst.node["[4,7]"]}{state=current}
+\apply{sst}{add_node={id="[6,7]", parent="[4,7]"}}
+\narrate{Position 6 is in $[6,7]$. Allocate $[6,7]$.}
+
+\step
+\recolor{sst.node["[6,7]"]}{state=current}
+\apply{sst}{add_node={id="[6,6]", parent="[6,7]"}}
+\narrate{Allocate leaf $[6,6]$.}
+
+\step
+\apply{sst.node["[6,6]"]}{value=3}
+\recolor{sst.node["[6,6]"]}{state=good}
+\recolor{sst.node["[6,7]"]}{state=done}
+\apply{sst.node["[6,7]"]}{value=3}
+\recolor{sst.node["[4,7]"]}{state=done}
+\apply{sst.node["[4,7]"]}{value=3}
+\recolor{sst.node["[0,7]"]}{state=done}
+\apply{sst.node["[0,7]"]}{value=8}
+\narrate{Leaf $[6,6]=3$. Bubble up: $[6,7]=3$, $[4,7]=3$, root $[0,7]=8$. Two paths allocated, rest of tree stays virtual.}
+
+\step
+\annotate{sst.node["[0,7]"]}{label="total = 8", color=good}
+\narrate{Final state: only 8 nodes allocated out of a potential 15. Sparse trees use $O(q \log R)$ memory instead of $O(R)$.}
+\end{animation}

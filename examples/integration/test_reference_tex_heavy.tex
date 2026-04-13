@@ -1,0 +1,260 @@
+\section{Mathematical Foundations}
+
+\subsection{Linear Algebra}
+
+\subsubsection{Matrix Operations and Decompositions}
+
+Consider a system of linear equations represented in matrix form $Ax = b$, where
+$A \in \mathbb{R}^{m \times n}$. The solution depends on the rank of~$A$.
+
+The general least-squares solution uses the \textbf{pseudo-inverse}:
+
+$$\begin{align}
+x^* &= A^+ b \\
+    &= (A^T A)^{-1} A^T b \\
+    &= V \Sigma^+ U^T b
+\end{align}$$
+
+A piecewise function with the cases environment:
+
+$$f(x) = \begin{cases}
+x^2 & \text{if } x \geq 0 \\
+-x^2 & \text{if } x < 0 \\
+0 & \text{otherwise}
+\end{cases}$$
+
+The identity matrix and a general matrix side by side:
+
+$$I_3 = \begin{matrix}
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 1
+\end{matrix}
+\quad
+A = \begin{pmatrix}
+a_{11} & a_{12} & a_{13} \\
+a_{21} & a_{22} & a_{23} \\
+a_{31} & a_{32} & a_{33}
+\end{pmatrix}$$
+
+\subsection{Probability Theory}
+
+\subsubsection{Bayes' Theorem and Applications}
+
+Given events $A$ and $B$ with $P(B) > 0$:
+
+$$P(A \mid B) = \frac{P(B \mid A) \cdot P(A)}{P(B)}$$
+
+The total probability expansion:
+
+$$P(B) = \sum_{i=1}^{n} P(B \mid A_i) P(A_i)$$
+
+
+\section{Programming Languages}
+
+\subsection{Algorithm Implementations}
+
+\subsubsection{Dynamic Programming Examples}
+
+The classic coin change problem can be solved with DP. Below is the recurrence:
+
+$$dp[i] = \begin{cases}
+0 & \text{if } i = 0 \\
+\min_{c \in \text{coins}} (dp[i - c] + 1) & \text{if } i > 0 \\
+\infty & \text{if no valid coin}
+\end{cases}$$
+
+\begin{lstlisting}[language=Python]
+def coin_change(coins: list[int], amount: int) -> int:
+    dp = [float('inf')] * (amount + 1)
+    dp[0] = 0
+    for i in range(1, amount + 1):
+        for c in coins:
+            if c <= i and dp[i - c] + 1 < dp[i]:
+                dp[i] = dp[i - c] + 1
+    return dp[amount] if dp[amount] != float('inf') else -1
+\end{lstlisting}
+
+\subsubsection{Graph Algorithms in C++}
+
+\begin{lstlisting}[language=C++]
+#include <vector>
+#include <queue>
+using namespace std;
+
+vector<int> bfs(const vector<vector<int>>& adj, int src) {
+    int n = adj.size();
+    vector<int> dist(n, -1);
+    queue<int> q;
+    dist[src] = 0;
+    q.push(src);
+    while (!q.empty()) {
+        int u = q.front(); q.pop();
+        for (int v : adj[u]) {
+            if (dist[v] == -1) {
+                dist[v] = dist[u] + 1;
+                q.push(v);
+            }
+        }
+    }
+    return dist;
+}
+\end{lstlisting}
+
+\subsubsection{Data Structures in Java}
+
+\begin{lstlisting}[language=Java]
+import java.util.*;
+
+public class SegmentTree {
+    private int[] tree;
+    private int n;
+
+    public SegmentTree(int[] arr) {
+        n = arr.length;
+        tree = new int[4 * n];
+        build(arr, 1, 0, n - 1);
+    }
+
+    private void build(int[] arr, int node, int lo, int hi) {
+        if (lo == hi) {
+            tree[node] = arr[lo];
+            return;
+        }
+        int mid = (lo + hi) / 2;
+        build(arr, 2 * node, lo, mid);
+        build(arr, 2 * node + 1, mid + 1, hi);
+        tree[node] = Math.min(tree[2 * node], tree[2 * node + 1]);
+    }
+
+    public int query(int node, int lo, int hi, int l, int r) {
+        if (r < lo || hi < l) return Integer.MAX_VALUE;
+        if (l <= lo && hi <= r) return tree[node];
+        int mid = (lo + hi) / 2;
+        return Math.min(
+            query(2 * node, lo, mid, l, r),
+            query(2 * node + 1, mid + 1, hi, l, r)
+        );
+    }
+}
+\end{lstlisting}
+
+
+\section{Reference Tables and Typography}
+
+\subsection{Algorithm Complexity Reference}
+
+\subsubsection{Comprehensive Comparison Table}
+
+\begin{tabular}{|l|c|c|c|r|}
+\hline
+\multicolumn{5}{|c|}{\textbf{Algorithm Complexity Summary}} \\
+\hline
+\textbf{Algorithm} & \textbf{Best} & \textbf{Average} & \textbf{Worst} & \textbf{Space} \\
+\hline
+Merge Sort & $O(n \log n)$ & $O(n \log n)$ & $O(n \log n)$ & $O(n)$ \\
+\hline
+Quick Sort & $O(n \log n)$ & $O(n \log n)$ & $O(n^2)$ & $O(\log n)$ \\
+\hline
+\multirow{2}{*}{Heap Sort} & \multicolumn{2}{c|}{$O(n \log n)$} & $O(n \log n)$ & $O(1)$ \\
+\cline{2-5}
+ & \multicolumn{4}{c|}{\textit{In-place, not stable}} \\
+\hline
+Counting Sort & $O(n+k)$ & $O(n+k)$ & $O(n+k)$ & $O(k)$ \\
+\hline
+\multirow{2}{*}{Radix Sort} & \multicolumn{3}{c|}{$O(d \cdot (n+k))$} & $O(n+k)$ \\
+\cline{2-5}
+ & \multicolumn{4}{c|}{\textit{$d$ = digits, $k$ = base}} \\
+\hline
+\end{tabular}
+
+\subsection{Nested List Structures}
+
+\subsubsection{Algorithm Design Techniques}
+
+\begin{enumerate}
+\item \textbf{Divide and Conquer}
+  \begin{itemize}
+  \item Split the problem into subproblems
+    \begin{enumerate}
+    \item Identify independent substructures
+    \item Determine base cases
+    \item Design the merge step
+    \end{enumerate}
+  \item Solve each subproblem recursively
+    \begin{itemize}
+    \item Apply memoization if subproblems overlap
+    \item Consider iterative bottom-up approaches
+      \begin{itemize}
+      \item Tabulation avoids stack overflow
+      \item Often has better cache performance
+      \item Easier to parallelize
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\item \textbf{Greedy Algorithms}
+  \begin{itemize}
+  \item Make locally optimal choices
+  \item Prove the greedy choice property
+    \begin{enumerate}
+    \item Show optimal substructure
+    \item Prove exchange argument
+    \item Verify by contradiction
+    \end{enumerate}
+  \end{itemize}
+\item \textbf{Network Flow}
+  \begin{itemize}
+  \item Model as a directed graph with capacities
+  \item Apply Ford--Fulkerson or Dinic's algorithm
+  \end{itemize}
+\end{enumerate}
+
+\subsection{Typography and Formatting Showcase}
+
+\subsubsection{Text Formatting Commands}
+
+This paragraph demonstrates \textbf{bold text}, \textit{italic text},
+\underline{underlined text}, \texttt{monospace text}, \sout{struck-through text},
+and \textsc{small caps text}.
+
+Nested formatting: \textbf{\textit{bold italic}}, \textit{\texttt{italic monospace}},
+\textbf{\underline{bold underline}}, and \textbf{\textit{\underline{bold italic underline}}}.
+
+\subsubsection{Typographic Details}
+
+Em dash---used for parenthetical statements---like this one.
+En dash: pages 12--34, years 2020--2025.
+
+``Smart double quotes'' and `smart single quotes' are supported.
+
+A non-breaking~space prevents line breaks between words. The cost is \$42.00,
+which is 15\% of the budget. The expression $a \& b$ uses the bitwise AND operator.
+See item \#7 in the list. The underscore character \_\ is used in identifiers.
+Curly braces \{ and \} delimit groups in \LaTeX.
+
+\subsubsection{Links and References}
+
+Visit \href{https://codeforces.com}{Codeforces} for competitive programming contests.
+The full URL is \url{https://codeforces.com/problemset}.
+Documentation is at \href{https://cp-algorithms.com/algebra/sieve-of-eratosthenes.html}{CP~Algorithms}.
+
+\epigraph{The art of programming is the art of organizing complexity.}{Edsger W. Dijkstra}
+
+More inline math to stress-test: the Euler identity $e^{i\pi} + 1 = 0$ connects
+five fundamental constants. The binomial coefficient $\binom{n}{k} = \frac{n!}{k!(n-k)!}$
+counts combinations. The integral $\int_0^\infty e^{-x^2} dx = \frac{\sqrt{\pi}}{2}$
+is the Gaussian integral.
+
+$$\begin{align}
+\nabla \cdot \mathbf{E} &= \frac{\rho}{\varepsilon_0} \\
+\nabla \cdot \mathbf{B} &= 0 \\
+\nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t} \\
+\nabla \times \mathbf{B} &= \mu_0 \mathbf{J} + \mu_0 \varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}
+\end{align}$$
+
+
+\begin{diagram}[id="complexity-graph", label="Algorithm relationships"]
+\shape{G}{Graph}{nodes=["DFS","BFS","Dijkstra","Bellman-Ford","Floyd"], edges=[("DFS","BFS"),("BFS","Dijkstra"),("Dijkstra","Bellman-Ford"),("Bellman-Ford","Floyd")], directed=true, layout="hierarchical"}
+\recolor{G.node[DFS]}{state=current}
+\recolor{G.node[Floyd]}{state=done}
+\end{diagram}

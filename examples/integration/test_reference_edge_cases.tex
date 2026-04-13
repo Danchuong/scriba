@@ -1,0 +1,315 @@
+\section{Edge Case Tests}
+
+This file tests boundary conditions and edge cases from the Scriba reference.
+
+%% ==========================================================
+%% EDGE CASE A: Animation with exactly 1 step (minimum)
+%% ==========================================================
+\subsection{A: Single-Step Animation}
+
+\begin{animation}[id="edge-a-single-step", label="Minimum 1-step animation"]
+\shape{a1}{Array}{size=3, data=[10,20,30], label="one step"}
+
+\step
+\narrate{This animation has exactly one step --- the minimum.}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE B: Animation with 30 steps (soft limit boundary)
+%% ==========================================================
+\subsection{B: 30-Step Animation (Soft Limit)}
+
+\begin{animation}[id="edge-b-30-steps", label="Exactly 30 frames"]
+\shape{b}{Array}{size=5, data=[0,0,0,0,0], labels="0..4", label="$counter$"}
+
+\step
+\apply{b.cell[0]}{value=1}
+\narrate{Step 1 of 30.}
+
+\step
+\apply{b.cell[1]}{value=2}
+\narrate{Step 2 of 30.}
+
+\step
+\apply{b.cell[2]}{value=3}
+\narrate{Step 3 of 30.}
+
+\step
+\apply{b.cell[3]}{value=4}
+\narrate{Step 4 of 30.}
+
+\step
+\apply{b.cell[4]}{value=5}
+\narrate{Step 5 of 30.}
+
+\step
+\recolor{b.cell[0]}{state=done}
+\narrate{Step 6 of 30.}
+
+\step
+\recolor{b.cell[1]}{state=done}
+\narrate{Step 7 of 30.}
+
+\step
+\recolor{b.cell[2]}{state=done}
+\narrate{Step 8 of 30.}
+
+\step
+\recolor{b.cell[3]}{state=done}
+\narrate{Step 9 of 30.}
+
+\step
+\recolor{b.cell[4]}{state=done}
+\narrate{Step 10 of 30.}
+
+\step
+\recolor{b.cell[0]}{state=current}
+\narrate{Step 11 of 30.}
+
+\step
+\recolor{b.cell[1]}{state=current}
+\narrate{Step 12 of 30.}
+
+\step
+\recolor{b.cell[2]}{state=current}
+\narrate{Step 13 of 30.}
+
+\step
+\recolor{b.cell[3]}{state=current}
+\narrate{Step 14 of 30.}
+
+\step
+\recolor{b.cell[4]}{state=current}
+\narrate{Step 15 of 30.}
+
+\step
+\recolor{b.cell[0]}{state=idle}
+\narrate{Step 16 of 30.}
+
+\step
+\recolor{b.cell[1]}{state=idle}
+\narrate{Step 17 of 30.}
+
+\step
+\recolor{b.cell[2]}{state=idle}
+\narrate{Step 18 of 30.}
+
+\step
+\recolor{b.cell[3]}{state=idle}
+\narrate{Step 19 of 30.}
+
+\step
+\recolor{b.cell[4]}{state=idle}
+\narrate{Step 20 of 30.}
+
+\step
+\apply{b.cell[0]}{value=21}
+\narrate{Step 21 of 30.}
+
+\step
+\apply{b.cell[1]}{value=22}
+\narrate{Step 22 of 30.}
+
+\step
+\apply{b.cell[2]}{value=23}
+\narrate{Step 23 of 30.}
+
+\step
+\apply{b.cell[3]}{value=24}
+\narrate{Step 24 of 30.}
+
+\step
+\apply{b.cell[4]}{value=25}
+\narrate{Step 25 of 30.}
+
+\step
+\recolor{b.cell[0]}{state=good}
+\narrate{Step 26 of 30.}
+
+\step
+\recolor{b.cell[1]}{state=good}
+\narrate{Step 27 of 30.}
+
+\step
+\recolor{b.cell[2]}{state=good}
+\narrate{Step 28 of 30.}
+
+\step
+\recolor{b.cell[3]}{state=good}
+\narrate{Step 29 of 30.}
+
+\step
+\recolor{b.cell[4]}{state=good}
+\narrate{Step 30 of 30 --- exactly at the soft limit.}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE C: Empty narrate
+%% ==========================================================
+\subsection{C: Empty Narrate}
+
+\begin{animation}[id="edge-c-empty-narrate", label="Empty narrate test"]
+\shape{c}{Array}{size=2, data=[1,2], label="empty narrate"}
+
+\step
+\narrate{}
+
+\step
+\narrate{This step has narration, the previous did not.}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE D: Multiple primitives of same type
+%% ==========================================================
+\subsection{D: Two Arrays and Two Graphs}
+
+\begin{animation}[id="edge-d-same-types", label="Duplicate primitive types"]
+\shape{arr1}{Array}{size=3, data=[1,2,3], label="$A_1$"}
+\shape{arr2}{Array}{size=4, data=[10,20,30,40], label="$A_2$"}
+\shape{g1}{Graph}{nodes=["X","Y"], edges=[("X","Y")], directed=true, label="$G_1$"}
+\shape{g2}{Graph}{nodes=["P","Q","R"], edges=[("P","Q"),("Q","R")], directed=false, label="$G_2$"}
+
+\step
+\recolor{arr1.cell[0]}{state=current}
+\recolor{arr2.cell[3]}{state=good}
+\recolor{g1.node[X]}{state=current}
+\recolor{g2.node[R]}{state=done}
+\narrate{Operating on two Arrays and two Graphs simultaneously.}
+
+\step
+\recolor{arr1.cell[2]}{state=done}
+\recolor{arr2.cell[0]}{state=error}
+\recolor{g1.edge[(X,Y)]}{state=good}
+\recolor{g2.edge[(P,Q)]}{state=dim}
+\narrate{Each primitive tracks its own state independently.}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE E: Very long narrate with lots of inline math
+%% ==========================================================
+\subsection{E: Long Narrate with Heavy Math}
+
+\begin{animation}[id="edge-e-long-narrate", label="Long narrate text"]
+\shape{e}{Array}{size=3, data=[1,2,3], label="$arr$"}
+
+\step
+\narrate{Consider the recurrence $T(n) = 2T(n/2) + O(n)$ which by the Master Theorem yields $T(n) = O(n \log n)$. For dynamic programming, the transition is $dp[i][j] = \min_{k=i}^{j-1}(dp[i][k] + dp[k+1][j] + \sum_{m=i}^{j} a_m)$. The expected value is $E[X] = \sum_{x} x \cdot P(X = x) = \int_{-\infty}^{\infty} x f(x) dx$ and the variance satisfies $\text{Var}(X) = E[X^2] - (E[X])^2 \geq 0$. By the Cauchy--Schwarz inequality, $\left(\sum_{i=1}^{n} a_i b_i\right)^2 \leq \left(\sum_{i=1}^{n} a_i^2\right)\left(\sum_{i=1}^{n} b_i^2\right)$. Furthermore, $\binom{n}{k} = \frac{n!}{k!(n-k)!}$ and $\sum_{k=0}^{n}\binom{n}{k} = 2^n$.}
+
+\step
+\recolor{e.cell[1]}{state=current}
+\narrate{After all that math, we highlight cell 1 with $O(1)$ cost.}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE F: Array with size=1 (minimum)
+%% ==========================================================
+\subsection{F: Size-1 Array}
+
+\begin{animation}[id="edge-f-size1-array", label="Minimum size array"]
+\shape{f}{Array}{size=1, data=[42], label="singleton"}
+
+\step
+\recolor{f.cell[0]}{state=current}
+\narrate{An array with exactly one element: $a[0] = 42$.}
+
+\step
+\recolor{f.cell[0]}{state=done}
+\apply{f.cell[0]}{value=99}
+\narrate{Updated the single cell to 99.}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE G: Graph with single node, no edges
+%% ==========================================================
+\subsection{G: Single-Node Graph}
+
+\begin{animation}[id="edge-g-single-node", label="Isolated node graph"]
+\shape{iso}{Graph}{nodes=["alone"], edges=[], directed=false}
+
+\step
+\recolor{iso.node[alone]}{state=current}
+\narrate{A graph with a single node and zero edges.}
+
+\step
+\recolor{iso.node[alone]}{state=done}
+\narrate{Mark the isolated node as done.}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE H: Highlight ephemeral clearing across steps
+%% ==========================================================
+\subsection{H: Highlight Ephemeral Clearing}
+
+\begin{animation}[id="edge-h-ephemeral", label="Highlight auto-clear test"]
+\shape{h}{Array}{size=4, data=[10,20,30,40], labels="0..3", label="ephemeral"}
+
+\step
+\highlight{h.cell[1]}
+\narrate{Cell 1 is highlighted (ephemeral). It should auto-clear on the next step.}
+
+\step
+\narrate{No commands here --- cell 1 should no longer be highlighted.}
+
+\step
+\highlight{h.cell[3]}
+\recolor{h.cell[0]}{state=done}
+\narrate{Cell 3 highlighted (ephemeral), cell 0 recolored (persistent). Next step should clear only the highlight.}
+
+\step
+\narrate{Cell 3 highlight should be gone. Cell 0 should still be done (persistent).}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE I: Multiple annotate on same target, different arrow_from
+%% ==========================================================
+\subsection{I: Multiple Annotations Same Target}
+
+\begin{animation}[id="edge-i-multi-annotate", label="Multiple annotations"]
+\shape{dp}{DPTable}{n=5, label="dp", labels="0..4"}
+
+\step
+\apply{dp.cell[0]}{value=0}
+\recolor{dp.cell[0]}{state=done}
+\apply{dp.cell[1]}{value=3}
+\recolor{dp.cell[1]}{state=done}
+\apply{dp.cell[2]}{value=7}
+\recolor{dp.cell[2]}{state=done}
+\narrate{Base cases filled: $dp[0]=0$, $dp[1]=3$, $dp[2]=7$.}
+
+\step
+\recolor{dp.cell[3]}{state=current}
+\annotate{dp.cell[3]}{label="+4", arrow_from="dp.cell[1]", color=good}
+\annotate{dp.cell[3]}{label="+1", arrow_from="dp.cell[2]", color=info}
+\narrate{Two transition arrows into $dp[3]$: one from $dp[1]$ (cost +4) and one from $dp[2]$ (cost +1).}
+
+\step
+\apply{dp.cell[3]}{value=8}
+\recolor{dp.cell[3]}{state=done}
+\narrate{Chose $dp[3] = \min(3+4, 7+1) = 7$... wait, $dp[3] = 8$. Annotations persist.}
+\end{animation}
+
+%% ==========================================================
+%% EDGE CASE J: Deeply nested foreach (2 levels)
+%% ==========================================================
+\subsection{J: Nested Foreach (2 Levels)}
+
+\begin{animation}[id="edge-j-nested-foreach", label="2-level foreach nesting"]
+\shape{grid}{Grid}{rows=3, cols=3, data=[0,0,0,0,0,0,0,0,0], label="$M$"}
+
+\step
+\narrate{A $3 \times 3$ grid, all zeros. We will iterate with nested foreach.}
+
+\step
+\foreach{r}{0..2}
+  \foreach{c}{0..2}
+    \recolor{grid.cell[${r}][${c}]}{state=done}
+  \endforeach
+\endforeach
+\narrate{Nested foreach: marked all 9 cells as done in one step.}
+
+\step
+\foreach{i}{0..2}
+  \recolor{grid.cell[${i}][${i}]}{state=current}
+\endforeach
+\narrate{Diagonal cells highlighted via single-level foreach after the nested one.}
+\end{animation}
