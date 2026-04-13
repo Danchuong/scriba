@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "scriba"
+name = "scriba-tex"
 version = "0.6.0"
 description = "Backend Python library for rendering LaTeX problem statements and CP editorial animations to self-contained HTML"
 readme = "README.md"
@@ -19,8 +19,7 @@ keywords = [
   "editorial",
   "animation",
 ]
-# TODO: confirm maintainer contact email before first public release
-authors = [{ name = "OJCloud", email = "maintainers@ojcloud.dev" }]
+authors = [{ name = "OJCloud", email = "chuongdan2006@gmail.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",
@@ -45,10 +44,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ojcloud/scriba"       # TODO: confirm URL
-Repository = "https://github.com/ojcloud/scriba"     # TODO: confirm URL
-Issues = "https://github.com/ojcloud/scriba/issues"  # TODO: confirm URL
-Documentation = "https://github.com/ojcloud/scriba/tree/main/docs"  # TODO: confirm URL
+Homepage = "https://github.com/Danchuong/scriba"
+Repository = "https://github.com/Danchuong/scriba"
+Issues = "https://github.com/Danchuong/scriba/issues"
+Documentation = "https://github.com/Danchuong/scriba/tree/main/docs"
 
 [tool.hatch.build.targets.wheel]
 packages = ["scriba"]
