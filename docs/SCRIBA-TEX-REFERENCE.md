@@ -345,9 +345,12 @@ LIFO stack.
 ### 7.9 Plane2D
 2D coordinate plane with points and lines.
 ```latex
-\shape{p}{Plane2D}{xrange=[-3,3], yrange=[-3,3], grid=true, axes=true}
+\shape{p}{Plane2D}{xrange=[-3,3], yrange=[-3,3], grid=true, axes=true, show_coords=true}
 ```
 **Operations:** `\apply{p}{add_point=(1,2)}`, `\apply{p}{add_line=("y=x",1,0)}`
+**`show_coords=true`**: opt-in display of `(x, y)` coordinate labels on each point.
+**Annotations:** `\annotate{p.point[0]}{label="A", position=above, color=good}` — text labels on points without arrows. Supports `position=above|below|left|right`.
+**Tick labels:** adaptive — works for fractional ranges `[0,1]`, large ranges `[-100,100]`, and zero-boundary ranges `[0,10]`.
 
 ### 7.10 MetricPlot
 Time-series metric chart.
