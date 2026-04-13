@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Annotation Label Placement Strategies</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f8f9fa;
+    color: #1a1a2e;
+    padding: 2rem;
+    line-height: 1.6;
+  }
+  h1 {
+    font-size: 1.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .subtitle {
+    color: #666;
+    margin-bottom: 2rem;
+    font-size: 0.95rem;
+  }
+  section {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    margin-bottom: 0.25rem;
+    color: #16213e;
+  }
+  .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+  }
+  .tag-problem { background: #fce4ec; color: #c62828; }
+  .tag-strategy { background: #e3f2fd; color: #1565c0; }
+  .commentary {
+    font-size: 0.88rem;
+    color: #555;
+    margin-bottom: 1rem;
+  }
+  .pros-cons {
+    display: flex;
+    gap: 2rem;
+    font-size: 0.85rem;
+    margin-top: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .pros-cons div { min-width: 200px; }
+  .pros-cons h4 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.25rem; }
+  .pros-cons ul { padding-left: 1.2rem; color: #444; }
+  .pros-cons .pros h4 { color: #2e7d32; }
+  .pros-cons .cons h4 { color: #c62828; }
+  svg { display: block; margin: 0.5rem auto; }
+  .legend {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.82rem;
+    color: #555;
+    margin-top: 0.5rem;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .legend-swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Annotation Label Placement Strategies</h1>
+<p class="subtitle">
+  Comparing approaches for labeling DP transition arrows on array visualizations.
+  Data: array [2, 9, 4, 5, 1, 6] with three arrows pointing to cell[3] from cells [0], [1], [2].
+</p>
+
+<!-- =========================================================
+     1. CURRENT APPROACH
+     ========================================================= -->
+<section>
+  <h2>1. Current Approach &mdash; Centered Above Bezier Peak</h2>
+  <span class="tag tag-problem">Problem</span>
+  <p class="commentary">
+    Labels are placed at the horizontal midpoint of the arrow, vertically centered above the Bezier peak.
+    When multiple arrows converge on the same target, labels stack on top of each other at similar heights,
+    creating unreadable overlap.
+  </p>
+
+  <svg width="640" height="200" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- Array cells -->
+    <g font-family="monospace" font-size="13">
+      <g transform="translate(100,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[0]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">2</text>
+      </g>
+      <g transform="translate(180,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[1]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">9</text>
+      </g>
+      <g transform="translate(260,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[2]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">4</text>
+      </g>
+      <g transform="translate(340,140)">
+        <rect width="60" height="40" rx="4" fill="#c8e6c9" stroke="#43a047" stroke-width="2"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#2e7d32">dp[3]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold" fill="#2e7d32">5</text>
+      </g>
+      <g transform="translate(420,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[4]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">1</text>
+      </g>
+      <g transform="translate(500,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[5]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">6</text>
+      </g>
+    </g>
+
+    <!-- Arrowhead marker -->
+    <defs>
+      <marker id="ah1" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#e53935"/>
+      </marker>
+    </defs>
+
+    <!-- Arrow from cell[0] to cell[3] -->
+    <path d="M130,140 C130,65 370,65 370,140" fill="none" stroke="#e53935" stroke-width="1.8" marker-end="url(#ah1)"/>
+    <!-- Arrow from cell[1] to cell[3] -->
+    <path d="M210,140 C210,70 370,70 370,140" fill="none" stroke="#e53935" stroke-width="1.8" marker-end="url(#ah1)"/>
+    <!-- Arrow from cell[2] to cell[3] -->
+    <path d="M290,140 C290,75 370,75 370,140" fill="none" stroke="#e53935" stroke-width="1.8" marker-end="url(#ah1)"/>
+
+    <!-- Overlapping labels — all clustered near the same spot -->
+    <text x="250" y="58" text-anchor="middle" font-size="13" fill="#e53935" font-weight="600">+3</text>
+    <text x="290" y="63" text-anchor="middle" font-size="13" fill="#e53935" font-weight="600">+4</text>
+    <text x="330" y="68" text-anchor="middle" font-size="13" fill="#e53935" font-weight="600">+1</text>
+
+    <!-- Annotation showing the problem -->
+    <rect x="180" y="42" width="220" height="36" rx="4" fill="none" stroke="#ff9800" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <text x="400" y="50" font-size="10" fill="#e65100" font-style="italic">labels overlap here</text>
+  </svg>
+
+  <div class="pros-cons">
+    <div class="cons">
+      <h4>Problems</h4>
+      <ul>
+        <li>Labels collide when arrows converge on one cell</li>
+        <li>Hard to tell which label belongs to which arrow</li>
+        <li>Gets worse as more arrows are added</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     2. MID-PATH LABELS
+     ========================================================= -->
+<section>
+  <h2>2. Strategy: Mid-Path Labels</h2>
+  <span class="tag tag-strategy">Strategy</span>
+  <p class="commentary">
+    Place each label at the geometric midpoint of its own Bezier curve, rotated to follow the tangent angle.
+    Each label sits on its own curve, naturally spreading them apart.
+  </p>
+
+  <svg width="640" height="200" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+    <!-- Array cells -->
+    <g font-family="monospace" font-size="13">
+      <g transform="translate(100,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[0]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">2</text>
+      </g>
+      <g transform="translate(180,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[1]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">9</text>
+      </g>
+      <g transform="translate(260,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[2]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">4</text>
+      </g>
+      <g transform="translate(340,140)">
+        <rect width="60" height="40" rx="4" fill="#c8e6c9" stroke="#43a047" stroke-width="2"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#2e7d32">dp[3]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold" fill="#2e7d32">5</text>
+      </g>
+      <g transform="translate(420,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[4]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">1</text>
+      </g>
+      <g transform="translate(500,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[5]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">6</text>
+      </g>
+    </g>
+
+    <defs>
+      <marker id="ah2" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#1565c0"/>
+      </marker>
+    </defs>
+
+    <!-- Arrow from cell[0] to cell[3] — arc high -->
+    <path d="M130,140 C130,40 370,40 370,140" fill="none" stroke="#1565c0" stroke-width="1.8" marker-end="url(#ah2)"/>
+    <!-- Mid-path label, rotated along tangent (roughly horizontal at midpoint for symmetric curve) -->
+    <text x="250" y="45" text-anchor="middle" font-size="12" fill="#1565c0" font-weight="600"
+          transform="rotate(2, 250, 45)">+3</text>
+
+    <!-- Arrow from cell[1] to cell[3] — arc medium -->
+    <path d="M210,140 C210,70 370,70 370,140" fill="none" stroke="#1565c0" stroke-width="1.8" marker-end="url(#ah2)"/>
+    <text x="290" y="72" text-anchor="middle" font-size="12" fill="#1565c0" font-weight="600"
+          transform="rotate(5, 290, 72)">+4</text>
+
+    <!-- Arrow from cell[2] to cell[3] — arc low -->
+    <path d="M290,140 C290,100 370,100 370,140" fill="none" stroke="#1565c0" stroke-width="1.8" marker-end="url(#ah2)"/>
+    <text x="330" y="104" text-anchor="middle" font-size="12" fill="#1565c0" font-weight="600"
+          transform="rotate(8, 330, 104)">+1</text>
+  </svg>
+
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Pros</h4>
+      <ul>
+        <li>Labels are naturally separated by curve geometry</li>
+        <li>Clear which label belongs to which arrow</li>
+        <li>Rotation adds visual association with the path</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Cons</h4>
+      <ul>
+        <li>Rotated text can be harder to read</li>
+        <li>Labels on short/flat arcs may still overlap</li>
+        <li>Implementation requires computing Bezier midpoint + tangent</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     3. COLOR-ONLY (NO TEXT)
+     ========================================================= -->
+<section>
+  <h2>3. Strategy: Color-Only (No Text Labels)</h2>
+  <span class="tag tag-strategy">Strategy</span>
+  <p class="commentary">
+    Remove text labels entirely. Distinguish arrows by color and rely on a separate legend below the diagram.
+    The visual is much cleaner, especially with many arrows.
+  </p>
+
+  <svg width="640" height="200" viewBox="0 0 640 200" xmlns="http://www.w3.org/2000/svg">
+    <g font-family="monospace" font-size="13">
+      <g transform="translate(100,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[0]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">2</text>
+      </g>
+      <g transform="translate(180,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[1]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">9</text>
+      </g>
+      <g transform="translate(260,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[2]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">4</text>
+      </g>
+      <g transform="translate(340,140)">
+        <rect width="60" height="40" rx="4" fill="#c8e6c9" stroke="#43a047" stroke-width="2"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#2e7d32">dp[3]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold" fill="#2e7d32">5</text>
+      </g>
+      <g transform="translate(420,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[4]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">1</text>
+      </g>
+      <g transform="translate(500,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[5]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">6</text>
+      </g>
+    </g>
+
+    <defs>
+      <marker id="ah3a" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#43a047"/>
+      </marker>
+      <marker id="ah3b" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#9e9e9e"/>
+      </marker>
+    </defs>
+
+    <!-- Optimal arrow (green): cell[1] -> cell[3] -->
+    <path d="M210,140 C210,55 370,55 370,140" fill="none" stroke="#43a047" stroke-width="2.5" marker-end="url(#ah3a)"/>
+
+    <!-- Alternative arrows (gray) -->
+    <path d="M130,140 C130,45 370,45 370,140" fill="none" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#ah3b)"/>
+    <path d="M290,140 C290,90 370,90 370,140" fill="none" stroke="#9e9e9e" stroke-width="1.5" stroke-dasharray="6,3" marker-end="url(#ah3b)"/>
+  </svg>
+
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#43a047;"></div>
+      <span>Optimal transition (+4, from dp[1])</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#9e9e9e;"></div>
+      <span>Alternative transitions (+3, +1)</span>
+    </div>
+  </div>
+
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Pros</h4>
+      <ul>
+        <li>Cleanest visual; zero text clutter above the array</li>
+        <li>Scales well to many arrows</li>
+        <li>Easy to implement</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Cons</h4>
+      <ul>
+        <li>Loses per-arrow detail (exact values only in legend)</li>
+        <li>Color alone is not accessible (color-blind users)</li>
+        <li>Requires scanning back and forth between diagram and legend</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     4. NUMBERED BADGES
+     ========================================================= -->
+<section>
+  <h2>4. Strategy: Numbered Badges</h2>
+  <span class="tag tag-strategy">Strategy</span>
+  <p class="commentary">
+    Replace verbose text with small numbered circles on each arrow.
+    A legend below maps each number to its full description.
+    Compact yet informative.
+  </p>
+
+  <svg width="640" height="210" viewBox="0 0 640 210" xmlns="http://www.w3.org/2000/svg">
+    <g font-family="monospace" font-size="13">
+      <g transform="translate(100,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[0]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">2</text>
+      </g>
+      <g transform="translate(180,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[1]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">9</text>
+      </g>
+      <g transform="translate(260,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[2]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">4</text>
+      </g>
+      <g transform="translate(340,140)">
+        <rect width="60" height="40" rx="4" fill="#c8e6c9" stroke="#43a047" stroke-width="2"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#2e7d32">dp[3]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold" fill="#2e7d32">5</text>
+      </g>
+      <g transform="translate(420,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[4]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">1</text>
+      </g>
+      <g transform="translate(500,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[5]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">6</text>
+      </g>
+    </g>
+
+    <defs>
+      <marker id="ah4" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#6a1b9a"/>
+      </marker>
+    </defs>
+
+    <!-- Arrows -->
+    <path d="M130,140 C130,40 370,40 370,140" fill="none" stroke="#6a1b9a" stroke-width="1.8" marker-end="url(#ah4)"/>
+    <path d="M210,140 C210,65 370,65 370,140" fill="none" stroke="#6a1b9a" stroke-width="1.8" marker-end="url(#ah4)"/>
+    <path d="M290,140 C290,95 370,95 370,140" fill="none" stroke="#6a1b9a" stroke-width="1.8" marker-end="url(#ah4)"/>
+
+    <!-- Badge 1 on first arrow -->
+    <circle cx="200" cy="62" r="11" fill="#6a1b9a"/>
+    <text x="200" y="67" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">1</text>
+
+    <!-- Badge 2 on second arrow -->
+    <circle cx="280" cy="72" r="11" fill="#6a1b9a"/>
+    <text x="280" y="77" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">2</text>
+
+    <!-- Badge 3 on third arrow -->
+    <circle cx="325" cy="100" r="11" fill="#6a1b9a"/>
+    <text x="325" y="105" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">3</text>
+
+    <!-- Legend row -->
+    <g font-family="sans-serif" font-size="12" fill="#333" transform="translate(130,198)">
+      <circle cx="0" cy="-4" r="8" fill="#6a1b9a"/>
+      <text x="0" y="0" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">1</text>
+      <text x="14" y="0">dp[0] + 3</text>
+
+      <circle cx="130" cy="-4" r="8" fill="#6a1b9a"/>
+      <text x="130" y="0" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">2</text>
+      <text x="144" y="0">dp[1] + 4</text>
+
+      <circle cx="270" cy="-4" r="8" fill="#6a1b9a"/>
+      <text x="270" y="0" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">3</text>
+      <text x="284" y="0">dp[2] + 1</text>
+    </g>
+  </svg>
+
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Pros</h4>
+      <ul>
+        <li>Compact badges never overlap (small footprint)</li>
+        <li>Full descriptions available in legend</li>
+        <li>Works well even with many arrows</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Cons</h4>
+      <ul>
+        <li>Requires scanning between badge and legend</li>
+        <li>Numbers alone carry no semantic meaning in-context</li>
+        <li>Legend can grow long with many arrows</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     5. BACKGROUND PILLS
+     ========================================================= -->
+<section>
+  <h2>5. Strategy: Background Pills</h2>
+  <span class="tag tag-strategy">Strategy</span>
+  <p class="commentary">
+    Add a rounded rectangle (pill) behind each label, similar to GitHub PR labels or badges.
+    The opaque background prevents text from blending into crossing arrows.
+    Labels are offset vertically to avoid stacking.
+  </p>
+
+  <svg width="640" height="210" viewBox="0 0 640 210" xmlns="http://www.w3.org/2000/svg">
+    <g font-family="monospace" font-size="13">
+      <g transform="translate(100,150)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[0]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">2</text>
+      </g>
+      <g transform="translate(180,150)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[1]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">9</text>
+      </g>
+      <g transform="translate(260,150)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[2]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">4</text>
+      </g>
+      <g transform="translate(340,150)">
+        <rect width="60" height="40" rx="4" fill="#c8e6c9" stroke="#43a047" stroke-width="2"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#2e7d32">dp[3]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold" fill="#2e7d32">5</text>
+      </g>
+      <g transform="translate(420,150)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[4]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">1</text>
+      </g>
+      <g transform="translate(500,150)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[5]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">6</text>
+      </g>
+    </g>
+
+    <defs>
+      <marker id="ah5" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#00838f"/>
+      </marker>
+    </defs>
+
+    <!-- Arrows with staggered heights -->
+    <path d="M130,150 C130,30 370,30 370,150" fill="none" stroke="#00838f" stroke-width="1.8" marker-end="url(#ah5)"/>
+    <path d="M210,150 C210,65 370,65 370,150" fill="none" stroke="#00838f" stroke-width="1.8" marker-end="url(#ah5)"/>
+    <path d="M290,150 C290,100 370,100 370,150" fill="none" stroke="#00838f" stroke-width="1.8" marker-end="url(#ah5)"/>
+
+    <!-- Pill + label on arrow 1 (highest arc) -->
+    <rect x="222" y="22" width="32" height="20" rx="10" fill="#00838f"/>
+    <text x="238" y="37" text-anchor="middle" font-size="12" fill="#fff" font-weight="600">+3</text>
+
+    <!-- Pill + label on arrow 2 (medium arc) -->
+    <rect x="273" y="58" width="32" height="20" rx="10" fill="#00838f"/>
+    <text x="289" y="73" text-anchor="middle" font-size="12" fill="#fff" font-weight="600">+4</text>
+
+    <!-- Pill + label on arrow 3 (lowest arc) -->
+    <rect x="316" y="92" width="28" height="20" rx="10" fill="#00838f"/>
+    <text x="330" y="107" text-anchor="middle" font-size="12" fill="#fff" font-weight="600">+1</text>
+  </svg>
+
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Pros</h4>
+      <ul>
+        <li>Opaque background ensures readability over crossing lines</li>
+        <li>Labels stay inline on their arrows</li>
+        <li>Familiar visual metaphor (badge / tag)</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Cons</h4>
+      <ul>
+        <li>Pills can obscure the arrow path beneath them</li>
+        <li>Still need vertical staggering to prevent overlap</li>
+        <li>Adds visual weight; busy with many arrows</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================
+     6. STACKED LABEL COLUMN
+     ========================================================= -->
+<section>
+  <h2>6. Strategy: Stacked Label Column with Leader Lines</h2>
+  <span class="tag tag-strategy">Strategy</span>
+  <p class="commentary">
+    All labels are collected into a vertical column to the right of the array.
+    Thin leader lines connect each label to the midpoint of its corresponding arrow.
+    The arrows themselves remain clean and unlabeled.
+  </p>
+
+  <svg width="700" height="210" viewBox="0 0 700 210" xmlns="http://www.w3.org/2000/svg">
+    <g font-family="monospace" font-size="13">
+      <g transform="translate(60,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[0]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">2</text>
+      </g>
+      <g transform="translate(140,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[1]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">9</text>
+      </g>
+      <g transform="translate(220,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[2]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">4</text>
+      </g>
+      <g transform="translate(300,140)">
+        <rect width="60" height="40" rx="4" fill="#c8e6c9" stroke="#43a047" stroke-width="2"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#2e7d32">dp[3]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold" fill="#2e7d32">5</text>
+      </g>
+      <g transform="translate(380,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[4]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">1</text>
+      </g>
+      <g transform="translate(460,140)">
+        <rect width="60" height="40" rx="4" fill="#e8eaf6" stroke="#5c6bc0" stroke-width="1.5"/>
+        <text x="30" y="16" text-anchor="middle" font-size="11" fill="#666">dp[5]</text>
+        <text x="30" y="32" text-anchor="middle" font-weight="bold">6</text>
+      </g>
+    </g>
+
+    <defs>
+      <marker id="ah6" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+        <path d="M0,0 L8,3 L0,6 Z" fill="#bf360c"/>
+      </marker>
+    </defs>
+
+    <!-- Arrows (clean, no labels) -->
+    <path d="M90,140 C90,40 330,40 330,140" fill="none" stroke="#bf360c" stroke-width="1.8" marker-end="url(#ah6)"/>
+    <path d="M170,140 C170,65 330,65 330,140" fill="none" stroke="#bf360c" stroke-width="1.8" marker-end="url(#ah6)"/>
+    <path d="M250,140 C250,95 330,95 330,140" fill="none" stroke="#bf360c" stroke-width="1.8" marker-end="url(#ah6)"/>
+
+    <!-- Label column on the right -->
+    <g font-family="sans-serif" font-size="12">
+      <!-- Leader line 1: from arrow midpoint to label -->
+      <line x1="210" y1="42" x2="560" y2="55" stroke="#bf360c" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <circle cx="210" cy="42" r="2.5" fill="#bf360c"/>
+      <rect x="562" y="43" width="110" height="22" rx="4" fill="#fff3e0" stroke="#bf360c" stroke-width="1"/>
+      <text x="617" y="59" text-anchor="middle" fill="#bf360c" font-weight="600">dp[0] + 3 = 5</text>
+
+      <!-- Leader line 2 -->
+      <line x1="250" y1="66" x2="560" y2="80" stroke="#bf360c" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <circle cx="250" cy="66" r="2.5" fill="#bf360c"/>
+      <rect x="562" y="68" width="110" height="22" rx="4" fill="#fff3e0" stroke="#bf360c" stroke-width="1"/>
+      <text x="617" y="84" text-anchor="middle" fill="#bf360c" font-weight="600">dp[1] + 4 = 13</text>
+
+      <!-- Leader line 3 -->
+      <line x1="285" y1="98" x2="560" y2="105" stroke="#bf360c" stroke-width="0.8" stroke-dasharray="3,2"/>
+      <circle cx="285" cy="98" r="2.5" fill="#bf360c"/>
+      <rect x="562" y="93" width="110" height="22" rx="4" fill="#fff3e0" stroke="#bf360c" stroke-width="1"/>
+      <text x="617" y="109" text-anchor="middle" fill="#bf360c" font-weight="600">dp[2] + 1 = 5</text>
+    </g>
+  </svg>
+
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Pros</h4>
+      <ul>
+        <li>Zero overlap; labels are always vertically stacked with uniform spacing</li>
+        <li>Arrows stay clean and uncluttered</li>
+        <li>Supports long label text without crowding the diagram</li>
+        <li>Leader lines maintain arrow-label association</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Cons</h4>
+      <ul>
+        <li>Requires extra horizontal space for the column</li>
+        <li>Leader lines can cross each other with many arrows</li>
+        <li>Visual indirection: eye must follow leader line to connect label to arrow</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

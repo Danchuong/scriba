@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Smart Label Placement Demo — Full Content, Zero Truncation</title>
+<style>
+  body { font-family: -apple-system, system-ui, sans-serif; background: #f5f5f5; padding: 2rem; max-width: 1400px; margin: 0 auto; }
+  h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  h2 { font-size: 1.15rem; margin: 2.5rem 0 0.5rem; color: #222; border-bottom: 2px solid #ddd; padding-bottom: 0.3rem; }
+  .row { display: flex; gap: 1.5rem; flex-wrap: wrap; margin: 0.8rem 0; }
+  .card { background: white; border-radius: 8px; padding: 1.2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.1); flex: 1; min-width: 500px; }
+  .card h4 { font-size: 0.85rem; color: #666; margin: 0 0 0.5rem; }
+  .note { font-size: 0.8rem; color: #888; margin: 0.3rem 0; }
+  svg { display: block; }
+  /* Interactive: hover an annotation group → highlight pair */
+  .scriba-annotation { transition: opacity 0.15s ease; }
+  svg:hover .scriba-annotation { opacity: 0.3 !important; }
+  svg:hover .scriba-annotation:hover { opacity: 1 !important; }
+  svg:hover .scriba-annotation:hover path { stroke-width: 3 !important; }
+</style>
+</head>
+<body>
+
+<h1>Smart Label Placement — No Truncation, Full Content</h1>
+<p class="note">Hover any arrow to isolate it + its label. All text shown in full. Techniques: paint-order halo, background pill, greedy nudge, leader lines, edge-tangent rotation.</p>
+
+<!-- ============================================================ -->
+<h2>1. Array: 5 arrows into dp[4] — Knapsack DP</h2>
+<p class="note">dp[4] = min(dp[0]+8, dp[1]+3, dp[2]+6, dp[3]+1, dp[3]+2). All 5 labels fully visible, no overlap.</p>
+
+<div class="card">
+<svg width="620" height="210" viewBox="0 0 620 210">
+<g transform="translate(15,130)">
+  <!-- Array cells -->
+  <rect x="0" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="29" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#11181c">0</text>
+  <rect x="62" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="91" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#11181c">3</text>
+  <rect x="124" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="153" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#11181c">5</text>
+  <rect x="186" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="215" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#11181c">7</text>
+  <rect x="248" y="0" width="58" height="38" rx="6" fill="#0090ff" stroke="#0090ff"/><text x="277" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="white">8</text>
+  <rect x="310" y="0" width="58" height="38" rx="6" fill="#f8f9fa" stroke="#dfe3e6"/><text x="339" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#999">-</text>
+  <rect x="372" y="0" width="58" height="38" rx="6" fill="#f8f9fa" stroke="#dfe3e6"/><text x="401" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#999">-</text>
+  <rect x="434" y="0" width="58" height="38" rx="6" fill="#f8f9fa" stroke="#dfe3e6"/><text x="463" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#999">-</text>
+  <!-- Index labels -->
+  <text x="29" y="52" text-anchor="middle" font-size="10" fill="#687076">0</text>
+  <text x="91" y="52" text-anchor="middle" font-size="10" fill="#687076">1</text>
+  <text x="153" y="52" text-anchor="middle" font-size="10" fill="#687076">2</text>
+  <text x="215" y="52" text-anchor="middle" font-size="10" fill="#687076">3</text>
+  <text x="277" y="52" text-anchor="middle" font-size="10" fill="#687076">4</text>
+  <text x="339" y="52" text-anchor="middle" font-size="10" fill="#687076">5</text>
+  <text x="401" y="52" text-anchor="middle" font-size="10" fill="#687076">6</text>
+  <text x="463" y="52" text-anchor="middle" font-size="10" fill="#687076">7</text>
+
+  <!-- Arrow 0→4: dp[0]+8=8 (BEST, good color) -->
+  <g class="scriba-annotation" opacity="1.0">
+    <path d="M29,0 C85,-50 215,-50 277,0" stroke="#059669" stroke-width="2.2" fill="none"/>
+    <polygon points="277,0 267,-4 273,-11" fill="#059669"/>
+    <!-- Label at curve midpoint with halo + pill -->
+    <rect x="109" y="-64" width="92" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#059669" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="155" y="-51" text-anchor="middle" font-size="11" font-weight="700" fill="#059669"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">dp[0]+8=8</text>
+  </g>
+
+  <!-- Arrow 1→4: dp[1]+3=6 -->
+  <g class="scriba-annotation" opacity="0.7">
+    <path d="M91,0 C135,-40 230,-40 277,0" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <polygon points="277,0 269,-5 274,-11" fill="#94a3b8"/>
+    <!-- Label nudged: no overlap with arrow 0 label -->
+    <rect x="142" y="-50" width="88" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="186" y="-37" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">dp[1]+3=6</text>
+  </g>
+
+  <!-- Arrow 2→4: dp[2]+6=11 -->
+  <g class="scriba-annotation" opacity="0.7">
+    <path d="M153,0 C185,-32 248,-32 277,0" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <polygon points="277,0 270,-4 275,-10" fill="#94a3b8"/>
+    <!-- Label nudged further down to avoid overlap -->
+    <rect x="172" y="-38" width="92" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="218" y="-25" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">dp[2]+6=11</text>
+  </g>
+
+  <!-- Arrow 3→4 (first): dp[3]+1=8 -->
+  <g class="scriba-annotation" opacity="0.7">
+    <path d="M215,0 C232,-22 260,-22 277,0" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <polygon points="277,0 271,-3 276,-8" fill="#94a3b8"/>
+    <!-- Label placed along curve, slight right offset -->
+    <rect x="213" y="-28" width="88" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="257" y="-15" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">dp[3]+1=8</text>
+  </g>
+
+  <!-- Arrow 3→4 (second): dp[3]+2=9 — leader line to margin -->
+  <g class="scriba-annotation" opacity="0.7">
+    <path d="M215,0 C238,-14 262,-14 277,0" stroke="#2563eb" stroke-width="1.5" fill="none"/>
+    <polygon points="277,0 272,-2 276,-7" fill="#2563eb"/>
+    <!-- Label displaced to right margin with leader line -->
+    <polyline points="252,-7 360,-7 360,-18 380,-18" fill="none" stroke="#2563eb" stroke-width="0.75" stroke-dasharray="3,2" stroke-linejoin="round"/>
+    <circle cx="252" cy="-7" r="2" fill="#2563eb"/>
+    <rect x="380" y="-28" width="92" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#2563eb" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="426" y="-15" text-anchor="middle" font-size="11" font-weight="500" fill="#2563eb"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">dp[3]+2=9</text>
+  </g>
+</g>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<h2>2. Array: long label — full text, no truncation</h2>
+<p class="note">Label: "min(dp[i-1]+cost(i-1,i), dp[i-2]+cost(i-2,i))" — 46 chars displayed in full via multi-line pill.</p>
+
+<div class="card">
+<svg width="620" height="170" viewBox="0 0 620 170">
+<g transform="translate(15,90)">
+  <rect x="0" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="29" y="19" text-anchor="middle" dominant-baseline="central" font-size="13">0</text>
+  <rect x="62" y="0" width="58" height="38" rx="6" fill="#f8f9fa" stroke="#dfe3e6"/><text x="91" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#999">-</text>
+  <rect x="124" y="0" width="58" height="38" rx="6" fill="#f8f9fa" stroke="#dfe3e6"/><text x="153" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#999">-</text>
+  <rect x="186" y="0" width="58" height="38" rx="6" fill="#f8f9fa" stroke="#dfe3e6"/><text x="215" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#999">-</text>
+  <rect x="248" y="0" width="58" height="38" rx="6" fill="#f8f9fa" stroke="#dfe3e6"/><text x="277" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#999">-</text>
+  <rect x="310" y="0" width="58" height="38" rx="6" fill="#0090ff" stroke="#0090ff"/><text x="339" y="19" text-anchor="middle" dominant-baseline="central" font-size="13" fill="white">42</text>
+  <g class="scriba-annotation" opacity="1.0">
+    <path d="M29,0 C100,-50 268,-50 339,0" stroke="#059669" stroke-width="2.2" fill="none"/>
+    <polygon points="339,0 329,-3 336,-10" fill="#059669"/>
+    <!-- Long label: two lines inside pill -->
+    <rect x="107" y="-72" width="196" height="32" rx="4" fill="white" fill-opacity="0.92" stroke="#059669" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="205" y="-52" text-anchor="middle" font-size="10.5" font-weight="700" fill="#059669"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">
+      <tspan x="205" dy="0">min(dp[i-1]+cost(i-1,i),</tspan>
+      <tspan x="205" dy="14">dp[i-2]+cost(i-2,i))</tspan>
+    </text>
+  </g>
+</g>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<h2>3. DPTable 2D: same-column + same-row + diagonal arrows</h2>
+<p class="note">dp[0][2] receives arrows from dp[0][0] (row), dp[1][2] (col), dp[0][1] (adjacent). All labels visible with greedy placement.</p>
+
+<div class="card">
+<svg width="400" height="260" viewBox="0 0 400 260">
+<g transform="translate(30,70)">
+  <!-- 3x4 grid -->
+  <rect x="0" y="0" width="58" height="38" rx="4" fill="#e6e8eb" stroke="#dfe3e6"/><text x="29" y="19" text-anchor="middle" dominant-baseline="central" font-size="11">0</text>
+  <rect x="62" y="0" width="58" height="38" rx="4" fill="#e6e8eb" stroke="#dfe3e6"/><text x="91" y="19" text-anchor="middle" dominant-baseline="central" font-size="11">15750</text>
+  <rect x="124" y="0" width="58" height="38" rx="4" fill="#0090ff" stroke="#0090ff"/><text x="153" y="19" text-anchor="middle" dominant-baseline="central" font-size="11" fill="white">7875</text>
+  <rect x="186" y="0" width="58" height="38" rx="4" fill="#f8f9fa" stroke="#dfe3e6"/><text x="215" y="19" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">?</text>
+  <rect x="0" y="42" width="58" height="38" rx="4" fill="#f8f9fa" stroke="#dfe3e6"/><text x="29" y="61" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">-</text>
+  <rect x="62" y="42" width="58" height="38" rx="4" fill="#e6e8eb" stroke="#dfe3e6"/><text x="91" y="61" text-anchor="middle" dominant-baseline="central" font-size="11">0</text>
+  <rect x="124" y="42" width="58" height="38" rx="4" fill="#e6e8eb" stroke="#dfe3e6"/><text x="153" y="61" text-anchor="middle" dominant-baseline="central" font-size="11">2625</text>
+  <rect x="186" y="42" width="58" height="38" rx="4" fill="#f8f9fa" stroke="#dfe3e6"/><text x="215" y="61" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">-</text>
+  <rect x="0" y="84" width="58" height="38" rx="4" fill="#f8f9fa" stroke="#dfe3e6"/><text x="29" y="103" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">-</text>
+  <rect x="62" y="84" width="58" height="38" rx="4" fill="#f8f9fa" stroke="#dfe3e6"/><text x="91" y="103" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">-</text>
+  <rect x="124" y="84" width="58" height="38" rx="4" fill="#e6e8eb" stroke="#dfe3e6"/><text x="153" y="103" text-anchor="middle" dominant-baseline="central" font-size="11">0</text>
+  <rect x="186" y="84" width="58" height="38" rx="4" fill="#f8f9fa" stroke="#dfe3e6"/><text x="215" y="103" text-anchor="middle" dominant-baseline="central" font-size="11" fill="#999">-</text>
+
+  <!-- Arrow [0][0]→[0][2]: same row, horizontal arc (k=0) -->
+  <g class="scriba-annotation" opacity="1.0">
+    <path d="M29,19 C60,-15 122,-15 153,19" stroke="#059669" stroke-width="2.2" fill="none"/>
+    <polygon points="153,19 144,13 150,6" fill="#059669"/>
+    <rect x="50" y="-28" width="86" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#059669" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="93" y="-15" text-anchor="middle" font-size="11" font-weight="700" fill="#059669"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">k=0: 0+2625</text>
+  </g>
+
+  <!-- Arrow [0][1]→[0][2]: adjacent, short arc -->
+  <g class="scriba-annotation" opacity="0.7">
+    <path d="M91,19 C108,-5 138,-5 153,19" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <polygon points="153,19 146,12 151,6" fill="#94a3b8"/>
+    <!-- Nudged right to avoid overlap with k=0 label -->
+    <rect x="118" y="-14" width="100" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="168" y="-1" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">k=1: 15750+0</text>
+  </g>
+
+  <!-- Arrow [1][2]→[0][2]: same column, left-arcing -->
+  <g class="scriba-annotation" opacity="0.7">
+    <path d="M153,61 C115,35 115,35 153,19" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <polygon points="153,19 145,24 142,15" fill="#94a3b8"/>
+    <!-- Label placed to the left of the arc, with leader line -->
+    <polyline points="125,40 85,40 85,128 100,128" fill="none" stroke="#94a3b8" stroke-width="0.75" stroke-dasharray="3,2" stroke-linejoin="round"/>
+    <circle cx="125" cy="40" r="2" fill="#94a3b8"/>
+    <rect x="100" y="118" width="140" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="170" y="131" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">col: dp[1][2]=2625</text>
+  </g>
+</g>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<h2>4. Graph: Dijkstra — 4 edges to node E, rotated labels</h2>
+<p class="note">Labels rotated along edge tangent. Hover isolates one edge+label pair. All distances shown in full.</p>
+
+<div class="card">
+<svg width="500" height="350" viewBox="0 0 500 350">
+<g transform="translate(250,175)">
+  <!-- Edges + labels (rendered BEFORE nodes so nodes are on top) -->
+
+  <!-- A→E: d=10 via A -->
+  <g class="scriba-annotation" opacity="0.6">
+    <path d="M-82,-68 C-50,-35 -25,5 -16,18" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <polygon points="-16,18 -22,8 -12,10" fill="#94a3b8"/>
+    <!-- Label rotated ~50deg along edge tangent, at 35% of path -->
+    <g transform="translate(-58,-40) rotate(-50)">
+      <rect x="-48" y="-10" width="96" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3"/>
+      <text x="0" y="3" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8"
+            stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">d=10 via A</text>
+    </g>
+  </g>
+
+  <!-- B→E: d=7 via B -->
+  <g class="scriba-annotation" opacity="0.6">
+    <path d="M82,-68 C50,-35 25,5 16,18" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <polygon points="16,18 22,8 12,10" fill="#94a3b8"/>
+    <g transform="translate(58,-40) rotate(50)">
+      <rect x="-44" y="-10" width="88" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3"/>
+      <text x="0" y="3" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8"
+            stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">d=7 via B</text>
+    </g>
+  </g>
+
+  <!-- C→E: d=12 via C -->
+  <g class="scriba-annotation" opacity="0.6">
+    <path d="M-102,52 C-65,42 -30,36 -18,32" stroke="#94a3b8" stroke-width="1.5" fill="none"/>
+    <polygon points="-18,32 -28,28 -24,38" fill="#94a3b8"/>
+    <g transform="translate(-68,38) rotate(12)">
+      <rect x="-50" y="-10" width="100" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#94a3b8" stroke-width="0.5" stroke-opacity="0.3"/>
+      <text x="0" y="3" text-anchor="middle" font-size="11" font-weight="500" fill="#94a3b8"
+            stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">d=12 via C</text>
+    </g>
+  </g>
+
+  <!-- D→E: d=5 via D (BEST — good color, full opacity) -->
+  <g class="scriba-annotation" opacity="1.0">
+    <path d="M102,52 C65,42 30,36 18,32" stroke="#059669" stroke-width="2.5" fill="none"/>
+    <polygon points="18,32 28,28 24,38" fill="#059669"/>
+    <g transform="translate(68,38) rotate(-12)">
+      <rect x="-48" y="-10" width="96" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#059669" stroke-width="0.5" stroke-opacity="0.3"/>
+      <text x="0" y="3" text-anchor="middle" font-size="11" font-weight="700" fill="#059669"
+            stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">d=5 via D</text>
+    </g>
+  </g>
+
+  <!-- Nodes (on top of edges) -->
+  <circle cx="-100" cy="-80" r="20" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="-100" y="-80" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600">A</text>
+  <circle cx="100" cy="-80" r="20" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="100" y="-80" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600">B</text>
+  <circle cx="-120" cy="60" r="20" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="-120" y="60" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600">C</text>
+  <circle cx="120" cy="60" r="20" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="120" y="60" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600">D</text>
+  <circle cx="0" cy="30" r="22" fill="#0090ff" stroke="#0072B2" stroke-width="2"/><text x="0" y="30" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="600" fill="white">E</text>
+</g>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<h2>5. Tree: segtree annotations with leader lines</h2>
+<p class="note">push_down + lazy values on segtree nodes. Labels placed away from edges, connected by leader lines.</p>
+
+<div class="card">
+<svg width="500" height="280" viewBox="0 0 500 280">
+<g transform="translate(250,40)">
+  <!-- Tree edges -->
+  <line x1="0" y1="18" x2="-90" y2="68" stroke="#dfe3e6" stroke-width="1.5"/>
+  <line x1="0" y1="18" x2="90" y2="68" stroke="#dfe3e6" stroke-width="1.5"/>
+  <line x1="-90" y1="88" x2="-140" y2="138" stroke="#dfe3e6" stroke-width="1.5"/>
+  <line x1="-90" y1="88" x2="-40" y2="138" stroke="#dfe3e6" stroke-width="1.5"/>
+  <line x1="90" y1="88" x2="40" y2="138" stroke="#dfe3e6" stroke-width="1.5"/>
+  <line x1="90" y1="88" x2="140" y2="138" stroke="#dfe3e6" stroke-width="1.5"/>
+
+  <!-- Nodes -->
+  <circle cx="0" cy="0" r="20" fill="#0090ff" stroke="#0072B2" stroke-width="2"/><text x="0" y="0" text-anchor="middle" dominant-baseline="central" font-size="9" fill="white" font-weight="600">[0,5]</text>
+  <circle cx="-90" cy="78" r="18" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="-90" y="78" text-anchor="middle" dominant-baseline="central" font-size="9">[0,2]</text>
+  <circle cx="90" cy="78" r="18" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="90" y="78" text-anchor="middle" dominant-baseline="central" font-size="9">[3,5]</text>
+  <circle cx="-140" cy="150" r="16" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="-140" y="150" text-anchor="middle" dominant-baseline="central" font-size="9">[0,1]</text>
+  <circle cx="-40" cy="150" r="16" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="-40" y="150" text-anchor="middle" dominant-baseline="central" font-size="9">[2,2]</text>
+  <circle cx="40" cy="150" r="16" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="40" y="150" text-anchor="middle" dominant-baseline="central" font-size="9">[3,4]</text>
+  <circle cx="140" cy="150" r="16" fill="#e6e8eb" stroke="#dfe3e6" stroke-width="1.5"/><text x="140" y="150" text-anchor="middle" dominant-baseline="central" font-size="9">[5,5]</text>
+
+  <!-- Annotation: push_down on [0,5] — label to the right with leader line -->
+  <g class="scriba-annotation" opacity="1.0">
+    <path d="M-72,68 C-45,38 -20,18 -16,6" stroke="#059669" stroke-width="2" fill="none"/>
+    <polygon points="-16,6 -22,-2 -12,-1" fill="#059669"/>
+    <polyline points="-50,45 -180,45 -180,28 -175,28" fill="none" stroke="#059669" stroke-width="0.75" stroke-dasharray="3,2" stroke-linejoin="round"/>
+    <circle cx="-50" cy="45" r="2" fill="#059669"/>
+    <rect x="-175" y="18" width="120" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#059669" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="-115" y="31" text-anchor="middle" font-size="11" font-weight="700" fill="#059669"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">push_down [0,5]</text>
+  </g>
+
+  <!-- Annotation: lazy=3 on [0,2] — label below-left with leader line -->
+  <g class="scriba-annotation" opacity="0.8">
+    <circle cx="-90" cy="78" r="22" fill="none" stroke="#D55E00" stroke-width="1.5" stroke-dasharray="4,2"/>
+    <polyline points="-112,80 -190,80 -190,98 -185,98" fill="none" stroke="#D55E00" stroke-width="0.75" stroke-dasharray="3,2" stroke-linejoin="round"/>
+    <circle cx="-112" cy="80" r="2" fill="#D55E00"/>
+    <rect x="-185" y="88" width="108" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#D55E00" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="-131" y="101" text-anchor="middle" font-size="11" font-weight="600" fill="#D55E00"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">lazy=3 pending</text>
+  </g>
+
+  <!-- Annotation: sum=15 on [3,5] — label to the right -->
+  <g class="scriba-annotation" opacity="0.8">
+    <polyline points="108,78 165,78 165,68 170,68" fill="none" stroke="#0090ff" stroke-width="0.75" stroke-dasharray="3,2" stroke-linejoin="round"/>
+    <circle cx="108" cy="78" r="2" fill="#0090ff"/>
+    <rect x="170" y="58" width="68" height="18" rx="4" fill="white" fill-opacity="0.92" stroke="#0090ff" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="204" y="71" text-anchor="middle" font-size="11" font-weight="500" fill="#0090ff"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">sum=15</text>
+  </g>
+</g>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<h2>6. LIS traceback: path arrows + dimmed alternatives</h2>
+<p class="note">Optimal path arrows get full opacity + pills. Non-optimal arrows dimmed, labels still readable via halo.</p>
+
+<div class="card">
+<svg width="620" height="180" viewBox="0 0 620 180">
+<g transform="translate(15,100)">
+  <!-- Cells: path cells highlighted -->
+  <rect x="0" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="29" y="19" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#999">3</text>
+  <rect x="62" y="0" width="58" height="38" rx="6" fill="#2563eb" stroke="#2563eb"/><text x="91" y="19" text-anchor="middle" dominant-baseline="central" font-size="12" fill="white">1</text>
+  <rect x="124" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="153" y="19" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#999">8</text>
+  <rect x="186" y="0" width="58" height="38" rx="6" fill="#2563eb" stroke="#2563eb"/><text x="215" y="19" text-anchor="middle" dominant-baseline="central" font-size="12" fill="white">2</text>
+  <rect x="248" y="0" width="58" height="38" rx="6" fill="#2563eb" stroke="#2563eb"/><text x="277" y="19" text-anchor="middle" dominant-baseline="central" font-size="12" fill="white">5</text>
+  <rect x="310" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="339" y="19" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#999">4</text>
+  <rect x="372" y="0" width="58" height="38" rx="6" fill="#2563eb" stroke="#2563eb"/><text x="401" y="19" text-anchor="middle" dominant-baseline="central" font-size="12" fill="white">7</text>
+  <rect x="434" y="0" width="58" height="38" rx="6" fill="#e6e8eb" stroke="#dfe3e6"/><text x="463" y="19" text-anchor="middle" dominant-baseline="central" font-size="12" fill="#999">6</text>
+
+  <!-- Dimmed non-path arrows (still readable via halo, no pill) -->
+  <g class="scriba-annotation" opacity="0.25">
+    <path d="M29,0 C60,-18 122,-18 153,0" stroke="#94a3b8" stroke-width="1" fill="none"/>
+    <text x="91" y="-22" text-anchor="middle" font-size="10" fill="#94a3b8"
+          stroke="white" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill">dp[0]+1</text>
+  </g>
+  <g class="scriba-annotation" opacity="0.25">
+    <path d="M153,0 C200,-25 244,-25 277,0" stroke="#94a3b8" stroke-width="1" fill="none"/>
+    <text x="215" y="-29" text-anchor="middle" font-size="10" fill="#94a3b8"
+          stroke="white" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill">dp[2]+1</text>
+  </g>
+  <g class="scriba-annotation" opacity="0.25">
+    <path d="M215,0 C250,-18 306,-18 339,0" stroke="#94a3b8" stroke-width="1" fill="none"/>
+    <text x="277" y="-22" text-anchor="middle" font-size="10" fill="#94a3b8"
+          stroke="white" stroke-width="4" stroke-linejoin="round" paint-order="stroke fill">dp[3]+1</text>
+  </g>
+
+  <!-- Path arrows: full opacity + pills -->
+  <g class="scriba-annotation" opacity="1.0">
+    <path d="M91,0 C135,-32 185,-32 215,0" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+    <polygon points="215,0 205,-3 212,-10" fill="#2563eb"/>
+    <rect x="118" y="-46" width="94" height="18" rx="4" fill="white" fill-opacity="0.95" stroke="#2563eb" stroke-width="0.5" stroke-opacity="0.4"/>
+    <text x="165" y="-33" text-anchor="middle" font-size="11" font-weight="700" fill="#2563eb"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">dp[1]+1=2</text>
+  </g>
+  <g class="scriba-annotation" opacity="1.0">
+    <path d="M215,0 C240,-25 260,-25 277,0" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+    <polygon points="277,0 269,-4 275,-10" fill="#2563eb"/>
+    <rect x="212" y="-38" width="94" height="18" rx="4" fill="white" fill-opacity="0.95" stroke="#2563eb" stroke-width="0.5" stroke-opacity="0.4"/>
+    <text x="259" y="-25" text-anchor="middle" font-size="11" font-weight="700" fill="#2563eb"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">dp[3]+1=3</text>
+  </g>
+  <g class="scriba-annotation" opacity="1.0">
+    <path d="M277,0 C318,-35 368,-35 401,0" stroke="#2563eb" stroke-width="2.5" fill="none"/>
+    <polygon points="401,0 391,-3 398,-10" fill="#2563eb"/>
+    <rect x="299" y="-48" width="94" height="18" rx="4" fill="white" fill-opacity="0.95" stroke="#2563eb" stroke-width="0.5" stroke-opacity="0.4"/>
+    <text x="346" y="-35" text-anchor="middle" font-size="11" font-weight="700" fill="#2563eb"
+          stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill">dp[4]+1=4</text>
+  </g>
+</g>
+</svg>
+</div>
+
+<!-- ============================================================ -->
+<h2>Techniques Used</h2>
+<table style="width:100%; border-collapse:collapse; background:white; border-radius:8px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+<thead><tr style="background:#f0f0f0;"><th style="padding:6px 10px; text-align:left; font-size:0.85rem;">Technique</th><th style="padding:6px 10px; text-align:left; font-size:0.85rem;">How</th><th style="padding:6px 10px; text-align:left; font-size:0.85rem;">Where used above</th></tr></thead>
+<tbody>
+<tr><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;"><strong>paint-order halo</strong></td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">White stroke behind text fill</td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">Every label</td></tr>
+<tr><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;"><strong>Background pill</strong></td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">White rounded rect, 92% opacity, color-matched border</td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">Every label</td></tr>
+<tr><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;"><strong>Greedy nudge</strong></td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">Shift label until no overlap with placed labels</td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">#1 (5 arrows), #3 (3 arrows)</td></tr>
+<tr><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;"><strong>Leader lines</strong></td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">Elbow connector when label displaced far</td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">#1 (5th arrow), #3 (col arrow), #5 (tree)</td></tr>
+<tr><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;"><strong>Edge-tangent rotation</strong></td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">Label rotated to match arrow direction</td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">#4 (graph Dijkstra)</td></tr>
+<tr><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;"><strong>Multi-line tspan</strong></td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">Long text wraps to 2 lines inside pill</td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">#2 (46-char label)</td></tr>
+<tr><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;"><strong>Hover isolation</strong></td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">CSS: svg:hover dims all, :hover on annotation restores</td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">All sections (try hovering!)</td></tr>
+<tr><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;"><strong>Zero truncation</strong></td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">All text shown in full — smart positioning only</td><td style="padding:6px 10px; font-size:0.85rem; border-top:1px solid #eee;">All sections</td></tr>
+</tbody>
+</table>
+
+</body>
+</html>
