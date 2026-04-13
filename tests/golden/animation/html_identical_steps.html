@@ -1,38 +1,239 @@
-<!-- Golden file: html_identical_steps.html
-     Source: 2-step Array with no changes between steps.
-     Step 1: narration only
-     Step 2: narration only (no recolor, no apply)
-
-     No shape_states changes between frames means no transitions.
-
-     Expected tr: fields:
-       Frame 0: tr:null (no previous frame)
-       Frame 1: tr:null (no changes = no manifest)
--->
-<div class="scriba-widget" id="test-identical" tabindex="0">
-  <div class="scriba-controls">
-    <button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button>
-    <span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span>
-    <button class="scriba-btn-next" aria-label="Next step">Next</button>
-    <div class="scriba-progress">
-      <div class="scriba-dot active"></div>
-      <div class="scriba-dot"></div>
-    </div>
-  </div>
-  <div class="scriba-stage"></div>
-  <p class="scriba-narration" id="test-identical-narration" aria-live="polite"></p>
-  <div class="scriba-substory-container"></div>
-  <div class="scriba-print-frames" style="display:none">
-    <!-- print frames omitted for brevity -->
-  </div>
-</div>
-<script>
-(function(){
+<div class="scriba-widget" id="test-identical" tabindex="0"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-live="polite" aria-atomic="true">Step 1 / 2</span><button class="scriba-btn-next" aria-label="Next step">Next</button><div class="scriba-progress"><div class="scriba-dot active"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" id="test-identical-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 216 72" role="img" aria-labelledby="test-identical-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c">1</text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c">2</text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c">3</text></g></g></g></svg></div><p class="scriba-narration" id="test-identical-print-1-narration">Step one.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 216 72" role="img" aria-labelledby="test-identical-print-2-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c">1</text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c">2</text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c">3</text></g></g></g></svg></div><p class="scriba-narration" id="test-identical-print-2-narration">Step two.</p></div></div></div>
+<script>(function(){
   var W=document.getElementById('test-identical');
   var frames=[
-    {svg:`<svg><!-- frame 0 SVG --></svg>`,narration:`Step one.`,substory:``,label:``,tr:null},
-    {svg:`<svg><!-- frame 1 SVG --></svg>`,narration:`Step two.`,substory:``,label:``,tr:null}
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 216 72" role="img" aria-labelledby="test-identical-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16.0,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-idle">
+    <rect x="1.0" y="1.0" width="58.0" height="38.0"/>
+    <text x="30" y="20" fill="#11181c">1</text>
+  </g>
+  <g data-target="a.cell[1]" class="scriba-state-idle">
+    <rect x="63.0" y="1.0" width="58.0" height="38.0"/>
+    <text x="92" y="20" fill="#11181c">2</text>
+  </g>
+  <g data-target="a.cell[2]" class="scriba-state-idle">
+    <rect x="125.0" y="1.0" width="58.0" height="38.0"/>
+    <text x="154" y="20" fill="#11181c">3</text>
+  </g>
+</g>
+</g>
+</svg>`,narration:`Step one.`,substory:``,label:``,tr:null,fs:0},
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 216 72" role="img" aria-labelledby="test-identical-narration" xmlns="http://www.w3.org/2000/svg">
+<g transform="translate(16.0,16)">
+<g data-primitive="array" data-shape="a">
+  <g data-target="a.cell[0]" class="scriba-state-idle">
+    <rect x="1.0" y="1.0" width="58.0" height="38.0"/>
+    <text x="30" y="20" fill="#11181c">1</text>
+  </g>
+  <g data-target="a.cell[1]" class="scriba-state-idle">
+    <rect x="63.0" y="1.0" width="58.0" height="38.0"/>
+    <text x="92" y="20" fill="#11181c">2</text>
+  </g>
+  <g data-target="a.cell[2]" class="scriba-state-idle">
+    <rect x="125.0" y="1.0" width="58.0" height="38.0"/>
+    <text x="154" y="20" fill="#11181c">3</text>
+  </g>
+</g>
+</g>
+</svg>`,narration:`Step two.`,substory:``,label:``,tr:null,fs:0}
   ];
-  // ... runtime functions
-})();
-</script>
+  var cur=0;
+  var stage=W.querySelector('.scriba-stage');
+  var narr=W.querySelector('.scriba-narration');
+  var subC=W.querySelector('.scriba-substory-container');
+  var ctr=W.querySelector('.scriba-step-counter');
+  var prev=W.querySelector('.scriba-btn-prev');
+  var next=W.querySelector('.scriba-btn-next');
+  var dots=W.querySelectorAll('.scriba-dot');
+  var _anims=[];
+  var _animState='idle';
+  var _canAnim=(typeof Element.prototype.animate==='function')
+    &&!window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var DUR=180;
+  function _cancelAnims(){
+    for(var k=0;k<_anims.length;k++)try{_anims[k].finish();}catch(e){}
+    _anims=[];_animState='idle';
+  }
+  function initSub(el){
+    var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
+    var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
+    var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
+    var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
+    function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
+      sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+      sp.disabled=i===0;sx.disabled=i===fd.length-1;
+      sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+    }
+    sp.addEventListener('click',function(){if(sc>0)sh(sc-1);});
+    sx.addEventListener('click',function(){if(sc<fd.length-1)sh(sc+1);});
+    sh(0);
+  }
+  function _updateControls(i){
+    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    prev.disabled=i===0;
+    next.disabled=i===frames.length-1;
+    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+  }
+  function snapToFrame(i){
+    _cancelAnims();
+    cur=i;
+    stage.innerHTML=frames[i].svg;
+    narr.innerHTML=frames[i].narration;
+    subC.innerHTML=frames[i].substory||'';
+    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+    _updateControls(i);
+  }
+  function animateTransition(toIdx){
+    if(_animState==='animating'){_cancelAnims();snapToFrame(toIdx);return;}
+    var tr=frames[toIdx]&&frames[toIdx].tr;
+    if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
+    _animState='animating';
+    narr.innerHTML=frames[toIdx].narration;
+    _updateControls(toIdx);
+    var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
+    var pending=[];
+    var hasWaapi=false;
+    for(var t=0;t<tr.length;t++){
+      var rec=tr[t];
+      var target=rec[0],prop=rec[1],fromVal=rec[2],toVal=rec[3],kind=rec[4];
+      var sel='[data-target="'+CSS.escape(target)+'"]';
+      if(kind==='recolor'){
+        var el=stage.querySelector(sel);
+        if(el){
+          var cls=el.className.baseVal||el.className||'';
+          cls=cls.replace('scriba-state-'+fromVal,'scriba-state-'+toVal);
+          if(el.className.baseVal!==undefined)el.className.baseVal=cls;
+          else el.className=cls;
+        }
+      }else if(kind==='value_change'){
+        var el2=stage.querySelector(sel);
+        if(el2){var txt=el2.querySelector('text');if(txt)txt.textContent=toVal;}
+      }else if(kind==='highlight_on'){
+        var el3=stage.querySelector(sel);
+        if(el3){
+          var c3=el3.className.baseVal||el3.className||'';
+          if(c3.indexOf('scriba-highlighted')===-1){
+            c3+=' scriba-highlighted';
+            if(el3.className.baseVal!==undefined)el3.className.baseVal=c3;
+            else el3.className=c3;
+          }
+        }
+      }else if(kind==='highlight_off'){
+        var el4=stage.querySelector(sel);
+        if(el4){
+          var c4=el4.className.baseVal||el4.className||'';
+          c4=c4.replace(/\s*scriba-highlighted/g,'');
+          if(el4.className.baseVal!==undefined)el4.className.baseVal=c4;
+          else el4.className=c4;
+        }
+      }else if(kind==='element_remove'){
+        var el5=stage.querySelector(sel);
+        if(el5){
+          var a5=el5.animate([{opacity:1},{opacity:0}],
+            {duration:DUR,easing:'ease-out',fill:'forwards'});
+          _anims.push(a5);pending.push(a5.finished);hasWaapi=true;
+        }
+      }else if(kind==='element_add'){
+        var src=parsed.querySelector(sel);
+        if(src){
+          var clone=document.importNode(src,true);
+          clone.style.opacity='0';
+          var srcP=src.parentNode;
+          var pShape=null;
+          while(srcP&&srcP.nodeType===1){
+            var ds2=srcP.getAttribute&&srcP.getAttribute('data-shape');
+            if(ds2){pShape=stage.querySelector('[data-shape="'+CSS.escape(ds2)+'"]');break;}
+            srcP=srcP.parentNode;
+          }
+          var ct=pShape||stage.querySelector('svg');
+          if(ct){ct.appendChild(clone);
+            var a6=clone.animate([{opacity:0},{opacity:1}],
+              {duration:DUR,easing:'ease-in',fill:'forwards'});
+            _anims.push(a6);pending.push(a6.finished);hasWaapi=true;
+          }
+        }
+      }else if(kind==='position_move'){
+        var el9=stage.querySelector(sel);
+        if(el9){
+          var pf=fromVal.split(',');
+          var pt=toVal.split(',');
+          var dx=parseFloat(pf[0])-parseFloat(pt[0]);
+          var dy=parseFloat(pf[1])-parseFloat(pt[1]);
+          var a9=el9.animate([
+            {transform:'translate('+dx+'px,'+dy+'px)'},
+            {transform:'translate(0,0)'}
+          ],{duration:DUR,easing:'ease-out',fill:'forwards'});
+          _anims.push(a9);pending.push(a9.finished);hasWaapi=true;
+        }
+      }else if(kind==='annotation_remove'){
+        var el7=stage.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
+        if(el7){
+          var a7=el7.animate([{opacity:1},{opacity:0}],
+            {duration:DUR,easing:'ease-out',fill:'forwards'});
+          _anims.push(a7);pending.push(a7.finished);hasWaapi=true;
+        }
+      }else if(kind==='annotation_add'){
+        var src8=parsed.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
+        if(src8){
+          var clone8=document.importNode(src8,true);
+          clone8.style.opacity='0';
+          /* Find the matching parent primitive group in the current DOM
+             so the annotation inherits the correct coordinate transform.
+             The parsed (new frame) SVG has the annotation inside its
+             primitive <g data-primitive="..." data-shape="...">, so we
+             locate the same shape group in the live stage. */
+          var srcParent=src8.parentNode;
+          var parentShape=null;
+          while(srcParent&&srcParent.nodeType===1){
+            var ds=srcParent.getAttribute&&srcParent.getAttribute('data-shape');
+            if(ds){parentShape=stage.querySelector('[data-shape="'+CSS.escape(ds)+'"]');break;}
+            srcParent=srcParent.parentNode;
+          }
+          var container=parentShape||stage.querySelector('svg');
+          if(container){container.appendChild(clone8);
+            var a8=clone8.animate([{opacity:0},{opacity:1}],
+              {duration:DUR,easing:'ease-in',fill:'forwards'});
+            _anims.push(a8);pending.push(a8.finished);hasWaapi=true;
+          }
+        }
+      }
+    }
+    var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
+    function _finish(fullSync){
+      cur=toIdx;
+      if(fullSync){
+        stage.innerHTML=frames[toIdx].svg;
+      }
+      subC.innerHTML=frames[toIdx].substory||'';
+      subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+      _anims=[];_animState='idle';
+    }
+    if(hasWaapi){
+      Promise.all(pending).then(function(){_finish(needsSync||true);}).catch(function(){_finish(true);});
+    }else if(needsSync){
+      setTimeout(function(){_finish(true);},DUR+20);
+    }else{
+      _finish(false);
+    }
+  }
+  function show(i,animate){
+    if(animate&&i===cur+1&&frames[i]&&frames[i].tr&&_canAnim){
+      animateTransition(i);
+    }else{
+      snapToFrame(i);
+    }
+  }
+  prev.addEventListener('click',function(){if(cur>0)show(cur-1,false);});
+  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1,true);});
+  W.addEventListener('keydown',function(e){
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1,true);}
+    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1,false);}
+  });
+  if(typeof MutationObserver!=='undefined'){
+    new MutationObserver(function(){_cancelAnims();if(cur>=0)snapToFrame(cur);})
+      .observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+  }
+  show(0,false);
+})();</script>

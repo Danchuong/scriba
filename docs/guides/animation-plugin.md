@@ -4,7 +4,7 @@
 
 ## 1. Purpose
 
-`AnimationRenderer` is the Scriba plugin that turns a `\begin{animation} ... \end{animation}` LaTeX environment into a **filmstrip of N static frames**: an `<ol class="scriba-frames">` whose children are `<li class="scriba-frame">` elements, each holding a pre-rendered inline `<svg>` and a narration paragraph. The HTML is pure markup — no `<button>` controls, no step controller, no runtime JavaScript, no Lit widgets, no Motion One. The filmstrip renders identically in browsers, email clients, RSS readers, PDF print, and screen readers; the only navigation affordance is the `:target` CSS selector driven by the URL fragment (`#{scene-id}-frame-7`).
+`AnimationRenderer` is the Scriba plugin that turns a `\begin{animation} ... \end{animation}` LaTeX environment into either an **interactive widget** (default) or a **static filmstrip of N frames**. In interactive mode, the output includes an inline JS runtime with prev/next step controller buttons; the differ computes frame-to-frame transition manifests and the runtime applies CSS class changes and WAAPI animations between steps. In static mode, the output is an `<ol class="scriba-frames">` whose children are `<li class="scriba-frame">` elements with pure markup — no JavaScript, no buttons. The static filmstrip renders identically in browsers, email clients, RSS readers, PDF print, and screen readers; navigation uses the `:target` CSS selector driven by the URL fragment (`#{scene-id}-frame-7`).
 
 Concrete goals:
 
@@ -14,13 +14,13 @@ Concrete goals:
 4. Maintain a delta-based `SceneState` across frames: each frame inherits the previous frame's state, drops ephemeral overlays (`\highlight`, `\annotate{ephemeral=true}`), and applies its own commands on top.
 5. Render each frame's final `SceneState` as one inline `<svg>` via the shared SVG emitter.
 6. Delegate every `\narrate{...}` body to `ctx.render_inline_tex(body)` for KaTeX + inline TeX processing, inserting the resulting HTML inside a `<p class="scriba-narration">`.
-7. Return a `RenderArtifact` whose `html` is the full `<figure class="scriba-animation">`, whose `css_assets` includes `scriba-animation.css` and `scriba-scene-primitives.css`, and whose `js_assets` is **empty**.
+7. Return a `RenderArtifact` whose `html` is the full `<figure class="scriba-animation">`, whose `css_assets` includes `scriba-animation.css` and `scriba-scene-primitives.css`. In interactive mode, the JS runtime is embedded inline in the HTML (not a separate asset file), so `js_assets` remains empty.
 
 Non-goals:
 
-- Any runtime JavaScript (step controller, play/pause, auto-advance, hover-to-step, scroll-sync). All of these are out of scope per `environments.md` §13 and require an ADR to add.
+- Auto-advance, hover-to-step, or scroll-sync behaviors. The interactive widget includes a step controller with prev/next buttons and an inline JS runtime that drives frame-to-frame transitions via WAAPI, but auto-play and scroll-sync remain out of scope per `environments.md` §13.
 - Parsing or detecting code fences, Markdown, or any format other than the LaTeX environment.
-- Transitions between frames beyond what pure CSS `@keyframes` on a static `<li>` can produce.
+- Author-configurable transition timing or easing curves. The built-in differ produces frame-to-frame transition manifests (serialized as `tr:` in the JS frames array) covering `recolor`, `value_change`, `element_add`, `element_remove`, `highlight_on`, and `highlight_off`; the JS runtime applies CSS class changes and WAAPI animations automatically. A `fs:` (full-sync) flag handles structural DOM changes, and `prefers-reduced-motion` disables animations. When a frame exceeds 150 transitions, the runtime sets `skip_animation` and applies changes instantly. Custom timing controls beyond these defaults require an ADR.
 - Rasterization to PNG, OG image generation, GIF export. The output is SVG-in-HTML only.
 - Per-frame interactivity or client-side state. Each `<li>` is inert markup.
 
@@ -282,7 +282,7 @@ def assets(self) -> RendererAssets:
     )
 ```
 
-Both CSS files are always-on for any Pipeline that registers `AnimationRenderer`. `scriba-scene-primitives.css` is shared with `DiagramRenderer` — the Pipeline's asset aggregator (see `scriba/core/pipeline.py` step 6) namespaces basenames by owning renderer name, so both plugins can contribute the same file without collision. No JavaScript asset is emitted under any configuration.
+Both CSS files are always-on for any Pipeline that registers `AnimationRenderer`. `scriba-scene-primitives.css` is shared with `DiagramRenderer` — the Pipeline's asset aggregator (see `scriba/core/pipeline.py` step 6) namespaces basenames by owning renderer name, so both plugins can contribute the same file without collision. No separate JavaScript asset file is emitted; in interactive mode, the JS runtime (step controller and WAAPI transition driver) is embedded inline in the HTML output.
 
 Custom-property variables (state colors, frame gap, stage padding) live in the `--scriba-*` namespace from `01-architecture.md` §"CSS variable naming convention", extended in `environments.md` §9. Dark mode is a single ancestor selector `[data-theme="dark"]`, consistent with `TexRenderer`.
 

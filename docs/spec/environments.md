@@ -907,7 +907,7 @@ Rendered HTML:
 
 The following are explicitly **not** part of this spec. Attempting to implement any of them in W3 requires an ADR and a bump to this document.
 
-- **Runtime JavaScript of any kind.** No Lit widgets, no Motion One, no step controller buttons, no hover-to-advance, no scroll-to-step synchronization, no animated transitions between frames beyond what pure CSS `@keyframes` on a static `<li>` can produce without altering the per-frame SVG.
+- **Lit widgets, Motion One, hover-to-advance, scroll-to-step synchronization.** The interactive widget now includes an inline JS runtime with a step controller (prev/next buttons) and frame-to-frame WAAPI transitions driven by the differ's transition manifests. However, Lit, Motion One, hover-to-advance, and scroll-to-step synchronization remain out of scope.
 - **Nested environments.** Animations inside animations, diagrams inside animations, environments inside `\begin{tabular}`: all forbidden.
 - **Custom primitive plug-ins.** Only the 16 registered primitives are usable via `\shape`. Third-party primitive packages are a v0.4+ concern.
 - **Live re-compute.** `\compute` runs once at build time. There is no way to reactively recompute when a consumer toggles a prop. If the consumer wants that, they render the same source twice with different `RenderContext.metadata` keys and swap the results at the HTML level.

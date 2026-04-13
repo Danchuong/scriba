@@ -78,7 +78,7 @@ def _extract_tr_fields(html: str) -> list[str]:
     Returns a list of strings, each either ``"null"`` or a JSON array
     like ``'[["a.cell[1]","state","idle","current","recolor"]]'``.
     """
-    return re.findall(r",tr:(null|\[\[.*?\]\])\}", html)
+    return re.findall(r",tr:(null|\[\[.*?\]\]),fs:\d\}", html)
 
 
 def _has_animation_runtime(html: str) -> bool:

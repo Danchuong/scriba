@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-04-12
+
+### Fixed
+
+- **Animation transition integration tests** — Updated stale golden files and regex patterns in `tests/integration/test_animation_transitions.py` to match current emitter output. All 12 test cases pass.
+- **Documentation accuracy** — Corrected `docs/guides/animation-plugin.md` non-goals section which falsely claimed transitions were not produced and no runtime JavaScript existed. The frame-to-frame differ (`scriba/animation/differ.py`) and JS animation runtime (`emitter.py`) are fully operational: the differ computes transition manifests (`recolor`, `value_change`, `element_add`, `element_remove`, `highlight_on`, `highlight_off`), serialized as `tr:` fields in the JS frames array, with WAAPI animations and `prefers-reduced-motion` support.
+
 ## [0.6.1] - 2026-04-11
 
 ### Fixed

@@ -276,4 +276,4 @@ except ScribaError as exc:
 
 That is the whole pipeline, end to end. One `.tex` file in — with plain
 LaTeX, diagrams, and animations freely mixed — one HTML string plus a
-CSS asset manifest out, no JavaScript anywhere.
+CSS asset manifest out. Interactive animations embed an inline JS runtime for step control and WAAPI transitions; no separate JavaScript asset files are produced.

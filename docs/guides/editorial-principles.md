@@ -239,9 +239,7 @@ half of the contract.
 
 ## 9. Work with the spec, not around it
 
-- **Do not reach for `innerHTML` tricks.** There is no runtime. There is
-  no custom element. There is no step controller. If you think you need
-  JavaScript, you are writing a different product.
+- **Do not reach for `innerHTML` tricks.** The interactive widget includes an inline JS runtime with a step controller and WAAPI transitions, but authors should not inject custom JavaScript or DOM manipulation. If you need behavior beyond what the built-in step controller and transition system provide, file an ADR.
 - **Do not nest environments.** `\begin{animation}` inside
   `\begin{animation}` is an error (`E1003`). If you want to show two
   things evolving, use two animations in sequence with prose between
