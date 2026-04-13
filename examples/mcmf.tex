@@ -1,0 +1,261 @@
+\section{Min-Cost Max-Flow}
+
+\subsection{Problem}
+
+Given a directed graph $G = (V, E)$ where each edge $(u, v)$ has a \textbf{capacity} $c(u,v)$ and a \textbf{cost} $w(u,v)$, find the maximum flow from source $s$ to sink $t$ that minimizes total cost.
+
+$$\text{minimize} \sum_{(u,v) \in E} w(u,v) \cdot f(u,v) \quad \text{subject to} \quad \sum f = \text{max-flow}$$
+
+The key idea: use \textbf{Shortest Path Augmentation} (SPFA / Bellman-Ford) to always push flow along the cheapest augmenting path.
+
+\subsection{Example Graph}
+
+\begin{diagram}[id="mcmf-graph", label="MCMF Network"]
+\shape{G}{Graph}{
+  nodes=["S","A","B","C","D","T"],
+  edges=[("S","A",4),("S","B",3),("A","C",2),("A","D",3),("B","C",5),("B","D",1),("C","T",4),("D","T",3)],
+  directed=true,
+  show_weights=true,
+  layout="hierarchical"
+}
+\recolor{G.node[S]}{state=current}
+\recolor{G.node[T]}{state=good}
+\end{diagram}
+
+Edge labels show capacity. Costs: $w(S,A)=1$, $w(S,B)=2$, $w(A,C)=3$, $w(A,D)=1$, $w(B,C)=1$, $w(B,D)=4$, $w(C,T)=2$, $w(D,T)=1$.
+
+\subsection{Algorithm Walkthrough}
+
+\begin{animation}[id="mcmf-spfa", label="MCMF via Shortest Path Augmentation"]
+\shape{G}{Graph}{
+  nodes=["S","A","B","C","D","T"],
+  edges=[("S","A",4),("S","B",3),("A","C",2),("A","D",3),("B","C",5),("B","D",1),("C","T",4),("D","T",3)],
+  directed=true,
+  show_weights=true,
+  layout="hierarchical"
+}
+\shape{dist}{Array}{size=6, data=["$\\infty$","$\\infty$","$\\infty$","$\\infty$","$\\infty$","$\\infty$"], labels="0..5", label="dist[ ]"}
+\shape{vars}{VariableWatch}{names=["flow","cost","path","bottleneck"], label="State"}
+
+\step
+\recolor{G.node[S]}{state=current}
+\recolor{G.node[T]}{state=good}
+\apply{vars.var[flow]}{value="0"}
+\apply{vars.var[cost]}{value="0"}
+\apply{vars.var[path]}{value="---"}
+\apply{vars.var[bottleneck]}{value="---"}
+\narrate{Network with source $S$ and sink $T$. Edge labels = capacity. We track total flow and cost.}
+
+\step
+\narrate{\textbf{Round 1:} Run SPFA from $S$ to find cheapest path. Initialize $dist[S] = 0$, all others $\infty$.}
+\apply{dist.cell[0]}{value="0"}
+\recolor{dist.cell[0]}{state=current}
+
+\step
+\narrate{Relax edges from $S$: $dist[A] = 0 + 1 = 1$, $dist[B] = 0 + 2 = 2$.}
+\apply{dist.cell[1]}{value="1"}
+\apply{dist.cell[2]}{value="2"}
+\recolor{dist.cell[1]}{state=current}
+\recolor{dist.cell[2]}{state=current}
+\recolor{G.edge[(S,A)]}{state=current}
+\recolor{G.edge[(S,B)]}{state=current}
+
+\step
+\narrate{Relax from $A$: $dist[D] = 1 + 1 = 2$ via $A \to D$ (cost 1). $dist[C] = 1 + 3 = 4$ via $A \to C$.}
+\apply{dist.cell[3]}{value="4"}
+\apply{dist.cell[4]}{value="2"}
+\recolor{dist.cell[3]}{state=current}
+\recolor{dist.cell[4]}{state=current}
+\recolor{G.edge[(A,C)]}{state=current}
+\recolor{G.edge[(A,D)]}{state=current}
+\recolor{G.node[A]}{state=current}
+
+\step
+\narrate{Relax from $B$: $dist[C] = \min(4, 2+1) = 3$ improved via $B \to C$! $D$ not improved ($2+4=6 > 2$).}
+\apply{dist.cell[3]}{value="3"}
+\recolor{G.edge[(B,C)]}{state=good}
+\recolor{G.node[B]}{state=current}
+
+\step
+\narrate{Relax from $D$: $dist[T] = 2 + 1 = 3$ via $D \to T$.}
+\apply{dist.cell[5]}{value="3"}
+\recolor{dist.cell[5]}{state=good}
+\recolor{G.edge[(D,T)]}{state=current}
+
+\step
+\narrate{Relax from $C$: $dist[T] = \min(3, 3+2) = 3$ not improved. SPFA complete.}
+\recolor{G.edge[(C,T)]}{state=dim}
+
+\step
+\narrate{Cheapest path: $S \to A \to D \to T$ with cost $1+1+1=3$. Bottleneck = $\min(4, 3, 3) = 3$.}
+\recolor{G.edge[(S,A)]}{state=good}
+\recolor{G.edge[(A,D)]}{state=good}
+\recolor{G.edge[(D,T)]}{state=good}
+\recolor{G.edge[(S,B)]}{state=dim}
+\recolor{G.edge[(B,C)]}{state=dim}
+\recolor{G.edge[(A,C)]}{state=dim}
+\recolor{G.node[A]}{state=good}
+\recolor{G.node[D]}{state=good}
+\apply{vars.var[path]}{value="S-A-D-T"}
+\apply{vars.var[bottleneck]}{value="3"}
+
+\step
+\narrate{Push 3 units along path. $flow = 3$, $cost = 3 \times 3 = 9$. Update residual capacities.}
+\apply{vars.var[flow]}{value="3"}
+\apply{vars.var[cost]}{value="9"}
+\recolor{G.node[S]}{state=current}
+\recolor{G.node[T]}{state=good}
+\recolor{G.node[A]}{state=done}
+\recolor{G.node[D]}{state=done}
+\recolor{G.edge[(S,A)]}{state=done}
+\recolor{G.edge[(A,D)]}{state=done}
+\recolor{G.edge[(D,T)]}{state=done}
+\recolor{G.edge[(S,B)]}{state=idle}
+\recolor{G.edge[(B,C)]}{state=idle}
+\recolor{G.edge[(A,C)]}{state=idle}
+
+\step
+\narrate{\textbf{Round 2:} Run SPFA again on residual graph. Reset distances.}
+\apply{dist.cell[0]}{value="0"}
+\apply{dist.cell[1]}{value="$\\infty$"}
+\apply{dist.cell[2]}{value="$\\infty$"}
+\apply{dist.cell[3]}{value="$\\infty$"}
+\apply{dist.cell[4]}{value="$\\infty$"}
+\apply{dist.cell[5]}{value="$\\infty$"}
+\recolor{dist.cell[0]}{state=current}
+\recolor{dist.cell[1]}{state=idle}
+\recolor{dist.cell[2]}{state=idle}
+\recolor{dist.cell[3]}{state=idle}
+\recolor{dist.cell[4]}{state=idle}
+\recolor{dist.cell[5]}{state=idle}
+\recolor{G.node[A]}{state=idle}
+\recolor{G.node[B]}{state=idle}
+\recolor{G.node[D]}{state=idle}
+\apply{vars.var[path]}{value="---"}
+\apply{vars.var[bottleneck]}{value="---"}
+
+\step
+\narrate{SPFA finds: $S \to A \to C \to T$ (cost $1+3+2=6$, residual cap $\min(1, 2, 4)=1$) and $S \to B \to C \to T$ (cost $2+1+2=5$, cap $\min(3, 5, 4)=3$). Cheapest: $S \to B \to C \to T$.}
+\apply{dist.cell[2]}{value="2"}
+\apply{dist.cell[3]}{value="3"}
+\apply{dist.cell[5]}{value="5"}
+\recolor{dist.cell[2]}{state=current}
+\recolor{dist.cell[3]}{state=current}
+\recolor{dist.cell[5]}{state=good}
+
+\step
+\narrate{Path $S \to B \to C \to T$, cost $5$, bottleneck $= 3$. Push 3 units.}
+\recolor{G.edge[(S,B)]}{state=good}
+\recolor{G.edge[(B,C)]}{state=good}
+\recolor{G.edge[(C,T)]}{state=good}
+\recolor{G.node[B]}{state=good}
+\recolor{G.node[C]}{state=good}
+\apply{vars.var[path]}{value="S-B-C-T"}
+\apply{vars.var[bottleneck]}{value="3"}
+
+\step
+\narrate{$flow = 3 + 3 = 6$, $cost = 9 + 3 \times 5 = 24$. Update residual.}
+\apply{vars.var[flow]}{value="6"}
+\apply{vars.var[cost]}{value="24"}
+\recolor{G.edge[(S,B)]}{state=done}
+\recolor{G.edge[(B,C)]}{state=done}
+\recolor{G.edge[(C,T)]}{state=done}
+\recolor{G.node[B]}{state=done}
+\recolor{G.node[C]}{state=done}
+
+\step
+\narrate{\textbf{Round 3:} SPFA on residual. $S \to A$ has 1 residual cap. Find $S \to A \to C \to T$: cost $1+3+2=6$, cap $\min(1, 2, 1)=1$.}
+\recolor{G.edge[(S,A)]}{state=good}
+\recolor{G.edge[(A,C)]}{state=good}
+\recolor{G.edge[(C,T)]}{state=good}
+\recolor{G.node[A]}{state=good}
+\recolor{G.node[C]}{state=good}
+\apply{vars.var[path]}{value="S-A-C-T"}
+\apply{vars.var[bottleneck]}{value="1"}
+
+\step
+\narrate{Push 1 unit. $flow = 7$, $cost = 24 + 1 \times 6 = 30$. No more $s$-$t$ paths in residual.}
+\apply{vars.var[flow]}{value="7"}
+\apply{vars.var[cost]}{value="30"}
+\recolor{G.edge[(S,A)]}{state=done}
+\recolor{G.edge[(A,C)]}{state=done}
+\recolor{G.node[A]}{state=done}
+
+\step
+\narrate{\textbf{Result:} Max-flow $= 7$, Min-cost $= 30$. All source edges saturated: $S \to A$ used 4/4, $S \to B$ used 3/3.}
+\recolor{G.node[S]}{state=done}
+\recolor{G.node[T]}{state=done}
+\apply{vars.var[path]}{value="done"}
+\apply{vars.var[bottleneck]}{value="done"}
+
+\end{animation}
+
+\subsection{Complexity}
+
+With SPFA (Bellman-Ford variant):
+
+$$O(V \cdot E \cdot F)$$
+
+where $F$ is the max flow value. Each SPFA round takes $O(VE)$ and pushes at least 1 unit of flow.
+
+For competitive programming, the practical bound is usually fast enough when $|V| \le 500$ and $|E| \le 5000$.
+
+\subsection{Implementation}
+
+\begin{lstlisting}[language=Python]
+from collections import deque
+
+def mcmf(graph, s, t, n):
+    """Min-Cost Max-Flow via SPFA augmentation."""
+    total_flow = 0
+    total_cost = 0
+
+    while True:
+        # SPFA to find cheapest s-t path
+        dist = [float('inf')] * n
+        dist[s] = 0
+        in_queue = [False] * n
+        parent = [-1] * n
+        parent_edge = [-1] * n
+
+        q = deque([s])
+        in_queue[s] = True
+
+        while q:
+            u = q.popleft()
+            in_queue[u] = False
+            for i, (v, cap, cost, rev) in enumerate(graph[u]):
+                if cap > 0 and dist[u] + cost < dist[v]:
+                    dist[v] = dist[u] + cost
+                    parent[v] = u
+                    parent_edge[v] = i
+                    if not in_queue[v]:
+                        q.append(v)
+                        in_queue[v] = True
+
+        if dist[t] == float('inf'):
+            break  # no augmenting path
+
+        # Find bottleneck
+        bottleneck = float('inf')
+        v = t
+        while v != s:
+            u = parent[v]
+            bottleneck = min(bottleneck, graph[u][parent_edge[v]][1])
+            v = u
+
+        # Augment
+        v = t
+        while v != s:
+            u = parent[v]
+            ei = parent_edge[v]
+            graph[u][ei][1] -= bottleneck       # reduce cap
+            ri = graph[u][ei][3]
+            graph[v][ri][1] += bottleneck       # increase reverse cap
+            v = u
+
+        total_flow += bottleneck
+        total_cost += bottleneck * dist[t]
+
+    return total_flow, total_cost
+\end{lstlisting}

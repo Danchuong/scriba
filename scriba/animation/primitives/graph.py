@@ -694,13 +694,17 @@ class Graph(PrimitiveBase):
                 f"to node {html_escape(str(v))}"
             )
             weight_text = ""
-            if (
-                self.show_weights
-                and not self.directed
-                and weight is not None
-            ):
+            # Dynamic value from \apply overrides the static weight.
+            edge_suffix = self._edge_key(u, v)
+            dynamic_val = self.get_value(edge_suffix)
+            display_weight: str | None = None
+            if dynamic_val is not None:
+                display_weight = str(dynamic_val)
+            elif self.show_weights and weight is not None:
+                display_weight = _format_weight(weight)
+            if display_weight is not None:
                 weight_text = _render_svg_text(
-                    _format_weight(weight), mid_x, mid_y,
+                    display_weight, mid_x, mid_y,
                     fill=THEME["fg_muted"],
                     text_anchor="middle",
                     css_class="scriba-graph-weight",
