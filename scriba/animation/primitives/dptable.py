@@ -20,6 +20,8 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
+    _LabelPlacement,
+    arrow_height_above,
     emit_arrow_marker_defs,
     emit_arrow_svg,
     register_primitive,
@@ -204,9 +206,16 @@ class DPTablePrimitive(PrimitiveBase):
         """Emit SVG ``<g>`` for the DP table."""
         effective_anns = self._annotations
 
+        # Compute vertical space needed above cells for arrow curves
+        arrow_above = self._arrow_height_above(effective_anns)
+
         lines: list[str] = [
             f'<g data-primitive="dptable" data-shape="{self.shape_name}">'
         ]
+
+        # Shift all content down so arrows curve into valid space above y=0
+        if arrow_above > 0:
+            lines.append(f'  <g transform="translate(0, {arrow_above})">')
 
         # Emit arrowhead marker defs when annotations with arrows are present
         emit_arrow_marker_defs(lines, effective_anns)
@@ -218,8 +227,9 @@ class DPTablePrimitive(PrimitiveBase):
 
         # Arrow annotations
         if effective_anns:
+            placed: list[_LabelPlacement] = []
             for ann in effective_anns:
-                self._emit_arrow(lines, ann, annotations=effective_anns, render_inline_tex=render_inline_tex)
+                self._emit_arrow(lines, ann, annotations=effective_anns, render_inline_tex=render_inline_tex, placed_labels=placed)
 
         # Caption label
         if self.label is not None:
@@ -266,6 +276,10 @@ class DPTablePrimitive(PrimitiveBase):
                 )
             )
 
+        # Close the translate group if we opened one for arrow space
+        if arrow_above > 0:
+            lines.append("  </g>")
+
         lines.append("</g>")
         return "\n".join(lines)
 
@@ -302,6 +316,9 @@ class DPTablePrimitive(PrimitiveBase):
             )
         elif self.label:
             h += INDEX_LABEL_OFFSET
+        # Reserve space above for arrow annotations (same as Array)
+        arrow_above = self._arrow_height_above(self._annotations)
+        h += arrow_above
         return BoundingBox(x=0, y=0, width=float(tw), height=h)
 
     # -- internal: cell emission -------------------------------------------
@@ -450,6 +467,7 @@ class DPTablePrimitive(PrimitiveBase):
         ann: dict[str, Any],
         annotations: list[dict[str, Any]] | None = None,
         render_inline_tex: "Callable[[str], str] | None" = None,
+        placed_labels: "list[_LabelPlacement] | None" = None,
     ) -> None:
         """Emit a cubic Bezier arrow annotation."""
         arrow_from = ann.get("arrow_from", "")
@@ -483,7 +501,15 @@ class DPTablePrimitive(PrimitiveBase):
             arrow_index=arrow_index,
             cell_height=CELL_HEIGHT,
             render_inline_tex=render_inline_tex,
+            placed_labels=placed_labels,
         )
+
+    def _arrow_height_above(self, annotations: list[dict[str, Any]]) -> int:
+        """Compute vertical extent above y=0 that arrows need."""
+        computed = arrow_height_above(
+            annotations, self._cell_center, cell_height=CELL_HEIGHT
+        )
+        return max(computed, getattr(self, "_min_arrow_above", 0))
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
         """Return the ``(cx, cy)`` pixel center of a cell selector."""

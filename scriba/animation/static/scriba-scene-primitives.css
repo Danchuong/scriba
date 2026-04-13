@@ -424,8 +424,11 @@
    ============================================ */
 
 .scriba-annotation {
-  pointer-events: none;
+  pointer-events: auto;
+  transition: opacity 0.15s ease;
 }
+.scriba-stage:hover .scriba-annotation { opacity: 0.3 !important; }
+.scriba-stage:hover .scriba-annotation:hover { opacity: 1 !important; }
 
 .scriba-annotation > text {
   font:        var(--scriba-annotation-font);

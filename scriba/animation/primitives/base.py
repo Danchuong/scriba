@@ -140,6 +140,65 @@ def estimate_text_width(text: str, font_size: int = 14) -> int:
     return int(len(s) * avg_char_w + 0.5)
 
 # ---------------------------------------------------------------------------
+# Smart label placement constants & helpers
+# ---------------------------------------------------------------------------
+
+_LABEL_MAX_WIDTH_CHARS = 24
+_LABEL_PILL_PAD_X = 6
+_LABEL_PILL_PAD_Y = 3
+_LABEL_PILL_RADIUS = 4
+_LABEL_BG_OPACITY = 0.92
+_LABEL_HEADROOM = 24
+
+
+@dataclass(slots=True)
+class _LabelPlacement:
+    """Tracks the bounding box of a placed annotation label for collision avoidance."""
+
+    x: float
+    y: float
+    width: float
+    height: float
+
+    def overlaps(self, other: "_LabelPlacement") -> bool:
+        """Return True if this placement overlaps *other*."""
+        return not (
+            self.x + self.width / 2 < other.x - other.width / 2
+            or self.x - self.width / 2 > other.x + other.width / 2
+            or self.y + self.height / 2 < other.y - other.height / 2
+            or self.y - self.height / 2 > other.y + other.height / 2
+        )
+
+
+def _wrap_label_lines(text: str, max_chars: int = _LABEL_MAX_WIDTH_CHARS) -> list[str]:
+    """Split label text into lines at natural break points if it exceeds *max_chars*."""
+    if len(text) <= max_chars:
+        return [text]
+    # Split at spaces, operators, commas
+    tokens: list[str] = []
+    current = ""
+    for ch in text:
+        current += ch
+        if ch in (" ", ",", "+", "=", "-"):
+            tokens.append(current)
+            current = ""
+    if current:
+        tokens.append(current)
+
+    lines: list[str] = []
+    line = ""
+    for tok in tokens:
+        if line and len(line) + len(tok) > max_chars:
+            lines.append(line.rstrip())
+            line = tok
+        else:
+            line += tok
+    if line:
+        lines.append(line.rstrip())
+    return lines if lines else [text]
+
+
+# ---------------------------------------------------------------------------
 # Selector regex helpers
 # ---------------------------------------------------------------------------
 
@@ -636,6 +695,7 @@ def emit_arrow_svg(
     layout: str = "horizontal",
     shorten_src: float = 0.0,
     shorten_dst: float = 0.0,
+    placed_labels: "list[_LabelPlacement] | None" = None,
 ) -> None:
     """Emit a cubic Bezier arrow annotation into *lines*.
 
@@ -674,6 +734,10 @@ def emit_arrow_svg(
         Pull the path end point toward the source by this many pixels.
         Useful for circular nodes so the arrowhead stops at the circle
         edge rather than piercing into the node.
+    placed_labels:
+        Optional mutable list of already-placed label bounding boxes.
+        When provided, collision avoidance nudges labels away from
+        previous placements and appends the final position.
     """
     color = ann.get("color", "info")
     label_text = ann.get("label", "")
@@ -722,6 +786,9 @@ def emit_arrow_svg(
 
         label_ref_x = int(mid_x_f + perp_x * (total_offset + 8))
         label_ref_y = int(mid_y_f + perp_y * (total_offset + 8))
+        # Curve midpoint for leader line anchoring
+        curve_mid_x = int(mid_x_f + perp_x * total_offset * 0.75)
+        curve_mid_y = int(mid_y_f + perp_y * total_offset * 0.75)
     else:
         # Horizontal layout: curve upward (original formula)
         mid_x_f = (x1 + x2) / 2
@@ -733,11 +800,18 @@ def emit_arrow_svg(
         h_span = abs(x2 - x1)
         if h_span < 4:
             h_nudge = total_offset * 0.6
-            cx1 = int(mid_x_f - h_nudge)
+            cx1 = max(0, int(mid_x_f - h_nudge))
             cy1 = mid_y_val
-            cx2 = int(mid_x_f - h_nudge)
+            cx2 = max(0, int(mid_x_f - h_nudge))
             cy2 = mid_y_val
-            label_ref_x = int(mid_x_f - h_nudge - 8)
+            # Clamp label X so pill doesn't go negative.
+            # Estimate pill half-width from label text.
+            _est_pill_hw = (
+                estimate_text_width(label_text, 11) // 2 + _LABEL_PILL_PAD_X
+                if label_text else 20
+            )
+            raw_lx = int(mid_x_f - h_nudge - 8)
+            label_ref_x = max(raw_lx, _est_pill_hw)
             label_ref_y = mid_y_val - 4
         else:
             cx1 = int((x1 + mid_x_f) / 2)
@@ -746,6 +820,9 @@ def emit_arrow_svg(
             cy2 = mid_y_val
             label_ref_x = int(mid_x_f)
             label_ref_y = mid_y_val - 4  # slightly above the curve peak
+        # Curve midpoint for leader line anchoring
+        curve_mid_x = int(mid_x_f)
+        curve_mid_y = mid_y_val
 
     ix1, iy1 = int(x1), int(y1)
     ix2, iy2 = int(x2), int(y2)
@@ -805,20 +882,146 @@ def emit_arrow_svg(
         l_fill = style["label_fill"]
         l_weight = style["label_weight"]
         l_size = style["label_size"]
-        lines.append(
-            "    "
-            + _render_svg_text(
-                label_text,
-                label_ref_x,
-                label_ref_y,
-                fill=l_fill,
-                font_weight=l_weight,
-                font_size=l_size,
-                text_anchor="middle",
-                dominant_baseline="auto",
-                render_inline_tex=render_inline_tex,
+        l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else 11
+
+        # Multi-line wrap
+        label_lines = _wrap_label_lines(label_text)
+        line_height = l_font_px + 2
+        num_lines = len(label_lines)
+
+        # Measure pill dimensions
+        max_line_w = max(estimate_text_width(ln, l_font_px) for ln in label_lines)
+        pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
+        pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
+
+        # Natural label position
+        natural_x = float(label_ref_x)
+        natural_y = float(label_ref_y)
+        final_x = natural_x
+        final_y = natural_y
+
+        # Collision avoidance
+        if placed_labels is not None:
+            candidate = _LabelPlacement(
+                x=final_x, y=final_y, width=float(pill_w), height=float(pill_h),
             )
+            # Nudge directions: up, left, right, down
+            nudge_step = pill_h + 2
+            nudge_dirs = [
+                (0, -nudge_step),    # up
+                (-nudge_step, 0),    # left
+                (nudge_step, 0),     # right
+                (0, nudge_step),     # down
+            ]
+            for _ in range(4):
+                if not any(candidate.overlaps(p) for p in placed_labels):
+                    break
+                # Pick the first nudge direction that resolves the overlap
+                resolved = False
+                for ndx, ndy in nudge_dirs:
+                    test = _LabelPlacement(
+                        x=candidate.x + ndx,
+                        y=candidate.y + ndy,
+                        width=candidate.width,
+                        height=candidate.height,
+                    )
+                    if not any(test.overlaps(p) for p in placed_labels):
+                        candidate = test
+                        resolved = True
+                        break
+                if not resolved:
+                    # Apply first nudge (up) and retry
+                    candidate = _LabelPlacement(
+                        x=candidate.x + nudge_dirs[0][0],
+                        y=candidate.y + nudge_dirs[0][1],
+                        width=candidate.width,
+                        height=candidate.height,
+                    )
+
+            final_x = candidate.x
+            final_y = candidate.y
+            placed_labels.append(candidate)
+
+        fi_x = int(final_x)
+        fi_y = int(final_y)
+
+        # Background pill: white rect with rounded corners, before text
+        # Clamp so pill doesn't extend outside the viewBox (x/y >= 0).
+        pill_rx = max(0, int(fi_x - pill_w / 2))
+        pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
+        # If pill was clamped, shift label text to stay centered in pill
+        fi_x = max(fi_x, pill_w // 2)
+        lines.append(
+            f'    <rect x="{pill_rx}" y="{pill_ry}"'
+            f' width="{pill_w}" height="{pill_h}"'
+            f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
+            f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
+            f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
         )
+
+        # Leader line: if label was nudged far from its natural position
+        displacement = math.sqrt(
+            (final_x - natural_x) ** 2 + (final_y - natural_y) ** 2
+        )
+        if displacement > 30:
+            lines.append(
+                f'    <circle cx="{curve_mid_x}" cy="{curve_mid_y}" r="2"'
+                f' fill="{s_stroke}" opacity="0.6"/>'
+            )
+            lines.append(
+                f'    <polyline points="{curve_mid_x},{curve_mid_y}'
+                f' {fi_x},{fi_y}"'
+                f' fill="none" stroke="{s_stroke}"'
+                f' stroke-width="0.75" stroke-dasharray="3,2"'
+                f' opacity="0.6"/>'
+            )
+
+        # Render label text with paint-order halo
+        if num_lines == 1:
+            # Single line — use _render_svg_text with halo attributes
+            text_attrs = (
+                f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
+                f' stroke="white" stroke-width="3"'
+                f' stroke-linejoin="round" paint-order="stroke fill"'
+            )
+            style_parts = []
+            if l_weight:
+                style_parts.append(f"font-weight:{l_weight}")
+            if l_size:
+                style_parts.append(f"font-size:{l_size}")
+            style_parts.append("text-anchor:middle")
+            style_parts.append("dominant-baseline:auto")
+            style_str = ";".join(style_parts)
+            lines.append(
+                f'    <text {text_attrs} style="{style_str}">'
+                f'{_escape_xml(label_text)}</text>'
+            )
+        else:
+            # Multi-line — use tspan elements
+            text_attrs = (
+                f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
+                f' stroke="white" stroke-width="3"'
+                f' stroke-linejoin="round" paint-order="stroke fill"'
+            )
+            style_parts = []
+            if l_weight:
+                style_parts.append(f"font-weight:{l_weight}")
+            if l_size:
+                style_parts.append(f"font-size:{l_size}")
+            style_parts.append("text-anchor:middle")
+            style_parts.append("dominant-baseline:auto")
+            style_str = ";".join(style_parts)
+            tspans = ""
+            for li, ln_text in enumerate(label_lines):
+                dy_val = f'{line_height}' if li > 0 else "0"
+                tspans += (
+                    f'<tspan x="{fi_x}" dy="{dy_val}">'
+                    f'{_escape_xml(ln_text)}</tspan>'
+                )
+            lines.append(
+                f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+            )
+
     lines.append("  </g>")
 
 
@@ -886,10 +1089,10 @@ def arrow_height_above(
             mid_y = (y1 + y2) / 2
             ctrl_y = mid_y + perp_y * total_offset
             extent_above = max(0, min(y1, y2) - ctrl_y)
-            max_height = max(max_height, int(extent_above) + 14)
+            max_height = max(max_height, int(extent_above) + _LABEL_HEADROOM)
         else:
             # Horizontal: the curve peaks at min(y1, y2) - total_offset
-            max_height = max(max_height, int(total_offset) + 14)
+            max_height = max(max_height, int(total_offset) + _LABEL_HEADROOM)
 
     return max_height
 

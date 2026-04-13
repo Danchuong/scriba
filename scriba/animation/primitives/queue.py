@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
+    _LabelPlacement,
     emit_arrow_marker_defs,
     emit_arrow_svg,
     estimate_text_width,
@@ -388,6 +389,7 @@ class Queue(PrimitiveBase):
         arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
         if arrow_anns:
             arrow_lines: list[str] = []
+            placed: list[_LabelPlacement] = []
             for idx, ann in enumerate(arrow_anns):
                 src = self.resolve_annotation_point(ann.get("arrow_from", ""))
                 dst = self.resolve_annotation_point(ann.get("target", ""))
@@ -400,6 +402,7 @@ class Queue(PrimitiveBase):
                     emit_arrow_svg(
                         arrow_lines, ann, src, dst, arrow_index,
                         CELL_HEIGHT, render_inline_tex,
+                        placed_labels=placed,
                     )
             parts.extend(arrow_lines)
 

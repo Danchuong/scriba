@@ -19,6 +19,7 @@ from typing import Any, Callable, ClassVar, Sequence
 
 from scriba.animation.errors import _emit_warning, animation_error
 from scriba.animation.primitives.base import (
+    _LabelPlacement,
     BoundingBox,
     PrimitiveBase,
     THEME,
@@ -644,11 +645,13 @@ class Plane2D(PrimitiveBase):
 
         # Layer 4: arrow annotations (SVG coordinates, outside transform)
         if effective_anns:
+            placed: list[_LabelPlacement] = []
             for ann in effective_anns:
                 self._emit_arrow(
                     parts, ann,
                     annotations=effective_anns,
                     render_inline_tex=render_inline_tex,
+                    placed_labels=placed,
                 )
 
         # Close the translate group if we opened one for arrow space
@@ -666,6 +669,7 @@ class Plane2D(PrimitiveBase):
         ann: dict[str, Any],
         annotations: list[dict[str, Any]] | None = None,
         render_inline_tex: Callable[[str], str] | None = None,
+        placed_labels: "list[_LabelPlacement] | None" = None,
     ) -> None:
         """Emit a single arrow annotation using the shared infrastructure."""
         arrow_from = ann.get("arrow_from", "")
@@ -699,6 +703,7 @@ class Plane2D(PrimitiveBase):
             cell_height=_ARROW_CELL_HEIGHT,
             render_inline_tex=render_inline_tex,
             layout="2d",
+            placed_labels=placed_labels,
         )
 
     def _arrow_height_above(self) -> int:

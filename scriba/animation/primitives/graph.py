@@ -16,6 +16,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import animation_error
 from scriba.animation.primitives.base import (
+    _LabelPlacement,
     BoundingBox,
     PrimitiveBase,
     THEME,
@@ -758,12 +759,14 @@ class Graph(PrimitiveBase):
         # --- Annotation arrows (rendered on top of everything) ---
         if effective_anns:
             arrow_lines: list[str] = []
+            placed: list[_LabelPlacement] = []
             emit_arrow_marker_defs(arrow_lines, effective_anns)
             for ann in effective_anns:
                 self._emit_arrow(
                     arrow_lines, ann,
                     annotations=effective_anns,
                     render_inline_tex=render_inline_tex,
+                    placed_labels=placed,
                 )
             parts.extend(arrow_lines)
 
@@ -778,6 +781,7 @@ class Graph(PrimitiveBase):
         ann: dict[str, Any],
         annotations: list[dict[str, Any]] | None = None,
         render_inline_tex: Callable[[str], str] | None = None,
+        placed_labels: "list[_LabelPlacement] | None" = None,
     ) -> None:
         """Emit a cubic Bezier arrow annotation between two graph nodes."""
         arrow_from = ann.get("arrow_from", "")
@@ -810,6 +814,7 @@ class Graph(PrimitiveBase):
             layout="2d",
             shorten_src=float(self._node_radius),
             shorten_dst=float(self._node_radius),
+            placed_labels=placed_labels,
         )
 
     def _arrow_height_above(self) -> int:

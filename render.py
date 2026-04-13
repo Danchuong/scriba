@@ -103,6 +103,12 @@ h1 {{ font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }}
 }}
 .scriba-stage-svg {{ width: 100%; height: auto; }}
 
+/* Annotation hover isolation — dim all, restore hovered */
+.scriba-annotation {{ pointer-events: auto; transition: opacity 0.15s ease; }}
+.scriba-stage:hover .scriba-annotation {{ opacity: 0.3 !important; }}
+.scriba-stage:hover .scriba-annotation:hover {{ opacity: 1 !important; }}
+.scriba-stage:hover .scriba-annotation:hover path {{ stroke-width: 3 !important; }}
+
 /* Narration */
 .scriba-narration {{
   padding: 0.75rem 1rem;

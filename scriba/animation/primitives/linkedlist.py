@@ -20,6 +20,7 @@ from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
+    _LabelPlacement,
     THEME,
     BoundingBox,
     PrimitiveBase,
@@ -454,6 +455,7 @@ class LinkedList(PrimitiveBase):
         arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
         if arrow_anns:
             arrow_lines: list[str] = []
+            placed: list[_LabelPlacement] = []
             for idx, ann in enumerate(arrow_anns):
                 src = self.resolve_annotation_point(ann.get("arrow_from", ""))
                 dst = self.resolve_annotation_point(ann.get("target", ""))
@@ -466,6 +468,7 @@ class LinkedList(PrimitiveBase):
                     emit_arrow_svg(
                         arrow_lines, ann, src, dst, arrow_index,
                         _NODE_HEIGHT, render_inline_tex,
+                        placed_labels=placed,
                     )
             parts.extend(arrow_lines)
 

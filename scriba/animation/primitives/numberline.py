@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
+    _LabelPlacement,
     STATE_COLORS,
     THEME,
     BoundingBox,
@@ -293,6 +294,7 @@ class NumberLinePrimitive(PrimitiveBase):
         # Arrow annotations
         arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
         tick_height = NL_TICK_BOTTOM - NL_TICK_TOP
+        placed: list[_LabelPlacement] = []
         for idx, ann in enumerate(arrow_anns):
             src = self.resolve_annotation_point(ann.get("arrow_from", ""))
             dst = self.resolve_annotation_point(ann.get("target", ""))
@@ -305,6 +307,7 @@ class NumberLinePrimitive(PrimitiveBase):
                 emit_arrow_svg(
                     lines, ann, src, dst, arrow_index,
                     tick_height, render_inline_tex,
+                    placed_labels=placed,
                 )
 
         # Close translate group if opened for arrow space

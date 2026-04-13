@@ -13,6 +13,7 @@ from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
+    _LabelPlacement,
     THEME,
     BoundingBox,
     PrimitiveBase,
@@ -355,6 +356,7 @@ class VariableWatch(PrimitiveBase):
 
         # Arrow annotations
         arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        placed: list[_LabelPlacement] = []
         for idx, ann in enumerate(arrow_anns):
             src = self.resolve_annotation_point(ann.get("arrow_from", ""))
             dst = self.resolve_annotation_point(ann.get("target", ""))
@@ -367,6 +369,7 @@ class VariableWatch(PrimitiveBase):
                 emit_arrow_svg(
                     parts, ann, src, dst, arrow_index,
                     _ROW_HEIGHT, render_inline_tex,
+                    placed_labels=placed,
                 )
 
         # Close translate group if opened for arrow space

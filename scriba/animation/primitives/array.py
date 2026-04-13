@@ -22,6 +22,7 @@ from scriba.animation.primitives.base import (
     _render_svg_text,
     arrow_height_above,
     emit_arrow_marker_defs,
+    _LabelPlacement,
     emit_arrow_svg,
     estimate_text_width,
     register_primitive,
@@ -311,8 +312,9 @@ class ArrayPrimitive(PrimitiveBase):
 
         # Arrow annotations
         if effective_anns:
+            placed: list[_LabelPlacement] = []
             for ann in effective_anns:
-                self._emit_arrow(lines, ann, annotations=effective_anns, render_inline_tex=render_inline_tex)
+                self._emit_arrow(lines, ann, annotations=effective_anns, render_inline_tex=render_inline_tex, placed_labels=placed)
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
@@ -371,6 +373,7 @@ class ArrayPrimitive(PrimitiveBase):
         ann: dict[str, Any],
         annotations: list[dict[str, Any]] | None = None,
         render_inline_tex: "Callable[[str], str] | None" = None,
+        placed_labels: "list[_LabelPlacement] | None" = None,
     ) -> None:
         """Emit a cubic Bezier arrow annotation."""
         arrow_from = ann.get("arrow_from", "")
@@ -404,6 +407,7 @@ class ArrayPrimitive(PrimitiveBase):
             arrow_index=arrow_index,
             cell_height=CELL_HEIGHT,
             render_inline_tex=render_inline_tex,
+            placed_labels=placed_labels,
         )
 
     def _arrow_height_above(self, annotations: list[dict[str, Any]]) -> int:

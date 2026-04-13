@@ -20,6 +20,7 @@ from scriba.animation.primitives.base import (
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
+    _LabelPlacement,
     emit_arrow_marker_defs,
     emit_arrow_svg,
     register_primitive,
@@ -281,6 +282,7 @@ class GridPrimitive(PrimitiveBase):
 
         # Arrow annotations
         arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        placed: list[_LabelPlacement] = []
         for idx, ann in enumerate(arrow_anns):
             src = self.resolve_annotation_point(ann.get("arrow_from", ""))
             dst = self.resolve_annotation_point(ann.get("target", ""))
@@ -294,6 +296,7 @@ class GridPrimitive(PrimitiveBase):
                     lines, ann, src, dst, arrow_index,
                     CELL_HEIGHT, render_inline_tex,
                     layout="2d",
+                    placed_labels=placed,
                 )
 
         # Close the translate group if we opened one for arrow space
