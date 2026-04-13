@@ -139,8 +139,8 @@ class TestShowWeights:
         svg = g.emit_svg()
         assert "scriba-graph-weight" not in svg
 
-    def test_show_weights_skipped_for_directed(self) -> None:
-        """Directed graphs suppress the midpoint label (spec)."""
+    def test_show_weights_for_directed(self) -> None:
+        """Directed graphs show midpoint weight labels (flow networks)."""
         g = Graph(
             "G",
             {
@@ -151,7 +151,7 @@ class TestShowWeights:
             },
         )
         svg = g.emit_svg()
-        assert "scriba-graph-weight" not in svg
+        assert "scriba-graph-weight" in svg
 
     def test_show_weights_multiple_edges(self) -> None:
         g = Graph(

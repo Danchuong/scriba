@@ -1,0 +1,22 @@
+\section{Edge Label Overlap Test}
+
+\begin{diagram}[id="overlap-test", label="Overlapping edge labels"]
+\shape{G}{Graph}{
+  nodes=["A","B","C","D","E","F"],
+  edges=[("A","B"),("A","C"),("A","D"),("B","C"),("B","D"),("B","E"),("C","D"),("C","F"),("D","E"),("D","F"),("E","F")],
+  directed=true,
+  layout="stable",
+  layout_seed=42
+}
+\apply{G.edge[(A,B)]}{value="3/10"}
+\apply{G.edge[(A,C)]}{value="5/8"}
+\apply{G.edge[(A,D)]}{value="2/7"}
+\apply{G.edge[(B,C)]}{value="4/6"}
+\apply{G.edge[(B,D)]}{value="1/5"}
+\apply{G.edge[(B,E)]}{value="7/9"}
+\apply{G.edge[(C,D)]}{value="3/4"}
+\apply{G.edge[(C,F)]}{value="6/8"}
+\apply{G.edge[(D,E)]}{value="2/3"}
+\apply{G.edge[(D,F)]}{value="5/7"}
+\apply{G.edge[(E,F)]}{value="4/10"}
+\end{diagram}

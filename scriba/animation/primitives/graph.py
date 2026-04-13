@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     emit_arrow_marker_defs,
     emit_arrow_svg,
+    estimate_text_width,
     register_primitive,
     svg_style_attrs,
 )
@@ -665,6 +666,7 @@ class Graph(PrimitiveBase):
             n for n in self.nodes
             if self.get_state(self._node_key(n)) == "hidden"
         }
+        placed_edge_labels: list[_LabelPlacement] = []
         parts.append('<g class="scriba-graph-edges">')
         for u, v, weight in self.edges:
             edge_target = f"{self.name}.{self._edge_key(u, v)}"
@@ -703,8 +705,48 @@ class Graph(PrimitiveBase):
             elif self.show_weights and weight is not None:
                 display_weight = _format_weight(weight)
             if display_weight is not None:
-                weight_text = _render_svg_text(
-                    display_weight, mid_x, mid_y,
+                _WEIGHT_FONT = 11
+                _PILL_PAD_X = 5
+                _PILL_PAD_Y = 2
+                _PILL_R = 3
+                tw = estimate_text_width(display_weight, _WEIGHT_FONT)
+                th = _WEIGHT_FONT + 2
+                pill_w = tw + _PILL_PAD_X * 2
+                pill_h = th + _PILL_PAD_Y * 2
+
+                lx, ly = mid_x, mid_y
+
+                # Nudge perpendicular to edge if overlapping a placed label
+                candidate = _LabelPlacement(
+                    x=lx, y=ly, width=pill_w, height=pill_h
+                )
+                dx_edge = x2 - x1
+                dy_edge = y2 - y1
+                edge_len = math.hypot(dx_edge, dy_edge) or 1.0
+                # Unit perpendicular vector
+                perp_x = -dy_edge / edge_len
+                perp_y = dx_edge / edge_len
+                nudge_step = pill_h + 2
+                for _attempt in range(6):
+                    if not any(candidate.overlaps(p) for p in placed_edge_labels):
+                        break
+                    lx += perp_x * nudge_step
+                    ly += perp_y * nudge_step
+                    candidate = _LabelPlacement(
+                        x=lx, y=ly, width=pill_w, height=pill_h
+                    )
+                placed_edge_labels.append(candidate)
+
+                # Background pill
+                pill_rx = lx - pill_w / 2
+                pill_ry = ly - pill_h / 2
+                weight_text = (
+                    f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
+                    f'width="{pill_w}" height="{pill_h}" '
+                    f'rx="{_PILL_R}" fill="white" fill-opacity="0.85" '
+                    f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
+                ) + _render_svg_text(
+                    display_weight, lx, ly,
                     fill=THEME["fg_muted"],
                     text_anchor="middle",
                     css_class="scriba-graph-weight",
