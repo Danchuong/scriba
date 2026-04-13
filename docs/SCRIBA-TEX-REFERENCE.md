@@ -273,6 +273,7 @@ Nodes + edges with layout engine.
 ```
 **Layout options:** `"force"` (default), `"circular"`, `"bipartite"`, `"hierarchical"`, `"stable"` (≤20 nodes).
 **Weighted edges:** `edges=[("A","B",4),("B","C",2)]` with `show_weights=true`.
+**Dynamic edge labels:** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other.
 **Selectors:** `G`, `G.node[id]`, `G.node["A"]`, `G.edge[("A","B")]`, `G.all`
 
 ### 7.5 Tree
@@ -610,6 +611,21 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 ```latex
 \recolor{G.edge[(A,B)]}{state=good}    % tree edge
 \recolor{G.edge[(C,D)]}{state=dim}     % non-tree edge (cross edge)
+```
+
+### Flow network (dynamic edge labels)
+```latex
+\shape{G}{Graph}{nodes=["S","A","T"], edges=[("S","A"),("A","T")], directed=true}
+% Initialize with 0/cap
+\apply{G.edge[(S,A)]}{value="0/10"}
+\apply{G.edge[(A,T)]}{value="0/5"}
+
+\step
+% Push flow — update labels
+\apply{G.edge[(S,A)]}{value="5/10"}
+\apply{G.edge[(A,T)]}{value="5/5"}
+\recolor{G.edge[(A,T)]}{state=error}   % saturated edge
+\narrate{Push 5 units. Edge $A \to T$ saturated.}
 ```
 
 ---
