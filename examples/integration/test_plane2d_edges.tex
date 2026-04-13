@@ -1,0 +1,184 @@
+\section{Plane2D Edge Cases}
+
+Tests for boundary conditions, label overlap, clipping, and extreme ranges.
+
+\subsection{Case 1: Very Small Range (tick label overlap)}
+
+\begin{diagram}[id="small-range", label="Small range: xrange=[0,1], yrange=[0,1]"]
+\shape{p1}{Plane2D}{xrange=[0,1], yrange=[0,1], grid=true, axes=true}
+\apply{p1}{add_point=(0.1,0.1)}
+\apply{p1}{add_point=(0.2,0.2)}
+\apply{p1}{add_point=(0.3,0.15)}
+\apply{p1}{add_point=(0.4,0.5)}
+\apply{p1}{add_point=(0.5,0.6)}
+\apply{p1}{add_point=(0.6,0.7)}
+\apply{p1}{add_point=(0.7,0.8)}
+\apply{p1}{add_point=(0.8,0.85)}
+\apply{p1}{add_point=(0.9,0.95)}
+\annotate{p1.point[0]}{label="pt0", position=above, color=info}
+\annotate{p1.point[1]}{label="pt1", position=above, color=info}
+\annotate{p1.point[2]}{label="pt2", position=below, color=warn}
+\annotate{p1.point[3]}{label="pt3", position=right, color=good}
+\end{diagram}
+
+\subsection{Case 2: Very Large Range (label fit)}
+
+\begin{diagram}[id="large-range", label="Large range: xrange=[-100,100], yrange=[-100,100]"]
+\shape{p2}{Plane2D}{xrange=[-100,100], yrange=[-100,100], grid=true, axes=true}
+\apply{p2}{add_point=(0,0)}
+\apply{p2}{add_point=(50,50)}
+\apply{p2}{add_point=(-50,-50)}
+\apply{p2}{add_point=(99,99)}
+\apply{p2}{add_point=(-99,-99)}
+\apply{p2}{add_point=(100,100)}
+\apply{p2}{add_point=(-100,-100)}
+\apply{p2}{add_line=("y=x",1,0)}
+\annotate{p2.point[0]}{label="Origin (0,0)", position=above, color=info}
+\annotate{p2.point[3]}{label="Near max (99,99)", position=left, color=warn}
+\annotate{p2.point[5]}{label="Exact max (100,100)", position=below, color=error}
+\annotate{p2.point[6]}{label="Exact min (-100,-100)", position=above, color=error}
+\end{diagram}
+
+\subsection{Case 3: Asymmetric Range}
+
+\begin{diagram}[id="asymmetric", label="Asymmetric: xrange=[-1,10], yrange=[-10,1]"]
+\shape{p3}{Plane2D}{xrange=[-1,10], yrange=[-10,1], grid=true, axes=true}
+\apply{p3}{add_point=(0,0)}
+\apply{p3}{add_point=(-1,-10)}
+\apply{p3}{add_point=(10,1)}
+\apply{p3}{add_point=(5,-5)}
+\apply{p3}{add_point=(10,-10)}
+\apply{p3}{add_point=(-1,1)}
+\apply{p3}{add_line=("y=-x",-1,0)}
+\recolor{p3.point[0]}{state=current}
+\recolor{p3.point[1]}{state=error}
+\recolor{p3.point[2]}{state=error}
+\recolor{p3.point[4]}{state=good}
+\recolor{p3.point[5]}{state=good}
+\annotate{p3.point[1]}{label="Bottom-left corner (-1,-10)", position=above, color=error}
+\annotate{p3.point[2]}{label="Top-right corner (10,1)", position=below, color=error}
+\annotate{p3.point[4]}{label="Bottom-right (10,-10)", position=above, color=good}
+\annotate{p3.point[5]}{label="Top-left (-1,1)", position=below, color=good}
+\end{diagram}
+
+\subsection{Case 4: Points Exactly at Boundaries}
+
+\begin{diagram}[id="boundary-pts", label="Points at exact boundary limits"]
+\shape{p4}{Plane2D}{xrange=[-3,3], yrange=[-3,3], grid=true, axes=true}
+\apply{p4}{add_point=(-3,-3)}
+\apply{p4}{add_point=(-3,3)}
+\apply{p4}{add_point=(3,-3)}
+\apply{p4}{add_point=(3,3)}
+\apply{p4}{add_point=(-3,0)}
+\apply{p4}{add_point=(3,0)}
+\apply{p4}{add_point=(0,-3)}
+\apply{p4}{add_point=(0,3)}
+\recolor{p4.point[0]}{state=error}
+\recolor{p4.point[1]}{state=error}
+\recolor{p4.point[2]}{state=error}
+\recolor{p4.point[3]}{state=error}
+\recolor{p4.point[4]}{state=current}
+\recolor{p4.point[5]}{state=current}
+\recolor{p4.point[6]}{state=current}
+\recolor{p4.point[7]}{state=current}
+\annotate{p4.point[0]}{label="BL(-3,-3)", position=above, color=error}
+\annotate{p4.point[1]}{label="TL(-3,3)", position=below, color=error}
+\annotate{p4.point[2]}{label="BR(3,-3)", position=above, color=error}
+\annotate{p4.point[3]}{label="TR(3,3)", position=below, color=error}
+\annotate{p4.point[4]}{label="Left edge", position=right, color=info}
+\annotate{p4.point[5]}{label="Right edge", position=left, color=info}
+\annotate{p4.point[6]}{label="Bottom edge", position=above, color=info}
+\annotate{p4.point[7]}{label="Top edge", position=below, color=info}
+\end{diagram}
+
+\subsection{Case 5: Points with Long Labels}
+
+\begin{diagram}[id="long-labels", label="Points with verbose labels and values"]
+\shape{p5}{Plane2D}{xrange=[-5,5], yrange=[-5,5], grid=true, axes=true}
+\apply{p5}{add_point=(0,0)}
+\apply{p5}{add_point=(2,3)}
+\apply{p5}{add_point=(-4,4)}
+\apply{p5}{add_point=(4,-4)}
+\apply{p5}{add_point=(-2,-3)}
+\annotate{p5.point[0]}{label="This is a very long annotation label at origin (0,0)", position=above, color=info}
+\annotate{p5.point[1]}{label="Another extremely verbose label for point (2,3)", position=right, color=warn}
+\annotate{p5.point[2]}{label="Top-left verbose annotation (-4,4)", position=below, color=good}
+\annotate{p5.point[3]}{label="Bottom-right verbose annotation (4,-4)", position=above, color=error}
+\annotate{p5.point[4]}{label="Yet another long label (-2,-3)", position=left, color=muted}
+\end{diagram}
+
+\subsection{Case 6: Negative-Only Ranges}
+
+\begin{diagram}[id="neg-only", label="Negative-only: xrange=[-5,-1], yrange=[-5,-1]"]
+\shape{p6}{Plane2D}{xrange=[-5,-1], yrange=[-5,-1], grid=true, axes=true}
+\apply{p6}{add_point=(-5,-5)}
+\apply{p6}{add_point=(-1,-1)}
+\apply{p6}{add_point=(-3,-3)}
+\apply{p6}{add_point=(-5,-1)}
+\apply{p6}{add_point=(-1,-5)}
+\apply{p6}{add_point=(-2,-4)}
+\apply{p6}{add_line=("y=x",1,0)}
+\recolor{p6.point[0]}{state=error}
+\recolor{p6.point[1]}{state=good}
+\recolor{p6.point[2]}{state=current}
+\recolor{p6.point[3]}{state=done}
+\recolor{p6.point[4]}{state=done}
+\annotate{p6.point[0]}{label="Min corner (-5,-5)", position=above, color=error}
+\annotate{p6.point[1]}{label="Max corner (-1,-1)", position=below, color=good}
+\annotate{p6.point[3]}{label="TL(-5,-1)", position=right, color=info}
+\annotate{p6.point[4]}{label="BR(-1,-5)", position=left, color=info}
+\end{diagram}
+
+\subsection{Case 7: Tiny Range with Dense Points}
+
+\begin{diagram}[id="tiny-dense", label="Tiny range [0,0.5] with 10 points"]
+\shape{p7}{Plane2D}{xrange=[0,0.5], yrange=[0,0.5], grid=true, axes=true}
+\apply{p7}{add_point=(0.05,0.05)}
+\apply{p7}{add_point=(0.1,0.1)}
+\apply{p7}{add_point=(0.15,0.15)}
+\apply{p7}{add_point=(0.2,0.2)}
+\apply{p7}{add_point=(0.25,0.25)}
+\apply{p7}{add_point=(0.3,0.3)}
+\apply{p7}{add_point=(0.35,0.35)}
+\apply{p7}{add_point=(0.4,0.4)}
+\apply{p7}{add_point=(0.45,0.45)}
+\apply{p7}{add_point=(0.5,0.5)}
+\annotate{p7.point[0]}{label="0.05", position=right, color=info}
+\annotate{p7.point[4]}{label="0.25", position=right, color=info}
+\annotate{p7.point[9]}{label="0.50", position=left, color=info}
+\end{diagram}
+
+\subsection{Case 8: Mixed Lines Near Boundaries}
+
+\begin{diagram}[id="lines-boundary", label="Lines intersecting near viewport edges"]
+\shape{p8}{Plane2D}{xrange=[-3,3], yrange=[-3,3], grid=true, axes=true}
+\apply{p8}{add_line=("y=3x",3,0)}
+\apply{p8}{add_line=("y=-3x",-3,0)}
+\apply{p8}{add_line=("y=0.1x+2.9",0.1,2.9)}
+\apply{p8}{add_line=("y=-0.1x-2.9",-0.1,-2.9)}
+\apply{p8}{add_point=(0,0)}
+\apply{p8}{add_point=(1,3)}
+\apply{p8}{add_point=(-1,-3)}
+\recolor{p8.point[1]}{state=error}
+\recolor{p8.point[2]}{state=error}
+\annotate{p8.point[1]}{label="On boundary (1,3)", position=below, color=error}
+\annotate{p8.point[2]}{label="On boundary (-1,-3)", position=above, color=error}
+\end{diagram}
+
+\subsection{Case 9: Positive-Only with Zero Start}
+
+\begin{diagram}[id="zero-start", label="xrange=[0,10], yrange=[0,10]"]
+\shape{p9}{Plane2D}{xrange=[0,10], yrange=[0,10], grid=true, axes=true}
+\apply{p9}{add_point=(0,0)}
+\apply{p9}{add_point=(10,10)}
+\apply{p9}{add_point=(0,10)}
+\apply{p9}{add_point=(10,0)}
+\apply{p9}{add_point=(5,5)}
+\apply{p9}{add_line=("y=x",1,0)}
+\recolor{p9.point[0]}{state=current}
+\recolor{p9.point[1]}{state=good}
+\annotate{p9.point[0]}{label="Origin (0,0)", position=above, color=info}
+\annotate{p9.point[1]}{label="Max (10,10)", position=below, color=good}
+\annotate{p9.point[2]}{label="(0,10)", position=right, color=warn}
+\annotate{p9.point[3]}{label="(10,0)", position=above, color=warn}
+\end{diagram}

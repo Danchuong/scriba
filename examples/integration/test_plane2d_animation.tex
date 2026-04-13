@@ -1,0 +1,71 @@
+\section{Plane2D Animation -- Convex Hull Build-Up}
+
+This animation tests Plane2D dynamic operations across multiple steps:
+adding points, adding lines, recoloring points, annotating, and verifying
+viewBox stability across frames.
+
+\begin{animation}[id="plane2d-anim", label="Convex Hull Visualization"]
+\shape{p}{Plane2D}{xrange=[-1,10], yrange=[-1,10], grid=true, axes=true}
+
+\step
+\narrate{Empty coordinate plane with range $[-1,10] \times [-1,10]$. We will build a convex hull step by step.}
+
+\step
+\apply{p}{add_point=(1,2)}
+\narrate{Add first point at $(1,2)$.}
+
+\step
+\apply{p}{add_point=(4,8)}
+\recolor{p.point[0]}{state=done}
+\narrate{Add point $(4,8)$. Mark $(1,2)$ as done.}
+
+\step
+\apply{p}{add_point=(7,3)}
+\recolor{p.point[1]}{state=done}
+\annotate{p.point[0]}{label="P0", position=below, color=info}
+\annotate{p.point[1]}{label="P1", position=above, color=info}
+\narrate{Add point $(7,3)$. Annotate earlier points.}
+
+\step
+\apply{p}{add_point=(9,7)}
+\apply{p}{add_point=(2,6)}
+\recolor{p.point[2]}{state=done}
+\annotate{p.point[2]}{label="P2", position=right, color=info}
+\narrate{Add two more points: $(9,7)$ and $(2,6)$. Five points total now.}
+
+\step
+\apply{p}{add_point=(5,1)}
+\apply{p}{add_point=(8,9)}
+\recolor{p.point[3]}{state=current}
+\recolor{p.point[4]}{state=current}
+\narrate{Add points $(5,1)$ and $(8,9)$. Highlight $(9,7)$ and $(2,6)$ as current hull candidates.}
+
+\step
+\apply{p}{add_line=("lower hull",0.1,0.9)}
+\recolor{p.point[0]}{state=good}
+\recolor{p.point[2]}{state=good}
+\recolor{p.point[5]}{state=good}
+\annotate{p.point[5]}{label="P5 hull", position=below, color=good}
+\narrate{Draw lower hull approximation line $y = 0.1x + 0.9$. Mark hull points $(1,2)$, $(7,3)$, $(5,1)$ as good.}
+
+\step
+\apply{p}{add_line=("upper hull",0.5,4)}
+\recolor{p.point[1]}{state=good}
+\recolor{p.point[3]}{state=good}
+\recolor{p.point[6]}{state=good}
+\annotate{p.point[6]}{label="P6 top", position=above, color=warn}
+\annotate{p.point[3]}{label="P3 hull", position=right, color=good}
+\narrate{Draw upper hull line $y = 0.5x + 4$. Mark upper hull points as good.}
+
+\step
+\recolor{p.point[4]}{state=dim}
+\annotate{p.point[4]}{label="interior", position=left, color=muted}
+\narrate{Point $(2,6)$ is interior to the hull -- dim it out.}
+
+\step
+\apply{p}{add_point=(0,0)}
+\recolor{p.point[7]}{state=error}
+\annotate{p.point[7]}{label="origin added late", position=right, color=error}
+\narrate{Add origin $(0,0)$ in a late step. Does it render correctly? Is the viewBox still stable?}
+
+\end{animation}

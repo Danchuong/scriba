@@ -1,0 +1,84 @@
+\section{Plane2D Adaptive Tick Labels Demo}
+
+This demo tests adaptive tick label rendering across different axis ranges.
+The tick spacing should adjust automatically based on the range magnitude.
+
+\subsection{Diagram 1: Fractional Range [0,1]}
+
+Ticks should appear at 0.2 increments for a range of $[0,1] \times [0,1]$.
+
+\begin{diagram}[id="ticks-fractional", label="Fractional ticks: xrange=[0,1], yrange=[0,1]"]
+\shape{p1}{Plane2D}{xrange=[0,1], yrange=[0,1], grid=true, axes=true}
+\apply{p1}{add_point=(0.2,0.3)}
+\apply{p1}{add_point=(0.5,0.8)}
+\apply{p1}{add_point=(0.7,0.4)}
+\apply{p1}{add_point=(0.9,0.9)}
+\recolor{p1.point[0]}{state=current}
+\recolor{p1.point[1]}{state=good}
+\recolor{p1.point[2]}{state=done}
+\recolor{p1.point[3]}{state=error}
+\annotate{p1.point[0]}{label="(0.2, 0.3)", position=above, color=info}
+\annotate{p1.point[3]}{label="(0.9, 0.9)", position=below, color=error}
+\end{diagram}
+
+\subsection{Diagram 2: Large Range [-100,100]}
+
+Ticks should appear at intervals of 20 or 50 for a range of $[-100,100]$.
+
+\begin{diagram}[id="ticks-large", label="Large ticks: xrange=[-100,100], yrange=[-100,100]"]
+\shape{p2}{Plane2D}{xrange=[-100,100], yrange=[-100,100], grid=true, axes=true}
+\apply{p2}{add_point=(0,0)}
+\apply{p2}{add_point=(75,50)}
+\apply{p2}{add_point=(-60,-80)}
+\apply{p2}{add_point=(30,-40)}
+\apply{p2}{add_point=(-90,70)}
+\recolor{p2.point[0]}{state=current}
+\recolor{p2.point[1]}{state=good}
+\recolor{p2.point[2]}{state=error}
+\recolor{p2.point[3]}{state=done}
+\recolor{p2.point[4]}{state=good}
+\annotate{p2.point[0]}{label="Origin", position=above, color=info}
+\annotate{p2.point[1]}{label="(75,50)", position=above, color=good}
+\annotate{p2.point[2]}{label="(-60,-80)", position=above, color=error}
+\annotate{p2.point[4]}{label="(-90,70)", position=below, color=good}
+\end{diagram}
+
+\subsection{Diagram 3: Origin at Boundary [0,10]}
+
+The origin sits at the boundary. Tick label "0" should render correctly.
+
+\begin{diagram}[id="ticks-zero-start", label="Zero-start ticks: xrange=[0,10], yrange=[0,10]"]
+\shape{p3}{Plane2D}{xrange=[0,10], yrange=[0,10], grid=true, axes=true}
+\apply{p3}{add_point=(0,0)}
+\apply{p3}{add_point=(5,5)}
+\apply{p3}{add_point=(10,10)}
+\apply{p3}{add_point=(2,8)}
+\apply{p3}{add_point=(8,2)}
+\recolor{p3.point[0]}{state=current}
+\recolor{p3.point[1]}{state=done}
+\recolor{p3.point[2]}{state=good}
+\annotate{p3.point[0]}{label="Origin boundary", position=above, color=info}
+\annotate{p3.point[2]}{label="Max corner", position=below, color=good}
+\apply{p3}{add_line=("y=x",1,0)}
+\end{diagram}
+
+\subsection{Diagram 4: Very Small Fractional Range [-0.5, 0.5]}
+
+Extremely small range -- ticks should show fine-grained fractional values.
+
+\begin{diagram}[id="ticks-tiny", label="Tiny ticks: xrange=[-0.5,0.5], yrange=[-0.5,0.5]"]
+\shape{p4}{Plane2D}{xrange=[-0.5,0.5], yrange=[-0.5,0.5], grid=true, axes=true}
+\apply{p4}{add_point=(0,0)}
+\apply{p4}{add_point=(0.25,0.25)}
+\apply{p4}{add_point=(-0.25,-0.25)}
+\apply{p4}{add_point=(0.4,-0.3)}
+\apply{p4}{add_point=(-0.4,0.3)}
+\recolor{p4.point[0]}{state=current}
+\recolor{p4.point[1]}{state=good}
+\recolor{p4.point[2]}{state=error}
+\recolor{p4.point[3]}{state=done}
+\recolor{p4.point[4]}{state=done}
+\annotate{p4.point[0]}{label="Center", position=above, color=info}
+\annotate{p4.point[1]}{label="(0.25,0.25)", position=right, color=good}
+\annotate{p4.point[2]}{label="(-0.25,-0.25)", position=left, color=error}
+\end{diagram}
