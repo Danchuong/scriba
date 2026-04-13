@@ -436,7 +436,8 @@
 .scriba-annotation > line {
   fill:         none;
   stroke-width: var(--scriba-annotation-arrow-width);
-  marker-end:   url(#scriba-annotation-arrowhead);
+  /* marker-end is set inline per-path with the correct color-specific
+     marker ID (e.g. #scriba-arrow-good).  Do NOT override it here. */
 }
 
 /* -- Annotation color tokens ------------------------------- */

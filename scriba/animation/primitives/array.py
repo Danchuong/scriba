@@ -407,10 +407,15 @@ class ArrayPrimitive(PrimitiveBase):
         )
 
     def _arrow_height_above(self, annotations: list[dict[str, Any]]) -> int:
-        """Compute the max vertical extent above y=0 that arrows need."""
-        return arrow_height_above(
+        """Compute the max vertical extent above y=0 that arrows need.
+
+        Returns at least ``_min_arrow_above`` (set by the emitter) so
+        that cells stay at a stable vertical position across frames.
+        """
+        computed = arrow_height_above(
             annotations, self._cell_center, cell_height=CELL_HEIGHT
         )
+        return max(computed, getattr(self, "_min_arrow_above", 0))
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
         """Return the ``(cx, cy)`` pixel center of a cell selector."""

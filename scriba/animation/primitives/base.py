@@ -316,6 +316,15 @@ class PrimitiveBase(abc.ABC):
         """Set annotations for this primitive."""
         self._annotations = annotations
 
+    def set_min_arrow_above(self, value: int) -> None:
+        """Set minimum vertical space to reserve above cells for arrows.
+
+        Called by the emitter with the max ``arrow_height_above`` across
+        all animation frames so that primitives keep a stable translate
+        offset even in frames with fewer (or no) arrows.
+        """
+        self._min_arrow_above = value
+
     # ----- abstract interface ----------------------------------------------
 
     @abc.abstractmethod
@@ -691,9 +700,11 @@ def emit_arrow_svg(
     dy = y2 - y1
     dist = math.sqrt(dx * dx + dy * dy) or 1.0
 
-    # Control points: scale with distance and stagger for multiple arrows
-    base_offset = max(cell_height * 0.75, abs(x2 - x1) * 0.25)
-    stagger = cell_height * 0.5
+    # Control points: sqrt-scaled curve height capped at 1.2x cell height,
+    # with compact stagger for multiple arrows targeting the same cell.
+    h_dist = abs(x2 - x1) + abs(y2 - y1)
+    base_offset = min(cell_height * 1.2, max(cell_height * 0.5, math.sqrt(h_dist) * 2.5))
+    stagger = cell_height * 0.3
     total_offset = base_offset + arrow_index * stagger
 
     if layout == "2d":
@@ -716,13 +727,25 @@ def emit_arrow_svg(
         mid_x_f = (x1 + x2) / 2
         mid_y_val = int(min(y1, y2) - total_offset)
 
-        cx1 = int((x1 + mid_x_f) / 2)
-        cy1 = mid_y_val
-        cx2 = int((x2 + mid_x_f) / 2)
-        cy2 = mid_y_val
-
-        label_ref_x = int(mid_x_f)
-        label_ref_y = mid_y_val - 4  # slightly above the curve peak
+        # When source and target are nearly vertically aligned (same column
+        # in a 2D DPTable), the default control points collapse to a vertical
+        # line.  Offset them horizontally to produce a visible arc.
+        h_span = abs(x2 - x1)
+        if h_span < 4:
+            h_nudge = total_offset * 0.6
+            cx1 = int(mid_x_f - h_nudge)
+            cy1 = mid_y_val
+            cx2 = int(mid_x_f - h_nudge)
+            cy2 = mid_y_val
+            label_ref_x = int(mid_x_f - h_nudge - 8)
+            label_ref_y = mid_y_val - 4
+        else:
+            cx1 = int((x1 + mid_x_f) / 2)
+            cy1 = mid_y_val
+            cx2 = int((x2 + mid_x_f) / 2)
+            cy2 = mid_y_val
+            label_ref_x = int(mid_x_f)
+            label_ref_y = mid_y_val - 4  # slightly above the curve peak
 
     ix1, iy1 = int(x1), int(y1)
     ix2, iy2 = int(x2), int(y2)
@@ -740,6 +763,28 @@ def emit_arrow_svg(
     if label_text:
         ann_desc += f": {_escape_xml(label_text)}"
 
+    # Compute inline arrowhead polygon at the path endpoint.
+    # This replaces SVG <marker> defs which have cross-browser issues
+    # (Safari file://, innerHTML replacement, etc.).
+    arrow_size = 10
+    # Direction vector at the curve tip: approximate via last control
+    # point → endpoint.
+    adx = float(ix2 - cx2)
+    ady = float(iy2 - cy2)
+    ad = math.sqrt(adx * adx + ady * ady) or 1.0
+    aux, auy = adx / ad, ady / ad       # unit vector toward tip
+    apx, apy = -auy, aux                 # perpendicular
+    hw = arrow_size * 0.5
+    # Three vertices: tip, and two base corners
+    p1x, p1y = ix2, iy2
+    p2x = p1x - aux * arrow_size + apx * hw
+    p2y = p1y - auy * arrow_size + apy * hw
+    p3x = p1x - aux * arrow_size - apx * hw
+    p3y = p1y - auy * arrow_size - apy * hw
+    arrow_points = (
+        f"{p1x:.1f},{p1y:.1f} {p2x:.1f},{p2y:.1f} {p3x:.1f},{p3y:.1f}"
+    )
+
     ann_key = f"{target}-{arrow_from}" if arrow_from else f"{target}-solo"
     lines.append(
         f'  <g class="scriba-annotation scriba-annotation-{color}"'
@@ -749,10 +794,12 @@ def emit_arrow_svg(
     )
     lines.append(
         f'    <path d="M{ix1},{iy1} C{cx1},{cy1} {cx2},{cy2} {ix2},{iy2}" '
-        f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none" '
-        f'marker-end="url(#scriba-arrow-{color})">'
+        f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none">'
         f'<title>{ann_desc}</title>'
         f'</path>'
+    )
+    lines.append(
+        f'    <polygon points="{arrow_points}" fill="{s_stroke}"/>'
     )
     if label_text:
         l_fill = style["label_fill"]
@@ -819,8 +866,9 @@ def arrow_height_above(
             if a.get("target") == target
             and j < idx
         )
-        base_offset = max(cell_height * 0.75, abs(x2 - x1) * 0.25)
-        stagger = cell_height * 0.5
+        h_dist = abs(x2 - x1) + abs(y2 - y1)
+        base_offset = min(cell_height * 1.2, max(cell_height * 0.5, math.sqrt(h_dist) * 2.5))
+        stagger = cell_height * 0.3
         total_offset = base_offset + arrow_index * stagger
 
         if layout == "2d":
@@ -863,22 +911,7 @@ def emit_arrow_marker_defs(
         Full list of annotations; only those with ``arrow_from`` are
         considered.
     """
-    arrow_anns = [a for a in annotations if a.get("arrow_from")]
-    if not arrow_anns:
-        return
-
-    colors_used = {a.get("color", "info") for a in arrow_anns}
-    lines.append("  <defs>")
-    for color in sorted(colors_used):
-        marker_style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
-        marker_fill = marker_style["stroke"]
-        lines.append(
-            f'    <marker id="scriba-arrow-{color}" '
-            f'viewBox="0 0 10 10" refX="10" refY="5" '
-            f'markerWidth="6" markerHeight="6" '
-            f'orient="auto-start-reverse">'
-            f'<title>Arrowhead ({color})</title>'
-            f'<path d="M 0 0 L 10 5 L 0 10 z" fill="{marker_fill}"/>'
-            f"</marker>"
-        )
-    lines.append("  </defs>")
+    # Arrowheads are now rendered as inline <polygon> elements inside
+    # each annotation group by emit_arrow_svg().  No <marker> <defs>
+    # needed.  This function is kept as a no-op for call-site compat.
+    pass

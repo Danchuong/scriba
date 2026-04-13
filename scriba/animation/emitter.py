@@ -451,8 +451,8 @@ def _emit_frame_svg(
                             else:
                                 prim.apply_command(params)
 
-    # Recompute viewbox AFTER push/pop, including arrow annotation space
-    viewbox = compute_viewbox(primitives, annotations=frame.annotations)
+    # NOTE: viewbox is NOT recomputed here — the caller passes a stable
+    # max-across-all-frames viewbox so the stage size stays constant.
 
     svg_parts: list[str] = [
         f'<svg class="scriba-stage-svg" viewBox="{viewbox}" '
@@ -590,7 +590,44 @@ def emit_animation_html(
             f"</figure>"
         )
 
-    viewbox = compute_viewbox(primitives)
+    # Compute the max viewbox across ALL frames so the stage size stays
+    # stable.  Without this, frames with arrow annotations are taller
+    # than frames without, causing the array to visually shrink/grow.
+    max_vb_width = 0
+    max_vb_height = 0
+    for f in frames:
+        vb_str = compute_viewbox(primitives, annotations=f.annotations)
+        parts = vb_str.split()
+        max_vb_width = max(max_vb_width, int(parts[2]))
+        max_vb_height = max(max_vb_height, int(parts[3]))
+    # Also consider the base (no annotations) for primitives that change
+    # size via push/pop (Stack, Queue).
+    base_vb = compute_viewbox(primitives)
+    base_parts = base_vb.split()
+    max_vb_width = max(max_vb_width, int(base_parts[2]))
+    max_vb_height = max(max_vb_height, int(base_parts[3]))
+    viewbox = f"0 0 {max_vb_width} {max_vb_height}"
+
+    # Set per-primitive min_arrow_above for stable cell positioning
+    for shape_name, prim in primitives.items():
+        if not hasattr(prim, "set_min_arrow_above"):
+            continue
+        max_ah = 0
+        for f in frames:
+            prim_anns = [
+                a for a in f.annotations
+                if a.get("target", "").startswith(shape_name + ".")
+            ]
+            if hasattr(prim, "set_annotations"):
+                prim.set_annotations(prim_anns)
+            if hasattr(prim, "_arrow_height_above"):
+                try:
+                    max_ah = max(max_ah, prim._arrow_height_above(prim_anns))
+                except TypeError:
+                    max_ah = max(max_ah, prim._arrow_height_above())
+        prim.set_min_arrow_above(max_ah)
+        if hasattr(prim, "set_annotations"):
+            prim.set_annotations([])
 
     # aria-label from first frame with a label, or empty
     aria_label = ""
@@ -750,7 +787,42 @@ def emit_interactive_html(
             f'</div>'
         )
 
-    viewbox = compute_viewbox(primitives)
+    # Compute max viewbox across ALL frames so stage size stays stable.
+    max_vb_width = 0
+    max_vb_height = 0
+    for f in frames:
+        vb_str = compute_viewbox(primitives, annotations=f.annotations)
+        parts = vb_str.split()
+        max_vb_width = max(max_vb_width, int(parts[2]))
+        max_vb_height = max(max_vb_height, int(parts[3]))
+    base_vb = compute_viewbox(primitives)
+    base_parts = base_vb.split()
+    max_vb_width = max(max_vb_width, int(base_parts[2]))
+    max_vb_height = max(max_vb_height, int(base_parts[3]))
+    viewbox = f"0 0 {max_vb_width} {max_vb_height}"
+
+    # Set per-primitive min_arrow_above so cells stay at stable Y
+    # positions across frames (no jumping when arrows appear/disappear).
+    for shape_name, prim in primitives.items():
+        if not hasattr(prim, "set_min_arrow_above"):
+            continue
+        max_ah = 0
+        for f in frames:
+            prim_anns = [
+                a for a in f.annotations
+                if a.get("target", "").startswith(shape_name + ".")
+            ]
+            if hasattr(prim, "set_annotations"):
+                prim.set_annotations(prim_anns)
+            if hasattr(prim, "_arrow_height_above"):
+                try:
+                    max_ah = max(max_ah, prim._arrow_height_above(prim_anns))
+                except TypeError:
+                    max_ah = max(max_ah, prim._arrow_height_above())
+        prim.set_min_arrow_above(max_ah)
+        # Clear annotations — they'll be set per-frame during rendering
+        if hasattr(prim, "set_annotations"):
+            prim.set_annotations([])
 
     # ----------------------------------------------------------------
     # Single-pass frame rendering.
@@ -1081,8 +1153,8 @@ def emit_interactive_html(
             var len=pathEl.getTotalLength();
             pathEl.style.strokeDasharray=len;
             pathEl.style.strokeDashoffset=len+'px';
-            var savedMarker=pathEl.getAttribute('marker-end');
-            if(savedMarker)pathEl.removeAttribute('marker-end');
+            var polyEl=clone8.querySelector('polygon');
+            if(polyEl)polyEl.setAttribute('opacity','0');
             var textEl=clone8.querySelector('text');
             if(textEl)textEl.setAttribute('opacity','0');
             var drawDone=new Promise(function(resolve){{
@@ -1094,15 +1166,10 @@ def emit_interactive_html(
                 pathEl.style.strokeDashoffset=(len*(1-eased))+'px';
                 if(!headShown&&t>=0.7){{
                   headShown=true;
-                  var pts=_arrowheadAt(pathEl,12);
-                  var ns='http://www.w3.org/2000/svg';
-                  var poly=document.createElementNS(ns,'polygon');
-                  poly.setAttribute('points',pts);
-                  poly.setAttribute('fill',pathEl.getAttribute('stroke')||'currentColor');
-                  poly.setAttribute('opacity','0');
-                  clone8.appendChild(poly);
-                  poly.animate([{{opacity:0}},{{opacity:1}}],
-                    {{duration:_dur(36),easing:'ease-out',fill:'forwards'}});
+                  if(polyEl){{
+                    polyEl.animate([{{opacity:0}},{{opacity:1}}],
+                      {{duration:_dur(36),easing:'ease-out',fill:'forwards'}});
+                  }}
                   if(textEl){{
                     textEl.animate([{{opacity:0}},{{opacity:1}}],
                       {{duration:_dur(36),easing:'ease-out',fill:'forwards'}});
@@ -1111,6 +1178,7 @@ def emit_interactive_html(
                 if(t<1){{requestAnimationFrame(tick);}}
                 else{{
                   pathEl.style.strokeDashoffset='0';
+                  if(polyEl)polyEl.setAttribute('opacity','1');
                   resolve();
                 }}
               }}

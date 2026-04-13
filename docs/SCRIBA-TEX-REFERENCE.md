@@ -289,6 +289,36 @@ Rooted tree with Reingold-Tilford layout.
 ```
 **Selectors:** `T`, `T.node[id]`, `T.node["[0,5]"]` (segtree), `T.edge[(p,c)]`, `T.all`
 
+**Segtree node topology:** Nodes are split by `mid = (lo+hi)//2`. Left child = `[lo, mid]`,
+right child = `[mid+1, hi]`. For `data=[2,5,1,3,7,4]` (6 elements, range `[0,5]`):
+```
+              [0,5]
+           /         \
+       [0,2]         [3,5]
+      /     \       /     \
+   [0,1]  [2,2]  [3,4]  [5,5]
+   /   \          /   \
+[0,0] [1,1]   [3,3] [4,4]
+```
+Node IDs are the range strings: `st.node["[0,5]"]`, `st.node["[0,2]"]`, `st.node["[2,2]"]`, etc.
+
+**Sparse segtree:** Starts with only root node `[range_lo, range_hi]`. Add nodes dynamically:
+```latex
+\shape{sst}{Tree}{kind="sparse_segtree", range_lo=0, range_hi=7}
+
+\step
+% Root exists automatically: sst.node["[0,7]"]
+\recolor{sst.node["[0,7]"]}{state=current}
+\narrate{Root node covers full range [0,7].}
+
+\step
+% Add child nodes dynamically
+\apply{sst}{add_node={id="[0,3]", parent="[0,7]"}}
+\apply{sst}{add_node={id="[4,7]", parent="[0,7]"}}
+\recolor{sst.node["[0,3]"]}{state=current}
+\narrate{Split root into [0,3] and [4,7].}
+```
+
 ### 7.6 NumberLine
 Horizontal axis with tick marks.
 ```latex
@@ -584,7 +614,76 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 
 ---
 
-## 13. Limits
+## 13. Gotchas & Known Limitations
+
+### 13.1 Stack/Queue: recolor newly pushed items in the NEXT step
+When you `\apply{s}{push="X"}`, the new item is not addressable for `\recolor`
+in the **same** `\step`. Split across two steps:
+```latex
+% WRONG — s.item[2] not yet addressable
+\step
+\apply{s}{push="C"}
+\recolor{s.item[2]}{state=current}    % WARNING: selector not found
+
+% CORRECT — push first, recolor next step
+\step
+\apply{s}{push="C"}
+\narrate{Push C onto the stack.}
+
+\step
+\recolor{s.item[2]}{state=current}
+\narrate{Now we can highlight the new top.}
+```
+Same applies to Queue `enqueue`.
+
+### 13.2 `${interpolation}` works reliably inside `\foreach`, use literal indices elsewhere
+`${var}` interpolation from `\compute` bindings is **guaranteed** inside `\foreach`
+loop bodies (the loop variable is substituted textually). Outside `\foreach`, use
+literal indices in `\recolor` / `\apply` / `\annotate` commands:
+```latex
+% RELIABLE — inside foreach
+\compute{ indices = [0, 2, 4] }
+\foreach{i}{${indices}}
+  \recolor{a.cell[${i}]}{state=done}     % works
+\endforeach
+
+% RELIABLE — literal index
+\recolor{a.cell[3]}{state=good}           % works
+
+% UNRELIABLE — compute var outside foreach
+\compute{ target = 4 }
+\recolor{a.cell[${target}]}{state=good}   % may fail
+```
+
+### 13.3 No `\documentclass` or `\begin{document}`
+Files are body content directly. Adding `\documentclass{article}` or
+`\begin{document}` will cause parse errors.
+
+### 13.4 Math delimiters
+Use `$...$` (inline) and `$$...$$` (display) only. `\[...\]` and `\(...\)`
+are NOT supported and will render as literal text.
+
+### 13.5 No `\section*{}` (starred variants)
+Use `\section{}` without the star. Scriba never emits section numbers anyway.
+
+### 13.6 Starlark integer literals max 10,000,000
+The Starlark sandbox enforces a maximum integer literal of `10000000` (10^7).
+Use `10**9` instead of `999999999` for large sentinel values:
+```latex
+% WRONG
+\compute{ INF = 999999999 }
+
+% CORRECT
+\compute{ INF = 10**9 }
+```
+
+### 13.7 `\LaTeX` and other unsupported commands render as literal text
+Commands not in the supported set (§2) pass through as literal text, not as errors.
+Common traps: `\LaTeX`, `\footnote`, `\caption`, `\cite`, `\ref`.
+
+---
+
+## 14. Limits
 
 | Limit | Value |
 |-------|-------|
@@ -594,6 +693,7 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 | Starlark timeout | 5 seconds per `\compute` |
 | Starlark ops | 10^8 per block |
 | Starlark memory | 64 MB per block |
+| Starlark int literals | ≤10,000,000 (use `10**N` for larger) |
 | foreach nesting | 3 levels max |
 | substory nesting | 3 levels max |
 | Graph stable layout | ≤20 nodes, ≤50 frames |

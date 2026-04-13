@@ -200,7 +200,7 @@ class TestArrowAnnotation:
         assert "scriba-annotation" in svg
         assert "scriba-annotation-good" in svg
         assert "<path" in svg
-        assert "scriba-arrow-good" in svg
+        assert "<polygon" in svg  # inline arrowhead polygon
         assert ">30</text>" in svg
 
     def test_2d_arrow(self) -> None:
