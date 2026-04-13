@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>stroke-dashoffset draw-on test — arrowhead fix</title>
+<style>
+body { font-family: sans-serif; padding: 2rem; background: #f5f5f5; }
+button { font-size: 1rem; padding: 0.5rem 1rem; margin: 0.5rem; cursor: pointer; }
+svg { background: #fff; border: 1px solid #ddd; border-radius: 8px; display: block; margin: 1rem 0; }
+.log { font: 0.8rem monospace; color: #666; margin-top: 0.5rem; white-space: pre-line; }
+h3 { margin-top: 2rem; }
+</style>
+</head>
+<body>
+<h2>Arrow draw-on test — arrowhead appears at end</h2>
+<p>The problem: <code>marker-end</code> renders immediately regardless of <code>stroke-dashoffset</code>.<br>
+Fix: No marker on path. Instead, a separate <code>&lt;polygon&gt;</code> arrowhead fades in when the path finishes drawing.</p>
+
+<h3>Method A: rAF draw-on + separate arrowhead polygon</h3>
+<svg id="svg-a" width="500" height="250" viewBox="0 0 500 250">
+  <circle cx="100" cy="150" r="25" fill="#f8f9fa" stroke="#0090ff" stroke-width="2"/>
+  <text x="100" y="150" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="600">C</text>
+  <circle cx="380" cy="80" r="25" fill="#f8f9fa" stroke="#0090ff" stroke-width="2"/>
+  <text x="380" y="80" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="600">B</text>
+
+  <!-- Path WITHOUT marker-end — hidden initially via dashoffset -->
+  <path id="pathA"
+    d="M122,138 C185,50 300,30 358,72"
+    stroke="#2a7e3b" stroke-width="2.5" fill="none"
+    stroke-dasharray="999" stroke-dashoffset="999"
+  />
+  <!-- Separate arrowhead at path endpoint, initially hidden -->
+  <polygon id="headA" points="0,0 0,0 0,0" fill="#2a7e3b" opacity="0"/>
+
+  <text id="labelA" x="230" y="35" text-anchor="middle"
+    font-family="ui-monospace, monospace" font-size="13" font-weight="600"
+    fill="#2a7e3b" opacity="0">2+1=3</text>
+</svg>
+<button onclick="resetA()">Reset</button>
+<button onclick="drawA()">Draw arrow</button>
+
+<h3>Method B: rAF draw-on + traveling dot tip</h3>
+<svg id="svg-b" width="500" height="250" viewBox="0 0 500 250">
+  <circle cx="80" cy="180" r="25" fill="#f8f9fa" stroke="#0b68cb" stroke-width="2"/>
+  <text x="80" y="180" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="600">D</text>
+  <circle cx="400" cy="60" r="25" fill="#f8f9fa" stroke="#0b68cb" stroke-width="2"/>
+  <text x="400" y="60" text-anchor="middle" dominant-baseline="central" font-size="16" font-weight="600">E</text>
+
+  <path id="pathB"
+    d="M102,168 C170,60 310,20 378,54"
+    stroke="#0b68cb" stroke-width="2.5" fill="none"
+    stroke-dasharray="999" stroke-dashoffset="999"
+  />
+  <!-- Traveling dot that follows the path tip -->
+  <circle id="dotB" cx="102" cy="168" r="4" fill="#0b68cb" opacity="0"/>
+  <!-- Arrowhead -->
+  <polygon id="headB" points="0,0 0,0 0,0" fill="#0b68cb" opacity="0"/>
+
+  <text id="labelB" x="250" y="25" text-anchor="middle"
+    font-family="ui-monospace, monospace" font-size="13" font-weight="600"
+    fill="#0b68cb" opacity="0">8+2=10</text>
+</svg>
+<button onclick="resetB()">Reset</button>
+<button onclick="drawB()">Draw arrow with dot</button>
+
+<h3>Method C: Full sequence (dim → pulse source → draw arrow → label → counter)</h3>
+<svg id="svg-c" width="500" height="250" viewBox="0 0 500 250">
+  <circle id="cC" cx="100" cy="150" r="25" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="2"/>
+  <text x="100" y="150" text-anchor="middle" dominant-baseline="central" font-size="16">C</text>
+  <circle id="cB" cx="380" cy="80" r="25" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="2"/>
+  <text x="380" y="80" text-anchor="middle" dominant-baseline="central" font-size="16">B</text>
+
+  <!-- dist label on B -->
+  <text id="distB" x="380" y="120" text-anchor="middle" font-family="ui-monospace, monospace"
+    font-size="12" fill="#687076">dist=4</text>
+
+  <path id="pathC" d="M122,138 C185,50 300,30 358,72"
+    stroke="#2a7e3b" stroke-width="2.5" fill="none"
+    stroke-dasharray="999" stroke-dashoffset="999"/>
+  <polygon id="headC" points="0,0 0,0 0,0" fill="#2a7e3b" opacity="0"/>
+  <text id="labelC" x="230" y="35" text-anchor="middle"
+    font-family="ui-monospace, monospace" font-size="13" font-weight="600"
+    fill="#2a7e3b" opacity="0">2+1=3</text>
+</svg>
+<button onclick="resetC()">Reset</button>
+<button onclick="fullSequence()">Full 5-phase sequence</button>
+
+<div class="log" id="log"></div>
+
+<script>
+var log = document.getElementById('log');
+function L(m) { log.textContent += m + '\n'; }
+
+/* ================================================================
+   Utility: compute arrowhead polygon at the end of a path
+   ================================================================ */
+function arrowheadAt(path, size) {
+  var len = path.getTotalLength();
+  var tip = path.getPointAtLength(len);
+  var back = path.getPointAtLength(Math.max(0, len - size * 1.5));
+
+  var dx = tip.x - back.x;
+  var dy = tip.y - back.y;
+  var d = Math.sqrt(dx * dx + dy * dy) || 1;
+  var ux = dx / d, uy = dy / d;      // unit vector along path
+  var px = -uy, py = ux;              // perpendicular
+
+  var hw = size * 0.5;  // half width
+  var p1x = tip.x, p1y = tip.y;
+  var p2x = tip.x - ux * size + px * hw;
+  var p2y = tip.y - uy * size + py * hw;
+  var p3x = tip.x - ux * size - px * hw;
+  var p3y = tip.y - uy * size - py * hw;
+
+  return p1x+','+p1y+' '+p2x+','+p2y+' '+p3x+','+p3y;
+}
+
+/* ================================================================
+   Utility: draw path with rAF + arrowhead at end
+   ================================================================ */
+function drawPathRAF(path, headEl, dur, onProgress) {
+  var len = path.getTotalLength();
+  path.style.strokeDasharray = len;
+  path.style.strokeDashoffset = len;
+  if (headEl) headEl.setAttribute('opacity', '0');
+
+  var start = performance.now();
+  return new Promise(function(resolve) {
+    function tick(now) {
+      var t = Math.min((now - start) / dur, 1);
+      var e = 1 - Math.pow(1 - t, 3); // ease-out cubic
+      var drawn = len * e;
+      path.style.strokeDashoffset = (len - drawn) + 'px';
+
+      if (onProgress) onProgress(t, drawn, len);
+
+      if (t < 1) {
+        requestAnimationFrame(tick);
+      } else {
+        path.style.strokeDashoffset = '0';
+        // Show arrowhead at final position
+        if (headEl) {
+          headEl.setAttribute('points', arrowheadAt(path, 12));
+          headEl.setAttribute('opacity', '1');
+        }
+        resolve();
+      }
+    }
+    requestAnimationFrame(tick);
+  });
+}
+
+/* ================================================================
+   Utility: fade in element
+   ================================================================ */
+function fadeIn(el, dur) {
+  if (!el) return Promise.resolve();
+  el.style.transition = 'none';
+  el.setAttribute('opacity', '0');
+  el.getBoundingClientRect();
+  el.style.transition = 'opacity ' + dur + 'ms ease-out';
+  el.setAttribute('opacity', '1');
+  return new Promise(function(r) { setTimeout(r, dur); });
+}
+
+function sl(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+/* ================================================================
+   Method A: Simple draw-on + arrowhead
+   ================================================================ */
+function resetA() {
+  var p = document.getElementById('pathA');
+  var len = p.getTotalLength();
+  p.style.strokeDasharray = len;
+  p.style.strokeDashoffset = len + 'px';
+  document.getElementById('headA').setAttribute('opacity', '0');
+  document.getElementById('labelA').setAttribute('opacity', '0');
+  L('A reset. Path len = ' + len.toFixed(1) + ' (hidden via dashoffset)');
+}
+
+function drawA() {
+  log.textContent = '';
+  L('A: Drawing path with rAF...');
+  var p = document.getElementById('pathA');
+  var h = document.getElementById('headA');
+  var lbl = document.getElementById('labelA');
+
+  drawPathRAF(p, h, 800).then(function() {
+    L('A: Path done. Arrowhead placed. Fading label...');
+    return fadeIn(lbl, 300);
+  }).then(function() {
+    L('A: Complete!');
+  });
+}
+
+/* ================================================================
+   Method B: Draw-on + traveling dot
+   ================================================================ */
+function resetB() {
+  var p = document.getElementById('pathB');
+  var len = p.getTotalLength();
+  p.style.strokeDasharray = len;
+  p.style.strokeDashoffset = len + 'px';
+  document.getElementById('dotB').setAttribute('opacity', '0');
+  document.getElementById('headB').setAttribute('opacity', '0');
+  document.getElementById('labelB').setAttribute('opacity', '0');
+  L('B reset. Path hidden.');
+}
+
+function drawB() {
+  log.textContent = '';
+  L('B: Drawing with traveling dot...');
+  var p = document.getElementById('pathB');
+  var dot = document.getElementById('dotB');
+  var h = document.getElementById('headB');
+  var lbl = document.getElementById('labelB');
+  dot.setAttribute('opacity', '1');
+
+  drawPathRAF(p, h, 800, function(t, drawn, len) {
+    // Move dot to current tip of drawn portion
+    var pt = p.getPointAtLength(drawn);
+    dot.setAttribute('cx', pt.x);
+    dot.setAttribute('cy', pt.y);
+  }).then(function() {
+    dot.setAttribute('opacity', '0'); // hide dot, arrowhead replaces it
+    L('B: Path done. Fading label...');
+    return fadeIn(lbl, 300);
+  }).then(function() {
+    L('B: Complete!');
+  });
+}
+
+/* ================================================================
+   Method C: Full 5-phase sequence
+   ================================================================ */
+function resetC() {
+  var cC = document.getElementById('cC');
+  var cB = document.getElementById('cB');
+  cC.setAttribute('stroke', '#dfe3e6'); cC.setAttribute('stroke-width', '2'); cC.setAttribute('fill', '#f8f9fa');
+  cB.setAttribute('stroke', '#dfe3e6'); cB.setAttribute('stroke-width', '2'); cB.setAttribute('fill', '#f8f9fa');
+  cC.style.transition = ''; cB.style.transition = '';
+  var p = document.getElementById('pathC');
+  var len = p.getTotalLength();
+  p.style.strokeDasharray = len;
+  p.style.strokeDashoffset = len + 'px';
+  document.getElementById('headC').setAttribute('opacity', '0');
+  document.getElementById('labelC').setAttribute('opacity', '0');
+  document.getElementById('distB').textContent = 'dist=4';
+  document.getElementById('distB').setAttribute('fill', '#687076');
+  L('C reset. Arrow hidden.');
+}
+
+function fullSequence() {
+  log.textContent = '';
+  var cC = document.getElementById('cC');
+  var cB = document.getElementById('cB');
+  var p = document.getElementById('pathC');
+  var h = document.getElementById('headC');
+  var lbl = document.getElementById('labelC');
+  var distTxt = document.getElementById('distB');
+
+  // Phase 1: SIGNAL — highlight source C, target B
+  L('Phase 1: SIGNAL — highlight C (source), B (target)');
+  cC.style.transition = 'stroke 250ms ease-out, stroke-width 250ms ease-out';
+  cB.style.transition = 'stroke 250ms ease-out, stroke-width 250ms ease-out';
+  cC.setAttribute('stroke', '#0090ff'); cC.setAttribute('stroke-width', '2.5');
+  cB.setAttribute('stroke', '#0090ff'); cB.setAttribute('stroke-width', '2.5');
+
+  // Pulse C
+  cC.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
+    {duration:300, easing:'ease-in-out'});
+
+  sl(200).then(function() {
+    // Pulse B
+    cB.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
+      {duration:300, easing:'ease-in-out'});
+    return sl(400);
+  }).then(function() {
+    // Phase 2: CONNECT — draw arrow C → B
+    L('Phase 2: CONNECT — draw arrow C→B with stroke-dashoffset');
+    return drawPathRAF(p, h, 600);
+  }).then(function() {
+    // Fade in label
+    L('          Label fade-in: "2+1=3"');
+    return fadeIn(lbl, 250);
+  }).then(function() {
+    return sl(200);
+  }).then(function() {
+    // Phase 3: COMPUTE — counter roll dist[B] from 4 to 3
+    L('Phase 3: COMPUTE — counter dist[B]: 4 → 3');
+    distTxt.setAttribute('fill', '#2a7e3b');
+    var from = 4, to = 3, dur = 300, start = performance.now();
+    return new Promise(function(resolve) {
+      (function tick(now) {
+        var t = Math.min((now - start) / dur, 1);
+        var e = 1 - Math.pow(1 - t, 3);
+        distTxt.textContent = 'dist=' + Math.round(from + (to - from) * e);
+        if (t < 1) requestAnimationFrame(tick); else resolve();
+      })(performance.now());
+    });
+  }).then(function() {
+    return sl(200);
+  }).then(function() {
+    // Phase 4: RESULT — mark B as updated
+    L('Phase 4: RESULT — B updated');
+    cB.setAttribute('fill', '#e6e8eb');
+    cB.setAttribute('stroke', '#2a7e3b');
+    return sl(300);
+  }).then(function() {
+    // Phase 5: SETTLE
+    L('Phase 5: SETTLE — done');
+    cC.setAttribute('stroke', '#c1c8cd');
+    cC.setAttribute('stroke-width', '2');
+  });
+}
+
+resetA();
+</script>
+</body>
+</html>

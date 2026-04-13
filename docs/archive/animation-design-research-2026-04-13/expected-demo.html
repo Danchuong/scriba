@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriba Animation v2 — Expected Behavior Demo</title>
+<style>
+:root {
+  --scriba-fg: #11181c; --scriba-fg-muted: #687076;
+  --scriba-bg: #ffffff; --scriba-bg-code: #f8f9fa;
+  --scriba-border: #dfe3e6; --scriba-link: #0b68cb;
+  --si-f: #f8f9fa; --si-s: #dfe3e6; --si-t: #11181c;
+  --sc-f: #0090ff; --sc-s: #0b68cb; --sc-t: #ffffff;
+  --sd-f: #e6e8eb; --sd-s: #c1c8cd; --sd-t: #11181c;
+  --sdm-f: #f1f3f5; --sdm-s: #e6e8eb; --sdm-t: #687076;
+  --sh-f: #f8f9fa; --sh-s: #0090ff; --sh-t: #0b68cb;
+  --sg-f: #e6e8eb; --sg-s: #2a7e3b; --sg-t: #11181c;
+  --se-f: #f8f9fa; --se-s: #e5484d; --se-t: #11181c;
+  --ann-info: #0b68cb; --ann-good: #2a7e3b; --ann-warn: #f5a524; --ann-err: #e5484d;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; color: var(--scriba-fg); padding: 2rem; line-height: 1.6; max-width: 900px; margin: 0 auto; }
+h1 { font-size: 1.5rem; font-weight: 700; margin-bottom: 0.25rem; }
+h2 { font-size: 1.1rem; font-weight: 600; margin: 2.5rem 0 0.5rem; color: var(--scriba-fg-muted); }
+.sub { font-size: 0.85rem; color: var(--scriba-fg-muted); margin-bottom: 2rem; }
+.note { font-size: 0.8rem; color: var(--scriba-fg-muted); margin-bottom: 0.5rem; font-style: italic; }
+
+.W { background: var(--scriba-bg); border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05); overflow: hidden; outline: none; max-width: 720px; margin-bottom: 1.5rem; }
+.W:focus-visible { outline: 2px solid var(--scriba-link); outline-offset: 2px; }
+.ctl { display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 1rem; border-bottom: 1px solid var(--scriba-border); }
+.ctl button { font: 600 0.75rem -apple-system, sans-serif; padding: 0.3rem 0.8rem; border-radius: 6px; border: 1px solid var(--scriba-border); background: var(--scriba-bg); color: var(--scriba-fg); cursor: pointer; }
+.ctl button:hover:not(:disabled) { background: var(--scriba-bg-code); }
+.ctl button:disabled { opacity: 0.4; cursor: default; }
+.ctr { font: 500 0.75rem ui-monospace, monospace; color: var(--scriba-fg-muted); min-width: 7em; text-align: center; }
+.prg { display: flex; gap: 4px; margin-left: auto; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--scriba-border); transition: background 200ms; }
+.dot.a { background: var(--scriba-link); } .dot.d { background: var(--scriba-fg-muted); }
+.stg { padding: 1.5rem 1rem; background: var(--scriba-bg-code); display: flex; justify-content: center; min-height: 80px; }
+.stg svg { display: block; }
+.nar { padding: 0.75rem 1rem; font-size: 0.92rem; line-height: 1.55; min-height: 2.5rem; }
+.nar code { font: 0.85em ui-monospace, monospace; background: var(--scriba-bg-code); padding: 0.1em 0.35em; border-radius: 4px; }
+.pb { display: flex; gap: 2px; padding: 0.25rem 1rem; border-top: 1px solid var(--scriba-border); font: 500 0.65rem ui-monospace, monospace; color: var(--scriba-fg-muted); }
+.pb .p { flex: 1; text-align: center; padding: 0.15rem; border-radius: 3px; background: var(--scriba-bg-code); transition: background 150ms, color 150ms; }
+.pb .p.on { background: var(--scriba-link); color: #fff; }
+.pb .p.ok { background: var(--sd-f); color: var(--scriba-fg); }
+.sc { display: flex; align-items: center; gap: 0.5rem; padding: 0 1rem 0.5rem; font: 500 0.7rem ui-monospace, monospace; color: var(--scriba-fg-muted); }
+.sc input { width: 80px; }
+
+/* SVG transitions */
+[data-t] > rect, [data-t] > circle { transition: fill 250ms ease-out, stroke 250ms ease-out, stroke-width 250ms ease-out, opacity 200ms ease-out; }
+[data-t] > line { transition: stroke 250ms ease-out, stroke-width 250ms ease-out, opacity 200ms ease-out; }
+[data-t] > text { transition: fill 250ms ease-out; }
+
+.si > rect{fill:var(--si-f);stroke:var(--si-s);stroke-width:1;} .si > text{fill:var(--si-t);}
+.sc2 > rect{fill:var(--sc-f);stroke:var(--sc-s);stroke-width:2;} .sc2 > text{fill:var(--sc-t);font-weight:600;}
+.sd2 > rect{fill:var(--sd-f);stroke:var(--sd-s);stroke-width:1;} .sd2 > text{fill:var(--sd-t);}
+.sdm > rect{fill:var(--sdm-f);stroke:var(--sdm-s);stroke-width:1;} .sdm > text{fill:var(--sdm-t);} .sdm{opacity:0.5;}
+.sh > rect{fill:var(--sh-f);stroke:var(--sh-s);stroke-width:2;} .sh > text{fill:var(--sh-t);}
+.sg > rect{fill:var(--sg-f);stroke:var(--sg-s);stroke-width:2;} .sg > text{fill:var(--sg-t);}
+.se > rect{fill:var(--se-f);stroke:var(--se-s);stroke-width:2;} .se > text{fill:var(--se-t);}
+
+.si > circle{fill:var(--si-f);stroke:var(--si-s);stroke-width:2;}
+.sc2 > circle{fill:var(--sc-f);stroke:var(--sc-s);stroke-width:2.5;}
+.sd2 > circle{fill:var(--sd-f);stroke:var(--sd-s);stroke-width:2;}
+.sh > circle{fill:var(--sh-f);stroke:var(--sh-s);stroke-width:2.5;}
+.sg > circle{fill:var(--sg-f);stroke:var(--sg-s);stroke-width:2.5;}
+
+.si > line{stroke:var(--si-s);stroke-width:1.5;}
+.sc2 > line{stroke:var(--sc-s);stroke-width:2.5;}
+.sd2 > line{stroke:var(--sd-s);stroke-width:1.5;}
+.sg > line{stroke:var(--sg-s);stroke-width:2;}
+.sdm > line{stroke:var(--sdm-s);stroke-width:1.5;}
+
+@media(forced-colors:none){
+  [data-t] text{paint-order:stroke fill markers;stroke:var(--h,var(--scriba-bg-code));stroke-width:3;stroke-linejoin:round;}
+  .si>text{--h:var(--si-f);} .sc2>text{--h:var(--sc-f);} .sd2>text{--h:var(--sd-f);} .sh>text{--h:var(--sh-f);} .sg>text{--h:var(--sg-f);}
+  .idx{--h:var(--scriba-bg-code);stroke-width:2;}
+  .gn text{stroke-width:4;}
+}
+.idx{font:500 10px ui-monospace,monospace;fill:var(--scriba-fg-muted);text-anchor:middle;dominant-baseline:hanging;}
+[data-t]>text{font:500 14px -apple-system,sans-serif;font-variant-numeric:tabular-nums;text-anchor:middle;dominant-baseline:central;pointer-events:none;}
+.gn [data-t]>text{font:500 14px -apple-system,sans-serif;text-anchor:middle;dominant-baseline:central;}
+.ann path,.ann line{fill:none;stroke-width:2;}
+.ann text{font:600 11px ui-monospace,monospace;text-anchor:middle;dominant-baseline:auto;}
+.ann-good path{stroke:var(--ann-good);} .ann-good text{fill:var(--ann-good);}
+.ann-info path{stroke:var(--ann-info);} .ann-info text{fill:var(--ann-info);}
+.wt{font:500 11px ui-monospace,monospace;fill:var(--scriba-fg-muted);text-anchor:middle;}
+
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:0.01ms!important;animation-duration:0.01ms!important;}}
+</style>
+</head>
+<body>
+
+<h1>Scriba Animation v2 -- Expected Behavior</h1>
+<p class="sub">7 demos. Click Next / press Arrow Right / Space to step. Each shows 5-phase micro-animation.</p>
+
+<h2>Demo 1: Dijkstra annotate arrow_from (Graph + Array)</h2>
+<p class="note">Step 5: <code>\annotate{G.node[B]}{arrow_from="G.node[C]", label="2+1=3", color=good}</code> -- bezier arrow draws on from C to B with label.</p>
+<div class="W" id="w1" tabindex="0"></div>
+
+<h2>Demo 2: DPTable narrate arrow_from -- Fibonacci</h2>
+<p class="note">Arrow draw-on from <code>dp[i-2]</code> and <code>dp[i-1]</code> to <code>dp[i]</code>, then counter roll-up.</p>
+<div class="W" id="w2" tabindex="0"></div>
+
+<h2>Demo 3: Array -- Bubble Sort Swap</h2>
+<p class="note">Arc-swap: values fly over/under each other along curved paths.</p>
+<div class="W" id="w3" tabindex="0"></div>
+
+<h2>Demo 4: Graph -- BFS Edge Traversal Dot</h2>
+<p class="note">Colored dot travels along edge, staggered neighbor discovery.</p>
+<div class="W" id="w4" tabindex="0"></div>
+
+<h2>Demo 5: Tree -- DFS + Backtrack Pulse</h2>
+<p class="note">Blue dot descends, red dot backtracks on leaf.</p>
+<div class="W" id="w5" tabindex="0"></div>
+
+<h2>Demo 6: Grid -- BFS Wavefront</h2>
+<p class="note">Diamond wavefront expanding from center with per-cell stagger.</p>
+<div class="W" id="w6" tabindex="0"></div>
+
+<h2>Demo 7: LinkedList -- Insert + Remove</h2>
+<p class="note">Fade-in new node, pointer redirect, fade-out removed node.</p>
+<div class="W" id="w7" tabindex="0"></div>
+
+<script>
+/* Shared anim utils */
+var _ok=(typeof Element.prototype.animate==='function')&&!window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+function wa(e,k,o){if(!_ok||!e)return Promise.resolve();var a=e.animate(k,o);return a.finished||new Promise(function(r){a.onfinish=r;});}
+function sl(m){return new Promise(function(r){setTimeout(r,m);});}
+function drawP(p,dur,ease){
+  if(!p||!_ok){if(p)p.style.opacity='1';return Promise.resolve();}
+  var l=p.getTotalLength?p.getTotalLength():200;
+  p.style.strokeDasharray=l;p.style.strokeDashoffset=l;p.style.opacity='1';
+  return wa(p,[{strokeDashoffset:l+'px'},{strokeDashoffset:'0px'}],{duration:dur,easing:ease||'ease-out',fill:'forwards'});
+}
+function pulse(e,s,d){if(!e||!_ok)return Promise.resolve();return wa(e,[{transform:'scale(1)'},{transform:'scale('+s+')'},{transform:'scale(1)'}],{duration:d,easing:'ease-in-out',fill:'forwards'});}
+function counter(e,f,t,d){
+  if(!e||!_ok){if(e)e.textContent=t;return Promise.resolve();}
+  var fr=parseInt(f)||0,to=parseInt(t)||0,st=performance.now();
+  if(fr===to){e.textContent=t;return Promise.resolve();}
+  return new Promise(function(r){(function tk(n){var p=Math.min((n-st)/d,1);e.textContent=Math.round(fr+(to-fr)*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(tk);else{e.textContent=t;r();}})(performance.now());});
+}
+function dotGo(svg,x1,y1,x2,y2,dur,col){
+  if(!_ok)return Promise.resolve();
+  var ns='http://www.w3.org/2000/svg',d=document.createElementNS(ns,'circle');
+  d.setAttribute('r','5');d.setAttribute('fill',col||'#0090ff');d.setAttribute('cx',x1);d.setAttribute('cy',y1);svg.appendChild(d);
+  return wa(d,[{transform:'translate(0,0)',opacity:1},{transform:'translate('+(x2-x1)+'px,'+(y2-y1)+'px)',opacity:0.3}],{duration:dur,easing:'ease-in-out',fill:'forwards'}).then(function(){d.remove();});
+}
+function fadeIn(e,d){if(!e)return Promise.resolve();e.style.opacity='0';if(!_ok){e.style.opacity='1';return Promise.resolve();}return wa(e,[{opacity:0},{opacity:1}],{duration:d,easing:'ease-out',fill:'forwards'});}
+function fadeOut(e,d){if(!e)return Promise.resolve();if(!_ok){e.style.opacity='0';return Promise.resolve();}return wa(e,[{opacity:1},{opacity:0}],{duration:d,easing:'ease-in',fill:'forwards'});}
+
+/* Widget builder */
+function bw(id,steps){
+  var r=document.getElementById(id),s=0,T=steps.length,sp=1,busy=false;
+  var h='<div class="ctl"><button class="bp">Prev</button><span class="ctr">Step 1 / '+T+'</span><button class="bn">Next</button><div class="prg">';
+  for(var i=0;i<T;i++)h+='<div class="dot'+(i===0?' a':'')+'"></div>';
+  h+='</div></div><div class="stg"></div><div class="pb"><div class="p" data-p="signal">Signal</div><div class="p" data-p="connect">Connect</div><div class="p" data-p="compute">Compute</div><div class="p" data-p="result">Result</div><div class="p" data-p="settle">Settle</div></div><p class="nar" aria-live="polite"></p><div class="sc"><label>Speed:</label><input type="range" min="0.25" max="2" step="0.25" value="1"><span>1x</span></div>';
+  r.innerHTML=h;
+  var stg=r.querySelector('.stg'),nar=r.querySelector('.nar'),ctr=r.querySelector('.ctr'),bp=r.querySelector('.bp'),bn=r.querySelector('.bn'),dots=r.querySelectorAll('.dot'),phs=r.querySelectorAll('.p');
+  r.querySelector('input').addEventListener('input',function(){sp=parseFloat(this.value);r.querySelector('.sc span').textContent=sp+'x';});
+  function d(m){return Math.round(m/sp);}
+  function ph(n){phs.forEach(function(e){e.classList.remove('on','ok');if(e.dataset.p===n)e.classList.add('on');});}
+  function phD(n){phs.forEach(function(e){if(e.dataset.p===n){e.classList.remove('on');e.classList.add('ok');}});}
+  function phC(){phs.forEach(function(e){e.classList.remove('on','ok');});}
+  function upd(){ctr.textContent='Step '+(s+1)+' / '+T;bp.disabled=s===0||busy;bn.disabled=s===T-1||busy;dots.forEach(function(dd,i){dd.className='dot'+(i===s?' a':i<s?' d':'');});}
+  function show(i,an){if(busy)return;s=i;upd();var st=steps[s];nar.innerHTML=st.narration;if(st.instant||!an){st.render(stg);phC();return;}busy=true;upd();st.render(stg);st.animate(stg,d,ph,phD).then(function(){phC();busy=false;upd();});}
+  bp.addEventListener('click',function(){if(s>0)show(s-1,false);});
+  bn.addEventListener('click',function(){if(s<T-1)show(s+1,true);});
+  r.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(s<T-1)show(s+1,true);}if(e.key==='ArrowLeft'){e.preventDefault();if(s>0)show(s-1,false);}});
+  show(0,false);
+}
+
+
+/* ================================================================
+   DEMO 1: Dijkstra with annotate arrow_from
+   Faithful to examples/algorithms/graph/dijkstra.tex
+   ================================================================ */
+(function(){
+  // Graph layout (stable seed=7 approximate positions)
+  var N={A:{x:80,y:80},B:{x:250,y:60},C:{x:150,y:200},D:{x:320,y:180},E:{x:250,y:300},F:{x:400,y:260}};
+  var E=[['A','B',4],['A','C',2],['B','C',1],['B','D',5],['C','D',8],['C','E',10],['D','E',2],['D','F',6],['E','F',3]];
+  var ns={},es={},dist=['inf','inf','inf','inf','inf','inf'],ds=['si','si','si','si','si','si'];
+  var labels='ABCDEF';
+  var anns=[]; // active annotations [{from,to,label,color}]
+
+  var CW=46,CH=46,CG=4,CPAD=20;
+  function dX(i){return CPAD+i*(CW+CG);} function dCX(i){return dX(i)+CW/2;}
+
+  function mk(){return '<marker id="am" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2a7e3b"/></marker>';}
+
+  function renderGraph(){
+    var s='<svg xmlns="http://www.w3.org/2000/svg" width="480" height="340" viewBox="0 0 480 340"><defs>'+mk()+'</defs><g data-primitive="graph">';
+    // Edges
+    s+='<g class="ge">';
+    E.forEach(function(e){
+      var a=N[e[0]],b=N[e[1]],st=es[e[0]+e[1]]||'si';
+      s+='<g data-t="e-'+e[0]+e[1]+'" class="'+st+'"><line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/></g>';
+      // Weight label
+      var mx=(a.x+b.x)/2,my=(a.y+b.y)/2;
+      s+='<text class="wt" x="'+mx+'" y="'+(my-6)+'">'+e[2]+'</text>';
+    });
+    s+='</g>';
+    // Nodes
+    s+='<g class="gn">';
+    Object.keys(N).forEach(function(k){
+      var n=N[k],st=ns[k]||'si';
+      s+='<g data-t="n-'+k+'" class="'+st+'"><circle cx="'+n.x+'" cy="'+n.y+'" r="20"/><text x="'+n.x+'" y="'+n.y+'">'+k+'</text></g>';
+    });
+    s+='</g>';
+    // Annotations (arrow_from)
+    anns.forEach(function(a){
+      var src=N[a.from],dst=N[a.to];
+      var dx=dst.x-src.x,dy=dst.y-src.y,d=Math.sqrt(dx*dx+dy*dy)||1;
+      var px=-dy/d,py=dx/d,off=30;
+      var mx=(src.x+dst.x)/2,my=(src.y+dst.y)/2;
+      var cx1=Math.round((src.x+mx)/2+px*off),cy1=Math.round((src.y+my)/2+py*off);
+      var cx2=Math.round((dst.x+mx)/2+px*off),cy2=Math.round((dst.y+my)/2+py*off);
+      // Shorten for circle radius
+      var sx=src.x+(dx/d)*22,sy=src.y+(dy/d)*22;
+      var ex=dst.x-(dx/d)*22,ey=dst.y-(dy/d)*22;
+      s+='<g class="ann ann-good" data-ann="'+a.from+'-'+a.to+'" style="opacity:'+(a.visible?1:0)+'">';
+      s+='<path d="M'+Math.round(sx)+','+Math.round(sy)+' C'+cx1+','+cy1+' '+cx2+','+cy2+' '+Math.round(ex)+','+Math.round(ey)+'" marker-end="url(#am)"/>';
+      s+='<text x="'+Math.round(mx+px*(off+10))+'" y="'+Math.round(my+py*(off+10))+'">'+a.label+'</text>';
+      s+='</g>';
+    });
+    s+='</g></svg>';
+    return s;
+  }
+
+  function renderDist(){
+    var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+(CPAD*2+6*(CW+CG)-CG)+'" height="80" viewBox="0 0 '+(CPAD*2+6*(CW+CG)-CG)+' 80"><g data-primitive="array">';
+    for(var i=0;i<6;i++){
+      s+='<g data-t="d['+i+']" class="'+ds[i]+'"><rect x="'+dX(i)+'" y="10" width="'+CW+'" height="'+CH+'" rx="6"/><text x="'+dCX(i)+'" y="'+(10+CH/2)+'">'+dist[i]+'</text></g>';
+      s+='<text class="idx" x="'+dCX(i)+'" y="'+(10+CH+8)+'">'+labels[i]+'</text>';
+    }
+    s+='</g></svg>';
+    return s;
+  }
+
+  function renderBoth(stg){
+    stg.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;gap:0.5rem">'+renderGraph()+'<div style="font:500 0.7rem ui-monospace,monospace;color:var(--scriba-fg-muted)">dist[ ]</div>'+renderDist()+'</div>';
+  }
+
+  function reset(){Object.keys(N).forEach(function(k){ns[k]='si';});E.forEach(function(e){es[e[0]+e[1]]='si';});dist=['inf','inf','inf','inf','inf','inf'];ds=['si','si','si','si','si','si'];anns=[];}
+
+  var S=[];
+  var ni={A:0,B:1,C:2,D:3,E:4,F:5};
+
+  // Step 0: Init
+  S.push({narration:'Dijkstra from <code>A</code>. <code>dist[A]=0</code>, all others <code>inf</code>.',instant:true,
+    render:function(stg){reset();ns.A='sc2';dist[0]='0';ds[0]='sc2';renderBoth(stg);},animate:function(){return Promise.resolve();}});
+
+  // Step 1: Settle A, relax A->B (4)
+  S.push({narration:'Settle <code>A</code>. Relax A&rarr;B (w=4): <code>dist[B] = min(inf, 0+4) = 4</code>.',instant:false,
+    render:function(stg){ns.A='sd2';ds[0]='sd2';es.AB='sc2';dist[1]='4';ds[1]='sc2';renderBoth(stg);},
+    animate:function(stg,d,ph,phD){
+      ph('signal'); ns.A='sd2';ds[0]='sd2';renderBoth(stg);
+      return sl(d(150)).then(function(){phD('signal');ph('connect');
+        es.AB='sc2';renderBoth(stg);
+        var svg=stg.querySelector('.ge');
+        var a=N.A,b=N.B;
+        return dotGo(stg.querySelector('svg'),a.x,a.y,b.x,b.y,d(350),'#0b68cb');
+      }).then(function(){phD('connect');ph('compute');
+        var tEl=stg.querySelector('[data-t="d[1]"] text');
+        dist[1]='4';ds[1]='sc2';
+        return counter(tEl,'0','4',d(200));
+      }).then(function(){renderBoth(stg);phD('compute');ph('settle');return sl(d(100));}).then(function(){phD('settle');});
+    }});
+
+  // Step 2: Relax A->C (2)
+  S.push({narration:'Relax A&rarr;C (w=2): <code>dist[C] = min(inf, 0+2) = 2</code>. Pop C next (key=2).',instant:false,
+    render:function(stg){es.AB='si';es.AC='sc2';dist[2]='2';ds[2]='sc2';renderBoth(stg);},
+    animate:function(stg,d,ph,phD){
+      ph('signal');es.AB='si';renderBoth(stg);return sl(d(100)).then(function(){
+        phD('signal');ph('connect');es.AC='sc2';renderBoth(stg);
+        return dotGo(stg.querySelector('svg'),N.A.x,N.A.y,N.C.x,N.C.y,d(350),'#0b68cb');
+      }).then(function(){phD('connect');ph('compute');
+        var t2=stg.querySelector('[data-t="d[2]"] text');dist[2]='2';ds[2]='sc2';
+        return counter(t2,'0','2',d(200));
+      }).then(function(){renderBoth(stg);phD('compute');ph('settle');return sl(d(100));}).then(function(){phD('settle');});
+    }});
+
+  // Step 3: Settle C
+  S.push({narration:'Pop <code>C</code> (key=2). Settle C.',instant:true,
+    render:function(stg){es.AC='si';ds[1]='si';ds[2]='si';ns.C='sc2';ds[2]='sc2';renderBoth(stg);},animate:function(){return Promise.resolve();}});
+
+  // Step 4: Relax C->B (1) — THE KEY STEP with arrow_from!
+  S.push({
+    narration:'Relax C&rarr;B (w=1): <code>dist[B] = min(4, 2+1) = 3</code>. <b>annotate arrow_from C to B</b> with label "2+1=3".',
+    instant:false,
+    render:function(stg){
+      es.BC='sc2';dist[1]='3';ds[1]='sc2';
+      anns=[{from:'C',to:'B',label:'2+1=3',visible:true}];
+      renderBoth(stg);
+    },
+    animate:function(stg,d,ph,phD){
+      // Signal: highlight C (source) and B (target)
+      ph('signal');
+      ns.C='sc2'; ns.B='sh';
+      anns=[];
+      renderBoth(stg);
+      var svg=stg.querySelector('svg');
+      var gC=svg.querySelector('[data-t="n-C"]');
+      var gB=svg.querySelector('[data-t="n-B"]');
+      return Promise.all([pulse(gC,1.1,d(200)),sl(d(60)).then(function(){return pulse(gB,1.1,d(200));})]).then(function(){
+        phD('signal'); ph('connect');
+        // Edge pulse C->B
+        es.BC='sc2'; renderBoth(stg);
+        return dotGo(stg.querySelector('svg'),N.C.x,N.C.y,N.B.x,N.B.y,d(350),'#0b68cb');
+      }).then(function(){
+        // Now draw the ANNOTATION arrow_from C to B (the bezier curve!)
+        anns=[{from:'C',to:'B',label:'2+1=3',visible:false}];
+        renderBoth(stg);
+        var annG=stg.querySelector('[data-ann="C-B"]');
+        var annPath=annG?annG.querySelector('path'):null;
+        var annText=annG?annG.querySelector('text'):null;
+        // Draw arrow on with stroke-dashoffset
+        return drawP(annPath,d(400),'ease-out').then(function(){
+          // Fade in label
+          if(annText){annText.style.opacity='0';return fadeIn(annText,d(200));}
+        });
+      }).then(function(){
+        phD('connect'); ph('compute');
+        // Counter: dist[B] from 4 to 3
+        var tB=stg.querySelector('[data-t="d[1]"] text');
+        dist[1]='3';ds[1]='sc2';
+        return counter(tB,'4','3',d(250));
+      }).then(function(){
+        renderBoth(stg); phD('compute'); ph('result');
+        return sl(d(200));
+      }).then(function(){
+        // Keep annotation visible, settle
+        anns=[{from:'C',to:'B',label:'2+1=3',visible:true}];
+        renderBoth(stg);
+        phD('result'); ph('settle'); return sl(d(150));
+      }).then(function(){phD('settle');});
+    }
+  });
+
+  // Step 5: Relax C->D (8)
+  S.push({narration:'Relax C&rarr;D (w=8): <code>dist[D] = min(inf, 2+8) = 10</code>.',instant:false,
+    render:function(stg){es.BC='si';es.CD='sc2';dist[3]='10';ds[3]='sc2';anns=[];renderBoth(stg);},
+    animate:function(stg,d,ph,phD){
+      ph('connect');es.BC='si';anns=[];es.CD='sc2';renderBoth(stg);
+      return dotGo(stg.querySelector('svg'),N.C.x,N.C.y,N.D.x,N.D.y,d(350),'#0b68cb').then(function(){
+        phD('connect');ph('compute');var t=stg.querySelector('[data-t="d[3]"] text');dist[3]='10';ds[3]='sc2';
+        return counter(t,'0','10',d(200));
+      }).then(function(){renderBoth(stg);phD('compute');ph('settle');return sl(d(100));}).then(function(){phD('settle');});
+    }});
+
+  // Step 6: Settle B, relax B->D with arrow_from
+  S.push({
+    narration:'Settle <code>B</code>. Relax B&rarr;D (w=5): <code>dist[D] = min(10, 3+5) = 8</code>. <b>annotate arrow_from B to D</b> with label "3+5=8".',
+    instant:false,
+    render:function(stg){
+      es.CD='si';ns.C='sd2';ds[2]='sd2';ns.B='sc2';ds[1]='sc2';es.BD='sc2';dist[3]='8';ds[3]='sc2';
+      anns=[{from:'B',to:'D',label:'3+5=8',visible:true}];
+      renderBoth(stg);
+    },
+    animate:function(stg,d,ph,phD){
+      ph('signal');es.CD='si';ns.C='sd2';ds[2]='sd2';
+      ds[1]='si';ds[3]='si';ds[4]='si';
+      ns.B='sc2';ds[1]='sc2';anns=[];renderBoth(stg);
+      var gB=stg.querySelector('svg').querySelector('[data-t="n-B"]');
+      return pulse(gB,1.1,d(200)).then(function(){
+        phD('signal');ph('connect');es.BD='sc2';renderBoth(stg);
+        return dotGo(stg.querySelector('svg'),N.B.x,N.B.y,N.D.x,N.D.y,d(350),'#0b68cb');
+      }).then(function(){
+        // Draw annotation arrow B->D
+        anns=[{from:'B',to:'D',label:'3+5=8',visible:false}];renderBoth(stg);
+        var annG=stg.querySelector('[data-ann="B-D"]');
+        var annPath=annG?annG.querySelector('path'):null;
+        var annText=annG?annG.querySelector('text'):null;
+        return drawP(annPath,d(400),'ease-out').then(function(){
+          if(annText){annText.style.opacity='0';return fadeIn(annText,d(200));}
+        });
+      }).then(function(){
+        phD('connect');ph('compute');
+        var tD=stg.querySelector('[data-t="d[3]"] text');dist[3]='8';ds[3]='sc2';
+        return counter(tD,'10','8',d(250));
+      }).then(function(){
+        renderBoth(stg);phD('compute');ph('result');return sl(d(150));
+      }).then(function(){
+        anns=[{from:'B',to:'D',label:'3+5=8',visible:true}];renderBoth(stg);
+        phD('result');ph('settle');return sl(d(100));
+      }).then(function(){phD('settle');});
+    }
+  });
+
+  // Step 7: Final
+  S.push({narration:'Final distances: <code>[0, 3, 2, 8, 10, 13]</code>. Shortest-path tree: A&rarr;C, C&rarr;B, B&rarr;D, D&rarr;E, E&rarr;F.',instant:true,
+    render:function(stg){
+      Object.keys(N).forEach(function(k){ns[k]='sd2';});
+      dist=['0','3','2','8','10','13'];ds=['sd2','sd2','sd2','sd2','sd2','sd2'];
+      E.forEach(function(e){es[e[0]+e[1]]='sdm';});
+      es.AC='sg';es.BC='sg';es.BD='sg';es.DE='sg';es.EF='sg';
+      anns=[];renderBoth(stg);
+    },animate:function(){return Promise.resolve();}});
+
+  bw('w1',S);
+})();
+
+
+/* ================================================================
+   DEMO 2: DPTable Fibonacci with arrow_from
+   ================================================================ */
+(function(){
+  var N=8,W=46,H=46,G=4,PAD=30;var SVGW=PAD*2+N*(W+G)-G,SVGH=130;
+  var v=[0,1,null,null,null,null,null,null],st=Array(N).fill('si');
+  var fib=[0,1,1,2,3,5,8,13];
+  function cX(i){return PAD+i*(W+G);}function cCX(i){return cX(i)+W/2;}
+  var DEFS='<defs><marker id="fa" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0b68cb"/></marker></defs>';
+  function renderDP(arrows){
+    var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+SVGW+'" height="'+SVGH+'" viewBox="0 0 '+SVGW+' '+SVGH+'">'+DEFS+'<g data-primitive="dptable">';
+    for(var i=0;i<N;i++){s+='<g data-t="dp['+i+']" class="'+st[i]+'"><rect x="'+cX(i)+'" y="40" width="'+W+'" height="'+H+'" rx="6"/><text x="'+cCX(i)+'" y="'+(40+H/2)+'">'+(v[i]!==null?v[i]:'')+'</text></g>';
+      s+='<text class="idx" x="'+cCX(i)+'" y="'+(40+H+8)+'">'+i+'</text>';}
+    if(arrows)s+=arrows;
+    s+='</g></svg>';return s;
+  }
+  function bezA(fi,ti){
+    var fx=cCX(fi),tx=cCX(ti),fy=40,ty=40;
+    var my=fy-25-Math.abs(ti-fi)*8;
+    return '<g class="ann ann-info" style="opacity:0" data-ann="a'+fi+'-'+ti+'"><path d="M'+fx+','+fy+' Q'+((fx+tx)/2)+','+my+' '+tx+','+ty+'" stroke="#0b68cb" fill="none" stroke-width="2" marker-end="url(#fa)"/></g>';
+  }
+
+  var S2=[];
+  S2.push({narration:'Fibonacci DP: <code>dp[0]=0, dp[1]=1</code>. Recurrence: <code>dp[i] = dp[i-1] + dp[i-2]</code>.',instant:true,
+    render:function(stg){v=[0,1,null,null,null,null,null,null];st=['sd2','sd2','si','si','si','si','si','si'];stg.innerHTML=renderDP();},
+    animate:function(){return Promise.resolve();}});
+
+  for(var ci=2;ci<=7;ci++){(function(idx){
+    S2.push({
+      narration:'Fill <code>dp['+idx+'] = dp['+(idx-1)+'] + dp['+(idx-2)+'] = '+fib[idx-1]+' + '+fib[idx-2]+' = '+fib[idx]+'</code>.',
+      instant:false,
+      render:function(stg){v[idx]=fib[idx];st[idx]='sd2';stg.innerHTML=renderDP();},
+      animate:function(stg,d,ph,phD){
+        // Signal
+        ph('signal');
+        for(var k=0;k<N;k++){if(v[k]!==null&&k!==idx)st[k]='sdm';else if(v[k]===null)st[k]='si';}
+        st[idx-1]='sh';st[idx-2]='sh';st[idx]='sc2';
+        stg.innerHTML=renderDP();
+        var svg=stg.querySelector('svg');
+        return Promise.all([
+          pulse(svg.querySelector('[data-t="dp['+(idx-2)+']"]'),1.08,d(200)),
+          sl(d(50)).then(function(){return pulse(svg.querySelector('[data-t="dp['+(idx-1)+']"]'),1.08,d(200));})
+        ]).then(function(){
+          phD('signal');ph('connect');
+          // Draw arrows
+          var arrows=bezA(idx-2,idx)+bezA(idx-1,idx);
+          stg.innerHTML=renderDP(arrows);
+          var p1=stg.querySelector('[data-ann="a'+(idx-2)+'-'+idx+'"] path');
+          var p2=stg.querySelector('[data-ann="a'+(idx-1)+'-'+idx+'"] path');
+          return drawP(p1,d(300),'ease-out').then(function(){return sl(d(60));}).then(function(){return drawP(p2,d(300),'ease-out');});
+        }).then(function(){
+          phD('connect');ph('compute');
+          var tEl=svg.querySelector('[data-t="dp['+idx+']"] text');
+          v[idx]=fib[idx];
+          return counter(tEl,'0',String(fib[idx]),d(250));
+        }).then(function(){
+          phD('compute');ph('result');
+          for(var k=0;k<N;k++){if(v[k]!==null)st[k]='sd2';else st[k]='si';}
+          stg.innerHTML=renderDP();
+          return sl(d(150));
+        }).then(function(){phD('result');ph('settle');return sl(d(80));}).then(function(){phD('settle');});
+      }
+    });
+  })(ci);}
+
+  S2.push({narration:'Done: <code>[0, 1, 1, 2, 3, 5, 8, 13]</code>.',instant:true,
+    render:function(stg){for(var i=0;i<N;i++){v[i]=fib[i];st[i]='sg';}stg.innerHTML=renderDP();},
+    animate:function(){return Promise.resolve();}});
+  bw('w2',S2);
+})();
+
+
+/* ================================================================
+   DEMO 3: Array Bubble Sort
+   ================================================================ */
+(function(){
+  var N=6,W=46,H=46,G=4,PAD=30;var SVGW=PAD*2+N*(W+G)-G,SVGH=100;
+  var data,st;
+  function aX(i){return PAD+i*(W+G);}function aCX(i){return aX(i)+W/2;}
+  function renderA(){var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+SVGW+'" height="'+SVGH+'" viewBox="0 0 '+SVGW+' '+SVGH+'"><g data-primitive="array">';for(var i=0;i<N;i++){s+='<g data-t="a['+i+']" class="'+(st[i]||'si')+'"><rect x="'+aX(i)+'" y="25" width="'+W+'" height="'+H+'" rx="6"/><text x="'+aCX(i)+'" y="'+(25+H/2)+'">'+data[i]+'</text></g><text class="idx" x="'+aCX(i)+'" y="'+(25+H+8)+'">'+i+'</text>';}s+='</g></svg>';return s;}
+  var init=[5,3,8,1,4,2],passes=[];
+  var arr=init.slice();
+  for(var p=0;p<arr.length-1;p++)for(var j=0;j<arr.length-1-p;j++){if(arr[j]>arr[j+1]){passes.push({i:j,j:j+1,swap:true,before:arr.slice()});var t=arr[j];arr[j]=arr[j+1];arr[j+1]=t;}else{passes.push({i:j,j:j+1,swap:false,before:arr.slice()});}}
+  var ra=init.slice();var S3=[];
+  S3.push({narration:'Bubble sort: <code>[5,3,8,1,4,2]</code>.',instant:true,render:function(stg){data=init.slice();st=Array(N).fill('si');stg.innerHTML=renderA();},animate:function(){return Promise.resolve();}});
+  var runA=init.slice();
+  passes.slice(0,7).forEach(function(p){
+    var snap=runA.slice();
+    if(p.swap){var t=runA[p.i];runA[p.i]=runA[p.j];runA[p.j]=t;}
+    var after=runA.slice();
+    S3.push({
+      narration:'Compare <code>a['+p.i+']='+snap[p.i]+'</code> vs <code>a['+p.j+']='+snap[p.j]+'</code>.'+(p.swap?' Swap!':' OK.'),
+      instant:false,
+      render:function(stg){data=after.slice();st=Array(N).fill('si');stg.innerHTML=renderA();},
+      animate:function(stg,d,ph,phD){
+        ph('signal');data=snap.slice();st=Array(N).fill('sdm');st[p.i]='sh';st[p.j]='sh';stg.innerHTML=renderA();
+        var svg=stg.querySelector('svg');
+        return Promise.all([pulse(svg.querySelector('[data-t="a['+p.i+']"]'),1.08,d(200)),pulse(svg.querySelector('[data-t="a['+p.j+']"]'),1.08,d(200))]).then(function(){
+          phD('signal');
+          if(!p.swap){ph('result');data=after.slice();st=Array(N).fill('si');stg.innerHTML=renderA();return sl(d(150)).then(function(){phD('result');});}
+          ph('connect');
+          var g1=stg.querySelector('[data-t="a['+p.i+']"]'),g2=stg.querySelector('[data-t="a['+p.j+']"]');
+          var dx=W+G;
+          return Promise.all([
+            wa(g1,[{transform:'translate(0,0)'},{transform:'translate(0,-15px)',offset:0.3},{transform:'translate('+dx+'px,0)'}],{duration:d(400),easing:'ease-in-out',fill:'forwards'}),
+            wa(g2,[{transform:'translate(0,0)'},{transform:'translate(0,15px)',offset:0.3},{transform:'translate(-'+dx+'px,0)'}],{duration:d(400),easing:'ease-in-out',fill:'forwards'})
+          ]).then(function(){phD('connect');ph('result');data=after.slice();st=Array(N).fill('si');st[p.i]='sd2';st[p.j]='sd2';stg.innerHTML=renderA();return sl(d(100));}).then(function(){phD('result');});
+        });
+      }
+    });
+  });
+  bw('w3',S3);
+})();
+
+
+/* ================================================================
+   DEMO 4: Graph BFS
+   ================================================================ */
+(function(){
+  var nodes=[{id:'A',x:200,y:50},{id:'B',x:100,y:140},{id:'C',x:300,y:140},{id:'D',x:50,y:240},{id:'E',x:170,y:240},{id:'F',x:250,y:240},{id:'G',x:350,y:240}];
+  var edges=[['A','B'],['A','C'],['B','D'],['B','E'],['C','F'],['C','G']];
+  var ns={},es={};
+  function fn(id){return nodes.find(function(n){return n.id===id;});}
+  function rG(){var s='<svg xmlns="http://www.w3.org/2000/svg" width="420" height="290" viewBox="0 0 420 290"><g data-primitive="graph"><g class="ge">';edges.forEach(function(e){var a=fn(e[0]),b=fn(e[1]);s+='<g data-t="e-'+e[0]+e[1]+'" class="'+(es[e[0]+e[1]]||'si')+'"><line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/></g>';});s+='</g><g class="gn">';nodes.forEach(function(n){s+='<g data-t="n-'+n.id+'" class="'+(ns[n.id]||'si')+'"><circle cx="'+n.x+'" cy="'+n.y+'" r="20"/><text x="'+n.x+'" y="'+n.y+'">'+n.id+'</text></g>';});s+='</g></g></svg>';return s;}
+  function rst(){nodes.forEach(function(n){ns[n.id]='si';});edges.forEach(function(e){es[e[0]+e[1]]='si';});}
+  function bfsS(nd,nb,el,txt){return{narration:txt,instant:false,render:function(stg){ns[nd]='sc2';stg.innerHTML=rG();},animate:function(stg,d,ph,phD){
+    ph('signal');ns[nd]='sc2';stg.innerHTML=rG();var svg=stg.querySelector('svg');return pulse(svg.querySelector('[data-t="n-'+nd+'"]'),1.12,d(250)).then(function(){phD('signal');ph('connect');return sl(d(80));}).then(function(){var src=fn(nd),p=Promise.resolve();el.forEach(function(e){p=p.then(function(){return dotGo(svg,src.x,src.y,fn(e[1]).x,fn(e[1]).y,d(350),'#0090ff');}).then(function(){es[e[0]+e[1]]='sc2';var eg=stg.querySelector('[data-t="e-'+e[0]+e[1]+'"]');if(eg)eg.className.baseVal='sc2';return sl(d(60));});});return p;}).then(function(){phD('connect');ph('result');return sl(d(80));}).then(function(){var p2=Promise.resolve();nb.forEach(function(nId,i){p2=p2.then(function(){return sl(d(i*80));}).then(function(){ns[nId]='sh';var ng=stg.querySelector('[data-t="n-'+nId+'"]');if(ng)ng.className.baseVal='sh';return pulse(ng,1.08,d(180));});});return p2;}).then(function(){phD('result');ph('settle');ns[nd]='sd2';el.forEach(function(e){es[e[0]+e[1]]='sd2';});stg.innerHTML=rG();return sl(d(100));}).then(function(){phD('settle');});}};}
+  var S4=[
+    {narration:'BFS from <code>A</code>.',instant:true,render:function(stg){rst();ns.A='sh';stg.innerHTML=rG();},animate:function(){return Promise.resolve();}},
+    bfsS('A',['B','C'],[['A','B'],['A','C']],'Dequeue <code>A</code>. Explore A&rarr;B, A&rarr;C.'),
+    bfsS('B',['D','E'],[['B','D'],['B','E']],'Dequeue <code>B</code>. Explore B&rarr;D, B&rarr;E.'),
+    bfsS('C',['F','G'],[['C','F'],['C','G']],'Dequeue <code>C</code>. Explore C&rarr;F, C&rarr;G.'),
+    bfsS('D',[],[],'Dequeue <code>D</code>. Leaf.'),
+    bfsS('E',[],[],'Dequeue <code>E</code>. Leaf.'),
+    {narration:'BFS done. All visited.',instant:true,render:function(stg){nodes.forEach(function(n){ns[n.id]='sg';});edges.forEach(function(e){es[e[0]+e[1]]='sd2';});stg.innerHTML=rG();},animate:function(){return Promise.resolve();}}
+  ];
+  bw('w4',S4);
+})();
+
+
+/* ================================================================
+   DEMO 5: Tree DFS + Backtrack
+   ================================================================ */
+(function(){
+  var tn=[{id:'1',x:200,y:40},{id:'2',x:120,y:120},{id:'3',x:280,y:120},{id:'4',x:80,y:200},{id:'5',x:160,y:200},{id:'6',x:240,y:200},{id:'7',x:320,y:200}];
+  var te=[['1','2'],['1','3'],['2','4'],['2','5'],['3','6'],['3','7']];
+  var tns={},tes={};function tf(id){return tn.find(function(n){return n.id===id;});}
+  function rT(){var s='<svg xmlns="http://www.w3.org/2000/svg" width="420" height="250" viewBox="0 0 420 250"><g data-primitive="tree"><g>';te.forEach(function(e){var a=tf(e[0]),b=tf(e[1]);s+='<g data-t="te-'+e[0]+e[1]+'" class="'+(tes[e[0]+e[1]]||'si')+'"><line x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/></g>';});s+='</g><g class="gn">';tn.forEach(function(n){s+='<g data-t="tn-'+n.id+'" class="'+(tns[n.id]||'si')+'"><circle cx="'+n.x+'" cy="'+n.y+'" r="20"/><text x="'+n.x+'" y="'+n.y+'">'+n.id+'</text></g>';});s+='</g></g></svg>';return s;}
+  function trst(){tn.forEach(function(n){tns[n.id]='si';});te.forEach(function(e){tes[e[0]+e[1]]='si';});}
+  var dfs=[{n:'1',e:null,leaf:false},{n:'2',e:['1','2'],leaf:false},{n:'4',e:['2','4'],leaf:true},{n:'5',e:['2','5'],leaf:true},{n:'3',e:['1','3'],leaf:false},{n:'6',e:['3','6'],leaf:true},{n:'7',e:['3','7'],leaf:true}];
+  var S5=[{narration:'DFS on binary tree.',instant:true,render:function(stg){trst();stg.innerHTML=rT();},animate:function(){return Promise.resolve();}}];
+  dfs.forEach(function(d2){S5.push({narration:'Visit <code>'+d2.n+'</code>.'+(d2.leaf?' Leaf, backtrack.':''),instant:false,
+    render:function(stg){tns[d2.n]='sc2';if(d2.e)tes[d2.e[0]+d2.e[1]]='sc2';stg.innerHTML=rT();},
+    animate:function(stg,d,ph,phD){
+      ph('signal');tns[d2.n]='sc2';stg.innerHTML=rT();var svg=stg.querySelector('svg');
+      return pulse(svg.querySelector('[data-t="tn-'+d2.n+'"]'),1.12,d(250)).then(function(){
+        phD('signal');if(!d2.e)return Promise.resolve();
+        ph('connect');var src=tf(d2.e[0]),dst=tf(d2.e[1]);
+        return dotGo(svg,src.x,src.y,dst.x,dst.y,d(350),'#0090ff').then(function(){
+          tes[d2.e[0]+d2.e[1]]='sc2';var eg=stg.querySelector('[data-t="te-'+d2.e[0]+d2.e[1]+'"]');if(eg)eg.className.baseVal='sc2';phD('connect');
+        });
+      }).then(function(){ph('result');return sl(d(150));}).then(function(){
+        tns[d2.n]='sd2';if(d2.e)tes[d2.e[0]+d2.e[1]]='sd2';
+        if(d2.leaf&&d2.e){var src2=tf(d2.e[1]),dst2=tf(d2.e[0]);return dotGo(svg,src2.x,src2.y,dst2.x,dst2.y,d(250),'#e5484d').then(function(){stg.innerHTML=rT();});}
+        stg.innerHTML=rT();return sl(d(80));
+      }).then(function(){phD('result');ph('settle');return sl(d(80));}).then(function(){phD('settle');});
+    }});});
+  bw('w5',S5);
+})();
+
+
+/* ================================================================
+   DEMO 6: Grid BFS Wavefront
+   ================================================================ */
+(function(){
+  var R=5,C=7,W=40,H=40,G=2,PAD=20;var SVGW=PAD*2+C*(W+G)-G,SVGH=PAD*2+R*(H+G)-G;
+  var gs,dist,sr=2,sc2=3;
+  function gX(c){return PAD+c*(W+G);}function gY(r){return PAD+r*(H+G);}
+  function rGr(){var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+SVGW+'" height="'+SVGH+'" viewBox="0 0 '+SVGW+' '+SVGH+'"><g data-primitive="grid">';for(var r=0;r<R;r++)for(var c=0;c<C;c++){s+='<g data-t="g['+r+']['+c+']" class="'+(gs[r][c]||'si')+'"><rect x="'+gX(c)+'" y="'+gY(r)+'" width="'+W+'" height="'+H+'" rx="4"/><text x="'+(gX(c)+W/2)+'" y="'+(gY(r)+H/2)+'" style="font-size:12px">'+(dist[r][c]>=0?dist[r][c]:'')+'</text></g>';}s+='</g></svg>';return s;}
+  function initG(){gs=[];dist=[];for(var r=0;r<R;r++){gs.push(Array(C).fill('si'));dist.push(Array(C).fill(-1));}}
+  var layers=[];(function(){var vis=Array.from({length:R},function(){return Array(C).fill(false);});var q=[[sr,sc2,0]];vis[sr][sc2]=true;var cd=0,cl=[];while(q.length){var c=q.shift();if(c[2]>cd){layers.push(cl);cl=[];cd=c[2];}cl.push([c[0],c[1]]);[[0,1],[0,-1],[1,0],[-1,0]].forEach(function(d){var nr=c[0]+d[0],nc=c[1]+d[1];if(nr>=0&&nr<R&&nc>=0&&nc<C&&!vis[nr][nc]){vis[nr][nc]=true;q.push([nr,nc,c[2]+1]);}});}if(cl.length)layers.push(cl);})();
+  var S6=[{narration:'BFS wavefront from <code>(2,3)</code>.',instant:true,render:function(stg){initG();gs[sr][sc2]='sc2';dist[sr][sc2]=0;stg.innerHTML=rGr();},animate:function(){return Promise.resolve();}}];
+  layers.forEach(function(ly,li){S6.push({narration:'Wave '+li+': '+ly.length+' cells at dist='+li+'.',instant:false,
+    render:function(stg){ly.forEach(function(c){gs[c[0]][c[1]]='sd2';dist[c[0]][c[1]]=li;});stg.innerHTML=rGr();},
+    animate:function(stg,d,ph,phD){ph('signal');ly.forEach(function(c){gs[c[0]][c[1]]='sc2';dist[c[0]][c[1]]=li;});stg.innerHTML=rGr();return sl(d(80)).then(function(){phD('signal');ph('result');var svg=stg.querySelector('svg');return Promise.all(ly.map(function(c,i){return sl(d(i*35)).then(function(){return pulse(svg.querySelector('[data-t="g['+c[0]+']['+c[1]+']"]'),1.1,d(180));});}));}).then(function(){phD('result');ph('settle');ly.forEach(function(c){gs[c[0]][c[1]]='sd2';});stg.innerHTML=rGr();return sl(d(80));}).then(function(){phD('settle');});}});});
+  S6.push({narration:'BFS done. Max dist='+(layers.length-1)+'.',instant:true,render:function(stg){for(var r=0;r<R;r++)for(var c=0;c<C;c++)gs[r][c]='sg';gs[sr][sc2]='sc2';stg.innerHTML=rGr();},animate:function(){return Promise.resolve();}});
+  bw('w6',S6);
+})();
+
+
+/* ================================================================
+   DEMO 7: LinkedList Insert + Remove
+   ================================================================ */
+(function(){
+  var VW=50,PW=30,NH=40,GAP=30,PAD=20;
+  var ld,ls;
+  function nX(i){return PAD+i*(VW+PW+GAP);}function nCX(i){return nX(i)+VW/2;}
+  function rLL(){var N=ld.length;var SVGW=PAD*2+N*(VW+PW+GAP)-GAP;
+    var s='<svg xmlns="http://www.w3.org/2000/svg" width="'+SVGW+'" height="120" viewBox="0 0 '+SVGW+' 120"><defs><marker id="lm" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#687076"/></marker></defs><g data-primitive="ll">';
+    for(var i=0;i<N;i++){s+='<g data-t="ll['+i+']" class="'+(ls[i]||'si')+'"><rect x="'+nX(i)+'" y="40" width="'+VW+'" height="'+NH+'" rx="4"/><text x="'+nCX(i)+'" y="'+(40+NH/2)+'">'+ld[i]+'</text></g>';
+      s+='<rect x="'+(nX(i)+VW)+'" y="40" width="'+PW+'" height="'+NH+'" fill="none" stroke="var(--si-s)" stroke-width="1"/>';
+      if(i<N-1){var ax1=nX(i)+VW+PW,ay=40+NH/2,ax2=nX(i+1);s+='<g data-t="lk['+i+']"><line x1="'+ax1+'" y1="'+ay+'" x2="'+ax2+'" y2="'+ay+'" stroke="#687076" stroke-width="1.5" marker-end="url(#lm)"/></g>';}
+      else{var nx=nX(i)+VW;s+='<line x1="'+nx+'" y1="'+(40+NH)+'" x2="'+(nx+PW)+'" y2="40" stroke="#687076" stroke-width="1"/>';}
+      s+='<text class="idx" x="'+(nX(i)+(VW+PW)/2)+'" y="'+(40+NH+12)+'">'+i+'</text>';}
+    s+='</g></svg>';return s;}
+  var S7=[];
+  S7.push({narration:'List: <code>3 &rarr; 7 &rarr; 1 &rarr; null</code>.',instant:true,render:function(stg){ld=[3,7,1];ls=['si','si','si'];stg.innerHTML=rLL();},animate:function(){return Promise.resolve();}});
+  S7.push({narration:'Insert <code>5</code> after node[0]. Find insertion point.',instant:false,
+    render:function(stg){ld=[3,7,1];ls=['sc2','si','si'];stg.innerHTML=rLL();},
+    animate:function(stg,d,ph,phD){ph('signal');ld=[3,7,1];ls=['sc2','sdm','sdm'];stg.innerHTML=rLL();
+      return pulse(stg.querySelector('[data-t="ll[0]"]'),1.08,d(250)).then(function(){phD('signal');return sl(d(100));});}});
+  S7.push({narration:'New node <code>5</code> inserted. Pointers redirected.',instant:false,
+    render:function(stg){ld=[3,5,7,1];ls=['sd2','sg','si','si'];stg.innerHTML=rLL();},
+    animate:function(stg,d,ph,phD){ph('connect');ld=[3,7,1];ls=['sd2','si','si'];stg.innerHTML=rLL();
+      return sl(d(200)).then(function(){ld=[3,5,7,1];ls=['sd2','sh','si','si'];stg.innerHTML=rLL();
+        return fadeIn(stg.querySelector('[data-t="ll[1]"]'),d(350));
+      }).then(function(){phD('connect');ph('result');ls=['sd2','sg','si','si'];stg.innerHTML=rLL();return sl(d(150));}).then(function(){phD('result');});}});
+  S7.push({narration:'List: <code>3 &rarr; 5 &rarr; 7 &rarr; 1 &rarr; null</code>.',instant:true,render:function(stg){ld=[3,5,7,1];ls=['sg','sg','sg','sg'];stg.innerHTML=rLL();},animate:function(){return Promise.resolve();}});
+  S7.push({narration:'Remove node[2] (value 7).',instant:false,
+    render:function(stg){ld=[3,5,7,1];ls=['sdm','sdm','se','sdm'];stg.innerHTML=rLL();},
+    animate:function(stg,d,ph,phD){ph('signal');ld=[3,5,7,1];ls=['sdm','sdm','se','sdm'];stg.innerHTML=rLL();
+      return pulse(stg.querySelector('[data-t="ll[2]"]'),1.08,d(250)).then(function(){phD('signal');ph('connect');
+        return fadeOut(stg.querySelector('[data-t="ll[2]"]'),d(300));
+      }).then(function(){phD('connect');ph('result');ld=[3,5,1];ls=['sd2','sd2','sd2'];stg.innerHTML=rLL();return sl(d(150));}).then(function(){phD('result');});}});
+  S7.push({narration:'List: <code>3 &rarr; 5 &rarr; 1 &rarr; null</code>.',instant:true,render:function(stg){ld=[3,5,1];ls=['sg','sg','sg'];stg.innerHTML=rLL();},animate:function(){return Promise.resolve();}});
+  bw('w7',S7);
+})();
+</script>
+</body>
+</html>
