@@ -19,6 +19,7 @@ from typing import Any, Callable, ClassVar, Sequence
 
 from scriba.animation.errors import _emit_warning, animation_error
 from scriba.animation.primitives.base import (
+    ARROW_STYLES,
     _LabelPlacement,
     BoundingBox,
     PrimitiveBase,
@@ -132,6 +133,7 @@ class Plane2D(PrimitiveBase):
             "xlabel",
             "ylabel",
             "label",
+            "show_coords",
         }
     )
 
@@ -188,6 +190,8 @@ class Plane2D(PrimitiveBase):
             self._add_polygon_internal(poly)
         for reg in params.get("regions", []):
             self._add_region_internal(reg)
+
+        self.show_coords: bool = bool(params.get("show_coords", False))
 
         self.primitive_type: str = "plane2d"
 
@@ -643,16 +647,22 @@ class Plane2D(PrimitiveBase):
         # Layer 3: text labels (SVG coordinates, outside transform)
         parts.append(self._emit_labels(render_inline_tex=render_inline_tex))
 
-        # Layer 4: arrow annotations (SVG coordinates, outside transform)
+        # Layer 4: annotations (SVG coordinates, outside transform)
         if effective_anns:
             placed: list[_LabelPlacement] = []
             for ann in effective_anns:
-                self._emit_arrow(
-                    parts, ann,
-                    annotations=effective_anns,
-                    render_inline_tex=render_inline_tex,
-                    placed_labels=placed,
-                )
+                if ann.get("arrow_from"):
+                    self._emit_arrow(
+                        parts, ann,
+                        annotations=effective_anns,
+                        render_inline_tex=render_inline_tex,
+                        placed_labels=placed,
+                    )
+                else:
+                    self._emit_text_annotation(
+                        parts, ann,
+                        render_inline_tex=render_inline_tex,
+                    )
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
@@ -660,6 +670,89 @@ class Plane2D(PrimitiveBase):
 
         parts.append("</g>")
         return "".join(parts)
+
+    # ----- Text-only annotation helper --------------------------------------
+
+    def _emit_text_annotation(
+        self,
+        lines: list[str],
+        ann: dict[str, Any],
+        render_inline_tex: Callable[[str], str] | None = None,
+    ) -> None:
+        """Emit a positional text label annotation (no arrow).
+
+        Resolves the target point's SVG coordinates, offsets the label
+        based on ``position`` (above/below/left/right), and renders a
+        small pill background behind the text for readability.
+        """
+        target = ann.get("target", "")
+        point = self.resolve_annotation_point(target)
+        if point is None:
+            return
+
+        label_text = ann.get("label", "")
+        if not label_text:
+            return
+
+        px, py = point
+        position = ann.get("position", "above")
+        color = ann.get("color", "info")
+        style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+        fill = style["label_fill"]
+        font_weight = style.get("label_weight", "600")
+        font_size = style.get("label_size", "11px")
+
+        # Compute offset and text-anchor based on position
+        text_anchor = "middle"
+        if position == "above":
+            tx, ty = int(px), int(py) - 14
+        elif position == "below":
+            tx, ty = int(px), int(py) + 16
+        elif position == "left":
+            tx, ty = int(px) - 10, int(py)
+            text_anchor = "end"
+        elif position == "right":
+            tx, ty = int(px) + 10, int(py)
+            text_anchor = "start"
+        else:
+            # Default to above for unknown positions
+            tx, ty = int(px), int(py) - 14
+
+        # Estimate pill width from label length
+        char_width = 7
+        pill_w = max(len(label_text) * char_width + 8, 20)
+        pill_h = 16
+        pill_rx = 4
+
+        # Compute pill x based on text-anchor
+        if text_anchor == "middle":
+            pill_x = tx - pill_w / 2
+        elif text_anchor == "end":
+            pill_x = tx - pill_w
+        else:  # start
+            pill_x = tx
+        pill_y = ty - pill_h + 4
+
+        # Background pill for readability
+        lines.append(
+            f'<rect x="{pill_x:.1f}" y="{pill_y:.1f}" '
+            f'width="{pill_w}" height="{pill_h}" rx="{pill_rx}" '
+            f'fill="white" opacity="0.85"/>'
+        )
+
+        # Render label text
+        lines.append(
+            _render_svg_text(
+                label_text,
+                tx,
+                ty,
+                fill=fill,
+                font_weight=font_weight,
+                font_size=font_size,
+                text_anchor=text_anchor,
+                render_inline_tex=render_inline_tex,
+            )
+        )
 
     # ----- Arrow annotation helpers ----------------------------------------
 
@@ -982,17 +1075,20 @@ class Plane2D(PrimitiveBase):
         if self.axes:
             parts.append(self._emit_tick_labels())
 
-        # Point labels
+        # Point labels (with opt-in coordinate display)
         for i, pt in enumerate(self.points):
             if pt is _TOMBSTONE:
                 continue
             if self.get_state(f"point[{i}]") == "hidden":
                 continue
-            if pt.get("label"):
+            label_text = pt.get("label")
+            if not label_text and self.show_coords:
+                label_text = f"({pt['x']:.6g}, {pt['y']:.6g})"
+            if label_text:
                 sx, sy = self.math_to_svg(pt["x"], pt["y"])
                 parts.append(
                     _render_svg_text(
-                        str(pt["label"]),
+                        str(label_text),
                         round(sx + _LABEL_OFFSET),
                         round(sy - _LABEL_OFFSET),
                         fill=THEME["fg"],
@@ -1001,36 +1097,141 @@ class Plane2D(PrimitiveBase):
                     )
                 )
 
-        # Line labels
+        # Line labels — with collision avoidance and viewBox clamping
+        _LINE_LABEL_CHAR_W = 7  # approx px per char at _TICK_FONT_SIZE
+        _LINE_LABEL_H = 14
+        _LINE_LABEL_PAD = 10
+        _LINE_PILL_PAD_X = 5
+        _LINE_PILL_PAD_Y = 2
+        _LINE_PILL_R = 3
+        _LINE_NUDGE_STEP = 16
+        _LINE_MAX_NUDGE = 4
+
+        placed_labels: list[_LabelPlacement] = []
+        vb_w = self.width
+        vb_h = self.height
+
         for i, ln in enumerate(self.lines):
             if ln is _TOMBSTONE:
                 continue
             if self.get_state(f"line[{i}]") == "hidden":
                 continue
             if ln.get("label"):
+                label_text = str(ln["label"])
                 slope = ln["slope"]
                 intercept_val = ln["intercept"]
                 if math.isinf(slope):
-                    label_x, label_y = self.math_to_svg(intercept_val, self.yrange[1])
+                    label_x, label_y = self.math_to_svg(
+                        intercept_val, self.yrange[1],
+                    )
                 else:
-                    result = clip_line_to_viewport(slope, intercept_val, self.xrange, self.yrange)
+                    result = clip_line_to_viewport(
+                        slope, intercept_val, self.xrange, self.yrange,
+                    )
                     if result is None:
                         continue
                     (_, _), (x2, y2) = result
                     label_x, label_y = self.math_to_svg(x2, y2)
+
+                label_x += _LABEL_OFFSET
+                label_y -= _LABEL_OFFSET
+
+                est_w = len(label_text) * _LINE_LABEL_CHAR_W + _LINE_LABEL_PAD
+                pill_w = est_w + _LINE_PILL_PAD_X * 2
+                pill_h = _LINE_LABEL_H + _LINE_PILL_PAD_Y * 2
+
+                # Collision avoidance: nudge downward if overlapping
+                candidate = _LabelPlacement(
+                    x=label_x, y=label_y,
+                    width=est_w, height=_LINE_LABEL_H,
+                )
+                for _attempt in range(_LINE_MAX_NUDGE):
+                    if not any(
+                        candidate.overlaps(p) for p in placed_labels
+                    ):
+                        break
+                    label_y += _LINE_NUDGE_STEP
+                    candidate = _LabelPlacement(
+                        x=label_x, y=label_y,
+                        width=est_w, height=_LINE_LABEL_H,
+                    )
+
+                # Clamp within viewBox
+                half_w = est_w / 2
+                label_x = max(
+                    _PAD + half_w,
+                    min(label_x, vb_w - _PAD - half_w),
+                )
+                label_y = max(12.0, min(label_y, vb_h - 4.0))
+
+                candidate = _LabelPlacement(
+                    x=label_x, y=label_y,
+                    width=est_w, height=_LINE_LABEL_H,
+                )
+                placed_labels.append(candidate)
+
+                # Background pill for readability
+                pill_rx = label_x - pill_w / 2
+                pill_ry = label_y - pill_h / 2
+                parts.append(
+                    f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
+                    f'width="{pill_w}" height="{pill_h}" '
+                    f'rx="{_LINE_PILL_R}" fill="white" '
+                    f'fill-opacity="0.85"/>'
+                )
                 parts.append(
                     _render_svg_text(
-                        str(ln["label"]),
-                        round(label_x + _LABEL_OFFSET),
-                        round(label_y - _LABEL_OFFSET),
+                        label_text,
+                        round(label_x),
+                        round(label_y),
                         fill=THEME["fg"],
                         font_size=str(_TICK_FONT_SIZE),
+                        text_anchor="middle",
                         render_inline_tex=render_inline_tex,
                     )
                 )
 
         parts.append("</g>")
         return "".join(parts)
+
+    @staticmethod
+    def _nice_ticks(vmin: float, vmax: float, max_ticks: int = 10) -> list[float]:
+        """Generate a list of nicely-spaced tick values between *vmin* and *vmax*.
+
+        Picks a "nice" step from {1, 2, 2.5, 5} x 10^n so that the number of
+        ticks is roughly between 5 and *max_ticks*.  Ported from
+        ``MetricPlot._nice_ticks``.
+        """
+        if vmax <= vmin:
+            return [vmin]
+        raw_step = (vmax - vmin) / max(max_ticks - 1, 1)
+        magnitude = 10 ** math.floor(math.log10(max(abs(raw_step), 1e-15)))
+        residual = raw_step / magnitude
+        if residual <= 1.0:
+            nice_step = magnitude
+        elif residual <= 2.0:
+            nice_step = 2 * magnitude
+        elif residual <= 2.5:
+            nice_step = 2.5 * magnitude
+        elif residual <= 5.0:
+            nice_step = 5 * magnitude
+        else:
+            nice_step = 10 * magnitude
+
+        start = math.ceil(vmin / nice_step) * nice_step
+        ticks: list[float] = []
+        t = start
+        while t <= vmax + nice_step * 0.01:
+            ticks.append(round(t, 10))
+            t += nice_step
+        return ticks if ticks else [vmin]
+
+    @staticmethod
+    def _format_tick(v: float) -> str:
+        """Format a tick value: use int when exact, else compact float."""
+        if v == int(v):
+            return str(int(v))
+        return f"{v:.6g}"
 
     def _emit_tick_labels(self) -> str:
         parts: list[str] = []
@@ -1040,38 +1241,40 @@ class Plane2D(PrimitiveBase):
         y_axis_math = max(ymin, min(0.0, ymax))
         x_axis_math = max(xmin, min(0.0, xmax))
 
-        # Compute tick spacing in SVG pixels
-        sx_per_unit = abs(self._sx)
-        sy_per_unit = abs(self._sy)
+        x_ticks = self._nice_ticks(xmin, xmax)
+        y_ticks = self._nice_ticks(ymin, ymax)
 
-        # X-axis tick labels
-        x_start = math.ceil(xmin)
-        x_end = math.floor(xmax)
-        for xi in range(x_start, x_end + 1):
-            if xi == 0 and self.xrange[0] <= 0 <= self.xrange[1]:
-                continue  # skip origin label on x-axis
-            if sx_per_unit < _MIN_TICK_SPACING_PX:
+        # X-axis tick labels — skip adjacent ticks that are too close in px
+        prev_sx: float | None = None
+        for v in x_ticks:
+            # Suppress origin "0" only when it is interior to the range
+            if v == 0 and xmin < 0 < xmax:
                 continue
-            sx, sy = self.math_to_svg(xi, y_axis_math)
+            sx, sy = self.math_to_svg(v, y_axis_math)
+            if prev_sx is not None and abs(sx - prev_sx) < _MIN_TICK_SPACING_PX:
+                continue
+            label = self._format_tick(v)
             parts.append(
                 f'<text x="{sx:.2f}" y="{sy + _TICK_FONT_SIZE + 2:.2f}" '
                 f'text-anchor="middle" font-size="{_TICK_FONT_SIZE}" '
-                f'fill="{THEME["fg_muted"]}">{xi}</text>'
+                f'fill="{THEME["fg_muted"]}">{label}</text>'
             )
+            prev_sx = sx
 
-        # Y-axis tick labels
-        y_start = math.ceil(ymin)
-        y_end = math.floor(ymax)
-        for yi in range(y_start, y_end + 1):
-            if yi == 0 and self.yrange[0] <= 0 <= self.yrange[1]:
+        # Y-axis tick labels — skip adjacent ticks that are too close in px
+        prev_sy: float | None = None
+        for v in y_ticks:
+            if v == 0 and ymin < 0 < ymax:
                 continue
-            if sy_per_unit < _MIN_TICK_SPACING_PX:
+            sx, sy = self.math_to_svg(x_axis_math, v)
+            if prev_sy is not None and abs(sy - prev_sy) < _MIN_TICK_SPACING_PX:
                 continue
-            sx, sy = self.math_to_svg(x_axis_math, yi)
+            label = self._format_tick(v)
             parts.append(
                 f'<text x="{sx - _LABEL_OFFSET:.2f}" y="{sy + 3:.2f}" '
                 f'text-anchor="end" font-size="{_TICK_FONT_SIZE}" '
-                f'fill="{THEME["fg_muted"]}">{yi}</text>'
+                f'fill="{THEME["fg_muted"]}">{label}</text>'
             )
+            prev_sy = sy
 
         return "".join(parts)
