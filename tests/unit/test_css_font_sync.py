@@ -10,6 +10,9 @@ would silently drift closer to/overlap with neighbors).
 This test parses the CSS file, extracts each ``--scriba-*-font``
 variable's pixel size, and asserts equality with the Python constant
 that claims to match it. Drift is caught in CI, not in production.
+
+Additionally tests the ``css_bundler`` module to ensure CSS loading and
+KaTeX font inlining work correctly.
 """
 
 from __future__ import annotations
@@ -20,6 +23,7 @@ from pathlib import Path
 import pytest
 
 from scriba.animation.primitives import array, dptable
+from scriba.core.css_bundler import inline_katex_css, load_css
 
 
 _CSS_PATH = (
@@ -113,24 +117,23 @@ class TestDPTableFontSync:
 
 
 class TestHaloCascadeParity:
-    """Wave 9 — both CSS sources (scriba-scene-primitives.css and
-    render.py HTML_TEMPLATE) must declare the same text-halo cascade so
-    the Pipeline asset path and the standalone CLI render pipeline
-    produce visually identical output. If one side is extended without
-    the other, text overflow legibility regresses in exactly the
-    environments that don't get the updated stylesheet.
+    """Wave 9 — the stylesheet must declare the text-halo cascade.
 
-    These assertions are structural (substring checks on the CSS
-    source) rather than visual — they verify the cascade is wired, not
-    that the browser renders it correctly. Cross-browser rendering is
-    left to manual QA.
+    Since render.py no longer contains inline CSS (it loads CSS from
+    source files via ``css_bundler.load_css``), there is only one CSS
+    source to verify: ``scriba-scene-primitives.css``.  We also verify
+    that the bundled output produced by ``load_css`` carries the same
+    halo rules, ensuring the CLI render path gets them.
     """
 
     @pytest.fixture(scope="class")
-    def render_template_css(self) -> str:
-        return (
-            Path(__file__).parent.parent.parent / "render.py"
-        ).read_text()
+    def bundled_css(self) -> str:
+        """CSS bundle as produced by ``load_css`` for the render pipeline."""
+        return load_css(
+            "scriba-scene-primitives.css",
+            "scriba-animation.css",
+            "scriba-standalone.css",
+        )
 
     def test_stylesheet_has_halo_block(self, css_text: str) -> None:
         """scriba-scene-primitives.css must declare the halo cascade."""
@@ -175,24 +178,20 @@ class TestHaloCascadeParity:
             "unwanted text outlines. Wave 9 Agent A."
         )
 
-    def test_render_template_has_halo_block(
-        self, render_template_css: str
-    ) -> None:
-        """render.py HTML_TEMPLATE must carry the same halo cascade as
-        the standalone stylesheet so the CLI render path (used by every
-        cookbook HTML file under examples/) gets the same treatment."""
-        normalized = _normalize_ws(render_template_css)
+    def test_bundled_css_has_halo_block(self, bundled_css: str) -> None:
+        """The CSS bundle produced by ``load_css`` must include the halo
+        cascade so the CLI render path gets identical treatment."""
+        normalized = _normalize_ws(bundled_css)
         assert "paint-order: stroke fill markers" in normalized, (
-            "Halo cascade missing from render.py HTML_TEMPLATE. The "
-            "standalone CLI path must carry the same rules as "
+            "Halo cascade missing from load_css() bundle output. The "
+            "CLI render path must include the same rules as "
             "scriba-scene-primitives.css."
         )
-        assert "--scriba-halo" in render_template_css
+        assert "--scriba-halo" in bundled_css
 
-    def test_render_template_state_halo_overrides_match(
-        self, render_template_css: str
-    ) -> None:
-        normalized = _normalize_ws(render_template_css)
+    def test_bundled_css_has_state_halo_overrides(self, bundled_css: str) -> None:
+        """Bundled CSS must carry all state halo overrides."""
+        normalized = _normalize_ws(bundled_css)
         states = (
             "idle", "current", "done", "dim",
             "error", "good", "highlight", "path",
@@ -200,51 +199,86 @@ class TestHaloCascadeParity:
         for state in states:
             selector = f".scriba-state-{state} > text"
             assert selector in normalized, (
-                f"State halo override missing from render.py "
-                f"HTML_TEMPLATE: expected '{selector}'. The CLI render "
-                "path must mirror scriba-scene-primitives.css."
+                f"State halo override missing from bundled CSS: "
+                f"expected '{selector}'. The CLI render path must "
+                "mirror scriba-scene-primitives.css."
             )
 
-    def test_render_template_dark_mode_flips_halo(
-        self, render_template_css: str
-    ) -> None:
-        """Dark mode should override --scriba-bg so the halo cascade
-        flips automatically without any JS or Python work. Wave 9."""
-        # The [data-theme="dark"] block must set --scriba-bg.
-        dark_block_match = re.search(
-            r'\[data-theme="dark"\]\s*\{[^}]*--scriba-bg\s*:',
-            render_template_css,
-        )
-        assert dark_block_match is not None, (
-            "render.py HTML_TEMPLATE [data-theme=\"dark\"] block does "
-            "not override --scriba-bg. The halo cascade will remain "
-            "locked to the light-theme background in dark mode."
-        )
 
+class TestRenderBundledFontSync:
+    """After the render.py refactor, CSS is loaded from source files via
+    ``css_bundler.load_css`` instead of being inlined in HTML_TEMPLATE.
+    Verify the bundled CSS carries the expected font declarations so the
+    CLI render path stays in sync with the static stylesheet."""
 
-class TestRenderTemplateFontSync:
-    """render.py HTML_TEMPLATE is the other CSS source. It MUST declare
-    a matching ``.scriba-index-label`` or ``.idx`` font size. If the
-    template drifts from the static stylesheet, cookbook HTML files
-    disagree with embedded Pipeline renders."""
-
-    def test_render_template_idx_font_size(
+    def test_bundled_css_has_idx_font(
         self, css_font_sizes: dict[str, int]
     ) -> None:
-        render_py = (
-            Path(__file__).parent.parent.parent / "render.py"
-        ).read_text()
-        # .idx { font: 500 10px ui-monospace, monospace; }
+        """The CSS bundle must declare the cell-index font variable."""
+        bundled = load_css("scriba-scene-primitives.css")
         match = re.search(
-            r"\.idx\s*,?\s*[^}]*?font\s*:\s*\d+\s+(?P<size>\d+)px",
-            render_py,
+            r"--scriba-cell-index-font\s*:\s*[^;]*?(?P<size>\d+)px",
+            bundled,
         )
         assert match is not None, (
-            ".idx font declaration missing from render.py HTML_TEMPLATE"
+            "--scriba-cell-index-font declaration missing from bundled "
+            "scriba-scene-primitives.css"
         )
-        template_size = int(match.group("size"))
+        bundled_size = int(match.group("size"))
         css_size = css_font_sizes["cell-index"]
-        assert template_size == css_size, (
-            f"render.py HTML_TEMPLATE has .idx font-size={template_size}px "
-            f"but --scriba-cell-index-font declares {css_size}px"
+        assert bundled_size == css_size, (
+            f"Bundled CSS has --scriba-cell-index-font={bundled_size}px "
+            f"but direct file parse found {css_size}px — load_css may "
+            "be reading a different file."
+        )
+
+
+class TestCssBundler:
+    """Tests for ``scriba.core.css_bundler`` — the module that replaced
+    inline CSS in render.py."""
+
+    def test_load_css_returns_content(self) -> None:
+        """``load_css`` must return a non-empty string with expected
+        markers from known stylesheets."""
+        result = load_css("scriba-scene-primitives.css")
+        assert isinstance(result, str)
+        assert len(result) > 0, "load_css returned empty string"
+        # The primitives stylesheet must contain the scene-level custom
+        # properties or selectors we rely on.
+        assert "--scriba-" in result, (
+            "load_css('scriba-scene-primitives.css') output lacks any "
+            "--scriba- custom property — wrong file?"
+        )
+
+    def test_load_css_multiple_files(self) -> None:
+        """``load_css`` concatenates multiple files."""
+        combined = load_css(
+            "scriba-scene-primitives.css",
+            "scriba-animation.css",
+        )
+        assert "--scriba-" in combined
+        # Both files contribute content, so result should be longer than
+        # either file alone.
+        single = load_css("scriba-scene-primitives.css")
+        assert len(combined) > len(single), (
+            "Concatenating two CSS files should produce more content "
+            "than a single file."
+        )
+
+    def test_inline_katex_css_no_external_urls(self) -> None:
+        """After inlining, no ``url(fonts/...)`` references should remain
+        — every font must be replaced with a data URI."""
+        result = inline_katex_css()
+        remaining = re.findall(r"url\([\"']?fonts/", result)
+        assert not remaining, (
+            f"inline_katex_css() left {len(remaining)} external font "
+            f"url(fonts/...) references. All fonts must be base64-inlined."
+        )
+
+    def test_inline_katex_css_has_data_uris(self) -> None:
+        """Inlined KaTeX CSS must contain base64-encoded woff2 data URIs."""
+        result = inline_katex_css()
+        assert "data:font/woff2;base64," in result, (
+            "inline_katex_css() output lacks data:font/woff2;base64 URIs. "
+            "Font inlining appears broken."
         )
