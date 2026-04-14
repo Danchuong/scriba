@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.7.0 · MIT · Python 3.10+
+**Status:** v0.8.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,7 +24,16 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
-## What's new in v0.7.0
+## What's new in v0.8.0
+
+- **Fixed state styling regression.** Cell/node/edge state colors
+  (`current`, `error`, `good`, `highlight`, etc.) were silently overridden
+  by primitive base selectors due to a CSS specificity conflict. Primitive
+  base selectors now use `:where()` to zero their qualifying specificity,
+  so `.scriba-state-*` rules always win.
+
+<details>
+<summary>v0.7.0 changelog</summary>
 
 - **Fully portable HTML output.** `render.py` now produces single-file,
   offline-ready HTML. All CSS (scene primitives, animation, widget chrome,
@@ -41,6 +50,8 @@ asset basenames needed to display it.
 - **`text_outline=` parameter removed.** The per-call text outline parameter
   on primitives, deprecated in v0.6.0, is removed. Use the CSS halo
   cascade instead.
+
+</details>
 
 <details>
 <summary>v0.6.0 changelog</summary>
@@ -65,7 +76,7 @@ asset basenames needed to display it.
 ## Install
 
 ```bash
-pip install scriba
+pip install scriba-tex
 ```
 
 Scriba shells out to a small Node.js worker for KaTeX math, so the host
@@ -78,7 +89,7 @@ apt-get install nodejs   # or: brew install node
 
 KaTeX `0.16.11` is vendored inside the wheel (at
 `scriba/tex/vendor/katex/katex.min.js`), so **no separate
-`npm install -g katex` step is required**. `pip install scriba` is all
+`npm install -g katex` step is required**. `pip install scriba-tex` is all
 you need once Node is present.
 
 ## Hello world
