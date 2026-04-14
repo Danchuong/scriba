@@ -7,7 +7,12 @@ field names and types.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from importlib.abc import Traversable
+import sys
+
+if sys.version_info >= (3, 12):
+    from importlib.resources.abc import Traversable
+else:
+    from importlib.abc import Traversable
 from pathlib import Path
 from typing import Any, Literal, Mapping
 
