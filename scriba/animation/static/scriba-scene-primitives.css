@@ -302,9 +302,11 @@
    ============================================ */
 
 /* -- Cell (Array, Grid, DPTable) --------------------------- */
-[data-primitive="array"] > [data-target] > rect,
-[data-primitive="grid"] > [data-target] > rect,
-[data-primitive="dptable"] > [data-target] > rect {
+/* :where() zeroes the qualifying specificity so .scriba-state-* rules
+ * (specificity 0,1,1) always win for fill / stroke / stroke-width. */
+:where([data-primitive="array"]  > [data-target]) > rect,
+:where([data-primitive="grid"]   > [data-target]) > rect,
+:where([data-primitive="dptable"] > [data-target]) > rect {
   fill:            var(--scriba-state-idle-fill);
   stroke:          var(--scriba-state-idle-stroke);
   stroke-width:    var(--scriba-cell-stroke-width);
@@ -330,9 +332,9 @@
  * widths the rendering font would otherwise use. font-synthesis-weight:
  * none prevents the browser from faux-bolding when the chosen weight
  * isn't available — a real blank cell stays visually blank. */
-[data-primitive="array"]   [data-target] > text,
-[data-primitive="grid"]    [data-target] > text,
-[data-primitive="dptable"] [data-target] > text {
+:where([data-primitive="array"]   [data-target]) > text,
+:where([data-primitive="grid"]    [data-target]) > text,
+:where([data-primitive="dptable"] [data-target]) > text {
   font:                  var(--scriba-cell-font);
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
@@ -359,8 +361,8 @@
 }
 
 /* -- Node (Graph, Tree) ------------------------------------ */
-[data-primitive="graph"] .scriba-graph-nodes > [data-target] > circle,
-[data-primitive="tree"] .scriba-tree-nodes > [data-target] > circle {
+:where([data-primitive="graph"] .scriba-graph-nodes > [data-target]) > circle,
+:where([data-primitive="tree"]  .scriba-tree-nodes > [data-target]) > circle {
   fill:            var(--scriba-state-idle-fill);
   stroke:          var(--scriba-state-idle-stroke);
   stroke-width:    var(--scriba-node-stroke-width);
@@ -368,8 +370,8 @@
   stroke-linejoin: round;
 }
 
-[data-primitive="graph"] .scriba-graph-nodes > [data-target] > text,
-[data-primitive="tree"] .scriba-tree-nodes > [data-target] > text {
+:where([data-primitive="graph"] .scriba-graph-nodes > [data-target]) > text,
+:where([data-primitive="tree"]  .scriba-tree-nodes > [data-target]) > text {
   font:                  var(--scriba-node-font);
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
@@ -381,25 +383,25 @@
 }
 
 /* -- Edge (Graph, Tree) ------------------------------------ */
-[data-primitive="graph"] .scriba-graph-edges > [data-target] > line,
-[data-primitive="tree"] .scriba-tree-edges > [data-target] > line {
+:where([data-primitive="graph"] .scriba-graph-edges > [data-target]) > line,
+:where([data-primitive="tree"]  .scriba-tree-edges > [data-target]) > line {
   stroke:       var(--scriba-state-idle-stroke);
   stroke-width: var(--scriba-edge-stroke-width);
   fill:         none;
 }
 
 /* -- Tick mark (NumberLine) -------------------------------- */
-[data-primitive="numberline"] > [data-target="nl.axis"] > line {
+:where([data-primitive="numberline"] > [data-target="nl.axis"]) > line {
   stroke:       var(--scriba-fg);
   stroke-width: var(--scriba-edge-stroke-width);
 }
 
-[data-primitive="numberline"] > [data-target] > line {
+:where([data-primitive="numberline"] > [data-target]) > line {
   stroke:       var(--scriba-state-idle-stroke);
   stroke-width: var(--scriba-tick-stroke-width);
 }
 
-[data-primitive="numberline"] > [data-target] > text {
+:where([data-primitive="numberline"] > [data-target]) > text {
   font:              var(--scriba-cell-index-font);
   fill:              var(--scriba-fg);
   text-anchor:       middle;
