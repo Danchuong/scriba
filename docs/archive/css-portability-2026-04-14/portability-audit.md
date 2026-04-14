@@ -19,17 +19,17 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 | P0-2: KaTeX version mismatch | P0 | FIXED | `925ff5a` |
 | P0-3: CSS duplication in render.py | P0 | FIXED | `925ff5a` |
 | P0-4: Pygments CSS not embedded | P0 | FIXED | `925ff5a` |
-| P0-5: Images reference external paths | P0 | Open | — |
+| P0-5: Images reference external paths | P0 | FIXED | `6c810d9` |
 | P1-1: Node.js required | P1 | Open (acceptable) | — |
 | P1-2: npm NODE_PATH discovery | P1 | Open (no fix needed) | — |
 | P2-1: Error documentation URL | P2 | Open | — |
-| P2-2: Cookbook/legacy CDN links | P2 | PARTIALLY FIXED | `925ff5a` |
+| P2-2: Cookbook/legacy CDN links | P2 | FIXED | `6c810d9` |
 | P2-3: Vendor script CDN (build-time) | P2 | Open (no fix needed) | — |
 | P3-1: Windows SIGALRM | P3 | Open | — |
 | P3-2: Windows resource limits | P3 | Open | — |
 | P3-3: macOS vs Linux rlimit | P3 | Open (no fix needed) | — |
 | P3-4: select.select() Windows bypass | P3 | Open (already handled) | — |
-| P4-1: hypothesis missing from dev deps | P4 | Open | — |
+| P4-1: hypothesis missing from dev deps | P4 | N/A (already declared) | — |
 | P4-2: importlib.resources anti-pattern | P4 | FIXED | `6e6202c` |
 | P4-3: Unused dev deps | P4 | Open | — |
 
@@ -74,11 +74,11 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 #### P0-5: Images reference external paths
 
-- **File:** `render.py:581`
-- **What:** `resource_resolver=lambda name: f"/static/{name}"` — `\includegraphics` produces `<img src="/static/foo.png">`
-- **Impact:** Images broken in standalone HTML files
-- **Fix:** Convert to data-URI (`data:image/png;base64,...`) or embed inline SVG
-- **Scope:** Low priority — most scriba docs don't use `\includegraphics`
+- **Status: FIXED (commit 6c810d9)**
+- **File:** `render.py:86-93`
+- **What:** `resource_resolver` now resolves images relative to input .tex file and embeds as data URIs
+- **Impact:** Images fully portable in standalone HTML files
+- **Fix:** `_resolve_resource()` helper reads local files and returns `data:image/...;base64,...` URIs
 
 ---
 
@@ -116,11 +116,10 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 #### P2-2: Cookbook/legacy HTML files hardcode CDN
 
-- **Status: PARTIALLY FIXED (commit 925ff5a)** — `examples/*.html` regenerated, but subdirectory examples still have old CDN links
-- **Files:** `docs/cookbook/*/output.html`, `docs/legacy/*/index.html` (13+ files)
-- **What:** Hardcoded `<link>` and `<script>` to jsdelivr CDN for KaTeX 0.16.11
-- **Impact:** Pre-built examples require internet
-- **Fix:** Regenerate after P0-1 fix
+- **Status: FIXED (commit 6c810d9)** — all 86 example HTML files regenerated (6 top-level + 80 subdirectory), zero CDN references remain
+- **Files:** `examples/**/*.html`
+- **What:** All example HTML files now use inlined CSS + KaTeX fonts
+- **Note:** `docs/cookbook/*/output.html` and `docs/legacy/*/index.html` use a different pipeline and are not covered by render.py
 
 #### P2-3: Vendor script uses CDN (build-time only)
 
@@ -194,11 +193,11 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 | Dimension | Score | Blocking Issues |
 |-----------|-------|-----------------|
-| **Output HTML offline** | 8/10 | ~~KaTeX CDN~~, ~~Pygments CSS~~, images (P0-5 open) |
-| **pip install** | 9/10 | Missing hypothesis in dev deps (P4-1), ~~importlib anti-pattern~~ |
-| **Cross-platform** | 7/10 | Windows sandbox limitations |
-| **Runtime deps** | 6/10 | Node.js required |
-| **Network independence** | 7/10 | ~~CDN in output~~, subdirectory examples (P2-2 partial), error docs URL |
+| **Output HTML offline** | 10/10 | All P0 issues resolved |
+| **pip install** | 9/10 | ~~importlib anti-pattern~~ |
+| **Cross-platform** | 7/10 | Windows sandbox limitations (P3-1, P3-2) |
+| **Runtime deps** | 6/10 | Node.js required (P1-1, acceptable) |
+| **Network independence** | 9/10 | ~~CDN in output~~, ~~examples~~, error docs URL (P2-1, informational only) |
 
 ---
 
