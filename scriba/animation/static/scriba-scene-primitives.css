@@ -591,6 +591,9 @@
   --scriba-annotation-muted:   var(--scriba-fg-muted);
 }
 
+/* Index labels use a hardcoded fill in light mode; flip for dark. */
+[data-theme="dark"] .idx { fill: #9ba1a6; }
+
 /* ============================================
    Focus indicator (interactive widget)
    ============================================ */
