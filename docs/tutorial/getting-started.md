@@ -450,3 +450,67 @@ Scriba ships 16 primitive types organized in three groups.
 | `VariableWatch` | Variable watch panel for displaying named variables via `.var[name]` selectors. |
 
 Each primitive has its own selectors and apply operations documented in the [ruleset](../spec/ruleset.md).
+
+---
+
+## Rendering to HTML
+
+Once you've written your `.tex` file, render it to a portable HTML file:
+
+```bash
+python render.py myfile.tex
+```
+
+This produces `myfile.html` — a **single, self-contained HTML file** with:
+- All CSS inlined (no external stylesheets)
+- KaTeX math fonts embedded (no CDN or internet needed)
+- Pygments syntax highlighting included
+- Interactive animation controls (prev/next, progress dots)
+
+Open the file in any browser. It works offline, on any device, with no setup.
+
+### CLI options
+
+| Flag | Effect |
+|------|--------|
+| `-o output.html` | Custom output path |
+| `--open` | Render and open in default browser |
+| `--static` | Legacy filmstrip mode (no JavaScript) |
+| `--dump-frames` | Print JSON frame data to stdout (debugging) |
+| `--no-minify` | Disable JS minification (debugging) |
+
+### Library API
+
+For programmatic use (e.g., in a web server), use the Pipeline API instead:
+
+```python
+from scriba import Pipeline, RenderContext, SubprocessWorkerPool
+from scriba.tex import TexRenderer
+from scriba.animation import AnimationRenderer
+
+pool = SubprocessWorkerPool()
+pipeline = Pipeline([
+    TexRenderer(worker_pool=pool),
+    AnimationRenderer(),
+])
+
+ctx = RenderContext(
+    resource_resolver=lambda name: f"/static/{name}",
+    theme="light",
+    metadata={},
+    render_inline_tex=None,
+)
+
+doc = pipeline.render(open("myfile.tex").read(), ctx)
+print(doc.html)           # HTML fragment (not a full page)
+print(doc.required_css)   # CSS basenames to serve alongside
+pipeline.close()
+```
+
+The Pipeline API returns HTML **fragments** (not full pages) plus a list of
+required CSS/JS assets. Your application is responsible for serving those
+assets and wrapping the fragment in a page template. This is the recommended
+approach for web applications.
+
+`render.py` uses this same API internally but wraps the output in a full
+HTML page with all assets inlined.

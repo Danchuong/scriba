@@ -96,6 +96,26 @@ print(doc.required_css)  # namespaced CSS keys
 pipeline.close()
 ```
 
+## Standalone CLI
+
+For quick rendering without writing Python, use `render.py` directly:
+
+```bash
+python render.py input.tex                # → input.html
+python render.py input.tex -o out.html    # → custom output path
+python render.py input.tex --open         # → render and open in browser
+```
+
+Output is a **single, fully portable HTML file** — all CSS, KaTeX math
+fonts, and syntax highlighting are inlined. No internet connection or
+external files needed. Just open the `.html` file in any browser.
+
+For legacy filmstrip mode (static frames, no JavaScript):
+
+```bash
+python render.py input.tex --static
+```
+
 ## Sanitize before embedding
 
 Scriba does **not** sanitize its output — consumers must pass it through a
@@ -132,6 +152,11 @@ Then include them alongside the rendered fragment:
 
 <article class="scriba-tex-content">{{ doc.html }}</article>
 ```
+
+> **Note:** This section applies to the **Pipeline API** (library usage),
+> where you serve assets yourself. If you use `render.py` instead, the
+> output HTML is fully self-contained — all CSS, KaTeX fonts (base64), and
+> Pygments highlighting are inlined. No separate asset serving needed.
 
 ## Documentation
 

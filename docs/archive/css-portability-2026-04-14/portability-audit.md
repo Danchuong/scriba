@@ -11,12 +11,37 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 ---
 
+## Resolution Status
+
+| Issue | Priority | Status | Commit |
+|-------|----------|--------|--------|
+| P0-1: KaTeX CSS linked from CDN | P0 | FIXED | `925ff5a` |
+| P0-2: KaTeX version mismatch | P0 | FIXED | `925ff5a` |
+| P0-3: CSS duplication in render.py | P0 | FIXED | `925ff5a` |
+| P0-4: Pygments CSS not embedded | P0 | FIXED | `925ff5a` |
+| P0-5: Images reference external paths | P0 | Open | — |
+| P1-1: Node.js required | P1 | Open (acceptable) | — |
+| P1-2: npm NODE_PATH discovery | P1 | Open (no fix needed) | — |
+| P2-1: Error documentation URL | P2 | Open | — |
+| P2-2: Cookbook/legacy CDN links | P2 | PARTIALLY FIXED | `925ff5a` |
+| P2-3: Vendor script CDN (build-time) | P2 | Open (no fix needed) | — |
+| P3-1: Windows SIGALRM | P3 | Open | — |
+| P3-2: Windows resource limits | P3 | Open | — |
+| P3-3: macOS vs Linux rlimit | P3 | Open (no fix needed) | — |
+| P3-4: select.select() Windows bypass | P3 | Open (already handled) | — |
+| P4-1: hypothesis missing from dev deps | P4 | Open | — |
+| P4-2: importlib.resources anti-pattern | P4 | FIXED | `6e6202c` |
+| P4-3: Unused dev deps | P4 | Open | — |
+
+---
+
 ## Issue Registry
 
 ### P0 — Output HTML Not Self-Contained
 
 #### P0-1: KaTeX CSS linked from CDN
 
+- **Status: FIXED (commit 925ff5a)**
 - **File:** `render.py:646`
 - **What:** `<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.22/dist/katex.min.css">`
 - **Impact:** Output HTML requires internet for math rendering
@@ -25,6 +50,7 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 #### P0-2: KaTeX version mismatch
 
+- **Status: FIXED (commit 925ff5a)**
 - **File:** `render.py:646` vs `scriba/tex/vendor/katex/`
 - **What:** CDN references 0.16.22, vendored copy is 0.16.11
 - **Impact:** Potential rendering differences between dev and output
@@ -32,6 +58,7 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 #### P0-3: CSS duplication in render.py
 
+- **Status: FIXED (commit 925ff5a)**
 - **File:** `render.py:32-501` vs `scriba/animation/static/scriba-scene-primitives.css`
 - **What:** ~300 lines hand-copied with `{{}}` Python escaping
 - **Impact:** Maintenance burden, drift risk (only halo cascade enforced by tests)
@@ -39,6 +66,7 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 #### P0-4: Pygments CSS not embedded
 
+- **Status: FIXED (commit 925ff5a)**
 - **Files:** `scriba/tex/static/scriba-tex-pygments-light.css`, `scriba-tex-pygments-dark.css`
 - **What:** Syntax highlighting CSS declared in `required_css` but NOT inlined by `render.py`
 - **Impact:** Code blocks in output HTML have unstyled tokens
@@ -88,6 +116,7 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 #### P2-2: Cookbook/legacy HTML files hardcode CDN
 
+- **Status: PARTIALLY FIXED (commit 925ff5a)** — `examples/*.html` regenerated, but subdirectory examples still have old CDN links
 - **Files:** `docs/cookbook/*/output.html`, `docs/legacy/*/index.html` (13+ files)
 - **What:** Hardcoded `<link>` and `<script>` to jsdelivr CDN for KaTeX 0.16.11
 - **Impact:** Pre-built examples require internet
@@ -145,6 +174,7 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 #### P4-2: importlib.resources anti-pattern
 
+- **Status: FIXED (commit 6e6202c)** — `Path(str(...))` replaced with `traversable_to_path()` helper in `scriba/core/artifact.py`
 - **Files:** `scriba/tex/renderer.py:142,206,277-284`, `scriba/animation/renderer.py:372,627`
 - **What:** `Path(str(files(...).joinpath(...)))` — loses Traversable safety
 - **Impact:** Breaks if package installed as zipped egg/wheel
@@ -164,32 +194,32 @@ Scriba's **core library** is well-packaged (1 PyPI dep, all assets bundled). But
 
 | Dimension | Score | Blocking Issues |
 |-----------|-------|-----------------|
-| **Output HTML offline** | 3/10 | KaTeX CDN, Pygments CSS, images |
-| **pip install** | 9/10 | Missing hypothesis in dev deps |
+| **Output HTML offline** | 8/10 | ~~KaTeX CDN~~, ~~Pygments CSS~~, images (P0-5 open) |
+| **pip install** | 9/10 | Missing hypothesis in dev deps (P4-1), ~~importlib anti-pattern~~ |
 | **Cross-platform** | 7/10 | Windows sandbox limitations |
 | **Runtime deps** | 6/10 | Node.js required |
-| **Network independence** | 5/10 | CDN in output, error docs URL |
+| **Network independence** | 7/10 | ~~CDN in output~~, subdirectory examples (P2-2 partial), error docs URL |
 
 ---
 
 ## Priority Roadmap
 
-### Sprint 1: Output HTML Portability (P0)
+### Sprint 1: Output HTML Portability (P0) — COMPLETE (commit 925ff5a)
 
-1. Extract CSS from render.py template → read from `.css` files (P0-3)
-2. Inline vendored KaTeX CSS + base64 fonts (P0-1, P0-2)
-3. Inline Pygments CSS (P0-4)
-4. Regenerate cookbook/legacy HTML files (P2-2)
+1. ~~Extract CSS from render.py template → read from `.css` files (P0-3)~~ DONE
+2. ~~Inline vendored KaTeX CSS + base64 fonts (P0-1, P0-2)~~ DONE
+3. ~~Inline Pygments CSS (P0-4)~~ DONE
+4. Regenerate cookbook/legacy HTML files (P2-2) — PARTIAL (`examples/*.html` done, subdirectory examples still have old CDN links)
 
-**Result:** Output HTML works fully offline.
+**Result:** Output HTML works fully offline. Remaining: subdirectory example files need regeneration.
 
-### Sprint 2: Packaging Fixes (P4)
+### Sprint 2: Packaging Fixes (P4) — IN PROGRESS
 
-1. Add hypothesis to dev deps (P4-1)
-2. Fix importlib.resources anti-pattern (P4-2)
-3. Clean unused dev deps (P4-3)
+1. Add hypothesis to dev deps (P4-1) — OPEN
+2. ~~Fix importlib.resources anti-pattern (P4-2)~~ DONE (commit 6e6202c)
+3. Clean unused dev deps (P4-3) — OPEN
 
-**Result:** Clean install on all platforms.
+**Result:** Partial — importlib safety fixed, dev deps cleanup remaining.
 
 ### Sprint 3: Documentation & Polish (P1, P2)
 
