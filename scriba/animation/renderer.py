@@ -24,6 +24,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Any
 
+from scriba.core.artifact import traversable_to_path
 from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.emitter import FrameData, SubstoryData, emit_animation_html, emit_html, scene_id_from_source
 from scriba.animation.errors import FrameCountError
@@ -369,7 +370,7 @@ class AnimationRenderer:
             "scriba-plane2d.css",
             "scriba-metricplot.css",
         ):
-            path = Path(str(static / name))
+            path = traversable_to_path(static / name)
             if path.exists():
                 css_files.add(path)
         return RendererAssets(
@@ -624,7 +625,7 @@ class DiagramRenderer:
         static = files("scriba.animation").joinpath("static")
         css_files: set[Path] = set()
         for name in ("scriba-animation.css", "scriba-scene-primitives.css"):
-            css_files.add(Path(str(static / name)))
+            css_files.add(traversable_to_path(static / name))
         return RendererAssets(
             css_files=frozenset(css_files),
             js_files=frozenset(),

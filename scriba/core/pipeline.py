@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from scriba._version import SCRIBA_VERSION
-from scriba.core.artifact import Block, CollectedWarning, Document, RenderArtifact
+from scriba.core.artifact import Block, CollectedWarning, Document, RenderArtifact, traversable_to_path
 from scriba.core.context import RenderContext
 from scriba.core.errors import ScribaError, ValidationError
 from scriba.core.renderer import Renderer
@@ -269,7 +269,7 @@ class Pipeline:
                 basename = getattr(path, "name", str(path))
                 key = f"{ns}/{basename}"
                 css_set.add(key)
-                resolved = path if isinstance(path, Path) else Path(str(path))
+                resolved = traversable_to_path(path)
                 if key in asset_paths and asset_paths[key] != resolved:
                     warnings.warn(
                         f"asset path collision for {key!r}: keeping "
@@ -283,7 +283,7 @@ class Pipeline:
                 basename = getattr(path, "name", str(path))
                 key = f"{ns}/{basename}"
                 js_set.add(key)
-                resolved = path if isinstance(path, Path) else Path(str(path))
+                resolved = traversable_to_path(path)
                 if key in asset_paths and asset_paths[key] != resolved:
                     warnings.warn(
                         f"asset path collision for {key!r}: keeping "

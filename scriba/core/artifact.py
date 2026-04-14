@@ -7,8 +7,22 @@ field names and types.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from importlib.abc import Traversable
 from pathlib import Path
 from typing import Any, Literal, Mapping
+
+
+def traversable_to_path(t: Traversable | Path) -> Path:
+    """Cast an importlib.resources Traversable to a concrete Path.
+
+    ``importlib.resources.files()`` returns a Traversable which is not a
+    ``pathlib.Path``.  For unzipped installs (the default for pip) the
+    underlying object is already backed by the filesystem, so
+    ``Path(str(t))`` yields a usable path.  This helper centralises that
+    cast so the intent is documented and easy to find if we later need to
+    switch to ``importlib.resources.as_file()`` for zipped packages.
+    """
+    return t if isinstance(t, Path) else Path(str(t))
 
 
 @dataclass(frozen=True)

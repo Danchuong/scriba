@@ -16,7 +16,7 @@ from importlib.resources import files
 from pathlib import Path
 from typing import Literal, Mapping
 
-from scriba.core.artifact import Block, RenderArtifact, RendererAssets
+from scriba.core.artifact import Block, RenderArtifact, RendererAssets, traversable_to_path
 from scriba.core.context import RenderContext
 from scriba.core.errors import (
     RendererError,
@@ -139,7 +139,7 @@ def _probe_runtime(node_executable: str) -> None:
         if shutil.which(node_executable) is None:
             raise ScribaRuntimeError(_NODE_MISSING_MSG, component="node")
         # Vendored katex.min.js ships inside the wheel next to the worker.
-        vendored = Path(str(files("scriba.tex").joinpath("vendor/katex/katex.min.js")))
+        vendored = traversable_to_path(files("scriba.tex").joinpath("vendor/katex/katex.min.js"))
         probe_env = os.environ.copy()
         try:
             result = subprocess.run(
@@ -203,7 +203,7 @@ class TexRenderer:
 
         if katex_worker_path is None:
             resolved = files("scriba.tex").joinpath("katex_worker.js")
-            self._katex_worker_path = Path(str(resolved))
+            self._katex_worker_path = traversable_to_path(resolved)
         else:
             self._katex_worker_path = Path(katex_worker_path)
 
@@ -274,14 +274,14 @@ class TexRenderer:
 
     def assets(self) -> RendererAssets:
         static = files("scriba.tex").joinpath("static")
-        css: set[Path] = {Path(str(static / "scriba-tex-content.css"))}
+        css: set[Path] = {traversable_to_path(static / "scriba-tex-content.css")}
         if self._pygments_theme in ("one-light", "github-light"):
-            css.add(Path(str(static / "scriba-tex-pygments-light.css")))
+            css.add(traversable_to_path(static / "scriba-tex-pygments-light.css"))
         elif self._pygments_theme in ("one-dark", "github-dark"):
-            css.add(Path(str(static / "scriba-tex-pygments-dark.css")))
+            css.add(traversable_to_path(static / "scriba-tex-pygments-dark.css"))
         js: set[Path] = set()
         if self._enable_copy_buttons:
-            js.add(Path(str(static / "scriba-tex-copy.js")))
+            js.add(traversable_to_path(static / "scriba-tex-copy.js"))
         return RendererAssets(
             css_files=frozenset(css), js_files=frozenset(js)
         )
