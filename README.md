@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.6.0 · MIT · Python 3.10+
+**Status:** v0.7.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,38 +24,43 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
-## What's new in v0.6.0
+## What's new in v0.7.0
+
+- **Fully portable HTML output.** `render.py` now produces single-file,
+  offline-ready HTML. All CSS (scene primitives, animation, widget chrome,
+  Pygments syntax highlighting), KaTeX math fonts (20 woff2 files,
+  base64-encoded), and `\includegraphics` images (data URIs) are inlined.
+  Zero CDN dependencies — just open the `.html` in any browser.
+- **CSS deduplication.** The ~470-line inline CSS block in `render.py` was
+  replaced by a new `scriba.core.css_bundler` module that reads CSS from
+  source `.css` files at render time. Single source of truth for all
+  styling.
+- **`traversable_to_path()` helper.** Centralised the
+  `Path(str(traversable))` anti-pattern across 3 files into a documented
+  helper in `scriba.core.artifact`, ready for future `as_file()` upgrade.
+- **`text_outline=` parameter removed.** The per-call text outline parameter
+  on primitives, deprecated in v0.6.0, is removed. Use the CSS halo
+  cascade instead.
+
+<details>
+<summary>v0.6.0 changelog</summary>
 
 - **Wave 8 — vstack layout.** Array, DP-table, and related primitives now
   compose their caption, index labels, and cells through a shared
-  `scriba/animation/primitives/layout.py` vstack helper. No more hardcoded
-  Y offsets: cell, index, and caption font sizes drive the layout through
-  real font metrics.
+  `scriba/animation/primitives/layout.py` vstack helper.
 - **Wave 9 — CSS-first text halo cascade.** Every `[data-primitive] text`
   element now inherits `paint-order: stroke fill markers` with a
-  `--scriba-halo` CSS variable that each state class overrides. The block is
-  wrapped in `@media (forced-colors: none)` so Windows High Contrast Mode
-  strips it cleanly. The per-call `text_outline=` parameter on primitives is
-  deprecated and scheduled for removal in v0.7.0 — authors should rely on
-  the CSS cascade instead.
+  `--scriba-halo` CSS variable that each state class overrides.
 - **RFC-001 — structural mutation ops.** Tree, Graph, and Plane2D primitives
-  gained safe structural ops (`add_node`, `remove_node`, `reparent`, and
-  friends) plus a new `hidden` state for elements that are modeled but not
-  yet rendered. See `docs/guides/hidden-state-pattern.md` for the intended
-  authoring flow.
-- **RFC-002 — strict mode and document warnings.** The pipeline now
-  surfaces non-fatal issues on `Document.warnings` as a tuple of typed
-  `CollectedWarning` entries (code, message, source line/col, primitive,
-  severity). Setting `RenderContext(strict=True)` promotes a designated
-  set of dangerous codes (`E1461`, `E1462`, `E1463`, `E1484`, `E1501`,
-  `E1502`, `E1503`) into hard render errors; `strict_except` opts specific
-  codes back out. Strict mode is a `RenderContext` field, not a core CLI
-  flag — CLIs wrap it themselves. See
+  gained safe structural ops (`add_node`, `remove_node`, `reparent`).
+- **RFC-002 — strict mode and document warnings.** Pipeline surfaces
+  non-fatal issues on `Document.warnings`. See
   [`docs/guides/strict-mode.md`](docs/guides/strict-mode.md).
 - **Examples reorganized.** 53 `.tex` examples across `examples/quickstart/`,
   `examples/algorithms/`, `examples/cses/`, and `examples/primitives/`.
-  HTML outputs are now build artifacts (`./examples/build.sh`), not
-  checked into git. See [`docs/cookbook/README.md`](docs/cookbook/README.md).
+  See [`docs/cookbook/README.md`](docs/cookbook/README.md).
+
+</details>
 
 ## Install
 
