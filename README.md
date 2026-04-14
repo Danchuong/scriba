@@ -107,8 +107,9 @@ python render.py input.tex --open         # → render and open in browser
 ```
 
 Output is a **single, fully portable HTML file** — all CSS, KaTeX math
-fonts, and syntax highlighting are inlined. No internet connection or
-external files needed. Just open the `.html` file in any browser.
+fonts, syntax highlighting, and images (via `\includegraphics`) are
+inlined as data URIs. No internet connection or external files needed.
+Just open the `.html` file in any browser.
 
 For legacy filmstrip mode (static frames, no JavaScript):
 
