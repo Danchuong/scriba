@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scriba-tex"
-version = "0.7.0"
+version = "0.8.0"
 description = "Backend Python library for rendering LaTeX problem statements and CP editorial animations to self-contained HTML"
 readme = "README.md"
 license = { text = "MIT" }
