@@ -10,7 +10,9 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import base64
 import json
+import mimetypes
 import sys
 import webbrowser
 from pathlib import Path
@@ -81,6 +83,16 @@ def _snapshot_to_dict(snap: object) -> dict:
     }
 
 
+def _resolve_resource(input_dir: Path, name: str) -> str:
+    """Resolve a resource name to a data URI if the file exists locally."""
+    candidate = input_dir / name
+    if candidate.is_file():
+        mime_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
+        encoded = base64.b64encode(candidate.read_bytes()).decode("ascii")
+        return f"data:{mime_type};base64,{encoded}"
+    return f"/static/{name}"
+
+
 def render_file(
     input_path: Path,
     output_path: Path,
@@ -111,7 +123,7 @@ def render_file(
         return tex_renderer.render_inline_text(text)
 
     ctx = RenderContext(
-        resource_resolver=lambda name: f"/static/{name}",
+        resource_resolver=lambda name: _resolve_resource(input_path.parent, name),
         theme="light",
         metadata={"output_mode": output_mode, "minify": minify},
         render_inline_tex=_inline_tex,
