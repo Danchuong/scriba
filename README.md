@@ -24,13 +24,26 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
-## What's new in v0.8.0
+## What's new in v0.8.2
+
+- **Position-aware auto-ID generation.** Duplicate animation/diagram
+  blocks with identical content now produce distinct HTML element IDs.
+  Previously, identical blocks generated the same SHA-256-based ID,
+  causing the second widget's JavaScript to bind to the first DOM element.
+- **Duplicate block ID warning.** The pipeline now emits a
+  `CollectedWarning(code="E1019", severity="dangerous")` when two blocks
+  share the same `block_id`, surfaced via `Document.warnings` (RFC-002).
+
+<details>
+<summary>v0.8.0 changelog</summary>
 
 - **Fixed state styling regression.** Cell/node/edge state colors
   (`current`, `error`, `good`, `highlight`, etc.) were silently overridden
   by primitive base selectors due to a CSS specificity conflict. Primitive
   base selectors now use `:where()` to zero their qualifying specificity,
   so `.scriba-state-*` rules always win.
+
+</details>
 
 <details>
 <summary>v0.7.0 changelog</summary>

@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.2] - 2026-04-15
+
+### Fixed
+
+- **Position-aware auto-ID generation** — `_scene_id()` and `scene_id_from_source()` now hash `"{position}:{raw}"` instead of just the raw content. Two animation/diagram blocks with identical content at different document positions now produce distinct HTML element IDs, fixing a bug where animation 2's JavaScript bound to animation 1's DOM element.
+- **CSS selector tests updated** — Stability tests for primitive CSS centering now match the `:where()`-wrapped selectors introduced in v0.8.0.
+
+### Added
+
+- **Duplicate block ID warning** — The pipeline (step 4b) now scans rendered artifacts for duplicate `block_id` values and emits a `CollectedWarning(code="E1019", severity="dangerous")` on `Document.warnings`. This catches both explicit `[id="..."]` reuse and auto-generated hash collisions.
+
+## [0.8.0] - 2026-04-14
+
+### Fixed
+
+- **State styling CSS specificity regression** — Cell/node/edge state colors (`current`, `error`, `good`, `highlight`, etc.) were silently overridden by primitive base selectors due to a CSS specificity conflict. Primitive base selectors now use `:where()` to zero their qualifying specificity, so `.scriba-state-*` rules always win. Browser support: Chrome 88+, Firefox 78+, Safari 14+.
+
+### Changed
+
+- **CSS deduplication via `css_bundler`** — The ~470-line inline CSS block in `render.py` was replaced by `scriba.core.css_bundler`, reading CSS from source `.css` files at render time.
+- **Widget chrome extracted** — `scriba-standalone.css` split into `scriba-embed.css` for widget chrome CSS.
+
 ## [0.6.3] - 2026-04-13
 
 ### Added
