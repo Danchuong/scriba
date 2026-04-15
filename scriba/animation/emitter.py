@@ -85,9 +85,14 @@ class FrameData:
 # ---------------------------------------------------------------------------
 
 
-def scene_id_from_source(source: str) -> str:
-    """Deterministic scene ID: ``scriba-`` + first 10 hex of SHA-256."""
-    digest = hashlib.sha256(source.encode()).hexdigest()[:10]
+def scene_id_from_source(source: str, *, position: int = 0) -> str:
+    """Deterministic scene ID: ``scriba-`` + first 10 hex of SHA-256.
+
+    Including *position* (byte offset in the document) ensures two blocks
+    with identical content at different locations produce distinct IDs.
+    """
+    key = f"{position}:{source}"
+    digest = hashlib.sha256(key.encode()).hexdigest()[:10]
     return f"scriba-{digest}"
 
 

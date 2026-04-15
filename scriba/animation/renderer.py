@@ -93,9 +93,15 @@ def _strip_environment(raw: str) -> tuple[str, str]:
     return raw[body_start:body_end], opts_str
 
 
-def _scene_id(raw: str) -> str:
-    """Deterministic scene ID from block source."""
-    digest = hashlib.sha256(raw.encode()).hexdigest()[:10]
+def _scene_id(raw: str, *, position: int = 0) -> str:
+    """Deterministic scene ID from block source and position.
+
+    Including *position* (the byte offset in the document) ensures that
+    two blocks with identical content at different locations produce
+    distinct IDs.
+    """
+    key = f"{position}:{raw}"
+    digest = hashlib.sha256(key.encode()).hexdigest()[:10]
     return f"scriba-{digest}"
 
 
@@ -305,7 +311,7 @@ class AnimationRenderer:
         scene_id = (
             ir.options.id
             if ir.options.id is not None
-            else _scene_id(block.raw)
+            else _scene_id(block.raw, position=block.start)
         )
 
         # Instantiate primitives from shape declarations
@@ -586,7 +592,7 @@ class DiagramRenderer:
                 code="E1050",
             )
 
-        scene_id = scene_id_from_source(raw)
+        scene_id = scene_id_from_source(raw, position=block.start)
         if hasattr(ir, "options") and hasattr(ir.options, "id") and ir.options.id:
             scene_id = ir.options.id
 

@@ -232,6 +232,31 @@ class Pipeline:
                 ) from e
             artifacts.append(artifact)
 
+        # 4b. Warn on duplicate block_ids (typically from explicit
+        # \begin{animation}[id=...] reuse). Duplicate ids collide at the
+        # HTML element level and break JS widget binding.
+        _seen_ids: dict[str, int] = {}
+        for artifact in artifacts:
+            bid = artifact.block_id
+            if not bid:
+                continue
+            if bid in _seen_ids:
+                msg = (
+                    f"duplicate block id {bid!r} — two blocks share the "
+                    f"same HTML element id; the second widget will not "
+                    f"bind correctly"
+                )
+                logger.warning(msg)
+                internal_collector.append(
+                    CollectedWarning(
+                        code="E1019",
+                        message=msg,
+                        severity="dangerous",
+                    )
+                )
+            else:
+                _seen_ids[bid] = 1
+
         # 5. Substitute placeholders in a single pass via regex. Using
         # re.sub with a callback guarantees each marker is replaced exactly
         # once and prevents artifact HTML that happens to contain another

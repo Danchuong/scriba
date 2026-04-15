@@ -576,3 +576,82 @@ def test_asset_path_collision_warns_and_keeps_first(tmp_path):
     ]
     assert warning_msgs, "expected a collision warning"
 
+
+# --- Duplicate block_id warning (UX-3 / E1019) ----------------------------
+
+
+def test_duplicate_block_id_emits_collected_warning():
+    """When two blocks produce the same block_id, pipeline must emit
+    a CollectedWarning with code E1019 on Document.warnings."""
+
+    class DuplicateIdRenderer:
+        name = "dup"
+        version = 1
+        priority = 100
+
+        def detect(self, source):
+            # Produce two non-overlapping blocks.
+            mid = len(source) // 2
+            return [
+                Block(start=0, end=mid, kind="a", raw=source[:mid]),
+                Block(start=mid, end=len(source), kind="b", raw=source[mid:]),
+            ]
+
+        def render_block(self, block, ctx):
+            return RenderArtifact(
+                html=f"<p>{block.kind}</p>",
+                css_assets=frozenset(),
+                js_assets=frozenset(),
+                block_id="same-id",  # duplicate on purpose
+            )
+
+        def assets(self):
+            return _stub_assets()
+
+    p = Pipeline([DuplicateIdRenderer()])
+    ctx = RenderContext(resource_resolver=lambda n: None)
+    doc = p.render("abcdef", ctx)
+
+    e1019 = [w for w in doc.warnings if w.code == "E1019"]
+    assert len(e1019) == 1, f"expected exactly 1 E1019 warning, got {len(e1019)}"
+    assert "same-id" in e1019[0].message
+    assert e1019[0].severity == "dangerous"
+
+
+def test_unique_block_ids_no_warning():
+    """When all block_ids are unique, no E1019 warning is emitted."""
+
+    call_count = 0
+
+    class UniqueIdRenderer:
+        name = "uniq"
+        version = 1
+        priority = 100
+
+        def detect(self, source):
+            mid = len(source) // 2
+            return [
+                Block(start=0, end=mid, kind="a", raw=source[:mid]),
+                Block(start=mid, end=len(source), kind="b", raw=source[mid:]),
+            ]
+
+        def render_block(self, block, ctx):
+            nonlocal call_count
+            call_count += 1
+            return RenderArtifact(
+                html=f"<p>{block.kind}</p>",
+                css_assets=frozenset(),
+                js_assets=frozenset(),
+                block_id=f"id-{call_count}",
+            )
+
+        def assets(self):
+            return _stub_assets()
+
+    p = Pipeline([UniqueIdRenderer()])
+    ctx = RenderContext(resource_resolver=lambda n: None)
+    doc = p.render("abcdef", ctx)
+
+    e1019 = [w for w in doc.warnings if w.code == "E1019"]
+    assert len(e1019) == 0
+

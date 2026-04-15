@@ -174,17 +174,21 @@ class TestCellTextSelectorRobustness:
         """
         stripped = re.sub(r"/\*.*?\*/", "", css_text, flags=re.DOTALL)
         for prim in ("array", "grid", "dptable"):
-            # Scope specifically to the cell-text rule by requiring
-            # ``[data-target] > text`` at the tail.
+            # The cell-text selector is wrapped in :where() for
+            # specificity zeroing (v0.8.0 fix). Match both the wrapped
+            # form `:where([data-primitive="X"] [data-target]) > text`
+            # and the unwrapped form for backwards compatibility.
             pattern = re.compile(
-                rf'\[data-primitive="{prim}"\]\s*([>\s])\s*\[data-target\]\s*>\s*text',
+                rf':where\(\s*\[data-primitive="{prim}"\]\s*([>\s])\s*\[data-target\]\s*\)\s*>\s*text'
+                rf'|\[data-primitive="{prim}"\]\s*([>\s])\s*\[data-target\]\s*>\s*text',
             )
             matches = list(pattern.finditer(stripped))
             assert matches, (
                 f"Cell text selector for {prim!r} missing from CSS."
             )
             for match in matches:
-                combinator = match.group(1).strip()
+                # Group 1 is from :where() form, group 2 from unwrapped
+                combinator = (match.group(1) or match.group(2) or "").strip()
                 assert combinator != ">", (
                     f"Cell text selector for data-primitive={prim!r} uses "
                     f"strict child combinator (>). This breaks when Array "
@@ -215,8 +219,9 @@ class TestDominantBaselineConsistency:
         stripped = re.sub(r"/\*.*?\*/", "", css_text, flags=re.DOTALL)
         # Match the rule header we added: three selectors separated by
         # commas, each ending in ``[data-target] > text``.
+        # Match both :where()-wrapped and unwrapped forms.
         header = re.search(
-            r'\[data-primitive="array"\][^{]*\[data-target\]\s*>\s*text[^{]*\{([^}]*)\}',
+            r'(?::where\(\s*)?\[data-primitive="array"\][^{]*\[data-target\]\s*\)?\s*>\s*text[^{]*\{([^}]*)\}',
             stripped,
         )
         assert header is not None, (

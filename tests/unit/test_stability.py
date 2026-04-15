@@ -191,17 +191,25 @@ def test_animation_scene_id_format_is_locked() -> None:
 
     Consumer CSS / JS that targets `#scriba-<hash>` breaks if this
     format changes. See STABILITY.md §SVG scene ID format.
+
+    The hash input is ``"{position}:{raw}"`` so that identical blocks at
+    different document positions produce distinct IDs.
     """
     from scriba.animation.renderer import _scene_id
 
     raw = "\\begin{animation}[id=test]\\end{animation}"
-    sid = _scene_id(raw)
+    sid = _scene_id(raw, position=0)
     assert sid.startswith("scriba-")
     suffix = sid[len("scriba-"):]
     assert len(suffix) == 10
-    # Must match the first 10 chars of sha256 of the raw bytes.
-    expected = hashlib.sha256(raw.encode()).hexdigest()[:10]
+    # Must match the first 10 chars of sha256 of "{position}:{raw}".
+    expected = hashlib.sha256(f"0:{raw}".encode()).hexdigest()[:10]
     assert suffix == expected
+
+    # Same content at different position → different ID.
+    sid2 = _scene_id(raw, position=100)
+    assert sid2.startswith("scriba-")
+    assert sid != sid2
 
 
 # ---------------------------------------------------------------------------
