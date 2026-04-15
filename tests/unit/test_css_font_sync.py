@@ -34,6 +34,22 @@ _CSS_PATH = (
     / "scriba-scene-primitives.css"
 )
 
+_EMBED_CSS_PATH = (
+    Path(__file__).parent.parent.parent
+    / "scriba"
+    / "animation"
+    / "static"
+    / "scriba-embed.css"
+)
+
+_STANDALONE_CSS_PATH = (
+    Path(__file__).parent.parent.parent
+    / "scriba"
+    / "animation"
+    / "static"
+    / "scriba-standalone.css"
+)
+
 # --scriba-FOO-font: 700 14px inherit
 # --scriba-cell-index-font: 500 10px ui-monospace, monospace
 _CSS_FONT_RE = re.compile(
@@ -57,6 +73,18 @@ def css_font_sizes() -> dict[str, int]:
 def css_text() -> str:
     """Full stylesheet contents for substring-level assertions."""
     return _CSS_PATH.read_text()
+
+
+@pytest.fixture(scope="module")
+def embed_css_text() -> str:
+    """Embed-safe widget stylesheet contents."""
+    return _EMBED_CSS_PATH.read_text()
+
+
+@pytest.fixture(scope="module")
+def standalone_css_text() -> str:
+    """Standalone document shell stylesheet contents."""
+    return _STANDALONE_CSS_PATH.read_text()
 
 
 def _normalize_ws(text: str) -> str:
@@ -132,6 +160,7 @@ class TestHaloCascadeParity:
         return load_css(
             "scriba-scene-primitives.css",
             "scriba-animation.css",
+            "scriba-embed.css",
             "scriba-standalone.css",
         )
 
@@ -231,6 +260,63 @@ class TestRenderBundledFontSync:
             f"but direct file parse found {css_size}px — load_css may "
             "be reading a different file."
         )
+
+
+class TestEmbedCssSplit:
+    """Guard the standalone/embed split.
+
+    Host applications must be able to load widget chrome without inheriting
+    document-wide resets or body layout rules.
+    """
+
+    def test_embed_css_has_widget_chrome(self, embed_css_text: str) -> None:
+        normalized = _normalize_ws(embed_css_text)
+        for selector in (
+            ".scriba-widget",
+            ".scriba-controls",
+            ".scriba-controls button",
+            ".scriba-progress",
+            ".scriba-stage",
+            ".scriba-narration",
+        ):
+            assert selector in normalized, (
+                f"Embed stylesheet missing widget selector '{selector}'. "
+                "Host integrations rely on scriba-embed.css carrying the "
+                "interactive widget chrome."
+            )
+
+    def test_embed_css_has_no_document_level_rules(self, embed_css_text: str) -> None:
+        normalized = _normalize_ws(embed_css_text)
+        forbidden = (
+            " body {",
+            " h1 {",
+            " .theme-toggle {",
+            "* { margin: 0; padding: 0; box-sizing: border-box; }",
+        )
+        for token in forbidden:
+            assert token not in f" {normalized}", (
+                f"Embed stylesheet still contains document-level rule "
+                f"'{token.strip()}'. It must remain safe to load inside a "
+                "host application shell."
+            )
+
+    def test_standalone_css_no_longer_duplicates_widget_chrome(
+        self, standalone_css_text: str
+    ) -> None:
+        normalized = _normalize_ws(standalone_css_text)
+        for selector in (
+            ".scriba-widget",
+            ".scriba-controls",
+            ".scriba-progress",
+            ".scriba-stage",
+            ".scriba-narration",
+        ):
+            assert selector not in normalized, (
+                f"Standalone shell still duplicates widget selector "
+                f"'{selector}'. Widget chrome should live in "
+                "scriba-embed.css so standalone and embedded paths share "
+                "the same source."
+            )
 
 
 class TestCssBundler:

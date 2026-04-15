@@ -192,6 +192,7 @@ def render_file(
         load_css(
             "scriba-scene-primitives.css",
             "scriba-animation.css",
+            "scriba-embed.css",
             "scriba-standalone.css",
         ),
     ]
