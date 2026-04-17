@@ -1,0 +1,21 @@
+% Regression: Stack cell width must NOT shrink when widest item is popped.
+% Step 2 pushes a wide item; step 3 pops it.
+% Before fix: _compute_cell_width rescanned current items -> shrinks.
+% After fix: monotonic max(self._cell_width, ...) keeps cell width.
+
+\begin{animation}[id="stack-shrink", label="Stack shrink-width regression"]
+\shape{s}{Stack}{items=["a","b"]}
+
+\step
+\narrate{Step 1: narrow stack.}
+
+\step
+\apply{s}{push="WIDE-PAYLOAD-HERE"}
+\recolor{s.item[2]}{state=current}
+\narrate{Step 2: push wide item. Cell width grows.}
+
+\step
+\apply{s}{pop=1}
+\recolor{s.item[1]}{state=current}
+\narrate{Step 3: pop wide item. Cell width must NOT shrink.}
+\end{animation}

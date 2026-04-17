@@ -111,14 +111,16 @@ class LinkedList(PrimitiveBase):
     # ----- layout helpers --------------------------------------------------
 
     def _recalc_widths(self) -> None:
-        """Recompute dynamic node widths from current values."""
+        """Recompute dynamic node widths from current values (monotonic)."""
         if self.values:
-            self._value_width = max(
+            current = max(
                 _VALUE_WIDTH_MIN,
                 max(estimate_text_width(str(v), 14) + 12 for v in self.values),
             )
         else:
-            self._value_width = _VALUE_WIDTH_MIN
+            current = _VALUE_WIDTH_MIN
+        # Monotonic: never shrink so bounding_box stays valid across frames
+        self._value_width = max(getattr(self, "_value_width", _VALUE_WIDTH_MIN), current)
         self._node_width = self._value_width + _PTR_WIDTH
         self._arrowhead_size = max(4, min(8, _LINK_GAP // 4))
 

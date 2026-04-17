@@ -154,8 +154,8 @@ class Stack(PrimitiveBase):
             for _ in range(min(count, len(self.items))):
                 self.items.pop()
 
-        # Recalculate after any push/pop
-        self._cell_width = self._compute_cell_width()
+        # Recalculate after any push/pop (monotonic: never shrink)
+        self._cell_width = max(self._cell_width, self._compute_cell_width())
 
     # ----- Primitive interface ---------------------------------------------
 

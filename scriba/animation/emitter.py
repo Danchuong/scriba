@@ -220,9 +220,18 @@ def _prescan_value_widths(
     # so it is preserved across the snapshot restore.
     import copy as _copy
     snapshots: dict[str, dict[str, str]] = {}
+    cell_snapshots: dict[str, list] = {}
+    bucket_snapshots: dict[str, dict] = {}
+    values_snapshots: dict[str, list] = {}
     for shape_name, prim in primitives.items():
         if hasattr(prim, "_values") and isinstance(prim._values, dict):
             snapshots[shape_name] = _copy.copy(prim._values)
+        if hasattr(prim, "cells") and isinstance(prim.cells, list):
+            cell_snapshots[shape_name] = list(prim.cells)
+        if hasattr(prim, "_bucket_values") and isinstance(prim._bucket_values, dict):
+            bucket_snapshots[shape_name] = dict(prim._bucket_values)
+        if hasattr(prim, "values") and isinstance(prim.values, list):
+            values_snapshots[shape_name] = list(prim.values)
 
     for frame in frames:
         for shape_name, prim in primitives.items():
@@ -250,6 +259,16 @@ def _prescan_value_widths(
         prim = primitives[shape_name]
         prim._values.clear()
         prim._values.update(snap)
+    for shape_name, snap in cell_snapshots.items():
+        prim = primitives[shape_name]
+        prim.cells[:] = snap
+    for shape_name, snap in bucket_snapshots.items():
+        prim = primitives[shape_name]
+        prim._bucket_values.clear()
+        prim._bucket_values.update(snap)
+    for shape_name, snap in values_snapshots.items():
+        prim = primitives[shape_name]
+        prim.values[:] = snap
 
 
 def compute_viewbox(
@@ -784,6 +803,8 @@ def emit_substory_html(
 
     # Use substory's own primitives if available, otherwise fall back to parent
     sub_primitives = substory.primitives if substory.primitives else primitives
+    if substory.primitives:
+        _prescan_value_widths(substory.frames, sub_primitives)
     sub_viewbox = compute_viewbox(sub_primitives) if substory.primitives else viewbox
 
     # Build JSON frame data for substory (stored in data attribute)
@@ -955,6 +976,8 @@ def emit_interactive_html(
         if frame.substories:
             for sub in frame.substories:
                 sub_prims = sub.primitives if sub.primitives else primitives
+                if sub.primitives:
+                    _prescan_value_widths(sub.frames, sub_prims)
                 sub_vb = compute_viewbox(sub_prims) if sub.primitives else viewbox
                 for sub_frame in sub.frames:
                     sub_svg = _emit_frame_svg(
@@ -1525,6 +1548,7 @@ def emit_diagram_html(
             f'</figure>'
         )
 
+    _prescan_value_widths(frames, primitives)
     viewbox = compute_viewbox(primitives)
     frame = frames[0]
     svg_html = _emit_frame_svg(frame, primitives, scene_id, viewbox, render_inline_tex)

@@ -1,0 +1,27 @@
+% Regression: pre-scan must NOT pollute initial display state.
+% Queue.cells, HashMap._bucket_values, LinkedList.values all overridden
+% set_value paths. Snapshot/restore must keep frame 1 visually empty.
+
+\begin{animation}[id="prescan-no-pollution", label="Pre-scan must not pollute step 1"]
+\shape{q}{Queue}{capacity=4, label="$Q$"}
+\shape{hm}{HashMap}{capacity=3, label="$map$"}
+\shape{ll}{LinkedList}{data=[0,0,0], label="list"}
+
+\step
+\narrate{Step 1: Queue empty, HashMap empty, LinkedList shows initial zeros.}
+
+\step
+\apply{q.cell[0]}{value="alpha"}
+\apply{hm.bucket[1]}{value="key:value-long-string"}
+\apply{ll.node[1]}{value="WIDE-PAYLOAD"}
+\recolor{q.cell[0]}{state=current}
+\recolor{hm.bucket[1]}{state=current}
+\recolor{ll.node[1]}{state=current}
+\narrate{Step 2: values applied. Width grows for prescan, but step 1 must NOT pre-show these values.}
+
+\step
+\apply{q.cell[0]}{value="z"}
+\apply{hm.bucket[1]}{value="x"}
+\apply{ll.node[1]}{value="y"}
+\narrate{Step 3: values shrunk. ViewBox must remain at widest (step 2).}
+\end{animation}

@@ -1,0 +1,29 @@
+% Regression: emit_substory_html now invokes _prescan_value_widths.
+% Substory contains its own VariableWatch primitive whose value widens
+% inside the substory frames. Substory viewBox must accommodate it.
+
+\begin{animation}[id="substory-prescan"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\narrate{Outer step 1.}
+
+\substory[title="Inner detail"]
+\shape{vars}{VariableWatch}{names=["k"], label="Inner"}
+
+\step
+\apply{vars.var[k]}{value="long-value-that-widens-the-column-in-substory"}
+\recolor{vars.var[k]}{state=current}
+\narrate{Inner step: widen inside substory.}
+
+\step
+\apply{vars.var[k]}{value="x"}
+\recolor{vars.var[k]}{state=good}
+\narrate{Inner step: shrink. Substory viewBox must stay wide.}
+\endsubstory
+
+\step
+\recolor{a.cell[0]}{state=done}
+\narrate{Outer step 2.}
+\end{animation}

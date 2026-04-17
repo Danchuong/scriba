@@ -101,6 +101,9 @@ class HashMap(PrimitiveBase):
             i: "" for i in range(self.capacity)
         }
 
+        # Monotonic max: never shrinks so bounding_box stays valid across frames
+        self._max_entries_col_width: int = _MIN_ENTRIES_COL_WIDTH
+
     # ----- dynamic column widths ------------------------------------------
 
     def _index_col_width(self) -> int:
@@ -111,8 +114,8 @@ class HashMap(PrimitiveBase):
         needed = estimate_text_width(str(max_idx), font_size=int(_INDEX_FONT_SIZE)) + 16
         return max(_MIN_INDEX_COL_WIDTH, needed)
 
-    def _entries_col_width(self) -> int:
-        """Compute entries column width from the longest bucket value."""
+    def _compute_entries_col_width(self) -> int:
+        """Pure scan: compute entries column width from the longest bucket value."""
         max_text_w = 0
         for value in self._bucket_values.values():
             if value:
@@ -124,7 +127,7 @@ class HashMap(PrimitiveBase):
 
     def _panel_width(self) -> int:
         """Total width of the index + entries columns."""
-        return self._index_col_width() + self._entries_col_width()
+        return self._index_col_width() + self._max_entries_col_width
 
     # ----- apply commands --------------------------------------------------
 
@@ -146,6 +149,10 @@ class HashMap(PrimitiveBase):
                 idx = int(m.group("idx"))
                 if 0 <= idx < self.capacity and "value" in params:
                     self._bucket_values[idx] = str(params["value"])
+                    self._max_entries_col_width = max(
+                        self._max_entries_col_width,
+                        self._compute_entries_col_width(),
+                    )
                 return
 
     def set_value(self, suffix: str, value: str) -> None:
@@ -155,6 +162,10 @@ class HashMap(PrimitiveBase):
             idx = int(m.group("idx"))
             if 0 <= idx < self.capacity:
                 self._bucket_values[idx] = value
+                self._max_entries_col_width = max(
+                    self._max_entries_col_width,
+                    self._compute_entries_col_width(),
+                )
 
     # ----- Primitive interface ---------------------------------------------
 
@@ -186,7 +197,7 @@ class HashMap(PrimitiveBase):
             idx = int(m.group("idx"))
             if 0 <= idx < self.capacity:
                 index_col_w = self._index_col_width()
-                entries_col_w = self._entries_col_width()
+                entries_col_w = self._max_entries_col_width
                 cx = _PADDING + index_col_w + entries_col_w / 2
                 cy = _PADDING + idx * _ROW_HEIGHT + _ROW_HEIGHT / 2
                 return (cx, cy)
@@ -212,7 +223,7 @@ class HashMap(PrimitiveBase):
         self, *, render_inline_tex: Callable[[str], str] | None = None
     ) -> str:
         index_col_w = self._index_col_width()
-        entries_col_w = self._entries_col_width()
+        entries_col_w = self._max_entries_col_width
         total_w = index_col_w + entries_col_w
 
         effective_anns = self._annotations

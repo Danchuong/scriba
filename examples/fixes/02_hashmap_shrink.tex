@@ -1,0 +1,21 @@
+% Regression: HashMap entries column width must NOT shrink across frames.
+% Step 2 fills a bucket with a long collision chain; step 3 clears it.
+% Before fix: _entries_col_width() rescanned live -> narrow viewBox -> step 2 overflows.
+% After fix: monotonic _max_entries_col_width preserves widest historical width.
+
+\begin{animation}[id="hm-shrink", label="HashMap shrink-width regression"]
+\shape{hm}{HashMap}{capacity=4, label="$map$"}
+
+\step
+\narrate{Step 1: empty map.}
+
+\step
+\apply{hm.bucket[0]}{value="cat:3 -> car:7 -> cup:11 -> cab:42"}
+\recolor{hm.bucket[0]}{state=error}
+\narrate{Step 2: long collision chain in bucket 0.}
+
+\step
+\apply{hm.bucket[0]}{value="x"}
+\recolor{hm.bucket[0]}{state=good}
+\narrate{Step 3: bucket cleared to short value. ViewBox must stay wide.}
+\end{animation}

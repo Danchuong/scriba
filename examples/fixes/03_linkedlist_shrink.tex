@@ -1,0 +1,21 @@
+% Regression: LinkedList node value-width must NOT shrink across frames.
+% Step 2 widens a node value; step 3 narrows it.
+% Before fix: _recalc_widths reassigned _value_width from current values -> shrinks.
+% After fix: monotonic max(self._value_width, candidate) preserves max width.
+
+\begin{animation}[id="ll-shrink", label="LinkedList shrink-width regression"]
+\shape{ll}{LinkedList}{data=[1,2,3], label="list"}
+
+\step
+\narrate{Step 1: small values.}
+
+\step
+\apply{ll.node[1]}{value="a-very-long-payload-string"}
+\recolor{ll.node[1]}{state=current}
+\narrate{Step 2: node 1 widened. ViewBox must accommodate it.}
+
+\step
+\apply{ll.node[1]}{value="z"}
+\recolor{ll.node[1]}{state=done}
+\narrate{Step 3: node 1 shrunk back. ViewBox must stay wide.}
+\end{animation}
