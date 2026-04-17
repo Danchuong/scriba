@@ -37,7 +37,8 @@
 
   /* Stage (SVG container) */
   --scriba-stage-padding:          1.5rem 1rem;
-  --scriba-stage-bg:               var(--scriba-bg-code);
+  /* L3 fix: --scriba-stage-bg removed — defined but never applied anywhere.
+     The stage background is inherited from .scriba-widget; see scriba-embed.css. */
 
   /* Narration */
   --scriba-narration-font-size:    0.92rem;
@@ -90,7 +91,13 @@
    State color tokens — β "Tonal Architecture"
    Radix slate + blue. Signal states (current/error/good/highlight)
    carry meaning via stroke color and a thicker stroke, not a saturated
-   fill. WCAG AA verified in /tmp/scriba-cell-mockups-v2.html.
+   fill.
+
+   WCAG AA contrast ratios (verified 2026-04-17):
+     current  — #ffffff on #0070d5 → 4.91:1 ✓ AA (was #0090ff → 3.26:1 ✗)
+     path     — #5e6669 on #e6e8eb → 4.78:1 ✓ AA (was #687076 → 4.10:1 ✗)
+     dim      — #687076 on #f1f3f5 → 4.53:1 ✓ AA (unchanged)
+     idle/done/error/good/highlight — dark text on light fill, all >> 4.5:1
    ============================================ */
 
 :root {
@@ -98,7 +105,8 @@
   --scriba-state-idle-stroke:      #dfe3e6;
   --scriba-state-idle-text:        #11181c;
 
-  --scriba-state-current-fill:     #0090ff;
+  /* C3 fix: darkened from #0090ff (3.26:1) to #0070d5 (4.91:1) with white */
+  --scriba-state-current-fill:     #0070d5;
   --scriba-state-current-stroke:   #0b68cb;
   --scriba-state-current-text:     #ffffff;
 
@@ -122,15 +130,22 @@
   --scriba-state-highlight-stroke: #0090ff;
   --scriba-state-highlight-text:   #0b68cb;
 
+  /* path fix: text darkened from #687076 (4.10:1) to #5e6669 (4.78:1) on #e6e8eb */
   --scriba-state-path-fill:        #e6e8eb;
   --scriba-state-path-stroke:      #c1c8cd;
-  --scriba-state-path-text:        #687076;
+  --scriba-state-path-text:        #5e6669;
 
-  /* Annotation color tokens — aligned with β palette. */
+  /* Annotation color tokens — aligned with β palette.
+     Arrow/label text colors are used against the white pill background
+     (fill-opacity: 0.92). Verified WCAG AA on white (2026-04-17):
+       muted  #687076 → 5.04:1 ✓   info   #0b68cb → 5.45:1 ✓
+       good   #2a7e3b → 5.07:1 ✓   warn   #92600a → 5.38:1 ✓
+       error  #c6282d → 5.61:1 ✓
+     Warn darkened from #f5a524 (2.04:1 ✗); error darkened from #e5484d (3.91:1 ✗). */
   --scriba-annotation-info:        #0b68cb;
-  --scriba-annotation-warn:        #f5a524;
+  --scriba-annotation-warn:        #92600a;
   --scriba-annotation-good:        #2a7e3b;
-  --scriba-annotation-error:       #e5484d;
+  --scriba-annotation-error:       #c6282d;
   --scriba-annotation-path:        #0b68cb;
   --scriba-annotation-muted:       var(--scriba-fg-muted);
 }
@@ -535,8 +550,14 @@
 
 /* ============================================
    Dark mode — β "Tonal Architecture" dark variant
+
+   H6 fix: wrapped in a mixin-style ruleset and applied to both
+   [data-theme="dark"] (explicit toggle) AND
+   @media (prefers-color-scheme: dark) :root:not([data-theme="light"])
+   so the OS preference is honoured unless the user explicitly chose light.
    ============================================ */
 
+/* -- Explicit data-theme="dark" toggle ------------------------------------ */
 [data-theme="dark"] {
   /* Base token overrides for dark mode */
   --scriba-fg:                 #ecedee;
@@ -553,7 +574,8 @@
   --scriba-state-idle-stroke:      #313538;
   --scriba-state-idle-text:        #ecedee;
 
-  --scriba-state-current-fill:     #0090ff;
+  /* C3 dark: keep #0070d5 fill so white text stays ≥ 4.91:1 in dark mode too */
+  --scriba-state-current-fill:     #0070d5;
   --scriba-state-current-stroke:   #70b8ff;
   --scriba-state-current-text:     #ffffff;
 
@@ -579,12 +601,13 @@
 
   --scriba-state-path-fill:        #2b2f31;
   --scriba-state-path-stroke:      #4c5155;
+  /* path text: #9ba1a6 on #2b2f31 → passes WCAG AA in dark mode */
   --scriba-state-path-text:        #9ba1a6;
 
-  /* Layout surface overrides */
-  --scriba-stage-bg:           var(--scriba-bg-code);
-
-  /* Annotation tokens — dark variant */
+  /* Annotation tokens — dark variant.
+     Arrow/label colors are used on the dark pill background (#1a1d1e / #151718).
+     warn #ffc53d on #1a1d1e → 10.74:1 ✓  error #ff6369 → 5.85:1 ✓
+     info #70b8ff → 8.07:1 ✓  good #65ba74 → 7.13:1 ✓  muted #9ba1a6 → 6.49:1 ✓ */
   --scriba-annotation-info:    #70b8ff;
   --scriba-annotation-warn:    #ffc53d;
   --scriba-annotation-good:    #65ba74;
@@ -593,8 +616,89 @@
   --scriba-annotation-muted:   var(--scriba-fg-muted);
 }
 
+/* -- H6 fix: OS-level dark mode preference -------------------------------- */
+/* Applies the same dark tokens when the OS prefers dark mode, UNLESS the
+   user has explicitly chosen light via data-theme="light". */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --scriba-fg:                 #ecedee;
+    --scriba-fg-muted:           #9ba1a6;
+    --scriba-bg:                 #151718;
+    --scriba-bg-code:            #1a1d1e;
+    --scriba-border:             #313538;
+    --scriba-link:               #70b8ff;
+
+    --scriba-state-idle-fill:        #1a1d1e;
+    --scriba-state-idle-stroke:      #313538;
+    --scriba-state-idle-text:        #ecedee;
+
+    --scriba-state-current-fill:     #0070d5;
+    --scriba-state-current-stroke:   #70b8ff;
+    --scriba-state-current-text:     #ffffff;
+
+    --scriba-state-done-fill:        #2b2f31;
+    --scriba-state-done-stroke:      #4c5155;
+    --scriba-state-done-text:        #ecedee;
+
+    --scriba-state-dim-fill:         #202425;
+    --scriba-state-dim-stroke:       #2b2f31;
+    --scriba-state-dim-text:         #9ba1a6;
+
+    --scriba-state-error-fill:       #1a1d1e;
+    --scriba-state-error-stroke:     #ff6369;
+    --scriba-state-error-text:       #ecedee;
+
+    --scriba-state-good-fill:        #2b2f31;
+    --scriba-state-good-stroke:      #65ba74;
+    --scriba-state-good-text:        #ecedee;
+
+    --scriba-state-highlight-fill:   #1a1d1e;
+    --scriba-state-highlight-stroke: #0090ff;
+    --scriba-state-highlight-text:   #70b8ff;
+
+    --scriba-state-path-fill:        #2b2f31;
+    --scriba-state-path-stroke:      #4c5155;
+    --scriba-state-path-text:        #9ba1a6;
+
+    --scriba-annotation-info:    #70b8ff;
+    --scriba-annotation-warn:    #ffc53d;
+    --scriba-annotation-good:    #65ba74;
+    --scriba-annotation-error:   #ff6369;
+    --scriba-annotation-path:    #70b8ff;
+    --scriba-annotation-muted:   var(--scriba-fg-muted);
+  }
+}
+
+/* H5 fix: arrowhead polygons and label pill rects are not <path>/<line>/<text>
+   elements so the per-category annotation color rules above don't reach them.
+   Explicit dark-mode overrides: polygon fill matches the arrow stroke color;
+   rect fill flips to the dark background so the pill blends with dark surfaces. */
+
+/* -- Explicit data-theme="dark" overrides ---------------------------------- */
+[data-theme="dark"] .scriba-annotation-info  > polygon { fill: #70b8ff; }
+[data-theme="dark"] .scriba-annotation-warn  > polygon { fill: #ffc53d; }
+[data-theme="dark"] .scriba-annotation-good  > polygon { fill: #65ba74; }
+[data-theme="dark"] .scriba-annotation-error > polygon { fill: #ff6369; }
+[data-theme="dark"] .scriba-annotation-muted > polygon { fill: #9ba1a6; }
+[data-theme="dark"] .scriba-annotation-path  > polygon { fill: #70b8ff; }
+[data-theme="dark"] .scriba-annotation        > rect    { fill: #1a1d1e; }
+
+/* -- OS preference dark-mode overrides (H6) -------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-annotation-info  > polygon { fill: #70b8ff; }
+  :root:not([data-theme="light"]) .scriba-annotation-warn  > polygon { fill: #ffc53d; }
+  :root:not([data-theme="light"]) .scriba-annotation-good  > polygon { fill: #65ba74; }
+  :root:not([data-theme="light"]) .scriba-annotation-error > polygon { fill: #ff6369; }
+  :root:not([data-theme="light"]) .scriba-annotation-muted > polygon { fill: #9ba1a6; }
+  :root:not([data-theme="light"]) .scriba-annotation-path  > polygon { fill: #70b8ff; }
+  :root:not([data-theme="light"]) .scriba-annotation        > rect    { fill: #1a1d1e; }
+}
+
 /* Index labels use a hardcoded fill in light mode; flip for dark. */
 [data-theme="dark"] .idx { fill: #9ba1a6; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .idx { fill: #9ba1a6; }
+}
 
 /* ============================================
    Focus indicator (interactive widget)

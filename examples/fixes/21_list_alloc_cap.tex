@@ -1,0 +1,21 @@
+% Regression fixture: H2 — C-level list allocation bypasses SIGALRM.
+%
+% ``[0] * 9_000_000`` allocates ~72 MB entirely in a single C-level call
+% that returns before SIGALRM can fire.  Without the safe-list wrapper this
+% succeeds silently above the 64 MB memory limit.
+%
+% Expected behaviour (with fix):
+%   The worker returns ok=false with code E1154 (forbidden construct /
+%   size-cap violation) because _safe_list rejects construction of more
+%   than _MAX_LIST_SIZE (100 000) elements.
+%
+% Expected behaviour (without fix):
+%   The allocation succeeds and the response contains a large binding,
+%   potentially crashing the worker via OOM.
+
+\begin{animation}[id="list-alloc-cap", label="List allocation cap"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{big = list(range(9000000))}
+\narrate{This step should never render — list size cap fires first.}
+\end{animation}

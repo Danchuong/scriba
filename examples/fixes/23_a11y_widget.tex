@@ -1,0 +1,31 @@
+% Accessibility fix regression fixture (issue 23).
+% Verifies: role="region", aria-label, aria-hidden on progress dots,
+% substory arrow-key bubbling guard, and live prefers-reduced-motion.
+
+\begin{animation}[id="a11y-widget", label="Accessibility test animation"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\narrate{Step 1: highlight the first element.}
+
+\substory[title="Sub-computation: element 0"]
+\shape{sub}{Array}{size=2, data=[1,2]}
+
+\step
+\highlight{sub.cell[0]}
+\narrate{Sub-step 1: inspect left sub-element.}
+
+\step
+\recolor{sub.all}{state=done}
+\narrate{Sub-step 2: sub-computation complete.}
+\endsubstory
+
+\step
+\recolor{a.cell[0]}{state=done}
+\narrate{Step 2: element 0 processed.}
+
+\step
+\recolor{a.cell[1]}{state=current}
+\narrate{Step 3: highlight the second element.}
+\end{animation}

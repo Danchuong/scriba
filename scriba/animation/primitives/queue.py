@@ -14,6 +14,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
+    CELL_1D_RE,
     CELL_GAP,
     CELL_HEIGHT,
     CELL_WIDTH,
@@ -46,13 +47,14 @@ _LABEL_PADDING = 20  # horizontal padding for pointer labels extending beyond ce
 # Selector regexes (suffix-only, without shape name prefix)
 # ---------------------------------------------------------------------------
 
+# Suffix-only regexes — local, no base.py equivalent.
 _CELL_RE = re.compile(r"^cell\[(?P<idx>\d+)\]$")
 _FRONT_RE = re.compile(r"^front$")
 _REAR_RE = re.compile(r"^rear$")
 _ALL_RE = re.compile(r"^all$")
 
-# Full-qualified selector regex (with shape name prefix) for annotation points
-_FULL_CELL_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
+# Full-qualified selector regex (with shape name prefix) — canonical from base.py.
+_FULL_CELL_RE = CELL_1D_RE
 
 
 def _is_truthy_flag(value: Any) -> bool:

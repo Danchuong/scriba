@@ -679,3 +679,183 @@ class TestErrorCatalogMergeGuards:
             assert isinstance(code, str)
             assert isinstance(detail, str)
             assert detail, f"empty detail for {code}"
+
+
+# ---------------------------------------------------------------------------
+# Catalog parity — every production-raised E-code must be in ERROR_CATALOG
+# and in the user-facing spec markdown.
+# ---------------------------------------------------------------------------
+
+#: Complete set of E-codes that production code raises (raise sites
+#: verified against scriba/ source as of 2026-04-17 audit).  Add new
+#: codes here whenever a new raise site is introduced so this test keeps
+#: the guarantee tight.
+_PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
+    {
+        # Detection / structural
+        "E1001",
+        "E1003",
+        "E1004",
+        "E1005",
+        "E1006",
+        "E1007",
+        "E1009",
+        "E1010",
+        "E1011",
+        "E1012",
+        "E1013",
+        # Uniqueness (W6.4) — uniqueness.py + pipeline.py
+        "E1017",
+        "E1018",
+        "E1019",
+        # Diagram / substory parser
+        "E1050",
+        "E1051",
+        "E1052",
+        "E1053",
+        "E1054",
+        "E1055",
+        "E1056",
+        "E1057",
+        # Parse / validation
+        "E1100",
+        "E1102",
+        "E1103",
+        "E1109",
+        "E1112",
+        "E1113",
+        "E1114",
+        "E1115",
+        "E1116",
+        # Render (KaTeX) — tex/renderer.py
+        "E1200",
+        # Starlark sandbox
+        "E1150",
+        "E1151",
+        "E1152",
+        "E1153",
+        "E1154",
+        "E1155",
+        # Foreach
+        "E1170",
+        "E1171",
+        "E1172",
+        "E1173",
+        # Frame / cursor
+        "E1180",
+        "E1181",
+        "E1182",
+        # Substory
+        "E1360",
+        "E1361",
+        "E1362",
+        "E1365",
+        "E1366",
+        "E1368",
+        # Array
+        "E1400",
+        "E1401",
+        "E1402",
+        # Grid
+        "E1410",
+        "E1411",
+        "E1412",
+        # Matrix / DPTable
+        "E1420",
+        "E1421",
+        "E1422",
+        "E1425",
+        "E1426",
+        "E1427",
+        "E1428",
+        "E1429",
+        # Tree init + mutation (W6.1)
+        "E1430",
+        "E1431",
+        "E1432",
+        "E1433",
+        "E1434",
+        "E1435",
+        "E1436",
+        # Plane2D remove (W6.5)
+        "E1437",
+        # Queue / Stack
+        "E1440",
+        "E1441",
+        # HashMap / NumberLine
+        "E1450",
+        "E1451",
+        "E1452",
+        "E1453",
+        "E1454",
+        # Plane2D
+        "E1460",
+        "E1461",
+        "E1462",
+        "E1463",
+        "E1465",
+        "E1466",
+        # Graph primitive mutation (W6.2)
+        "E1470",
+        "E1471",
+        "E1472",
+        "E1473",
+        "E1474",
+        # MetricPlot
+        "E1480",
+        "E1481",
+        "E1483",
+        "E1484",
+        "E1485",
+        "E1486",
+        "E1487",
+        # Graph layout
+        "E1500",
+        "E1501",
+        "E1502",
+        "E1503",
+        "E1504",
+        "E1505",
+    }
+)
+
+
+class TestCatalogParity:
+    """Regression guard: every production-raised E-code must appear in both
+    ERROR_CATALOG (errors.py) and the user-facing spec markdown
+    (docs/spec/error-codes.md).
+
+    The audit (2026-04-17) found 15 codes raised in production that were
+    absent from the spec.  This test prevents the gap from widening silently.
+
+    To add a new raise site:
+    1. Add the code string to ``_PRODUCTION_RAISED_CODES`` above.
+    2. Add an entry to ``ERROR_CATALOG`` in ``scriba/animation/errors.py``.
+    3. Add a row to the appropriate section of ``docs/spec/error-codes.md``.
+    """
+
+    @pytest.mark.parametrize("code", sorted(_PRODUCTION_RAISED_CODES))
+    def test_production_code_in_error_catalog(self, code: str) -> None:
+        """Every production-raised code must have an ERROR_CATALOG entry."""
+        assert code in ERROR_CATALOG, (
+            f"{code} is raised in production but has no entry in ERROR_CATALOG. "
+            f"Add it to scriba/animation/errors.py ERROR_CATALOG."
+        )
+
+    @pytest.mark.parametrize("code", sorted(_PRODUCTION_RAISED_CODES))
+    def test_production_code_in_spec_markdown(self, code: str) -> None:
+        """Every production-raised code must appear in the user-facing spec."""
+        import pathlib
+
+        spec_path = (
+            pathlib.Path(__file__).parent.parent.parent
+            / "docs"
+            / "spec"
+            / "error-codes.md"
+        )
+        spec_text = spec_path.read_text(encoding="utf-8")
+        assert f"| {code} |" in spec_text, (
+            f"{code} is raised in production and has an ERROR_CATALOG entry "
+            f"but is missing from docs/spec/error-codes.md. "
+            f"Add a row to the appropriate section."
+        )

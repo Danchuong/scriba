@@ -8,16 +8,22 @@ HTML files are fully self-contained.
 from __future__ import annotations
 
 import base64
+import functools
 import re
 from importlib.resources import files
 
 
+@functools.lru_cache(maxsize=None)
 def load_css(*names: str) -> str:
     """Read and concatenate CSS files from scriba packages.
 
     Each *name* is a bare filename.  Files whose name starts with
     ``"scriba-tex"`` are resolved from :mod:`scriba.tex.static`;
     everything else comes from :mod:`scriba.animation.static`.
+
+    Results are cached for the lifetime of the process — the static
+    CSS assets do not change at runtime, so repeated calls with the
+    same file list are free after the first load.
     """
 
     parts: list[str] = []
@@ -30,12 +36,18 @@ def load_css(*names: str) -> str:
     return "\n".join(parts)
 
 
+@functools.lru_cache(maxsize=None)
 def inline_katex_css() -> str:
     """Return vendored KaTeX CSS with all font urls replaced by data URIs.
 
     Reads ``scriba/tex/vendor/katex/katex.min.css`` and replaces every
     ``url(fonts/KaTeX_*.woff2)`` reference (with or without quotes) with
     an inline ``data:font/woff2;base64,...`` URI.
+
+    Results are cached for the lifetime of the process — the KaTeX
+    vendor assets do not change at runtime.  The first call performs
+    the full read + base64 encoding; subsequent calls return the cached
+    string instantly.
     """
 
     katex_root = files("scriba.tex") / "vendor" / "katex"

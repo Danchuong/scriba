@@ -1,0 +1,13 @@
+% Regression fixture: XSS via malicious filename in <title> and <h1>.
+% This file is rendered with a filename containing HTML special characters
+% (e.g. "<img src=x onerror=alert(1)>") to verify the output is properly
+% HTML-escaped. See test_xss.sh for the invocation.
+%
+% Expected: the rendered HTML contains &lt;img rather than <img in the title/h1.
+
+\begin{animation}[id="xss-fixture", label="XSS filename regression"]
+\shape{a}{Array}{size=1, data=[1]}
+
+\step
+\narrate{Only step.}
+\end{animation}

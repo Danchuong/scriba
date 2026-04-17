@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import argparse
 import base64
+import html
 import json
 import mimetypes
+import os
 import sys
 import webbrowser
 from pathlib import Path
@@ -102,7 +104,7 @@ def render_file(
     minify: bool = True,
 ) -> None:
     source = input_path.read_text()
-    title = input_path.stem
+    title = html.escape(input_path.stem)  # C2: prevent XSS via malicious filename
 
     from scriba.animation.detector import detect_animation_blocks, detect_diagram_blocks
     from scriba.animation.renderer import DiagramRenderer
@@ -240,6 +242,17 @@ def main():
         sys.exit(1)
 
     output = args.output or args.input.with_suffix(".html")
+
+    # H1: prevent path traversal via -o flag unless opt-out env var is set
+    if args.output and not os.environ.get("SCRIBA_ALLOW_ANY_OUTPUT"):
+        resolved = Path(args.output).resolve()
+        cwd = Path.cwd().resolve()
+        try:
+            resolved.relative_to(cwd)
+        except ValueError:
+            print(f"refusing to write outside cwd: {resolved}", file=sys.stderr)
+            sys.exit(1)
+
     output_mode = "static" if args.static else "interactive"
     render_file(
         args.input, output,

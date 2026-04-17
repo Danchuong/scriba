@@ -280,5 +280,6 @@ class TestEmitPlainArrowSvg:
             dst_point=(30.0, 0.0),
         )
         svg = "\n".join(lines)
-        # ARROW_STYLES["error"]["stroke"] == "#dc2626"
-        assert "#dc2626" in svg
+        # ARROW_STYLES["error"]["stroke"] == "#c6282d" (darkened from #dc2626
+        # for WCAG AA: 5.61:1 on white pill, was 4.83:1 which failed AA)
+        assert "#c6282d" in svg

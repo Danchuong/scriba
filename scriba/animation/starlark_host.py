@@ -10,12 +10,14 @@ from __future__ import annotations
 import logging
 import platform
 import sys
+import time
 import uuid
 import warnings
 from typing import Any
 
 from scriba.core.errors import WorkerError
 from scriba.core.workers import SubprocessWorkerPool
+from scriba.animation import starlark_worker as _starlark_worker_module
 
 logger = logging.getLogger(__name__)
 
@@ -145,6 +147,9 @@ class StarlarkHost:
             preexec_fn=_starlark_preexec,
         )
         self._pool = worker_pool
+        # Track whether the cumulative budget has been reset for this
+        # render session. Reset happens lazily on the first eval() call.
+        self._budget_reset_done: bool = False
 
     def eval(
         self,
@@ -176,6 +181,13 @@ class StarlarkHost:
             On transport failure, timeout, or if the worker returns an
             error response.
         """
+        # C1 fix: reset the cumulative budget on the first eval() call of
+        # each StarlarkHost session so that budgets from a previous render
+        # (sharing the same module-level state) do not bleed through.
+        if not self._budget_reset_done:
+            _starlark_worker_module.reset_cumulative_budget()
+            self._budget_reset_done = True
+
         request_id = uuid.uuid4().hex[:10]
         request = {
             "op": "eval",
@@ -185,12 +197,28 @@ class StarlarkHost:
         }
 
         worker = self._pool.get("starlark")
+        t_start = time.monotonic()
         response = worker.send(request, timeout=timeout)
+        elapsed = time.monotonic() - t_start
 
         if not response.get("ok", False):
             code = response.get("code", "E1151")
             message = response.get("message", "unknown starlark error")
             raise WorkerError(message, code=code)
+
+        # C1 fix: charge the wall-clock time of this block against the
+        # cumulative budget.  consume_cumulative_budget() raises an
+        # AnimationError(E1152) when the total exceeds _CUMULATIVE_BUDGET_SECONDS.
+        # Convert to WorkerError so callers get the same error type as other
+        # sandbox violations.
+        from scriba.core.errors import ScribaError  # avoid circular at module level
+        try:
+            _starlark_worker_module.consume_cumulative_budget(elapsed)
+        except ScribaError as exc:
+            raise WorkerError(
+                exc._raw_message,
+                code=getattr(exc, "code", "E1152") or "E1152",
+            ) from exc
 
         return response.get("bindings", {})
 
@@ -205,6 +233,12 @@ class StarlarkHost:
 
         Useful when the caller needs access to ``debug`` output or wants
         to inspect the ``ok`` field without catching exceptions.
+
+        .. deprecated::
+            ``eval_raw`` has no internal callers and is not part of the
+            stable Scriba public API.  It is scheduled for removal in a
+            future release.  Use :meth:`eval` instead; if you need the
+            raw worker response, file an issue describing your use-case.
         """
         request_id = uuid.uuid4().hex[:10]
         request = {

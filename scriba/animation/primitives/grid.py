@@ -10,6 +10,8 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
+    ALL_RE,
+    CELL_2D_RE,
     CELL_GAP,
     CELL_HEIGHT,
     CELL_WIDTH,
@@ -77,12 +79,11 @@ def _flatten_2d(raw: Any, rows: int, cols: int) -> list[Any]:
 # Selector matching
 # ---------------------------------------------------------------------------
 
-_CELL_2D_RE = re.compile(
-    r"^(?P<name>\w+)\.cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$"
-)
-_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+# Full-qualified selectors (with shape name prefix) — canonical from base.py.
+_CELL_2D_RE = CELL_2D_RE
+_ALL_RE = ALL_RE
 
-# Suffix-only regex (no shape name prefix)
+# Suffix-only regex (no shape name prefix) — local, no base.py equivalent.
 _SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
 
 

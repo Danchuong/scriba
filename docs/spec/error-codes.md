@@ -7,21 +7,24 @@
 
 ## Detection / Structural Errors (E10xx)
 
-| Code | Description | Common Fix |
-|------|-------------|------------|
-| E1001 | Unclosed `\begin{animation}` or unbalanced braces/strings/interpolation. | Add matching `\end{animation}` or close the brace/string. |
-| E1003 | Nested `\begin{animation}` or `\begin{diagram}` detected. | Remove the inner environment; nesting is not allowed. |
-| E1004 | Unknown environment or substory option key. | Check spelling; valid keys are `width`, `height`, `id`, `label`, `layout`, `grid`. |
-| E1005 | Invalid option or parameter value. | Check that the value type matches what the key expects. |
-| E1006 | Unknown backslash command. | Use one of the 14 recognized commands (see `ruleset.md` section 2). |
-| E1007 | Expected opening brace `{` after command. | Add the missing `{`. |
-| E1009 | Selector parse error (general). | Check selector syntax against the grammar in `ruleset.md` section 3. |
-| E1010 | Selector parse error: expected number, identifier, or specific character. | Fix the token at the reported position. |
-| E1011 | Unterminated string literal in selector. | Close the string with a matching quote. |
-| E1012 | Unexpected token kind. | Check for typos or misplaced characters in the selector. |
-| E1013 | Source exceeds maximum size limit (1 MB). | Split into smaller animations or reduce content. |
+| Code | Description | Common Cause | Common Fix |
+|------|-------------|--------------|------------|
+| E1001 | Unclosed `\begin{animation}` or unbalanced braces/strings/interpolation. | Missing `\end{animation}` or unclosed `{`. | Add matching `\end{animation}` or close the brace/string. |
+| E1003 | Nested `\begin{animation}` or `\begin{diagram}` detected. | A second `\begin{animation}` appears inside an existing one. | Remove the inner environment; nesting is not allowed. |
+| E1004 | Unknown environment or substory option key. | Typo in an option key such as `[ids=...]` instead of `[id=...]`. | Check spelling; valid keys are `width`, `height`, `id`, `label`, `layout`, `grid`. |
+| E1005 | Invalid option or parameter value. | A value type does not match what the key expects (e.g. string where a number is required). | Check that the value type matches what the key expects. |
+| E1006 | Unknown backslash command. | Typo or use of an unsupported command name. | Use one of the 14 recognized commands (see `ruleset.md` section 2). |
+| E1007 | Expected opening brace `{` after command. | A `\shape` or similar command is missing its argument brace. | Add the missing `{`. |
+| E1009 | Selector parse error (general). | Malformed selector syntax. | Check selector syntax against the grammar in `ruleset.md` section 3. |
+| E1010 | Selector parse error: expected number, identifier, or specific character. | Unexpected character at the reported position in a selector. | Fix the token at the reported position. |
+| E1011 | Unterminated string literal in selector. | A quoted string inside a selector is missing its closing quote. | Close the string with a matching quote. |
+| E1012 | Unexpected token kind. | A token that is syntactically valid in isolation appears in the wrong context. | Check for typos or misplaced characters in the selector. |
+| E1013 | Source exceeds maximum size limit (1 MB). | The `.tex` source file is larger than 1 MiB. | Split into smaller animations or reduce content. |
+| E1017 | Shape id contains invalid characters or exceeds the 63-character limit; allowed charset is `[A-Za-z_][A-Za-z0-9_]{0,62}`. | A `\shape` name contains spaces, hyphens, or non-ASCII letters. | Rename the shape using only ASCII letters, digits, and underscores; start with a letter or underscore. |
+| E1018 | Duplicate shape id within the animation scope — two `\shape` declarations use the same name. | Copy-paste of a shape block without renaming the id argument. | Give each shape a unique id within its `\begin{animation}` block. |
+| E1019 | Duplicate animation id across the document — two `\begin{animation}[id=...]` blocks share the same explicit id. | Two animations in the same `.tex` file were given identical `id=` options. | Use a distinct `id=` for every `\begin{animation}` block in the document. |
 
-## Diagram-Specific Errors (E1050--E1059)
+## Diagram-Specific Errors (E1050--E1057)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
@@ -32,6 +35,7 @@
 | E1054 | `\narrate` is not allowed inside a diagram environment. | Remove `\narrate`; diagrams have no narration. |
 | E1055 | Duplicate `\narrate` in the same step. | Keep only one `\narrate` per step. |
 | E1056 | `\narrate` must be inside a `\step` block. | Move `\narrate` after a `\step`. |
+| E1057 | Mutation command (`\highlight`, `\apply`, or `\recolor`) appears in a substory prelude (before the substory's first `\step`). | Move the command after the first `\step` inside the substory. |
 
 ## Parse / Validation Errors (E11xx)
 
@@ -43,8 +47,15 @@
 | E1109 | Invalid `\recolor` state or missing required state/color parameter. | Use a valid state: idle, current, done, dim, error, good, highlight, path. |
 | E1112 | Unknown annotation position. | Use: above, below, left, right, inside. |
 | E1113 | Invalid or missing annotation color. | Use: info, warn, good, error, muted, path. |
+| E1114 | Unknown keyword parameter passed to a `\shape` primitive. A "did you mean X?" suggestion is included when a close match exists. | Check the parameter name against the primitive's accepted options. |
 | E1115 | Selector does not match any addressable part of the target primitive (warning — command silently dropped). | Check selector syntax against the primitive's addressable parts. |
 | E1116 | Mutation command (`\apply`, `\highlight`, `\recolor`, `\annotate`) references a shape that was never declared with `\shape`. | Add a `\shape` declaration in the animation prelude before the first `\step`, e.g. `\shape{a}{Array}{size=5}`. |
+
+## Render Errors (E1200--E1249)
+
+| Code | Description | Common Cause | Common Fix |
+|------|-------------|--------------|------------|
+| E1200 | KaTeX inline error embedded in rendered output — a math expression could not be parsed by the KaTeX worker. The detail message carries the underlying error title. | A `$...$` or `\[...\]` expression contains invalid LaTeX syntax (unknown command, mismatched braces, etc.). | Fix the LaTeX math expression; check the KaTeX error title for the exact character that caused the failure. |
 
 ## Starlark Sandbox Errors (E1150--E1155)
 
@@ -92,7 +103,7 @@ code per `(primitive, validation)` pair. Existing code that caught
 `E1103` continues to work because catalog entry `E1103` is retained as a
 documented deprecated alias.
 
-### Array (E1400--E1409)
+### Array (E1400--E1402)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
@@ -100,7 +111,7 @@ documented deprecated alias.
 | E1401 | Array `size` out of range; valid: 1..10000. | Pick an integer between 1 and 10000. |
 | E1402 | Array `data` length does not match `size`. | Either drop `data` or ensure `len(data) == size`. |
 
-### Grid (E1410--E1419)
+### Grid (E1410--E1412)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
@@ -121,22 +132,26 @@ documented deprecated alias.
 | E1428 | DPTable `rows`/`cols` must be a positive integer. | Use positive integers for both. |
 | E1429 | DPTable `data` length does not match expected size. | `len(data)` must equal `n` (1D) or `rows*cols` (2D). |
 
-### Tree (E1430--E1439)
+### Tree (E1430--E1437)
 
-| Code | Description | Common Fix |
-|------|-------------|------------|
-| E1430 | Tree requires `root` parameter. | `Tree{t}{root="A", nodes=[...], edges=[...]}`. |
-| E1431 | Tree (kind=segtree) requires `data` parameter. | Supply `data=[v0, v1, ...]` of leaf values. |
-| E1432 | Tree (kind=sparse_segtree) requires `range_lo` and `range_hi`. | Specify the valid index bounds. |
+| Code | Description | Common Cause | Common Fix |
+|------|-------------|--------------|------------|
+| E1430 | Tree requires `root` parameter. | `root=` was omitted from the `\shape` declaration. | `Tree{t}{root="A", nodes=[...], edges=[...]}`. |
+| E1431 | Tree (kind=segtree) requires `data` parameter. | A segment tree was declared without supplying leaf values. | Supply `data=[v0, v1, ...]` of leaf values. |
+| E1432 | Tree (kind=sparse_segtree) requires `range_lo` and `range_hi`. | Index bounds were omitted for a sparse segment tree. | Specify the valid index bounds. |
+| E1433 | `remove_node` targets a node that still has children, and `cascade=true` was not passed. | Attempting to delete a non-leaf node without explicitly requesting subtree deletion. | Pass `cascade=true` to delete the node and all its descendants. |
+| E1434 | `remove_node` targets the tree root without `cascade=true`. | Attempting to delete the root node, which would clear the entire tree, without an explicit opt-in. | Pass `cascade=true` to delete the entire tree, or remove leaf nodes first. |
+| E1435 | `reparent` would create a cycle — the proposed new parent is a descendant of the target node, or the node is being reparented to itself. | Moving a node to one of its own descendants. | Choose a new parent that is not in the subtree rooted at the target node. |
+| E1436 | Tree mutation references a node id that does not exist in the current tree, or an `add_node` / `remove_node` argument has a malformed shape. | Using an id that was never added, or a stale id from a previous step. | Verify the node id exists before calling `add_node`, `remove_node`, or `reparent`. |
 
-### Queue / Stack (E1440--E1449)
+### Queue / Stack (E1440--E1441)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
 | E1440 | Queue `capacity` must be a positive integer. | Use a positive integer for `capacity`. |
 | E1441 | Stack `max_visible` must be a positive integer. | Use a positive integer for `max_visible`. |
 
-### HashMap / NumberLine (E1450--E1459)
+### HashMap / NumberLine (E1450--E1454)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
@@ -146,22 +161,27 @@ documented deprecated alias.
 | E1453 | NumberLine `domain` must be a two-element [min, max] list. | Supply exactly two numbers. |
 | E1454 | NumberLine `ticks` exceeds maximum (1000). | Reduce the tick count. |
 
-### Graph (E1470--E1479)
+### Graph (E1470--E1474)
 
-| Code | Description | Common Fix |
-|------|-------------|------------|
-| E1470 | Graph requires a non-empty `nodes` list. | `Graph{g}{nodes=[...], edges=[...]}`. |
+| Code | Description | Common Cause | Common Fix |
+|------|-------------|--------------|------------|
+| E1470 | Graph requires a non-empty `nodes` list. | `nodes=` was omitted from the `\shape` declaration. | `Graph{g}{nodes=[...], edges=[...]}`. |
+| E1471 | `add_edge` references a node that does not exist in the graph, or the `add_edge` argument is not a `{from, to}` dict. | Using a node id that was never declared, or passing a bare string instead of a dict. | Verify both endpoints exist as declared nodes before calling `add_edge`. |
+| E1472 | `remove_edge` targets an edge that does not exist, or the argument is not a `{from, to}` dict. | The edge was already removed, the direction is wrong for a directed graph, or a non-dict argument was passed. | Check that the edge is present and that `from`/`to` match the direction it was added with. |
+| E1473 | `set_weight` targets an edge that does not exist, or is missing the `value` key. | Trying to set a weight on an edge that was never added or was already removed. | Ensure the edge exists before calling `set_weight`, and supply a numeric `value`. |
+| E1474 | The `edges` list mixes weighted `(u, v, w)` and unweighted `(u, v)` tuples, or contains an entry that is neither a 2-tuple nor a 3-tuple. | A graph declared with some weighted and some unweighted edges in the same list. | Use all 2-tuples (unweighted) or all 3-tuples (weighted); do not mix. |
 
-## Plane2D Errors (E1460--E1466)
+## Plane2D Errors (E1437, E1460--E1466)
 
-| Code | Description | Common Fix |
-|------|-------------|------------|
-| E1460 | Degenerate viewport (xrange or yrange has equal endpoints). | Use distinct min/max values for the viewport range. |
-| E1461 | Degenerate or out-of-viewport line geometry. | Ensure line endpoints are within or intersect the viewport. |
-| E1462 | Polygon not closed (auto-closing applied). | Close the polygon explicitly or accept auto-closing. |
-| E1463 | Point is outside viewport bounds. | Move the point inside the viewport or expand the range. |
-| E1465 | Invalid aspect value. | Use `equal` or `auto`. |
-| E1466 | Plane2D element cap reached. | Reduce the number of geometric elements. |
+| Code | Description | Common Cause | Common Fix |
+|------|-------------|--------------|------------|
+| E1437 | `remove_point`, `remove_line`, `remove_segment`, `remove_polygon`, or `remove_region` references an index that is out of range or refers to an element already removed. | Using a stale index from a previous step, or off-by-one in the element index. | Check the valid index range reported in the error message, and do not remove the same element twice. |
+| E1460 | Degenerate viewport (`xrange` or `yrange` has equal endpoints). | `xrange=[5, 5]` or `yrange=[0, 0]` gives a zero-width or zero-height viewport. | Use distinct min/max values for the viewport range. |
+| E1461 | Degenerate or out-of-viewport line geometry (warning — line is not added). | A line equation `ax + by + c = 0` has `a=0` and `b=0`, or both endpoints are outside the viewport. | Ensure line endpoints are within or intersect the viewport. |
+| E1462 | Polygon not closed (auto-closing applied, warning). | A polygon was submitted whose last point does not match its first. | Close the polygon explicitly by repeating the first point at the end, or accept auto-closing. |
+| E1463 | Point is outside viewport bounds (warning — point is still added but invisible). | Coordinates fall outside `xrange`/`yrange`. | Move the point inside the viewport or expand the range. |
+| E1465 | Invalid `aspect` value. | `aspect=` was set to a string other than `equal` or `auto`. | Use `equal` or `auto`. |
+| E1466 | Plane2D element cap reached. | Too many geometric elements added to a single Plane2D primitive. | Reduce the number of geometric elements. |
 
 ## MetricPlot Errors (E1480--E1487)
 

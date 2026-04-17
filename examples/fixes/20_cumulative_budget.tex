@@ -1,0 +1,210 @@
+% Regression fixture: C1 — Cumulative budget never wired.
+%
+% This file verifies that a document with many \compute blocks each doing
+% sub-budget work is still capped by the cumulative wall-clock budget.
+%
+% Each \compute block runs a tight Python loop to burn ~300 ms of wall-clock
+% time (using only bytecode operations so SIGALRM fires between steps).
+% Twenty such blocks would accumulate ~6 s total, which exceeds the 5 s
+% cumulative budget (_CUMULATIVE_BUDGET_SECONDS = 5.0).
+%
+% Expected behaviour (with fix):
+%   The render raises WorkerError with code E1152 containing "cumulative"
+%   before the 18th block completes.
+%
+% Expected behaviour (without fix):
+%   All 20 blocks complete unchecked, accumulating ~6 s with zero error.
+
+\begin{animation}[id="cumulative-budget-01", label="Cumulative budget block 1"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 1 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-02", label="Cumulative budget block 2"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 2 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-03", label="Cumulative budget block 3"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 3 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-04", label="Cumulative budget block 4"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 4 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-05", label="Cumulative budget block 5"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 5 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-06", label="Cumulative budget block 6"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 6 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-07", label="Cumulative budget block 7"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 7 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-08", label="Cumulative budget block 8"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 8 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-09", label="Cumulative budget block 9"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 9 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-10", label="Cumulative budget block 10"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 10 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-11", label="Cumulative budget block 11"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 11 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-12", label="Cumulative budget block 12"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 12 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-13", label="Cumulative budget block 13"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 13 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-14", label="Cumulative budget block 14"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 14 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-15", label="Cumulative budget block 15"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 15 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-16", label="Cumulative budget block 16"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 16 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-17", label="Cumulative budget block 17"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 17 done.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-18", label="Cumulative budget block 18"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{x = 0
+for i in range(250000):
+    x = x + 1
+result = x}
+\narrate{Block 18 — should not be reached.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-19", label="Cumulative budget block 19"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{result = 99}
+\narrate{Block 19 — should not be reached.}
+\end{animation}
+
+\begin{animation}[id="cumulative-budget-20", label="Cumulative budget block 20"]
+\shape{A}{Array}{size=3, data=[1,2,3]}
+\step
+\compute{result = 99}
+\narrate{Block 20 — should not be reached.}
+\end{animation}

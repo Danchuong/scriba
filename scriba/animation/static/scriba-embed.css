@@ -72,12 +72,16 @@
 
 /* ============================================
    Progress dots
+   L4 fix: flex-wrap + overflow-x: auto so dots wrap or scroll at 320px
+   with ≥ 6 steps instead of being clipped by overflow: hidden.
    ============================================ */
 
 .scriba-progress {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
   margin-left: auto;
+  overflow-x: auto;
 }
 
 .scriba-dot {
@@ -86,9 +90,11 @@
   border-radius: 50%;
   background: #dfe3e6;
   transition: background 0.2s;
+  flex-shrink: 0;
 }
 
-.scriba-dot.active { background: #0090ff; }
+/* C3 fix: active dot darkened to match current-fill (#0070d5) */
+.scriba-dot.active { background: #0070d5; }
 .scriba-dot.done { background: #c1c8cd; }
 
 /* ============================================
@@ -184,6 +190,9 @@
    Dark mode — widget-specific overrides only
    Token overrides (--scriba-state-* variables) live in
    scriba-scene-primitives.css.
+
+   H6 fix: prefers-color-scheme media query added so OS dark preference
+   applies automatically unless the user has explicitly set data-theme="light".
    ============================================ */
 
 [data-theme="dark"] .scriba-widget { background: #1a1d1e; border-color: #313538; }
@@ -193,6 +202,23 @@
 [data-theme="dark"] .scriba-step-counter { color: #9ba1a6; }
 [data-theme="dark"] .scriba-narration { color: #ecedee; border-color: #2b2f31; }
 [data-theme="dark"] .scriba-dot { background: #313538; }
+/* C3 fix: active dot darkened in dark mode too (#0070d5 matches current-fill) */
+[data-theme="dark"] .scriba-dot.active { background: #0070d5; }
 [data-theme="dark"] .scriba-frame { background: #1a1d1e; border-color: #313538; }
 [data-theme="dark"] .scriba-frame-header { background: #202425; border-color: #313538; }
 [data-theme="dark"] .scriba-step-label { color: #9ba1a6; }
+
+/* H6 fix: OS-level dark mode preference (overridden by explicit data-theme="light") */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-widget { background: #1a1d1e; border-color: #313538; }
+  :root:not([data-theme="light"]) .scriba-controls { background: #202425; border-color: #313538; }
+  :root:not([data-theme="light"]) .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
+  :root:not([data-theme="light"]) .scriba-controls button:hover { background: #313538; }
+  :root:not([data-theme="light"]) .scriba-step-counter { color: #9ba1a6; }
+  :root:not([data-theme="light"]) .scriba-narration { color: #ecedee; border-color: #2b2f31; }
+  :root:not([data-theme="light"]) .scriba-dot { background: #313538; }
+  :root:not([data-theme="light"]) .scriba-dot.active { background: #0070d5; }
+  :root:not([data-theme="light"]) .scriba-frame { background: #1a1d1e; border-color: #313538; }
+  :root:not([data-theme="light"]) .scriba-frame-header { background: #202425; border-color: #313538; }
+  :root:not([data-theme="light"]) .scriba-step-label { color: #9ba1a6; }
+}

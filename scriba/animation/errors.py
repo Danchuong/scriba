@@ -597,9 +597,15 @@ def format_compute_traceback(tb_text: str) -> str:
     *not* inside a ``<compute>`` pseudo-file and keeps the trailing
     exception header.
 
-    Currently unused. Cluster 1 owns ``starlark_worker.py`` and will
-    migrate the raw-traceback assembly to call this helper in a follow-up
-    change — the function lives here so the migration is a one-liner.
+    Additionally handles two cases that would otherwise leak internal paths:
+
+    * ``RecursionError`` — raised by ``compile()`` or ``exec()`` before any
+      user frame is on the stack, so no ``<compute>`` frame exists in the
+      traceback.  Detected by inspecting the exception header line.
+    * Fallback path — when no ``<compute>`` frames are found (e.g. a deep
+      ``RecursionError`` from ``compile()``), any ``File "..."`` lines that
+      reference ``starlark_worker.py`` or ``starlark_host.py`` are stripped
+      from the returned text so internal paths are never exposed.
 
     Parameters
     ----------
@@ -611,8 +617,15 @@ def format_compute_traceback(tb_text: str) -> str:
     -------
     str
         A filtered traceback. If no ``<compute>`` frames are found the
-        input is returned unchanged so callers never lose information.
+        input is returned with internal-path lines removed so callers
+        never see ``starlark_worker.py`` paths.
     """
+    # M3 fix: RecursionError from compile() produces a traceback whose
+    # exception header line contains "RecursionError".  In that case we
+    # return a concise, path-free message immediately.
+    if "RecursionError" in tb_text:
+        return "RecursionError: expression too deeply nested for the sandbox"
+
     lines = tb_text.splitlines()
     kept: list[str] = []
     skip_next = False
@@ -634,68 +647,28 @@ def format_compute_traceback(tb_text: str) -> str:
         # Exception header or any other trailing line — always keep.
         kept.append(line)
 
-    # If filtering produced nothing useful, return original so callers
-    # never lose error context.
+    # If filtering produced nothing useful, return a sanitised version of
+    # the original (strip internal File lines) so callers never lose the
+    # exception type but also never see ``starlark_worker.py`` paths.
     if not any("<compute>" in line for line in kept):
-        return tb_text
+        _INTERNAL_MODULES = ("starlark_worker.py", "starlark_host.py")
+        sanitised: list[str] = []
+        skip_src = False
+        for line in lines:
+            stripped = line.strip()
+            if stripped.startswith("File ") and any(
+                m in stripped for m in _INTERNAL_MODULES
+            ):
+                skip_src = True
+                continue
+            if skip_src:
+                skip_src = False
+                continue
+            sanitised.append(line)
+        return "\n".join(sanitised)
     return "\n".join(kept)
 
 
-def validation_error_from_selector(
-    message: str,
-    *,
-    position: int,
-    source_line_offset: int = 0,
-    code: str = "E1009",
-    line: int | None = None,
-) -> ValidationError:
-    """Convert a selector parser ``position`` into a :class:`ValidationError`
-    with a proper ``col`` field.
-
-    The selector parser in ``scriba.animation.parser.selectors`` tracks a
-    byte offset within the selector text (e.g. ``position=7`` inside
-    ``"a.cell[X]"``). That offset is *not* the same as the source
-    column — the column needs to be shifted by wherever the selector
-    string begins on its source line.
-
-    Parameters
-    ----------
-    message:
-        The raw human-readable failure message.
-    position:
-        Byte offset inside the selector text (0-indexed) where parsing
-        failed.
-    source_line_offset:
-        Column in the full source line where the selector text begins.
-        Defaults to ``0`` so stand-alone callers still get a reasonable
-        column estimate.
-    code:
-        The ``E101x`` error code to attach. Defaults to the generic
-        ``E1009``.
-    line:
-        Optional 1-indexed source line.
-
-    Returns
-    -------
-    ValidationError
-        A :class:`ValidationError` with ``col`` set to
-        ``source_line_offset + position`` so the renderer can point at
-        the exact failing character.
-
-    Notes
-    -----
-    Currently unused. Wave 3 will migrate
-    ``scriba/animation/parser/selectors.py`` to call this helper when
-    propagating errors out of the selector grammar. The helper lives
-    here so the migration is a one-liner.
-    """
-    return ValidationError(
-        message,
-        code=code,
-        position=position,
-        line=line,
-        col=source_line_offset + position,
-    )
 
 
 # ---------------------------------------------------------------------------

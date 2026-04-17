@@ -10,10 +10,14 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, animation_error
 from scriba.animation.primitives.base import (
+    ALL_RE,
+    CELL_1D_RE,
+    CELL_2D_RE,
     CELL_GAP,
     CELL_HEIGHT,
     CELL_WIDTH,
     INDEX_LABEL_OFFSET,
+    RANGE_RE,
     THEME,
     BoundingBox,
     PrimitiveBase,
@@ -48,16 +52,13 @@ _STACK_GAP: int = 9
 # Selector matching
 # ---------------------------------------------------------------------------
 
-_CELL_1D_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
-_CELL_2D_RE = re.compile(
-    r"^(?P<name>\w+)\.cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$"
-)
-_RANGE_RE = re.compile(
-    r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$"
-)
-_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+# Full-qualified selectors (with shape name prefix) — canonical from base.py.
+_CELL_1D_RE = CELL_1D_RE
+_CELL_2D_RE = CELL_2D_RE
+_RANGE_RE = RANGE_RE
+_ALL_RE = ALL_RE
 
-# Suffix-only regexes (no shape name prefix)
+# Suffix-only regexes (no shape name prefix) — local, no base.py equivalent.
 _SUFFIX_CELL_1D_RE = re.compile(r"^cell\[(?P<idx>\d+)\]$")
 _SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
 _SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")

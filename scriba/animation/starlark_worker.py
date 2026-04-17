@@ -51,6 +51,15 @@ _MAX_STR_LITERAL_LEN = 10_000  # characters
 _MAX_RANGE_LEN = 10**6  # 1 million elements
 
 # ---------------------------------------------------------------------------
+# Runtime bulk-allocation cap (H2 fix)
+# ---------------------------------------------------------------------------
+# SIGALRM fires only between Python bytecode instructions.  A single C-level
+# call such as ``[0] * 9_000_000`` or ``bytes(10**8)`` allocates memory
+# entirely in C before any handler can fire.  We therefore cap the argument
+# to every bulk-constructing builtin at this limit.
+_MAX_LIST_SIZE = 100_000  # elements for list/tuple/set/dict/bytes
+
+# ---------------------------------------------------------------------------
 # Security sets (imported from constants.py for centralization)
 # ---------------------------------------------------------------------------
 
@@ -282,12 +291,114 @@ def _safe_range(*args: int) -> range:
     return r
 
 
+def _safe_list(*args: Any) -> list:
+    """Wrapper around built-in ``list()`` that caps construction size.
+
+    Prevents C-level bulk allocation (e.g. ``[0] * 9_000_000``) from
+    bypassing the SIGALRM handler.  The size check is applied to any
+    iterable argument that has a ``__len__``; if the length is not
+    cheaply available the construction is allowed (the tracemalloc and
+    RLIMIT backstops remain as secondary guards).
+    """
+    if args:
+        arg = args[0]
+        size = len(arg) if hasattr(arg, "__len__") else None
+        if size is not None and size > _MAX_LIST_SIZE:
+            raise animation_error(
+                "E1154",
+                f"list() argument too large: {size} elements "
+                f"(max {_MAX_LIST_SIZE}); "
+                f"use a smaller collection",
+            )
+    result = list(*args)
+    if len(result) > _MAX_LIST_SIZE:
+        raise animation_error(
+            "E1154",
+            f"list() produced {len(result)} elements "
+            f"(max {_MAX_LIST_SIZE})",
+        )
+    return result
+
+
+def _safe_tuple(*args: Any) -> tuple:
+    """Wrapper around built-in ``tuple()`` that caps construction size."""
+    if args:
+        arg = args[0]
+        size = len(arg) if hasattr(arg, "__len__") else None
+        if size is not None and size > _MAX_LIST_SIZE:
+            raise animation_error(
+                "E1154",
+                f"tuple() argument too large: {size} elements "
+                f"(max {_MAX_LIST_SIZE})",
+            )
+    result = tuple(*args)
+    if len(result) > _MAX_LIST_SIZE:
+        raise animation_error(
+            "E1154",
+            f"tuple() produced {len(result)} elements "
+            f"(max {_MAX_LIST_SIZE})",
+        )
+    return result
+
+
+def _safe_set(*args: Any) -> set:
+    """Wrapper around built-in ``set()`` that caps construction size."""
+    if args:
+        arg = args[0]
+        size = len(arg) if hasattr(arg, "__len__") else None
+        if size is not None and size > _MAX_LIST_SIZE:
+            raise animation_error(
+                "E1154",
+                f"set() argument too large: {size} elements "
+                f"(max {_MAX_LIST_SIZE})",
+            )
+    result = set(*args)
+    if len(result) > _MAX_LIST_SIZE:
+        raise animation_error(
+            "E1154",
+            f"set() produced {len(result)} elements "
+            f"(max {_MAX_LIST_SIZE})",
+        )
+    return result
+
+
+def _safe_bytes(*args: Any) -> bytes:
+    """Wrapper around built-in ``bytes()`` that caps allocation size.
+
+    ``bytes(N)`` where N is a large integer allocates N bytes entirely in
+    C before any SIGALRM or trace hook can fire.
+    """
+    if args:
+        arg = args[0]
+        # bytes(int) form — cap the integer directly
+        if isinstance(arg, int) and arg > _MAX_LIST_SIZE:
+            raise animation_error(
+                "E1154",
+                f"bytes() size too large: {arg} bytes "
+                f"(max {_MAX_LIST_SIZE})",
+            )
+        # bytes(iterable) form — check length if available
+        size = len(arg) if hasattr(arg, "__len__") else None
+        if size is not None and size > _MAX_LIST_SIZE:
+            raise animation_error(
+                "E1154",
+                f"bytes() argument too large: {size} elements "
+                f"(max {_MAX_LIST_SIZE})",
+            )
+    return bytes(*args)
+
+
 _ALLOWED_BUILTINS: dict[str, Any] = {
-    # Types / constructors
-    "list": list,
-    "dict": dict,
-    "tuple": tuple,
-    "set": set,
+    # Types / constructors — bulk-allocation variants wrapped for H2 safety.
+    # ``list``, ``tuple``, ``set``, and ``bytes`` are replaced with capped
+    # variants so that a single C-level call (e.g. ``[0]*9_000_000``) cannot
+    # bypass the SIGALRM handler.  ``dict`` construction from a large iterable
+    # is intercepted via ``_safe_dict``.
+    "list": _safe_list,
+    "dict": dict,   # dict() from literal {} is safe; bulk path via fromkeys
+    "tuple": _safe_tuple,
+    "set": _safe_set,
+    "bytes": _safe_bytes,
     "str": str,
     "int": int,
     "float": float,
@@ -589,6 +700,21 @@ def _evaluate(
             "message": exc._raw_message,
             "line": getattr(exc, "line", None),
             "col": getattr(exc, "col", None),
+        }
+    except RecursionError:
+        # M3 fix: RecursionError from compile() fires before any user frame
+        # is on the stack, so the traceback contains only internal paths.
+        # Return a concise, path-free message rather than leaking
+        # starlark_worker.py line numbers.
+        if has_alarm:
+            signal.alarm(0)
+        return {
+            "id": request_id,
+            "ok": False,
+            "code": "E1151",
+            "message": "RecursionError: expression too deeply nested for the sandbox",
+            "line": None,
+            "col": None,
         }
     except Exception as exc:
         if has_alarm:

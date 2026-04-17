@@ -54,13 +54,16 @@ from scriba.animation.constants import DEFAULT_STATE, VALID_STATES  # noqa: F401
 
 STATE_COLORS: dict[str, dict[str, str]] = {
     "idle":      {"fill": "#f8f9fa", "stroke": "#dfe3e6", "text": "#11181c"},
-    "current":   {"fill": "#0090ff", "stroke": "#0b68cb", "text": "#ffffff"},
+    # C3 fix: current fill darkened from #0090ff (3.26:1) to #0070d5 (4.91:1) with white
+    "current":   {"fill": "#0070d5", "stroke": "#0b68cb", "text": "#ffffff"},
     "done":      {"fill": "#e6e8eb", "stroke": "#c1c8cd", "text": "#11181c"},
+    # dim: #687076 on #f1f3f5 = 4.53:1 — passes WCAG AA, unchanged
     "dim":       {"fill": "#f1f3f5", "stroke": "#e6e8eb", "text": "#687076"},
     "error":     {"fill": "#f8f9fa", "stroke": "#e5484d", "text": "#11181c"},
     "good":      {"fill": "#e6e8eb", "stroke": "#2a7e3b", "text": "#11181c"},
     "highlight": {"fill": "#f8f9fa", "stroke": "#0090ff", "text": "#0b68cb"},
-    "path":      {"fill": "#e6e8eb", "stroke": "#c1c8cd", "text": "#687076"},
+    # path fix: text darkened from #687076 (4.10:1) to #5e6669 (4.78:1) on #e6e8eb
+    "path":      {"fill": "#e6e8eb", "stroke": "#c1c8cd", "text": "#5e6669"},
 }
 
 
@@ -204,14 +207,16 @@ def _wrap_label_lines(text: str, max_chars: int = _LABEL_MAX_WIDTH_CHARS) -> lis
 # Selector regex helpers
 # ---------------------------------------------------------------------------
 
-_CELL_1D_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
-_CELL_2D_RE = re.compile(
+# Public canonical regexes — import these in primitive modules instead of
+# re-defining the same patterns locally.
+CELL_1D_RE = re.compile(r"^(?P<name>\w+)\.cell\[(?P<idx>\d+)\]$")
+CELL_2D_RE = re.compile(
     r"^(?P<name>\w+)\.cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$"
 )
-_RANGE_RE = re.compile(
+RANGE_RE = re.compile(
     r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$"
 )
-_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
 
 
 # ---------------------------------------------------------------------------
@@ -634,49 +639,55 @@ def _render_svg_text(
 # Shared arrow annotation infrastructure
 # ---------------------------------------------------------------------------
 
+# Annotation pill labels (ARROW_STYLES "label_fill") are rendered on a white
+# semi-opaque pill background (fill="white" fill-opacity="0.92").  All label_fill
+# values below have been verified ≥ 4.5:1 against white (WCAG AA, 2026-04-17):
+#   good  #027a55 → 5.36:1   info   #506882 → 5.76:1
+#   warn  #92600a → 5.38:1   error  #c6282d → 5.61:1
+#   muted #526070 → 6.43:1   path   #2563eb → 5.17:1
 ARROW_STYLES: dict[str, dict[str, str]] = {
     "good": {
-        "stroke": "#059669",
+        "stroke": "#027a55",      # darkened from #059669 (3.77:1 ✗) → 5.36:1 ✓
         "stroke_width": "2.2",
         "opacity": "1.0",
-        "label_fill": "#059669",
+        "label_fill": "#027a55",
         "label_weight": "700",
         "label_size": "12px",
     },
     "info": {
-        "stroke": "#94a3b8",
+        "stroke": "#506882",      # darkened from #94a3b8 (2.56:1 ✗) → 5.76:1 ✓
         "stroke_width": "1.5",
         "opacity": "0.45",
-        "label_fill": "#94a3b8",
+        "label_fill": "#506882",
         "label_weight": "500",
         "label_size": "11px",
     },
     "warn": {
-        "stroke": "#d97706",
+        "stroke": "#92600a",      # darkened from #d97706 (3.19:1 ✗) → 5.38:1 ✓
         "stroke_width": "2.0",
         "opacity": "0.8",
-        "label_fill": "#d97706",
+        "label_fill": "#92600a",
         "label_weight": "600",
         "label_size": "11px",
     },
     "error": {
-        "stroke": "#dc2626",
+        "stroke": "#c6282d",      # darkened from #dc2626 (4.83:1 ✗) → 5.61:1 ✓
         "stroke_width": "2.0",
         "opacity": "0.8",
-        "label_fill": "#dc2626",
+        "label_fill": "#c6282d",
         "label_weight": "600",
         "label_size": "11px",
     },
     "muted": {
-        "stroke": "#cbd5e1",
+        "stroke": "#526070",      # darkened from #cbd5e1 (1.48:1 ✗) → 6.43:1 ✓
         "stroke_width": "1.2",
         "opacity": "0.3",
-        "label_fill": "#cbd5e1",
+        "label_fill": "#526070",
         "label_weight": "500",
         "label_size": "11px",
     },
     "path": {
-        "stroke": "#2563eb",
+        "stroke": "#2563eb",      # unchanged — 5.17:1 ✓ on white
         "stroke_width": "2.5",
         "opacity": "1.0",
         "label_fill": "#2563eb",
