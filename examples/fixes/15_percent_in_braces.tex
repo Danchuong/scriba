@@ -1,0 +1,16 @@
+% Regression: % inside a brace argument strips the rest of the line (LaTeX
+% comment semantics), leaving the brace unbalanced.  E1001 used to say only
+% "unterminated brace argument" with no hint about why the brace was never
+% closed.
+%
+% Before fix: E1001 "unterminated brace argument: missing '}' before end of input"
+%             — no mention of the % comment character.
+% After fix:  same E1001 message, plus hint:
+%             "the `%` character is a LaTeX comment and was stripped to end of
+%              line; if you need a literal `%`, escape it as `\%`"
+
+\begin{animation}[id="percent-in-braces", label="Percent in brace argument"]
+\shape{a}{Array}{length=3}
+\step
+\apply{a.cell[0]}{value=5%inline comment}
+\end{animation}

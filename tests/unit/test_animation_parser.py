@@ -614,6 +614,79 @@ class TestUnclosedBraceEOF:
             parser.parse(src)
 
 
+class TestPercentInBraceHint:
+    """Regression tests for the LaTeX-comment hint on E1001.
+
+    When a ``%`` inside a brace argument strips the closing ``}`` to end of
+    line, the resulting E1001 should include an explicit hint that explains the
+    ``%`` comment mechanism and how to escape it.
+
+    Fixture: examples/fixes/15_percent_in_braces.tex
+    Audit: docs/archive/ruleset-audit-2026-04-17/02-errors-edge-cases.md, test 6
+    """
+
+    def test_percent_in_param_brace_at_eof_raises_e1001_with_hint(
+        self, parser: SceneParser,
+    ) -> None:
+        """``\\apply{a.cell[0]}{value=5%comment}`` — exact case from the audit.
+
+        The ``%`` strips the rest of the line including the closing ``}``.
+        When the ``%`` comment is at EOF (no following lines), the parser hits
+        EOF inside ``_read_param_brace`` and raises E1001.  The hint must
+        mention the ``%`` comment mechanism.
+        """
+        src = r"\apply{a.cell[0]}{value=5%inline comment}"
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src)
+        err = exc_info.value
+        assert err.code == "E1001"
+        assert err.hint is not None, "expected a hint about the % comment character"
+        assert "%" in err.hint
+        assert "LaTeX comment" in err.hint
+        assert r"\%" in err.hint or "\\%" in err.hint
+
+    def test_percent_in_narrate_brace_raises_e1001_with_hint(
+        self, parser: SceneParser,
+    ) -> None:
+        """``\\narrate{text with % comment}`` raises E1001 with a ``%`` hint.
+
+        ``\\narrate`` uses ``_read_raw_brace_arg`` (raw source scan), which has
+        its own E1001 raise path in ``Lexer.extract_brace_content``.  This
+        tests that path also carries the hint.
+        """
+        src = "\\step\n\\narrate{some text % oops"
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src)
+        err = exc_info.value
+        assert err.code == "E1001"
+        assert err.hint is not None, "expected a hint about the % comment character"
+        assert "%" in err.hint
+        assert "LaTeX comment" in err.hint
+
+    def test_shape_param_with_percent_raises_e1001_with_hint(
+        self, parser: SceneParser,
+    ) -> None:
+        """``\\shape{a}{Array}{size=5%comment}`` raises E1001 with a ``%`` hint."""
+        src = r"\shape{a}{Array}{size=5%comment"
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src)
+        err = exc_info.value
+        assert err.code == "E1001"
+        assert err.hint is not None
+        assert "%" in err.hint
+
+    def test_no_percent_no_hint(
+        self, parser: SceneParser,
+    ) -> None:
+        """A plain unterminated brace with no ``%`` must not add the hint."""
+        src = "\\step\n\\apply{a}{value=5"
+        with pytest.raises(ValidationError) as exc_info:
+            parser.parse(src)
+        err = exc_info.value
+        assert err.code == "E1001"
+        assert err.hint is None
+
+
 class TestEmptyParamBrace:
     """Regression tests for audit finding 07-C2.
 

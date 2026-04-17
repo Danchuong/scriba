@@ -149,6 +149,8 @@ _LABEL_PILL_PAD_Y = 3
 _LABEL_PILL_RADIUS = 4
 _LABEL_BG_OPACITY = 0.92
 _LABEL_HEADROOM = 24
+# Length of the straight stem for plain arrow=true annotations (no source arc).
+_PLAIN_ARROW_STEM = 18
 
 
 @dataclass(slots=True)
@@ -684,6 +686,190 @@ ARROW_STYLES: dict[str, dict[str, str]] = {
 }
 
 
+def emit_plain_arrow_svg(
+    lines: list[str],
+    ann: dict[str, Any],
+    dst_point: tuple[float, float],
+    render_inline_tex: "Callable[[str], str] | None" = None,
+    placed_labels: "list[_LabelPlacement] | None" = None,
+) -> None:
+    """Emit a short straight pointer arrow for ``arrow=true`` annotations.
+
+    ``arrow=true`` means "draw an arrowhead pointing at the target with no
+    source arc".  A short vertical stem originates from
+    ``_PLAIN_ARROW_STEM`` pixels above the target cell top edge, and an
+    inline arrowhead polygon points downward into the target.
+
+    Parameters
+    ----------
+    lines:
+        Output buffer — SVG markup is appended in-place.
+    ann:
+        Annotation dict with keys ``target``, optional ``color``, and
+        optional ``label``.
+    dst_point:
+        ``(x, y)`` SVG coordinates of the target cell center (top edge).
+    render_inline_tex:
+        Optional callback for rendering ``$...$`` math in labels.
+    placed_labels:
+        Optional mutable list of already-placed label bounding boxes for
+        collision avoidance.
+    """
+    color = ann.get("color", "info")
+    label_text = ann.get("label", "")
+    target = ann.get("target", "")
+
+    x2, y2 = float(dst_point[0]), float(dst_point[1])
+    x1, y1 = x2, y2 - _PLAIN_ARROW_STEM
+
+    # Resolve inline style for this color
+    style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    s_stroke = style["stroke"]
+    s_width = style["stroke_width"]
+    s_opacity = style["opacity"]
+
+    ann_desc = f"Pointer to {_escape_xml(str(target))}"
+    if label_text:
+        ann_desc += f": {_escape_xml(label_text)}"
+
+    # Inline arrowhead polygon pointing straight down into the target.
+    arrow_size = 10
+    # Direction: straight down (unit vector = (0, 1))
+    aux, auy = 0.0, 1.0
+    apx, apy = -auy, aux  # perpendicular = (-1, 0)
+    hw = arrow_size * 0.5
+    ix2, iy2 = int(x2), int(y2)
+    p1x, p1y = float(ix2), float(iy2)
+    p2x = p1x - aux * arrow_size + apx * hw
+    p2y = p1y - auy * arrow_size + apy * hw
+    p3x = p1x - aux * arrow_size - apx * hw
+    p3y = p1y - auy * arrow_size - apy * hw
+    arrow_points = (
+        f"{p1x:.1f},{p1y:.1f} {p2x:.1f},{p2y:.1f} {p3x:.1f},{p3y:.1f}"
+    )
+
+    ix1, iy1 = int(x1), int(y1)
+
+    ann_key = f"{target}-plain-arrow"
+    lines.append(
+        f'  <g class="scriba-annotation scriba-annotation-{color}"'
+        f' data-annotation="{_escape_xml(ann_key)}"'
+        f' opacity="{s_opacity}"'
+        f' role="graphics-symbol" aria-label="{ann_desc}">'
+    )
+    lines.append(
+        f'    <line x1="{ix1}" y1="{iy1}" x2="{ix2}" y2="{iy2}"'
+        f' stroke="{s_stroke}" stroke-width="{s_width}"/>'
+    )
+    lines.append(
+        f'    <polygon points="{arrow_points}" fill="{s_stroke}"/>'
+    )
+
+    if label_text:
+        l_fill = style["label_fill"]
+        l_weight = style["label_weight"]
+        l_size = style["label_size"]
+        l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else 11
+
+        label_lines = _wrap_label_lines(label_text)
+        line_height = l_font_px + 2
+        num_lines = len(label_lines)
+
+        max_line_w = max(estimate_text_width(ln, l_font_px) for ln in label_lines)
+        pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
+        pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
+
+        # Label sits above the stem start
+        natural_x = float(ix1)
+        natural_y = float(iy1) - pill_h / 2 - 2
+        final_x = natural_x
+        final_y = natural_y
+
+        if placed_labels is not None:
+            candidate = _LabelPlacement(
+                x=final_x, y=final_y, width=float(pill_w), height=float(pill_h),
+            )
+            nudge_step = pill_h + 2
+            nudge_dirs = [
+                (0, -nudge_step),
+                (-nudge_step, 0),
+                (nudge_step, 0),
+                (0, nudge_step),
+            ]
+            for _ in range(4):
+                if not any(candidate.overlaps(p) for p in placed_labels):
+                    break
+                resolved = False
+                for ndx, ndy in nudge_dirs:
+                    test = _LabelPlacement(
+                        x=candidate.x + ndx,
+                        y=candidate.y + ndy,
+                        width=candidate.width,
+                        height=candidate.height,
+                    )
+                    if not any(test.overlaps(p) for p in placed_labels):
+                        candidate = test
+                        resolved = True
+                        break
+                if not resolved:
+                    candidate = _LabelPlacement(
+                        x=candidate.x + nudge_dirs[0][0],
+                        y=candidate.y + nudge_dirs[0][1],
+                        width=candidate.width,
+                        height=candidate.height,
+                    )
+            final_x = candidate.x
+            final_y = candidate.y
+            placed_labels.append(candidate)
+
+        fi_x = int(final_x)
+        fi_y = int(final_y)
+
+        pill_rx = max(0, int(fi_x - pill_w / 2))
+        pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
+        fi_x = max(fi_x, pill_w // 2)
+        lines.append(
+            f'    <rect x="{pill_rx}" y="{pill_ry}"'
+            f' width="{pill_w}" height="{pill_h}"'
+            f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
+            f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
+            f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
+        )
+
+        text_attrs = (
+            f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
+            f' stroke="white" stroke-width="3"'
+            f' stroke-linejoin="round" paint-order="stroke fill"'
+        )
+        style_parts = []
+        if l_weight:
+            style_parts.append(f"font-weight:{l_weight}")
+        if l_size:
+            style_parts.append(f"font-size:{l_size}")
+        style_parts.append("text-anchor:middle")
+        style_parts.append("dominant-baseline:auto")
+        style_str = ";".join(style_parts)
+
+        if num_lines == 1:
+            lines.append(
+                f'    <text {text_attrs} style="{style_str}">'
+                f'{_escape_xml(label_text)}</text>'
+            )
+        else:
+            tspans = ""
+            for li, ln_text in enumerate(label_lines):
+                dy_val = f"{line_height}" if li > 0 else "0"
+                tspans += (
+                    f'<tspan x="{fi_x}" dy="{dy_val}">'
+                    f"{_escape_xml(ln_text)}</tspan>"
+                )
+            lines.append(
+                f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+            )
+
+    lines.append("  </g>")
+
+
 def emit_arrow_svg(
     lines: list[str],
     ann: dict[str, Any],
@@ -1049,9 +1235,22 @@ def arrow_height_above(
     """
     if not annotations:
         return 0
+    # Include both arc-style (arrow_from) and pointer-style (arrow=True) annotations
     arrow_anns = [a for a in annotations if a.get("arrow_from")]
-    if not arrow_anns:
+    plain_anns = [a for a in annotations if a.get("arrow") and not a.get("arrow_from")]
+    if not arrow_anns and not plain_anns:
         return 0
+
+    # Plain arrow=true annotations need a fixed height above the target for the
+    # short pointer stem (stem length + label headroom).
+    plain_height = 0
+    if plain_anns:
+        plain_height = _PLAIN_ARROW_STEM + (
+            _LABEL_HEADROOM if any(a.get("label") for a in plain_anns) else 0
+        )
+
+    if not arrow_anns:
+        return plain_height
 
     has_label = any(a.get("label") for a in arrow_anns)
     max_height = 0
@@ -1098,7 +1297,7 @@ def arrow_height_above(
     if has_label:
         max_height += _LABEL_HEADROOM
 
-    return max_height
+    return max(max_height, plain_height)
 
 
 def emit_arrow_marker_defs(

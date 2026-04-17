@@ -1,0 +1,9 @@
+\begin{animation}[id="empty-foreach-iterable", label="E1173 hint for empty/invalid foreach iterable"]
+% Demonstrates E1173 with an actionable hint listing the three valid iterable forms.
+% \foreach{i}{} — empty iterable string — should raise E1173 with a hint.
+\shape{a}{Array}{size=3}
+\step
+\foreach{i}{}
+  \recolor{a.cell[${i}]}{state=done}
+\endforeach
+\end{animation}

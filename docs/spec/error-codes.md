@@ -82,7 +82,7 @@
 | E1361 | Unclosed `\substory` (missing `\endsubstory`). | Add `\endsubstory` to close the block. |
 | E1362 | `\substory` must be inside a `\step` block. | Move `\substory` after a `\step`. |
 | E1365 | `\endsubstory` without matching `\substory`. | Remove the orphan `\endsubstory` or add the opening `\substory`. |
-| E1366 | Substory with zero steps (warning). | Add at least one `\step` inside the substory. |
+| E1366 | `\substory` contains no `\step` commands and will render nothing (warning, emitted as `EmptySubstoryWarning`; includes opening line/col of the substory). | Add at least one `\step` inside the substory block. |
 | E1368 | Non-whitespace text on same line as `\substory`/`\endsubstory`. | Put these commands on their own line. |
 
 ## Primitive Parameter Validation (E1400--E1459)

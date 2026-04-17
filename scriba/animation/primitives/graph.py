@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     emit_arrow_marker_defs,
     emit_arrow_svg,
+    emit_plain_arrow_svg,
     estimate_text_width,
     register_primitive,
     svg_style_attrs,
@@ -829,8 +830,22 @@ class Graph(PrimitiveBase):
         render_inline_tex: Callable[[str], str] | None = None,
         placed_labels: "list[_LabelPlacement] | None" = None,
     ) -> None:
-        """Emit a cubic Bezier arrow annotation between two graph nodes."""
+        """Emit an arrow annotation — Bezier arc or plain pointer."""
         arrow_from = ann.get("arrow_from", "")
+
+        # Plain arrow=true: short straight pointer, no source arc.
+        if not arrow_from and ann.get("arrow"):
+            dst_point = self.resolve_annotation_point(ann.get("target", ""))
+            if dst_point is not None:
+                emit_plain_arrow_svg(
+                    lines,
+                    ann,
+                    dst_point=dst_point,
+                    render_inline_tex=render_inline_tex,
+                    placed_labels=placed_labels,
+                )
+            return
+
         if not arrow_from:
             return
 

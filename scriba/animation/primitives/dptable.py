@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     emit_arrow_marker_defs,
     emit_arrow_svg,
+    emit_plain_arrow_svg,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -469,8 +470,22 @@ class DPTablePrimitive(PrimitiveBase):
         render_inline_tex: "Callable[[str], str] | None" = None,
         placed_labels: "list[_LabelPlacement] | None" = None,
     ) -> None:
-        """Emit a cubic Bezier arrow annotation."""
+        """Emit an arrow annotation — Bezier arc or plain pointer."""
         arrow_from = ann.get("arrow_from", "")
+
+        # Plain arrow=true: short straight pointer, no source arc.
+        if not arrow_from and ann.get("arrow"):
+            dst_center = self._cell_center(ann.get("target", ""))
+            if dst_center is not None:
+                emit_plain_arrow_svg(
+                    lines,
+                    ann,
+                    dst_point=dst_center,
+                    render_inline_tex=render_inline_tex,
+                    placed_labels=placed_labels,
+                )
+            return
+
         if not arrow_from:
             return
 

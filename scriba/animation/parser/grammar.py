@@ -6,7 +6,7 @@ import hashlib
 import unicodedata
 from typing import Any, Iterable, NoReturn, Union
 
-from scriba.animation.errors import suggest_closest
+from scriba.animation.errors import EmptySubstoryWarning, suggest_closest
 from scriba.core.errors import ValidationError
 
 from .ast import (
@@ -30,7 +30,7 @@ from .ast import (
     StepCommand,
     SubstoryBlock,
 )
-from .lexer import Lexer, Token, TokenKind
+from .lexer import Lexer, Token, TokenKind, _percent_hint_for_source_line
 from .selectors import parse_selector
 
 import warnings as _warnings_mod
@@ -1215,8 +1215,11 @@ class SceneParser:
                     # Warn if zero steps
                     if not sub_frames:
                         _warnings_mod.warn(
-                            f"E1366: substory with zero steps "
-                            f"(line {substory_line}, col {substory_col})",
+                            f"[E1366] \\substory at line {substory_line},"
+                            f" col {substory_col} contains no \\step commands"
+                            " and will render nothing."
+                            " Add at least one \\step inside the substory block.",
+                            EmptySubstoryWarning,
                             stacklevel=2,
                         )
 
@@ -1476,6 +1479,7 @@ class SceneParser:
             code="E1001",
             line=cmd_tok.line,
             col=cmd_tok.col,
+            hint=self._percent_hint_for_line(cmd_tok.line),
             source_line=self._source_line_at(cmd_tok.line),
         )
 
@@ -1542,13 +1546,17 @@ class SceneParser:
         if self._at_end():
             # EOF reached without closing brace — unterminated parameter
             # brace.  Point the error at the opening ``{`` so the author
-            # can find it.
+            # can find it.  Also check whether an unescaped ``%`` on the
+            # same line silently consumed the rest of the content (including
+            # the closing ``}``).
             raise ValidationError(
                 "unterminated brace argument: missing '}' before end of input",
                 position=open_tok.col,
                 code="E1001",
                 line=open_tok.line,
                 col=open_tok.col,
+                hint=self._percent_hint_for_line(open_tok.line),
+                source_line=self._source_line_at(open_tok.line),
             )
         if self._peek().kind == TokenKind.RBRACE:
             self._advance()
@@ -1800,6 +1808,23 @@ class SceneParser:
         if line_number > len(lines):
             return None
         return lines[line_number - 1]
+
+    def _percent_hint_for_line(self, line_number: int) -> str | None:
+        """Return a hint string when the source line contains a ``%`` character.
+
+        The ``%`` character is a LaTeX comment delimiter and is stripped to end
+        of line by the lexer.  When an E1001 "unbalanced braces" error fires, a
+        ``%`` on the same line is a very common cause — the comment consumed the
+        closing ``}`` and left the brace group open.
+
+        Returns ``None`` when no ``%`` is present (or when the source is
+        unavailable), so callers can pass the return value directly as
+        ``hint=...``.
+        """
+        source = getattr(self, "_source", None)
+        if source is None:
+            return None
+        return _percent_hint_for_source_line(source, line_number)
 
     def _peek(self) -> Token:
         return self._tokens[self._pos]

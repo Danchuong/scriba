@@ -427,7 +427,11 @@ class SceneState:
             return parsed
 
         raise ValidationError(
-            f"foreach: cannot resolve iterable '{raw}'",
+            f"foreach: cannot resolve iterable '{raw}'"
+            "\nhint: \\foreach iterable must be one of:"
+            "\n  - range:   {0..n}         e.g. {0..4}"
+            "\n  - binding: {${list_name}} e.g. {${my_list}}"
+            "\n  - literal: {[1, 2, 3]}    e.g. {[\"a\", \"b\"]}",
             code="E1173",
             line=line,
         )

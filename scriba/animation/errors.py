@@ -216,10 +216,13 @@ ERROR_CATALOG: dict[str, str] = {
     "E1361": "Unclosed \\substory (missing \\endsubstory).",
     "E1362": "\\substory must be inside a \\step block.",
     "E1365": "\\endsubstory without matching \\substory.",
-    # reserved: E1366 ships as a warning (UserWarning subclass) via
+    # E1366 ships as EmptySubstoryWarning (UserWarning subclass) via
     # grammar.py rather than as a raised exception. Catalog entry keeps
     # the message aligned so docs-sync tooling can render it.
-    "E1366": "Substory with zero steps (warning).",
+    "E1366": (
+        "\\substory contains no \\step commands and will render nothing. "
+        "Add at least one \\step inside the substory block."
+    ),
     "E1368": "Non-whitespace text on same line as \\substory or \\endsubstory.",
     # --- Primitive parameter validation (E1400 -- E1459) ---
     # Wave 2 split of the legacy E1103 mega-bucket. Allocation is one
@@ -504,6 +507,28 @@ class AnimationParseError(AnimationError):
 # ---------------------------------------------------------------------------
 # Scene errors (E1150 -- E1199)
 # ---------------------------------------------------------------------------
+
+
+class EmptySubstoryWarning(UserWarning):
+    """E1366: ``\\substory`` block contains zero ``\\step`` commands (renders nothing).
+
+    Inherits from :class:`UserWarning` so it can be caught by
+    ``warnings.catch_warnings()`` and ``warnings.filterwarnings()``.
+
+    The warning message always includes an ``[E1366]`` prefix, the
+    opening source line/col of the offending ``\\substory``, and a short
+    actionable hint so authors can pinpoint the empty block immediately.
+
+    Visibility
+    ----------
+    Surfaced via ``warnings.warn()`` from
+    ``scriba.animation.parser.grammar._parse_substory`` at the
+    ``\\endsubstory`` token. The substory node is still returned and
+    appended to the parent frame — it simply has no inner frames, so the
+    renderer produces no output for it.
+    """
+
+    code = "E1366"
 
 
 class FrameCountWarning(UserWarning):

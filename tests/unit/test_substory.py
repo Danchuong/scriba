@@ -6,6 +6,7 @@ import warnings
 
 import pytest
 
+from scriba.animation.errors import EmptySubstoryWarning
 from scriba.animation.parser.ast import FrameIR, SubstoryBlock
 from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.scene import SceneState
@@ -179,7 +180,7 @@ class TestSubstoryErrors:
             _parse(src)
 
     def test_e1366_substory_with_zero_steps(self):
-        """E1366: substory with zero steps emits warning."""
+        """E1366: substory with zero steps emits EmptySubstoryWarning."""
         src = (
             "\\step\n"
             "\\substory\n"
@@ -188,9 +189,42 @@ class TestSubstoryErrors:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             ir = _parse(src)
-            assert any("E1366" in str(warning.message) for warning in w)
+            e1366 = [x for x in w if issubclass(x.category, EmptySubstoryWarning)]
+            assert e1366, "Expected at least one EmptySubstoryWarning"
+            msg = str(e1366[0].message)
+            assert "[E1366]" in msg
+            # substory opens on line 2 of the source string
+            assert "line 2" in msg
         sub = ir.frames[0].substories[0]
         assert len(sub.frames) == 0
+
+    def test_e1366_substory_with_zero_steps_col_present(self):
+        """E1366: warning message includes both line and col of the \\substory token."""
+        src = (
+            "\\step\n"
+            "\\substory\n"
+            "\\endsubstory\n"
+        )
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            _parse(src)
+            e1366 = [x for x in w if issubclass(x.category, EmptySubstoryWarning)]
+            assert e1366
+            msg = str(e1366[0].message)
+            # col is present in structured message
+            assert "col" in msg
+
+    def test_e1366_warning_category_is_empty_substory_warning(self):
+        """E1366 warning is specifically an EmptySubstoryWarning, not a bare UserWarning."""
+        src = (
+            "\\step\n"
+            "\\substory\n"
+            "\\endsubstory\n"
+        )
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            _parse(src)
+            assert any(x.category is EmptySubstoryWarning for x in w)
 
     def test_e1368_text_on_same_line_as_substory(self):
         """E1368: text on same line as \\substory."""

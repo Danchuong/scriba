@@ -91,6 +91,32 @@ _INTERP_RE = re.compile(r"\$\{")
 _STRING_START = '"'
 _COMMENT_CHAR = "%"
 
+_PERCENT_HINT = (
+    "the `%` character is a LaTeX comment and was stripped to"
+    " end of line; if you need a literal `%`, escape it as `\\%`"
+)
+
+
+def _percent_hint_for_source_line(source: str, line_number: int) -> str | None:
+    """Return the LaTeX-comment hint when *line_number* (1-based) of *source*
+    contains a ``%`` character, otherwise ``None``.
+
+    In Scriba's animation mini-language the ``%`` character always starts a
+    comment — the lexer strips everything from ``%`` to end of line regardless
+    of any preceding backslash.  When an E1001 "unbalanced braces" error fires,
+    a ``%`` on the same line is a likely cause: the comment consumed the closing
+    ``}`` and left the brace group open.
+
+    Returns ``None`` when no ``%`` is present or the source is unavailable, so
+    callers can pass the return value directly as ``hint=...``.
+    """
+    lines = source.splitlines()
+    if line_number <= 0 or line_number > len(lines):
+        return None
+    if "%" in lines[line_number - 1]:
+        return _PERCENT_HINT
+    return None
+
 
 # ---------------------------------------------------------------------------
 # Lexer
@@ -276,6 +302,7 @@ class Lexer:
             code="E1001",
             line=line,
             col=col,
+            hint=_percent_hint_for_source_line(source, line),
         )
 
 

@@ -337,6 +337,38 @@ class TestForeachExpansion:
         with pytest.raises(ValidationError, match="E1173"):
             state.apply_frame(frame)
 
+    def test_foreach_empty_iterable_hint(self):
+        """Empty iterable string raises E1173 with a hint listing all three valid forms."""
+        state = SceneState()
+        state.apply_prelude(shapes=(_shape("a"),))
+
+        foreach_cmd = ForeachCommand(
+            variable="i",
+            iterable_raw="",
+            body=(
+                RecolorCommand(
+                    line=0, col=0,
+                    target=Selector(shape_name="a"),
+                    state="done",
+                ),
+            ),
+            line=1,
+        )
+
+        frame = _frame(commands=(foreach_cmd,))
+        with pytest.raises(ValidationError) as exc_info:
+            state.apply_frame(frame)
+
+        err = exc_info.value
+        assert err.code == "E1173"
+        msg = str(err)
+        assert "hint" in msg
+        assert "range" in msg
+        assert "0..n" in msg
+        assert "binding" in msg
+        assert "list_name" in msg
+        assert "literal" in msg
+
     def test_foreach_substitution_in_params(self):
         """${var} replaced in both selector AND param values."""
         state = SceneState()

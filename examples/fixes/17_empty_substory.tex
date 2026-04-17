@@ -1,0 +1,17 @@
+% Fixture 17 — empty \substory warning (E1366)
+%
+% A \substory block with zero \step commands renders nothing.
+% Scriba now emits an EmptySubstoryWarning with the E1366 code and the
+% opening line/col of the substory so the author can find and fill it.
+%
+% Expected stderr:
+%   UserWarning (EmptySubstoryWarning):
+%   [E1366] \substory at line 14, col 1 contains no \step commands
+%            and will render nothing. Add at least one \step inside
+%            the substory block.
+
+\begin{animation}[id="fix-17-empty-substory"]
+\step
+\substory[title="empty — triggers E1366"]
+\endsubstory
+\end{animation}

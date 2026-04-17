@@ -258,6 +258,7 @@ def _snapshot_to_frame_data(
             "arrow_from": a.arrow_from,
             "color": a.color,
             "position": a.position,
+            **({"arrow": True} if a.arrow else {}),
         }
         for a in snap.annotations
     ]
