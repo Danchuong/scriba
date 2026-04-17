@@ -532,6 +532,40 @@ _WALL_CLOCK_SECONDS = 1
 _CUMULATIVE_BUDGET_SECONDS: float = 5.0
 _cumulative_elapsed: float = 0.0
 
+# ---------------------------------------------------------------------------
+# SIGXCPU handler — W7-C2
+# ---------------------------------------------------------------------------
+# Tracks the request ID currently being evaluated so the SIGXCPU handler can
+# embed it in the graceful error response.  Set in main() before each
+# _evaluate() call; signal-safe (only read, not written, inside the handler).
+_current_request_id: str | None = None
+
+
+def _sigxcpu_handler(signum: int, frame: Any) -> None:
+    """Write a graceful E1152 response when the RLIMIT_CPU soft limit fires.
+
+    The OS sends SIGXCPU when the process accumulates ``_CPU_SOFT_LIMIT_SECONDS``
+    of CPU time.  With the hard limit set to 60 s we have a grace window to flush
+    a structured response before SIGKILL arrives.
+    """
+    response = {
+        "id": _current_request_id,
+        "ok": False,
+        "code": "E1152",
+        "message": (
+            "Starlark CPU limit exceeded (5s): worker process has consumed "
+            "too much CPU time across all blocks"
+        ),
+        "line": None,
+        "col": None,
+    }
+    try:
+        sys.stdout.write(json.dumps(response, ensure_ascii=True) + "\n")
+        sys.stdout.flush()
+    except OSError:
+        pass
+    sys.exit(0)  # clean exit; parent will respawn on next request
+
 
 def reset_cumulative_budget() -> None:
     """Reset the cumulative Starlark wall-clock budget to zero.
@@ -805,10 +839,19 @@ def main() -> None:
     parent process via ``preexec_fn`` before this code runs.  See
     ``starlark_host._starlark_preexec``.
     """
+    global _current_request_id
+
     # Lock the recursion limit to the value promised by the spec.  Without
     # this the cap would float with the Python interpreter default, which
     # has been observed to differ across CPython builds and OSes.
     sys.setrecursionlimit(_RECURSION_DEPTH_LIMIT)
+
+    # W7-C2: Install SIGXCPU handler so that when the RLIMIT_CPU soft limit
+    # fires (after ~5s of accumulated CPU time) we can flush a structured
+    # E1152 response instead of dying with no output (returncode -24).
+    # SIGXCPU only exists on Unix; guard with hasattr for Windows portability.
+    if hasattr(signal, "SIGXCPU"):
+        signal.signal(signal.SIGXCPU, _sigxcpu_handler)
 
     sys.stderr.flush()  # flush any logging output before ready signal
 
@@ -847,7 +890,11 @@ def main() -> None:
         if op == "eval":
             caller_globals = request.get("globals", {})
             source = request.get("source", "")
+            # W7-C2: track the active request ID so _sigxcpu_handler can embed
+            # it in the graceful error response if SIGXCPU fires mid-eval.
+            _current_request_id = request_id
             response = _evaluate(source, caller_globals, request_id)
+            _current_request_id = None
             sys.stdout.write(json.dumps(response, ensure_ascii=False) + "\n")
             sys.stdout.flush()
             continue

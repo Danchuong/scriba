@@ -212,13 +212,26 @@ def fruchterman_reingold(
 
 
 def _arrow_marker_defs() -> str:
-    """Return an SVG ``<defs>`` block with the shared arrowhead marker."""
+    """Return an SVG ``<defs>`` block with the shared arrowhead markers.
+
+    Two markers are emitted for SVG 1.1 compatibility (Firefox ESR ≤ 88
+    does not support ``orient="auto-start-reverse"``):
+
+    * ``scriba-arrow-fwd`` — forward arrowhead, ``orient="auto"``.
+    * ``scriba-arrow-rev`` — reverse arrowhead, path rotated 180°,
+      ``orient="auto"``.
+    """
     return (
         '<defs>'
-        '<marker id="scriba-arrow" viewBox="0 0 10 10" refX="10" refY="5" '
-        'markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
-        '<title>Arrowhead</title>'
+        '<marker id="scriba-arrow-fwd" viewBox="0 0 10 10" refX="10" refY="5" '
+        'markerWidth="6" markerHeight="6" orient="auto">'
+        '<title>Arrowhead (forward)</title>'
         '<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>'
+        '</marker>'
+        '<marker id="scriba-arrow-rev" viewBox="0 0 10 10" refX="0" refY="5" '
+        'markerWidth="6" markerHeight="6" orient="auto">'
+        '<title>Arrowhead (reverse)</title>'
+        '<path d="M 10 0 L 0 5 L 10 10 z" fill="currentColor"/>'
         '</marker>'
         '</defs>'
     )
@@ -688,7 +701,7 @@ class Graph(PrimitiveBase):
                 # Shorten line so arrowhead stops at circle boundary
                 x2, y2 = _shorten_line_to_circle(x1, y1, x2, y2, self._node_radius)
 
-            marker = ' marker-end="url(#scriba-arrow)"' if self.directed else ""
+            marker = ' marker-end="url(#scriba-arrow-fwd)"' if self.directed else ""
             edge_colors = svg_style_attrs(state)
             edge_stroke = edge_colors["stroke"]
             edge_sw = "1.5" if state == "idle" else "2"

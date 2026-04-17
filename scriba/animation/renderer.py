@@ -416,6 +416,11 @@ class AnimationRenderer:
         ctx: RenderContext,
     ) -> RenderArtifact:
         """Parse, materialise scenes, and emit HTML for one animation block."""
+        # W7-M1: reset the per-render cumulative budget so that time consumed
+        # by previous renders sharing this StarlarkHost does not bleed through.
+        if self._starlark_host is not None:
+            self._starlark_host.begin_render()
+
         ir = self._parse(block)
 
         scene_id = (

@@ -291,6 +291,7 @@ class PersistentSubprocessWorker:
                 raise WorkerError(
                     f"worker {self._name!r} closed unexpectedly "
                     "(empty response)",
+                    code="E1199",
                     stderr=stderr,
                 )
 

@@ -29,7 +29,7 @@ from scriba.tex.renderer import TexRenderer
 
 HTML_TEMPLATE = """\
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="{lang}" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -102,8 +102,9 @@ def render_file(
     output_mode: str = "interactive",
     dump_frames: bool = False,
     minify: bool = True,
+    lang: str = "en",
 ) -> None:
-    source = input_path.read_text()
+    source = input_path.read_text(encoding="utf-8-sig")
     title = html.escape(input_path.stem)  # C2: prevent XSS via malicious filename
 
     from scriba.animation.detector import detect_animation_blocks, detect_diagram_blocks
@@ -207,9 +208,9 @@ def render_file(
 
     css = "\n".join(css_parts)
 
-    full_html = HTML_TEMPLATE.format(title=title, body=body, css=css)
+    full_html = HTML_TEMPLATE.format(title=title, body=body, css=css, lang=lang)
 
-    output_path.write_text(full_html)
+    output_path.write_text(full_html, encoding="utf-8")
     block_count = len(anim_blocks) + len(diag_blocks)
     tex_gaps = len([p for p in html_parts if p]) - block_count
     print(f"Rendered {block_count} block(s) + {tex_gaps} TeX region(s) -> {output_path}")
@@ -235,6 +236,11 @@ def main():
         action="store_true",
         help="Disable HTML minification (useful for debugging output)",
     )
+    parser.add_argument(
+        "--lang",
+        default="en",
+        help="BCP 47 language tag for HTML lang= attribute (e.g. 'vi', 'zh', 'ar')",
+    )
     args = parser.parse_args()
 
     if not args.input.exists():
@@ -259,6 +265,7 @@ def main():
         output_mode=output_mode,
         dump_frames=args.dump_frames,
         minify=not args.no_minify,
+        lang=args.lang,
     )
 
     if args.open:

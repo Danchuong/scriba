@@ -57,18 +57,18 @@ const KATEX_OPTIONS_BASE = {
   maxExpand: 100,
 };
 
-function renderOne(math, displayMode) {
+function renderOne(math, displayMode, requestMacros) {
   try {
-    // Always pass a *fresh* empty macros map so that any ``\def`` that
-    // KaTeX accepts inside ``math`` cannot persist to the next call.
-    // Historically KaTeX mutates the ``macros`` argument in place when
-    // it sees a ``\def``, which turns the options object into a
-    // stateful cache across renders. By handing it a per-call literal
-    // we guarantee each render starts from a clean slate.
+    // Merge caller-supplied macros into a *fresh* copy so that any
+    // ``\def`` KaTeX accepts inside ``math`` cannot mutate the original
+    // dict or persist across calls. Historically KaTeX mutates the
+    // ``macros`` argument in place; Object.assign gives each render its
+    // own starting state while still honouring document-wide macros
+    // threaded in from the Python side via ``request.macros``.
     const html = katex.renderToString(math, {
       ...KATEX_OPTIONS_BASE,
       displayMode: displayMode || false,
-      macros: {},
+      macros: Object.assign({}, requestMacros || {}),
     });
     return { html, error: null };
   } catch (e) {
@@ -86,11 +86,14 @@ rl.on("line", (line) => {
     }
 
     if (request.type === "batch") {
-      const results = (request.items || []).map((item) => renderOne(item.math, item.displayMode));
+      const topMacros = request.macros || {};
+      const results = (request.items || []).map((item) =>
+        renderOne(item.math, item.displayMode, topMacros)
+      );
       process.stdout.write(JSON.stringify({ results }) + "\n");
     } else {
       // Single render
-      const result = renderOne(request.math, request.displayMode);
+      const result = renderOne(request.math, request.displayMode, request.macros);
       process.stdout.write(JSON.stringify(result) + "\n");
     }
   } catch (e) {

@@ -778,3 +778,44 @@ def test_validation_env_stripping_does_not_affect_center(pipeline, ctx):
     doc = pipeline.render(src, ctx)
     assert "scriba-tex-center" in doc.html
     assert "Centered text" in doc.html
+
+
+# -----------------------------------------------------------------------------
+# W7-C1: katex_macros actually expand through the JS worker (no mocking)
+# -----------------------------------------------------------------------------
+
+
+def test_katex_macros_expand_in_real_worker():
+    """Macros passed to TexRenderer must expand through the real JS worker.
+
+    This test does NOT mock the worker — it verifies the full round-trip:
+    Python serialises macros → JS ``renderOne`` receives them → KaTeX
+    expands ``\\RR`` to ``\\mathbb{R}`` → HTML contains ``mord mathbb``
+    (the KaTeX class for a double-struck letter) and NOT the red error
+    style ``color:#cc0000``.
+    """
+    pool = SubprocessWorkerPool()
+    try:
+        r = TexRenderer(
+            worker_pool=pool,
+            pygments_theme="none",
+            katex_macros={r"\RR": r"\mathbb{R}"},
+        )
+        try:
+            p = Pipeline([r])
+            try:
+                doc = p.render(r"$\RR$", _make_ctx())
+                # Must contain the KaTeX double-struck R glyph class.
+                assert "mord mathbb" in doc.html, (
+                    f"Expected 'mord mathbb' (expanded macro) in HTML, got:\n{doc.html}"
+                )
+                # Must NOT contain the KaTeX unknown-command red colour.
+                assert "color:#cc0000" not in doc.html, (
+                    f"Macro was not expanded — red error text found:\n{doc.html}"
+                )
+            finally:
+                p.close()
+        finally:
+            r.close()
+    finally:
+        pool.close()

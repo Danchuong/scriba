@@ -12,6 +12,7 @@ from __future__ import annotations
 import abc
 import math
 import re
+import unicodedata
 import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
@@ -130,17 +131,64 @@ def _inset_rect_attrs(
     }
 
 
-def estimate_text_width(text: str, font_size: int = 14) -> int:
-    """Estimate rendered text width in pixels using conservative heuristics.
+def _char_display_width(ch: str) -> float:
+    """Return display-width multiplier for one Unicode codepoint.
 
-    Uses a simple character-count model tuned for common monospace and
-    sans-serif fonts.  Callers should add padding on top of this estimate.
+    Returns:
+        0.0  — combining marks / format chars (zero display width)
+        1.0  — Wide / Fullwidth CJK (≈ 1 em in CJK fonts)
+        0.62 — everything else (Latin/ASCII average)
+    """
+    cat = unicodedata.category(ch)
+    if cat in ("Mn", "Me", "Cf"):  # combining / enclosing mark / format
+        return 0.0
+    eaw = unicodedata.east_asian_width(ch)
+    if eaw in ("W", "F"):  # Wide / Fullwidth
+        return 1.0
+    return 0.62
+
+
+def estimate_text_width(text: str, font_size: int = 14) -> int:
+    """Estimate rendered text width in pixels using Unicode-aware heuristics.
+
+    Handles CJK full-width characters, combining diacritics, ZWJ emoji
+    sequences, and ASCII Latin text.  Uses pure stdlib (unicodedata).
+
+    Rules applied in order:
+    - ZWJ sequences (U+200D joiners): the entire joined cluster counts
+      as exactly 1.0 em.  The algorithm uses a two-pass approach:
+      first identify cluster boundaries, then sum widths.
+    - Combining marks / format chars (Mn, Me, Cf category): 0 width.
+    - East-Asian Wide / Fullwidth: 1.0 em.
+    - All other chars: 0.62 em (sans-serif Latin average).
+
+    Callers should add padding on top of this estimate.
     """
     s = str(text)
-    # Average character width ≈ 0.6 × font_size for sans-serif,
-    # ≈ 0.62 × font_size for monospace.  Use 0.62 (conservative).
-    avg_char_w = font_size * 0.62
-    return int(len(s) * avg_char_w + 0.5)
+    total: float = 0.0
+    i = 0
+    n = len(s)
+    while i < n:
+        ch = s[i]
+        if ch == "\u200d":
+            # Bare ZWJ between clusters — skip; the previous cluster
+            # was already merged by look-ahead below.
+            i += 1
+            continue
+        # Peek: if ANY later codepoint in this cluster is joined via ZWJ,
+        # consume the whole ZWJ run as a single 1.0 em cluster.
+        if i + 1 < n and s[i + 1] == "\u200d":
+            # Walk forward past the entire ZWJ sequence.
+            i += 1  # skip ch (base of cluster)
+            while i < n and s[i] == "\u200d":
+                i += 1  # skip ZWJ
+                if i < n and s[i] != "\u200d":
+                    i += 1  # skip next base in cluster
+            total += 1.0  # whole cluster = 1 em
+            continue
+        total += _char_display_width(ch)
+        i += 1
+    return int(total * font_size + 0.5)
 
 # ---------------------------------------------------------------------------
 # Smart label placement constants & helpers
@@ -462,21 +510,20 @@ def _render_mixed_html(
     the *render_inline_tex* callback (which takes a bare fragment, no
     ``$`` delimiters) and returned as-is (already HTML).
     """
+    # W7-H1: hide escaped \$ before math regex so two escaped dollars
+    # cannot pair up as a phantom math span.
+    _SENTINEL = "\x00SCRIBA_BASE_DOLLAR\x00"
+    src = str(text).replace("\\$", _SENTINEL)
     parts: list[str] = []
     last = 0
-    for m in _INLINE_MATH_RE.finditer(str(text)):
-        # Escape the literal text before this match
+    for m in _INLINE_MATH_RE.finditer(src):
         if m.start() > last:
-            parts.append(_escape_xml(str(text)[last : m.start()]))
-        # Render the math fragment — wrap in $…$ because the callback
-        # (from _make_inline_tex_callback / tex_inline_provider) expects
-        # text that may contain ``$...$`` delimiters.
-        parts.append(render_inline_tex(f"${m.group(1)}$"))
+            parts.append(_escape_xml(src[last : m.start()].replace(_SENTINEL, "$")))
+        parts.append(render_inline_tex(f"${m.group(1).replace(_SENTINEL, '$')}$"))
         last = m.end()
-    # Trailing literal text
-    tail = str(text)[last:]
+    tail = src[last:]
     if tail:
-        parts.append(_escape_xml(tail))
+        parts.append(_escape_xml(tail.replace(_SENTINEL, "$")))
     return "".join(parts)
 
 

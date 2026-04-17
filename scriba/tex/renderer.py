@@ -58,6 +58,15 @@ _KATEX_ERROR_RE = re.compile(
     re.IGNORECASE,
 )
 
+# W7-M2: KaTeX also emits inline color fallback (``<span style="color:#cc0000">``)
+# for undefined commands when trust=false and strict=false — e.g. an unknown
+# ``\foo`` renders red without raising. Scan for this too so authors get an
+# E1200 warning instead of silent red text.
+_KATEX_COLOR_FALLBACK_RE = re.compile(
+    r'<span[^>]*?style="[^"]*color\s*:\s*#cc0000[^"]*"[^>]*>([^<]+)</span>',
+    re.IGNORECASE,
+)
+
 
 def _scan_katex_errors(html: str, ctx: RenderContext | None) -> None:
     """Surface every ``<span class="katex-error">`` in *html* via the
@@ -84,6 +93,19 @@ def _scan_katex_errors(html: str, ctx: RenderContext | None) -> None:
             ctx,
             "E1200",
             f"KaTeX inline error: {title}",
+            severity="hidden",
+        )
+    for m in _KATEX_COLOR_FALLBACK_RE.finditer(html):
+        literal = (
+            m.group(1)
+            .replace("&amp;", "&")
+            .replace("&lt;", "<")
+            .replace("&gt;", ">")
+        )
+        _emit_warning(
+            ctx,
+            "E1200",
+            f"KaTeX unknown command rendered as literal: {literal.strip()}",
             severity="hidden",
         )
 
@@ -325,7 +347,15 @@ class TexRenderer:
         if not raw.strip():
             return ""
 
-        # 1. Inline math first → safe HTML span → placeholder.
+        # 0. Hide escaped \$ BEFORE the math regex runs so that two or more
+        #    \$ sequences in the same cell cannot open/close a spurious math
+        #    span. Mirrors the _DOLLAR_LITERAL guard in extract_math().
+        _CELL_DOLLAR = "\x00SCRIBA_CELL_DOLLAR\x00"
+        raw = raw.replace("\\$", _CELL_DOLLAR)
+
+        # 1. Display math ($$...$$) BEFORE single-dollar inline math,
+        #    mirroring the priority order in extract_math(). This prevents
+        #    $$...$$ from being consumed as inline + two literal dollars.
         cell_placeholders: list[tuple[str, str]] = []
 
         def _stash(html: str) -> str:
@@ -333,16 +363,24 @@ class TexRenderer:
             cell_placeholders.append((ph, html))
             return ph
 
+        def _display_math_sub(m: re.Match[str]) -> str:
+            inner = m.group(1)
+            if not inner.strip():
+                return m.group(0)
+            return _stash(self._render_display(inner))
+
         def _math_sub(m: re.Match[str]) -> str:
             inner = m.group(1)
             if not inner.strip():
                 return m.group(0)
             return _stash(self._render_inline(inner))
 
-        text = re.sub(r"\$([^\$]+?)\$", _math_sub, raw)
+        text = re.sub(r"\$\$([\s\S]*?)\$\$", _display_math_sub, raw)
+        text = re.sub(r"\$([^\$]+?)\$", _math_sub, text)
 
-        # 2. Escape literals before HTML escape.
-        text = text.replace("\\$", "$").replace("\\&", "&")
+        # 2. Escape literals before HTML escape. \$ is already stashed as
+        #    _CELL_DOLLAR so we restore it to a plain dollar at the end.
+        text = text.replace("\\&", "&")
 
         # 3. HTML-escape free text (math is already stashed).
         text = _html.escape(text, quote=False)
@@ -367,6 +405,8 @@ class TexRenderer:
         # 6. Restore math placeholders.
         for ph, html in cell_placeholders:
             text = text.replace(ph, html)
+        # 7. Restore the escaped-dollar sentinel to a plain dollar sign.
+        text = text.replace(_CELL_DOLLAR, "$")
         return text
 
     def _render_inline(self, tex: str) -> str:
@@ -396,6 +436,34 @@ class TexRenderer:
                 )
             return html_escape_text(tex)
         return f'<span class="scriba-tex-math-inline">{html}</span>'
+
+    def _render_display(self, tex: str) -> str:
+        """Render a bare display-math fragment to HTML (used by _render_cell)."""
+        if not tex.strip():
+            return ""
+        worker = self._worker_pool.get("katex")
+        request: dict = {
+            "type": "single",
+            "math": tex.strip(),
+            "displayMode": True,
+        }
+        if self._katex_macros:
+            request["macros"] = dict(self._katex_macros)
+        try:
+            response = worker.send(request, timeout=self._katex_worker_timeout)
+        except WorkerError as e:
+            if self._strict_math:
+                raise
+            logger.warning("KaTeX display failed, escaping: %s", e)
+            return html_escape_text(tex)
+        html = response.get("html")
+        if html is None:
+            if self._strict_math:
+                raise RendererError(
+                    f"katex error: {response.get('error')}", renderer="tex"
+                )
+            return html_escape_text(tex)
+        return f'<div class="scriba-tex-math-display">{html}</div>'
 
     # ----- main pipeline -----
 

@@ -1,8 +1,10 @@
-"""Regression tests for three Starlark sandbox security fixes.
+"""Regression tests for Starlark sandbox security fixes.
 
-C1 — Cumulative budget wired into StarlarkHost.eval()
+C1 — Cumulative budget tracked on StarlarkHost instance (W7-H2/W7-M1)
 H2 — Bulk-allocation builtins capped to prevent C-level SIGALRM bypass
 M3 — RecursionError no longer leaks starlark_worker.py internal paths
+W7-C2 — SIGXCPU handler flushes graceful E1152 response
+W7-L3 — Empty-response WorkerError carries E1199 code
 """
 
 from __future__ import annotations
@@ -75,49 +77,32 @@ def _close(proc: subprocess.Popen) -> None:
 
 
 class TestCumulativeBudgetWiring:
-    """C1: StarlarkHost.eval() must reset and consume the cumulative budget."""
+    """W7-H2/W7-M1: Budget tracked on StarlarkHost instance, not module-level."""
 
-    @pytest.fixture(autouse=True)
-    def _reset(self):
-        reset_cumulative_budget()
-        yield
-        reset_cumulative_budget()
-
-    def test_host_eval_resets_budget_on_first_call(self):
-        """A fresh StarlarkHost resets the module-level counter on first eval."""
-        from scriba.animation import starlark_worker as sw
-
-        # Pre-charge the counter so we can detect the reset.
-        consume_cumulative_budget(4.9)
-        assert sw.get_cumulative_elapsed() == pytest.approx(4.9)
-
-        pool = SubprocessWorkerPool()
+    def test_host_starts_with_zero_budget(self):
+        """A fresh StarlarkHost starts with _cumulative_elapsed == 0.0."""
         from scriba.animation.starlark_host import StarlarkHost
 
+        pool = SubprocessWorkerPool()
         host = StarlarkHost(pool)
         try:
-            # First eval() must reset the counter first.
-            host.eval({}, "x = 1")
-            # Counter is now the elapsed time of this single fast call —
-            # much less than the pre-charged 4.9 s.
-            assert sw.get_cumulative_elapsed() < 4.0
+            assert host._cumulative_elapsed == 0.0
         finally:
             pool.close()
 
     def test_host_eval_charges_elapsed_after_success(self):
-        """Each successful eval() charges its wall-clock time to the budget."""
-        from scriba.animation import starlark_worker as sw
+        """Each successful eval() charges its wall-clock time to the instance budget."""
         from scriba.animation.starlark_host import StarlarkHost
 
         pool = SubprocessWorkerPool()
         host = StarlarkHost(pool)
         try:
             host.eval({}, "x = 1")
-            first_elapsed = sw.get_cumulative_elapsed()
+            first_elapsed = host._cumulative_elapsed
             assert first_elapsed > 0.0
 
             host.eval({}, "y = 2")
-            second_elapsed = sw.get_cumulative_elapsed()
+            second_elapsed = host._cumulative_elapsed
             assert second_elapsed > first_elapsed
         finally:
             pool.close()
@@ -130,40 +115,57 @@ class TestCumulativeBudgetWiring:
         pool = SubprocessWorkerPool()
         host = StarlarkHost(pool)
         try:
-            # Make one cheap call to trigger the initial reset.
+            # Make one cheap call to populate _cumulative_elapsed.
             host.eval({}, "x = 1")
-            # Set the counter well past the limit; the next consume_cumulative_budget
-            # call inside eval() will detect the overflow even if elapsed is tiny.
-            sw._cumulative_elapsed = sw._CUMULATIVE_BUDGET_SECONDS + 1.0
-            # The next eval() must detect the overflow via consume_cumulative_budget.
+            # Directly set the instance counter past the limit so the next
+            # eval() detects overflow regardless of its own tiny elapsed.
+            host._cumulative_elapsed = sw._CUMULATIVE_BUDGET_SECONDS + 1.0
             with pytest.raises(WorkerError) as exc_info:
                 host.eval({}, "y = 2")
             err = exc_info.value
-            # WorkerError carries the code as an attribute or in its message.
             assert "E1152" in str(err) or getattr(err, "code", "") == "E1152"
             assert "cumulative" in str(err).lower()
         finally:
             pool.close()
 
-    def test_second_host_instance_resets_budget(self):
-        """Each new StarlarkHost resets the budget on its first eval(), so
-        budgets from a previous host do not bleed into a new render."""
-        from scriba.animation import starlark_worker as sw
+    def test_begin_render_resets_instance_budget(self):
+        """begin_render() zeroes _cumulative_elapsed so renders don't bleed."""
+        from scriba.animation.starlark_host import StarlarkHost
+
+        pool = SubprocessWorkerPool()
+        host = StarlarkHost(pool)
+        try:
+            host.eval({}, "a = 1")
+            assert host._cumulative_elapsed > 0.0
+
+            host.begin_render()
+            assert host._cumulative_elapsed == 0.0
+
+            # Ensure eval() still works and starts accumulating from zero.
+            host.eval({}, "b = 2")
+            assert host._cumulative_elapsed > 0.0
+        finally:
+            pool.close()
+
+    def test_two_hosts_have_independent_budgets(self):
+        """Two StarlarkHost instances on the same pool track budgets independently."""
         from scriba.animation.starlark_host import StarlarkHost
 
         pool = SubprocessWorkerPool()
         host1 = StarlarkHost(pool)
+        host2 = StarlarkHost(pool)
         try:
             host1.eval({}, "a = 1")
-            after_host1 = sw.get_cumulative_elapsed()
-            assert after_host1 > 0
-
-            # Second host on same pool — must reset counter.
-            host2 = StarlarkHost(pool)
             host2.eval({}, "b = 2")
-            after_host2 = sw.get_cumulative_elapsed()
-            # After reset, elapsed is only the time of host2's single call.
-            assert after_host2 < after_host1 + 0.5  # sanity: not accumulating
+            # Both accumulate independently; neither resets the other.
+            assert host1._cumulative_elapsed > 0.0
+            assert host2._cumulative_elapsed > 0.0
+            # They should be roughly equal (both did one fast eval).
+            # The key invariant: one host's eval doesn't zero the other.
+            before = host1._cumulative_elapsed
+            host2.begin_render()
+            # host1 budget must be untouched after host2 reset.
+            assert host1._cumulative_elapsed == pytest.approx(before)
         finally:
             pool.close()
 
@@ -399,3 +401,88 @@ class TestRecursionErrorNoPathLeak:
             assert "starlark_worker.py" not in resp["message"]
         finally:
             _close(proc)
+
+
+# ---------------------------------------------------------------------------
+# W7-C2 — SIGXCPU handler writes graceful E1152
+# ---------------------------------------------------------------------------
+
+
+class TestSIGXCPUHandler:
+    """W7-C2: SIGXCPU handler must flush a structured E1152 response."""
+
+    @pytest.mark.skipif(
+        not hasattr(__import__("signal"), "SIGXCPU"),
+        reason="SIGXCPU not available on this platform",
+    )
+    def test_sigxcpu_handler_writes_e1152_and_exits_cleanly(self):
+        """Send SIGXCPU to a live worker; it should return E1152 and exit 0."""
+        import os
+        import signal as _signal
+
+        proc = _spawn_worker()
+        try:
+            # Confirm the worker is alive via ping.
+            pong = _send(proc, {"op": "ping", "id": "ping-1"})
+            assert pong.get("ok") is True
+
+            # Deliver SIGXCPU directly to the worker process.
+            os.kill(proc.pid, _signal.SIGXCPU)
+
+            # The handler should write an E1152 line to stdout before exiting.
+            line = proc.stdout.readline()
+            assert line, "worker produced no output after SIGXCPU"
+            resp = json.loads(line)
+            assert resp["ok"] is False
+            assert resp["code"] == "E1152"
+            assert (
+                "cpu" in resp["message"].lower()
+                or "limit" in resp["message"].lower()
+            )
+
+            # Worker must have exited cleanly (exit code 0 from sys.exit(0)).
+            proc.wait(timeout=3)
+            assert proc.returncode == 0, (
+                f"expected returncode 0, got {proc.returncode}"
+            )
+        finally:
+            _close(proc)
+
+
+# ---------------------------------------------------------------------------
+# W7-L3 — Empty-response WorkerError carries E1199
+# ---------------------------------------------------------------------------
+
+
+class TestEmptyResponseErrorCode:
+    """W7-L3: a worker crash (empty response) must raise WorkerError(code='E1199')."""
+
+    def test_empty_response_worker_error_has_e1199_code(self):
+        """Kill the worker subprocess; the host must raise WorkerError E1199."""
+        import os
+        import signal as _signal
+
+        from scriba.animation.starlark_host import StarlarkHost
+
+        pool = SubprocessWorkerPool()
+        host = StarlarkHost(pool)
+        try:
+            # First request confirms the worker is alive.
+            host.eval({}, "x = 1")
+
+            # Retrieve the underlying PersistentSubprocessWorker and kill the
+            # subprocess so the next send() gets an empty response.
+            worker = pool.get("starlark")
+            if worker._process is not None:
+                os.kill(worker._process.pid, _signal.SIGKILL)
+
+            # The next eval() must raise WorkerError with code E1199.
+            with pytest.raises(WorkerError) as exc_info:
+                host.eval({}, "y = 2")
+            err = exc_info.value
+            assert getattr(err, "code", None) == "E1199", (
+                f"expected E1199, got code={getattr(err, 'code', None)!r} "
+                f"message={str(err)!r}"
+            )
+        finally:
+            pool.close()

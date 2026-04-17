@@ -86,7 +86,10 @@ _KNOWN_COMMANDS = frozenset(
 # ---------------------------------------------------------------------------
 
 _NUMBER_RE = re.compile(r"-?(?:\d+\.?\d*|\.\d+)")
-_IDENT_RE = re.compile(r"[a-zA-Z_][a-zA-Z0-9_]*")
+# Unicode-aware identifier: starts with a Unicode letter (non-digit, non-
+# punctuation word char), followed by any word chars.  Allows Vietnamese,
+# CJK, and other Unicode shape names (e.g. \shape{mảng}{Array}).
+_IDENT_RE = re.compile(r"[^\W\d]\w*", re.UNICODE)
 _INTERP_RE = re.compile(r"\$\{")
 _STRING_START = '"'
 _COMMENT_CHAR = "%"

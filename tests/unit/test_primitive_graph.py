@@ -227,8 +227,8 @@ class TestGraphEmitSvg:
             "directed": True,
         })
         svg = g.emit_svg()
-        assert "scriba-arrow" in svg
-        assert 'marker-end="url(#scriba-arrow)"' in svg
+        assert "scriba-arrow-fwd" in svg
+        assert 'marker-end="url(#scriba-arrow-fwd)"' in svg
 
     def test_node_circle_radius(self) -> None:
         g = Graph("G", {

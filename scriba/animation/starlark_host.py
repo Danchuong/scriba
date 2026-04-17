@@ -75,7 +75,9 @@ def _maybe_emit_windows_warning() -> None:
 # memory cap. A prior drift allowed 256 MB at the RLIMIT level and 128 MB at
 # the tracemalloc level, undermining the DoS guarantee the spec advertises.
 _MEMORY_LIMIT_BYTES = 64 * 1024 * 1024  # 64 MB
-_CPU_LIMIT_SECONDS = 5
+_CPU_LIMIT_SECONDS = 5  # kept for reference; see _CPU_SOFT/HARD below
+_CPU_SOFT_LIMIT_SECONDS = 5   # SIGXCPU fires here — handleable by worker
+_CPU_HARD_LIMIT_SECONDS = 60  # SIGKILL backstop — process cannot survive this
 
 
 def _starlark_preexec() -> None:
@@ -109,11 +111,15 @@ def _starlark_preexec() -> None:
         except (ValueError, OSError):
             logger.debug("RLIMIT_DATA not supported; memory limit not enforced")
 
-    # CPU time limit (works on both Linux and macOS)
+    # CPU time limit (works on both Linux and macOS).
+    # Split soft (SIGXCPU, handleable) from hard (SIGKILL backstop) so the
+    # worker's SIGXCPU handler can flush a structured E1152 response before
+    # the process terminates. With soft==hard the default SIGXCPU disposition
+    # (terminate) fires immediately, giving the worker no grace window.
     try:
         resource.setrlimit(
             resource.RLIMIT_CPU,
-            (_CPU_LIMIT_SECONDS, _CPU_LIMIT_SECONDS),
+            (_CPU_SOFT_LIMIT_SECONDS, _CPU_HARD_LIMIT_SECONDS),
         )
     except (ValueError, OSError):
         logger.debug("RLIMIT_CPU not supported; CPU time limit not enforced")
@@ -147,9 +153,22 @@ class StarlarkHost:
             preexec_fn=_starlark_preexec,
         )
         self._pool = worker_pool
-        # Track whether the cumulative budget has been reset for this
-        # render session. Reset happens lazily on the first eval() call.
-        self._budget_reset_done: bool = False
+        # W7-H2 / W7-M1: per-instance cumulative budget accumulator.
+        # Replaces the module-level _cumulative_elapsed in starlark_worker,
+        # eliminating the thread-safety race and cross-render budget leak.
+        # Reset via begin_render() at the start of each render.
+        self._cumulative_elapsed: float = 0.0
+
+    def begin_render(self) -> None:
+        """Reset the per-render cumulative wall-clock budget to zero.
+
+        Call this at the start of each render (before the first
+        ``\\compute`` block) so that budget consumed by previous renders
+        sharing this host does not bleed into the current render.
+
+        ``AnimationRenderer.render_block()`` calls this automatically.
+        """
+        self._cumulative_elapsed = 0.0
 
     def eval(
         self,
@@ -181,13 +200,6 @@ class StarlarkHost:
             On transport failure, timeout, or if the worker returns an
             error response.
         """
-        # C1 fix: reset the cumulative budget on the first eval() call of
-        # each StarlarkHost session so that budgets from a previous render
-        # (sharing the same module-level state) do not bleed through.
-        if not self._budget_reset_done:
-            _starlark_worker_module.reset_cumulative_budget()
-            self._budget_reset_done = True
-
         request_id = uuid.uuid4().hex[:10]
         request = {
             "op": "eval",
@@ -206,19 +218,22 @@ class StarlarkHost:
             message = response.get("message", "unknown starlark error")
             raise WorkerError(message, code=code)
 
-        # C1 fix: charge the wall-clock time of this block against the
-        # cumulative budget.  consume_cumulative_budget() raises an
-        # AnimationError(E1152) when the total exceeds _CUMULATIVE_BUDGET_SECONDS.
-        # Convert to WorkerError so callers get the same error type as other
-        # sandbox violations.
-        from scriba.core.errors import ScribaError  # avoid circular at module level
-        try:
-            _starlark_worker_module.consume_cumulative_budget(elapsed)
-        except ScribaError as exc:
+        # W7-H2 / W7-M1: charge elapsed time against the instance-level
+        # cumulative budget.  Instance state is thread-safe per render
+        # session (each render should use its own StarlarkHost or call
+        # begin_render() to reset between renders).
+        _CUMULATIVE_BUDGET_SECONDS = _starlark_worker_module._CUMULATIVE_BUDGET_SECONDS
+        if elapsed < 0:
+            elapsed = 0.0
+        self._cumulative_elapsed += elapsed
+        if self._cumulative_elapsed > _CUMULATIVE_BUDGET_SECONDS:
             raise WorkerError(
-                exc._raw_message,
-                code=getattr(exc, "code", "E1152") or "E1152",
-            ) from exc
+                f"cumulative Starlark wall-clock budget exceeded "
+                f"({self._cumulative_elapsed:.2f}s > "
+                f"{_CUMULATIVE_BUDGET_SECONDS}s): reduce the number or size "
+                "of \\compute blocks in this animation",
+                code="E1152",
+            )
 
         return response.get("bindings", {})
 

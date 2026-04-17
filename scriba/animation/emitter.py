@@ -337,10 +337,15 @@ def emit_shared_defs(primitives: dict[str, Any]) -> str:
         return ""
     return (
         "<defs>"
-        '<marker id="scriba-arrow" viewBox="0 0 10 10" '
+        '<marker id="scriba-arrow-fwd" viewBox="0 0 10 10" '
         'refX="10" refY="5" '
-        'markerWidth="6" markerHeight="6" orient="auto-start-reverse">'
+        'markerWidth="6" markerHeight="6" orient="auto">'
         '<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>'
+        "</marker>"
+        '<marker id="scriba-arrow-rev" viewBox="0 0 10 10" '
+        'refX="0" refY="5" '
+        'markerWidth="6" markerHeight="6" orient="auto">'
+        '<path d="M 10 0 L 0 5 L 10 10 z" fill="currentColor"/>'
         "</marker>"
         "</defs>"
     )
@@ -1062,7 +1067,7 @@ def emit_interactive_html(
     </div>
   </div>
   <div class="scriba-stage"></div>
-  <p class="scriba-narration" id="{_escape(scene_id)}-narration" aria-live="polite"></p>
+  <p class="scriba-narration" dir="auto" id="{_escape(scene_id)}-narration" aria-live="polite"></p>
   <div class="scriba-substory-container"></div>
   <div class="scriba-print-frames" style="display:none">
 {print_frames_html}
@@ -1070,6 +1075,7 @@ def emit_interactive_html(
 </div>
 <script>
 (function(){{
+  var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){{return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){{return '\\\\'+c.charCodeAt(0).toString(16)+' ';}});}};
   var W=document.getElementById('{_escape_js(scene_id)}');
   var frames=[
     {js_frames_str}
@@ -1086,7 +1092,7 @@ def emit_interactive_html(
   var _animState='idle';
   var _motionMQ=window.matchMedia('(prefers-reduced-motion:reduce)');
   var _canAnim=(typeof Element.prototype.animate==='function')&&!_motionMQ.matches;
-  _motionMQ.addEventListener('change',function(ev){{_canAnim=(typeof Element.prototype.animate==='function')&&!ev.matches;}});
+  (function(){{var _mh=function(ev){{_canAnim=(typeof Element.prototype.animate==='function')&&!ev.matches;}};if(_motionMQ.addEventListener){{_motionMQ.addEventListener('change',_mh);}}else if(_motionMQ.addListener){{_motionMQ.addListener(function(mq){{_mh({{matches:mq.matches}});}});}}}})()
   var DUR=180;
   var _speed=parseFloat(W.getAttribute('data-scriba-speed'))||1;
   function _dur(ms){{return Math.round(ms/_speed);}}
@@ -1135,7 +1141,7 @@ def emit_interactive_html(
   }}
   function _applyTransition(rec,parsed,pending){{
     var target=rec[0],prop=rec[1],fromVal=rec[2],toVal=rec[3],kind=rec[4];
-    var sel='[data-target="'+CSS.escape(target)+'"]';
+    var sel='[data-target="'+_cssEscape(target)+'"]';
     if(kind==='recolor'){{
       var el=stage.querySelector(sel);
       if(el){{
@@ -1185,7 +1191,7 @@ def emit_interactive_html(
         var pShape=null;
         while(srcP&&srcP.nodeType===1){{
           var ds2=srcP.getAttribute&&srcP.getAttribute('data-shape');
-          if(ds2){{pShape=stage.querySelector('[data-shape="'+CSS.escape(ds2)+'"]');break;}}
+          if(ds2){{pShape=stage.querySelector('[data-shape="'+_cssEscape(ds2)+'"]');break;}}
           srcP=srcP.parentNode;
         }}
         var ct=pShape||stage.querySelector('svg');
@@ -1209,14 +1215,14 @@ def emit_interactive_html(
         _anims.push(a9);pending.push(a9.finished);
       }}
     }}else if(kind==='annotation_remove'){{
-      var el7=stage.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
+      var el7=stage.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
       if(el7){{
         var a7=el7.animate([{{opacity:1}},{{opacity:0}}],
           {{duration:_dur(DUR),easing:'ease-out',fill:'forwards'}});
         _anims.push(a7);pending.push(a7.finished);
       }}
     }}else if(kind==='annotation_add'){{
-      var src8=parsed.querySelector('[data-annotation="'+CSS.escape(target)+'"]');
+      var src8=parsed.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
       if(src8){{
         var clone8=document.importNode(src8,true);
         var srcParent=src8.parentNode;
@@ -1224,7 +1230,7 @@ def emit_interactive_html(
         var _midTransforms=[];
         while(srcParent&&srcParent.nodeType===1){{
           var ds=srcParent.getAttribute&&srcParent.getAttribute('data-shape');
-          if(ds){{parentShape=stage.querySelector('[data-shape="'+CSS.escape(ds)+'"]');break;}}
+          if(ds){{parentShape=stage.querySelector('[data-shape="'+_cssEscape(ds)+'"]');break;}}
           var _tr=srcParent.getAttribute('transform');
           if(_tr)_midTransforms.push(_tr);
           srcParent=srcParent.parentNode;
