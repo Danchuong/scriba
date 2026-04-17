@@ -454,6 +454,10 @@ class SceneState:
                 return tuple(_sub_value(item) for item in v)
             if isinstance(v, Selector):
                 return _sub_selector(v)
+            if isinstance(v, InterpolationRef) and v.name == variable:
+                if v.subscripts:
+                    return _sub_index_expr(v)
+                return value if isinstance(value, int) else val_str
             return v
 
         def _sub_selector(sel: Selector) -> Selector:
@@ -617,6 +621,13 @@ class SceneState:
     def _apply_highlight(self, cmd: HighlightCommand) -> None:
         """\\highlight — ephemeral, cleared at next step."""
         target_str = _selector_to_str(cmd.target)
+        shape_name = target_str.split(".", 1)[0]
+        if shape_name not in self.shape_states:
+            warnings.warn(
+                f"[E1116] \\highlight references undeclared shape "
+                f"'{shape_name}' (target: '{target_str}'); "
+                f"declare it with \\shape before using \\highlight"
+            )
         self.highlights.add(target_str)
 
     def _apply_annotate(self, cmd: AnnotateCommand) -> None:
@@ -627,9 +638,9 @@ class SceneState:
         shape_name = target_str.split(".", 1)[0]
         if shape_name not in self.shape_states:
             warnings.warn(
-                f"\\annotate target shape '{shape_name}' not found "
-                f"in declared shapes, annotation may be invalid",
-                stacklevel=2,
+                f"[E1116] \\annotate references undeclared shape "
+                f"'{shape_name}' (target: '{target_str}'); "
+                f"declare it with \\shape before using \\annotate"
             )
 
         # Cap total active annotations to guard against pathological
@@ -681,10 +692,23 @@ class SceneState:
             target_state.state = cmd.curr_state
 
     def _ensure_target(self, target: str) -> ShapeTargetState:
-        """Find or create a target state entry."""
+        """Find or create a target state entry.
+
+        Emits a structured ``[E1116]`` warning (with E-code, not a bare
+        ``UserWarning``) when the shape referenced by *target* was never
+        declared with ``\\shape``. The entry is still created so the rest
+        of the pipeline can continue — the command is silently dropped by
+        the emitter because the shape has no corresponding primitive.
+        """
         parts = target.split(".", 1)
         shape_name = parts[0]
         if shape_name not in self.shape_states:
+            warnings.warn(
+                f"[E1116] mutation command references undeclared shape "
+                f"'{shape_name}' (target: '{target}'); "
+                f"declare it with \\shape before using \\apply, "
+                f"\\highlight, \\recolor, or \\annotate"
+            )
             self.shape_states[shape_name] = {}
         targets = self.shape_states[shape_name]
         if target not in targets:

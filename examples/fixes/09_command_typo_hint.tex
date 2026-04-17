@@ -1,0 +1,9 @@
+% Regression: typo'd command \reocolor should suggest \recolor via E1006 hint.
+% Before fix: E1006 listed every valid command with no "did you mean?" hint.
+% After fix: E1006 message ends with  did you mean `\recolor`?
+
+\begin{animation}[id="typo-hint", label="Command typo hint regression"]
+\shape{a}{Array}{length=3}
+\step
+\reocolor{a}{state=current}
+\end{animation}

@@ -370,12 +370,19 @@ class SceneParser:
         "\\recolor, \\reannotate, \\annotate, \\cursor, "
         "\\foreach, \\endforeach, \\substory, \\endsubstory"
     )
+    _VALID_COMMAND_NAMES = (
+        "shape", "compute", "step", "narrate", "apply", "highlight",
+        "recolor", "reannotate", "annotate", "cursor",
+        "foreach", "endforeach", "substory", "endsubstory",
+    )
 
     def _raise_unknown_command(self, tok: Token) -> None:
         """Raise ``E1006`` for an unknown backslash command token."""
+        suggestion = suggest_closest(tok.value, self._VALID_COMMAND_NAMES)
+        hint = f" did you mean `\\{suggestion}`?" if suggestion else ""
         raise ValidationError(
             f"unknown command \\{tok.value}; "
-            f"valid commands: {self._VALID_COMMANDS_LIST}",
+            f"valid commands: {self._VALID_COMMANDS_LIST}.{hint}",
             position=tok.col,
             code="E1006",
             line=tok.line,

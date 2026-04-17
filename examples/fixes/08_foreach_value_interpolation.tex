@@ -1,0 +1,8 @@
+\begin{animation}[id="foreach-value-interp", label="foreach value interpolation regression"]
+\shape{a}{Array}{size=4, data=[0,0,0,0]}
+\step
+\foreach{i}{0..3}
+  \apply{a.cell[${i}]}{value=${i}}
+\endforeach
+\narrate{Each cell should show its index: 0, 1, 2, 3.}
+\end{animation}

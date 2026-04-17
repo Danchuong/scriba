@@ -327,7 +327,7 @@ class PrimitiveBase(abc.ABC):
         """Set the CSS state class for an addressable target."""
         if not self.validate_selector(target):
             warnings.warn(
-                f"{self.__class__.__name__} '{self.name}': "
+                f"[E1115] {self.__class__.__name__} '{self.name}': "
                 f"invalid selector '{target}', ignoring set_state()",
                 stacklevel=2,
             )

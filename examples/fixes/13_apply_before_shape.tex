@@ -1,0 +1,8 @@
+% Regression: \apply targeting an undeclared shape must raise E1116.
+% Before fix: exits 0 and renders an empty "No frames" widget — zero error signal.
+% After fix:  raises AnimationError E1116 with a clear hint.
+
+\begin{animation}
+\step
+\apply{a.cell[0]}{value=5}
+\end{animation}

@@ -43,6 +43,8 @@
 | E1109 | Invalid `\recolor` state or missing required state/color parameter. | Use a valid state: idle, current, done, dim, error, good, highlight, path. |
 | E1112 | Unknown annotation position. | Use: above, below, left, right, inside. |
 | E1113 | Invalid or missing annotation color. | Use: info, warn, good, error, muted, path. |
+| E1115 | Selector does not match any addressable part of the target primitive (warning — command silently dropped). | Check selector syntax against the primitive's addressable parts. |
+| E1116 | Mutation command (`\apply`, `\highlight`, `\recolor`, `\annotate`) references a shape that was never declared with `\shape`. | Add a `\shape` declaration in the animation prelude before the first `\step`, e.g. `\shape{a}{Array}{size=5}`. |
 
 ## Starlark Sandbox Errors (E1150--E1155)
 

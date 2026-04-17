@@ -7,7 +7,7 @@ import re
 
 import pytest
 
-from scriba.animation.errors import FrameCountError
+from scriba.animation.errors import AnimationError, FrameCountError
 from scriba.animation.renderer import AnimationRenderer
 from scriba.core.artifact import Block
 from scriba.core.context import RenderContext
@@ -238,3 +238,129 @@ class TestVersion:
 
     def test_priority_is_10(self, renderer: AnimationRenderer) -> None:
         assert renderer.priority == 10
+
+
+class TestNoShapeDeclaredGuard:
+    r"""E1116: \apply/\highlight/\recolor/\annotate without a \shape declaration.
+
+    Regression for the silent "No frames" / empty-stage failure mode where
+    writing \apply{a.cell[0]}{value=5} + \step without a preceding
+    \shape{a}{Array}{...} exits 0 and shows an empty widget.
+    """
+
+    def _render(
+        self,
+        renderer: AnimationRenderer,
+        ctx: RenderContext,
+        body: str,
+    ) -> None:
+        source = r"\begin{animation}" + "\n" + body + "\n" + r"\end{animation}"
+        block = Block(start=0, end=len(source), kind="animation", raw=source)
+        renderer.render_block(block, ctx)
+
+    def test_apply_before_shape_raises_e1116(
+        self,
+        renderer: AnimationRenderer,
+        ctx: RenderContext,
+    ) -> None:
+        """Exact regression from the bug report: apply + step, no shape."""
+        with pytest.raises(AnimationError) as exc_info:
+            self._render(
+                renderer,
+                ctx,
+                r"\apply{a.cell[0]}{value=5}" + "\n" + r"\step",
+            )
+        err = str(exc_info.value)
+        assert "E1116" in err
+        assert "\\shape" in err
+
+    def test_highlight_before_shape_raises_e1116(
+        self,
+        renderer: AnimationRenderer,
+        ctx: RenderContext,
+    ) -> None:
+        with pytest.raises(AnimationError) as exc_info:
+            self._render(
+                renderer,
+                ctx,
+                r"\step" + "\n" + r"\highlight{x.cell[0]}",
+            )
+        assert "E1116" in str(exc_info.value)
+
+    def test_recolor_before_shape_raises_e1116(
+        self,
+        renderer: AnimationRenderer,
+        ctx: RenderContext,
+    ) -> None:
+        with pytest.raises(AnimationError) as exc_info:
+            self._render(
+                renderer,
+                ctx,
+                r"\step" + "\n" + r"\recolor{x.cell[0]}{state=done}",
+            )
+        assert "E1116" in str(exc_info.value)
+
+    def test_annotate_before_shape_raises_e1116(
+        self,
+        renderer: AnimationRenderer,
+        ctx: RenderContext,
+    ) -> None:
+        with pytest.raises(AnimationError) as exc_info:
+            self._render(
+                renderer,
+                ctx,
+                r"\step" + "\n" + r"\annotate{x.cell[0]}{text}",
+            )
+        assert "E1116" in str(exc_info.value)
+
+    def test_steps_only_no_commands_no_error(
+        self,
+        renderer: AnimationRenderer,
+        ctx: RenderContext,
+    ) -> None:
+        """Steps with only narration (no shape refs) must NOT raise E1116."""
+        artifact = None
+        source = (
+            r"\begin{animation}" + "\n"
+            + r"\step" + "\n"
+            + r"\narrate{Just narration, no shapes needed.}" + "\n"
+            + r"\end{animation}"
+        )
+        block = Block(start=0, end=len(source), kind="animation", raw=source)
+        # Must not raise
+        artifact = renderer.render_block(block, ctx)
+        assert artifact is not None
+
+    def test_shape_declared_no_error(
+        self,
+        renderer: AnimationRenderer,
+        ctx: RenderContext,
+    ) -> None:
+        r"""When \shape is declared, \apply must not raise E1116."""
+        source = (
+            r"\begin{animation}" + "\n"
+            + r"\shape{a}{Array}{size=3}" + "\n"
+            + r"\step" + "\n"
+            + r"\apply{a.cell[0]}{value=5}" + "\n"
+            + r"\end{animation}"
+        )
+        block = Block(start=0, end=len(source), kind="animation", raw=source)
+        artifact = renderer.render_block(block, ctx)
+        assert artifact is not None
+        assert "E1116" not in artifact.html
+
+    def test_error_message_includes_hint(
+        self,
+        renderer: AnimationRenderer,
+        ctx: RenderContext,
+    ) -> None:
+        """E1116 error message must include an actionable hint."""
+        with pytest.raises(AnimationError) as exc_info:
+            self._render(
+                renderer,
+                ctx,
+                r"\apply{a.cell[0]}{value=5}" + "\n" + r"\step",
+            )
+        err = str(exc_info.value)
+        # hint: should tell the user how to fix it
+        assert "Array" in err or "\\shape" in err

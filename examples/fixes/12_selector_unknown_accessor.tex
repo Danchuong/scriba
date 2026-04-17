@@ -1,0 +1,12 @@
+% Regression: using an unknown accessor name (a.bogus) must emit [E1115]
+% on stderr with an E-code, not a bare UserWarning.
+% Before fix: stderr showed "UserWarning: selector 'a.bogus' does not match
+%             any addressable part of 'a'"
+% After fix:  stderr shows "[E1115] selector 'a.bogus' does not match any
+%             addressable part of 'a'"
+
+\begin{animation}[id="sel-unknown-accessor", label="Selector unknown accessor"]
+\shape{a}{Array}{size=3}
+\step
+\highlight{a.bogus}
+\end{animation}

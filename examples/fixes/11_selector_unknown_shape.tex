@@ -1,0 +1,10 @@
+% Regression: referencing an undeclared shape name must emit [E1116] on
+% stderr. Before fix: zero output on stderr (exit 0, completely silent).
+% After fix: stderr shows "[E1116] mutation command references undeclared
+%            shape 'nonexistent' ..."
+
+\begin{animation}[id="sel-unknown-shape", label="Selector unknown shape"]
+\shape{a}{Array}{size=3}
+\step
+\highlight{nonexistent.cell[0]}
+\end{animation}

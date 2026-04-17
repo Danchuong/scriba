@@ -27,12 +27,17 @@ from typing import Any
 from scriba.core.artifact import traversable_to_path
 from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.emitter import FrameData, SubstoryData, emit_animation_html, emit_html, scene_id_from_source
-from scriba.animation.errors import FrameCountError
+from scriba.animation.errors import FrameCountError, animation_error
 from scriba.animation.extensions.hl_macro import process_hl_macros
 from scriba.tex.parser.text_commands import apply_text_commands
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
 from scriba.animation.parser.ast import (
     AnimationIR,
+    AnnotateCommand,
+    ApplyCommand,
+    ForeachCommand,
+    HighlightCommand,
+    RecolorCommand,
     ShapeCommand,
     SubstoryBlock,
 )
@@ -271,6 +276,110 @@ def _snapshot_to_frame_data(
 
 
 # ---------------------------------------------------------------------------
+# Pre-materialisation shape-reference guard (E1116)
+# ---------------------------------------------------------------------------
+
+#: Commands that reference a shape by name and therefore require at least
+#: one ``\\shape`` declaration to produce meaningful output.
+_SHAPE_DEPENDENT_TYPES = (
+    ApplyCommand,
+    HighlightCommand,
+    RecolorCommand,
+    AnnotateCommand,
+)
+
+
+def _first_shape_ref_line(ir: AnimationIR) -> int | None:
+    """Return the source line of the first shape-referencing command, or None.
+
+    Scans prelude commands and all frame commands (recursively through
+    ``ForeachCommand`` bodies) for the first ``\\apply``, ``\\highlight``,
+    ``\\recolor``, or ``\\annotate`` that names a shape not present in
+    ``ir.shapes``.
+
+    When ``ir.shapes`` is *empty*, ANY such command is invalid, so we
+    return the line of the very first one found.  When ``ir.shapes`` is
+    non-empty we return ``None`` — the parallel agent (selector-error fix)
+    handles the unknown-shape-in-non-empty-table case.
+    """
+    if ir.shapes:
+        # Shape table is populated; unknown-name detection deferred to the
+        # selector-error parallel agent.
+        return None
+
+    def _scan_commands(commands: tuple) -> int | None:
+        for cmd in commands:
+            if isinstance(cmd, _SHAPE_DEPENDENT_TYPES):
+                return getattr(cmd, "line", None)
+            if isinstance(cmd, ForeachCommand):
+                found = _scan_commands(cmd.body)
+                if found is not None:
+                    return found
+        return None
+
+    # Check prelude commands first
+    found = _scan_commands(ir.prelude_commands)
+    if found is not None:
+        return found
+
+    # Check every frame's commands
+    for frame in ir.frames:
+        found = _scan_commands(frame.commands)
+        if found is not None:
+            return found
+
+    return None
+
+
+def _check_shapes_declared(ir: AnimationIR) -> None:
+    """Raise E1116 when shape-dependent commands exist but no shape is declared.
+
+    This is the primary guard against the silent "No frames" / empty-stage
+    failure mode that occurs when a user writes ``\\apply{a.cell[0]}{...}``
+    and ``\\step`` without a preceding ``\\shape{a}{Array}{...}``.
+
+    The guard fires when ALL three conditions hold:
+    1. ``ir.shapes`` is empty (no ``\\shape`` declaration anywhere in the
+       animation prelude or top-level body).
+    2. At least one frame is present (``\\step`` was written).
+    3. At least one shape-referencing command (``\\apply``, ``\\highlight``,
+       ``\\recolor``, ``\\annotate``) exists in the prelude or any frame.
+
+    Substory-local shapes have their own scope and are not affected — a
+    substory may legitimately declare shapes that the parent does not know
+    about.  The guard only looks at the *top-level* IR.
+
+    Raises
+    ------
+    AnimationError (E1116)
+        With the source line of the first offending command and a hint
+        showing how to add a ``\\shape`` declaration.
+    """
+    if ir.shapes:
+        # Shape table is non-empty — no violation at this level.
+        return
+
+    ref_line = _first_shape_ref_line(ir)
+    if ref_line is None:
+        # No shape-dependent commands at all (e.g. animation with only
+        # narration steps) — perfectly valid, do not raise.
+        return
+
+    # Both conditions met: commands reference shapes but no shape declared.
+    raise animation_error(
+        "E1116",
+        "no \\shape declared before \\step; "
+        "\\apply, \\highlight, \\recolor, and \\annotate all require a "
+        "shape (e.g. `\\shape{a}{Array}{size=5}`)",
+        line=ref_line,
+        hint=(
+            "Add a \\shape declaration in the animation prelude before "
+            "the first \\step, e.g. `\\shape{a}{Array}{size=5}`."
+        ),
+    )
+
+
+# ---------------------------------------------------------------------------
 # Renderer
 # ---------------------------------------------------------------------------
 
@@ -434,6 +543,11 @@ class AnimationRenderer:
         self, ir: AnimationIR, ctx: RenderContext, scene_id: str,
     ) -> list[FrameData]:
         """Run the delta state machine, process substories, return FrameData."""
+        # Guard: raise E1116 when shape-dependent commands exist but no
+        # \shape was declared.  Must run before the state machine so we
+        # produce a hard error instead of a silent empty-stage widget.
+        _check_shapes_declared(ir)
+
         state = SceneState()
         state.apply_prelude(
             shapes=ir.shapes,

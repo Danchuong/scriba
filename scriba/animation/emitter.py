@@ -456,8 +456,11 @@ def _validate_expanded_selectors(
         if not valid:
             # Legacy channel: keep the plain UserWarning so tests that
             # use ``pytest.warns(UserWarning)`` continue to pass.
+            # Include the E-code prefix so the message appears on stderr
+            # with a machine-readable code (E1115) rather than a bare
+            # warning string.
             warnings.warn(
-                f"selector '{target_key}' does not match any "
+                f"[E1115] selector '{target_key}' does not match any "
                 f"addressable part of '{shape_name}'"
             )
             # SF-14 (RFC-002): additionally route through the structured

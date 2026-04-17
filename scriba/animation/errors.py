@@ -172,6 +172,11 @@ ERROR_CATALOG: dict[str, str] = {
         "Selector does not match any addressable part of the target "
         "primitive (warning — the command is silently dropped)."
     ),
+    "E1116": (
+        "Mutation command references a shape name that was never declared "
+        "with \\shape. Declare the shape before using \\apply, "
+        "\\highlight, \\recolor, or \\annotate."
+    ),
     # --- Render errors (E1200 -- E1249) ---
     "E1200": (
         "KaTeX inline error embedded in rendered output (ParseError from "

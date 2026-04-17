@@ -651,6 +651,7 @@ class TestErrorCatalogMergeGuards:
             "E1007",
             "E1057",
             "E1115",
+            "E1116",
             "E1200",
             # W6.4 uniqueness
             "E1017",
