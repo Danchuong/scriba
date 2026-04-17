@@ -103,15 +103,21 @@ class VariableWatch(PrimitiveBase):
         self.primitive_type: str = "VariableWatch"
 
     def _recalc_value_col(self) -> None:
-        """Recompute value column width from current values."""
+        """Recompute value column width from current values.
+
+        Width is monotonic non-shrinking so the stage viewBox (computed
+        from the largest historical width) stays consistent across
+        frames even when later values are shorter than earlier ones.
+        """
         if self._values:
             max_val_w = max(
                 (estimate_text_width(str(v), 13) + 16 for v in self._values.values()),
                 default=0,
             )
-            self._value_col_width = max(_MIN_VALUE_COL_WIDTH, max_val_w)
+            candidate = max(_MIN_VALUE_COL_WIDTH, max_val_w)
         else:
-            self._value_col_width = _MIN_VALUE_COL_WIDTH
+            candidate = _MIN_VALUE_COL_WIDTH
+        self._value_col_width = max(self._value_col_width, candidate)
         self._total_width = self._name_col_width + self._value_col_width
 
     # ----- apply commands --------------------------------------------------

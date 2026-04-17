@@ -201,6 +201,57 @@ def _normalize_bbox(
     return (int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]))
 
 
+def _prescan_value_widths(
+    frames: list["FrameData"],
+    primitives: dict[str, Any],
+) -> None:
+    """Pre-apply ``value`` payloads from all frames into width-tracking
+    primitives (e.g. VariableWatch) so the cumulative max width is known
+    before viewbox computation.
+
+    Only primitives exposing ``set_value`` are touched, and only the
+    ``value`` field is consumed.  This is idempotent and does not
+    mutate structural state (no push/pop/add_node side effects).
+    """
+    # Snapshot per-primitive display state so pre-scan does not pollute
+    # initial render (e.g. DPTable cells appearing pre-filled).  Width
+    # tracking lives in separate fields (e.g. VariableWatch
+    # ``_value_col_width``, Queue ``_cell_width``) and grows monotonically,
+    # so it is preserved across the snapshot restore.
+    import copy as _copy
+    snapshots: dict[str, dict[str, str]] = {}
+    for shape_name, prim in primitives.items():
+        if hasattr(prim, "_values") and isinstance(prim._values, dict):
+            snapshots[shape_name] = _copy.copy(prim._values)
+
+    for frame in frames:
+        for shape_name, prim in primitives.items():
+            if not hasattr(prim, "set_value"):
+                continue
+            shape_state = frame.shape_states.get(shape_name)
+            if not shape_state:
+                continue
+            for target_key, target_data in shape_state.items():
+                if not isinstance(target_data, dict):
+                    continue
+                val = target_data.get("value")
+                if val is None:
+                    continue
+                suffix = target_key
+                if suffix.startswith(shape_name + "."):
+                    suffix = suffix[len(shape_name) + 1:]
+                try:
+                    prim.set_value(suffix, str(val))
+                except Exception:  # noqa: BLE001 - best effort
+                    pass
+
+    # Restore display state; width fields stay at grown maxima.
+    for shape_name, snap in snapshots.items():
+        prim = primitives[shape_name]
+        prim._values.clear()
+        prim._values.update(snap)
+
+
 def compute_viewbox(
     primitives: dict[str, Any],
     annotations: list[dict[str, Any]] | None = None,
@@ -595,6 +646,10 @@ def emit_animation_html(
             f"</figure>"
         )
 
+    # Pre-apply value payloads so width-tracking primitives reflect their
+    # widest historical state before viewbox computation.
+    _prescan_value_widths(frames, primitives)
+
     # Compute the max viewbox across ALL frames so the stage size stays
     # stable.  Without this, frames with arrow annotations are taller
     # than frames without, causing the array to visually shrink/grow.
@@ -791,6 +846,10 @@ def emit_interactive_html(
             f'<p class="scriba-narration">No frames</p>'
             f'</div>'
         )
+
+    # Pre-apply value payloads so width-tracking primitives reflect their
+    # widest historical state before viewbox computation.
+    _prescan_value_widths(frames, primitives)
 
     # Compute max viewbox across ALL frames so stage size stays stable.
     max_vb_width = 0
