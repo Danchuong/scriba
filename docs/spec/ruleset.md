@@ -1155,7 +1155,7 @@ Print media: lines forced to `stroke: #000`.
 | E1054 | `\narrate` in diagram |
 | E1055 | Multiple `\narrate` per `\step` |
 | E1056 | `\narrate` outside `\step` |
-| E1057 | Empty animation (no `\step`) _(reserved)_ |
+| E1057 | Command (`\highlight`, `\apply`, or `\recolor`) in substory prelude before first `\step` |
 | E1058 | Duplicate `\step` label _(reserved)_ |
 
 ### Target/Type Errors (E1100–E1149)
@@ -1206,7 +1206,7 @@ Print media: lines forced to `stroke: #000`.
 |------|---------|
 | E1180 | Warning: >30 frames |
 | E1181 | Error: >100 frames |
-| E1182 | Missing narration (strict mode) |
+| E1182 | Invalid `\cursor` prev_state or curr_state value |
 
 ### Render Errors (E1200–E1249)
 

@@ -387,11 +387,12 @@ Not every visualization needs step-by-step animation. Use `\begin{diagram}...\en
 
 ### What does NOT work in diagrams
 
-- `\step` — error E1050
-- `\narrate` — error E1054
-- `\cursor` — requires steps
-- `\foreach` / `\compute` — requires steps
-- `\substory` — requires steps
+- `\step` — error E1050; diagrams are single-frame, so step boundaries are meaningless
+- `\narrate` — error E1054; there are no frames to narrate
+- `\cursor` — depends on `\step` to know which frame to advance into
+- `\substory` / `\endsubstory` — error E1362; requires an enclosing `\step`
+
+Note: `\foreach` and `\compute` **are** valid in diagram prelude (see `spec/ruleset.md §2.1`). You can use them to derive data values or set up shape parameters before the diagram is rendered — they just cannot produce step boundaries.
 
 ### When to use diagram vs animation
 
@@ -400,7 +401,105 @@ Not every visualization needs step-by-step animation. Use `\begin{diagram}...\en
 
 ---
 
-## 11. Next Steps
+## 11. Nested Mini-Animations with `\substory`
+
+Sometimes a single step is the right place to drill down into a sub-computation — for example, comparing two merge candidates, expanding one node in a decision tree, or tracing a sub-array scan — without breaking the outer animation's frame count or visual context. `\substory` opens an independent mini-animation inline inside a `\step`.
+
+### What `\substory` does
+
+A `\substory` block embeds a self-contained animation inside one step of the parent animation:
+
+- It has its own **prelude** (shape declarations) and its own **steps** (`\step` inside the substory).
+- It renders as a nested widget with its own Prev/Next controls, labeled "Sub-step 1 / N".
+- Mutations made inside the substory are **ephemeral** — the parent frame's state is saved before `\substory` and fully restored after `\endsubstory`. Nothing inside the substory leaks into the parent frame or subsequent steps.
+
+### Syntax
+
+```tex
+\substory[title="...", id="..."]
+\shape{...}{...}{...}     % optional substory-private shapes
+
+\step
+...commands...
+\narrate{...}
+
+\step
+...commands...
+\narrate{...}
+
+\endsubstory
+```
+
+Both `\substory` and `\endsubstory` must appear on their own line (→ `E1368`). The `title` and `id` options are both optional; `title` appears in the sub-widget header.
+
+### Worked example: drilling into a sub-computation
+
+The outer animation processes an array element by element. When processing element 0, a substory drills into a two-element sub-array comparison without touching the parent array's state.
+
+```tex
+\begin{animation}[id="substory-demo", label="Substory Demo"]
+\shape{a}{Array}{size=4, data=[3,1,4,1]}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\narrate{Processing element 0. We will now run a sub-computation.}
+\substory[title="Sub-computation for element 0", id="sub0"]
+\shape{sub}{Array}{size=2, data=[3,1]}
+
+\step
+\highlight{sub.cell[0]}
+\narrate{Compare values 3 and 1.}
+
+\step
+\recolor{sub.all}{state=done}
+\narrate{Sub-computation complete: 3 $>$ 1.}
+
+\endsubstory
+
+\step
+\recolor{a.cell[0]}{state=done}
+\narrate{Element 0 fully processed. Parent array unchanged by the substory.}
+\end{animation}
+```
+
+**What happens:**
+
+- **Outer frame 1** — `a.cell[0]` turns blue (`current`). The substory widget appears inline with its own step counter.
+- **Substory step 1** — `sub.cell[0]` is highlighted. The parent array is unaffected.
+- **Substory step 2** — both sub-cells turn green (`done`). Still inside the substory.
+- After `\endsubstory` the reader returns to the outer flow.
+- **Outer frame 2** — `a.cell[0]` turns green. `sub` no longer exists; the parent array is exactly as it was before the substory started.
+
+### Scope rules
+
+| Concern | Rule |
+|---------|------|
+| Shapes declared inside `\substory` | Private to the substory; not visible to the parent |
+| Shapes declared in the parent prelude | Visible inside the substory (the substory can recolor parent shapes) |
+| Mutations made inside `\substory` to parent shapes | Reverted on `\endsubstory`; parent frame state is restored |
+| `\compute` bindings from the parent prelude | Visible inside the substory |
+
+This means you can safely highlight a parent cell inside a substory to "point at" something — when the substory closes, that highlight is unwound automatically.
+
+### Constraints
+
+- `\substory` must appear inside a `\step` (→ `E1362`). It cannot be in the animation prelude or in diagram mode.
+- Maximum nesting depth is 3 (→ `E1360`). A substory can contain another `\substory`, which can contain one more, but no deeper.
+- A substory must contain at least one `\step` (→ `E1366` warning if empty).
+- `\substory` and `\endsubstory` must not share a line with any other text (→ `E1368`).
+- `\step`, `\shape`, `\substory`, and `\endsubstory` must not appear inside a `\foreach` body (→ `E1172`).
+
+### When to use `\substory`
+
+- **Decision sub-problems** — show a sub-array comparison, a sub-tree query, or an inner hash-lookup without polluting the outer frame count.
+- **Worked proof steps** — inline a short algebraic derivation or case analysis as its own navigable sequence.
+- **Algorithm "zoom in"** — a BFS step that internally runs a shortest-path relaxation sub-walk.
+
+See `examples/primitives/substory.tex` for a minimal runnable example and `docs/cookbook/10-substory-shared-private/` for the shared/private primitives pattern.
+
+---
+
+## 12. Next Steps
 
 - **Full reference** -- see [ruleset.md](../spec/ruleset.md) for every command, primitive type, selector syntax, error code, and CSS contract.
 - **Examples** -- browse `examples/` for complete worked animations:
@@ -414,7 +513,7 @@ Not every visualization needs step-by-step animation. Use `\begin{diagram}...\en
 
 ---
 
-## 12. All Primitive Types
+## 13. All Primitive Types
 
 Scriba ships 16 primitive types organized in three groups.
 

@@ -52,10 +52,10 @@
 |------|-------------|------------|
 | E1150 | Starlark parse/syntax error. | Fix the Python syntax inside `\compute{...}`. |
 | E1151 | Starlark runtime evaluation failure. | Check for runtime errors (IndexError, KeyError, etc.) in compute code. |
-| E1152 | Starlark evaluation timed out (3s limit). | Simplify the computation or reduce data size. |
+| E1152 | Starlark evaluation timed out (5s cumulative limit across all `\compute` blocks). | Simplify the computation or reduce data size. |
 | E1153 | Starlark execution step count exceeded. | Reduce loop iterations or algorithmic complexity. |
 | E1154 | Starlark forbidden construct (import, while, class, lambda, etc.). | Use only `for` loops and allowed builtins. |
-| E1155 | Starlark memory limit exceeded (128 MB). | Reduce data size or avoid large intermediate structures. |
+| E1155 | Starlark memory limit exceeded (64 MB). | Reduce data size or avoid large intermediate structures. |
 
 ## Foreach Errors (E1170--E1173)
 

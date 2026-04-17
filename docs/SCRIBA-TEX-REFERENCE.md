@@ -174,6 +174,58 @@ Runs Starlark code. Bindings available via `${name}` interpolation.
 ### 5.3 `\step`
 Starts a new frame (animation only).
 
+**Optional `[label=ident]` bracket:**
+
+```latex
+\step[label=base-case]
+```
+
+Binds the frame to the identifier `base-case`. The label:
+
+- Becomes part of the frame's HTML `id` — the emitter renders it as
+  `id="{scene-id}-base-case"` and adds `data-label="base-case"` on the
+  `<li>` element, instead of the default `id="{scene-id}-frame-{N}"`.
+- Enables `\hl{base-case}{…}` cross-references inside any `\narrate`
+  block in the same animation (§7.1 of the spec). The CSS `:target`
+  pseudo-class highlights the narration text when the frame is active —
+  no JavaScript required.
+- Must be unique within the animation. A duplicate label raises `E1005`.
+
+**Label syntax rules:**
+
+| Constraint | Detail |
+|---|---|
+| Characters | Letters, digits, `_`, `-`, `.` — matches `[A-Za-z_][A-Za-z0-9._-]*` |
+| Leading char | Must be a letter or `_` (not a digit or `-`) |
+| Empty | Not allowed — raises `E1005` |
+| Unknown key | Any key other than `label` raises `E1004` |
+
+The bracket must appear on the same line as `\step` and before any
+trailing content. Trailing non-whitespace after the closing `]` raises
+`E1052`.
+
+**Example — labeled steps with `\hl` cross-references:**
+
+```latex
+\begin{animation}[id="lcs-demo", label="LCS Walk-through"]
+\shape{dp}{DPTable}{rows=3, cols=3}
+
+\step[label=init]
+\narrate{Initialize the \hl{init}{base row} to zeros.}
+
+\step[label=fill]
+\recolor{dp.cell[1][1]}{state=current}
+\narrate{Fill cell (1,1). See \hl{fill}{this step} for the recurrence.}
+
+\step[label=done]
+\recolor{dp.cell[1][1]}{state=done}
+\narrate{Cell filled. Return to \hl{init}{initialization} or continue.}
+\end{animation}
+```
+
+Frames without a `[label=…]` bracket receive the automatic id
+`{scene-id}-frame-{N}` and cannot be targeted by `\hl`.
+
 ### 5.4 `\narrate{LaTeX text}`
 Attaches narration to current frame. Supports inline math and text formatting.
 
@@ -187,7 +239,75 @@ Ephemeral focus marker. Cleared at next `\step`.
 Changes visual state. Persistent. States: `idle`, `current`, `done`, `dim`, `error`, `good`, `path`, `hidden`.
 
 ### 5.8 `\annotate{target}{params...}`
-Attaches label/arrow. Params: `label=`, `position=above|below|left|right|inside`, `color=info|warn|good|error|muted|path`, `ephemeral=true|false`, `arrow_from=`.
+Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
+
+**Parameters:**
+
+| Parameter | Type | Default | Description |
+|---|---|---|---|
+| `label` | string | `""` | Text shown in the annotation pill (supports `$...$` math) |
+| `position` | enum | `above` | Pill placement relative to the cell: `above`, `below`, `left`, `right`, `inside` |
+| `color` | enum | `info` | Color token: `info`, `warn`, `good`, `error`, `muted`, `path` |
+| `ephemeral` | bool | `false` | When `true`, the annotation is cleared at the next `\step` boundary |
+| `arrow` | bool | `false` | When `true`, adds a pointer arrowhead on the annotation pill pointing at the target cell (no source cell required) |
+| `arrow_from` | selector | _(none)_ | Draws a Bezier arc **from** the specified source cell **to** the target, with an arrowhead at the destination |
+
+**`arrow=true` — bare arrowhead, no source:**
+
+Use `arrow=true` when you want the annotation pill to carry a small
+pointer tip directed at the target cell but there is no meaningful
+"source" cell to draw a curve from. The pill renders at the `position`
+offset with a directional arrowhead pointing inward.
+
+```latex
+\step
+\annotate{a.cell[3]}{label="pivot", arrow=true, color=warn}
+```
+
+**`arrow_from=<selector>` — arc between two cells:**
+
+Use `arrow_from=` when you need to show a relationship between two
+specific cells — the most common use case is tracing DP recurrences.
+The emitter draws a cubic Bezier arc from the resolved source point to
+the target, with an arrowhead at the target. Multiple arcs targeting
+the same cell are staggered automatically.
+
+```latex
+\step
+\annotate{dp.cell[2][2]}{label="diagonal", arrow_from="dp.cell[1][1]", color=good}
+\annotate{dp.cell[2][2]}{label="from left", arrow_from="dp.cell[2][1]", color=info}
+\annotate{dp.cell[2][2]}{label="from above", arrow_from="dp.cell[1][2]", color=info}
+```
+
+**`ephemeral=true` — single-frame annotation:**
+
+By default annotations persist across all subsequent frames. Use
+`ephemeral=true` to show an annotation for the current frame only —
+it is cleared automatically at the next `\step` boundary.
+
+```latex
+\step
+\annotate{a.cell[0]}{label="check here", ephemeral=true}
+% This annotation is gone in the next frame — no cleanup needed.
+
+\step
+% a.cell[0] no longer has the annotation.
+```
+
+**Combining params:**
+
+```latex
+\annotate{dp.cell[1][1]}{label="match", arrow_from="dp.cell[0][0]", color=good, ephemeral=true}
+```
+
+**Distinction: `arrow=true` vs `arrow_from=`**
+
+| | `arrow=true` | `arrow_from=selector` |
+|---|---|---|
+| Visual | Pill with directional pointer tip | Curved arc from source to target + arrowhead |
+| Source cell | None — pointer direction is implied by `position` | Explicit selector (must resolve to a valid cell) |
+| Multiple arcs | N/A | Staggered automatically for same target |
+| Use when | Calling out a single cell without a "from" | Showing data flow or recurrence paths between cells |
 
 ### 5.9 `\reannotate{target}{color=..., arrow_from=...}`
 Recolors existing annotations. Persistent.
@@ -205,6 +325,83 @@ Loop expansion. Iterables: `0..4`, `[1,3,5]`, `${computed_list}`.
   \recolor{a.cell[${i}]}{state=done}
 \endforeach
 ```
+
+#### Variable interpolation — why `${i}` is mandatory
+
+**`${i}` and bare `i` are not equivalent.** Inside a selector or value position,
+a bare identifier like `i` is parsed as a literal string key, not as a variable
+lookup. Only the `${...}` form triggers interpolation.
+
+| Form | What the parser sees | Result |
+|------|----------------------|--------|
+| `a.cell[${i}]` | `InterpolationRef(name="i")` — resolved at expansion time | `a.cell[0]`, `a.cell[1]`, … |
+| `a.cell[i]` | Literal string `"i"` — unchanged by substitution | Targets literal cell `"i"` (out of range) |
+| `value=${i}` | `InterpolationRef` in value position — resolved to iteration value | `value=0`, `value=1`, … (supported since v0.8.2) |
+| `value=i` | Literal string `"i"` — not substituted | Cell displays the string `"i"` |
+
+**Silent failure mode.** When bare `i` is used inside a selector and the loop
+runs, the parser does NOT emit a warning even if `i` matches the foreach
+variable name. The command is accepted with the literal key `"i"`, which is
+typically out of range for any numeric-indexed primitive. The runtime drops
+the command with a `UserWarning` — the animation renders without error but
+the cells are never updated. This is the most common source of silent
+wrong-output bugs in foreach bodies.
+
+**Wrong vs correct — worked example:**
+```latex
+% WRONG: bare i in selector — targets literal cell "i", always out of range.
+% Runtime drops the command with a UserWarning; cells are never recolored.
+\foreach{i}{0..3}
+  \apply{a.cell[i]}{value=${i}}     % 'i' is the string "i", not 0/1/2/3
+\endforeach
+
+% CORRECT: ${i} in both selector and value position.
+\foreach{i}{0..3}
+  \apply{a.cell[${i}]}{value=${i}}  % expands to cell[0], cell[1], cell[2], cell[3]
+\endforeach
+```
+
+#### Subscript form — `${arr[i]}` for indexing a compute-bound list
+
+To index into a compute-bound list by the loop variable, use the subscript
+form `${list_name[i]}`:
+```latex
+\compute{
+  dp_vals = [0, 1, 3, 6, 10]
+}
+\foreach{i}{0..4}
+  \apply{dp.cell[${i}]}{value=${dp_vals[i]}}
+\endforeach
+```
+Here `${dp_vals[i]}` looks up index `i` in the list `dp_vals` at expansion
+time. The `i` inside the brackets is the foreach loop variable, not a
+binding name.
+
+#### Scope — loop variable is visible only inside the body
+
+The loop variable is added to the known bindings when parsing the body and
+removed immediately after `\endforeach`. It is **not visible** before
+`\foreach` or after `\endforeach`:
+
+```latex
+\recolor{a.cell[${i}]}{state=done}   % ERROR: ${i} unknown here
+
+\foreach{i}{0..3}
+  \recolor{a.cell[${i}]}{state=done} % OK: ${i} is the loop variable
+\endforeach
+
+\recolor{a.cell[${i}]}{state=done}   % ERROR: ${i} is gone again
+```
+
+Unknown `${name}` outside a foreach body emits a `UserWarning` (not a hard
+error) and the reference is left unresolved. See also `spec/ruleset.md §6.5`
+for the broader `\compute` scope rules.
+
+#### Allowed commands inside the body
+
+`\apply`, `\highlight`, `\recolor`, `\reannotate`, `\annotate`, `\cursor`,
+and nested `\foreach` (max depth 3). `\step`, `\shape`, `\substory`, and
+`\narrate` are not allowed inside a foreach body.
 
 ### 5.12 `\substory[title="..."]...\endsubstory`
 Nested frame sequence inside a parent frame (animation only, max depth 3).
@@ -415,10 +612,23 @@ Variable panel showing named values.
 | Queue | `.cell[i]` | — | — | — | — | — |
 | VariableWatch | `.var[name]` | — | — | — | — | — |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
-| Plane2D | — | — | — | — | — | — |
+| Plane2D | `.point[i]` | — | — | — | — | `.all` |
 | MetricPlot | — | — | — | — | — | — |
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
+
+**Plane2D full selector set** — Plane2D has five element-type families, all addressed by zero-based index. The "Cell/Item" column above shows the most common form; the complete set is:
+
+| Selector | Addresses | Annotation anchor |
+|----------|-----------|-------------------|
+| `.point[i]` | Point *i* | Center of the point |
+| `.line[i]` | Infinite line *i* | Midpoint of the visible clipped segment |
+| `.segment[i]` | Finite segment *i* | Midpoint of the segment |
+| `.polygon[i]` | Closed polygon *i* | Centroid of the vertex list |
+| `.region[i]` | Shaded region *i* | Not resolvable for annotation anchors |
+| `.all` | All live elements | — |
+
+All six forms work with `\recolor`, `\highlight`, and `\annotate`. Indices are stable across frames: removing an element tombstones its slot so later indices remain valid (e.g. after `remove_point=1`, `point[2]` still refers to the original third point). Out-of-range or tombstoned selectors raise **E1437**.
 
 ---
 

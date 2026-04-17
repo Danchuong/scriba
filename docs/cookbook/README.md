@@ -15,7 +15,9 @@
 | 07 | [`07-swap-game/`](./07-swap-game/) | `\begin{animation}` | Swap game BFS on state space |
 | 08 | [`08-monkey-apples/`](./08-monkey-apples/) | `\begin{animation}` | Sparse segtree lazy paint |
 | 09 | [`09-zuma/`](./09-zuma/) | `\begin{animation}` | Zuma interval DP |
+| 10 | [`10-substory-shared-private/`](./10-substory-shared-private/) | `\begin{animation}` | Substory with shared parent shapes and private scratch shapes |
 | 11 | [`11-loop-to-step-manual-unroll.md`](./11-loop-to-step-manual-unroll.md) | `\begin{animation}` | Monotonic stack manual unroll pattern |
+| 12 | [`12-foreach-apply-dp-table.md`](./12-foreach-apply-dp-table.md) | `\begin{animation}` | `\foreach` + `\apply` bulk-fill DP table from compute binding |
 
 ## Algorithm examples
 
@@ -43,6 +45,8 @@ HTML outputs are gitignored -- treat as build artifacts.
 - **Hidden-state pre-declaration** -- see [`docs/guides/hidden-state-pattern.md`](../guides/hidden-state-pattern.md). Example: `examples/algorithms/dp/convex_hull_trick.tex`.
 - **Strict mode** -- see [`docs/guides/strict-mode.md`](../guides/strict-mode.md).
 - **Static diagrams** -- see [`docs/guides/how-to-use-diagrams.md`](../guides/how-to-use-diagrams.md). Example: `examples/primitives/diagram.tex`.
+- **`\foreach` variable interpolation** (`${i}` vs bare `i`, `${arr[i]}` subscript form, scope) -- see `SCRIBA-TEX-REFERENCE.md §5.11`. Recipe 12 shows the `\foreach` + `\apply` DP-table fill pattern.
+- **Substory shared/private primitives** -- shapes declared in the parent prelude are visible (and their mutations ephemeral) inside a substory; shapes declared in the substory prelude are private. Recipe 10 shows the pattern.
 
 ## Relationship to specs
 
