@@ -1053,6 +1053,7 @@ def arrow_height_above(
     if not arrow_anns:
         return 0
 
+    has_label = any(a.get("label") for a in arrow_anns)
     max_height = 0
     for idx, ann in enumerate(arrow_anns):
         src = cell_center_resolver(ann.get("arrow_from", ""))
@@ -1089,10 +1090,13 @@ def arrow_height_above(
             mid_y = (y1 + y2) / 2
             ctrl_y = mid_y + perp_y * total_offset
             extent_above = max(0, min(y1, y2) - ctrl_y)
-            max_height = max(max_height, int(extent_above) + _LABEL_HEADROOM)
+            max_height = max(max_height, int(extent_above))
         else:
             # Horizontal: the curve peaks at min(y1, y2) - total_offset
-            max_height = max(max_height, int(total_offset) + _LABEL_HEADROOM)
+            max_height = max(max_height, int(total_offset))
+
+    if has_label:
+        max_height += _LABEL_HEADROOM
 
     return max_height
 

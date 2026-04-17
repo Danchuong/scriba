@@ -187,6 +187,15 @@ class NumberLinePrimitive(PrimitiveBase):
 
         return suffix in ("axis", "all")
 
+    def _arrow_height_above(self, annotations: "list[dict]") -> int:
+        """Compute arrow height above, locked to cross-frame max to prevent jitter."""
+        computed = arrow_height_above(
+            annotations,
+            self.resolve_annotation_point,
+            cell_height=NL_TICK_BOTTOM - NL_TICK_TOP,
+        )
+        return max(computed, getattr(self, "_min_arrow_above", 0))
+
     def emit_svg(
         self,
         *,
@@ -195,11 +204,7 @@ class NumberLinePrimitive(PrimitiveBase):
         """Emit SVG ``<g>`` for the number line."""
 
         effective_anns = self._annotations
-        arrow_above = arrow_height_above(
-            effective_anns,
-            self.resolve_annotation_point,
-            cell_height=NL_TICK_BOTTOM - NL_TICK_TOP,
-        )
+        arrow_above = self._arrow_height_above(effective_anns)
 
         lines: list[str] = [
             f'<g data-primitive="numberline" data-shape="{self.shape_name}">'
@@ -323,12 +328,7 @@ class NumberLinePrimitive(PrimitiveBase):
         if self.label:
             h += 16  # extra space for caption
 
-        tick_height = NL_TICK_BOTTOM - NL_TICK_TOP
-        arrow_above = arrow_height_above(
-            self._annotations,
-            self.resolve_annotation_point,
-            cell_height=tick_height,
-        )
+        arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
 
         return BoundingBox(x=0.0, y=0.0, width=float(self.width), height=float(h))

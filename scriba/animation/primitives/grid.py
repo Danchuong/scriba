@@ -185,6 +185,14 @@ class GridPrimitive(PrimitiveBase):
                 return (float(x), float(y))
         return None
 
+    def _arrow_height_above(self, annotations: "list[dict]") -> int:
+        """Compute arrow height above, locked to cross-frame max to prevent jitter."""
+        computed = arrow_height_above(
+            annotations, self.resolve_annotation_point, cell_height=CELL_HEIGHT,
+            layout="2d",
+        )
+        return max(computed, getattr(self, "_min_arrow_above", 0))
+
     def emit_svg(
         self,
         *,
@@ -194,10 +202,7 @@ class GridPrimitive(PrimitiveBase):
         effective_anns = self._annotations
 
         # Compute vertical space needed above cells for arrow curves
-        arrow_above = arrow_height_above(
-            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT,
-            layout="2d",
-        )
+        arrow_above = self._arrow_height_above(effective_anns)
 
         lines: list[str] = [
             f'<g data-primitive="grid" data-shape="{self.shape_name}">'
@@ -312,11 +317,7 @@ class GridPrimitive(PrimitiveBase):
         h = th
         if self.label:
             h += INDEX_LABEL_OFFSET
-        arrow_above = arrow_height_above(
-            self._annotations, self.resolve_annotation_point,
-            cell_height=CELL_HEIGHT,
-            layout="2d",
-        )
+        arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
         return BoundingBox(x=0, y=0, width=tw, height=h)
 

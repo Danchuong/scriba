@@ -225,15 +225,20 @@ class Queue(PrimitiveBase):
                 return (float(x), float(y))
         return None
 
+    def _arrow_height_above(self, annotations: list[dict]) -> int:
+        """Compute arrow height above, locked to cross-frame max to prevent jitter."""
+        computed = arrow_height_above(
+            annotations, self.resolve_annotation_point,
+            cell_height=CELL_HEIGHT,
+        )
+        return max(computed, getattr(self, "_min_arrow_above", 0))
+
     def bounding_box(self) -> BoundingBox:
         w = self._total_width() + 2 * _LABEL_PADDING
         h = _POINTER_HEIGHT + _POINTER_LABEL_GAP + CELL_HEIGHT + INDEX_LABEL_OFFSET
         if self.label_text:
             h += 20
-        arrow_above = arrow_height_above(
-            self._annotations, self.resolve_annotation_point,
-            cell_height=CELL_HEIGHT,
-        )
+        arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
         return BoundingBox(x=0, y=0, width=w, height=h)
 
@@ -243,10 +248,7 @@ class Queue(PrimitiveBase):
         effective_anns = self._annotations
 
         # Compute vertical space needed above content for arrow curves
-        arrow_above = arrow_height_above(
-            effective_anns, self.resolve_annotation_point,
-            cell_height=CELL_HEIGHT,
-        )
+        arrow_above = self._arrow_height_above(effective_anns)
 
         parts: list[str] = []
         parts.append(
