@@ -1,0 +1,197 @@
+\section{Core Idea}
+
+Let $dp[i][j]$ be the minimum number of edits needed to transform the first
+$i$ characters of $a$ into the first $j$ characters of $b$.
+
+The last operation must be exactly one of these three:
+
+\begin{itemize}
+\item delete $a[i-1]$
+\item insert $b[j-1]$
+\item align $a[i-1]$ with $b[j-1]$, which costs $0$ if they match and $1$ if we replace
+\end{itemize}
+
+So we get
+
+$$
+dp[i][j] =
+\min\left(
+dp[i-1][j] + 1,\;
+dp[i][j-1] + 1,\;
+dp[i-1][j-1] + c(i,j)
+\right),
+$$
+
+where $c(i,j)=0$ if $a[i-1]=b[j-1]$ and $1$ otherwise.
+
+The base cases are $dp[i][0] = i$ and $dp[0][j] = j$.
+
+\section{Toy Example}
+
+For the animation, we use
+
+\begin{itemize}
+\item $a = \texttt{CAT}$
+\item $b = \texttt{CUTE}$
+\end{itemize}
+
+This example is small enough to fit on screen, but it still shows the three
+important ideas:
+
+\begin{itemize}
+\item a match with zero extra cost
+\item a replacement with cost $1$
+\item an insertion that increases the answer at the end
+\end{itemize}
+
+\section{Walkthrough}
+
+\begin{animation}[id="edit-distance-dp", label="Edit Distance DP walkthrough"]
+\shape{dp}{DPTable}{rows=4, cols=5, label="dp[i][j]"}
+\shape{vars}{VariableWatch}{names=["a","b","cell","rule"], label="Current state"}
+\apply{vars.var[a]}{value="CAT"}
+\apply{vars.var[b]}{value="CUTE"}
+\apply{vars.var[cell]}{value="start"}
+\apply{vars.var[rule]}{value="set up states"}
+
+\step
+\recolor{dp.cell[0][0]}{state=current}
+\narrate{Row $i$ means the first $i$ characters of \texttt{CAT}, and column $j$ means the first $j$ characters of \texttt{CUTE}. Each cell stores the best answer for those two prefixes.}
+
+\step
+\apply{dp.cell[0][0]}{value="0"}
+\apply{dp.cell[0][1]}{value="1"}
+\apply{dp.cell[0][2]}{value="2"}
+\apply{dp.cell[0][3]}{value="3"}
+\apply{dp.cell[0][4]}{value="4"}
+\apply{dp.cell[1][0]}{value="1"}
+\apply{dp.cell[2][0]}{value="2"}
+\apply{dp.cell[3][0]}{value="3"}
+\recolor{dp.cell[0][0]}{state=done}
+\recolor{dp.cell[0][1]}{state=done}
+\recolor{dp.cell[0][2]}{state=done}
+\recolor{dp.cell[0][3]}{state=done}
+\recolor{dp.cell[0][4]}{state=done}
+\recolor{dp.cell[1][0]}{state=done}
+\recolor{dp.cell[2][0]}{state=done}
+\recolor{dp.cell[3][0]}{state=done}
+\apply{vars.var[cell]}{value="base row and column"}
+\apply{vars.var[rule]}{value="only insertions or deletions"}
+\narrate{The first row and first column are immediate. Reaching the empty string uses only deletions, and building a prefix from the empty string uses only insertions.}
+
+\step
+\apply{dp.cell[1][1]}{value="0"}
+\apply{dp.cell[1][2]}{value="1"}
+\apply{dp.cell[2][1]}{value="1"}
+\recolor{dp.cell[1][1]}{state=current}
+\recolor{dp.cell[1][2]}{state=done}
+\recolor{dp.cell[2][1]}{state=done}
+\annotate{dp.cell[1][1]}{label="match C", arrow_from="dp.cell[0][0]", color=good}
+\apply{vars.var[cell]}{value="dp[1][1]"}
+\apply{vars.var[rule]}{value="matching characters use the diagonal"}
+\narrate{The first real transition is $dp[1][1]$. Since \texttt{C} matches \texttt{C}, the diagonal move costs $0$, so $dp[1][1] = dp[0][0] = 0$.}
+
+\step
+\apply{dp.cell[2][2]}{value="1"}
+\recolor{dp.cell[1][1]}{state=good}
+\recolor{dp.cell[1][2]}{state=done}
+\recolor{dp.cell[2][1]}{state=done}
+\recolor{dp.cell[2][2]}{state=current}
+\annotate{dp.cell[2][2]}{label="delete", arrow_from="dp.cell[1][2]", color=info}
+\annotate{dp.cell[2][2]}{label="insert", arrow_from="dp.cell[2][1]", color=info}
+\annotate{dp.cell[2][2]}{label="replace", arrow_from="dp.cell[1][1]", color=good}
+\apply{vars.var[cell]}{value="dp[2][2]"}
+\apply{vars.var[rule]}{value="take the minimum of three choices"}
+\narrate{Now compare \texttt{CA} with \texttt{CU}. Deleting and inserting both give cost $2$, while replacing \texttt{A} with \texttt{U} gives $dp[1][1] + 1 = 1$. So the minimum is $1$.}
+
+\step
+\apply{dp.cell[2][3]}{value="2"}
+\apply{dp.cell[3][3]}{value="1"}
+\apply{dp.cell[3][4]}{value="2"}
+\recolor{dp.cell[2][2]}{state=path}
+\recolor{dp.cell[3][3]}{state=path}
+\recolor{dp.cell[3][4]}{state=good}
+\annotate{dp.cell[3][3]}{label="match T", arrow_from="dp.cell[2][2]", color=good}
+\annotate{dp.cell[3][4]}{label="insert E", arrow_from="dp.cell[3][3]", color=path}
+\apply{vars.var[cell]}{value="dp[3][4]"}
+\apply{vars.var[rule]}{value="finish with one insertion"}
+\narrate{The rest of the table is filled the same way. Here \texttt{T} matches \texttt{T}, so $dp[3][3] = 1$, and then we insert the final \texttt{E}, giving $dp[3][4] = 2$. The answer is the bottom-right cell.}
+\end{animation}
+
+\section{Proof Sketch}
+
+Consider an optimal edit sequence for the prefixes $a[0..i-1]$ and $b[0..j-1]$.
+Its final step must be one of three cases:
+
+\begin{itemize}
+\item If it deletes $a[i-1]$, then before that step we must already have
+transformed $a[0..i-2]$ into $b[0..j-1]$, so the cost is $dp[i-1][j] + 1$.
+\item If it inserts $b[j-1]$, then before that step we must already have
+transformed $a[0..i-1]$ into $b[0..j-2]$, so the cost is $dp[i][j-1] + 1$.
+\item Otherwise it aligns the last characters of both prefixes. If they match,
+the extra cost is $0$; otherwise we pay $1$ for a replacement. So this case
+costs $dp[i-1][j-1] + c(i,j)$.
+\end{itemize}
+
+Every optimal solution ends in one of these cases, and each case reduces the
+problem to a smaller prefix pair. Therefore taking the minimum of the three
+values gives the correct answer for $dp[i][j]$.
+
+\section{Complexity}
+
+There are $(n+1)(m+1)$ states, and each state is computed in constant time.
+
+\begin{itemize}
+\item Time complexity: $O(nm)$
+\item Memory complexity: $O(nm)$
+\end{itemize}
+
+\section{Pitfalls}
+
+\begin{itemize}
+\item The table size is $(n+1) \times (m+1)$ because we need the empty-prefix
+row and column.
+\item The transition uses $a[i-1]$ and $b[j-1]$ because $i$ and $j$ are prefix
+lengths, not direct indices into the DP table.
+\item For the original constraints, a full 2D table is acceptable with
+\texttt{int}, but unnecessary larger types waste memory.
+\end{itemize}
+
+\section{Reference Implementation}
+
+\begin{lstlisting}[language=C++]
+#include <algorithm>
+#include <iostream>
+#include <vector>
+using namespace std;
+
+int main() {
+    string a, b;
+    cin >> a >> b;
+
+    int n = a.size();
+    int m = b.size();
+
+    vector<vector<int>> dp(n + 1, vector<int>(m + 1));
+
+    for (int i = 0; i <= n; ++i) {
+        dp[i][0] = i;
+    }
+    for (int j = 0; j <= m; ++j) {
+        dp[0][j] = j;
+    }
+
+    for (int i = 1; i <= n; ++i) {
+        for (int j = 1; j <= m; ++j) {
+            int cost = (a[i - 1] == b[j - 1] ? 0 : 1);
+            dp[i][j] = min({
+                dp[i - 1][j] + 1,
+                dp[i][j - 1] + 1,
+                dp[i - 1][j - 1] + cost,
+            });
+        }
+    }
+
+    cout << dp[n][m] << "\n";
+}
+\end{lstlisting}
