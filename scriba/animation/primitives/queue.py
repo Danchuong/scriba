@@ -281,9 +281,7 @@ class Queue(PrimitiveBase):
             if all_state != "idle" and state_name == "idle":
                 state_name = all_state
 
-            # β redesign — highlight is a standalone state.
-            highlighted = suffix in self._highlighted
-            if highlighted and state_name == "idle":
+            if state_name == "idle" and self._is_highlighted(suffix):
                 effective_state = "highlight"
             else:
                 effective_state = state_name

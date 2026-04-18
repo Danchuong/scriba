@@ -20,14 +20,11 @@ from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
-    _LabelPlacement,
     THEME,
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
     arrow_height_above,
-    emit_arrow_marker_defs,
-    emit_arrow_svg,
     estimate_text_width,
     register_primitive,
     svg_style_attrs,
@@ -250,11 +247,6 @@ class LinkedList(PrimitiveBase):
         if arrow_above > 0:
             parts.append(f'<g transform="translate(0, {arrow_above})">')
 
-        # Emit arrowhead marker defs for annotation arrows
-        ann_arrow_lines: list[str] = []
-        emit_arrow_marker_defs(ann_arrow_lines, effective_anns)
-        parts.extend(ann_arrow_lines)
-
         # --- Arrowhead marker definition ---
         ah = self._arrowhead_size
         marker_id = f"arrowhead-{html_escape(self.name)}"
@@ -454,24 +446,9 @@ class LinkedList(PrimitiveBase):
             )
 
         # Annotation arrow rendering
-        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
-        if arrow_anns:
+        if effective_anns:
             arrow_lines: list[str] = []
-            placed: list[_LabelPlacement] = []
-            for idx, ann in enumerate(arrow_anns):
-                src = self.resolve_annotation_point(ann.get("arrow_from", ""))
-                dst = self.resolve_annotation_point(ann.get("target", ""))
-                if src and dst:
-                    arrow_index = sum(
-                        1
-                        for prev in arrow_anns[:idx]
-                        if prev.get("target") == ann.get("target")
-                    )
-                    emit_arrow_svg(
-                        arrow_lines, ann, src, dst, arrow_index,
-                        _NODE_HEIGHT, render_inline_tex,
-                        placed_labels=placed,
-                    )
+            self.emit_annotation_arrows(arrow_lines, effective_anns, render_inline_tex=render_inline_tex)
             parts.extend(arrow_lines)
 
         # Close the translate group if we opened one for arrow space

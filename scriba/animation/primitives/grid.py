@@ -22,9 +22,6 @@ from scriba.animation.primitives.base import (
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
-    _LabelPlacement,
-    emit_arrow_marker_defs,
-    emit_arrow_svg,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -149,6 +146,7 @@ class GridPrimitive(PrimitiveBase):
         self.cols: int = cols
         self.data: list[Any] = data
         self.label: str | None = self.params.get("label")
+        self._arrow_layout = "2d"
 
     # -- PrimitiveBase interface --------------------------------------------
 
@@ -186,14 +184,6 @@ class GridPrimitive(PrimitiveBase):
                 return (float(x), float(y))
         return None
 
-    def _arrow_height_above(self, annotations: "list[dict]") -> int:
-        """Compute arrow height above, locked to cross-frame max to prevent jitter."""
-        computed = arrow_height_above(
-            annotations, self.resolve_annotation_point, cell_height=CELL_HEIGHT,
-            layout="2d",
-        )
-        return max(computed, getattr(self, "_min_arrow_above", 0))
-
     def emit_svg(
         self,
         *,
@@ -203,7 +193,11 @@ class GridPrimitive(PrimitiveBase):
         effective_anns = self._annotations
 
         # Compute vertical space needed above cells for arrow curves
-        arrow_above = self._arrow_height_above(effective_anns)
+        computed = arrow_height_above(
+            effective_anns, self.resolve_annotation_point,
+            cell_height=CELL_HEIGHT, layout="2d",
+        )
+        arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
 
         lines: list[str] = [
             f'<g data-primitive="grid" data-shape="{self.shape_name}">'
@@ -213,26 +207,16 @@ class GridPrimitive(PrimitiveBase):
         if arrow_above > 0:
             lines.append(f'  <g transform="translate(0, {arrow_above})">')
 
-        # Emit arrowhead marker defs when annotations with arrows are present
-        emit_arrow_marker_defs(lines, effective_anns)
-
         for r in range(self.rows):
             for c in range(self.cols):
                 target = f"{self.shape_name}.cell[{r}][{c}]"
                 suffix = f"cell[{r}][{c}]"
 
-                state_name = self.get_state(suffix)
                 value = self.get_value(suffix)
                 if value is None:
                     flat_idx = r * self.cols + c
                     value = self.data[flat_idx]
-
-                # β redesign — highlight is a state, not an overlay.
-                highlighted = suffix in self._highlighted
-                if highlighted and state_name == "idle":
-                    effective_state = "highlight"
-                else:
-                    effective_state = state_name
+                effective_state = self.resolve_effective_state(suffix)
 
                 css = state_class(effective_state)
                 colors = svg_style_attrs(effective_state)
@@ -287,23 +271,8 @@ class GridPrimitive(PrimitiveBase):
             )
 
         # Arrow annotations
-        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
-        placed: list[_LabelPlacement] = []
-        for idx, ann in enumerate(arrow_anns):
-            src = self.resolve_annotation_point(ann.get("arrow_from", ""))
-            dst = self.resolve_annotation_point(ann.get("target", ""))
-            if src and dst:
-                arrow_index = sum(
-                    1
-                    for prev in arrow_anns[:idx]
-                    if prev.get("target") == ann.get("target")
-                )
-                emit_arrow_svg(
-                    lines, ann, src, dst, arrow_index,
-                    CELL_HEIGHT, render_inline_tex,
-                    layout="2d",
-                    placed_labels=placed,
-                )
+        if effective_anns:
+            self.emit_annotation_arrows(lines, effective_anns, render_inline_tex=render_inline_tex)
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
@@ -318,7 +287,11 @@ class GridPrimitive(PrimitiveBase):
         h = th
         if self.label:
             h += INDEX_LABEL_OFFSET
-        arrow_above = self._arrow_height_above(self._annotations)
+        computed = arrow_height_above(
+            self._annotations, self.resolve_annotation_point,
+            cell_height=CELL_HEIGHT, layout="2d",
+        )
+        arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
         return BoundingBox(x=0, y=0, width=tw, height=h)
 

@@ -24,10 +24,6 @@ from scriba.animation.primitives.base import (
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
-    emit_arrow_marker_defs,
-    _LabelPlacement,
-    emit_arrow_svg,
-    emit_plain_arrow_svg,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -179,7 +175,10 @@ class ArrayPrimitive(PrimitiveBase):
         effective_anns = self._annotations
 
         # Compute vertical space needed above cells for arrow curves
-        arrow_above = self._arrow_height_above(effective_anns)
+        computed = arrow_height_above(
+            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
+        )
+        arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
 
         lines: list[str] = [
             f'<g data-primitive="array" data-shape="{self.shape_name}">'
@@ -188,9 +187,6 @@ class ArrayPrimitive(PrimitiveBase):
         # Shift all content down so arrows curve into valid space above y=0
         if arrow_above > 0:
             lines.append(f'  <g transform="translate(0, {arrow_above})">')
-
-        # Emit arrowhead marker defs when annotations with arrows are present
-        emit_arrow_marker_defs(lines, effective_anns)
 
         # Pre-compute the bottom stack (index labels + caption) once, via
         # the vstack helper which guarantees glyph boxes cannot overlap
@@ -229,21 +225,10 @@ class ArrayPrimitive(PrimitiveBase):
             target = f"{self.shape_name}.cell[{i}]"
             suffix = f"cell[{i}]"
 
-            state_name = self.get_state(suffix)
             value = self.get_value(suffix)
             if value is None:
                 value = self.data[i]
-            highlighted = suffix in self._highlighted
-
-            # β redesign — highlight becomes a state rather than an
-            # additive dashed overlay. A plain cell that is marked
-            # highlighted becomes ``highlight``; a cell already in a
-            # stronger signal state (current/error/good/etc.) keeps its
-            # state so the two signals don't visually compete.
-            if highlighted and state_name == "idle":
-                effective_state = "highlight"
-            else:
-                effective_state = state_name
+            effective_state = self.resolve_effective_state(suffix)
 
             css = state_class(effective_state)
             # ``svg_style_attrs`` is still used for <text> fill until the
@@ -317,9 +302,7 @@ class ArrayPrimitive(PrimitiveBase):
 
         # Arrow annotations
         if effective_anns:
-            placed: list[_LabelPlacement] = []
-            for ann in effective_anns:
-                self._emit_arrow(lines, ann, annotations=effective_anns, render_inline_tex=render_inline_tex, placed_labels=placed)
+            self.emit_annotation_arrows(lines, effective_anns, render_inline_tex=render_inline_tex)
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
@@ -366,79 +349,12 @@ class ArrayPrimitive(PrimitiveBase):
             gap=_STACK_GAP,
         ) if stack_items else float(CELL_HEIGHT)
 
-        arrow_above = self._arrow_height_above(effective_anns)
+        computed = arrow_height_above(
+            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
+        )
+        arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
         return BoundingBox(x=0, y=0, width=float(w), height=float(h))
-
-    # -- internal: arrows ---------------------------------------------------
-
-    def _emit_arrow(
-        self,
-        lines: list[str],
-        ann: dict[str, Any],
-        annotations: list[dict[str, Any]] | None = None,
-        render_inline_tex: "Callable[[str], str] | None" = None,
-        placed_labels: "list[_LabelPlacement] | None" = None,
-    ) -> None:
-        """Emit an arrow annotation — Bezier arc or plain pointer."""
-        arrow_from = ann.get("arrow_from", "")
-
-        # Plain arrow=true: short straight pointer, no source arc.
-        if not arrow_from and ann.get("arrow"):
-            dst_center = self._cell_center(ann.get("target", ""))
-            if dst_center is not None:
-                emit_plain_arrow_svg(
-                    lines,
-                    ann,
-                    dst_point=dst_center,
-                    render_inline_tex=render_inline_tex,
-                    placed_labels=placed_labels,
-                )
-            return
-
-        if not arrow_from:
-            return
-
-        src_center = self._cell_center(arrow_from)
-        dst_center = self._cell_center(ann.get("target", ""))
-
-        if src_center is None or dst_center is None:
-            return
-
-        # Compute arrow_index: how many earlier arrows target the same cell
-        target = ann.get("target", "")
-        arrow_index = 0
-        if annotations:
-            for other in annotations:
-                if other is ann:
-                    break
-                if (
-                    other.get("target") == target
-                    and other.get("arrow_from")
-                ):
-                    arrow_index += 1
-
-        emit_arrow_svg(
-            lines,
-            ann,
-            src_point=src_center,
-            dst_point=dst_center,
-            arrow_index=arrow_index,
-            cell_height=CELL_HEIGHT,
-            render_inline_tex=render_inline_tex,
-            placed_labels=placed_labels,
-        )
-
-    def _arrow_height_above(self, annotations: list[dict[str, Any]]) -> int:
-        """Compute the max vertical extent above y=0 that arrows need.
-
-        Returns at least ``_min_arrow_above`` (set by the emitter) so
-        that cells stay at a stable vertical position across frames.
-        """
-        computed = arrow_height_above(
-            annotations, self._cell_center, cell_height=CELL_HEIGHT
-        )
-        return max(computed, getattr(self, "_min_arrow_above", 0))
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
         """Return the ``(cx, cy)`` pixel center of a cell selector."""
@@ -451,6 +367,13 @@ class ArrayPrimitive(PrimitiveBase):
                 y = 0  # top edge of cell — arrows curve above
                 return (x, y)
         return None
+
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Delegate to ``_cell_center`` for annotation arrow resolution."""
+        result = self._cell_center(selector)
+        if result is None:
+            return None
+        return (float(result[0]), float(result[1]))
 
     # -- internal -----------------------------------------------------------
 

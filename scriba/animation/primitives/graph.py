@@ -22,9 +22,6 @@ from scriba.animation.primitives.base import (
     THEME,
     _render_svg_text,
     arrow_height_above,
-    emit_arrow_marker_defs,
-    emit_arrow_svg,
-    emit_plain_arrow_svg,
     estimate_text_width,
     register_primitive,
     svg_style_attrs,
@@ -397,6 +394,9 @@ class Graph(PrimitiveBase):
                 int(min(self.width, self.height) / (2 * max(len(self.nodes), 1))),
             ),
         )
+        self._arrow_cell_height = float(self._node_radius * 2)
+        self._arrow_layout = "2d"
+        self._arrow_shorten = float(self._node_radius)
 
         # Compute positions
         self.positions: dict[str | int, tuple[int, int]] = (
@@ -649,7 +649,12 @@ class Graph(PrimitiveBase):
 
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
-        arrow_above = self._arrow_height_above()
+        arrow_above = arrow_height_above(
+            self._annotations,
+            self.resolve_annotation_point,
+            cell_height=float(self._node_radius * 2),
+            layout="2d",
+        )
         return BoundingBox(
             x=0,
             y=0,
@@ -666,7 +671,12 @@ class Graph(PrimitiveBase):
 
         r = self._node_radius
         effective_anns = self._annotations
-        arrow_above = self._arrow_height_above()
+        arrow_above = arrow_height_above(
+            effective_anns,
+            self.resolve_annotation_point,
+            cell_height=float(self._node_radius * 2),
+            layout="2d",
+        )
 
         parts: list[str] = []
         # Offset by node radius so nodes at edge positions don't clip.
@@ -845,83 +855,8 @@ class Graph(PrimitiveBase):
         # --- Annotation arrows (rendered on top of everything) ---
         if effective_anns:
             arrow_lines: list[str] = []
-            placed: list[_LabelPlacement] = []
-            emit_arrow_marker_defs(arrow_lines, effective_anns)
-            for ann in effective_anns:
-                self._emit_arrow(
-                    arrow_lines, ann,
-                    annotations=effective_anns,
-                    render_inline_tex=render_inline_tex,
-                    placed_labels=placed,
-                )
+            self.emit_annotation_arrows(arrow_lines, effective_anns, render_inline_tex=render_inline_tex)
             parts.extend(arrow_lines)
 
         parts.append('</g>')
         return ''.join(parts)
-
-    # -- internal: arrows ---------------------------------------------------
-
-    def _emit_arrow(
-        self,
-        lines: list[str],
-        ann: dict[str, Any],
-        annotations: list[dict[str, Any]] | None = None,
-        render_inline_tex: Callable[[str], str] | None = None,
-        placed_labels: "list[_LabelPlacement] | None" = None,
-    ) -> None:
-        """Emit an arrow annotation — Bezier arc or plain pointer."""
-        arrow_from = ann.get("arrow_from", "")
-
-        # Plain arrow=true: short straight pointer, no source arc.
-        if not arrow_from and ann.get("arrow"):
-            dst_point = self.resolve_annotation_point(ann.get("target", ""))
-            if dst_point is not None:
-                emit_plain_arrow_svg(
-                    lines,
-                    ann,
-                    dst_point=dst_point,
-                    render_inline_tex=render_inline_tex,
-                    placed_labels=placed_labels,
-                )
-            return
-
-        if not arrow_from:
-            return
-
-        src_point = self.resolve_annotation_point(arrow_from)
-        dst_point = self.resolve_annotation_point(ann.get("target", ""))
-        if src_point is None or dst_point is None:
-            return
-
-        # Compute arrow_index: how many earlier arrows target the same cell
-        target = ann.get("target", "")
-        arrow_index = 0
-        if annotations:
-            for other in annotations:
-                if other is ann:
-                    break
-                if other.get("target") == target and other.get("arrow_from"):
-                    arrow_index += 1
-
-        emit_arrow_svg(
-            lines,
-            ann,
-            src_point=src_point,
-            dst_point=dst_point,
-            arrow_index=arrow_index,
-            cell_height=float(self._node_radius * 2),
-            render_inline_tex=render_inline_tex,
-            layout="2d",
-            shorten_src=float(self._node_radius),
-            shorten_dst=float(self._node_radius),
-            placed_labels=placed_labels,
-        )
-
-    def _arrow_height_above(self) -> int:
-        """Compute the max vertical extent above the graph that arrows need."""
-        return arrow_height_above(
-            self._annotations,
-            self.resolve_annotation_point,
-            cell_height=float(self._node_radius * 2),
-            layout="2d",
-        )

@@ -201,6 +201,10 @@ class PrimitiveBase(abc.ABC):
         self._labels: dict[str, str] = {}  # target suffix -> display label
         self._annotations: list[dict[str, Any]] = []
         self._highlighted: set[str] = set()
+        # Arrow rendering defaults — subclasses override in __init__ as needed.
+        self._arrow_cell_height: float = float(CELL_HEIGHT)
+        self._arrow_layout: str = "1d"
+        self._arrow_shorten: float = 0.0
 
     @classmethod
     def _validate_accepted_params(cls, params: dict[str, Any]) -> None:
@@ -320,6 +324,109 @@ class PrimitiveBase(abc.ABC):
         selectors like ``'arr.cell[3]'`` or ``'G.node[A]'`` to pixel
         coordinates.  Returns ``None`` if the selector cannot be resolved.
         """
+        return None
+
+    def _is_highlighted(self, suffix: str) -> bool:
+        """Return True if *suffix* is in the highlighted set.
+
+        Override in subclasses with non-trivial highlight membership
+        (e.g. named-alias selectors like ``"top"``).
+        """
+        return suffix in self._highlighted
+
+    def resolve_effective_state(self, suffix: str) -> str:
+        """Combine get_state(suffix) with the highlight override.
+
+        Returns ``"highlight"`` when the part is idle and highlighted;
+        otherwise returns the stored state unchanged.
+        """
+        state = self.get_state(suffix)
+        if state == "idle" and self._is_highlighted(suffix):
+            return "highlight"
+        return state
+
+    def emit_annotation_arrows(
+        self,
+        parts: "list[str]",
+        annotations: "list[dict[str, Any]]",
+        *,
+        render_inline_tex: "Callable[[str], str] | None" = None,
+    ) -> None:
+        """Emit arrow and plain-pointer SVG for *annotations* into *parts*.
+
+        Handles both Bezier-arc arrows (``arrow_from`` key) and plain
+        straight-pointer annotations (``arrow=true``).  Honours the
+        ``_min_arrow_above`` floor so the translate offset stays stable
+        across frames.
+
+        Instance attributes consulted:
+            _arrow_cell_height  — virtual cell height for arc offset (default 40)
+            _arrow_layout       — ``"1d"`` or ``"2d"`` (default ``"1d"``)
+            _arrow_shorten      — pixels to shorten src/dst by (default 0)
+        """
+        if not annotations:
+            return
+
+        emit_arrow_marker_defs(parts, annotations)
+
+        placed: "list[_LabelPlacement]" = []
+        for ann in annotations:
+            arrow_from = ann.get("arrow_from", "")
+
+            if not arrow_from and ann.get("arrow"):
+                dst_point = self.resolve_annotation_point(ann.get("target", ""))
+                if dst_point is not None:
+                    emit_plain_arrow_svg(
+                        parts,
+                        ann,
+                        dst_point=dst_point,
+                        render_inline_tex=render_inline_tex,
+                        placed_labels=placed,
+                    )
+                continue
+
+            if not arrow_from:
+                continue
+
+            src_point = self.resolve_annotation_point(arrow_from)
+            dst_point = self.resolve_annotation_point(ann.get("target", ""))
+            if src_point is None or dst_point is None:
+                continue
+
+            target = ann.get("target", "")
+            arrow_index = 0
+            for other in annotations:
+                if other is ann:
+                    break
+                if other.get("target") == target and other.get("arrow_from"):
+                    arrow_index += 1
+
+            kwargs: "dict[str, Any]" = {}
+            if self._arrow_layout == "2d":
+                kwargs["layout"] = "2d"
+            if self._arrow_shorten:
+                kwargs["shorten_src"] = self._arrow_shorten
+                kwargs["shorten_dst"] = self._arrow_shorten
+
+            emit_arrow_svg(
+                parts,
+                ann,
+                src_point=src_point,
+                dst_point=dst_point,
+                arrow_index=arrow_index,
+                cell_height=self._arrow_cell_height,
+                render_inline_tex=render_inline_tex,
+                placed_labels=placed,
+                **kwargs,
+            )
+
+    def apply_command(
+        self,
+        params: "dict[str, Any]",
+        *,
+        target_suffix: "str | None" = None,
+    ) -> None:
+        """Apply a primitive-specific command. Default: no-op. Override per primitive."""
         return None
 
 

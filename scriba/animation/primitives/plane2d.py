@@ -26,9 +26,6 @@ from scriba.animation.primitives.base import (
     THEME,
     _render_svg_text,
     arrow_height_above,
-    emit_arrow_marker_defs,
-    emit_arrow_svg,
-    emit_plain_arrow_svg,
     register_primitive,
     svg_style_attrs,
 )
@@ -195,6 +192,8 @@ class Plane2D(PrimitiveBase):
         self.show_coords: bool = bool(params.get("show_coords", False))
 
         self.primitive_type: str = "plane2d"
+        self._arrow_cell_height = float(_ARROW_CELL_HEIGHT)
+        self._arrow_layout = "2d"
 
     # ----- transform -------------------------------------------------------
 
@@ -597,7 +596,12 @@ class Plane2D(PrimitiveBase):
     # ----- bounding box ----------------------------------------------------
 
     def bounding_box(self) -> BoundingBox:
-        arrow_above = self._arrow_height_above()
+        arrow_above = arrow_height_above(
+            self._annotations,
+            self.resolve_annotation_point,
+            cell_height=float(_ARROW_CELL_HEIGHT),
+            layout="2d",
+        )
         return BoundingBox(
             x=0,
             y=0,
@@ -609,7 +613,12 @@ class Plane2D(PrimitiveBase):
 
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         effective_anns = self._annotations
-        arrow_above = self._arrow_height_above()
+        arrow_above = arrow_height_above(
+            effective_anns,
+            self.resolve_annotation_point,
+            cell_height=float(_ARROW_CELL_HEIGHT),
+            layout="2d",
+        )
 
         parts: list[str] = []
         parts.append(
@@ -621,12 +630,6 @@ class Plane2D(PrimitiveBase):
         # Shift all content down when arrows need space above the plot
         if arrow_above > 0:
             parts.append(f'<g transform="translate(0, {arrow_above})">')
-
-        # Emit arrowhead marker defs when annotations with arrows exist
-        arrow_lines: list[str] = []
-        emit_arrow_marker_defs(arrow_lines, effective_anns)
-        if arrow_lines:
-            parts.extend(arrow_lines)
 
         # Layer 1: grid and axes (SVG coordinates, no transform)
         parts.append(self._emit_grid())
@@ -650,20 +653,12 @@ class Plane2D(PrimitiveBase):
 
         # Layer 4: annotations (SVG coordinates, outside transform)
         if effective_anns:
-            placed: list[_LabelPlacement] = []
-            for ann in effective_anns:
-                if ann.get("arrow_from"):
-                    self._emit_arrow(
-                        parts, ann,
-                        annotations=effective_anns,
-                        render_inline_tex=render_inline_tex,
-                        placed_labels=placed,
-                    )
-                else:
-                    self._emit_text_annotation(
-                        parts, ann,
-                        render_inline_tex=render_inline_tex,
-                    )
+            arrow_anns = [a for a in effective_anns if a.get("arrow_from") or a.get("arrow")]
+            text_anns = [a for a in effective_anns if not a.get("arrow_from") and not a.get("arrow")]
+            if arrow_anns:
+                self.emit_annotation_arrows(parts, arrow_anns, render_inline_tex=render_inline_tex)
+            for ann in text_anns:
+                self._emit_text_annotation(parts, ann, render_inline_tex=render_inline_tex)
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
@@ -753,74 +748,6 @@ class Plane2D(PrimitiveBase):
                 text_anchor=text_anchor,
                 render_inline_tex=render_inline_tex,
             )
-        )
-
-    # ----- Arrow annotation helpers ----------------------------------------
-
-    def _emit_arrow(
-        self,
-        lines: list[str],
-        ann: dict[str, Any],
-        annotations: list[dict[str, Any]] | None = None,
-        render_inline_tex: Callable[[str], str] | None = None,
-        placed_labels: "list[_LabelPlacement] | None" = None,
-    ) -> None:
-        """Emit an arrow annotation — Bezier arc or plain pointer."""
-        arrow_from = ann.get("arrow_from", "")
-
-        # Plain arrow=true: short straight pointer, no source arc.
-        if not arrow_from and ann.get("arrow"):
-            dst_center = self.resolve_annotation_point(ann.get("target", ""))
-            if dst_center is not None:
-                emit_plain_arrow_svg(
-                    lines,
-                    ann,
-                    dst_point=dst_center,
-                    render_inline_tex=render_inline_tex,
-                    placed_labels=placed_labels,
-                )
-            return
-
-        if not arrow_from:
-            return
-
-        src_center = self.resolve_annotation_point(arrow_from)
-        dst_center = self.resolve_annotation_point(ann.get("target", ""))
-        if src_center is None or dst_center is None:
-            return
-
-        # Compute stagger index: count earlier arrows targeting the same cell
-        target = ann.get("target", "")
-        arrow_index = 0
-        if annotations:
-            for other in annotations:
-                if other is ann:
-                    break
-                if (
-                    other.get("target") == target
-                    and other.get("arrow_from")
-                ):
-                    arrow_index += 1
-
-        emit_arrow_svg(
-            lines,
-            ann,
-            src_point=src_center,
-            dst_point=dst_center,
-            arrow_index=arrow_index,
-            cell_height=_ARROW_CELL_HEIGHT,
-            render_inline_tex=render_inline_tex,
-            layout="2d",
-            placed_labels=placed_labels,
-        )
-
-    def _arrow_height_above(self) -> int:
-        """Compute the max vertical extent above y=0 that arrows need."""
-        return arrow_height_above(
-            self._annotations,
-            self.resolve_annotation_point,
-            cell_height=_ARROW_CELL_HEIGHT,
-            layout="2d",
         )
 
     # ----- Grid rendering --------------------------------------------------

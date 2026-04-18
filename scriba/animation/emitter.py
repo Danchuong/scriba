@@ -507,32 +507,34 @@ def _emit_frame_svg(
         shape_state = _expand_selectors(
             frame.shape_states.get(shape_name, {}), shape_name, prim
         )
-        if hasattr(prim, "apply_command"):
-            # Check once whether apply_command accepts target_suffix
-            _accepts_suffix = "target_suffix" in inspect.signature(
-                prim.apply_command
-            ).parameters
+        if not hasattr(prim, "apply_command"):
+            continue
 
-            for target_key, target_data in shape_state.items():
-                if isinstance(target_data, dict):
-                    ap = target_data.get("apply_params")
-                    if ap:
-                        # Extract the suffix (e.g. "bucket[0]") from the
-                        # full target key (e.g. "hm.bucket[0]").
-                        suffix = target_key
-                        if suffix.startswith(shape_name + "."):
-                            suffix = suffix[len(shape_name) + 1 :]
+        # Check once whether apply_command accepts target_suffix
+        _accepts_suffix = "target_suffix" in inspect.signature(
+            prim.apply_command
+        ).parameters
 
-                        # apply_params is a list of dicts (one per \apply
-                        # command in the frame).  Process each in order.
-                        params_list = ap if isinstance(ap, list) else [ap]
-                        for params in params_list:
-                            if _accepts_suffix:
-                                prim.apply_command(
-                                    params, target_suffix=suffix
-                                )
-                            else:
-                                prim.apply_command(params)
+        for target_key, target_data in shape_state.items():
+            if isinstance(target_data, dict):
+                ap = target_data.get("apply_params")
+                if ap:
+                    # Extract the suffix (e.g. "bucket[0]") from the
+                    # full target key (e.g. "hm.bucket[0]").
+                    suffix = target_key
+                    if suffix.startswith(shape_name + "."):
+                        suffix = suffix[len(shape_name) + 1 :]
+
+                    # apply_params is a list of dicts (one per \apply
+                    # command in the frame).  Process each in order.
+                    params_list = ap if isinstance(ap, list) else [ap]
+                    for params in params_list:
+                        if _accepts_suffix:
+                            prim.apply_command(
+                                params, target_suffix=suffix
+                            )
+                        else:
+                            prim.apply_command(params)
 
     # NOTE: viewbox is NOT recomputed here — the caller passes a stable
     # max-across-all-frames viewbox so the stage size stays constant.

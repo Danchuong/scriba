@@ -234,16 +234,7 @@ class NumberLinePrimitive(PrimitiveBase):
             target = f"{self.shape_name}.tick[{i}]"
             suffix = f"tick[{i}]"
 
-            state_name = self.get_state(suffix)
-            highlighted = suffix in self._highlighted
-
-            # β redesign — highlight becomes a standalone state so the
-            # marker inherits its styling from scriba-scene-primitives.css
-            # instead of emitting a hardcoded dashed gold circle overlay.
-            if highlighted and state_name == "idle":
-                effective_state = "highlight"
-            else:
-                effective_state = state_name
+            effective_state = self.resolve_effective_state(suffix)
 
             css = state_class(effective_state)
             colors = svg_style_attrs(effective_state)

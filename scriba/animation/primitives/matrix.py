@@ -307,15 +307,7 @@ class MatrixPrimitive(PrimitiveBase):
                 target = f"{self.shape_name}.cell[{r}][{c}]"
                 suffix = f"cell[{r}][{c}]"
 
-                state_name = self.get_state(suffix)
-                highlighted = suffix in self._highlighted
-
-                # β redesign — highlight is a standalone state; only
-                # promote an ``idle`` cell so stronger signals still win.
-                if highlighted and state_name == "idle":
-                    effective_state = "highlight"
-                else:
-                    effective_state = state_name
+                effective_state = self.resolve_effective_state(suffix)
 
                 css = state_class(effective_state)
 
