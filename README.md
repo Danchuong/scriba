@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.8.2 · MIT · Python 3.10+
+**Status:** v0.8.3 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,15 +24,30 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
-## What's new in v0.8.2
+## What's new in v0.8.3
+
+- **External JS runtime + strict CSP support.** Animation runtime now
+  shippable as `scriba.<sha384>.js` next to the HTML. New CLI flags
+  (`--inline-runtime`, `--asset-base-url`, `--copy-runtime`) select
+  inline / external-copy / CDN modes. Enables `script-src 'self'` CSP.
+  Inline mode stays default in 0.8.x; flips in v0.9.0.
+- **Wave 8 audit fixes.** CLI ergonomics (clean error messages,
+  `--debug`, extension check, overwrite guard), corrected animation
+  easing curves, KaTeX MathML output for screen readers, narration
+  live-region cleanup, Plane2D `vector-effect` for zoom-stable grids,
+  print-mode dark-mode fix, ~7–8% render speedup, and locked public
+  API via `__all__`. See `CHANGELOG.md` for the full list.
+
+<details>
+<summary>v0.8.2 changelog</summary>
 
 - **Position-aware auto-ID generation.** Duplicate animation/diagram
   blocks with identical content now produce distinct HTML element IDs.
-  Previously, identical blocks generated the same SHA-256-based ID,
-  causing the second widget's JavaScript to bind to the first DOM element.
-- **Duplicate block ID warning.** The pipeline now emits a
-  `CollectedWarning(code="E1019", severity="dangerous")` when two blocks
-  share the same `block_id`, surfaced via `Document.warnings` (RFC-002).
+- **Duplicate block ID warning.** The pipeline emits
+  `CollectedWarning(code="E1019", severity="dangerous")` when two
+  blocks share the same `block_id`.
+
+</details>
 
 <details>
 <summary>v0.8.0 changelog</summary>
