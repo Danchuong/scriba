@@ -537,7 +537,7 @@ LIFO stack.
 \shape{s}{Stack}{items=["A","B"]}
 ```
 **Operations:** `\apply{s}{push="C"}`, `\apply{s}{pop=1}`
-**Selectors:** `s`, `s.item[i]` (0=bottom)
+**Selectors:** `s`, `s.item[i]` (0=bottom), `s.top`, `s.all`
 
 ### 7.9 Plane2D
 2D coordinate plane with points and lines.
@@ -584,7 +584,7 @@ FIFO queue.
 \shape{q}{Queue}{capacity=6, data=[1], label="$Q$"}
 ```
 **Operations:** `\apply{q}{enqueue=2}`, `\apply{q}{dequeue=true}`
-**Selectors:** `q`, `q.cell[i]`
+**Selectors:** `q`, `q.cell[i]`, `q.front`, `q.rear`
 
 ### 7.15 VariableWatch
 Variable panel showing named values.
@@ -605,7 +605,7 @@ Variable panel showing named values.
 | Graph | — | `.node[id]` | `.edge[(u,v)]` | — | — | `.all` |
 | Tree | — | `.node[id]` | `.edge[(p,c)]` | — | — | `.all` |
 | NumberLine | — | — | — | `.tick[i]` | `.range[lo:hi]` | `.all` |
-| Stack | `.item[i]` | — | — | — | — | — |
+| Stack | `.item[i]`, `.top` | — | — | — | — | `.all` |
 | CodePanel | `.line[i]` | — | — | — | — | — |
 | HashMap | `.bucket[i]` | — | — | — | — | — |
 | LinkedList | — | `.node[i]` | `.link[i]` | — | — | — |

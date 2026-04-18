@@ -49,6 +49,7 @@ The `Document` dataclass fields are locked. As of v0.1.1 the fields are:
 - `versions: Mapping[str, int]`
 - `block_data: Mapping[str, Any]` (added in 0.1.1)
 - `required_assets: Mapping[str, Path]` (added in 0.1.1)
+- `warnings: tuple[CollectedWarning, ...]` (added in 0.6.0, RFC-002; always a tuple, empty when nothing collected)
 
 Rules:
 

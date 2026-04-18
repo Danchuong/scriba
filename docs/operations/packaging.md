@@ -1,6 +1,6 @@
 # 04 — Packaging and Build Specification
 
-> Normative reference for the `scriba-tex` wheel layout, build system, dependencies, vendored assets, and versioning scheme. Binds verbatim to [`01-architecture.md`](../spec/architecture.md) (package layout, `RendererAssets`, `SCRIBA_VERSION`) and to [`02-tex-plugin.md`](../guides/tex-plugin.md) (KaTeX worker resolution, static assets). Where this file and those documents appear to disagree, `01-architecture.md` wins and this file is the bug.
+> Normative reference for the `scriba-tex` wheel layout, build system, dependencies, vendored assets, and versioning scheme. Binds verbatim to [`architecture.md`](../spec/architecture.md) (package layout, `RendererAssets`, `SCRIBA_VERSION`) and to [`tex-plugin.md`](../guides/tex-plugin.md) (KaTeX worker resolution, static assets). Where this file and those documents appear to disagree, `architecture.md` wins and this file is the bug.
 
 ## 1. Build system
 
@@ -111,7 +111,7 @@ The vendored `katex.min.css` has `.woff` and `.ttf` `@font-face` fallbacks strip
 To bump the vendored KaTeX version (e.g. `0.16.11` -> `0.16.12`):
 
 ```bash
-packages/scriba/scripts/vendor_katex.sh 0.16.12
+scripts/vendor_katex.sh 0.16.12
 ```
 
 The script:
@@ -343,7 +343,7 @@ Plus top-level metadata files at the wheel root: `README.md`, `CHANGELOG.md`, `C
 
 ## 12. Entry points
 
-Scriba declares no console scripts, GUI scripts, or plugin entry points. The package is a library — consumers import it directly:
+Scriba declares no console scripts, GUI scripts, or plugin entry points in `pyproject.toml`. The package is a library — consumers import it directly. A developer convenience CLI (`render.py`) lives at the repo root but is not installed as a `console_scripts` entry point:
 
 ```python
 from scriba import Pipeline, RenderContext, SubprocessWorkerPool

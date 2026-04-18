@@ -24,7 +24,7 @@ Non-goals:
 - Rasterization to PNG, OG image generation, GIF export. The output is SVG-in-HTML only.
 - Per-frame interactivity or client-side state. Each `<li>` is inert markup.
 
-`AnimationRenderer` and `DiagramRenderer` are siblings in the `scriba.animation` package and share the parser, primitive catalog, Starlark worker registration, and SVG emitter. See [`03-diagram-plugin.md`](diagram-plugin.md) §12 for the shared-core boundary.
+`AnimationRenderer` and `DiagramRenderer` are siblings in the `scriba.animation` package and share the parser, primitive catalog, Starlark worker registration, and SVG emitter. See [`diagram-plugin.md`](diagram-plugin.md) §12 for the shared-core boundary.
 
 ## 2. Public API
 
@@ -110,7 +110,7 @@ Parse pipeline:
    - `\step` or `\narrate` missing → `E1057` on zero frames, `E1150` on zero narrations (warning).
    - Frame count > 30 → `E1180` (warning). Frame count > 100 → `E1181` (error, no HTML emitted).
 
-The resulting `AnimationIR` is a frozen dataclass; subsequent stages consume it read-only. See [`05-scene-ir.md`](../spec/scene-ir.md) for the full field layout.
+The resulting `AnimationIR` is a frozen dataclass; subsequent stages consume it read-only. See [`scene-ir.md`](../spec/scene-ir.md) for the full field layout.
 
 ## 5. `render_block()` contract
 

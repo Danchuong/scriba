@@ -71,6 +71,11 @@ height = width * (yrange[1] - yrange[0]) / (xrange[1] - xrange[0])
 
 If `xrange` or `yrange` has equal endpoints (degenerate), emit **E1460** (viewport-invalid).
 
+**Reserved-but-no-op parameters:** `xlabel`, `ylabel`, and `label` are accepted by
+`ACCEPTED_PARAMS` and will not trigger E1114, but they have no rendered effect in the
+current version. They are forward-declared for the v0.6.2 axis-labeling feature. Do
+not rely on them producing visible output.
+
 **Unknown parameter:** surfaces through the generic parse/validation
 path — see [`error-codes.md`](../spec/error-codes.md) for the current
 mapping.

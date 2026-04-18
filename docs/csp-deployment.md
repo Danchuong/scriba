@@ -65,14 +65,14 @@ by full URL.  Use `--no-copy-runtime` to skip copying the file locally.
 ```bash
 python render.py input.tex \
   --no-inline-runtime \
-  --asset-base-url https://cdn.example.com/scriba/0.8.3 \
+  --asset-base-url https://cdn.example.com/scriba/<version> \
   --no-copy-runtime
 ```
 
 The rendered HTML will contain:
 
 ```html
-<script src="https://cdn.example.com/scriba/0.8.3/scriba.<hash>.js"
+<script src="https://cdn.example.com/scriba/<version>/scriba.<hash>.js"
         integrity="sha384-<base64>"
         crossorigin="anonymous" defer></script>
 ```

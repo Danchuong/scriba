@@ -4,7 +4,7 @@
 # until the `uv publish` step is uncommented and a PyPI trusted-publisher
 # configuration (or `PYPI_TOKEN` secret) is in place.
 #
-# Current status (Scriba v0.5.x, pre-1.0):
+# Current status (Scriba v0.9.x, pre-1.0):
 #   - No first public release on PyPI yet.
 #   - Homebrew formula in `homebrew/Formula/scriba.rb` is a stub.
 #   - Tag pushes and manual runs will build wheels + sdists as a dry run

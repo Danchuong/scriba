@@ -96,8 +96,8 @@ Extend the zero-JS locked spec (`environments.md`) with 10 new features grouped 
 | Document | Role |
 |----------|------|
 | [`environments.md`](../spec/environments.md) | Base locked spec. Still the single source of truth for `\begin{animation}`, `\begin{diagram}`, inner commands, Starlark host, filmstrip HTML shape. EXTENDED by this decision, not replaced. |
-| [`04-roadmap.md`](roadmap.md) | Will be rewritten by Agent 4 to reflect the 12-week revised timeline. |
-| [`05-implementation-phases.md`](implementation-phases.md) | Will be rewritten by Agent 4 with revised phases incorporating 10 new features. |
+| [`roadmap.md`](roadmap.md) | Will be rewritten by Agent 4 to reflect the 12-week revised timeline. |
+| [`implementation-phases.md`](implementation-phases.md) | Will be rewritten by Agent 4 with revised phases incorporating 10 new features. |
 | [`extensions/`](../extensions/) | Agent 2 will write 5 spec files: `figure-embed.md`, `hl-macro.md`, `fastforward.md`, `substory.md`, `keyframe-animation.md`. |
 | [`primitives/`](../primitives/) | Agent 3 will write 5 spec files: `matrix.md`, `stack.md`, `plane2d.md`, `metricplot.md`, `graph-stable-layout.md`. |
 | [`legacy/pivot-1-research/`](../legacy/pivot-1-research/) | Archived A1–A8 research documents. Preserved for decision trail only. Do not cite as current spec. |

@@ -6,9 +6,9 @@
 > [`environments.md`](../spec/environments.md); all milestones below bind
 > to the class names, environment grammar, HTML output shape, error codes, and CSS
 > contract defined there. Do not relitigate locked decisions in this file; open an
-> entry in [`07-open-questions.md`](open-questions.md) instead.
+> entry in [`open-questions.md`](open-questions.md) instead.
 
-## 1. Current state — v0.1.1-alpha (shipped)
+## 1. Current state — v0.1.1-alpha (shipped) <!-- NOTE: Historical — as of 2026-04-18, project is at v0.9.0; Phases A–D are complete -->
 
 Scriba `0.1.1-alpha` is live on the ojcloud tenant and published internally. It contains:
 
@@ -355,7 +355,7 @@ accessibility audit, and document the known partial (Problem #3, 4D Knapsack).
 | 4D Tensor primitive with slice scrubber | Enough demand from multidimensional DP editorial authors | Deferred; HARD-TO-DISPLAY §3 accepted as cognitive limit |
 | 1.0 API freeze | Two consecutive minor releases with no HTML shape change + one external OJ in production | Not scheduled |
 
-See [`06-out-of-scope.md`](out-of-scope.md) for features that are **explicitly not
+See [`out-of-scope.md`](out-of-scope.md) for features that are **explicitly not
 coming** in the 0.x series, including the interactive scrubber, true FFT-parallel
 step mode, and Manim-class continuous animation.
 
@@ -364,12 +364,12 @@ step mode, and Manim-class continuous animation.
 | Document | Relationship |
 |----------|--------------|
 | [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md) | Pivot #2 rationale, coverage matrix, rejected alternatives. |
-| [`01-architecture.md`](../spec/architecture.md) | Locks `Pipeline`, `Renderer`, `SubprocessWorkerPool`. |
-| [`02-tex-plugin.md`](../guides/tex-plugin.md) | v0.1 TeX internals. Still current. |
+| [`architecture.md`](../spec/architecture.md) | Locks `Pipeline`, `Renderer`, `SubprocessWorkerPool`. |
+| [`tex-plugin.md`](../guides/tex-plugin.md) | v0.1 TeX internals. Still current. |
 | [`environments.md`](../spec/environments.md) | Locked grammar, HTML shape, CSS contract, error codes for v0.2–v0.3. Extended by Pivot #2, not replaced. |
-| [`05-implementation-phases.md`](implementation-phases.md) | Week-by-week task breakdown refining this roadmap. |
-| [`06-out-of-scope.md`](out-of-scope.md) | Explicit non-goals. |
-| [`07-open-questions.md`](open-questions.md) | Deferred decisions (Q21: Starlark host choice). |
+| [`implementation-phases.md`](implementation-phases.md) | Week-by-week task breakdown refining this roadmap. |
+| [`out-of-scope.md`](out-of-scope.md) | Explicit non-goals. |
+| [`open-questions.md`](open-questions.md) | Deferred decisions (Q21: Starlark host choice). |
 | [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) | 10-problem stress test that motivated Pivot #2. |
 | [`extensions/figure-embed.md`](../extensions/figure-embed.md) | E1 spec (written by Agent 2). |
 | [`extensions/hl-macro.md`](../extensions/hl-macro.md) | E2 spec (written by Agent 2). |

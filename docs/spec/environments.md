@@ -1,8 +1,8 @@
 # 04 — Animation & Diagram Environments Spec
 
-> Status: **locked foundation spec** for Scriba v0.3. This file is the single source of truth for the `\begin{animation}` and `\begin{diagram}` LaTeX environments. Wave-3 implementation docs (parser, Starlark host, primitives, SVG emitter, CSS, error catalog) MUST bind to the names, grammar, selectors, HTML shape, and error codes defined here verbatim. Contradictions go to `07-open-questions.md`, not into the code.
+> Status: **locked foundation spec** for Scriba v0.3. This file is the single source of truth for the `\begin{animation}` and `\begin{diagram}` LaTeX environments. Wave-3 implementation docs (parser, Starlark host, primitives, SVG emitter, CSS, error catalog) MUST bind to the names, grammar, selectors, HTML shape, and error codes defined here verbatim. Contradictions go to `open-questions.md`, not into the code.
 >
-> Cross-references: [`01-architecture.md`](architecture.md) for the `Pipeline`/`Renderer` contract, [`02-tex-plugin.md`](../guides/tex-plugin.md) for how `TexRenderer` already carves out regions, and [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) for the problems that motivated these environments.
+> Cross-references: [`architecture.md`](architecture.md) for the `Pipeline`/`Renderer` contract, [`tex-plugin.md`](../guides/tex-plugin.md) for how `TexRenderer` already carves out regions, and [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY.md) for the problems that motivated these environments.
 
 ## 1. Overview
 
@@ -11,7 +11,7 @@ Scriba v0.3 ships two new LaTeX environments that let problem authors embed algo
 - `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 12 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8 for mode selection.
 - `\begin{diagram} ... \end{diagram}` — a **single static figure**. Same primitive vocabulary minus `\step` and `\narrate`. Intended for standalone illustrations (trees, grids, graphs, DP tables shown at a single moment in time).
 
-Both environments plug into the existing `scriba.core.pipeline.Pipeline` from [`01-architecture.md`](architecture.md) as two additional `Renderer` implementations registered alongside `TexRenderer`:
+Both environments plug into the existing `scriba.core.pipeline.Pipeline` from [`architecture.md`](architecture.md) as two additional `Renderer` implementations registered alongside `TexRenderer`:
 
 ```python
 from scriba import Pipeline, RenderContext

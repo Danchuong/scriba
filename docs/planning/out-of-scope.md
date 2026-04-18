@@ -16,16 +16,17 @@ genres catalogued in [`cookbook/HARD-TO-DISPLAY.md`](../cookbook/HARD-TO-DISPLAY
 
 ## Non-goals
 
-### 1. Runtime JavaScript of any kind
+### 1. Runtime JavaScript of any kind (static mode)
+
+> **As of v0.8.x (2026-04-18 note):** This constraint applies to **static/filmstrip mode only** (`--static-mode`). Interactive mode (default in v0.8.x) emits a JS runtime (`scriba.<hash>.js`) that is inline by default and external in the recommended configuration. See `docs/csp-deployment.md` for the three deployment modes. The "zero `<script>`" guarantee is preserved in static mode and for `\begin{diagram}` environments.
 
 No Lit 3 widget, no Motion One timeline, no step controller, no keyboard
 navigation, no `<script>` emitted by any renderer in the `animation` or
-`diagram` plugins. The HTML output per `environments.md` §8 is a
+`diagram` plugins in static mode. The HTML output per `environments.md` §8 is a
 pure `<figure>` + `<ol>` + inline `<svg>` tree that renders identically in
 email, print, PDF export, RSS, and any sanitizer-aware HTML consumer. An
-interactive runtime may return in v0.6+ as an **opt-in** layer behind a
-feature flag, but it is not on the v0.2–v0.5 roadmap and it will never be
-the default. Rationale: every consumer we have spoken with reads editorials
+interactive runtime returned in v0.8.x as an opt-in layer (and became the
+default in v0.8.x). Rationale: every consumer we have spoken with reads editorials
 in contexts (print, email, embedded JS-free shells) where a runtime would
 break. A static filmstrip works everywhere.
 

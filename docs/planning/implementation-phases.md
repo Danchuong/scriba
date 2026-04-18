@@ -1,12 +1,14 @@
 # 05 — Implementation Phases
 
+> **Historical record (as of 2026-04-18):** Phases A–D are complete and the project is at v0.9.0. All checkboxes below remain unchecked because this document was a forward-looking plan that was never updated as tasks completed. Treat it as an execution record.
+
 > **Revised 2026-04-09 for Pivot #2. Supersedes the prior phases document.**
 > See [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md)
-> for rationale and [`04-roadmap.md`](roadmap.md) for the milestone view.
+> for rationale and [`roadmap.md`](roadmap.md) for the milestone view.
 >
 > This file refines the roadmap into a week-by-week task breakdown. Every task
 > binds to the contracts in [`environments.md`](../spec/environments.md),
-> [`01-architecture.md`](../spec/architecture.md), and the current
+> [`architecture.md`](../spec/architecture.md), and the current
 > `packages/scriba/` source tree (v0.1.1-alpha). Extension tasks bind to their
 > spec files in `docs/scriba/extensions/`; primitive tasks bind to their spec
 > files in `docs/scriba/primitives/`. Effort estimates assume a single mid-senior
@@ -311,10 +313,10 @@ Goal: production-grade error UX, Homebrew tap, PyPI final, launch, and formal
 
 ## Cross-reference
 
-- [`04-roadmap.md`](roadmap.md) — milestone-level view; phase allocation rationale; Pivot #2 feature list.
-- [`00-ARCHITECTURE-DECISION-2026-04-09.md`](architecture-decision.md) — HARD-TO-DISPLAY coverage matrix; rejected alternatives.
+- [`roadmap.md`](roadmap.md) — milestone-level view; phase allocation rationale; Pivot #2 feature list.
+- [`architecture-decision.md`](architecture-decision.md) — HARD-TO-DISPLAY coverage matrix; rejected alternatives.
 - [`environments.md`](../spec/environments.md) — source of truth for grammar, selectors, HTML shape, error codes referenced in every task above.
-- [`07-open-questions.md`](open-questions.md) — Q21 on Starlark host choice may reshape Week A1 tasks.
+- [`open-questions.md`](open-questions.md) — Q21 on Starlark host choice may reshape Week A1 tasks.
 - [`docs/scriba/extensions/hl-macro.md`](../extensions/hl-macro.md) — E2 spec.
 - [`docs/scriba/extensions/keyframe-animation.md`](../extensions/keyframe-animation.md) — E5 spec.
 - [`docs/scriba/extensions/figure-embed.md`](../extensions/figure-embed.md) — E1 spec.

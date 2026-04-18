@@ -34,8 +34,9 @@ manual-unroll pattern from Recipe 11, because `\step` is forbidden inside
 | `value=dp[i]` | Literal string `"dp[i]"` | Cell displays the string `"dp[i]"`, not the value |
 
 The parser does **not** warn when a bare identifier inside a selector matches
-the foreach variable name. The wrong form silently produces a `UserWarning`
-at runtime and leaves cells unchanged. Always use `${...}`.
+the foreach variable name. The wrong form silently addresses a literal cell
+named `"i"` (which is out of range and dropped) — no warning is emitted.
+Always use `${...}`.
 
 `value=${i}` interpolation in `\apply` is supported from v0.8.2 onward (the
 `_sub_value` path now resolves `InterpolationRef` the same way `_sub_index_expr`

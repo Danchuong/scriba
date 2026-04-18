@@ -9,13 +9,13 @@
 > Cross-references: [`environments.md`](environments.md) §8 for the frozen
 > HTML output shape, §9 for the CSS class contract and state variables;
 > [`primitives.md`](primitives.md) for the per-primitive SVG output templates and
-> selector grammar; [`09-animation-plugin.md`](../guides/animation-plugin.md) §5–6 for how the
-> emitter is invoked per frame; [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §5–6 for
+> selector grammar; [`animation-plugin.md`](../guides/animation-plugin.md) §5–6 for how the
+> emitter is invoked per frame; [`diagram-plugin.md`](../guides/diagram-plugin.md) §5–6 for
 > the single-frame invocation path.
 >
-> This file does **not** define: the Scene IR datatypes (`05-scene-ir.md`), the primitive
-> shape catalog (`primitives.md`), the Starlark worker (`07-starlark-worker.md`), or the
-> CSS stylesheet contents (`09-animation-css.md`). Where this file and
+> This file does **not** define: the Scene IR datatypes (`scene-ir.md`), the primitive
+> shape catalog (`primitives.md`), the Starlark worker (`starlark-worker.md`), or the
+> CSS stylesheet contents (`animation-css.md`). Where this file and
 > `environments.md` appear to disagree, `environments.md` wins and this
 > file is the bug.
 
@@ -141,7 +141,7 @@ primitive's x-offset is `(viewBox_width - primitive_width) / 2`.
 
 ### 3.4 Frozen geometry across frames
 
-Per [`09-animation-plugin.md`](../guides/animation-plugin.md) §6, the primitive layout (positions,
+Per [`animation-plugin.md`](../guides/animation-plugin.md) §6, the primitive layout (positions,
 sizes, graph/tree topology) is computed **once from the prelude state** and cached across
 frames. Per-frame rendering only re-applies state classes and annotation overlays on top of
 the frozen geometry. The viewBox dimensions and all element positions are identical across
@@ -152,7 +152,7 @@ all frames of an animation. This guarantees visual stability and prevents layout
 The viewBox computation is fully deterministic. Given the same set of primitives with the
 same parameters, the output viewBox and all element positions are byte-identical across
 runs. This preserves the content-hash cache contract from
-[`01-architecture.md`](architecture.md).
+[`architecture.md`](architecture.md).
 
 ---
 
@@ -747,7 +747,7 @@ The SVG emitter MUST produce byte-identical output given the same inputs:
    after denormalization.
 
 These guarantees support the content-hash cache in `tenant-backend`
-([`01-architecture.md`](architecture.md) §Versioning): identical source + identical
+([`architecture.md`](architecture.md) §Versioning): identical source + identical
 Scriba version = identical HTML = identical cache key.
 
 ---

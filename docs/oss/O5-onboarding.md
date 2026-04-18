@@ -33,7 +33,7 @@ The package drops into the user's existing venv, lockfile, or Poetry/uv/Pipenv p
 - curl-pipe install (security)
 - npm wrapper (wrong runtime — Scriba is Python)
 - Docker image (heavy; Scriba is a library, not a daemon)
-- Homebrew tap (no CLI to install)
+- Homebrew tap (deferred to Phase D; a CLI now exists via `render.py` but the tap is pre-release — see `homebrew/README.md`)
 
 ## 4. The Quick Start snippet
 

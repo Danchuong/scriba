@@ -3,7 +3,7 @@
 > **Target:** Polish error UX, PyPI final publish, Homebrew tap, launch messaging, HARD-TO-DISPLAY verification.
 > **Effort:** ~1.5 weeks solo, ~1 week with 2 engineers.
 > **Prerequisite:** v0.4.0 complete (all 11 primitives, `\substory`, docs site).
-> **Binds to:** [`04-roadmap.md`](roadmap.md) §7.
+> **Binds to:** [`roadmap.md`](roadmap.md) §7.
 
 ---
 
@@ -11,11 +11,11 @@
 
 | Category | Deliverable | Reference |
 |----------|-------------|-----------|
-| Error UX | Structured error messages with `E1xxx` codes, source line/column, docs site link | `environments.md` §11, `04-roadmap.md` §7.2 |
-| PyPI final | Publish `scriba 0.5.0` (non-alpha) to PyPI with full changelog | `04-roadmap.md` §7.2 |
-| Homebrew tap | `brew tap ojcloud/tap` + `brew install scriba` formula (arm64 + x86_64) | `04-roadmap.md` §7.2 |
-| Launch messaging | Blog post + community thread drafts (HN, Lobsters, CP Discord) | `04-roadmap.md` §7.2 |
-| HARD-TO-DISPLAY verification | 9 canonical editorials verified, accessibility audit, Problem #3 documented as partial | `04-roadmap.md` §7.2 |
+| Error UX | Structured error messages with `E1xxx` codes, source line/column, docs site link | `environments.md` §11, `roadmap.md` §7.2 |
+| PyPI final | Publish `scriba 0.5.0` (non-alpha) to PyPI with full changelog | `roadmap.md` §7.2 |
+| Homebrew tap | `brew tap ojcloud/tap` + `brew install scriba` formula (arm64 + x86_64) | `roadmap.md` §7.2 |
+| Launch messaging | Blog post + community thread drafts (HN, Lobsters, CP Discord) | `roadmap.md` §7.2 |
+| HARD-TO-DISPLAY verification | 9 canonical editorials verified, accessibility audit, Problem #3 documented as partial | `roadmap.md` §7.2 |
 | Bug fixes | Resolve remaining test failures (6 failing as of Phase C exit) | — |
 
 ---
@@ -295,7 +295,7 @@ After v0.5.0 GA, Scriba enters maintenance + on-demand mode:
 
 | Document | Relationship |
 |----------|--------------|
-| [`04-roadmap.md`](roadmap.md) §7 | Phase D milestone |
+| [`roadmap.md`](roadmap.md) §7 | Phase D milestone |
 | [`PHASE-A-PLAN.md`](phase-a.md) | Phase A (predecessor) |
 | [`PHASE-B-PLAN.md`](phase-b.md) | Phase B (predecessor) |
 | [`PHASE-C-PLAN.md`](phase-c.md) | Phase C (predecessor) |

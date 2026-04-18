@@ -838,7 +838,7 @@ Scriba is thread-safe by design for synchronous web frameworks:
 
 ## Environment renderers (v0.3)
 
-Scriba v0.3 introduces two additional Renderer implementations that live alongside `TexRenderer` and consume LaTeX-native environments. They bind verbatim to every contract on this page — `Renderer` protocol, `Block`, `RenderArtifact`, `RenderContext`, `SubprocessWorkerPool`, `RendererError` — and add no new core abstractions. See [`environments.md`](environments.md) for the frozen grammar, HTML output shape, CSS class contract, and error catalog, and [`03-diagram-plugin.md`](../guides/diagram-plugin.md) / [`09-animation-plugin.md`](../guides/animation-plugin.md) for the per-plugin specs.
+Scriba v0.3 introduces two additional Renderer implementations that live alongside `TexRenderer` and consume LaTeX-native environments. They bind verbatim to every contract on this page — `Renderer` protocol, `Block`, `RenderArtifact`, `RenderContext`, `SubprocessWorkerPool`, `RendererError` — and add no new core abstractions. See [`environments.md`](environments.md) for the frozen grammar, HTML output shape, CSS class contract, and error catalog, and [`diagram-plugin.md`](../guides/diagram-plugin.md) / [`animation-plugin.md`](../guides/animation-plugin.md) for the per-plugin specs.
 
 **Registered renderers and priority (first-wins overlap):**
 

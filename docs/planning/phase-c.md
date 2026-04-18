@@ -4,7 +4,7 @@
 > **Note:** `\fastforward` (E3) was removed — inferior output compared to manual `\compute` + `\step`.
 > **Effort:** ~5 weeks solo, ~3 weeks with 2 engineers.
 > **Prerequisite:** v0.3.0 complete (all 8 primitives + DiagramRenderer + interactive widget).
-> **Binds to:** [`04-roadmap.md`](roadmap.md) §6,
+> **Binds to:** [`roadmap.md`](roadmap.md) §6,
 > [`primitives/plane2d.md`](../primitives/plane2d.md),
 > [`primitives/metricplot.md`](../primitives/metricplot.md),
 > [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md),
@@ -66,31 +66,12 @@ After these: all 11 primitives/modes working, 9/10 HARD-TO-DISPLAY covered.
 
 ## 3. Deliverable specs
 
-### 3.1 `\fastforward` (E3)
+### 3.1 `\fastforward` (E3) — REMOVED
 
-**New files:**
-- `scriba/animation/extensions/fastforward.py` — parser integration, Starlark iteration loop, snapshot sampling
-- `scriba/animation/starlark_rng.py` — seeded RNG object (`random`, `randint`, `uniform`, `shuffle`, `choice`)
-
-**Parser changes:**
-- `SceneParser`: add `\fastforward` as 9th inner command alongside `\step`
-- Grammar: `fastforward_block ::= "\fastforward" "{" total_iters "}" "{" ff_params "}" ff_narrate_cmd?`
-- Expands to N sequential `\step` frames at compile time
-
-**Starlark host changes:**
-- Elevated step cap: 10^9 ops (vs 10^8 regular `\compute`)
-- `SCRIBA_FASTFORWARD=1` env var for worker
-- Inject `rng` object only during `\fastforward` execution
-- Call author's `iterate(scene, rng)` function N times
-- Snapshot scene dict at every `sample_every` intervals
-
-**Key parameters:**
-- `total_iters`: 1 to 10^6 (E1340 if exceeded)
-- `sample_every`: >= 1; `floor(total_iters/sample_every)` <= 100 (E1341)
-- `seed`: mandatory (E1342)
-- `label`: optional, default `"ff"`
-
-**Error codes:** E1340–E1349
+> **This section is void.** `\fastforward` was removed before implementation
+> (see header note). The spec below is retained for historical reference only;
+> do not implement it. Use manual `\compute` + `\step` unrolling instead.
+> Error codes E1340–E1349 are reserved but unassigned.
 
 ### 3.2 `\substory` (E4)
 
@@ -175,7 +156,7 @@ ty =  (height - pad) + yrange[0] * (height - 2*pad) / (yrange[1] - yrange[0])
 - Per-series `scale="linear"|"log"` and `axis="left"|"right"` (two-axis mode)
 - Current-step vertical marker with circle dots
 - Legend at top-right (or below chart if overflow)
-- `\fastforward` integration: reads series keys from scene dict snapshots
+- Data driven via `\apply` per step; no `\fastforward` integration (E3 removed)
 
 **Data mapping:**
 ```python
@@ -396,7 +377,7 @@ Mitigation:
 
 | Document | Relationship |
 |----------|--------------|
-| [`04-roadmap.md`](roadmap.md) §6 | Phase C milestone |
+| [`roadmap.md`](roadmap.md) §6 | Phase C milestone |
 | [`primitives/plane2d.md`](../primitives/plane2d.md) | P3 spec |
 | [`primitives/metricplot.md`](../primitives/metricplot.md) | P4 spec |
 | [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) | P5 spec |

@@ -275,4 +275,4 @@ back to the prose.
 
 *Mechanics in [`environments.md`](../spec/environments.md).
 Starter problems in [`cookbook/`](../cookbook/). Integration examples in
-[`08-usage-example.md`](usage-example.md).*
+[`usage-example.md`](usage-example.md).*

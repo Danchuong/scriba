@@ -4,7 +4,7 @@
 > **Effort:** ~2.5 weeks solo, ~1.5 weeks with 2 engineers.
 > **Prerequisite:** v0.2.0 complete (animation + Array/DPTable/Graph + interactive widget).
 > **Binds to:** [`environments.md`](../spec/environments.md),
-> [`06-primitives.md`](../spec/primitives.md), [`primitives/matrix.md`](../primitives/matrix.md),
+> [`primitives.md`](../spec/primitives.md), [`primitives/matrix.md`](../primitives/matrix.md),
 > [`primitives/stack.md`](../primitives/stack.md).
 
 ---
@@ -275,9 +275,9 @@ No controls, no narration, no step counter.
 
 | Document | Relationship |
 |----------|--------------|
-| [`04-roadmap.md`](roadmap.md) §5 | Phase B milestone |
-| [`05-implementation-phases.md`](implementation-phases.md) | Task breakdown |
-| [`06-primitives.md`](../spec/primitives.md) | Grid, Tree, NumberLine specs |
+| [`roadmap.md`](roadmap.md) §5 | Phase B milestone |
+| [`implementation-phases.md`](implementation-phases.md) | Task breakdown |
+| [`primitives.md`](../spec/primitives.md) | Grid, Tree, NumberLine specs |
 | [`primitives/matrix.md`](../primitives/matrix.md) | Matrix/Heatmap spec |
 | [`primitives/stack.md`](../primitives/stack.md) | Stack spec |
 | [`extensions/figure-embed.md`](../extensions/figure-embed.md) | figure-embed spec |

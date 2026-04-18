@@ -23,7 +23,7 @@ Today that risk blocks two deferred workstreams:
 - **KaTeX 0.16.11 → 0.16.22 upgrade.** Wave 3 Cluster 10 kicked this
   down the road explicitly pending "a visual regression suite" — see
   `SECURITY.md` "Known limitations" and
-  `docs/archive/production-audit-2026-04-11/21-ops-release.md`.
+  `docs/archive/docs-audit-2026-04-18/05-ops-release.md`.
 - **Template or primitive refactors that touch rendered HTML.** These
   currently rely on eyeball testing against `examples/**/*.tex`.
 
@@ -104,5 +104,5 @@ When adding a new capability:
   gain a pre-merge call into the regression suite once it lands.
 - `SECURITY.md` — "Known limitations" explains why the KaTeX upgrade is
   still deferred.
-- `docs/archive/production-audit-2026-04-11/21-ops-release.md` —
+- `docs/archive/docs-audit-2026-04-18/05-ops-release.md` —
   original finding that motivated this strategy.

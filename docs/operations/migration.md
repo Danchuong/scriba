@@ -1,9 +1,11 @@
 # 05 — Migration Guide
 
+> **Historical record (as of 2026-04-18):** This guide describes the migration path written at v0.1.1-alpha. The project has since shipped through v0.9.0 with Phases A–D complete. The version timeline table (§10) lists v0.5.0 GA as a future milestone, but the project is already past that point. Treat this document as an execution log, not a forward-looking plan.
+
 > This document is a **guide**, not a locked spec. It describes how to migrate
 > existing ojcloud content and backend code to use Scriba. The authoritative
-> contracts it references are [`01-architecture.md`](../spec/architecture.md),
-> [`02-tex-plugin.md`](../guides/tex-plugin.md), and
+> contracts it references are [`architecture.md`](../spec/architecture.md),
+> [`tex-plugin.md`](../guides/tex-plugin.md), and
 > [`environments.md`](../spec/environments.md). When this guide and a
 > locked spec disagree, the spec wins.
 
@@ -91,7 +93,7 @@ migration note.
    pip install scriba-tex
    python -m pytest --pyargs scriba
    ```
-4. Confirm 71 tests pass (snapshot, XSS, validator, pipeline, workers,
+4. Confirm tests pass (snapshot, XSS, validator, pipeline, workers,
    sanitize).
 
 ### Phase 2: Backend render path (2--3 days)
@@ -511,7 +513,7 @@ classes will render incorrectly under the old CSS.
 ## 10. Timeline alignment with roadmap
 
 The migration is phased to align with the Scriba release roadmap
-([`04-roadmap.md`](../planning/roadmap.md)):
+([`roadmap.md`](../planning/roadmap.md)):
 
 | Scriba version | Migration milestone |
 |---|---|
@@ -554,7 +556,7 @@ Use this checklist to track migration progress:
 
 | Document | Relationship |
 |----------|-------------|
-| [`01-architecture.md`](../spec/architecture.md) | Locked API surface: `Pipeline`, `RenderContext`, `ResourceResolver`, `ALLOWED_TAGS`, `ALLOWED_ATTRS` |
-| [`02-tex-plugin.md`](../guides/tex-plugin.md) | TeX port details, HTML output contract, diff vs old renderer, snapshot/XSS tests |
-| [`04-roadmap.md`](../planning/roadmap.md) | Release timeline, migration coupling |
-| [`07-open-questions.md`](../planning/open-questions.md) | Q7 (bleach vs nh3), Q5 (dark mode trigger) |
+| [`architecture.md`](../spec/architecture.md) | Locked API surface: `Pipeline`, `RenderContext`, `ResourceResolver`, `ALLOWED_TAGS`, `ALLOWED_ATTRS` |
+| [`tex-plugin.md`](../guides/tex-plugin.md) | TeX port details, HTML output contract, diff vs old renderer, snapshot/XSS tests |
+| [`roadmap.md`](../planning/roadmap.md) | Release timeline, migration coupling |
+| [`open-questions.md`](../planning/open-questions.md) | Q7 (bleach vs nh3), Q5 (dark mode trigger) |

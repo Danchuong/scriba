@@ -6,8 +6,8 @@
 # Pending items before this formula goes live:
 #   - Confirm `url` points at the real published sdist on PyPI.
 #   - Replace every REPLACE_WITH_ACTUAL_SHA256 with the actual hash.
-#   - Confirm the pygments resource version matches the floor in
-#     pyproject.toml (`pygments>=2.17,<2.20`).
+#   - Confirm the pygments resource version matches the range in
+#     pyproject.toml (`pygments>=2.17,<2.21`). Pin to 2.20.x to include the OPS-001 CVE fix.
 #   - Run `brew audit --strict --online scriba` against the ojcloud tap
 #     before pushing.
 #
@@ -32,8 +32,8 @@ class Scriba < Formula
   depends_on "node"
 
   resource "pygments" do
-    url "https://files.pythonhosted.org/packages/source/p/pygments/pygments-2.19.1.tar.gz"
-    sha256 "REPLACE_WITH_ACTUAL_SHA256"  # pending first public release
+    url "https://files.pythonhosted.org/packages/source/p/pygments/pygments-2.20.0.tar.gz"
+    sha256 "REPLACE_WITH_ACTUAL_SHA256"  # pending first public release — update SHA256 at publish time
   end
 
   def install

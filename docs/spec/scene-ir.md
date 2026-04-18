@@ -6,8 +6,8 @@
 >
 > Cross-references: [`environments.md`](environments.md) §10.3 for the
 > parser-to-IR contract, §3 for the 8 inner commands, §4 for target selector syntax,
-> §6 for frame semantics. [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §4 step 6 for
-> `DiagramIR`. [`09-animation-plugin.md`](../guides/animation-plugin.md) §4 for `AnimationIR`
+> §6 for frame semantics. [`diagram-plugin.md`](../guides/diagram-plugin.md) §4 step 6 for
+> `DiagramIR`. [`animation-plugin.md`](../guides/animation-plugin.md) §4 for `AnimationIR`
 > and `FrameIR`. [`primitives.md`](primitives.md) for the primitive catalog that
 > interprets `ShapeCommand` parameters.
 >

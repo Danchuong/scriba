@@ -42,7 +42,7 @@ text by a pre-processing pass in `SceneParser` before the body is passed to
 
 ```
 hl_macro     ::= "\hl" "{" step_id "}" "{" tex_expr "}"
-step_id      ::= IDENT           (* matches [a-z][a-zA-Z0-9_]* *)
+step_id      ::= IDENT           (* matches [A-Za-z_][A-Za-z0-9._-]* *)
 tex_expr     ::= balanced_text   (* any LaTeX expression accepted by KaTeX *)
 ```
 
@@ -371,7 +371,7 @@ The following changes to `environments.md` are REQUIRED.
 
 1. **§3.3 `\step`**: Add an optional `[label=<ident>]` argument:
    > `\step` optionally accepts `[label=<ident>]` where `<ident>` matches
-   > `[a-z][a-zA-Z0-9_]*`. The label is used by the `\hl` macro (extension E2)
+   > `[A-Za-z_][A-Za-z0-9._-]*`. The label is used by the `\hl` macro (extension E2)
    > to associate narration terms with frame `:target` CSS rules. When absent,
    > the implicit label `step{N}` (1-indexed) is assigned. Duplicate labels in
    > the same animation are E1058. Labels must be unique per animation.

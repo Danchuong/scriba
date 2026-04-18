@@ -35,7 +35,7 @@ TAPREADME
 cd "${TAP_DIR}"
 git init
 git add -A
-git commit -m "feat: add scriba 0.5.0 formula"
+git commit -m "feat: add scriba formula"
 
 echo ""
 echo "==> Done. Next steps:"

@@ -6,7 +6,7 @@
 
 | Dimension | Target |
 |---|---|
-| Testing | pytest + syrupy snapshot tests on HTML+SVG output, 80% line coverage on parser, Starlark host, IR, and SVG emitter |
+| Testing | pytest + syrupy snapshot tests on HTML+SVG output, 75% line coverage enforced in CI (`fail_under = 75` in `pyproject.toml`); aspirational target is 80% |
 | Error messages | Rust-style with source caret + hint + docs link (codes `E1001–E1299`) |
 | Type safety | mypy `--strict`, Pydantic v2 for Scene IR, `typing.Protocol` for `Renderer` / `WorkerPool` |
 | Determinism | Byte-identical output across runs and OSes for the full cookbook canon (CI matrix: linux, macos; py3.11, py3.12) |

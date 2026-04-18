@@ -1,3 +1,7 @@
+<!-- Read by OpenAI Codex / Agents and similar tools. Kept in sync with
+     CLAUDE.md — both carry the same GitNexus block because Claude Code and
+     OpenAI Agents each read their own file. Update both together; content
+     must remain identical. -->
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 

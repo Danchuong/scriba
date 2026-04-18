@@ -44,68 +44,7 @@ asset basenames needed to display it.
   inline magic values. No API changes for library consumers. See
   `CHANGELOG.md` for the full list.
 
-<details>
-<summary>v0.8.2 changelog</summary>
-
-- **Position-aware auto-ID generation.** Duplicate animation/diagram
-  blocks with identical content now produce distinct HTML element IDs.
-- **Duplicate block ID warning.** The pipeline emits
-  `CollectedWarning(code="E1019", severity="dangerous")` when two
-  blocks share the same `block_id`.
-
-</details>
-
-<details>
-<summary>v0.8.0 changelog</summary>
-
-- **Fixed state styling regression.** Cell/node/edge state colors
-  (`current`, `error`, `good`, `highlight`, etc.) were silently overridden
-  by primitive base selectors due to a CSS specificity conflict. Primitive
-  base selectors now use `:where()` to zero their qualifying specificity,
-  so `.scriba-state-*` rules always win.
-
-</details>
-
-<details>
-<summary>v0.7.0 changelog</summary>
-
-- **Fully portable HTML output.** `render.py` now produces single-file,
-  offline-ready HTML. All CSS (scene primitives, animation, widget chrome,
-  Pygments syntax highlighting), KaTeX math fonts (20 woff2 files,
-  base64-encoded), and `\includegraphics` images (data URIs) are inlined.
-  Zero CDN dependencies — just open the `.html` in any browser.
-- **CSS deduplication.** The ~470-line inline CSS block in `render.py` was
-  replaced by a new `scriba.core.css_bundler` module that reads CSS from
-  source `.css` files at render time. Single source of truth for all
-  styling.
-- **`traversable_to_path()` helper.** Centralised the
-  `Path(str(traversable))` anti-pattern across 3 files into a documented
-  helper in `scriba.core.artifact`, ready for future `as_file()` upgrade.
-- **`text_outline=` parameter removed.** The per-call text outline parameter
-  on primitives, deprecated in v0.6.0, is removed. Use the CSS halo
-  cascade instead.
-
-</details>
-
-<details>
-<summary>v0.6.0 changelog</summary>
-
-- **Wave 8 — vstack layout.** Array, DP-table, and related primitives now
-  compose their caption, index labels, and cells through a shared
-  `scriba/animation/primitives/layout.py` vstack helper.
-- **Wave 9 — CSS-first text halo cascade.** Every `[data-primitive] text`
-  element now inherits `paint-order: stroke fill markers` with a
-  `--scriba-halo` CSS variable that each state class overrides.
-- **RFC-001 — structural mutation ops.** Tree, Graph, and Plane2D primitives
-  gained safe structural ops (`add_node`, `remove_node`, `reparent`).
-- **RFC-002 — strict mode and document warnings.** Pipeline surfaces
-  non-fatal issues on `Document.warnings`. See
-  [`docs/guides/strict-mode.md`](docs/guides/strict-mode.md).
-- **Examples reorganized.** 53 `.tex` examples across `examples/quickstart/`,
-  `examples/algorithms/`, `examples/cses/`, and `examples/primitives/`.
-  See [`docs/cookbook/README.md`](docs/cookbook/README.md).
-
-</details>
+For older release notes see [`CHANGELOG.md`](CHANGELOG.md).
 
 ## Install
 

@@ -1,6 +1,6 @@
 # 02 — `scriba.tex` plugin
 
-> Wave 2 elaboration. Binds verbatim to names locked in [`01-architecture.md`](../spec/architecture.md): `Block`, `RenderArtifact`, `Document`, `RenderContext`, `Renderer`, `RendererAssets`, `Pipeline`, `SubprocessWorker`, `SubprocessWorkerPool`, `ScribaError`, `RendererError`, `WorkerError`, `ValidationError`, `ResourceResolver`, `ALLOWED_TAGS`, `ALLOWED_ATTRS`. Do not relitigate those names here.
+> Wave 2 elaboration. Binds verbatim to names locked in [`architecture.md`](../spec/architecture.md): `Block`, `RenderArtifact`, `Document`, `RenderContext`, `Renderer`, `RendererAssets`, `Pipeline`, `SubprocessWorker`, `SubprocessWorkerPool`, `ScribaError`, `RendererError`, `WorkerError`, `ValidationError`, `ResourceResolver`, `ALLOWED_TAGS`, `ALLOWED_ATTRS`. Do not relitigate those names here.
 
 ## 1. Purpose
 

@@ -17,7 +17,7 @@
 
 ## 1. Purpose
 
-`DiagramRenderer` is the Scriba plugin that turns a `\begin{diagram} ... \end{diagram}` LaTeX environment into a single static `<figure class="scriba-diagram">` containing one inline `<svg>` stage. It shares its parser, selector machinery, primitive catalog, Starlark host, and SVG emitter with `AnimationRenderer` (see [`09-animation-plugin.md`](animation-plugin.md)); the two plugins are sibling entry points over the same rendering core. The only difference visible to authors is that `diagram` is **single-frame** — `\step` and `\narrate` are forbidden — and the only difference visible to consumers is the emitted HTML shape (§8 below).
+`DiagramRenderer` is the Scriba plugin that turns a `\begin{diagram} ... \end{diagram}` LaTeX environment into a single static `<figure class="scriba-diagram">` containing one inline `<svg>` stage. It shares its parser, selector machinery, primitive catalog, Starlark host, and SVG emitter with `AnimationRenderer` (see [`animation-plugin.md`](animation-plugin.md)); the two plugins are sibling entry points over the same rendering core. The only difference visible to authors is that `diagram` is **single-frame** — `\step` and `\narrate` are forbidden — and the only difference visible to consumers is the emitted HTML shape (§8 below).
 
 Concrete goals:
 

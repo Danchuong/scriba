@@ -31,7 +31,7 @@ adequately at compile time.
 | 4 | FFT butterfly | Author provides a planar butterfly wiring diagram for N=256 as a hand-crafted SVG inset |
 | 5 | MCMF dense graph | Pre-rendered Matplotlib heatmap of the final 200×200 assignment matrix |
 | 6 | Convex Hull Trick geometry | Matplotlib line-plot SVG for N=20 lines showing the lower envelope |
-| 9 | Simulated Annealing | Pre-rendered tour snapshot used alongside `\fastforward` frames |
+| 9 | Simulated Annealing | Pre-rendered tour snapshot embedded alongside manual `\step` frames |
 | 10 | Planar Separator | Hardcoded N=20 planar graph with BFS layers hand-drawn in Excalidraw |
 
 The escape hatch is not a failure mode — it is a design feature. An editorial that

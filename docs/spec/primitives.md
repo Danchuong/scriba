@@ -332,7 +332,7 @@ Both are required (E1103).
 |-------------|----------|-----------|-------------------------------------------------------|
 | `directed`  | boolean  | `false`   | `true` for directed graph (arrowhead markers).        |
 | `layout`    | string   | `"force"` | Layout algorithm: `"force"`, `"circular"`, `"bipartite"`, `"hierarchical"`, `"stable"`. |
-| `layout_seed`| integer | `42`      | Seed for deterministic layout.                        |
+| `layout_seed`| integer | `42`      | Seed for deterministic layout. Alias: `seed` (deprecated, prefer `layout_seed`). |
 | `label`     | string   | `None`    | Caption for the entire graph.                         |
 
 **`layout="stable"` constraints** (see [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md)):

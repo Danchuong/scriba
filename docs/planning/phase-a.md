@@ -4,8 +4,8 @@
 > **Effort:** ~3 weeks solo, ~2 weeks with 2 engineers.
 > **Prerequisite:** v0.1.1-alpha shipped (TeX plugin complete, 71 tests passing).
 > **Binds to:** [`environments.md`](../spec/environments.md),
-> [`05-scene-ir.md`](../spec/scene-ir.md), [`07-starlark-worker.md`](../spec/starlark-worker.md),
-> [`08-svg-emitter.md`](../spec/svg-emitter.md), [`09-animation-css.md`](../spec/animation-css.md).
+> [`scene-ir.md`](../spec/scene-ir.md), [`starlark-worker.md`](../spec/starlark-worker.md),
+> [`svg-emitter.md`](../spec/svg-emitter.md), [`animation-css.md`](../spec/animation-css.md).
 
 ---
 
@@ -382,14 +382,14 @@ Primitive (Protocol):
 
 | Document | Relationship |
 |----------|--------------|
-| [`04-roadmap.md`](roadmap.md) §4 | Phase A milestone definition |
-| [`05-implementation-phases.md`](implementation-phases.md) | Week-by-week task breakdown (source of truth for task list) |
+| [`roadmap.md`](roadmap.md) §4 | Phase A milestone definition |
+| [`implementation-phases.md`](implementation-phases.md) | Week-by-week task breakdown (source of truth for task list) |
 | [`environments.md`](../spec/environments.md) | Locked grammar, HTML shape, CSS contract, error codes |
-| [`05-scene-ir.md`](../spec/scene-ir.md) | Scene IR datatype definitions |
-| [`06-primitives.md`](../spec/primitives.md) | Primitive catalog (Array, DPTable, Graph for Phase A) |
-| [`07-starlark-worker.md`](../spec/starlark-worker.md) | Starlark worker wire protocol |
-| [`08-svg-emitter.md`](../spec/svg-emitter.md) | SVG emitter specification |
-| [`09-animation-css.md`](../spec/animation-css.md) | CSS stylesheet specification |
+| [`scene-ir.md`](../spec/scene-ir.md) | Scene IR datatype definitions |
+| [`primitives.md`](../spec/primitives.md) | Primitive catalog (Array, DPTable, Graph for Phase A) |
+| [`starlark-worker.md`](../spec/starlark-worker.md) | Starlark worker wire protocol |
+| [`svg-emitter.md`](../spec/svg-emitter.md) | SVG emitter specification |
+| [`animation-css.md`](../spec/animation-css.md) | CSS stylesheet specification |
 | [`extensions/hl-macro.md`](../extensions/hl-macro.md) | E2 spec |
 | [`extensions/keyframe-animation.md`](../extensions/keyframe-animation.md) | E5 spec |
-| [`07-open-questions.md`](open-questions.md) Q21 | Starlark host choice (Go vs Python) |
+| [`open-questions.md`](open-questions.md) Q21 | Starlark host choice (Go vs Python) |

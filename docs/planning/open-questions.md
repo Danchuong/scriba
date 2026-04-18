@@ -3,12 +3,12 @@
 ## Purpose
 
 This file tracks decisions the planning and v0.3 pivot intentionally
-deferred. Unlike [`06-out-of-scope.md`](out-of-scope.md) — which records
+deferred. Unlike [`out-of-scope.md`](out-of-scope.md) — which records
 firm, rationale-backed exclusions — every question here is genuinely open
 and will be resolved during or before the implementation phase that needs
 it. When a question is resolved, the answer is written into the
-authoritative file ([`01-architecture.md`](../spec/architecture.md),
-[`02-tex-plugin.md`](../guides/tex-plugin.md),
+authoritative file ([`architecture.md`](../spec/architecture.md),
+[`tex-plugin.md`](../guides/tex-plugin.md),
 [`environments.md`](../spec/environments.md), or a new contract
 file) **and** this entry is updated with a `RESOLVED` note and the commit
 SHA where the decision landed.
