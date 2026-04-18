@@ -97,7 +97,7 @@ def _selector_to_str(sel: Selector | str) -> str:
 # ---------------------------------------------------------------------------
 
 
-@dataclass
+@dataclass(frozen=True)
 class ShapeTargetState:
     """Accumulated state for one target within one shape."""
 
@@ -224,8 +224,9 @@ class SceneState:
 
         # Clear apply_params after snapshot (they are ephemeral per-frame)
         for targets in self.shape_states.values():
-            for ts in targets.values():
-                ts.apply_params = None
+            for target_key, ts in list(targets.items()):
+                if ts.apply_params is not None:
+                    targets[target_key] = replace(ts, apply_params=None)
 
         # Restore bindings (frame-scoped compute is transient)
         if frame_ir.compute:
@@ -564,19 +565,25 @@ class SceneState:
         target_str = _selector_to_str(cmd.target)
         target_state = self._ensure_target(target_str)
         value = cmd.params.get("value")
-        if value is not None:
-            target_state.value = str(value)
+        new_value = str(value) if value is not None else target_state.value
         label = cmd.params.get("label")
-        if label is not None:
-            target_state.label = str(label)
+        new_label = str(label) if label is not None else target_state.label
         # Store push/pop and other custom params for primitives like Stack/Queue.
         # Accumulate into a list so multiple \apply commands on the same target
         # in one frame are all preserved (e.g. two enqueue calls).
         extra = {k: v for k, v in cmd.params.items() if k not in ("value", "label")}
         if extra:
-            if target_state.apply_params is None:
-                target_state.apply_params = []
-            target_state.apply_params.append(extra)
+            new_apply_params = list(target_state.apply_params) if target_state.apply_params else []
+            new_apply_params.append(extra)
+        else:
+            new_apply_params = target_state.apply_params
+        target_state = replace(
+            target_state,
+            value=new_value,
+            label=new_label,
+            apply_params=new_apply_params,
+        )
+        self.shape_states[target_str.split(".", 1)[0]][target_str] = target_state
 
     def _apply_recolor(self, cmd: RecolorCommand) -> None:
         """\\recolor — persistent state replacement and/or annotation recolor."""
@@ -585,7 +592,8 @@ class SceneState:
         # Apply cell/node state change if specified
         if cmd.state is not None:
             target_state = self._ensure_target(target_str)
-            target_state.state = cmd.state
+            target_state = replace(target_state, state=cmd.state)
+            self.shape_states[target_str.split(".", 1)[0]][target_str] = target_state
 
         # Recolor matching annotations if annotation_color is specified
         if cmd.annotation_color is not None:
@@ -689,13 +697,14 @@ class SceneState:
             if shape_name in self.shape_states:
                 for key, ts in self.shape_states[shape_name].items():
                     if key.startswith(target_prefix) and ts.state == cmd.curr_state:
-                        ts.state = cmd.prev_state
+                        self.shape_states[shape_name][key] = replace(ts, state=cmd.prev_state)
                         break
 
             # Set the new index to curr_state
             new_key = f"{target_prefix}[{cmd.index}]"
             target_state = self._ensure_target(new_key)
-            target_state.state = cmd.curr_state
+            target_state = replace(target_state, state=cmd.curr_state)
+            self.shape_states[shape_name][new_key] = target_state
 
     def _ensure_target(self, target: str) -> ShapeTargetState:
         """Find or create a target state entry.

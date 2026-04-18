@@ -44,7 +44,8 @@ from scriba.tex.parser.math import (
     restore_dollar_literals,
 )
 from scriba.tex.parser.tables import apply_tabular
-from scriba.tex.parser.text_commands import apply_size_commands, apply_text_commands
+from scriba.core.text_utils import apply_text_commands
+from scriba.tex.parser.text_commands import apply_size_commands
 from scriba.tex.validate import validate as _validate
 
 
@@ -80,7 +81,7 @@ def _scan_katex_errors(html: str, ctx: RenderContext | None) -> None:
     """
     if ctx is None:
         return
-    from scriba.animation.errors import _emit_warning
+    from scriba.core.warnings import _emit_warning
 
     for m in _KATEX_ERROR_RE.finditer(html):
         title = (
@@ -349,6 +350,15 @@ class TexRenderer:
         self.close()
 
     # ----- inline text API -----
+
+    def render_inline(self, tex: str) -> str:
+        """Public entry point: render a bare inline math fragment to HTML.
+
+        Delegates to :meth:`_render_inline`. Exposed so that external
+        callers (e.g. :func:`scriba.tex.tex_inline_provider`) can reference
+        this method without reaching into the private API.
+        """
+        return self._render_inline(tex)
 
     def render_inline_text(self, raw: str) -> str:
         """Render an inline TeX fragment to safe HTML.

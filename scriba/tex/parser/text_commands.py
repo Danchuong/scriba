@@ -1,26 +1,22 @@
 """Inline text-style commands and the nine size commands.
 
 See ``docs/scriba/02-tex-plugin.md`` §3 for the HTML output contract.
+
+Note: :func:`apply_text_commands` and its helpers were moved to
+:mod:`scriba.core.text_utils` in v0.9.0 to fix a cross-layer import
+violation. They are re-exported here so that existing callers of
+``scriba.tex.parser.text_commands.apply_text_commands`` continue to work.
 """
 
 from __future__ import annotations
 
 import re
 
-# (command, opening tag, closing tag) — wrapped via balanced-brace expansion
-# repeated until no further matches are found, so nesting works.
-_BRACE_COMMANDS: tuple[tuple[str, str, str], ...] = (
-    ("textbf", "<strong>", "</strong>"),
-    ("textit", "<em>", "</em>"),
-    ("emph", "<em>", "</em>"),
-    ("texttt", '<code class="scriba-tex-code-inline">', "</code>"),
-    ("underline", "<u>", "</u>"),
-    ("sout", "<s>", "</s>"),
-    ("textsc", '<span class="scriba-tex-smallcaps">', "</span>"),
-    # Old Polygon-style aliases.
-    ("bf", "<strong>", "</strong>"),
-    ("it", "<em>", "</em>"),
-    ("tt", '<code class="scriba-tex-code-inline">', "</code>"),
+# Re-export from canonical location in scriba.core.
+from scriba.core.text_utils import (  # noqa: F401
+    _BRACE_COMMANDS,
+    _replace_balanced,
+    apply_text_commands,
 )
 
 # Nine size commands → CSS class names. Order matters: longer names first
@@ -36,43 +32,6 @@ SIZE_COMMANDS: tuple[str, ...] = (
     "small",
     "tiny",
 )
-
-
-def _replace_balanced(text: str, command: str, open_tag: str, close_tag: str) -> str:
-    """Replace ``\\command{...}`` with ``open_tag...close_tag`` recursively.
-
-    The brace body itself may contain further commands so we keep iterating
-    until a fixed point is reached.
-    """
-    pattern = re.compile(r"\\" + re.escape(command) + r"\{")
-    while True:
-        m = pattern.search(text)
-        if not m:
-            return text
-        start = m.start()
-        body_start = m.end()
-        depth = 1
-        i = body_start
-        while i < len(text) and depth > 0:
-            if text[i] == "{":
-                depth += 1
-            elif text[i] == "}":
-                depth -= 1
-                if depth == 0:
-                    break
-            i += 1
-        if depth != 0:
-            # Unbalanced — leave as-is and stop scanning to avoid infinite loop.
-            return text
-        body = text[body_start:i]
-        text = text[:start] + open_tag + body + close_tag + text[i + 1 :]
-
-
-def apply_text_commands(text: str) -> str:
-    """Convert ``\\textbf{...}`` and friends to inline HTML."""
-    for command, open_tag, close_tag in _BRACE_COMMANDS:
-        text = _replace_balanced(text, command, open_tag, close_tag)
-    return text
 
 
 def apply_size_commands(text: str) -> str:

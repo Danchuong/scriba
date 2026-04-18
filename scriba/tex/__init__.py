@@ -26,7 +26,7 @@ def tex_inline_provider(
         return ctx
     for r in renderers:
         if isinstance(r, TexRenderer):
-            inline = r._render_inline  # type: ignore[attr-defined]
+            inline = r.render_inline
 
             def _delegate(fragment: str, _inline=inline) -> str:
                 return _inline(fragment)

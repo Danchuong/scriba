@@ -324,29 +324,46 @@ class PersistentSubprocessWorker:
 # Wave 1 Cluster 3 introduced a module-import-time warning; Wave 3 Cluster 9
 # replaced it with this PEP 562 lazy hook so plain ``import scriba`` stays
 # silent. See audit finding 14-H2 and Cluster 3 handoff note.
+#
+# ``SubprocessWorker`` will be removed in 1.0.0.
+
+
+def _warn_subprocess_worker_alias(caller_module: str, stacklevel: int = 2) -> type:
+    """Emit a :class:`DeprecationWarning` for the ``SubprocessWorker`` alias.
+
+    Suppresses the warning when *caller_module* is within the ``scriba``
+    package so first-party code does not spam end users. Returns
+    :class:`PersistentSubprocessWorker`.
+
+    *stacklevel* is forwarded to :func:`warnings.warn` so the warning
+    points at the external call site rather than this helper.
+    """
+    import warnings
+
+    is_internal = caller_module == "scriba" or caller_module.startswith(
+        "scriba."
+    )
+    if not is_internal:
+        warnings.warn(
+            "SubprocessWorker is a deprecated alias for "
+            "PersistentSubprocessWorker and will be removed in 1.0.0. "
+            "Import PersistentSubprocessWorker instead.",
+            DeprecationWarning,
+            stacklevel=stacklevel,
+        )
+    return PersistentSubprocessWorker
+
+
 def __getattr__(name: str):  # PEP 562 module-level attribute access hook
     if name == "SubprocessWorker":
         import sys
-        import warnings
 
         caller_module = ""
         try:
             caller_module = sys._getframe(1).f_globals.get("__name__", "")
         except ValueError:  # pragma: no cover - defensive
             caller_module = ""
-
-        is_internal = caller_module == "scriba" or caller_module.startswith(
-            "scriba."
-        )
-        if not is_internal:
-            warnings.warn(
-                "SubprocessWorker is a deprecated alias for "
-                "PersistentSubprocessWorker and will be removed in 1.0.0. "
-                "Import PersistentSubprocessWorker instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        return PersistentSubprocessWorker
+        return _warn_subprocess_worker_alias(caller_module, stacklevel=2)
     raise AttributeError(
         f"module {__name__!r} has no attribute {name!r}"
     )

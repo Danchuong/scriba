@@ -29,7 +29,7 @@ from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.emitter import FrameData, SubstoryData, emit_animation_html, emit_html, scene_id_from_source
 from scriba.animation.errors import FrameCountError, _animation_error
 from scriba.animation.extensions.hl_macro import process_hl_macros
-from scriba.tex.parser.text_commands import apply_text_commands
+from scriba.core.text_utils import apply_text_commands
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
 from scriba.animation.parser.ast import (
     AnimationIR,

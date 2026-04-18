@@ -56,26 +56,15 @@ def __getattr__(name: str):  # PEP 562 lazy attribute access
     """
     if name == "SubprocessWorker":
         import sys
-        import warnings
+
+        from scriba.core.workers import _warn_subprocess_worker_alias
 
         caller_module = ""
         try:
             caller_module = sys._getframe(1).f_globals.get("__name__", "")
         except ValueError:  # pragma: no cover - defensive
             caller_module = ""
-
-        is_internal = caller_module == "scriba" or caller_module.startswith(
-            "scriba."
-        )
-        if not is_internal:
-            warnings.warn(
-                "SubprocessWorker is a deprecated alias for "
-                "PersistentSubprocessWorker and will be removed in 1.0.0. "
-                "Import PersistentSubprocessWorker instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-        return PersistentSubprocessWorker
+        return _warn_subprocess_worker_alias(caller_module, stacklevel=2)
     raise AttributeError(
         f"module {__name__!r} has no attribute {name!r}"
     )

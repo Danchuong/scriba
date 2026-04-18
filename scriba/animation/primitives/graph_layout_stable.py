@@ -19,7 +19,10 @@ import json
 import logging
 import math
 import random
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:  # pragma: no cover - type checking only
+    from scriba.core.context import RenderContext
 
 from scriba.core.errors import ValidationError
 
@@ -34,11 +37,12 @@ _LAMBDA_MAX = 10.0
 # SF-5 / SF-6 promotion scaffold (RFC-002)
 # ---------------------------------------------------------------------------
 #
-# W6.3 owns the real RenderContext warning collector. To avoid touching
-# core/context.py from this worktree, we stage warnings in a module-level
-# list here. W6.3's merge will drain them via ``_drain_collected`` into
-# the real report collector and replace the ``_collect`` calls with
-# ``_emit_warning(ctx, ...)``.
+# The module-level ``_collected`` list + ``_collect``/``_drain_collected``
+# helpers are retained because tests read warnings via ``_drain_collected``.
+# As of v0.9.0, production paths also call ``_emit_warning(ctx, ...)`` when
+# a ``RenderContext`` is supplied (see ``compute_stable_layout`` ctx param).
+# Do not remove this scaffold until the tests are rewritten to read from
+# ``Document.warnings`` instead.
 _collected: list[dict[str, Any]] = []
 
 
@@ -182,6 +186,8 @@ def compute_stable_layout(
     height: int = 300,
     node_radius: int = 16,
     initial_positions: dict[str, tuple[float, float]] | None = None,
+    *,
+    ctx: "RenderContext | None" = None,
 ) -> dict[str, tuple[float, float]] | None:
     """Compute stable node positions across all frames via simulated annealing.
 
@@ -224,14 +230,14 @@ def compute_stable_layout(
             _LAMBDA_MIN,
             _LAMBDA_MAX,
         )
-        _collect(
-            "E1504",
-            (
-                f"layout_lambda={lambda_weight} outside "
-                f"[{_LAMBDA_MIN},{_LAMBDA_MAX}], clamping"
-            ),
-            "hidden",
+        _msg_e1504 = (
+            f"layout_lambda={lambda_weight} outside "
+            f"[{_LAMBDA_MIN},{_LAMBDA_MAX}], clamping"
         )
+        _collect("E1504", _msg_e1504, "hidden")
+        if ctx is not None:
+            from scriba.core.warnings import _emit_warning
+            _emit_warning(ctx, "E1504", _msg_e1504, severity="hidden")
         lambda_weight = max(_LAMBDA_MIN, min(_LAMBDA_MAX, lambda_weight))
 
     # --- Guard: too many nodes ---
@@ -240,16 +246,14 @@ def compute_stable_layout(
             "E1501: %d nodes exceeds limit of %d", len(nodes), _MAX_NODES
         )
         logger.warning("E1503: falling back to force layout")
-        _collect(
-            "E1501",
-            f"{len(nodes)} nodes exceeds limit of {_MAX_NODES}",
-            "dangerous",
-        )
-        _collect(
-            "E1503",
-            "stable layout fallback triggered (force layout)",
-            "dangerous",
-        )
+        _msg_e1501 = f"{len(nodes)} nodes exceeds limit of {_MAX_NODES}"
+        _msg_e1503 = "stable layout fallback triggered (force layout)"
+        _collect("E1501", _msg_e1501, "dangerous")
+        _collect("E1503", _msg_e1503, "dangerous")
+        if ctx is not None:
+            from scriba.core.warnings import _emit_warning
+            _emit_warning(ctx, "E1501", _msg_e1501, severity="dangerous")
+            _emit_warning(ctx, "E1503", _msg_e1503, severity="dangerous")
         return None
 
     # --- Guard: too many frames ---
@@ -260,16 +264,14 @@ def compute_stable_layout(
             _MAX_FRAMES,
         )
         logger.warning("E1503: falling back to force layout")
-        _collect(
-            "E1502",
-            f"{len(frame_edge_sets)} frames exceeds limit of {_MAX_FRAMES}",
-            "dangerous",
-        )
-        _collect(
-            "E1503",
-            "stable layout fallback triggered (force layout)",
-            "dangerous",
-        )
+        _msg_e1502 = f"{len(frame_edge_sets)} frames exceeds limit of {_MAX_FRAMES}"
+        _msg_e1503b = "stable layout fallback triggered (force layout)"
+        _collect("E1502", _msg_e1502, "dangerous")
+        _collect("E1503", _msg_e1503b, "dangerous")
+        if ctx is not None:
+            from scriba.core.warnings import _emit_warning
+            _emit_warning(ctx, "E1502", _msg_e1502, severity="dangerous")
+            _emit_warning(ctx, "E1503", _msg_e1503b, severity="dangerous")
         return None
 
     # --- Initialize positions in [0,1]^2 ---
@@ -347,14 +349,14 @@ def compute_stable_layout(
             current_obj,
             initial_obj,
         )
-        _collect(
-            "E1500",
-            (
-                f"final objective ({current_obj:.4f}) exceeds 10x initial "
-                f"({initial_obj:.4f})"
-            ),
-            "hidden",
+        _msg_e1500 = (
+            f"final objective ({current_obj:.4f}) exceeds 10x initial "
+            f"({initial_obj:.4f})"
         )
+        _collect("E1500", _msg_e1500, "hidden")
+        if ctx is not None:
+            from scriba.core.warnings import _emit_warning
+            _emit_warning(ctx, "E1500", _msg_e1500, severity="hidden")
 
     # --- Denormalize to SVG coordinates ---
     pad = node_radius + 8
