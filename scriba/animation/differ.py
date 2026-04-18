@@ -8,6 +8,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from scriba.animation.emitter import FrameData
 
+__all__ = [
+    "Transition",
+    "TransitionManifest",
+    "compute_transitions",
+]
+
 _MAX_TRANSITIONS = 150  # Report 06 S1.1: mobile perf threshold
 
 

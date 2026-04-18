@@ -36,6 +36,7 @@ from typing import Any
 from scriba.animation.constants import BLOCKED_ATTRIBUTES, FORBIDDEN_BUILTINS
 from scriba.animation.errors import _animation_error, _format_compute_traceback
 from scriba.core.errors import ScribaError
+from scriba.core.types import JsonValue
 
 # ---------------------------------------------------------------------------
 # AST literal limits (defence-in-depth against C-level bombs)
@@ -616,9 +617,9 @@ def consume_cumulative_budget(elapsed: float) -> None:
 
 def _evaluate(
     source: str,
-    caller_globals: dict[str, Any],
+    caller_globals: dict[str, JsonValue],
     request_id: str | None,
-) -> dict[str, Any]:
+) -> dict[str, JsonValue]:
     """Evaluate *source* in a restricted namespace and return a response dict."""
     debug: list[str] = []
     print_capture: list[str] = []

@@ -35,6 +35,10 @@ __all__ = [
     "CELL_2D_RE",
     "RANGE_RE",
     "ALL_RE",
+    # Numeric constants
+    "_FLOAT_EPS",
+    "_DEFAULT_FONT_SIZE_PX",
+    "_DEFAULT_LABEL_FONT_SIZE_PX",
 ]
 
 
@@ -140,6 +144,21 @@ def _inset_rect_attrs(
         "width": f"{width - 2 * _CELL_STROKE_INSET}",
         "height": f"{height - 2 * _CELL_STROKE_INSET}",
     }
+
+
+# ---------------------------------------------------------------------------
+# Shared numeric constants
+# ---------------------------------------------------------------------------
+
+# Floating-point tolerance for geometry comparisons (e.g. parallel-slope tests,
+# deduplication of near-coincident points in plane2d / plane2d_compute).
+_FLOAT_EPS: float = 1e-9
+
+# Default font size (px) used by cell-based primitives for cell text rendering.
+_DEFAULT_FONT_SIZE_PX: int = 14
+
+# Smaller font size (px) used for labels, indices, and annotations.
+_DEFAULT_LABEL_FONT_SIZE_PX: int = 12
 
 
 # ---------------------------------------------------------------------------

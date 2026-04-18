@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "scriba-tex"
-version = "0.8.3"
+dynamic = ["version"]
 description = "Backend Python library for rendering LaTeX problem statements and CP editorial animations to self-contained HTML"
 readme = "README.md"
 license = { text = "MIT" }
@@ -48,6 +48,10 @@ Homepage = "https://github.com/Danchuong/scriba"
 Repository = "https://github.com/Danchuong/scriba"
 Issues = "https://github.com/Danchuong/scriba/issues"
 Documentation = "https://github.com/Danchuong/scriba/tree/main/docs"
+
+[tool.hatch.version]
+path = "scriba/_version.py"
+pattern = "^__version__(?:: str)? = ['\"](?P<version>[^'\"]+)['\"]"
 
 [tool.hatch.build.targets.wheel]
 packages = ["scriba"]

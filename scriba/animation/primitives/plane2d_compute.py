@@ -10,6 +10,8 @@ from __future__ import annotations
 
 from typing import Sequence
 
+from scriba.animation.primitives._types import _FLOAT_EPS
+
 # ---------------------------------------------------------------------------
 # Type aliases
 # ---------------------------------------------------------------------------
@@ -30,7 +32,7 @@ def intersect(line1: LineSI, line2: LineSI) -> Point2D | None:
     """
     s1, i1 = line1
     s2, i2 = line2
-    if abs(s1 - s2) < 1e-9:
+    if abs(s1 - s2) < _FLOAT_EPS:
         return None
     x = (i2 - i1) / (s1 - s2)
     y = s1 * x + i1
@@ -132,7 +134,7 @@ def clip_line_to_viewport(
     unique: list[Point2D] = [candidates[0]]
     for pt in candidates[1:]:
         is_dup = any(
-            abs(pt[0] - u[0]) < 1e-9 and abs(pt[1] - u[1]) < 1e-9
+            abs(pt[0] - u[0]) < _FLOAT_EPS and abs(pt[1] - u[1]) < _FLOAT_EPS
             for u in unique
         )
         if not is_dup:
@@ -180,7 +182,7 @@ def lower_envelope(
     # Remove dominated lines: among parallel lines, only keep lowest intercept
     deduped: list[LineSI] = []
     for line in sorted_lines:
-        if deduped and abs(line[0] - deduped[-1][0]) < 1e-9:
+        if deduped and abs(line[0] - deduped[-1][0]) < _FLOAT_EPS:
             # Same slope — keep the one with smaller intercept
             if line[1] < deduped[-1][1]:
                 deduped[-1] = line

@@ -12,6 +12,17 @@ Error numbering scheme (see ``errors.py`` for the full catalog):
     E15xx       Graph layout errors
 """
 
+__all__ = [
+    "VALID_STATES",
+    "VALID_ANNOTATION_COLORS",
+    "VALID_ANNOTATION_POSITIONS",
+    "VALID_OPTION_KEYS",
+    "VALID_SUBSTORY_OPTION_KEYS",
+    "DEFAULT_STATE",
+    "BLOCKED_ATTRIBUTES",
+    "FORBIDDEN_BUILTINS",
+]
+
 # Valid state names for \recolor and \cursor
 VALID_STATES = frozenset({
     "idle", "current", "done", "dim", "error", "good", "highlight", "path",

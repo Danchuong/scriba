@@ -12,6 +12,11 @@ import functools
 import re
 from importlib.resources import files
 
+__all__ = [
+    "load_css",
+    "inline_katex_css",
+]
+
 
 @functools.lru_cache(maxsize=None)
 def load_css(*names: str) -> str:
