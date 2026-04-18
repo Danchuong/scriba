@@ -116,6 +116,7 @@ Every cell, node, or edge has a **state** that controls its color. Use `\recolor
 | `dim` | No longer relevant | 50% opacity |
 | `good` | Positive / optimal choice | Sky blue |
 | `error` | Problem / mismatch | Red |
+| `highlight` | Persistent emphasis (used by `\highlight` command) | Yellow background |
 | `path` | Part of the solution path | Blue outline |
 
 ```tex
@@ -577,6 +578,13 @@ Open the file in any browser. It works offline, on any device, with no setup.
 | `--static` | Legacy filmstrip mode (no JavaScript) |
 | `--dump-frames` | Print JSON frame data to stdout (debugging) |
 | `--no-minify` | Disable JS minification (debugging) |
+| `--lang LANG` | BCP 47 language tag for the HTML `lang=` attribute (e.g. `vi`, `zh`, `ar`; default: `en`) |
+| `--inline-runtime` | Inline the full JS runtime into the HTML (default; works on `file://`). Deprecated: will no longer be the default in v0.9.0. |
+| `--no-inline-runtime` | Use an external `scriba.<hash>.js` asset instead of inlining the runtime. Enables a strict `script-src 'self'` CSP. |
+| `--asset-base-url URL` | URL prefix for the external runtime asset (e.g. `https://cdn.example.com/scriba/0.8.3`). Only used with `--no-inline-runtime`. |
+| `--copy-runtime` | Copy `scriba.<hash>.js` next to the output HTML when using `--no-inline-runtime` (default unless `--asset-base-url` is set). |
+| `--no-copy-runtime` | Do not copy `scriba.<hash>.js` next to the output HTML. |
+| `--debug` / `SCRIBA_DEBUG=1` | Enable verbose debug output (stack traces, intermediate state). Set the env var or pass the flag. |
 
 ### Library API
 

@@ -36,17 +36,16 @@ the applicable error code.
 
 | Environment | Status | Purpose | Frames |
 |-------------|--------|---------|--------|
-| `\begin{animation}...\end{animation}` | **v0.5.x — supported** | Multi-frame step animation | N frames via `\step` |
-| `\begin{diagram}...\end{diagram}` | **reserved for extension E5** | Single static figure | 1 implicit frame |
+| `\begin{animation}...\end{animation}` | **supported** | Multi-frame step animation | N frames via `\step` |
+| `\begin{diagram}...\end{diagram}` | **supported** | Single static figure, zero JS | 1 implicit frame |
 
-> **NOTE (v0.5.x):** `\begin{diagram}` is **reserved for a future
-> extension (E5)** and is **not a first-class IR** in v0.5.x.  The parser
-> always produces an `AnimationIR`; there is no `DiagramIR` type.  A
-> `\begin{diagram}` block is rendered as a single-frame animation in
-> diagram mode (no `\step` allowed inside → `E1050`) and is treated as
-> experimental surface area.  New authoring should prefer
-> `\begin{animation}` with a single implicit frame until E5 lands.  See
-> the BNF note in §3.1.
+> **NOTE:** `\begin{diagram}` is a first-class environment handled by
+> `DiagramRenderer` (shipped since v0.3, promoted to `scriba.animation.__all__`
+> in v0.8.x).  It produces a static single-frame SVG with zero JavaScript —
+> no `\step` is allowed inside (`E1050`), and `\narrate` is forbidden
+> (`E1054`).  Use `\begin{diagram}` for problem illustrations, data-structure
+> snapshots, and reference figures; use `\begin{animation}` for step-by-step
+> walkthroughs.  See the BNF note in §3.1.
 
 **Constraints:**
 - Environments MUST NOT be nested → `E1003`

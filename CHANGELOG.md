@@ -11,6 +11,105 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING: `StarlarkHost.eval_raw` removed** — the deprecated `eval_raw` method has been deleted. Use `\compute{...}` blocks instead. Wire-level requests with `op="eval_raw"` now return a structured error `E1156` with a migration hint.
 
+## [0.8.3] - 2026-04-18
+
+Wave 8 landing release. All changes are additive or bug fixes; fully
+backward compatible with 0.8.2 consumers. `SCRIBA_VERSION` unchanged.
+
+### CSP / Runtime (Wave 8 — M12/M13)
+
+- **External JS runtime** — the animation runtime is now shipped as a
+  standalone `scriba.<sha384[:8]>.js` asset alongside the rendered HTML.
+  The new CLI flags (`--inline-runtime` / `--no-inline-runtime`,
+  `--asset-base-url`, `--copy-runtime` / `--no-copy-runtime`) select
+  between three deployment modes: inline (default, `file://`-safe),
+  external-copy (serve alongside HTML, enables `script-src 'self'` CSP),
+  and CDN (supply your own host via `--asset-base-url`).
+  `scriba.animation.runtime_asset` exports `RUNTIME_JS_BYTES`,
+  `RUNTIME_JS_FILENAME`, and `RUNTIME_JS_SHA384` for programmatic use.
+  Inline mode is deprecated and will no longer be the default in v0.9.0.
+
+### CLI
+
+- **New flags** — `--lang` (BCP 47 tag for the HTML `lang=` attribute,
+  default `en`), `--inline-runtime`, `--no-inline-runtime`,
+  `--asset-base-url`, `--copy-runtime`, `--no-copy-runtime` (see CSP
+  deployment guide at `docs/csp-deployment.md` for usage).
+- **`--debug` / `SCRIBA_DEBUG=1`** — enable verbose output including full
+  stack traces and intermediate render state. Intended for authoring
+  diagnostics; not recommended for production CI pipelines.
+- **`ScribaError` handler** — unhandled `ScribaError` exceptions in the
+  CLI now print a clean one-line diagnostic without a Python traceback.
+  Pass `--debug` to restore full traceback output.
+- **Input extension check** — `render.py` now rejects input files that
+  do not end in `.tex` with a clear error message (F-03).
+- **Overwrite guard for `-o input.tex`** — the CLI refuses to overwrite
+  the input file when `-o` is set to the same path as the input.
+- **E1116 promoted to error** — undeclared shape references that
+  previously surfaced as warnings are now raised as errors at render
+  time, matching the severity documented in `docs/spec/error-codes.md`.
+
+### Animation
+
+- **Corrected easing curves** — `element_add` and `element_remove`
+  transitions now use `ease-out` (was `linear`); `annotation_add` uses
+  `ease-in-out` (was `ease-out`). Matches the authored intent from the
+  Wave 6.3 transition manifest spec.
+- **Named timing constants** — animation durations previously scattered
+  as magic numbers are now centralised as named constants in the emitter
+  (`TRANSITION_MS_FAST`, `TRANSITION_MS_NORMAL`, `TRANSITION_MS_SLOW`).
+
+### Accessibility
+
+- **KaTeX MathML output** — the KaTeX worker now emits both HTML and
+  MathML (`output: "htmlAndMathml"`). Screen readers receive structured
+  math rather than falling back to the raw LaTeX source.
+- **Live-region cleanup** — the narration `aria-live="polite"` region is
+  now cleared on frame reset so stale text is not re-announced when the
+  animation loops or rewinds.
+- **Substory narration** — substory steps now update the parent
+  animation's narration region, ensuring sub-step text is announced by
+  assistive technology.
+- **Filmstrip `aria-label` fallback** — the static filmstrip `<figure>`
+  element now falls back to `aria-label="Animation"` when no `label=`
+  option is supplied, eliminating unlabelled landmark warnings.
+
+### SVG
+
+- **Plane2D grid `vector-effect`** — grid lines in `Plane2D` primitives
+  now carry `vector-effect="non-scaling-stroke"` so grid line width
+  stays visually consistent across zoom levels.
+- **Print-mode dark mode fix** — the `@media print` CSS block now
+  correctly resets `color-scheme` to `light` when dark mode is active,
+  preventing black-on-black printed output.
+
+### Performance
+
+- **~7–8% render speedup** on large and medium fixtures (benchmark:
+  `examples/algorithms/graph/dijkstra.tex`, `h15_kmp_matching.tex`)
+  via reduced per-frame SVG allocation and deferred selector expansion.
+- **−100 ms cold start** — KaTeX worker startup deferred until the first
+  math expression is encountered; documents with no math pay no startup
+  cost.
+- **−360 KB output** on math-free renders — KaTeX font data no longer
+  inlined when no `$...$` or `\[...\]` expressions are present.
+
+### Hygiene (Wave 8 audit — P1/P3)
+
+- **`errors.py` `__all__`** — public exception classes and `ERROR_CATALOG`
+  now listed explicitly; internal helpers (`_animation_error`,
+  `_suggest_closest`, `_format_compute_traceback`) prefixed with `_` and
+  excluded (Round D). Audit finding P1 F-01.
+- **Underscore-prefix internals** — module-private helpers across
+  `emitter.py`, `scene.py`, and `starlark_worker.py` renamed with a
+  leading underscore to make the public surface explicit (Round D).
+- **`SubprocessWorker` deprecation message** — the `DeprecationWarning`
+  now includes the replacement name (`PersistentSubprocessWorker`) and
+  the version it will be removed in (`v1.0.0`). Audit finding P3 H1.
+- **Extension API stability** — `DiagramRenderer` added to
+  `scriba.animation.__all__` (Round A); import path documented in
+  `docs/spec/environments.md`. Audit finding P1 F-05.
+
 ## [0.8.2] - 2026-04-15
 
 ### Fixed

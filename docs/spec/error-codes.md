@@ -57,7 +57,7 @@
 |------|-------------|--------------|------------|
 | E1200 | KaTeX inline error embedded in rendered output — a math expression could not be parsed by the KaTeX worker. The detail message carries the underlying error title. | A `$...$` or `\[...\]` expression contains invalid LaTeX syntax (unknown command, mismatched braces, etc.). | Fix the LaTeX math expression; check the KaTeX error title for the exact character that caused the failure. |
 
-## Starlark Sandbox Errors (E1150--E1155)
+## Starlark Sandbox Errors (E1150--E1156)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
@@ -67,6 +67,7 @@
 | E1153 | Starlark execution step count exceeded. | Reduce loop iterations or algorithmic complexity. |
 | E1154 | Starlark forbidden construct (import, while, class, lambda, etc.). | Use only `for` loops and allowed builtins. |
 | E1155 | Starlark memory limit exceeded (64 MB). | Reduce data size or avoid large intermediate structures. |
+| E1156 | `eval_raw` has been removed. Use `\compute{...}` blocks instead. | Replace any `eval_raw` calls with a `\compute{...}` block. |
 
 ## Foreach Errors (E1170--E1173)
 
