@@ -31,11 +31,15 @@
     var _motionMQ=window.matchMedia('(prefers-reduced-motion:reduce)');
     var _canAnim=(typeof Element.prototype.animate==='function')&&!_motionMQ.matches;
     (function(){var _mh=function(ev){_canAnim=(typeof Element.prototype.animate==='function')&&!ev.matches;};if(_motionMQ.addEventListener){_motionMQ.addEventListener('change',_mh);}else if(_motionMQ.addListener){_motionMQ.addListener(function(mq){_mh({matches:mq.matches});});}})();
-    var DUR=180;
+    var DUR=180;          // ms — primary WAAPI transition baseline
     // DUR_PATH_DRAW is intentionally shorter than DUR: drawn annotations feel snappier
     // than discrete element adds because the stroke-draw motion already implies "appearing".
     // Unifying to DUR would make path draws feel sluggish. Keep distinct.
-    var DUR_PATH_DRAW=120;
+    var DUR_PATH_DRAW=120; // ms — annotation path stroke-draw
+    var DUR_VALUE=100;     // ms — value-change scale bounce (snappier than baseline)
+    var DUR_ARROWHEAD=36;  // ms — arrowhead/label fade after path draw (~2 frames @ 60fps)
+    var DUR_STAGGER=50;    // ms — phase-1 → phase-2 gap (annotation/highlight before moves)
+    var DUR_SYNC_FUDGE=20; // ms — extra margin for needsSync timeout beyond _dur(DUR)
     var _speed=parseFloat(W.getAttribute('data-scriba-speed'))||1;
     function _dur(ms){return Math.round(ms/_speed);}
     function _cancelAnims(){
@@ -97,7 +101,7 @@
         if(el2){var txt=el2.querySelector('text');if(txt){
           txt.textContent=toVal;
           if(_canAnim){txt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
-            {duration:_dur(100),easing:'ease-out'});}
+            {duration:_dur(DUR_VALUE),easing:'ease-out'});}
         }}
       }else if(kind==='highlight_on'){
         var el3=stage.querySelector(sel);
@@ -208,11 +212,11 @@
                     headShown=true;
                     if(polyEl){
                       polyEl.animate([{opacity:0},{opacity:1}],
-                        {duration:_dur(36),easing:'ease-out',fill:'forwards'});
+                        {duration:_dur(DUR_ARROWHEAD),easing:'ease-out',fill:'forwards'});
                     }
                     if(textEl){
                       textEl.animate([{opacity:0},{opacity:1}],
-                        {duration:_dur(36),easing:'ease-out',fill:'forwards'});
+                        {duration:_dur(DUR_ARROWHEAD),easing:'ease-out',fill:'forwards'});
                     }
                   }
                   if(t<1){requestAnimationFrame(tick);}
@@ -272,13 +276,13 @@
         if(pending.length>0){
           Promise.all(pending).then(function(){_finish(needsSync||true);}).catch(function(){_finish(true);});
         }else if(needsSync){
-          setTimeout(function(){_finish(true);},_dur(DUR)+20);
+          setTimeout(function(){_finish(true);},_dur(DUR)+DUR_SYNC_FUDGE);
         }else{
           _finish(false);
         }
       }
       if(phase1.length>0&&phase2.length>0){
-        setTimeout(_runPhase2,_dur(50));
+        setTimeout(_runPhase2,_dur(DUR_STAGGER));
       }else{
         _runPhase2();
       }

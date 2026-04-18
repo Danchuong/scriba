@@ -6,7 +6,7 @@ import hashlib
 import unicodedata
 from typing import Any, Iterable, NoReturn, Union
 
-from scriba.animation.errors import EmptySubstoryWarning, suggest_closest
+from scriba.animation.errors import EmptySubstoryWarning, _suggest_closest
 from scriba.core.errors import ValidationError
 
 from .ast import (
@@ -378,7 +378,7 @@ class SceneParser:
 
     def _raise_unknown_command(self, tok: Token) -> None:
         """Raise ``E1006`` for an unknown backslash command token."""
-        suggestion = suggest_closest(tok.value, self._VALID_COMMAND_NAMES)
+        suggestion = _suggest_closest(tok.value, self._VALID_COMMAND_NAMES)
         hint = f" did you mean `\\{suggestion}`?" if suggestion else ""
         raise ValidationError(
             f"unknown command \\{tok.value}; "
@@ -404,11 +404,11 @@ class SceneParser:
 
         Builds a uniform ``"unknown <field_name> <value>; valid: a, b, c"``
         message and attaches a fuzzy "did you mean `X`?" hint whenever
-        :func:`suggest_closest` finds a close candidate. Used by the
+        :func:`_suggest_closest` finds a close candidate. Used by the
         E1004/E1006/E1109/E1112/E1113 raise sites to keep hinting consistent.
         """
         valid_sorted = sorted(valid)
-        suggestion = suggest_closest(value, valid_sorted)
+        suggestion = _suggest_closest(value, valid_sorted)
         hint = f"did you mean `{suggestion}`?" if suggestion else None
         raise ValidationError(
             f"unknown {field_name} {value!r}; valid: {', '.join(valid_sorted)}",
@@ -570,7 +570,7 @@ class SceneParser:
             return
         if type_stripped in registry:
             return
-        suggestion = suggest_closest(type_stripped, tuple(registry.keys()))
+        suggestion = _suggest_closest(type_stripped, tuple(registry.keys()))
         hint = f"did you mean: {suggestion}?" if suggestion else None
         valid_list = ", ".join(sorted(registry.keys()))
         raise ValidationError(

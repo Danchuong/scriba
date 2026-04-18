@@ -14,7 +14,7 @@ import re
 from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import animation_error
+from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     _LabelPlacement,
     BoundingBox,
@@ -302,11 +302,11 @@ class Graph(PrimitiveBase):
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         self.nodes: list[str | int] = list(params.get("nodes", []))
         if not self.nodes:
-            raise animation_error(
+            raise _animation_error(
                 "E1470",
                 detail=(
                     f"Graph '{name}' requires a non-empty 'nodes' list; "
@@ -318,9 +318,9 @@ class Graph(PrimitiveBase):
             # Force-directed layout is O(N^2) per iteration; reject
             # oversized graphs up front rather than letting a
             # malicious editorial burn seconds of renderer time.
-            from scriba.animation.errors import animation_error
+            from scriba.animation.errors import _animation_error
 
-            raise animation_error(
+            raise _animation_error(
                 "E1501",
                 detail=(
                     f"Graph '{name}' node count {len(self.nodes)} "
@@ -340,12 +340,12 @@ class Graph(PrimitiveBase):
                 parsed_edges.append((e[0], e[1], None))
                 has_unweighted = True
             else:
-                raise animation_error(
+                raise _animation_error(
                     "E1474",
                     detail=f"edge must be 2-tuple or 3-tuple, got {e!r}",
                 )
         if has_weighted and has_unweighted:
-            raise animation_error(
+            raise _animation_error(
                 "E1474",
                 detail="edges list mixes weighted and unweighted entries",
             )
@@ -371,13 +371,13 @@ class Graph(PrimitiveBase):
         # ``int`` but ``True``/``False`` as a seed is almost certainly a
         # programming mistake.
         if isinstance(raw_seed, bool) or not isinstance(raw_seed, int):
-            raise animation_error(
+            raise _animation_error(
                 "E1505",
                 f"Graph layout_seed must be a non-negative integer, "
                 f"got {type(raw_seed).__name__} {raw_seed!r}",
             )
         if raw_seed < 0:
-            raise animation_error(
+            raise _animation_error(
                 "E1505",
                 f"Graph layout_seed must be a non-negative integer, "
                 f"got {raw_seed}",
@@ -427,12 +427,12 @@ class Graph(PrimitiveBase):
             - ``E1472`` if ``remove_edge`` targets a non-existent edge.
             - ``E1473`` if ``set_weight`` targets a non-existent edge.
         """
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         if "add_edge" in params:
             spec = params["add_edge"]
             if not isinstance(spec, dict):
-                raise animation_error(
+                raise _animation_error(
                     "E1471",
                     detail=f"add_edge requires a dict {{from, to}}, got {type(spec).__name__}",
                 )
@@ -440,7 +440,7 @@ class Graph(PrimitiveBase):
             v = spec.get("to")
             weight = spec.get("weight")
             if u is None or v is None:
-                raise animation_error(
+                raise _animation_error(
                     "E1471",
                     detail="add_edge requires {from, to}",
                 )
@@ -449,7 +449,7 @@ class Graph(PrimitiveBase):
         if "remove_edge" in params:
             spec = params["remove_edge"]
             if not isinstance(spec, dict):
-                raise animation_error(
+                raise _animation_error(
                     "E1472",
                     detail=f"remove_edge requires a dict {{from, to}}, got {type(spec).__name__}",
                 )
@@ -458,7 +458,7 @@ class Graph(PrimitiveBase):
         if "set_weight" in params:
             spec = params["set_weight"]
             if not isinstance(spec, dict):
-                raise animation_error(
+                raise _animation_error(
                     "E1473",
                     detail=f"set_weight requires a dict {{from, to, value}}, got {type(spec).__name__}",
                 )
@@ -482,15 +482,15 @@ class Graph(PrimitiveBase):
         v: str | int,
         weight: float | int | None,
     ) -> None:
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         if u not in self.nodes:
-            raise animation_error(
+            raise _animation_error(
                 "E1471",
                 detail=f"add_edge source node {u!r} is not in graph",
             )
         if v not in self.nodes:
-            raise animation_error(
+            raise _animation_error(
                 "E1471",
                 detail=f"add_edge target node {v!r} is not in graph",
             )
@@ -500,11 +500,11 @@ class Graph(PrimitiveBase):
         self._relayout_with_warm_start()
 
     def _remove_edge_internal(self, u: str | int, v: str | int) -> None:
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         idx = self._find_edge_index(u, v)
         if idx is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1472",
                 detail=f"remove_edge: no edge between {u!r} and {v!r}",
             )
@@ -518,16 +518,16 @@ class Graph(PrimitiveBase):
         v: str | int,
         value: float | int | None,
     ) -> None:
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         if value is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1473",
                 detail="set_weight requires a numeric 'value'",
             )
         idx = self._find_edge_index(u, v)
         if idx is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1473",
                 detail=f"set_weight: no edge between {u!r} and {v!r}",
             )

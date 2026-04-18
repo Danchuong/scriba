@@ -34,7 +34,7 @@ from io import StringIO
 from typing import Any
 
 from scriba.animation.constants import BLOCKED_ATTRIBUTES, FORBIDDEN_BUILTINS
-from scriba.animation.errors import animation_error, format_compute_traceback
+from scriba.animation.errors import _animation_error, _format_compute_traceback
 from scriba.core.errors import ScribaError
 
 # ---------------------------------------------------------------------------
@@ -270,20 +270,20 @@ def _make_print_fn(capture_list: list[str]):
 def _safe_range(*args: int) -> range:
     """Wrapper around built-in ``range()`` that caps length to _MAX_RANGE_LEN.
 
-    Any violation is surfaced as an ``E1173`` animation_error (foreach /
+    Any violation is surfaced as an ``E1173`` _animation_error (foreach /
     iterable validation) rather than a bare :class:`ValueError`, so callers
     get a structured error code per the error catalog.
     """
     for a in args:
         if abs(a) > _MAX_RANGE_LEN:
-            raise animation_error(
+            raise _animation_error(
                 "E1173",
                 f"range() argument too large "
                 f"(max {_MAX_RANGE_LEN})",
             )
     r = range(*args)
     if len(r) > _MAX_RANGE_LEN:
-        raise animation_error(
+        raise _animation_error(
             "E1173",
             f"range() would produce {len(r)} elements "
             f"(max {_MAX_RANGE_LEN})",
@@ -304,7 +304,7 @@ def _safe_list(*args: Any) -> list:
         arg = args[0]
         size = len(arg) if hasattr(arg, "__len__") else None
         if size is not None and size > _MAX_LIST_SIZE:
-            raise animation_error(
+            raise _animation_error(
                 "E1154",
                 f"list() argument too large: {size} elements "
                 f"(max {_MAX_LIST_SIZE}); "
@@ -312,7 +312,7 @@ def _safe_list(*args: Any) -> list:
             )
     result = list(*args)
     if len(result) > _MAX_LIST_SIZE:
-        raise animation_error(
+        raise _animation_error(
             "E1154",
             f"list() produced {len(result)} elements "
             f"(max {_MAX_LIST_SIZE})",
@@ -326,14 +326,14 @@ def _safe_tuple(*args: Any) -> tuple:
         arg = args[0]
         size = len(arg) if hasattr(arg, "__len__") else None
         if size is not None and size > _MAX_LIST_SIZE:
-            raise animation_error(
+            raise _animation_error(
                 "E1154",
                 f"tuple() argument too large: {size} elements "
                 f"(max {_MAX_LIST_SIZE})",
             )
     result = tuple(*args)
     if len(result) > _MAX_LIST_SIZE:
-        raise animation_error(
+        raise _animation_error(
             "E1154",
             f"tuple() produced {len(result)} elements "
             f"(max {_MAX_LIST_SIZE})",
@@ -347,14 +347,14 @@ def _safe_set(*args: Any) -> set:
         arg = args[0]
         size = len(arg) if hasattr(arg, "__len__") else None
         if size is not None and size > _MAX_LIST_SIZE:
-            raise animation_error(
+            raise _animation_error(
                 "E1154",
                 f"set() argument too large: {size} elements "
                 f"(max {_MAX_LIST_SIZE})",
             )
     result = set(*args)
     if len(result) > _MAX_LIST_SIZE:
-        raise animation_error(
+        raise _animation_error(
             "E1154",
             f"set() produced {len(result)} elements "
             f"(max {_MAX_LIST_SIZE})",
@@ -372,7 +372,7 @@ def _safe_bytes(*args: Any) -> bytes:
         arg = args[0]
         # bytes(int) form — cap the integer directly
         if isinstance(arg, int) and arg > _MAX_LIST_SIZE:
-            raise animation_error(
+            raise _animation_error(
                 "E1154",
                 f"bytes() size too large: {arg} bytes "
                 f"(max {_MAX_LIST_SIZE})",
@@ -380,7 +380,7 @@ def _safe_bytes(*args: Any) -> bytes:
         # bytes(iterable) form — check length if available
         size = len(arg) if hasattr(arg, "__len__") else None
         if size is not None and size > _MAX_LIST_SIZE:
-            raise animation_error(
+            raise _animation_error(
                 "E1154",
                 f"bytes() argument too large: {size} elements "
                 f"(max {_MAX_LIST_SIZE})",
@@ -586,7 +586,7 @@ def get_cumulative_elapsed() -> float:
 def consume_cumulative_budget(elapsed: float) -> None:
     """Charge *elapsed* seconds against the cumulative budget.
 
-    Raises an ``E1152`` animation_error when the total exceeds
+    Raises an ``E1152`` _animation_error when the total exceeds
     :data:`_CUMULATIVE_BUDGET_SECONDS`.
 
     Parameters
@@ -601,7 +601,7 @@ def consume_cumulative_budget(elapsed: float) -> None:
         elapsed = 0.0
     _cumulative_elapsed += elapsed
     if _cumulative_elapsed > _CUMULATIVE_BUDGET_SECONDS:
-        raise animation_error(
+        raise _animation_error(
             "E1152",
             detail=(
                 f"cumulative Starlark wall-clock budget exceeded "
@@ -761,7 +761,7 @@ def _evaluate(
         tb_text = "".join(
             traceback.format_exception(type(exc), exc, exc.__traceback__)
         )
-        message = format_compute_traceback(tb_text).strip()
+        message = _format_compute_traceback(tb_text).strip()
         return {
             "id": request_id,
             "ok": False,

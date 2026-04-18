@@ -25,7 +25,7 @@ from scriba.animation.starlark_worker import (
     _safe_set,
     _safe_tuple,
     consume_cumulative_budget,
-    format_compute_traceback,
+    _format_compute_traceback,
     reset_cumulative_budget,
 )
 from scriba.core.errors import WorkerError
@@ -336,7 +336,7 @@ class TestRecursionErrorNoPathLeak:
     """M3: RecursionError from compile() must not expose starlark_worker.py."""
 
     def test_format_compute_traceback_sanitises_recursion_error(self):
-        """format_compute_traceback detects RecursionError text and returns
+        """_format_compute_traceback detects RecursionError text and returns
         a safe, path-free message."""
         fake_tb = (
             "Traceback (most recent call last):\n"
@@ -345,7 +345,7 @@ class TestRecursionErrorNoPathLeak:
             "    exec(compile(source, '<compute>', 'exec'), namespace)\n"
             "RecursionError: maximum recursion depth exceeded\n"
         )
-        result = format_compute_traceback(fake_tb)
+        result = _format_compute_traceback(fake_tb)
         assert "starlark_worker.py" not in result
         assert "RecursionError" in result or "nested" in result.lower()
 
@@ -357,7 +357,7 @@ class TestRecursionErrorNoPathLeak:
             "    some_call()\n"
             "ValueError: something\n"
         )
-        result = format_compute_traceback(fake_tb)
+        result = _format_compute_traceback(fake_tb)
         assert "starlark_worker.py" not in result
         assert "ValueError" in result
 

@@ -341,7 +341,7 @@ def __getattr__(name: str):  # PEP 562 module-level attribute access hook
         if not is_internal:
             warnings.warn(
                 "SubprocessWorker is a deprecated alias for "
-                "PersistentSubprocessWorker and will be removed in 0.2.0. "
+                "PersistentSubprocessWorker and will be removed in 1.0.0. "
                 "Import PersistentSubprocessWorker instead.",
                 DeprecationWarning,
                 stacklevel=2,

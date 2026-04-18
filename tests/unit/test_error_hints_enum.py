@@ -2,7 +2,7 @@
 
 Wave 5.3 collapsed the E1004/E1109/E1112/E1113 raise sites into a single
 ``_raise_unknown_enum`` helper that attaches a "did you mean `X`?" hint
-via :func:`scriba.animation.errors.suggest_closest`.
+via :func:`scriba.animation.errors._suggest_closest`.
 """
 
 from __future__ import annotations

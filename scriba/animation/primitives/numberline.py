@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, animation_error
+from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     _LabelPlacement,
     STATE_COLORS,
@@ -78,13 +78,13 @@ class NumberLinePrimitive(PrimitiveBase):
         super().__init__(name, params)
         domain = self.params.get("domain")
         if domain is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1452",
                 detail="NumberLine requires 'domain' parameter",
                 hint="example: NumberLine{n}{domain=[0, 10]}",
             )
         if not isinstance(domain, (list, tuple)) or len(domain) != 2:
-            raise animation_error(
+            raise _animation_error(
                 "E1453",
                 detail=(
                     "NumberLine 'domain' must be a two-element "
@@ -99,7 +99,7 @@ class NumberLinePrimitive(PrimitiveBase):
         if ticks is not None:
             ticks = int(ticks)
             if ticks < 1:
-                raise animation_error(
+                raise _animation_error(
                     E1103,
                     detail=(
                         f"NumberLine ticks {ticks} is out of range; "
@@ -107,7 +107,7 @@ class NumberLinePrimitive(PrimitiveBase):
                     ),
                 )
             if ticks > 1_000:
-                raise animation_error(
+                raise _animation_error(
                     "E1454",
                     detail=(
                         f"NumberLine ticks {ticks} exceeds maximum; "

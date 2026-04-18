@@ -34,13 +34,33 @@ if TYPE_CHECKING:  # pragma: no cover - type checking only
     from scriba.core.artifact import CollectedWarning
     from scriba.core.context import RenderContext
 
+__all__ = [
+    # Public error classes
+    "AnimationError",
+    "AnimationParseError",
+    "EmptySubstoryWarning",
+    "FrameCountError",
+    "FrameCountWarning",
+    "NestedAnimationError",
+    "StarlarkEvalError",
+    "UnclosedAnimationError",
+    # Public catalog and legacy alias
+    "ERROR_CATALOG",
+    "E1103",
+    # Internal helpers — prefixed with _ intentionally.
+    # Do NOT add animation_error, suggest_closest, or format_compute_traceback
+    # here; they have been renamed to _animation_error, _suggest_closest, and
+    # _format_compute_traceback respectively (Wave 8 Round D hygiene).
+]
+
+
 
 # ---------------------------------------------------------------------------
 # Fuzzy-match suggestion helper
 # ---------------------------------------------------------------------------
 
 
-def suggest_closest(
+def _suggest_closest(
     needle: str,
     candidates: Iterable[str],
     *,
@@ -447,7 +467,7 @@ class NestedAnimationError(AnimationError):
 E1103 = "E1103"
 
 
-def animation_error(
+def _animation_error(
     code: str,
     detail: str,
     *,
@@ -588,7 +608,7 @@ class StarlarkEvalError(RendererError):
 # ---------------------------------------------------------------------------
 
 
-def format_compute_traceback(tb_text: str) -> str:
+def _format_compute_traceback(tb_text: str) -> str:
     """Filter a Python traceback down to the user's ``\\compute{...}`` frames.
 
     The Starlark host currently returns the full CPython traceback with
@@ -747,4 +767,4 @@ def _emit_warning(
         and code in _DANGEROUS_CODES
         and code not in getattr(ctx, "strict_except", frozenset())
     ):
-        raise animation_error(code, detail=message)
+        raise _animation_error(code, detail=message)

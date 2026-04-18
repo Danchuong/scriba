@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, animation_error
+from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     ALL_RE,
     CELL_2D_RE,
@@ -51,7 +51,7 @@ def _flatten_2d(raw: Any, rows: int, cols: int) -> list[Any]:
             flat.extend(row)
         expected = rows * cols
         if len(flat) != expected:
-            raise animation_error(
+            raise _animation_error(
                 "E1412",
                 detail=(
                     f"Grid 'data' flattened length ({len(flat)}) "
@@ -65,7 +65,7 @@ def _flatten_2d(raw: Any, rows: int, cols: int) -> list[Any]:
     flat_list = list(raw)
     expected = rows * cols
     if len(flat_list) != expected:
-        raise animation_error(
+        raise _animation_error(
             "E1412",
             detail=(
                 f"Grid 'data' length ({len(flat_list)}) does not match "
@@ -112,7 +112,7 @@ class GridPrimitive(PrimitiveBase):
         cols = self.params.get("cols")
 
         if rows is None or cols is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1410",
                 detail="Grid requires both 'rows' and 'cols' parameters",
                 hint="example: \\shape{g}{Grid}{rows=4, cols=5}",
@@ -121,22 +121,22 @@ class GridPrimitive(PrimitiveBase):
         rows = int(rows)
         cols = int(cols)
         if rows < 1:
-            raise animation_error(
+            raise _animation_error(
                 "E1411",
                 detail=f"Grid rows {rows} is out of range; valid: 1..500",
             )
         if cols < 1:
-            raise animation_error(
+            raise _animation_error(
                 "E1411",
                 detail=f"Grid cols {cols} is out of range; valid: 1..500",
             )
         if rows > 500:
-            raise animation_error(
+            raise _animation_error(
                 "E1411",
                 detail=f"Grid rows {rows} exceeds maximum; valid: 1..500",
             )
         if cols > 500:
-            raise animation_error(
+            raise _animation_error(
                 "E1411",
                 detail=f"Grid cols {cols} exceeds maximum; valid: 1..500",
             )

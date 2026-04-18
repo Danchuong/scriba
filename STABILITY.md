@@ -194,8 +194,33 @@ touch the legacy name. Reaching for the alias
 (`from scriba import SubprocessWorker` or
 `from scriba.core.workers import SubprocessWorker`) emits a
 `DeprecationWarning` exactly once per call site. The alias is scheduled
-for removal in **0.2.0**; consumers should migrate to
+for removal in **1.0.0**; consumers should migrate to
 `PersistentSubprocessWorker`.
+
+## Extension API (Locked)
+
+### `register_primitive` / `get_primitive_registry`
+
+Third-party primitive plugins use these two entry points from
+`scriba.animation.primitives`:
+
+- **`register_primitive(*type_names)`** — class decorator that adds a
+  `PrimitiveBase` subclass to the built-in dispatch table under one or
+  more type-name strings. The decorator signature is locked.
+- **`get_primitive_registry()`** — returns a ``dict[str, type]`` snapshot
+  of all registered primitives. The return type is locked.
+
+Rules:
+
+- These symbols remain in `scriba.animation.primitives.__all__` and are
+  therefore part of the importable public surface.
+- The **decorator signature** (`*type_names: str`) will not change before
+  `1.0.0`.
+- The **return type** of `get_primitive_registry` (`dict[str, type]`) will
+  not change before `1.0.0`.
+- The *internal* dispatch table (`_PRIMITIVE_REGISTRY`) is not locked and
+  may be restructured without notice.
+
 
 ## Not yet locked (evolving)
 

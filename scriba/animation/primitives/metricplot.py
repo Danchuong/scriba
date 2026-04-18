@@ -15,7 +15,7 @@ import logging
 import math
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import _emit_warning, animation_error
+from scriba.animation.errors import _emit_warning, _animation_error
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -123,9 +123,9 @@ class MetricPlot(PrimitiveBase):
         # --- parse series ---
         raw_series = params.get("series", [])
         if not raw_series:
-            raise animation_error("E1480", "MetricPlot requires at least one series")
+            raise _animation_error("E1480", "MetricPlot requires at least one series")
         if len(raw_series) > _MAX_SERIES:
-            raise animation_error(
+            raise _animation_error(
                 "E1481",
                 f"MetricPlot supports at most {_MAX_SERIES} series, got {len(raw_series)}",
             )
@@ -150,7 +150,7 @@ class MetricPlot(PrimitiveBase):
                 s_scale = "linear"
 
             if s_name in seen_names:
-                raise animation_error(
+                raise _animation_error(
                     "E1485",
                     f"duplicate series name {s_name!r} in MetricPlot",
                 )
@@ -190,7 +190,7 @@ class MetricPlot(PrimitiveBase):
             if self.xrange[0] == self.xrange[1]:
                 logger.error("[E1486] degenerate xrange [%s, %s]; falling back to auto",
                              self.xrange[0], self.xrange[1])
-                raise animation_error(
+                raise _animation_error(
                     "E1486",
                     f"degenerate xrange [{self.xrange[0]}, {self.xrange[1]}]",
                 )
@@ -221,7 +221,7 @@ class MetricPlot(PrimitiveBase):
         for axis in ("left", "right"):
             scales = {s.scale for s in self._series if s.axis == axis}
             if len(scales) > 1:
-                raise animation_error(
+                raise _animation_error(
                     "E1487",
                     f"series on axis {axis!r} have mixed scales: {scales}",
                 )
@@ -243,7 +243,7 @@ class MetricPlot(PrimitiveBase):
         for series_name, value in params.items():
             if series_name in self._series_names:
                 if len(self._data[series_name]) >= _MAX_POINTS:
-                    raise animation_error(
+                    raise _animation_error(
                         "E1483",
                         f"MetricPlot series {series_name!r} exceeded "
                         f"maximum {_MAX_POINTS} points per series; "

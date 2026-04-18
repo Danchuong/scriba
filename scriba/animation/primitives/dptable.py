@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, animation_error
+from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     ALL_RE,
     CELL_1D_RE,
@@ -95,7 +95,7 @@ class DPTablePrimitive(PrimitiveBase):
             # 1D mode
             n = int(n)
             if n < 1:
-                raise animation_error(
+                raise _animation_error(
                     "E1427",
                     detail=(
                         f"DPTable n {n} is out of range; valid: "
@@ -111,7 +111,7 @@ class DPTablePrimitive(PrimitiveBase):
             dim_rows = int(rows)
             dim_cols = int(cols)
             if dim_rows < 1:
-                raise animation_error(
+                raise _animation_error(
                     "E1428",
                     detail=(
                         f"DPTable rows {dim_rows} is out of range; "
@@ -119,7 +119,7 @@ class DPTablePrimitive(PrimitiveBase):
                     ),
                 )
             if dim_cols < 1:
-                raise animation_error(
+                raise _animation_error(
                     "E1428",
                     detail=(
                         f"DPTable cols {dim_cols} is out of range; "
@@ -128,7 +128,7 @@ class DPTablePrimitive(PrimitiveBase):
                 )
             n = dim_rows * dim_cols
         else:
-            raise animation_error(
+            raise _animation_error(
                 "E1426",
                 detail="DPTable requires 'n' (1D) or 'rows'+'cols' (2D)",
                 hint="example: \\shape{t}{DPTable}{n=10}",
@@ -136,7 +136,7 @@ class DPTablePrimitive(PrimitiveBase):
 
         max_cells = dim_rows * dim_cols
         if max_cells > 250_000:
-            raise animation_error(
+            raise _animation_error(
                 "E1425",
                 detail=(
                     f"DPTable cell count {max_cells} (rows={dim_rows}, "
@@ -147,7 +147,7 @@ class DPTablePrimitive(PrimitiveBase):
 
         data: list[Any] = list(self.params.get("data", []))
         if data and len(data) != n:
-            raise animation_error(
+            raise _animation_error(
                 "E1429",
                 detail=(
                     f"DPTable 'data' length ({len(data)}) does not match "

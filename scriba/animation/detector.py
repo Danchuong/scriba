@@ -17,7 +17,7 @@ import re
 from scriba.animation.errors import (
     NestedAnimationError,
     UnclosedAnimationError,
-    animation_error,
+    _animation_error,
 )
 from scriba.core.artifact import Block
 
@@ -98,7 +98,7 @@ def detect_animation_blocks(source: str) -> list[Block]:
                 # Stray \end{animation} — SF-8 (RFC-002): ALWAYS an error.
                 # There is no strict-mode opt-out for this case; the
                 # document is structurally malformed.
-                raise animation_error(
+                raise _animation_error(
                     "E1007",
                     detail=(
                         "stray \\end{animation} without a matching "

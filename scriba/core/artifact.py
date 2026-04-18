@@ -114,7 +114,7 @@ class CollectedWarning:
         :data:`scriba.animation.errors.ERROR_CATALOG` whenever possible.
     message:
         Human-readable description. Usually the same string the helper
-        would have passed to ``animation_error(..., detail=...)``.
+        would have passed to ``_animation_error(..., detail=...)``.
     source_line, source_col:
         Optional 1-indexed source location where the problem originated.
     primitive:

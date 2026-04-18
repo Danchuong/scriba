@@ -16,7 +16,7 @@ from scriba.animation.errors import (
     NestedAnimationError,
     StarlarkEvalError,
     UnclosedAnimationError,
-    animation_error,
+    _animation_error,
 )
 
 
@@ -156,7 +156,7 @@ class TestAnimationErrors:
         assert f"{_DOCS_BASE}/E1151" in s
 
     def test_animation_error_helper(self) -> None:
-        err = animation_error("E1103", "missing required parameter 'data'")
+        err = _animation_error("E1103", "missing required parameter 'data'")
         s = str(err)
         assert "[E1103]" in s
         assert f"{_DOCS_BASE}/E1103" in s

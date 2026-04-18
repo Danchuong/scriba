@@ -27,7 +27,7 @@ from typing import Any
 from scriba.core.artifact import traversable_to_path
 from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.emitter import FrameData, SubstoryData, emit_animation_html, emit_html, scene_id_from_source
-from scriba.animation.errors import FrameCountError, animation_error
+from scriba.animation.errors import FrameCountError, _animation_error
 from scriba.animation.extensions.hl_macro import process_hl_macros
 from scriba.tex.parser.text_commands import apply_text_commands
 from scriba.animation.extensions.keyframes import generate_keyframe_styles
@@ -367,7 +367,7 @@ def _check_shapes_declared(ir: AnimationIR) -> None:
         return
 
     # Both conditions met: commands reference shapes but no shape declared.
-    raise animation_error(
+    raise _animation_error(
         "E1116",
         "no \\shape declared before \\step; "
         "\\apply, \\highlight, \\recolor, and \\annotate all require a "

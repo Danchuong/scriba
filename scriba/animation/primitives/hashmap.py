@@ -15,7 +15,7 @@ import re
 from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, animation_error
+from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     _LabelPlacement,
     THEME,
@@ -78,14 +78,14 @@ class HashMap(PrimitiveBase):
 
         raw_cap = params.get("capacity")
         if raw_cap is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1450",
                 detail=f"HashMap '{name}' requires a 'capacity' parameter",
                 hint="example: HashMap{h}{capacity=8}",
             )
         self.capacity: int = int(raw_cap)
         if self.capacity < 1:
-            raise animation_error(
+            raise _animation_error(
                 "E1451",
                 detail=(
                     f"HashMap '{name}' capacity {self.capacity} is out "

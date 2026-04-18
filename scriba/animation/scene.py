@@ -36,7 +36,7 @@ from scriba.animation.uniqueness import (
     check_duplicate_shape_ids,
     validate_shape_id_charset,
 )
-from scriba.animation.errors import AnimationError, animation_error
+from scriba.animation.errors import AnimationError, _animation_error
 from scriba.core.errors import ValidationError
 
 __all__ = ["SceneState", "FrameSnapshot"]
@@ -627,7 +627,7 @@ class SceneState:
         target_str = _selector_to_str(cmd.target)
         shape_name = target_str.split(".", 1)[0]
         if shape_name not in self.shape_states:
-            raise animation_error(
+            raise _animation_error(
                 "E1116",
                 f"\\highlight references undeclared shape '{shape_name}'"
                 f" (target: '{target_str}')",
@@ -642,7 +642,7 @@ class SceneState:
         # Validate that the target shape exists
         shape_name = target_str.split(".", 1)[0]
         if shape_name not in self.shape_states:
-            raise animation_error(
+            raise _animation_error(
                 "E1116",
                 f"\\annotate references undeclared shape '{shape_name}'"
                 f" (target: '{target_str}')",
@@ -708,7 +708,7 @@ class SceneState:
         parts = target.split(".", 1)
         shape_name = parts[0]
         if shape_name not in self.shape_states:
-            raise animation_error(
+            raise _animation_error(
                 "E1116",
                 f"mutation command references undeclared shape '{shape_name}'"
                 f" (target: '{target}')",

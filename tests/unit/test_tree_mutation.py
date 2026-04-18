@@ -21,7 +21,7 @@ W6.3 merges, the monkey-patching becomes a no-op and the tests continue
 to pass unchanged.
 
 Similarly, the new error codes ``E1433``-``E1436`` are raised via
-``animation_error(code=...)`` which does NOT consult the catalog at
+``_animation_error(code=...)`` which does NOT consult the catalog at
 runtime (the factory only stores the code string on the exception). So
 raising an as-yet-uncataloged code is safe — the ``code`` attribute on
 the raised exception is the authoritative check site.

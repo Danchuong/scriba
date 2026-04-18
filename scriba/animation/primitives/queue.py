@@ -12,7 +12,7 @@ import re
 from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, animation_error
+from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     CELL_1D_RE,
     CELL_GAP,
@@ -102,7 +102,7 @@ class Queue(PrimitiveBase):
 
         self.capacity: int = int(params.get("capacity", _DEFAULT_CAPACITY))
         if self.capacity < 1:
-            raise animation_error(
+            raise _animation_error(
                 "E1440",
                 detail=(
                     f"Queue capacity {self.capacity} is out of range; "

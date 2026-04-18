@@ -12,7 +12,7 @@ import re
 from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, animation_error
+from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -90,7 +90,7 @@ class Stack(PrimitiveBase):
         self.orientation: str = str(params.get("orientation", "vertical"))
         self.max_visible: int = int(params.get("max_visible", _DEFAULT_MAX_VISIBLE))
         if self.max_visible < 1:
-            raise animation_error(
+            raise _animation_error(
                 "E1441",
                 detail=(
                     f"Stack max_visible {self.max_visible} is out of "

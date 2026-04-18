@@ -17,7 +17,7 @@ import re
 from html import escape as html_escape
 from typing import Any, Callable, ClassVar, Sequence
 
-from scriba.animation.errors import _emit_warning, animation_error
+from scriba.animation.errors import _emit_warning, _animation_error
 from scriba.animation.primitives.base import (
     ARROW_STYLES,
     _LabelPlacement,
@@ -146,16 +146,16 @@ class Plane2D(PrimitiveBase):
         self.yrange: tuple[float, float] = tuple(params.get("yrange", [-5.0, 5.0]))  # type: ignore[assignment]
 
         if self.xrange[1] - self.xrange[0] == 0:
-            raise animation_error("E1460", "xrange has equal endpoints (degenerate viewport)")
+            raise _animation_error("E1460", "xrange has equal endpoints (degenerate viewport)")
         if self.yrange[1] - self.yrange[0] == 0:
-            raise animation_error("E1460", "yrange has equal endpoints (degenerate viewport)")
+            raise _animation_error("E1460", "yrange has equal endpoints (degenerate viewport)")
 
         # --- display params ---
         self.grid: bool | str = params.get("grid", True)
         self.axes: bool = bool(params.get("axes", True))
         aspect = params.get("aspect", "equal")
         if aspect not in ("equal", "auto"):
-            raise animation_error("E1465", f"aspect must be 'equal' or 'auto', got {aspect!r}")
+            raise _animation_error("E1465", f"aspect must be 'equal' or 'auto', got {aspect!r}")
         self.aspect: str = aspect
 
         self.width: int = int(params.get("width", 320))
@@ -233,7 +233,7 @@ class Plane2D(PrimitiveBase):
         """
         current = self._total_elements()
         if current >= _ELEMENT_CAP:
-            raise animation_error(
+            raise _animation_error(
                 "E1466",
                 f"Plane2D element count {current + 1} exceeds maximum "
                 f"{_ELEMENT_CAP} per frame; remove elements or split into "
@@ -396,13 +396,13 @@ class Plane2D(PrimitiveBase):
 
     def _remove_point_internal(self, idx: int) -> None:
         if not (0 <= idx < len(self.points)):
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' has no point[{idx}] "
                 f"(valid: 0..{len(self.points) - 1 if self.points else -1})",
             )
         if self.points[idx] is _TOMBSTONE:
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' point[{idx}] already removed",
             )
@@ -410,13 +410,13 @@ class Plane2D(PrimitiveBase):
 
     def _remove_line_internal(self, idx: int) -> None:
         if not (0 <= idx < len(self.lines)):
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' has no line[{idx}] "
                 f"(valid: 0..{len(self.lines) - 1 if self.lines else -1})",
             )
         if self.lines[idx] is _TOMBSTONE:
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' line[{idx}] already removed",
             )
@@ -424,13 +424,13 @@ class Plane2D(PrimitiveBase):
 
     def _remove_segment_internal(self, idx: int) -> None:
         if not (0 <= idx < len(self.segments)):
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' has no segment[{idx}] "
                 f"(valid: 0..{len(self.segments) - 1 if self.segments else -1})",
             )
         if self.segments[idx] is _TOMBSTONE:
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' segment[{idx}] already removed",
             )
@@ -438,13 +438,13 @@ class Plane2D(PrimitiveBase):
 
     def _remove_polygon_internal(self, idx: int) -> None:
         if not (0 <= idx < len(self.polygons)):
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' has no polygon[{idx}] "
                 f"(valid: 0..{len(self.polygons) - 1 if self.polygons else -1})",
             )
         if self.polygons[idx] is _TOMBSTONE:
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' polygon[{idx}] already removed",
             )
@@ -452,13 +452,13 @@ class Plane2D(PrimitiveBase):
 
     def _remove_region_internal(self, idx: int) -> None:
         if not (0 <= idx < len(self.regions)):
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' has no region[{idx}] "
                 f"(valid: 0..{len(self.regions) - 1 if self.regions else -1})",
             )
         if self.regions[idx] is _TOMBSTONE:
-            raise animation_error(
+            raise _animation_error(
                 "E1437",
                 f"Plane2D '{self.name}' region[{idx}] already removed",
             )

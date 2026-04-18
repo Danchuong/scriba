@@ -320,11 +320,11 @@ class Tree(PrimitiveBase):
 
     def _init_standard(self, params: dict[str, Any]) -> None:
         """Initialize a standard tree from explicit root/nodes/edges."""
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         root = params.get("root")
         if root is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1430",
                 detail="Tree requires 'root' parameter",
                 hint="example: Tree{t}{root=\"A\", nodes=[...], edges=[...]}",
@@ -355,11 +355,11 @@ class Tree(PrimitiveBase):
 
     def _init_segtree(self, params: dict[str, Any]) -> None:
         """Initialize a segment tree from leaf data."""
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         data = params.get("data")
         if data is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1431",
                 detail="Tree (kind=segtree) requires 'data' parameter",
                 hint="example: Tree{t}{kind=\"segtree\", data=[1, 2, 3, 4]}",
@@ -381,12 +381,12 @@ class Tree(PrimitiveBase):
 
     def _init_sparse_segtree(self, params: dict[str, Any]) -> None:
         """Initialize a sparse segment tree with range bounds."""
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         range_lo = params.get("range_lo")
         range_hi = params.get("range_hi")
         if range_lo is None or range_hi is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1432",
                 detail=(
                     "Tree (kind=sparse_segtree) requires 'range_lo' and "
@@ -412,12 +412,12 @@ class Tree(PrimitiveBase):
         Supported keys (checked in order): ``add_node``, ``remove_node``,
         ``reparent``. See RFC-001 §4.1 for spec details.
         """
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         if "add_node" in params:
             spec = params["add_node"]
             if not isinstance(spec, dict) or "id" not in spec or "parent" not in spec:
-                raise animation_error(
+                raise _animation_error(
                     "E1436",
                     detail="add_node requires {id, parent}",
                 )
@@ -433,7 +433,7 @@ class Tree(PrimitiveBase):
                     spec["id"], cascade=bool(spec.get("cascade", False))
                 )
             else:
-                raise animation_error(
+                raise _animation_error(
                     "E1436",
                     detail="remove_node requires id or {id, cascade?}",
                 )
@@ -442,7 +442,7 @@ class Tree(PrimitiveBase):
         if "reparent" in params:
             spec = params["reparent"]
             if not isinstance(spec, dict) or "node" not in spec or "parent" not in spec:
-                raise animation_error(
+                raise _animation_error(
                     "E1435",
                     detail="reparent requires {node, parent}",
                 )
@@ -473,10 +473,10 @@ class Tree(PrimitiveBase):
     def _add_node_internal(
         self, node_id: str | int, parent_id: str | int
     ) -> None:
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         if parent_id not in self.children_map:
-            raise animation_error(
+            raise _animation_error(
                 "E1436",
                 detail=(
                     f"add_node parent {parent_id!r} is not in the tree"
@@ -484,7 +484,7 @@ class Tree(PrimitiveBase):
                 hint="parent must be an existing node id",
             )
         if node_id in self.children_map:
-            raise animation_error(
+            raise _animation_error(
                 "E1436",
                 detail=f"add_node id {node_id!r} already exists",
                 hint="node ids must be unique",
@@ -514,10 +514,10 @@ class Tree(PrimitiveBase):
     def _remove_node_internal(
         self, node_id: str | int, *, cascade: bool
     ) -> None:
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         if node_id not in self.children_map:
-            raise animation_error(
+            raise _animation_error(
                 "E1436",
                 detail=f"remove_node target {node_id!r} is not in the tree",
             )
@@ -526,14 +526,14 @@ class Tree(PrimitiveBase):
         kids = list(self.children_map.get(node_id, []))
 
         if is_root and not cascade:
-            raise animation_error(
+            raise _animation_error(
                 "E1434",
                 detail="cannot remove root without cascade",
                 hint="pass cascade=true to drop the whole tree",
             )
 
         if kids and not cascade:
-            raise animation_error(
+            raise _animation_error(
                 "E1433",
                 detail=(
                     f"remove_node {node_id!r} has {len(kids)} child(ren)"
@@ -590,32 +590,32 @@ class Tree(PrimitiveBase):
     def _reparent_internal(
         self, node_id: str | int, new_parent_id: str | int
     ) -> None:
-        from scriba.animation.errors import animation_error
+        from scriba.animation.errors import _animation_error
 
         if node_id not in self.children_map:
-            raise animation_error(
+            raise _animation_error(
                 "E1436",
                 detail=f"reparent node {node_id!r} is not in the tree",
             )
         if new_parent_id not in self.children_map:
-            raise animation_error(
+            raise _animation_error(
                 "E1436",
                 detail=f"reparent parent {new_parent_id!r} is not in the tree",
             )
         if node_id == self.root:
-            raise animation_error(
+            raise _animation_error(
                 "E1435",
                 detail="cannot reparent the root node",
             )
         if node_id == new_parent_id:
-            raise animation_error(
+            raise _animation_error(
                 "E1435",
                 detail="reparent would create a cycle (self-parent)",
             )
 
         # Cycle check: new_parent_id must not be a descendant of node_id.
         if self._is_ancestor(node_id, new_parent_id):
-            raise animation_error(
+            raise _animation_error(
                 "E1435",
                 detail="reparent would create a cycle",
                 hint=(
@@ -625,7 +625,7 @@ class Tree(PrimitiveBase):
 
         old_parent = self._find_parent(node_id)
         if old_parent is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1436",
                 detail=f"reparent node {node_id!r} has no parent in the tree",
             )

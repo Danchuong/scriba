@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, animation_error
+from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     ALL_RE,
     CELL_2D_RE,
@@ -139,7 +139,7 @@ class MatrixPrimitive(PrimitiveBase):
         rows = self.params.get("rows")
         cols = self.params.get("cols")
         if rows is None or cols is None:
-            raise animation_error(
+            raise _animation_error(
                 "E1420",
                 detail="Matrix requires 'rows' and 'cols' parameters",
                 hint="example: \\shape{m}{Matrix}{rows=3, cols=3}",
@@ -147,17 +147,17 @@ class MatrixPrimitive(PrimitiveBase):
         rows = int(rows)
         cols = int(cols)
         if rows < 1:
-            raise animation_error(
+            raise _animation_error(
                 "E1421",
                 detail=f"Matrix rows {rows} is out of range; valid: positive integer",
             )
         if cols < 1:
-            raise animation_error(
+            raise _animation_error(
                 "E1421",
                 detail=f"Matrix cols {cols} is out of range; valid: positive integer",
             )
         if rows * cols > 250_000:
-            raise animation_error(
+            raise _animation_error(
                 "E1425",
                 detail=(
                     f"Matrix cell count {rows * cols} (rows={rows}, "
@@ -177,7 +177,7 @@ class MatrixPrimitive(PrimitiveBase):
             # Flat list -> 2D
             flat = [float(v) for v in raw_data]
             if len(flat) != rows * cols:
-                raise animation_error(
+                raise _animation_error(
                     "E1422",
                     detail=(
                         f"Matrix 'data' length ({len(flat)}) does not match "

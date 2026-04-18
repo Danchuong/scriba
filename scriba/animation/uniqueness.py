@@ -20,7 +20,7 @@ from __future__ import annotations
 
 import re
 
-from scriba.animation.errors import animation_error
+from scriba.animation.errors import _animation_error
 
 __all__ = [
     "validate_shape_id_charset",
@@ -63,7 +63,7 @@ def validate_shape_id_charset(
         the file.
     """
     if not isinstance(shape_id, str) or not _VALID_SHAPE_ID_RE.match(shape_id):
-        raise animation_error(
+        raise _animation_error(
             "E1017",
             detail=(
                 f"shape id {shape_id!r} contains invalid characters "
@@ -93,7 +93,7 @@ def check_duplicate_shape_ids(shape_ids: list[str]) -> None:
     seen: set[str] = set()
     for sid in shape_ids:
         if sid in seen:
-            raise animation_error(
+            raise _animation_error(
                 "E1018",
                 detail=f"duplicate shape id {sid!r} within animation",
                 hint=(
@@ -123,7 +123,7 @@ def check_duplicate_animation_ids(animation_ids: list[str]) -> None:
     seen: set[str] = set()
     for aid in animation_ids:
         if aid in seen:
-            raise animation_error(
+            raise _animation_error(
                 "E1019",
                 detail=f"duplicate animation id {aid!r} within document",
                 hint=(

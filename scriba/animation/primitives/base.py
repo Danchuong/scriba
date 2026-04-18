@@ -277,11 +277,39 @@ _PRIMITIVE_REGISTRY: dict[str, type["PrimitiveBase"]] = {}
 def register_primitive(*type_names: str):
     """Decorator to register a primitive class under one or more type names.
 
-    Usage:
+    This is the **stable extension-point API** for third-party primitive
+    plugins. Decorating a :class:`PrimitiveBase` subclass with
+    ``@register_primitive("MyType")`` makes it available to the Scriba
+    animation parser under ``\\shape{name}{MyType{...}}``.
+
+    **Stability:** This decorator is part of the locked extension API.
+    Its signature will not change before ``1.0.0``. See ``STABILITY.md``
+    §Extension API for the full contract.
+
+    Parameters
+    ----------
+    *type_names:
+        One or more string names to register. Multiple names create
+        aliases (e.g. ``@register_primitive("Matrix", "Heatmap")`` allows
+        both ``Matrix{...}`` and ``Heatmap{...}`` to resolve to the same
+        class). Names are case-sensitive.
+
+    Returns
+    -------
+    Callable[[type], type]
+        A class decorator that registers the class and returns it
+        unchanged, so it may be stacked with other decorators.
+
+    Examples
+    --------
+    Single-name registration::
+
         @register_primitive("Queue")
         class Queue(PrimitiveBase): ...
 
-        @register_primitive("Matrix", "Heatmap")  # aliases
+    Alias registration::
+
+        @register_primitive("Matrix", "Heatmap")
         class MatrixPrimitive(PrimitiveBase): ...
     """
     def decorator(cls):
@@ -292,7 +320,33 @@ def register_primitive(*type_names: str):
 
 
 def get_primitive_registry() -> dict[str, type["PrimitiveBase"]]:
-    """Return a copy of the registered primitive catalog."""
+    """Return a snapshot copy of the registered primitive catalog.
+
+    The catalog maps type-name strings (e.g. ``"Array"``, ``"Graph"``) to
+    their :class:`PrimitiveBase` subclass. This is the **stable inspection
+    API** for tooling that needs to enumerate or validate available
+    primitive types at runtime.
+
+    **Stability:** This function is part of the locked extension API. Its
+    return type (``dict[str, type[PrimitiveBase]]``) will not change
+    before ``1.0.0``. See ``STABILITY.md`` §Extension API for the full
+    contract.
+
+    Returns
+    -------
+    dict[str, type[PrimitiveBase]]
+        A fresh ``dict`` copy — mutating the returned mapping does not
+        affect the internal registry. Keys are the registered type-name
+        strings; values are the corresponding primitive classes.
+
+    Notes
+    -----
+    All built-in primitives are registered at import time via the
+    ``@register_primitive`` decorator in their respective modules. Third-
+    party primitives appear in this dict as soon as their module is
+    imported. Import order determines registration order, though the dict
+    itself is unordered for lookup purposes.
+    """
     return dict(_PRIMITIVE_REGISTRY)
 
 
@@ -355,19 +409,19 @@ class PrimitiveBase(abc.ABC):
         to sidestep the circular ``errors.py ↔ primitives`` dependency.
         """
         # Local import to avoid the ``errors.py`` <-> primitives cycle.
-        from scriba.animation.errors import animation_error, suggest_closest
+        from scriba.animation.errors import _animation_error, _suggest_closest
 
         accepted = cls.ACCEPTED_PARAMS
         for key in params:
             if key in accepted:
                 continue
-            suggestion = suggest_closest(key, accepted)
+            suggestion = _suggest_closest(key, accepted)
             hint = (
                 f"did you mean `{suggestion}`?"
                 if suggestion
                 else f"valid: {', '.join(sorted(accepted))}"
             )
-            raise animation_error(
+            raise _animation_error(
                 "E1114",
                 (
                     f"unknown {cls.__name__} parameter {key!r}; "

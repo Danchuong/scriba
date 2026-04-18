@@ -143,7 +143,7 @@ class TestTimeout:
             })
             assert resp["ok"] is False
             # May hit range iterable validation (E1173 — ``_safe_range``
-            # now wraps its ValueError in an ``animation_error``),
+            # now wraps its ValueError in an ``_animation_error``),
             # timeout (E1152), or step limit (E1153).
             assert resp["code"] in ("E1152", "E1153", "E1173")
         finally:
@@ -176,7 +176,7 @@ class TestTimeout:
 
 class TestTracebackFiltering:
     """Verify that ``E1151`` error messages contain only user frames
-    after wiring ``errors.format_compute_traceback`` into ``_evaluate``.
+    after wiring ``errors._format_compute_traceback`` into ``_evaluate``.
     """
 
     def test_runtime_error_traceback_only_contains_user_frames(self):
