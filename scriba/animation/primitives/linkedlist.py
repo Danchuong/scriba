@@ -30,6 +30,10 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._types import (
+    _CELL_HORIZONTAL_PADDING,
+    _DEFAULT_FONT_SIZE_PX,
+)
 
 # ---------------------------------------------------------------------------
 # Layout constants
@@ -119,7 +123,7 @@ class LinkedList(PrimitiveBase):
         if self.values:
             current = max(
                 _VALUE_WIDTH_MIN,
-                max(estimate_text_width(str(v), 14) + 12 for v in self.values),
+                max(estimate_text_width(str(v), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING for v in self.values),
             )
         else:
             current = _VALUE_WIDTH_MIN

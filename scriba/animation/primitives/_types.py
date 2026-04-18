@@ -39,6 +39,9 @@ __all__ = [
     "_FLOAT_EPS",
     "_DEFAULT_FONT_SIZE_PX",
     "_DEFAULT_LABEL_FONT_SIZE_PX",
+    "_CELL_HORIZONTAL_PADDING",
+    "_PRIMITIVE_LABEL_Y",
+    "_NODE_MIN_RADIUS",
 ]
 
 
@@ -159,6 +162,18 @@ _DEFAULT_FONT_SIZE_PX: int = 14
 
 # Smaller font size (px) used for labels, indices, and annotations.
 _DEFAULT_LABEL_FONT_SIZE_PX: int = 12
+
+# Horizontal padding (px) added to measured text width when computing the
+# minimum cell width for Queue, LinkedList, and Array primitives.
+_CELL_HORIZONTAL_PADDING: int = 12
+
+# Y-coordinate (px from top of primitive bounding box) for the caption label
+# rendered below graph and tree primitives.
+_PRIMITIVE_LABEL_Y: int = 14
+
+# Minimum node radius (px) used as the lower bound when scaling node size with
+# graph/tree density; prevents nodes from becoming too small to read.
+_NODE_MIN_RADIUS: int = 12
 
 
 # ---------------------------------------------------------------------------

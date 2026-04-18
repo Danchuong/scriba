@@ -1,0 +1,675 @@
+"""HTML stitching helpers — Wave E3 split from emitter.py.
+
+Combines per-frame SVGs, scripts, and styles into the final HTML output
+(interactive widget, static filmstrip, diagram, substory sections).
+Stateless except for the module-level ``_substory_counter``.
+"""
+
+from __future__ import annotations
+
+import html as _html
+import json as _json
+from typing import Any, Callable
+
+from scriba.animation._frame_renderer import (
+    _emit_frame_svg,
+    _prescan_value_widths,
+    compute_viewbox,
+)
+from scriba.animation._minify import _minify_html  # noqa: F401
+from scriba.animation._script_builder import (  # noqa: F401
+    _build_external_script,
+    _build_inline_script,
+)
+from scriba.animation.differ import compute_transitions
+
+__all__ = [
+    "emit_animation_html",
+    "emit_diagram_html",
+    "emit_html",
+    "emit_interactive_html",
+    "emit_substory_html",
+]
+
+
+# ---------------------------------------------------------------------------
+# HTML helpers
+# ---------------------------------------------------------------------------
+
+
+def _escape(text: str) -> str:
+    """Escape text for use in HTML attributes."""
+    return _html.escape(text, quote=True)
+
+
+def _escape_js(text: str) -> str:
+    """Escape text for embedding in a JS template literal (backtick string)."""
+    return (
+        text
+        .replace("\\", "\\\\")
+        .replace("`", "\\`")
+        .replace("${", "\\${")
+        .replace("</script>", r"<\/script>")
+        .replace("</style>", r"<\/style>")
+    )
+
+
+# ---------------------------------------------------------------------------
+# Frame ID helpers (imported from emitter via lazy import to avoid circularity)
+# ---------------------------------------------------------------------------
+
+
+def _get_frame_id_fn() -> Callable[[str, Any], str]:
+    """Return the ``_frame_id`` function from emitter (lazy to avoid circular)."""
+    from scriba.animation.emitter import _frame_id
+    return _frame_id
+
+
+def _get_is_id_safe_label_fn() -> Callable[[Any], bool]:
+    """Return the ``_is_id_safe_label`` function from emitter (lazy)."""
+    from scriba.animation.emitter import _is_id_safe_label
+    return _is_id_safe_label
+
+
+# ---------------------------------------------------------------------------
+# Static filmstrip HTML (legacy mode)
+# ---------------------------------------------------------------------------
+
+
+def emit_animation_html(
+    scene_id: str,
+    frames: list[Any],
+    primitives: dict[str, Any],
+    css_assets: set[str] | None = None,
+    render_inline_tex: Callable[[str], str] | None = None,
+) -> str:
+    """Produce the complete ``<figure>`` HTML for an animation.
+
+    Follows the locked HTML shape from ``04-environments-spec.md`` s8.1.
+    """
+    _frame_id = _get_frame_id_fn()
+    _is_id_safe_label = _get_is_id_safe_label_fn()
+
+    frame_count = len(frames)
+
+    if not frames:
+        return (
+            f'<figure class="scriba-animation" '
+            f'data-scriba-scene="{_escape(scene_id)}" '
+            f'data-frame-count="0" '
+            f'data-layout="filmstrip" '
+            f'aria-label="Animation">\n'
+            f'  <ol class="scriba-frames">\n'
+            f"  </ol>\n"
+            f"</figure>"
+        )
+
+    # Pre-apply value payloads so width-tracking primitives reflect their
+    # widest historical state before viewbox computation.
+    _prescan_value_widths(frames, primitives)
+
+    # Compute the max viewbox across ALL frames so the stage size stays
+    # stable.  Without this, frames with arrow annotations are taller
+    # than frames without, causing the array to visually shrink/grow.
+    max_vb_width = 0
+    max_vb_height = 0
+    for f in frames:
+        vb_str = compute_viewbox(primitives, annotations=f.annotations)
+        parts = vb_str.split()
+        max_vb_width = max(max_vb_width, int(parts[2]))
+        max_vb_height = max(max_vb_height, int(parts[3]))
+    # Also consider the base (no annotations) for primitives that change
+    # size via push/pop (Stack, Queue).
+    base_vb = compute_viewbox(primitives)
+    base_parts = base_vb.split()
+    max_vb_width = max(max_vb_width, int(base_parts[2]))
+    max_vb_height = max(max_vb_height, int(base_parts[3]))
+    viewbox = f"0 0 {max_vb_width} {max_vb_height}"
+
+    # Set per-primitive min_arrow_above for stable cell positioning
+    for shape_name, prim in primitives.items():
+        if not hasattr(prim, "set_min_arrow_above"):
+            continue
+        max_ah = 0
+        for f in frames:
+            prim_anns = [
+                a for a in f.annotations
+                if a.get("target", "").startswith(shape_name + ".")
+            ]
+            if hasattr(prim, "set_annotations"):
+                prim.set_annotations(prim_anns)
+            if hasattr(prim, "_arrow_height_above"):
+                try:
+                    max_ah = max(max_ah, prim._arrow_height_above(prim_anns))
+                except TypeError:
+                    max_ah = max(max_ah, prim._arrow_height_above())
+        prim.set_min_arrow_above(max_ah)
+        if hasattr(prim, "set_annotations"):
+            prim.set_annotations([])
+
+    # aria-label from first frame with a label, or fall back to "Animation"
+    # (matches the interactive widget's fallback at emit_interactive_html)
+    aria_label = "Animation"
+    for f in frames:
+        if f.label:
+            aria_label = f.label
+            break
+
+    frame_items: list[str] = []
+    for frame in frames:
+        step = frame.step_number
+        frame_id = _frame_id(scene_id, frame)
+        narration_id = f"{frame_id}-narration"
+        # Emit data-label="{label}" only when the label is id-safe (so
+        # JS can route by label token as well as by step index).
+        data_label_attr = (
+            f' data-label="{_escape(frame.label)}"'
+            if _is_id_safe_label(frame.label)
+            else ""
+        )
+
+        svg_html = _emit_frame_svg(
+            frame, primitives, scene_id, viewbox, render_inline_tex,
+            _frame_id_fn=_frame_id,
+            _escape_fn=_escape,
+        )
+
+        substory_html = ""
+        if frame.substories:
+            for sub in frame.substories:
+                substory_html += emit_substory_html(
+                    scene_id, frame_id, sub, primitives, viewbox,
+                    render_inline_tex=render_inline_tex,
+                )
+
+        frame_items.append(
+            f'    <li class="scriba-frame" id="{frame_id}" '
+            f'data-step="{step}"{data_label_attr}>\n'
+            f'      <header class="scriba-frame-header">\n'
+            f"        "
+            f'<span class="scriba-step-label">'
+            f"Step {step} / {frame_count}</span>\n"
+            f"      </header>\n"
+            f'      <div class="scriba-stage">\n'
+            f"        {svg_html}\n"
+            f"      </div>\n"
+            f'      <p class="scriba-narration" id="{narration_id}">'
+            f"{frame.narration_html}</p>\n"
+            f"{substory_html}"
+            f"    </li>"
+        )
+
+    frames_html = "\n".join(frame_items)
+
+    return (
+        f'<figure class="scriba-animation" '
+        f'data-scriba-scene="{_escape(scene_id)}" '
+        f'data-frame-count="{frame_count}" '
+        f'data-layout="filmstrip" '
+        f'aria-label="{_escape(aria_label)}">\n'
+        f'  <ol class="scriba-frames">\n'
+        f"{frames_html}\n"
+        f"  </ol>\n"
+        f"</figure>"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Substory HTML
+# ---------------------------------------------------------------------------
+
+
+_substory_counter = 0
+
+
+def emit_substory_html(
+    scene_id: str,
+    parent_frame_id: str,
+    substory: Any,
+    primitives: dict[str, Any],
+    viewbox: str,
+    render_inline_tex: Callable[[str], str] | None = None,
+) -> str:
+    """Produce interactive ``<section class="scriba-substory">`` with step controller.
+
+    Uses ``data-scriba-frames`` attribute with JSON-encoded frame data
+    so no ``<script>`` is needed inside the substory section.  The parent
+    widget's initialiser calls ``_initSubWidget()`` after injection.
+    """
+    global _substory_counter
+    _substory_counter += 1
+    widget_id = f"sub-{scene_id}-{_substory_counter}"
+
+    depth = substory.depth
+    sub_id = substory.substory_id
+    title = substory.title
+    sub_frame_count = len(substory.frames)
+
+    # Use substory's own primitives if available, otherwise fall back to parent
+    sub_primitives = substory.primitives if substory.primitives else primitives
+    if substory.primitives:
+        _prescan_value_widths(substory.frames, sub_primitives)
+    sub_viewbox = compute_viewbox(sub_primitives) if substory.primitives else viewbox
+
+    _frame_id = _get_frame_id_fn()
+
+    # Build JSON frame data for substory (stored in data attribute)
+    json_frames: list[dict[str, str]] = []
+    for sub_frame in substory.frames:
+        svg_html = _emit_frame_svg(
+            sub_frame, sub_primitives, scene_id, sub_viewbox, render_inline_tex,
+            _frame_id_fn=_frame_id,
+            _escape_fn=_escape,
+        )
+        json_frames.append({
+            "svg": svg_html,
+            "narration": sub_frame.narration_html,
+        })
+    frames_json = _escape(_json.dumps(json_frames))
+
+    dots_html = "\n        ".join(
+        f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
+        for i in range(sub_frame_count)
+    )
+
+    return (
+        f'      <section class="scriba-substory" role="group"\n'
+        f'               aria-label="Sub-computation: {_escape(title)}"\n'
+        f'               data-substory-id="{_escape(sub_id)}"\n'
+        f'               data-substory-depth="{depth}">\n'
+        f'        <div class="scriba-substory-widget" id="{widget_id}"\n'
+        f'             data-scriba-frames="{frames_json}">\n'
+        f'          <div class="scriba-controls scriba-substory-controls">\n'
+        f'            <button class="scriba-btn-prev" aria-label="Previous sub-step" disabled>Prev</button>\n'
+        f'            <span class="scriba-step-counter">Sub-step 1 / {sub_frame_count}</span>\n'
+        f'            <button class="scriba-btn-next" aria-label="Next sub-step"'
+        f'{"" if sub_frame_count > 1 else " disabled"}>Next</button>\n'
+        f'            <div class="scriba-progress" aria-hidden="true">\n'
+        f'              {dots_html}\n'
+        f'            </div>\n'
+        f'          </div>\n'
+        f'          <div class="scriba-stage"></div>\n'
+        f'          <p class="scriba-narration" aria-live="polite" aria-atomic="true"></p>\n'
+        f'        </div>\n'
+        f'      </section>\n'
+    )
+
+
+# ---------------------------------------------------------------------------
+# Interactive widget HTML (default mode)
+# ---------------------------------------------------------------------------
+
+
+def emit_interactive_html(
+    scene_id: str,
+    frames: list[Any],
+    primitives: dict[str, Any],
+    label: str = "",
+    render_inline_tex: Callable[[str], str] | None = None,
+    inline_runtime: bool = True,
+    asset_base_url: str = "",
+) -> str:
+    """Produce interactive widget HTML with step controller.
+
+    Parameters
+    ----------
+    inline_runtime:
+        When ``True`` (default), the full runtime JS and frame data are
+        inlined in a ``<script>`` block — self-contained, works on
+        ``file://``.  When ``False``, frame data is emitted as an inert
+        ``<script type="application/json">`` island and a ``<script
+        src="...">`` tag referencing the external ``scriba.<hash>.js``
+        asset is appended.  External mode requires the asset to be served
+        alongside the HTML.
+    asset_base_url:
+        URL prefix for the external runtime asset (e.g.
+        ``"https://cdn.example.com/scriba/0.8.3"``).  Only used when
+        ``inline_runtime=False``.  Defaults to ``""`` (relative path,
+        asset expected next to the HTML file).
+    """
+    _frame_id = _get_frame_id_fn()
+    _is_id_safe_label = _get_is_id_safe_label_fn()
+
+    frame_count = len(frames)
+
+    if not frames:
+        return (
+            f'<div class="scriba-widget" id="{_escape(scene_id)}">'
+            f'<p class="scriba-narration">No frames</p>'
+            f'</div>'
+        )
+
+    # Pre-apply value payloads so width-tracking primitives reflect their
+    # widest historical state before viewbox computation.
+    _prescan_value_widths(frames, primitives)
+
+    # Compute max viewbox across ALL frames so stage size stays stable.
+    max_vb_width = 0
+    max_vb_height = 0
+    for f in frames:
+        vb_str = compute_viewbox(primitives, annotations=f.annotations)
+        parts = vb_str.split()
+        max_vb_width = max(max_vb_width, int(parts[2]))
+        max_vb_height = max(max_vb_height, int(parts[3]))
+    base_vb = compute_viewbox(primitives)
+    base_parts = base_vb.split()
+    max_vb_width = max(max_vb_width, int(base_parts[2]))
+    max_vb_height = max(max_vb_height, int(base_parts[3]))
+    viewbox = f"0 0 {max_vb_width} {max_vb_height}"
+
+    # Set per-primitive min_arrow_above so cells stay at stable Y
+    # positions across frames (no jumping when arrows appear/disappear).
+    for shape_name, prim in primitives.items():
+        if not hasattr(prim, "set_min_arrow_above"):
+            continue
+        max_ah = 0
+        for f in frames:
+            prim_anns = [
+                a for a in f.annotations
+                if a.get("target", "").startswith(shape_name + ".")
+            ]
+            if hasattr(prim, "set_annotations"):
+                prim.set_annotations(prim_anns)
+            if hasattr(prim, "_arrow_height_above"):
+                try:
+                    max_ah = max(max_ah, prim._arrow_height_above(prim_anns))
+                except TypeError:
+                    max_ah = max(max_ah, prim._arrow_height_above())
+        prim.set_min_arrow_above(max_ah)
+        # Clear annotations — they'll be set per-frame during rendering
+        if hasattr(prim, "set_annotations"):
+            prim.set_annotations([])
+
+    # ----------------------------------------------------------------
+    # Single-pass frame rendering.
+    #
+    # Before this fix (Wave 7 double-pass bug), JS frames and print
+    # frames were built in TWO separate loops that each called
+    # ``_emit_frame_svg``.  That function has a side effect: it calls
+    # ``prim.apply_command()`` for structural mutations (add_edge,
+    # remove_edge, add_node, etc.).  After the first loop finished,
+    # ALL mutations from every step had accumulated in the live
+    # primitives dict, so the second loop re-applied them — making
+    # step 1's print render show the graph's *final* edge set instead
+    # of step 1's.  Any animation using structural mutation was broken.
+    #
+    # Fix: render each frame's SVG ONCE and reuse it for both the JS
+    # frame data and the print frame.  The only difference between the
+    # two outputs is the ``aria-labelledby`` attribute, which we patch
+    # via string replacement.
+    # ----------------------------------------------------------------
+
+    narration_id = f"{scene_id}-narration"
+    _frame_parts: list[tuple[str, str, str, str]] = []
+    _json_frames_raw: list[dict] = []  # for external-runtime JSON island
+    print_frame_items: list[str] = []
+
+    for frame in frames:
+        step = frame.step_number
+
+        # Render the SVG exactly once — mutations accumulate correctly.
+        svg_html = _emit_frame_svg(
+            frame, primitives, scene_id, viewbox, render_inline_tex,
+            narration_id,
+            _frame_id_fn=_frame_id,
+            _escape_fn=_escape,
+        )
+
+        # Inject node positions from Tree primitives into shape_states
+        # so the differ can detect position changes between frames.
+        from scriba.animation.emitter import _inject_tree_positions
+        _inject_tree_positions(frame, primitives)
+
+        # --- JS frame data ---
+        svg_escaped = _escape_js(svg_html)
+        narration_escaped = _escape_js(frame.narration_html)
+        label_token = frame.label if _is_id_safe_label(frame.label) else ""
+        label_escaped = _escape_js(label_token)
+        substory_html = ""
+        if frame.substories:
+            frame_id = _frame_id(scene_id, frame)
+            for sub in frame.substories:
+                substory_html += emit_substory_html(
+                    scene_id, frame_id, sub, primitives, viewbox,
+                    render_inline_tex=render_inline_tex,
+                )
+        substory_escaped = _escape_js(substory_html)
+        _frame_parts.append((svg_escaped, narration_escaped, substory_escaped, label_escaped))
+
+        # --- Raw JSON frame data (for external-runtime mode) ---
+        _json_frames_raw.append({
+            "svg": svg_html,
+            "narration": frame.narration_html,
+            "substory": substory_html,
+            "label": label_token,
+        })
+
+        # --- Print frame (reuse the same SVG, swap aria-labelledby) ---
+        print_narration_id = f"{scene_id}-print-{step}-narration"
+        print_svg = svg_html.replace(
+            f'aria-labelledby="{_escape(narration_id)}"',
+            f'aria-labelledby="{_escape(print_narration_id)}"',
+        )
+        data_label_attr = (
+            f' data-label="{_escape(frame.label)}"'
+            if _is_id_safe_label(frame.label)
+            else ""
+        )
+        print_substory = ""
+        if frame.substories:
+            for sub in frame.substories:
+                sub_prims = sub.primitives if sub.primitives else primitives
+                if sub.primitives:
+                    _prescan_value_widths(sub.frames, sub_prims)
+                sub_vb = compute_viewbox(sub_prims) if sub.primitives else viewbox
+                for sub_frame in sub.frames:
+                    sub_svg = _emit_frame_svg(
+                        sub_frame, sub_prims, scene_id, sub_vb,
+                        render_inline_tex,
+                        _frame_id_fn=_frame_id,
+                        _escape_fn=_escape,
+                    )
+                    print_substory += (
+                        f'<div class="scriba-substory"'
+                        f' data-substory-id="{_escape(sub.substory_id)}">\n'
+                        f'  <div class="scriba-stage">{sub_svg}</div>\n'
+                        f'  <p class="scriba-narration">'
+                        f'{sub_frame.narration_html}</p>\n'
+                        f'</div>\n'
+                    )
+        print_frame_items.append(
+            f'<div class="scriba-print-frame" data-step="{step}"{data_label_attr}>\n'
+            f'  <span class="scriba-step-label">'
+            f'Step {step} / {frame_count}</span>\n'
+            f'  <div class="scriba-stage">{print_svg}</div>\n'
+            f'  <p class="scriba-narration"'
+            f' id="{_escape(print_narration_id)}">'
+            f'{frame.narration_html}</p>\n'
+            f'{print_substory}'
+            f'</div>'
+        )
+
+    # Compute transition manifests for consecutive frame pairs.
+    # Also detect when the SVG changed structurally (add_edge, remove_edge,
+    # add_node, etc.) but the differ only captured CSS-level transitions
+    # (recolor, value_change).  In that case we mark the frame as needing
+    # a full innerHTML sync (fs:1) so the JS runtime doesn't skip it.
+    _manifests: list[str] = ["null"]  # Frame 0 has no previous frame
+    _needs_sync: list[bool] = [False]
+    for i in range(1, len(frames)):
+        _m = compute_transitions(frames[i - 1], frames[i])
+        if not _m.transitions or _m.skip_animation:
+            _manifests.append("null")
+            _needs_sync.append(False)
+        else:
+            _manifests.append(
+                _json.dumps(_m.to_compact(), separators=(",", ":"))
+            )
+            # If the SVG actually changed between frames, we need a full
+            # innerHTML sync after CSS/WAAPI transitions complete.  The
+            # differ may not capture all structural changes (e.g. add_edge
+            # in Graph), so we always sync when the SVG differs.
+            svg_changed = _frame_parts[i][0] != _frame_parts[i - 1][0]
+            _needs_sync.append(svg_changed)
+
+    # Build JS frames array with transition manifests
+    js_frames: list[str] = []
+    for idx, (sve, ne, se, le) in enumerate(_frame_parts):
+        tr = _manifests[idx]
+        fs = "1" if _needs_sync[idx] else "0"
+        js_frames.append(
+            f'{{svg:`{sve}`,narration:`{ne}`,'
+            f'substory:`{se}`,label:`{le}`,'
+            f'tr:{tr},fs:{fs}}}'
+        )
+
+    js_frames_str = ",\n    ".join(js_frames)
+    print_frames_html = "\n".join(print_frame_items)
+
+    # Build external-runtime JSON island (augment raw frames with tr/fs).
+    if not inline_runtime:
+        for idx, raw in enumerate(_json_frames_raw):
+            tr_val = _json.loads(_manifests[idx]) if _manifests[idx] != "null" else None
+            raw["tr"] = tr_val
+            raw["fs"] = 1 if _needs_sync[idx] else 0
+
+    # Build progress dots
+    dots_html = "\n      ".join(
+        f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
+        for i in range(frame_count)
+    )
+
+    _aria_label = _escape(label) if label else "Animation"
+
+    # Build the script block: inline or external.
+    if inline_runtime:
+        _script_block = _build_inline_script(scene_id, js_frames_str)
+    else:
+        _script_block = _build_external_script(scene_id, _json_frames_raw, asset_base_url)
+
+    widget_html = f"""\
+<div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1" role="region" aria-label="{_aria_label}">
+  <div class="scriba-controls">
+    <button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button>
+    <span class="scriba-step-counter" aria-atomic="true">Step 1 / {frame_count}</span>
+    <button class="scriba-btn-next" aria-label="Next step"{"" if frame_count > 1 else " disabled"}>Next</button>
+    <div class="scriba-progress" aria-hidden="true">
+      {dots_html}
+    </div>
+  </div>
+  <div class="scriba-stage"></div>
+  <p class="scriba-narration" dir="auto" id="{_escape(scene_id)}-narration" aria-live="polite"></p>
+  <div class="scriba-substory-container"></div>
+  <div class="scriba-print-frames" style="display:none">
+{print_frames_html}
+  </div>
+</div>
+{_script_block}"""
+
+    return widget_html
+
+
+# ---------------------------------------------------------------------------
+# Unified entry point
+# ---------------------------------------------------------------------------
+
+
+def emit_html(
+    scene_id: str,
+    frames: list[Any],
+    primitives: dict[str, Any],
+    mode: str = "interactive",
+    label: str = "",
+    render_inline_tex: Callable[[str], str] | None = None,
+    minify: bool = True,
+    inline_runtime: bool = True,
+    asset_base_url: str = "",
+) -> str:
+    """Produce HTML for an animation scene.
+
+    Parameters
+    ----------
+    mode:
+        ``"interactive"`` (default) produces a step-controller widget.
+        ``"static"`` produces the legacy filmstrip ``<figure>``.
+    render_inline_tex:
+        Optional callback that renders a bare TeX math fragment to HTML.
+    minify:
+        When ``True`` (default), apply basic HTML minification to the
+        output to reduce file size.
+    inline_runtime:
+        When ``True`` (default in v0.8.x), inline the full JS runtime and
+        frame data.  When ``False``, use an external ``scriba.<hash>.js``
+        asset with a JSON data island (CSP-safe, opt-in for v0.8.3).
+        Default flips to ``False`` in v0.9.0.
+    asset_base_url:
+        URL prefix for the external runtime asset.  Only used when
+        ``inline_runtime=False``.  Defaults to ``""`` (relative).
+    """
+    from scriba.animation.emitter import validate_frame_labels_unique
+
+    # Enforce frame-label uniqueness before emission. Duplicates would
+    # produce colliding HTML ids which break hash-navigation and
+    # screen-reader focus, so fail fast with E1005.
+    validate_frame_labels_unique(frames)
+
+    if mode == "static":
+        result = emit_animation_html(
+            scene_id, frames, primitives, render_inline_tex=render_inline_tex,
+        )
+    elif mode == "diagram":
+        result = emit_diagram_html(
+            scene_id, frames, primitives, render_inline_tex=render_inline_tex,
+        )
+    else:
+        result = emit_interactive_html(
+            scene_id, frames, primitives, label=label,
+            render_inline_tex=render_inline_tex,
+            inline_runtime=inline_runtime,
+            asset_base_url=asset_base_url,
+        )
+    if minify:
+        result = _minify_html(result)
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Diagram output (static single-frame figure)
+# ---------------------------------------------------------------------------
+
+
+def emit_diagram_html(
+    scene_id: str,
+    frames: list[Any],
+    primitives: dict[str, Any],
+    render_inline_tex: Callable[[str], str] | None = None,
+) -> str:
+    """Produce a static ``<figure class="scriba-diagram">`` with no controls."""
+    _frame_id = _get_frame_id_fn()
+
+    if not frames:
+        # Diagrams should have exactly 1 implicit frame from prelude commands
+        return (
+            f'<figure class="scriba-diagram" '
+            f'data-scriba-scene="{_escape(scene_id)}">'
+            f'<div class="scriba-stage"></div>'
+            f'</figure>'
+        )
+
+    _prescan_value_widths(frames, primitives)
+    viewbox = compute_viewbox(primitives)
+    frame = frames[0]
+    svg_html = _emit_frame_svg(
+        frame, primitives, scene_id, viewbox, render_inline_tex,
+        _frame_id_fn=_frame_id,
+        _escape_fn=_escape,
+    )
+
+    return (
+        f'<figure class="scriba-diagram" '
+        f'data-scriba-scene="{_escape(scene_id)}">\n'
+        f'  <div class="scriba-stage">\n'
+        f'    {svg_html}\n'
+        f'  </div>\n'
+        f'</figure>'
+    )

@@ -27,6 +27,10 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._types import (
+    _NODE_MIN_RADIUS,
+    _PRIMITIVE_LABEL_Y,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -398,7 +402,7 @@ class Graph(PrimitiveBase):
 
         # Scale node radius with density so dense graphs don't overlap
         self._node_radius: int = max(
-            12,
+            _NODE_MIN_RADIUS,
             min(
                 _NODE_RADIUS,
                 int(min(self.width, self.height) / (2 * max(len(self.nodes), 1))),
@@ -696,7 +700,7 @@ class Graph(PrimitiveBase):
                 _render_svg_text(
                     str(self.label),
                     self.width // 2,
-                    14,
+                    _PRIMITIVE_LABEL_Y,
                     fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     text_anchor="middle",

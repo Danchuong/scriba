@@ -33,6 +33,10 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._types import (
+    _CELL_HORIZONTAL_PADDING,
+    _DEFAULT_FONT_SIZE_PX,
+)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -137,7 +141,7 @@ class Queue(PrimitiveBase):
         self._cell_width: int = max(
             CELL_WIDTH,
             max(
-                (estimate_text_width(str(v), 14) + 12 for v in raw_data),
+                (estimate_text_width(str(v), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING for v in raw_data),
                 default=CELL_WIDTH,
             ),
         )
@@ -168,7 +172,7 @@ class Queue(PrimitiveBase):
                 self.cells[self.rear_idx] = enqueue_val
                 self.rear_idx += 1
                 # Widen cells if the new value is wider than current cell width
-                new_w = estimate_text_width(str(enqueue_val), 14) + 12
+                new_w = estimate_text_width(str(enqueue_val), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING
                 if new_w > self._cell_width:
                     self._cell_width = new_w
 
@@ -193,7 +197,7 @@ class Queue(PrimitiveBase):
             if 0 <= idx < self.capacity:
                 self.cells[idx] = value
                 # Recalc cell width if new value is wider
-                needed = estimate_text_width(str(value), 14) + 12
+                needed = estimate_text_width(str(value), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING
                 if needed > self._cell_width:
                     self._cell_width = needed
 

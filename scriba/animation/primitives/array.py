@@ -29,6 +29,7 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._types import _CELL_HORIZONTAL_PADDING
 from scriba.animation.primitives.layout import TextBox, stack_bottom, vstack
 
 # Font sizes for each role — must match the CSS variables below. A CI
@@ -147,7 +148,7 @@ class ArrayPrimitive(PrimitiveBase):
             )
         else:
             max_label_w = 0
-        self._cell_width: int = max(CELL_WIDTH, max_content_w + 12, max_label_w + 8)
+        self._cell_width: int = max(CELL_WIDTH, max_content_w + _CELL_HORIZONTAL_PADDING, max_label_w + 8)
 
     # -- PrimitiveBase interface --------------------------------------------
 
