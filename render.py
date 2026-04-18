@@ -247,8 +247,25 @@ def render_file(
     # Add Pygments syntax highlighting CSS
     css_parts.append(load_css("scriba-tex-pygments-light.css"))
 
-    # Inline KaTeX CSS with embedded fonts (no CDN dependency)
-    css_parts.append(inline_katex_css())
+    # Opt-3: skip the ~380 KB KaTeX CSS+fonts blob when the document has no
+    # math.  A document is math-free when it has no animation/diagram blocks
+    # AND no bare $...$ or $$...$$ spans in the source TeX.
+    #
+    # We use the already-computed block lists (anim_blocks / diag_blocks) plus
+    # a single regex scan of the source.  The regex matches any un-escaped
+    # dollar sign: $$...$$ or $...$  (escaped \$ is excluded by negative
+    # lookbehind). False positives (treating a literal $ as math) are safe
+    # because they only cause us to include CSS we might not need — never
+    # to drop CSS when it IS needed.
+    import re as _re_opt3
+    _has_math = bool(
+        anim_blocks
+        or diag_blocks
+        or _re_opt3.search(r"(?<!\\)\$", source)
+    )
+    if _has_math:
+        # Inline KaTeX CSS with embedded fonts (no CDN dependency)
+        css_parts.append(inline_katex_css())
 
     css = "\n".join(css_parts)
 

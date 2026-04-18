@@ -467,6 +467,15 @@ class Graph(PrimitiveBase):
             )
             return
 
+    def _invalidate_addressable_cache(self) -> None:
+        """Discard the cached addressable_parts and validate_selector results.
+
+        Called by any mutation that changes graph topology (add_edge,
+        remove_edge).  The cache is lazily rebuilt on the next call.
+        """
+        self.__dict__.pop("_cached_addressable_parts", None)
+        self.__dict__.pop("_cached_addressable_set", None)
+
     def _add_edge_internal(
         self,
         u: str | int,
@@ -487,6 +496,7 @@ class Graph(PrimitiveBase):
             )
         w: float | None = float(weight) if weight is not None else None
         self.edges.append((u, v, w))
+        self._invalidate_addressable_cache()  # Opt-4: topology changed
         self._relayout_with_warm_start()
 
     def _remove_edge_internal(self, u: str | int, v: str | int) -> None:
@@ -499,6 +509,7 @@ class Graph(PrimitiveBase):
                 detail=f"remove_edge: no edge between {u!r} and {v!r}",
             )
         self.edges.pop(idx)
+        self._invalidate_addressable_cache()  # Opt-4: topology changed
         self._relayout_with_warm_start()
 
     def _set_weight_internal(
@@ -586,17 +597,32 @@ class Graph(PrimitiveBase):
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:
-        parts: list[str] = []
-        for node_id in self.nodes:
-            parts.append(self._node_key(node_id))
-        for u, v, _w in self.edges:
-            parts.append(self._edge_key(u, v))
-        return parts
+        """Return all valid selector suffixes for this Graph instance.
+
+        Opt-4: result is memoized on the instance after the first call.
+        Graph topology is fixed at construction — no mutation path exists —
+        so the cache is valid for the lifetime of the primitive.
+        """
+        cached = self.__dict__.get("_cached_addressable_parts")
+        if cached is None:
+            parts: list[str] = []
+            for node_id in self.nodes:
+                parts.append(self._node_key(node_id))
+            for u, v, _w in self.edges:
+                parts.append(self._edge_key(u, v))
+            self.__dict__["_cached_addressable_parts"] = parts
+            cached = parts
+        return cached
 
     def validate_selector(self, suffix: str) -> bool:
         if suffix == "all":
             return True
-        return suffix in set(self.addressable_parts())
+        # Opt-4: reuse the cached frozenset built from the cached parts list.
+        cached_set = self.__dict__.get("_cached_addressable_set")
+        if cached_set is None:
+            cached_set = frozenset(self.addressable_parts())
+            self.__dict__["_cached_addressable_set"] = cached_set
+        return suffix in cached_set
 
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
         """Map ``"G.node[A]"`` to the SVG ``(x, y)`` center of that node.

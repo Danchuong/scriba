@@ -5,6 +5,7 @@ See ``docs/scriba/02-tex-plugin.md`` §Public API for the locked signature.
 
 from __future__ import annotations
 
+import functools
 import html as _html
 import logging
 import os
@@ -217,6 +218,11 @@ class TexRenderer:
         self._pygments_theme = pygments_theme
         self._enable_copy_buttons = enable_copy_buttons
         self._katex_macros = dict(katex_macros) if katex_macros else None
+        # Opt-5: pre-compute the macros dict shared across all KaTeX requests
+        # instead of copying it on every _render_inline / _render_display call.
+        self._katex_macros_request_dict: dict[str, str] | None = (
+            dict(self._katex_macros) if self._katex_macros else None
+        )
         self._katex_worker_timeout = katex_worker_timeout
         self._katex_worker_max_requests = katex_worker_max_requests
         self._node_executable = node_executable
@@ -229,13 +235,28 @@ class TexRenderer:
         else:
             self._katex_worker_path = Path(katex_worker_path)
 
-        # Ensure NODE_PATH is set so the worker can find a globally installed
-        # ``katex`` package. We only set it if the parent env doesn't already
-        # carry one — never overwrite a deliberate operator setting.
+        # Opt-2 (npm root cache): The vendored katex_worker.js loads KaTeX via
+        # an explicit absolute path (``require(VENDORED_KATEX)``), so NODE_PATH
+        # is not needed when the vendored file is present — which it always is
+        # when installed from the wheel.  We skip the 100 ms ``npm root -g``
+        # subprocess entirely when the vendored file exists.
+        #
+        # For rare source-checkout scenarios where the vendor directory is absent
+        # the worker falls back to ``require('katex')`` and NODE_PATH may be
+        # needed.  We detect this at __init__ time (cheap stat) and only pay the
+        # npm cost then; the result is cached module-wide via lru_cache.
         if "NODE_PATH" not in os.environ:
-            global_root = self._discover_node_global_root()
-            if global_root:
-                os.environ["NODE_PATH"] = global_root
+            vendored_katex = (
+                files("scriba.tex").joinpath("vendor/katex/katex.min.js")
+            )
+            try:
+                _vendored_exists = traversable_to_path(vendored_katex).exists()
+            except Exception:
+                _vendored_exists = False
+            if not _vendored_exists:
+                global_root = self._discover_node_global_root()
+                if global_root:
+                    os.environ["NODE_PATH"] = global_root
 
         # Fail fast with an actionable error if node/katex are missing.
         _probe_runtime(self._node_executable)
@@ -250,7 +271,14 @@ class TexRenderer:
         worker_pool.register("katex", worker=worker)
 
     @staticmethod
+    @functools.lru_cache(maxsize=1)
     def _discover_node_global_root() -> str | None:
+        """Return the global npm root directory, or None.
+
+        Cached at module level so the ``npm root -g`` subprocess is run at most
+        once per process regardless of how many TexRenderer instances are created.
+        Only called when the vendored KaTeX file is absent (see __init__).
+        """
         npm = shutil.which("npm")
         if not npm:
             return None
@@ -419,8 +447,9 @@ class TexRenderer:
             "math": tex.strip(),
             "displayMode": False,
         }
-        if self._katex_macros:
-            request["macros"] = dict(self._katex_macros)
+        # Opt-5: reuse pre-computed dict rather than copy on every call.
+        if self._katex_macros_request_dict is not None:
+            request["macros"] = self._katex_macros_request_dict
         try:
             response = worker.send(request, timeout=self._katex_worker_timeout)
         except WorkerError as e:
@@ -447,8 +476,9 @@ class TexRenderer:
             "math": tex.strip(),
             "displayMode": True,
         }
-        if self._katex_macros:
-            request["macros"] = dict(self._katex_macros)
+        # Opt-5: reuse pre-computed dict rather than copy on every call.
+        if self._katex_macros_request_dict is not None:
+            request["macros"] = self._katex_macros_request_dict
         try:
             response = worker.send(request, timeout=self._katex_worker_timeout)
         except WorkerError as e:
