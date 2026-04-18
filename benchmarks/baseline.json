@@ -1,0 +1,87 @@
+[
+  {
+    "label": "tiny-nomath",
+    "tier": "small",
+    "has_math": false,
+    "has_starlark": false,
+    "source_bytes": 452,
+    "output_bytes": 417555,
+    "times_ms": [
+      167.84358397126198,
+      1.3955410104244947,
+      1.381541951559484,
+      1.7044160049408674,
+      1.369624980725348
+    ],
+    "median_ms": 1.3955410104244947,
+    "min_ms": 1.369624980725348
+  },
+  {
+    "label": "small-math",
+    "tier": "small",
+    "has_math": true,
+    "has_starlark": true,
+    "source_bytes": 1027,
+    "output_bytes": 439241,
+    "times_ms": [
+      2.6941250544041395,
+      2.5617090286687016,
+      2.173250075429678,
+      2.1487498888745904,
+      2.540124929510057
+    ],
+    "median_ms": 2.540124929510057,
+    "min_ms": 2.1487498888745904
+  },
+  {
+    "label": "medium-tutorial",
+    "tier": "medium",
+    "has_math": true,
+    "has_starlark": true,
+    "source_bytes": 6661,
+    "output_bytes": 555452,
+    "times_ms": [
+      70.65125007648021,
+      80.70729195605963,
+      69.54504200257361,
+      68.55395797174424,
+      78.1596249435097
+    ],
+    "median_ms": 70.65125007648021,
+    "min_ms": 68.55395797174424
+  },
+  {
+    "label": "large-dinic",
+    "tier": "large",
+    "has_math": true,
+    "has_starlark": true,
+    "source_bytes": 12044,
+    "output_bytes": 966752,
+    "times_ms": [
+      98.43633288983256,
+      98.25308399740607,
+      100.0593330245465,
+      100.14120896812528,
+      97.20424993429333
+    ],
+    "median_ms": 98.43633288983256,
+    "min_ms": 97.20424993429333
+  },
+  {
+    "label": "large-bfs-editorial",
+    "tier": "large",
+    "has_math": true,
+    "has_starlark": true,
+    "source_bytes": 15067,
+    "output_bytes": 933159,
+    "times_ms": [
+      102.11687500122935,
+      98.52241701446474,
+      96.75550006795675,
+      98.06462505366653,
+      101.85754206031561
+    ],
+    "median_ms": 98.52241701446474,
+    "min_ms": 96.75550006795675
+  }
+]
