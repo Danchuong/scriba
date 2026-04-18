@@ -27,7 +27,7 @@ Dieu kien: chi co the lay vat $i$ khi $j \geq w[i]$. Neu $j < w[i]$ thi $dp[i][j
 \subsection{So do bang DP -- trang thai ban dau}
 
 \begin{diagram}[id="knapsack-init"]
-\shape{dp}{DPTable}{rows=5, cols=6, row_labels="i=0..4", col_labels="j=0..5", label="dp[i][j]"}
+\shape{dp}{DPTable}{rows=5, cols=6, label="dp[i][j]"}
 \apply{dp.cell[0][0]}{value=0}
 \apply{dp.cell[0][1]}{value=0}
 \apply{dp.cell[0][2]}{value=0}
@@ -62,7 +62,7 @@ Gia tri lon hon trong hai lua chon se duoc ghi vao $dp[i][j]$.
 
 \begin{animation}[id="knapsack-fill", label="0/1 Knapsack -- Dien bang DP"]
 \shape{items}{Array}{size=4, data=["w=2,v=3","w=3,v=4","w=4,v=5","w=5,v=6"], labels="1..4", label="Vat pham"}
-\shape{dp}{DPTable}{rows=5, cols=6, row_labels="i=0..4", col_labels="j=0..5", label="dp[i][j]"}
+\shape{dp}{DPTable}{rows=5, cols=6, label="dp[i][j]"}
 
 \step
 \apply{dp.cell[0][0]}{value=0}

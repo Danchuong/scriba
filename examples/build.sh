@@ -16,18 +16,18 @@ fi
 count=0
 failed=0
 
-find examples -name "*.tex" -type f | sort | while read -r tex; do
+while IFS= read -r tex; do
     html="${tex%.tex}.html"
     name="${tex#examples/}"
     printf "  %-50s " "$name"
-    if uv run python render.py "$tex" -o "$html" $OPEN_FLAG 2>/dev/null; then
+    if uv run python render.py "$tex" -o "$html" $OPEN_FLAG </dev/null 2>/dev/null; then
         echo "OK"
         count=$((count + 1))
     else
         echo "FAILED"
         failed=$((failed + 1))
     fi
-done
+done < <(find examples -name "*.tex" -type f | sort)
 
 echo ""
 echo "Done."
