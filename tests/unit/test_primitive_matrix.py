@@ -9,9 +9,7 @@ from __future__ import annotations
 import pytest
 
 from scriba.animation.primitives.matrix import (
-    MatrixInstance,
     MatrixPrimitive,
-    HeatmapPrimitive,
     interpolate_color,
     VIRIDIS,
 )
@@ -29,7 +27,7 @@ class TestDeclare:
             "rows": 3, "cols": 4,
             "data": [float(i) for i in range(12)],
         })
-        assert isinstance(inst, MatrixInstance)
+        assert isinstance(inst, MatrixPrimitive)
         assert inst.rows == 3
         assert inst.cols == 4
         assert inst.name == "m"
@@ -257,9 +255,10 @@ class TestBoundingBox:
 
 class TestHeatmapAlias:
     def test_heatmap_is_matrix(self) -> None:
+        from scriba.animation.primitives.matrix import HeatmapPrimitive
         inst = HeatmapPrimitive("h", {
             "rows": 2, "cols": 2,
             "data": [0.1, 0.2, 0.3, 0.4],
         })
-        assert isinstance(inst, MatrixInstance)
+        assert isinstance(inst, MatrixPrimitive)
         assert inst.primitive_type == "matrix"

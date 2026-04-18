@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from scriba.animation.primitives.dptable import DPTableInstance, DPTablePrimitive
+from scriba.animation.primitives.dptable import DPTablePrimitive
 from scriba.core.errors import ValidationError
 
 
@@ -19,7 +19,7 @@ from scriba.core.errors import ValidationError
 class TestDeclare:
     def test_1d_with_n(self) -> None:
         inst = DPTablePrimitive("dp", {"n": 5})
-        assert isinstance(inst, DPTableInstance)
+        assert isinstance(inst, DPTablePrimitive)
         assert inst.cols == 5
         assert inst.is_2d is False
 

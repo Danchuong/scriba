@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — v0.9.1
+
+### Deprecated
+
+- `ArrayInstance`, `DPTableInstance`, `GridInstance`, `MatrixInstance`,
+  `NumberLineInstance` aliases — use `*Primitive` names. Will be removed in v1.0.
+- `HeatmapPrimitive` alias — use `MatrixPrimitive`. Will be removed in v1.0.
+- `load_css` and `inline_katex_css` removed from `scriba.core.css_bundler.__all__`.
+  Still importable but considered internal. A higher-level `render_to_html()`
+  helper is planned for the public bundling surface.
+
 ## [0.9.0] — 2026-04-18
 
 ### Breaking

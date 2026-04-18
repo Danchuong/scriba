@@ -12,10 +12,7 @@ import functools
 import re
 from importlib.resources import files
 
-__all__ = [
-    "load_css",
-    "inline_katex_css",
-]
+__all__: list[str] = []  # load_css / inline_katex_css are internal; not part of the public API
 
 
 @functools.lru_cache(maxsize=None)

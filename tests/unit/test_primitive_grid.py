@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from scriba.animation.primitives.grid import GridInstance, GridPrimitive
+from scriba.animation.primitives.grid import GridPrimitive
 from scriba.core.errors import ValidationError
 
 
@@ -19,7 +19,7 @@ from scriba.core.errors import ValidationError
 class TestDeclare:
     def test_3x3_grid(self) -> None:
         inst = GridPrimitive("g", {"rows": 3, "cols": 3})
-        assert isinstance(inst, GridInstance)
+        assert isinstance(inst, GridPrimitive)
         assert inst.rows == 3
         assert inst.cols == 3
         assert inst.name == "g"

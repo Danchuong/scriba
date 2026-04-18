@@ -12,7 +12,6 @@ import pytest
 from scriba.animation.primitives.numberline import (
     NL_PADDING,
     NL_WIDTH,
-    NumberLineInstance,
     NumberLinePrimitive,
     _resolve_labels,
 )

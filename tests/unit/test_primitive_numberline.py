@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from scriba.animation.primitives.numberline import NumberLineInstance, NumberLinePrimitive
+from scriba.animation.primitives.numberline import NumberLinePrimitive
 from scriba.core.errors import ValidationError
 
 
@@ -19,7 +19,7 @@ from scriba.core.errors import ValidationError
 class TestDeclare:
     def test_domain_0_5_creates_6_ticks(self) -> None:
         inst = NumberLinePrimitive("nl", {"domain": [0, 5]})
-        assert isinstance(inst, NumberLineInstance)
+        assert isinstance(inst, NumberLinePrimitive)
         assert inst.tick_count == 6
         assert inst.name == "nl"
 

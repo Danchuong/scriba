@@ -11,7 +11,6 @@ import pytest
 
 from scriba.animation.primitives.matrix import (
     HeatmapPrimitive,
-    MatrixInstance,
     MatrixPrimitive,
     VIRIDIS,
     interpolate_color,
@@ -233,7 +232,7 @@ class TestHeatmapAlias:
             "rows": 2, "cols": 2,
             "data": [0.1, 0.2, 0.3, 0.4],
         })
-        assert isinstance(inst, MatrixInstance)
+        assert isinstance(inst, MatrixPrimitive)
         assert inst.primitive_type == "matrix"
 
     def test_heatmap_svg_same_as_matrix(self) -> None:

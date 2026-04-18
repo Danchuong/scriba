@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import pytest
 
-from scriba.animation.primitives.array import ArrayInstance, ArrayPrimitive
+from scriba.animation.primitives.array import ArrayPrimitive
 from scriba.core.errors import ValidationError
 
 
@@ -19,7 +19,7 @@ from scriba.core.errors import ValidationError
 class TestDeclare:
     def test_size_creates_cells(self) -> None:
         inst = ArrayPrimitive("a", {"size": 5})
-        assert isinstance(inst, ArrayInstance)
+        assert isinstance(inst, ArrayPrimitive)
         assert inst.size == 5
         assert inst.name == "a"
 
