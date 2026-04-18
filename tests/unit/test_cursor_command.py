@@ -240,23 +240,23 @@ class TestCursorScene:
         assert snap2.shape_states["a"]["a.cell[0]"].state == "done"
         assert snap2.shape_states["a"]["a.cell[1]"].state == "current"
 
-    def test_cursor_unknown_shape_creates_entry(self) -> None:
-        """Cursor on an undeclared shape prefix records a target state.
+    def test_cursor_unknown_shape_raises_e1116(self) -> None:
+        """Cursor on an undeclared shape name must raise AnimationError E1116.
 
-        The scene layer currently does not hard-error on unknown shape names
-        at ``\\cursor`` time (parser accepts any prefix; runtime validation
-        is deferred to the emitter). This test pins current behaviour so a
-        later tightening is visible.
+        Wave 8 Round B (F-06): promoted from UserWarning to hard error so the
+        author gets clear feedback instead of a silently broken render.
         """
+        from scriba.animation.errors import AnimationError
+
         state = SceneState()
         state.apply_prelude(shapes=(_shape("a"),))
 
         cmd = CursorCommand(targets=("ghost.cell",), index=0)
-        # Should not raise.
-        snap = state.apply_frame(FrameIR(line=0, commands=(cmd,)))
+        with pytest.raises(AnimationError) as exc_info:
+            state.apply_frame(FrameIR(line=0, commands=(cmd,)))
 
-        assert "ghost" in snap.shape_states
-        assert snap.shape_states["ghost"]["ghost.cell[0]"].state == "current"
+        assert "E1116" in str(exc_info.value)
+        assert "ghost" in str(exc_info.value)
 
 
 # ===========================================================================

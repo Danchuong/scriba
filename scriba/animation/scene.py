@@ -14,7 +14,6 @@ from __future__ import annotations
 import ast as _ast_module
 import copy
 import re
-import warnings
 from dataclasses import dataclass, field, fields, replace
 from typing import Any
 
@@ -37,6 +36,7 @@ from scriba.animation.uniqueness import (
     check_duplicate_shape_ids,
     validate_shape_id_charset,
 )
+from scriba.animation.errors import AnimationError, animation_error
 from scriba.core.errors import ValidationError
 
 __all__ = ["SceneState", "FrameSnapshot"]
@@ -627,10 +627,11 @@ class SceneState:
         target_str = _selector_to_str(cmd.target)
         shape_name = target_str.split(".", 1)[0]
         if shape_name not in self.shape_states:
-            warnings.warn(
-                f"[E1116] \\highlight references undeclared shape "
-                f"'{shape_name}' (target: '{target_str}'); "
-                f"declare it with \\shape before using \\highlight"
+            raise animation_error(
+                "E1116",
+                f"\\highlight references undeclared shape '{shape_name}'"
+                f" (target: '{target_str}')",
+                hint=f"declare '{shape_name}' with \\shape before using \\highlight",
             )
         self.highlights.add(target_str)
 
@@ -641,10 +642,11 @@ class SceneState:
         # Validate that the target shape exists
         shape_name = target_str.split(".", 1)[0]
         if shape_name not in self.shape_states:
-            warnings.warn(
-                f"[E1116] \\annotate references undeclared shape "
-                f"'{shape_name}' (target: '{target_str}'); "
-                f"declare it with \\shape before using \\annotate"
+            raise animation_error(
+                "E1116",
+                f"\\annotate references undeclared shape '{shape_name}'"
+                f" (target: '{target_str}')",
+                hint=f"declare '{shape_name}' with \\shape before using \\annotate",
             )
 
         # Cap total active annotations to guard against pathological
@@ -698,22 +700,24 @@ class SceneState:
     def _ensure_target(self, target: str) -> ShapeTargetState:
         """Find or create a target state entry.
 
-        Emits a structured ``[E1116]`` warning (with E-code, not a bare
-        ``UserWarning``) when the shape referenced by *target* was never
-        declared with ``\\shape``. The entry is still created so the rest
-        of the pipeline can continue — the command is silently dropped by
-        the emitter because the shape has no corresponding primitive.
+        Raises :class:`AnimationError` ``[E1116]`` when the shape referenced
+        by *target* was never declared with ``\\shape``.  This is a hard
+        error (exit 2) so the author receives clear feedback instead of
+        silently broken output.
         """
         parts = target.split(".", 1)
         shape_name = parts[0]
         if shape_name not in self.shape_states:
-            warnings.warn(
-                f"[E1116] mutation command references undeclared shape "
-                f"'{shape_name}' (target: '{target}'); "
-                f"declare it with \\shape before using \\apply, "
-                f"\\highlight, \\recolor, or \\annotate"
+            raise animation_error(
+                "E1116",
+                f"mutation command references undeclared shape '{shape_name}'"
+                f" (target: '{target}')",
+                hint=(
+                    f"declare '{shape_name}' with \\shape before using"
+                    " \\apply, \\highlight, \\recolor, or \\annotate"
+                ),
             )
-            self.shape_states[shape_name] = {}
+            self.shape_states[shape_name] = {}  # unreachable; kept for clarity
         targets = self.shape_states[shape_name]
         if target not in targets:
             targets[target] = ShapeTargetState()

@@ -16,4 +16,14 @@
     stroke: #000 !important;
     stroke-width: 1.5;
   }
+  /* In dark-mode + print-color-adjust:exact, var(--scriba-fg) resolves to near-white
+     (#ecedee) producing invisible axes and labels on white paper. Force print-safe dark. */
+  .scriba-metricplot-gridline-h,
+  .scriba-metricplot-gridline-v {
+    stroke: #ccc !important;
+  }
+  .scriba-metricplot-legend-label,
+  .scriba-metricplot-right-axis-label {
+    fill: #000 !important;
+  }
 }

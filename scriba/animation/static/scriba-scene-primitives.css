@@ -905,4 +905,14 @@
     box-shadow: none !important;
     outline: none !important;
   }
+
+  /* MetricPlot: axis lines and tick labels carry inline stroke/fill via SVG presentation
+     attributes that use var(--scriba-fg). In dark-mode + print-color-adjust:exact those
+     resolve to near-white (#ecedee) → invisible on white paper. Force print-safe values.
+     Gridlines and legend labels are handled in scriba-metricplot.css @media print. */
+  [data-primitive="metricplot"] line,
+  [data-primitive="metricplot"] text {
+    fill: #000 !important;
+    stroke: #000 !important;
+  }
 }

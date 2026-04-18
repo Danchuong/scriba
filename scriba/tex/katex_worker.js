@@ -40,7 +40,7 @@ const rl = readline.createInterface({
 
 const KATEX_OPTIONS_BASE = {
   throwOnError: false,
-  output: "html",
+  output: "htmlAndMathml",
   strict: false,
   // W6.4 red-team hardening (Agent 14 finding 3b).
   //

@@ -180,6 +180,14 @@ def render_file(
         special_blocks.append((b.start, b.end, "diagram", b))
     special_blocks.sort(key=lambda t: t[0])
 
+    # F-04: warn when the file has no animation or diagram blocks at all.
+    if not anim_blocks and not diag_blocks:
+        print(
+            r"warning: no \begin{animation} or \begin{diagram} environment found."
+            " Did you forget to wrap your content?",
+            file=sys.stderr,
+        )
+
     # 3. Render in source order: TeX gaps + animation/diagram blocks.
     html_parts: list[str] = []
     all_snapshots: list[object] = []
@@ -346,7 +354,32 @@ def main():
         print(f"error: file not found: {args.input}", file=sys.stderr)
         sys.exit(1)
 
+    # F-03: reject clearly wrong file extensions
+    _suffix = args.input.suffix.lower()
+    _clearly_wrong = {".pdf", ".docx", ".doc", ".html", ".htm", ".odt", ".rtf"}
+    if _suffix in _clearly_wrong:
+        print(
+            f"error: expected a .tex file, got '{args.input.suffix}' --"
+            f" pass a LaTeX source file",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+    elif _suffix not in (".tex", ".latex"):
+        print(
+            f"warning: input file has extension '{args.input.suffix}', not .tex --"
+            f" attempting to render anyway",
+            file=sys.stderr,
+        )
+
     output = args.output or args.input.with_suffix(".html")
+
+    # F-05: prevent --output from silently overwriting the input file
+    if args.output and Path(args.output).resolve() == args.input.resolve():
+        print(
+            f"error: --output would overwrite the input file: {args.output}",
+            file=sys.stderr,
+        )
+        sys.exit(2)
 
     # H1: prevent path traversal via -o flag unless opt-out env var is set
     if args.output and not os.environ.get("SCRIBA_ALLOW_ANY_OUTPUT"):

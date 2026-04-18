@@ -157,11 +157,13 @@ class TestHighlight:
 
     def test_highlight_present_in_frame(self) -> None:
         state = SceneState()
+        state.apply_prelude(shapes=(_shape("arr"),))
         snap = state.apply_frame(_frame(commands=(_highlight("arr.0"),)))
         assert "arr.0" in snap.highlights
 
     def test_highlight_cleared_at_next_frame(self) -> None:
         state = SceneState()
+        state.apply_prelude(shapes=(_shape("arr"),))
         state.apply_frame(_frame(commands=(_highlight("arr.0"),)))
         snap2 = state.apply_frame(_frame())
         assert "arr.0" not in snap2.highlights
@@ -172,6 +174,7 @@ class TestAnnotate:
 
     def test_persistent_annotation(self) -> None:
         state = SceneState()
+        state.apply_prelude(shapes=(_shape("arr"),))
         snap1 = state.apply_frame(_frame(commands=(_annotate("arr.0", text="note"),)))
         snap2 = state.apply_frame(_frame())
 
@@ -181,6 +184,7 @@ class TestAnnotate:
 
     def test_ephemeral_annotation_cleared(self) -> None:
         state = SceneState()
+        state.apply_prelude(shapes=(_shape("arr"),))
         snap1 = state.apply_frame(
             _frame(commands=(_annotate("arr.0", text="temp", ephemeral=True),))
         )
@@ -194,6 +198,7 @@ class TestAnnotate:
         from scriba.core.errors import ValidationError
 
         state = SceneState()
+        state.apply_prelude(shapes=(_shape("arr"),))
         cap = SceneState._MAX_ANNOTATIONS_PER_FRAME
         # Build a single frame with 600 annotation commands (> cap = 500).
         cmds = tuple(
@@ -207,6 +212,7 @@ class TestAnnotate:
     def test_annotation_at_cap_ok(self) -> None:
         """Exactly _MAX_ANNOTATIONS_PER_FRAME annotations is permitted."""
         state = SceneState()
+        state.apply_prelude(shapes=(_shape("arr"),))
         cap = SceneState._MAX_ANNOTATIONS_PER_FRAME
         cmds = tuple(_annotate(f"arr.{i}", text=f"n{i}") for i in range(cap))
         snap = state.apply_frame(_frame(commands=cmds))

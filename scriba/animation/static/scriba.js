@@ -32,6 +32,10 @@
     var _canAnim=(typeof Element.prototype.animate==='function')&&!_motionMQ.matches;
     (function(){var _mh=function(ev){_canAnim=(typeof Element.prototype.animate==='function')&&!ev.matches;};if(_motionMQ.addEventListener){_motionMQ.addEventListener('change',_mh);}else if(_motionMQ.addListener){_motionMQ.addListener(function(mq){_mh({matches:mq.matches});});}})();
     var DUR=180;
+    // DUR_PATH_DRAW is intentionally shorter than DUR: drawn annotations feel snappier
+    // than discrete element adds because the stroke-draw motion already implies "appearing".
+    // Unifying to DUR would make path draws feel sluggish. Keep distinct.
+    var DUR_PATH_DRAW=120;
     var _speed=parseFloat(W.getAttribute('data-scriba-speed'))||1;
     function _dur(ms){return Math.round(ms/_speed);}
     function _cancelAnims(){
@@ -117,7 +121,7 @@
         var el5=stage.querySelector(sel);
         if(el5){
           var a5=el5.animate([{opacity:1},{opacity:0}],
-            {duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
+            {duration:_dur(DUR),easing:'ease-in',fill:'forwards'}); // fade-out accelerates → ease-in
           _anims.push(a5);pending.push(a5.finished);
         }
       }else if(kind==='element_add'){
@@ -135,7 +139,7 @@
           var ct=pShape||stage.querySelector('svg');
           if(ct){ct.appendChild(clone);
             var a6=clone.animate([{opacity:0},{opacity:1}],
-              {duration:_dur(DUR),easing:'ease-in',fill:'forwards'});
+              {duration:_dur(DUR),easing:'ease-out',fill:'forwards'}); // fade-in decelerates → ease-out
             _anims.push(a6);pending.push(a6.finished);
           }
         }
@@ -197,7 +201,7 @@
                 var start=performance.now();
                 var headShown=false;
                 function tick(now){
-                  var t=Math.min((now-start)/_dur(120),1);
+                  var t=Math.min((now-start)/_dur(DUR_PATH_DRAW),1);
                   var eased=1-Math.pow(1-t,3);
                   pathEl.style.strokeDashoffset=(len*(1-eased))+'px';
                   if(!headShown&&t>=0.7){
@@ -225,7 +229,7 @@
               clone8.style.opacity='0';
               container.appendChild(_insertNode);
               var a8=clone8.animate([{opacity:0},{opacity:1}],
-                {duration:_dur(DUR),easing:'ease-in',fill:'forwards'});
+                {duration:_dur(DUR),easing:'ease-out',fill:'forwards'}); // fade-in decelerates → ease-out
               _anims.push(a8);pending.push(a8.finished);
             }
           }
@@ -237,7 +241,6 @@
       var tr=frames[toIdx]&&frames[toIdx].tr;
       if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
       _animState='animating';
-      narr.innerHTML=frames[toIdx].narration;
       _updateControls(toIdx);
       var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
       var pending=[];
@@ -254,6 +257,10 @@
         if(fullSync){
           stage.innerHTML=frames[toIdx].svg;
         }
+        // A03: update narration AFTER the SVG animation settles so that the
+        // aria-live announcement fires once the visual is stable, not at the
+        // start of the WAAPI transition (~220 ms early).
+        narr.innerHTML=frames[toIdx].narration;
         subC.innerHTML=frames[toIdx].substory||'';
         subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
         _anims=[];_animState='idle';
