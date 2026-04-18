@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-04-18
+
+### Fixed
+
+- 5 example `.tex` files passed unsupported `row_labels=` /
+  `col_labels=` to `DPTable` (rejected by `ACCEPTED_PARAMS`),
+  causing E1114 build failures: `algorithms/dp/dp_optimization`,
+  `algorithms/dp/interval_dp`, `cses/houses_schools`,
+  `editorials/knapsack_editorial`, `integration/test_reference_dptable`.
+- `examples/build.sh`: switched to process-substitution + redirect
+  stdin from `/dev/null` so renders cannot accidentally read piped
+  input.
+- `Graph.ACCEPTED_PARAMS`: added `layout_lambda` (real param
+  consumed by `graph_layout_stable.py` but missing from the
+  frozenset).
+- 4 broken xrefs in `docs/guides/tex-plugin.md` and 7 broken
+  internal links across `docs/README.md`, `pyproject.toml`,
+  `docs/guides/tex-plugin.md`.
+
+### Changed
+
+- **PyPI distribution name** is now `scriba-tex`
+  (`pip install scriba-tex`); the `scriba` name is taken on PyPI
+  by an unrelated project. Python import name remains `scriba`.
+- `pyproject.toml` `[project.urls]`: `ojcloud/scriba` →
+  `Danchuong/scriba` (canonical org per git remote). Same
+  rewrite in `README.md`, `CONTRIBUTING.md`, `CHANGELOG.md`
+  diff URLs, `scriba/tex/renderer.py` error message.
+- `docs/operations/packaging.md`: full rewrite — `__version__`
+  bumped from stale `0.1.1-alpha` to `0.9.0`, removed all
+  `scriba.diagram` references (module deleted), added
+  `scriba.animation` as core subpackage, synced dev deps
+  (`hypothesis`, `pytest-cov`), bumped `pygments` upper bound.
+
+### Documentation
+
+- 5 CRITICAL audit fixes (Wave 1):
+  - `SECURITY.md`: rewrite Supported Versions table
+    (0.5.x → 0.9.x current + 0.8.x previous).
+  - `docs/tutorial/getting-started.md`: `--debug` CLI flag
+    does not exist; replaced with `SCRIBA_DEBUG=1` env-var.
+  - `docs/cookbook/10-substory-shared-private`: `vars=`
+    rejected by `VariableWatch.ACCEPTED_PARAMS`; replaced
+    with `names=`.
+- 24 HIGH audit fixes (Wave 2):
+  - Stripped 5 cookbook entries (03/05/06/07/08) of legacy
+    `@compute` / `apply_tag` / `scene{}` / D2-prose / `match
+    event.type` syntax — replaced with current scriba grammar.
+  - `docs/primitives/{matrix,metricplot,stack}.md`: stripped
+    undefined params and dead selectors.
+  - `docs/rfc/001-tree-graph-mutation.md`: marked "design
+    only; not yet implemented".
+  - `docs/spec/environments.md`: removed E1150 collision
+    references (E1150 belongs to Starlark parse error).
+  - `README.md`: v0.8.3 → v0.9.0 + new "What's new" block.
+  - `CONTRIBUTING.md`: fixed ghost paths
+    (`packages/scriba/scripts` → `scripts`), stripped
+    `docs/scriba/`, replaced stale v0.2.0 roadmap.
+  - `CHANGELOG.md`: Keep-a-Changelog compliance (Unreleased
+    header, dash style consistency).
+- Added 6 standard OSS files: `CODE_OF_CONDUCT.md` (Contributor
+  Covenant v2.1 adoption stub), `.github/PULL_REQUEST_TEMPLATE.md`,
+  `.github/ISSUE_TEMPLATE/{bug_report,feature_request}.md`,
+  `.github/CODEOWNERS`, `.editorconfig`.
+- Added cross-cutting docs audit at
+  `docs/archive/docs-audit-2026-04-18/` (6 per-bucket reports +
+  aggregated summary + README index).
+- Rewrote `examples/tutorial_en.tex` with a labyrinth/BFS
+  problem (multi-source BFS + Safety Frontier Invariant).
+
 ### Deprecated
 
 - `ArrayInstance`, `DPTableInstance`, `GridInstance`, `MatrixInstance`,
