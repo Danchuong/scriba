@@ -109,7 +109,7 @@ class Queue(PrimitiveBase):
                     "valid: positive integer"
                 ),
             )
-        self.label_text: str | None = params.get("label")
+        self.label: str | None = params.get("label")
 
         # Internal data store — one slot per capacity position
         self.cells: list[Any] = [""] * self.capacity
@@ -238,7 +238,7 @@ class Queue(PrimitiveBase):
     def bounding_box(self) -> BoundingBox:
         w = self._total_width() + 2 * _LABEL_PADDING
         h = _POINTER_HEIGHT + _POINTER_LABEL_GAP + CELL_HEIGHT + INDEX_LABEL_OFFSET
-        if self.label_text:
+        if self.label:
             h += 20
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
@@ -368,14 +368,14 @@ class Queue(PrimitiveBase):
         )
 
         # --- Caption label ---
-        if self.label_text is not None:
+        if self.label is not None:
             bbox = self.bounding_box()
             cx = bbox.width // 2
             cy = bbox.height - 4
             parts.append(
                 "  "
                 + _render_svg_text(
-                    str(self.label_text),
+                    str(self.label),
                     cx,
                     cy,
                     fill=THEME["fg_muted"],

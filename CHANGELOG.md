@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — v0.9.0
 
+### Breaking
+
+- `data-primitive=` SVG attribute and `primitive_type` for `HashMap` and
+  `VariableWatch` are now lowercase (`"hashmap"`, `"variablewatch"`) to
+  match the convention used by the other 13 primitives. Any CSS or JS
+  selectors targeting `[data-primitive="HashMap"]` or
+  `[data-primitive="VariableWatch"]` must be updated.
+
 ### Removed
 
 - **BREAKING: `StarlarkHost.eval_raw` removed** — the deprecated `eval_raw` method has been deleted. Use `\compute{...}` blocks instead. Wire-level requests with `op="eval_raw"` now return a structured error `E1156` with a migration hint.

@@ -196,6 +196,7 @@ class PrimitiveBase(abc.ABC):
         self.params = params if params is not None else {}
         if self.ACCEPTED_PARAMS:
             self._validate_accepted_params(self.params)
+        self.label: str | None = None  # optional caption shown below the primitive
         self._states: dict[str, str] = {}  # target suffix -> state name
         self._values: dict[str, str] = {}  # target suffix -> display value
         self._labels: dict[str, str] = {}  # target suffix -> display label

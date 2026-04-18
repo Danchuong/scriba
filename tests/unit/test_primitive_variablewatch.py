@@ -23,7 +23,7 @@ class TestDeclare:
         inst = VariableWatch("vars", {"names": ["i", "j", "sum"]})
         assert inst.name == "vars"
         assert inst.var_names == ["i", "j", "sum"]
-        assert inst.primitive_type == "VariableWatch"
+        assert inst.primitive_type == "variablewatch"
 
     def test_names_as_comma_string(self) -> None:
         inst = VariableWatch("vars", {"names": "x, y, z"})
@@ -36,7 +36,7 @@ class TestDeclare:
 
     def test_label_parameter(self) -> None:
         inst = VariableWatch("vars", {"names": ["x"], "label": "Variables"})
-        assert inst.label_text == "Variables"
+        assert inst.label == "Variables"
 
     def test_empty_names_warns(self) -> None:
         with warnings.catch_warnings(record=True) as w:
@@ -144,7 +144,7 @@ class TestEmitSvg:
     def test_basic_structure(self) -> None:
         inst = VariableWatch("vars", {"names": ["i", "j"]})
         svg = inst.emit_svg()
-        assert 'data-primitive="VariableWatch"' in svg
+        assert 'data-primitive="variablewatch"' in svg
         assert 'data-shape="vars"' in svg
         assert 'data-target="vars.var[i]"' in svg
         assert 'data-target="vars.var[j]"' in svg

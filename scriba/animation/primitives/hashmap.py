@@ -90,8 +90,8 @@ class HashMap(PrimitiveBase):
                 ),
             )
 
-        self.label_text: str | None = params.get("label")
-        self.primitive_type: str = "HashMap"
+        self.label: str | None = params.get("label")
+        self.primitive_type: str = "hashmap"
 
         # Per-bucket display text: index -> string (e.g. "cat:3  car:7")
         self._bucket_values: dict[int, str] = {
@@ -204,7 +204,7 @@ class HashMap(PrimitiveBase):
         h = self.capacity * _ROW_HEIGHT + 2 * _PADDING
         w = self._panel_width() + 2 * _PADDING
 
-        if self.label_text:
+        if self.label:
             h += 20
 
         arrow_above = arrow_height_above(
@@ -232,7 +232,7 @@ class HashMap(PrimitiveBase):
 
         parts: list[str] = []
         parts.append(
-            f'<g data-primitive="HashMap" '
+            f'<g data-primitive="hashmap" '
             f'data-shape="{html_escape(self.name)}">'
         )
 
@@ -339,13 +339,13 @@ class HashMap(PrimitiveBase):
             parts.append("</g>")
 
         # Caption / label
-        if self.label_text is not None:
+        if self.label is not None:
             bbox = self.bounding_box()
             cx = bbox.width // 2
             cy = bbox.height - 4
             parts.append(
                 _render_svg_text(
-                    str(self.label_text),
+                    str(self.label),
                     cx,
                     cy,
                     fill=THEME["fg_muted"],

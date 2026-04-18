@@ -33,7 +33,7 @@ class TestDeclare:
 
     def test_label_parameter(self) -> None:
         inst = LinkedList("ll", {"data": [1], "label": "Linked List"})
-        assert inst.label_text == "Linked List"
+        assert inst.label == "Linked List"
 
 
 # ---------------------------------------------------------------------------

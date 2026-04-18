@@ -491,6 +491,26 @@ def _validate_expanded_selectors(
                 pass
 
 
+def _apply_param_list(
+    prim: Any,
+    params_list: list[Any],
+    suffix: str,
+    accepts_suffix: bool,
+) -> None:
+    """Dispatch a list of ``apply_params`` dicts to *prim*.
+
+    Each entry in *params_list* corresponds to one ``\\apply`` command in the
+    frame.  Commands are executed in order.  When *accepts_suffix* is true the
+    target suffix (e.g. ``"bucket[0]"``) is forwarded so the primitive can
+    narrow the operation to a specific addressable part.
+    """
+    for params in params_list:
+        if accepts_suffix:
+            prim.apply_command(params, target_suffix=suffix)
+        else:
+            prim.apply_command(params)
+
+
 def _emit_frame_svg(
     frame: FrameData,
     primitives: dict[str, Any],
@@ -511,30 +531,25 @@ def _emit_frame_svg(
             continue
 
         # Check once whether apply_command accepts target_suffix
-        _accepts_suffix = "target_suffix" in inspect.signature(
+        accepts_suffix = "target_suffix" in inspect.signature(
             prim.apply_command
         ).parameters
 
         for target_key, target_data in shape_state.items():
-            if isinstance(target_data, dict):
-                ap = target_data.get("apply_params")
-                if ap:
-                    # Extract the suffix (e.g. "bucket[0]") from the
-                    # full target key (e.g. "hm.bucket[0]").
-                    suffix = target_key
-                    if suffix.startswith(shape_name + "."):
-                        suffix = suffix[len(shape_name) + 1 :]
-
-                    # apply_params is a list of dicts (one per \apply
-                    # command in the frame).  Process each in order.
-                    params_list = ap if isinstance(ap, list) else [ap]
-                    for params in params_list:
-                        if _accepts_suffix:
-                            prim.apply_command(
-                                params, target_suffix=suffix
-                            )
-                        else:
-                            prim.apply_command(params)
+            if not isinstance(target_data, dict):
+                continue
+            ap = target_data.get("apply_params")
+            if not ap:
+                continue
+            # Extract the suffix (e.g. "bucket[0]") from the full target
+            # key (e.g. "hm.bucket[0]").
+            suffix = target_key
+            if suffix.startswith(shape_name + "."):
+                suffix = suffix[len(shape_name) + 1:]
+            # apply_params is a list of dicts (one per \apply command in
+            # the frame).  Process each in order.
+            params_list = ap if isinstance(ap, list) else [ap]
+            _apply_param_list(prim, params_list, suffix, accepts_suffix)
 
     # NOTE: viewbox is NOT recomputed here — the caller passes a stable
     # max-across-all-frames viewbox so the stage size stays constant.

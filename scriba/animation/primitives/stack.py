@@ -97,7 +97,7 @@ class Stack(PrimitiveBase):
                     "range; valid: positive integer"
                 ),
             )
-        self.label_text: str | None = params.get("label")
+        self.label: str | None = params.get("label")
 
         # Initialize items from params
         raw_items = params.get("items", [])
@@ -194,7 +194,7 @@ class Stack(PrimitiveBase):
             w = cw + 2 * _PADDING
             h = visible * (_CELL_HEIGHT + _CELL_GAP) - _CELL_GAP + 2 * _PADDING
 
-        if self.label_text:
+        if self.label:
             h += 20
 
         return BoundingBox(x=0, y=0, width=w, height=h)
@@ -307,13 +307,13 @@ class Stack(PrimitiveBase):
             )
 
         # Caption
-        if self.label_text is not None:
+        if self.label is not None:
             bbox = self.bounding_box()
             cx = bbox.width // 2
             cy = bbox.height - 4
             parts.append(
                 _render_svg_text(
-                    str(self.label_text),
+                    str(self.label),
                     cx,
                     cy,
                     fill=THEME["fg_muted"],

@@ -92,7 +92,7 @@ class CodePanel(PrimitiveBase):
         else:
             self.lines = []
 
-        self.label_text: str | None = params.get("label")
+        self.label: str | None = params.get("label")
         self.primitive_type: str = "codepanel"
 
         # Pre-compute dynamic gutter width based on line count
@@ -121,7 +121,7 @@ class CodePanel(PrimitiveBase):
         """Compute total panel height from line count."""
         n = max(len(self.lines), 1)
         height = _PADDING_Y + n * _LINE_HEIGHT + _PADDING_Y
-        if self.label_text:
+        if self.label:
             height += 20
         return height
 
@@ -261,12 +261,12 @@ class CodePanel(PrimitiveBase):
             parts.append("</g>")
 
         # Caption / label
-        if self.label_text is not None:
+        if self.label is not None:
             label_y = panel_h - 4
             label_x = panel_w // 2
             parts.append(
                 _render_svg_text(
-                    self.label_text,
+                    self.label,
                     label_x,
                     label_y,
                     fill=THEME["fg_muted"],

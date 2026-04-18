@@ -80,7 +80,7 @@ class VariableWatch(PrimitiveBase):
                 f"VariableWatch '{name}' created with empty names list",
                 stacklevel=2,
             )
-        self.label_text: str | None = params.get("label")
+        self.label: str | None = params.get("label")
 
         # Per-variable values: varname -> display string
         self._values: dict[str, str] = {vn: "----" for vn in self.var_names}
@@ -97,7 +97,7 @@ class VariableWatch(PrimitiveBase):
         self._recalc_value_col()
         self._total_width = self._name_col_width + self._value_col_width
 
-        self.primitive_type: str = "VariableWatch"
+        self.primitive_type: str = "variablewatch"
 
     def _recalc_value_col(self) -> None:
         """Recompute value column width from current values.
@@ -194,7 +194,7 @@ class VariableWatch(PrimitiveBase):
         h = row_count * _ROW_HEIGHT + 2 * _PADDING
         w = self._total_width + 2 * _PADDING
 
-        if self.label_text:
+        if self.label:
             h += 20
 
         arrow_above = arrow_height_above(
@@ -216,7 +216,7 @@ class VariableWatch(PrimitiveBase):
 
         parts: list[str] = []
         parts.append(
-            f'<g data-primitive="VariableWatch" data-shape="{html_escape(self.name)}">'
+            f'<g data-primitive="variablewatch" data-shape="{html_escape(self.name)}">'
         )
 
         # Shift content down so arrows curve into valid space above y=0
@@ -336,13 +336,13 @@ class VariableWatch(PrimitiveBase):
             parts.append("</g>")
 
         # Caption / label
-        if self.label_text is not None:
+        if self.label is not None:
             bbox = self.bounding_box()
             cx = bbox.width // 2
             cy = bbox.height - 4
             parts.append(
                 _render_svg_text(
-                    str(self.label_text),
+                    str(self.label),
                     cx,
                     cy,
                     fill=THEME["fg_muted"],

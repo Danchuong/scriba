@@ -37,7 +37,7 @@ class TestDeclare:
 
     def test_label_parameter(self) -> None:
         inst = CodePanel("code", {"source": "x = 1", "label": "Algorithm"})
-        assert inst.label_text == "Algorithm"
+        assert inst.label == "Algorithm"
 
     def test_source_strips_leading_trailing_newlines(self) -> None:
         inst = CodePanel("code", {"source": "\nline1\nline2\n"})

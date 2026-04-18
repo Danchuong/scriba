@@ -34,7 +34,7 @@ class TestDeclare:
 
     def test_label_parameter(self) -> None:
         inst = Queue("q", {"capacity": 4, "label": "FIFO Queue"})
-        assert inst.label_text == "FIFO Queue"
+        assert inst.label == "FIFO Queue"
 
     def test_empty_construction(self) -> None:
         inst = Queue("q", {"capacity": 3})

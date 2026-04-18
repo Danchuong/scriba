@@ -22,7 +22,7 @@ class TestDeclare:
         inst = HashMap("hm", {"capacity": 4})
         assert inst.name == "hm"
         assert inst.capacity == 4
-        assert inst.primitive_type == "HashMap"
+        assert inst.primitive_type == "hashmap"
 
     def test_capacity_as_string(self) -> None:
         inst = HashMap("hm", {"capacity": "3"})
@@ -30,7 +30,7 @@ class TestDeclare:
 
     def test_label_parameter(self) -> None:
         inst = HashMap("hm", {"capacity": 2, "label": "Hash Table"})
-        assert inst.label_text == "Hash Table"
+        assert inst.label == "Hash Table"
 
     def test_missing_capacity_raises_error(self) -> None:
         # v0.5.1: E1450 (HashMap missing capacity)
@@ -137,7 +137,7 @@ class TestEmitSvg:
     def test_basic_structure(self) -> None:
         inst = HashMap("hm", {"capacity": 2})
         svg = inst.emit_svg()
-        assert 'data-primitive="HashMap"' in svg
+        assert 'data-primitive="hashmap"' in svg
         assert 'data-shape="hm"' in svg
         assert 'data-target="hm.bucket[0]"' in svg
         assert 'data-target="hm.bucket[1]"' in svg
@@ -176,7 +176,7 @@ class TestEdgeCases:
         assert inst.capacity == 1
         assert inst.addressable_parts() == ["bucket[0]", "all"]
         svg = inst.emit_svg()
-        assert 'data-primitive="HashMap"' in svg
+        assert 'data-primitive="hashmap"' in svg
 
     def test_bounding_box_positive(self) -> None:
         inst = HashMap("hm", {"capacity": 3})

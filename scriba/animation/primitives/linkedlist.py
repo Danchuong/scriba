@@ -99,7 +99,7 @@ class LinkedList(PrimitiveBase):
                 raw_data = [raw_data]
 
         self.values: list[Any] = list(raw_data)
-        self.label_text: str | None = params.get("label")
+        self.label: str | None = params.get("label")
         self.primitive_type: str = "linkedlist"
 
         # Dynamic sizing based on actual content
@@ -213,7 +213,7 @@ class LinkedList(PrimitiveBase):
             + (n - 1) * _LINK_GAP
         )
         h = 2 * _PADDING + _NODE_HEIGHT + _INDEX_LABEL_OFFSET
-        if self.label_text:
+        if self.label:
             h += 20
         arrow_above = arrow_height_above(
             self._annotations, self.resolve_annotation_point,
@@ -426,13 +426,13 @@ class LinkedList(PrimitiveBase):
             parts.append("</g>")
 
         # --- Caption label ---
-        if self.label_text is not None:
+        if self.label is not None:
             bbox = self.bounding_box()
             cx = bbox.width // 2
             cy = bbox.height - 4
             parts.append(
                 _render_svg_text(
-                    str(self.label_text),
+                    str(self.label),
                     cx,
                     cy,
                     fill=THEME["fg_muted"],
