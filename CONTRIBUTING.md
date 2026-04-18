@@ -26,6 +26,19 @@ Before cloning the repo you will need:
 > exist on Windows. Use Linux, macOS, or WSL2. This is documented in
 > `SECURITY.md` under "Known limitations".
 
+## Local installation via Homebrew
+
+If you want to install Scriba as a command-line tool on macOS via Homebrew
+rather than setting up a dev environment, use the ojcloud tap:
+
+```bash
+brew tap ojcloud/tap
+brew install scriba
+```
+
+See [`homebrew/README.md`](homebrew/README.md) for formula details, supported
+architectures (arm64 + x86_64), and upgrade instructions.
+
 ## Dev install
 
 Scriba uses a standard PEP 621 / Hatch layout. Fresh-clone quickstart:

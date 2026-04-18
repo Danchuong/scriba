@@ -3,6 +3,8 @@
 > Showcase: sparse segment tree — node được **lazy-allocate** khi access lần đầu, cộng với lazy tag propagation. Bài toán "Monkey and Apple-trees" (F — trang trại táo) là case study.
 >
 > Đây là ví dụ phức tạp nhất trong cookbook và cũng là **canonical example** chứng minh rằng `\compute{...}` một mình đã đủ để chạy thuật toán đệ quy thật sự — không cần layer phụ nào.
+>
+> See [HOW-IT-WORKS.md](HOW-IT-WORKS.md) for a step-by-step walkthrough of the rendering decisions in this example.
 
 ## Problem context
 

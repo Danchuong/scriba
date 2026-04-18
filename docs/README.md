@@ -199,6 +199,15 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 |---|---|
 | [`packaging.md`](operations/packaging.md) | Wheel layout, build system, dependencies, vendored assets, versioning scheme. |
 | [`migration.md`](operations/migration.md) | Migrating from the old renderer to Scriba. |
+| [`ops/dep-cve-baseline.md`](ops/dep-cve-baseline.md) | `pip-audit` CVE baseline: open findings, lifecycle, and scan instructions. |
+| [`ops/visual-regression.md`](ops/visual-regression.md) | Visual regression strategy: tooling, screenshot matrix, CI integration. |
+
+### `rfc/` — Accepted RFCs
+
+| File | Purpose |
+|---|---|
+| [`rfc/001-tree-graph-mutation.md`](rfc/001-tree-graph-mutation.md) | RFC-001: Tree / Graph / Plane2D mutation API design and rationale. |
+| [`rfc/002-strict-mode.md`](rfc/002-strict-mode.md) | RFC-002: Strict mode validation and authoring constraints. |
 
 ### `archive/` — One-off audit and verify reports
 
@@ -220,7 +229,7 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 | [`cookbook/`](cookbook/) | Worked problems. Frog 1 DP, animated BFS, segment tree query, sparse segtree lazy, small multiples, side-by-side, swap game, monkey apples, Zuma. Copy-paste starters. |
 | [`extensions/`](extensions/) | Extension specs (figure-embed, hl-macro, substory, keyframe-animation). |
 | [`primitives/`](primitives/) | Primitive extension specs (production) (matrix, stack, plane2d, metricplot, graph-stable-layout, codepanel, hashmap, linkedlist, queue, variablewatch). |
-| [`oss/`](oss/) | Notes on the open-source pipeline: what ships publicly, what stays in-tree. |
+| [`oss/`](oss/) | Notes on the open-source pipeline: what ships publicly, what stays in-tree. See also [`oss/OSS-LAUNCH-PLAN.md`](oss/OSS-LAUNCH-PLAN.md) for the launch checklist. |
 | [`legacy/`](legacy/) | Historical drafts from earlier design phases. Not current — see `spec/` and `planning/` for authoritative docs. |
 
 ## Design commitments, in one breath
