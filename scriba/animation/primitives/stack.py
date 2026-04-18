@@ -9,7 +9,6 @@ See ``docs/primitives/stack.md`` for the authoritative specification.
 from __future__ import annotations
 
 import re
-from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, _animation_error
@@ -17,6 +16,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     THEME,
+    _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
     estimate_text_width,
@@ -204,7 +204,7 @@ class Stack(PrimitiveBase):
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         parts: list[str] = []
         parts.append(
-            f'<g data-primitive="stack" data-shape="{html_escape(self.name)}">'
+            f'<g data-primitive="stack" data-shape="{_escape_xml(self.name)}">'
         )
 
         cw = self._cell_width
@@ -266,7 +266,7 @@ class Stack(PrimitiveBase):
                 y = _PADDING + rev_vi * (_CELL_HEIGHT + _CELL_GAP)
 
             parts.append(
-                f'<g data-target="{html_escape(target)}" '
+                f'<g data-target="{_escape_xml(target)}" '
                 f'class="{state_class(effective_state)}">'
             )
             rect_attrs = _inset_rect_attrs(x, y, cw, _CELL_HEIGHT)

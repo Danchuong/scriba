@@ -9,13 +9,14 @@ See ``docs/spec/primitives.md`` section 7 for the authoritative specification.
 from __future__ import annotations
 
 import re
-from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
+from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     THEME,
+    _escape_xml,
     _render_svg_text,
     arrow_height_above,
     register_primitive,
@@ -141,8 +142,6 @@ class Tree(PrimitiveBase):
 
     def _init_standard(self, params: dict[str, Any]) -> None:
         """Initialize a standard tree from explicit root/nodes/edges."""
-        from scriba.animation.errors import _animation_error
-
         root = params.get("root")
         if root is None:
             raise _animation_error(
@@ -176,8 +175,6 @@ class Tree(PrimitiveBase):
 
     def _init_segtree(self, params: dict[str, Any]) -> None:
         """Initialize a segment tree from leaf data."""
-        from scriba.animation.errors import _animation_error
-
         data = params.get("data")
         if data is None:
             raise _animation_error(
@@ -202,8 +199,6 @@ class Tree(PrimitiveBase):
 
     def _init_sparse_segtree(self, params: dict[str, Any]) -> None:
         """Initialize a sparse segment tree with range bounds."""
-        from scriba.animation.errors import _animation_error
-
         range_lo = params.get("range_lo")
         range_hi = params.get("range_hi")
         if range_lo is None or range_hi is None:
@@ -233,8 +228,6 @@ class Tree(PrimitiveBase):
         Supported keys (checked in order): ``add_node``, ``remove_node``,
         ``reparent``. See RFC-001 §4.1 for spec details.
         """
-        from scriba.animation.errors import _animation_error
-
         if "add_node" in params:
             spec = params["add_node"]
             if not isinstance(spec, dict) or "id" not in spec or "parent" not in spec:
@@ -294,8 +287,6 @@ class Tree(PrimitiveBase):
     def _add_node_internal(
         self, node_id: str | int, parent_id: str | int
     ) -> None:
-        from scriba.animation.errors import _animation_error
-
         if parent_id not in self.children_map:
             raise _animation_error(
                 "E1436",
@@ -335,8 +326,6 @@ class Tree(PrimitiveBase):
     def _remove_node_internal(
         self, node_id: str | int, *, cascade: bool
     ) -> None:
-        from scriba.animation.errors import _animation_error
-
         if node_id not in self.children_map:
             raise _animation_error(
                 "E1436",
@@ -411,8 +400,6 @@ class Tree(PrimitiveBase):
     def _reparent_internal(
         self, node_id: str | int, new_parent_id: str | int
     ) -> None:
-        from scriba.animation.errors import _animation_error
-
         if node_id not in self.children_map:
             raise _animation_error(
                 "E1436",
@@ -571,7 +558,7 @@ class Tree(PrimitiveBase):
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         if not self.nodes:
             return (
-                f'<g data-primitive="tree" data-shape="{html_escape(self.name)}">'
+                f'<g data-primitive="tree" data-shape="{_escape_xml(self.name)}">'
                 "</g>"
             )
 
@@ -590,7 +577,7 @@ class Tree(PrimitiveBase):
         # arrow_above so curves have room above the tree.
         ty = r + arrow_above
         parts.append(
-            f'<g data-primitive="tree" data-shape="{html_escape(self.name)}"'
+            f'<g data-primitive="tree" data-shape="{_escape_xml(self.name)}"'
             f' transform="translate({r},{ty})">'
         )
 
@@ -641,7 +628,7 @@ class Tree(PrimitiveBase):
                 x1, y1 = _shorten_line_to_circle(cx, cy, px, py, self._node_radius)
                 x2, y2 = _shorten_line_to_circle(px, py, cx, cy, self._node_radius)
                 parts.append(
-                    f'<g data-target="{html_escape(edge_target)}" '
+                    f'<g data-target="{_escape_xml(edge_target)}" '
                     f'class="{state_class(state)}">'
                     f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
                     f'fill="none" stroke="{edge_stroke}" '
@@ -692,7 +679,7 @@ class Tree(PrimitiveBase):
                 render_inline_tex=render_inline_tex,
             )
             parts.append(
-                f'<g data-target="{html_escape(node_target)}" '
+                f'<g data-target="{_escape_xml(node_target)}" '
                 f'data-node-x="{cx}" data-node-y="{cy}" '
                 f'class="{state_class(state)}">'
                 f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}" '

@@ -11,7 +11,6 @@ from __future__ import annotations
 import math
 import random
 import re
-from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
@@ -20,6 +19,7 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     THEME,
+    _escape_xml,
     _render_svg_text,
     arrow_height_above,
     estimate_text_width,
@@ -313,8 +313,6 @@ class Graph(PrimitiveBase):
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 
-        from scriba.animation.errors import _animation_error
-
         self.nodes: list[str | int] = list(params.get("nodes", []))
         if not self.nodes:
             raise _animation_error(
@@ -329,8 +327,6 @@ class Graph(PrimitiveBase):
             # Force-directed layout is O(N^2) per iteration; reject
             # oversized graphs up front rather than letting a
             # malicious editorial burn seconds of renderer time.
-            from scriba.animation.errors import _animation_error
-
             raise _animation_error(
                 "E1501",
                 detail=(
@@ -441,8 +437,6 @@ class Graph(PrimitiveBase):
             - ``E1472`` if ``remove_edge`` targets a non-existent edge.
             - ``E1473`` if ``set_weight`` targets a non-existent edge.
         """
-        from scriba.animation.errors import _animation_error
-
         if "add_edge" in params:
             spec = params["add_edge"]
             if not isinstance(spec, dict):
@@ -496,8 +490,6 @@ class Graph(PrimitiveBase):
         v: str | int,
         weight: float | int | None,
     ) -> None:
-        from scriba.animation.errors import _animation_error
-
         if u not in self.nodes:
             raise _animation_error(
                 "E1471",
@@ -514,8 +506,6 @@ class Graph(PrimitiveBase):
         self._relayout_with_warm_start()
 
     def _remove_edge_internal(self, u: str | int, v: str | int) -> None:
-        from scriba.animation.errors import _animation_error
-
         idx = self._find_edge_index(u, v)
         if idx is None:
             raise _animation_error(
@@ -532,8 +522,6 @@ class Graph(PrimitiveBase):
         v: str | int,
         value: float | int | None,
     ) -> None:
-        from scriba.animation.errors import _animation_error
-
         if value is None:
             raise _animation_error(
                 "E1473",
@@ -679,7 +667,7 @@ class Graph(PrimitiveBase):
     def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
         if not self.nodes:
             return (
-                f'<g data-primitive="graph" data-shape="{html_escape(self.name)}">'
+                f'<g data-primitive="graph" data-shape="{_escape_xml(self.name)}">'
                 '</g>'
             )
 
@@ -698,7 +686,7 @@ class Graph(PrimitiveBase):
         # arrow_above so curves have room above the graph.
         ty = r + arrow_above
         parts.append(
-            f'<g data-primitive="graph" data-shape="{html_escape(self.name)}"'
+            f'<g data-primitive="graph" data-shape="{_escape_xml(self.name)}"'
             f' transform="translate({r},{ty})">'
         )
 
@@ -756,8 +744,8 @@ class Graph(PrimitiveBase):
             edge_stroke = edge_colors["stroke"]
             edge_sw = "1.5" if state == "idle" else "2"
             edge_label = (
-                f"Edge from node {html_escape(str(u))} "
-                f"to node {html_escape(str(v))}"
+                f"Edge from node {_escape_xml(str(u))} "
+                f"to node {_escape_xml(str(v))}"
             )
             weight_text = ""
             # Dynamic value from \apply overrides the static weight.
@@ -817,7 +805,7 @@ class Graph(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             parts.append(
-                f'<g data-target="{html_escape(edge_target)}" '
+                f'<g data-target="{_escape_xml(edge_target)}" '
                 f'class="{state_class(state)}" '
                 f'role="graphics-symbol" aria-label="{edge_label}">'
                 f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
@@ -858,7 +846,7 @@ class Graph(PrimitiveBase):
                 # Wave 9: no inline text_outline — CSS halo cascade owns it.
             )
             parts.append(
-                f'<g data-target="{html_escape(node_target)}" '
+                f'<g data-target="{_escape_xml(node_target)}" '
                 f'class="{state_class(effective_state)}">'
                 f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}"/>'
                 f'{node_text}'

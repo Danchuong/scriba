@@ -32,10 +32,10 @@ class InterpolationRef:
 
 
 # Index expressions inside selectors and subscripts.
-IndexExpr = Union[int, str, InterpolationRef]
+IndexExpr = int | str | InterpolationRef
 
 # Parameter values in \\shape and \\apply.
-ParamValue = Union[int, float, str, bool, list["ParamValue"], InterpolationRef]
+ParamValue = int | float | str | bool | list["ParamValue"] | InterpolationRef
 
 # ---------------------------------------------------------------------------
 # Selector types  (§4)
@@ -98,16 +98,16 @@ class NamedAccessor:
     name: str
 
 
-SelectorAccessor = Union[
-    CellAccessor,
-    NodeAccessor,
-    EdgeAccessor,
-    RangeAccessor,
-    AllAccessor,
-    TickAccessor,
-    ItemAccessor,
-    NamedAccessor,
-]
+SelectorAccessor = (
+    CellAccessor
+    | NodeAccessor
+    | EdgeAccessor
+    | RangeAccessor
+    | AllAccessor
+    | TickAccessor
+    | ItemAccessor
+    | NamedAccessor
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -256,15 +256,15 @@ class CursorCommand:
 # ---------------------------------------------------------------------------
 
 # Mutation commands that appear inside frames or as prelude state mutations.
-MutationCommand = Union[
-    ApplyCommand,
-    HighlightCommand,
-    RecolorCommand,
-    ReannotateCommand,
-    AnnotateCommand,
-    ForeachCommand,
-    CursorCommand,
-]
+MutationCommand = (
+    ApplyCommand
+    | HighlightCommand
+    | RecolorCommand
+    | ReannotateCommand
+    | AnnotateCommand
+    | ForeachCommand
+    | CursorCommand
+)
 
 # All inner commands (8 base + substory + foreach).
 Command = Union[

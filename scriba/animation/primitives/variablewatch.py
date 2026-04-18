@@ -9,13 +9,13 @@ See ``docs/archive/PRIMITIVES-PLAN.md`` §5 for the authoritative specification.
 from __future__ import annotations
 
 import re
-from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
     PrimitiveBase,
+    _escape_xml,
     _render_svg_text,
     arrow_height_above,
     estimate_text_width,
@@ -222,7 +222,7 @@ class VariableWatch(PrimitiveBase):
 
         parts: list[str] = []
         parts.append(
-            f'<g data-primitive="variablewatch" data-shape="{html_escape(self.name)}">'
+            f'<g data-primitive="variablewatch" data-shape="{_escape_xml(self.name)}">'
         )
 
         # Shift content down so arrows curve into valid space above y=0
@@ -280,7 +280,7 @@ class VariableWatch(PrimitiveBase):
             row_y = _PADDING + row_idx * _ROW_HEIGHT
 
             parts.append(
-                f'<g data-target="{html_escape(target)}" '
+                f'<g data-target="{_escape_xml(target)}" '
                 f'class="{state_class(state)}">'
             )
 

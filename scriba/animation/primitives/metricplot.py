@@ -10,7 +10,6 @@ Error codes: E1480--E1489.
 
 from __future__ import annotations
 
-import html
 import logging
 import math
 from typing import Any, Callable, ClassVar
@@ -19,6 +18,7 @@ from scriba.animation.errors import _emit_warning, _animation_error
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
+    _escape_xml,
     _render_svg_text,
     register_primitive,
 )
@@ -377,9 +377,9 @@ class MetricPlot(PrimitiveBase):
 
         parts: list[str] = []
         parts.append(
-            f'<g data-primitive="metricplot" data-shape="{html.escape(self.name)}"'
-            f' data-target="{html.escape(self.name)}"'
-            f' data-scriba-series="{html.escape(series_names_str)}">'
+            f'<g data-primitive="metricplot" data-shape="{_escape_xml(self.name)}"'
+            f' data-target="{_escape_xml(self.name)}"'
+            f' data-scriba-series="{_escape_xml(series_names_str)}">'
         )
 
         # Layer 1: Grid
@@ -493,7 +493,7 @@ class MetricPlot(PrimitiveBase):
             label = self._format_tick(xt)
             parts.append(
                 f'<text x="{sx}" y="{H - pb + 14}"'
-                f' text-anchor="middle" font-size="10">{html.escape(label)}</text>'
+                f' text-anchor="middle" font-size="10">{_escape_xml(label)}</text>'
             )
         parts.append("</g>")
 
@@ -510,7 +510,7 @@ class MetricPlot(PrimitiveBase):
             label = self._format_tick(yt)
             parts.append(
                 f'<text x="{pl - 8}" y="{round(sy + 4, 2)}"'
-                f' text-anchor="end" font-size="10">{html.escape(label)}</text>'
+                f' text-anchor="end" font-size="10">{_escape_xml(label)}</text>'
             )
         parts.append("</g>")
 
@@ -528,7 +528,7 @@ class MetricPlot(PrimitiveBase):
                 label = self._format_tick(yt)
                 parts.append(
                     f'<text x="{W - pr + 8}" y="{round(sy + 4, 2)}"'
-                    f' text-anchor="start" font-size="10">{html.escape(label)}</text>'
+                    f' text-anchor="start" font-size="10">{_escape_xml(label)}</text>'
                 )
             parts.append("</g>")
 
@@ -586,7 +586,7 @@ class MetricPlot(PrimitiveBase):
 
             parts.append(
                 f'<g class="scriba-metricplot-series-{s.index}"'
-                f' data-scriba-series-name="{html.escape(s.name)}">'
+                f' data-scriba-series-name="{_escape_xml(s.name)}">'
             )
 
             if data:

@@ -16,13 +16,13 @@ See ``docs/archive/PRIMITIVES-PLAN.md`` §2 for the authoritative spec.
 from __future__ import annotations
 
 import re
-from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
     PrimitiveBase,
+    _escape_xml,
     _render_svg_text,
     arrow_height_above,
     estimate_text_width,
@@ -247,7 +247,7 @@ class LinkedList(PrimitiveBase):
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="linkedlist"'
-            f' data-shape="{html_escape(self.name)}">'
+            f' data-shape="{_escape_xml(self.name)}">'
         )
 
         # Shift all content down so arrows curve into valid space above y=0
@@ -256,7 +256,7 @@ class LinkedList(PrimitiveBase):
 
         # --- Arrowhead marker definition ---
         ah = self._arrowhead_size
-        marker_id = f"arrowhead-{html_escape(self.name)}"
+        marker_id = f"arrowhead-{_escape_xml(self.name)}"
         parts.append("<defs>")
         parts.append(
             f'<marker id="{marker_id}" markerWidth="{ah}"'
@@ -315,7 +315,7 @@ class LinkedList(PrimitiveBase):
 
             # Update arrowhead color via a per-link marker when non-idle
             if link_state != "idle":
-                link_marker_id = f"arrowhead-{html_escape(self.name)}-{i}"
+                link_marker_id = f"arrowhead-{_escape_xml(self.name)}-{i}"
                 parts.append(
                     f'<defs><marker id="{link_marker_id}"'
                     f' markerWidth="{ah}"'
@@ -334,7 +334,7 @@ class LinkedList(PrimitiveBase):
                 arrow_marker = f"url(#{marker_id})"
 
             parts.append(
-                f'<g data-target="{html_escape(link_target)}"'
+                f'<g data-target="{_escape_xml(link_target)}"'
                 f' class="{state_class(link_state)}">'
             )
             parts.append(
@@ -357,7 +357,7 @@ class LinkedList(PrimitiveBase):
             ny = _PADDING
 
             parts.append(
-                f'<g data-target="{html_escape(node_target)}"'
+                f'<g data-target="{_escape_xml(node_target)}"'
                 f' class="{state_class(node_state)}">'
             )
 

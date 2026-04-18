@@ -10,7 +10,6 @@ See ``docs/archive/PRIMITIVES-PLAN.md`` §4 for the design.
 from __future__ import annotations
 
 import re
-from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
@@ -179,7 +178,7 @@ class CodePanel(PrimitiveBase):
 
         parts.append(
             f'<g data-primitive="codepanel" '
-            f'data-shape="{html_escape(self.name)}">'
+            f'data-shape="{_escape_xml(self.name)}">'
         )
 
         # Panel background border
@@ -221,7 +220,7 @@ class CodePanel(PrimitiveBase):
             text_y = line_y + _LINE_HEIGHT // 2
 
             parts.append(
-                f'<g data-target="{html_escape(target)}" '
+                f'<g data-target="{_escape_xml(target)}" '
                 f'class="{state_class(line_state)}">'
             )
 

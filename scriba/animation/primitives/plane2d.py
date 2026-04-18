@@ -14,7 +14,6 @@ from __future__ import annotations
 import logging
 import math
 import re
-from html import escape as html_escape
 from typing import Any, Callable, ClassVar, Sequence
 
 from scriba.animation.errors import _emit_warning, _animation_error
@@ -23,6 +22,7 @@ from scriba.animation.primitives.base import (
     _LabelPlacement,
     BoundingBox,
     PrimitiveBase,
+    _escape_xml,
     THEME,
     _render_svg_text,
     arrow_height_above,
@@ -623,7 +623,7 @@ class Plane2D(PrimitiveBase):
 
         parts: list[str] = []
         parts.append(
-            f'<g data-primitive="plane2d" data-shape="{html_escape(self.name)}" '
+            f'<g data-primitive="plane2d" data-shape="{_escape_xml(self.name)}" '
             f'data-scriba-xrange="{self.xrange[0]} {self.xrange[1]}" '
             f'data-scriba-yrange="{self.yrange[0]} {self.yrange[1]}">'
         )
@@ -894,7 +894,7 @@ class Plane2D(PrimitiveBase):
             # non-idle states alone so current/error/good keep their signal.
             effective_state = "highlight" if (is_hl and state == "idle") else state
             parts.append(
-                f'<g data-target="{html_escape(target)}" '
+                f'<g data-target="{_escape_xml(target)}" '
                 f'class="scriba-plane-point scriba-state-{effective_state}">'
                 f'<circle cx="{pt["x"]}" cy="{pt["y"]}" r="{r_math:.4f}" '
                 f'vector-effect="non-scaling-stroke"/>'
@@ -934,7 +934,7 @@ class Plane2D(PrimitiveBase):
             (x1, y1), (x2, y2) = endpoints
             sw = "1.5" if state == "idle" else "2"
             parts.append(
-                f'<g data-target="{html_escape(target)}" '
+                f'<g data-target="{_escape_xml(target)}" '
                 f'class="scriba-plane-line scriba-state-{state}">'
                 f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
                 f'stroke="{colors["stroke"]}" stroke-width="{sw}" '
@@ -956,7 +956,7 @@ class Plane2D(PrimitiveBase):
             colors = svg_style_attrs(state)
             sw = "2" if state != "idle" else "1.5"
             parts.append(
-                f'<g data-target="{html_escape(target)}" '
+                f'<g data-target="{_escape_xml(target)}" '
                 f'class="scriba-plane-segment scriba-state-{state}">'
                 f'<line x1="{seg["x1"]}" y1="{seg["y1"]}" '
                 f'x2="{seg["x2"]}" y2="{seg["y2"]}" '
@@ -981,7 +981,7 @@ class Plane2D(PrimitiveBase):
             # Auto-close: SVG <polygon> auto-closes, but ensure the points list
             points_str = " ".join(f"{p[0]},{p[1]}" for p in pts)
             parts.append(
-                f'<g data-target="{html_escape(target)}" '
+                f'<g data-target="{_escape_xml(target)}" '
                 f'class="scriba-plane-polygon scriba-state-{state}">'
                 f'<polygon points="{points_str}" '
                 f'fill="rgba(0,114,178,0.15)" '
@@ -1005,10 +1005,10 @@ class Plane2D(PrimitiveBase):
             fill = reg["fill"]
             points_str = " ".join(f"{p[0]},{p[1]}" for p in pts)
             parts.append(
-                f'<g data-target="{html_escape(target)}" '
+                f'<g data-target="{_escape_xml(target)}" '
                 f'class="scriba-plane-region scriba-state-{state}">'
                 f'<polygon points="{points_str}" '
-                f'fill="{html_escape(fill)}" stroke="none"/>'
+                f'fill="{_escape_xml(fill)}" stroke="none"/>'
                 f'</g>'
             )
         return "".join(parts)

@@ -9,7 +9,6 @@ See ``docs/archive/PRIMITIVES-PLAN.md`` §1 for the design specification.
 from __future__ import annotations
 
 import re
-from html import escape as html_escape
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, _animation_error
@@ -22,6 +21,7 @@ from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
     PrimitiveBase,
+    _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
@@ -262,7 +262,7 @@ class Queue(PrimitiveBase):
 
         parts: list[str] = []
         parts.append(
-            f'<g data-primitive="queue" data-shape="{html_escape(self.name)}">'
+            f'<g data-primitive="queue" data-shape="{_escape_xml(self.name)}">'
         )
 
         # Shift all content down so arrows curve into valid space above y=0
@@ -300,7 +300,7 @@ class Queue(PrimitiveBase):
             value = self.cells[i]
 
             parts.append(
-                f'  <g data-target="{html_escape(target)}" '
+                f'  <g data-target="{_escape_xml(target)}" '
                 f'class="{state_class(effective_state)}">'
             )
             rect_attrs = _inset_rect_attrs(
@@ -468,7 +468,7 @@ class Queue(PrimitiveBase):
         pointer_color = colors["stroke"] if state_name != "idle" else THEME["fg_muted"]
 
         parts.append(
-            f'  <g data-target="{html_escape(target)}" '
+            f'  <g data-target="{_escape_xml(target)}" '
             f'class="{state_class(state_name)}">'
         )
         parts.append(
