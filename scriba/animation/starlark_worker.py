@@ -529,7 +529,17 @@ _WALL_CLOCK_SECONDS = 1
 # (the worker is a separate process with per-process state), they are
 # intended for the in-process host side.
 _CUMULATIVE_BUDGET_SECONDS: float = 5.0
-_cumulative_elapsed: float = 0.0
+_thread_state = threading.local()
+
+
+def _get_cumulative_elapsed() -> float:
+    """Return this thread's cumulative elapsed seconds (default 0.0)."""
+    return getattr(_thread_state, "cumulative_elapsed", 0.0)
+
+
+def _set_cumulative_elapsed(value: float) -> None:
+    """Set this thread's cumulative elapsed seconds."""
+    _thread_state.cumulative_elapsed = value
 
 # ---------------------------------------------------------------------------
 # SIGXCPU handler — W7-C2
@@ -572,14 +582,15 @@ def reset_cumulative_budget() -> None:
     Call this at the start of each render (before the first
     ``\\compute`` block runs) so that budgets do not leak across
     renders sharing the same host process.
+
+    Each calling thread maintains its own counter via :data:`_thread_state`.
     """
-    global _cumulative_elapsed
-    _cumulative_elapsed = 0.0
+    _set_cumulative_elapsed(0.0)
 
 
 def get_cumulative_elapsed() -> float:
-    """Return the cumulative elapsed wall-clock time (seconds)."""
-    return _cumulative_elapsed
+    """Return the cumulative elapsed wall-clock time (seconds) for this thread."""
+    return _get_cumulative_elapsed()
 
 
 def consume_cumulative_budget(elapsed: float) -> None:
@@ -595,16 +606,16 @@ def consume_cumulative_budget(elapsed: float) -> None:
         Must be non-negative; negative values are clamped to zero so a
         clock skew cannot gift extra budget.
     """
-    global _cumulative_elapsed
     if elapsed < 0:
         elapsed = 0.0
-    _cumulative_elapsed += elapsed
-    if _cumulative_elapsed > _CUMULATIVE_BUDGET_SECONDS:
+    new_total = _get_cumulative_elapsed() + elapsed
+    _set_cumulative_elapsed(new_total)
+    if new_total > _CUMULATIVE_BUDGET_SECONDS:
         raise _animation_error(
             "E1152",
             detail=(
                 f"cumulative Starlark wall-clock budget exceeded "
-                f"({_cumulative_elapsed:.2f}s > "
+                f"({new_total:.2f}s > "
                 f"{_CUMULATIVE_BUDGET_SECONDS}s)"
             ),
             hint=(

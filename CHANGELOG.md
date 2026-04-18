@@ -19,6 +19,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING: `StarlarkHost.eval_raw` removed** — the deprecated `eval_raw` method has been deleted. Use `\compute{...}` blocks instead. Wire-level requests with `op="eval_raw"` now return a structured error `E1156` with a migration hint.
 
+### Refactored
+
+#### Wave A — Public API hygiene
+- `ContextProvider` exported from `scriba.core` public `__init__`.
+- `scriba/animation/tree.py` gained an explicit `__all__`.
+- Internal helpers in `tree.py` and several primitives renamed with `_` prefix to clarify private vs public surface.
+
+#### Wave B — Cross-layer decoupling
+- New `scriba/core/warnings.py` centralises warning emission; callers no longer import from animation internals.
+- New `scriba/core/text_utils.py` extracts shared text-processing helpers.
+- `scriba/animation/errors.py` and `scriba/tex/parser/text_commands.py` reduced to thin shims delegating to the core modules.
+
+#### Wave C1 — `base.py` split
+- `scriba/animation/primitives/base.py` reduced from 1436 to ~333 lines; logic extracted into `_types.py`, `_text_render.py`, and `_svg_helpers.py`.
+
+#### Wave C2 — Arrow consolidation
+- `PrimitiveBase.emit_annotation_arrows` unified arrow emission; plain-pointer gap closed for `Grid`, `HashMap`, `VariableWatch`, and `LinkedList`.
+- `_min_arrow_above` floor now respected across 9 primitives.
+
+#### Wave C3 — `label` normalisation
+- `self.label_text` renamed to `self.label` across 6 primitives (`Array`, `Stack`, `Queue`, `Tree`, `Graph`, `Plane2D`); emitter nesting flattened accordingly. *(See Breaking entry above.)*
+
+#### Wave D2 — Emitter and tree split
+- `emitter.py` split into `_minify.py` (HTML/CSS minifier) and `_script_builder.py` (JS bundle assembly).
+- `tree.py` layout logic extracted into `tree_layout.py`.
+
+#### Wave D3 — Type aliases and constants hygiene
+- `JsonValue` type alias introduced in `scriba/core/types.py`; used throughout IPC layer.
+- `__all__` added to `differ.py`, `css_bundler.py`, and `constants.py`.
+- Named float and font constants added to `_types.py` (replaces inline magic values).
+- `pyproject.toml` migrated to Hatchling dynamic version from `scriba/__init__.py`.
+
+#### Wave D5 — Thread-local budget state
+- `_cumulative_elapsed` in `starlark_worker.py` converted from a module-level float to `threading.local()`; `reset_cumulative_budget`, `get_cumulative_elapsed`, and `consume_cumulative_budget` updated to use per-thread accessors.
+
 ## [0.8.3] - 2026-04-18
 
 Wave 8 landing release. All changes are additive or bug fixes; fully
