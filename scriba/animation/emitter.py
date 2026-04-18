@@ -32,8 +32,6 @@ __all__ = [
     "emit_substory_html",
     "scene_id_from_source",
     "validate_frame_labels_unique",
-    "_build_external_script",
-    "_build_inline_script",
 ]
 
 # Regex for a label that is safe to embed in an HTML id token. The

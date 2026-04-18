@@ -31,7 +31,7 @@ from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.primitives.dptable import DPTablePrimitive
 from scriba.animation.primitives.matrix import MatrixPrimitive
 from scriba.animation.primitives.plane2d import Plane2D
-from scriba.animation.primitives.tree import Tree, reingold_tilford
+from scriba.animation.primitives.tree import Tree, _reingold_tilford as reingold_tilford
 from scriba.animation.primitives.graph import Graph, _MAX_NODES
 from scriba.core.errors import ValidationError
 

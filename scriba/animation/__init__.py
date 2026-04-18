@@ -9,7 +9,7 @@ Re-exports the public surface for convenience:
 
 from __future__ import annotations
 
-from scriba.animation.detector import detect_animation_blocks
+from scriba.animation.detector import detect_animation_blocks, detect_diagram_blocks
 from scriba.animation.renderer import AnimationRenderer, DiagramRenderer
 
-__all__ = ["AnimationRenderer", "DiagramRenderer", "detect_animation_blocks"]
+__all__ = ["AnimationRenderer", "DiagramRenderer", "detect_animation_blocks", "detect_diagram_blocks"]

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import unicodedata
-from typing import Any, Iterable, NoReturn, Union
+from typing import Any, Iterable, NoReturn
 
 from scriba.animation.errors import EmptySubstoryWarning, _suggest_closest
 from scriba.core.errors import ValidationError

@@ -27,6 +27,8 @@ from scriba.animation.primitives.base import (
     svg_style_attrs,
 )
 
+__all__ = ["Tree"]
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -71,7 +73,7 @@ def _shorten_line_to_circle(
 # ---------------------------------------------------------------------------
 
 
-def build_segtree(
+def _build_segtree(
     data: list[Any],
 ) -> tuple[str, list[str], list[tuple[str, str]], dict[str, Any]]:
     """Build segment tree nodes and edges from leaf data.
@@ -115,7 +117,7 @@ def build_segtree(
 # ---------------------------------------------------------------------------
 
 
-def reingold_tilford(
+def _reingold_tilford(
     root: str | int,
     children_map: dict[str | int, list[str | int]],
     *,
@@ -307,7 +309,7 @@ class Tree(PrimitiveBase):
 
         # Compute positions
         if self.nodes:
-            self.positions: dict[str | int, tuple[int, int]] = reingold_tilford(
+            self.positions: dict[str | int, tuple[int, int]] = _reingold_tilford(
                 self.root,
                 self.children_map,
                 width=self.width,
@@ -366,7 +368,7 @@ class Tree(PrimitiveBase):
             )
 
         data = list(data)
-        root_id, nodes, edges, sums = build_segtree(data)
+        root_id, nodes, edges, sums = _build_segtree(data)
         self.root = root_id
         self.nodes = nodes
         self.edges = edges
@@ -454,7 +456,7 @@ class Tree(PrimitiveBase):
     def _relayout(self) -> None:
         """Recompute Reingold-Tilford positions after a mutation."""
         if self.nodes:
-            self.positions = reingold_tilford(
+            self.positions = _reingold_tilford(
                 self.root,
                 self.children_map,
                 width=self.width,

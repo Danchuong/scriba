@@ -250,8 +250,6 @@ def _scan_ast(source: str) -> tuple[str, int | None, int | None] | None:
 # Allowed builtins for the restricted namespace
 # ---------------------------------------------------------------------------
 
-_CAPTURED_PRINTS: list[str] = []
-
 
 def _make_print_fn(capture_list: list[str]):
     """Return a ``print()`` replacement that captures output."""

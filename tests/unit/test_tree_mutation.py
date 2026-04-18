@@ -447,7 +447,7 @@ class TestLayoutDeterminism:
         # viewport. The determinism property we actually care about is:
         # a tree of a given shape + viewport always produces the same
         # positions. Verify that by re-running layout with identical args.
-        from scriba.animation.primitives.tree import reingold_tilford
+        from scriba.animation.primitives.tree import _reingold_tilford as reingold_tilford
 
         p1 = reingold_tilford(
             "A", direct.children_map, width=400, height=300

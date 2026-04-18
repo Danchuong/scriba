@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from scriba.animation.primitives.tree import Tree, build_segtree, reingold_tilford
+from scriba.animation.primitives.tree import Tree, _build_segtree as build_segtree, _reingold_tilford as reingold_tilford
 
 
 # ---------------------------------------------------------------

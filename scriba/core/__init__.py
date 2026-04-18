@@ -9,7 +9,7 @@ See ``STABILITY.md``.
 from scriba.core.artifact import Block, CollectedWarning, Document, RenderArtifact
 from scriba.core.context import RenderContext, ResourceResolver
 from scriba.core.renderer import Renderer, RendererAssets
-from scriba.core.pipeline import Pipeline
+from scriba.core.pipeline import ContextProvider, Pipeline
 from scriba.core.workers import (
     OneShotSubprocessWorker,
     PersistentSubprocessWorker,
@@ -33,6 +33,7 @@ __all__ = [
     "ResourceResolver",
     "Renderer",
     "RendererAssets",
+    "ContextProvider",
     "Pipeline",
     "Worker",
     "SubprocessWorker",

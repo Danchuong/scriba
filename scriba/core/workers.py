@@ -25,7 +25,7 @@ import subprocess
 import sys
 import threading
 import warnings
-from typing import Callable, Literal, Optional, Protocol, runtime_checkable
+from typing import Callable, Literal, Protocol, runtime_checkable
 
 from scriba.core.errors import WorkerError
 
@@ -72,7 +72,7 @@ class PersistentSubprocessWorker:
         # preexec_fn is called in the child process before exec on Unix.
         # On Windows (where preexec_fn is not supported), pass None.
         self._preexec_fn = preexec_fn if sys.platform != "win32" else None
-        self._process: Optional[subprocess.Popen] = None
+        self._process: subprocess.Popen | None = None
         self._request_count = 0
         self._lock = threading.Lock()
         self._closed = False
