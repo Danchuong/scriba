@@ -112,7 +112,7 @@ def build_pipeline() -> Pipeline:
     out the ``\\begin{animation}`` and ``\\begin{diagram}`` regions
     before TexRenderer's detector ever sees them.
     """
-    pool = SubprocessWorkerPool(max_workers=4)
+    pool = SubprocessWorkerPool()
     return Pipeline(
         renderers=[
             AnimationRenderer(),          # uses the default in-process Starlark host

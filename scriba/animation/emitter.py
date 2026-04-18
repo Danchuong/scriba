@@ -669,7 +669,7 @@ def emit_animation_html(
             f'data-scriba-scene="{_escape(scene_id)}" '
             f'data-frame-count="0" '
             f'data-layout="filmstrip" '
-            f'aria-label="">\n'
+            f'aria-label="Animation">\n'
             f'  <ol class="scriba-frames">\n'
             f"  </ol>\n"
             f"</figure>"
@@ -718,8 +718,9 @@ def emit_animation_html(
         if hasattr(prim, "set_annotations"):
             prim.set_annotations([])
 
-    # aria-label from first frame with a label, or empty
-    aria_label = ""
+    # aria-label from first frame with a label, or fall back to "Animation"
+    # (matches the interactive widget's fallback at emit_interactive_html)
+    aria_label = "Animation"
     for f in frames:
         if f.label:
             aria_label = f.label

@@ -1,6 +1,12 @@
 # Extension E1 — `\begin{figure-embed}` Environment
 
-> **Status:** Accepted extension to `environments.md`. This document defines
+> **Status: not yet implemented (planned for E6 extension).** `FigureEmbedRenderer`
+> does not exist in the current package. This document is a design spec only.
+> Do not attempt to import or instantiate `FigureEmbedRenderer` — it will raise
+> `ImportError`. The implementation is tracked separately and will ship in a future
+> minor release.
+
+> **Design status:** Accepted extension to `environments.md`. This document defines
 > a compile-time SVG/PNG escape-hatch environment. It does not modify the base spec;
 > any required base-spec changes are listed in §12 (Base-spec deltas).
 >
@@ -485,19 +491,23 @@ for this extension spec and is recorded in `07-open-questions.md`.
 
 ## 11. `FigureEmbedRenderer` pipeline registration
 
-```python
-from scriba.animation import AnimationRenderer, DiagramRenderer, FigureEmbedRenderer
+> **Note:** `FigureEmbedRenderer` is not yet implemented. The code below is a
+> design preview of the planned registration API and will not work with the
+> current package.
 
-pipeline = Pipeline(renderers=[
-    AnimationRenderer(worker_pool=pool),
-    DiagramRenderer(worker_pool=pool),
-    FigureEmbedRenderer(                      # NEW
-        worker_pool=pool,
-        resource_resolver=my_resolver,
-        lock_path=Path("scriba.lock"),
-    ),
-    TexRenderer(worker_pool=pool),
-])
+```python
+# NOT YET AVAILABLE — design preview only
+# from scriba.animation import AnimationRenderer, DiagramRenderer, FigureEmbedRenderer
+#
+# pipeline = Pipeline(renderers=[
+#     AnimationRenderer(),
+#     DiagramRenderer(),
+#     FigureEmbedRenderer(                      # planned for E6 extension
+#         resource_resolver=my_resolver,
+#         lock_path=Path("scriba.lock"),
+#     ),
+#     TexRenderer(worker_pool=pool),
+# ])
 ```
 
 `FigureEmbedRenderer.priority = 10` (same as `AnimationRenderer`). The detection

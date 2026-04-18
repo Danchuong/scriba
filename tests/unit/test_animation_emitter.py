@@ -322,11 +322,14 @@ class TestAriaLabel:
         html = emit_animation_html("al", [frame], {"a": prim})
         assert 'aria-label="Binary search demo"' in html
 
-    def test_aria_label_empty_when_no_label(self) -> None:
+    def test_aria_label_fallback_when_no_label(self) -> None:
+        # A01 fix: when no frame has a label, fall back to "Animation"
+        # instead of emitting an empty aria-label=""
         prim = _StubPrimitive(shape_name="a")
         frame = _frame(step=1, total=1)
         html = emit_animation_html("al2", [frame], {"a": prim})
-        assert 'aria-label=""' in html
+        assert 'aria-label=""' not in html
+        assert 'aria-label="Animation"' in html
 
     def test_aria_label_escapes_special_chars(self) -> None:
         prim = _StubPrimitive(shape_name="a")

@@ -112,16 +112,16 @@ from pathlib import Path
 
 from scriba import Pipeline, RenderContext, SubprocessWorkerPool
 from scriba.tex import TexRenderer
-from scriba.animation import AnimationRenderer, DiagramRenderer  # v0.3
+from scriba.animation import AnimationRenderer, DiagramRenderer
 
 def noop_resolver(_filename: str) -> str | None:
     return None
 
-pool = SubprocessWorkerPool(max_workers=2)
+pool = SubprocessWorkerPool()
 
 pipeline = Pipeline(renderers=[
-    AnimationRenderer(worker_pool=pool),  # priority before tex
-    DiagramRenderer(worker_pool=pool),
+    AnimationRenderer(),  # priority before tex
+    DiagramRenderer(),
     TexRenderer(worker_pool=pool),
 ])
 

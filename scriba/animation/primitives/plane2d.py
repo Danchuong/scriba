@@ -845,7 +845,8 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<line x1="{sx:.2f}" y1="{sy_top:.2f}" '
                 f'x2="{sx:.2f}" y2="{sy_bot:.2f}" '
-                f'stroke="{THEME["border"]}" stroke-width="0.5" opacity="0.6"/>'
+                f'stroke="{THEME["border"]}" stroke-width="0.5" opacity="0.6"'
+                f' vector-effect="non-scaling-stroke"/>'
             )
 
         for yi in range(y_start, y_end + 1):
@@ -854,7 +855,8 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<line x1="{sx_left:.2f}" y1="{sy:.2f}" '
                 f'x2="{sx_right:.2f}" y2="{sy:.2f}" '
-                f'stroke="{THEME["border"]}" stroke-width="0.5" opacity="0.6"/>'
+                f'stroke="{THEME["border"]}" stroke-width="0.5" opacity="0.6"'
+                f' vector-effect="non-scaling-stroke"/>'
             )
 
         # Fine grid (0.2 intervals)
@@ -869,7 +871,8 @@ class Plane2D(PrimitiveBase):
                     parts.append(
                         f'<line x1="{sx:.2f}" y1="{sy_top:.2f}" '
                         f'x2="{sx:.2f}" y2="{sy_bot:.2f}" '
-                        f'stroke="{THEME["border"]}" stroke-width="0.25" opacity="0.3"/>'
+                        f'stroke="{THEME["border"]}" stroke-width="0.25" opacity="0.3"'
+                        f' vector-effect="non-scaling-stroke"/>'
                     )
                 x_fine += step
 
@@ -881,7 +884,8 @@ class Plane2D(PrimitiveBase):
                     parts.append(
                         f'<line x1="{sx_left:.2f}" y1="{sy:.2f}" '
                         f'x2="{sx_right:.2f}" y2="{sy:.2f}" '
-                        f'stroke="{THEME["border"]}" stroke-width="0.25" opacity="0.3"/>'
+                        f'stroke="{THEME["border"]}" stroke-width="0.25" opacity="0.3"'
+                        f' vector-effect="non-scaling-stroke"/>'
                     )
                 y_fine += step
 

@@ -22,6 +22,7 @@ from pathlib import Path
 from scriba.animation.renderer import AnimationRenderer
 from scriba.animation.starlark_host import StarlarkHost
 from scriba.core.context import RenderContext
+from scriba.core.errors import ScribaError
 from scriba.core.workers import SubprocessWorkerPool
 from scriba.core.css_bundler import inline_katex_css, load_css
 from scriba.tex.renderer import TexRenderer
@@ -342,7 +343,7 @@ def main():
     args = parser.parse_args()
 
     if not args.input.exists():
-        print(f"File not found: {args.input}")
+        print(f"error: file not found: {args.input}", file=sys.stderr)
         sys.exit(1)
 
     output = args.output or args.input.with_suffix(".html")
@@ -358,16 +359,28 @@ def main():
             sys.exit(1)
 
     output_mode = "static" if args.static else "interactive"
-    render_file(
-        args.input, output,
-        output_mode=output_mode,
-        dump_frames=args.dump_frames,
-        minify=not args.no_minify,
-        lang=args.lang,
-        inline_runtime=args.inline_runtime,
-        asset_base_url=args.asset_base_url,
-        copy_runtime=args.copy_runtime,
-    )
+    _debug = bool(os.environ.get("SCRIBA_DEBUG"))
+    try:
+        render_file(
+            args.input, output,
+            output_mode=output_mode,
+            dump_frames=args.dump_frames,
+            minify=not args.no_minify,
+            lang=args.lang,
+            inline_runtime=args.inline_runtime,
+            asset_base_url=args.asset_base_url,
+            copy_runtime=args.copy_runtime,
+        )
+    except ScribaError as exc:
+        if _debug:
+            raise
+        print(f"error {exc}", file=sys.stderr)
+        sys.exit(2)
+    except OSError as exc:
+        if _debug:
+            raise
+        print(f"error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
     if args.open:
         webbrowser.open(f"file://{output.resolve()}")

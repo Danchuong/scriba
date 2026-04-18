@@ -38,15 +38,14 @@ The package drops into the user's existing venv, lockfile, or Poetry/uv/Pipenv p
 ## 4. The Quick Start snippet
 
 ```python
-from scriba import Pipeline
+from scriba import Pipeline, SubprocessWorkerPool
 from scriba.tex import TexRenderer
 from scriba.animation import AnimationRenderer, DiagramRenderer
-from scriba.workers import SubprocessWorkerPool
 
-pool = SubprocessWorkerPool(max_workers=4)
+pool = SubprocessWorkerPool()
 pipeline = Pipeline(renderers=[
-    AnimationRenderer(worker_pool=pool),
-    DiagramRenderer(worker_pool=pool),
+    AnimationRenderer(),
+    DiagramRenderer(),
     TexRenderer(worker_pool=pool),
 ])
 
@@ -101,4 +100,4 @@ The new onboarding is measurably shorter because Scriba stopped asking the user 
 
 - **Beginner**: copy the binary-search canon, tweak it for their problem.
 - **Intermediate**: mix `\begin{diagram}` (for static illustration) and `\begin{animation}` (for step-through) in the same `.tex` file. Drive one animation from `\compute{}`-generated data.
-- **Advanced**: write a thin wrapper that walks their problem corpus, compiles in parallel using the shared `SubprocessWorkerPool`, and caches by `scriba.cache_key(tex)`.
+- **Advanced**: write a thin wrapper that walks their problem corpus, compiles in parallel using the shared `SubprocessWorkerPool`.
