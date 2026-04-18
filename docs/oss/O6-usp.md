@@ -60,13 +60,13 @@ Saying no to these loudly is part of the pitch. The product is sharper for it.
 6. Starlark `\compute{}` for build-time determinism.
 7. Drop the compiled HTML into a Django template: literally `{{ problem.html|safe }}`.
 8. Prints as a vertical filmstrip. Works in Thunderbird. Works in a PDF export.
-9. `pip install scriba`, 6 lines of Python, done.
+9. `pip install scriba-tex`, 6 lines of Python, done.
 10. Repo + docs links.
 
 ### README first three paragraphs
 1. **Problem statement.** CP editorials need step-by-step visualizations. Hand-authored SVG is a nightmare. Matplotlib GIFs are inaccessible. Manim is overkill and non-text. JS widgets break in email and print.
 2. **Scriba's answer.** Two new LaTeX environments. Author in `.tex`. Get back static HTML + inline SVG. Zero JavaScript. Works everywhere.
-3. **Install and hello.** `pip install scriba`, 6 lines of Python to register the renderers, 25 lines of LaTeX for a binary-search animation.
+3. **Install and hello.** `pip install scriba-tex`, 6 lines of Python to register the renderers, 25 lines of LaTeX for a binary-search animation.
 
 ## 7. What the messaging does *not* say
 

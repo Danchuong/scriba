@@ -2,14 +2,14 @@
 
 ## Supported versions
 
-Scriba is pre-1.0. The current `0.5.x` Beta line receives security fixes.
-Older alpha releases (`0.1.x` – `0.4.x`) are no longer supported.
+Scriba is pre-1.0. The current `0.9.x` line and the previous minor `0.8.x`
+receive security fixes. All earlier releases are no longer supported.
 
 | Version  | Status              | Security fixes |
 |----------|---------------------|----------------|
-| 0.5.x    | Current (Beta)      | Yes            |
-| 0.1–0.4  | Superseded alphas   | No             |
-| < 0.1    | Unsupported         | No             |
+| 0.9.x    | Current             | Yes            |
+| 0.8.x    | Previous minor      | Yes            |
+| 0.7.x and below | Unsupported  | No             |
 
 ## Reporting a vulnerability
 

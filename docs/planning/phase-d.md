@@ -106,7 +106,7 @@ Fix each with minimal diff. No architectural changes.
 
 **Pre-publish checklist:**
 - [ ] All tests passing (0 failures)
-- [ ] `pip install scriba` in a fresh venv works
+- [ ] `pip install scriba-tex` in a fresh venv works
 - [ ] `python -c "import scriba; print(scriba.__version__)"` prints `0.5.0`
 - [ ] `Document.versions` returns correct version dict
 - [ ] README renders correctly on PyPI
@@ -187,7 +187,7 @@ end
 2. 10 HARD-TO-DISPLAY problems that motivated Scriba
 3. Demo: before/after (raw TeX vs rendered animation)
 4. Architecture: compile-time, zero-JS static mode, portable
-5. Quick start: `pip install scriba` + minimal example
+5. Quick start: `pip install scriba-tex` + minimal example
 6. What's next: community contributions, new primitives on demand
 
 **Deliverable:** `docs/blog/launch-0.5.0.md` + community thread templates

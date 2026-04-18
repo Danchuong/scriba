@@ -317,14 +317,14 @@ authors systematically leave narration empty and miss the warning in CI.
 **Default.** (a) for v0.3. **Revisit trigger:** accessibility audit by a
 screen-reader user during Phase D.
 
-### ~~Q32. KaTeX bundling strategy for the `pip install scriba` UX~~
+### ~~Q32. KaTeX bundling strategy for the `pip install scriba-tex` UX~~
 
 **RESOLVED:** Option 2 — `katex.min.js` v0.16.11 is now vendored inside the
 wheel at `scriba/tex/vendor/katex/katex.min.js` (~275 KB). `katex_worker.js`
 loads it via a relative `require()` with a fallback to the global `katex`
 module for source checkouts. `_probe_runtime` no longer checks for a global
 `katex` install; it only verifies that `node` is on PATH and that the
-vendored file is readable. `pip install scriba` now works on any machine
+vendored file is readable. `pip install scriba-tex` now works on any machine
 with Node.js — no separate `npm install -g katex` step required.
 
 Supporting files:

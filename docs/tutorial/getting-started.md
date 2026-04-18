@@ -584,7 +584,7 @@ Open the file in any browser. It works offline, on any device, with no setup.
 | `--asset-base-url URL` | URL prefix for the external runtime asset (e.g. `https://cdn.example.com/scriba/0.8.3`). Only used with `--no-inline-runtime`. |
 | `--copy-runtime` | Copy `scriba.<hash>.js` next to the output HTML when using `--no-inline-runtime` (default unless `--asset-base-url` is set). |
 | `--no-copy-runtime` | Do not copy `scriba.<hash>.js` next to the output HTML. |
-| `--debug` / `SCRIBA_DEBUG=1` | Enable verbose debug output (stack traces, intermediate state). Set the env var or pass the flag. |
+| `SCRIBA_DEBUG=1` | Enable verbose debug output (stack traces, intermediate state). Set this environment variable before invoking `render.py`. |
 
 ### Library API
 

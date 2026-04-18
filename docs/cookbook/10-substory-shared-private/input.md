@@ -27,7 +27,7 @@ shapes from polluting the parent's display.
 \begin{animation}[id="substory-shared-private",
                   label="Min/Max via divide-and-conquer substories"]
 \shape{a}{Array}{size=5, data=[3,1,4,1,5], labels="0..4", label="$a$"}
-\shape{result}{VariableWatch}{vars=["min","max"], label="result"}
+\shape{result}{VariableWatch}{names=["min","max"], label="result"}
 
 \step
 \narrate{We want the minimum and maximum of $a = [3,1,4,1,5]$.

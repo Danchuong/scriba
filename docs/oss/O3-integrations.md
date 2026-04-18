@@ -6,7 +6,7 @@
 
 Scriba is a Python package. Consumers:
 
-1. `pip install scriba` into whatever Python environment already runs their OJ backend or static site build.
+1. `pip install scriba-tex` into whatever Python environment already runs their OJ backend or static site build.
 2. Import `Pipeline`, `AnimationRenderer`, `DiagramRenderer`, `TexRenderer`.
 3. Build a `Pipeline` once at process start.
 4. Feed `.tex` source into `pipeline.render(...)` whenever a problem is created or updated.

@@ -1,6 +1,6 @@
 # 04 — Packaging and Build Specification
 
-> Normative reference for the `scriba` wheel layout, build system, dependencies, vendored assets, and versioning scheme. Binds verbatim to [`01-architecture.md`](../spec/architecture.md) (package layout, `RendererAssets`, `SCRIBA_VERSION`) and to [`02-tex-plugin.md`](../guides/tex-plugin.md) (KaTeX worker resolution, static assets). Where this file and those documents appear to disagree, `01-architecture.md` wins and this file is the bug.
+> Normative reference for the `scriba-tex` wheel layout, build system, dependencies, vendored assets, and versioning scheme. Binds verbatim to [`01-architecture.md`](../spec/architecture.md) (package layout, `RendererAssets`, `SCRIBA_VERSION`) and to [`02-tex-plugin.md`](../guides/tex-plugin.md) (KaTeX worker resolution, static assets). Where this file and those documents appear to disagree, `01-architecture.md` wins and this file is the bug.
 
 ## 1. Build system
 
@@ -14,7 +14,23 @@ build-backend = "hatchling.build"
 
 No compiled extensions, no Cython, no CFFI. The wheel is pure Python plus static JS/CSS/font assets. `pip wheel .` and `pip install -e ".[dev]"` are the only build commands that need to work.
 
-## 2. Python version requirement
+## 2. PyPI name and installation
+
+The PyPI distribution name is **`scriba-tex`** (the name `scriba` is taken by an unrelated project on PyPI).
+
+```bash
+pip install scriba-tex
+```
+
+The installed import package remains `scriba`:
+
+```python
+from scriba import Pipeline, RenderContext, SubprocessWorkerPool
+from scriba.tex import TexRenderer
+from scriba.animation import AnimationRenderer
+```
+
+## 3. Python version requirement
 
 ```
 requires-python = ">=3.10"
@@ -22,25 +38,25 @@ requires-python = ">=3.10"
 
 Scriba targets Python 3.10+ and tests against 3.10, 3.11, and 3.12. The lower bound is driven by `match` statement usage, `|` union type syntax in annotations, and `importlib.resources.files()` behavior (stable since 3.9 but practically reliable from 3.10).
 
-## 3. Dependencies
+## 4. Dependencies
 
-### 3.1 Runtime dependencies (PyPI)
+### 4.1 Runtime dependencies (PyPI)
 
 | Package | Constraint | Purpose |
 |---------|-----------|---------|
-| `pygments` | `>=2.17,<2.20` | Syntax highlighting for `\begin{lstlisting}` code blocks. Upper bound prevents silent output changes from new Pygments token categories. |
+| `pygments` | `>=2.17,<2.21` | Syntax highlighting for `\begin{lstlisting}` code blocks. Upper bound prevents silent output changes from new Pygments token categories. |
 
 Scriba has exactly **one** runtime PyPI dependency. This is intentional — rendering libraries must be lightweight to embed in backend services.
 
-### 3.2 External runtime requirements
+### 4.2 External runtime requirements
 
 | Dependency | Version | Why |
 |------------|---------|-----|
 | **Node.js** | 18+ | The KaTeX math worker (`katex_worker.js`) runs as a persistent Node.js subprocess via `SubprocessWorker`. Node is **not** a PyPI dependency — it must be present on `$PATH` (or supplied via `TexRenderer(node_executable="/path/to/node")`). |
 
-`pip install scriba` does not install or verify Node.js. If `node` is absent, the first math render raises `WorkerError` with a clear diagnostic. This is documented in `README.md` and is by design — Scriba does not silently degrade when math rendering is unavailable.
+`pip install scriba-tex` does not install or verify Node.js. If `node` is absent, the first math render raises `WorkerError` with a clear diagnostic. This is documented in `README.md` and is by design — Scriba does not silently degrade when math rendering is unavailable.
 
-### 3.3 Dev dependencies
+### 4.3 Dev dependencies
 
 ```toml
 [project.optional-dependencies]
@@ -48,6 +64,8 @@ dev = [
   "pytest>=8.0",
   "bleach>=6.1",
   "lxml>=5.0",
+  "hypothesis>=6.100",
+  "pytest-cov>=5.0",
 ]
 ```
 
@@ -56,14 +74,16 @@ dev = [
 | `pytest` | Test runner. |
 | `bleach` | Used in integration tests to verify that Scriba output survives sanitization through the shipped `ALLOWED_TAGS` / `ALLOWED_ATTRS` allowlist. |
 | `lxml` | HTML tree assertions in snapshot tests. |
+| `hypothesis` | Property-based testing for parser and sanitizer invariants. |
+| `pytest-cov` | Coverage reporting (`--cov=scriba --cov-report=term-missing`). |
 
 Install with `pip install -e ".[dev]"`.
 
-## 4. Vendored dependencies
+## 5. Vendored dependencies
 
-### 4.1 KaTeX 0.16.11
+### 5.1 KaTeX 0.16.11
 
-KaTeX is vendored inside the wheel at `scriba/tex/vendor/katex/` so that `pip install scriba` is self-contained — no separate `npm install -g katex` step is required.
+KaTeX is vendored inside the wheel at `scriba/tex/vendor/katex/` so that `pip install scriba-tex` is self-contained — no separate `npm install -g katex` step is required.
 
 **Location:**
 
@@ -86,7 +106,7 @@ scriba/tex/vendor/katex/
 
 The vendored `katex.min.css` has `.woff` and `.ttf` `@font-face` fallbacks stripped — only `.woff2` sources remain. Modern browsers support woff2 universally; stripping the unused formats avoids 18 dead 404 requests.
 
-### 4.2 Update process
+### 5.2 Update process
 
 To bump the vendored KaTeX version (e.g. `0.16.11` -> `0.16.12`):
 
@@ -104,7 +124,7 @@ The script:
 
 **Commit all changed files together:** `katex.min.js`, `katex.min.css`, `fonts/*.woff2`, `LICENSE`, and `VENDORED.md`. A KaTeX version bump is a coordinated change — also update `CHANGELOG.md` and `README.md` where the version is referenced.
 
-## 5. Package data included in wheel
+## 6. Package data included in wheel
 
 The `[tool.hatch.build.targets.wheel.package-data]` section declares exactly which non-Python files ship inside the wheel:
 
@@ -121,10 +141,10 @@ The `[tool.hatch.build.targets.wheel.package-data]` section declares exactly whi
   "vendor/katex/LICENSE",
   "vendor/katex/fonts/*.woff2",
 ]
-"scriba.diagram" = ["static/*.css", "static/*.js"]
+"scriba.animation" = ["static/*"]
 ```
 
-### 5.1 TeX plugin package data
+### 6.1 TeX plugin package data
 
 | Path | Purpose |
 |------|---------|
@@ -139,20 +159,19 @@ The `[tool.hatch.build.targets.wheel.package-data]` section declares exactly whi
 | `scriba/tex/vendor/katex/VENDORED.md` | Provenance and SHA-256 metadata. |
 | `scriba/tex/vendor/katex/LICENSE` | KaTeX MIT license. |
 
-### 5.2 Diagram plugin package data
+### 6.2 Animation plugin package data
 
 | Path | Purpose |
 |------|---------|
-| `scriba/diagram/static/scriba-diagram.css` | Diagram figure styling. |
-| `scriba/diagram/static/scriba-diagram-steps.js` | Step animation runtime (diagram walkthroughs). |
+| `scriba/animation/static/*` | Animation runtime assets (CSS/JS) served client-side by the consumer. |
 
-### 5.3 Top-level marker
+### 6.3 Top-level marker
 
 | Path | Purpose |
 |------|---------|
 | `scriba/py.typed` | PEP 561 marker — declares the package ships inline type information. |
 
-## 6. Wheel build include/exclude
+## 7. Wheel build include/exclude
 
 ```toml
 [tool.hatch.build.targets.wheel]
@@ -174,25 +193,25 @@ exclude = [
 
 User-facing docs (`README.md`, `CONTRIBUTING.md`, `SECURITY.md`, `CHANGELOG.md`) ship with the wheel. Internal design logs (`PHASE2_DECISIONS.md`), tests, and examples are excluded.
 
-## 7. Asset namespace convention
+## 8. Asset namespace convention
 
 Asset basenames follow the convention `<renderer>/<basename>`, where `<renderer>` matches `Renderer.name`:
 
 - `tex/scriba-tex-content.css`
 - `tex/scriba-tex-pygments-light.css`
 - `tex/scriba-tex-copy.js`
-- `diagram/scriba-diagram.css`
-- `diagram/scriba-diagram-steps.js`
+- `animation/scriba-animation.css`
+- `animation/scriba-animation.js`
 
 Within the Python package, these map to `scriba.<renderer>.static.<basename>`. All CSS/JS filenames are prefixed with `scriba-<renderer>-` to guarantee global uniqueness when consumers dump assets from multiple plugins into a single static directory.
 
 `RenderArtifact.css_assets` and `RenderArtifact.js_assets` carry **basenames only** (e.g. `"scriba-tex-content.css"`), never paths. `RendererAssets.css_files` and `RendererAssets.js_files` carry **absolute `Path` objects** resolved via `importlib.resources` at construction time. The `Pipeline` unions the basenames onto `Document.required_css` / `Document.required_js`; consumers use the basenames to locate the on-disk files.
 
-## 8. Asset serving strategy for consumers
+## 9. Asset serving strategy for consumers
 
 Scriba renders HTML fragments, not full pages. Consumers are responsible for serving the required CSS, JS, and font assets. Two approaches are supported:
 
-### 8.1 Copy at deploy time (recommended)
+### 9.1 Copy at deploy time (recommended)
 
 ```python
 from importlib.resources import files
@@ -211,6 +230,13 @@ shutil.copytree(
     "./public/katex",
     dirs_exist_ok=True,
 )
+
+# Copy animation plugin static assets
+shutil.copytree(
+    str(files("scriba.animation.static")),
+    "./public/scriba",
+    dirs_exist_ok=True,
+)
 ```
 
 Then reference in HTML:
@@ -224,7 +250,7 @@ Then reference in HTML:
 
 The vendored `katex.min.css` references fonts via relative `url(fonts/KaTeX_*.woff2)`, so `katex.min.css` and the `fonts/` directory must live in the same parent.
 
-### 8.2 Direct importlib.resources access
+### 9.2 Direct importlib.resources access
 
 For environments where deploy-time copying is impractical (e.g. serverless), consumers can resolve asset paths at runtime:
 
@@ -234,24 +260,24 @@ from importlib.resources import files
 css_path = files("scriba.tex").joinpath("static", "scriba-tex-content.css")
 ```
 
-`importlib.resources.files()` returns a `Traversable` which is a real filesystem path when the package is installed from a wheel. **Zipapp installs are unsupported in Scriba 0.1** — `katex_worker.js` must be a real file on disk for `SubprocessWorker` to pass it to `node` via `argv`.
+`importlib.resources.files()` returns a `Traversable` which is a real filesystem path when the package is installed from a wheel. **Zipapp installs are unsupported** — `katex_worker.js` must be a real file on disk for `SubprocessWorker` to pass it to `node` via `argv`.
 
-## 9. Version scheme
+## 10. Version scheme
 
 Scriba uses two version identifiers that serve different purposes:
 
-### 9.1 `__version__` (package version)
+### 10.1 `__version__` (package version)
 
 ```python
-__version__: str = "0.1.1-alpha"
+__version__: str = "0.9.0"
 ```
 
 Standard PEP 440 version string. Bumped on every PyPI release. Tracks the overall package lifecycle: new features, bug fixes, dependency bumps.
 
-### 9.2 `SCRIBA_VERSION` (API contract version)
+### 10.2 `SCRIBA_VERSION` (API contract version)
 
 ```python
-SCRIBA_VERSION: int = 2
+SCRIBA_VERSION: int = 3
 ```
 
 Integer version of the core abstractions (`Pipeline`, `Document`, `Renderer`, `RenderArtifact`, `RenderContext`). Bumped **only** when the core API changes in a way that invalidates consumer caches — independent of `__version__`.
@@ -260,7 +286,7 @@ Consumers key their render caches on `Document.versions`, which includes `{"core
 
 Both constants live in `scriba/_version.py` and are re-exported from `scriba.__init__`.
 
-## 10. Wheel structure
+## 11. Wheel structure
 
 A built wheel contains the following top-level tree:
 
@@ -276,14 +302,13 @@ scriba/
 │   ├── renderer.py
 │   ├── pipeline.py
 │   ├── workers.py
-│   └── errors.py
+│   ├── errors.py
+│   └── warnings.py
 ├── tex/
 │   ├── __init__.py
 │   ├── renderer.py
-│   ├── parser.py
-│   ├── math.py
+│   ├── parser/
 │   ├── highlight.py
-│   ├── copy_button.py
 │   ├── validate.py
 │   ├── katex_worker.js
 │   ├── static/
@@ -299,14 +324,16 @@ scriba/
 │           ├── LICENSE
 │           └── fonts/
 │               └── KaTeX_*.woff2  (20 files)
-├── diagram/
+├── animation/
 │   ├── __init__.py
 │   ├── renderer.py
-│   ├── engine.py
-│   ├── steps.py
+│   ├── emitter.py
+│   ├── scene.py
+│   ├── differ.py
+│   ├── errors.py
+│   ├── primitives/
+│   ├── extensions/
 │   └── static/
-│       ├── scriba-diagram.css
-│       └── scriba-diagram-steps.js
 └── sanitize/
     ├── __init__.py
     └── whitelist.py
@@ -314,20 +341,21 @@ scriba/
 
 Plus top-level metadata files at the wheel root: `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `LICENSE`.
 
-## 11. Entry points
+## 12. Entry points
 
-Scriba 0.1 declares no console scripts, GUI scripts, or plugin entry points. The package is a library — consumers import it directly:
+Scriba declares no console scripts, GUI scripts, or plugin entry points. The package is a library — consumers import it directly:
 
 ```python
 from scriba import Pipeline, RenderContext, SubprocessWorkerPool
 from scriba.tex import TexRenderer
+from scriba.animation import AnimationRenderer
 ```
 
-Plugins (`TexRenderer`, `DiagramRenderer`) are **not** re-exported from the top-level `scriba` namespace. Consumers import them explicitly from `scriba.tex` / `scriba.diagram`. This keeps the top-level namespace stable and prevents plugin-private symbols from polluting `scriba.*`.
+Plugins (`TexRenderer`, `AnimationRenderer`) are **not** re-exported from the top-level `scriba` namespace. Consumers import them explicitly from `scriba.tex` / `scriba.animation`. This keeps the top-level namespace stable and prevents plugin-private symbols from polluting `scriba.*`.
 
-## 12. Constraints and non-goals
+## 13. Constraints and non-goals
 
 - **No compiled extensions.** The wheel is pure Python + static assets. No platform-specific wheels.
-- **No zipapp support (v0.1).** `katex_worker.js` must exist as a real file on disk — `SubprocessWorker` passes it to `node` via argv. Zipapp-based installs where `importlib.resources` returns a zip-internal `Traversable` are unsupported.
+- **No zipapp support.** `katex_worker.js` must exist as a real file on disk — `SubprocessWorker` passes it to `node` via argv. Zipapp-based installs where `importlib.resources` returns a zip-internal `Traversable` are unsupported.
 - **No bundled Node.js.** Scriba does not vendor or download a Node.js runtime. Consumers provide it.
 - **No automatic asset serving.** Scriba produces HTML fragments and declares which assets are needed. Consumers decide where and how to serve them.

@@ -88,7 +88,7 @@ migration note.
 2. Verify Node.js 18+ is available on PATH in the deployment environment.
 3. Run the Scriba test suite against the ojcloud environment:
    ```bash
-   pip install scriba
+   pip install scriba-tex
    python -m pytest --pyargs scriba
    ```
 4. Confirm 71 tests pass (snapshot, XSS, validator, pipeline, workers,

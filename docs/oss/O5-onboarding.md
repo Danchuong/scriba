@@ -13,7 +13,7 @@ There is no `scriba init`. There is no starter template. There is no dev server.
 | Minute | Milestone |
 |---|---|
 | 0:00 | Land on `scriba.dev`. Watch a 60-second capture. See the install command above the fold. |
-| 0:30 | `pip install scriba` inside whatever Python env already runs the user's backend. |
+| 0:30 | `pip install scriba-tex` inside whatever Python env already runs the user's backend. |
 | 1:00 | Copy 6 lines of Python from Quick Start. Register the three renderers in a `Pipeline`. |
 | 3:00 | Paste the 20-line `binary-search.tex` canon from the docs into an existing problem statement file. |
 | 5:00 | Call `pipeline.render(tex)`. Copy the resulting HTML into a throwaway template or `.html` file and open it. The filmstrip renders. |
@@ -23,7 +23,7 @@ There is no `scriba init`. There is no starter template. There is no dev server.
 
 ## 3. Install
 
-**Primary**: `pip install scriba`
+**Primary**: `pip install scriba-tex`
 
 The package drops into the user's existing venv, lockfile, or Poetry/uv/Pipenv project. It has a small dependency footprint (Pydantic v2, a Starlark runtime, no GUI deps).
 

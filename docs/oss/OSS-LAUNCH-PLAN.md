@@ -15,7 +15,7 @@
 - **Starlark `\compute{}`** — deterministic, sandboxed, build-time only
 - **Output**: `<figure>` → `<ol>` of `<li class="scriba-frame">`, each with an inline `<svg>` + `<p>` narration. No `<script>`, no custom elements, no hydration.
 - **Docs site**: Astro Starlight + Cloudflare Pages + Pagefind (HTML+SVG drops verbatim into MDX — zero runtime)
-- **Integrations**: `pip install scriba`, import `Pipeline`, feed `.tex`, get HTML. Examples for Django, FastAPI, Flask, and static generators.
+- **Integrations**: `pip install scriba-tex`, import `Pipeline`, feed `.tex`, get HTML. Examples for Django, FastAPI, Flask, and static generators.
 - **Quality bar**: pytest + syrupy, mypy strict, Pydantic v2 IR, Rust-style errors (codes `E1001–E1299`), towncrier, CI on every PR
 - **USP**: "two LaTeX environments that compile CP editorial animations into zero-JS static SVG — drop the output into any site, email, or PDF"
 
@@ -111,8 +111,8 @@ Onboarding is now "**add Scriba to your existing LaTeX pipeline**", not "start a
 
 | Min | Milestone |
 |---|---|
-| 0:00 | Land on homepage, see 60s video + `pip install scriba` |
-| 0:30 | `pip install scriba` in existing OJ backend venv |
+| 0:00 | Land on homepage, see 60s video + `pip install scriba-tex` |
+| 0:30 | `pip install scriba-tex` in existing OJ backend venv |
 | 1:00 | Import `Pipeline`, register `AnimationRenderer + DiagramRenderer + TexRenderer` |
 | 3:00 | Paste the 20-line `binary-search.tex` canon into an existing problem statement |
 | 5:00 | `Pipeline.render(tex)` → copy resulting HTML into a test template, see it render |

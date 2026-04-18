@@ -1,7 +1,7 @@
 # Vendored: KaTeX
 
 This directory contains a vendored copy of KaTeX shipped inside the
-`scriba` wheel so that `pip install scriba` works without a separate
+`scriba` wheel so that `pip install scriba-tex` works without a separate
 `npm install -g katex` step.
 
 | Field | Value |

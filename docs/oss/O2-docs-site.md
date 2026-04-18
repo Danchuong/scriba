@@ -44,10 +44,10 @@ Starlight wins because "paste compiled HTML into MDX, done" is the shortest poss
 ## 3. Information architecture (~20 pages at v0.3)
 
 ### Home
-- Tagline, 60s screen capture, `pip install scriba`, 20-line binary-search demo, CTA to Quick Start.
+- Tagline, 60s screen capture, `pip install scriba-tex`, 20-line binary-search demo, CTA to Quick Start.
 
 ### Quick Start (5 minutes)
-1. `pip install scriba`
+1. `pip install scriba-tex`
 2. Minimal Python snippet that builds `Pipeline([AnimationRenderer, DiagramRenderer, TexRenderer])`
 3. Paste a 20-line `\begin{animation}` source, call `pipeline.render`, print HTML
 4. Drop output into any file served as `text/html` — it renders.
