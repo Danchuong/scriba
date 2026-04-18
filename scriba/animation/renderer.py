@@ -451,10 +451,14 @@ class AnimationRenderer:
         # Produce final HTML via the emitter
         output_mode = ctx.metadata.get("output_mode", "interactive")
         minify = ctx.metadata.get("minify", True)
+        inline_runtime = ctx.metadata.get("inline_runtime", True)
+        asset_base_url = ctx.metadata.get("asset_base_url", "")
         html = emit_html(
             scene_id, frames, primitives, mode=output_mode,
             render_inline_tex=ctx.render_inline_tex,
             minify=minify,
+            inline_runtime=inline_runtime,
+            asset_base_url=asset_base_url,
         )
 
         # Collect CSS assets

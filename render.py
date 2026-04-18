@@ -39,14 +39,23 @@ HTML_TEMPLATE = """\
 </style>
 </head>
 <body>
-<button class="theme-toggle" onclick="
-  var t = document.documentElement.dataset.theme;
-  document.documentElement.dataset.theme = t === 'dark' ? 'light' : 'dark';
-">Toggle theme</button>
+<button class="theme-toggle" data-scriba-action="theme-toggle">Toggle theme</button>
 <h1>{title}</h1>
 {body}
-</body>
+{inline_theme_script}</body>
 </html>
+"""
+
+# Minimal inline bootstrap for the theme-toggle button when no external
+# scriba.js is loaded (inline-runtime mode).  In external-runtime mode,
+# scriba.js handles the delegated click via data-scriba-action.
+_INLINE_THEME_SCRIPT = """\
+<script>
+document.addEventListener('click',function(e){
+  var btn=e.target.closest('[data-scriba-action="theme-toggle"]');
+  if(btn){var t=document.documentElement.dataset.theme;document.documentElement.dataset.theme=(t==='dark'?'light':'dark');}
+});
+</script>
 """
 
 
@@ -103,7 +112,28 @@ def render_file(
     dump_frames: bool = False,
     minify: bool = True,
     lang: str = "en",
+    inline_runtime: bool = True,
+    asset_base_url: str = "",
+    copy_runtime: bool = True,
 ) -> None:
+    """Render a ``.tex`` animation file to HTML.
+
+    Parameters
+    ----------
+    inline_runtime:
+        When ``True`` (default in v0.8.x), all JS is inlined — fully
+        self-contained HTML.  When ``False``, frame data goes into an
+        inert JSON island and the runtime is referenced as an external
+        ``scriba.<hash>.js`` asset.
+    asset_base_url:
+        URL prefix for the external runtime (e.g. a CDN path).  Only
+        used when ``inline_runtime=False``.  When empty, the asset is
+        referenced by filename only (expected next to the HTML).
+    copy_runtime:
+        When ``True`` (default) and ``inline_runtime=False``, copy
+        ``scriba.<hash>.js`` next to the output HTML file.  Ignored when
+        ``inline_runtime=True`` or ``asset_base_url`` is set.
+    """
     source = input_path.read_text(encoding="utf-8-sig")
     title = html.escape(input_path.stem)  # C2: prevent XSS via malicious filename
 
@@ -128,7 +158,12 @@ def render_file(
     ctx = RenderContext(
         resource_resolver=lambda name: _resolve_resource(input_path.parent, name),
         theme="light",
-        metadata={"output_mode": output_mode, "minify": minify},
+        metadata={
+            "output_mode": output_mode,
+            "minify": minify,
+            "inline_runtime": inline_runtime,
+            "asset_base_url": asset_base_url,
+        },
         render_inline_tex=_inline_tex,
     )
 
@@ -208,9 +243,27 @@ def render_file(
 
     css = "\n".join(css_parts)
 
-    full_html = HTML_TEMPLATE.format(title=title, body=body, css=css, lang=lang)
+    # In inline-runtime mode, attach the small theme-toggle bootstrap.
+    # In external-runtime mode, scriba.js handles it via delegation.
+    theme_script = _INLINE_THEME_SCRIPT if inline_runtime else ""
+
+    full_html = HTML_TEMPLATE.format(
+        title=title,
+        body=body,
+        css=css,
+        lang=lang,
+        inline_theme_script=theme_script,
+    )
 
     output_path.write_text(full_html, encoding="utf-8")
+
+    # Copy the external runtime asset next to the HTML when requested.
+    if not inline_runtime and copy_runtime and not asset_base_url:
+        from scriba.animation.runtime_asset import RUNTIME_JS_BYTES, RUNTIME_JS_FILENAME
+        dest = output_path.parent / RUNTIME_JS_FILENAME
+        dest.write_bytes(RUNTIME_JS_BYTES)
+        print(f"Copied runtime -> {dest}")
+
     block_count = len(anim_blocks) + len(diag_blocks)
     tex_gaps = len([p for p in html_parts if p]) - block_count
     print(f"Rendered {block_count} block(s) + {tex_gaps} TeX region(s) -> {output_path}")
@@ -241,6 +294,51 @@ def main():
         default="en",
         help="BCP 47 language tag for HTML lang= attribute (e.g. 'vi', 'zh', 'ar')",
     )
+    # Wave 8: external runtime flags (opt-in in v0.8.3; default flips in v0.9.0)
+    parser.add_argument(
+        "--inline-runtime",
+        action="store_true",
+        default=True,
+        help=(
+            "Inline the full JS runtime into the HTML (default; works on file://)."
+            " Deprecated: will no longer be the default in v0.9.0."
+        ),
+    )
+    parser.add_argument(
+        "--no-inline-runtime",
+        dest="inline_runtime",
+        action="store_false",
+        help=(
+            "Use an external scriba.<hash>.js asset instead of inlining the"
+            " runtime.  Requires the asset to be served alongside the HTML."
+            " Enables a strict 'script-src self' CSP."
+        ),
+    )
+    parser.add_argument(
+        "--asset-base-url",
+        default="",
+        metavar="URL",
+        help=(
+            "URL prefix for the external scriba.<hash>.js asset"
+            " (e.g. 'https://cdn.example.com/scriba/0.8.3')."
+            " Only used with --no-inline-runtime."
+        ),
+    )
+    parser.add_argument(
+        "--copy-runtime",
+        action="store_true",
+        default=True,
+        help=(
+            "Copy scriba.<hash>.js next to the output HTML when using"
+            " --no-inline-runtime (default: true unless --asset-base-url is set)."
+        ),
+    )
+    parser.add_argument(
+        "--no-copy-runtime",
+        dest="copy_runtime",
+        action="store_false",
+        help="Do not copy scriba.<hash>.js next to the output HTML.",
+    )
     args = parser.parse_args()
 
     if not args.input.exists():
@@ -266,6 +364,9 @@ def main():
         dump_frames=args.dump_frames,
         minify=not args.no_minify,
         lang=args.lang,
+        inline_runtime=args.inline_runtime,
+        asset_base_url=args.asset_base_url,
+        copy_runtime=args.copy_runtime,
     )
 
     if args.open:

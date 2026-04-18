@@ -32,6 +32,8 @@ __all__ = [
     "emit_substory_html",
     "scene_id_from_source",
     "validate_frame_labels_unique",
+    "_build_external_script",
+    "_build_inline_script",
 ]
 
 # Regex for a label that is safe to embed in an HTML id token. The
@@ -865,8 +867,27 @@ def emit_interactive_html(
     primitives: dict[str, Any],
     label: str = "",
     render_inline_tex: Callable[[str], str] | None = None,
+    inline_runtime: bool = True,
+    asset_base_url: str = "",
 ) -> str:
-    """Produce interactive widget HTML with step controller."""
+    """Produce interactive widget HTML with step controller.
+
+    Parameters
+    ----------
+    inline_runtime:
+        When ``True`` (default), the full runtime JS and frame data are
+        inlined in a ``<script>`` block — self-contained, works on
+        ``file://``.  When ``False``, frame data is emitted as an inert
+        ``<script type="application/json">`` island and a ``<script
+        src="...">`` tag referencing the external ``scriba.<hash>.js``
+        asset is appended.  External mode requires the asset to be served
+        alongside the HTML.
+    asset_base_url:
+        URL prefix for the external runtime asset (e.g.
+        ``"https://cdn.example.com/scriba/0.8.3"``).  Only used when
+        ``inline_runtime=False``.  Defaults to ``""`` (relative path,
+        asset expected next to the HTML file).
+    """
     frame_count = len(frames)
 
     if not frames:
@@ -938,6 +959,7 @@ def emit_interactive_html(
 
     narration_id = f"{scene_id}-narration"
     _frame_parts: list[tuple[str, str, str, str]] = []
+    _json_frames_raw: list[dict] = []  # for external-runtime JSON island
     print_frame_items: list[str] = []
 
     for frame in frames:
@@ -968,6 +990,14 @@ def emit_interactive_html(
                 )
         substory_escaped = _escape_js(substory_html)
         _frame_parts.append((svg_escaped, narration_escaped, substory_escaped, label_escaped))
+
+        # --- Raw JSON frame data (for external-runtime mode) ---
+        _json_frames_raw.append({
+            "svg": svg_html,
+            "narration": frame.narration_html,
+            "substory": substory_html,
+            "label": label_token,
+        })
 
         # --- Print frame (reuse the same SVG, swap aria-labelledby) ---
         print_narration_id = f"{scene_id}-print-{step}-narration"
@@ -1049,6 +1079,13 @@ def emit_interactive_html(
     js_frames_str = ",\n    ".join(js_frames)
     print_frames_html = "\n".join(print_frame_items)
 
+    # Build external-runtime JSON island (augment raw frames with tr/fs).
+    if not inline_runtime:
+        for idx, raw in enumerate(_json_frames_raw):
+            tr_val = _json.loads(_manifests[idx]) if _manifests[idx] != "null" else None
+            raw["tr"] = tr_val
+            raw["fs"] = 1 if _needs_sync[idx] else 0
+
     # Build progress dots
     dots_html = "\n      ".join(
         f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
@@ -1056,6 +1093,13 @@ def emit_interactive_html(
     )
 
     _aria_label = _escape(label) if label else "Animation"
+
+    # Build the script block: inline or external.
+    if inline_runtime:
+        _script_block = _build_inline_script(scene_id, js_frames_str)
+    else:
+        _script_block = _build_external_script(scene_id, _json_frames_raw, asset_base_url)
+
     widget_html = f"""\
 <div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1" role="region" aria-label="{_aria_label}">
   <div class="scriba-controls">
@@ -1073,10 +1117,19 @@ def emit_interactive_html(
 {print_frames_html}
   </div>
 </div>
+{_script_block}"""
+
+    return widget_html
+
+
+def _build_inline_script(scene_id: str, js_frames_str: str) -> str:
+    """Build the legacy inline ``<script>`` block for a widget."""
+    sid = _escape_js(scene_id)
+    return f"""\
 <script>
 (function(){{
   var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){{return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){{return '\\\\'+c.charCodeAt(0).toString(16)+' ';}});}};
-  var W=document.getElementById('{_escape_js(scene_id)}');
+  var W=document.getElementById('{sid}');
   var frames=[
     {js_frames_str}
   ];
@@ -1360,7 +1413,40 @@ def emit_interactive_html(
 }})();
 </script>"""
 
-    return widget_html
+
+def _build_external_script(
+    scene_id: str,
+    json_frames: list[dict],
+    asset_base_url: str,
+) -> str:
+    """Build the JSON island + external ``<script src>`` tag for a widget.
+
+    The JSON island uses ``<script type="application/json">`` which browsers
+    never execute, so it is safe under any ``script-src`` CSP policy.
+    The runtime ``scriba.<hash>.js`` is referenced via SRI-bearing ``<script
+    src=...>`` which passes ``script-src 'self'`` without ``'unsafe-inline'``.
+    """
+    from scriba.animation.runtime_asset import (
+        RUNTIME_JS_FILENAME,
+        RUNTIME_JS_SHA384,
+    )
+
+    island_id = f"scriba-frames-{_escape(scene_id)}"
+    json_payload = _json.dumps(json_frames, separators=(",", ":"))
+
+    base = asset_base_url.rstrip("/")
+    if base:
+        src = f"{base}/{RUNTIME_JS_FILENAME}"
+    else:
+        src = RUNTIME_JS_FILENAME
+
+    return (
+        f'<script type="application/json" id="{island_id}">'
+        f"{json_payload}"
+        f"</script>\n"
+        f'<script src="{src}" integrity="sha384-{RUNTIME_JS_SHA384}"'
+        f' crossorigin="anonymous" defer></script>'
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1509,6 +1595,8 @@ def emit_html(
     label: str = "",
     render_inline_tex: Callable[[str], str] | None = None,
     minify: bool = True,
+    inline_runtime: bool = True,
+    asset_base_url: str = "",
 ) -> str:
     """Produce HTML for an animation scene.
 
@@ -1522,6 +1610,14 @@ def emit_html(
     minify:
         When ``True`` (default), apply basic HTML minification to the
         output to reduce file size.
+    inline_runtime:
+        When ``True`` (default in v0.8.x), inline the full JS runtime and
+        frame data.  When ``False``, use an external ``scriba.<hash>.js``
+        asset with a JSON data island (CSP-safe, opt-in for v0.8.3).
+        Default flips to ``False`` in v0.9.0.
+    asset_base_url:
+        URL prefix for the external runtime asset.  Only used when
+        ``inline_runtime=False``.  Defaults to ``""`` (relative).
     """
     # Enforce frame-label uniqueness before emission. Duplicates would
     # produce colliding HTML ids which break hash-navigation and
@@ -1540,6 +1636,8 @@ def emit_html(
         result = emit_interactive_html(
             scene_id, frames, primitives, label=label,
             render_inline_tex=render_inline_tex,
+            inline_runtime=inline_runtime,
+            asset_base_url=asset_base_url,
         )
     if minify:
         result = _minify_html(result)
