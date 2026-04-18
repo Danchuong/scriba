@@ -22,7 +22,7 @@ class TestDeclare:
         assert isinstance(inst, GridInstance)
         assert inst.rows == 3
         assert inst.cols == 3
-        assert inst.shape_name == "g"
+        assert inst.name == "g"
 
     def test_with_2d_data(self) -> None:
         data = [[0, 0, 0], [0, 1, 0], [0, 0, 0]]

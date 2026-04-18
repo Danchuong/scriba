@@ -20,6 +20,7 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_svg_text,
     register_primitive,
+    state_class,
     svg_style_attrs,
 )
 
@@ -64,10 +65,18 @@ class CodePanel(PrimitiveBase):
         (list of strings). Optional: ``label``.
     """
 
+    primitive_type = "codepanel"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "line[{i}]": "line by number (1-based)",
         "all": "all lines",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "source",
+        "lines",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
@@ -93,7 +102,6 @@ class CodePanel(PrimitiveBase):
             self.lines = []
 
         self.label: str | None = params.get("label")
-        self.primitive_type: str = "codepanel"
 
         # Pre-compute dynamic gutter width based on line count
         self._gutter_width: int = self._line_num_gutter_width()
@@ -214,7 +222,7 @@ class CodePanel(PrimitiveBase):
 
             parts.append(
                 f'<g data-target="{html_escape(target)}" '
-                f'class="scriba-state-{line_state}">'
+                f'class="{state_class(line_state)}">'
             )
 
             # Background rect for the line (colored when state != idle)

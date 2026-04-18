@@ -112,13 +112,29 @@ class MetricPlot(PrimitiveBase):
       more points, down-sample the source data or split into multiple plots.
     """
 
+    primitive_type = "metricplot"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "all": "the entire plot",
     }
 
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "series",
+        "xlabel",
+        "ylabel",
+        "ylabel_right",
+        "grid",
+        "width",
+        "height",
+        "show_legend",
+        "show_current_marker",
+        "xrange",
+        "yrange",
+        "yrange_right",
+    })
+
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
-        self.primitive_type: str = "metricplot"
 
         # --- parse series ---
         raw_series = params.get("series", [])

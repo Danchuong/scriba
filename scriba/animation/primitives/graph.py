@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     estimate_text_width,
     register_primitive,
+    state_class,
     svg_style_attrs,
 )
 
@@ -290,11 +291,24 @@ class Graph(PrimitiveBase):
     anything else raises ``E1505``.
     """
 
+    primitive_type = "graph"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",
         "edge[({u},{v})]": "edge by endpoints",
         "all": "all nodes and edges",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "nodes",
+        "edges",
+        "directed",
+        "layout",
+        "layout_seed",
+        "seed",
+        "show_weights",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
@@ -804,7 +818,7 @@ class Graph(PrimitiveBase):
                 )
             parts.append(
                 f'<g data-target="{html_escape(edge_target)}" '
-                f'class="scriba-state-{state}" '
+                f'class="{state_class(state)}" '
                 f'role="graphics-symbol" aria-label="{edge_label}">'
                 f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
                 f'stroke="{edge_stroke}" stroke-width="{edge_sw}"'
@@ -845,7 +859,7 @@ class Graph(PrimitiveBase):
             )
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
-                f'class="scriba-state-{effective_state}">'
+                f'class="{state_class(effective_state)}">'
                 f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}"/>'
                 f'{node_text}'
                 f'</g>'

@@ -21,6 +21,7 @@ from scriba.animation.primitives.base import (
     _render_svg_text,
     estimate_text_width,
     register_primitive,
+    state_class,
     svg_style_attrs,
 )
 
@@ -78,6 +79,8 @@ class Stack(PrimitiveBase):
         Optional keys: ``items``, ``orientation``, ``max_visible``, ``label``.
     """
 
+    primitive_type = "stack"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "item[{i}]": "item by index",
         "top": "top of stack",
@@ -113,7 +116,6 @@ class Stack(PrimitiveBase):
             else:
                 self.items.append(StackItem(label=str(item)))
 
-        self.primitive_type: str = "stack"
         self._cell_width: int = self._compute_cell_width()
 
     # ----- internal: dynamic sizing ----------------------------------------
@@ -265,7 +267,7 @@ class Stack(PrimitiveBase):
 
             parts.append(
                 f'<g data-target="{html_escape(target)}" '
-                f'class="scriba-state-{effective_state}">'
+                f'class="{state_class(effective_state)}">'
             )
             rect_attrs = _inset_rect_attrs(x, y, cw, _CELL_HEIGHT)
             parts.append(

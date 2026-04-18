@@ -77,13 +77,24 @@ class ArrayPrimitive(PrimitiveBase):
     Extends :class:`PrimitiveBase` with self-managed state.
     """
 
-    primitive_type: str = "array"
+    primitive_type = "array"
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index",
         "range[{lo}:{hi}]": "contiguous range of cells",
         "all": "all cells",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "size",
+        "n",
+        "data",
+        "labels",
+        "label",
+        # Legacy alias — not consumed but accepted so that ``values=``
+        # in existing scenes passes validation and reaches the size check.
+        "values",
+    })
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)
@@ -120,7 +131,6 @@ class ArrayPrimitive(PrimitiveBase):
         if not data:
             data = [""] * size
 
-        self.shape_name: str = name
         self.size: int = size
         self.data: list[Any] = data
         self.labels: str | None = self.params.get("labels")
@@ -181,7 +191,7 @@ class ArrayPrimitive(PrimitiveBase):
         arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
 
         lines: list[str] = [
-            f'<g data-primitive="array" data-shape="{self.shape_name}">'
+            f'<g data-primitive="array" data-shape="{self.name}">'
         ]
 
         # Shift all content down so arrows curve into valid space above y=0
@@ -222,7 +232,7 @@ class ArrayPrimitive(PrimitiveBase):
         }
 
         for i in range(self.size):
-            target = f"{self.shape_name}.cell[{i}]"
+            target = f"{self.name}.cell[{i}]"
             suffix = f"cell[{i}]"
 
             value = self.get_value(suffix)
@@ -359,7 +369,7 @@ class ArrayPrimitive(PrimitiveBase):
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
         """Return the ``(cx, cy)`` pixel center of a cell selector."""
         m = _CELL_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
+        if m and m.group("name") == self.name:
             i = int(m.group("idx"))
             if 0 <= i < self.size:
                 cw = self._cell_width

@@ -21,7 +21,7 @@ class TestDeclare:
         inst = NumberLinePrimitive("nl", {"domain": [0, 5]})
         assert isinstance(inst, NumberLineInstance)
         assert inst.tick_count == 6
-        assert inst.shape_name == "nl"
+        assert inst.name == "nl"
 
     def test_domain_0_10_ticks_5(self) -> None:
         inst = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 5})

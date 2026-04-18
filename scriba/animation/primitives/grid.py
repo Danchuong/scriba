@@ -96,12 +96,19 @@ class GridPrimitive(PrimitiveBase):
     Extends :class:`PrimitiveBase` with self-managed state.
     """
 
-    primitive_type: str = "grid"
+    primitive_type = "grid"
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{r}][{c}]": "cell by row,col",
         "all": "all cells",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "rows",
+        "cols",
+        "data",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)
@@ -141,7 +148,6 @@ class GridPrimitive(PrimitiveBase):
         raw_data: Any = self.params.get("data", [])
         data: list[Any] = _flatten_2d(raw_data, rows, cols)
 
-        self.shape_name: str = name
         self.rows: int = rows
         self.cols: int = cols
         self.data: list[Any] = data
@@ -175,7 +181,7 @@ class GridPrimitive(PrimitiveBase):
         Returns the top-center of the cell (y=top edge) so arrows curve above.
         """
         m = _CELL_2D_RE.match(selector)
-        if m and m.group("name") == self.shape_name:
+        if m and m.group("name") == self.name:
             r = int(m.group("row"))
             c = int(m.group("col"))
             if 0 <= r < self.rows and 0 <= c < self.cols:
@@ -200,7 +206,7 @@ class GridPrimitive(PrimitiveBase):
         arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
 
         lines: list[str] = [
-            f'<g data-primitive="grid" data-shape="{self.shape_name}">'
+            f'<g data-primitive="grid" data-shape="{self.name}">'
         ]
 
         # Shift all content down so arrows curve into valid space above y=0
@@ -209,7 +215,7 @@ class GridPrimitive(PrimitiveBase):
 
         for r in range(self.rows):
             for c in range(self.cols):
-                target = f"{self.shape_name}.cell[{r}][{c}]"
+                target = f"{self.name}.cell[{r}][{c}]"
                 suffix = f"cell[{r}][{c}]"
 
                 value = self.get_value(suffix)

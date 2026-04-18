@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     estimate_text_width,
     register_primitive,
+    state_class,
     svg_style_attrs,
 )
 
@@ -65,10 +66,17 @@ class HashMap(PrimitiveBase):
         Optional keys: ``label``.
     """
 
+    primitive_type = "hashmap"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "bucket[{i}]": "bucket by index",
         "all": "all buckets",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "capacity",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
@@ -91,7 +99,6 @@ class HashMap(PrimitiveBase):
             )
 
         self.label: str | None = params.get("label")
-        self.primitive_type: str = "hashmap"
 
         # Per-bucket display text: index -> string (e.g. "cat:3  car:7")
         self._bucket_values: dict[int, str] = {
@@ -271,7 +278,7 @@ class HashMap(PrimitiveBase):
 
             parts.append(
                 f'<g data-target="{html_escape(target)}" '
-                f'class="scriba-state-{state}">'
+                f'class="{state_class(state)}">'
             )
 
             # Row divider (skip first row)

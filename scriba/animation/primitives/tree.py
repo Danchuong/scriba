@@ -19,6 +19,7 @@ from scriba.animation.primitives.base import (
     _render_svg_text,
     arrow_height_above,
     register_primitive,
+    state_class,
     svg_style_attrs,
 )
 from scriba.animation.primitives.tree_layout import *  # noqa: F401, F403
@@ -64,11 +65,25 @@ class Tree(PrimitiveBase):
         Dictionary of parameters from the ``\\shape`` command.
     """
 
+    primitive_type = "tree"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",
         "edge[({u},{v})]": "edge by endpoints",
         "all": "all nodes and edges",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "root",
+        "nodes",
+        "edges",
+        "kind",
+        "data",
+        "range_lo",
+        "range_hi",
+        "show_sum",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
@@ -627,7 +642,7 @@ class Tree(PrimitiveBase):
                 x2, y2 = _shorten_line_to_circle(px, py, cx, cy, self._node_radius)
                 parts.append(
                     f'<g data-target="{html_escape(edge_target)}" '
-                    f'class="scriba-state-{state}">'
+                    f'class="{state_class(state)}">'
                     f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
                     f'fill="none" stroke="{edge_stroke}" '
                     f'stroke-width="{edge_sw}"/>'
@@ -679,7 +694,7 @@ class Tree(PrimitiveBase):
             parts.append(
                 f'<g data-target="{html_escape(node_target)}" '
                 f'data-node-x="{cx}" data-node-y="{cy}" '
-                f'class="scriba-state-{state}">'
+                f'class="{state_class(state)}">'
                 f'<circle cx="{cx}" cy="{cy}" r="{self._node_radius}" '
                 f'fill="{node_colors["fill"]}" '
                 f'stroke="{node_colors["stroke"]}" '

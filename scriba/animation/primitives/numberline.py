@@ -65,7 +65,7 @@ class NumberLinePrimitive(PrimitiveBase):
     Extends :class:`PrimitiveBase` with self-managed state.
     """
 
-    primitive_type: str = "numberline"
+    primitive_type = "numberline"
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "tick[{i}]": "tick mark by index",
@@ -73,6 +73,13 @@ class NumberLinePrimitive(PrimitiveBase):
         "axis": "the axis line",
         "all": "all ticks and axis",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "domain",
+        "ticks",
+        "labels",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)
@@ -134,7 +141,6 @@ class NumberLinePrimitive(PrimitiveBase):
             min_tick_spacing = max(min_tick_spacing, max_label_w + 8)
         width = max(NL_WIDTH, ticks * min_tick_spacing + 2 * NL_PADDING)
 
-        self.shape_name: str = name
         self.domain_min: float = domain_min
         self.domain_max: float = domain_max
         self.tick_count: int = ticks
@@ -155,7 +161,7 @@ class NumberLinePrimitive(PrimitiveBase):
 
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
         """Map ``'N.tick[3]'`` to the SVG center of that tick mark."""
-        prefix = f"{self.shape_name}."
+        prefix = f"{self.name}."
         local = selector[len(prefix):] if selector.startswith(prefix) else selector
         m = _SUFFIX_TICK_RE.match(local)
         if m:
@@ -207,7 +213,7 @@ class NumberLinePrimitive(PrimitiveBase):
         arrow_above = self._arrow_height_above(effective_anns)
 
         lines: list[str] = [
-            f'<g data-primitive="numberline" data-shape="{self.shape_name}">'
+            f'<g data-primitive="numberline" data-shape="{self.name}">'
         ]
 
         # Shift content down so arrows curve into valid space above y=0
@@ -220,7 +226,7 @@ class NumberLinePrimitive(PrimitiveBase):
         # Axis line — always idle color
         idle_colors = STATE_COLORS["idle"]
         lines.append(
-            f'  <g data-target="{self.shape_name}.axis">'
+            f'  <g data-target="{self.name}.axis">'
         )
         lines.append(
             f'    <line x1="{NL_PADDING}" y1="{NL_AXIS_Y}" '
@@ -231,7 +237,7 @@ class NumberLinePrimitive(PrimitiveBase):
 
         # Ticks
         for i in range(self.tick_count):
-            target = f"{self.shape_name}.tick[{i}]"
+            target = f"{self.name}.tick[{i}]"
             suffix = f"tick[{i}]"
 
             effective_state = self.resolve_effective_state(suffix)

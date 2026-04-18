@@ -164,6 +164,12 @@ class PrimitiveBase(abc.ABC):
     per-part values, annotations) and renders itself via :meth:`emit_svg`.
     """
 
+    # Subclasses set this to identify their primitive type string, e.g. "array".
+    # Declared as ClassVar so type checkers know it belongs to the class, not
+    # instances.  Concrete subclasses override with a plain assignment (no
+    # annotation needed on the override).
+    primitive_type: ClassVar[str] = ""
+
     # Subclasses override to declare their selector patterns as metadata.
     # Format: {"suffix_pattern": description}
     # Special patterns:

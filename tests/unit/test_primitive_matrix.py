@@ -32,7 +32,7 @@ class TestDeclare:
         assert isinstance(inst, MatrixInstance)
         assert inst.rows == 3
         assert inst.cols == 4
-        assert inst.shape_name == "m"
+        assert inst.name == "m"
         assert inst.primitive_type == "matrix"
 
     def test_2d_data(self) -> None:

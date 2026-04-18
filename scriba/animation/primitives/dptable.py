@@ -72,7 +72,7 @@ class DPTablePrimitive(PrimitiveBase):
     Extends :class:`PrimitiveBase` with self-managed state.
     """
 
-    primitive_type: str = "dptable"
+    primitive_type = "dptable"
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index (1D mode)",
@@ -80,6 +80,15 @@ class DPTablePrimitive(PrimitiveBase):
         "range[{lo}:{hi}]": "contiguous range of cells (1D mode)",
         "all": "all cells",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "n",
+        "rows",
+        "cols",
+        "data",
+        "labels",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)
@@ -154,7 +163,6 @@ class DPTablePrimitive(PrimitiveBase):
         if not data:
             data = [""] * n
 
-        self.shape_name: str = name
         self.is_2d: bool = is_2d
         self.rows: int = dim_rows
         self.cols: int = dim_cols
@@ -211,7 +219,7 @@ class DPTablePrimitive(PrimitiveBase):
         arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
 
         lines: list[str] = [
-            f'<g data-primitive="dptable" data-shape="{self.shape_name}">'
+            f'<g data-primitive="dptable" data-shape="{self.name}">'
         ]
 
         # Shift all content down so arrows curve into valid space above y=0
@@ -336,7 +344,7 @@ class DPTablePrimitive(PrimitiveBase):
         )
 
         for i in range(self.cols):
-            target = f"{self.shape_name}.cell[{i}]"
+            target = f"{self.name}.cell[{i}]"
             suffix = f"cell[{i}]"
 
             value = self.get_value(suffix)
@@ -398,7 +406,7 @@ class DPTablePrimitive(PrimitiveBase):
         """Emit cells for 2D grid layout."""
         for r in range(self.rows):
             for c in range(self.cols):
-                target = f"{self.shape_name}.cell[{r}][{c}]"
+                target = f"{self.name}.cell[{r}][{c}]"
                 suffix = f"cell[{r}][{c}]"
 
                 value = self.get_value(suffix)
@@ -450,14 +458,14 @@ class DPTablePrimitive(PrimitiveBase):
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
         """Return the ``(cx, cy)`` pixel center of a cell selector."""
         m = _CELL_1D_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
+        if m and m.group("name") == self.name:
             i = int(m.group("idx"))
             x = int(i * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2)
             y = int(CELL_HEIGHT // 2)
             return (x, y)
 
         m = _CELL_2D_RE.match(selector_str)
-        if m and m.group("name") == self.shape_name:
+        if m and m.group("name") == self.name:
             r, c = int(m.group("row")), int(m.group("col"))
             x = int(c * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2)
             y = int(r * (CELL_HEIGHT + CELL_GAP) + CELL_HEIGHT // 2)

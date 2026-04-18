@@ -127,12 +127,26 @@ class MatrixPrimitive(PrimitiveBase):
     Extends :class:`PrimitiveBase` with self-managed state.
     """
 
-    primitive_type: str = "matrix"
+    primitive_type = "matrix"
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{r}][{c}]": "cell by row,col",
         "all": "all cells",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "rows",
+        "cols",
+        "data",
+        "colorscale",
+        "show_values",
+        "cell_size",
+        "vmin",
+        "vmax",
+        "row_labels",
+        "col_labels",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)
@@ -209,7 +223,6 @@ class MatrixPrimitive(PrimitiveBase):
             max_col_h = max(estimate_text_width(str(c), 10) for c in col_labels)
             col_label_offset = max(_LABEL_OFFSET, max_col_h + 4)
 
-        self.shape_name: str = name
         self.rows: int = rows
         self.cols: int = cols
         self.data: list[list[float]] = data_2d
@@ -256,7 +269,7 @@ class MatrixPrimitive(PrimitiveBase):
         effective_vmin, effective_vmax = self._compute_range()
 
         lines: list[str] = [
-            f'<g data-primitive="matrix" data-shape="{self.shape_name}">'
+            f'<g data-primitive="matrix" data-shape="{self.name}">'
         ]
 
         # Compute offsets for row/col labels (use dynamic values)
@@ -304,7 +317,7 @@ class MatrixPrimitive(PrimitiveBase):
 
         for r in range(self.rows):
             for c in range(self.cols):
-                target = f"{self.shape_name}.cell[{r}][{c}]"
+                target = f"{self.name}.cell[{r}][{c}]"
                 suffix = f"cell[{r}][{c}]"
 
                 effective_state = self.resolve_effective_state(suffix)

@@ -95,6 +95,8 @@ class Plane2D(PrimitiveBase):
         Dictionary of parameters from the ``\\shape`` command.
     """
 
+    primitive_type = "plane2d"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "point[{i}]": "point by index",
         "line[{i}]": "line by index",
@@ -191,7 +193,6 @@ class Plane2D(PrimitiveBase):
 
         self.show_coords: bool = bool(params.get("show_coords", False))
 
-        self.primitive_type: str = "plane2d"
         self._arrow_cell_height = float(_ARROW_CELL_HEIGHT)
         self._arrow_layout = "2d"
 

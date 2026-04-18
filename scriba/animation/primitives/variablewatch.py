@@ -20,6 +20,7 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     estimate_text_width,
     register_primitive,
+    state_class,
     svg_style_attrs,
 )
 
@@ -61,10 +62,17 @@ class VariableWatch(PrimitiveBase):
         Optional keys: ``label``.
     """
 
+    primitive_type = "variablewatch"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "var[{name}]": "variable by name",
         "all": "all variables",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "names",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
@@ -96,8 +104,6 @@ class VariableWatch(PrimitiveBase):
         self._value_col_width = _MIN_VALUE_COL_WIDTH
         self._recalc_value_col()
         self._total_width = self._name_col_width + self._value_col_width
-
-        self.primitive_type: str = "variablewatch"
 
     def _recalc_value_col(self) -> None:
         """Recompute value column width from current values.
@@ -275,7 +281,7 @@ class VariableWatch(PrimitiveBase):
 
             parts.append(
                 f'<g data-target="{html_escape(target)}" '
-                f'class="scriba-state-{state}">'
+                f'class="{state_class(state)}">'
             )
 
             # Row divider (skip first row)

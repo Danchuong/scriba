@@ -30,6 +30,7 @@ from scriba.animation.primitives.base import (
     emit_arrow_svg,
     estimate_text_width,
     register_primitive,
+    state_class,
     svg_style_attrs,
 )
 
@@ -90,12 +91,20 @@ class Queue(PrimitiveBase):
         Recognised keys: ``capacity``, ``data``, ``label``.
     """
 
+    primitive_type = "queue"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index",
         "front": "front pointer",
         "rear": "rear pointer",
         "all": "all cells and pointers",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "capacity",
+        "data",
+        "label",
+    })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
@@ -133,7 +142,6 @@ class Queue(PrimitiveBase):
             ),
         )
 
-        self.primitive_type: str = "queue"
 
     # ----- apply commands --------------------------------------------------
 
@@ -293,7 +301,7 @@ class Queue(PrimitiveBase):
 
             parts.append(
                 f'  <g data-target="{html_escape(target)}" '
-                f'class="scriba-state-{effective_state}">'
+                f'class="{state_class(effective_state)}">'
             )
             rect_attrs = _inset_rect_attrs(
                 x, cell_y, self._cell_width, CELL_HEIGHT
@@ -461,7 +469,7 @@ class Queue(PrimitiveBase):
 
         parts.append(
             f'  <g data-target="{html_escape(target)}" '
-            f'class="scriba-state-{state_name}">'
+            f'class="{state_class(state_name)}">'
         )
         parts.append(
             f'    <polygon points="{triangle_points}" '

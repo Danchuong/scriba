@@ -21,7 +21,7 @@ class TestDeclare:
         inst = ArrayPrimitive("a", {"size": 5})
         assert isinstance(inst, ArrayInstance)
         assert inst.size == 5
-        assert inst.shape_name == "a"
+        assert inst.name == "a"
 
     def test_n_alias(self) -> None:
         inst = ArrayPrimitive("arr", {"n": 3, "data": [1, 2, 3]})

@@ -27,6 +27,7 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     estimate_text_width,
     register_primitive,
+    state_class,
     svg_style_attrs,
 )
 
@@ -72,11 +73,18 @@ class LinkedList(PrimitiveBase):
         Recognised keys: ``data`` (list of values), ``label``.
     """
 
+    primitive_type = "linkedlist"
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{i}]": "node by index",
         "link[{i}]": "link arrow by index",
         "all": "all nodes and links",
     }
+
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "data",
+        "label",
+    })
 
     # ``link[i]`` addresses the outgoing arrow *after* ``node[i]`` — i.e.
     # the link that points from ``node[i]`` to ``node[i+1]``. Valid
@@ -100,7 +108,6 @@ class LinkedList(PrimitiveBase):
 
         self.values: list[Any] = list(raw_data)
         self.label: str | None = params.get("label")
-        self.primitive_type: str = "linkedlist"
 
         # Dynamic sizing based on actual content
         self._recalc_widths()
@@ -328,7 +335,7 @@ class LinkedList(PrimitiveBase):
 
             parts.append(
                 f'<g data-target="{html_escape(link_target)}"'
-                f' class="scriba-state-{link_state}">'
+                f' class="{state_class(link_state)}">'
             )
             parts.append(
                 f'<line x1="{x_start}" y1="{y_mid}"'
@@ -351,7 +358,7 @@ class LinkedList(PrimitiveBase):
 
             parts.append(
                 f'<g data-target="{html_escape(node_target)}"'
-                f' class="scriba-state-{node_state}">'
+                f' class="{state_class(node_state)}">'
             )
 
             # Full node outline
