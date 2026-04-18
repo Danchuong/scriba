@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.8.3 · MIT · Python 3.10+
+**Status:** v0.9.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,19 +24,25 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
-## What's new in v0.8.3
+## What's new in v0.9.0
 
-- **External JS runtime + strict CSP support.** Animation runtime now
-  shippable as `scriba.<sha384>.js` next to the HTML. New CLI flags
-  (`--inline-runtime`, `--asset-base-url`, `--copy-runtime`) select
-  inline / external-copy / CDN modes. Enables `script-src 'self'` CSP.
-  Inline mode stays default in 0.8.x; flips in v0.9.0.
-- **Wave 8 audit fixes.** CLI ergonomics (clean error messages,
-  `--debug`, extension check, overwrite guard), corrected animation
-  easing curves, KaTeX MathML output for screen readers, narration
-  live-region cleanup, Plane2D `vector-effect` for zoom-stable grids,
-  print-mode dark-mode fix, ~7–8% render speedup, and locked public
-  API via `__all__`. See `CHANGELOG.md` for the full list.
+- **Breaking: `data-primitive` casing normalized.** `HashMap` and
+  `VariableWatch` attributes are now lowercase (`"hashmap"`,
+  `"variablewatch"`) to match all other primitives. Update any CSS or
+  JS selectors that target the old casing.
+- **Breaking: `eval_raw` removed.** The deprecated
+  `StarlarkHost.eval_raw` method has been deleted. Use `\compute{...}`
+  blocks instead; wire-level requests with `op="eval_raw"` now return
+  error `E1156` with a migration hint.
+- **External JS runtime (from v0.8.3) is now the default.** Inline
+  mode is no longer the default. Use `--inline-runtime` to restore it.
+  The `--asset-base-url` and `--copy-runtime` flags select CDN or
+  external-copy deployment for `script-src 'self'` CSP compliance.
+- **Structural refactors (waves A–D).** `grammar.py` split into mixin
+  files, `base.py` reduced from 1436 to ~333 lines, warning emission
+  centralised in `scriba.core.warnings`, and named constants replace
+  inline magic values. No API changes for library consumers. See
+  `CHANGELOG.md` for the full list.
 
 <details>
 <summary>v0.8.2 changelog</summary>
@@ -206,8 +212,7 @@ Then include them alongside the rendered fragment:
 ## Documentation
 
 Full architecture, contracts, and roadmap live under the project docs tree:
-<https://github.com/ojcloud/scriba/tree/main/docs>
-<!-- TODO: update once public mirror exists -->
+<https://github.com/Danchuong/scriba/tree/main/docs>
 
 ## License
 

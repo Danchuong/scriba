@@ -309,6 +309,7 @@ class Graph(PrimitiveBase):
         "directed",
         "layout",
         "layout_seed",
+        "layout_lambda",
         "seed",
         "show_weights",
         "label",

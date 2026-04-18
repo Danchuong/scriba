@@ -2,7 +2,7 @@
 
 > Showcase: sparse segment tree — node được **lazy-allocate** khi access lần đầu, cộng với lazy tag propagation. Bài toán "Monkey and Apple-trees" (F — trang trại táo) là case study.
 >
-> Đây là ví dụ phức tạp nhất trong cookbook và cũng là **canonical example** chứng minh rằng `@compute` một mình đã đủ để chạy thuật toán đệ quy thật sự — không cần layer phụ nào.
+> Đây là ví dụ phức tạp nhất trong cookbook và cũng là **canonical example** chứng minh rằng `\compute{...}` một mình đã đủ để chạy thuật toán đệ quy thật sự — không cần layer phụ nào.
 
 ## Problem context
 
@@ -156,24 +156,20 @@ The author writes this LaTeX environment directly in their problem statement:
 \end{animation}
 ```
 
-## Why this example stresses `@compute`
+## Why this example stresses `\compute{...}`
 
 | Layer | Purpose here |
 |---|---|
-| **L1 editorial script** (`.scriba`) | Declarative step narration, `allocate` / `apply_tag` directives tiêu thụ trace. |
-| **L2 `@compute`** | Làm **toàn bộ heavy lifting**: định nghĩa 4 hàm đệ quy (`set_range`, `sum_range`, `push_down`, `get_or_create`), giữ `nodes` dict + `checkpoints` list, chạy thuật toán thật, emit ~60 dòng logic. |
+| **Editorial script** (`\begin{animation}`) | Declarative step narration; `\apply` directives tiêu thụ trace. |
+| **`\compute{...}` block** | Làm **toàn bộ heavy lifting**: định nghĩa 4 hàm đệ quy (`set_range`, `sum_range`, `push_down`, `get_or_create`), giữ `nodes` dict + `checkpoints` list, chạy thuật toán thật, emit ~60 dòng logic. |
 
-Không còn layer thứ 3. Tác giả viết thuật toán sparse segtree ngay trong Starlark, return `trace`, L1 render. Đây là **canonical case** cho thấy `@compute` không chỉ là "precompute vài biến" — nó đủ mạnh để chạy real recursive algorithm với mutable state.
+Không còn layer thứ 3. Tác giả viết thuật toán sparse segtree ngay trong Starlark, return `trace`, editorial script render. Đây là **canonical case** cho thấy `\compute{...}` không chỉ là "precompute vài biến" — nó đủ mạnh để chạy real recursive algorithm với mutable state.
 
-## Key new primitive: `allocate`
+## Key rendering pattern: lazy node reveal
 
-`allocate st.node("[l,r]") parent="[pl,pr]"` compiles to:
+Sparse segtree nodes that are allocated on-demand are represented by pre-generating all nodes in the SVG output but rendering them with `state=dim` (visually hidden) until the step where they are allocated. At that point a `\recolor` command transitions the node to `state=idle`, producing a visual "pop-in" effect via the runtime CSS transition.
 
-1. Hide the node at step N-1 (D2 `style.opacity: 0`)
-2. At step N, un-hide with pop-in animation (D2 `style.opacity: 1` + CSS transition in runtime JS)
-3. Add edge from parent if not exists
-
-Đây là cách sparse segtree thể hiện "node on-demand" trong static D2 topology — node **tồn tại** trong D2 source từ đầu (compiler generate đủ từ `SegTree.sparse`), nhưng opacity 0 cho tới step allocate.
+The parent-child edge is also pre-generated but invisible (`state=dim`) and revealed alongside the child node in the same frame.
 
 ## Expected output
 
@@ -186,4 +182,4 @@ Ví dụ này phức tạp hơn example 04 ở 4 điểm:
 1. **Node count dynamic**: cây bắt đầu 1 node, tăng dần tới 9 node qua các step. Compiler generate đủ D2 nodes từ trace, set opacity per step.
 2. **Lazy tag display**: mỗi node có label 3 phần: range, sum, lazy. Lazy hiển thị bằng badge nhỏ trên node khi != None.
 3. **Push_down semantic**: lazy tag từ parent chảy xuống 2 con, rồi parent reset lazy. Animation: lazy badge fade ở parent, pop-in ở con.
-4. **Recursion inline**: nhờ Starlark host bật `resolve.AllowRecursion = true`, ta có thể định nghĩa 4 hàm đệ quy ngay trong `@compute`. Ràng buộc còn lại — không `while` (dùng `for _ in range(MAX): if cond: break`), không `import`, không `class` (dùng dict với `"type"` tag), không `try/except`, không stdlib — không cản được thuật toán này.
+4. **Recursion inline**: nhờ Starlark host bật `resolve.AllowRecursion = true`, ta có thể định nghĩa 4 hàm đệ quy ngay trong `\compute{...}`. Ràng buộc còn lại — không `while` (dùng `for _ in range(MAX): if cond: break`), không `import`, không `class` (dùng dict với `"type"` tag), không `try/except`, không stdlib — không cản được thuật toán này.

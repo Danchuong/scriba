@@ -36,79 +36,14 @@ The author writes this LaTeX environment directly in their problem statement:
 
 ## What happens at compile time
 
-1. **L1 parser** reads `scene { ... }` block → produces `SceneIR` với 2 shape + 4 step.
-2. Each `step "..."` → 1 `Step` IR object với deltas. Ví dụ step 2 có deltas:
-   - `set g.A.state = current` → D2 `g.A.style.fill: "#fef3c7"; g.A.style.stroke: "#f59e0b"`
-   - `set g.AB.highlight = true` → D2 `g.AB.style.stroke: "#2563eb"; g.AB.style.stroke-width: 2`
-   - `set g.AC.highlight = true` → tương tự
-3. **IR-to-D2 compiler** emit D2 source với `steps: { 1: {...} 2: {...} 3: {...} 4: {...} }` block.
-4. **`d2` subprocess** render ra 1 SVG master với mọi element được stamped `class="d2-step-N"`.
-5. **Post-process** convert `d2-step-N` → `data-step="N"` attr, inject narration `<p data-step="N">`, wrap trong `<figure class="scriba-widget">` với controls + progress bars.
-6. **Client**: `scriba-steps.js` auto-init widget, wire next/prev/play/keyboard.
-
-## Generated D2 source (mô phỏng)
-
-```d2
-vars: {
-  d2-config: {
-    layout-engine: dagre
-    theme-id: neutral-default
-  }
-}
-
-# Shapes
-g: {
-  A: { shape: circle; label: "A" }
-  B: { shape: circle; label: "B" }
-  C: { shape: circle; label: "C" }
-  A <-> B
-  A <-> C
-}
-
-q: {
-  grid-rows: 1
-  grid-columns: 3
-  c0: ""
-  c1: ""
-  c2: ""
-}
-
-# Steps (cumulative)
-steps: {
-  1: {
-    g.A.style.fill: "#dbeafe"
-    q.c0.label: "A"
-    q.c0.style.fill: "#dbeafe"
-  }
-  2: {
-    g.A.style.fill: "#fef3c7"
-    g.A.style.stroke: "#f59e0b"
-    q.c0.label: ""
-    (g.A -> g.B)[0].style.stroke: "#2563eb"
-    (g.A -> g.B)[0].style.stroke-width: 2
-    (g.A -> g.C)[0].style.stroke: "#2563eb"
-    (g.A -> g.C)[0].style.stroke-width: 2
-  }
-  3: {
-    q.c0.label: "B"
-    q.c0.style.fill: "#dbeafe"
-    q.c1.label: "C"
-    q.c1.style.fill: "#dbeafe"
-    g.B.style.fill: "#dbeafe"
-    g.C.style.fill: "#dbeafe"
-  }
-  4: {
-    g.A.style.fill: "#d1fae5"
-    g.A.style.stroke: "#059669"
-    q.c0.label: ""
-    q.c1.label: "B"
-    g.B.style.fill: "#fef3c7"
-    g.B.style.stroke: "#f59e0b"
-  }
-}
-```
-
-D2 emit SVG, Scriba post-process, ra widget final.
+1. **Parser** reads the `\begin{animation}` environment body → produces `AnimationIR` với 2 `\shape` declarations + 4 `FrameIR` objects.
+2. Each `\step` opens a new frame. Mutations inside each frame (e.g. `\recolor`, `\highlight`) become `MutationCommand` objects. For example, frame 2 contains:
+   - `RecolorCommand(target="g.node[A]", state="current")` → SVG fill/stroke updated by the primitive renderer.
+   - `HighlightCommand(target="g.edge[(A,B)]")` → edge stroke colour set to the highlight token.
+   - `HighlightCommand(target="g.edge[(A,C)]")` → same for the second edge.
+3. **IR-to-SVG compiler** calls each primitive's `render_frame()` method, accumulating per-frame SVG patches. No external subprocess is used — all SVG is emitted directly by the Python primitive classes.
+4. **Output assembly** wraps each frame's SVG patch into `<div data-step="N">` elements, injects `<p class="narration" data-step="N">` nodes, and wraps the whole widget in `<figure class="scriba-widget">` with step-controller HTML.
+5. **Client**: the bundled runtime JS auto-initialises the widget (next/prev/play buttons, keyboard ← →, progress bar) from the `data-step` attributes already in the HTML.
 
 ## Expected output
 

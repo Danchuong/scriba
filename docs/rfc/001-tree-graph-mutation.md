@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| **Status** | Accepted |
+| **Status** | Accepted — **design only; not yet implemented** |
 | **Author** | Wave 5 orchestration (research grounded in `scriba` v0.5.2 @ `90d1527`) |
 | **Date** | 2026-04-11 |
 | **Target release** | v0.6.0 |

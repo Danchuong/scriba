@@ -178,7 +178,7 @@ Attaches narration text to the current frame. The brace body is LaTeX and is ren
 
 - **Contexts:** animation only.
 - **Signature:** `\narrate{<balanced_latex>}`
-- **Cardinality:** **exactly one** `\narrate` per `\step`. Zero is `E1150` (warning, emits an empty `<p class="scriba-narration" aria-hidden="true"></p>`). Two or more in the same step is `E1055` (error).
+- **Cardinality:** **exactly one** `\narrate` per `\step`. Zero emits an empty `<p class="scriba-narration" aria-hidden="true"></p>` (no error code). Two or more in the same step is `E1055` (error).
 - **Position constraint:** may appear anywhere inside the `\step` block; emission order is: state mutations first (apply/highlight/recolor/annotate), narration last.
 - **Content:** any LaTeX the `TexRenderer` accepts. Authors may mix English and Vietnamese (see cookbook `06-frog1-dp/input.md`).
 - **Error codes:** `E1055` duplicate narrate; `E1056` narrate outside `\step`.
@@ -429,7 +429,7 @@ At the start of frame k:
 
 ### 6.2 Narration cardinality
 
-Each `\step` **SHOULD** have exactly one `\narrate`. Zero → `E1150` warning (empty narration paragraph is emitted with `aria-hidden="true"` so screen readers skip it). Two or more → `E1055` error (the intent is ambiguous; authors should merge them).
+Each `\step` **SHOULD** have exactly one `\narrate`. Zero → empty narration paragraph emitted with `aria-hidden="true"` (no error code). Two or more → `E1055` error (the intent is ambiguous; authors should merge them).
 
 ### 6.3 Frame count limits
 

@@ -39,7 +39,6 @@ emitter. No runtime JS, no CDN dependency. Output is a static `<svg>` per frame.
   xrange="auto",
   yrange="auto",
   series=["phi", "cost"],
-  yscale="linear",
   grid=true,
   width=320,
   height=200

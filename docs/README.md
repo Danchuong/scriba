@@ -202,11 +202,10 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 
 ### `archive/` — One-off audit and verify reports
 
-| File | Purpose |
+| Directory | Purpose |
 |---|---|
-| [`audit-2026-04-09.md`](archive/audit-2026-04-09.md) | Audit of the locked base spec (2026-04-09). |
-| [`verify-2026-04-09.md`](archive/verify-2026-04-09.md) | Verification report (2026-04-09). |
-| [`v020-verify.md`](archive/v020-verify.md) | v0.2.0 verification report. |
+| [`scriba-audit-2026-04-17/`](archive/scriba-audit-2026-04-17/) | Audit of the locked base spec (2026-04-17). |
+| [`docs-audit-2026-04-18/`](archive/docs-audit-2026-04-18/) | Cross-cutting docs audit (2026-04-18). |
 
 ### `tutorial/` — Getting started
 
@@ -219,9 +218,8 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 | Directory | Purpose |
 |---|---|
 | [`cookbook/`](cookbook/) | Worked problems. Frog 1 DP, animated BFS, segment tree query, sparse segtree lazy, small multiples, side-by-side, swap game, monkey apples, Zuma. Copy-paste starters. |
-| [`extensions/`](extensions/) | Extension specs (figure-embed, hl-macro, fastforward, substory, keyframe-animation). |
+| [`extensions/`](extensions/) | Extension specs (figure-embed, hl-macro, substory, keyframe-animation). |
 | [`primitives/`](primitives/) | Primitive extension specs (production) (matrix, stack, plane2d, metricplot, graph-stable-layout, codepanel, hashmap, linkedlist, queue, variablewatch). |
-| [`blog/`](blog/) | Launch blog posts and community thread templates. |
 | [`oss/`](oss/) | Notes on the open-source pipeline: what ships publicly, what stays in-tree. |
 | [`legacy/`](legacy/) | Historical drafts from earlier design phases. Not current — see `spec/` and `planning/` for authoritative docs. |
 

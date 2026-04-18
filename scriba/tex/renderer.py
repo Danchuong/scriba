@@ -135,8 +135,8 @@ _KATEX_MISSING_MSG = """\
 Scriba ships KaTeX 0.16.11 bundled inside the wheel, but Node.js could not
 load the vendored file. This is a packaging bug, not a user install issue.
 
-Please file a bug at https://github.com/ojcloud/scriba/issues with:
-- your `pip show scriba` output
+Please file a bug at https://github.com/Danchuong/scriba/issues with:
+- your `pip show scriba-tex` output
 - your Node.js version (`node --version`)
 - the Node stderr below
 

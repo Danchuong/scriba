@@ -1,6 +1,6 @@
 # 02 — `scriba.tex` plugin
 
-> Wave 2 elaboration. Binds verbatim to names locked in [`01-architecture.md`](../spec/architecture.md): `Block`, `RenderArtifact`, `Document`, `RenderContext`, `Renderer`, `RendererAssets`, `Pipeline`, `SubprocessWorker`, `SubprocessWorkerPool`, `ScribaError`, `RendererError`, `WorkerError`, `ValidationError`, `ResourceResolver`, `ALLOWED_TAGS`, `ALLOWED_ATTRS`. Do not relitigate those names here — if you think one is wrong, file an entry in `07-open-questions.md`.
+> Wave 2 elaboration. Binds verbatim to names locked in [`01-architecture.md`](../spec/architecture.md): `Block`, `RenderArtifact`, `Document`, `RenderContext`, `Renderer`, `RendererAssets`, `Pipeline`, `SubprocessWorker`, `SubprocessWorkerPool`, `ScribaError`, `RendererError`, `WorkerError`, `ValidationError`, `ResourceResolver`, `ALLOWED_TAGS`, `ALLOWED_ATTRS`. Do not relitigate those names here.
 
 ## 1. Purpose
 
@@ -359,7 +359,7 @@ if not Path(str(resolved)).is_file():
     )
 ```
 
-`importlib.resources.files("scriba.tex").joinpath("katex_worker.js")` returns a `Traversable` which is a real filesystem path when the package is installed from a wheel and a zip path when installed from a zipapp. Scriba 0.1 supports the filesystem case only; zipapp installs are documented in `04-packaging.md` as unsupported.
+`importlib.resources.files("scriba.tex").joinpath("katex_worker.js")` returns a `Traversable` which is a real filesystem path when the package is installed from a wheel and a zip path when installed from a zipapp. Scriba 0.1 supports the filesystem case only; zipapp installs are unsupported.
 
 ### 5.2 Batching strategy
 
@@ -440,7 +440,7 @@ All assets ship inside `scriba/tex/static/` and are addressed by basename throug
 | `scriba-tex-copy.js` | Vanilla IIFE, ~40 lines. Event-delegated click handler on `document` that matches `event.target.closest(".scriba-tex-copy-btn")`, reads the sibling `[data-code]` attribute, calls `navigator.clipboard.writeText(decoded)`, and swaps the button text to `"Copied"` for 2000 ms before reverting. No framework, no bundler. | ~40 lines |
 | `katex_worker.js` | The Node worker script, shipped as package data (not under `static/` because it is not served to browsers). | ~80 lines |
 
-`scriba/tex/__init__.py` declares the package-data manifest so `importlib.resources.files("scriba.tex")` finds all of the above (see `04-packaging.md` for `pyproject.toml` details).
+`scriba/tex/__init__.py` declares the package-data manifest so `importlib.resources.files("scriba.tex")` finds all of the above (see `pyproject.toml` for package-data details).
 
 ### 7.1 `assets()` return logic
 
@@ -603,7 +603,7 @@ Wave 1 §"Thread and process model" stated that each worker process gets its own
 4. **Shutdown.** The Flask teardown hook calls `app.extensions["scriba"].close()`, which iterates every registered renderer calling `close()`, then closes the `SubprocessWorkerPool`, which SIGTERMs every spawned worker and waits up to 2 seconds before SIGKILL. This mirrors the current `atexit` handler in `katex_worker.py` but runs on app shutdown rather than interpreter exit, making graceful reloads under gunicorn's `--reload` flag work correctly.
 5. **Testing.** Integration tests instantiate one `Pipeline` per test module via a pytest fixture scoped at `module` level; the fixture's teardown calls `pipeline.close()`. Test isolation is achieved by resetting the LRU cache between tests via `renderer._cache.cache_clear()` (private API, acceptable in tests).
 
-This migration is fully elaborated in `05-migration.md`. This document only commits to the resolution above.
+This document only commits to the resolution above.
 
 ## 13. Summary of guarantees
 

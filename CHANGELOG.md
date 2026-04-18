@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v0.9.1
+## [Unreleased]
 
 ### Deprecated
 
@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Still importable but considered internal. A higher-level `render_to_html()`
   helper is planned for the public bundling surface.
 
-## [0.9.0] — 2026-04-18
+## [0.9.0] - 2026-04-18
 
 ### Breaking
 
@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 - **BREAKING: `StarlarkHost.eval_raw` removed** — the deprecated `eval_raw` method has been deleted. Use `\compute{...}` blocks instead. Wire-level requests with `op="eval_raw"` now return a structured error `E1156` with a migration hint.
+- **BREAKING: inline-runtime is no longer the default** — as forecast in the v0.8.3 entry, inline mode no longer defaults to `True`. Pass `--inline-runtime` (CLI) or `render_inline_runtime=True` (API) to restore the previous behavior.
 
 ### Refactored
 
@@ -185,6 +186,9 @@ backward compatible with 0.8.2 consumers. `SCRIBA_VERSION` unchanged.
 
 - **CSS deduplication via `css_bundler`** — The ~470-line inline CSS block in `render.py` was replaced by `scriba.core.css_bundler`, reading CSS from source `.css` files at render time.
 - **Widget chrome extracted** — `scriba-standalone.css` split into `scriba-embed.css` for widget chrome CSS.
+
+<!-- Note: versions 0.7.x and 0.8.1 were internal development snapshots
+     that were never published to PyPI. They are omitted from this changelog. -->
 
 ## [0.6.3] - 2026-04-13
 
@@ -1215,10 +1219,10 @@ worker; diagram plugin (0.2+) reserved.
 - 71 tests: 30 snapshot + 5 XSS + 6 validator + 9 API + 7 pipeline +
   9 workers + 7 sanitize
 
-[0.5.1]: https://github.com/ojcloud/scriba/compare/v0.5.0...v0.5.1
-[0.5.0]: https://github.com/ojcloud/scriba/compare/v0.4.0...v0.5.0
-[0.4.0]: https://github.com/ojcloud/scriba/compare/v0.3.0...v0.4.0
-[0.3.0]: https://github.com/ojcloud/scriba/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/ojcloud/scriba/compare/v0.1.1-alpha...v0.2.0
-[0.1.1-alpha]: https://github.com/ojcloud/scriba/compare/v0.1.0-alpha...v0.1.1-alpha
-[0.1.0-alpha]: https://github.com/ojcloud/scriba/releases/tag/v0.1.0-alpha
+[0.5.1]: https://github.com/Danchuong/scriba/compare/v0.5.0...v0.5.1
+[0.5.0]: https://github.com/Danchuong/scriba/compare/v0.4.0...v0.5.0
+[0.4.0]: https://github.com/Danchuong/scriba/compare/v0.3.0...v0.4.0
+[0.3.0]: https://github.com/Danchuong/scriba/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/Danchuong/scriba/compare/v0.1.1-alpha...v0.2.0
+[0.1.1-alpha]: https://github.com/Danchuong/scriba/compare/v0.1.0-alpha...v0.1.1-alpha
+[0.1.0-alpha]: https://github.com/Danchuong/scriba/releases/tag/v0.1.0-alpha

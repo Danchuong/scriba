@@ -31,7 +31,7 @@ Before cloning the repo you will need:
 Scriba uses a standard PEP 621 / Hatch layout. Fresh-clone quickstart:
 
 ```bash
-git clone https://github.com/ojcloud/scriba.git  # TODO: confirm URL
+git clone https://github.com/Danchuong/scriba.git
 cd scriba
 uv sync --dev
 uv run pytest -q
@@ -58,7 +58,7 @@ Scriba does not use `pre-commit` hooks, so there is no extra
 To refresh the vendored KaTeX copy (e.g. `0.16.11` → `0.16.12`), run:
 
 ```bash
-packages/scriba/scripts/vendor_katex.sh 0.16.12
+scripts/vendor_katex.sh 0.16.12
 ```
 
 The script downloads the pinned version from jsDelivr, updates
@@ -94,7 +94,7 @@ updated after manual review against the TeX plugin contract in
    behavior change.
 3. Run `pytest -q` locally before pushing.
 4. Write a descriptive PR body that explains the *why*, not just the
-   *what*. Link to the relevant doc section in `docs/scriba/` when
+   *what*. Link to the relevant doc section in `docs/` when
    touching the plugin contract.
 
 ## Architecture and open questions
@@ -109,10 +109,12 @@ The canonical design documents live under `docs/`:
 
 ## Roadmap pointer
 
-The next feature milestone is **v0.2.0**, which introduces the
-`\begin{animation}` LaTeX environment for step-through CP editorials.
-See `docs/spec/environments.md` for the contract in progress.
-Contributions targeting that milestone are especially welcome.
+The project is at **v0.9.0**. The `\begin{animation}` environment has
+been shipping since v0.2.0 and is fully documented in
+`docs/spec/environments.md`. The next milestone is **v0.9.1 / v1.0.0**
+stabilization: API surface lock, extended test coverage, and public
+documentation polish. Contributions in those areas are especially
+welcome.
 
 By contributing, you agree that your contributions will be licensed under
 the project's MIT license.

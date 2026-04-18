@@ -91,22 +91,14 @@ Example:
 | Selector            | Addresses                                                                |
 |---------------------|--------------------------------------------------------------------------|
 | `s`                 | The entire stack (whole-shape target)                                    |
-| `s.top`             | The topmost item (most recently pushed). Alias for `s.item[-1]`.         |
-| `s.bottom`          | The bottommost item. Alias for `s.item[0]`.                              |
+| `s.top`             | The topmost item (most recently pushed).                                 |
 | `s.item[i]`         | Item at 0-based index from bottom. `i=0` is the oldest item.            |
-| `s.item[-1]`        | Top item (alias). Negative indices count from the top.                   |
-| `s.range[lo:hi]`    | Items from index `lo` to `hi`, **inclusive on both ends** (matches base spec §4.2 inclusive-range convention). |
 | `s.all`             | Every item currently in the stack.                                       |
 
-Index semantics: the "bottom" is index 0; the "top" is index `size-1`. Negative indices
-wrap from the top: `item[-1]` = top, `item[-2]` = second from top.
+Index semantics: the "bottom" is index 0; the "top" is index `size-1`.
 
 Out-of-range index after all push/pop operations for the frame is **E1443**
-(item-out-of-range). Empty-stack access (top/bottom on an empty stack) is also E1443.
-
-> **Note (audit 3.3):** the earlier draft used Python-style exclusive-hi slice semantics
-> (`lo:hi-1`). This has been corrected to **inclusive** range `[lo, hi]` to match the
-> base spec §4.2 convention used by `DPTable` and `Matrix`.
+(item-out-of-range). Empty-stack access (top on an empty stack) is also E1443.
 
 ---
 

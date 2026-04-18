@@ -70,7 +70,6 @@ for HARD-TO-DISPLAY #5 — use `Graph layout=stable` for the N=6 toy flow networ
 | `vmax`         | float or `"auto"`  | `"auto"`    | Value mapped to the maximum colorscale stop.             |
 | `row_labels`   | list of strings    | none        | Labels drawn to the left of each row.                    |
 | `col_labels`   | list of strings    | none        | Labels drawn above each column.                          |
-| `title`        | string             | none        | Text drawn above the matrix.                             |
 
 ### 2.3 Data layout
 

@@ -2,7 +2,7 @@
 
 > Showcase: bài toán kinh điển **"Monkey and Apple-trees"** (F — trang trại táo) viết lại trong Scriba. Một con khỉ đi trên hàng cây, mỗi ngày hoặc **làm chín** một dãy cây, hoặc hỏi **đếm số cây chín** trong một dãy. Đây là bản song song với example 05 nhưng tập trung vào semantic **frequency / đếm** và `range_set` kiểu "paint once" thay vì gán tổng.
 >
-> Cùng trục ý tưởng: sparse segtree + lazy, nhưng node-level state là `(freq, lazy)` chứ không phải `(sum, lazy)`, và trace được sinh ra từ một lần chạy thuật toán đệ quy ngay trong `@compute`.
+> Cùng trục ý tưởng: sparse segtree + lazy, nhưng node-level state là `(freq, lazy)` chứ không phải `(sum, lazy)`, và trace được sinh ra từ một lần chạy thuật toán đệ quy ngay trong `\compute{...}`.
 
 ## Problem context
 
@@ -213,6 +213,6 @@ Xem [`output.html`](./output.html). 9 step, node pop-in khi allocate, lazy badge
 
 ## Notes
 
-- Ví dụ này dùng cùng host `@compute` setting như example 05: `resolve.AllowRecursion = true`, không `while`, không `import`, không `class`, node biểu diễn bằng dict với `"type"` tag. 4 hàm đệ quy (`get_or_create`, `push_down`, `set_range`, `sum_range`) viết trực tiếp, không layer phụ.
+- Ví dụ này dùng cùng host `\compute{...}` setting như example 05: `resolve.AllowRecursion = true`, không `while`, không `import`, không `class`, node biểu diễn bằng dict với `"type"` tag. 4 hàm đệ quy (`get_or_create`, `push_down`, `set_range`, `sum_range`) viết trực tiếp, không layer phụ.
 - Điểm khác biệt chính so với 05: state là `(freq, lazy∈{0,1})` thay vì `(sum, lazy=value)`, và `sum_range` chỉ cộng, không set.
 - `output.html` là kỳ vọng render thủ công để pin-down ngữ nghĩa — không phải kết quả compile thật.

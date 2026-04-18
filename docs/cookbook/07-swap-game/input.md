@@ -215,9 +215,9 @@ The author writes this LaTeX environment directly in their problem statement:
 \end{animation}
 ```
 
-**Tổng: ~90 dòng LaTeX.** BFS authoritative loop + editorial trace nằm trong một block `\compute`. Không cần stdlib helper riêng cho bài này.
+**Tổng: ~90 dòng LaTeX.** BFS authoritative loop + editorial trace nằm trong một block `\compute{...}`. Không cần stdlib helper riêng cho bài này.
 
-## Vì sao `@compute` lại chạy BFS thật, rồi lại "cherry-pick" frame?
+## Vì sao `\compute{...}` lại chạy BFS thật, rồi lại "cherry-pick" frame?
 
 Có hai pattern khả thi:
 1. **Chỉ hand-craft frame** — tác giả gõ tay 8 event. Ngắn hơn nhưng không có guarantee frame phù hợp với BFS thật.
