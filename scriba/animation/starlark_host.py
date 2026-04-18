@@ -237,35 +237,6 @@ class StarlarkHost:
 
         return response.get("bindings", {})
 
-    def eval_raw(
-        self,
-        globals: dict[str, Any],
-        source: str,
-        *,
-        timeout: float = 5.0,
-    ) -> dict[str, Any]:
-        """Like :meth:`eval` but returns the full worker response dict.
-
-        Useful when the caller needs access to ``debug`` output or wants
-        to inspect the ``ok`` field without catching exceptions.
-
-        .. deprecated::
-            ``eval_raw`` has no internal callers and is not part of the
-            stable Scriba public API.  It is scheduled for removal in a
-            future release.  Use :meth:`eval` instead; if you need the
-            raw worker response, file an issue describing your use-case.
-        """
-        request_id = uuid.uuid4().hex[:10]
-        request = {
-            "op": "eval",
-            "id": request_id,
-            "globals": globals,
-            "source": source,
-        }
-
-        worker = self._pool.get("starlark")
-        return worker.send(request, timeout=timeout)
-
     def ping(self, *, timeout: float = 5.0) -> bool:
         """Send a health-check ping. Returns True if the worker is healthy."""
         worker = self._pool.get("starlark")

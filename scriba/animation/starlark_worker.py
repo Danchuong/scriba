@@ -899,6 +899,22 @@ def main() -> None:
             sys.stdout.flush()
             continue
 
+        if op == "eval_raw":
+            response = {
+                "id": request_id,
+                "ok": False,
+                "code": "E1156",
+                "message": (
+                    "eval_raw was removed in v0.9.0; "
+                    r"use \compute{...} instead"
+                ),
+                "line": None,
+                "col": None,
+            }
+            sys.stdout.write(json.dumps(response, ensure_ascii=False) + "\n")
+            sys.stdout.flush()
+            continue
+
         # Unknown op
         response = {
             "id": request_id,

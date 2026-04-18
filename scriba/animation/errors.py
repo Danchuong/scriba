@@ -190,6 +190,7 @@ ERROR_CATALOG: dict[str, str] = {
     "E1153": "Starlark execution step count exceeded.",
     "E1154": "Starlark forbidden construct (import, while, class, lambda, etc.).",
     "E1155": "Starlark memory limit exceeded.",
+    "E1156": "eval_raw removed; use \\compute{...} instead.",
     # --- Foreach errors (E1170 -- E1179) ---
     "E1170": "\\foreach nesting depth exceeds maximum (3).",
     "E1171": "\\foreach with empty body.",
