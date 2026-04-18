@@ -1185,7 +1185,7 @@ def emit_interactive_html(
     }}else if(kind==='element_add'){{
       var src=parsed.querySelector(sel);
       if(src){{
-        var clone=document.importNode(src,true);
+        var clone=document.adoptNode(src.cloneNode(true));
         clone.style.opacity='0';
         var srcP=src.parentNode;
         var pShape=null;
@@ -1224,7 +1224,7 @@ def emit_interactive_html(
     }}else if(kind==='annotation_add'){{
       var src8=parsed.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
       if(src8){{
-        var clone8=document.importNode(src8,true);
+        var clone8=document.adoptNode(src8.cloneNode(true));
         var srcParent=src8.parentNode;
         var parentShape=null;
         var _midTransforms=[];

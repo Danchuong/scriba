@@ -6,6 +6,7 @@ See ``docs/scriba/02-tex-plugin.md`` §3 for the HTML output contract and
 
 from __future__ import annotations
 
+import hashlib
 import re
 import unicodedata
 
@@ -18,7 +19,13 @@ from scriba.tex.parser.escape import (
 
 
 def slugify(text: str) -> str:
-    """Slugify heading text per ``02-tex-plugin.md`` §3.1."""
+    """Slugify heading text per ``02-tex-plugin.md`` §3.1.
+
+    For non-Latin scripts (CJK, Arabic, etc.) whose characters are fully
+    stripped by NFKD + ASCII-only filtering, fall back to a stable
+    ``section-<sha1[:8]>`` suffix derived from the original heading text
+    so that every heading gets a unique, linkable ``id=``.
+    """
     decoded = (
         text.replace("&amp;", "&")
         .replace("&lt;", "<")
@@ -30,7 +37,13 @@ def slugify(text: str) -> str:
     stripped = "".join(c for c in normalized if not unicodedata.combining(c))
     lowered = stripped.lower()
     slug = re.sub(r"[^a-z0-9]+", "-", lowered).strip("-")
-    return slug or "section"
+    if not slug:
+        # All characters were non-Latin (e.g. CJK, Arabic).  Use a
+        # content-stable hash of the original text so duplicate headings
+        # with different non-Latin content still get distinct ids.
+        sha1 = hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
+        slug = f"section-{sha1}"
+    return slug
 
 
 def apply_sections(text: str, slug_counts: dict[str, int]) -> str:

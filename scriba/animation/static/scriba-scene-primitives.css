@@ -11,7 +11,22 @@
  * by stroke color + stroke weight on a mostly tonal neutral background,
  * not by filling every cell with a saturated hue. Cross-verified WCAG AA
  * in /tmp/scriba-cell-mockups-v2.html.
- */
+ *
+ * ── Browser compatibility floor (W7-M9) ─────────────────────────────────
+ * Minimum supported browsers: Safari 14+, Firefox ESR 128+, Chrome 90+.
+ *
+ * This file uses :where() in twelve selectors to zero-out specificity so
+ * state classes win without needing !important.  :where() shipped in:
+ *   Chrome 88 (Jan 2021) · Firefox 78 · Safari 14
+ * Safari 13.1 and Firefox ≤77 will silently drop all :where() rules,
+ * causing idle-state fill/stroke/stroke-width defaults to be missing —
+ * a major visual regression on those versions.  Since the project floor
+ * is Safari 14+, this is intentional and accepted.
+ *
+ * If the Safari floor ever drops to 13.x, replace :where(sel) with sel
+ * and control specificity by ordering: default rules first, state-class
+ * overrides after.  Do NOT add :is() duplicates unless the floor drops.
+ * ─────────────────────────────────────────────────────────────────────── */
 
 /* ============================================
    Scene-level tokens
@@ -353,7 +368,8 @@
   font:                  var(--scriba-cell-font);
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
-  font-synthesis-weight: none;
+  font-synthesis:        none;         /* broad compat: Firefox ≤106, Safari ≤16.3 */
+  font-synthesis-weight: none;         /* precise longhand where supported */
   fill:                  var(--scriba-fg);
   text-anchor:           middle;
   dominant-baseline:     central;
@@ -390,7 +406,8 @@
   font:                  var(--scriba-node-font);
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
-  font-synthesis-weight: none;
+  font-synthesis:        none;         /* broad compat: Firefox ≤106, Safari ≤16.3 */
+  font-synthesis-weight: none;         /* precise longhand where supported */
   fill:                  var(--scriba-fg);
   text-anchor:           middle;
   dominant-baseline:     middle;
@@ -501,50 +518,64 @@
    supersedes Tree's previous per-element halo at ``tree.py:793`` and
    extends the same treatment to every other primitive in one rule set.
 
-   Wrapped in ``@media (forced-colors: none)`` so Windows High Contrast
-   Mode can strip the halo without leaving behind an unwanted outline.
+   Applied unconditionally so Firefox ≤88 (which silently ignores
+   ``forced-colors: none``) still gets the halo.  A ``forced-colors: active``
+   block below removes the halo for Windows High Contrast Mode on browsers
+   that support the query (Chrome 89+, Firefox 89+, Safari 16+).
    ``stroke-linejoin: round`` kills the sub-pixel miter spikes that
-   otherwise show up on narrow curved glyphs (lowercase a, e, s). */
-@media (forced-colors: none) {
+   otherwise show up on narrow curved glyphs (lowercase a, e, s).
+   W7-M10: was ``@media (forced-colors: none)`` — inverted so the default
+   styling is always applied and HCM suppression is opt-in. */
+[data-primitive] text {
+  paint-order:       stroke fill markers;
+  stroke:            var(--scriba-halo, var(--scriba-bg));
+  stroke-width:      3;
+  stroke-linejoin:   round;
+  stroke-linecap:    round;
+}
+
+/* Text inside a stateful container inherits the container's fill so
+   the glyph appears to sit ON the container even when it overflows
+   the rect or circle. One override per state keeps the halo in sync
+   with the cell's rendered background. */
+.scriba-state-idle      > text { --scriba-halo: var(--scriba-state-idle-fill); }
+.scriba-state-current   > text { --scriba-halo: var(--scriba-state-current-fill); }
+.scriba-state-done      > text { --scriba-halo: var(--scriba-state-done-fill); }
+.scriba-state-dim       > text { --scriba-halo: var(--scriba-state-dim-fill); }
+.scriba-state-error     > text { --scriba-halo: var(--scriba-state-error-fill); }
+.scriba-state-good      > text { --scriba-halo: var(--scriba-state-good-fill); }
+.scriba-state-highlight > text { --scriba-halo: var(--scriba-state-highlight-fill); }
+.scriba-state-path      > text { --scriba-halo: var(--scriba-state-path-fill); }
+
+/* Floating labels (index row under an Array cell, primitive caption,
+   Graph edge weights, Plane2D tick labels) sit in the whitespace
+   between primitives. The halo matches the stage background so
+   overlapping labels stay legible and no "color soup" forms when two
+   floating labels collide (Wave 9 Agent B visual-quality finding). */
+.scriba-index-label,
+.idx,
+.scriba-primitive-label,
+.scriba-graph-weight {
+  --scriba-halo: var(--scriba-bg);
+  stroke-width:  2;
+}
+
+/* Tree / Graph node text routinely overflows small circles, so the
+   halo gets an extra pixel of breathing room. */
+.scriba-tree-nodes text,
+.scriba-graph-nodes text {
+  stroke-width: 4;
+}
+
+/* W7-M10: Remove halo under Windows High Contrast Mode where the OS
+   controls all colors; the halo stroke would appear as a forced-color
+   outline and interfere with HCM's own text rendering.
+   Supported in Chrome 89+, Firefox 89+, Safari 16+. */
+@media (forced-colors: active) {
   [data-primitive] text {
-    paint-order:       stroke fill markers;
-    stroke:            var(--scriba-halo, var(--scriba-bg));
-    stroke-width:      3;
-    stroke-linejoin:   round;
-    stroke-linecap:    round;
-  }
-
-  /* Text inside a stateful container inherits the container's fill so
-     the glyph appears to sit ON the container even when it overflows
-     the rect or circle. One override per state keeps the halo in sync
-     with the cell's rendered background. */
-  .scriba-state-idle      > text { --scriba-halo: var(--scriba-state-idle-fill); }
-  .scriba-state-current   > text { --scriba-halo: var(--scriba-state-current-fill); }
-  .scriba-state-done      > text { --scriba-halo: var(--scriba-state-done-fill); }
-  .scriba-state-dim       > text { --scriba-halo: var(--scriba-state-dim-fill); }
-  .scriba-state-error     > text { --scriba-halo: var(--scriba-state-error-fill); }
-  .scriba-state-good      > text { --scriba-halo: var(--scriba-state-good-fill); }
-  .scriba-state-highlight > text { --scriba-halo: var(--scriba-state-highlight-fill); }
-  .scriba-state-path      > text { --scriba-halo: var(--scriba-state-path-fill); }
-
-  /* Floating labels (index row under an Array cell, primitive caption,
-     Graph edge weights, Plane2D tick labels) sit in the whitespace
-     between primitives. The halo matches the stage background so
-     overlapping labels stay legible and no "color soup" forms when two
-     floating labels collide (Wave 9 Agent B visual-quality finding). */
-  .scriba-index-label,
-  .idx,
-  .scriba-primitive-label,
-  .scriba-graph-weight {
-    --scriba-halo: var(--scriba-bg);
-    stroke-width:  2;
-  }
-
-  /* Tree / Graph node text routinely overflows small circles, so the
-     halo gets an extra pixel of breathing room. */
-  .scriba-tree-nodes text,
-  .scriba-graph-nodes text {
-    stroke-width: 4;
+    paint-order:  normal;
+    stroke:       none;
+    stroke-width: 0;
   }
 }
 
