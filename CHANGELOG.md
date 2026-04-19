@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-04-19
+
+Phase 6 — Playwright E2E suite + runtime race fix uncovered by it.
+
+### Fixed
+
+- Animation runtime: ``cur`` (current frame index) now updates
+  synchronously when ``animateTransition`` starts, instead of only when
+  ``_finish`` resolves. Previously, two back-to-back ``next`` clicks
+  (the second issued after the visible step counter advanced but before
+  the WAAPI timeline settled) used a stale ``cur`` and got
+  cancelled-and-snapped to the same destination as the first click,
+  effectively losing the second navigation. Patched in both
+  ``scriba/animation/_script_builder.py`` (inline runtime) and the
+  static ``scriba/animation/static/scriba.js`` (CSP-strict deployments).
+
+### Tests
+
+- New ``tests/e2e/`` Playwright suite with 5 critical-path tests:
+  widget mount + zero console errors, next/prev frame navigation,
+  ``data-theme`` ↔ ``aria-pressed`` toggle synchrony, and
+  ``prefers-reduced-motion: reduce`` non-blocking nav.
+- ``tests/e2e/conftest.py`` rebuilds ``examples/quickstart/hello.html``
+  via ``render.py`` per session and serves it over ``file://`` (Scriba
+  is a build-time generator — no dev server needed).
+- New ``e2e`` extra in ``pyproject.toml``
+  (``playwright>=1.40``, ``pytest-playwright>=0.5``) and a matching
+  ``e2e`` pytest marker.
+
 ## [0.9.2] - 2026-04-19
 
 Full-project audit pass (10 axes) — see
