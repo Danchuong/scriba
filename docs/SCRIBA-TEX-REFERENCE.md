@@ -51,7 +51,9 @@ No starred variants (`\section*{}`). No section numbers.
 | `$...$` | inline |
 | `$$...$$` | display |
 
-**NOT supported:** `\[...\]`, `\(...\)`. Math environments (`align`, `cases`, `matrix`, etc.) must be inside `$` or `$$` delimiters. Max 500 math expressions per document.
+**NOT supported:** `\[...\]`, `\(...\)`. Math environments (`equation`, `align`, `align*`, `array`, `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `Vmatrix`, `cases`) MUST be wrapped in `$$...$$` — KaTeX renders them inside math regions. Max 500 math expressions per document.
+
+**WARNING — validator trap.** These environments are listed in the validator's `KNOWN_ENVIRONMENTS` set so brace/env-balance counts succeed. But if you write `\begin{equation}...\end{equation}` at the **top level** (outside `$$`), the renderer has no dedicated handler — the literal `\begin{equation}` and `\end{equation}` text leaks into the HTML. Always wrap math envs in `$$...$$`.
 
 ### 2.4 Lists
 ```latex
@@ -417,17 +419,22 @@ Nested frame sequence inside a parent frame (animation only, max depth 3).
 
 ## 6. Visual States
 
-| State | Color | Use |
-|-------|-------|-----|
-| `idle` | default bg | not yet processed |
-| `current` | blue (#0072B2) | being processed now |
-| `done` | green (#009E73) | finished processing |
-| `dim` | 50% opacity | no longer relevant |
-| `error` | vermillion (#D55E00) | error/invalid |
-| `good` | sky blue (#56B4E9) | correct/optimal |
-| `path` | blue (#2563eb) | part of solution path |
-| `hidden` | invisible | exists but not shown yet |
-| `highlight` | yellow (#F0E442) | ephemeral focus (via `\highlight` only) |
+Palette is **Radix Slate + Blue** (β "Tonal Architecture"). Hex values
+are the inline SVG fallback; CSS custom properties override them when
+`scriba-scene-primitives.css` is loaded. Source of truth:
+`scriba/animation/primitives/_types.py` (`STATE_COLORS`).
+
+| State | Fill | Stroke | Text | Use |
+|-------|------|--------|------|-----|
+| `idle` | `#f8f9fa` | `#dfe3e6` | `#11181c` | not yet processed |
+| `current` | `#0070d5` | `#0b68cb` | `#ffffff` | being processed now |
+| `done` | `#e6e8eb` | `#c1c8cd` | `#11181c` | finished processing |
+| `dim` | `#f1f3f5` | `#e6e8eb` | `#687076` | no longer relevant |
+| `error` | `#f8f9fa` | `#e5484d` | `#11181c` | error/invalid |
+| `good` | `#e6e8eb` | `#2a7e3b` | `#11181c` | correct/optimal |
+| `path` | `#e6e8eb` | `#c1c8cd` | `#5e6669` | part of solution path |
+| `highlight` | `#f8f9fa` | `#0090ff` | `#0b68cb` | ephemeral focus (via `\highlight`) |
+| `hidden` | — | — | — | not rendered (CSS `display:none`) |
 
 ---
 
@@ -723,14 +730,13 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 \end{animation}
 ```
 
-### 9.5 Using foreach and compute
+### 9.5 Using foreach
 ```latex
-\begin{animation}[id="foreach-demo", label="Foreach and Compute"]
+\begin{animation}[id="foreach-demo", label="Foreach iteration"]
 \shape{a}{Array}{size=5, data=[10,20,30,40,50], labels="0..4"}
 
 \step
-\compute{ evens = [0, 2, 4] }
-\foreach{i}{${evens}}
+\foreach{i}{[0, 2, 4]}
   \recolor{a.cell[${i}]}{state=good}
 \endforeach
 \narrate{Mark even-indexed cells as good.}
@@ -742,6 +748,13 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 \narrate{Mark all cells as done.}
 \end{animation}
 ```
+
+> `\foreach` accepts a literal list `[…]` or an inclusive range `lo..hi`.
+> Bindings via `\compute{ name = … }` only resolve when an
+> `AnimationRenderer(starlark_host=…)` host is configured. Renderers built
+> without one silently skip `\compute`, and a downstream
+> `${binding}` lookup raises **E1173**. Prefer literal lists in examples
+> and the reference unless the host is guaranteed.
 
 ### 9.6 Hidden State Pattern (BFS Tree)
 ```latex
@@ -812,13 +825,13 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 
 ### Traceback with reannotate
 ```latex
-\compute{ path = [0, 2, 3, 5] }
-\foreach{i}{${path}}
+\foreach{i}{[0, 2, 3, 5]}
   \recolor{dp.cell[${i}]}{state=path}
 \endforeach
 \reannotate{dp.cell[2]}{color=path, arrow_from="dp.cell[0]"}
 \reannotate{dp.cell[3]}{color=path, arrow_from="dp.cell[2]"}
 ```
+> Literal list — works without a Starlark host. See §9.5 note.
 
 ### Graph edge marking
 ```latex
