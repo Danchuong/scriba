@@ -47,6 +47,20 @@ No starred variants (`\section*{}`). No section numbers. **Do not use starred va
 
 Legacy Polygon-style aliases `\bf`, `\it`, `\tt` are also accepted (equivalent to `\textbf`, `\textit`, `\texttt` respectively — `text_utils.py`).
 
+**Size commands** (`text_commands.py:24–73`): nine commands that change text size are implemented. Both the brace form `\large{text}` and the switch form `\large text` (affecting all subsequent text until the next size command or group boundary) are supported.
+
+| Command | Relative size |
+|---------|---------------|
+| `\tiny` | smallest |
+| `\scriptsize` | very small |
+| `\small` | small |
+| `\normalsize` | base size |
+| `\large` | large |
+| `\Large` | larger |
+| `\LARGE` | even larger |
+| `\huge` | very large |
+| `\Huge` | largest |
+
 ### 2.3 Math
 | Delimiter | Mode |
 |-----------|------|
@@ -89,7 +103,7 @@ Alice & 95 & A \\
 \hline
 \end{tabular}
 ```
-Supports `\multicolumn{n}{spec}{content}`, `\multirow{n}{*}{content}`, `\cline{n-m}`.
+Supports `\hline` (full-width horizontal rule), `\multicolumn{n}{spec}{content}`, `\multirow{n}{*}{content}`, `\cline{n-m}` (`tables.py:138`).
 
 ### 2.7 Links & Images
 ```latex
@@ -97,6 +111,8 @@ Supports `\multicolumn{n}{spec}{content}`, `\multirow{n}{*}{content}`, `\cline{n
 \url{https://example.com}
 \includegraphics[width=8cm]{photo.jpg}
 ```
+
+`\includegraphics` recognized options (`images.py:47–75`): `width=`, `height=`, `scale=`. Supported units: `cm`, `mm`, `in`, `pt`, `px`. Unknown options (e.g. `keepaspectratio`, `angle`) are silently ignored.
 
 ### 2.8 Other
 | Feature | Syntax |
@@ -108,9 +124,13 @@ Supports `\multicolumn{n}{spec}{content}`, `\multirow{n}{*}{content}`, `\cline{n
 | Em dash | `---` |
 | En dash | `--` |
 | Escape chars | `\$` `\&` `\%` `\#` `\_` `\{` `\}` |
+| Curly double quotes | ` ``text'' ` → "text" |
+| Curly single quotes | `` `text' `` → 'text' |
 
 ### 2.9 NOT Supported
 No `\usepackage`, `\newcommand`, `\def`, TikZ, BibTeX, `\footnote`, `\caption`, `\tableofcontents`, `\input`, `\include`.
+
+**Validator-accepted passthrough environments:** `verbatim`, `quote`, `quotation`, `figure`, `table`, `description`, `minipage` are in the validator's `KNOWN_ENVIRONMENTS` set (`validate.py:14–39`) so brace/balance checks pass, and their `\begin`/`\end` delimiters are stripped (`environments.py:77–87`). However, they have **no dedicated block renderer** — the content renders inline as plain text without any block-quote wrapper, figure box, or other structural element. Do not rely on these environments to produce formatted output.
 
 ---
 
@@ -144,11 +164,12 @@ Step-through editorial walkthrough with frames, narration, and visual primitives
 ### 3.2 Rules
 - All `\shape` declarations MUST be before first `\step`
 - At most one `\narrate` per `\step` (a second raises `E1055`). Omitting `\narrate` is permitted and renders an empty narration paragraph.
-- Soft limit: 30 frames. Hard limit: 100 frames
+- Soft limit: 30 total frames. Hard limit: 100 total frames. **Substory frames count toward both limits** — `renderer.py` sums top-level frames and all nested substory frames before comparing against the thresholds.
 - Frames are **delta-based**: each inherits previous frame's state
 - `\highlight` is **ephemeral** (auto-cleared at next `\step`); it is **banned in the animation prelude** (raises `E1053`)
 - `\apply`, `\recolor`, `\annotate` are **persistent** across frames
 - Options `width`, `height`, `layout`, and `grid` are accepted by the parser but are **currently no-ops** — see §10.
+- A stray `\end{animation}` (no matching `\begin{animation}`) raises **E1007**. By contrast, a stray `\end{diagram}` is **silently skipped** (`detector.py` simply `continue`s). These behaviors are asymmetric; treat a stray `\end{diagram}` as a silent bug rather than a guaranteed error.
 
 ---
 
@@ -157,6 +178,8 @@ Step-through editorial walkthrough with frames, narration, and visual primitives
 Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 
 > **`\highlight` behaves differently in diagrams.** In an animation environment `\highlight` is ephemeral (cleared at the next `\step`) and is banned from the prelude (E1053). In a diagram environment there are no steps, so `\highlight` is **allowed and persistent** — it produces permanent SVG highlighting (`allow_highlight_in_prelude=True` in `DiagramRenderer`). Do not assume identical behavior between the two environments.
+
+> **`label=` on diagram is silently dropped.** The `label=` option is parsed and stored but `emit_diagram_html` does not emit an `aria-label` or caption — the value is discarded with no error. This is a known gap; for now, omit `label=` on diagrams or treat it as a no-op.
 
 ```latex
 \begin{diagram}[id="my-diagram", label="Graph visualization"]
@@ -206,6 +229,7 @@ Binds the frame to the identifier `base-case`. The label:
 | Characters | Letters, digits, `_`, `-`, `.` — matches `[A-Za-z_][A-Za-z0-9._-]*` |
 | Leading char | Must be a letter or `_` (not a digit or `-`) |
 | Empty | Not allowed — raises `E1005` |
+| Duplicate | Same label used twice in one animation — raises `E1005` |
 | Unknown key | Any key other than `label` raises `E1004` |
 
 The bracket must appear on the same line as `\step` and before any
@@ -253,7 +277,7 @@ Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
 
 | Parameter | Type | Default | Description |
 |---|---|---|---|
-| `label` | string | `""` | Text shown in the annotation pill (supports `$...$` math) |
+| `label` | string | `None` | Text shown in the annotation pill (supports `$...$` math). Default is `None` (no label rendered), **not** an empty string — some primitives distinguish between `None` and `""`. |
 | `position` | enum | `above` | Pill placement relative to the cell: `above`, `below`, `left`, `right`, `inside` |
 | `color` | enum | `info` | Color token: `info`, `warn`, `good`, `error`, `muted`, `path` |
 | `ephemeral` | bool | `false` | When `true`, the annotation is cleared at the next `\step` boundary |
@@ -413,6 +437,9 @@ and nested `\foreach` (max depth 3). `\step`, `\shape`, `\substory`, and
 
 ### 5.12 `\substory[title="..."]...\endsubstory`
 Nested frame sequence inside a parent frame (animation only, max depth 3).
+
+**Bracket options:** `title=` (display label, defaults to `"Sub-computation"`) and `id=` (sets the substory's HTML id for rendering — `constants.py:50–52`). Both are optional; either or both may be supplied.
+
 ```latex
 \substory[title="Sub-problem"]
 \shape{sub}{Array}{size=2, data=[3,1]}
@@ -481,7 +508,7 @@ Nodes + edges with layout engine.
   layout_seed=42
 }
 ```
-**Layout options:** `"force"` (default), `"circular"`, `"bipartite"`, `"hierarchical"`, `"stable"` (≤20 nodes).
+**Layout options:** `"force"` (default), `"circular"`, `"bipartite"`, `"hierarchical"`, `"stable"` (≤20 nodes). Additional accepted params (`graph.py:306–316`): `seed` (convenience alias for `layout_seed`), `layout_lambda` (internal layout-tuning parameter).
 **Weighted edges:** `edges=[("A","B",4),("B","C",2)]` with `show_weights=true`.
 **Dynamic edge labels:** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other.
 **Selectors:** `G`, `G.node[id]`, `G.node["A"]`, `G.edge[("A","B")]`, `G.all`
@@ -535,6 +562,7 @@ Horizontal axis with tick marks.
 ```latex
 \shape{nl}{NumberLine}{domain=[0,24], ticks=25, label="Range"}
 ```
+**Additional accepted param** (`numberline.py:77`): `labels` — list of strings to display at each tick position instead of the auto-generated numeric labels.
 **Selectors:** `nl`, `nl.tick[i]`, `nl.range[lo:hi]`, `nl.axis`, `nl.all`
 
 ### 7.7 Matrix / Heatmap
@@ -573,6 +601,21 @@ LIFO stack.
 **Annotations:** `\annotate{p.point[0]}{label="A", position=above, color=good}` — text labels on points without arrows. Supports `position=above|below|left|right`.
 **Tick labels:** adaptive — works for fractional ranges `[0,1]`, large ranges `[-100,100]`, and zero-boundary ranges `[0,10]`.
 
+**Additional accepted params** (`plane2d.py:118–138`):
+
+| Param | Description |
+|-------|-------------|
+| `aspect` | Aspect ratio of the coordinate plane |
+| `width` | Width hint for the rendered plane |
+| `height` | Height hint for the rendered plane |
+| `points` | Initial list of points (bulk init) |
+| `lines` | Initial list of infinite lines |
+| `segments` | Initial list of finite segments |
+| `polygons` | Initial list of closed polygons |
+| `regions` | Initial list of shaded regions |
+| `xlabel` | X-axis label — **currently no rendered effect** (accepted but unused per code comment) |
+| `ylabel` | Y-axis label — **currently no rendered effect** (accepted but unused per code comment) |
+
 ### 7.10 MetricPlot
 Time-series metric chart.
 ```latex
@@ -601,6 +644,7 @@ Source code with line highlighting.
 ```latex
 \shape{code}{CodePanel}{lines=["for i in range(n):", "  if dp[i] < best:", "    best = dp[i]"], label="Code"}
 ```
+**Alternative `source=` param** (`codepanel.py:74`): instead of `lines=[...]`, supply a single newline-separated string — `source="line1\nline2\nline3"`. The string is split on `\n` to produce the same internal lines list.
 **Selectors:** `code`, `code.line[i]` (1-indexed)
 
 ### 7.12 HashMap
@@ -646,11 +690,11 @@ Variable panel showing named values.
 | Tree | — | `.node[id]` | `.edge[(p,c)]` | — | — | `.all` |
 | NumberLine | — | — | — | `.tick[i]` | `.range[lo:hi]` | `.all` |
 | Stack | `.item[i]`, `.top` | — | — | — | — | `.all` |
-| CodePanel | `.line[i]` | — | — | — | — | — |
-| HashMap | `.bucket[i]` | — | — | — | — | — |
-| LinkedList | — | `.node[i]` | `.link[i]` | — | — | — |
-| Queue | `.cell[i]` | — | — | — | — | — |
-| VariableWatch | `.var[name]` | — | — | — | — | — |
+| CodePanel | `.line[i]` | — | — | — | — | `.all` |
+| HashMap | `.bucket[i]` | — | — | — | — | `.all` |
+| LinkedList | — | `.node[i]` | `.link[i]` | — | — | `.all` |
+| Queue | `.cell[i]` | — | — | — | — | `.all` |
+| VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
 | Plane2D | `.point[i]` | — | — | — | — | `.all` |
 | MetricPlot | — | — | — | — | — | `.all` |
@@ -700,6 +744,8 @@ All six forms work with `\recolor`, `\highlight`, and `\annotate`. Indices are s
 \recolor{G.node[D]}{state=good}
 \end{diagram}
 ```
+
+> Each edge here is a **3-tuple `(u, v, weight)`** — the third element is the numeric weight shown when `show_weights=true`. 2-tuples `(u, v)` are also accepted for unweighted edges. See §7.4 Graph for the full weighted-edge spec.
 
 ### 9.3 DP Editorial (Frog Problem)
 ```latex
@@ -782,7 +828,7 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 \end{animation}
 ```
 
-> `\foreach` accepts a literal list `[…]` or an inclusive range `lo..hi`.
+> `\foreach` accepts a literal list `[…]` or an inclusive range `lo..hi` — **both ends are inclusive**, so `0..4` expands to `[0, 1, 2, 3, 4]` (5 elements).
 > Bindings via `\compute{ name = … }` only resolve when an
 > `AnimationRenderer(starlark_host=…)` host is configured. Renderers built
 > without one silently skip `\compute`, and a downstream
@@ -844,6 +890,9 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 ## 12. Common Patterns
 
 ### Cursor movement through array
+
+> **These are fragments, not standalone blocks.** Each snippet below must appear inside a `\begin{animation}...\end{animation}` with a `\shape` declaration and `\step` separators between each `\cursor` call. Copying the lines verbatim at top level will produce a parser error.
+
 ```latex
 \cursor{a.cell}{0}                          % initial position
 % next step:
@@ -957,6 +1006,9 @@ Use `10**9` instead of `999999999` for large sentinel values:
 Commands not in the supported set (§2) pass through as literal text, not as errors.
 Common traps: `\LaTeX`, `\footnote`, `\caption`, `\cite`, `\ref`.
 
+### 13.8 Windows: SIGALRM Starlark backstop absent
+On **Windows**, `SIGALRM` and `RLIMIT_CPU` are unavailable. The wall-clock safety net for runaway `\compute` blocks is therefore absent — only the step-counter limit (`10^8` steps) remains active. If a C-extension builtin is called from Starlark and does not tick the trace hook, it can evade the step counter. The host emits a `RuntimeWarning` at startup (`starlark_host.py:64`) but does not hard-error. On Linux/macOS both the step counter and the SIGALRM backstop are active.
+
 ---
 
 ## 14. Limits
@@ -972,4 +1024,5 @@ Common traps: `\LaTeX`, `\footnote`, `\caption`, `\cite`, `\ref`.
 | Starlark int literals | ≤10,000,000 (use `10**N` for larger) |
 | foreach nesting | 3 levels max |
 | substory nesting | 3 levels max |
+| Annotations per frame | 500 hard max (E1103) |
 | Graph stable layout | ≤20 nodes, ≤50 frames |
