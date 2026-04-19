@@ -33,7 +33,7 @@ More paragraph text after the animation.
 | `\subsection{...}` | `<h3>` |
 | `\subsubsection{...}` | `<h4>` |
 
-No starred variants (`\section*{}`). No section numbers.
+No starred variants (`\section*{}`). No section numbers. **Do not use starred variants** — `environments.py` matches only `\section{…}` (no `*`), so `\section*{Title}` does not match the regex and the literal text `\section*{Title}` leaks verbatim into the HTML output.
 
 ### 2.2 Text Formatting
 | Command | Effect |
@@ -45,11 +45,14 @@ No starred variants (`\section*{}`). No section numbers.
 | `\sout{...}` | ~~strikethrough~~ |
 | `\textsc{...}` | small caps |
 
+Legacy Polygon-style aliases `\bf`, `\it`, `\tt` are also accepted (equivalent to `\textbf`, `\textit`, `\texttt` respectively — `text_utils.py`).
+
 ### 2.3 Math
 | Delimiter | Mode |
 |-----------|------|
 | `$...$` | inline |
 | `$$...$$` | display |
+| `$$$...$$$` | display (alias — Polygon-style; processed before `$$` by `math.py`) |
 
 **NOT supported:** `\[...\]`, `\(...\)`. Math environments (`equation`, `align`, `align*`, `array`, `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `Vmatrix`, `cases`) MUST be wrapped in `$$...$$` — KaTeX renders them inside math regions. Max 500 math expressions per document.
 
@@ -140,17 +143,20 @@ Step-through editorial walkthrough with frames, narration, and visual primitives
 
 ### 3.2 Rules
 - All `\shape` declarations MUST be before first `\step`
-- Each `\step` should have exactly one `\narrate`
+- At most one `\narrate` per `\step` (a second raises `E1055`). Omitting `\narrate` is permitted and renders an empty narration paragraph.
 - Soft limit: 30 frames. Hard limit: 100 frames
 - Frames are **delta-based**: each inherits previous frame's state
-- `\highlight` is **ephemeral** (auto-cleared at next `\step`)
+- `\highlight` is **ephemeral** (auto-cleared at next `\step`); it is **banned in the animation prelude** (raises `E1053`)
 - `\apply`, `\recolor`, `\annotate` are **persistent** across frames
+- Options `width`, `height`, `layout`, and `grid` are accepted by the parser but are **currently no-ops** — see §10.
 
 ---
 
 ## 4. Diagram Environment
 
 Single-frame static figure. Same primitives, no `\step` or `\narrate`.
+
+> **`\highlight` behaves differently in diagrams.** In an animation environment `\highlight` is ephemeral (cleared at the next `\step`) and is banned from the prelude (E1053). In a diagram environment there are no steps, so `\highlight` is **allowed and persistent** — it produces permanent SVG highlighting (`allow_highlight_in_prelude=True` in `DiagramRenderer`). Do not assume identical behavior between the two environments.
 
 ```latex
 \begin{diagram}[id="my-diagram", label="Graph visualization"]
@@ -232,13 +238,13 @@ Frames without a `[label=…]` bracket receive the automatic id
 Attaches narration to current frame. Supports inline math and text formatting.
 
 ### 5.5 `\apply{target}{params...}`
-Sets values. Persistent. Common: `value=`, `label=`, `tooltip=`.
+Sets values. Persistent. Common: `value=`, `label=`. (`tooltip=` is not implemented — do not use it.)
 
 ### 5.6 `\highlight{target}`
 Ephemeral focus marker. Cleared at next `\step`.
 
 ### 5.7 `\recolor{target}{state=...}`
-Changes visual state. Persistent. States: `idle`, `current`, `done`, `dim`, `error`, `good`, `path`, `hidden`.
+Changes visual state. Persistent. States: `idle`, `current`, `done`, `dim`, `error`, `good`, `highlight`, `path`, `hidden`.
 
 ### 5.8 `\annotate{target}{params...}`
 Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
@@ -312,7 +318,7 @@ it is cleared automatically at the next `\step` boundary.
 | Use when | Calling out a single cell without a "from" | Showing data flow or recurrence paths between cells |
 
 ### 5.9 `\reannotate{target}{color=..., arrow_from=...}`
-Recolors existing annotations. Persistent.
+Recolors existing annotations. Persistent. `color` is **required** — omitting it raises `E1113`. `arrow_from` is optional.
 
 ### 5.10 `\cursor{targets}{index, prev_state=..., curr_state=...}`
 Moves cursor through arrays. Default: prev→`dim`, curr→`current`.
@@ -536,6 +542,17 @@ Horizontal axis with tick marks.
 ```latex
 \shape{m}{Matrix}{rows=4, cols=4, data=[0.1,0.3,...], show_values=true}
 ```
+**Additional accepted params** (`matrix.py:137–149`):
+
+| Param | Description |
+|-------|-------------|
+| `colorscale` | Named colorscale for heatmap fill (e.g. `"viridis"`, `"reds"`) |
+| `cell_size` | Override cell pixel size |
+| `vmin` | Data value mapped to the low end of the colorscale |
+| `vmax` | Data value mapped to the high end of the colorscale |
+| `row_labels` | List of strings labeling each row |
+| `col_labels` | List of strings labeling each column |
+
 **Selectors:** `m`, `m.cell[r][c]`, `m.all`
 
 ### 7.8 Stack
@@ -562,6 +579,22 @@ Time-series metric chart.
 \shape{plot}{MetricPlot}{series=["cost","temp"], xlabel="step", ylabel="value"}
 ```
 **Operations:** `\apply{plot}{cost=10, temp=100}` (appends data point per step)
+
+**Additional accepted params** (`metricplot.py:121–134`):
+
+| Param | Description |
+|-------|-------------|
+| `ylabel_right` | Y-axis label for the secondary (right) axis |
+| `grid` | Show grid lines (`true`/`false`) |
+| `width` | Chart width hint |
+| `height` | Chart height hint |
+| `show_legend` | Show series legend (`true`/`false`) |
+| `show_current_marker` | Show a vertical marker at the current step (`true`/`false`) |
+| `xrange` | Fixed x-axis range as `[lo, hi]` |
+| `yrange` | Fixed y-axis range as `[lo, hi]` (left axis) |
+| `yrange_right` | Fixed y-axis range as `[lo, hi]` (right axis) |
+
+**Selectors:** `plot.all`
 
 ### 7.11 CodePanel
 Source code with line highlighting.
@@ -620,7 +653,7 @@ Variable panel showing named values.
 | VariableWatch | `.var[name]` | — | — | — | — | — |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
 | Plane2D | `.point[i]` | — | — | — | — | `.all` |
-| MetricPlot | — | — | — | — | — | — |
+| MetricPlot | — | — | — | — | — | `.all` |
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
 
@@ -788,9 +821,10 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 |--------|------|---------|------------|---------|
 | `id` | ident | auto | both | Stable scene ID |
 | `label` | string | none | both | Accessibility label |
-| `width` | dimension | auto | both | ViewBox width hint |
-| `height` | dimension | auto | both | ViewBox height hint |
-| `layout` | filmstrip\|stack | filmstrip | animation | Frame layout |
+| `width` | dimension | auto | both | **Currently a no-op.** Parsed into `AnimationOptions` but never read by the renderer. |
+| `height` | dimension | auto | both | **Currently a no-op.** Parsed into `AnimationOptions` but never read by the renderer. |
+| `layout` | filmstrip\|stack | filmstrip | animation | **Currently a no-op.** Stored in `AnimationOptions` but renderer always emits `data-layout="filmstrip"` unconditionally. |
+| `grid` | bool | — | animation | **Currently a no-op.** Accepted by the validator but not stored in `AnimationOptions` at all (silently discarded). |
 
 ---
 
