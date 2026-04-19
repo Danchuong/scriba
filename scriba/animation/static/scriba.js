@@ -247,6 +247,7 @@
       var tr=frames[toIdx]&&frames[toIdx].tr;
       if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
       _animState='animating';
+      cur=toIdx;
       _updateControls(toIdx);
       var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
       var pending=[];
@@ -259,7 +260,6 @@
       for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
       var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
       function _finish(fullSync){
-        cur=toIdx;
         if(fullSync){
           stage.innerHTML=frames[toIdx].svg;
         }

@@ -284,6 +284,7 @@ def _build_inline_script(scene_id: str, js_frames_str: str) -> str:
     var tr=frames[toIdx]&&frames[toIdx].tr;
     if(!tr||!tr.length||!_canAnim){{snapToFrame(toIdx);return;}}
     _animState='animating';
+    cur=toIdx;
     narr.innerHTML=frames[toIdx].narration;
     _updateControls(toIdx);
     var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
@@ -297,7 +298,6 @@ def _build_inline_script(scene_id: str, js_frames_str: str) -> str:
     for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
     var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){{
-      cur=toIdx;
       if(fullSync){{
         stage.innerHTML=frames[toIdx].svg;
       }}
