@@ -145,7 +145,7 @@ class TestRenderFileEncoding:
 
     def test_bom_stripped_from_output(self, tmp_path: Path, minimal_tex: str) -> None:
         """A BOM-prefixed .tex file must not produce \\ufeff in the HTML output."""
-        from render import render_file
+        from scriba.cli import render_file
 
         tex_file = tmp_path / "bom_test.tex"
         # Write with UTF-8 BOM
@@ -159,7 +159,7 @@ class TestRenderFileEncoding:
 
     def test_output_written_as_utf8(self, tmp_path: Path, minimal_tex: str) -> None:
         """Output file must be valid UTF-8 (no BOM, decodeable)."""
-        from render import render_file
+        from scriba.cli import render_file
 
         tex_file = tmp_path / "enc_test.tex"
         tex_file.write_text(minimal_tex, encoding="utf-8")
@@ -174,7 +174,7 @@ class TestRenderFileEncoding:
 
     def test_default_lang_is_en(self, tmp_path: Path, minimal_tex: str) -> None:
         """Default render must produce lang=\"en\"."""
-        from render import render_file
+        from scriba.cli import render_file
 
         tex_file = tmp_path / "lang_test.tex"
         tex_file.write_text(minimal_tex, encoding="utf-8")
@@ -187,7 +187,7 @@ class TestRenderFileEncoding:
 
     def test_lang_vi_threads_through(self, tmp_path: Path, minimal_tex: str) -> None:
         """render_file(lang='vi') must produce lang=\"vi\" in the HTML output."""
-        from render import render_file
+        from scriba.cli import render_file
 
         tex_file = tmp_path / "lang_vi.tex"
         tex_file.write_text(minimal_tex, encoding="utf-8")
@@ -200,7 +200,7 @@ class TestRenderFileEncoding:
 
     def test_lang_ar_threads_through(self, tmp_path: Path, minimal_tex: str) -> None:
         """render_file(lang='ar') must produce lang=\"ar\"."""
-        from render import render_file
+        from scriba.cli import render_file
 
         tex_file = tmp_path / "lang_ar.tex"
         tex_file.write_text(minimal_tex, encoding="utf-8")

@@ -63,6 +63,7 @@ class PersistentSubprocessWorker:
         max_requests: int = 50_000,
         default_timeout: float = 10.0,
         preexec_fn: Callable[[], None] | None = None,
+        env: dict[str, str] | None = None,
     ) -> None:
         self._name = name
         self._argv = list(argv)
@@ -72,6 +73,7 @@ class PersistentSubprocessWorker:
         # preexec_fn is called in the child process before exec on Unix.
         # On Windows (where preexec_fn is not supported), pass None.
         self._preexec_fn = preexec_fn if sys.platform != "win32" else None
+        self._env = env
         self._process: subprocess.Popen | None = None
         self._request_count = 0
         self._lock = threading.Lock()
@@ -102,6 +104,7 @@ class PersistentSubprocessWorker:
                 text=True,
                 bufsize=1,
                 preexec_fn=self._preexec_fn,
+                env=self._env,
             )
         except FileNotFoundError as e:
             self._process = None

@@ -13,6 +13,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Literal
 
+from scriba.core.errors import StrictModeError
+
 if TYPE_CHECKING:  # pragma: no cover - type checking only
     from scriba.core.artifact import CollectedWarning
     from scriba.core.context import RenderContext
@@ -98,6 +100,4 @@ def _emit_warning(
         and code in _DANGEROUS_CODES
         and code not in getattr(ctx, "strict_except", frozenset())
     ):
-        from scriba.animation.errors import _animation_error
-
-        raise _animation_error(code, detail=message)
+        raise StrictModeError(message, code=code)

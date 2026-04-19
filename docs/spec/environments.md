@@ -758,7 +758,7 @@ All animation/diagram errors use codes in `E1001..E1299`. The ranges are reserve
 | E1201 | Inline TeX renderer (`ctx.render_inline_tex`) raised.             |
 | E1202 | Scene hash collision (extremely unlikely; report bug).            |
 
-Remaining codes in `E1058..E1099`, `E1114..E1149`, `E1158..E1179`, `E1183..E1199`, `E1203..E1249`, and `E1250..E1299` are **reserved** for future expansion. Wave-3 implementation adds codes only after consulting this file and `07-open-questions.md`.
+Remaining codes in `E1058..E1099`, `E1114..E1149`, `E1158..E1179`, `E1183..E1198`, `E1203..E1249`, and `E1250..E1299` are **reserved** for future expansion (E1199 is live — see `scriba/core/workers.py`). Wave-3 implementation adds codes only after consulting this file and `07-open-questions.md`.
 
 ## 12. Complete worked examples
 

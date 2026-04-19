@@ -1,7 +1,7 @@
-"""Unit tests for security fixes in render.py.
+"""Unit tests for security fixes in scriba/cli.py (formerly render.py).
 
-C2 — XSS via filename in <title> and <h1>  (render.py line 107)
-H1 — Path traversal via -o flag            (render.py lines 246-254)
+C2 — XSS via filename in <title> and <h1>  (scriba/cli.py)
+H1 — Path traversal via -o flag            (scriba/cli.py)
 """
 
 from __future__ import annotations
@@ -21,7 +21,7 @@ import pytest
 def _make_render_file_patcher():
     """Return a patcher that stubs out the heavy rendering pipeline so
     render_file() can be called in unit tests without a real TeX install."""
-    return patch("render.render_file", return_value=None)
+    return patch("scriba.cli.render_file", return_value=None)
 
 
 # ---------------------------------------------------------------------------
@@ -49,11 +49,11 @@ class TestXSSEscaping:
     def test_render_file_calls_html_escape_on_stem(self, tmp_path: Path) -> None:
         """render_file() must call html.escape() on input_path.stem.
 
-        We spy on render.html.escape and assert it is called with the raw stem.
+        We spy on scriba.cli.html.escape and assert it is called with the raw stem.
         Coupled with test_angle_brackets_escaped above, this proves the XSS
         payload would be neutralised before reaching the template.
         """
-        import render  # noqa: PLC0415
+        import scriba.cli as cli_mod  # noqa: PLC0415
         import html as stdlib_html
 
         malicious_stem = "<img src=x onerror=alert(1)>"
@@ -71,18 +71,18 @@ class TestXSSEscaping:
 
         output_file = tmp_path / "out.html"
 
-        with patch("render.html.escape", side_effect=_spy_escape), \
-             patch("render.AnimationRenderer"), \
-             patch("render.StarlarkHost"), \
-             patch("render.SubprocessWorkerPool"), \
-             patch("render.TexRenderer") as mock_tex_cls, \
+        with patch("scriba.cli.html.escape", side_effect=_spy_escape), \
+             patch("scriba.cli.AnimationRenderer"), \
+             patch("scriba.cli.StarlarkHost"), \
+             patch("scriba.cli.SubprocessWorkerPool"), \
+             patch("scriba.cli.TexRenderer") as mock_tex_cls, \
              patch("scriba.animation.detector.detect_animation_blocks", return_value=[]), \
              patch("scriba.animation.detector.detect_diagram_blocks", return_value=[]), \
-             patch("render.load_css", return_value=""), \
-             patch("render.inline_katex_css", return_value=""):
+             patch("scriba.cli.load_css", return_value=""), \
+             patch("scriba.cli.inline_katex_css", return_value=""):
             mock_tex = mock_tex_cls.return_value
             mock_tex.render_inline_text.side_effect = lambda t: t
-            render.render_file(mock_input, output_file)
+            cli_mod.render_file(mock_input, output_file)
 
         assert malicious_stem in escape_calls, (
             f"html.escape() was not called with the malicious stem {malicious_stem!r}. "
@@ -114,11 +114,11 @@ class TestPathTraversal:
         output_arg: str,
         env: dict[str, str] | None = None,
     ) -> int:
-        """Call render.main() with a synthetic argv and return the SystemExit code."""
+        """Call scriba.cli.main() with a synthetic argv and return the SystemExit code."""
         tex = tmp_path / "input.tex"
         tex.write_text("Hello.")
 
-        argv = ["render.py", str(tex), "-o", output_arg]
+        argv = ["scriba", str(tex), "-o", output_arg]
 
         extra_env = dict(os.environ)
         extra_env.pop("SCRIBA_ALLOW_ANY_OUTPUT", None)
@@ -127,10 +127,10 @@ class TestPathTraversal:
 
         with patch("sys.argv", argv), \
              patch.dict(os.environ, extra_env, clear=True), \
-             patch("render.render_file", return_value=None):
-            import render  # noqa: PLC0415
+             patch("scriba.cli.render_file", return_value=None):
+            import scriba.cli as cli_mod  # noqa: PLC0415
             try:
-                render.main()
+                cli_mod.main()
                 return 0
             except SystemExit as exc:
                 return int(exc.code) if exc.code is not None else 0
@@ -190,12 +190,12 @@ class TestPathTraversal:
         tex = tmp_path / "input.tex"
         tex.write_text("Hello.")
         # Default output (same dir as input) is always inside cwd; must not fail.
-        with patch("sys.argv", ["render.py", str(tex)]), \
+        with patch("sys.argv", ["scriba", str(tex)]), \
              patch.dict(os.environ, {}, clear=False), \
-             patch("render.render_file", return_value=None):
-            import render  # noqa: PLC0415
+             patch("scriba.cli.render_file", return_value=None):
+            import scriba.cli as cli_mod  # noqa: PLC0415
             try:
-                render.main()
+                cli_mod.main()
                 code = 0
             except SystemExit as exc:
                 code = int(exc.code) if exc.code is not None else 0

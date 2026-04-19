@@ -16,6 +16,7 @@ from scriba.tex.parser.escape import (
     html_escape_attr,
     html_escape_text,
 )
+from scriba.tex.validate import _VALIDATION_ONLY_ENVS
 
 
 def slugify(text: str) -> str:
@@ -71,20 +72,8 @@ def apply_sections(text: str, slug_counts: dict[str, int]) -> str:
     return text
 
 
-# Environments accepted by the validator that have no dedicated rendering
-# pass.  Their ``\begin{…}`` / ``\end{…}`` delimiters must be stripped so
-# they do not leak as literal text into the HTML output.
-_VALIDATION_ONLY_ENVS: frozenset[str] = frozenset(
-    {
-        "verbatim",
-        "quote",
-        "quotation",
-        "figure",
-        "table",
-        "description",
-        "minipage",
-    }
-)
+# _VALIDATION_ONLY_ENVS imported from scriba.tex.validate (see top of file)
+# to keep it co-located with KNOWN_ENVIRONMENTS and prevent drift.
 
 # Matches \begin{env} with an optional brace argument like {0.5\textwidth}
 # and \end{env} for each validation-only environment.

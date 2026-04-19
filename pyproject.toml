@@ -43,6 +43,9 @@ dev = [
   "pytest-cov>=5.0",
 ]
 
+[project.scripts]
+scriba = "scriba.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/Danchuong/scriba"
 Repository = "https://github.com/Danchuong/scriba"
@@ -72,8 +75,8 @@ exclude = [
 
 [tool.hatch.build.targets.wheel.package-data]
 "scriba" = ["py.typed"]
-"scriba.tex" = ["katex_worker.js", "static/*.css", "static/*.js", "vendor/katex/*.js", "vendor/katex/*.css", "vendor/katex/*.md", "vendor/katex/LICENSE", "vendor/katex/fonts/*.woff2"]
-"scriba.animation" = ["static/*"]
+"scriba/tex" = ["katex_worker.js", "static/*.css", "static/*.js", "vendor/katex/*.js", "vendor/katex/*.css", "vendor/katex/*.md", "vendor/katex/LICENSE", "vendor/katex/fonts/*.woff2"]
+"scriba/animation" = ["static/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

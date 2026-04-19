@@ -39,6 +39,28 @@ KNOWN_ENVIRONMENTS: frozenset[str] = frozenset(
 )
 
 
+# Subset of KNOWN_ENVIRONMENTS that have no dedicated rendering pass — their
+# ``\begin{…}`` / ``\end{…}`` delimiters must be stripped before rendering so
+# they do not leak as literal text into the HTML output. Co-located with
+# KNOWN_ENVIRONMENTS to prevent drift; canonical home for parser/environments.py
+# to import from.
+_VALIDATION_ONLY_ENVS: frozenset[str] = frozenset(
+    {
+        "verbatim",
+        "quote",
+        "quotation",
+        "figure",
+        "table",
+        "description",
+        "minipage",
+    }
+)
+assert _VALIDATION_ONLY_ENVS <= KNOWN_ENVIRONMENTS, (
+    f"_VALIDATION_ONLY_ENVS contains names not in KNOWN_ENVIRONMENTS: "
+    f"{_VALIDATION_ONLY_ENVS - KNOWN_ENVIRONMENTS}"
+)
+
+
 def validate(content: str) -> tuple[bool, str | None]:
     """Validate the structural correctness of a TeX source.
 

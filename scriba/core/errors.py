@@ -181,3 +181,12 @@ class ValidationError(ScribaError):
             hint=hint,
             source_line=source_line,
         )
+
+
+class StrictModeError(ValidationError):
+    """Raised when strict mode is active and a dangerous warning is emitted.
+
+    Lives in :mod:`scriba.core.errors` so :mod:`scriba.core.warnings` can raise
+    it without a runtime import from :mod:`scriba.animation.errors` (which
+    would be a core → animation layer inversion).
+    """

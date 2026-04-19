@@ -228,6 +228,10 @@ ERROR_CATALOG: dict[str, str] = {
         "an index parameter."
     ),
     "E1182": "Invalid \\cursor prev_state or curr_state value.",
+    "E1199": (
+        "Worker subprocess terminated without response "
+        "(crash or ungraceful exit)."
+    ),
     # --- Substory errors (E1360 -- E1369) ---
     "E1360": "Substory nesting depth exceeds maximum.",
     "E1361": "Unclosed \\substory (missing \\endsubstory).",

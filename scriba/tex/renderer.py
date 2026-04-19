@@ -25,7 +25,7 @@ from scriba.core.errors import (
     ValidationError,
     WorkerError,
 )
-from scriba.core.workers import SubprocessWorker, SubprocessWorkerPool
+from scriba.core.workers import PersistentSubprocessWorker, SubprocessWorkerPool
 from scriba.tex.parser.code_blocks import extract_lstlisting
 from scriba.tex.parser.dashes_quotes import apply_typography
 from scriba.tex.parser.environments import (
@@ -246,6 +246,10 @@ class TexRenderer:
         # the worker falls back to ``require('katex')`` and NODE_PATH may be
         # needed.  We detect this at __init__ time (cheap stat) and only pay the
         # npm cost then; the result is cached module-wide via lru_cache.
+        # Compute extra env without mutating os.environ. Pass NODE_PATH only
+        # to the spawned worker subprocess to avoid process-wide side effects
+        # under concurrent renderer construction.
+        self._extra_node_env: dict[str, str] = {}
         if "NODE_PATH" not in os.environ:
             vendored_katex = (
                 files("scriba.tex").joinpath("vendor/katex/katex.min.js")
@@ -257,17 +261,22 @@ class TexRenderer:
             if not _vendored_exists:
                 global_root = self._discover_node_global_root()
                 if global_root:
-                    os.environ["NODE_PATH"] = global_root
+                    self._extra_node_env["NODE_PATH"] = global_root
 
         # Fail fast with an actionable error if node/katex are missing.
         _probe_runtime(self._node_executable)
 
-        worker = SubprocessWorker(
+        worker = PersistentSubprocessWorker(
             name="katex",
             argv=[self._node_executable, str(self._katex_worker_path)],
             ready_signal="katex-worker ready",
             max_requests=self._katex_worker_max_requests,
             default_timeout=self._katex_worker_timeout,
+            env=(
+                {**os.environ, **self._extra_node_env}
+                if self._extra_node_env
+                else None
+            ),
         )
         worker_pool.register("katex", worker=worker)
 

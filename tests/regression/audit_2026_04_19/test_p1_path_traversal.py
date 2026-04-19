@@ -23,10 +23,10 @@ from pathlib import Path
 
 import pytest
 
-# ``_resolve_resource`` is a module-level private function in render.py.
+# ``_resolve_resource`` is a module-level private function now in scriba/cli.py.
 # We import it directly; if the function is later moved/renamed the import
 # path must be updated together with the fix.
-from render import _resolve_resource
+from scriba.cli import _resolve_resource
 
 
 # ---------------------------------------------------------------------------
