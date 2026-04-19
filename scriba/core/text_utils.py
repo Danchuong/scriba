@@ -33,6 +33,13 @@ _BRACE_COMMANDS: tuple[tuple[str, str, str], ...] = (
     ("tt", '<code class="scriba-tex-code-inline">', "</code>"),
 )
 
+# Module-level compiled patterns for _replace_balanced — one per command.
+# Keyed by command name to avoid per-call re.compile inside the while loop.
+_BALANCED_RES: dict[str, re.Pattern[str]] = {
+    cmd: re.compile(r"\\" + re.escape(cmd) + r"\{")
+    for cmd, _open, _close in _BRACE_COMMANDS
+}
+
 
 def _replace_balanced(text: str, command: str, open_tag: str, close_tag: str) -> str:
     """Replace ``\\command{...}`` with ``open_tag...close_tag`` recursively.
@@ -40,7 +47,9 @@ def _replace_balanced(text: str, command: str, open_tag: str, close_tag: str) ->
     The brace body itself may contain further commands so we keep iterating
     until a fixed point is reached.
     """
-    pattern = re.compile(r"\\" + re.escape(command) + r"\{")
+    pattern = _BALANCED_RES.setdefault(
+        command, re.compile(r"\\" + re.escape(command) + r"\{")
+    )
     while True:
         m = pattern.search(text)
         if not m:

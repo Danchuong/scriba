@@ -38,7 +38,7 @@ LaTeX source with \begin{animation}...\end{animation}
          │
          ▼
 ┌─────────────────────┐
-│  SceneParser         │  recursive-descent over 8 inner commands
+│  SceneParser         │  recursive-descent over 12 inner commands
 │  (lexer → AST)       │  → AnimationIR (prelude + frames)
 └────────┬────────────┘
          │

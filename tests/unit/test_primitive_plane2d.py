@@ -477,13 +477,13 @@ class TestTextAnnotation:
         assert svg.count("opacity=\"0.85\"") == 0
 
     def test_text_annotation_has_background_pill(self) -> None:
-        """Text annotation renders a white background pill for readability."""
+        """Text annotation renders a theme-aware background pill for readability."""
         p = Plane2D("p", {"points": [(1, 2)]})
         p.set_annotations([
             {"target": "p.point[0]", "label": "B", "position": "above", "color": "good"},
         ])
         svg = p.emit_svg()
-        assert 'fill="white"' in svg
+        assert 'fill="var(--scriba-bg)"' in svg
         assert 'opacity="0.85"' in svg
 
 

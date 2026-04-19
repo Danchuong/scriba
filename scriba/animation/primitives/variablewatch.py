@@ -63,6 +63,7 @@ class VariableWatch(PrimitiveBase):
     """
 
     primitive_type = "variablewatch"
+    _accepts_target_suffix = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "var[{name}]": "variable by name",

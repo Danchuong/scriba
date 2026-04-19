@@ -96,6 +96,7 @@ class Queue(PrimitiveBase):
     """
 
     primitive_type = "queue"
+    _accepts_target_suffix = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index",

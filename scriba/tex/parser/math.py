@@ -21,6 +21,18 @@ _DOLLAR_LITERAL = "\x00SCRIBA_TEX_DOLLAR\x00"
 MAX_MATH_ITEMS = 500
 """Maximum number of math expressions allowed per document."""
 
+# ---------------------------------------------------------------------------
+# Module-level compiled patterns for _preprocess_text_command_chars
+# ---------------------------------------------------------------------------
+
+_TEXT_CMD_RE = re.compile(
+    r"\\(texttt|textbf|textit|textsc|textrm|textsf|text)\{([^}]*)\}"
+)
+_ESC_UNDERSCORE_RE = re.compile(r"(?<!\\)_")
+_ESC_HASH_RE = re.compile(r"(?<!\\)#")
+_ESC_PERCENT_RE = re.compile(r"(?<!\\)%")
+_ESC_AMP_RE = re.compile(r"(?<!\\)&")
+
 
 @dataclass(frozen=True)
 class _MathItem:
@@ -36,20 +48,16 @@ def _preprocess_text_command_chars(math: str) -> str:
     ``\\text{a_b}`` is parsed as a subscript and fails. Mirrors the upstream
     ``_preprocess_math_for_katex`` helper from ``tex_renderer.py``.
     """
-    pattern = re.compile(
-        r"\\(texttt|textbf|textit|textsc|textrm|textsf|text)\{([^}]*)\}"
-    )
-
     def _esc(m: re.Match[str]) -> str:
         cmd = m.group(1)
         inner = m.group(2)
-        inner = re.sub(r"(?<!\\)_", r"\\_", inner)
-        inner = re.sub(r"(?<!\\)#", r"\\#", inner)
-        inner = re.sub(r"(?<!\\)%", r"\\%", inner)
-        inner = re.sub(r"(?<!\\)&", r"\\&", inner)
+        inner = _ESC_UNDERSCORE_RE.sub(r"\\_", inner)
+        inner = _ESC_HASH_RE.sub(r"\\#", inner)
+        inner = _ESC_PERCENT_RE.sub(r"\\%", inner)
+        inner = _ESC_AMP_RE.sub(r"\\&", inner)
         return "\\" + cmd + "{" + inner + "}"
 
-    return pattern.sub(_esc, math)
+    return _TEXT_CMD_RE.sub(_esc, math)
 
 
 def extract_math(

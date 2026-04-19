@@ -78,6 +78,7 @@ class LinkedList(PrimitiveBase):
     """
 
     primitive_type = "linkedlist"
+    _accepts_target_suffix = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{i}]": "node by index",

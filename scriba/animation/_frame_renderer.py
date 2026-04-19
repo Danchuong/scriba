@@ -6,7 +6,8 @@ and per-frame ``<svg>`` generation.  Stateless; safe for concurrent use.
 
 from __future__ import annotations
 
-import inspect
+import functools
+import re
 import warnings
 from typing import Any, Callable
 
@@ -194,6 +195,19 @@ def emit_shared_defs(primitives: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
+@functools.lru_cache(maxsize=128)
+def _make_shape_res(
+    shape_name: str,
+) -> tuple[re.Pattern[str], re.Pattern[str], re.Pattern[str]]:
+    """Return (range_re, all_re, top_re) compiled once per unique shape_name."""
+    esc = re.escape(shape_name)
+    return (
+        re.compile(rf"^{esc}\.range\[(\d+):(\d+)\]$"),
+        re.compile(rf"^{esc}\.all$"),
+        re.compile(rf"^{esc}\.top$"),
+    )
+
+
 def _expand_selectors(
     shape_state: dict[str, dict],
     shape_name: str,
@@ -204,13 +218,8 @@ def _expand_selectors(
     E.g., ``nl.range[3:7]`` → ``nl.tick[3]``, ..., ``nl.tick[7]``
     and ``a.all`` → ``a.cell[0]``, ..., ``a.cell[N-1]``.
     """
-    import re
-
     expanded: dict[str, dict] = {}
-    range_re = re.compile(
-        rf"^{re.escape(shape_name)}\.range\[(\d+):(\d+)\]$"
-    )
-    all_re = re.compile(rf"^{re.escape(shape_name)}\.all$")
+    range_re, all_re, top_re = _make_shape_res(shape_name)
 
     def _merge(target: str, data: dict) -> None:
         """Merge data into expanded[target].
@@ -225,8 +234,6 @@ def _expand_selectors(
             expanded[target] = merged
         else:
             expanded[target] = dict(data)
-
-    top_re = re.compile(rf"^{re.escape(shape_name)}\.top$")
 
     for key, data in shape_state.items():
         m_range = range_re.match(key)
@@ -380,10 +387,10 @@ def _emit_frame_svg(
         if not hasattr(prim, "apply_command"):
             continue
 
-        # Check once whether apply_command accepts target_suffix
-        accepts_suffix = "target_suffix" in inspect.signature(
-            prim.apply_command
-        ).parameters
+        # Check once whether apply_command accepts target_suffix.
+        # Read the class-level flag set by each primitive class; avoids
+        # per-call inspect.signature overhead inside the frame loop.
+        accepts_suffix = getattr(type(prim), "_accepts_target_suffix", False)
 
         for target_key, target_data in shape_state.items():
             if not isinstance(target_data, dict):

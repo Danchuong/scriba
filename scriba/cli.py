@@ -40,9 +40,13 @@ HTML_TEMPLATE = """\
 </style>
 </head>
 <body>
-<button class="theme-toggle" data-scriba-action="theme-toggle">Toggle theme</button>
+<header>
+<button type="button" class="theme-toggle" aria-pressed="false" data-scriba-action="theme-toggle">Toggle theme</button>
+</header>
+<main>
 <h1>{title}</h1>
 {body}
+</main>
 {inline_theme_script}</body>
 </html>
 """
@@ -54,7 +58,7 @@ _INLINE_THEME_SCRIPT = """\
 <script>
 document.addEventListener('click',function(e){
   var btn=e.target.closest('[data-scriba-action="theme-toggle"]');
-  if(btn){var t=document.documentElement.dataset.theme;document.documentElement.dataset.theme=(t==='dark'?'light':'dark');}
+  if(btn){var t=document.documentElement.dataset.theme;var dark=(t==='dark'?'light':'dark')==='dark';document.documentElement.dataset.theme=(t==='dark'?'light':'dark');btn.setAttribute('aria-pressed',dark?'true':'false');}
 });
 </script>
 """

@@ -296,6 +296,7 @@ class Graph(PrimitiveBase):
     """
 
     primitive_type = "graph"
+    _accepts_target_suffix = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",
@@ -805,7 +806,7 @@ class Graph(PrimitiveBase):
                 weight_text = (
                     f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
                     f'width="{pill_w}" height="{pill_h}" '
-                    f'rx="{_PILL_R}" fill="white" fill-opacity="0.85" '
+                    f'rx="{_PILL_R}" fill="var(--scriba-bg)" fill-opacity="0.85" '
                     f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
                 ) + _render_svg_text(
                     display_weight, lx, ly,

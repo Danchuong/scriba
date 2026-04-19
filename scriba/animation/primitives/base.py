@@ -170,6 +170,11 @@ class PrimitiveBase(abc.ABC):
     # annotation needed on the override).
     primitive_type: ClassVar[str] = ""
 
+    # Set to True on primitives whose apply_command accepts the
+    # ``target_suffix`` keyword argument.  Reading this class variable avoids
+    # a per-call ``inspect.signature`` lookup inside the frame-render loop.
+    _accepts_target_suffix: ClassVar[bool] = False
+
     # Subclasses override to declare their selector patterns as metadata.
     # Format: {"suffix_pattern": description}
     # Special patterns:

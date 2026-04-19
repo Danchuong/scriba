@@ -33,6 +33,23 @@ SIZE_COMMANDS: tuple[str, ...] = (
     "tiny",
 )
 
+# Compiled once at module level — SIZE_COMMANDS never changes at runtime.
+# Switch form: ``\large foo`` consumes ``foo`` until the next size cmd
+# or another backslash command. Implemented as one combined regex over
+# all nine commands so order isn't fragile.
+#
+# NOTE: The [^\\] in the body group stops at ANY backslash, not just
+# known TeX commands. This is intentional — by the time size commands
+# run, text commands (\\textbf, \\emph, etc.) have already been expanded
+# to HTML tags (which use ``<``/``>`` not ``\``). So any remaining ``\``
+# genuinely marks the start of another TeX command and is a correct
+# termination point.
+_SIZE_CMD_ALT = "|".join(re.escape(c) for c in SIZE_COMMANDS)
+_SWITCH_RE = re.compile(
+    r"\\(" + _SIZE_CMD_ALT + r")\b\s*"
+    r"((?:(?!\\(?:" + _SIZE_CMD_ALT + r")\b)[^\\])*)"
+)
+
 
 def apply_size_commands(text: str) -> str:
     """Convert size commands to ``<span class="scriba-tex-size-...">``.
@@ -48,26 +65,10 @@ def apply_size_commands(text: str) -> str:
         cls = f"scriba-tex-size-{cmd}"
         text = _replace_balanced(text, cmd, f'<span class="{cls}">', "</span>")
 
-    # Switch form: ``\large foo`` consumes ``foo`` until the next size cmd
-    # or another backslash command. Implemented as one combined regex over
-    # all nine commands so order isn't fragile.
-    #
-    # NOTE: The [^\\] in the body group stops at ANY backslash, not just
-    # known TeX commands. This is intentional — by the time size commands
-    # run, text commands (\\textbf, \\emph, etc.) have already been expanded
-    # to HTML tags (which use ``<``/``>`` not ``\``). So any remaining ``\``
-    # genuinely marks the start of another TeX command and is a correct
-    # termination point.
-    cmd_alt = "|".join(re.escape(c) for c in SIZE_COMMANDS)
-    switch_re = re.compile(
-        r"\\(" + cmd_alt + r")\b\s*"
-        r"((?:(?!\\(?:" + cmd_alt + r")\b)[^\\])*)"
-    )
-
     def _switch_sub(m: re.Match[str]) -> str:
         cmd = m.group(1)
         body = m.group(2).rstrip()
         cls = f"scriba-tex-size-{cmd}"
         return f'<span class="{cls}">{body}</span>'
 
-    return switch_re.sub(_switch_sub, text)
+    return _SWITCH_RE.sub(_switch_sub, text)

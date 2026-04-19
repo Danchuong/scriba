@@ -16,15 +16,14 @@ receive security fixes. All earlier releases are no longer supported.
 Please report suspected vulnerabilities **privately** rather than opening
 a public issue.
 
-The Scriba source currently lives in a private monorepo and is not yet
-published on a public GitHub mirror. Until the public mirror exists,
-coordinate directly with the OJCloud maintainers through an existing
-private channel. Once the public GitHub mirror is live, open a
-[GitHub Security Advisory](https://docs.github.com/en/code-security/security-advisories/guide-to-privately-reporting-a-security-vulnerability)
-on the mirror repository instead of an issue or PR. The maintainer
-contact list is tracked in
-[`.github/SECURITY_CONTACTS.md`](.github/SECURITY_CONTACTS.md) (a
-pre-release stub until the public mirror goes live).
+Scriba is publicly available at <https://github.com/Danchuong/scriba>.
+Open a [GitHub Security Advisory](https://docs.github.com/en/code-security/security-advisories/guide-to-privately-reporting-a-security-vulnerability)
+on that repository — use the **"Report a vulnerability"** button on the
+Security tab rather than a regular issue or PR. If you are unable to use
+GitHub's private reporting flow, email
+[security@danchuong.dev](mailto:security@danchuong.dev) with the subject
+line `[scriba] security report`. The maintainer contact list is tracked in
+[`.github/SECURITY_CONTACTS.md`](.github/SECURITY_CONTACTS.md).
 
 Include a clear description, reproduction steps, affected version, and
 any proof-of-concept input. We aim to acknowledge reports within a few

@@ -9,7 +9,7 @@
 Concrete goals:
 
 1. Claim every top-level `\begin{animation}[opts]\n ... \n\end{animation}` region at priority `10`, before `TexRenderer.detect()` sees it.
-2. Parse the body with the shared `SceneParser` over the 8 inner commands from `environments.md` §3.
+2. Parse the body with the shared `SceneParser` over the 12 inner commands from `environments.md` §3.
 3. Evaluate every `\compute{...}` block in the shared Starlark subprocess worker, tracking global vs frame-local scope.
 4. Maintain a delta-based `SceneState` across frames: each frame inherits the previous frame's state, drops ephemeral overlays (`\highlight`, `\annotate{ephemeral=true}`), and applies its own commands on top.
 5. Render each frame's final `SceneState` as one inline `<svg>` via the shared SVG emitter.

@@ -22,7 +22,7 @@
 Concrete goals:
 
 1. Claim every top-level `\begin{diagram}[opts]\n ... \n\end{diagram}` region at priority `10`, before `TexRenderer` sees it.
-2. Parse the body with the recursive-descent `SceneParser` over the 8 inner commands from `environments.md` §3.
+2. Parse the body with the recursive-descent `SceneParser` over the 12 inner commands from `environments.md` §3.
 3. Evaluate every `\compute{...}` block in the shared Starlark subprocess worker.
 4. Instantiate each `\shape{name}{Type}{params}` against the primitive catalog, and apply `\apply` / `\highlight` / `\recolor` / `\annotate` commands against the resulting `SceneState`.
 5. Emit exactly one SVG stage via the shared SVG emitter, wrapped in the frozen `<figure class="scriba-diagram">` shell from `environments.md` §8.2.
@@ -104,7 +104,7 @@ Returned blocks are guaranteed non-overlapping by construction (`DIAGRAM_RE` is 
 
 ## 4. Parse contract
 
-After `detect()`, `render_block` hands `block.raw` (minus the already-matched `\begin`/`\end` lines) to an internal `SceneParser`. The parser is a small recursive-descent walker over exactly the 8 inner commands from `environments.md` §3: `\shape`, `\compute`, `\apply`, `\highlight`, `\recolor`, `\annotate`, `\step`, `\narrate`. In the diagram context, `\step` (`E1050`) and `\narrate` (`E1054`) are parse-time errors.
+After `detect()`, `render_block` hands `block.raw` (minus the already-matched `\begin`/`\end` lines) to an internal `SceneParser`. The parser is a small recursive-descent walker over exactly the 12 inner commands from `environments.md` §3: `\shape`, `\compute`, `\apply`, `\highlight`, `\recolor`, `\annotate`, `\step`, `\narrate`, `\reannotate`, `\cursor`, `\foreach`, `\substory`. In the diagram context, `\step` (`E1050`) and `\narrate` (`E1054`) are parse-time errors.
 
 The parse pipeline:
 

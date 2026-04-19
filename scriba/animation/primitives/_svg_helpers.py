@@ -306,13 +306,13 @@ def emit_plain_arrow_svg(
             f'    <rect x="{pill_rx}" y="{pill_ry}"'
             f' width="{pill_w}" height="{pill_h}"'
             f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
-            f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
+            f' fill="var(--scriba-bg)" fill-opacity="{_LABEL_BG_OPACITY}"'
             f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
         )
 
         text_attrs = (
             f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-            f' stroke="white" stroke-width="3"'
+            f' stroke="var(--scriba-bg)" stroke-width="3"'
             f' stroke-linejoin="round" paint-order="stroke fill"'
         )
         style_parts = []
@@ -615,7 +615,7 @@ def emit_arrow_svg(
             f'    <rect x="{pill_rx}" y="{pill_ry}"'
             f' width="{pill_w}" height="{pill_h}"'
             f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
-            f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
+            f' fill="var(--scriba-bg)" fill-opacity="{_LABEL_BG_OPACITY}"'
             f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
         )
 
@@ -641,7 +641,7 @@ def emit_arrow_svg(
             # Single line — use _render_svg_text with halo attributes
             text_attrs = (
                 f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-                f' stroke="white" stroke-width="3"'
+                f' stroke="var(--scriba-bg)" stroke-width="3"'
                 f' stroke-linejoin="round" paint-order="stroke fill"'
             )
             style_parts = []
@@ -660,7 +660,7 @@ def emit_arrow_svg(
             # Multi-line — use tspan elements
             text_attrs = (
                 f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-                f' stroke="white" stroke-width="3"'
+                f' stroke="var(--scriba-bg)" stroke-width="3"'
                 f' stroke-linejoin="round" paint-order="stroke fill"'
             )
             style_parts = []

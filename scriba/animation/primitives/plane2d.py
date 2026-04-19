@@ -96,6 +96,7 @@ class Plane2D(PrimitiveBase):
     """
 
     primitive_type = "plane2d"
+    _accepts_target_suffix = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "point[{i}]": "point by index",
@@ -734,7 +735,7 @@ class Plane2D(PrimitiveBase):
         lines.append(
             f'<rect x="{pill_x:.1f}" y="{pill_y:.1f}" '
             f'width="{pill_w}" height="{pill_h}" rx="{pill_rx}" '
-            f'fill="white" opacity="0.85"/>'
+            f'fill="var(--scriba-bg)" opacity="0.85"/>'
         )
 
         # Render label text
@@ -1123,7 +1124,7 @@ class Plane2D(PrimitiveBase):
                 parts.append(
                     f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
                     f'width="{pill_w}" height="{pill_h}" '
-                    f'rx="{_LINE_PILL_R}" fill="white" '
+                    f'rx="{_LINE_PILL_R}" fill="var(--scriba-bg)" '
                     f'fill-opacity="0.85"/>'
                 )
                 parts.append(

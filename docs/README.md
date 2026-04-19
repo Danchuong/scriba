@@ -1,4 +1,4 @@
-> **Scriba v0.9.0** — 3 renderers (TexRenderer, AnimationRenderer, DiagramRenderer), 16 primitive types.
+> **Scriba v0.9.1** — 3 renderers (TexRenderer, AnimationRenderer, DiagramRenderer), 16 primitive types.
 
 ---
 
@@ -152,7 +152,7 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 | File | Purpose |
 |---|---|
 | [`architecture.md`](spec/architecture.md) | The Pipeline, Renderer, RenderContext, and Document contracts. Read this first if you are implementing a renderer or integrating Scriba into a service. |
-| [`environments.md`](spec/environments.md) | **Locked** spec for the `animation` and `diagram` environments: grammar, the 8 inner commands, the 6 primitives, the 6 semantic states, the Starlark host, the HTML/CSS contract, and the error catalog. Single source of truth for implementation. |
+| [`environments.md`](spec/environments.md) | **Locked** spec for the `animation` and `diagram` environments: grammar, the 12 inner commands, the 16 primitive types, the 9 semantic states, the Starlark host, the HTML/CSS contract, and the error catalog. Single source of truth for implementation. |
 | [`scene-ir.md`](spec/scene-ir.md) | Scene IR datatype definitions. |
 | [`primitives.md`](spec/primitives.md) | Primitive catalog — all 16 primitive types (6 base, 5 extended, 5 data-structure). |
 | [`svg-emitter.md`](spec/svg-emitter.md) | SVG emitter specification. |
@@ -214,7 +214,17 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 | Directory | Purpose |
 |---|---|
 | [`scriba-audit-2026-04-17/`](archive/scriba-audit-2026-04-17/) | Audit of the locked base spec (2026-04-17). |
+| [`ruleset-audit-2026-04-17/`](archive/ruleset-audit-2026-04-17/) | Ruleset audit (2026-04-17). |
+| [`vertical-space-audit-2026-04-17/`](archive/vertical-space-audit-2026-04-17/) | Vertical spacing audit (2026-04-17). |
+| [`viewbox-width-audit-2026-04-17/`](archive/viewbox-width-audit-2026-04-17/) | viewBox/width-tracking fixes audit (2026-04-17). |
 | [`docs-audit-2026-04-18/`](archive/docs-audit-2026-04-18/) | Cross-cutting docs audit (2026-04-18). |
+| [`animation-v2-2026-04-18/`](archive/animation-v2-2026-04-18/) | Animation v2 research (2026-04-18). |
+| [`refactor-research-2026-04-18/`](archive/refactor-research-2026-04-18/) | Refactor research (2026-04-18). |
+| [`scriba-audit-2026-04-18-wave7/`](archive/scriba-audit-2026-04-18-wave7/) | Wave 7 audit (2026-04-18). |
+| [`scriba-wave8-audit-2026-04-18/`](archive/scriba-wave8-audit-2026-04-18/) | Wave 8 audit (2026-04-18). |
+| [`scriba-wave8-plan-2026-04-18/`](archive/scriba-wave8-plan-2026-04-18/) | Wave 8 plan (2026-04-18). |
+| [`scriba-tex-reference-audit-2026-04-19/`](archive/scriba-tex-reference-audit-2026-04-19/) | SCRIBA-TEX-REFERENCE audit and fix waves R1–R3 (2026-04-19). |
+| [`scriba-full-audit-2026-04-19/`](archive/scriba-full-audit-2026-04-19/) | Full cross-doc consistency audit (2026-04-19). |
 
 ### `tutorial/` — Getting started
 

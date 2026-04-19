@@ -80,6 +80,7 @@ class Stack(PrimitiveBase):
     """
 
     primitive_type = "stack"
+    _accepts_target_suffix = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "item[{i}]": "item by index",

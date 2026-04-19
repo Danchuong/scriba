@@ -207,7 +207,7 @@ asset pipeline.
 `\usepackage{...}`, `\newcommand`, `\def`, `\let` in document content are
 not supported. Math-mode macros are provided via the `katex_macros`
 constructor argument on `TexRenderer`. Inside a `\begin{animation}` body,
-authors use the 8 inner commands from `environments.md` §3, not
+authors use the 12 inner commands from `environments.md` §3, not
 arbitrary LaTeX macros.
 
 ### 25. Internationalization of error messages

@@ -71,6 +71,7 @@ class Tree(PrimitiveBase):
     """
 
     primitive_type = "tree"
+    _accepts_target_suffix = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",

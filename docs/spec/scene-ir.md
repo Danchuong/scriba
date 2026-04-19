@@ -5,7 +5,7 @@
 > the Starlark host, primitive catalog, SVG emitter, and HTML stitcher.
 >
 > Cross-references: [`environments.md`](environments.md) §10.3 for the
-> parser-to-IR contract, §3 for the 8 inner commands, §4 for target selector syntax,
+> parser-to-IR contract, §3 for the 12 inner commands, §4 for target selector syntax,
 > §6 for frame semantics. [`diagram-plugin.md`](../guides/diagram-plugin.md) §4 step 6 for
 > `DiagramIR`. [`animation-plugin.md`](../guides/animation-plugin.md) §4 for `AnimationIR`
 > and `FrameIR`. [`primitives.md`](primitives.md) for the primitive catalog that
@@ -75,7 +75,7 @@ All IR types are defined in `scriba/animation/parser/ast.py` and re-exported fro
 
 ## 3. Command IR types
 
-Each of the 8 inner commands from [`environments.md`](environments.md) §3
+Each of the 12 inner commands from [`environments.md`](environments.md) §3
 is represented by a frozen dataclass. All command types share a common base.
 
 ### 3.1 Base fields

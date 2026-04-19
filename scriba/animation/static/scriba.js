@@ -9,7 +9,9 @@
     var btn=e.target.closest('[data-scriba-action="theme-toggle"]');
     if(btn){
       var t=document.documentElement.dataset.theme;
-      document.documentElement.dataset.theme=(t==='dark'?'light':'dark');
+      var nextTheme=(t==='dark'?'light':'dark');
+      document.documentElement.dataset.theme=nextTheme;
+      btn.setAttribute('aria-pressed',nextTheme==='dark'?'true':'false');
     }
   });
 

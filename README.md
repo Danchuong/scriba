@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.9.0 · MIT · Python 3.10+
+**Status:** v0.9.1 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,7 +24,7 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
-## What's new in v0.9.0
+## What's new in v0.9.1
 
 - **Breaking: `data-primitive` casing normalized.** `HashMap` and
   `VariableWatch` attributes are now lowercase (`"hashmap"`,
