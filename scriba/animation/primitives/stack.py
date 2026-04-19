@@ -130,7 +130,7 @@ class Stack(PrimitiveBase):
 
     # ----- apply commands --------------------------------------------------
 
-    def apply_command(self, params: dict[str, Any]) -> None:
+    def apply_command(self, params: dict[str, Any], *, target_suffix: str | None = None) -> None:
         """Process push/pop commands from ``\\apply``.
 
         Supported params:

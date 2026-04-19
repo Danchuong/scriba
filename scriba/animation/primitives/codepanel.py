@@ -208,8 +208,9 @@ class CodePanel(PrimitiveBase):
             suffix = f"line[{line_num}]"
             target = f"{self.name}.{suffix}"
 
-            # Per-line state: specific line state overrides "all" state
-            line_state = self.get_state(suffix)
+            # Per-line state: resolve_effective_state handles highlight promotion;
+            # "all" state override applies only when still idle after that.
+            line_state = self.resolve_effective_state(suffix)
             if line_state == "idle" and all_state != "idle":
                 line_state = all_state
 

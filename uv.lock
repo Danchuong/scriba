@@ -356,12 +356,12 @@ wheels = [
 name = "scriba-tex"
 source = { editable = "." }
 dependencies = [
+    { name = "bleach" },
     { name = "pygments" },
 ]
 
 [package.optional-dependencies]
 dev = [
-    { name = "bleach" },
     { name = "hypothesis" },
     { name = "lxml" },
     { name = "pytest" },
@@ -370,7 +370,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "bleach", marker = "extra == 'dev'", specifier = ">=6.1" },
+    { name = "bleach", specifier = ">=6.1" },
     { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.100" },
     { name = "lxml", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "pygments", specifier = ">=2.17,<2.21" },

@@ -357,7 +357,7 @@ class Plane2D(PrimitiveBase):
 
     # ----- apply commands --------------------------------------------------
 
-    def apply_command(self, params: dict[str, Any]) -> None:
+    def apply_command(self, params: dict[str, Any], *, target_suffix: str | None = None) -> None:
         """Process add/modify commands from ``\\apply``."""
         # Dynamic additions
         if "add_point" in params:

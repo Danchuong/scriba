@@ -54,6 +54,36 @@ def _escape_js(text: str) -> str:
     )
 
 
+def _sanitize_narration_html(html: str) -> str:
+    """Strip executable HTML from narration before it enters JS frame data.
+
+    Narration may legitimately contain safe inline markup (``<strong>``,
+    ``<em>``, KaTeX MathML, etc.) so we cannot plain-text-escape it.
+    Instead we run it through bleach with the same tag/attribute allowlist
+    used by the rest of the Scriba pipeline.
+
+    This prevents DOM-XSS via ``narr.innerHTML = frames[i].narration``:
+    tags like ``<script>`` and attributes like ``onerror=`` are stripped
+    by bleach before the string ever reaches the browser.
+
+    Audit finding P2: the narration path bypassed sanitization entirely.
+    """
+    import bleach  # deferred import — bleach is a runtime dep, not a type dep
+
+    from scriba.sanitize.whitelist import ALLOWED_ATTRS, ALLOWED_TAGS
+
+    # bleach.clean strips tags not in ALLOWED_TAGS and attributes not in
+    # ALLOWED_ATTRS.  ``strip=True`` removes the tag markup (not entities).
+    # ``strip_comments=True`` removes HTML comments which can carry payloads.
+    return bleach.clean(
+        html,
+        tags=ALLOWED_TAGS,
+        attributes=ALLOWED_ATTRS,
+        strip=True,
+        strip_comments=True,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Frame ID helpers (imported from emitter via lazy import to avoid circularity)
 # ---------------------------------------------------------------------------
@@ -261,9 +291,12 @@ def emit_substory_html(
             _frame_id_fn=_frame_id,
             _escape_fn=_escape,
         )
+        # Sanitize substory narration before it enters the JSON island (audit P2).
+        # The JS runtime assigns fd[i].narration to sn.innerHTML (scriba.js initSub),
+        # so this path carries the same DOM-XSS risk as the main narration path.
         json_frames.append({
             "svg": svg_html,
-            "narration": sub_frame.narration_html,
+            "narration": _sanitize_narration_html(sub_frame.narration_html),
         })
     frames_json = _escape(_json.dumps(json_frames))
 
@@ -422,7 +455,13 @@ def emit_interactive_html(
 
         # --- JS frame data ---
         svg_escaped = _escape_js(svg_html)
-        narration_escaped = _escape_js(frame.narration_html)
+        # Sanitize narration before embedding into JS frame data (audit P2).
+        # narration_html flows directly to ``narr.innerHTML`` in the browser.
+        # Bleach strips executable tags (<script>) and event-handler attrs
+        # (onerror=, onclick=, etc.) while preserving legitimate inline markup
+        # (KaTeX MathML, <strong>, <em>, etc.).
+        narration_safe = _sanitize_narration_html(frame.narration_html)
+        narration_escaped = _escape_js(narration_safe)
         label_token = frame.label if _is_id_safe_label(frame.label) else ""
         label_escaped = _escape_js(label_token)
         substory_html = ""
@@ -439,7 +478,7 @@ def emit_interactive_html(
         # --- Raw JSON frame data (for external-runtime mode) ---
         _json_frames_raw.append({
             "svg": svg_html,
-            "narration": frame.narration_html,
+            "narration": narration_safe,  # sanitized (audit P2)
             "substory": substory_html,
             "label": label_token,
         })

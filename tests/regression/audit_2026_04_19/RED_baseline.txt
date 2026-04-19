@@ -1,0 +1,1139 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.10.20, pytest-9.0.3, pluggy-1.6.0 -- /Users/mrchuongdan/Documents/GitHub/scriba/.venv/bin/python3
+cachedir: .pytest_cache
+hypothesis profile 'default'
+rootdir: /Users/mrchuongdan/Documents/GitHub/scriba
+configfile: pyproject.toml
+plugins: cov-7.1.0, hypothesis-6.151.12
+collecting ... collected 52 items
+
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_single_dotdot_segment_is_blocked FAILED [  1%]
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_double_dotdot_segment_is_blocked FAILED [  3%]
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_traversal_with_intermediate_valid_dir FAILED [  5%]
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_absolute_path_is_blocked FAILED [  7%]
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_legitimate_resource_inside_input_dir_is_served PASSED [  9%]
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_dotdot_does_not_return_data_uri_of_outside_file FAILED [ 11%]
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_script_tag_in_narration_html_not_in_js_frames_raw FAILED [ 13%]
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_script_tag_in_narration_is_html_entity_encoded FAILED [ 15%]
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_onerror_event_handler_in_narration_blocked FAILED [ 17%]
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_multiple_script_tags_all_blocked FAILED [ 19%]
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_plain_text_narration_is_unchanged PASSED [ 21%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestCodePanelHighlight::test_highlighted_line_produces_highlight_class FAILED [ 23%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestCodePanelHighlight::test_highlighted_middle_line_produces_highlight_class FAILED [ 25%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestCodePanelHighlight::test_non_highlighted_line_stays_idle PASSED [ 26%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestCodePanelHighlight::test_highlight_overrides_idle_but_not_active_state PASSED [ 28%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestLinkedListHighlight::test_highlighted_node_produces_highlight_class FAILED [ 30%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestLinkedListHighlight::test_highlighted_last_node_produces_highlight_class FAILED [ 32%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestLinkedListHighlight::test_non_highlighted_node_stays_idle PASSED [ 34%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestHashMapHighlight::test_highlighted_bucket_produces_highlight_class FAILED [ 36%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestHashMapHighlight::test_highlighted_middle_bucket_produces_highlight_class FAILED [ 38%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestHashMapHighlight::test_non_highlighted_bucket_stays_idle PASSED [ 40%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestVariableWatchHighlight::test_highlighted_var_produces_highlight_class FAILED [ 42%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestVariableWatchHighlight::test_highlighted_second_var_produces_highlight_class FAILED [ 44%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestVariableWatchHighlight::test_non_highlighted_var_stays_idle PASSED [ 46%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestQueueHighlightAlreadyWorks::test_highlighted_cell_produces_highlight_class PASSED [ 48%]
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestStackHighlightAlreadyWorks::test_highlighted_item_produces_highlight_class PASSED [ 50%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestStackApplyCommandAcceptsTargetSuffix::test_push_with_target_suffix_does_not_raise FAILED [ 51%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestStackApplyCommandAcceptsTargetSuffix::test_pop_with_target_suffix_does_not_raise FAILED [ 53%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestStackApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise FAILED [ 55%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestStackApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works FAILED [ 57%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestLinkedListApplyCommandAcceptsTargetSuffix::test_insert_with_target_suffix_does_not_raise FAILED [ 59%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestLinkedListApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise FAILED [ 61%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestLinkedListApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works FAILED [ 63%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestTreeApplyCommandAcceptsTargetSuffix::test_add_node_with_target_suffix_does_not_raise FAILED [ 65%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestTreeApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise FAILED [ 67%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestTreeApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works FAILED [ 69%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestGraphApplyCommandAcceptsTargetSuffix::test_add_edge_with_target_suffix_does_not_raise FAILED [ 71%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestGraphApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise FAILED [ 73%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestGraphApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works FAILED [ 75%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestQueueApplyCommandAcceptsTargetSuffix::test_enqueue_with_target_suffix_does_not_raise FAILED [ 76%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestQueueApplyCommandAcceptsTargetSuffix::test_dequeue_with_target_suffix_does_not_raise FAILED [ 78%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestQueueApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise FAILED [ 80%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestQueueApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works FAILED [ 82%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestPlane2DApplyCommandAcceptsTargetSuffix::test_add_point_with_target_suffix_does_not_raise FAILED [ 84%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestPlane2DApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise FAILED [ 86%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestPlane2DApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works FAILED [ 88%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Stack] FAILED [ 90%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[LinkedList] FAILED [ 92%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Tree] FAILED [ 94%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Graph] FAILED [ 96%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Queue] FAILED [ 98%]
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Plane2D] FAILED [100%]
+
+=================================== FAILURES ===================================
+________ TestPathTraversalBlocked.test_single_dotdot_segment_is_blocked ________
+
+self = <tests.regression.audit_2026_04_19.test_p1_path_traversal.TestPathTraversalBlocked object at 0x1072af3d0>
+tmp_path = PosixPath('/private/var/folders/w6/9v2h3zys5z9cmy1q_7py_d480000gn/T/pytest-of-mrchuongdan/pytest-627/test_single_dotdot_segment_is_0')
+
+    def test_single_dotdot_segment_is_blocked(self, tmp_path: Path) -> None:
+        """``../secret.png`` resolves outside input_dir and must be refused.
+    
+        Expected post-fix behaviour: return ``/static/../secret.png`` (the
+        unresolved fallback URL) instead of reading the file.
+    
+        Fails today because _resolve_resource performs no bounds check.
+        """
+        input_dir, secret_file, _ = _make_tree(tmp_path)
+    
+        result = _resolve_resource(input_dir, "../secret.png")
+    
+>       assert not result.startswith("data:"), (
+            "_resolve_resource read a file outside input_dir via '../secret.png'. "
+            "Expected a /static/ fallback URL but got a data URI."
+        )
+E       AssertionError: _resolve_resource read a file outside input_dir via '../secret.png'. Expected a /static/ fallback URL but got a data URI.
+E       assert not True
+E        +  where True = <built-in method startswith of str object at 0x10728fe30>('data:')
+E        +    where <built-in method startswith of str object at 0x10728fe30> = 'data:image/png;base64,iVBORw0KU2Vuc2l0aXZlIGRhdGEgb3V0c2lkZSBwcm9qZWN0IGRpcg=='.startswith
+
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py:88: AssertionError
+________ TestPathTraversalBlocked.test_double_dotdot_segment_is_blocked ________
+
+self = <tests.regression.audit_2026_04_19.test_p1_path_traversal.TestPathTraversalBlocked object at 0x1072af490>
+tmp_path = PosixPath('/private/var/folders/w6/9v2h3zys5z9cmy1q_7py_d480000gn/T/pytest-of-mrchuongdan/pytest-627/test_double_dotdot_segment_is_0')
+
+    def test_double_dotdot_segment_is_blocked(self, tmp_path: Path) -> None:
+        """``../../etc/passwd``-style traversal must be refused.
+    
+        Even when no such file exists on this machine, the logic must still
+        apply the path-bounds check *before* calling ``is_file()``.
+        """
+        input_dir = tmp_path / "a" / "b"
+        input_dir.mkdir(parents=True)
+    
+        # Create a file two levels up to prove the traversal would read it.
+        target = tmp_path / "canary.txt"
+        target.write_text("CANARY")
+    
+        result = _resolve_resource(input_dir, "../../canary.txt")
+    
+>       assert not result.startswith("data:"), (
+            "_resolve_resource resolved '../../canary.txt' outside input_dir "
+            "and returned a data URI. Expected a /static/ fallback."
+        )
+E       AssertionError: _resolve_resource resolved '../../canary.txt' outside input_dir and returned a data URI. Expected a /static/ fallback.
+E       assert not True
+E        +  where True = <built-in method startswith of str object at 0x1073736e0>('data:')
+E        +    where <built-in method startswith of str object at 0x1073736e0> = 'data:text/plain;base64,Q0FOQVJZ'.startswith
+
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py:108: AssertionError
+_____ TestPathTraversalBlocked.test_traversal_with_intermediate_valid_dir ______
+
+self = <tests.regression.audit_2026_04_19.test_p1_path_traversal.TestPathTraversalBlocked object at 0x1072af790>
+tmp_path = PosixPath('/private/var/folders/w6/9v2h3zys5z9cmy1q_7py_d480000gn/T/pytest-of-mrchuongdan/pytest-627/test_traversal_with_intermedia0')
+
+    def test_traversal_with_intermediate_valid_dir(self, tmp_path: Path) -> None:
+        """``subdir/../../secret.png`` also escapes and must be refused.
+    
+        A traversal that first descends into a valid subdirectory and then
+        climbs back out must still be caught.
+        """
+        input_dir, secret_file, _ = _make_tree(tmp_path)
+        (input_dir / "subdir").mkdir(exist_ok=True)
+    
+        result = _resolve_resource(input_dir, "subdir/../../secret.png")
+    
+>       assert not result.startswith("data:"), (
+            "_resolve_resource followed a 'subdir/../../' path and read a file "
+            "outside input_dir. Expected a /static/ fallback."
+        )
+E       AssertionError: _resolve_resource followed a 'subdir/../../' path and read a file outside input_dir. Expected a /static/ fallback.
+E       assert not True
+E        +  where True = <built-in method startswith of str object at 0x107393eb0>('data:')
+E        +    where <built-in method startswith of str object at 0x107393eb0> = 'data:image/png;base64,iVBORw0KU2Vuc2l0aXZlIGRhdGEgb3V0c2lkZSBwcm9qZWN0IGRpcg=='.startswith
+
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py:124: AssertionError
+____________ TestPathTraversalBlocked.test_absolute_path_is_blocked ____________
+
+self = <tests.regression.audit_2026_04_19.test_p1_path_traversal.TestPathTraversalBlocked object at 0x1072afa90>
+tmp_path = PosixPath('/private/var/folders/w6/9v2h3zys5z9cmy1q_7py_d480000gn/T/pytest-of-mrchuongdan/pytest-627/test_absolute_path_is_blocked0')
+
+    def test_absolute_path_is_blocked(self, tmp_path: Path) -> None:
+        """An absolute path that escapes input_dir must be refused.
+    
+        ``input_dir / '/etc/passwd'`` on POSIX discards the input_dir
+        prefix and resolves directly to ``/etc/passwd``.  The fix must
+        detect that the result is not under input_dir.
+        """
+        input_dir, _, _ = _make_tree(tmp_path)
+    
+        # Use a file that actually exists on most POSIX systems.
+        result = _resolve_resource(input_dir, "/etc/hosts")
+    
+        # We assert either: the file was not read (data: URI absent), or
+        # the path was not under input_dir (static fallback returned).
+>       assert not result.startswith("data:"), (
+            "_resolve_resource resolved an absolute path '/etc/hosts' and "
+            "returned a data URI. Expected a /static/ fallback."
+        )
+E       AssertionError: _resolve_resource resolved an absolute path '/etc/hosts' and returned a data URI. Expected a /static/ fallback.
+E       assert not True
+E        +  where True = <built-in method startswith of str object at 0x1071ad0b0>('data:')
+E        +    where <built-in method startswith of str object at 0x1071ad0b0> = 'data:application/octet-stream;base64,IyMKIyBIb3N0IERhdGFiYXNlCiMKIyBsb2NhbGhvc3QgaXMgdXNlZCB0byBjb25maWd1cmUgdGhlIGxvb3BiYWNrIGludGVyZmFjZQojIHdoZW4gdGhlIHN5c3RlbSBpcyBib290aW5nLiAgRG8gbm90IGNoYW5nZSB0aGlzIGVudHJ5LgojIwoxMjcuMC4wLjEJbG9jYWxob3N0CjI1NS4yNTUuMjU1LjI1NQlicm9hZGNhc3Rob3N0Cjo6MSAgICAgICAgICAgICBsb2NhbGhvc3QKCg=='.startswith
+
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py:143: AssertionError
+_ TestPathTraversalBlocked.test_dotdot_does_not_return_data_uri_of_outside_file _
+
+self = <tests.regression.audit_2026_04_19.test_p1_path_traversal.TestPathTraversalBlocked object at 0x1073000d0>
+tmp_path = PosixPath('/private/var/folders/w6/9v2h3zys5z9cmy1q_7py_d480000gn/T/pytest-of-mrchuongdan/pytest-627/test_dotdot_does_not_return_da0')
+
+    def test_dotdot_does_not_return_data_uri_of_outside_file(
+        self, tmp_path: Path
+    ) -> None:
+        """Cross-check: the returned value must not contain the secret content.
+    
+        Even if the path check is absent, the data URI must not encode the
+        sensitive file's bytes.
+        """
+        input_dir, secret_file, _ = _make_tree(tmp_path)
+    
+        result = _resolve_resource(input_dir, "../secret.png")
+    
+        if result.startswith("data:"):
+            # If it is a data URI, make sure it is NOT the secret file
+            encoded_part = result.split(",", 1)[1]
+            decoded = base64.b64decode(encoded_part)
+>           assert b"Sensitive data outside project dir" not in decoded, (
+                "_resolve_resource encoded the secret file's content into the "
+                "output. This is a path-traversal vulnerability."
+            )
+E           AssertionError: _resolve_resource encoded the secret file's content into the output. This is a path-traversal vulnerability.
+E           assert b'Sensitive data outside project dir' not in b'\x89PNG\r\nSensitive data outside project dir'
+
+tests/regression/audit_2026_04_19/test_p1_path_traversal.py:189: AssertionError
+_ TestNarrationScriptTagBlocked.test_script_tag_in_narration_html_not_in_js_frames_raw _
+
+self = <tests.regression.audit_2026_04_19.test_p2_dom_xss.TestNarrationScriptTagBlocked object at 0x1073005e0>
+
+    def test_script_tag_in_narration_html_not_in_js_frames_raw(self) -> None:
+        """A ``<script>`` injected into narration_html must not appear raw in JS frames.
+    
+        Audit finding P2: the ``_escape_js`` helper escapes ``</script>`` to
+        ``<\\/script>`` but leaves ``<script>`` unescaped in the backtick
+        literal.  When the client calls ``narr.innerHTML = frames[i].narration``
+        the browser sees a ``<script>`` open tag and executes the payload.
+    
+        Post-fix expectation: the JS frame data must NOT contain the literal
+        string ``<script>`` inside any narration value — it must be either
+        HTML-entity-encoded (``&lt;script&gt;``) or stripped entirely.
+        """
+        payload = "<script>alert('xss-p2')</script>"
+        html = emit_interactive_html(
+            "test-p2-narration",
+            _frames_with_narration(payload),
+            {},
+        )
+    
+        narration_values = _extract_js_narration_values(html)
+        assert narration_values, (
+            "Could not locate narration values in emitted JS frames. "
+            "The extraction regex may need updating if the frame format changed."
+        )
+    
+        for value in narration_values:
+>           assert "<script>" not in value, (
+                "P2 DOM XSS: the literal string '<script>' appears inside the "
+                "JS frames narration field.\n"
+                f"narration value: {value!r}\n"
+                "When the client executes narr.innerHTML=frames[i].narration "
+                "the browser will parse and execute this script."
+            )
+E           AssertionError: P2 DOM XSS: the literal string '<script>' appears inside the JS frames narration field.
+E             narration value: "<script>alert('xss-p2')<\\/script>"
+E             When the client executes narr.innerHTML=frames[i].narration the browser will parse and execute this script.
+E           assert '<script>' not in "<script>ale...)<\\/script>"
+E             
+E             '<script>' is contained here:
+E               <script>alert('xss-p2')<\/script>
+E             ? ++++++++
+
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py:129: AssertionError
+_ TestNarrationScriptTagBlocked.test_script_tag_in_narration_is_html_entity_encoded _
+
+self = <tests.regression.audit_2026_04_19.test_p2_dom_xss.TestNarrationScriptTagBlocked object at 0x1073008b0>
+
+    def test_script_tag_in_narration_is_html_entity_encoded(self) -> None:
+        """The ``<`` in ``<script>`` must be encoded as ``&lt;`` in narration output.
+    
+        Acceptable encodings that survive innerHTML assignment safely:
+          - ``&lt;script&gt;...&lt;/script&gt;``  (HTML entity encoding)
+          - complete absence of the tag (stripped by sanitizer)
+    
+        Fails today because the raw ``<script>`` opening tag is present in
+        the backtick literal that flows to ``innerHTML``.
+        """
+        payload = "<script>document.cookie='stolen'</script>"
+        html = emit_interactive_html(
+            "test-p2-entity",
+            _frames_with_narration(payload),
+            {},
+        )
+    
+        narration_values = _extract_js_narration_values(html)
+        for value in narration_values:
+            # Either the tag is gone or it is entity-encoded
+            tag_present_raw = "<script>" in value
+            tag_present_encoded = "&lt;script&gt;" in value or "\\u003cscript" in value
+>           assert not tag_present_raw or tag_present_encoded, (
+                "P2 DOM XSS: '<script>' is present unencoded in the narration "
+                "JS frame value. It must be HTML-entity-encoded so that "
+                "innerHTML assignment renders it as text, not executable code.\n"
+                f"narration value: {value!r}"
+            )
+E           AssertionError: P2 DOM XSS: '<script>' is present unencoded in the narration JS frame value. It must be HTML-entity-encoded so that innerHTML assignment renders it as text, not executable code.
+E             narration value: "<script>document.cookie='stolen'<\\/script>"
+E           assert (not True or False)
+
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py:159: AssertionError
+_ TestNarrationScriptTagBlocked.test_onerror_event_handler_in_narration_blocked _
+
+self = <tests.regression.audit_2026_04_19.test_p2_dom_xss.TestNarrationScriptTagBlocked object at 0x107300b80>
+
+    def test_onerror_event_handler_in_narration_blocked(self) -> None:
+        """An ``<img onerror=...>`` payload in narration must not survive raw.
+    
+        Even without ``<script>``, inline event handlers can execute JS via
+        ``innerHTML``.  The fix must strip or encode all executable HTML.
+        """
+        payload = '<img src=x onerror="alert(\'p2-img\')">'
+        html = emit_interactive_html(
+            "test-p2-img",
+            _frames_with_narration(payload),
+            {},
+        )
+    
+        narration_values = _extract_js_narration_values(html)
+        for value in narration_values:
+>           assert "onerror=" not in value, (
+                "P2 DOM XSS: '<img onerror=...>' survives into the narration "
+                "JS frame value and will execute when set via innerHTML.\n"
+                f"narration value: {value!r}"
+            )
+E           AssertionError: P2 DOM XSS: '<img onerror=...>' survives into the narration JS frame value and will execute when set via innerHTML.
+E             narration value: '<img src=x onerror="alert(\'p2-img\')">'
+E           assert 'onerror=' not in '<img src=x ...'p2-img\')">'
+E             
+E             'onerror=' is contained here:
+E               <img src=x onerror="alert('p2-img')">
+E             ?            ++++++++
+
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py:181: AssertionError
+_____ TestNarrationScriptTagBlocked.test_multiple_script_tags_all_blocked ______
+
+self = <tests.regression.audit_2026_04_19.test_p2_dom_xss.TestNarrationScriptTagBlocked object at 0x107300e50>
+
+    def test_multiple_script_tags_all_blocked(self) -> None:
+        """Multiple ``<script>`` tags in a single narration must all be blocked."""
+        payload = (
+            "<script>alert(1)</script>"
+            " some text "
+            "<script>alert(2)</script>"
+        )
+        html = emit_interactive_html(
+            "test-p2-multi",
+            _frames_with_narration(payload),
+            {},
+        )
+    
+        narration_values = _extract_js_narration_values(html)
+        for value in narration_values:
+>           assert "<script>" not in value, (
+                "P2 DOM XSS: '<script>' found in narration JS frame value "
+                "even after multiple-tag sanitization.\n"
+                f"narration value: {value!r}"
+            )
+E           AssertionError: P2 DOM XSS: '<script>' found in narration JS frame value even after multiple-tag sanitization.
+E             narration value: '<script>alert(1)<\\/script> some text <script>alert(2)<\\/script>'
+E           assert '<script>' not in '<script>ale...)<\\/script>'
+E             
+E             '<script>' is contained here:
+E               <script>alert(1)<\/script> some text <script>alert(2)<\/script>
+E             ? ++++++++
+
+tests/regression/audit_2026_04_19/test_p2_dom_xss.py:202: AssertionError
+____ TestCodePanelHighlight.test_highlighted_line_produces_highlight_class _____
+
+self = <tests.regression.audit_2026_04_19.test_p3_highlight_state.TestCodePanelHighlight object at 0x1072af9a0>
+
+    def test_highlighted_line_produces_highlight_class(self) -> None:
+        """Setting _highlighted={'line[1]'} must produce scriba-state-highlight.
+    
+        Covers audit finding P3 for CodePanel (codepanel.py:212).
+        """
+        prim = CodePanel("cp", {"lines": ["x = 1", "y = 2", "return x + y"]})
+        prim._highlighted = {"line[1]"}
+    
+        svg = prim.emit_svg()
+    
+>       _assert_highlight_class_present(svg, "line[1]", "CodePanel")
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+svg = '<g data-primitive="codepanel" data-shape="cp"><rect x="0" y="0" width="166" height="88" rx="6" fill="#f8f9fa" stroke=...eight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">return x + y</text></g></g>'
+target = 'line[1]', label = 'CodePanel'
+
+    def _assert_highlight_class_present(svg: str, target: str, label: str) -> None:
+        """Assert that ``scriba-state-highlight`` appears near ``data-target=<target>``."""
+        # The emitter wraps each part in a <g data-target="..."> element and sets
+        # the class attribute to the state class.  After the fix the class must be
+        # ``scriba-state-highlight`` for any part in the highlighted set.
+>       assert "scriba-state-highlight" in svg, (
+            f"{label}: setting _highlighted={{'{target}'}} and calling emit_svg() "
+            "must produce SVG containing 'scriba-state-highlight' but it did not.\n"
+            "This means resolve_effective_state() is not being used in the emit loop."
+        )
+E       AssertionError: CodePanel: setting _highlighted={'line[1]'} and calling emit_svg() must produce SVG containing 'scriba-state-highlight' but it did not.
+E         This means resolve_effective_state() is not being used in the emit loop.
+E       assert 'scriba-state-highlight' in '<g data-primitive="codepanel" data-shape="cp"><rect x="0" y="0" width="166" height="88" rx="6" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1"/><g data-target="cp.line[1]" class="scriba-state-idle"><text x="38" y="20" style="font-family:monospace;font-size:13px;font-weight:400;text-anchor:end;dominant-baseline:central" fill="#687076">1</text><text x="54" y="20" style="font-family:monospace;font-size:14px;font-weight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">x = 1</text></g><g data-target="cp.line[2]" class="scriba-state-idle"><text x="38" y="44" style="font-family:monospace;font-size:13px;font-weight:400;text-anchor:end;dominant-baseline:central" fill="#687076">2</text><text x="54" y="44" style="font-family:monospace;font-size:14px;font-weight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">y = 2</text></g><g data-target="cp.line[3]" class="scriba-state-idle"><text x="38" y="68" style="font-family:monospace;font-size:13px;font-weight:400;text-anchor:end;dominant-baseline:central" fill="#687076">3</text><text x="54" y="68" style="font-family:monospace;font-size:14px;font-weight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">return x + y</text></g></g>'
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:62: AssertionError
+_ TestCodePanelHighlight.test_highlighted_middle_line_produces_highlight_class _
+
+self = <tests.regression.audit_2026_04_19.test_p3_highlight_state.TestCodePanelHighlight object at 0x1072af250>
+
+    def test_highlighted_middle_line_produces_highlight_class(self) -> None:
+        """Highlight works for any line index, not just the first."""
+        prim = CodePanel("cp", {"lines": ["a", "b", "c", "d"]})
+        prim._highlighted = {"line[3]"}
+    
+        svg = prim.emit_svg()
+    
+>       _assert_highlight_class_present(svg, "line[3]", "CodePanel")
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+svg = '<g data-primitive="codepanel" data-shape="cp"><rect x="0" y="0" width="166" height="112" rx="6" fill="#f8f9fa" stroke...14px;font-weight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">d</text></g></g>'
+target = 'line[3]', label = 'CodePanel'
+
+    def _assert_highlight_class_present(svg: str, target: str, label: str) -> None:
+        """Assert that ``scriba-state-highlight`` appears near ``data-target=<target>``."""
+        # The emitter wraps each part in a <g data-target="..."> element and sets
+        # the class attribute to the state class.  After the fix the class must be
+        # ``scriba-state-highlight`` for any part in the highlighted set.
+>       assert "scriba-state-highlight" in svg, (
+            f"{label}: setting _highlighted={{'{target}'}} and calling emit_svg() "
+            "must produce SVG containing 'scriba-state-highlight' but it did not.\n"
+            "This means resolve_effective_state() is not being used in the emit loop."
+        )
+E       AssertionError: CodePanel: setting _highlighted={'line[3]'} and calling emit_svg() must produce SVG containing 'scriba-state-highlight' but it did not.
+E         This means resolve_effective_state() is not being used in the emit loop.
+E       assert 'scriba-state-highlight' in '<g data-primitive="codepanel" data-shape="cp"><rect x="0" y="0" width="166" height="112" rx="6" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1"/><g data-target="cp.line[1]" class="scriba-state-idle"><text x="38" y="20" style="font-family:monospace;font-size:13px;font-weight:400;text-anchor:end;dominant-baseline:central" fill="#687076">1</text><text x="54" y="20" style="font-family:monospace;font-size:14px;font-weight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">a</text></g><g data-target="cp.line[2]" class="scriba-state-idle"><text x="38" y="44" style="font-family:monospace;font-size:13px;font-weight:400;text-anchor:end;dominant-baseline:central" fill="#687076">2</text><text x="54" y="44" style="font-family:monospace;font-size:14px;font-weight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">b</text></g><g data-target="cp.line[3]" class="scriba-state-idle"><text x="38" y="68" style="font-family:monospace;font-size:13px;font-weight:400;text-anchor:end;dominant-baseline:central" fill="#687076">3</text><text x="54" y="68" style="font-family:monospace;font-size:14px;font-weight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">c</text></g><g data-target="cp.line[4]" class="scriba-state-idle"><text x="38" y="92" style="font-family:monospace;font-size:13px;font-weight:400;text-anchor:end;dominant-baseline:central" fill="#687076">4</text><text x="54" y="92" style="font-family:monospace;font-size:14px;font-weight:400;text-anchor:start;dominant-baseline:central" fill="#11181c" xml:space="preserve">d</text></g></g>'
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:62: AssertionError
+____ TestLinkedListHighlight.test_highlighted_node_produces_highlight_class ____
+
+self = <tests.regression.audit_2026_04_19.test_p3_highlight_state.TestLinkedListHighlight object at 0x107300850>
+
+    def test_highlighted_node_produces_highlight_class(self) -> None:
+        """Setting _highlighted={'node[0]'} must produce scriba-state-highlight.
+    
+        Covers audit finding P3 for LinkedList (linkedlist.py:356).
+        """
+        prim = LinkedList("ll", {"data": [10, 20, 30]})
+        prim._highlighted = {"node[0]"}
+    
+        svg = prim.emit_svg()
+    
+>       _assert_highlight_class_present(svg, "node[0]", "LinkedList")
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:162: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+svg = '<g data-primitive="linkedlist" data-shape="ll"><defs><marker id="arrowhead-ll" markerWidth="7" markerHeight="7" refX=...t x="272" y="68" text-anchor="middle" dominant-baseline="central" fill="#687076" font-size="10">node[2]</text></g></g>'
+target = 'node[0]', label = 'LinkedList'
+
+    def _assert_highlight_class_present(svg: str, target: str, label: str) -> None:
+        """Assert that ``scriba-state-highlight`` appears near ``data-target=<target>``."""
+        # The emitter wraps each part in a <g data-target="..."> element and sets
+        # the class attribute to the state class.  After the fix the class must be
+        # ``scriba-state-highlight`` for any part in the highlighted set.
+>       assert "scriba-state-highlight" in svg, (
+            f"{label}: setting _highlighted={{'{target}'}} and calling emit_svg() "
+            "must produce SVG containing 'scriba-state-highlight' but it did not.\n"
+            "This means resolve_effective_state() is not being used in the emit loop."
+        )
+E       AssertionError: LinkedList: setting _highlighted={'node[0]'} and calling emit_svg() must produce SVG containing 'scriba-state-highlight' but it did not.
+E         This means resolve_effective_state() is not being used in the emit loop.
+E       assert 'scriba-state-highlight' in '<g data-primitive="linkedlist" data-shape="ll"><defs><marker id="arrowhead-ll" markerWidth="7" markerHeight="7" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3 L0,7 Z" fill="#dfe3e6" class="scriba-ll-arrowhead"/></marker></defs><g data-target="ll.link[0]" class="scriba-state-idle"><line x1="77" y1="32" x2="115" y2="32" stroke="#dfe3e6" stroke-width="1.5" marker-end="url(#arrowhead-ll)"/></g><g data-target="ll.link[1]" class="scriba-state-idle"><line x1="187" y1="32" x2="225" y2="32" stroke="#dfe3e6" stroke-width="1.5" marker-end="url(#arrowhead-ll)"/></g><g data-target="ll.node[0]" class="scriba-state-idle"><rect x="12" y="12" width="80" height="40" rx="4" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1"/><line x1="62" y1="12" x2="62" y2="52" stroke="#dfe3e6" stroke-width="1"/><text x="37" y="32" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">10</text><circle cx="77" cy="32" r="4" fill="#11181c"/><text x="52" y="68" text-anchor="middle" dominant-baseline="central" fill="#687076" font-size="10">node[0]</text></g><g data-target="ll.node[1]" class="scriba-state-idle"><rect x="122" y="12" width="80" height="40" rx="4" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1"/><line x1="172" y1="12" x2="172" y2="52" stroke="#dfe3e6" stroke-width="1"/><text x="147" y="32" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">20</text><circle cx="187" cy="32" r="4" fill="#11181c"/><text x="162" y="68" text-anchor="middle" dominant-baseline="central" fill="#687076" font-size="10">node[1]</text></g><g data-target="ll.node[2]" class="scriba-state-idle"><rect x="232" y="12" width="80" height="40" rx="4" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1"/><line x1="282" y1="12" x2="282" y2="52" stroke="#dfe3e6" stroke-width="1"/><text x="257" y="32" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">30</text><line x1="286" y1="48" x2="308" y2="16" stroke="#11181c" stroke-width="1.5"/><text x="272" y="68" text-anchor="middle" dominant-baseline="central" fill="#687076" font-size="10">node[2]</text></g></g>'
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:62: AssertionError
+_ TestLinkedListHighlight.test_highlighted_last_node_produces_highlight_class __
+
+self = <tests.regression.audit_2026_04_19.test_p3_highlight_state.TestLinkedListHighlight object at 0x107301810>
+
+    def test_highlighted_last_node_produces_highlight_class(self) -> None:
+        """Highlight works for the last node as well as the first."""
+        prim = LinkedList("ll", {"data": [1, 2, 3]})
+        prim._highlighted = {"node[2]"}
+    
+        svg = prim.emit_svg()
+    
+>       _assert_highlight_class_present(svg, "node[2]", "LinkedList")
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+svg = '<g data-primitive="linkedlist" data-shape="ll"><defs><marker id="arrowhead-ll" markerWidth="7" markerHeight="7" refX=...t x="272" y="68" text-anchor="middle" dominant-baseline="central" fill="#687076" font-size="10">node[2]</text></g></g>'
+target = 'node[2]', label = 'LinkedList'
+
+    def _assert_highlight_class_present(svg: str, target: str, label: str) -> None:
+        """Assert that ``scriba-state-highlight`` appears near ``data-target=<target>``."""
+        # The emitter wraps each part in a <g data-target="..."> element and sets
+        # the class attribute to the state class.  After the fix the class must be
+        # ``scriba-state-highlight`` for any part in the highlighted set.
+>       assert "scriba-state-highlight" in svg, (
+            f"{label}: setting _highlighted={{'{target}'}} and calling emit_svg() "
+            "must produce SVG containing 'scriba-state-highlight' but it did not.\n"
+            "This means resolve_effective_state() is not being used in the emit loop."
+        )
+E       AssertionError: LinkedList: setting _highlighted={'node[2]'} and calling emit_svg() must produce SVG containing 'scriba-state-highlight' but it did not.
+E         This means resolve_effective_state() is not being used in the emit loop.
+E       assert 'scriba-state-highlight' in '<g data-primitive="linkedlist" data-shape="ll"><defs><marker id="arrowhead-ll" markerWidth="7" markerHeight="7" refX="7" refY="3" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L7,3 L0,7 Z" fill="#dfe3e6" class="scriba-ll-arrowhead"/></marker></defs><g data-target="ll.link[0]" class="scriba-state-idle"><line x1="77" y1="32" x2="115" y2="32" stroke="#dfe3e6" stroke-width="1.5" marker-end="url(#arrowhead-ll)"/></g><g data-target="ll.link[1]" class="scriba-state-idle"><line x1="187" y1="32" x2="225" y2="32" stroke="#dfe3e6" stroke-width="1.5" marker-end="url(#arrowhead-ll)"/></g><g data-target="ll.node[0]" class="scriba-state-idle"><rect x="12" y="12" width="80" height="40" rx="4" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1"/><line x1="62" y1="12" x2="62" y2="52" stroke="#dfe3e6" stroke-width="1"/><text x="37" y="32" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">1</text><circle cx="77" cy="32" r="4" fill="#11181c"/><text x="52" y="68" text-anchor="middle" dominant-baseline="central" fill="#687076" font-size="10">node[0]</text></g><g data-target="ll.node[1]" class="scriba-state-idle"><rect x="122" y="12" width="80" height="40" rx="4" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1"/><line x1="172" y1="12" x2="172" y2="52" stroke="#dfe3e6" stroke-width="1"/><text x="147" y="32" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">2</text><circle cx="187" cy="32" r="4" fill="#11181c"/><text x="162" y="68" text-anchor="middle" dominant-baseline="central" fill="#687076" font-size="10">node[1]</text></g><g data-target="ll.node[2]" class="scriba-state-idle"><rect x="232" y="12" width="80" height="40" rx="4" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1"/><line x1="282" y1="12" x2="282" y2="52" stroke="#dfe3e6" stroke-width="1"/><text x="257" y="32" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">3</text><line x1="286" y1="48" x2="308" y2="16" stroke="#11181c" stroke-width="1.5"/><text x="272" y="68" text-anchor="middle" dominant-baseline="central" fill="#687076" font-size="10">node[2]</text></g></g>'
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:62: AssertionError
+____ TestHashMapHighlight.test_highlighted_bucket_produces_highlight_class _____
+
+self = <tests.regression.audit_2026_04_19.test_p3_highlight_state.TestHashMapHighlight object at 0x107301e40>
+
+    def test_highlighted_bucket_produces_highlight_class(self) -> None:
+        """Setting _highlighted={'bucket[0]'} must produce scriba-state-highlight.
+    
+        Covers audit finding P3 for HashMap (hashmap.py:272).
+        """
+        prim = HashMap("hm", {"capacity": 4})
+        prim._highlighted = {"bucket[0]"}
+    
+        svg = prim.emit_svg()
+    
+>       _assert_highlight_class_present(svg, "bucket[0]", "HashMap")
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:205: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+svg = '<g data-primitive="hashmap" data-shape="hm"><rect x="4" y="4" width="240" height="160" fill="none" stroke="#dfe3e6" s...ext x="24" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">3</text></g></g>'
+target = 'bucket[0]', label = 'HashMap'
+
+    def _assert_highlight_class_present(svg: str, target: str, label: str) -> None:
+        """Assert that ``scriba-state-highlight`` appears near ``data-target=<target>``."""
+        # The emitter wraps each part in a <g data-target="..."> element and sets
+        # the class attribute to the state class.  After the fix the class must be
+        # ``scriba-state-highlight`` for any part in the highlighted set.
+>       assert "scriba-state-highlight" in svg, (
+            f"{label}: setting _highlighted={{'{target}'}} and calling emit_svg() "
+            "must produce SVG containing 'scriba-state-highlight' but it did not.\n"
+            "This means resolve_effective_state() is not being used in the emit loop."
+        )
+E       AssertionError: HashMap: setting _highlighted={'bucket[0]'} and calling emit_svg() must produce SVG containing 'scriba-state-highlight' but it did not.
+E         This means resolve_effective_state() is not being used in the emit loop.
+E       assert 'scriba-state-highlight' in '<g data-primitive="hashmap" data-shape="hm"><rect x="4" y="4" width="240" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="44" y1="4" x2="44" y2="164" stroke="#dfe3e6" stroke-width="1"/><g data-target="hm.bucket[0]" class="scriba-state-idle"><rect x="4" y="4" width="40" height="40" fill="#f1f3f5" stroke="none"/><rect x="44" y="4" width="200" height="40" fill="#f8f9fa" stroke="none"/><text x="24" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">0</text></g><g data-target="hm.bucket[1]" class="scriba-state-idle"><line x1="4" y1="44" x2="244" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><rect x="4" y="44" width="40" height="40" fill="#f1f3f5" stroke="none"/><rect x="44" y="44" width="200" height="40" fill="#f8f9fa" stroke="none"/><text x="24" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="hm.bucket[2]" class="scriba-state-idle"><line x1="4" y1="84" x2="244" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><rect x="4" y="84" width="40" height="40" fill="#f1f3f5" stroke="none"/><rect x="44" y="84" width="200" height="40" fill="#f8f9fa" stroke="none"/><text x="24" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">2</text></g><g data-target="hm.bucket[3]" class="scriba-state-idle"><line x1="4" y1="124" x2="244" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><rect x="4" y="124" width="40" height="40" fill="#f1f3f5" stroke="none"/><rect x="44" y="124" width="200" height="40" fill="#f8f9fa" stroke="none"/><text x="24" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">3</text></g></g>'
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:62: AssertionError
+_ TestHashMapHighlight.test_highlighted_middle_bucket_produces_highlight_class _
+
+self = <tests.regression.audit_2026_04_19.test_p3_highlight_state.TestHashMapHighlight object at 0x107302110>
+
+    def test_highlighted_middle_bucket_produces_highlight_class(self) -> None:
+        """Highlight works for bucket[2] in a 4-bucket map."""
+        prim = HashMap("hm", {"capacity": 4})
+        prim._highlighted = {"bucket[2]"}
+    
+        svg = prim.emit_svg()
+    
+>       _assert_highlight_class_present(svg, "bucket[2]", "HashMap")
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:214: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+svg = '<g data-primitive="hashmap" data-shape="hm"><rect x="4" y="4" width="240" height="160" fill="none" stroke="#dfe3e6" s...ext x="24" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">3</text></g></g>'
+target = 'bucket[2]', label = 'HashMap'
+
+    def _assert_highlight_class_present(svg: str, target: str, label: str) -> None:
+        """Assert that ``scriba-state-highlight`` appears near ``data-target=<target>``."""
+        # The emitter wraps each part in a <g data-target="..."> element and sets
+        # the class attribute to the state class.  After the fix the class must be
+        # ``scriba-state-highlight`` for any part in the highlighted set.
+>       assert "scriba-state-highlight" in svg, (
+            f"{label}: setting _highlighted={{'{target}'}} and calling emit_svg() "
+            "must produce SVG containing 'scriba-state-highlight' but it did not.\n"
+            "This means resolve_effective_state() is not being used in the emit loop."
+        )
+E       AssertionError: HashMap: setting _highlighted={'bucket[2]'} and calling emit_svg() must produce SVG containing 'scriba-state-highlight' but it did not.
+E         This means resolve_effective_state() is not being used in the emit loop.
+E       assert 'scriba-state-highlight' in '<g data-primitive="hashmap" data-shape="hm"><rect x="4" y="4" width="240" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="44" y1="4" x2="44" y2="164" stroke="#dfe3e6" stroke-width="1"/><g data-target="hm.bucket[0]" class="scriba-state-idle"><rect x="4" y="4" width="40" height="40" fill="#f1f3f5" stroke="none"/><rect x="44" y="4" width="200" height="40" fill="#f8f9fa" stroke="none"/><text x="24" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">0</text></g><g data-target="hm.bucket[1]" class="scriba-state-idle"><line x1="4" y1="44" x2="244" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><rect x="4" y="44" width="40" height="40" fill="#f1f3f5" stroke="none"/><rect x="44" y="44" width="200" height="40" fill="#f8f9fa" stroke="none"/><text x="24" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="hm.bucket[2]" class="scriba-state-idle"><line x1="4" y1="84" x2="244" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><rect x="4" y="84" width="40" height="40" fill="#f1f3f5" stroke="none"/><rect x="44" y="84" width="200" height="40" fill="#f8f9fa" stroke="none"/><text x="24" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">2</text></g><g data-target="hm.bucket[3]" class="scriba-state-idle"><line x1="4" y1="124" x2="244" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><rect x="4" y="124" width="40" height="40" fill="#f1f3f5" stroke="none"/><rect x="44" y="124" width="200" height="40" fill="#f8f9fa" stroke="none"/><text x="24" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:13px">3</text></g></g>'
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:62: AssertionError
+___ TestVariableWatchHighlight.test_highlighted_var_produces_highlight_class ___
+
+self = <tests.regression.audit_2026_04_19.test_p3_highlight_state.TestVariableWatchHighlight object at 0x107302740>
+
+    def test_highlighted_var_produces_highlight_class(self) -> None:
+        """Setting _highlighted={'var[x]'} must produce scriba-state-highlight.
+    
+        Covers audit finding P3 for VariableWatch (variablewatch.py:272).
+        """
+        prim = VariableWatch("vw", {"names": ["x", "y", "z"]})
+        prim._highlighted = {"var[x]"}
+    
+        svg = prim.emit_svg()
+    
+>       _assert_highlight_class_present(svg, "var[x]", "VariableWatch")
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:248: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+svg = '<g data-primitive="variablewatch" data-shape="vw"><rect x="4" y="4" width="200" height="120" fill="none" stroke="#dfe...x="154" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">----</text></g></g>'
+target = 'var[x]', label = 'VariableWatch'
+
+    def _assert_highlight_class_present(svg: str, target: str, label: str) -> None:
+        """Assert that ``scriba-state-highlight`` appears near ``data-target=<target>``."""
+        # The emitter wraps each part in a <g data-target="..."> element and sets
+        # the class attribute to the state class.  After the fix the class must be
+        # ``scriba-state-highlight`` for any part in the highlighted set.
+>       assert "scriba-state-highlight" in svg, (
+            f"{label}: setting _highlighted={{'{target}'}} and calling emit_svg() "
+            "must produce SVG containing 'scriba-state-highlight' but it did not.\n"
+            "This means resolve_effective_state() is not being used in the emit loop."
+        )
+E       AssertionError: VariableWatch: setting _highlighted={'var[x]'} and calling emit_svg() must produce SVG containing 'scriba-state-highlight' but it did not.
+E         This means resolve_effective_state() is not being used in the emit loop.
+E       assert 'scriba-state-highlight' in '<g data-primitive="variablewatch" data-shape="vw"><rect x="4" y="4" width="200" height="120" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="104" y1="4" x2="104" y2="124" stroke="#dfe3e6" stroke-width="1"/><g data-target="vw.var[x]" class="scriba-state-idle"><rect x="104" y="4" width="100" height="40" fill="#f8f9fa" stroke="none"/><text x="12" y="24" fill="#687076" style="text-anchor:start;dominant-baseline:central;font-size:12px">x</text><text x="154" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">----</text></g><g data-target="vw.var[y]" class="scriba-state-idle"><line x1="4" y1="44" x2="204" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><rect x="104" y="44" width="100" height="40" fill="#f8f9fa" stroke="none"/><text x="12" y="64" fill="#687076" style="text-anchor:start;dominant-baseline:central;font-size:12px">y</text><text x="154" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">----</text></g><g data-target="vw.var[z]" class="scriba-state-idle"><line x1="4" y1="84" x2="204" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><rect x="104" y="84" width="100" height="40" fill="#f8f9fa" stroke="none"/><text x="12" y="104" fill="#687076" style="text-anchor:start;dominant-baseline:central;font-size:12px">z</text><text x="154" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">----</text></g></g>'
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:62: AssertionError
+_ TestVariableWatchHighlight.test_highlighted_second_var_produces_highlight_class _
+
+self = <tests.regression.audit_2026_04_19.test_p3_highlight_state.TestVariableWatchHighlight object at 0x107302a10>
+
+    def test_highlighted_second_var_produces_highlight_class(self) -> None:
+        """Highlight works for ``var[y]`` as well."""
+        prim = VariableWatch("vw", {"names": ["x", "y"]})
+        prim._highlighted = {"var[y]"}
+    
+        svg = prim.emit_svg()
+    
+>       _assert_highlight_class_present(svg, "var[y]", "VariableWatch")
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:257: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+svg = '<g data-primitive="variablewatch" data-shape="vw"><rect x="4" y="4" width="200" height="80" fill="none" stroke="#dfe3... x="154" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">----</text></g></g>'
+target = 'var[y]', label = 'VariableWatch'
+
+    def _assert_highlight_class_present(svg: str, target: str, label: str) -> None:
+        """Assert that ``scriba-state-highlight`` appears near ``data-target=<target>``."""
+        # The emitter wraps each part in a <g data-target="..."> element and sets
+        # the class attribute to the state class.  After the fix the class must be
+        # ``scriba-state-highlight`` for any part in the highlighted set.
+>       assert "scriba-state-highlight" in svg, (
+            f"{label}: setting _highlighted={{'{target}'}} and calling emit_svg() "
+            "must produce SVG containing 'scriba-state-highlight' but it did not.\n"
+            "This means resolve_effective_state() is not being used in the emit loop."
+        )
+E       AssertionError: VariableWatch: setting _highlighted={'var[y]'} and calling emit_svg() must produce SVG containing 'scriba-state-highlight' but it did not.
+E         This means resolve_effective_state() is not being used in the emit loop.
+E       assert 'scriba-state-highlight' in '<g data-primitive="variablewatch" data-shape="vw"><rect x="4" y="4" width="200" height="80" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="104" y1="4" x2="104" y2="84" stroke="#dfe3e6" stroke-width="1"/><g data-target="vw.var[x]" class="scriba-state-idle"><rect x="104" y="4" width="100" height="40" fill="#f8f9fa" stroke="none"/><text x="12" y="24" fill="#687076" style="text-anchor:start;dominant-baseline:central;font-size:12px">x</text><text x="154" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">----</text></g><g data-target="vw.var[y]" class="scriba-state-idle"><line x1="4" y1="44" x2="204" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><rect x="104" y="44" width="100" height="40" fill="#f8f9fa" stroke="none"/><text x="12" y="64" fill="#687076" style="text-anchor:start;dominant-baseline:central;font-size:12px">y</text><text x="154" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">----</text></g></g>'
+
+tests/regression/audit_2026_04_19/test_p3_highlight_state.py:62: AssertionError
+_ TestStackApplyCommandAcceptsTargetSuffix.test_push_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestStackApplyCommandAcceptsTargetSuffix object at 0x107302230>
+
+    def test_push_with_target_suffix_does_not_raise(self) -> None:
+        """apply_command({'push': 'X'}, target_suffix='item[0]') must not raise.
+    
+        Covers audit finding P4 for Stack (stack.py:133).
+        """
+        prim = Stack("s", {"items": ["A", "B"]})
+    
+        # Must not raise TypeError
+>       prim.apply_command({"push": "X"}, target_suffix="item[0]")
+E       TypeError: Stack.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:78: TypeError
+_ TestStackApplyCommandAcceptsTargetSuffix.test_pop_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestStackApplyCommandAcceptsTargetSuffix object at 0x107302080>
+
+    def test_pop_with_target_suffix_does_not_raise(self) -> None:
+        """apply_command({'pop': 1}, target_suffix='top') must not raise."""
+        prim = Stack("s", {"items": ["A", "B", "C"]})
+    
+>       prim.apply_command({"pop": 1}, target_suffix="top")
+E       TypeError: Stack.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:90: TypeError
+_ TestStackApplyCommandAcceptsTargetSuffix.test_empty_params_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestStackApplyCommandAcceptsTargetSuffix object at 0x107301930>
+
+    def test_empty_params_with_target_suffix_does_not_raise(self) -> None:
+        """An empty params dict with target_suffix must not raise TypeError."""
+        prim = Stack("s", {"items": ["A"]})
+    
+        # Must not raise
+>       prim.apply_command({}, target_suffix="item[0]")
+E       TypeError: Stack.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:100: TypeError
+_ TestStackApplyCommandAcceptsTargetSuffix.test_none_target_suffix_still_works _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestStackApplyCommandAcceptsTargetSuffix object at 0x107300400>
+
+    def test_none_target_suffix_still_works(self) -> None:
+        """target_suffix=None (the default) must also be accepted after the fix."""
+        prim = Stack("s", {})
+>       prim.apply_command({"push": "Z"}, target_suffix=None)
+E       TypeError: Stack.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:105: TypeError
+_ TestLinkedListApplyCommandAcceptsTargetSuffix.test_insert_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestLinkedListApplyCommandAcceptsTargetSuffix object at 0x107300d00>
+
+    def test_insert_with_target_suffix_does_not_raise(self) -> None:
+        """apply_command({'insert': {'index': 0, 'value': 99}}, target_suffix='node[0]')
+        must not raise.
+    
+        Covers audit finding P4 for LinkedList (linkedlist.py:137).
+        """
+        prim = LinkedList("ll", {"data": [1, 2, 3]})
+    
+>       prim.apply_command(
+            {"insert": {"index": 0, "value": 99}},
+            target_suffix="node[0]",
+        )
+E       TypeError: LinkedList.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:126: TypeError
+_ TestLinkedListApplyCommandAcceptsTargetSuffix.test_empty_params_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestLinkedListApplyCommandAcceptsTargetSuffix object at 0x1073030a0>
+
+    def test_empty_params_with_target_suffix_does_not_raise(self) -> None:
+        """Empty params with target_suffix must not raise TypeError."""
+        prim = LinkedList("ll", {"data": [1, 2]})
+>       prim.apply_command({}, target_suffix="node[1]")
+E       TypeError: LinkedList.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:139: TypeError
+_ TestLinkedListApplyCommandAcceptsTargetSuffix.test_none_target_suffix_still_works _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestLinkedListApplyCommandAcceptsTargetSuffix object at 0x1073036d0>
+
+    def test_none_target_suffix_still_works(self) -> None:
+        """target_suffix=None must also be accepted."""
+        prim = LinkedList("ll", {"data": [1]})
+>       prim.apply_command({}, target_suffix=None)
+E       TypeError: LinkedList.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:144: TypeError
+_ TestTreeApplyCommandAcceptsTargetSuffix.test_add_node_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestTreeApplyCommandAcceptsTargetSuffix object at 0x107303a30>
+
+    def test_add_node_with_target_suffix_does_not_raise(self) -> None:
+        """apply_command({'add_node': {...}}, target_suffix='node[B]') must
+        not raise.
+    
+        Covers audit finding P4 for Tree (tree.py:229).
+        """
+        prim = Tree(
+            "t",
+            {
+                "root": "A",
+                "nodes": ["A"],
+                "edges": [],
+            },
+        )
+    
+>       prim.apply_command(
+            {"add_node": {"id": "B", "parent": "A"}},
+            target_suffix="node[B]",
+        )
+E       TypeError: Tree.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:171: TypeError
+_ TestTreeApplyCommandAcceptsTargetSuffix.test_empty_params_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestTreeApplyCommandAcceptsTargetSuffix object at 0x107303d00>
+
+    def test_empty_params_with_target_suffix_does_not_raise(self) -> None:
+        """Empty params with target_suffix must not raise TypeError."""
+        prim = Tree("t", {"root": "R", "nodes": ["R"], "edges": []})
+>       prim.apply_command({}, target_suffix="node[R]")
+E       TypeError: Tree.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:183: TypeError
+_ TestTreeApplyCommandAcceptsTargetSuffix.test_none_target_suffix_still_works __
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestTreeApplyCommandAcceptsTargetSuffix object at 0x107303f10>
+
+    def test_none_target_suffix_still_works(self) -> None:
+        """target_suffix=None must also be accepted."""
+        prim = Tree("t", {"root": "R", "nodes": ["R"], "edges": []})
+>       prim.apply_command({}, target_suffix=None)
+E       TypeError: Tree.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:188: TypeError
+_ TestGraphApplyCommandAcceptsTargetSuffix.test_add_edge_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestGraphApplyCommandAcceptsTargetSuffix object at 0x107303880>
+
+    def test_add_edge_with_target_suffix_does_not_raise(self) -> None:
+        """apply_command({'add_edge': {...}}, target_suffix='edge[A-B]') must
+        not raise.
+    
+        Covers audit finding P4 for Graph (graph.py:429).
+        """
+        prim = Graph(
+            "g",
+            {
+                "nodes": ["A", "B", "C"],
+                "edges": [["A", "B"]],
+            },
+        )
+    
+>       prim.apply_command(
+            {"add_edge": {"from": "B", "to": "C"}},
+            target_suffix="edge[B-C]",
+        )
+E       TypeError: Graph.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:214: TypeError
+_ TestGraphApplyCommandAcceptsTargetSuffix.test_empty_params_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestGraphApplyCommandAcceptsTargetSuffix object at 0x107303640>
+
+    def test_empty_params_with_target_suffix_does_not_raise(self) -> None:
+        """Empty params with target_suffix must not raise TypeError."""
+        prim = Graph("g", {"nodes": ["X"], "edges": []})
+>       prim.apply_command({}, target_suffix="node[X]")
+E       TypeError: Graph.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:229: TypeError
+_ TestGraphApplyCommandAcceptsTargetSuffix.test_none_target_suffix_still_works _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestGraphApplyCommandAcceptsTargetSuffix object at 0x107300610>
+
+    def test_none_target_suffix_still_works(self) -> None:
+        """target_suffix=None must also be accepted."""
+        prim = Graph("g", {"nodes": ["X"], "edges": []})
+>       prim.apply_command({}, target_suffix=None)
+E       TypeError: Graph.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:234: TypeError
+_ TestQueueApplyCommandAcceptsTargetSuffix.test_enqueue_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestQueueApplyCommandAcceptsTargetSuffix object at 0x107301a50>
+
+    def test_enqueue_with_target_suffix_does_not_raise(self) -> None:
+        """apply_command({'enqueue': 42}, target_suffix='cell[0]') must not raise.
+    
+        Covers audit finding P4 for Queue (queue.py:152).
+        """
+        prim = Queue("q", {"capacity": 4})
+    
+>       prim.apply_command({"enqueue": 42}, target_suffix="cell[0]")
+E       TypeError: Queue.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:253: TypeError
+_ TestQueueApplyCommandAcceptsTargetSuffix.test_dequeue_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestQueueApplyCommandAcceptsTargetSuffix object at 0x107302050>
+
+    def test_dequeue_with_target_suffix_does_not_raise(self) -> None:
+        """apply_command({'dequeue': True}, target_suffix='front') must not raise."""
+        prim = Queue("q", {"capacity": 4, "data": [1, 2, 3]})
+    
+>       prim.apply_command({"dequeue": True}, target_suffix="front")
+E       TypeError: Queue.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:263: TypeError
+_ TestQueueApplyCommandAcceptsTargetSuffix.test_empty_params_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestQueueApplyCommandAcceptsTargetSuffix object at 0x107302590>
+
+    def test_empty_params_with_target_suffix_does_not_raise(self) -> None:
+        """Empty params with target_suffix must not raise TypeError."""
+        prim = Queue("q", {"capacity": 4})
+>       prim.apply_command({}, target_suffix="rear")
+E       TypeError: Queue.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:273: TypeError
+_ TestQueueApplyCommandAcceptsTargetSuffix.test_none_target_suffix_still_works _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestQueueApplyCommandAcceptsTargetSuffix object at 0x10732c2b0>
+
+    def test_none_target_suffix_still_works(self) -> None:
+        """target_suffix=None must also be accepted."""
+        prim = Queue("q", {"capacity": 4})
+>       prim.apply_command({}, target_suffix=None)
+E       TypeError: Queue.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:278: TypeError
+_ TestPlane2DApplyCommandAcceptsTargetSuffix.test_add_point_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestPlane2DApplyCommandAcceptsTargetSuffix object at 0x10732c610>
+
+    def test_add_point_with_target_suffix_does_not_raise(self) -> None:
+        """apply_command({'add_point': {...}}, target_suffix='point[P]')
+        must not raise.
+    
+        Covers audit finding P4 for Plane2D (plane2d.py:360).
+        """
+        prim = Plane2D("plane", {})
+    
+>       prim.apply_command(
+            {"add_point": {"id": "P", "x": 1.0, "y": 2.0}},
+            target_suffix="point[P]",
+        )
+E       TypeError: Plane2D.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:298: TypeError
+_ TestPlane2DApplyCommandAcceptsTargetSuffix.test_empty_params_with_target_suffix_does_not_raise _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestPlane2DApplyCommandAcceptsTargetSuffix object at 0x10732c8e0>
+
+    def test_empty_params_with_target_suffix_does_not_raise(self) -> None:
+        """Empty params with target_suffix must not raise TypeError.
+    
+        This is the minimal reproduction of the bug: the TypeError is thrown
+        at the Python call boundary, before any logic runs.
+        """
+        prim = Plane2D("plane", {})
+>       prim.apply_command({}, target_suffix="point[A]")
+E       TypeError: Plane2D.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:318: TypeError
+_ TestPlane2DApplyCommandAcceptsTargetSuffix.test_none_target_suffix_still_works _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestPlane2DApplyCommandAcceptsTargetSuffix object at 0x10732cbb0>
+
+    def test_none_target_suffix_still_works(self) -> None:
+        """target_suffix=None must also be accepted."""
+        prim = Plane2D("plane", {})
+>       prim.apply_command({}, target_suffix=None)
+E       TypeError: Plane2D.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:323: TypeError
+_ TestApplyCommandPolymorphism.test_apply_command_accepts_target_suffix_kwarg[Stack] _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestApplyCommandPolymorphism object at 0x10732cf10>
+prim = <scriba.animation.primitives.stack.Stack object at 0x107302fe0>
+params = {}
+
+    @pytest.mark.parametrize(
+        "prim,params",
+        [
+            (Stack("s", {}), {}),
+            (LinkedList("ll", {}), {}),
+            (Tree("t", {"root": "R", "nodes": ["R"], "edges": []}), {}),
+            (Graph("g", {"nodes": ["X"], "edges": []}), {}),
+            (Queue("q", {}), {}),
+            (Plane2D("p", {}), {}),
+        ],
+        ids=["Stack", "LinkedList", "Tree", "Graph", "Queue", "Plane2D"],
+    )
+    def test_apply_command_accepts_target_suffix_kwarg(self, prim, params) -> None:
+        """apply_command(params, target_suffix='dummy') must not raise TypeError.
+    
+        This is the canonical Liskov violation test: any subclass of
+        PrimitiveBase must accept the full base-class signature.
+        """
+        # Must not raise TypeError (which would crash the rendering pipeline)
+>       prim.apply_command(params, target_suffix="dummy_suffix")
+E       TypeError: Stack.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:359: TypeError
+_ TestApplyCommandPolymorphism.test_apply_command_accepts_target_suffix_kwarg[LinkedList] _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestApplyCommandPolymorphism object at 0x10732d1e0>
+prim = <scriba.animation.primitives.linkedlist.LinkedList object at 0x107303010>
+params = {}
+
+    @pytest.mark.parametrize(
+        "prim,params",
+        [
+            (Stack("s", {}), {}),
+            (LinkedList("ll", {}), {}),
+            (Tree("t", {"root": "R", "nodes": ["R"], "edges": []}), {}),
+            (Graph("g", {"nodes": ["X"], "edges": []}), {}),
+            (Queue("q", {}), {}),
+            (Plane2D("p", {}), {}),
+        ],
+        ids=["Stack", "LinkedList", "Tree", "Graph", "Queue", "Plane2D"],
+    )
+    def test_apply_command_accepts_target_suffix_kwarg(self, prim, params) -> None:
+        """apply_command(params, target_suffix='dummy') must not raise TypeError.
+    
+        This is the canonical Liskov violation test: any subclass of
+        PrimitiveBase must accept the full base-class signature.
+        """
+        # Must not raise TypeError (which would crash the rendering pipeline)
+>       prim.apply_command(params, target_suffix="dummy_suffix")
+E       TypeError: LinkedList.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:359: TypeError
+_ TestApplyCommandPolymorphism.test_apply_command_accepts_target_suffix_kwarg[Tree] _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestApplyCommandPolymorphism object at 0x10732d510>
+prim = <scriba.animation.primitives.tree.Tree object at 0x107303040>
+params = {}
+
+    @pytest.mark.parametrize(
+        "prim,params",
+        [
+            (Stack("s", {}), {}),
+            (LinkedList("ll", {}), {}),
+            (Tree("t", {"root": "R", "nodes": ["R"], "edges": []}), {}),
+            (Graph("g", {"nodes": ["X"], "edges": []}), {}),
+            (Queue("q", {}), {}),
+            (Plane2D("p", {}), {}),
+        ],
+        ids=["Stack", "LinkedList", "Tree", "Graph", "Queue", "Plane2D"],
+    )
+    def test_apply_command_accepts_target_suffix_kwarg(self, prim, params) -> None:
+        """apply_command(params, target_suffix='dummy') must not raise TypeError.
+    
+        This is the canonical Liskov violation test: any subclass of
+        PrimitiveBase must accept the full base-class signature.
+        """
+        # Must not raise TypeError (which would crash the rendering pipeline)
+>       prim.apply_command(params, target_suffix="dummy_suffix")
+E       TypeError: Tree.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:359: TypeError
+_ TestApplyCommandPolymorphism.test_apply_command_accepts_target_suffix_kwarg[Graph] _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestApplyCommandPolymorphism object at 0x1073026b0>
+prim = <scriba.animation.primitives.graph.Graph object at 0x107302c20>
+params = {}
+
+    @pytest.mark.parametrize(
+        "prim,params",
+        [
+            (Stack("s", {}), {}),
+            (LinkedList("ll", {}), {}),
+            (Tree("t", {"root": "R", "nodes": ["R"], "edges": []}), {}),
+            (Graph("g", {"nodes": ["X"], "edges": []}), {}),
+            (Queue("q", {}), {}),
+            (Plane2D("p", {}), {}),
+        ],
+        ids=["Stack", "LinkedList", "Tree", "Graph", "Queue", "Plane2D"],
+    )
+    def test_apply_command_accepts_target_suffix_kwarg(self, prim, params) -> None:
+        """apply_command(params, target_suffix='dummy') must not raise TypeError.
+    
+        This is the canonical Liskov violation test: any subclass of
+        PrimitiveBase must accept the full base-class signature.
+        """
+        # Must not raise TypeError (which would crash the rendering pipeline)
+>       prim.apply_command(params, target_suffix="dummy_suffix")
+E       TypeError: Graph.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:359: TypeError
+_ TestApplyCommandPolymorphism.test_apply_command_accepts_target_suffix_kwarg[Queue] _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestApplyCommandPolymorphism object at 0x107302650>
+prim = <scriba.animation.primitives.queue.Queue object at 0x107302a40>
+params = {}
+
+    @pytest.mark.parametrize(
+        "prim,params",
+        [
+            (Stack("s", {}), {}),
+            (LinkedList("ll", {}), {}),
+            (Tree("t", {"root": "R", "nodes": ["R"], "edges": []}), {}),
+            (Graph("g", {"nodes": ["X"], "edges": []}), {}),
+            (Queue("q", {}), {}),
+            (Plane2D("p", {}), {}),
+        ],
+        ids=["Stack", "LinkedList", "Tree", "Graph", "Queue", "Plane2D"],
+    )
+    def test_apply_command_accepts_target_suffix_kwarg(self, prim, params) -> None:
+        """apply_command(params, target_suffix='dummy') must not raise TypeError.
+    
+        This is the canonical Liskov violation test: any subclass of
+        PrimitiveBase must accept the full base-class signature.
+        """
+        # Must not raise TypeError (which would crash the rendering pipeline)
+>       prim.apply_command(params, target_suffix="dummy_suffix")
+E       TypeError: Queue.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:359: TypeError
+_ TestApplyCommandPolymorphism.test_apply_command_accepts_target_suffix_kwarg[Plane2D] _
+
+self = <tests.regression.audit_2026_04_19.test_p4_target_suffix.TestApplyCommandPolymorphism object at 0x107302350>
+prim = <scriba.animation.primitives.plane2d.Plane2D object at 0x107302b30>
+params = {}
+
+    @pytest.mark.parametrize(
+        "prim,params",
+        [
+            (Stack("s", {}), {}),
+            (LinkedList("ll", {}), {}),
+            (Tree("t", {"root": "R", "nodes": ["R"], "edges": []}), {}),
+            (Graph("g", {"nodes": ["X"], "edges": []}), {}),
+            (Queue("q", {}), {}),
+            (Plane2D("p", {}), {}),
+        ],
+        ids=["Stack", "LinkedList", "Tree", "Graph", "Queue", "Plane2D"],
+    )
+    def test_apply_command_accepts_target_suffix_kwarg(self, prim, params) -> None:
+        """apply_command(params, target_suffix='dummy') must not raise TypeError.
+    
+        This is the canonical Liskov violation test: any subclass of
+        PrimitiveBase must accept the full base-class signature.
+        """
+        # Must not raise TypeError (which would crash the rendering pipeline)
+>       prim.apply_command(params, target_suffix="dummy_suffix")
+E       TypeError: Plane2D.apply_command() got an unexpected keyword argument 'target_suffix'
+
+tests/regression/audit_2026_04_19/test_p4_target_suffix.py:359: TypeError
+=========================== short test summary info ============================
+FAILED tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_single_dotdot_segment_is_blocked
+FAILED tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_double_dotdot_segment_is_blocked
+FAILED tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_traversal_with_intermediate_valid_dir
+FAILED tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_absolute_path_is_blocked
+FAILED tests/regression/audit_2026_04_19/test_p1_path_traversal.py::TestPathTraversalBlocked::test_dotdot_does_not_return_data_uri_of_outside_file
+FAILED tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_script_tag_in_narration_html_not_in_js_frames_raw
+FAILED tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_script_tag_in_narration_is_html_entity_encoded
+FAILED tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_onerror_event_handler_in_narration_blocked
+FAILED tests/regression/audit_2026_04_19/test_p2_dom_xss.py::TestNarrationScriptTagBlocked::test_multiple_script_tags_all_blocked
+FAILED tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestCodePanelHighlight::test_highlighted_line_produces_highlight_class
+FAILED tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestCodePanelHighlight::test_highlighted_middle_line_produces_highlight_class
+FAILED tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestLinkedListHighlight::test_highlighted_node_produces_highlight_class
+FAILED tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestLinkedListHighlight::test_highlighted_last_node_produces_highlight_class
+FAILED tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestHashMapHighlight::test_highlighted_bucket_produces_highlight_class
+FAILED tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestHashMapHighlight::test_highlighted_middle_bucket_produces_highlight_class
+FAILED tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestVariableWatchHighlight::test_highlighted_var_produces_highlight_class
+FAILED tests/regression/audit_2026_04_19/test_p3_highlight_state.py::TestVariableWatchHighlight::test_highlighted_second_var_produces_highlight_class
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestStackApplyCommandAcceptsTargetSuffix::test_push_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestStackApplyCommandAcceptsTargetSuffix::test_pop_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestStackApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestStackApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestLinkedListApplyCommandAcceptsTargetSuffix::test_insert_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestLinkedListApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestLinkedListApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestTreeApplyCommandAcceptsTargetSuffix::test_add_node_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestTreeApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestTreeApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestGraphApplyCommandAcceptsTargetSuffix::test_add_edge_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestGraphApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestGraphApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestQueueApplyCommandAcceptsTargetSuffix::test_enqueue_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestQueueApplyCommandAcceptsTargetSuffix::test_dequeue_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestQueueApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestQueueApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestPlane2DApplyCommandAcceptsTargetSuffix::test_add_point_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestPlane2DApplyCommandAcceptsTargetSuffix::test_empty_params_with_target_suffix_does_not_raise
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestPlane2DApplyCommandAcceptsTargetSuffix::test_none_target_suffix_still_works
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Stack]
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[LinkedList]
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Tree]
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Graph]
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Queue]
+FAILED tests/regression/audit_2026_04_19/test_p4_target_suffix.py::TestApplyCommandPolymorphism::test_apply_command_accepts_target_suffix_kwarg[Plane2D]
+========================= 43 failed, 9 passed in 0.33s =========================

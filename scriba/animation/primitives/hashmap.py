@@ -268,7 +268,7 @@ class HashMap(PrimitiveBase):
             suffix = f"bucket[{row_idx}]"
             target = f"{self.name}.{suffix}"
 
-            state = self.get_state(suffix)
+            state = self.resolve_effective_state(suffix)
             all_state = self.get_state("all")
             if all_state != "idle" and state == "idle":
                 state = all_state

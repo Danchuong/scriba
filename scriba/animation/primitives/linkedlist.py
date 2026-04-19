@@ -134,7 +134,7 @@ class LinkedList(PrimitiveBase):
 
     # ----- apply commands --------------------------------------------------
 
-    def apply_command(self, params: dict[str, Any]) -> None:
+    def apply_command(self, params: dict[str, Any], *, target_suffix: str | None = None) -> None:
         """Process insert / remove / value-set commands.
 
         Supported params
@@ -353,7 +353,7 @@ class LinkedList(PrimitiveBase):
         for i in range(node_count):
             node_suffix = f"node[{i}]"
             node_target = f"{self.name}.{node_suffix}"
-            node_state = self.get_state(node_suffix)
+            node_state = self.resolve_effective_state(node_suffix)
             colors = svg_style_attrs(node_state)
             stroke_w = "1" if node_state == "idle" else "2"
 

@@ -149,7 +149,7 @@ class Queue(PrimitiveBase):
 
     # ----- apply commands --------------------------------------------------
 
-    def apply_command(self, params: dict[str, Any]) -> None:
+    def apply_command(self, params: dict[str, Any], *, target_suffix: str | None = None) -> None:
         """Process enqueue/dequeue/value commands from ``\\apply``.
 
         *target_suffix* is the part after ``<name>.`` — either empty string

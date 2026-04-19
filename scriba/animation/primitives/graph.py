@@ -424,9 +424,14 @@ class Graph(PrimitiveBase):
             )
         )
 
+    @property
+    def _edges(self) -> list:
+        """Alias for edges; keeps test assertions stable under refactor."""
+        return self.edges
+
     # ----- mutation API ----------------------------------------------------
 
-    def apply_command(self, params: dict[str, Any]) -> None:
+    def apply_command(self, params: dict[str, Any], *, target_suffix: str | None = None) -> None:
         """Apply a mutation command from the animation pipeline.
 
         Supported ops (one per call):

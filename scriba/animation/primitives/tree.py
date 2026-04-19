@@ -226,7 +226,7 @@ class Tree(PrimitiveBase):
 
     # ----- apply commands --------------------------------------------------
 
-    def apply_command(self, params: dict[str, Any]) -> None:
+    def apply_command(self, params: dict[str, Any], *, target_suffix: str | None = None) -> None:
         """Process mutation commands from ``\\apply``.
 
         Supported keys (checked in order): ``add_node``, ``remove_node``,
@@ -287,6 +287,11 @@ class Tree(PrimitiveBase):
             if node_id in kids:
                 return parent
         return None
+
+    @property
+    def _nodes(self) -> list:
+        """Alias for nodes; keeps test assertions stable under refactor."""
+        return self.nodes
 
     def _add_node_internal(
         self, node_id: str | int, parent_id: str | int

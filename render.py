@@ -97,7 +97,10 @@ def _snapshot_to_dict(snap: object) -> dict:
 
 def _resolve_resource(input_dir: Path, name: str) -> str:
     """Resolve a resource name to a data URI if the file exists locally."""
-    candidate = input_dir / name
+    candidate = (input_dir / name).resolve()
+    input_dir_resolved = input_dir.resolve()
+    if not candidate.is_relative_to(input_dir_resolved):
+        return f"/static/{name}"
     if candidate.is_file():
         mime_type = mimetypes.guess_type(name)[0] or "application/octet-stream"
         encoded = base64.b64encode(candidate.read_bytes()).decode("ascii")

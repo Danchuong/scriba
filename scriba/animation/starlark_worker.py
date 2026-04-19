@@ -156,13 +156,25 @@ def _attribute_chain_names(node: ast.Attribute) -> list[str]:
 
 
 def _scan_format_call(node: ast.Call) -> tuple[str, int | None, int | None] | None:
-    """Detect ``"...{x.attr}...".format(...)`` patterns and reject them.
+    """Detect dangerous ``.format(...)`` patterns and reject them.
 
-    The Python runtime parses format-field attributes at ``.format()``
-    call time, which completely bypasses the AST scanner.  An attacker
-    can therefore do ``"{0.append.__self__.__class__}".format([])`` to
-    leak a class object.  Blocking any format string that contains a
-    ``.attr`` field closes the hole without disabling ``.format`` itself.
+    Two attack surfaces are blocked:
+
+    1. **Literal receiver with attribute field** —
+       ``"{0.append.__self__.__class__}".format([])``
+       The Python runtime parses format-field attributes at ``.format()``
+       call time, bypassing the AST attribute scanner.  We reject any
+       format string whose template contains a ``.attr`` field.
+
+    2. **Variable receiver** — ``fmt = "{0.__class__}"; fmt.format([])``
+       When the receiver is not a string literal we cannot inspect the
+       template at parse time.  A variable receiver could hold any
+       string, including one with attribute access fields.  We reject
+       all such calls (audit finding F-04).
+
+    Safe patterns that remain allowed:
+    - ``"{0}-{1}".format(a, b)``  (literal receiver, no ``.attr`` field)
+    - ``"{name}".format(name=x)``  (literal receiver, no ``.attr`` field)
     """
     # Must be ``<something>.format(...)``
     if not isinstance(node.func, ast.Attribute):
@@ -171,13 +183,20 @@ def _scan_format_call(node: ast.Call) -> tuple[str, int | None, int | None] | No
         return None
 
     receiver = node.func.value
-    # Only care about string-literal receivers — other receivers cannot
-    # carry a format-spec the author controls at parse time.
+
     if isinstance(receiver, ast.Constant) and isinstance(receiver.value, str):
+        # Literal receiver: only reject if the template contains a ``.attr`` field.
         if _FORMAT_ATTR_PATTERN.search(receiver.value):
             line, col = _position(node)
             return "format-with-attribute", line, col
-    return None
+        # Literal receiver with no attribute fields — safe, allow it.
+        return None
+
+    # Non-literal receiver (variable, subscript, function call, etc.):
+    # we cannot inspect the format string at parse time, so reject entirely
+    # to close the variable-receiver bypass (audit finding F-04).
+    line, col = _position(node)
+    return "format-on-variable-receiver", line, col
 
 
 def _scan_ast(source: str) -> tuple[str, int | None, int | None] | None:
