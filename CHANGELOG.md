@@ -7,6 +7,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-04-19
+
+Full-project audit pass (10 axes) — see
+``docs/archive/scriba-full-audit-2026-04-19/``. Six commits across phases
+1-5.5; no public API additions, no HTML output shape changes.
+
+### Security
+
+- ``\href`` / ``\url``: hardened ``is_safe_url`` against control-char and
+  zero-width-separator scheme smuggling (rejects ``java\tscript:…``,
+  ``java\u2028script:…``, etc.). (Phase 1, P1)
+- ``_html_stitcher`` JS-frame narration: bleach-sanitized before reaching
+  ``narr.innerHTML = frames[i].narration``. Phase 5.5 extends the same
+  sanitize to the **print-frame** ``frame.narration_html`` and per-substory
+  ``sub_frame.narration_html`` paths that previously bypassed sanitize.
+  (Phase 1 P2 + Phase 5.5)
+- ``_script_builder._build_external_script``: validate
+  ``asset_base_url`` via ``is_safe_url`` (rejects ``javascript:``,
+  ``data:``, ``vbscript:`` and control-char smuggling) and HTML-escape
+  the final ``<script src>`` value. (Phase 5.5)
+- KaTeX worker subprocess now receives a minimal env allowlist
+  (``PATH``, ``HOME``, ``TMPDIR``/``TEMP``/``TMP``, ``NODE_PATH``,
+  ``NODE_OPTIONS``, ``LANG``, ``LC_ALL``, ``LC_CTYPE``) plus the renderer's
+  ``_extra_node_env`` instead of the full ``os.environ``. Avoids leaking
+  ``AWS_*``, ``GITHUB_TOKEN``, ``OPENAI_API_KEY``, ... to a child process
+  that only needs Node module resolution. (Phase 5.5)
+- Resource resolver path traversal: ``Path.resolve()`` + ``is_relative_to``
+  enforced on every asset lookup. (Phase 1, P3)
+- Starlark ``_scan_format_call`` now blocks reflective access via
+  ``getattr(obj, '__class__')`` style indirection. (Phase 1, P4)
+
+### Fixed
+
+- ``HashMap`` was missing the ``_accepts_target_suffix: ClassVar[bool] = True``
+  marker, so the ``hashmap.bucket[i]@x`` form was silently dropped by the
+  frame renderer. (Phase 5.5)
+- ``core.pipeline.Pipeline.render``: mid-loop renderer failures now re-raise
+  the original exception type with kwargs preserved (was reconstructing as
+  bare ``ScribaError`` and losing ``WorkerError(stderr=…)`` /
+  ``RendererError(renderer=…)`` / ``ValidationError(position=…)`` context).
+  (Phase 4)
+
+### Performance
+
+- Hot-path regex compilation hoisted to module scope across 6 modules:
+  ``_frame_renderer`` (``lru_cache _make_shape_res(name)``),
+  ``core/text_utils`` (10 brace-command patterns dict),
+  ``tex/parser/math`` (text-command + 4 lookbehind patterns),
+  ``tex/parser/dashes_quotes`` (3 typography patterns),
+  ``tex/parser/text_commands`` (switch pattern),
+  ``animation/parser/_grammar_compute`` (lazy ``import re`` removed).
+  (Phase 3 + Phase 5.5)
+
+### Accessibility
+
+- Theme-toggle button now exposes ``aria-pressed`` and flips it on click;
+  paired with ``type="button"`` to prevent accidental form submission.
+  (Phase 3)
+- ``var(--scriba-bg)`` substituted for hardcoded ``fill="white"`` /
+  ``stroke="white"`` across SVG helpers, ``Plane2D``, and ``Graph`` so
+  primitives render correctly under dark mode. (Phase 3)
+- CLI ``HTML_TEMPLATE`` body wrapped in ``<header>`` + ``<main>`` landmarks.
+  (Phase 3)
+
+### Architecture
+
+- ``_VALIDATION_ONLY_ENVS`` consolidated into ``scriba.tex.validate`` next
+  to ``KNOWN_ENVIRONMENTS`` (prevents drift between the two sets).
+  (Phase 2)
+- ``PersistentSubprocessWorker`` gains an optional ``env`` parameter; the
+  KaTeX renderer no longer mutates process-wide ``os.environ`` to set
+  ``NODE_PATH``. (Phase 2)
+- ``tex/parser/math``: removed last in-tree user of the deprecated
+  ``SubprocessWorker`` alias; renamed import + type hint to
+  ``PersistentSubprocessWorker``. (Phase 5.5)
+- ``E1199`` worker-crash error code added to the catalog and reserved
+  range narrowed accordingly in ``docs/spec/environments.md``. (Phase 2)
+
+### Tests
+
+- New unit/integration suites: ``test_svg_text_render`` (36),
+  ``test_substory_nesting`` (7), ``test_minify`` (18),
+  regression ``test_pipeline_reraise`` (13). All four pytest marks
+  (``unit``, ``integration``, ``regression``, ``slow``) registered in
+  ``pyproject.toml``. (Phase 4)
+- 2891 → 2963 tests (+72), still 1 skipped. Full build:
+  105/105 examples render OK (5 previously-failing DP examples now
+  pass after the 0.9.1 fix landed in this release window). (Phase 6)
+
+### Deprecated
+
+- ``SubprocessWorker`` removed from ``scriba.__all__`` and
+  ``scriba.core.__all__``. Star-imports (``from scriba import *``) no
+  longer surface the deprecated alias. Explicit
+  ``from scriba import SubprocessWorker`` still works (lazy
+  PEP 562 ``__getattr__`` continues to emit ``DeprecationWarning``).
+  (Phase 5.5)
+
 ## [0.9.1] - 2026-04-18
 
 ### Fixed
