@@ -81,8 +81,10 @@ exclude = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
-  "regression: audit regression tests (deselect with '-m not regression')",
-  "unit: fast isolated unit tests",
+  "unit: unit tests (single function/class)",
+  "integration: cross-module integration tests",
+  "regression: bug-regression tests",
+  "slow: slow tests (>1s)",
 ]
 
 # Coverage is NOT wired into default pytest args — run explicitly via

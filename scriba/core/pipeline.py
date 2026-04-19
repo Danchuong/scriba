@@ -226,10 +226,22 @@ class Pipeline:
                 artifact = renderer.render_block(block, ctx)
             except Exception as e:
                 # Enrich mid-loop failures with which block crashed.
-                raise type(e)(
+                # We mutate e.args (and _raw_message for ScribaError subclasses)
+                # rather than reconstructing via type(e)(...) because custom
+                # ScribaError subclasses have keyword-only __init__ parameters
+                # (e.g. WorkerError(stderr=…), RendererError(renderer=…),
+                # ValidationError(position=…)) that type(e)(msg) would miss,
+                # raising a secondary TypeError and obscuring the real error.
+                _prefix = (
                     f"renderer {renderer.name!r} failed on block "
-                    f"kind={block.kind!r} at [{block.start}:{block.end}]: {e}"
-                ) from e
+                    f"kind={block.kind!r} at [{block.start}:{block.end}]: "
+                )
+                if isinstance(e, ScribaError):
+                    e._raw_message = _prefix + e._raw_message
+                    e.args = (str(e),)
+                else:
+                    e.args = (_prefix + (e.args[0] if e.args else str(e)),) + e.args[1:]
+                raise
             artifacts.append(artifact)
 
         # 4b. Warn on duplicate block_ids (typically from explicit
