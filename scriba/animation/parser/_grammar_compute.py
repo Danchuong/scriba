@@ -6,6 +6,7 @@ public API.  Methods access SceneParser instance state via the MRO.
 
 from __future__ import annotations
 
+import re as _re
 import warnings as _warnings_mod
 from typing import TYPE_CHECKING
 
@@ -54,7 +55,6 @@ class _ComputeMixin:
         comprehensions) is ignored.  Because missing bindings only trigger
         a warning, false negatives are safer than false positives.
         """
-        import re as _re
         if _ComputeMixin._ASSIGNMENT_RE is None:
             _ComputeMixin._ASSIGNMENT_RE = _re.compile(
                 r"""^[ \t]*            # leading indent

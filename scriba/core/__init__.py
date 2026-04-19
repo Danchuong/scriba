@@ -36,7 +36,10 @@ __all__ = [
     "ContextProvider",
     "Pipeline",
     "Worker",
-    "SubprocessWorker",
+    # ``SubprocessWorker`` is intentionally omitted from ``__all__`` so it
+    # is excluded from ``from scriba.core import *``. It remains importable
+    # via explicit ``from scriba.core import SubprocessWorker`` (emits
+    # DeprecationWarning).
     "PersistentSubprocessWorker",
     "OneShotSubprocessWorker",
     "SubprocessWorkerPool",

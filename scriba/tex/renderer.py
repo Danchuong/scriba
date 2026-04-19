@@ -266,17 +266,29 @@ class TexRenderer:
         # Fail fast with an actionable error if node/katex are missing.
         _probe_runtime(self._node_executable)
 
+        # Pass a minimal allowlist of env vars to the worker subprocess.
+        # Avoids leaking secrets (AWS_*, GITHUB_TOKEN, OPENAI_API_KEY, ...) to
+        # a child process that only needs Node module resolution + basic OS
+        # paths.  See audit P-LOW-1.
+        _ALLOWED_ENV_KEYS = (
+            "PATH", "HOME", "TMPDIR", "TEMP", "TMP",
+            "NODE_PATH", "NODE_OPTIONS",
+            "LANG", "LC_ALL", "LC_CTYPE",
+        )
+        _worker_env: dict[str, str] | None = None
+        if self._extra_node_env:
+            _worker_env = {
+                k: os.environ[k] for k in _ALLOWED_ENV_KEYS if k in os.environ
+            }
+            _worker_env.update(self._extra_node_env)
+
         worker = PersistentSubprocessWorker(
             name="katex",
             argv=[self._node_executable, str(self._katex_worker_path)],
             ready_signal="katex-worker ready",
             max_requests=self._katex_worker_max_requests,
             default_timeout=self._katex_worker_timeout,
-            env=(
-                {**os.environ, **self._extra_node_env}
-                if self._extra_node_env
-                else None
-            ),
+            env=_worker_env,
         )
         worker_pool.register("katex", worker=worker)
 

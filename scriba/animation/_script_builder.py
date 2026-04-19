@@ -362,11 +362,19 @@ def _build_external_script(
         RUNTIME_JS_FILENAME,
         RUNTIME_JS_SHA384,
     )
+    from scriba.tex.parser._urls import is_safe_url
 
     island_id = f"scriba-frames-{_escape(scene_id)}"
     json_payload = _json.dumps(json_frames, separators=(",", ":"))
 
     base = asset_base_url.rstrip("/")
+    if base and not is_safe_url(base):
+        # Reject javascript:/data:/vbscript: and control-char smuggling.
+        # Falls back to relative path so the runtime can still load.
+        raise ValueError(
+            f"unsafe asset_base_url: {asset_base_url!r} "
+            "(only http/https/relative URLs allowed)"
+        )
     if base:
         src = f"{base}/{RUNTIME_JS_FILENAME}"
     else:
@@ -376,6 +384,6 @@ def _build_external_script(
         f'<script type="application/json" id="{island_id}">'
         f"{json_payload}"
         f"</script>\n"
-        f'<script src="{src}" integrity="sha384-{RUNTIME_JS_SHA384}"'
+        f'<script src="{_escape(src)}" integrity="sha384-{RUNTIME_JS_SHA384}"'
         f' crossorigin="anonymous" defer></script>'
     )

@@ -385,7 +385,9 @@ class TestHtmlEscaping:
         prim = _StubPrimitive(shape_name="a")
         frame = _frame(step=1, total=1, narration="a &amp; b < c")
         html = emit_animation_html("esc", [frame], {"a": prim})
-        assert "a &amp; b < c" in html
+        # Phase 5.5: print-frame narration now bleach-sanitized; bare ``<``
+        # gets escaped to ``&lt;`` (already-encoded ``&amp;`` is preserved).
+        assert "a &amp; b &lt; c" in html
 
     def test_scene_id_escaping(self) -> None:
         prim = _StubPrimitive(shape_name="a")

@@ -13,7 +13,7 @@ import re
 from dataclasses import dataclass
 
 from scriba.core.errors import RendererError, ValidationError
-from scriba.core.workers import SubprocessWorker
+from scriba.core.workers import PersistentSubprocessWorker
 from scriba.tex.parser.escape import PlaceholderManager
 
 _DOLLAR_LITERAL = "\x00SCRIBA_TEX_DOLLAR\x00"
@@ -112,7 +112,7 @@ def restore_dollar_literals(text: str) -> str:
 def render_math_batch(
     items: list[_MathItem],
     *,
-    worker: SubprocessWorker,
+    worker: PersistentSubprocessWorker,
     macros: dict[str, str] | None,
     strict: bool,
     timeout: float,

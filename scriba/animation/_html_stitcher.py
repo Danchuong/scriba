@@ -224,7 +224,7 @@ def emit_animation_html(
             f"        {svg_html}\n"
             f"      </div>\n"
             f'      <p class="scriba-narration" id="{narration_id}">'
-            f"{frame.narration_html}</p>\n"
+            f"{_sanitize_narration_html(frame.narration_html)}</p>\n"
             f"{substory_html}"
             f"    </li>"
         )
@@ -513,7 +513,7 @@ def emit_interactive_html(
                         f' data-substory-id="{_escape(sub.substory_id)}">\n'
                         f'  <div class="scriba-stage">{sub_svg}</div>\n'
                         f'  <p class="scriba-narration">'
-                        f'{sub_frame.narration_html}</p>\n'
+                        f'{_sanitize_narration_html(sub_frame.narration_html)}</p>\n'
                         f'</div>\n'
                     )
         print_frame_items.append(
@@ -523,7 +523,7 @@ def emit_interactive_html(
             f'  <div class="scriba-stage">{print_svg}</div>\n'
             f'  <p class="scriba-narration"'
             f' id="{_escape(print_narration_id)}">'
-            f'{frame.narration_html}</p>\n'
+            f'{_sanitize_narration_html(frame.narration_html)}</p>\n'
             f'{print_substory}'
             f'</div>'
         )

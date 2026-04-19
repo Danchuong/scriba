@@ -33,7 +33,8 @@ EXPECTED_SCRIBA_ALL: frozenset[str] = frozenset(
         "ContextProvider",
         "Pipeline",
         "Worker",
-        "SubprocessWorker",
+        # NOTE: "SubprocessWorker" intentionally omitted — deprecated alias
+        # is reachable via explicit import only (emits DeprecationWarning).
         "PersistentSubprocessWorker",
         "OneShotSubprocessWorker",
         "SubprocessWorkerPool",
@@ -60,7 +61,7 @@ EXPECTED_SCRIBA_CORE_ALL: frozenset[str] = frozenset(
         "ContextProvider",
         "Pipeline",
         "Worker",
-        "SubprocessWorker",
+        # NOTE: "SubprocessWorker" intentionally omitted — see EXPECTED_SCRIBA_ALL.
         "PersistentSubprocessWorker",
         "OneShotSubprocessWorker",
         "SubprocessWorkerPool",

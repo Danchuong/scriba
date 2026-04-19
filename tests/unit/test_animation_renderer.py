@@ -122,8 +122,9 @@ class TestRenderBlock:
         block = Block(start=0, end=len(source), kind="animation", raw=source)
         artifact = renderer.render_block(block, ctx_with_tex)
 
-        # The render_inline_tex callback wraps in <span class='tex'>
-        assert "<span class='tex'>" in artifact.html
+        # The render_inline_tex callback wraps in <span class='tex'>.
+        # Phase 5.5: bleach sanitize normalizes attribute quotes to ``"``.
+        assert '<span class="tex">' in artifact.html
 
     def test_render_block_prelude_only(
         self,

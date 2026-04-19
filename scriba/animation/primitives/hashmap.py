@@ -67,6 +67,7 @@ class HashMap(PrimitiveBase):
     """
 
     primitive_type = "hashmap"
+    _accepts_target_suffix: ClassVar[bool] = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "bucket[{i}]": "bucket by index",
