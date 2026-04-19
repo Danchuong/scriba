@@ -1,0 +1,247 @@
+[main]	INFO	profile include tests: None
+[main]	INFO	profile exclude tests: None
+[main]	INFO	cli include tests: None
+[main]	INFO	cli exclude tests: None
+[main]	INFO	running on Python 3.10.20
+Working... ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100% 0:00:01
+Run started:2026-04-19 02:15:24.355632+00:00
+
+Test results:
+>> Issue: [B110:try_except_pass] Try, Except, Pass detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html
+   Location: scriba/animation/_frame_renderer.py:92:16
+91	                    prim.set_value(suffix, str(val))
+92	                except Exception:  # noqa: BLE001 - best effort
+93	                    pass
+94	
+
+--------------------------------------------------
+>> Issue: [B110:try_except_pass] Try, Except, Pass detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html
+   Location: scriba/animation/_frame_renderer.py:328:12
+327	                    )
+328	            except Exception:  # noqa: BLE001 - best-effort collector
+329	                pass
+330	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: scriba/animation/constants.py:56:0
+55	
+56	assert DEFAULT_STATE in VALID_STATES, (
+57	    f"DEFAULT_STATE {DEFAULT_STATE!r} not in VALID_STATES"
+58	)
+59	
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: scriba/animation/emitter.py:170:8
+169	            continue
+170	        assert label is not None  # narrowed by _is_id_safe_label
+171	        if label in seen:
+
+--------------------------------------------------
+>> Issue: [B110:try_except_pass] Try, Except, Pass detected.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b110_try_except_pass.html
+   Location: scriba/animation/parser/_grammar_compute.py:39:8
+38	            self._collect_compute_bindings(body)
+39	        except Exception:  # noqa: BLE001 — best effort, never fail parse
+40	            pass
+41	        return ComputeCommand(tok.line, tok.col, body)
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: scriba/animation/parser/grammar.py:448:8
+447	        """Raise a single ``ValidationError`` summarizing all collected errors."""
+448	        assert self._recovery_errors
+449	
+
+--------------------------------------------------
+>> Issue: [B311:blacklist] Standard pseudo-random generators are not suitable for security/cryptographic purposes.
+   Severity: Low   Confidence: High
+   CWE: CWE-330 (https://cwe.mitre.org/data/definitions/330.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b311-random
+   Location: scriba/animation/primitives/graph.py:149:10
+148	
+149	    rng = random.Random(seed)
+150	    pos: dict[str | int, tuple[float, float]] = {
+
+--------------------------------------------------
+>> Issue: [B311:blacklist] Standard pseudo-random generators are not suitable for security/cryptographic purposes.
+   Severity: Low   Confidence: High
+   CWE: CWE-330 (https://cwe.mitre.org/data/definitions/330.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_calls.html#b311-random
+   Location: scriba/animation/primitives/graph_layout_stable.py:278:10
+277	    # --- Initialize positions in [0,1]^2 ---
+278	    rng = random.Random(seed)
+279	    if initial_positions is not None:
+
+--------------------------------------------------
+>> Issue: [B102:exec_used] Use of exec detected.
+   Severity: Medium   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b102_exec_used.html
+   Location: scriba/animation/starlark_worker.py:682:12
+681	        try:
+682	            exec(compile(source, "<compute>", "exec"), namespace)  # noqa: S102
+683	        finally:
+
+--------------------------------------------------
+>> Issue: [B404:blacklist] Consider possible security implications associated with the subprocess module.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess
+   Location: scriba/core/workers.py:24:0
+23	import select
+24	import subprocess
+25	import sys
+
+--------------------------------------------------
+>> Issue: [B603:subprocess_without_shell_equals_true] subprocess call - check for execution of untrusted input.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html
+   Location: scriba/core/workers.py:97:28
+96	        try:
+97	            self._process = subprocess.Popen(
+98	                self._argv,
+99	                stdin=subprocess.PIPE,
+100	                stdout=subprocess.PIPE,
+101	                stderr=subprocess.PIPE,
+102	                text=True,
+103	                bufsize=1,
+104	                preexec_fn=self._preexec_fn,
+105	            )
+106	        except FileNotFoundError as e:
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: scriba/core/workers.py:115:12
+114	        if self._ready_signal is not None:
+115	            assert self._process.stderr is not None
+116	            import os
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: scriba/core/workers.py:234:12
+233	            self._ensure_started()
+234	            assert self._process is not None
+235	            proc = self._process
+
+--------------------------------------------------
+>> Issue: [B101:assert_used] Use of assert detected. The enclosed code will be removed when compiling to optimised byte code.
+   Severity: Low   Confidence: High
+   CWE: CWE-703 (https://cwe.mitre.org/data/definitions/703.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b101_assert_used.html
+   Location: scriba/core/workers.py:236:12
+235	            proc = self._process
+236	            assert proc.stdin is not None and proc.stdout is not None
+237	
+
+--------------------------------------------------
+>> Issue: [B603:subprocess_without_shell_equals_true] subprocess call - check for execution of untrusted input.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html
+   Location: scriba/core/workers.py:406:19
+405	        try:
+406	            proc = subprocess.Popen(
+407	                self._argv,
+408	                stdin=subprocess.PIPE,
+409	                stdout=subprocess.PIPE,
+410	                stderr=subprocess.PIPE,
+411	                text=True,
+412	            )
+413	        except FileNotFoundError as e:
+
+--------------------------------------------------
+>> Issue: [B324:hashlib] Use of weak SHA1 hash for security. Consider usedforsecurity=False
+   Severity: High   Confidence: High
+   CWE: CWE-327 (https://cwe.mitre.org/data/definitions/327.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b324_hashlib.html
+   Location: scriba/tex/parser/environments.py:44:15
+43	        # with different non-Latin content still get distinct ids.
+44	        sha1 = hashlib.sha1(text.encode("utf-8")).hexdigest()[:8]
+45	        slug = f"section-{sha1}"
+
+--------------------------------------------------
+>> Issue: [B404:blacklist] Consider possible security implications associated with the subprocess module.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/blacklists/blacklist_imports.html#b404-import-subprocess
+   Location: scriba/tex/renderer.py:14:0
+13	import shutil
+14	import subprocess
+15	import threading
+
+--------------------------------------------------
+>> Issue: [B603:subprocess_without_shell_equals_true] subprocess call - check for execution of untrusted input.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html
+   Location: scriba/tex/renderer.py:169:21
+168	        try:
+169	            result = subprocess.run(
+170	                [node_executable, "-e", f"require({repr(str(vendored))})"],
+171	                capture_output=True,
+172	                text=True,
+173	                timeout=3,
+174	                env=probe_env,
+175	            )
+176	        except subprocess.TimeoutExpired as e:
+
+--------------------------------------------------
+>> Issue: [B603:subprocess_without_shell_equals_true] subprocess call - check for execution of untrusted input.
+   Severity: Low   Confidence: High
+   CWE: CWE-78 (https://cwe.mitre.org/data/definitions/78.html)
+   More Info: https://bandit.readthedocs.io/en/1.9.4/plugins/b603_subprocess_without_shell_equals_true.html
+   Location: scriba/tex/renderer.py:287:21
+286	        try:
+287	            result = subprocess.run(
+288	                [npm, "root", "-g"],
+289	                capture_output=True,
+290	                text=True,
+291	                timeout=3,
+292	            )
+293	        except (subprocess.TimeoutExpired, OSError):
+
+--------------------------------------------------
+
+Code scanned:
+	Total lines of code: 19146
+	Total lines skipped (#nosec): 0
+	Total potential issues skipped due to specifically being disabled (e.g., #nosec BXXX): 0
+
+Run metrics:
+	Total issues (by severity):
+		Undefined: 0
+		Low: 17
+		Medium: 1
+		High: 1
+	Total issues (by confidence):
+		Undefined: 0
+		Low: 0
+		Medium: 0
+		High: 19
+Files skipped (0):

@@ -1,0 +1,437 @@
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  7%]
+........................................................................ [ 10%]
+........................................................................ [ 12%]
+........................................................................ [ 15%]
+........................................................................ [ 17%]
+........................................................................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 25%]
+........................................................................ [ 27%]
+........................................................................ [ 30%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 43%]
+........................................................................ [ 45%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 58%]
+........................................................................ [ 61%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 73%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+........................................................................ [ 86%]
+........................................................................ [ 89%]
+........................................................................ [ 91%]
+......................................s................................. [ 94%]
+........................................................................ [ 96%]
+........................................................................ [ 99%]
+.......................<unknown>:12: DeprecationWarning: invalid escape sequence '\`'
+/Users/mrchuongdan/Documents/GitHub/scriba/scriba/tex/parser/dashes_quotes.py:12: DeprecationWarning: invalid escape sequence '\`'
+  """Apply LaTeX-style typographic substitutions.
+<unknown>:12: DeprecationWarning: invalid escape sequence '\`'
+/Users/mrchuongdan/Documents/GitHub/scriba/scriba/tex/parser/dashes_quotes.py:12: DeprecationWarning: invalid escape sequence '\`'
+  """Apply LaTeX-style typographic substitutions.
+<unknown>:12: DeprecationWarning: invalid escape sequence '\`'
+/Users/mrchuongdan/Documents/GitHub/scriba/scriba/tex/parser/dashes_quotes.py:12: DeprecationWarning: invalid escape sequence '\`'
+  """Apply LaTeX-style typographic substitutions.
+<unknown>:12: DeprecationWarning: invalid escape sequence '\`'
+                                                  [100%]
+=============================== warnings summary ===============================
+scriba/__init__.py:78
+scriba/__init__.py:78
+tests/core/test_workers.py::test_alias_via_top_level_scriba_module
+tests/core/test_workers.py::test_alias_via_top_level_scriba_module
+tests/core/test_workers.py::test_alias_via_top_level_scriba_module
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/__init__.py:78: DeprecationWarning: SubprocessWorker is a deprecated alias for PersistentSubprocessWorker and will be removed in 1.0.0. Import PersistentSubprocessWorker instead.
+    return _warn_subprocess_worker_alias(caller_module, stacklevel=2)
+
+tests/unit/test_a11y_aria_live.py:108
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_a11y_aria_live.py:108: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_a11y_aria_live.py:127
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_a11y_aria_live.py:127: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_a11y_aria_live.py:155
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_a11y_aria_live.py:155: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_a11y_aria_live.py:174
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_a11y_aria_live.py:174: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_a11y_aria_live.py:199
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_a11y_aria_live.py:199: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_a11y_aria_live.py:215
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_a11y_aria_live.py:215: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_a11y_aria_live.py:235
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_a11y_aria_live.py:235: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_contrast.py:100
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_contrast.py:100: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_contrast.py:112
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_contrast.py:112: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_contrast.py:126
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_contrast.py:126: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_contrast.py:159
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_contrast.py:159: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_contrast.py:171
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_contrast.py:171: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_contrast.py:181
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_contrast.py:181: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_css_bundler_cache.py:20
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_css_bundler_cache.py:20: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_css_bundler_cache.py:84
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_css_bundler_cache.py:84: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_error_hints_enum.py:20
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_error_hints_enum.py:20: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_error_hints_kwarg.py:18
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_error_hints_kwarg.py:18: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_error_hints_kwarg.py:59
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_error_hints_kwarg.py:59: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_annotation_cmds.py:51
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_annotation_cmds.py:51: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_annotation_cmds.py:156
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_annotation_cmds.py:156: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_annotation_cmds.py:257
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_annotation_cmds.py:257: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_bare_token_apply.py:25
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_bare_token_apply.py:25: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_foreach_unit.py:28
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_foreach_unit.py:28: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_foreach_unit.py:150
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_foreach_unit.py:150: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_interpolation.py:50
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_interpolation.py:50: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_interpolation.py:169
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_interpolation.py:169: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_nested_dict_value.py:25
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_nested_dict_value.py:25: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_nfc_identifier.py:36
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_nfc_identifier.py:36: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_param_value.py:59
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_param_value.py:59: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_param_value.py:107
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_param_value.py:107: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_param_value.py:145
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_param_value.py:145: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_param_value.py:194
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_param_value.py:194: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_param_value.py:256
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_param_value.py:256: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_substory_unit.py:33
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_substory_unit.py:33: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_substory_unit.py:158
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_substory_unit.py:158: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_values_unit.py:45
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_values_unit.py:45: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_values_unit.py:135
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_values_unit.py:135: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_values_unit.py:188
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_values_unit.py:188: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_parser_values_unit.py:243
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_parser_values_unit.py:243: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_render_security.py:92
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_render_security.py:92: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_render_security.py:138
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_render_security.py:138: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_render_security.py:146
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_render_security.py:146: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_render_security.py:160
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_render_security.py:160: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_render_security.py:168
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_render_security.py:168: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_render_security.py:182
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_render_security.py:182: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_render_security.py:204
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_render_security.py:204: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_suggest_closest.py:16
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_suggest_closest.py:16: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:113
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:113: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:119
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:119: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:125
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:125: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:132
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:132: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:142
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:142: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:149
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:149: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:166
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:166: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:172
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:172: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/unit/test_widget_a11y.py:195
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/unit/test_widget_a11y.py:195: PytestUnknownMarkWarning: Unknown pytest.mark.unit - is this a typo?  You can register custom marks to avoid this warning - for details, see https://docs.pytest.org/en/stable/how-to/mark.html
+    @pytest.mark.unit
+
+tests/core/test_pipeline.py::test_pipeline_close_idempotent_even_if_renderer_raised
+  /Users/mrchuongdan/Documents/GitHub/scriba/tests/core/test_pipeline.py:468: RuntimeWarning: renderer 'explosive' close() raised: boom
+    p.close()
+
+tests/core/test_workers.py::test_alias_identity_twice
+tests/core/test_workers.py::test_alias_identity_twice
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/core/workers.py:366: DeprecationWarning: SubprocessWorker is a deprecated alias for PersistentSubprocessWorker and will be removed in 1.0.0. Import PersistentSubprocessWorker instead.
+    return _warn_subprocess_worker_alias(caller_module, stacklevel=2)
+
+tests/sanitize/test_whitelist.py::test_bleach_roundtrip_inline_math
+tests/sanitize/test_whitelist.py::test_bleach_preserves_figure_scriba_data_attrs
+tests/sanitize/test_whitelist.py::test_bleach_preserves_substory_widget_frames_attr
+tests/sanitize/test_whitelist.py::test_bleach_preserves_svg_aria_labelledby
+tests/sanitize/test_whitelist.py::test_bleach_preserves_g_data_target
+tests/sanitize/test_whitelist.py::test_new_attrs_do_not_enable_script_injection
+tests/sanitize/test_whitelist.py::test_new_attrs_do_not_allow_event_handlers
+  /Users/mrchuongdan/Documents/GitHub/scriba/.venv/lib/python3.10/site-packages/bleach/sanitizer.py:166: NoCssSanitizerWarning: 'style' attribute specified, but css_sanitizer not set.
+    warnings.warn(
+
+tests/unit/test_animation_parser.py::TestParseShapeCommand::test_shape_with_interp_param
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/parser/_grammar_tokens.py:264: UserWarning: ${dp} at line 1, col 31: no compute-scope binding named 'dp' found before this point; runtime expansion may fail if the binding is not defined
+    value = self._parse_param_value()
+
+tests/unit/test_animation_parser.py::TestParamValues::test_interp_param
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/parser/_grammar_tokens.py:264: UserWarning: ${dp} at line 1, col 23: no compute-scope binding named 'dp' found before this point; runtime expansion may fail if the binding is not defined
+    value = self._parse_param_value()
+
+tests/unit/test_animation_parser.py::TestErrorRecovery::test_recovery_collects_multiple_errors
+tests/unit/test_animation_parser.py::TestErrorRecovery::test_recovery_reports_errors_from_different_steps
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/parser/grammar.py:220: UserWarning: 2 parsing error(s) occurred (error_recovery=True); animation may be incomplete.
+    self._raise_combined_errors()
+
+tests/unit/test_animation_parser.py::TestErrorRecovery::test_recovery_single_error_raises_directly
+tests/unit/test_animation_parser.py::TestErrorRecovery::test_recovery_skips_to_next_command
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/parser/grammar.py:220: UserWarning: 1 parsing error(s) occurred (error_recovery=True); animation may be incomplete.
+    self._raise_combined_errors()
+
+tests/unit/test_animation_parser.py::TestErrorRecovery::test_recovery_multiple_invalid_recolors_collected
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/parser/grammar.py:220: UserWarning: 3 parsing error(s) occurred (error_recovery=True); animation may be incomplete.
+    self._raise_combined_errors()
+
+tests/unit/test_foreach.py::TestForeachParsing::test_foreach_binding_parses
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/parser/_grammar_foreach.py:72: UserWarning: ${xs} at line 3, col 1: no compute-scope binding named 'xs' found before this point; runtime expansion may fail if the binding is not defined
+    return self._parse_foreach_body(tok, foreach_line, foreach_col)
+
+tests/unit/test_primitive_metricplot.py::TestLogScale::test_e1484_log_scale_non_positive_value
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/primitives/metricplot.py:596: UserWarning: [E1484] log scale: non-positive value -5.0 in series 'e' clamped to 1e-9
+    segments = self._build_segments(s, data, xmin, xmax, ymin, ymax)
+
+tests/unit/test_primitive_plane2d.py::TestAddElements::test_add_polygon
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/primitives/plane2d.py:373: UserWarning: [E1462] polygon not closed — auto-closing by appending the first point to the end of the list
+    self._add_polygon_internal(params["add_polygon"])
+
+tests/unit/test_primitive_plane2d.py::TestEmitSvg::test_polygon_auto_close_warning
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/primitives/plane2d.py:190: UserWarning: [E1462] polygon not closed — auto-closing by appending the first point to the end of the list
+    self._add_polygon_internal(poly)
+
+tests/unit/test_primitive_plane2d.py::TestEmitSvg::test_point_outside_viewport_warning
+  /Users/mrchuongdan/Documents/GitHub/scriba/scriba/animation/primitives/plane2d.py:184: UserWarning: [E1463] point (-10.00, -10.00) is outside viewport [0, 5] x [0, 5]
+    self._add_point_internal(pt)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+================================ tests coverage ================================
+______________ coverage: platform darwin, python 3.10.20-final-0 _______________
+
+Name                                                 Stmts   Miss Branch BrPart  Cover   Missing
+------------------------------------------------------------------------------------------------
+scriba/__init__.py                                      18      1      2      1    90%   79
+scriba/animation/__init__.py                             4      0      0      0   100%
+scriba/animation/_frame_renderer.py                    217     35    126     20    82%   68, 70, 72, 83, 88->90, 92-93, 101-102, 104-106, 108-109, 221-225, 241, 247-252, 254-259, 287->291, 297, 328-329, 347, 390, 398, 452->451, 461, 466->468
+scriba/animation/_html_stitcher.py                     212      9     80      6    95%   139->141, 144-145, 147->130, 251, 374-377, 463, 652
+scriba/animation/_minify.py                             58     16     12      0    74%   28-35, 81-83, 95-107
+scriba/animation/_script_builder.py                     20      0      2      0   100%
+scriba/animation/constants.py                           10      0      0      0   100%
+scriba/animation/detector.py                            77      1     34      3    96%   96->90, 165->161, 167
+scriba/animation/differ.py                             105      3     46      6    94%   114, 144->154, 155, 228, 287->262, 290->262
+scriba/animation/emitter.py                             75     13     22      1    77%   198-213
+scriba/animation/errors.py                              71      2     20      2    96%   657, 686
+scriba/animation/extensions/__init__.py                  4      0      0      0   100%
+scriba/animation/extensions/hl_macro.py                 49      5     22      5    86%   37, 48, 93, 102, 105
+scriba/animation/extensions/keyframes.py                21      1      8      0    97%   44
+scriba/animation/parser/__init__.py                      6      0      0      0   100%
+scriba/animation/parser/_grammar_commands.py           110      5     42      4    93%   131-138, 274, 309, 323->307
+scriba/animation/parser/_grammar_compute.py             47      4     26      5    88%   39-40, 77, 84->82, 88->72, 91->89, 110
+scriba/animation/parser/_grammar_foreach.py             65      5     36      7    88%   110->114, 117->194, 154, 163, 166, 182-191
+scriba/animation/parser/_grammar_substory.py           160     20     94     18    83%   107, 113, 123->125, 128->131, 147->364, 155, 202, 216, 243, 251, 303-307, 310-314, 319, 326, 352-361, 376->exit, 381
+scriba/animation/parser/_grammar_tokens.py             189     16    104     18    88%   61->63, 100, 103, 120, 138, 143->exit, 175-176, 181, 183, 189, 261, 285->287, 370, 375, 392, 413, 437, 447
+scriba/animation/parser/_grammar_values.py              47      0     16      1    98%   55->57
+scriba/animation/parser/ast.py                         147      0      0      0   100%
+scriba/animation/parser/grammar.py                     228     11    104      8    94%   140-143, 165, 198->125, 204, 349, 436, 495, 518->521, 561-564
+scriba/animation/parser/lexer.py                       211     18     66      8    90%   118, 352, 355->357, 358, 398-406, 410-414, 418
+scriba/animation/parser/selectors.py                   185     13     66      8    91%   84, 177, 190, 222-226, 232, 242-243, 265, 313
+scriba/animation/primitives/__init__.py                 28      6      2      0    73%   65-75
+scriba/animation/primitives/_svg_helpers.py            326     83     92     18    68%   78-98, 273->295, 276-289, 319->321, 321->323, 333-340, 416-417, 419-420, 436-451, 564->605, 576->601, 580-594, 627-631, 648->650, 650->652, 661-681, 735, 756-766
+scriba/animation/primitives/_text_render.py            101     44     48      4    56%   70-71, 79->77, 108, 123-135, 218-228, 235-284
+scriba/animation/primitives/_types.py                   35      0      0      0   100%
+scriba/animation/primitives/array.py                   149     12     52      9    89%   111, 125, 342, 350, 380, 386, 393, 420-426
+scriba/animation/primitives/base.py                    127     16     40     11    84%   251-256, 258-263, 273-278, 288-293, 334, 375, 385->393, 401, 405->411, 409, 413, 415-416, 437
+scriba/animation/primitives/codepanel.py               112      0     32      0   100%
+scriba/animation/primitives/dptable.py                 199     27     74     10    84%   155, 192->205, 240-269, 301-316, 322, 385-386, 413->416, 455, 474, 481, 501-510
+scriba/animation/primitives/graph.py                   344     21    124      5    93%   640-655, 674, 761, 787->795, 790-792, 864-866
+scriba/animation/primitives/graph_layout_stable.py     161     10     50      4    93%   239-240, 254-256, 272-274, 358-359
+scriba/animation/primitives/grid.py                    129     14     48      5    87%   133, 183-191, 214, 281, 285, 309
+scriba/animation/primitives/hashmap.py                 146     15     46      7    86%   150->exit, 152->exit, 154->160, 165->exit, 197-208, 248, 369, 373
+scriba/animation/primitives/layout.py                   40      0      8      0   100%
+scriba/animation/primitives/linkedlist.py              179     18     54      8    87%   111, 165->exit, 171->exit, 173->exit, 209-217, 259, 322-336, 461-463, 467
+scriba/animation/primitives/matrix.py                  190      9     66      8    93%   64, 73-74, 88, 96, 408, 420, 433, 439
+scriba/animation/primitives/metricplot.py              301      9    114      6    96%   163-166, 285, 304, 318, 332, 664
+scriba/animation/primitives/numberline.py              163     20     54      6    85%   139->142, 164-173, 221, 301-309, 317, 372, 383
+scriba/animation/primitives/plane2d.py                 651    132    286     36    77%   166, 192, 252, 290-291, 296-302, 311-315, 336-349, 353->exit, 391->exit, 461, 500-501, 505-506, 510-511, 515-516, 538, 550-595, 633, 660, 666, 716, 792-818, 914, 921-926, 930-931, 951-958, 974-983, 997-1007, 1065, 1066->1061, 1071, 1079, 1095->1107, 1158, 1202, 1218
+scriba/animation/primitives/plane2d_compute.py          93      2     50      2    97%   145, 188
+scriba/animation/primitives/queue.py                   185     26     62     12    81%   118, 133->132, 177, 195->exit, 197->exit, 202, 232-240, 274, 280, 297, 405-421, 425, 508
+scriba/animation/primitives/stack.py                   138      3     48      1    98%   53, 300-301
+scriba/animation/primitives/tree.py                    313     32    138      9    89%   113->112, 143, 173-178, 282, 440, 472, 502-506, 529-544, 564, 628->612, 700-702
+scriba/animation/primitives/tree_layout.py              97      1     36      1    98%   205
+scriba/animation/primitives/variablewatch.py           156     18     54      9    85%   137->145, 139->142, 147->146, 150->exit, 156->exit, 183-196, 230, 247, 365, 369
+scriba/animation/renderer.py                           284     55    116     15    74%   162-168, 183-189, 203, 236, 244->242, 246->242, 248, 309, 315-318, 422, 478, 499->492, 528-530, 540-543, 580-585, 607-644
+scriba/animation/runtime_asset.py                       13      0      0      0   100%
+scriba/animation/scene.py                              342     45    176     27    83%   57, 85, 88-92, 309, 383, 390, 396, 407-428, 455, 457, 459, 463-465, 474, 477, 489->486, 493, 502, 504-509, 514, 560->exit, 593->599, 600-605, 638, 653, 699->698, 738, 740->exit
+scriba/animation/starlark_host.py                       85     20     14      1    75%   94-125, 227, 246-247, 254-255
+scriba/animation/uniqueness.py                          21      0     10      0   100%
+scriba/core/__init__.py                                 16      1      2      1    89%   68
+scriba/core/artifact.py                                 64      1      2      1    97%   13
+scriba/core/context.py                                  23      0      2      1    96%   23->exit
+scriba/core/css_bundler.py                              26      0      4      0   100%
+scriba/core/errors.py                                   52      0     18      1    99%   68->72
+scriba/core/pipeline.py                                186     11     80     10    92%   46, 52, 55, 109, 113, 158, 162, 178, 215, 313, 366
+scriba/core/renderer.py                                 19      3      0      0    84%   41, 48, 52
+scriba/core/text_utils.py                               29      2     14      4    86%   52->60, 54, 57->59, 62
+scriba/core/types.py                                     4      0      0      0   100%
+scriba/core/warnings.py                                 15      0      6      1    95%   90->95
+scriba/core/workers.py                                 275     47     76     10    81%   41->exit, 45->exit, 121->154, 123-128, 144-152, 182-193, 196->195, 199-200, 206, 210, 218-220, 251-254, 259->278, 264-266, 280-283, 425-426
+scriba/sanitize/__init__.py                              2      0      0      0   100%
+scriba/sanitize/whitelist.py                             4      0      0      0   100%
+scriba/tex/__init__.py                                  15      0      6      0   100%
+scriba/tex/highlight.py                                 45      6     16      2    87%   72->68, 100-101, 120-121, 125-126, 129->132
+scriba/tex/parser/__init__.py                            1      0      0      0   100%
+scriba/tex/parser/_urls.py                              18      3      8      1    85%   29, 38-39
+scriba/tex/parser/code_blocks.py                        36      1     10      3    91%   28->26, 30->26, 33
+scriba/tex/parser/dashes_quotes.py                      10      0      0      0   100%
+scriba/tex/parser/environments.py                       79      5     12      3    91%   144-145, 148-149, 168
+scriba/tex/parser/escape.py                             68     18     26      3    71%   20, 30->32, 33, 42-54, 101, 105-107
+scriba/tex/parser/images.py                             65      8     24      5    85%   43, 51-52, 53->40, 56, 59-60, 64, 75
+scriba/tex/parser/lists.py                              57      3     14      3    92%   35->52, 39, 53-54
+scriba/tex/parser/math.py                               64     13     16      3    78%   44-50, 118, 132, 142-152
+scriba/tex/parser/tables.py                            155     27     62     11    79%   92-93, 155-160, 192-200, 216->226, 218-219, 224-225, 230-231, 236-240, 266, 274-275
+scriba/tex/parser/text_commands.py                      16      0      2      0   100%
+scriba/tex/renderer.py                                 271     46     84      4    81%   176-182, 237, 249->263, 255-256, 258-260, 283-298, 372, 405-408, 413, 481-506
+scriba/tex/validate.py                                  62      8     38      6    86%   59-60, 67, 91, 102, 105, 118-119
+------------------------------------------------------------------------------------------------
+TOTAL                                                 9121   1019   3344    408    86%
+Coverage JSON written to file /Users/mrchuongdan/Documents/GitHub/scriba/docs/archive/scriba-full-audit-2026-04-19/baseline/coverage.json
+Required test coverage of 75.0% reached. Total coverage: 86.32%
+2830 passed, 1 skipped, 83 warnings in 16.42s
