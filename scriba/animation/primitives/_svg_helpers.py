@@ -736,9 +736,6 @@ def emit_arrow_svg(
 
         label_ref_x = int(mid_x_f + perp_x * (total_offset + 8))
         label_ref_y = int(mid_y_f + perp_y * (total_offset + 8))
-        # Curve midpoint for leader line anchoring
-        curve_mid_x = int(mid_x_f + perp_x * total_offset * 0.75)
-        curve_mid_y = int(mid_y_f + perp_y * total_offset * 0.75)
     else:
         # Horizontal layout: curve upward (original formula)
         mid_x_f = (x1 + x2) / 2
@@ -770,9 +767,13 @@ def emit_arrow_svg(
             cy2 = mid_y_val
             label_ref_x = int(mid_x_f)
             label_ref_y = mid_y_val - 4  # slightly above the curve peak
-        # Curve midpoint for leader line anchoring
-        curve_mid_x = int(mid_x_f)
-        curve_mid_y = mid_y_val
+
+    # Curve midpoint B(0.5) for leader anchoring — evaluated from the actual
+    # control points so the anchor dot sits ON the rendered curve, not on the
+    # control-point plateau (which is ~25% above the true midpoint for cubic
+    # Bézier when both controls share the same coordinate).
+    curve_mid_x = int(0.125 * x1 + 0.375 * cx1 + 0.375 * cx2 + 0.125 * x2)
+    curve_mid_y = int(0.125 * y1 + 0.375 * cy1 + 0.375 * cy2 + 0.125 * y2)
 
     ix1, iy1 = int(x1), int(y1)
     ix2, iy2 = int(x2), int(y2)
