@@ -9,6 +9,7 @@ source-audits:
   - docs/archive/smart-label-audit-2026-04-21/
   - docs/archive/smart-label-ruleset-audit-2026-04-21/
   - docs/archive/smart-label-ruleset-strengthening-2026-04-21/
+  - docs/archive/smart-label-ruleset-hardening-2026-04-21/
 ---
 
 # Smart-Label Ruleset (v2)
@@ -405,7 +406,7 @@ is a minor configuration change, not a spec violation.
 | N-6 | `_LABEL_BG_OPACITY=0.92` | Design preference (A-1 applies to text contrast, not bg). |
 | N-7 | `emit_position_label_svg` 4-dir loop | Underspecified divergence from 8-dir grid; see S-6 migration. |
 | N-8 | `_LABEL_MAX_WIDTH_CHARS=24` | Wrap trigger UX. |
-| N-9 | Math multiplier 1.15× (→ 0.90× P0 A2) | Calibration; T-4 floor constrains. |
+| N-9 | Math multiplier 1.15× ([AT RISK] → 0.90× in v0.11.0 per ISSUE-A2) | Calibration; T-4 floor constrains. |
 | N-10 | `_PLAIN_ARROW_STEM=18` | Layout choice. |
 | N-11 | Side-hint key order `ann["side"] or ann["position"]` | API detail; C-5 mandates the mechanism. |
 | N-12 | Plain baseline headroom 24 px | Tunable; AC-5 mandates sufficiency. |
@@ -446,9 +447,11 @@ procedure EmitLabeledArrow(src, dst, label, color, side_hint, placed_labels):
 finalised". Per M-4 in §4 error table (and Round-1 synthesis A3), v2
 moves the clamp *inside* the candidate loop so that a candidate which
 passes the collision check pre-clamp but collides post-clamp is rejected.
-Until M-4 ships, implementations MAY approximate by re-checking the
-final clamped coordinate against the registry and, if it collides,
-advancing to the next candidate.
+Until ISSUE-A3 is closed (v0.11.0 / MW-3), implementations MAY
+approximate by re-checking the final clamped coordinate against the
+registry and, if it collides, advancing to the next candidate. This
+approximation MUST be replaced by the per-candidate loop on or before
+v0.11.0.
 
 ### §2.2 Nudge grid contract
 
@@ -530,8 +533,8 @@ pill_h = l_font_px * line_count + 2 * PAD_Y + (line_count − 1) * line_gap
 ```
 
 - Math pills: `_label_width_text` strips `\command` tokens then applies
-  the math multiplier. Current value 1.15× is scheduled to become
-  ≈ 0.90× per P0 A2 (see §9 ISSUE-A2).
+  the math multiplier (current: 1.15×; scheduled 0.90× in v0.11.0 per
+  ISSUE-A2; see §9.3).
 
 ### §3.3 Headroom helpers
 
@@ -539,8 +542,10 @@ pill_h = l_font_px * line_count + 2 * PAD_Y + (line_count − 1) * line_gap
 arrow_height_above(annotations)
   → 32 px if any label contains math, else 24 px                  # AC-6
 
-arrow_height_below(annotations)       [absent in v1; AT RISK]
-  → mirror of arrow_height_above — PROPOSED in MW-2.
+arrow_height_below(annotations)       [absent in v1]
+  → mirror of arrow_height_above — to be added in MW-2. Until then,
+    primitives with below-arrows SHOULD call arrow_height_above as a
+    conservative upper bound.
 
 position_label_height_above(annotations)
   → pill_h + 6 px margin (math: +8 px)
@@ -820,30 +825,48 @@ a documented re-scoping clause in
 
 ### §9.3 Open issues
 
-> **ISSUE-A1**: I-2 pad semantics. v1 claimed `pad=2`, code enforced
-> `pad=0`. v2 resolves: `pad=0` is the canonical default (§2.3). Any
-> caller wanting a buffer MUST pass `pad>0` explicitly. **Status**:
-> resolved in v2; code update pending.
+> **ISSUE-A1**: I-2 pad semantics. **Status**: CLOSED in v2. The
+> canonical default is `pad=0` (§2.3). `_LabelPlacement.overlaps()`
+> implements strict non-intersection. Optional `overlap_pad` support
+> is tracked under MW-3.
 
 > **ISSUE-A2**: Math width multiplier. Current 1.15× over-estimates by
-> RMSE 17.1 px on 16 / 20 sample labels. Optimal 0.81×. Recommended
-> 0.90× (RMSE 11.5 px). **Status**: S-2 default to be flipped with
-> corpus-driven regression test.
+> RMSE 17.1 px on 16/20 sample labels. Recommended: 0.90×.
+> **Decision**: FIX in v0.11.0 — flip to 0.90× gated by RMSE
+> regression test. See
+> `docs/archive/smart-label-ruleset-hardening-2026-04-21/04-open-issue-resolution.md §2.2`.
+> **Status**: OPEN pending v0.11.0.
 
 > **ISSUE-A3**: Clamp-race in collision loop. Per-candidate clamp is
-> normative (M-4). **Status**: PENDING code patch.
+> normative (§2.1). **Decision**: FIX in v0.11.0 via `_place_pill`
+> (MW-3). The §2.1 "MAY approximate" escape holds until then.
+> **Status**: OPEN pending v0.11.0 (MW-3).
 
-> **ISSUE-A4**: WCAG AA contrast post-opacity-composite. 4/6 tokens
-> fail at baseline (`info` 2.01:1, `muted` 1.49:1, compounded hover
-> ~1.1:1). **Status**: re-palette or opacity floor — design call
-> pending.
+> **ISSUE-A4**: WCAG AA contrast post-opacity-composite. `info` and
+> `muted` group-opacity values produce sub-4.5:1 effective contrast.
+> **Decision**: FIX in v0.11.0 — raise `info.opacity` to ≥ 0.75,
+> `muted.opacity` to ≥ 0.60; gate on
+> `tools/check_annotation_contrast.py`. **Status**: BLOCKS v2-final —
+> must be resolved or v2 re-scoped to declare A-1 SHOULD for
+> `info`/`muted` (not recommended). See
+> `docs/archive/smart-label-ruleset-hardening-2026-04-21/04-open-issue-resolution.md §2.4`.
 
-> **ISSUE-A5**: `info` and `path` share hex `#0b68cb`. Deuteranopia
-> simulator renders `warn`/`good`/`error` indistinguishable.
-> **Status**: re-palette via CVD simulator.
+> **ISSUE-A5**: CVD distinguishability. The `info`/`path` shared-hex
+> claim is stale — current palette has `info=#506882`, `path=#2563eb`
+> (distinct). The CVD concern for `{good, warn, error}` under
+> deuteranopia remains unmeasured. **Decision**: FIX in v0.11.0 —
+> run Machado 2009 CVD simulation; adjust hex if CIEDE2000 < 10 for
+> any pair. Round-3 a11y report measured `warn`/`error` CIEDE2000
+> = 2.8 under deuteranopia (FAILS); remediation via dashed leader
+> line pattern. **Status**: BLOCKS v2-final (requires at minimum a
+> confirmed PASS measurement). See
+> `docs/archive/smart-label-ruleset-hardening-2026-04-21/06-a11y-automation.md`.
 
 > **ISSUE-below-math**: `position_label_height_below` omits math
-> branch (AC-6 pending). **Status**: two-line fix in MW-2.
+> branch. **Decision**: FIX in v0.10.x hot-patch (not waiting for
+> MW-2). See
+> `docs/archive/smart-label-ruleset-hardening-2026-04-21/04-open-issue-resolution.md §2.6`.
+> **Status**: BLOCKS v2-final.
 
 ---
 
@@ -996,8 +1019,20 @@ is 85 % line+branch on `_svg_helpers.py` (per Round-1 synthesis).
 | AC-5 | `TestHeadroom::test_conservative` (property) |
 | AC-6 | `TestMathHeadroom::test_below_also_32px` (PENDING B6) |
 
-Missing today: C-6, C-7, A-1..A-4, AC-6. Target: 85 % coverage before
-MW-2 ships (P1 B5).
+Missing today: C-6, C-7, A-1..A-4. AC-6 (`test_below_also_32px`) is
+scheduled for v0.10.x hot-patch. A-1..A-4 contrast tests are scheduled
+for v0.11.0. C-6, C-7 pending MW-2. Target: 85 % coverage before MW-2
+ships.
+
+Round-3 hardening
+(`docs/archive/smart-label-ruleset-hardening-2026-04-21/`) supplies the
+full executable surface: per-invariant pytest map
+(`01-conformance-suite.md`), pinned golden corpus
+(`02-golden-corpus.md`), AST lint script and `PrimitiveProtocol`
+(`03-lint-and-protocol-enforcement.md`), Hypothesis property tests
+(`05-determinism-property-tests.md`), a11y automation including Machado
+CVD matrices (`06-a11y-automation.md`), and an Alloy formal model of
+the geometric invariants (`07-alloy-model.md` + `smart-label-model.als`).
 
 ---
 
@@ -1038,3 +1073,4 @@ cross-reference to the audit folder.
 |---|---|---|
 | 1.0 | 2026-04-21 | Initial v1 — Phase 0 + MW-1 as shipped, 10 invariants, informal prose. |
 | 2.0-draft | 2026-04-21 | v2 rewrite — RFC 2119, 42 invariants across 7 axes, E1560–E1579 codes, Primitive Participation Contract, versioning policy, 18 non-goals. |
+| 2.0-draft.r3 | 2026-04-21 | Round-3 hardening pass — ISSUE-A1 CLOSED; ISSUE-A2/A3/A4/A5/below-math given FIX decisions with target versions; §9.3 blockers for v2-final tagged; linked 44-fixture golden corpus, 42-invariant conformance suite design, FP-1..FP-6 lint design, Hypothesis property tests, a11y automation, and Alloy formal model. No invariant text changed. |
