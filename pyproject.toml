@@ -77,6 +77,11 @@ exclude = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+  "conformance: conformance-suite tests (spec-level invariants)",
+  "determinism: D-axis determinism property tests",
+  "slow: tests with high example counts (skip with -m 'not slow')",
+]
 
 # Coverage is NOT wired into default pytest args — run explicitly via
 #   uv run pytest --cov=scriba --cov-report=term-missing
