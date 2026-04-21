@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 520" width="720" height="520" style="background:#fafafa;font-family:sans-serif">
+  <text x="360" y="24" text-anchor="middle" font-size="14" font-weight="700" fill="#111">Smart-label — 6 color tokens (v2.0.0-rc.1)</text>
+  <text x="360" y="44" text-anchor="middle" font-size="11" fill="#666">top: emit_plain_arrow_svg  ·  bottom: emit_arrow_svg (leaders — warn dashed per A-5b)</text>
+  <text x="12" y="80" font-size="11" font-weight="600" fill="#333">Plain arrow (short stem + head)</text>
+  <text x="60" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#027a55">good</text>
+  <text x="60" y="120" text-anchor="middle" font-family="monospace" font-size="9" fill="#666">#027a55 · op 1.0</text>
+  <circle cx="60" cy="160" r="5" fill="#333"/>
+  <g class="scriba-annotation scriba-annotation-good" data-annotation="p0-plain-arrow" opacity="1.0" role="graphics-symbol" aria-label="Pointer to p0: good">
+    <line x1="60" y1="137" x2="60" y2="155" stroke="#027a55" stroke-width="2.2"/>
+    <polygon points="60.0,155.0 55.0,145.0 65.0,145.0" fill="#027a55"/>
+    <rect x="39" y="111" width="42" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="60" y="125" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:700;font-size:12px;text-anchor:middle;dominant-baseline:auto">good</text>
+  </g>
+  <text x="180" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#506882">info</text>
+  <text x="180" y="120" text-anchor="middle" font-family="monospace" font-size="9" fill="#666">#506882 · op 0.45</text>
+  <circle cx="180" cy="160" r="5" fill="#333"/>
+  <g class="scriba-annotation scriba-annotation-info" data-annotation="p1-plain-arrow" opacity="0.45" role="graphics-symbol" aria-label="Pointer to p1: info">
+    <line x1="180" y1="137" x2="180" y2="155" stroke="#506882" stroke-width="1.5"/>
+    <polygon points="180.0,155.0 175.0,145.0 185.0,145.0" fill="#506882"/>
+    <rect x="160" y="112" width="39" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="180" y="125" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto">info</text>
+  </g>
+  <text x="300" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#92600a">warn</text>
+  <text x="300" y="120" text-anchor="middle" font-family="monospace" font-size="9" fill="#666">#92600a · op 0.8</text>
+  <circle cx="300" cy="160" r="5" fill="#333"/>
+  <g class="scriba-annotation scriba-annotation-warn" data-annotation="p2-plain-arrow" opacity="0.8" role="graphics-symbol" aria-label="Pointer to p2: warn">
+    <line x1="300" y1="137" x2="300" y2="155" stroke="#92600a" stroke-width="2.0"/>
+    <polygon points="300.0,155.0 295.0,145.0 305.0,145.0" fill="#92600a"/>
+    <rect x="280" y="112" width="39" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#92600a" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="300" y="125" fill="#92600a" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto">warn</text>
+  </g>
+  <text x="420" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#c6282d">error</text>
+  <text x="420" y="120" text-anchor="middle" font-family="monospace" font-size="9" fill="#666">#c6282d · op 0.8</text>
+  <circle cx="420" cy="160" r="5" fill="#333"/>
+  <g class="scriba-annotation scriba-annotation-error" data-annotation="p3-plain-arrow" opacity="0.8" role="graphics-symbol" aria-label="Pointer to p3: error">
+    <line x1="420" y1="137" x2="420" y2="155" stroke="#c6282d" stroke-width="2.0"/>
+    <polygon points="420.0,155.0 415.0,145.0 425.0,145.0" fill="#c6282d"/>
+    <rect x="397" y="112" width="46" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#c6282d" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="420" y="125" fill="#c6282d" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto">error</text>
+  </g>
+  <text x="540" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#526070">muted</text>
+  <text x="540" y="120" text-anchor="middle" font-family="monospace" font-size="9" fill="#666">#526070 · op 0.3</text>
+  <circle cx="540" cy="160" r="5" fill="#333"/>
+  <g class="scriba-annotation scriba-annotation-muted" data-annotation="p4-plain-arrow" opacity="0.3" role="graphics-symbol" aria-label="Pointer to p4: muted">
+    <line x1="540" y1="137" x2="540" y2="155" stroke="#526070" stroke-width="1.2"/>
+    <polygon points="540.0,155.0 535.0,145.0 545.0,145.0" fill="#526070"/>
+    <rect x="517" y="112" width="46" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#526070" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="540" y="125" fill="#526070" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto">muted</text>
+  </g>
+  <text x="660" y="105" text-anchor="middle" font-size="12" font-weight="700" fill="#2563eb">path</text>
+  <text x="660" y="120" text-anchor="middle" font-family="monospace" font-size="9" fill="#666">#2563eb · op 1.0</text>
+  <circle cx="660" cy="160" r="5" fill="#333"/>
+  <g class="scriba-annotation scriba-annotation-path" data-annotation="p5-plain-arrow" opacity="1.0" role="graphics-symbol" aria-label="Pointer to p5: path">
+    <line x1="660" y1="137" x2="660" y2="155" stroke="#2563eb" stroke-width="2.5"/>
+    <polygon points="660.0,155.0 655.0,145.0 665.0,145.0" fill="#2563eb"/>
+    <rect x="639" y="111" width="42" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#2563eb" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="660" y="125" fill="#2563eb" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:700;font-size:12px;text-anchor:middle;dominant-baseline:auto">path</text>
+  </g>
+  <text x="12" y="300" font-size="11" font-weight="600" fill="#333">Cubic arrow with label (compact spacing forces leader)</text>
+  <circle cx="330" cy="320" r="3" fill="#999"/>
+  <rect x="382" y="372" width="16" height="16" fill="#eee" stroke="#888"/>
+  <g class="scriba-annotation scriba-annotation-good" data-annotation="cell-0-src-0" opacity="1.0" role="graphics-symbol" aria-label="Arrow from src-0 to cell-0: good: tương đối dài để ép leader">
+    <path d="M330,320 C345,292 375,292 390,380" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from src-0 to cell-0: good: tương đối dài để ép leader</title></path>
+    <polygon points="390.0,380.0 383.4,371.0 393.2,369.3" fill="#027a55"/>
+    <rect x="272" y="267" width="176" height="34" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="360" y="288" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:700;font-size:12px;text-anchor:middle;dominant-baseline:auto"><tspan x="360" dy="0">good: tương đối dài để</tspan><tspan x="360" dy="14">ép leader</tspan></text>
+  </g>
+  <circle cx="334" cy="320" r="3" fill="#999"/>
+  <rect x="378" y="374" width="16" height="16" fill="#eee" stroke="#888"/>
+  <g class="scriba-annotation scriba-annotation-info" data-annotation="cell-1-src-1" opacity="0.45" role="graphics-symbol" aria-label="Arrow from src-1 to cell-1: info: tương đối dài để ép leader">
+    <path d="M334,320 C347,293 373,293 386,382" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from src-1 to cell-1: info: tương đối dài để ép leader</title></path>
+    <polygon points="386.0,382.0 379.6,372.8 389.5,371.4" fill="#506882"/>
+    <rect x="279" y="301" width="162" height="32" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/>
+    <circle cx="360" cy="293" r="2" fill="#506882" opacity="0.6"/>
+    <polyline points="360,293 360,321" fill="none" stroke="#506882" stroke-width="0.75" opacity="0.6"/>
+    <text x="360" y="321" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto"><tspan x="360" dy="0">info: tương đối dài để</tspan><tspan x="360" dy="13">ép leader</tspan></text>
+  </g>
+  <circle cx="338" cy="320" r="3" fill="#999"/>
+  <rect x="374" y="376" width="16" height="16" fill="#eee" stroke="#888"/>
+  <g class="scriba-annotation scriba-annotation-warn" data-annotation="cell-2-src-2" opacity="0.8" role="graphics-symbol" aria-label="Arrow from src-2 to cell-2: warn: tương đối dài để ép leader">
+    <path d="M338,320 C349,294 371,294 382,384" stroke="#92600a" stroke-width="2.0" fill="none"><title>Arrow from src-2 to cell-2: warn: tương đối dài để ép leader</title></path>
+    <polygon points="382.0,384.0 375.8,374.7 385.7,373.5" fill="#92600a"/>
+    <rect x="279" y="222" width="162" height="32" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#92600a" stroke-width="0.5" stroke-opacity="0.3"/>
+    <circle cx="360" cy="294" r="2" fill="#92600a" opacity="0.6"/>
+    <polyline points="360,294 360,242" fill="none" stroke="#92600a" stroke-width="0.75" stroke-dasharray="3,2" opacity="0.6"/>
+    <text x="360" y="242" fill="#92600a" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto"><tspan x="360" dy="0">warn: tương đối dài để</tspan><tspan x="360" dy="13">ép leader</tspan></text>
+  </g>
+  <circle cx="342" cy="320" r="3" fill="#999"/>
+  <rect x="370" y="378" width="16" height="16" fill="#eee" stroke="#888"/>
+  <g class="scriba-annotation scriba-annotation-error" data-annotation="cell-3-src-3" opacity="0.8" role="graphics-symbol" aria-label="Arrow from src-3 to cell-3: error: tương đối dài để ép leader">
+    <path d="M342,320 C351,294 369,294 378,386" stroke="#c6282d" stroke-width="2.0" fill="none"><title>Arrow from src-3 to cell-3: error: tương đối dài để ép leader</title></path>
+    <polygon points="378.0,386.0 372.1,376.5 382.0,375.6" fill="#c6282d"/>
+    <rect x="275" y="270" width="169" height="32" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#c6282d" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="360" y="290" fill="#c6282d" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto"><tspan x="360" dy="0">error: tương đối dài để</tspan><tspan x="360" dy="13">ép leader</tspan></text>
+  </g>
+  <circle cx="346" cy="320" r="3" fill="#999"/>
+  <rect x="366" y="380" width="16" height="16" fill="#eee" stroke="#888"/>
+  <g class="scriba-annotation scriba-annotation-muted" data-annotation="cell-4-src-4" opacity="0.3" role="graphics-symbol" aria-label="Arrow from src-4 to cell-4: muted: tương đối dài để ép leader">
+    <path d="M346,320 C353,295 367,295 374,388" stroke="#526070" stroke-width="1.2" fill="none"><title>Arrow from src-4 to cell-4: muted: tương đối dài để ép leader</title></path>
+    <polygon points="374.0,388.0 368.3,378.4 378.2,377.7" fill="#526070"/>
+    <rect x="275" y="271" width="169" height="32" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#526070" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="360" y="291" fill="#526070" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto"><tspan x="360" dy="0">muted: tương đối dài để</tspan><tspan x="360" dy="13">ép leader</tspan></text>
+  </g>
+  <circle cx="350" cy="320" r="3" fill="#999"/>
+  <rect x="362" y="382" width="16" height="16" fill="#eee" stroke="#888"/>
+  <g class="scriba-annotation scriba-annotation-path" data-annotation="cell-5-src-5" opacity="1.0" role="graphics-symbol" aria-label="Arrow from src-5 to cell-5: path: tương đối dài để ép leader">
+    <path d="M350,320 C355,296 365,296 370,390" stroke="#2563eb" stroke-width="2.5" fill="none"><title>Arrow from src-5 to cell-5: path: tương đối dài để ép leader</title></path>
+    <polygon points="370.0,390.0 364.5,380.3 374.5,379.7" fill="#2563eb"/>
+    <rect x="272" y="271" width="176" height="34" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#2563eb" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="360" y="292" fill="#2563eb" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:700;font-size:12px;text-anchor:middle;dominant-baseline:auto"><tspan x="360" dy="0">path: tương đối dài để</tspan><tspan x="360" dy="14">ép leader</tspan></text>
+  </g>
+</svg>

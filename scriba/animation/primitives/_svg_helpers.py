@@ -560,7 +560,7 @@ ARROW_STYLES: dict[str, dict[str, str]] = {
     "muted": {
         "stroke": "#526070",      # darkened from #cbd5e1 (1.48:1 ✗) → 6.43:1 ✓
         "stroke_width": "1.2",
-        "opacity": "0.6",         # R-12: floor raised from 0.30 → 0.6 (WCAG 1.4.11)
+        "opacity": "0.7",         # R-12: floor raised from 0.30 → 0.7 (WCAG 1.4.11, 3.24:1)
         "label_fill": "#526070",
         "label_weight": "500",
         "label_size": "11px",
