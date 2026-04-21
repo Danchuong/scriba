@@ -638,12 +638,13 @@
   /* Annotation tokens — dark variant.
      Arrow/label colors are used on the dark pill background (#1a1d1e / #151718).
      warn #ffc53d on #1a1d1e → 10.74:1 ✓  error #ff6369 → 5.85:1 ✓
-     info #70b8ff → 8.07:1 ✓  good #65ba74 → 7.13:1 ✓  muted #9ba1a6 → 6.49:1 ✓ */
+     info #70b8ff → 8.07:1 ✓  good #65ba74 → 7.13:1 ✓  muted #9ba1a6 → 6.49:1 ✓
+     R-25: path #a78bfa on #1a1d1e → ~9:1 ✓ (distinct from info #70b8ff) */
   --scriba-annotation-info:    #70b8ff;
   --scriba-annotation-warn:    #ffc53d;
   --scriba-annotation-good:    #65ba74;
   --scriba-annotation-error:   #ff6369;
-  --scriba-annotation-path:    #70b8ff;
+  --scriba-annotation-path:    #a78bfa;
   --scriba-annotation-muted:   var(--scriba-fg-muted);
 }
 
@@ -695,7 +696,8 @@
     --scriba-annotation-warn:    #ffc53d;
     --scriba-annotation-good:    #65ba74;
     --scriba-annotation-error:   #ff6369;
-    --scriba-annotation-path:    #70b8ff;
+    /* R-25: path #a78bfa — distinct from info (#70b8ff) */
+    --scriba-annotation-path:    #a78bfa;
     --scriba-annotation-muted:   var(--scriba-fg-muted);
   }
 }
@@ -711,7 +713,8 @@
 [data-theme="dark"] .scriba-annotation-good  > polygon { fill: #65ba74; }
 [data-theme="dark"] .scriba-annotation-error > polygon { fill: #ff6369; }
 [data-theme="dark"] .scriba-annotation-muted > polygon { fill: #9ba1a6; }
-[data-theme="dark"] .scriba-annotation-path  > polygon { fill: #70b8ff; }
+/* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
+[data-theme="dark"] .scriba-annotation-path  > polygon { fill: #a78bfa; }
 [data-theme="dark"] .scriba-annotation        > rect    { fill: #1a1d1e; }
 
 /* -- OS preference dark-mode overrides (H6) -------------------------------- */
@@ -721,7 +724,8 @@
   :root:not([data-theme="light"]) .scriba-annotation-good  > polygon { fill: #65ba74; }
   :root:not([data-theme="light"]) .scriba-annotation-error > polygon { fill: #ff6369; }
   :root:not([data-theme="light"]) .scriba-annotation-muted > polygon { fill: #9ba1a6; }
-  :root:not([data-theme="light"]) .scriba-annotation-path  > polygon { fill: #70b8ff; }
+  /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
+  :root:not([data-theme="light"]) .scriba-annotation-path  > polygon { fill: #a78bfa; }
   :root:not([data-theme="light"]) .scriba-annotation        > rect    { fill: #1a1d1e; }
 }
 

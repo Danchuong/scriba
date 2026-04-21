@@ -18,6 +18,7 @@ from __future__ import annotations
 import math
 import os
 import re
+import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Iterator
 
@@ -44,6 +45,7 @@ __all__ = [
     "_LABEL_BG_OPACITY",
     "_LABEL_HEADROOM",
     "_PLAIN_ARROW_STEM",
+    "_LEADER_DISPLACEMENT_THRESHOLD",
     "_LabelPlacement",
     "_nudge_candidates",
     "_wrap_label_lines",
@@ -72,6 +74,13 @@ _LABEL_BG_OPACITY = 0.92
 _LABEL_HEADROOM = 24
 # Length of the straight stem for plain arrow=true annotations (no source arc).
 _PLAIN_ARROW_STEM = 18
+# R-07: Leader-line displacement threshold — scale-relative minimum.
+# A leader is emitted when the label is nudged more than this many pixels from
+# its natural anchor.  The threshold is computed per-call as max(pill_h, 20) so
+# it scales with pill height rather than being a fixed constant.  The constant
+# below is kept for backward compatibility with any callers that reference it
+# directly; the per-call formula supersedes it in emit_arrow_svg.
+_LEADER_DISPLACEMENT_THRESHOLD: float = 20.0
 
 
 @dataclass(slots=True)
@@ -576,6 +585,15 @@ def emit_plain_arrow_svg(
             target_id = ann.get("target", "unknown")
             lines.append(f"  <!-- scriba:label-collision id={target_id} -->")
 
+        # R-19: unconditional stderr warning when placement is degraded.
+        if collision_unresolved:
+            _target_id = ann.get("target", "unknown")
+            _disp = math.sqrt((float(fi_x) - natural_x) ** 2 + (float(fi_y) - natural_y) ** 2)
+            sys.stderr.write(
+                f"scriba:label-placement-degraded annotation={_target_id}"
+                f" displacement={_disp:.1f}px\n"
+            )
+
         pill_rx = max(0, int(fi_x - pill_w / 2))
         pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
         fi_x = max(fi_x, pill_w // 2)
@@ -918,6 +936,15 @@ def emit_arrow_svg(
             target_id = ann.get("target", "unknown")
             lines.append(f"  <!-- scriba:label-collision id={target_id} -->")
 
+        # R-19: unconditional stderr warning when placement is degraded.
+        if collision_unresolved:
+            _target_id = ann.get("target", "unknown")
+            _disp = math.sqrt((float(fi_x) - natural_x) ** 2 + (float(fi_y) - natural_y) ** 2)
+            sys.stderr.write(
+                f"scriba:label-placement-degraded annotation={_target_id}"
+                f" displacement={_disp:.1f}px\n"
+            )
+
         # Background pill: white rect with rounded corners, before text
         # Clamp so pill doesn't extend outside the viewBox (x/y >= 0).
         pill_rx = max(0, int(fi_x - pill_w / 2))
@@ -936,10 +963,12 @@ def emit_arrow_svg(
         # A-5 non-colour cue: warn token uses a dashed leader (stroke-dasharray
         # "3,2") to remain distinguishable from error (solid) under deuteranopia
         # (CIEDE2000 warn/error pairwise distance 2.8 under deuteranopia).
+        # R-07: threshold is scale-relative — max(pill_h, _LEADER_DISPLACEMENT_THRESHOLD).
         displacement = math.sqrt(
             (final_x - natural_x) ** 2 + (final_y - natural_y) ** 2
         )
-        if displacement > 30:
+        _leader_threshold = max(float(pill_h), _LEADER_DISPLACEMENT_THRESHOLD)
+        if displacement > _leader_threshold:
             leader_dasharray = ' stroke-dasharray="3,2"' if color == "warn" else ""
             lines.append(
                 f'    <circle cx="{curve_mid_x}" cy="{curve_mid_y}" r="2"'
