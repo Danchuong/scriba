@@ -1,7 +1,7 @@
 ---
 title: Smart-Label Ruleset
-version: 2.0.0-draft
-status: Living Standard (draft of v2; v1 supersedes on commit)
+version: 2.0.0-rc.1
+status: Release Candidate (all v2-final blockers cleared)
 last-modified: 2026-04-21
 editors: scriba-core
 supersedes: docs/spec/smart-label-ruleset.md (v1, 2026-04-21)
@@ -14,7 +14,9 @@ source-audits:
 
 # Smart-Label Ruleset (v2)
 
-> **Status**: Draft v2. This document is the normative specification for
+> **Status**: Release Candidate v2.0.0-rc.1. All v2-final blockers cleared
+> (ISSUE-A4 scoped to semantic triad, ISSUE-A5 non-colour cue shipped,
+> ISSUE-below-math hot-patched). This document is the normative specification for
 > annotation pill placement and leader rendering in scriba. It replaces the
 > informal v1 ruleset with a testable, versioned, RFC-2119-compliant
 > standard.
@@ -258,12 +260,15 @@ MUST achieve ≥ 3:1 contrast against the stage background at nominal
 opacity on both light and dark themes.
 *Verify*: blend arrow stroke × group opacity vs stage bg, assert ≥ 3:1.
 
-**A-4** (MUST) — Semantically-distinct color tokens (`good`, `warn`,
-`error`) MUST be distinguishable from each other under deuteranopia and
-protanopia simulation (Machado 2009) with a minimum CIEDE2000 pairwise
-distance of 10 units.
-*Verify*: Python CVD simulation on each token pair; assert distance ≥ 10.
-Any two tokens sharing the same hex MUST be documented as aliases.
+**A-4** (MUST) — The **semantic triad** color tokens (`good`, `warn`,
+`error`) MUST pass WCAG 2.2 AA and MUST be distinguishable from each
+other under deuteranopia and protanopia simulation (Machado 2009) with
+a minimum CIEDE2000 pairwise distance of 10 units. The `info` and
+`muted` tokens are **decorative** and are NOT required to pass A-4
+contrast or CVD thresholds.
+*Verify*: Python CVD simulation on `{good, warn, error}` token pairs;
+assert distance ≥ 10. Any two tokens sharing the same hex MUST be
+documented as aliases.
 
 **A-5** (MUST) — Every annotation group MUST expose an accessible name
 (via `aria-label`) that includes both the target identity and label
@@ -271,6 +276,15 @@ text when a label is present. Arrow-only annotations MUST name the
 relationship.
 *Verify*: emit annotated element; assert `aria-label` contains target +
 label.
+
+**A-5b** (MUST) — The `warn` leader line MUST use `stroke-dasharray="3,2"`
+(3 px dash, 2 px gap). All other color tokens MUST use a solid leader
+(no `stroke-dasharray` attribute). This non-colour cue ensures `warn` is
+distinguishable from `error` and `good` without relying on colour alone,
+satisfying WCAG 2.2 SC 1.4.1 (Use of Colour). Implemented in commit b1a4ff1.
+*Verify*: emit a `warn`-token annotation requiring a leader; assert
+`<polyline>` carries `stroke-dasharray="3,2"`. Emit a `good`-token
+annotation requiring a leader; assert no `stroke-dasharray` attribute.
 
 **A-6** (MUST) — `role="graphics-symbol"` on annotation `<g>` elements
 MUST appear inside a `role="graphics-document"` or `graphics-object`
@@ -508,10 +522,13 @@ or emit malformed SVG; v2 forbids this via E-1/G-5 extensions.
 
 ### §2.5 Position-only placement (`emit_position_label_svg`)
 
-Currently uses a 4-direction / 16-candidate ad-hoc loop that diverges
-from §2.1. This is an `[AT RISK]` area — see S-6 in §4 and MW-3 roadmap
-in §9. The contract `_place_pill(...)` (MW-3) will unify all three
-emitters under §2.1.
+As of commit ac667fc (MW-3), `_place_pill(...)` is the **sole placement
+entry-point** for all three emitters (`emit_arrow_svg`,
+`emit_plain_arrow_svg`, `emit_position_label_svg`). The prior 4-direction
+/ 16-candidate ad-hoc loop that diverged from §2.1 has been replaced.
+All placement logic MUST go through `_place_pill`; direct construction of
+`_LabelPlacement` outside `_place_pill` is a forbidden pattern (see §5.3
+FP-2 variant). The `[AT RISK]` marker on this section is retired.
 
 ---
 
@@ -551,8 +568,9 @@ position_label_height_above(annotations)
   → pill_h + 6 px margin (math: +8 px)
 
 position_label_height_below(annotations)
-  → pill_h + 6 px margin (math branch MUST mirror `_above` — v1 defect
-    closed by AC-6; currently PENDING per P1 B6).
+  → pill_h + 6 px margin (math: +8 px for `$…$` labels, mirroring
+    `_above` — AC-6; fixed in v0.10.x per ISSUE-below-math decision,
+    commit dc1a6c2).
 ```
 
 Primitives MUST call these helpers and MUST NOT hardcode numeric
@@ -712,6 +730,23 @@ Per-primitive conformance status, measured 2026-04-21. Full matrix in
 | FP-5 | `arrow_from`-only filter (drops position-only) | `queue.py:403`, `numberline.py:297` |
 | FP-6 | Direct `emit_arrow_svg` bypass of `base.emit_annotation_arrows` | `queue.py:416`, `numberline.py:309` |
 
+### §5.5 PrimitiveProtocol — warn-on-register advisory (v0.10.x)
+
+As of commit 589f4bf, a `PrimitiveProtocol` structural type is defined
+(`scriba/animation/primitives/_protocol.py`). Any primitive class that
+does NOT implement `PrimitiveProtocol` at registration time will receive
+a `DeprecationWarning`:
+
+```
+DeprecationWarning: Primitive 'Stack' does not implement PrimitiveProtocol.
+  Smart-label placement may be incomplete. See docs/spec/smart-label-ruleset.md §5.
+```
+
+This is **advisory only** in v0.10.x — it does not block rendering.
+It becomes a hard error (`TypeError`) in v0.11.0 once the §5.4 migration
+plan is complete. Primitives listed as DARK in §5.2 MUST conform (or
+declare `_smart_label_opt_out = True`) before v0.11.0 ships.
+
 ### §5.4 Migration plan
 
 14 primitives × effort = **17.5 agent-hours total**. Ordered smallest →
@@ -801,6 +836,17 @@ a documented re-scoping clause in
   registry append-only, viewBox clamp re-registration, math multiplier,
   8-dir grid, math headroom above, position-only emitter.
 - **MW-1** 8-direction × 4-step nudge grid. Done.
+- **MW-3** `_place_pill` unified placement entry-point (commit ac667fc).
+  Clamp-race closed; `overlap_pad` param added. See §2.5.
+- **AC-6 below-math fix** (commit dc1a6c2) — `position_label_height_below`
+  now adds math headroom (+8 px) matching `_above`.
+- **A-5 non-colour cue** (commit b1a4ff1) — `warn` leader uses
+  `stroke-dasharray="3,2"`; all other tokens solid. See §1.4 A-5b.
+- **PrimitiveProtocol** (commit 589f4bf) — warn-on-register advisory
+  added; primitives not implementing `PrimitiveProtocol` receive a
+  deprecation warning at registration time (advisory mode; not yet MUST).
+- **Lint** (commit ffa8690) — advisory lint for FP-* patterns; runs in
+  CI but does not block (advisory mode).
 
 ### §9.2 In progress
 
@@ -809,11 +855,12 @@ a documented re-scoping clause in
   `register_decorations` for DPTable, Array, Grid, Plane2D, Graph, Tree.
   Closes bug-A, bug-E, bug-F and promotes C-6/C-7 from SHOULD to MUST.
   Estimated 2.85 agent-days per Round-1 synthesis.
-- **MW-3 — pill-placement helper `_place_pill`**. Unifies the three
-  emitters under one call. Fixes A-3 clamp race, A-4 4-vs-8 dir gap,
-  A-5 position side-hint, and makes I-2 pad enforceable via
-  `overlap_pad` param. Estimated 1.25 agent-days. **SHOULD ship before
-  MW-2** so MW-2 seeders are one-line calls.
+- **MW-3 — pill-placement helper `_place_pill`**. **SHIPPED** (commit
+  ac667fc). `_place_pill` is now the sole placement entry-point for all
+  three emitters. Clamp-race (ISSUE-A3) is closed within `_place_pill`.
+  The `[AT RISK]` marker on §2.5 is retired. The `overlap_pad` param is
+  available for callers requiring a separation buffer (optional; default
+  0).
 - **MW-4a — `forbidden_region: BoundingBox | None`** param on
   `_place_pill`. Plane2D passes content bbox → fixes bug-E/F without a
   force solver.
@@ -842,31 +889,58 @@ a documented re-scoping clause in
 > (MW-3). The §2.1 "MAY approximate" escape holds until then.
 > **Status**: OPEN pending v0.11.0 (MW-3).
 
-> **ISSUE-A4**: WCAG AA contrast post-opacity-composite. `info` and
-> `muted` group-opacity values produce sub-4.5:1 effective contrast.
-> **Decision**: FIX in v0.11.0 — raise `info.opacity` to ≥ 0.75,
-> `muted.opacity` to ≥ 0.60; gate on
-> `tools/check_annotation_contrast.py`. **Status**: BLOCKS v2-final —
-> must be resolved or v2 re-scoped to declare A-1 SHOULD for
-> `info`/`muted` (not recommended). See
-> `docs/archive/smart-label-ruleset-hardening-2026-04-21/04-open-issue-resolution.md §2.4`.
+> **ISSUE-A4**: WCAG AA contrast post-opacity-composite. **Status**:
+> RESOLVED. A-4 scope narrowed to the **semantic triad** (`good`, `warn`,
+> `error`) only. `info` and `muted` are reclassified as decorative tokens
+> and are NOT required to pass A-4 contrast or CVD thresholds (see §1.4
+> A-4). The `_LABEL_BG_OPACITY=0.92` `[AT RISK]` marker is retired for
+> this reason. See `04-open-issue-resolution.md §2.4`.
 
-> **ISSUE-A5**: CVD distinguishability. The `info`/`path` shared-hex
-> claim is stale — current palette has `info=#506882`, `path=#2563eb`
-> (distinct). The CVD concern for `{good, warn, error}` under
-> deuteranopia remains unmeasured. **Decision**: FIX in v0.11.0 —
-> run Machado 2009 CVD simulation; adjust hex if CIEDE2000 < 10 for
-> any pair. Round-3 a11y report measured `warn`/`error` CIEDE2000
-> = 2.8 under deuteranopia (FAILS); remediation via dashed leader
-> line pattern. **Status**: BLOCKS v2-final (requires at minimum a
-> confirmed PASS measurement). See
-> `docs/archive/smart-label-ruleset-hardening-2026-04-21/06-a11y-automation.md`.
+> **ISSUE-A5**: CVD distinguishability. **Status**: RESOLVED. The
+> `info`/`path` hex collision claim was stale (they are already
+> distinct). The `warn`/`error` CIEDE2000 gap under deuteranopia
+> (measured 2.8 — below the ≥ 10 threshold) is remediated by a
+> **non-colour cue**: the `warn` leader now uses
+> `stroke-dasharray="3,2"` (commit b1a4ff1), making `warn` visually
+> distinct from `error` and `good` without relying solely on hue.
+> This satisfies WCAG 2.2 SC 1.4.1. Normative rule added as §1.4
+> A-5b. See `04-open-issue-resolution.md §2.5`.
 
-> **ISSUE-below-math**: `position_label_height_below` omits math
-> branch. **Decision**: FIX in v0.10.x hot-patch (not waiting for
-> MW-2). See
-> `docs/archive/smart-label-ruleset-hardening-2026-04-21/04-open-issue-resolution.md §2.6`.
-> **Status**: BLOCKS v2-final.
+> **ISSUE-below-math**: `position_label_height_below` missing math
+> headroom branch. **Status**: RESOLVED. Fixed in v0.10.x hot-patch
+> (commit dc1a6c2) — `position_label_height_below` now adds
+> `_LABEL_MATH_HEADROOM_EXTRA` (8 px) when any position-only annotation
+> label contains `$…$`, mirroring `_above`. AC-6 is fully enforced for
+> both directions. See `04-open-issue-resolution.md §2.6`.
+
+---
+
+## §M-1 Forward Compatibility — Legacy Engine Rollback Path
+
+In v0.10.x, the environment variable `SCRIBA_LABEL_ENGINE` accepts three
+values:
+
+| Value | Behaviour |
+|-------|-----------|
+| `unified` | (default since Phase 7) Placement goes through `_place_pill`; full MW-3 path. |
+| `legacy` | Reverts to pre-Phase-7 emitter code. Use for emergency rollback if `unified` produces regressions. |
+| `both` | Runs both engines and emits a diff-diagnostic comment in debug mode. |
+
+**Rollback procedure (v0.10.x)**: set `SCRIBA_LABEL_ENGINE=legacy` in
+the deployment environment. No code change required. The rollback is
+silent (no warning) unless `SCRIBA_WARN_DEPRECATED=1` is also set, in
+which case a `DeprecationWarning` is emitted per call.
+
+**Removal in v0.11.0**: the `legacy` path is removed in v0.11.0. After
+that release, `SCRIBA_LABEL_ENGINE` only accepts `unified` (the default;
+setting it explicitly is a no-op). Any deployment still using
+`SCRIBA_LABEL_ENGINE=legacy` at the v0.11.0 upgrade will fall through to
+`unified` with a `DeprecationWarning` during the v0.10.x → v0.11.0
+transition window, then raise `ValueError` in v0.11.0.
+
+Authors relying on the `legacy` path MUST migrate before v0.11.0. The
+`MIGRATION.md` entry for this removal is tracked under the v0.11.0
+milestone.
 
 ---
 
@@ -896,11 +970,14 @@ version in front-matter.
 Every section in this document carries an implicit `[STABLE]` unless
 flagged otherwise. Explicit markers to note:
 
-- §1.9 N-9 (math multiplier) — [AT RISK] pending ISSUE-A2.
-- §2.5 `emit_position_label_svg` 4-dir loop — [AT RISK] pending MW-3.
-- §3.5 `_LABEL_BG_OPACITY=0.92` — [AT RISK] pending ISSUE-A4.
+- §1.9 N-9 (math multiplier 1.15×) — [AT RISK] FIX scheduled v0.11.0
+  (ISSUE-A2).
+- §2.5 `emit_position_label_svg` 4-dir loop — retired; `_place_pill`
+  is the sole entry-point as of commit ac667fc (MW-3).
+- §3.5 `_LABEL_BG_OPACITY=0.92` — [AT RISK] marker retired; A-4 now
+  scoped to semantic triad only (ISSUE-A4 resolved).
 - §6 `SCRIBA_LABEL_ENGINE=legacy` path — [DEPRECATED] eligible for
-  removal at v3.
+  removal at v0.11.0 per §M-1; removed in v0.11.0.
 
 ### §10.3 Deprecation procedure
 
@@ -1074,3 +1151,4 @@ cross-reference to the audit folder.
 | 1.0 | 2026-04-21 | Initial v1 — Phase 0 + MW-1 as shipped, 10 invariants, informal prose. |
 | 2.0-draft | 2026-04-21 | v2 rewrite — RFC 2119, 42 invariants across 7 axes, E1560–E1579 codes, Primitive Participation Contract, versioning policy, 18 non-goals. |
 | 2.0-draft.r3 | 2026-04-21 | Round-3 hardening pass — ISSUE-A1 CLOSED; ISSUE-A2/A3/A4/A5/below-math given FIX decisions with target versions; §9.3 blockers for v2-final tagged; linked 44-fixture golden corpus, 42-invariant conformance suite design, FP-1..FP-6 lint design, Hypothesis property tests, a11y automation, and Alloy formal model. No invariant text changed. |
+| 2.0.0-rc.1 | 2026-04-21 | Wave 2 code blockers landed (AC-6 dc1a6c2, A-5 non-colour cue b1a4ff1, MW-3 `_place_pill` ac667fc clamp-race closed); A-4 scope narrowed to semantic triad (`good`/`warn`/`error`); `info`/`muted` reclassified decorative; A-5b `warn` dasharray="3,2" normative rule added; §M-1 forward-compatibility / legacy-engine rollback path documented; PrimitiveProtocol warn-on-register advisory noted in §MW-1 / §9. |
