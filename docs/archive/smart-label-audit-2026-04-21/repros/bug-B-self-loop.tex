@@ -1,0 +1,10 @@
+\begin{animation}[id="bug-b-self-loop", label="Bug B: self-referential arrow (src == dst)"]
+\shape{F}{Array}{size=4, data=[0,0,1,2], labels="0..3", label="$F$"}
+
+\step
+\narrate{KMP failure function array. Cell 3 points to itself.}
+
+\step
+\annotate{F.cell[3]}{label="j=F[3]=2", arrow_from="F.cell[3]", color=warn}
+\narrate{arrow_from == target: degenerate Bezier loop to the left, arrowhead points up-right instead of into the cell.}
+\end{animation}

@@ -1,0 +1,8 @@
+\begin{animation}[id="ok-simple-annotations", label="OK: two well-spaced annotations (control case)"]
+\shape{arr}{Array}{size=5, data=[1,3,6,10,15], labels="0..4", label="$arr$"}
+
+\step
+\narrate{Control case: two well-spaced annotations on different cells with short labels.}
+\annotate{arr.cell[2]}{label="pick", arrow_from="arr.cell[0]", color=info}
+\annotate{arr.cell[4]}{label="best", arrow_from="arr.cell[2]", color=good}
+\end{animation}

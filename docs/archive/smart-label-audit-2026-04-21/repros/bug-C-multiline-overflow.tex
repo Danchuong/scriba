@@ -1,0 +1,7 @@
+\begin{animation}[id="bug-c-multiline-overflow", label="Bug C: multi-line label overflows pill background"]
+\shape{dp}{DPTable}{n=6, data=[0,3,5,8,12,17], labels="0..5", label="$dp$"}
+
+\step
+\narrate{Long label wraps to 3 lines. Third tspan exits the pill background at the bottom.}
+\annotate{dp.cell[4]}{label="min(dp[i-1]+cost(i-1,i), dp[i-2]+cost(i-2,i))", arrow_from="dp.cell[2]", color=info}
+\end{animation}

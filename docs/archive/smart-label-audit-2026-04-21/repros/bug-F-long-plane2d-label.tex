@@ -1,0 +1,8 @@
+\begin{diagram}[id="bug-f-long-plane2d-label", label="Bug F: long label pill exceeds Plane2D viewBox width"]
+\shape{p}{Plane2D}{xrange=[-2,2], yrange=[-2,2], grid=true, axes=true, width=280}
+\apply{p}{add_point=(0,0)}
+\apply{p}{add_point=(1,1)}
+
+\annotate{p.point[0]}{label="This is a very long annotation label that should be clamped at the edge", position=above, color=info}
+\annotate{p.point[1]}{label="Another verbose label that overflows the right boundary of the SVG canvas", position=right, color=warn}
+\end{diagram}

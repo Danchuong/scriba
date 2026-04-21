@@ -1,0 +1,18 @@
+\begin{animation}[id="bug-a-four-arrows-2d", label="Bug A: 4 orthogonal arrows into one 2D cell"]
+\shape{dp}{DPTable}{rows=3, cols=3, label="$dp$"}
+
+\step
+\apply{dp.cell[1][1]}{value=20}
+\apply{dp.cell[1][0]}{value=15}
+\apply{dp.cell[1][2]}{value=17}
+\apply{dp.cell[0][1]}{value=13}
+\apply{dp.cell[2][1]}{value=16}
+\narrate{Center cell and four orthogonal neighbors filled.}
+
+\step
+\annotate{dp.cell[1][1]}{label="from-left", arrow_from="dp.cell[1][0]", color=info}
+\annotate{dp.cell[1][1]}{label="from-right", arrow_from="dp.cell[1][2]", color=good}
+\annotate{dp.cell[1][1]}{label="from-above", arrow_from="dp.cell[0][1]", color=warn}
+\annotate{dp.cell[1][1]}{label="from-below", arrow_from="dp.cell[2][1]", color=error}
+\narrate{Four arrows from left, right, above, below all target cell[1][1]. Collision loop exhaustion forces labels to stack.}
+\end{animation}

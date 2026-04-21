@@ -1,0 +1,9 @@
+\begin{animation}[id="bug-d-position-dropped", label="Bug D: position-only annotation silently dropped on Array"]
+\shape{arr}{Array}{size=3, data=[2,7,9], labels="0..2", label="$arr$"}
+
+\step
+\narrate{These position=above labels have no arrow_from and no arrow=true. They are silently dropped -- nothing appears above the cells.}
+\annotate{arr.cell[0]}{label="ptr", position=above, color=info}
+\annotate{arr.cell[1]}{label="mid", position=above, color=warn}
+\annotate{arr.cell[2]}{label="end", position=above, color=error}
+\end{animation}

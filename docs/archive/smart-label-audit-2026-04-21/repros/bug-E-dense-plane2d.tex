@@ -1,0 +1,14 @@
+\begin{diagram}[id="bug-e-dense-plane2d", label="Bug E: dense Plane2D cluster, pills overlap with no avoidance"]
+\shape{p}{Plane2D}{xrange=[-1,1], yrange=[-1,1], grid=true, axes=true}
+\apply{p}{add_point=(0,0)}
+\apply{p}{add_point=(0.1,0.1)}
+\apply{p}{add_point=(-0.1,0.1)}
+\apply{p}{add_point=(0.1,-0.1)}
+\apply{p}{add_point=(-0.1,-0.1)}
+
+\annotate{p.point[0]}{label="Origin", position=above, color=info}
+\annotate{p.point[1]}{label="Near A", position=above, color=warn}
+\annotate{p.point[2]}{label="Near B", position=above, color=error}
+\annotate{p.point[3]}{label="Near C", position=below, color=good}
+\annotate{p.point[4]}{label="Near D", position=below, color=muted}
+\end{diagram}
