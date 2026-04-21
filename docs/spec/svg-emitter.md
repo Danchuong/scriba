@@ -795,6 +795,56 @@ animations embedded. Any visual transitions (e.g., state-class changes in the co
 demo widgets) are handled by external CSS on the consumer side, which MUST respect
 `prefers-reduced-motion`. The emitter itself has no motion to suppress.
 
+### 13.6 Smart-label annotation accessibility (v0.11.0-W3, R-11..R-16)
+
+The following attributes are emitted by `emit_arrow_svg`, `emit_plain_arrow_svg`, and
+`emit_position_label_svg` in `scriba/animation/primitives/_svg_helpers.py` as of v0.11.0.
+All are normative per [smart-label-ruleset.md](smart-label-ruleset.md) §6.
+
+**R-14 — `aria-roledescription="annotation"` (line 671 / 1052 / 1758 of `_svg_helpers.py`)**
+
+Every annotation `<g>` element carries `aria-roledescription="annotation"`. This tells
+assistive technology the semantic role of the group in plain language rather than the
+default `"graphics-symbol"` fallback.
+
+**R-11 — Speech-form `aria-label`; raw LaTeX in `aria-description` (line 625 / 994)**
+
+`aria-label` on annotation `<g>` is the speech-friendly form of the label text: LaTeX
+delimiters (`$`, `\command`, `^`, `_`) are stripped or transliterated to spoken-math
+equivalents before injection. The raw TeX string is preserved in `aria-description` for
+AT users who prefer verbose math representation (e.g., MathJax/NVDA math mode).
+
+Example output:
+```html
+<g class="scriba-annotation scriba-annotation-good"
+   aria-roledescription="annotation"
+   aria-label="plus h sub 1 squared"
+   aria-description="$+h[1]^2$">
+  ...
+</g>
+```
+
+**R-13 — `stroke-dasharray` on arrow `<path>` and pill `<rect>` (lines 659–663 / 1040–1044)**
+
+`warn` arrow `<path>` carries `stroke-dasharray="3,2"` unconditionally (not leader-gated).
+`muted` arrow `<path>` carries `stroke-dasharray="1,3"` (dotted). Both attributes are also
+mirrored to the pill border `<rect>` element. These patterns provide a non-hue cue
+satisfying WCAG 2.2 SC 1.4.1 under deuteranopia/protanopia simulation.
+
+**R-15 — `<title>` as first child of `<svg>` root (line 423 of `_frame_renderer.py`)**
+
+Each rendered `<svg>` root has a `<title>` element as its first child. The title content
+is the scene's label text (or `scene_id` as fallback). This is the robust, standards-
+mandated pattern for SVG accessible names (SVG 2 §5.1) and supports `aria-labelledby`
+cross-document referencing.
+
+**R-16 — Pre-populated step-1 `aria-live` narration (line 292 of `_html_stitcher.py`)**
+
+The `aria-live="polite"` narration region is pre-populated with the first frame's narration
+text in the static HTML output. Empty `aria-live` regions are not announced by screen
+readers on page load; pre-population ensures step-1 annotations are accessible to non-
+sighted users without requiring interaction.
+
 ---
 
 ## 14. Error codes

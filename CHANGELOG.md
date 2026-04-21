@@ -7,6 +7,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-22 — Smart-label v2.0.0 (W3 batch)
+
+### Breaking
+
+- Smart-label golden corpus re-pinned (byte-breaking placement changes for all arc-annotated
+  scenes due to R-01 natural position fix, R-08 perimeter endpoint, R-22 side_hint
+  auto-inference, R-27 leader gating).
+- `aria-label` on annotation `<g>` is now in speech form, not raw LaTeX — raw LaTeX moved
+  to `aria-description`. AT consumers reading `aria-label` verbatim will see transliterated
+  math instead of LaTeX tokens.
+
+### Added
+
+- **R-07**: `_LEADER_DISPLACEMENT_THRESHOLD` scale-relative constant extracted from
+  hard-coded 30 px; formula `max(pill_h, 20)` used in `emit_arrow_svg`.
+- **R-11**: `aria-description` attribute on annotation `<g>` preserves raw LaTeX for AT
+  consumers (e.g. NVDA math mode). `aria-label` now holds speech-friendly form.
+- **R-13**: `stroke-dasharray="3,2"` on `warn` arrow `<path>` unconditionally; `"1,3"` on
+  `muted` arrow `<path>` unconditionally. Both mirrored to pill border `<rect>`.
+- **R-14**: `aria-roledescription="annotation"` on all annotation `<g>` elements in
+  `emit_arrow_svg`, `emit_plain_arrow_svg`, and `emit_position_label_svg`.
+- **R-15**: `<title>` as first child of each `<svg>` root in `_frame_renderer.py`.
+- **R-16**: Step-1 `aria-live` narration region pre-populated in static HTML output.
+- **R-19**: `scriba:label-placement-degraded` emitted to stderr unconditionally (was gated
+  behind `SCRIBA_DEBUG_LABELS`). Error code E1248 documented.
+- **R-22**: `side_hint` auto-inferred from arrow direction vector in `emit_arrow_svg` when
+  no explicit `side=` / `position=` key is present.
+
+### Changed
+
+- **R-01**: Arc-label natural position formula corrected to
+  `label_ref_y = mid_y_val − pill_h // 2 − 4` (arc clearance gap). Previous formula
+  `mid_y_val − 4` caused pill overlap with arc stroke for pills taller than 4 px.
+- **R-08**: Leader line endpoint now terminates at pill perimeter (AABB intersection),
+  not pill center `(fi_x, fi_y)`. Removes "same-side confusion" visual artefact.
+- **R-12**: `info` opacity 0.45 → 0.7 (measured 3.07:1 non-text contrast); `muted` opacity
+  0.30 → 0.7 (measured 3.24:1). Both now satisfy WCAG 2.2 SC 1.4.11.
+- **R-25**: Dark-mode `--scriba-annotation-path` → `#a78bfa` (violet, ~9:1 on dark bg),
+  distinct from `--scriba-annotation-info` (`#70b8ff`). Pre-fix both were `#0b68cb`.
+- **R-27**: Leader lines (`<circle>` origin dot + `<polyline>`) emitted only for
+  `color in ("warn", "error")`. Leaders removed from displaced `good`/`info`/`muted`/`path`.
+
+### Ruleset
+
+- `docs/spec/smart-label-ruleset.md` final v2.0.0: 30 unified rules (R-01..R-30) replacing
+  legacy axis IDs (A-*/B-*/C-*/D-*/G-*). Alias table in Appendix A.
+- Code-ref and test-ref fields updated for all 13 landed rules.
+
 ## [0.9.1] - 2026-04-18
 
 ### Fixed

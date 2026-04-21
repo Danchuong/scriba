@@ -107,23 +107,25 @@ v0.11.0-W3 interim fix)
 ### R-12 — Minimum opacity floors for `info` and `muted` tokens
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-2, A-4 (partial) from v2.0.0-rc.1; A11Y-04
 **Source:** a11y A11Y-04, cog P-OPAC-1
 **Scope:** `_svg_helpers.py:ARROW_STYLES`
 
-`muted` token group opacity MUST be ≥ 0.56 to achieve ≥ 3:1 effective non-text contrast
-(WCAG 2.2 SC 1.4.11). `info` token group opacity MUST be ≥ 0.49 for the same threshold.
-These are hard minimums; implementations MAY raise them further.
+`muted` token group opacity MUST be ≥ 0.7 (shipped: 0.7, measured 3.24:1 effective
+non-text contrast, WCAG 2.2 SC 1.4.11). `info` token group opacity MUST be ≥ 0.7
+(shipped: 0.7, measured 3.07:1). These are hard minimums; implementations MAY raise
+them further.
 
 **Rationale:** At v0.10.0 production values (`info` 0.45, `muted` 0.30), effective contrast
 ratios are 1.95:1 and 1.56:1 respectively — active SC 1.4.11 violations. If scriba is
 deployed in EU public-sector educational contexts, EN 301 549 clause 9 makes this a legal
 compliance issue. R-12 is the fastest safe fix (opacity constant only, no SVG geometry
-change) while R-09 (structural restructure) is deferred.
+change) while R-09 (structural restructure) is deferred. v0.11.0-W3 ships both tokens
+at 0.7 (previously separate floors 0.56 / 0.49 in rc.1 spec; raised uniformly for margin).
 
-**Code ref:** `_svg_helpers.py:ARROW_STYLES` (line ~357); `pending W3 batch 1 landing`
-**Test ref:** pending (A-1..A-4 contrast tests scheduled v0.11.0)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:527` (`ARROW_STYLES` dict; `info` opacity line 539, `muted` opacity line 563)
+**Test ref:** `tests/unit/test_w3_batch1.py` (R-12 covered via ARROW_STYLES constant inspection)
 **Golden ref:** none (no golden change — additive opacity adjustment)
 
 ---
@@ -131,7 +133,7 @@ change) while R-09 (structural restructure) is deferred.
 ### R-13 — Non-color differentiators per token
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-5, A-5b from v2.0.0-rc.1; A11Y-05, A11Y-06, comp P4
 **Source:** a11y A11Y-05, A11Y-06, comp P2/P4
 **Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
@@ -149,9 +151,9 @@ paths provide a reliable non-hue cue satisfying WCAG 2.2 SC 1.4.1 (Use of Colour
 rule supersedes the leader-conditional A-5b from rc.1, which only applied dashes when a
 leader was emitted.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `pending W3 batch 1 landing`
-**Test ref:** pending
-**Golden ref:** `tests/golden/smart_label/` — golden re-pin required for warn/muted scenes
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:659` (warn `stroke-dasharray="3,2"` on path); line 662 (muted `stroke-dasharray="1,3"` on path)
+**Test ref:** `tests/unit/test_w3_batch1.py` (R-13 covered indirectly; direct dash-pattern assertions in `test_phase_b_stack_edges.py`)
+**Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
 
 ---
 
@@ -182,21 +184,24 @@ v0.12.0 to bundle with the visual regression sweep.
 ### R-25 — Dark-mode token collision fix
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** none (new; a11y A11Y-12)
 **Source:** a11y A11Y-12
 **Scope:** CSS token file (dark-mode block)
 
 `--scriba-annotation-path` and `--scriba-annotation-info` MUST have distinct values in the
-dark-mode CSS block. Currently both resolve to `#0b68cb`, making `path` and `info` arrows
-visually identical in dark mode.
+dark-mode CSS block. Shipped value: `--scriba-annotation-path: #a78bfa` (violet, ~9:1 on
+`#1a1d1e` dark background), distinct from `--scriba-annotation-info` (`#70b8ff`). The
+pre-fix value `#0b68cb` was shared, making `path` and `info` arrows visually identical in
+dark mode.
 
 **Rationale:** One CSS variable value change in the dark-mode block; zero layout impact.
 Fixes a silent token collision that causes authors to believe their `path`-coloured arrows
-are distinct from `info`-coloured arrows when they are not.
+are distinct from `info`-coloured arrows when they are not. Color `#a78bfa` chosen for
+WCAG dark-mode contrast and hue distance from `info` blue.
 
-**Code ref:** pending W3 batch 1 landing (CSS token file)
-**Test ref:** pending
+**Code ref:** `scriba/animation/static/scriba-scene-primitives.css:647` (`[data-theme="dark"]` block, `--scriba-annotation-path: #a78bfa`)
+**Test ref:** `tests/unit/test_w3_batch1.py::TestR25DarkModePathToken::test_dark_mode_path_token_differs_from_info`
 **Golden ref:** none
 
 ---
@@ -234,7 +239,7 @@ natural positions, and clearance requirements.
 ### R-01 — Arc-label natural position formula
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 2)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** AC-3, G-7 (partial) from v2.0.0-rc.1; cog P-DIR-1
 **Source:** cog P-DIR-1
 **Scope:** `_svg_helpers.py:emit_arrow_svg`
@@ -249,10 +254,9 @@ arc midpoint, ensuring the gap between arc stroke and pill bottom is always ≥ 
 regardless of font size or line count. The −4 constant is the arc_clearance_gap and is
 intentionally ≥ 4 px (see §3 naming convention).
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `pending W3 batch 2 landing`
-**Test ref:** pending
-**Golden ref:** `tests/golden/smart_label/` — golden re-pin required for all arc-annotated
-scenes (byte-breaking; dependent on R-22 landing first)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:969` (`label_ref_y = mid_y_val - _est_pill_h // 2 - 4` arc clearance, horizontal layout); line 976 (same for main horizontal branch)
+**Test ref:** `tests/unit/test_smart_label_phase0.py` (arc natural position regression tests)
+**Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
 
 ---
 
@@ -381,7 +385,7 @@ larger gaps at larger type sizes.
 ### R-22 — Auto-compute `side_hint` from arrow direction
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 2)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** N-11 (partial) from v2.0.0-rc.1; code W-1
 **Source:** code W-1
 **Scope:** `_svg_helpers.py:emit_arrow_svg`
@@ -398,9 +402,9 @@ Closing this gap eliminates the need for authors to add redundant `side=` parame
 get predictable placement. Must land before R-01 (natural position fix) so the combined
 candidate ordering is tested as a unit.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `pending W3 batch 2 landing`
-**Test ref:** pending
-**Golden ref:** `tests/golden/smart_label/` — byte-breaking for most arc annotation scenes
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:1101` (auto-infer `side_hint` from arrow direction vector in `emit_arrow_svg`)
+**Test ref:** `tests/unit/test_smart_label_phase0.py::TestSideHintUpperFirst` (side_hint direction preference)
+**Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
 
 ---
 
@@ -413,7 +417,7 @@ Rules governing when, how, and where leader lines are drawn.
 ### R-07 — Leader threshold formula
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** G-8, N-1 from v2.0.0-rc.1; code W-3, comp P1
 **Source:** cog P-LEAD-1, code W-3, comp P1
 **Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
@@ -428,9 +432,8 @@ threshold stays at 30 px, causing leader lines to appear even when the pill is o
 displaced. The `max(pill_h, 20)` formula maintains the absolute minimum floor while
 scaling with pill height.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~942, hard-coded `30` constant);
-`pending W3 batch 1 landing`
-**Test ref:** pending
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:83` (`_LEADER_DISPLACEMENT_THRESHOLD = 20.0`); line 1191 (`max(pill_h, _LEADER_DISPLACEMENT_THRESHOLD)` formula in `emit_arrow_svg`)
+**Test ref:** `tests/unit/test_w3_batch1.py::TestR07LeaderDisplacementThreshold::test_constant_exported`
 **Golden ref:** none (no golden change at default pill_h ≈ 20 px)
 
 ---
@@ -438,7 +441,7 @@ scaling with pill height.
 ### R-08 — Leader endpoint at pill perimeter
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 2)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** G-7 from v2.0.0-rc.1; code W-4-leader, comp P2
 **Source:** cog P-LEAD-2, code W-4-leader, comp P2
 **Scope:** `_svg_helpers.py:emit_arrow_svg`
@@ -453,18 +456,16 @@ creating a visual "same-side confusion" artefact identified by Ware (2004) ch. 5
 at the perimeter makes the connection point immediately legible and eliminates the artefact.
 Implementation cost is approximately 8 lines of geometry.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~850 ff., `(fi_x, fi_y)` endpoint);
-`pending W3 batch 2 landing`
-**Test ref:** pending
-**Golden ref:** `tests/golden/smart_label/` — byte-breaking: changes leader endpoint coords
-in all scenes where a leader fires
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:1198` (perimeter-endpoint comment); line 1213 (perimeter intersection geometry in `emit_arrow_svg`)
+**Test ref:** `tests/unit/test_smart_label_phase0.py` (leader endpoint perimeter assertions)
+**Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
 
 ---
 
 ### R-27 — Leader emission gated to `warn`/`error` tokens only
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 2)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-5b (partial) from v2.0.0-rc.1; code W-4
 **Source:** code W-4
 **Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
@@ -481,11 +482,9 @@ tokens this emphasis is appropriate; for `good`/`info`/`muted`/`path` the leader
 clutter without meaningful disambiguation value. Restricting leaders to the two high-alert
 tokens also ensures the R-13 dash pattern is only applied where it has the most impact.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~850 ff. leader emit block);
-`pending W3 batch 2 landing`
-**Test ref:** pending
-**Golden ref:** `tests/golden/smart_label/` — byte-breaking: removes `<circle>`/`<polyline>`
-from displaced good/info/muted/path labels
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:1196` (`_leader_color_gate = color in {"warn", "error"}` in `emit_arrow_svg`)
+**Test ref:** `tests/unit/test_smart_label_phase0.py` (leader gating to warn/error only)
+**Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
 
 ---
 
@@ -619,7 +618,7 @@ Rules directly required for WCAG 2.2 AA conformance or keyboard accessibility.
 ### R-11 — Natural-language `aria-label` (no raw LaTeX)
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-5 from v2.0.0-rc.1; a11y A11Y-01
 **Source:** a11y A11Y-01
 **Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
@@ -636,9 +635,8 @@ representation.
 SC 1.1.1 violation. The fix is a string transform at the emitter level — no SVG geometry
 changes required.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634 `aria-label` emission);
-`pending W3 batch 1 landing`
-**Test ref:** `tests/unit/test_emitter_a11y.py` (pending — test for `aria-label` no raw $)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:625` (speech-form `aria-label` build in `emit_plain_arrow_svg`); line 635 (`aria-description` raw-TeX attr); line 994 / 1004 (same in `emit_arrow_svg`)
+**Test ref:** `tests/unit/test_smart_label_phase0.py::TestSpeechLabel` (speech-form and raw-TeX preservation)
 **Golden ref:** none
 
 ---
@@ -646,7 +644,7 @@ changes required.
 ### R-14 — `aria-roledescription="annotation"` on annotation groups
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-6 (partial) from v2.0.0-rc.1; a11y A11Y-02
 **Source:** a11y A11Y-02
 **Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
@@ -661,8 +659,8 @@ with only their `role` value (e.g. "graphics-symbol"), which gives no informatio
 what kind of element this is. Adding `aria-roledescription="annotation"` closes WCAG
 SC 1.3.1 and improves AT experience with minimal implementation cost (XS).
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `pending W3 batch 1 landing`
-**Test ref:** `tests/unit/test_emitter_a11y.py` (pending)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:671` (`aria-roledescription="annotation"` in `emit_plain_arrow_svg`); line 1052 (same in `emit_arrow_svg`); line 1758 (same in `emit_position_label_svg`)
+**Test ref:** `tests/unit/test_smart_label_phase0.py` (roledescription attribute assertions)
 **Golden ref:** none
 
 ---
@@ -670,7 +668,7 @@ SC 1.3.1 and improves AT experience with minimal implementation cost (XS).
 ### R-15 — `<title>` as first child of each `<svg>` root
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** a11y A11Y-03
 **Source:** a11y A11Y-03
 **Scope:** `_html_stitcher.py` (SVG root emission)
@@ -684,8 +682,8 @@ pointing to an element in the outer HTML document, which is fragile across DOM m
 and cross-origin embedding. A `<title>` as first child is the robust, standards-mandated
 pattern (SVG 2 §5.1). XS cost: one element added per frame.
 
-**Code ref:** `_html_stitcher.py` (SVG root emission); pending W3 batch 1 landing
-**Test ref:** `tests/unit/test_filmstrip_aria.py` (pending — check `<title>` first child)
+**Code ref:** `scriba/animation/_frame_renderer.py:423` (`<title>` first child injection in `_emit_frame_svg`)
+**Test ref:** `tests/unit/test_filmstrip_aria.py::test_frames_with_label_uses_frame_label`
 **Golden ref:** none
 
 ---
@@ -693,7 +691,7 @@ pattern (SVG 2 §5.1). XS cost: one element added per frame.
 ### R-16 — Pre-populate step-1 `aria-live` narration
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** a11y A11Y-09
 **Source:** a11y A11Y-09
 **Scope:** `_html_stitcher.py`
@@ -707,8 +705,8 @@ who do not interact with the step controls.
 empty and only populates on step-2 interaction, step-1 content is never announced. This is
 a zero-SVG-geometry, static HTML change to `_html_stitcher.py`.
 
-**Code ref:** `_html_stitcher.py` (step narration emission); pending W3 batch 1 landing
-**Test ref:** `tests/integration/test_substory_html.py` (pending — check step-1 narration)
+**Code ref:** `scriba/animation/_html_stitcher.py:292` (step-1 `aria-live` region pre-populated with narration on first load)
+**Test ref:** `tests/unit/test_a11y_aria_live.py` (pre-populated narration assertions)
 **Golden ref:** none
 
 ---
@@ -768,7 +766,7 @@ Rules governing output reproducibility, warning emission, and diagnostic signals
 ### R-19 — Unconditional stderr warning on degraded placement
 
 **Normative:** MUST
-**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Since:** v0.11.0 (2026-04-22)
 **Supersedes:** C-2 (strengthened) from v2.0.0-rc.1; comp P6, code W-8
 **Source:** comp P6, code W-8
 **Scope:** `_svg_helpers.py:_place_pill`, `_svg_helpers.py:emit_arrow_svg`
@@ -783,10 +781,8 @@ production monitoring. The SVG output MUST also include a diagnostic comment
 detecting degraded output. Unconditional stderr emission (a one-line change) makes the
 failure observable in any deployment context without requiring debug flag configuration.
 
-**Code ref:** `_svg_helpers.py:_place_pill` (line ~1213); line ~1324 fallback;
-`pending W3 batch 1 landing`
-**Test ref:** `tests/unit/test_smart_label_phase0.py` (pending — test unconditional stderr
-emit)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:775` (stderr write in `emit_plain_arrow_svg`); line 1170 (stderr write in `emit_arrow_svg`)
+**Test ref:** `tests/unit/test_w3_batch1.py::TestR19StderrDegradedWarning::test_emit_arrow_svg_warns_on_degraded`
 **Golden ref:** none
 
 ---
@@ -873,38 +869,38 @@ v0.11.0 release notes for the `arrow=true`/position-only silent-drop behaviour.
 
 | Rule | Title (short) | Normative | Status | v0.11.0-W3 | v0.12.0 | v0.13.0+ |
 |------|---------------|-----------|--------|:----------:|:-------:|:--------:|
-| R-01 | Arc natural position | MUST | Gap | ✅ batch 2 | — | — |
+| R-01 | Arc natural position | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-02 | Target-cell blocker | MUST | Gap | — | ✅ | — |
 | R-03 | Axis-label no-placement | MUST | Gap | — | — | ✅ |
 | R-04 | Source-cell WARN blocker | SHOULD | Gap | — | ✅ | — |
 | R-05 | Semantic ordering | MUST | Gap | — | ✅ | — |
 | R-06 | Arc-direction NE weighting | MUST | Gap | — | ✅ | — |
-| R-07 | Leader threshold formula | MUST | Gap | ✅ batch 1 | — | — |
-| R-08 | Leader perimeter endpoint | MUST | Gap | ✅ batch 2 | — | — |
+| R-07 | Leader threshold formula | MUST | Shipped | ✅ v0.11.0 | — | — |
+| R-08 | Leader perimeter endpoint | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-09 | Group opacity restructure | MUST | Gap | — | — | ✅ |
 | R-10 | Cell-boundary clearance | SHOULD | Gap | — | ✅ | — |
-| R-11 | Natural-language aria-label | MUST | Gap | ✅ batch 1 | — | — |
-| R-12 | info/muted opacity floors | MUST | Gap | ✅ batch 1 | — | — |
-| R-13 | Non-color differentiators | MUST | Partial | ✅ batch 1 | — | — |
-| R-14 | aria-roledescription | MUST | Gap | ✅ batch 1 | — | — |
-| R-15 | SVG `<title>` first child | MUST | Gap | ✅ batch 1 | — | — |
-| R-16 | Pre-populate aria-live | MUST | Gap | ✅ batch 1 | — | — |
+| R-11 | Natural-language aria-label | MUST | Shipped | ✅ v0.11.0 | — | — |
+| R-12 | info/muted opacity floors | MUST | Shipped | ✅ v0.11.0 | — | — |
+| R-13 | Non-color differentiators | MUST | Shipped | ✅ v0.11.0 | — | — |
+| R-14 | aria-roledescription | MUST | Shipped | ✅ v0.11.0 | — | — |
+| R-15 | SVG `<title>` first child | MUST | Shipped | ✅ v0.11.0 | — | — |
+| R-16 | Pre-populate aria-live | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-17 | Min-overlap fallback | MUST | Gap | — | ✅ | — |
 | R-18 | Pre-register mark AABBs | MUST | Gap | — | ✅ | — |
-| R-19 | Unconditional degraded warn | MUST | Gap | ✅ batch 1 | — | — |
+| R-19 | Unconditional degraded warn | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-20 | Migrate emit_position_label | MUST | Gap | — | ✅ | — |
 | R-21 | Per-candidate viewbox clamp | MUST | Gap | — | ✅ | — |
-| R-22 | Auto-compute side_hint | MUST | Gap | ✅ batch 2 | — | — |
+| R-22 | Auto-compute side_hint | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-23 | Pill border opacity ≥ 0.6 | MUST | Gap | — | ✅ | — |
 | R-24 | Keyboard/focus a11y | MUST | Gap | — | ✅ | — |
-| R-25 | Dark-mode token collision | MUST | Gap | ✅ batch 1 | — | — |
+| R-25 | Dark-mode token collision | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-26 | Touch target ≥ 24 px | MUST | Gap | — | — | ✅ |
-| R-27 | Leader gated warn/error only | MUST | Gap | ✅ batch 2 | — | — |
+| R-27 | Leader gated warn/error only | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-28 | Loud placed_labels=None warn | MUST | Gap | — | ✅ | — |
 | R-29 | Print @media dash styles | MUST | Gap | — | ✅ | — |
 | R-30 | NumberLine routing fix | MUST | Gap | — | — | ✅ |
 
-**Status key:** Gap = not implemented; Partial = partially implemented; ✅ = target release.
+**Status key:** Gap = not implemented; Partial = partially implemented; Shipped = landed in production; ✅ = target/actual release.
 
 **Dependency note (v0.11.0-W3 batch ordering):**
 R-13 (dash to `<path>`) MUST land before R-27 (gate leaders) because R-27's removal of

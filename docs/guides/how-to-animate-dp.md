@@ -90,6 +90,38 @@ A Fibonacci-style DP animation that computes the minimum cost to reach each cell
 
 ---
 
+---
+
+## Accessibility in smart-label
+
+As of v0.11.0, the annotation system implements WCAG 2.2 AA features automatically. No
+author action is required unless you want to understand or override defaults.
+
+### Screen reader output (R-11)
+
+`aria-label` on each annotation group contains a speech-friendly version of the label
+text: LaTeX math is transliterated (e.g. `$+h[1]^2$` becomes `"plus h sub 1 squared"`).
+The raw TeX is preserved in `aria-description` for AT users who want verbose math access
+(e.g. NVDA math mode, MathJax screen reader integration).
+
+### CVD-safe dash patterns on arrows (R-13)
+
+`warn` arrows carry `stroke-dasharray="3,2"` (dashed) and `muted` arrows carry
+`stroke-dasharray="1,3"` (dotted) directly on the arrow `<path>`. These patterns are
+applied unconditionally — they are not gated on leader presence. Under deuteranopia and
+protanopia simulation, `warn` and `muted` remain distinguishable from `good`/`error` by
+pattern alone, satisfying WCAG 2.2 SC 1.4.1 (Use of Colour).
+
+### Leader lines only for `warn` / `error` (R-27)
+
+Leader lines (the dot at the arc origin + the connecting line to the pill) are emitted
+only for `color=warn` and `color=error` annotations. For `good`, `info`, `muted`, and
+`path` annotations that are displaced from their natural position, no leader is drawn.
+This reduces visual clutter while preserving the semantic emphasis signal for high-alert
+tokens.
+
+---
+
 ## Next steps
 
 - [Getting Started](../tutorial/getting-started.md) for fundamentals.

@@ -56,6 +56,7 @@
 | Code | Description | Common Cause | Common Fix |
 |------|-------------|--------------|------------|
 | E1200 | KaTeX inline error embedded in rendered output — a math expression could not be parsed by the KaTeX worker. The detail message carries the underlying error title. | A `$...$` or `\[...\]` expression contains invalid LaTeX syntax (unknown command, mismatched braces, etc.). | Fix the LaTeX math expression; check the KaTeX error title for the exact character that caused the failure. |
+| E1248 | `scriba:label-placement-degraded` — emitted to stderr (and as an SVG comment) when the smart-label placer exhausts all 32 candidates without finding a zero-overlap position. Format: `scriba:label-placement-degraded annotation=<id> displacement=<px>`. | Too many overlapping annotations on a dense scene; all candidate positions are occupied. | Reduce annotation density, increase viewBox size, or accept degraded placement. See R-19 in [`smart-label-ruleset.md`](smart-label-ruleset.md). |
 
 ## Starlark Sandbox Errors (E1150--E1156)
 

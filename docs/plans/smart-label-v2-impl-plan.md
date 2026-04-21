@@ -1,11 +1,12 @@
 ---
 title: Smart-Label v2 Implementation Plan
-version: 1.0.0-draft
-status: draft
+version: 1.1.0
+status: in-progress
 date: 2026-04-21
+updated: 2026-04-22
 author: architect (W1) + Claude Opus 4.7
 inputs:
-  - docs/spec/smart-label-ruleset.md (v2.0.0-draft.r3)
+  - docs/spec/smart-label-ruleset.md (v2.0.0)
   - docs/archive/smart-label-ruleset-hardening-2026-04-21/
 supersedes: N/A
 ---
@@ -21,6 +22,27 @@ enforceable at the primitive boundary. Execute in **3 waves, 6–7
 agents**, serialized on `_svg_helpers.py` to avoid merge conflicts.
 Total engineering budget: ~44h across 7 PRs. Earliest v2-final
 shippable: **v0.10.x**. a11y gate flips blocking **2026-05-05**.
+
+> **W3 complete (2026-04-22):** 13 rules landed in v0.11.0. See §1.1
+> for shipped commit table and §1.2 for next phase (v0.12.0 W1 scoring).
+
+### 1.1 Shipped in v0.11.0-W3
+
+| Commit | Description | Rules |
+|--------|-------------|-------|
+| `1dc86f1` | docs: ruleset v2.0.0 rewrite (R-01..R-30) | (spec only) |
+| `17ca529` | feat: W3 batch 1 code | R-07, R-19, R-25 |
+| `27104ed` | feat!: W3 batch 2 code + golden re-pin | R-01, R-08, R-11, R-12, R-13, R-14, R-15, R-16, R-22, R-27 |
+| `51207f8` | fix: muted opacity 0.6→0.7 WCAG fix | R-12 (amendment) |
+
+Rules shipped: **R-01, R-07, R-08, R-11, R-12, R-13, R-14, R-15, R-16, R-19, R-22, R-25, R-27** (13 of 30).
+
+### 1.2 Next phase — v0.12.0 W1 (scoring function)
+
+The scoring function proposal is at
+`docs/plans/smart-label-scoring-proposal-2026-04-22.md`. v0.12.0 W1
+targets: R-02, R-04, R-05, R-06, R-10, R-17, R-18, R-20, R-21, R-23,
+R-24, R-28, R-29.
 
 ## 2. Scope
 
@@ -41,7 +63,7 @@ shippable: **v0.10.x**. a11y gate flips blocking **2026-05-05**.
 
 ## 3. Architecture Overview
 
-### 3.1 MW-3 `_place_pill` helper
+### 3.1 MW-3 `_place_pill` helper (R-17, R-18, R-20, R-21)
 
 Sole placement primitive. Per-candidate clamp **inside** the candidate
 loop (not after selection) closes ISSUE-A3 clamp-race.
@@ -104,16 +126,21 @@ longest-path. PR-4/5/6 branch from PR-3. PR-7 serializes after PR-5.
 ### Wave 1 — Plan (this doc)
 Single architect agent. Output: this file. **DONE.**
 
-### Wave 2 — Parallel implementation (4 agents)
+### Wave 2 — Parallel implementation (4 agents) — COMPLETE (v0.11.0)
 
-File-touch matrix designed to avoid conflicts:
+Wave 2 is complete. Batch 1 (R-07, R-19, R-25) landed in `17ca529`;
+batch 2 (R-01, R-08, R-11..R-16, R-22, R-27) landed in `27104ed` + WCAG
+fix `51207f8`. MW-1 (AC-6), MW-3 (`_place_pill`) were previously shipped
+in `ac667fc`. MW-2 typed-registry (R-18 prerequisite) is deferred to v0.12.0.
+
+File-touch matrix (for reference):
 
 | Stream | Agent | Owns | Reads only | Acceptance |
 |--------|-------|------|------------|------------|
 | A (core) | python | `_svg_helpers.py`, `plane2d.py`, `tests/conformance/smart_label/` | all primitives | PR-1 + PR-3 green |
 | B (corpus) | python | `tests/golden/smart_label/`, `tests/helpers/svg_normalize.py` | `_svg_helpers.py` | 3 fixtures SHA256-pinned |
 | C (lint) | python | `scripts/lint_smart_label.py`, `scriba/animation/primitives/_protocol.py` | all primitives | lint warns 12 FPs |
-| D (a11y) | python | palette tokens, `arrow.py` leader line | WCAG contrast libs | A-1 + A-4 pass |
+| D (a11y) | python | palette tokens, `arrow.py` leader line | WCAG contrast libs | R-11..R-16 + R-25 pass |
 
 ### Wave 3 — Finalize (2 agents)
 - Determinism Hypothesis tests (7 properties for D-1..D-4).
@@ -197,7 +224,8 @@ Plane2D alone = 5 of 6 FP categories. Migrating it first unlocks the
 
 ## Cross-references
 
-- v2 ruleset: `docs/spec/smart-label-ruleset.md`
+- v2 ruleset (v2.0.0 final): `docs/spec/smart-label-ruleset.md`
 - R3 synthesis: `docs/archive/smart-label-ruleset-hardening-2026-04-21/00-synthesis.md`
 - R3 open-issue resolution: `docs/archive/smart-label-ruleset-hardening-2026-04-21/04-open-issue-resolution.md`
-- Error codes: `docs/spec/error-codes.md` (E1560–E1579)
+- Error codes: `docs/spec/error-codes.md` (E1560–E1579; E1248 added for R-19)
+- v0.12.0 scoring proposal: `docs/plans/smart-label-scoring-proposal-2026-04-22.md`

@@ -257,6 +257,26 @@ Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
 | `ephemeral` | bool | `false` | When `true`, the annotation is cleared at the next `\step` boundary |
 | `arrow` | bool | `false` | When `true`, adds a pointer arrowhead on the annotation pill pointing at the target cell (no source cell required) |
 | `arrow_from` | selector | _(none)_ | Draws a Bezier arc **from** the specified source cell **to** the target, with an arrowhead at the destination |
+| `side` | enum | _(auto)_ | Override the auto-inferred pill half-plane: `"left"`, `"right"`, `"above"`, `"below"`. When omitted, the placement engine infers the preferred side from the arrow direction vector (R-22, v0.11.0+). |
+
+**`side_hint` auto-inference (R-22, v0.11.0+):**
+
+When no explicit `side=` key is present, the smart-label placer computes a `side_hint`
+from the arrow direction vector (`src_point → dst_point`). For left-to-right arcs the
+hint is `"above"`, causing pill candidates to favour the upper half-plane (consistent with
+the Hirsch 1982 NE-preference ladder; see R-06 for full NE-before-NW ordering, planned
+v0.12.0). For `arrow=true` (no source), the hint defaults to the `position` parameter.
+
+Default pill placement for L→R arcs: pills appear above the arc midpoint (above-arc
+first candidate). Override with `side="below"` for arcs where clearance is better below.
+
+```latex
+% auto side — pill above arc (default for left-to-right arrow)
+\annotate{dp.cell[3]}{label="+5", arrow_from="dp.cell[1]", color=good}
+
+% explicit override — force pill below
+\annotate{dp.cell[3]}{label="+5", arrow_from="dp.cell[1]", color=good, side="below"}
+```
 
 **`arrow=true` — bare arrowhead, no source:**
 
