@@ -1,1154 +1,1034 @@
 ---
 title: Smart-Label Ruleset
-version: 2.0.0-rc.1
-status: Release Candidate (all v2-final blockers cleared)
-last-modified: 2026-04-21
+version: 2.0.0
+status: Final
+last-modified: 2026-04-22
 editors: scriba-core
-supersedes: docs/spec/smart-label-ruleset.md (v1, 2026-04-21)
+supersedes: docs/spec/smart-label-ruleset.md (v2.0.0-rc.1, 2026-04-21)
 source-audits:
+  - docs/archive/smart-label-placement-pedagogy-2026-04-21/00-synthesis.md
   - docs/archive/smart-label-audit-2026-04-21/
   - docs/archive/smart-label-ruleset-audit-2026-04-21/
   - docs/archive/smart-label-ruleset-strengthening-2026-04-21/
   - docs/archive/smart-label-ruleset-hardening-2026-04-21/
 ---
 
-# Smart-Label Ruleset (v2)
+# Smart-Label Ruleset
 
-> **Status**: Release Candidate v2.0.0-rc.1. All v2-final blockers cleared
-> (ISSUE-A4 scoped to semantic triad, ISSUE-A5 non-colour cue shipped,
-> ISSUE-below-math hot-patched). This document is the normative specification for
-> annotation pill placement and leader rendering in scriba. It replaces the
-> informal v1 ruleset with a testable, versioned, RFC-2119-compliant
-> standard.
->
-> **Scope**: `\annotate` pill placement + leader rendering for every
-> primitive that emits annotations through
-> `scriba/animation/primitives/_svg_helpers.py`
+**Version:** 2.0.0 · **Supersedes:** 2.0.0-rc.1 · **Date:** 2026-04-22
+
+> **Scope**: `\annotate` pill placement and leader rendering for every primitive that emits
+> annotations through `scriba/animation/primitives/_svg_helpers.py`
 > (`emit_arrow_svg`, `emit_plain_arrow_svg`, `emit_position_label_svg`).
 >
-> **Audience**: engineers modifying `_svg_helpers.py`, primitive
-> `emit_svg` methods, or the Starlark `\annotate` contract; authors relying
-> on predictable label behavior; reviewers gating conformance.
+> **Audience**: engineers modifying `_svg_helpers.py`, primitive `emit_svg` methods, or the
+> Starlark `\annotate` contract; authors relying on predictable label behaviour; reviewers
+> gating conformance.
 >
-> **Living document**: extend when adding a rule; do not silently change an
-> existing rule's meaning. Breaking changes MUST follow §10 versioning
-> policy.
+> **Conformance language**: The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**,
+> **SHALL NOT**, **SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** are
+> interpreted as described in [RFC 2119] and [RFC 8174] when, and only when, they appear in
+> ALL CAPITALS.
+>
+> **Living document**: extend when adding a rule; do not silently change an existing rule's
+> meaning. Breaking changes MUST follow the versioning policy in the legacy v2.0.0-rc.1 §10.
 >
 > **Feedback**: open a GitHub issue with label `ruleset-smart-label`.
-
----
-
-## §0 Preamble
-
-### §0.1 Conformance language
-
-The key words **MUST**, **MUST NOT**, **REQUIRED**, **SHALL**, **SHALL NOT**,
-**SHOULD**, **SHOULD NOT**, **RECOMMENDED**, **MAY**, and **OPTIONAL** in
-this document are to be interpreted as described in [RFC 2119] and
-[RFC 8174] when, and only when, they appear in ALL CAPITALS. Plain
-lower-case uses of these words are descriptive prose, not normative
-requirements.
-
-Implementations that violate a MUST or MUST NOT rule MUST raise the listed
-`E15xx` error code (see §4) rather than silently accepting or silently
-rejecting the condition. Implementations MAY deviate from a SHOULD rule
-when they have a documented reason; the deviation MUST be logged or warned
-as specified per rule. MAY rules impose no conformance obligation.
 
 [RFC 2119]: https://datatracker.ietf.org/doc/html/rfc2119
 [RFC 8174]: https://datatracker.ietf.org/doc/html/rfc8174
 
-### §0.2 Conformance classes
+---
 
-Four conformance classes participate in this specification.
+## §0 Overview and conformance levels
 
-**Author** — a human writing Scriba `.tex` source. Authors MUST supply only
-the parameters documented in `ruleset.md §2` for `\annotate`. Position
-values outside `{above, below, left, right, inside}` are rejected with
-E1112. Color values outside `{info, warn, good, error, muted, path}` are
-rejected with E1113.
+This document replaces the axis-style invariant catalogue (G-*, C-*, T-*, A-*, D-*, E-*,
+AC-*) of v2.0.0-rc.1 with a unified 30-rule catalogue (R-01..R-30) derived from the
+synthesis study at
+`docs/archive/smart-label-placement-pedagogy-2026-04-21/00-synthesis.md`.
 
-**Primitive** — a concrete shape class (e.g. `Array`, `DPTable`, `Graph`)
-whose `emit_svg` method produces annotation SVG. A conforming Primitive
-MUST implement the Primitive Participation Contract (§5).
+### Conformance levels
 
-**Emitter** — any code that calls `emit_arrow_svg`, `emit_plain_arrow_svg`,
-or `emit_position_label_svg` from `_svg_helpers.py`. A conforming Emitter
-MUST obey the placement algorithm (§2), the geometry rules (§3), and all
-MUST invariants (§1).
+| Level | Meaning |
+|-------|---------|
+| **MUST** | Required for all conforming implementations. |
+| **SHOULD** | Strong recommendation; deviations require documented justification. |
+| **MAY** | Optional capability. |
 
-**Renderer** — the outermost pipeline that produces the final HTML/SVG
-document. A conforming Renderer MUST honour the debug flag gate (§6) and
-MUST NOT emit debug artefacts in production output.
+### Target releases
 
-### §0.3 Terminology
+| Release | Scope |
+|---------|-------|
+| **v0.11.0-W3** | R-01, R-07, R-08, R-11, R-12, R-13, R-14, R-15, R-16, R-19, R-22, R-25, R-27 |
+| **v0.12.0** | R-02, R-04, R-05, R-06, R-10, R-17, R-18, R-20, R-21, R-23, R-24, R-28, R-29 |
+| **v0.13.0+** | R-03, R-09, R-26, R-30 |
 
-The following terms are defined normatively. When used in this document
-they refer exclusively to these definitions. Links <dfn>…</dfn> in
-rule text point back here.
+### MW phases preserved
 
-| Term | Definition |
-|------|------------|
-| <dfn id="d-pill">pill</dfn> | The rounded `<rect rx="4">` that carries annotation text. |
-| <dfn id="d-leader">leader</dfn> | The dashed `<polyline>` connecting a displaced pill back to the arc midpoint or target. |
-| <dfn id="d-target">target</dfn> | The addressable primitive part the annotation points at (cell, node, tick, point). |
-| <dfn id="d-arrow-from">arrow_from</dfn> | Optional source selector on `\annotate`; present → Bezier arc from `arrow_from` to target + pill near arc midpoint. |
-| <dfn id="d-position-only">position-only label</dfn> | Annotation with `label` + `position` but no `arrow_from` and no `arrow=true`. |
-| <dfn id="d-plain-arrow">plain-arrow label</dfn> | Annotation with `arrow=true` and no `arrow_from`; short pointer stem + pill. |
-| <dfn id="d-anchor">anchor</dfn> | Geometric center of the pill AABB: `(cx, final_y − l_font_px × 0.3)`. |
-| <dfn id="d-aabb">AABB</dfn> | Axis-aligned bounding box `(cx, cy, width, height)`, `cx,cy` at center. |
-| <dfn id="d-registry">registry</dfn> | `placed_labels: list[_LabelPlacement]` accumulated during one primitive `emit_svg` call. |
-| <dfn id="d-nudge-grid">nudge grid</dfn> | 32-candidate iterator `_nudge_candidates(pill_w, pill_h, side_hint)`. |
-| <dfn id="d-collision">collision</dfn> | `_LabelPlacement.overlaps(other)` returns `True` for a proposed placement vs any registry entry. |
-| <dfn id="d-natural-position">natural position</dfn> | Pill center the geometry rule produces before any nudge. |
-| <dfn id="d-nudge">nudge</dfn> | Displacement applied to natural position to resolve a collision. |
-| <dfn id="d-clamp">clamp</dfn> | Post-nudge correction that translates the pill back inside viewBox without changing its dimensions. |
-| <dfn id="d-color-token">color token</dfn> | One of `{good, info, warn, error, muted, path}`. |
-| <dfn id="d-group-opacity">group opacity</dfn> | SVG `opacity` attribute on the annotation `<g>`; composites all children simultaneously. |
-| <dfn id="d-effective-contrast">effective contrast</dfn> | WCAG 2.2 contrast measured on the blended rendered color after all opacity compositing. |
-| <dfn id="d-frame">frame</dfn> | One SVG document produced by one `emit_svg` call on one primitive. |
-| <dfn id="d-headroom">headroom</dfn> | Vertical viewBox expansion above/below the primitive content to accommodate labels. |
-| <dfn id="d-side-hint">side hint</dfn> | `ann["side"]` or `ann["position"]` value passed to the nudge grid as `side_hint`. |
+MW-1 through MW-4 labels from the v2.0.0-rc.1 implementation plan remain valid.
+R-18 and R-21 map directly to the MW-2 typed-registry work. R-20 depends on MW-3
+`_place_pill` (already shipped, commit ac667fc). MW-4a/MW-4b repulsion-solver work
+falls outside this ruleset's scope (see NG-2 in v2.0.0-rc.1 §8).
 
 ---
 
-## §1 Invariants
+## §1 Color tokens and semantic channels
 
-42 invariants across 7 axes. Each invariant carries a normative strength
-(MUST / SHOULD / MAY) and a verifiability note. See Appendix A for the
-test-assertion map.
+Rules governing how color tokens are assigned, distinguished, and rendered.
 
-### §1.1 Geometry — G-1..G-8
+---
 
-**G-1** (MUST) — The pill AABB registered in the registry MUST use the
-post-clamp center coordinate, never the pre-clamp coordinate.
-*Verify*: place a pill at `natural_x = −50`, apply clamp, assert
-`placed_labels[-1].x >= pill_w / 2`.
+### R-09 — Group opacity restructure (background-only)
 
-**G-2** (MUST) — The geometric center of the pill rect
-(`pill_rx + pill_w/2`, `pill_ry + pill_h/2`) MUST equal the anchor
-coordinate used for collision detection within ±1 px in both axes.
-*Verify*: regex the emitted SVG for `<rect x=…>` and `<text x=…>`, assert
-center match.
+**Normative:** MUST
+**Since:** planned v0.13.0+
+**Supersedes:** A-1, A-2, N-6 (partial) from v2.0.0-rc.1
+**Source:** cog P-OPAC-1, a11y A11Y-04
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
+           `_svg_helpers.py:emit_position_label_svg`
 
-**G-3** (MUST) — No pill AABB pixel MUST lie outside the declared viewBox
-in any dimension. The viewBox height MUST contain every pill.
-*Verify*: for each emitted pill, assert
-`0 <= pill_rx AND pill_rx + pill_w <= W AND 0 <= pill_ry AND pill_ry + pill_h <= H`.
+Group-level `opacity < 1` MUST NOT be applied to annotation `<g>` elements that contain
+text. De-emphasis MUST be expressed via lighter foreground color token values or via
+background-rect-only opacity. The `_LABEL_BG_OPACITY` constant controls background rect
+opacity only and MUST NOT be applied to the enclosing `<g>`.
 
-**G-4** (MUST) — The clamp MUST preserve pill width and height unchanged;
-it MUST only translate the center coordinate.
-*Verify*: construct a pill near the right edge, apply clamp, assert
-`pill_w` is unchanged.
+**Rationale:** Group opacity composites all children simultaneously, including text strokes,
+causing text contrast to fall below WCAG 2.2 SC 1.4.3 thresholds at the `info` (0.45) and
+`muted` (0.3) values currently in use. Confining opacity to the background rect preserves
+full text contrast while retaining the desired visual hierarchy.
 
-**G-5** (MUST) — Pill dimensions MUST satisfy `pill_w > 0` and
-`pill_h > 0`. A pill with any zero dimension MUST NOT be emitted.
-*Verify*: pass `label=""`, assert no `<rect>` in output.
+**Code ref:** pending v0.13.0 (depends on token system redesign; R-12 opacity floor is the
+v0.11.0-W3 interim fix)
+**Test ref:** pending
+**Golden ref:** pending
 
-**G-6** (MUST) — `pill_w >= estimate_text_width(widest_line, l_font_px) +
-2 * PAD_X`.
-*Verify*: for a set of known labels, assert
-`pill_w >= estimate_text_width + 2*PAD_X`.
+---
 
-**G-7** (MUST) — The leader connecting a displaced pill MUST originate at
-the natural anchor (curve midpoint for arc arrows, stem tip for plain
-arrows), not at the target cell center.
-*Verify*: inject pill requiring nudge > 30 px, assert first `<polyline>`
-point equals `(curve_mid_x, curve_mid_y)`.
+### R-12 — Minimum opacity floors for `info` and `muted` tokens
 
-**G-8** (MUST) — The leader line MUST NOT be emitted when displacement
-between the pill center and the natural anchor is ≤ 30 px. The threshold
-value is a named constant `_LEADER_MIN_DISPLACEMENT = 30` (see §3.6).
-*Verify*: nudge by 30 px → no `<polyline>`. Nudge by 31 px → `<polyline>`
-present.
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** A-2, A-4 (partial) from v2.0.0-rc.1; A11Y-04
+**Source:** a11y A11Y-04, cog P-OPAC-1
+**Scope:** `_svg_helpers.py:ARROW_STYLES`
 
-### §1.2 Collision — C-1..C-7
+`muted` token group opacity MUST be ≥ 0.56 to achieve ≥ 3:1 effective non-text contrast
+(WCAG 2.2 SC 1.4.11). `info` token group opacity MUST be ≥ 0.49 for the same threshold.
+These are hard minimums; implementations MAY raise them further.
 
-**C-1** (MUST) — No two pill AABBs registered in the same frame MUST
-overlap at zero separation (strict non-intersection of closed rectangles).
-*Verify*: for every pair `(A, B)` in `placed_labels`, assert AABB
-non-intersection predicate holds.
+**Rationale:** At v0.10.0 production values (`info` 0.45, `muted` 0.30), effective contrast
+ratios are 1.95:1 and 1.56:1 respectively — active SC 1.4.11 violations. If scriba is
+deployed in EU public-sector educational contexts, EN 301 549 clause 9 makes this a legal
+compliance issue. R-12 is the fastest safe fix (opacity constant only, no SVG geometry
+change) while R-09 (structural restructure) is deferred.
 
-**C-2** (MUST) — When the nudge grid exhausts without finding a
-non-overlapping position, the renderer MUST emit a diagnostic signal
-under `SCRIBA_DEBUG_LABELS=1` (the `<!-- scriba:label-collision -->`
-comment). The signal MUST be suppressed when the flag is off.
-*Verify*: saturate 32 candidates; flag on → comment present; flag off →
-comment absent.
+**Code ref:** `_svg_helpers.py:ARROW_STYLES` (line ~357); `pending W3 batch 1 landing`
+**Test ref:** pending (A-1..A-4 contrast tests scheduled v0.11.0)
+**Golden ref:** none (no golden change — additive opacity adjustment)
 
-**C-3** (MUST) — The registry MUST be append-only within a single frame; a
-registered AABB MUST NOT be modified after appending.
-*Verify*: code inspection for `placed_labels[i].x = …` assignments
-post-append.
+---
 
-**C-4** (MUST) — The registry MUST NOT be shared across separate frame
-emissions or across primitive instances.
-*Verify*: call `emit_svg` twice, capture `placed_labels`; assert second
-call received a fresh `[]`.
+### R-13 — Non-color differentiators per token
 
-**C-5** (SHOULD) — When a `side_hint` is provided, the nudge grid SHOULD
-try all candidates in the preferred half-plane before any candidate in
-the opposite half-plane.
-*Verify*: block preferred half-plane → assert first non-blocked candidate
-comes from preferred half; block all preferred → assert fallback still
-emits.
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** A-5, A-5b from v2.0.0-rc.1; A11Y-05, A11Y-06, comp P4
+**Source:** a11y A11Y-05, A11Y-06, comp P2/P4
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
 
-**C-6** (SHOULD) — Pills SHOULD NOT overlap the primary leader arc of the
-same annotation group. *Upgrades to MUST when MW-2 registers leader path
-AABBs.*
-*Verify (post-MW-2)*: compute leader bbox for each annotation; assert no
-registered pill AABB overlaps it.
+Every color token MUST have at least one non-color differentiator (dash pattern,
+stroke-weight, or shape) that survives deuteranopia/protanopia/tritanopia and grayscale
+print simulation. Specifically: `warn` arrow `<path>` MUST carry `stroke-dasharray="3,2"`
+unconditionally (not only on displaced leaders). `muted` arrow `<path>` MUST carry a dotted
+dash `stroke-dasharray="1,3"` unconditionally. Both attributes MUST be applied directly on
+the `<path>` element, not gated on leader presence.
 
-**C-7** (SHOULD) — Pills SHOULD NOT overlap the native text content of
-the same primitive (cell values, node labels, axis labels).
-*Upgrades to MUST when MW-2 seeds cell-text AABBs.*
-*Verify (post-MW-2)*: seed cell-text AABBs; assert no pill AABB overlaps
-any seeded entry.
+**Rationale:** Under deuteranopia simulation, CIEDE2000 distances between `warn`/`error` and
+`info`/`muted` fall below the distinguishable threshold (≤ 5.7). Dash patterns on arrow
+paths provide a reliable non-hue cue satisfying WCAG 2.2 SC 1.4.1 (Use of Colour). This
+rule supersedes the leader-conditional A-5b from rc.1, which only applied dashes when a
+leader was emitted.
 
-### §1.3 Typography — T-1..T-6
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `pending W3 batch 1 landing`
+**Test ref:** pending
+**Golden ref:** `tests/golden/smart_label/` — golden re-pin required for warn/muted scenes
 
-**T-1** (MUST) — The label text rendered inside the pill MUST match
-character-for-character the `label=X` value declared by the author, with
-the sole exception of XML entity escaping and KaTeX rendering of `$…$`
-spans.
-*Verify*: pass label containing `<`, `>`, `&` + ASCII; verify emitted
-text reproduces original after XML-unescaping.
+---
 
-**T-2** (MUST) — The hyphen character (`-`) MUST NOT be used as a
-line-break point in any label (plain-text or math). The implicit "guard
-inside `$…$`" in v1 I-8 is replaced by a universal exclusion: `-` is
-never a split character.
-*Verify*: `_wrap_label_lines("long-label-that-exceeds-width")` returns
-single-element list.
+### R-23 — Pill border stroke-opacity floor
 
-**T-3** (MUST) — Math labels (containing at least one `$…$` span) MUST
-NOT be wrapped across multiple lines by `_wrap_label_lines`. The entire
-label MUST be treated as a single line.
-*Verify*: pass `"prefix $a+b$ suffix"` exceeding `_LABEL_MAX_WIDTH_CHARS`;
-assert return length == 1.
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** none (new)
+**Source:** a11y A11Y-07
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
+           `_svg_helpers.py:emit_position_label_svg`
 
-**T-4** (MUST) — The pill width estimator MUST produce a value that is
-≥ the rendered width of the widest label line at the target font size,
-within a tolerance of 20 px.
-*Verify*: render 20 known labels through headless KaTeX; assert
-`estimated >= actual − 20` AND `estimated <= actual + 30`.
+Pill border `stroke-opacity` MUST be ≥ 0.6 to meet WCAG 2.2 SC 1.4.11 3:1 non-text
+contrast for the pill boundary shape. The current value of 0.3 does not meet this
+threshold.
 
-**T-5** (MUST) — The minimum label font size across all color tokens
-MUST be ≥ 9 px in SVG user units.
-*Verify*: static inspection of `ARROW_STYLES` — all `label_size` ≥ 9.
+**Rationale:** The pill border defines the visual extent of the annotation element. At 0.3
+opacity, the border does not achieve 3:1 contrast against a white stage background, failing
+the non-text contrast criterion. The fix is a single constant change; it is deferred to
+v0.12.0 to bundle with the visual regression sweep.
 
-**T-6** (MUST) — Pill height MUST be at least
-`num_lines * (l_font_px + line_gap) + 2 * PAD_Y`.
-*Verify*: two-line label → assert `pill_h >= formula`.
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~930); `pending v0.12.0`
+**Test ref:** pending
+**Golden ref:** none (visual change but no geometry shift)
 
-### §1.4 Accessibility — A-1..A-7
+---
 
-**A-1** (MUST) — Effective rendered contrast ratio of label text against
-the pill background MUST be ≥ 4.5:1 for normal-weight text and ≥ 3:1 for
-bold text at ≥ 18.66 px, measured after compositing all opacity layers
-at the baseline (non-hover) state. WCAG 2.2 SC 1.4.3.
-*Verify*: Python blend (`css_color`, `pill_bg`, `group_opacity`) →
-assert WCAG ratio ≥ 4.5 / 3.
+### R-25 — Dark-mode token collision fix
 
-**A-2** (MUST) — Effective contrast MUST remain ≥ 3:1 under the
-hover-dim state (`group_opacity × hover_dim_opacity`). WCAG 2.2
-SC 1.4.11.
-*Verify*: same blend as A-1 with compound opacity.
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** none (new; a11y A11Y-12)
+**Source:** a11y A11Y-12
+**Scope:** CSS token file (dark-mode block)
 
-**A-3** (MUST) — Arrow leaders (path strokes and polygon arrowheads)
-MUST achieve ≥ 3:1 contrast against the stage background at nominal
-opacity on both light and dark themes.
-*Verify*: blend arrow stroke × group opacity vs stage bg, assert ≥ 3:1.
+`--scriba-annotation-path` and `--scriba-annotation-info` MUST have distinct values in the
+dark-mode CSS block. Currently both resolve to `#0b68cb`, making `path` and `info` arrows
+visually identical in dark mode.
 
-**A-4** (MUST) — The **semantic triad** color tokens (`good`, `warn`,
-`error`) MUST pass WCAG 2.2 AA and MUST be distinguishable from each
-other under deuteranopia and protanopia simulation (Machado 2009) with
-a minimum CIEDE2000 pairwise distance of 10 units. The `info` and
-`muted` tokens are **decorative** and are NOT required to pass A-4
-contrast or CVD thresholds.
-*Verify*: Python CVD simulation on `{good, warn, error}` token pairs;
-assert distance ≥ 10. Any two tokens sharing the same hex MUST be
-documented as aliases.
+**Rationale:** One CSS variable value change in the dark-mode block; zero layout impact.
+Fixes a silent token collision that causes authors to believe their `path`-coloured arrows
+are distinct from `info`-coloured arrows when they are not.
 
-**A-5** (MUST) — Every annotation group MUST expose an accessible name
-(via `aria-label`) that includes both the target identity and label
-text when a label is present. Arrow-only annotations MUST name the
-relationship.
-*Verify*: emit annotated element; assert `aria-label` contains target +
-label.
+**Code ref:** pending W3 batch 1 landing (CSS token file)
+**Test ref:** pending
+**Golden ref:** none
 
-**A-5b** (MUST) — The `warn` leader line MUST use `stroke-dasharray="3,2"`
-(3 px dash, 2 px gap). All other color tokens MUST use a solid leader
-(no `stroke-dasharray` attribute). This non-colour cue ensures `warn` is
-distinguishable from `error` and `good` without relying on colour alone,
-satisfying WCAG 2.2 SC 1.4.1 (Use of Colour). Implemented in commit b1a4ff1.
-*Verify*: emit a `warn`-token annotation requiring a leader; assert
-`<polyline>` carries `stroke-dasharray="3,2"`. Emit a `good`-token
-annotation requiring a leader; assert no `stroke-dasharray` attribute.
+---
 
-**A-6** (MUST) — `role="graphics-symbol"` on annotation `<g>` elements
-MUST appear inside a `role="graphics-document"` or `graphics-object`
-ancestor. The SVG root MUST carry `role="graphics-document"`, not
-`role="img"`.
-*Verify*: inspect SVG root; assert role and hierarchy.
+### R-29 — Print `@media` dash differentiation
 
-**A-7** (SHOULD) — The annotation system SHOULD provide a forced-colors
-fallback mapping pill border, text, and stage background to system
-colors under `@media (forced-colors: active)`.
-*Verify*: browser test with forced-colors emulation.
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** none (new)
+**Source:** a11y A11Y-10, comp P2
+**Scope:** CSS / SVG style block
 
-### §1.5 Determinism — D-1..D-4
+`@media print` MUST define distinguishable line styles (solid / dashed / dotted / double)
+per token to compensate for luma collapse. All six tokens (`good`, `info`, `warn`, `error`,
+`muted`, `path`) are within 4 % luma of each other, causing them to appear identical in
+grayscale or B&W print output.
 
-**D-1** (MUST) — Given identical inputs in the same process, the emitted
-SVG MUST be byte-identical across repeated calls.
-*Verify*: call emitter twice, assert `output_a == output_b`.
+**Rationale:** Lecture slides and printed textbooks are a primary distribution channel for
+educational algorithm animations. Without distinct print styles, all annotation types
+collapse to the same visual mark, destroying semantic distinctions the author intended.
 
-**D-2** (MUST) — `_nudge_candidates` MUST yield candidates in the same
-order for equal inputs; the first non-colliding candidate MUST always be
-selected.
-*Verify*: call `_nudge_candidates` twice with same args; assert
-sequences identical.
+**Code ref:** pending v0.12.0
+**Test ref:** pending (requires print visual regression fixtures)
+**Golden ref:** pending
 
-**D-3** (MAY) — Rendered x and y pixel coordinates MAY differ by up to
-1 px between Python versions or platforms due to `int()` truncation,
-without violating any MUST invariant.
-*Verify*: not directly tested. Visual-regression tests MUST use ±1 px
-tolerances.
+---
 
-**D-4** (MUST) — `_DEBUG_LABELS` MUST be captured exactly once at module
-import time; it MUST NOT be re-evaluated per call. Test fixtures altering
-the flag MUST patch `_svg_helpers._DEBUG_LABELS` directly, not the env
-var.
-*Verify*: code inspection; patching test.
+## §2 Placement geometry
 
-### §1.6 Error handling — E-1..E-4
+Rules governing the geometric computation of label positions, candidate generation,
+natural positions, and clearance requirements.
 
-**E-1** (MUST) — When the nudge grid exhausts all candidates without
-resolving a collision, the renderer MUST emit the pill at the
-last-attempted position (not the natural position, not an arbitrary
-fallback) and MUST set `collision_unresolved = True` for the debug
-signal.
-*Verify*: saturate all 32 candidates; assert emitted pill center equals
-the 32nd candidate position.
+---
 
-**E-2** (MUST) — When `position_label_height_above/below` is not called
-before rendering a position-only annotation, the annotation MUST still
-be emitted (not silently dropped). A partial clip is preferable to
-silent data loss.
-*Verify*: construct a primitive that skips the headroom helper; assert
-pill still renders.
+### R-01 — Arc-label natural position formula
 
-**E-3** (MUST) — An unknown `color` token MUST fall back to `"info"`
-without raising AND MUST emit a developer-visible warning (log or debug
-comment when `SCRIBA_DEBUG_LABELS=1`) identifying the unrecognised
-token.
-*Verify*: `color="nonexistent"` → emitted with info style; flag on →
-warning present.
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 2)
+**Supersedes:** AC-3, G-7 (partial) from v2.0.0-rc.1; cog P-DIR-1
+**Source:** cog P-DIR-1
+**Scope:** `_svg_helpers.py:emit_arrow_svg`
 
-**E-4** (MUST) — A multi-line label MUST NOT produce a pill height that
-exceeds the available headroom declared by the headroom helper, measured
-after the viewBox translate.
-*Verify*: long plain-text label → assert `pill_ry + pill_h` lies within
-viewBox height.
+Labels annotating a Bézier arc MUST use "above arc midpoint" as first candidate. The
+natural position MUST be computed as `label_ref_y = mid_y_val − pill_h // 2 − 4` (integer
+pixels). The current formula `mid_y_val − 4` is incorrect: it positions the pill top edge
+only 4 px above the arc stroke, causing overlap with any pill taller than 4 px.
 
-### §1.7 Author contract — AC-1..AC-6
+**Rationale:** The corrected formula places the pill center `pill_h // 2 + 4` px above the
+arc midpoint, ensuring the gap between arc stroke and pill bottom is always ≥ 4 px
+regardless of font size or line count. The −4 constant is the arc_clearance_gap and is
+intentionally ≥ 4 px (see §3 naming convention).
 
-**AC-1** (MUST) — If an author declares `label=X` on any annotation, the
-rendered output MUST contain a visible pill with text X in the frame
-corresponding to the annotation's step.
-*Verify*: integration test per primitive; grep emitted SVG for label
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `pending W3 batch 2 landing`
+**Test ref:** pending
+**Golden ref:** `tests/golden/smart_label/` — golden re-pin required for all arc-annotated
+scenes (byte-breaking; dependent on R-22 landing first)
+
+---
+
+### R-02 — Target cell AABB registered as fixed blocker
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** C-7 (SHOULD → MUST), cog P-OCC-1, code W-2
+**Source:** cog P-OCC-1, code W-2
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`;
+           `PrimitiveBase.resolve_obstacle_boxes`
+
+The target cell AABB MUST be registered as a no-placement FIXED blocker in `placed_labels`
+before any candidate is evaluated for that annotation. `kind="target_cell"` MUST be used
+(see R-18 for the `kind` field). No pill MUST be placed overlapping a registered
+target-cell entry.
+
+**Rationale:** The most common "annotation covers the thing it annotates" failure class
+(see audit 01 §5.3 and code audit §8 W-2) occurs because the collision registry is pill-only:
+target cells, axis labels, source cells, and grid lines are all invisible to
+`_nudge_candidates`. R-02 closes the highest-severity sub-case by ensuring the annotated
+cell itself is protected. Depends on the `resolve_obstacle_boxes` API (MW-2, v0.12.0).
+
+**Code ref:** pending v0.12.0 (requires `resolve_obstacle_boxes` API on `PrimitiveBase`)
+**Test ref:** pending
+**Golden ref:** pending (byte-breaking for all annotated primitives)
+
+---
+
+### R-03 — Axis-label bounding boxes registered as no-placement zones
+
+**Normative:** MUST
+**Since:** planned v0.13.0+
+**Supersedes:** cog P-OCC-2; depends on R-18
+**Source:** cog P-OCC-2
+**Scope:** `_svg_helpers.py:_nudge_candidates`; axis-emitting primitives
+
+Axis-label bounding boxes MUST be registered as no-placement zones (`kind="axis_label"`)
+before any annotation candidate is evaluated. No pill MUST be placed overlapping an
+axis-label AABB.
+
+**Rationale:** Axis labels carry semantically essential information (scale, tick values,
+dimension names). Annotation pills covering axis text destroy the chart's readability. This
+rule is deferred to v0.13.0+ because it depends on both R-18 (mark-AABB pre-registration
+infrastructure) and corpus expansion to cover axis-heavy primitives. Combined cost of R-18 +
+R-03 is rated L; a ruleset v2.1.0-rc bump is required when this lands.
+
+**Code ref:** pending v0.13.0+
+**Test ref:** pending
+**Golden ref:** pending
+
+---
+
+### R-04 — Source cell AABB registered as WARN-level blocker
+
+**Normative:** SHOULD
+**Since:** planned v0.12.0
+**Supersedes:** cog P-OCC-3; depends on R-02
+**Source:** cog P-OCC-3
+**Scope:** `_svg_helpers.py:emit_arrow_svg`; `PrimitiveBase.resolve_obstacle_boxes`
+
+The source cell AABB SHOULD be registered as a WARN-level blocker (`kind="source_cell"`)
+before candidate evaluation. Source-cell overlap is lower severity than target-cell overlap
+(R-02) and is therefore SHOULD rather than MUST.
+
+**Rationale:** When an arrow originates from a source cell, placing the label over that cell
+obscures the arrow's origin, reducing clarity of the algorithm step being illustrated. The
+SHOULD strength acknowledges that in dense scenes, avoiding the source cell may be
+impossible without excessive displacement; in those cases the implementation MUST prefer
+candidates that avoid target cells (R-02) first.
+
+**Code ref:** pending v0.12.0 (depends on R-02 infrastructure)
+**Test ref:** pending
+**Golden ref:** pending
+
+---
+
+### R-06 — Arc-direction-aware candidate weighting
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** cog P-DIR-2; builds on R-22
+**Source:** cog P-DIR-2
+**Scope:** `_svg_helpers.py:_nudge_candidates`
+
+Candidate generation MUST weight upper-right (NE) before upper-left (NW) before lower-right
+(SE) before lower-left (SW) for left-to-right arcs; this order MUST rotate 90° for
+top-to-bottom arcs. The current angle-uniform candidate ordering has no arc-direction
+awareness (Hirsch 1982 NE-preference ladder ignored).
+
+**Rationale:** For left-to-right reading-order arcs, placing the label in the NE position
+preserves the natural reading flow and is consistent with the Hirsch (1982) cartographic
+ladder. This rule extends R-22 (auto side_hint) by providing finer NE-before-NW ordering
+within each half-plane. Must land after R-22 stabilises candidate ordering.
+
+**Code ref:** `_svg_helpers.py:_nudge_candidates` (line 128); pending v0.12.0
+**Test ref:** pending
+**Golden ref:** pending (byte-breaking for all arc-annotated scenes)
+
+---
+
+### R-10 — Cell-boundary clearance scoring
+
+**Normative:** SHOULD
+**Since:** planned v0.12.0
+**Supersedes:** cog P-WHSP-1; depends on R-18
+**Source:** cog P-WHSP-1
+**Scope:** `_svg_helpers.py:_nudge_candidates`, `_svg_helpers.py:_place_pill`
+
+Label pills SHOULD maintain clearance of `max(4, pill_h × 0.15)` px from any non-excluded
+cell boundary. Near-boundary candidates SHOULD be penalised in candidate scoring (see
+`docs/plans/smart-label-scoring-proposal-2026-04-22.md` penalty P5). This rule becomes
+operative only after R-18 lands (mark AABB pre-registration).
+
+**Rationale:** Minimal whitespace between pill edge and cell boundary creates a visually
+cluttered result where it is unclear whether the label belongs to one cell or an adjacent
+one. A clearance of `max(4, pill_h × 0.15)` scales with font size, providing proportionally
+larger gaps at larger type sizes.
+
+**Code ref:** `_svg_helpers.py:_nudge_candidates` (line 128); pending v0.12.0 (depends R-18)
+**Test ref:** pending
+**Golden ref:** pending
+
+---
+
+### R-22 — Auto-compute `side_hint` from arrow direction
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 2)
+**Supersedes:** N-11 (partial) from v2.0.0-rc.1; code W-1
+**Source:** code W-1
+**Scope:** `_svg_helpers.py:emit_arrow_svg`
+
+`side_hint` MUST be auto-computed from the arrow direction vector
+`(src_point → dst_point)` when no explicit `side` or `position` key is present in the
+annotation dict. The current implementation defaults to a symmetric 32-direction search
+with no directional preference, producing visually arbitrary label positions for unlabelled-
+side arcs.
+
+**Rationale:** Auto-inferring `side_hint` from arrow direction closes the most common cause
+of mis-placed labels (majority of un-positioned arc annotations) with a small code change.
+Closing this gap eliminates the need for authors to add redundant `side=` parameters to
+get predictable placement. Must land before R-01 (natural position fix) so the combined
+candidate ordering is tested as a unit.
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `pending W3 batch 2 landing`
+**Test ref:** pending
+**Golden ref:** `tests/golden/smart_label/` — byte-breaking for most arc annotation scenes
+
+---
+
+## §3 Leader lines
+
+Rules governing when, how, and where leader lines are drawn.
+
+---
+
+### R-07 — Leader threshold formula
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** G-8, N-1 from v2.0.0-rc.1; code W-3, comp P1
+**Source:** cog P-LEAD-1, code W-3, comp P1
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+
+Leader threshold MUST be `max(pill_h, 20)` px, not the current hard-coded 30 px constant.
+The constant MUST be extracted to a named symbol `_LEADER_DISPLACEMENT_THRESHOLD`. The
+docstring MUST express the formula as `≥ 2.5 × pill_h` relative to scale.
+
+**Rationale:** A fixed 30 px threshold de-risks at current defaults (`pill_h ≈ 20 px`) but
+breaks at any font-size variation: at a larger font size `pill_h` increases but the
+threshold stays at 30 px, causing leader lines to appear even when the pill is only slightly
+displaced. The `max(pill_h, 20)` formula maintains the absolute minimum floor while
+scaling with pill height.
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~942, hard-coded `30` constant);
+`pending W3 batch 1 landing`
+**Test ref:** pending
+**Golden ref:** none (no golden change at default pill_h ≈ 20 px)
+
+---
+
+### R-08 — Leader endpoint at pill perimeter
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 2)
+**Supersedes:** G-7 from v2.0.0-rc.1; code W-4-leader, comp P2
+**Source:** cog P-LEAD-2, code W-4-leader, comp P2
+**Scope:** `_svg_helpers.py:emit_arrow_svg`
+
+The leader line endpoint MUST terminate at the nearest point on the pill perimeter
+rectangle, not at the pill center `(fi_x, fi_y)`. The perimeter intersection MUST be
+computed as the intersection of the segment from the leader origin to the pill center with
+the pill's AABB boundary.
+
+**Rationale:** A leader terminating at pill center appears to pass through the pill,
+creating a visual "same-side confusion" artefact identified by Ware (2004) ch. 5. Ending
+at the perimeter makes the connection point immediately legible and eliminates the artefact.
+Implementation cost is approximately 8 lines of geometry.
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~850 ff., `(fi_x, fi_y)` endpoint);
+`pending W3 batch 2 landing`
+**Test ref:** pending
+**Golden ref:** `tests/golden/smart_label/` — byte-breaking: changes leader endpoint coords
+in all scenes where a leader fires
+
+---
+
+### R-27 — Leader emission gated to `warn`/`error` tokens only
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 2)
+**Supersedes:** A-5b (partial) from v2.0.0-rc.1; code W-4
+**Source:** code W-4
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+
+Leader lines (the `<circle>` origin dot and `<polyline>`) MUST be emitted only when
+`color in ("warn", "error")` for displaced low-prominence labels. Leaders on `good`,
+`info`, `muted`, and `path` tokens add visual noise without providing disambiguation
+benefit. The displacement threshold check (R-07) remains; `warn`/`error` tokens with
+displacement ≤ threshold MUST NOT emit leaders.
+
+**Rationale:** Leaders are a semantic emphasis signal: they indicate that a label has been
+moved from its natural position and point back to the original anchor. For `warn`/`error`
+tokens this emphasis is appropriate; for `good`/`info`/`muted`/`path` the leader creates
+clutter without meaningful disambiguation value. Restricting leaders to the two high-alert
+tokens also ensures the R-13 dash pattern is only applied where it has the most impact.
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~850 ff. leader emit block);
+`pending W3 batch 2 landing`
+**Test ref:** pending
+**Golden ref:** `tests/golden/smart_label/` — byte-breaking: removes `<circle>`/`<polyline>`
+from displaced good/info/muted/path labels
+
+---
+
+## §4 Ordering and priority
+
+Rules governing the order in which annotations are processed and placed.
+
+---
+
+### R-05 — Semantic importance ordering before placement
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** code W-5; cog P-PRIO-1
+**Source:** cog P-PRIO-1, code W-5
+**Scope:** `_svg_helpers.py:emit_arrow_svg` (caller: `base.emit_annotation_arrows`)
+
+When multiple annotations share a placement pass, they MUST be sorted by semantic importance
+before displacement minimisation begins. Priority order (highest first): `error > warn >
+good > path > info > muted`. Highest-importance labels are placed first, guaranteeing they
+receive the best candidates.
+
+**Rationale:** Current emit order equals definition order in the `.tex` source, meaning a
+`muted` annotation defined first will claim the best placement position even when an `error`
+annotation defined later has far higher semantic weight. Sorting by priority token rank
+ensures the visual hierarchy matches the semantic hierarchy intended by the author.
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); pending v0.12.0
+**Test ref:** pending
+**Golden ref:** pending (byte-breaking for mixed-color annotation sets)
+
+---
+
+### R-17 — Minimum-overlap fallback when all candidates exhausted
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** E-1 from v2.0.0-rc.1 (MUST emit at last-attempted position); comp P3,
+code W-fallback
+**Source:** comp P3, code W-fallback
+**Scope:** `_svg_helpers.py:_place_pill`, `_svg_helpers.py:emit_arrow_svg`
+
+When all 32 candidates are exhausted without finding a zero-overlap position, the
+implementation MUST select the candidate with the **minimum overlap area** rather than
+"keep last regardless of overlap". The minimum-overlap candidate is the argmin over overlap
+area summed across all registry entries (see `docs/plans/smart-label-scoring-proposal-2026-04-22.md`
+§4.1 term P1 for the full weighted-overlap formula).
+
+**Rationale:** The current "keep last" fallback at `_svg_helpers.py:1324` selects the final
+candidate in iteration order, which has no relationship to visual quality. The minimum-
+overlap candidate is consistently better than "keep last" and requires only an argmin pass
+over the already-computed 32 candidates. This rule is a prerequisite for the full scoring
+function proposed in `docs/plans/smart-label-scoring-proposal-2026-04-22.md` (v0.12.0 W1).
+
+**Code ref:** `_svg_helpers.py:_place_pill` (line ~1213); line ~1324 current fallback;
+`pending v0.12.0`
+**Test ref:** pending
+**Golden ref:** none (only fires when all 32 candidates are exhausted; changes already-
+degraded placements only)
+
+---
+
+## §5 Registry and collision
+
+Rules governing the `placed_labels` registry and collision detection.
+
+---
+
+### R-18 — Pre-register all non-pill mark AABBs
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** C-7 (SHOULD), C-6 (SHOULD) from v2.0.0-rc.1; comp P5, cog P-OCC-2/3
+**Source:** comp P5, cog P-OCC-2/3
+**Scope:** `_svg_helpers.py`; all 12 primitive `emit_svg` entry points;
+           `PrimitiveBase.register_decorations`
+
+Before annotation emission, ALL non-pill mark AABBs — cell text, grid lines, axis text, and
+tick labels — MUST be pre-registered in `placed_labels` with a `kind` field. The `kind`
+field MUST be one of `{"pill", "target_cell", "axis_label", "source_cell", "grid",
+"cell_text"}`. This is the MW-2 typed-registry work.
+
+**Rationale:** The collision registry currently sees only placed pills. Cell text, grid
+lines, and axis labels are completely invisible to `_nudge_candidates`, directly causing the
+most frequent user-visible defect: "annotation covers the thing it annotates" (bug-A in
+v2.0.0-rc.1 §7, rated 34.6 % of frames for the pill-on-arrow variant). R-18 is the
+infrastructure prerequisite for R-02, R-03, R-04, and R-10. Cost is rated L; requires
+`kind` field on `_LabelPlacement` and changes to all 12 primitive `emit_svg` entry points.
+Must be coordinated with MW-2 to avoid conflicting `_LabelPlacement` dataclass mutations.
+
+**Code ref:** `_svg_helpers.py:_place_pill` (line ~1213); pending v0.12.0 (MW-2)
+**Test ref:** pending
+**Golden ref:** pending (byte-breaking for all primitives — full corpus re-pin required)
+
+---
+
+### R-21 — Per-candidate viewbox clamping in all primitives
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** G-3, G-4 (strengthened), code W-7/W-10
+**Source:** code W-7, W-10
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`;
+           10 primitive callsites
+
+`emit_arrow_svg` and `emit_plain_arrow_svg` MUST apply per-candidate clamping to
+`[viewbox_w, viewbox_h]` bounds before each collision check, identical to the AC-3 fix
+already implemented in `_place_pill`. Currently 10 of 12 primitive callsites lack this
+per-candidate clamp, creating a clamp-race where a candidate passes the pre-clamp collision
+check but fails post-clamp.
+
+**Rationale:** The clamp-race in 10 of 12 primitives means that a candidate can appear
+non-colliding before clamping but collide after clamping shifts it. This creates
+inconsistent behaviour across primitives. Threading `viewbox_w`/`viewbox_h` to 10
+callsites is an API surface change (M cost) which is why this is deferred to v0.12.0 rather
+than the W3 batch.
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `_svg_helpers.py:_place_pill`
+(line ~1213) already correct; pending v0.12.0
+**Test ref:** pending
+**Golden ref:** pending (byte-breaking for 10 primitives)
+
+---
+
+## §6 Accessibility (WCAG 2.2 AA)
+
+Rules directly required for WCAG 2.2 AA conformance or keyboard accessibility.
+
+---
+
+### R-11 — Natural-language `aria-label` (no raw LaTeX)
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** A-5 from v2.0.0-rc.1; a11y A11Y-01
+**Source:** a11y A11Y-01
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
+           `_svg_helpers.py:emit_position_label_svg`
+
+`aria-label` on annotation `<g>` elements MUST NOT contain raw LaTeX. LaTeX delimiters
+and command tokens (`$`, `\command`, `^`, `_`) MUST be stripped or translated to natural-
+language math descriptions before injection into `aria-label`. The raw TeX MAY be exposed
+in an `aria-description` fallback attribute for AT users who prefer verbose math
+representation.
+
+**Rationale:** Literal `$+h[1]^2$` in `aria-label` is read verbatim by screen readers
+(NVDA, VoiceOver, JAWS), producing meaningless phoneme strings. This is an active WCAG
+SC 1.1.1 violation. The fix is a string transform at the emitter level — no SVG geometry
+changes required.
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634 `aria-label` emission);
+`pending W3 batch 1 landing`
+**Test ref:** `tests/unit/test_emitter_a11y.py` (pending — test for `aria-label` no raw $)
+**Golden ref:** none
+
+---
+
+### R-14 — `aria-roledescription="annotation"` on annotation groups
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** A-6 (partial) from v2.0.0-rc.1; a11y A11Y-02
+**Source:** a11y A11Y-02
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
+           `_svg_helpers.py:emit_position_label_svg`
+
+Annotation `<g>` elements MUST carry `aria-roledescription="annotation"`. This attribute
+contextualises the group's role for assistive technology users who encounter it during
+document traversal. One attribute added per emit call; zero geometry effect.
+
+**Rationale:** Without `aria-roledescription`, screen readers announce annotation groups
+with only their `role` value (e.g. "graphics-symbol"), which gives no information about
+what kind of element this is. Adding `aria-roledescription="annotation"` closes WCAG
+SC 1.3.1 and improves AT experience with minimal implementation cost (XS).
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `pending W3 batch 1 landing`
+**Test ref:** `tests/unit/test_emitter_a11y.py` (pending)
+**Golden ref:** none
+
+---
+
+### R-15 — `<title>` as first child of each `<svg>` root
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** a11y A11Y-03
+**Source:** a11y A11Y-03
+**Scope:** `_html_stitcher.py` (SVG root emission)
+
+Each `<svg>` root MUST have a `<title>` element as its first child. The `<title>` content
+MUST describe the animation frame in natural language. This is required for reliable
+`aria-labelledby` cross-document referencing.
+
+**Rationale:** Without `<title>`, the SVG root's accessible name depends on `aria-labelledby`
+pointing to an element in the outer HTML document, which is fragile across DOM manipulation
+and cross-origin embedding. A `<title>` as first child is the robust, standards-mandated
+pattern (SVG 2 §5.1). XS cost: one element added per frame.
+
+**Code ref:** `_html_stitcher.py` (SVG root emission); pending W3 batch 1 landing
+**Test ref:** `tests/unit/test_filmstrip_aria.py` (pending — check `<title>` first child)
+**Golden ref:** none
+
+---
+
+### R-16 — Pre-populate step-1 `aria-live` narration
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** a11y A11Y-09
+**Source:** a11y A11Y-09
+**Scope:** `_html_stitcher.py`
+
+Step-1 narration MUST be pre-populated in the static HTML output. The `aria-live` region
+MUST NOT be empty on first load. Empty `aria-live` regions are not announced by screen
+readers on page load; the first frame's annotations become inaccessible to non-sighted users
+who do not interact with the step controls.
+
+**Rationale:** The `aria-live` region fires only when its text content changes. If it begins
+empty and only populates on step-2 interaction, step-1 content is never announced. This is
+a zero-SVG-geometry, static HTML change to `_html_stitcher.py`.
+
+**Code ref:** `_html_stitcher.py` (step narration emission); pending W3 batch 1 landing
+**Test ref:** `tests/integration/test_substory_html.py` (pending — check step-1 narration)
+**Golden ref:** none
+
+---
+
+### R-24 — Keyboard navigation and focus for annotation groups
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** a11y A11Y-08, A11Y-11
+**Source:** a11y A11Y-08, A11Y-11
+**Scope:** `_svg_helpers.py` (annotation `<g>` emission); JavaScript event handler layer
+
+Annotation `<g>` elements MUST be `tabindex="0"` focusable with a visible `:focus-visible`
+ring. The animation widget MUST handle `ArrowLeft`/`ArrowRight` keypresses for step
+navigation when any annotation group has focus.
+
+**Rationale:** WCAG 2.2 SC 2.1.1 requires all functionality to be available via keyboard.
+Step navigation is a core function of the algorithm animation viewer. This requires JS
+event-handler changes and keyboard regression tests (M cost), justifying deferral to
+v0.12.0.
+
+**Code ref:** pending v0.12.0
+**Test ref:** pending (requires keyboard A11Y regression fixtures)
+**Golden ref:** none
+
+---
+
+### R-26 — Touch target minimum height (WCAG 2.2 SC 2.5.8)
+
+**Normative:** MUST
+**Since:** planned v0.13.0+
+**Supersedes:** a11y A11Y-13
+**Source:** a11y A11Y-13
+**Scope:** `_svg_helpers.py:_LABEL_PILL_PAD_Y` constant
+
+Pill height MUST be ≥ 24 px to comply with WCAG 2.2 SC 2.5.8 AA minimum touch target size.
+`_LABEL_PILL_PAD_Y` MUST be increased from 3 to ≥ 7 px to achieve this at current default
+font sizes. The current computed pill height is 19 px, which is below threshold.
+
+**Rationale:** Mobile and touch-screen users of algorithm animation viewers need adequately
+sized touch targets to interact with individual annotation pills. Increasing `_LABEL_PILL_PAD_Y`
+from 3 to 7 px is a corpus-wide breaking change (all pill dimensions shift) requiring re-pin
+of every golden fixture. Deferred to v0.13.0+ pending corpus expansion to ~50 scenes.
+
+**Code ref:** `_svg_helpers.py:_LABEL_PILL_PAD_Y` (line 69, value `3`); pending v0.13.0+
+**Test ref:** pending
+**Golden ref:** pending (byte-breaking for all pill-emitting scenes)
+
+---
+
+## §7 Determinism and instrumentation
+
+Rules governing output reproducibility, warning emission, and diagnostic signals.
+
+---
+
+### R-19 — Unconditional stderr warning on degraded placement
+
+**Normative:** MUST
+**Since:** v2.0.0 (ships v0.11.0-W3 batch 1)
+**Supersedes:** C-2 (strengthened) from v2.0.0-rc.1; comp P6, code W-8
+**Source:** comp P6, code W-8
+**Scope:** `_svg_helpers.py:_place_pill`, `_svg_helpers.py:emit_arrow_svg`
+
+When collision is unresolved after all candidates are exhausted, a
+`scriba:label-placement-degraded` warning MUST be emitted to stderr unconditionally — not
+only when `SCRIBA_DEBUG_LABELS=1`. The current silent HTML comment is insufficient for
+production monitoring. The SVG output MUST also include a diagnostic comment
+`<!-- scriba:label-placement-degraded -->` to support offline inspection.
+
+**Rationale:** Silent failures in label placement prevent authors and CI pipelines from
+detecting degraded output. Unconditional stderr emission (a one-line change) makes the
+failure observable in any deployment context without requiring debug flag configuration.
+
+**Code ref:** `_svg_helpers.py:_place_pill` (line ~1213); line ~1324 fallback;
+`pending W3 batch 1 landing`
+**Test ref:** `tests/unit/test_smart_label_phase0.py` (pending — test unconditional stderr
+emit)
+**Golden ref:** none
+
+---
+
+### R-20 — Migrate `emit_position_label_svg` to `_nudge_candidates`
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** N-7 from v2.0.0-rc.1 (non-invariant); code W-6
+**Source:** code W-6
+**Scope:** `_svg_helpers.py:emit_position_label_svg`
+
+`emit_position_label_svg` MUST be migrated to use the 32-candidate 8-direction
+`_nudge_candidates` algorithm via `_place_pill`. The legacy 4-direction × 16-candidate loop
+MUST be retired. Until this lands, position-only labels on all non-Plane2D primitives
+silently use inferior collision resolution; this is documented as a known limitation in
+v0.11.0 release notes.
+
+**Rationale:** Three separate code paths operating at different quality levels (`_place_pill`
+correct + viewport-clamped; legacy 4-dir/16-candidate without per-candidate clamping) create
+silent, uneven placement behaviour across primitives. Unification via `_nudge_candidates` is
+required for consistent author experience. Depends on R-21 (viewbox parameter threading).
+
+**Code ref:** `_svg_helpers.py:emit_position_label_svg` (line 1337); pending v0.12.0
+**Test ref:** pending
+**Golden ref:** pending (byte-breaking for position-only label scenes)
+
+---
+
+### R-28 — Loud warning on `placed_labels=None`
+
+**Normative:** MUST
+**Since:** planned v0.12.0
+**Supersedes:** code W-8 (partial); silent no-op
+**Source:** code W-8
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
+           `_svg_helpers.py:emit_position_label_svg`, `_svg_helpers.py:_place_pill`
+
+`placed_labels=None` passed to any emit function MUST produce a runtime warning
+(via `warnings.warn` with `stacklevel=2`). The parameter SHOULD be treated as required;
+passing `None` MUST NOT silently no-op. The warning text MUST identify the calling function
+and recommend passing a `list[_LabelPlacement]` instance.
+
+**Rationale:** Silent `placed_labels=None` is a developer error that bypasses the entire
+collision-detection system. Every placed label collides with every other label when the
+registry is absent. The current silent no-op behaviour delays diagnosis of this class of
+bug. A loud warning is a developer-visible-only change (no SVG output change) and can land
+at any time.
+
+**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `_svg_helpers.py:_place_pill`
+(line ~1213); pending v0.12.0
+**Test ref:** pending
+**Golden ref:** none
+
+---
+
+### R-30 — NumberLine routed through `emit_annotation_arrows`
+
+**Normative:** MUST
+**Since:** planned v0.13.0+
+**Supersedes:** code T-11; §5.3 FP-5/FP-6 from v2.0.0-rc.1
+**Source:** code T-11
+**Scope:** `scriba/animation/primitives/numberline.py` (lines 300–316)
+
+NumberLine MUST route through `emit_annotation_arrows` (the shared base dispatcher) like
+all other primitives. The current bypass at `numberline.py:297–316` silently drops
+`arrow=true` and position-only annotations. This is silent data loss, not a graceful
+degradation.
+
+**Rationale:** The NumberLine primitive uses an orphan loop (FP-5/FP-6 forbidden pattern)
+that filters only `arrow_from`-style annotations, silently discarding position-only and
+`arrow=true` annotations. Authors relying on NumberLine annotations for these types receive
+no error and no output — a hard-to-debug silent failure. The fix requires refactoring
+`numberline.py:300–316` (M cost). Deferred to v0.13.0+ with a deprecation notice in the
+v0.11.0 release notes for the `arrow=true`/position-only silent-drop behaviour.
+
+**Code ref:** `scriba/animation/primitives/numberline.py` (lines ~300–316); pending v0.13.0+
+**Test ref:** pending
+**Golden ref:** pending (byte-breaking for NumberLine scenes with position-only annotations)
+
+---
+
+## §8 Conformance matrix
+
+| Rule | Title (short) | Normative | Status | v0.11.0-W3 | v0.12.0 | v0.13.0+ |
+|------|---------------|-----------|--------|:----------:|:-------:|:--------:|
+| R-01 | Arc natural position | MUST | Gap | ✅ batch 2 | — | — |
+| R-02 | Target-cell blocker | MUST | Gap | — | ✅ | — |
+| R-03 | Axis-label no-placement | MUST | Gap | — | — | ✅ |
+| R-04 | Source-cell WARN blocker | SHOULD | Gap | — | ✅ | — |
+| R-05 | Semantic ordering | MUST | Gap | — | ✅ | — |
+| R-06 | Arc-direction NE weighting | MUST | Gap | — | ✅ | — |
+| R-07 | Leader threshold formula | MUST | Gap | ✅ batch 1 | — | — |
+| R-08 | Leader perimeter endpoint | MUST | Gap | ✅ batch 2 | — | — |
+| R-09 | Group opacity restructure | MUST | Gap | — | — | ✅ |
+| R-10 | Cell-boundary clearance | SHOULD | Gap | — | ✅ | — |
+| R-11 | Natural-language aria-label | MUST | Gap | ✅ batch 1 | — | — |
+| R-12 | info/muted opacity floors | MUST | Gap | ✅ batch 1 | — | — |
+| R-13 | Non-color differentiators | MUST | Partial | ✅ batch 1 | — | — |
+| R-14 | aria-roledescription | MUST | Gap | ✅ batch 1 | — | — |
+| R-15 | SVG `<title>` first child | MUST | Gap | ✅ batch 1 | — | — |
+| R-16 | Pre-populate aria-live | MUST | Gap | ✅ batch 1 | — | — |
+| R-17 | Min-overlap fallback | MUST | Gap | — | ✅ | — |
+| R-18 | Pre-register mark AABBs | MUST | Gap | — | ✅ | — |
+| R-19 | Unconditional degraded warn | MUST | Gap | ✅ batch 1 | — | — |
+| R-20 | Migrate emit_position_label | MUST | Gap | — | ✅ | — |
+| R-21 | Per-candidate viewbox clamp | MUST | Gap | — | ✅ | — |
+| R-22 | Auto-compute side_hint | MUST | Gap | ✅ batch 2 | — | — |
+| R-23 | Pill border opacity ≥ 0.6 | MUST | Gap | — | ✅ | — |
+| R-24 | Keyboard/focus a11y | MUST | Gap | — | ✅ | — |
+| R-25 | Dark-mode token collision | MUST | Gap | ✅ batch 1 | — | — |
+| R-26 | Touch target ≥ 24 px | MUST | Gap | — | — | ✅ |
+| R-27 | Leader gated warn/error only | MUST | Gap | ✅ batch 2 | — | — |
+| R-28 | Loud placed_labels=None warn | MUST | Gap | — | ✅ | — |
+| R-29 | Print @media dash styles | MUST | Gap | — | ✅ | — |
+| R-30 | NumberLine routing fix | MUST | Gap | — | — | ✅ |
+
+**Status key:** Gap = not implemented; Partial = partially implemented; ✅ = target release.
+
+**Dependency note (v0.11.0-W3 batch ordering):**
+R-13 (dash to `<path>`) MUST land before R-27 (gate leaders) because R-27's removal of
+leaders makes the dash-on-path the primary non-color cue. R-22 (auto side_hint) MUST land
+before R-01 (natural position fix) so combined candidate ordering is tested as a unit.
+R-07/R-08/R-27/R-01/R-22 are byte-breaking and interact: all five MUST land in a single
+W3 commit with a combined golden re-pin pass to avoid cascading partial-break states.
+
+---
+
+## Appendix A — Legacy alias table (v2.0.0-rc.1 → v2.0.0)
+
+Maps every legacy invariant ID from v2.0.0-rc.1 to its R-* equivalent(s).
+Multi-mapping entries include a rationale column.
+
+| Legacy ID (rc.1) | R-* equivalent(s) | Rationale for split/merge |
+|------------------|-------------------|---------------------------|
+| G-1 | R-18 (post-clamp registry) | G-1's "post-clamp AABB" requirement is subsumed by R-18's registry schema |
+| G-2 | _(retained as §3 geometry note)_ | Anchor formula is a constant, not a new rule |
+| G-3 | R-21 | G-3 "no pill outside viewBox" generalised to per-candidate clamping in R-21 |
+| G-4 | R-21 | Clamp preserves dimensions — same scope as R-21 viewbox threading |
+| G-5 | _(retained in §2.4 guards)_ | Positive-dimensions guard is a pre-condition, not a placement rule |
+| G-6 | _(retained in §3.2 pill dimensions)_ | Width estimator formula is a constant definition |
+| G-7 | R-08 | G-7 "leader originates at arc midpoint" + R-08 "endpoint at perimeter" together define leader geometry |
+| G-8 | R-07 | G-8 named the threshold; R-07 fixes the formula and extracts the constant |
+| C-1 | R-18 + R-21 | No-overlap guarantee requires both pre-registered blockers (R-18) and correct clamping (R-21) |
+| C-2 | R-19 | C-2 required debug-flag-gated signal; R-19 upgrades to unconditional stderr |
+| C-3 | _(retained as registry invariant)_ | Append-only registry is a correctness invariant not a placement rule |
+| C-4 | _(retained as registry invariant)_ | Per-frame registry scope is a correctness invariant |
+| C-5 | R-22 | C-5 (side_hint SHOULD drive half-plane order) formalised as MUST in R-22 (auto-infer) |
+| C-6 | R-18 | C-6 "SHOULD → MUST post-MW-2" is exactly R-18 |
+| C-7 | R-02 + R-03 + R-04 | C-7 "pills SHOULD NOT overlap native content" split by content type: target cell (R-02), axis labels (R-03), source cell (R-04) |
+| T-1 | _(retained as author contract)_ | Label text fidelity is an author-contract invariant |
+| T-2 | _(retained as author contract)_ | Hyphen no-split is a typography invariant |
+| T-3 | _(retained as author contract)_ | Math no-wrap is a typography invariant |
+| T-4 | _(retained as author contract)_ | Width estimator floor is a typography invariant |
+| T-5 | _(retained as author contract)_ | Minimum font size is a typography invariant |
+| T-6 | R-26 | T-6 pill-height formula + R-26 touch target minimum (≥ 24 px) are the same constraint |
+| A-1 | R-12 + R-09 | A-1 (text contrast ≥ 4.5:1) requires opacity floors (R-12) and eventual group restructure (R-09) |
+| A-2 | R-12 | A-2 (hover contrast ≥ 3:1) addressed by R-12 opacity floors |
+| A-3 | R-13 | A-3 (arrow leader contrast) strengthened in R-13 to include non-color differentiators |
+| A-4 | R-12 + R-13 | A-4 (semantic triad CVD) covered by R-12 opacity + R-13 dash patterns |
+| A-5 | R-11 | A-5 (accessible name) strengthened: R-11 adds LaTeX-stripping requirement |
+| A-5b | R-13 + R-27 | A-5b (warn dasharray on leader) superseded: R-13 moves dash to `<path>` unconditionally; R-27 gates leader emission |
+| A-6 | R-14 | A-6 (role hierarchy) extended in R-14 with `aria-roledescription` |
+| A-7 | _(retained as SHOULD)_ | Forced-colors fallback remains SHOULD, no R-* mapping needed |
+| D-1 | R-19 (indirect) | D-1 (byte-identical output) still a core invariant; R-19 adds the stderr signal without changing it |
+| D-2 | _(retained as determinism invariant)_ | `_nudge_candidates` order determinism is a core invariant |
+| D-3 | _(retained as determinism note)_ | ±1 px platform tolerance note |
+| D-4 | _(retained as determinism invariant)_ | Debug flag import-time capture |
+| E-1 | R-17 | E-1 "emit at last-attempted" replaced by R-17 "emit at minimum-overlap" |
+| E-2 | R-30 (related) | E-2 "position-only not dropped" — NumberLine's silent drop addressed in R-30 |
+| E-3 | _(retained as error-handling invariant)_ | Unknown color token fallback |
+| E-4 | _(retained as error-handling invariant)_ | Multi-line pill headroom check |
+| AC-1 | _(retained as author contract)_ | Pill must appear |
+| AC-2 | _(retained as author contract)_ | Arc from A to B |
+| AC-3 | R-22 | AC-3 (declared position as first attempt) formalised in R-22 (auto side_hint MUST use declared value when present) |
+| AC-4 | _(retained as author contract)_ | Color token → ARROW_STYLES mapping |
+| AC-5 | _(retained as author contract)_ | Headroom helpers conservative |
+| AC-6 | _(retained as author contract)_ | Math headroom both directions |
+| N-1 | R-07 | N-1 (leader threshold configurable) absorbed: R-07 makes the formula normative |
+| N-7 | R-20 | N-7 (4-dir loop underspecified divergence) now a MUST to retire in R-20 |
+| N-11 | R-22 | N-11 (side-hint key order detail) absorbed into R-22 |
+
+---
+
+## Appendix B — CHANGELOG entry
+
+The following block is the draft entry for root `CHANGELOG.md` under the `v0.11.0-W3`
+heading. Actual `CHANGELOG.md` edit is in Agent A.2's scope; this appendix provides the
 text.
 
-**AC-2** (MUST) — If an author provides `arrow_from=A, target=B`, the
-output MUST contain a directed arc from A's coordinate to B's
-coordinate with a visible arrowhead at B.
-*Verify*: cubic Bezier start near `src_point`, end at `dst_point`,
-`<polygon>` arrowhead at `dst_point`.
-
-**AC-3** (MUST) — The author's declared `position` value MUST be the
-first placement attempted by the nudge algorithm; it MAY be overridden
-by collision avoidance. The natural position MUST always be the declared
-direction.
-*Verify*: empty registry + `position=above` → assert emitted pill is
-above anchor.
-
-**AC-4** (MUST) — The author's declared `color` token MUST produce the
-styles associated with that token in `ARROW_STYLES`. An undeclared color
-defaults to `"info"` per E-3; a declared valid color MUST produce
-exactly the matching styles.
-*Verify*: for each token, assert `stroke` and `label_fill` match
-`ARROW_STYLES[token]`.
-
-**AC-5** (MUST) — The headroom helpers MUST return values that, when
-used as the primitive's viewBox expansion, guarantee every pill fits
-without clipping. The helpers MUST be conservative (round up).
-*Verify*: property test over random annotation sets.
-
-**AC-6** (MUST) — Math headroom (32 px) MUST apply in both
-`position_label_height_above` and `position_label_height_below` when any
-position-only annotation label contains `$…$`. v1 I-9 addressed only
-`above`; v2 closes the `below` gap.
-*Verify*: create `position=below` + math label; assert
-`position_label_height_below >= base + 32`.
-
-### §1.8 Invariant conflicts + tie-breakers
-
-Six invariant pairs create tension; each has a documented tie-breaker.
-
-| Conflict | Tension | Tie-breaker |
-|---|---|---|
-| C-1 vs AC-3 | No overlap vs declared position | **C-1 wins.** Try preferred direction first (AC-3 start-point guarantee), fall back per C-5. |
-| G-3 vs AC-1 | Fit inside viewBox vs pill must appear | **G-3 wins for clipping; AC-1 is minimum.** System MUST emit (AC-1) AND clamp (G-3). If `pill_w > viewBox_W`, primitive config error — call headroom helpers (AC-5). |
-| T-4 vs C-1 | No under-estimate vs no overlap | **T-4 wins for under-estimation.** Estimator MAY over-estimate up to 20 px; nudge grid resolves the extra collisions. |
-| A-1 vs visual-hierarchy | Contrast floor vs dim opacity design | **A-1 wins.** Background, opacity, and color token values MUST compose to ≥ 4.5:1 effective. |
-| AC-1 vs G-5 | Pill must appear vs positive dimensions | **G-5 wins.** Empty/whitespace-only label → primitive config error, not silent emission. |
-| D-1 vs implementation-choice | Byte-identical vs refactor freedom | **D-1 is compat-critical.** Refactors that alter byte output MUST follow §10 versioning. |
-
-### §1.9 Non-invariants (configuration)
-
-The following were stated as rules in v1 but are implementation choices,
-not correctness requirements. Changing them within the documented bounds
-is a minor configuration change, not a spec violation.
-
-| ID | Item | Why configurable |
-|---|---|---|
-| N-1 | Leader threshold 30 px | UX preference. Existence of threshold is G-8 (MUST); value is choice. |
-| N-2 | Nudge step progression `(0.25, 0.5, 1.0, 1.5)` | Correctness agnostic; optimises coverage. |
-| N-3 | 32 candidates = 8 × 4 | Performance/coverage trade-off. |
-| N-4 | `PAD_X=6, PAD_Y=3, line_gap=2` | Visual density; G-6/T-6 constrain sufficiency. |
-| N-5 | `_LABEL_PILL_RADIUS=4` | Pure aesthetics. |
-| N-6 | `_LABEL_BG_OPACITY=0.92` | Design preference (A-1 applies to text contrast, not bg). |
-| N-7 | `emit_position_label_svg` 4-dir loop | Underspecified divergence from 8-dir grid; see S-6 migration. |
-| N-8 | `_LABEL_MAX_WIDTH_CHARS=24` | Wrap trigger UX. |
-| N-9 | Math multiplier 1.15× ([AT RISK] → 0.90× in v0.11.0 per ISSUE-A2) | Calibration; T-4 floor constrains. |
-| N-10 | `_PLAIN_ARROW_STEM=18` | Layout choice. |
-| N-11 | Side-hint key order `ann["side"] or ann["position"]` | API detail; C-5 mandates the mechanism. |
-| N-12 | Plain baseline headroom 24 px | Tunable; AC-5 mandates sufficiency. |
-
----
-
-## §2 Placement algorithm (normative)
-
-All emitter algorithms below use ECMAScript-style *Let / Assert / Return*
-steps. Line references are to `_svg_helpers.py` at the commit this spec
-was written against.
-
-### §2.1 Primary placement (`emit_arrow_svg`, `emit_plain_arrow_svg`)
-
 ```
-procedure EmitLabeledArrow(src, dst, label, color, side_hint, placed_labels):
-  1. Let `leader_geom` = computeLeader(src, dst).           // start, end, mid
-  2. Let `pill_w, pill_h` = computePillDims(label).
-  3. Let `natural_x, natural_y` = leader_geom.mid.           // initial center
-  4. Let `placement` = LabelPlacement(natural_x, natural_y − l_font_px*0.3,
-                                      pill_w, pill_h).
-  5. Assert placement has positive dimensions (G-5).
-  6. If any p in placed_labels : placement.overlaps(p):
-       For candidate in _nudge_candidates(pill_w, pill_h, side_hint):
-         Let `try` = placement translated by candidate.
-         Let `clamped` = clamp(try, viewBox).                // G-4
-         If no p in placed_labels : clamped.overlaps(p):
-           placement := clamped
-           goto 7
-       // Exhausted:
-       placement := last_clamped_candidate                    // E-1
-       If _DEBUG_LABELS: emit `<!-- scriba:label-collision -->`  // C-2
-  7. Append placement to placed_labels.                       // C-3, G-1
-  8. Render SVG in order: leader, pill, text.
+### v0.11.0 — W3 batch (smart-label ruleset v2.0.0)
+
+#### Non-breaking (batch 1)
+
+- feat(smart-label): R-12 raise `info` group opacity floor ≥ 0.49, `muted` ≥ 0.56
+  (WCAG 2.2 SC 1.4.11 active violation fix; `ARROW_STYLES` constant change only)
+- feat(smart-label): R-14 add `aria-roledescription="annotation"` to annotation `<g>`
+  elements in `emit_arrow_svg`, `emit_plain_arrow_svg`, `emit_position_label_svg`
+- feat(smart-label): R-15 emit `<title>` as first child of each `<svg>` root in
+  `_html_stitcher.py`
+- feat(smart-label): R-11 strip LaTeX delimiters/tokens from `aria-label`; expose raw TeX
+  in `aria-description` fallback
+- feat(smart-label): R-16 pre-populate step-1 narration in static HTML; `aria-live` region
+  non-empty on first load
+- feat(smart-label): R-25 assign distinct `--scriba-annotation-path` value in dark-mode CSS
+  block (was colliding with `--scriba-annotation-info`)
+- feat(smart-label): R-07 extract leader threshold to `_LEADER_DISPLACEMENT_THRESHOLD`;
+  formula `max(pill_h, 20)` replaces hard-coded 30 px constant
+- feat(smart-label): R-19 emit `scriba:label-placement-degraded` to stderr
+  unconditionally when all candidates exhausted (was gated behind `SCRIBA_DEBUG_LABELS`)
+- feat(smart-label): R-13 move `warn` `stroke-dasharray="3,2"` to arrow `<path>`
+  unconditionally; add `muted` dotted `"1,3"` to arrow `<path>`; remove leader-conditional
+  gating (golden re-pin: warn/muted scenes only — additive SVG attr change)
+
+#### Byte-breaking (batch 2 — combined golden re-pin)
+
+- feat(smart-label): R-27 gate leader `<circle>`/`<polyline>` emission to
+  `color in ("warn", "error")` only; removes leaders from displaced good/info/muted/path
+  labels
+- feat(smart-label): R-08 compute pill-perimeter intersection for leader endpoint; replaces
+  `(fi_x, fi_y)` pill-center termination
+- feat(smart-label): R-22 auto-compute `side_hint` from arrow direction vector in
+  `emit_arrow_svg` when no explicit `side`/`position` key present
+- feat(smart-label): R-01 fix arc-label natural position: `label_ref_y = mid_y_val −
+  pill_h // 2 − 4`; replaces incorrect `mid_y_val − 4` constant
+
+#### Ruleset
+
+- docs(ruleset): bump smart-label-ruleset.md from v2.0.0-rc.1 to v2.0.0 final;
+  migrate from axis-style IDs (G-*, C-*, T-*, A-*, D-*, E-*, AC-*) to R-01..R-30 catalogue;
+  add §8 conformance matrix, Appendix A legacy alias table, Appendix B CHANGELOG entry
 ```
-
-**Normative note**: v1 stated the clamp is applied "after placement is
-finalised". Per M-4 in §4 error table (and Round-1 synthesis A3), v2
-moves the clamp *inside* the candidate loop so that a candidate which
-passes the collision check pre-clamp but collides post-clamp is rejected.
-Until ISSUE-A3 is closed (v0.11.0 / MW-3), implementations MAY
-approximate by re-checking the final clamped coordinate against the
-registry and, if it collides, advancing to the next candidate. This
-approximation MUST be replaced by the per-candidate loop on or before
-v0.11.0.
-
-### §2.2 Nudge grid contract
-
-```
-signature:
-  _nudge_candidates(pill_w: int, pill_h: int,
-                    side_hint: Literal["above","below","left","right"] | None
-                   ) -> Iterator[tuple[int, int]]
-
-postconditions:
-  * Yields 32 candidates: 8 compass directions × 4 step sizes.
-  * Step sizes: (0.25, 0.5, 1.0, 1.5) × pill_h       (N-2; configurable)
-  * Sort key: Manhattan distance from origin, tie-break N, S, E, W,
-    NE, NW, SE, SW.
-  * When side_hint ∈ {above, below, left, right}, candidates in the
-    matching half-plane come first; the other half-plane still emits
-    as fallback (C-5).
-  * MUST NOT yield (0, 0)   (M-7 / E1566).
-  * MUST be deterministic — same inputs produce identical iteration
-    order (D-2).
-  * Parameter `pill_w` is currently structurally unused; deprecated in
-    favour of `_place_pill(...)` in MW-3.
-```
-
-### §2.3 Registry contract
-
-- **One** `placed_labels: list[_LabelPlacement]` per primitive `emit_svg`
-  call.
-- Registry is **append-only** (C-3).
-- Registry entries store the **post-clamp** AABB (G-1).
-- Registry is **not** shared across primitive instances, steps, or
-  frames (C-4).
-- `_LabelPlacement` is a `dataclass(slots=True)` with
-  `overlaps(other, pad=0) -> bool`. **v2 resolves the v1 I-2
-  discrepancy**: the canonical default is `pad=0` (strict
-  non-intersection). If callers want a buffer they MUST pass `pad>0`
-  explicitly.
-
-### §2.4 Pre-condition guards (from edge-case taxonomy)
-
-Before entering the placement loop, emitters MUST reject or sanitise
-pathological inputs:
-
-| Input | Guard | Error |
-|---|---|---|
-| `pill_h == 0 or pill_w == 0` | Reject — do not emit | G-5 / E1563-adj |
-| `NaN` anywhere in `(pill_w, pill_h, cx, cy)` | Reject — do not append to registry | Edge §4.1 |
-| `±inf` in `src_point` or `dst_point` | Raise before `int()` conversion | Edge §4.2 |
-| `\x00` (null byte) in label | Sanitise before `_escape_xml` | Edge §4.4 |
-| Self-loop `arrow_from == target` | Detect → emit stub or skip | bug-B |
-
-These guards are new in v2. Until they ship, implementations MAY crash
-or emit malformed SVG; v2 forbids this via E-1/G-5 extensions.
-
-### §2.5 Position-only placement (`emit_position_label_svg`)
-
-As of commit ac667fc (MW-3), `_place_pill(...)` is the **sole placement
-entry-point** for all three emitters (`emit_arrow_svg`,
-`emit_plain_arrow_svg`, `emit_position_label_svg`). The prior 4-direction
-/ 16-candidate ad-hoc loop that diverged from §2.1 has been replaced.
-All placement logic MUST go through `_place_pill`; direct construction of
-`_LabelPlacement` outside `_place_pill` is a forbidden pattern (see §5.3
-FP-2 variant). The `[AT RISK]` marker on this section is retired.
-
----
-
-## §3 Geometric constants
-
-### §3.1 Pill anchor
-
-- **Text anchor** sits at `(cx, final_y)` with
-  `dominant-baseline="middle"`.
-- **Geometric center** of the pill rect is
-  `(cx, final_y − l_font_px × 0.3)`.
-- Collision checks always use the geometric center, not the text anchor.
-
-### §3.2 Pill dimensions
-
-```
-pill_w = _label_width_text(label, l_font_px) + 2 * PAD_X
-pill_h = l_font_px * line_count + 2 * PAD_Y + (line_count − 1) * line_gap
-```
-
-- Math pills: `_label_width_text` strips `\command` tokens then applies
-  the math multiplier (current: 1.15×; scheduled 0.90× in v0.11.0 per
-  ISSUE-A2; see §9.3).
-
-### §3.3 Headroom helpers
-
-```
-arrow_height_above(annotations)
-  → 32 px if any label contains math, else 24 px                  # AC-6
-
-arrow_height_below(annotations)       [absent in v1]
-  → mirror of arrow_height_above — to be added in MW-2. Until then,
-    primitives with below-arrows SHOULD call arrow_height_above as a
-    conservative upper bound.
-
-position_label_height_above(annotations)
-  → pill_h + 6 px margin (math: +8 px)
-
-position_label_height_below(annotations)
-  → pill_h + 6 px margin (math: +8 px for `$…$` labels, mirroring
-    `_above` — AC-6; fixed in v0.10.x per ISSUE-below-math decision,
-    commit dc1a6c2).
-```
-
-Primitives MUST call these helpers and MUST NOT hardcode numeric
-headroom (M-13).
-
-### §3.4 viewBox clamp
-
-- Clamp only after placement is finalised (or, per M-4, per-candidate).
-- Clamp preserves `pill_w` and `pill_h` (G-4) — only the center
-  translates.
-- Re-register the clamped AABB in `placed_labels` (G-1).
-
-### §3.5 Stable constants
-
-These constants are [STABLE]. Altering them is a major break per §10.
-
-| Constant | Value | Rule anchor |
-|---|---:|---|
-| `_LABEL_PILL_PAD_X` | 6 | N-4 |
-| `_LABEL_PILL_PAD_Y` | 3 | N-4 |
-| `_LABEL_LINE_GAP` | 2 | N-4 |
-| `_LABEL_PILL_RADIUS` | 4 | N-5 |
-| `_LABEL_BG_OPACITY` | 0.92 | N-6 |
-| `_LEADER_MIN_DISPLACEMENT` | 30 | G-8 |
-| `_LABEL_MAX_WIDTH_CHARS` | 24 | N-8 |
-| `_PLAIN_ARROW_STEM` | 18 | N-10 |
-
-### §3.6 Named-constant promotion
-
-v2 PROMOTES these v1 magic numbers to named constants for spec and test
-reference:
-
-- `_LEADER_MIN_DISPLACEMENT = 30` — leader suppression floor (G-8).
-- `_LABEL_MATH_HEADROOM_EXTRA = 8` — the 32 − 24 delta in AC-6.
-- `_LABEL_ANCHOR_Y_OFFSET = 0.3` — the `l_font_px × 0.3` offset in
-  G-2 anchor formula.
-
----
-
-## §4 Error codes
-
-All smart-label error codes live in the E15xx block (reserved E1560–E1579).
-See `docs/spec/error-codes.md` for canonical registry; deltas below.
-
-| Code | Rule | Meaning | Detection point |
-|------|------|---------|-----------------|
-| E1112 | AC-3 | Unknown annotation `position=` value | Semantic validator |
-| E1113 | AC-4 | Unknown annotation `color=` value | Semantic validator |
-| E1560 | C-4 | Registry not reset between frames | MW-3 `_place_pill` (PROPOSED) |
-| E1561 | C-3 | Registry entry mutated after append | MW-3 (PROPOSED) |
-| E1562 | G-1 | Pre-clamp AABB registered | At `placed_labels.append(…)` |
-| E1563 | G-4 / M-4 | Clamp applied after selection, collides | Per-candidate loop |
-| E1564 | C-2 / I-5 | Debug comment in production output | Post-render assertion |
-| E1565 | G-2 | Pill anchor inconsistency (geom ≠ render) | At render site |
-| E1566 | D-2 / M-7 | `_nudge_candidates` yielded `(0, 0)` | Generator self-check |
-| E1567 | T-2 / T-3 | Line break inside math span | `_wrap_label_lines` |
-| E1568 | AC-6 / M-9 | Insufficient headroom for math label | Headroom helper |
-| E1569 | E-2 / AC-1 | Position-only label silently dropped | `base.emit_annotation_arrows` |
-| E1570 | M-13 | Hardcoded numeric headroom in primitive | Code review / lint |
-| E1571 | G-8 | Leader drawn below displacement floor | `emit_arrow_svg:937` |
-
-Future codes: E1572–E1579 reserved.
-
-**Error message format**: `[E15xx] <context>; <requirement>.`
-e.g. `[E1568] Primitive DPTable: computed headroom 24px is less than the
-required 32px for a math annotation label.`
-
----
-
-## §5 Primitive Participation Contract
-
-A Primitive class MUST implement the following interface to participate
-in smart-label placement. Conformance is measured per §5.2.
-
-### §5.1 Required interface
-
-```python
-class PrimitiveBase:
-    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
-        """Return SVG (x, y) anchor for an annotation selector.
-
-        Pre:  selector is a fully-qualified selector string.
-        Post: returned point lies within `self.bounding_box()`;
-              None for unknown selectors (no exception).
-        Grade: MUST.
-        """
-
-    def emit_svg(
-        self, *,
-        placed_labels: list[_LabelPlacement] | None = None,
-        render_inline_tex: Callable[[str], str] | None = None,
-    ) -> str:
-        """Emit the primitive's SVG for the current frame.
-
-        MUST pass `placed_labels` to every emitter call.
-        MUST NOT emit annotation `<text>` directly (see FP-1).
-        MUST NOT keep a private `placed_labels`-equivalent list (FP-2).
-        Grade: MUST (`placed_labels` kwarg added in MW-2).
-        """
-
-    def annotation_headroom_above(self) -> float:
-        """Return viewBox expansion above content for this frame.
-
-        Canonical formula:
-            max(arrow_height_above(anns),
-                position_label_height_above(anns),
-                getattr(self, "_min_arrow_above", 0))
-        Grade: MUST (new method; collapses the scattered `max(...)` blocks).
-        """
-
-    def annotation_headroom_below(self) -> float:
-        """Mirror of `annotation_headroom_above`.  Grade: MUST."""
-
-    def register_decorations(self, registry: list[_LabelPlacement]) -> None:
-        """Seed the registry with non-pill AABBs (cell text, leader paths,
-        tick labels, value badges). Grade: SHOULD stub now; MUST post-MW-2.
-        """
-
-    def dispatch_annotations(self, annotations, placed_labels) -> str:
-        """Hook for primitives (e.g. Plane2D) that route annotations
-        through a non-default dispatcher. Grade: SHOULD."""
-```
-
-### §5.2 Conformance matrix
-
-Per-primitive conformance status, measured 2026-04-21. Full matrix in
-`docs/archive/smart-label-ruleset-strengthening-2026-04-21/05-primitive-contract.md`.
-
-| Primitive | resolve | emit_svg wire | headroom_above | headroom_below | placed_labels plumbed | decorations | Grade |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|---|
-| Array | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | NEAR (miss HDB) |
-| DPTable | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | NEAR (miss HDB) |
-| Grid | ✓ | partial | ✗ | ✗ | via base | ✗ | PARTIAL |
-| Tree | ✓ | partial | ✗ | ✗ | via base | ✗ | PARTIAL |
-| LinkedList | ✓ | partial | ✗ | ✗ | via base | ✗ | PARTIAL |
-| HashMap | ✓ | partial | ✗ | ✗ | via base | ✗ | PARTIAL |
-| VariableWatch | ✓ | partial | ✗ | ✗ | via base | ✗ | PARTIAL |
-| Graph | ✓ | partial | ✗ | ✗ | separate list (FP-2) | ✗ | PARTIAL |
-| Queue | ✓ | ✗ orphan loop | ✗ | ✗ | ✗ | ✗ | NON-CONFORMANT |
-| NumberLine | ✓ | ✗ orphan loop | ✗ | ✗ | ✗ | ✗ | NON-CONFORMANT |
-| Plane2D | ✓ | ✗ direct `<text>` | ✗ | ✗ | separate list (FP-2) | ✗ | NON-CONFORMANT |
-| Stack | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | DARK |
-| Matrix | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | DARK |
-| MetricPlot | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | DARK |
-| CodePanel | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | DARK |
-
-**Target (post-MW-2)**: 15 / 15 CONFORMANT.
-
-### §5.3 Forbidden patterns
-
-| ID | Pattern | Current violation |
-|---|---|---|
-| FP-1 | Direct `<text>` emission for annotation labels | `plane2d.py:673–752` `_emit_text_annotation` |
-| FP-2 | Isolated second `placed_labels` list per call | `graph.py:726`, `plane2d.py:1057` |
-| FP-3 | Hardcoded glyph/pill metrics (`char_width=7`, `pill_h=16`) | `plane2d.py:719–721` |
-| FP-4 | No viewBox clamp after placement | `plane2d.py:724–731` (bug-F) |
-| FP-5 | `arrow_from`-only filter (drops position-only) | `queue.py:403`, `numberline.py:297` |
-| FP-6 | Direct `emit_arrow_svg` bypass of `base.emit_annotation_arrows` | `queue.py:416`, `numberline.py:309` |
-
-### §5.5 PrimitiveProtocol — warn-on-register advisory (v0.10.x)
-
-As of commit 589f4bf, a `PrimitiveProtocol` structural type is defined
-(`scriba/animation/primitives/_protocol.py`). Any primitive class that
-does NOT implement `PrimitiveProtocol` at registration time will receive
-a `DeprecationWarning`:
-
-```
-DeprecationWarning: Primitive 'Stack' does not implement PrimitiveProtocol.
-  Smart-label placement may be incomplete. See docs/spec/smart-label-ruleset.md §5.
-```
-
-This is **advisory only** in v0.10.x — it does not block rendering.
-It becomes a hard error (`TypeError`) in v0.11.0 once the §5.4 migration
-plan is complete. Primitives listed as DARK in §5.2 MUST conform (or
-declare `_smart_label_opt_out = True`) before v0.11.0 ships.
-
-### §5.4 Migration plan
-
-14 primitives × effort = **17.5 agent-hours total**. Ordered smallest →
-largest:
-
-| Order | Primitive | Effort | Change |
-|---:|---|---:|---|
-| 1–5 | Grid, Tree, LinkedList, HashMap, VariableWatch | 0.5 h each | Add two-line headroom helpers |
-| 6 | Array | 0.25 h | Wire headroom_below |
-| 7 | DPTable | 0.25 h | Wire headroom_below |
-| 8 | Graph | 1.5 h | Collapse second `placed_labels` (FP-2) |
-| 9 | Queue | 1.5 h | Replace orphan loop (FP-5/FP-6) |
-| 10 | NumberLine | 1.5 h | Replace orphan loop (FP-5/FP-6) |
-| 11 | Plane2D | 3.0 h | Replace direct `<text>` (FP-1), add clamp (FP-4) |
-| 12 | MetricPlot | 4.0 h | Define anchor semantics + full wire |
-| 13–15 | Stack, Matrix, CodePanel | 1.0 h each | Either conform or mark `_smart_label_opt_out = True` |
-
----
-
-## §6 Environment flags
-
-| Flag | Purpose | Default | Stability | Lifecycle |
-|---|---|---|---|---|
-| `SCRIBA_DEBUG_LABELS` | Emit `<!-- scriba:label-collision -->` comments for every placement that hit the nudge grid. | off | [STABLE] | permanent |
-| `SCRIBA_LABEL_ENGINE` | Select placement engine: `legacy` \| `unified` \| `both`. `unified` is the default as of Phase 7. | `unified` | [AT RISK] | `legacy` eligible for removal at v3 per §10.3 |
-| `SCRIBA_WARN_DEPRECATED` | Emit `DeprecationWarning` for deprecated APIs per §10.3. | off | [STABLE] | permanent |
-| `SCRIBA_LABEL_TRANSITIONS` | Opt-in CSS entrance transitions (future). | off | [EXPERIMENTAL] | MAY land post-v2 |
-
-Naming convention: `SCRIBA_LABEL_*` for smart-label flags. Adding a new
-flag requires a §11 change procedure.
-
----
-
-## §7 Known-bad repros
-
-Reference repros: `docs/archive/smart-label-audit-2026-04-21/repros-after/`
-and the 52-file corpus in
-`smart-label-ruleset-audit-2026-04-21/repros/rendered/`.
-
-| ID | Symptom | Root cause | Rule slot | Status |
-|---|---|---|---|---|
-| bug-A | Pills occlude cell numbers (15, 17, 13) | Registry is pill-only; cell text not seeded | C-7 (SHOULD → MUST post-MW-2) | PENDING MW-2 |
-| bug-B | Self-loop arrow → 2-px degenerate leader | Bezier control-point collapse when `arrow_from == target` | §2.4 guards | separate bug |
-| bug-C | Multi-line pill exceeds viewBox height | Wrap does not clamp vs headroom | E-4 / AC-5 | pending v2 guard |
-| bug-D | Position-only label dropped silently | `resolve_annotation_point → None` short-circuit | E-2 | FIXED Phase 0 |
-| bug-E | Dense Plane2D → 0 pills emitted | Plane2D never dispatches position-only | §5.2 matrix row | pending MW-2 |
-| bug-F | Long Plane2D label truncates off-canvas | No viewBox clamp (FP-4) | §5.3 | pending MW-2 |
-| pill-arrow-collide | 34.6 % of frames have pill on arrow | C-6 unregistered | C-6 (SHOULD → MUST post-MW-2) | pending MW-2 |
-| ok-simple | Reference clean case | — | regression guard | stable |
-
----
-
-## §8 Non-goals
-
-These capabilities are explicitly out of scope for this ruleset. Each has
-a documented re-scoping clause in
-`docs/archive/smart-label-ruleset-strengthening-2026-04-21/07-non-goals-versioning.md`.
-
-| ID | Capability | Why out of scope |
-|---|---|---|
-| NG-1 | Temporal coherence across frames | Requires cross-frame state object — renderer concern, not placement |
-| NG-2 | User-interactive drag-to-adjust | Requires interactive runtime; scriba is batch |
-| NG-3 | 3D projection | viewBox is 2D; would replace core model |
-| NG-4 | Cross-scene label sharing | Registry scoped to one `emit_svg` (C-4) |
-| NG-5 | RTL + vertical CJK layout | Requires bidi/writing-mode — separate typography spec |
-| NG-6 | Entrance / exit animations | CSS transitions; not placement geometry |
-| NG-7 | Richer selection / tooltip | Interaction design; separate spec |
-| NG-8 | Real-time live updates | Requires client-side placement engine |
-| NG-9 | Priority-weighted culling | Conflicts with "all labels required" axiom |
-| NG-10 | Browser-round-trip text metrics | Two-pass render; defer to LR-2 |
-| NG-11 | Variable-stroke arrow gradients | Visual design; not placement |
-| NG-12 | Leader curvature smoothing | Current straight/arc is sufficient |
-| NG-13 | Sub-pixel anti-aliasing control | SVG renderer concern |
-| NG-14 | Multi-level pill grouping | Complexity not justified |
-| NG-15 | Collision cost function tuning per primitive | Uniform model is simpler |
-| NG-16 | Arbitrary custom color tokens at author level | Breaks WCAG closure (A-4) |
-| NG-17 | Per-pill style overrides | Breaks WCAG token closure |
-| NG-18 | Cross-primitive registry at spec level | Deferred to compositor spec if ever needed |
-
----
-
-## §9 Roadmap + open issues
-
-### §9.1 Shipped
-
-- **Phase 0** (QW-1..QW-7 + position-only emit): anchor center-correction,
-  registry append-only, viewBox clamp re-registration, math multiplier,
-  8-dir grid, math headroom above, position-only emitter.
-- **MW-1** 8-direction × 4-step nudge grid. Done.
-- **MW-3** `_place_pill` unified placement entry-point (commit ac667fc).
-  Clamp-race closed; `overlap_pad` param added. See §2.5.
-- **AC-6 below-math fix** (commit dc1a6c2) — `position_label_height_below`
-  now adds math headroom (+8 px) matching `_above`.
-- **A-5 non-colour cue** (commit b1a4ff1) — `warn` leader uses
-  `stroke-dasharray="3,2"`; all other tokens solid. See §1.4 A-5b.
-- **PrimitiveProtocol** (commit 589f4bf) — warn-on-register advisory
-  added; primitives not implementing `PrimitiveProtocol` receive a
-  deprecation warning at registration time (advisory mode; not yet MUST).
-- **Lint** (commit ffa8690) — advisory lint for FP-* patterns; runs in
-  CI but does not block (advisory mode).
-
-### §9.2 In progress
-
-- **MW-2 — unified typed registry**. Adds `kind: LabelKind ∈ {pill,
-  cell_text, leader_path, decoration}`. Primitive seeders wire
-  `register_decorations` for DPTable, Array, Grid, Plane2D, Graph, Tree.
-  Closes bug-A, bug-E, bug-F and promotes C-6/C-7 from SHOULD to MUST.
-  Estimated 2.85 agent-days per Round-1 synthesis.
-- **MW-3 — pill-placement helper `_place_pill`**. **SHIPPED** (commit
-  ac667fc). `_place_pill` is now the sole placement entry-point for all
-  three emitters. Clamp-race (ISSUE-A3) is closed within `_place_pill`.
-  The `[AT RISK]` marker on §2.5 is retired. The `overlap_pad` param is
-  available for callers requiring a separation buffer (optional; default
-  0).
-- **MW-4a — `forbidden_region: BoundingBox | None`** param on
-  `_place_pill`. Plane2D passes content bbox → fixes bug-E/F without a
-  force solver.
-- **MW-4b — repulsion solver fallback**. Conditional on MW-4a being
-  insufficient. D3fc-style greedy argmin over overlap area +
-  adjustText-style anchor-distance tie-break.
-- **LR-1 — Wave A+B re-land** (drop JS Wave C.3–C.5) from Round-0
-  audit. Scoped for v3.
-
-### §9.3 Open issues
-
-> **ISSUE-A1**: I-2 pad semantics. **Status**: CLOSED in v2. The
-> canonical default is `pad=0` (§2.3). `_LabelPlacement.overlaps()`
-> implements strict non-intersection. Optional `overlap_pad` support
-> is tracked under MW-3.
-
-> **ISSUE-A2**: Math width multiplier. Current 1.15× over-estimates by
-> RMSE 17.1 px on 16/20 sample labels. Recommended: 0.90×.
-> **Decision**: FIX in v0.11.0 — flip to 0.90× gated by RMSE
-> regression test. See
-> `docs/archive/smart-label-ruleset-hardening-2026-04-21/04-open-issue-resolution.md §2.2`.
-> **Status**: OPEN pending v0.11.0.
-
-> **ISSUE-A3**: Clamp-race in collision loop. Per-candidate clamp is
-> normative (§2.1). **Decision**: FIX in v0.11.0 via `_place_pill`
-> (MW-3). The §2.1 "MAY approximate" escape holds until then.
-> **Status**: OPEN pending v0.11.0 (MW-3).
-
-> **ISSUE-A4**: WCAG AA contrast post-opacity-composite. **Status**:
-> RESOLVED. A-4 scope narrowed to the **semantic triad** (`good`, `warn`,
-> `error`) only. `info` and `muted` are reclassified as decorative tokens
-> and are NOT required to pass A-4 contrast or CVD thresholds (see §1.4
-> A-4). The `_LABEL_BG_OPACITY=0.92` `[AT RISK]` marker is retired for
-> this reason. See `04-open-issue-resolution.md §2.4`.
-
-> **ISSUE-A5**: CVD distinguishability. **Status**: RESOLVED. The
-> `info`/`path` hex collision claim was stale (they are already
-> distinct). The `warn`/`error` CIEDE2000 gap under deuteranopia
-> (measured 2.8 — below the ≥ 10 threshold) is remediated by a
-> **non-colour cue**: the `warn` leader now uses
-> `stroke-dasharray="3,2"` (commit b1a4ff1), making `warn` visually
-> distinct from `error` and `good` without relying solely on hue.
-> This satisfies WCAG 2.2 SC 1.4.1. Normative rule added as §1.4
-> A-5b. See `04-open-issue-resolution.md §2.5`.
-
-> **ISSUE-below-math**: `position_label_height_below` missing math
-> headroom branch. **Status**: RESOLVED. Fixed in v0.10.x hot-patch
-> (commit dc1a6c2) — `position_label_height_below` now adds
-> `_LABEL_MATH_HEADROOM_EXTRA` (8 px) when any position-only annotation
-> label contains `$…$`, mirroring `_above`. AC-6 is fully enforced for
-> both directions. See `04-open-issue-resolution.md §2.6`.
-
----
-
-## §M-1 Forward Compatibility — Legacy Engine Rollback Path
-
-In v0.10.x, the environment variable `SCRIBA_LABEL_ENGINE` accepts three
-values:
-
-| Value | Behaviour |
-|-------|-----------|
-| `unified` | (default since Phase 7) Placement goes through `_place_pill`; full MW-3 path. |
-| `legacy` | Reverts to pre-Phase-7 emitter code. Use for emergency rollback if `unified` produces regressions. |
-| `both` | Runs both engines and emits a diff-diagnostic comment in debug mode. |
-
-**Rollback procedure (v0.10.x)**: set `SCRIBA_LABEL_ENGINE=legacy` in
-the deployment environment. No code change required. The rollback is
-silent (no warning) unless `SCRIBA_WARN_DEPRECATED=1` is also set, in
-which case a `DeprecationWarning` is emitted per call.
-
-**Removal in v0.11.0**: the `legacy` path is removed in v0.11.0. After
-that release, `SCRIBA_LABEL_ENGINE` only accepts `unified` (the default;
-setting it explicitly is a no-op). Any deployment still using
-`SCRIBA_LABEL_ENGINE=legacy` at the v0.11.0 upgrade will fall through to
-`unified` with a `DeprecationWarning` during the v0.10.x → v0.11.0
-transition window, then raise `ValueError` in v0.11.0.
-
-Authors relying on the `legacy` path MUST migrate before v0.11.0. The
-`MIGRATION.md` entry for this removal is tracked under the v0.11.0
-milestone.
-
----
-
-## §10 Versioning policy
-
-### §10.1 Scheme
-
-Semantic versioning `MAJOR.MINOR.PATCH`. Milestones:
-
-- **v1** = Phase 0 + MW-1 + P0 patches (A1..A5).
-- **v1.1** = v1 + MW-3 `_place_pill`.
-- **v2** = v1.1 + MW-2 registry + §1.4 accessibility enforcement.
-- **v3** = v2 + LR-1 Wave A+B re-land.
-
-Tags land at release: `ruleset-vX.Y`. Head of this document carries the
-version in front-matter.
-
-### §10.2 Stability markers
-
-| Marker | Meaning |
-|---|---|
-| `[STABLE]` | Settled; any change is minor or major per §10.4. |
-| `[EXPERIMENTAL]` | May change without notice; do not rely on from production. |
-| `[AT RISK]` | Stable today but scheduled for modification in next minor/major. |
-| `[DEPRECATED]` | Will be removed at the next major bump. |
-
-Every section in this document carries an implicit `[STABLE]` unless
-flagged otherwise. Explicit markers to note:
-
-- §1.9 N-9 (math multiplier 1.15×) — [AT RISK] FIX scheduled v0.11.0
-  (ISSUE-A2).
-- §2.5 `emit_position_label_svg` 4-dir loop — retired; `_place_pill`
-  is the sole entry-point as of commit ac667fc (MW-3).
-- §3.5 `_LABEL_BG_OPACITY=0.92` — [AT RISK] marker retired; A-4 now
-  scoped to semantic triad only (ISSUE-A4 resolved).
-- §6 `SCRIBA_LABEL_ENGINE=legacy` path — [DEPRECATED] eligible for
-  removal at v0.11.0 per §M-1; removed in v0.11.0.
-
-### §10.3 Deprecation procedure
-
-1. Mark feature `[DEPRECATED]` in a minor release.
-2. Emit `DeprecationWarning` at the call site, gated by
-   `SCRIBA_WARN_DEPRECATED=1`.
-3. Wait at least two minor releases.
-4. Remove at the next major bump. `MIGRATION.md` documents the path.
-
-### §10.4 Compatibility bands
-
-| Change | Version bump |
-|---|---|
-| Clarify wording of a MUST without changing meaning | PATCH |
-| Add a new SHOULD or MAY rule | MINOR |
-| Add a new MUST rule with a `[STABLE]` feature flag (opt-in) | MINOR |
-| Add a new MUST rule enforced by default | MAJOR |
-| Demote MUST → SHOULD | MAJOR |
-| Remove a rule | MAJOR |
-| Alter a `[STABLE]` geometry constant by ≥ 8 px visible shift | MAJOR |
-| Alter a `[STABLE]` geometry constant by < 8 px visible shift | MINOR |
-| Add error code | MINOR |
-| Change existing error code number | MAJOR |
-
-**8 px author-visible threshold**: a change that shifts a rendered pill
-position by ≥ 8 px (≈ 0.75 em at 11 px font) is the threshold at which
-a reader may perceive the pill as pointing at a different cell or
-target. Changes below this are MINOR. The measurement authority is
-`tools/measure_label_shift.py` (to be written alongside MW-2 tests).
-
-### §10.5 Invariant-label reservation
-
-The identifiers `G-*`, `C-*`, `T-*`, `A-*`, `D-*`, `E-*`, `AC-*`, `N-*`,
-`FP-*`, `NG-*` are reserved permanently. Removed rules keep their
-identifiers as historical anchors; new rules get new numbers. Renumbering
-is a MAJOR break.
-
-### §10.6 Extension stages
-
-Rules proposed for inclusion pass through:
-
-1. **Idea** — informal proposal, no commitment.
-2. **Proposal** — written as an `[EXPERIMENTAL]` section with an ISSUE
-   block.
-3. **Implementation** — code lands behind a flag.
-4. **Candidate** — flag on by default, marked `[AT RISK]`.
-5. **Stable** — flag removed, rule is normative.
-
-Breaking-change protocol requires `BREAKING CHANGE:` footer on the
-commit, a `MIGRATION.md` entry, and two-maintainer review.
-
----
-
-## §11 Change procedure
-
-When modifying `_svg_helpers.py`, primitive `emit_svg` methods, or this
-spec:
-
-1. Run `gitnexus_impact({target: "<function>", direction: "upstream"})`.
-2. Identify which invariant(s) the change touches; update this document
-   first, then the code, in the same PR.
-3. Re-render all known-bad repros (§7) plus the 52-file visual corpus.
-   Visually diff before/after.
-4. Add or update the test in `tests/unit/test_smart_label_phase0.py`
-   (or the dedicated `TestInvariantGx / TestInvariantCx / …` class when
-   that test backfill lands in MW-3 per P1 B5).
-5. Run `pytest tests/unit/test_smart_label_phase0.py -v` and
-   `pytest tests/visual/` (when the visual corpus is wired).
-6. Run the A-1..A-7 contrast-check script (MW-2 scope) when colors or
-   opacity are touched.
-7. Commit code, tests, doc, and re-rendered repros in the same commit.
-8. If the change is MINOR or MAJOR per §10.4, update the front-matter
-   version and `CHANGELOG-smart-label.md`.
-
----
-
-## Appendix A — Test-assertion map
-
-Mapping from invariants to the tests that enforce them. Coverage target
-is 85 % line+branch on `_svg_helpers.py` (per Round-1 synthesis).
-
-| Invariant | Test class / function |
-|---|---|
-| G-1 | `TestRegistryPostClamp::test_clamp_registers_post_clamp_center` |
-| G-2 | `TestAnchorConsistency::test_y_roundtrip` |
-| G-3 | `TestViewBoxFit::test_all_pills_inside_viewbox` |
-| G-4 | `TestClamp::test_preserves_pill_dimensions` |
-| G-5 | `TestPillDims::test_positive_dimensions` |
-| G-6 | `TestPillWidth::test_covers_text` |
-| G-7 | `TestLeader::test_originates_at_arc_midpoint` |
-| G-8 | `TestLeader::test_suppressed_below_30px` |
-| C-1 | `TestCollision::test_no_pill_overlap_per_frame` |
-| C-2 | `TestCollisionDebug::test_debug_comment_gated` |
-| C-3 | `TestRegistry::test_append_only` |
-| C-4 | `TestRegistry::test_not_shared_across_frames` |
-| C-5 | `TestSideHint::test_preferred_halfplane_first` |
-| C-6, C-7 | `TestMW2CellText::*` (PENDING MW-2) |
-| T-1 | `TestLabelText::test_matches_author_declaration` |
-| T-2 | `TestWrap::test_hyphen_never_splits` |
-| T-3 | `TestWrap::test_math_never_wraps` |
-| T-4 | `TestWidthEstimator::test_within_20px_tolerance` |
-| T-5 | `TestTokens::test_min_font_size` |
-| T-6 | `TestPillHeight::test_multi_line` |
-| A-1..A-4 | `TestContrast::*` (PENDING MW-2 B7) |
-| A-5 | `TestA11y::test_aria_label_contains_target_and_label` |
-| A-6 | `TestA11y::test_role_hierarchy` |
-| A-7 | browser test (OPTIONAL) |
-| D-1 | `TestDeterminism::test_byte_identical_repeat` |
-| D-2 | `TestNudge::test_identical_sequence` |
-| D-4 | `TestDebugFlag::test_captured_at_import` |
-| E-1 | `TestCollision::test_last_candidate_on_exhaust` |
-| E-2 | `TestPositionOnly::test_emitted_without_headroom_helper` |
-| E-3 | `TestColor::test_unknown_falls_back_and_warns` |
-| E-4 | `TestMultiline::test_height_within_headroom` |
-| AC-1..AC-4 | per-primitive integration tests |
-| AC-5 | `TestHeadroom::test_conservative` (property) |
-| AC-6 | `TestMathHeadroom::test_below_also_32px` (PENDING B6) |
-
-Missing today: C-6, C-7, A-1..A-4. AC-6 (`test_below_also_32px`) is
-scheduled for v0.10.x hot-patch. A-1..A-4 contrast tests are scheduled
-for v0.11.0. C-6, C-7 pending MW-2. Target: 85 % coverage before MW-2
-ships.
-
-Round-3 hardening
-(`docs/archive/smart-label-ruleset-hardening-2026-04-21/`) supplies the
-full executable surface: per-invariant pytest map
-(`01-conformance-suite.md`), pinned golden corpus
-(`02-golden-corpus.md`), AST lint script and `PrimitiveProtocol`
-(`03-lint-and-protocol-enforcement.md`), Hypothesis property tests
-(`05-determinism-property-tests.md`), a11y automation including Machado
-CVD matrices (`06-a11y-automation.md`), and an Alloy formal model of
-the geometric invariants (`07-alloy-model.md` + `smart-label-model.als`).
-
----
-
-## Appendix B — Formal model (optional)
-
-A lightweight Alloy model of the structural invariants (G-3, C-1, C-4,
-registry append-only) is proposed as an optional artefact at
-`docs/formal/smart-label-model.als`. Status: `[EXPERIMENTAL]`. The
-model is not normative; Hypothesis property tests carry primary
-coverage. The Alloy model is scope ~150 lines and serves as a
-cross-check when rule interactions are redesigned.
-
-TLA+ was evaluated and declined: the algorithm is sequential,
-deterministic, and bounded; temporal logic adds no value over
-property-based tests.
-
----
-
-## Appendix C — Acknowledgements
-
-This document consolidates findings from three audit rounds:
-
-| Round | Folder | Agents | Focus |
-|---|---|---:|---|
-| 0 | `docs/archive/smart-label-audit-2026-04-21/` | 4 | Initial placement-algorithm + KaTeX audit |
-| 1 | `docs/archive/smart-label-ruleset-audit-2026-04-21/` | 10 | Operational gaps (bugs, coverage, WCAG, primitives) |
-| 2 | `docs/archive/smart-label-ruleset-strengthening-2026-04-21/` | 7 | Ruleset-document strengthening: first principles, RFC 2119, API contracts, edge cases, primitive interface, spec style, versioning |
-
-All three folders remain the source of truth for rationale behind
-individual rules. When a rule's rationale is unclear, follow the
-cross-reference to the audit folder.
 
 ---
 
 ## History
 
 | Version | Date | Change |
-|---|---|---|
+|---------|------|--------|
 | 1.0 | 2026-04-21 | Initial v1 — Phase 0 + MW-1 as shipped, 10 invariants, informal prose. |
 | 2.0-draft | 2026-04-21 | v2 rewrite — RFC 2119, 42 invariants across 7 axes, E1560–E1579 codes, Primitive Participation Contract, versioning policy, 18 non-goals. |
-| 2.0-draft.r3 | 2026-04-21 | Round-3 hardening pass — ISSUE-A1 CLOSED; ISSUE-A2/A3/A4/A5/below-math given FIX decisions with target versions; §9.3 blockers for v2-final tagged; linked 44-fixture golden corpus, 42-invariant conformance suite design, FP-1..FP-6 lint design, Hypothesis property tests, a11y automation, and Alloy formal model. No invariant text changed. |
-| 2.0.0-rc.1 | 2026-04-21 | Wave 2 code blockers landed (AC-6 dc1a6c2, A-5 non-colour cue b1a4ff1, MW-3 `_place_pill` ac667fc clamp-race closed); A-4 scope narrowed to semantic triad (`good`/`warn`/`error`); `info`/`muted` reclassified decorative; A-5b `warn` dasharray="3,2" normative rule added; §M-1 forward-compatibility / legacy-engine rollback path documented; PrimitiveProtocol warn-on-register advisory noted in §MW-1 / §9. |
+| 2.0-draft.r3 | 2026-04-21 | Round-3 hardening pass — ISSUE-A1..A5/below-math given FIX decisions; §9.3 blockers tagged; linked golden corpus and conformance suite. |
+| 2.0.0-rc.1 | 2026-04-21 | Wave 2 blockers landed (AC-6 dc1a6c2, A-5 b1a4ff1, MW-3 ac667fc); A-4 narrowed to semantic triad; A-5b warn dasharray normative; §M-1 rollback path documented. |
+| 2.0.0 | 2026-04-22 | Final — axis-style IDs retired; unified R-01..R-30 catalogue from pedagogy synthesis study; §8 conformance matrix; Appendix A legacy alias table; Appendix B CHANGELOG entry; v0.11.0-W3 / v0.12.0 / v0.13.0+ target releases assigned. |
