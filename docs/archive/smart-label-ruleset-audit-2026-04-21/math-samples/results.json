@@ -1,0 +1,233 @@
+{
+  "corpus_size": 20,
+  "font_px": 11,
+  "summary": {
+    "rmse_px": 16.61,
+    "mean_error_px": 10.42,
+    "under_count": 4,
+    "over_count": 16,
+    "exact_count": 0
+  },
+  "rows": [
+    {
+      "id": "S01",
+      "label": "$x$",
+      "description": "single variable",
+      "est_str": "xx",
+      "est_px": 14,
+      "true_w": 7.62,
+      "true_h": 15.97,
+      "error_px": 6.38,
+      "error_pct": 83.61
+    },
+    {
+      "id": "S02",
+      "label": "$n$",
+      "description": "single letter n",
+      "est_str": "nn",
+      "est_px": 14,
+      "true_w": 8,
+      "true_h": 15.97,
+      "error_px": 6,
+      "error_pct": 75.0
+    },
+    {
+      "id": "S03",
+      "label": "$1$",
+      "description": "single digit",
+      "est_str": "11",
+      "est_px": 14,
+      "true_w": 6.66,
+      "true_h": 15.97,
+      "error_px": 7.34,
+      "error_pct": 110.33
+    },
+    {
+      "id": "S04",
+      "label": "$x^2$",
+      "description": "variable with superscript",
+      "est_str": "x^2x",
+      "est_px": 27,
+      "true_w": 12.94,
+      "true_h": 15.97,
+      "error_px": 14.06,
+      "error_pct": 108.7
+    },
+    {
+      "id": "S05",
+      "label": "$x_i$",
+      "description": "variable with subscript",
+      "est_str": "x_ix",
+      "est_px": 27,
+      "true_w": 11.5,
+      "true_h": 15.97,
+      "error_px": 15.5,
+      "error_pct": 134.78
+    },
+    {
+      "id": "S06",
+      "label": "$\\alpha + \\beta$",
+      "description": "greek letters with operator",
+      "est_str": " +  ",
+      "est_px": 27,
+      "true_w": 33.08,
+      "true_h": 15.97,
+      "error_px": -6.08,
+      "error_pct": -18.38
+    },
+    {
+      "id": "S07",
+      "label": "$n-1$",
+      "description": "subtraction (no \\-split)",
+      "est_str": "n-1n",
+      "est_px": 27,
+      "true_w": 30.92,
+      "true_h": 15.97,
+      "error_px": -3.92,
+      "error_pct": -12.68
+    },
+    {
+      "id": "S08",
+      "label": "$\\mathbb{R}$",
+      "description": "double-struck R",
+      "est_str": "RR",
+      "est_px": 14,
+      "true_w": 9.62,
+      "true_h": 15.97,
+      "error_px": 4.38,
+      "error_pct": 45.45
+    },
+    {
+      "id": "S09",
+      "label": "$\\mathcal{O}(n)$",
+      "description": "calligraphic O with arg",
+      "est_str": "O(n)O",
+      "est_px": 34,
+      "true_w": 29.34,
+      "true_h": 16.97,
+      "error_px": 4.66,
+      "error_pct": 15.87
+    },
+    {
+      "id": "S10",
+      "label": "$\\textbf{x}$",
+      "description": "textbf command",
+      "est_str": "xx",
+      "est_px": 14,
+      "true_w": 8.09,
+      "true_h": 16.97,
+      "error_px": 5.91,
+      "error_pct": 72.97
+    },
+    {
+      "id": "S11",
+      "label": "$\\mathbf{v}$",
+      "description": "mathbf vector",
+      "est_str": "vv",
+      "est_px": 14,
+      "true_w": 8.3,
+      "true_h": 16.97,
+      "error_px": 5.7,
+      "error_pct": 68.74
+    },
+    {
+      "id": "S12",
+      "label": "$\\frac{a}{b}$",
+      "description": "simple fraction",
+      "est_str": "aba",
+      "est_px": 20,
+      "true_w": 8.12,
+      "true_h": 15.97,
+      "error_px": 11.88,
+      "error_pct": 146.15
+    },
+    {
+      "id": "S13",
+      "label": "$\\frac{n+1}{2}$",
+      "description": "fraction with expression",
+      "est_str": "n+12n",
+      "est_px": 34,
+      "true_w": 20.69,
+      "true_h": 16.22,
+      "error_px": 13.31,
+      "error_pct": 64.35
+    },
+    {
+      "id": "S14",
+      "label": "$\\frac{\\partial f}{\\partial x}$",
+      "description": "partial derivative fraction",
+      "est_str": " f x ",
+      "est_px": 34,
+      "true_w": 14.22,
+      "true_h": 17.38,
+      "error_px": 19.78,
+      "error_pct": 139.12
+    },
+    {
+      "id": "S15",
+      "label": "$\\sum_{i=0}^{n} x_i$",
+      "description": "sum with limits",
+      "est_str": "_i=0^n x_i_",
+      "est_px": 75,
+      "true_w": 43.56,
+      "true_h": 16.97,
+      "error_px": 31.44,
+      "error_pct": 72.17
+    },
+    {
+      "id": "S16",
+      "label": "$\\prod_{k=1}^{n} k$",
+      "description": "product with limits",
+      "est_str": "_k=1^n k_",
+      "est_px": 61,
+      "true_w": 39.84,
+      "true_h": 16.97,
+      "error_px": 21.16,
+      "error_pct": 53.1
+    },
+    {
+      "id": "S17",
+      "label": "value = $\\frac{a+b}{2}$",
+      "description": "mixed text+fraction",
+      "est_str": "value = a+b2v",
+      "est_px": 89,
+      "true_w": 72.19,
+      "true_h": 16.69,
+      "error_px": 16.81,
+      "error_pct": 23.29
+    },
+    {
+      "id": "S18",
+      "label": "$O(n \\log n)$",
+      "description": "big-O with log",
+      "est_str": "O(n  n)O",
+      "est_px": 55,
+      "true_w": 58.52,
+      "true_h": 15.97,
+      "error_px": -3.52,
+      "error_pct": -6.01
+    },
+    {
+      "id": "S19",
+      "label": "$\\displaystyle\\sum_{i=1}^{n} \\frac{1}{i^2}$",
+      "description": "displaystyle sum-frac",
+      "est_str": "_i=1^n 1i^2_",
+      "est_px": 82,
+      "true_w": 34.55,
+      "true_h": 38.98,
+      "error_px": 47.45,
+      "error_pct": 137.36
+    },
+    {
+      "id": "S20",
+      "label": "$\\hat{\\theta} = \\bar{x} \\pm \\frac{\\sigma}{\\sqrt{n}}$",
+      "description": "estimate with pm and sqrt",
+      "est_str": " = x  n ",
+      "est_px": 55,
+      "true_w": 64.77,
+      "true_h": 19.89,
+      "error_px": -9.77,
+      "error_pct": -15.08
+    }
+  ]
+}
