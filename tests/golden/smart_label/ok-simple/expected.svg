@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 100">
+  <rect x="10" y="50" width="60" height="40" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="70" y="50" width="60" height="40" fill="white" stroke="#333" stroke-width="1"/>
+  <rect x="130" y="50" width="60" height="40" fill="white" stroke="#333" stroke-width="1"/>
+  <g class="scriba-annotation scriba-annotation-info" data-annotation="arr.cell[1]-position-above" opacity="0.45" role="graphics-symbol" aria-label="ptr">
+    <rect x="84" y="3" width="32" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/>
+    <text x="100" y="16" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto">ptr</text>
+  </g>
+</svg>

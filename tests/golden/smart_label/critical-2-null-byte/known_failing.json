@@ -1,0 +1,6 @@
+{
+  "known_failing": true,
+  "reason": "Null byte in label text is not stripped before SVG emission (C-2 guard not yet implemented). Current output maps null byte to a space ('a b'). Expected fixed state: null byte stripped, label renders as 'ab'. Pin captures pre-fix behavior; XFAIL_IMPROVED fires when fix lands.",
+  "fix_signal": "close C-2",
+  "pinned_at": "2026-04-21"
+}
