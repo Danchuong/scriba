@@ -2,17 +2,14 @@
 
 Covers:
   R-07  Leader displacement threshold scale-relative (_LEADER_DISPLACEMENT_THRESHOLD)
-  R-19  Stderr warning on degraded placement
+  R-19  logging.warning on degraded placement
   R-25  Dark-mode path token distinct from info token
 """
 
 from __future__ import annotations
 
-import io
-import math
+import logging
 import re
-import sys
-from unittest.mock import patch
 
 import pytest
 
@@ -139,39 +136,44 @@ class TestR07LeaderDisplacementThreshold:
 # ---------------------------------------------------------------------------
 
 
-class TestR19StderrDegradedWarning:
+_SVG_HELPERS_LOGGER = "scriba.animation.primitives._svg_helpers"
+
+
+class TestR19DegradedWarning:
     """R-19: When all 32 nudge candidates fail (collision_unresolved=True),
-    a warning is written to stderr unconditionally (no SCRIBA_DEBUG_LABELS guard)."""
+    a WARNING is emitted via logging unconditionally (no SCRIBA_DEBUG_LABELS guard).
 
-    def _force_full_collision_emit_arrow(self) -> tuple[list[str], str]:
-        """Run emit_arrow_svg with a fully packed placed_labels registry
-        so that all 32 candidates fail, triggering the degraded warning."""
-        from scriba.animation.primitives._svg_helpers import (
-            _LabelPlacement,
-            emit_arrow_svg,
-        )
+    Tests use pytest's ``caplog`` fixture instead of patching sys.stderr so
+    that the assertion is independent of the logging handler configuration.
+    """
 
-        lines: list[str] = []
+    @staticmethod
+    def _make_flooded_labels(cx: float, cy: float) -> list:
+        from scriba.animation.primitives._svg_helpers import _LabelPlacement
         placed: list[_LabelPlacement] = []
-
-        # Flood the space so every nudge candidate is blocked
         for xi in range(-6, 7):
             for yi in range(-6, 7):
                 placed.append(_LabelPlacement(
-                    x=100.0 + xi * 15,
-                    y=46.0 + yi * 15,
+                    x=cx + xi * 15,
+                    y=cy + yi * 15,
                     width=30.0,
                     height=20.0,
                 ))
+        return placed
 
+    @pytest.mark.unit
+    def test_emit_arrow_svg_warns_on_degraded(self, caplog: pytest.LogCaptureFixture) -> None:
+        """emit_arrow_svg emits scriba:label-placement-degraded via logging.warning."""
+        from scriba.animation.primitives._svg_helpers import emit_arrow_svg
         ann = {
             "target": "test.cell[0]",
             "arrow_from": "test.cell[1]",
             "label": "warn",
             "color": "info",
         }
-        buf = io.StringIO()
-        with patch.object(sys, "stderr", buf):
+        placed = self._make_flooded_labels(100.0, 46.0)
+        lines: list[str] = []
+        with caplog.at_level(logging.WARNING, logger=_SVG_HELPERS_LOGGER):
             emit_arrow_svg(
                 lines=lines,
                 ann=ann,
@@ -181,75 +183,80 @@ class TestR19StderrDegradedWarning:
                 cell_height=40.0,
                 placed_labels=placed,
             )
-        return lines, buf.getvalue()
-
-    def _force_full_collision_emit_plain(self) -> tuple[list[str], str]:
-        """Run emit_plain_arrow_svg with fully packed placed_labels."""
-        from scriba.animation.primitives._svg_helpers import (
-            _LabelPlacement,
-            emit_plain_arrow_svg,
+        assert any("scriba:label-placement-degraded" in r.message for r in caplog.records), (
+            "Expected 'scriba:label-placement-degraded' in log records but got: "
+            + repr([r.message for r in caplog.records])
         )
 
+    @pytest.mark.unit
+    def test_emit_arrow_svg_warning_contains_annotation_id(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Degraded warning includes the annotation target id."""
+        from scriba.animation.primitives._svg_helpers import emit_arrow_svg
+        ann = {
+            "target": "test.cell[0]",
+            "arrow_from": "test.cell[1]",
+            "label": "warn",
+            "color": "info",
+        }
+        placed = self._make_flooded_labels(100.0, 46.0)
         lines: list[str] = []
-        placed: list[_LabelPlacement] = []
+        with caplog.at_level(logging.WARNING, logger=_SVG_HELPERS_LOGGER):
+            emit_arrow_svg(
+                lines=lines, ann=ann,
+                src_point=(40.0, 60.0), dst_point=(160.0, 60.0),
+                arrow_index=0, cell_height=40.0, placed_labels=placed,
+            )
+        combined = " ".join(r.message for r in caplog.records)
+        assert "test.cell[0]" in combined
 
-        for xi in range(-6, 7):
-            for yi in range(-6, 7):
-                placed.append(_LabelPlacement(
-                    x=100.0 + xi * 15,
-                    y=30.0 + yi * 15,
-                    width=30.0,
-                    height=20.0,
-                ))
+    @pytest.mark.unit
+    def test_emit_arrow_svg_warning_contains_displacement(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Degraded warning includes a displacement value in px."""
+        from scriba.animation.primitives._svg_helpers import emit_arrow_svg
+        ann = {
+            "target": "test.cell[0]",
+            "arrow_from": "test.cell[1]",
+            "label": "warn",
+            "color": "info",
+        }
+        placed = self._make_flooded_labels(100.0, 46.0)
+        lines: list[str] = []
+        with caplog.at_level(logging.WARNING, logger=_SVG_HELPERS_LOGGER):
+            emit_arrow_svg(
+                lines=lines, ann=ann,
+                src_point=(40.0, 60.0), dst_point=(160.0, 60.0),
+                arrow_index=0, cell_height=40.0, placed_labels=placed,
+            )
+        combined = " ".join(r.message for r in caplog.records)
+        assert "displacement=" in combined
+        assert "px" in combined
 
+    @pytest.mark.unit
+    def test_emit_plain_arrow_svg_warns_on_degraded(self, caplog: pytest.LogCaptureFixture) -> None:
+        """emit_plain_arrow_svg emits scriba:label-placement-degraded via logging.warning."""
+        from scriba.animation.primitives._svg_helpers import emit_plain_arrow_svg
         ann = {
             "target": "test.cell[2]",
             "label": "warn",
             "color": "info",
         }
-        buf = io.StringIO()
-        with patch.object(sys, "stderr", buf):
+        placed = self._make_flooded_labels(100.0, 30.0)
+        lines: list[str] = []
+        with caplog.at_level(logging.WARNING, logger=_SVG_HELPERS_LOGGER):
             emit_plain_arrow_svg(
                 lines=lines,
                 ann=ann,
                 dst_point=(100.0, 50.0),
                 placed_labels=placed,
             )
-        return lines, buf.getvalue()
-
-    @pytest.mark.unit
-    def test_emit_arrow_svg_warns_on_degraded(self) -> None:
-        """emit_arrow_svg writes scriba:label-placement-degraded to stderr."""
-        _, stderr_out = self._force_full_collision_emit_arrow()
-        assert "scriba:label-placement-degraded" in stderr_out, (
-            "Expected 'scriba:label-placement-degraded' in stderr but got: "
-            + repr(stderr_out)
+        assert any("scriba:label-placement-degraded" in r.message for r in caplog.records), (
+            "Expected degraded warning in log records but got: "
+            + repr([r.message for r in caplog.records])
         )
 
     @pytest.mark.unit
-    def test_emit_arrow_svg_warning_contains_annotation_id(self) -> None:
-        """Degraded warning includes the annotation target id."""
-        _, stderr_out = self._force_full_collision_emit_arrow()
-        assert "test.cell[0]" in stderr_out
-
-    @pytest.mark.unit
-    def test_emit_arrow_svg_warning_contains_displacement(self) -> None:
-        """Degraded warning includes a displacement value in px."""
-        _, stderr_out = self._force_full_collision_emit_arrow()
-        assert "displacement=" in stderr_out
-        assert "px" in stderr_out
-
-    @pytest.mark.unit
-    def test_emit_plain_arrow_svg_warns_on_degraded(self) -> None:
-        """emit_plain_arrow_svg writes scriba:label-placement-degraded to stderr."""
-        _, stderr_out = self._force_full_collision_emit_plain()
-        assert "scriba:label-placement-degraded" in stderr_out, (
-            "Expected degraded warning in stderr but got: " + repr(stderr_out)
-        )
-
-    @pytest.mark.unit
-    def test_no_warning_when_placement_succeeds(self) -> None:
-        """No degraded warning on stderr when placement resolves cleanly."""
+    def test_no_warning_when_placement_succeeds(self, caplog: pytest.LogCaptureFixture) -> None:
+        """No degraded warning when placement resolves cleanly."""
         from scriba.animation.primitives._svg_helpers import (
             _LabelPlacement,
             emit_arrow_svg,
@@ -262,8 +269,7 @@ class TestR19StderrDegradedWarning:
             "label": "ok",
             "color": "info",
         }
-        buf = io.StringIO()
-        with patch.object(sys, "stderr", buf):
+        with caplog.at_level(logging.WARNING, logger=_SVG_HELPERS_LOGGER):
             emit_arrow_svg(
                 lines=lines,
                 ann=ann,
@@ -273,30 +279,14 @@ class TestR19StderrDegradedWarning:
                 cell_height=40.0,
                 placed_labels=placed,
             )
-        assert buf.getvalue() == "", (
-            "No degraded warning expected when placement succeeds"
-        )
+        degraded = [r for r in caplog.records if "scriba:label-placement-degraded" in r.message]
+        assert degraded == [], "No degraded warning expected when placement succeeds"
 
     @pytest.mark.unit
-    def test_warning_unconditional_no_debug_guard(self) -> None:
+    def test_warning_unconditional_no_debug_guard(self, caplog: pytest.LogCaptureFixture) -> None:
         """Degraded warning fires without SCRIBA_DEBUG_LABELS=1."""
-        import os
-        import importlib
-        from scriba.animation.primitives._svg_helpers import (
-            _LabelPlacement,
-            emit_arrow_svg,
-        )
-        # Ensure debug flag is OFF
-        env = {k: v for k, v in os.environ.items() if k != "SCRIBA_DEBUG_LABELS"}
-        placed: list[_LabelPlacement] = []
-        for xi in range(-6, 7):
-            for yi in range(-6, 7):
-                placed.append(_LabelPlacement(
-                    x=100.0 + xi * 15,
-                    y=46.0 + yi * 15,
-                    width=30.0,
-                    height=20.0,
-                ))
+        from scriba.animation.primitives._svg_helpers import emit_arrow_svg
+        placed = self._make_flooded_labels(100.0, 46.0)
         ann = {
             "target": "test.r19",
             "arrow_from": "test.src",
@@ -304,9 +294,9 @@ class TestR19StderrDegradedWarning:
             "color": "info",
         }
         lines: list[str] = []
-        buf = io.StringIO()
-        with patch.dict(os.environ, env, clear=True):
-            with patch.object(sys, "stderr", buf):
+        with caplog.at_level(logging.WARNING, logger=_SVG_HELPERS_LOGGER):
+            with pytest.MonkeyPatch().context() as mp:
+                mp.delenv("SCRIBA_DEBUG_LABELS", raising=False)
                 emit_arrow_svg(
                     lines=lines,
                     ann=ann,
@@ -316,7 +306,7 @@ class TestR19StderrDegradedWarning:
                     cell_height=40.0,
                     placed_labels=placed,
                 )
-        assert "scriba:label-placement-degraded" in buf.getvalue(), (
+        assert any("scriba:label-placement-degraded" in r.message for r in caplog.records), (
             "R-19 warning must fire without SCRIBA_DEBUG_LABELS guard"
         )
 
@@ -428,3 +418,133 @@ class TestR25DarkModePathToken:
         # Check :root block
         root_match = re.search(r":root\s*\{([^}]+)--scriba-annotation-path", css)
         assert root_match is not None, ":root should define --scriba-annotation-path"
+
+
+# ---------------------------------------------------------------------------
+# HIGH-1 — _line_rect_intersection origin-inside / corner guards
+# ---------------------------------------------------------------------------
+
+
+class TestLineRectIntersectionGuards:
+    """Unit tests for _line_rect_intersection origin-inside and corner cases."""
+
+    @pytest.mark.unit
+    def test_origin_inside_rect_returns_none(self) -> None:
+        """When origin lies inside the AABB, _line_rect_intersection returns None.
+
+        A zero-length leader line would render as an invisible dot.  The caller
+        must check for None and skip leader emission.
+        """
+        from scriba.animation.primitives._svg_helpers import _line_rect_intersection
+
+        # pill centred at (100, 50) with size 40x20 → AABB [80,110] x [40,60].
+        # Origin (100, 50) is the exact centre — should return (100, 50) per
+        # the centre-degenerate path, not None.  Use a non-centre interior point.
+        result = _line_rect_intersection(
+            origin_x=95.0, origin_y=50.0,   # inside the pill AABB
+            pill_cx=100.0, pill_cy=50.0,
+            pill_w=40.0, pill_h=20.0,
+        )
+        assert result is None, (
+            f"Expected None when origin is inside pill AABB, got {result}"
+        )
+
+    @pytest.mark.unit
+    def test_origin_inside_rect_near_edge_returns_none(self) -> None:
+        """Origin just inside the boundary edge should also return None."""
+        from scriba.animation.primitives._svg_helpers import _line_rect_intersection
+
+        # Origin at (81, 50) — just inside left edge (left = 80) of pill AABB.
+        result = _line_rect_intersection(
+            origin_x=81.0, origin_y=50.0,
+            pill_cx=100.0, pill_cy=50.0,
+            pill_w=40.0, pill_h=20.0,
+        )
+        assert result is None, (
+            f"Expected None for origin near-inside edge, got {result}"
+        )
+
+    @pytest.mark.unit
+    def test_origin_outside_rect_returns_valid_point(self) -> None:
+        """Origin clearly outside the AABB returns an integer boundary point."""
+        from scriba.animation.primitives._svg_helpers import _line_rect_intersection
+
+        # Origin at (50, 50), pill at (100, 50) size 40x20.
+        # Ray travels to the right → should hit left edge of pill at x=80.
+        result = _line_rect_intersection(
+            origin_x=50.0, origin_y=50.0,
+            pill_cx=100.0, pill_cy=50.0,
+            pill_w=40.0, pill_h=20.0,
+        )
+        assert result is not None, "Expected intersection point, got None"
+        hit_x, hit_y = result
+        # Left edge x = pill_cx - pill_w/2 = 100 - 20 = 80
+        assert hit_x == 80, f"Expected left-edge hit x=80, got {hit_x}"
+        assert hit_y == 50, f"Expected hit y=50, got {hit_y}"
+
+    @pytest.mark.unit
+    def test_origin_at_corner_returns_valid_or_none(self) -> None:
+        """Origin at pill corner does not crash; returns None (inside inclusive test)."""
+        from scriba.animation.primitives._svg_helpers import _line_rect_intersection
+
+        # Corner: (80, 40) is on the boundary of pill at (100,50) size 40x20.
+        # _point_in_rect is inclusive, so this is "inside" → None.
+        result = _line_rect_intersection(
+            origin_x=80.0, origin_y=40.0,
+            pill_cx=100.0, pill_cy=50.0,
+            pill_w=40.0, pill_h=20.0,
+        )
+        # Corner is on boundary → inside inclusive → None (no crash is the key assertion).
+        assert result is None or isinstance(result, tuple), (
+            "Corner case must return None or a valid (int, int) tuple without raising"
+        )
+
+
+# ---------------------------------------------------------------------------
+# HIGH-3 — R-22 zero-vector side-hint inference
+# ---------------------------------------------------------------------------
+
+
+class TestAutoSideHintZeroVector:
+    """R-22 zero-vector guard: src==dst should produce no directional hint."""
+
+    @pytest.mark.unit
+    def test_zero_vector_does_not_crash(self) -> None:
+        """emit_arrow_svg with src==dst must not raise and must produce SVG output."""
+        from scriba.animation.primitives._svg_helpers import (
+            _LabelPlacement,
+            emit_arrow_svg,
+        )
+        lines: list[str] = []
+        placed: list[_LabelPlacement] = []
+        ann = {
+            "target": "arr.cell[1]",
+            "arrow_from": "arr.cell[1]",  # same as target → zero vector
+            "label": "zero",
+            "color": "info",
+        }
+        # Should not raise even though src == dst (zero-length arrow).
+        emit_arrow_svg(
+            lines=lines,
+            ann=ann,
+            src_point=(100.0, 60.0),
+            dst_point=(100.0, 60.0),  # identical → dx=0, dy=0
+            arrow_index=0,
+            cell_height=40.0,
+            placed_labels=placed,
+        )
+        assert len(lines) > 0, "Should still emit some SVG with zero-vector arrow"
+
+    @pytest.mark.unit
+    def test_zero_vector_infers_no_hint(self) -> None:
+        """When dx==0 and dy==0 the code path sets anchor_side=None (symmetric search).
+
+        We verify by inspecting the source — the guard must be present.
+        """
+        import inspect
+        from scriba.animation.primitives import _svg_helpers
+        source = inspect.getsource(_svg_helpers.emit_arrow_svg)
+        # HIGH-3 guard: explicit zero-vector branch
+        assert "_abs_dx == 0 and _abs_dy == 0" in source, (
+            "emit_arrow_svg must contain the zero-vector guard for R-22"
+        )

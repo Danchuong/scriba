@@ -6,7 +6,9 @@ and per-frame ``<svg>`` generation.  Stateless; safe for concurrent use.
 
 from __future__ import annotations
 
+import html as _html_mod
 import inspect
+import re as _re
 import warnings
 from typing import Any, Callable
 
@@ -407,8 +409,6 @@ def _emit_frame_svg(
     # R-15: <title> as first child of <svg>.  Use scene_id as title; fall back
     # to stripped narration text when available.  The title must not contain
     # HTML tags, so strip markup with a simple regex before embedding.
-    import re as _re
-    import html as _html_mod
     _raw_narration = getattr(frame, "narration_html", "") or ""
     _title_text = _re.sub(r"<[^>]+>", " ", _raw_narration).strip()
     if not _title_text:

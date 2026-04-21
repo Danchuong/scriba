@@ -15,10 +15,10 @@ call defeats overlap detection across annotation types.
 
 from __future__ import annotations
 
+import logging
 import math
 import os
 import re
-import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Iterator
 
@@ -81,6 +81,12 @@ _PLAIN_ARROW_STEM = 18
 # below is kept for backward compatibility with any callers that reference it
 # directly; the per-call formula supersedes it in emit_arrow_svg.
 _LEADER_DISPLACEMENT_THRESHOLD: float = 20.0
+
+# R-01: Default label font size in pixels.  Referenced by both the full render
+# path (l_font_px fallback) and the early pill-height estimator (_est_pill_h).
+_DEFAULT_LABEL_FONT_PX: int = 11
+
+_log = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -305,6 +311,19 @@ def _latex_to_speech(tex: str) -> str:
     return result
 
 
+def _point_in_rect(
+    px: float, py: float, rx: float, ry: float, rw: float, rh: float
+) -> bool:
+    """Return True if *(px, py)* lies strictly inside the axis-aligned rect.
+
+    The rect is defined by its centre *(rx, ry)* and dimensions *(rw, rh)*.
+    Points exactly on the boundary are considered inside (inclusive test).
+    """
+    half_w = rw / 2.0
+    half_h = rh / 2.0
+    return (rx - half_w <= px <= rx + half_w) and (ry - half_h <= py <= ry + half_h)
+
+
 def _line_rect_intersection(
     origin_x: float,
     origin_y: float,
@@ -312,7 +331,7 @@ def _line_rect_intersection(
     pill_cy: float,
     pill_w: float,
     pill_h: float,
-) -> tuple[int, int]:
+) -> tuple[int, int] | None:
     """Return the point where the line from *origin* through *pill_cx/cy* first hits the pill AABB.
 
     The pill AABB is centred at *(pill_cx, pill_cy)* with half-dimensions
@@ -320,7 +339,15 @@ def _line_rect_intersection(
     toward the centre, clips to each of the 4 half-planes, and returns the
     smallest positive *t* at which the ray exits the AABB.
 
-    Falls back to the pill centre when origin == centre (degenerate case).
+    Returns:
+        The intersection point as ``(x, y)`` integers, or ``None`` when the
+        origin lies inside the pill AABB (signals "no leader needed" to the
+        caller — the leader endpoint would be identical to the anchor point,
+        producing a zero-length invisible line).
+
+    Falls back to the pill centre when origin == centre (degenerate case:
+    origin at exact centre is outside the AABB detection range so it is
+    treated separately before the inside-rect check).
 
     Used by R-08: leader endpoint at pill perimeter (not pill centre).
     """
@@ -333,6 +360,14 @@ def _line_rect_intersection(
     if abs(ddx) < 1e-6 and abs(ddy) < 1e-6:
         # Degenerate: origin is at pill centre — return centre unchanged.
         return int(pill_cx), int(pill_cy)
+
+    # HIGH-1: if origin is inside the pill AABB the ray travels outward in the
+    # same direction it enters, so all t > 0 candidates land on the *far* side
+    # of the rect, not the near edge.  A leader from inside the pill to the far
+    # edge is visually meaningless (zero-length or backward).  Return None so
+    # the caller can skip leader emission for this candidate.
+    if _point_in_rect(origin_x, origin_y, pill_cx, pill_cy, pill_w, pill_h):
+        return None
 
     # Compute t for each of the 4 AABB edges.
     # Ray: P(t) = origin + t * (dd).
@@ -368,8 +403,9 @@ def _line_rect_intersection(
                 t_candidates.append(t_bot)
 
     if not t_candidates:
-        # No valid intersection (origin may be inside the rect) — use centre.
-        return int(pill_cx), int(pill_cy)
+        # No valid intersection found (unexpected geometry) — return None to
+        # suppress leader emission rather than producing an invisible dot.
+        return None
 
     t_hit = min(t_candidates)
     hit_x = origin_x + t_hit * ddx
@@ -684,7 +720,7 @@ def emit_plain_arrow_svg(
         l_fill = style["label_fill"]
         l_weight = style["label_weight"]
         l_size = style["label_size"]
-        l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else 11
+        l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
 
         # Do not wrap when math is present — would split inside $...$.
         if _label_has_math(label_text):
@@ -770,10 +806,11 @@ def emit_plain_arrow_svg(
         # R-19: unconditional stderr warning when placement is degraded.
         if collision_unresolved:
             _target_id = ann.get("target", "unknown")
-            _disp = math.sqrt((float(fi_x) - natural_x) ** 2 + (float(fi_y) - natural_y) ** 2)
-            sys.stderr.write(
-                f"scriba:label-placement-degraded annotation={_target_id}"
-                f" displacement={_disp:.1f}px\n"
+            _disp = int(math.sqrt((float(fi_x) - natural_x) ** 2 + (float(fi_y) - natural_y) ** 2))
+            _log.warning(
+                "scriba:label-placement-degraded annotation=%s displacement=%dpx",
+                _target_id,
+                _disp,
             )
 
         pill_rx = max(0, int(fi_x - pill_w / 2))
@@ -945,7 +982,7 @@ def emit_arrow_svg(
         # R-01: estimate pill_h early so the natural anchor clears the arc.
         # Pill height = (font_px + 2) * num_lines + LABEL_PILL_PAD_Y * 2.
         # For estimation: use single-line height (typical case).
-        _est_l_font_px = 11  # matches label_size default
+        _est_l_font_px = _DEFAULT_LABEL_FONT_PX  # reuse module constant
         _est_pill_h = (_est_l_font_px + 2) + _LABEL_PILL_PAD_Y * 2  # 19 px typical
 
         # When source and target are nearly vertically aligned (same column
@@ -961,7 +998,7 @@ def emit_arrow_svg(
             # Clamp label X so pill doesn't go negative.
             # Estimate pill half-width from label text.
             _est_pill_hw = (
-                estimate_text_width(label_text, 11) // 2 + _LABEL_PILL_PAD_X
+                estimate_text_width(label_text, _DEFAULT_LABEL_FONT_PX) // 2 + _LABEL_PILL_PAD_X
                 if label_text else 20
             )
             raw_lx = int(mid_x_f - h_nudge - 8)
@@ -1066,7 +1103,7 @@ def emit_arrow_svg(
         l_fill = style["label_fill"]
         l_weight = style["label_weight"]
         l_size = style["label_size"]
-        l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else 11
+        l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
 
         # Multi-line wrap (skip when math is present — would split inside $...$).
         if _label_has_math(label_text):
@@ -1104,7 +1141,12 @@ def emit_arrow_svg(
             # Infer from the (dx, dy) vector between src and dst (post-shortening).
             _abs_dx = abs(dx)
             _abs_dy = abs(dy)
-            if _abs_dx >= _abs_dy:
+            # HIGH-3: zero-vector guard — src == dst produces abs_dx == abs_dy == 0.
+            # No directional hint can be inferred; leave anchor_side as None so the
+            # 32-candidate symmetric search handles placement without a half-plane bias.
+            if _abs_dx == 0 and _abs_dy == 0:
+                anchor_side = None  # degenerate: no hint, use symmetric search
+            elif _abs_dx >= _abs_dy:
                 # Horizontal-ish arc: prefer ABOVE (cog P-DIR-1).
                 anchor_side = "above"
             else:
@@ -1165,10 +1207,11 @@ def emit_arrow_svg(
         # R-19: unconditional stderr warning when placement is degraded.
         if collision_unresolved:
             _target_id = ann.get("target", "unknown")
-            _disp = math.sqrt((float(fi_x) - natural_x) ** 2 + (float(fi_y) - natural_y) ** 2)
-            sys.stderr.write(
-                f"scriba:label-placement-degraded annotation={_target_id}"
-                f" displacement={_disp:.1f}px\n"
+            _disp = int(math.sqrt((float(fi_x) - natural_x) ** 2 + (float(fi_y) - natural_y) ** 2))
+            _log.warning(
+                "scriba:label-placement-degraded annotation=%s displacement=%dpx",
+                _target_id,
+                _disp,
             )
 
         # Background pill: white rect with rounded corners, before text
@@ -1198,23 +1241,26 @@ def emit_arrow_svg(
             # R-08: leader endpoint at pill perimeter, not pill centre.
             _pill_cx = float(fi_x)
             _pill_cy = float(fi_y - l_font_px * 0.3)  # centre of rendered pill
-            _leader_ep_x, _leader_ep_y = _line_rect_intersection(
+            _leader_ep = _line_rect_intersection(
                 float(curve_mid_x), float(curve_mid_y),
                 _pill_cx, _pill_cy,
                 float(pill_w), float(pill_h),
             )
-            leader_dasharray = ' stroke-dasharray="3,2"' if color == "warn" else ""
-            lines.append(
-                f'    <circle cx="{curve_mid_x}" cy="{curve_mid_y}" r="2"'
-                f' fill="{s_stroke}" opacity="0.6"/>'
-            )
-            lines.append(
-                f'    <polyline points="{curve_mid_x},{curve_mid_y}'
-                f' {_leader_ep_x},{_leader_ep_y}"'  # R-08: perimeter endpoint
-                f' fill="none" stroke="{s_stroke}"'
-                f' stroke-width="0.75"{leader_dasharray}'
-                f' opacity="0.6"/>'
-            )
+            # HIGH-1: skip leader when origin is inside the pill (None return).
+            if _leader_ep is not None:
+                _leader_ep_x, _leader_ep_y = _leader_ep
+                leader_dasharray = ' stroke-dasharray="3,2"' if color == "warn" else ""
+                lines.append(
+                    f'    <circle cx="{curve_mid_x}" cy="{curve_mid_y}" r="2"'
+                    f' fill="{s_stroke}" opacity="0.6"/>'
+                )
+                lines.append(
+                    f'    <polyline points="{curve_mid_x},{curve_mid_y}'
+                    f' {_leader_ep_x},{_leader_ep_y}"'  # R-08: perimeter endpoint
+                    f' fill="none" stroke="{s_stroke}"'
+                    f' stroke-width="0.75"{leader_dasharray}'
+                    f' opacity="0.6"/>'
+                )
 
         # Render label text with paint-order halo (single-line dispatches
         # to KaTeX foreignObject when math is present).
@@ -1645,7 +1691,7 @@ def emit_position_label_svg(
     l_fill = style["label_fill"]
     l_weight = style["label_weight"]
     l_size = style["label_size"]
-    l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else 11
+    l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
 
     if _label_has_math(label_text):
         label_lines = [label_text]
