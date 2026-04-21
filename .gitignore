@@ -17,3 +17,12 @@ htmlcov/
 examples/**/*.html
 .DS_Store
 **/.DS_Store
+
+# Scratch / temp dirs
+.scriba_tmp/
+tmp_sl_clip/
+
+# Node tooling (local only — not part of Python package)
+node_modules/
+package-lock.json
+package.json
