@@ -8,6 +8,24 @@ from __future__ import annotations
 import warnings
 from typing import Any
 
+# PrimitiveProtocol advisory warnings (warn-on-register, v0.10.x) are
+# developer-facing signals intentionally emitted at class-definition time.
+# They are visible in pytest output via the warnings summary, but must NOT
+# appear on stderr in subprocess contexts where the first line is a protocol
+# signal (e.g. the starlark worker emits "starlark-worker ready" on stderr
+# and test harnesses read that as the startup handshake).
+# Using "ignore" filter: suppress these advisory warnings at the package level.
+# NOTE: _protocol.register_primitive uses stacklevel=2, so the warning origin
+# is reported as each primitive file (array.py, stack.py, …), not _protocol.py.
+# The module= filter must therefore match the primitive modules, not _protocol.
+# Simplest: match any scriba.animation.primitives.* module.
+warnings.filterwarnings(
+    "ignore",
+    message=r"\[PrimitiveProtocol\]",
+    category=UserWarning,
+    module=r"scriba\.animation\.primitives\.",
+)
+
 from scriba.animation.primitives.array import ArrayPrimitive
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, get_primitive_registry, register_primitive
 from scriba.animation.primitives.codepanel import CodePanel

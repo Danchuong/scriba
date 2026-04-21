@@ -28,6 +28,8 @@ from scriba.animation.primitives.base import (
 )
 
 
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
+
 # ---------------------------------------------------------------------------
 # Data helpers
 # ---------------------------------------------------------------------------
@@ -90,6 +92,7 @@ _SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
 
 
 @register_primitive("Grid")
+@_protocol_register
 class GridPrimitive(PrimitiveBase):
     """A 2D rows x cols matrix of uniform cells.
 

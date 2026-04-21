@@ -30,13 +30,28 @@ import sys
 import threading
 import traceback
 import tracemalloc
+import warnings
 from io import StringIO
 from typing import Any
 
-from scriba.animation.constants import BLOCKED_ATTRIBUTES, FORBIDDEN_BUILTINS
-from scriba.animation.errors import _animation_error, _format_compute_traceback
-from scriba.core.errors import ScribaError
-from scriba.core.types import JsonValue
+# Suppress PrimitiveProtocol advisory warnings in the worker subprocess.
+# These warn-on-register messages are developer-facing and correct to emit in
+# interactive sessions, but the IPC test harness reads the first stderr line
+# expecting "starlark-worker ready" — advisory noise before that signal causes
+# false failures.  The warnings are still captured by the test suite when
+# primitives are imported directly.
+# NOTE: This filter must be set before any scriba imports that trigger
+# primitive module loading (which emits the advisory at class-definition time).
+warnings.filterwarnings(
+    "ignore",
+    message=r"\[PrimitiveProtocol\]",
+    category=UserWarning,
+)
+
+from scriba.animation.constants import BLOCKED_ATTRIBUTES, FORBIDDEN_BUILTINS  # noqa: E402
+from scriba.animation.errors import _animation_error, _format_compute_traceback  # noqa: E402
+from scriba.core.errors import ScribaError  # noqa: E402
+from scriba.core.types import JsonValue  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # AST literal limits (defence-in-depth against C-level bombs)

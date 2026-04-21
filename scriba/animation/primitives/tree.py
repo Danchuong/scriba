@@ -23,6 +23,7 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives._types import (
     _NODE_MIN_RADIUS,
     _PRIMITIVE_LABEL_Y,
@@ -59,6 +60,7 @@ _TREE_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
 
 
 @register_primitive("Tree")
+@_protocol_register
 class Tree(PrimitiveBase):
     """Rooted tree primitive with Reingold-Tilford layout.
 

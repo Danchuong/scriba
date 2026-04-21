@@ -30,6 +30,7 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives._types import _CELL_HORIZONTAL_PADDING
 from scriba.animation.primitives.layout import TextBox, stack_bottom, vstack
 
@@ -73,6 +74,7 @@ _SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
 
 
 @register_primitive("Array")
+@_protocol_register
 class ArrayPrimitive(PrimitiveBase):
     """A fixed-length horizontal row of indexed cells.
 

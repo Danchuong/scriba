@@ -27,6 +27,7 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives._types import (
     _NODE_MIN_RADIUS,
     _PRIMITIVE_LABEL_Y,
@@ -275,6 +276,7 @@ def _shorten_line_to_circle(
 
 
 @register_primitive("Graph")
+@_protocol_register
 class Graph(PrimitiveBase):
     """Force-directed graph primitive.
 

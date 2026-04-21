@@ -26,6 +26,8 @@ from scriba.animation.primitives.base import (
 )
 
 
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
+
 # ---------------------------------------------------------------------------
 # Layout constants
 # ---------------------------------------------------------------------------
@@ -59,6 +61,7 @@ _SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
 
 
 @register_primitive("NumberLine")
+@_protocol_register
 class NumberLinePrimitive(PrimitiveBase):
     """A horizontal axis with evenly spaced tick marks.
 

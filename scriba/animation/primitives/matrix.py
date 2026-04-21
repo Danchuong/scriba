@@ -27,6 +27,8 @@ from scriba.animation.primitives.base import (
     svg_style_attrs,
 )
 
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
+
 # ---------------------------------------------------------------------------
 # Colorscale definitions
 # ---------------------------------------------------------------------------
@@ -121,6 +123,7 @@ _SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
 
 
 @register_primitive("Matrix", "Heatmap")
+@_protocol_register
 class MatrixPrimitive(PrimitiveBase):
     """A dense 2D grid with colorscale mapping.
 

@@ -33,6 +33,7 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives._types import (
     _CELL_HORIZONTAL_PADDING,
     _DEFAULT_FONT_SIZE_PX,
@@ -83,6 +84,7 @@ def _is_truthy_flag(value: Any) -> bool:
 
 
 @register_primitive("Queue")
+@_protocol_register
 class Queue(PrimitiveBase):
     """Fixed-capacity FIFO queue with front/rear pointer visualisation.
 

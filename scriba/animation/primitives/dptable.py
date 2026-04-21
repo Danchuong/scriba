@@ -30,6 +30,7 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives.layout import TextBox, stack_bottom, vstack
 
 # Per-role font sizes — must match the CSS variables in
@@ -67,6 +68,7 @@ _SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
 
 
 @register_primitive("DPTable")
+@_protocol_register
 class DPTablePrimitive(PrimitiveBase):
     """A 1D or 2D DP table with optional transition arrows.
 

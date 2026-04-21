@@ -15,6 +15,7 @@ import math
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _emit_warning, _animation_error
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -93,6 +94,7 @@ class _SeriesInfo:
 
 
 @register_primitive("MetricPlot")
+@_protocol_register
 class MetricPlot(PrimitiveBase):
     """Compile-time SVG line chart primitive.
 

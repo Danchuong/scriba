@@ -24,6 +24,8 @@ from scriba.animation.primitives.base import (
     svg_style_attrs,
 )
 
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -49,6 +51,7 @@ _ALL_RE = re.compile(r"^all$")
 
 
 @register_primitive("VariableWatch")
+@_protocol_register
 class VariableWatch(PrimitiveBase):
     """Two-column name-value table for algorithm variable inspection.
 

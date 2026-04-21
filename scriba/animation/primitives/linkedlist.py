@@ -30,6 +30,7 @@ from scriba.animation.primitives.base import (
     state_class,
     svg_style_attrs,
 )
+from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives._types import (
     _CELL_HORIZONTAL_PADDING,
     _DEFAULT_FONT_SIZE_PX,
@@ -65,6 +66,7 @@ _FULL_NODE_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<idx>\d+)\]$")
 
 
 @register_primitive("LinkedList")
+@_protocol_register
 class LinkedList(PrimitiveBase):
     """Singly-linked list visualisation primitive.
 
