@@ -215,6 +215,167 @@ def _nudge_candidates(
 # Regex to match LaTeX command tokens like \frac, \sum, \alpha, etc.
 _LATEX_CMD_RE = re.compile(r"\\[a-zA-Z]+")
 
+# ---------------------------------------------------------------------------
+# R-11: LaTeX → speech helper
+# ---------------------------------------------------------------------------
+
+# Known LaTeX token → spoken-word replacements (R-11 required set).
+_LATEX_SPEECH_MAP: dict[str, str] = {
+    r"\alpha": "alpha",
+    r"\beta": "beta",
+    r"\gamma": "gamma",
+    r"\delta": "delta",
+    r"\epsilon": "epsilon",
+    r"\theta": "theta",
+    r"\lambda": "lambda",
+    r"\mu": "mu",
+    r"\pi": "pi",
+    r"\sigma": "sigma",
+    r"\phi": "phi",
+    r"\omega": "omega",
+    r"\sum": "sum",
+    r"\infty": "infinity",
+    r"\cdot": "times",
+    r"\leq": "less than or equal",
+    r"\geq": "greater than or equal",
+    r"\neq": "not equal",
+    r"\approx": "approximately",
+    r"\in": "in",
+    r"\notin": "not in",
+    r"\times": "times",
+    r"\div": "divided by",
+    r"\pm": "plus or minus",
+    r"\sqrt": "square root of",
+    r"\frac": "",  # removed; sub/sup handles numerator/denominator context
+    r"\left": "",
+    r"\right": "",
+}
+
+# Regex for subscript: _{n}, _{ab}, _n (single char), _0 etc.
+_SUBSCRIPT_RE = re.compile(r"_\{([^}]+)\}|_([A-Za-z0-9])")
+# Regex for superscript: ^{n}, ^n (single char).
+_SUPERSCRIPT_RE = re.compile(r"\^\{([^}]+)\}|\^([A-Za-z0-9])")
+
+
+def _latex_to_speech(tex: str) -> str:
+    r"""Convert a LaTeX-containing string to a screen-reader-friendly speech form.
+
+    Algorithm (R-11):
+    1. Strip ``$`` delimiters.
+    2. Replace known ``\command`` tokens from ``_LATEX_SPEECH_MAP``.
+    3. Replace ``_{n}`` / ``_n`` → `` subscript n``.
+    4. Replace ``^{n}`` / ``^n`` → `` to the power n``.
+    5. Remove remaining ``\`` prefix for unknown tokens.
+    6. Strip brace characters ``{`` / ``}``.
+    7. Collapse whitespace.
+    """
+    if not tex:
+        return tex
+
+    # Step 1: strip $ delimiters (both opening and closing).
+    result = _MATH_DELIM_RE.sub(lambda m: m.group(0)[1:-1], tex)
+
+    # Step 2: replace known LaTeX commands before generic stripping.
+    for cmd, replacement in _LATEX_SPEECH_MAP.items():
+        result = result.replace(cmd, f" {replacement} " if replacement else " ")
+
+    # Step 3: subscripts.
+    def _sub_repl(m: re.Match) -> str:
+        content = m.group(1) if m.group(1) is not None else m.group(2)
+        return f" subscript {content}"
+
+    result = _SUBSCRIPT_RE.sub(_sub_repl, result)
+
+    # Step 4: superscripts.
+    def _sup_repl(m: re.Match) -> str:
+        content = m.group(1) if m.group(1) is not None else m.group(2)
+        return f" to the power {content}"
+
+    result = _SUPERSCRIPT_RE.sub(_sup_repl, result)
+
+    # Step 5: strip remaining \ prefix for unknown tokens.
+    result = re.sub(r"\\([a-zA-Z]+)", r"\1", result)
+
+    # Step 6: strip brace chars.
+    result = result.replace("{", "").replace("}", "")
+
+    # Step 7: collapse whitespace.
+    result = " ".join(result.split())
+
+    return result
+
+
+def _line_rect_intersection(
+    origin_x: float,
+    origin_y: float,
+    pill_cx: float,
+    pill_cy: float,
+    pill_w: float,
+    pill_h: float,
+) -> tuple[int, int]:
+    """Return the point where the line from *origin* through *pill_cx/cy* first hits the pill AABB.
+
+    The pill AABB is centred at *(pill_cx, pill_cy)* with half-dimensions
+    *(pill_w/2, pill_h/2)*.  The function parametrises the ray from *origin*
+    toward the centre, clips to each of the 4 half-planes, and returns the
+    smallest positive *t* at which the ray exits the AABB.
+
+    Falls back to the pill centre when origin == centre (degenerate case).
+
+    Used by R-08: leader endpoint at pill perimeter (not pill centre).
+    """
+    half_w = pill_w / 2.0
+    half_h = pill_h / 2.0
+
+    ddx = pill_cx - origin_x
+    ddy = pill_cy - origin_y
+
+    if abs(ddx) < 1e-6 and abs(ddy) < 1e-6:
+        # Degenerate: origin is at pill centre — return centre unchanged.
+        return int(pill_cx), int(pill_cy)
+
+    # Compute t for each of the 4 AABB edges.
+    # Ray: P(t) = origin + t * (dd).
+    # We want the smallest t > 0 such that P(t) is ON an edge of the AABB.
+    t_candidates: list[float] = []
+
+    if abs(ddx) > 1e-9:
+        # Left edge: pill_cx - half_w
+        t_left = (pill_cx - half_w - origin_x) / ddx
+        if t_left > 0:
+            y_at_t = origin_y + t_left * ddy
+            if pill_cy - half_h <= y_at_t <= pill_cy + half_h:
+                t_candidates.append(t_left)
+        # Right edge: pill_cx + half_w
+        t_right = (pill_cx + half_w - origin_x) / ddx
+        if t_right > 0:
+            y_at_t = origin_y + t_right * ddy
+            if pill_cy - half_h <= y_at_t <= pill_cy + half_h:
+                t_candidates.append(t_right)
+
+    if abs(ddy) > 1e-9:
+        # Top edge: pill_cy - half_h
+        t_top = (pill_cy - half_h - origin_y) / ddy
+        if t_top > 0:
+            x_at_t = origin_x + t_top * ddx
+            if pill_cx - half_w <= x_at_t <= pill_cx + half_w:
+                t_candidates.append(t_top)
+        # Bottom edge: pill_cy + half_h
+        t_bot = (pill_cy + half_h - origin_y) / ddy
+        if t_bot > 0:
+            x_at_t = origin_x + t_bot * ddx
+            if pill_cx - half_w <= x_at_t <= pill_cx + half_w:
+                t_candidates.append(t_bot)
+
+    if not t_candidates:
+        # No valid intersection (origin may be inside the rect) — use centre.
+        return int(pill_cx), int(pill_cy)
+
+    t_hit = min(t_candidates)
+    hit_x = origin_x + t_hit * ddx
+    hit_y = origin_y + t_hit * ddy
+    return int(hit_x), int(hit_y)
+
 
 def _label_width_text(text: str) -> str:
     r"""Return a width-estimation string derived from *text*.
@@ -375,7 +536,7 @@ ARROW_STYLES: dict[str, dict[str, str]] = {
     "info": {
         "stroke": "#506882",      # darkened from #94a3b8 (2.56:1 ✗) → 5.76:1 ✓
         "stroke_width": "1.5",
-        "opacity": "0.45",
+        "opacity": "0.7",         # R-12: floor raised from 0.45 → 0.7 (WCAG 1.4.11)
         "label_fill": "#506882",
         "label_weight": "500",
         "label_size": "11px",
@@ -399,7 +560,7 @@ ARROW_STYLES: dict[str, dict[str, str]] = {
     "muted": {
         "stroke": "#526070",      # darkened from #cbd5e1 (1.48:1 ✗) → 6.43:1 ✓
         "stroke_width": "1.2",
-        "opacity": "0.3",
+        "opacity": "0.6",         # R-12: floor raised from 0.30 → 0.6 (WCAG 1.4.11)
         "label_fill": "#526070",
         "label_weight": "500",
         "label_size": "11px",
@@ -461,9 +622,17 @@ def emit_plain_arrow_svg(
     s_width = style["stroke_width"]
     s_opacity = style["opacity"]
 
-    ann_desc = f"Pointer to {_escape_xml(str(target))}"
+    # R-11: build aria-label using speech-friendly form; keep raw TeX for aria-description.
+    raw_ann_desc = f"Pointer to {_escape_xml(str(target))}"
     if label_text:
-        ann_desc += f": {_escape_xml(label_text)}"
+        raw_ann_desc += f": {_escape_xml(label_text)}"
+    speech_label_text = _latex_to_speech(label_text) if label_text else ""
+    speech_ann_desc = f"Pointer to {_escape_xml(str(target))}"
+    if speech_label_text:
+        speech_ann_desc += f": {_escape_xml(speech_label_text)}"
+    aria_description_attr = ""
+    if label_text and _label_has_math(label_text):
+        aria_description_attr = f' aria-description="{_escape_xml(label_text)}"'
 
     # Inline arrowhead polygon pointing straight down into the target.
     arrow_size = 10
@@ -483,16 +652,29 @@ def emit_plain_arrow_svg(
 
     ix1, iy1 = int(x1), int(y1)
 
+    # R-13: dash-array for warn/muted on the stem line.
+    path_dasharray = ""
+    pill_dasharray = ""
+    if color == "warn":
+        path_dasharray = ' stroke-dasharray="3,2"'
+        pill_dasharray = ' stroke-dasharray="3,2"'
+    elif color == "muted":
+        path_dasharray = ' stroke-dasharray="1,3"'
+        pill_dasharray = ' stroke-dasharray="1,3"'
+
     ann_key = f"{target}-plain-arrow"
     lines.append(
         f'  <g class="scriba-annotation scriba-annotation-{color}"'
         f' data-annotation="{_escape_xml(ann_key)}"'
         f' opacity="{s_opacity}"'
-        f' role="graphics-symbol" aria-label="{ann_desc}">'
+        f' role="graphics-symbol"'
+        f' aria-roledescription="annotation"'  # R-14
+        f' aria-label="{speech_ann_desc}"'      # R-11: speech form
+        f'{aria_description_attr}>'             # R-11: raw TeX in aria-description
     )
     lines.append(
         f'    <line x1="{ix1}" y1="{iy1}" x2="{ix2}" y2="{iy2}"'
-        f' stroke="{s_stroke}" stroke-width="{s_width}"/>'
+        f' stroke="{s_stroke}" stroke-width="{s_width}"{path_dasharray}/>'
     )
     lines.append(
         f'    <polygon points="{arrow_points}" fill="{s_stroke}"/>'
@@ -602,7 +784,8 @@ def emit_plain_arrow_svg(
             f' width="{pill_w}" height="{pill_h}"'
             f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
             f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
-            f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
+            f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"'
+            f'{pill_dasharray}/>'  # R-13: mirror dash to pill border
         )
 
         if num_lines == 1:
@@ -759,6 +942,12 @@ def emit_arrow_svg(
         mid_x_f = (x1 + x2) / 2
         mid_y_val = int(min(y1, y2) - total_offset)
 
+        # R-01: estimate pill_h early so the natural anchor clears the arc.
+        # Pill height = (font_px + 2) * num_lines + LABEL_PILL_PAD_Y * 2.
+        # For estimation: use single-line height (typical case).
+        _est_l_font_px = 11  # matches label_size default
+        _est_pill_h = (_est_l_font_px + 2) + _LABEL_PILL_PAD_Y * 2  # 19 px typical
+
         # When source and target are nearly vertically aligned (same column
         # in a 2D DPTable), the default control points collapse to a vertical
         # line.  Offset them horizontally to produce a visible arc.
@@ -777,14 +966,14 @@ def emit_arrow_svg(
             )
             raw_lx = int(mid_x_f - h_nudge - 8)
             label_ref_x = max(raw_lx, _est_pill_hw)
-            label_ref_y = mid_y_val - 4
+            label_ref_y = mid_y_val - _est_pill_h // 2 - 4  # R-01: arc clearance
         else:
             cx1 = int((x1 + mid_x_f) / 2)
             cy1 = mid_y_val
             cx2 = int((x2 + mid_x_f) / 2)
             cy2 = mid_y_val
             label_ref_x = int(mid_x_f)
-            label_ref_y = mid_y_val - 4  # slightly above the curve peak
+            label_ref_y = mid_y_val - _est_pill_h // 2 - 4  # R-01: arc clearance
 
     # Curve midpoint B(0.5) for leader anchoring — evaluated from the actual
     # control points so the anchor dot sits ON the rendered curve, not on the
@@ -802,12 +991,25 @@ def emit_arrow_svg(
     s_width = style["stroke_width"]
     s_opacity = style["opacity"]
 
-    ann_desc = (
+    # R-11: build speech-friendly aria-label; keep raw TeX in aria-description.
+    _speech_label = _latex_to_speech(label_text) if label_text else ""
+    speech_ann_desc = (
+        f"Arrow from {_escape_xml(str(arrow_from))} "
+        f"to {_escape_xml(str(target))}"
+    )
+    if _speech_label:
+        speech_ann_desc += f": {_escape_xml(_speech_label)}"
+    ann_aria_description_attr = ""
+    if label_text and _label_has_math(label_text):
+        ann_aria_description_attr = f' aria-description="{_escape_xml(label_text)}"'
+
+    # Keep raw desc for use in path <title> (no need to speechify title).
+    raw_ann_desc = (
         f"Arrow from {_escape_xml(str(arrow_from))} "
         f"to {_escape_xml(str(target))}"
     )
     if label_text:
-        ann_desc += f": {_escape_xml(label_text)}"
+        raw_ann_desc += f": {_escape_xml(label_text)}"
 
     # Compute inline arrowhead polygon at the path endpoint.
     # This replaces SVG <marker> defs which have cross-browser issues
@@ -831,17 +1033,30 @@ def emit_arrow_svg(
         f"{p1x:.1f},{p1y:.1f} {p2x:.1f},{p2y:.1f} {p3x:.1f},{p3y:.1f}"
     )
 
+    # R-13: dash-array for warn/muted on arrow path and pill border.
+    path_dasharray = ""
+    pill_dasharray_emit = ""
+    if color == "warn":
+        path_dasharray = ' stroke-dasharray="3,2"'
+        pill_dasharray_emit = ' stroke-dasharray="3,2"'
+    elif color == "muted":
+        path_dasharray = ' stroke-dasharray="1,3"'
+        pill_dasharray_emit = ' stroke-dasharray="1,3"'
+
     ann_key = f"{target}-{arrow_from}" if arrow_from else f"{target}-solo"
     lines.append(
         f'  <g class="scriba-annotation scriba-annotation-{color}"'
         f' data-annotation="{_escape_xml(ann_key)}"'
         f' opacity="{s_opacity}"'
-        f' role="graphics-symbol" aria-label="{ann_desc}">'
+        f' role="graphics-symbol"'
+        f' aria-roledescription="annotation"'       # R-14
+        f' aria-label="{speech_ann_desc}"'           # R-11: speech form
+        f'{ann_aria_description_attr}>'              # R-11: raw TeX in aria-description
     )
     lines.append(
         f'    <path d="M{ix1},{iy1} C{cx1},{cy1} {cx2},{cy2} {ix2},{iy2}" '
-        f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none">'
-        f'<title>{ann_desc}</title>'
+        f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none"{path_dasharray}>'  # R-13
+        f'<title>{raw_ann_desc}</title>'
         f'</path>'
     )
     lines.append(
@@ -882,8 +1097,19 @@ def emit_arrow_svg(
             _debug_capture["pill_w"] = pill_w
             _debug_capture["pill_h"] = pill_h
 
-        # MW-1: Extract side hint from annotation for half-plane preference.
+        # MW-1: Extract explicit side hint from annotation for half-plane preference.
+        # R-22: auto-infer side_hint from arrow vector when no explicit hint given.
         anchor_side = ann.get("side") or ann.get("position") or None
+        if anchor_side is None:
+            # Infer from the (dx, dy) vector between src and dst (post-shortening).
+            _abs_dx = abs(dx)
+            _abs_dy = abs(dy)
+            if _abs_dx >= _abs_dy:
+                # Horizontal-ish arc: prefer ABOVE (cog P-DIR-1).
+                anchor_side = "above"
+            else:
+                # Vertical-ish arc: prefer RIGHT.
+                anchor_side = "right"
 
         # Collision avoidance
         collision_unresolved = False
@@ -956,19 +1182,27 @@ def emit_arrow_svg(
             f' width="{pill_w}" height="{pill_h}"'
             f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
             f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
-            f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
+            f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"'
+            f'{pill_dasharray_emit}/>'  # R-13: mirror dash to pill border
         )
 
         # Leader line: if label was nudged far from its natural position.
-        # A-5 non-colour cue: warn token uses a dashed leader (stroke-dasharray
-        # "3,2") to remain distinguishable from error (solid) under deuteranopia
-        # (CIEDE2000 warn/error pairwise distance 2.8 under deuteranopia).
+        # R-27: only emit leader for warn and error colors (declutter).
         # R-07: threshold is scale-relative — max(pill_h, _LEADER_DISPLACEMENT_THRESHOLD).
         displacement = math.sqrt(
             (final_x - natural_x) ** 2 + (final_y - natural_y) ** 2
         )
         _leader_threshold = max(float(pill_h), _LEADER_DISPLACEMENT_THRESHOLD)
-        if displacement > _leader_threshold:
+        _leader_color_gate = color in {"warn", "error"}  # R-27
+        if displacement > _leader_threshold and _leader_color_gate:
+            # R-08: leader endpoint at pill perimeter, not pill centre.
+            _pill_cx = float(fi_x)
+            _pill_cy = float(fi_y - l_font_px * 0.3)  # centre of rendered pill
+            _leader_ep_x, _leader_ep_y = _line_rect_intersection(
+                float(curve_mid_x), float(curve_mid_y),
+                _pill_cx, _pill_cy,
+                float(pill_w), float(pill_h),
+            )
             leader_dasharray = ' stroke-dasharray="3,2"' if color == "warn" else ""
             lines.append(
                 f'    <circle cx="{curve_mid_x}" cy="{curve_mid_y}" r="2"'
@@ -976,7 +1210,7 @@ def emit_arrow_svg(
             )
             lines.append(
                 f'    <polyline points="{curve_mid_x},{curve_mid_y}'
-                f' {fi_x},{fi_y}"'
+                f' {_leader_ep_x},{_leader_ep_y}"'  # R-08: perimeter endpoint
                 f' fill="none" stroke="{s_stroke}"'
                 f' stroke-width="0.75"{leader_dasharray}'
                 f' opacity="0.6"/>'
@@ -1502,20 +1736,36 @@ def emit_position_label_svg(
     pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
     fi_x = max(fi_x, pill_w // 2)
 
-    ann_desc = _escape_xml(label_text)
+    # R-11: speech form for aria-label; raw TeX in aria-description when math.
+    speech_pos_label = _latex_to_speech(label_text)
+    pos_aria_description_attr = ""
+    if _label_has_math(label_text):
+        pos_aria_description_attr = f' aria-description="{_escape_xml(label_text)}"'
+
+    # R-13: dash-array for warn/muted colors on pill border.
+    pos_pill_dasharray = ""
+    if color == "warn":
+        pos_pill_dasharray = ' stroke-dasharray="3,2"'
+    elif color == "muted":
+        pos_pill_dasharray = ' stroke-dasharray="1,3"'
+
     ann_key = f"{target}-position-{position}"
     lines.append(
         f'  <g class="scriba-annotation scriba-annotation-{color}"'
         f' data-annotation="{_escape_xml(ann_key)}"'
         f' opacity="{s_opacity}"'
-        f' role="graphics-symbol" aria-label="{ann_desc}">'
+        f' role="graphics-symbol"'
+        f' aria-roledescription="annotation"'                      # R-14
+        f' aria-label="{_escape_xml(speech_pos_label)}"'           # R-11: speech form
+        f'{pos_aria_description_attr}>'                            # R-11: raw TeX
     )
     lines.append(
         f'    <rect x="{pill_rx}" y="{pill_ry}"'
         f' width="{pill_w}" height="{pill_h}"'
         f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
         f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
-        f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
+        f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"'
+        f'{pos_pill_dasharray}/>'  # R-13: dash on pill border
     )
     if num_lines == 1:
         lines.append(

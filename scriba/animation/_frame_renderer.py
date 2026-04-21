@@ -404,11 +404,23 @@ def _emit_frame_svg(
     # NOTE: viewbox is NOT recomputed here — the caller passes a stable
     # max-across-all-frames viewbox so the stage size stays constant.
 
+    # R-15: <title> as first child of <svg>.  Use scene_id as title; fall back
+    # to stripped narration text when available.  The title must not contain
+    # HTML tags, so strip markup with a simple regex before embedding.
+    import re as _re
+    import html as _html_mod
+    _raw_narration = getattr(frame, "narration_html", "") or ""
+    _title_text = _re.sub(r"<[^>]+>", " ", _raw_narration).strip()
+    if not _title_text:
+        _title_text = scene_id
+    # Re-encode for safe embedding inside <title>…</title>.
+    _title_escaped = _html_mod.escape(_html_mod.unescape(_title_text))
     svg_parts: list[str] = [
         f'<svg class="scriba-stage-svg" viewBox="{viewbox}" '
         f'role="img" '
         f'aria-labelledby="{_escape_fn(narration_id)}" '
-        f'xmlns="http://www.w3.org/2000/svg">',
+        f'xmlns="http://www.w3.org/2000/svg">'
+        f'<title>{_title_escaped}</title>',  # R-15: title first child
     ]
 
     # Shared defs

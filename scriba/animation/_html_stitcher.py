@@ -558,7 +558,7 @@ def emit_interactive_html(
     </div>
   </div>
   <div class="scriba-stage"></div>
-  <p class="scriba-narration" dir="auto" id="{_escape(scene_id)}-narration" aria-live="polite"></p>
+  <p class="scriba-narration" dir="auto" id="{_escape(scene_id)}-narration" aria-live="polite">{frames[0].narration_html}</p>
   <div class="scriba-substory-container"></div>
   <div class="scriba-print-frames" style="display:none">
 {print_frames_html}
