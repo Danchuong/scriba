@@ -1192,10 +1192,15 @@ def position_label_height_below(
     pill_h = line_height + _LABEL_PILL_PAD_Y * 2
     gap = max(4.0, cell_height * 0.1)
 
+    # AC-6: mirror the math-headroom branch from position_label_height_above.
+    # When any below-label contains $…$, add 8 px extra (32 − 24 delta).
+    has_math = any(_label_has_math(a.get("label", "")) for a in pos_anns)
+    math_extra = 8 if has_math else 0  # _LABEL_MATH_HEADROOM_EXTRA
+
     # final_y for below = ay + cell_height/2 + pill_h/2 + gap
     # pill bottom = final_y + pill_h/2 + l_font_px*0.3
     # extra = pill_bottom - cell_height
-    pill_bottom = cell_height / 2 + pill_h + gap + l_font_px * 0.3
+    pill_bottom = cell_height / 2 + pill_h + gap + l_font_px * 0.3 + math_extra
     return max(0, int(math.ceil(pill_bottom - cell_height)))
 
 
