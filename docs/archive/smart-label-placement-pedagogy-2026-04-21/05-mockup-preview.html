@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Smart-label v2.0.0 mockup — before/after</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --ink: #1a1a1a;
+    --muted-ink: #555;
+    --panel: #ffffff;
+    --border: #e4e4de;
+
+    /* v0.10.0 current */
+    --old-good:  #027a55;
+    --old-info:  #0b68cb;
+    --old-warn:  #b6741c;
+    --old-err:   #b42318;
+    --old-muted: #6b7280;
+    --old-path:  #0b68cb;   /* COLLIDES with info */
+
+    /* v2.0.0 proposed */
+    --new-good:  #027a55;
+    --new-info:  #0b68cb;
+    --new-warn:  #b6741c;
+    --new-err:   #b42318;
+    --new-muted: #6b7280;
+    --new-path:  #6d28d9;   /* R-25: distinct from info */
+  }
+  body {
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    max-width: 1120px;
+    margin: 32px auto;
+    padding: 0 24px;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 15px; margin: 24px 0 8px; }
+  .sub { color: var(--muted-ink); font-size: 13px; margin-bottom: 20px; }
+  .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+  .panel.old { border-top: 3px solid #b42318; }
+  .panel.new { border-top: 3px solid #027a55; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 6px;
+  }
+  .tag.old { background: #fbe9e7; color: #b42318; }
+  .tag.new { background: #e6f4ef; color: #027a55; }
+  .desc { font-size: 12px; color: var(--muted-ink); margin-top: 6px; }
+  svg { display: block; margin: 0 auto; }
+  .legend { font-size: 12px; color: var(--muted-ink); margin-top: 8px; }
+  .legend b { color: var(--ink); }
+  ul.rules { font-size: 12px; color: var(--muted-ink); padding-left: 16px; margin: 6px 0 0; }
+  ul.rules li { margin-bottom: 2px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 32px 0; }
+  footer { font-size: 12px; color: var(--muted-ink); text-align: center; margin-top: 40px; }
+  code { background: #f0eee8; padding: 1px 4px; border-radius: 2px; font-size: 12px; }
+
+  /* pill common */
+  .pill-bg { fill: white; stroke-width: 1; rx: 6; ry: 6; }
+  .pill-txt { font: 600 11px "SF Mono", Menlo, monospace; dominant-baseline: middle; text-anchor: middle; }
+  .cell-rect { fill: #fdfdfb; stroke: #b8b8b0; stroke-width: 1; }
+  .cell-label { font: 11px "SF Mono", Menlo, monospace; text-anchor: middle; dominant-baseline: middle; fill: #333; }
+  .cell-val { font: 600 13px "SF Mono", Menlo, monospace; text-anchor: middle; dominant-baseline: middle; }
+  .axis { stroke: #c4c4be; stroke-width: 1; }
+  .axis-txt { font: 10px "SF Mono", Menlo, monospace; fill: #888; text-anchor: middle; }
+</style>
+</head>
+<body>
+
+<h1>Smart-label v2.0.0 — mockup before/after</h1>
+<p class="sub">Mô phỏng kết quả khi áp dụng ruleset mới (R-01..R-30). Scene: 3 ô DP <code>dp[0..2]</code> với 3 transition arrows (good / info / muted). Tham chiếu: <code>00-synthesis.md §4</code>.</p>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- CASE 1 — opacity + CVD + leader gating                              -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>Case 1 · Arrow annotations ở trạng thái natural (không displacement)</h2>
+
+<div class="pair">
+  <div class="panel old">
+    <span class="tag old">v0.10.0</span> Current engine
+    <svg width="480" height="240" viewBox="0 0 480 240">
+      <!-- cells -->
+      <g>
+        <rect class="cell-rect" x="60"  y="140" width="90" height="60"/>
+        <rect class="cell-rect" x="195" y="140" width="90" height="60"/>
+        <rect class="cell-rect" x="330" y="140" width="90" height="60"/>
+        <text class="cell-label" x="105" y="152">dp[0]</text>
+        <text class="cell-label" x="240" y="152">dp[1]</text>
+        <text class="cell-label" x="375" y="152">dp[2]</text>
+        <text class="cell-val"   x="105" y="180">0</text>
+        <text class="cell-val"   x="240" y="180">16</text>
+        <text class="cell-val"   x="375" y="180">28</text>
+      </g>
+
+      <!-- arrow good: dp[1] → dp[2]  (winning) -->
+      <g>
+        <path d="M 240 140 C 240 80, 375 80, 375 140"
+              fill="none" stroke="var(--old-good)" stroke-width="1.8" opacity="1"/>
+        <polygon points="375,140 370,131 380,131" fill="var(--old-good)" opacity="1"/>
+        <!-- pill at natural −4, tiny gap -->
+        <rect class="pill-bg" x="285" y="82" width="60" height="18"
+              stroke="var(--old-good)" stroke-opacity="0.3" opacity="1"/>
+        <text class="pill-txt" x="315" y="92" fill="var(--old-good)">L₁ win</text>
+      </g>
+
+      <!-- arrow info: dp[0] → dp[1]  (baseline) -->
+      <g opacity="0.45">
+        <path d="M 105 140 C 105 95, 240 95, 240 140"
+              fill="none" stroke="var(--old-info)" stroke-width="1.6"/>
+        <polygon points="240,140 235,131 245,131" fill="var(--old-info)"/>
+        <rect class="pill-bg" x="150" y="97" width="50" height="18"
+              stroke="var(--old-info)" stroke-opacity="0.3"/>
+        <text class="pill-txt" x="175" y="107" fill="var(--old-info)">+h[1]²</text>
+      </g>
+
+      <!-- arrow muted: dp[0] → dp[2]  (losing) -->
+      <g opacity="0.30">
+        <path d="M 105 200 C 105 230, 375 230, 375 200"
+              fill="none" stroke="var(--old-muted)" stroke-width="1.6"/>
+        <polygon points="375,200 370,209 380,209" fill="var(--old-muted)"/>
+        <rect class="pill-bg" x="210" y="218" width="60" height="18"
+              stroke="var(--old-muted)" stroke-opacity="0.3"/>
+        <text class="pill-txt" x="240" y="228" fill="var(--old-muted)">L₀ lose</text>
+      </g>
+    </svg>
+    <ul class="rules">
+      <li>info pill contrast ≈ <b>1.95:1</b> (WCAG fail)</li>
+      <li>muted pill contrast ≈ <b>1.56:1</b> (WCAG fail)</li>
+      <li>info/muted giống nhau dưới CVD deuteranopia</li>
+      <li>pill overlap arc (natural y = mid − 4 px)</li>
+      <li>path token trùng màu info token</li>
+    </ul>
+  </div>
+
+  <div class="panel new">
+    <span class="tag new">v2.0.0</span> Proposed — R-01, R-12, R-13, R-25
+    <svg width="480" height="240" viewBox="0 0 480 240">
+      <!-- cells -->
+      <g>
+        <rect class="cell-rect" x="60"  y="140" width="90" height="60"/>
+        <rect class="cell-rect" x="195" y="140" width="90" height="60"/>
+        <rect class="cell-rect" x="330" y="140" width="90" height="60"/>
+        <text class="cell-label" x="105" y="152">dp[0]</text>
+        <text class="cell-label" x="240" y="152">dp[1]</text>
+        <text class="cell-label" x="375" y="152">dp[2]</text>
+        <text class="cell-val"   x="105" y="180">0</text>
+        <text class="cell-val"   x="240" y="180">16</text>
+        <text class="cell-val"   x="375" y="180">28</text>
+      </g>
+
+      <!-- good: solid arrow, natural y lifted by pill_h/2+4 -->
+      <g>
+        <path d="M 240 140 C 240 65, 375 65, 375 140"
+              fill="none" stroke="var(--new-good)" stroke-width="1.8"/>
+        <polygon points="375,140 370,131 380,131" fill="var(--new-good)"/>
+        <rect class="pill-bg" x="285" y="50" width="60" height="18"
+              stroke="var(--new-good)" stroke-opacity="0.7"/>
+        <text class="pill-txt" x="315" y="60" fill="var(--new-good)">L₁ win</text>
+      </g>
+
+      <!-- info: opacity raised to 0.7 effective, R-13 still color-only but clearer -->
+      <g opacity="0.7">
+        <path d="M 105 140 C 105 78, 240 78, 240 140"
+              fill="none" stroke="var(--new-info)" stroke-width="1.6"/>
+        <polygon points="240,140 235,131 245,131" fill="var(--new-info)"/>
+        <rect class="pill-bg" x="150" y="63" width="50" height="18"
+              stroke="var(--new-info)" stroke-opacity="0.7"/>
+        <text class="pill-txt" x="175" y="73" fill="var(--new-info)">+h[1]²</text>
+      </g>
+
+      <!-- muted: DOTTED dash on path (R-13) + opacity 0.6 effective -->
+      <g opacity="0.6">
+        <path d="M 105 200 C 105 232, 375 232, 375 200"
+              fill="none" stroke="var(--new-muted)" stroke-width="1.6"
+              stroke-dasharray="1,3"/>
+        <polygon points="375,200 370,209 380,209" fill="var(--new-muted)"/>
+        <rect class="pill-bg" x="210" y="220" width="60" height="18"
+              stroke="var(--new-muted)" stroke-opacity="0.7"
+              stroke-dasharray="1,3"/>
+        <text class="pill-txt" x="240" y="230" fill="var(--new-muted)">L₀ lose</text>
+      </g>
+    </svg>
+    <ul class="rules">
+      <li><b>R-12:</b> info opacity 0.45→0.7 · muted 0.30→0.6 → contrast ≥ 3:1</li>
+      <li><b>R-13:</b> muted dash <code>"1,3"</code> trên arrow path (CVD-safe)</li>
+      <li><b>R-01:</b> pill y = mid − pill_h/2 − 4 (không chạm arc)</li>
+      <li><b>R-25:</b> path token đổi sang <code>#6d28d9</code> (nếu dùng)</li>
+      <li><b>R-23:</b> pill border opacity 0.3→0.7</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- CASE 2 — displaced pill + leader endpoint + threshold + gating      -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>Case 2 · Collision forces displacement → leader line behaviour</h2>
+
+<div class="pair">
+  <div class="panel old">
+    <span class="tag old">v0.10.0</span> Current engine
+    <svg width="480" height="240" viewBox="0 0 480 240">
+      <!-- obstacle cell that the natural pill position would hit -->
+      <rect class="cell-rect" x="160" y="40" width="160" height="40" fill="#fff4d6" stroke="#d4a017"/>
+      <text class="cell-label" x="240" y="60" style="font-size:10px">existing label / obstacle</text>
+
+      <!-- good arrow displaced -->
+      <g>
+        <path d="M 80 180 C 80 110, 400 110, 400 180"
+              fill="none" stroke="var(--old-good)" stroke-width="1.8"/>
+        <polygon points="400,180 395,171 405,171" fill="var(--old-good)"/>
+        <!-- pill nudged far (displacement 50 px > 30) -->
+        <rect class="pill-bg" x="140" y="150" width="60" height="18"
+              stroke="var(--old-good)" stroke-opacity="0.3"/>
+        <text class="pill-txt" x="170" y="160" fill="var(--old-good)">L₁ win</text>
+        <!-- A-5b leader: dashed polyline from curve_mid to PILL CENTER -->
+        <circle cx="240" cy="110" r="2" fill="var(--old-good)" opacity="0.6"/>
+        <line x1="240" y1="110" x2="170" y2="159"
+              stroke="var(--old-good)" stroke-width="0.75"
+              stroke-dasharray="3,2" opacity="0.6"/>
+      </g>
+
+      <!-- info arrow also displaced, also gets leader -->
+      <g opacity="0.45">
+        <path d="M 80 200 C 80 230, 400 230, 400 200"
+              fill="none" stroke="var(--old-info)" stroke-width="1.6"/>
+        <polygon points="400,200 395,209 405,209" fill="var(--old-info)"/>
+        <rect class="pill-bg" x="195" y="200" width="90" height="18"
+              stroke="var(--old-info)" stroke-opacity="0.3"/>
+        <text class="pill-txt" x="240" y="210" fill="var(--old-info)">nudged info label</text>
+        <circle cx="240" cy="227" r="2" fill="var(--old-info)" opacity="0.6"/>
+        <line x1="240" y1="227" x2="240" y2="209"
+              stroke="var(--old-info)" stroke-width="0.75"
+              stroke-dasharray="3,2" opacity="0.6"/>
+      </g>
+    </svg>
+    <ul class="rules">
+      <li>Leader threshold hard-coded <code>30 px</code> (W-3)</li>
+      <li>Leader endpoint = pill <b>center</b> (cuts through text)</li>
+      <li>Mọi token đều emit leader → noise</li>
+      <li>Info leader vô nghĩa (pill ngay sát arc)</li>
+    </ul>
+  </div>
+
+  <div class="panel new">
+    <span class="tag new">v2.0.0</span> Proposed — R-07, R-08, R-22, R-27
+    <svg width="480" height="240" viewBox="0 0 480 240">
+      <rect class="cell-rect" x="160" y="40" width="160" height="40" fill="#fff4d6" stroke="#d4a017"/>
+      <text class="cell-label" x="240" y="60" style="font-size:10px">existing label / obstacle</text>
+
+      <!-- good: R-22 auto-infers side_hint LEFT from (80→400) + obstacle; pill nudged LEFT
+           instead of below. NO leader because good not in {warn,error}. -->
+      <g>
+        <path d="M 80 180 C 80 110, 400 110, 400 180"
+              fill="none" stroke="var(--new-good)" stroke-width="1.8"/>
+        <polygon points="400,180 395,171 405,171" fill="var(--new-good)"/>
+        <rect class="pill-bg" x="32" y="100" width="60" height="18"
+              stroke="var(--new-good)" stroke-opacity="0.7"/>
+        <text class="pill-txt" x="62" y="110" fill="var(--new-good)">L₁ win</text>
+      </g>
+
+      <!-- info: pill placed below (no obstacle there), NO leader (R-27) -->
+      <g opacity="0.7">
+        <path d="M 80 200 C 80 230, 400 230, 400 200"
+              fill="none" stroke="var(--new-info)" stroke-width="1.6"/>
+        <polygon points="400,200 395,209 405,209" fill="var(--new-info)"/>
+        <rect class="pill-bg" x="195" y="209" width="90" height="18"
+              stroke="var(--new-info)" stroke-opacity="0.7"/>
+        <text class="pill-txt" x="240" y="219" fill="var(--new-info)">nudged info label</text>
+      </g>
+
+      <!-- bonus: demo warn token WITH leader to show R-07 + R-08 behaviour -->
+      <g>
+        <path d="M 340 20 L 380 20"
+              fill="none" stroke="var(--new-warn)" stroke-width="1.6"
+              stroke-dasharray="3,2"/>
+        <polygon points="380,20 374,16 374,24" fill="var(--new-warn)"/>
+        <rect class="pill-bg" x="300" y="32" width="80" height="16"
+              stroke="var(--new-warn)" stroke-opacity="0.8"
+              stroke-dasharray="3,2"/>
+        <text class="pill-txt" x="340" y="40" fill="var(--new-warn)" style="font-size:9px">warn: displaced 40 px</text>
+        <!-- R-08: leader ends at pill top-edge nearest x, not center -->
+        <circle cx="360" cy="20" r="1.8" fill="var(--new-warn)" opacity="0.75"/>
+        <line x1="360" y1="20" x2="360" y2="32"
+              stroke="var(--new-warn)" stroke-width="0.75"
+              stroke-dasharray="3,2" opacity="0.75"/>
+      </g>
+    </svg>
+    <ul class="rules">
+      <li><b>R-22:</b> side_hint suy từ <code>dst − src</code> + obstacle → pill né sang trái</li>
+      <li><b>R-27:</b> good/info/muted/path <b>không</b> emit leader</li>
+      <li><b>R-07:</b> threshold = <code>max(pill_h, 20)</code>, không còn magic 30</li>
+      <li><b>R-08:</b> warn leader dừng ở <b>pill perimeter</b>, không cắt vào text</li>
+      <li><b>R-13:</b> warn dash <code>"3,2"</code> trên arrow path (không chỉ leader)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<!-- CASE 3 — target-occlusion guard (R-02)                              -->
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+
+<h2>Case 3 · Pill che mất target cell (v0.12.0 preview)</h2>
+
+<div class="pair">
+  <div class="panel old">
+    <span class="tag old">v0.10.0</span> Current engine
+    <svg width="480" height="200" viewBox="0 0 480 200">
+      <g>
+        <rect class="cell-rect" x="60"  y="100" width="90" height="60"/>
+        <rect class="cell-rect" x="195" y="100" width="90" height="60"
+              fill="#fff4d6" stroke="#d4a017" stroke-width="2"/>
+        <rect class="cell-rect" x="330" y="100" width="90" height="60"/>
+        <text class="cell-label" x="105" y="114">dp[0]</text>
+        <text class="cell-label" x="240" y="114">dp[1]</text>
+        <text class="cell-label" x="375" y="114">dp[2]</text>
+        <text class="cell-val"   x="105" y="142">0</text>
+        <text class="cell-val"   x="240" y="142">16</text>
+        <text class="cell-val"   x="375" y="142">28</text>
+      </g>
+
+      <!-- pill occludes target dp[1] because registry blind to cell -->
+      <g>
+        <path d="M 105 100 C 105 60, 240 60, 240 100"
+              fill="none" stroke="var(--old-good)" stroke-width="1.8"/>
+        <polygon points="240,100 235,91 245,91" fill="var(--old-good)"/>
+        <rect x="205" y="130" width="70" height="20"
+              fill="white" stroke="var(--old-good)" stroke-width="1" rx="6"
+              stroke-opacity="0.3"/>
+        <text class="pill-txt" x="240" y="140" fill="var(--old-good)">→ dp[1]</text>
+      </g>
+    </svg>
+    <ul class="rules">
+      <li>Registry chỉ thấy pills → target cell invisible</li>
+      <li>Pill nudged DOWN phủ lên giá trị <code>16</code> của dp[1]</li>
+      <li>Học sinh mất thông tin quan trọng nhất</li>
+    </ul>
+  </div>
+
+  <div class="panel new">
+    <span class="tag new">v2.1.0-rc</span> Proposed — R-02, R-18
+    <svg width="480" height="200" viewBox="0 0 480 200">
+      <g>
+        <rect class="cell-rect" x="60"  y="100" width="90" height="60"/>
+        <rect class="cell-rect" x="195" y="100" width="90" height="60"
+              fill="#e6f4ef" stroke="#027a55" stroke-width="2"/>
+        <rect class="cell-rect" x="330" y="100" width="90" height="60"/>
+        <text class="cell-label" x="105" y="114">dp[0]</text>
+        <text class="cell-label" x="240" y="114">dp[1]</text>
+        <text class="cell-label" x="375" y="114">dp[2]</text>
+        <text class="cell-val"   x="105" y="142">0</text>
+        <text class="cell-val"   x="240" y="142">16</text>
+        <text class="cell-val"   x="375" y="142">28</text>
+
+        <!-- visualize pre-registered target blocker (debug overlay, not final) -->
+        <rect x="195" y="100" width="90" height="60"
+              fill="none" stroke="#027a55" stroke-width="1"
+              stroke-dasharray="2,3" opacity="0.5"/>
+        <text x="240" y="176" style="font:9px monospace; fill:#027a55; text-anchor:middle">
+          kind=target · blocker
+        </text>
+      </g>
+
+      <g>
+        <path d="M 105 100 C 105 45, 240 45, 240 100"
+              fill="none" stroke="var(--new-good)" stroke-width="1.8"/>
+        <polygon points="240,100 235,91 245,91" fill="var(--new-good)"/>
+        <rect class="pill-bg" x="205" y="22" width="70" height="18"
+              stroke="var(--new-good)" stroke-opacity="0.7"/>
+        <text class="pill-txt" x="240" y="32" fill="var(--new-good)">→ dp[1]</text>
+      </g>
+    </svg>
+    <ul class="rules">
+      <li><b>R-02:</b> target cell AABB pre-registered với <code>kind="target"</code></li>
+      <li><b>R-18:</b> registry thấy non-pill marks → nudge bỏ qua vùng cell</li>
+      <li>Pill nằm phía trên arc, dp[1] value vẫn đọc được</li>
+      <li>Cần <code>resolve_obstacle_boxes()</code> API (M cost)</li>
+    </ul>
+  </div>
+</div>
+
+<hr>
+
+<h2>Tóm tắt visible changes</h2>
+<ul class="rules" style="font-size:13px">
+  <li><b>Pill contrast</b> tăng rõ rệt cho info/muted (WCAG AA passed).</li>
+  <li><b>Muted arrows</b> có dotted dash trên path → distinguishable khi CVD/print grayscale.</li>
+  <li><b>Leader lines</b> biến mất khỏi good/info/muted/path → ít noise, chỉ warn/error mới leader.</li>
+  <li><b>Arc labels</b> lift cao hơn (pill_h/2 + 4) → không chạm stroke.</li>
+  <li><b>Pill direction</b> tự suy từ arrow vector + obstacle → né thông minh hơn, không cần author đánh dấu <code>side</code>.</li>
+  <li><b>Target cells</b> được bảo vệ khỏi occlusion (v0.12.0).</li>
+</ul>
+
+<footer>
+  Mockup render với inline SVG (không deps). Tham chiếu rules: <code>00-synthesis.md §2</code> · 2026-04-21
+</footer>
+
+</body>
+</html>
