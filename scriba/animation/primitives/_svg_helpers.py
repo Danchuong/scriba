@@ -47,6 +47,7 @@ __all__ = [
     "_LabelPlacement",
     "_nudge_candidates",
     "_wrap_label_lines",
+    "_place_pill",
     # Arrow styles and rendering
     "ARROW_STYLES",
     "emit_plain_arrow_svg",
@@ -1202,6 +1203,130 @@ def position_label_height_below(
     # extra = pill_bottom - cell_height
     pill_bottom = cell_height / 2 + pill_h + gap + l_font_px * 0.3 + math_extra
     return max(0, int(math.ceil(pill_bottom - cell_height)))
+
+
+def _place_pill(
+    *,
+    natural_x: float,
+    natural_y: float,
+    pill_w: float,
+    pill_h: float,
+    placed_labels: "list[_LabelPlacement]",
+    viewbox_w: float,
+    viewbox_h: float,
+    side_hint: "str | None" = None,
+    overlap_pad: float = 0.0,
+    _debug_capture: "dict[str, Any] | None" = None,
+) -> "tuple[_LabelPlacement, bool]":
+    """Place a pill label using per-candidate clamp + collision avoidance.
+
+    Sole placement primitive for MW-3. Closes ISSUE-A3 (clamp-race) by
+    clamping each candidate to the viewport *before* the collision check,
+    so a candidate that would collide only after clamping is rejected.
+
+    Parameters
+    ----------
+    natural_x, natural_y:
+        Natural pill center (cx, cy) before any nudge.  The caller is
+        responsible for supplying the geometry-rule-derived center
+        (e.g. arc mid-point, stem tip, or position-offset anchor).
+    pill_w, pill_h:
+        Pill dimensions in SVG user units.  MUST be > 0.
+    placed_labels:
+        Registry of already-placed pills in this frame.  The returned
+        placement is NOT appended — the caller does that to maintain C-3
+        (append-only registry).
+    viewbox_w, viewbox_h:
+        Declared viewBox dimensions for clamping (G-3).
+    side_hint:
+        Half-plane preference passed to ``_nudge_candidates`` (C-5).
+    overlap_pad:
+        Extra separation margin for ``_LabelPlacement.overlaps`` calls.
+        Defaults to 0.0 (strict AABB non-intersection per §2.3).
+    _debug_capture:
+        When provided, receives diagnostic keys ``natural_x``,
+        ``natural_y``, ``final_x``, ``final_y``, ``collision_unresolved``,
+        ``candidates_tried``.  Enabled by ``SCRIBA_DEBUG_LABELS=1``.
+
+    Returns
+    -------
+    tuple[_LabelPlacement, bool]
+        ``(placement, fits_cleanly)`` where *fits_cleanly* is ``True``
+        when the returned placement does not overlap any existing entry.
+        When all 32 candidates are exhausted the last candidate (clamped)
+        is returned with ``fits_cleanly=False`` (E-1).
+
+    Tie-breakers
+    ------------
+    G-5: below > above > right > left — encoded in the ``_nudge_candidates``
+    iterator (S, N, E, W, … priority in ``_COMPASS_8``).  When
+    ``side_hint`` is provided, the preferred half-plane comes first (C-5).
+
+    Invariants enforced
+    -------------------
+    - AC-3 (clamp pre-collision): every candidate is clamped before the
+      collision check, preventing post-selection drift.
+    - G-3 (pill inside viewport): clamp guarantees
+      ``0 <= pill_rx`` and ``pill_rx + pill_w <= viewbox_w`` etc.
+    - G-4 (clamp preserves dimensions): only the center translates.
+    - C-4 (non-overlap): checked after clamp against ``placed_labels``.
+    """
+    half_w = pill_w / 2.0
+    half_h = pill_h / 2.0
+
+    def _clamp(cx: float, cy: float) -> tuple[float, float]:
+        """Translate center so the AABB stays within [0, viewbox_w] × [0, viewbox_h]."""
+        cx = max(half_w, min(cx, viewbox_w - half_w))
+        cy = max(half_h, min(cy, viewbox_h - half_h))
+        return cx, cy
+
+    # Natural position — clamp first (G-3).
+    clamped_x, clamped_y = _clamp(natural_x, natural_y)
+    natural_placement = _LabelPlacement(
+        x=clamped_x, y=clamped_y, width=pill_w, height=pill_h
+    )
+
+    # Check whether the natural (clamped) position is collision-free.
+    if not any(natural_placement.overlaps(p) for p in placed_labels):
+        if _debug_capture is not None:
+            _debug_capture.update({
+                "natural_x": natural_x, "natural_y": natural_y,
+                "final_x": clamped_x, "final_y": clamped_y,
+                "collision_unresolved": False, "candidates_tried": 0,
+            })
+        return natural_placement, True
+
+    # Nudge loop — clamp each candidate BEFORE collision check (AC-3).
+    last_placement = natural_placement
+    candidates_tried = 0
+    for ndx, ndy in _nudge_candidates(pill_w, pill_h, side_hint=side_hint):
+        cx = natural_x + ndx
+        cy = natural_y + ndy
+        cx, cy = _clamp(cx, cy)
+        candidate = _LabelPlacement(x=cx, y=cy, width=pill_w, height=pill_h)
+        last_placement = candidate
+        candidates_tried += 1
+        if not any(candidate.overlaps(p) for p in placed_labels):
+            if _debug_capture is not None:
+                _debug_capture.update({
+                    "natural_x": natural_x, "natural_y": natural_y,
+                    "final_x": cx, "final_y": cy,
+                    "collision_unresolved": False,
+                    "candidates_tried": candidates_tried,
+                })
+            return candidate, True
+
+    # All 32 candidates exhausted — emit last candidate per E-1.
+    if _DEBUG_LABELS:
+        pass  # callers emit the debug comment using their target id
+    if _debug_capture is not None:
+        _debug_capture.update({
+            "natural_x": natural_x, "natural_y": natural_y,
+            "final_x": last_placement.x, "final_y": last_placement.y,
+            "collision_unresolved": True,
+            "candidates_tried": candidates_tried,
+        })
+    return last_placement, False
 
 
 def emit_position_label_svg(
