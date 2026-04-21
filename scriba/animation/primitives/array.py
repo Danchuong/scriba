@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
+    position_label_height_above,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -185,11 +186,13 @@ class ArrayPrimitive(PrimitiveBase):
         """
         effective_anns = self._annotations
 
-        # Compute vertical space needed above cells for arrow curves
+        # Compute vertical space needed above cells for arrow curves and
+        # position=above pill labels.
         computed = arrow_height_above(
             effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
         )
-        arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
+        pos_above = position_label_height_above(effective_anns, cell_height=CELL_HEIGHT)
+        arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
 
         lines: list[str] = [
             f'<g data-primitive="array" data-shape="{self.name}">'
@@ -363,7 +366,8 @@ class ArrayPrimitive(PrimitiveBase):
         computed = arrow_height_above(
             effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
         )
-        arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
+        pos_above = position_label_height_above(effective_anns, cell_height=CELL_HEIGHT)
+        arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
         return BoundingBox(x=0, y=0, width=float(w), height=float(h))
 

@@ -2,11 +2,21 @@
 
 Extracted from base.py (Wave C1 split). Re-exported from base.py for
 backward compatibility — all existing imports from base.py continue to work.
+
+placed_labels contract
+----------------------
+Callers MUST initialize one ``placed_labels: list[_LabelPlacement] = []``
+before all annotation loops for a given frame and pass the **same list** to
+every call of both ``emit_plain_arrow_svg`` and ``emit_arrow_svg`` within
+that frame.  Sharing the list is what lets the collision-avoidance nudge
+account for labels placed by both helper functions.  Using a fresh list per
+call defeats overlap detection across annotation types.
 """
 
 from __future__ import annotations
 
 import math
+import os
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable
@@ -16,6 +26,10 @@ from scriba.animation.primitives._types import CELL_HEIGHT
 
 # Match inline math delimited by single `$`. Non-greedy; rejects empty bodies.
 _MATH_DELIM_RE = re.compile(r"\$[^$]+?\$")
+
+# Gate debug annotation comments behind an env var so they never leak into
+# production HTML.  Set SCRIBA_DEBUG_LABELS=1 to enable.
+_DEBUG_LABELS: bool = os.getenv("SCRIBA_DEBUG_LABELS") == "1"
 
 if TYPE_CHECKING:  # pragma: no cover - type checking only
     pass
@@ -36,7 +50,10 @@ __all__ = [
     "ARROW_STYLES",
     "emit_plain_arrow_svg",
     "emit_arrow_svg",
+    "emit_position_label_svg",
     "arrow_height_above",
+    "position_label_height_above",
+    "position_label_height_below",
     "emit_arrow_marker_defs",
 ]
 
@@ -79,15 +96,44 @@ def _label_has_math(text: str) -> bool:
     return bool(text) and bool(_MATH_DELIM_RE.search(text))
 
 
-def _label_width_text(text: str) -> str:
-    """Return *text* with ``$`` delimiters stripped for width estimation.
+# Regex to match LaTeX command tokens like \frac, \sum, \alpha, etc.
+_LATEX_CMD_RE = re.compile(r"\\[a-zA-Z]+")
 
-    KaTeX renders inline math at approximately the same pixel width as its
-    source body (± a few pixels for italic/script glyphs). Stripping only
-    the dollar signs keeps the estimator's character-based approximation
-    honest.
+
+def _label_width_text(text: str) -> str:
+    r"""Return a width-estimation string derived from *text*.
+
+    For plain text: returned unchanged.
+    For math labels (containing ``$...$``):
+
+    1. Strip ``$`` delimiters.
+    2. Strip ``\\command`` tokens (``\\frac``, ``\\sum``, ``\\alpha``, etc.).
+    3. Strip brace characters ``{`` and ``}``.
+    4. Repeat the remaining characters by 1.15× (by appending a scaled
+       suffix) so that ``estimate_text_width`` accounts for the structural
+       overhead of rendered math, which KaTeX renders ~15 % wider than a
+       naive character count suggests.
+
+    The 1.15× factor is applied by returning a string whose estimated
+    width, when passed to ``estimate_text_width``, equals the corrected
+    estimate.  Because ``estimate_text_width`` is linear in character count
+    for ASCII, repeating characters achieves the scale accurately.
     """
-    return _MATH_DELIM_RE.sub(lambda m: m.group(0)[1:-1], text or "")
+    if not text:
+        return ""
+    has_math = _label_has_math(text)
+    # Strip $ delimiters from math spans.
+    result = _MATH_DELIM_RE.sub(lambda m: m.group(0)[1:-1], text)
+    if has_math:
+        # Strip LaTeX command tokens and braces.
+        result = _LATEX_CMD_RE.sub("", result)
+        result = result.replace("{", "").replace("}", "")
+        # Apply 1.15x scale by appending 15% extra characters.
+        # We append a scaled copy of the stripped string so that
+        # estimate_text_width(result_scaled) ≈ estimate_text_width(result) * 1.15.
+        extra_len = max(1, int(len(result) * 0.15))
+        result = result + result[:extra_len]
+    return result
 
 
 def _emit_label_single_line(
@@ -155,15 +201,24 @@ def _emit_label_single_line(
 
 
 def _wrap_label_lines(text: str, max_chars: int = _LABEL_MAX_WIDTH_CHARS) -> list[str]:
-    """Split label text into lines at natural break points if it exceeds *max_chars*."""
+    """Split label text into lines at natural break points if it exceeds *max_chars*.
+
+    Split characters: space, comma, ``+``, ``=``.  The ``-`` character is
+    intentionally excluded from splitting to avoid breaking LaTeX math
+    expressions like ``$f(x)=-4$`` across lines.  Inside ``$...$`` delimiters
+    no splitting occurs at all (``in_math`` guard).
+    """
     if len(text) <= max_chars:
         return [text]
-    # Split at spaces, operators, commas
+    # Split at spaces, operators, commas — but NOT inside $...$ math regions.
     tokens: list[str] = []
     current = ""
+    in_math = False
     for ch in text:
+        if ch == "$":
+            in_math = not in_math
         current += ch
-        if ch in (" ", ",", "+", "=", "-"):
+        if not in_math and ch in (" ", ",", "+", "="):
             tokens.append(current)
             current = ""
     if current:
@@ -250,6 +305,7 @@ def emit_plain_arrow_svg(
     dst_point: tuple[float, float],
     render_inline_tex: "Callable[[str], str] | None" = None,
     placed_labels: "list[_LabelPlacement] | None" = None,
+    _debug_capture: "dict[str, Any] | None" = None,
 ) -> None:
     """Emit a short straight pointer arrow for ``arrow=true`` annotations.
 
@@ -270,8 +326,11 @@ def emit_plain_arrow_svg(
     render_inline_tex:
         Optional callback for rendering ``$...$`` math in labels.
     placed_labels:
-        Optional mutable list of already-placed label bounding boxes for
-        collision avoidance.
+        Shared mutable list of already-placed label bounding boxes used for
+        collision avoidance.  Callers MUST pass the **same** list to every
+        ``emit_plain_arrow_svg`` and ``emit_arrow_svg`` call within a single
+        frame so that cross-annotation overlap detection works correctly.
+        When provided, the final placement is appended to this list.
     """
     color = ann.get("color", "info")
     label_text = ann.get("label", "")
@@ -350,9 +409,20 @@ def emit_plain_arrow_svg(
         final_x = natural_x
         final_y = natural_y
 
+        # Populate debug capture dict for testing (zero overhead when None).
+        if _debug_capture is not None:
+            _debug_capture["final_y"] = final_y
+            _debug_capture["l_font_px"] = l_font_px
+            _debug_capture["pill_w"] = pill_w
+            _debug_capture["pill_h"] = pill_h
+
+        collision_unresolved = False
         if placed_labels is not None:
+            # HIGH #2: initial candidate uses center-corrected y so overlap
+            # geometry during nudge matches the registered placement geometry.
+            candidate_y = final_y - l_font_px * 0.3
             candidate = _LabelPlacement(
-                x=final_x, y=final_y, width=float(pill_w), height=float(pill_h),
+                x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
             )
             nudge_step = pill_h + 2
             nudge_dirs = [
@@ -377,18 +447,31 @@ def emit_plain_arrow_svg(
                         resolved = True
                         break
                 if not resolved:
-                    candidate = _LabelPlacement(
-                        x=candidate.x + nudge_dirs[0][0],
-                        y=candidate.y + nudge_dirs[0][1],
-                        width=candidate.width,
-                        height=candidate.height,
-                    )
+                    # QW-2: do NOT apply blind UP nudge — stop here.
+                    collision_unresolved = True
+                    break
             final_x = candidate.x
-            final_y = candidate.y
-            placed_labels.append(candidate)
+            # Reconstruct render y from candidate y (which carries the -0.3 correction).
+            final_y = candidate.y + l_font_px * 0.3
+            # QW-3: register the clamped x so collision avoidance for
+            # subsequent labels uses the same coordinate as rendering.
+            clamped_x = max(final_x, pill_w / 2)
+            # QW-1: register y = candidate.y (already = final_y - l_font_px*0.3).
+            placed_labels.append(_LabelPlacement(
+                x=clamped_x,
+                y=candidate.y,
+                width=float(pill_w),
+                height=float(pill_h),
+            ))
 
         fi_x = int(final_x)
         fi_y = int(final_y)
+
+        # QW-2: emit collision debug comment when all directions were exhausted.
+        # HIGH #1: gated behind _DEBUG_LABELS so it never leaks into production.
+        if collision_unresolved and _DEBUG_LABELS:
+            target_id = ann.get("target", "unknown")
+            lines.append(f"  <!-- scriba:label-collision id={target_id} -->")
 
         pill_rx = max(0, int(fi_x - pill_w / 2))
         pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
@@ -457,6 +540,7 @@ def emit_arrow_svg(
     shorten_src: float = 0.0,
     shorten_dst: float = 0.0,
     placed_labels: "list[_LabelPlacement] | None" = None,
+    _debug_capture: "dict[str, Any] | None" = None,
 ) -> None:
     """Emit a cubic Bezier arrow annotation into *lines*.
 
@@ -496,9 +580,11 @@ def emit_arrow_svg(
         Useful for circular nodes so the arrowhead stops at the circle
         edge rather than piercing into the node.
     placed_labels:
-        Optional mutable list of already-placed label bounding boxes.
-        When provided, collision avoidance nudges labels away from
-        previous placements and appends the final position.
+        Shared mutable list of already-placed label bounding boxes used for
+        collision avoidance.  Callers MUST pass the **same** list to every
+        ``emit_plain_arrow_svg`` and ``emit_arrow_svg`` call within a single
+        frame so that cross-annotation overlap detection works correctly.
+        When provided, the final placement is appended to this list.
     """
     color = ann.get("color", "info")
     label_text = ann.get("label", "")
@@ -667,10 +753,21 @@ def emit_arrow_svg(
         final_x = natural_x
         final_y = natural_y
 
+        # Populate debug capture dict for testing (zero overhead when None).
+        if _debug_capture is not None:
+            _debug_capture["final_y"] = final_y
+            _debug_capture["l_font_px"] = l_font_px
+            _debug_capture["pill_w"] = pill_w
+            _debug_capture["pill_h"] = pill_h
+
         # Collision avoidance
+        collision_unresolved = False
         if placed_labels is not None:
+            # HIGH #2: initial candidate uses center-corrected y so overlap
+            # geometry during nudge matches the registered placement geometry.
+            candidate_y = final_y - l_font_px * 0.3
             candidate = _LabelPlacement(
-                x=final_x, y=final_y, width=float(pill_w), height=float(pill_h),
+                x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
             )
             # Nudge directions: up, left, right, down
             nudge_step = pill_h + 2
@@ -697,20 +794,31 @@ def emit_arrow_svg(
                         resolved = True
                         break
                 if not resolved:
-                    # Apply first nudge (up) and retry
-                    candidate = _LabelPlacement(
-                        x=candidate.x + nudge_dirs[0][0],
-                        y=candidate.y + nudge_dirs[0][1],
-                        width=candidate.width,
-                        height=candidate.height,
-                    )
+                    # QW-2: do NOT apply blind UP nudge — stop here.
+                    collision_unresolved = True
+                    break
 
             final_x = candidate.x
-            final_y = candidate.y
-            placed_labels.append(candidate)
+            # Reconstruct render y from candidate y (which carries the -0.3 correction).
+            final_y = candidate.y + l_font_px * 0.3
+            # QW-3: register clamped x so subsequent labels check the right coord.
+            clamped_x = max(final_x, pill_w / 2)
+            # QW-1: register y = candidate.y (already = final_y - l_font_px*0.3).
+            placed_labels.append(_LabelPlacement(
+                x=clamped_x,
+                y=candidate.y,
+                width=float(pill_w),
+                height=float(pill_h),
+            ))
 
         fi_x = int(final_x)
         fi_y = int(final_y)
+
+        # QW-2: emit collision debug comment when all directions were exhausted.
+        # HIGH #1: gated behind _DEBUG_LABELS so it never leaks into production.
+        if collision_unresolved and _DEBUG_LABELS:
+            target_id = ann.get("target", "unknown")
+            lines.append(f"  <!-- scriba:label-collision id={target_id} -->")
 
         # Background pill: white rect with rounded corners, before text
         # Clamp so pill doesn't extend outside the viewBox (x/y >= 0).
@@ -874,9 +982,322 @@ def arrow_height_above(
             max_height = max(max_height, int(total_offset))
 
     if has_label:
-        max_height += _LABEL_HEADROOM
+        # QW-7: use 32 px headroom when any arrow label contains math
+        # (fractions, large operators overflow the 24 px default).
+        has_math = any(_label_has_math(a.get("label", "")) for a in arrow_anns)
+        headroom_extra = 32 if has_math else _LABEL_HEADROOM
+        max_height += headroom_extra
 
     return max(max_height, plain_height)
+
+
+def _position_only_anns(annotations: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Filter to annotations that go through emit_position_label_svg.
+
+    These are annotations with a ``label`` and (optionally) a ``position`` key
+    but with neither ``arrow_from`` nor ``arrow=true``.
+    """
+    return [
+        a for a in annotations
+        if a.get("label")
+        and not a.get("arrow_from")
+        and not a.get("arrow")
+    ]
+
+
+def position_label_height_above(
+    annotations: list[dict[str, Any]],
+    *,
+    l_font_px: int = 11,
+    cell_height: float = CELL_HEIGHT,
+) -> int:
+    """Compute the max vertical headroom needed above y=0 for position=above labels.
+
+    Parameters
+    ----------
+    annotations:
+        Full annotation list for the primitive (any entries without
+        ``arrow_from`` / ``arrow=true`` that have a ``label`` are considered).
+    l_font_px:
+        Label font size in pixels used to compute pill height.
+    cell_height:
+        Cell height used to match the offset calculation in
+        ``emit_position_label_svg``.
+
+    Returns
+    -------
+    int
+        Pixel headroom required above the cell top-edge (y=0) to fit all
+        ``position=above`` pill labels, or 0 when there are none.
+    """
+    pos_anns = [
+        a for a in _position_only_anns(annotations)
+        if a.get("position", "above") == "above"
+    ]
+    if not pos_anns:
+        return 0
+
+    line_height = l_font_px + 2
+    pill_h_base = line_height + _LABEL_PILL_PAD_Y * 2  # single-line pill height
+    gap = max(4.0, cell_height * 0.1)
+
+    # The label center sits at:
+    #   final_y = ay - cell_height/2 - pill_h/2 - gap
+    # where ay = 0 (cell center-y for the top row, which is the closest to y=0).
+    # The topmost pixel of the pill rect is at:
+    #   pill_ry = final_y - pill_h/2 - l_font_px*0.3
+    # Headroom = max(0, -pill_ry) so the translate shifts content down enough.
+    has_math = any(_label_has_math(a.get("label", "")) for a in pos_anns)
+    headroom_extra = 32 if has_math else _LABEL_HEADROOM
+
+    # Worst-case pill_h is pill_h_base (single line); multi-line makes it taller
+    # but also pushes its center further — here we use pill_h_base as the
+    # conservative minimum (taller pills need more room, but we match the
+    # same conservative estimate used for arrow_height_above).
+    pill_h = pill_h_base
+    final_y = -cell_height / 2 - pill_h / 2 - gap
+    pill_ry = final_y - pill_h / 2 - l_font_px * 0.3
+    # headroom = how much above y=0 the pill extends, plus label readability buffer
+    raw_headroom = int(math.ceil(-pill_ry)) + headroom_extra
+    return max(0, raw_headroom)
+
+
+def position_label_height_below(
+    annotations: list[dict[str, Any]],
+    *,
+    l_font_px: int = 11,
+    cell_height: float = CELL_HEIGHT,
+) -> int:
+    """Compute extra height needed BELOW the cell bottom for position=below labels.
+
+    Parameters
+    ----------
+    annotations:
+        Full annotation list for the primitive.
+    l_font_px:
+        Label font size in pixels.
+    cell_height:
+        Cell height used to match offset calculation in
+        ``emit_position_label_svg``.
+
+    Returns
+    -------
+    int
+        Extra pixels needed below the nominal cell bottom, or 0 when none.
+    """
+    pos_anns = [
+        a for a in _position_only_anns(annotations)
+        if a.get("position") == "below"
+    ]
+    if not pos_anns:
+        return 0
+
+    line_height = l_font_px + 2
+    pill_h = line_height + _LABEL_PILL_PAD_Y * 2
+    gap = max(4.0, cell_height * 0.1)
+
+    # final_y for below = ay + cell_height/2 + pill_h/2 + gap
+    # pill bottom = final_y + pill_h/2 + l_font_px*0.3
+    # extra = pill_bottom - cell_height
+    pill_bottom = cell_height / 2 + pill_h + gap + l_font_px * 0.3
+    return max(0, int(math.ceil(pill_bottom - cell_height)))
+
+
+def emit_position_label_svg(
+    lines: list[str],
+    ann: dict[str, Any],
+    anchor_point: tuple[float, float],
+    cell_height: float = CELL_HEIGHT,
+    render_inline_tex: "Callable[[str], str] | None" = None,
+    placed_labels: "list[_LabelPlacement] | None" = None,
+) -> None:
+    """Emit a pill-only label for position-only annotations (no arrow, no arc).
+
+    Called when an annotation has a ``label`` and a ``position`` key but
+    neither ``arrow_from`` nor ``arrow=true``.  Emits just the rounded pill
+    rectangle and the label text, offset from *anchor_point* according to
+    *position* (``"above"``, ``"below"``, ``"left"``, ``"right"``).
+
+    Parameters
+    ----------
+    lines:
+        Output buffer — SVG markup is appended in-place.
+    ann:
+        Annotation dict.  Keys ``label``, ``color``, ``position``,
+        ``target`` are consulted.
+    anchor_point:
+        ``(x, y)`` SVG coordinates of the annotated cell center.
+    cell_height:
+        Cell height used to compute the vertical offset from the anchor.
+    render_inline_tex:
+        Optional callback for rendering ``$...$`` math in labels.
+    placed_labels:
+        Shared mutable list of already-placed label bounding boxes.
+        Callers MUST pass the **same** list to every label-emitting call
+        within a single frame so that cross-annotation overlap detection
+        works correctly.
+    """
+    label_text = ann.get("label", "")
+    if not label_text:
+        return
+
+    color = ann.get("color", "info")
+    target = ann.get("target", "")
+    position = ann.get("position", "above")
+
+    style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    s_stroke = style["stroke"]
+    s_opacity = style["opacity"]
+    l_fill = style["label_fill"]
+    l_weight = style["label_weight"]
+    l_size = style["label_size"]
+    l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else 11
+
+    if _label_has_math(label_text):
+        label_lines = [label_text]
+    else:
+        label_lines = _wrap_label_lines(label_text)
+    line_height = l_font_px + 2
+    num_lines = len(label_lines)
+
+    max_line_w = max(
+        estimate_text_width(_label_width_text(ln), l_font_px)
+        for ln in label_lines
+    )
+    pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
+    pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
+
+    ax, ay = float(anchor_point[0]), float(anchor_point[1])
+    gap = max(4.0, cell_height * 0.1)
+
+    if position == "above":
+        final_x = ax
+        final_y = ay - cell_height / 2 - pill_h / 2 - gap
+    elif position == "below":
+        final_x = ax
+        final_y = ay + cell_height / 2 + pill_h / 2 + gap
+    elif position == "left":
+        final_x = ax - pill_w / 2 - gap
+        final_y = ay
+    elif position == "right":
+        final_x = ax + pill_w / 2 + gap
+        final_y = ay
+    else:
+        # Default: above
+        final_x = ax
+        final_y = ay - cell_height / 2 - pill_h / 2 - gap
+
+    if placed_labels is not None:
+        # HIGH #2: initial candidate uses center-corrected y so overlap
+        # geometry during nudge matches the registered placement geometry.
+        candidate_y = final_y - l_font_px * 0.3
+        candidate = _LabelPlacement(
+            x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
+        )
+        nudge_step = pill_h + 2
+        nudge_dirs = [
+            (0, -nudge_step),
+            (-nudge_step, 0),
+            (nudge_step, 0),
+            (0, nudge_step),
+        ]
+        collision_unresolved = False
+        for _ in range(4):
+            if not any(candidate.overlaps(p) for p in placed_labels):
+                break
+            resolved = False
+            for ndx, ndy in nudge_dirs:
+                test = _LabelPlacement(
+                    x=candidate.x + ndx,
+                    y=candidate.y + ndy,
+                    width=candidate.width,
+                    height=candidate.height,
+                )
+                if not any(test.overlaps(p) for p in placed_labels):
+                    candidate = test
+                    resolved = True
+                    break
+            if not resolved:
+                collision_unresolved = True
+                break
+        final_x = candidate.x
+        # Reconstruct render y from candidate y (which carries the -0.3 correction).
+        final_y = candidate.y + l_font_px * 0.3
+        clamped_x = max(final_x, pill_w / 2)
+        # QW-1: register y = candidate.y (already = final_y - l_font_px*0.3).
+        placed_labels.append(_LabelPlacement(
+            x=clamped_x,
+            y=candidate.y,
+            width=float(pill_w),
+            height=float(pill_h),
+        ))
+        # HIGH #1: gated behind _DEBUG_LABELS so it never leaks into production.
+        if collision_unresolved and _DEBUG_LABELS:
+            lines.append(f"  <!-- scriba:label-collision id={target} -->")
+
+    fi_x = int(final_x)
+    fi_y = int(final_y)
+
+    pill_rx = max(0, int(fi_x - pill_w / 2))
+    pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
+    fi_x = max(fi_x, pill_w // 2)
+
+    ann_desc = _escape_xml(label_text)
+    ann_key = f"{target}-position-{position}"
+    lines.append(
+        f'  <g class="scriba-annotation scriba-annotation-{color}"'
+        f' data-annotation="{_escape_xml(ann_key)}"'
+        f' opacity="{s_opacity}"'
+        f' role="graphics-symbol" aria-label="{ann_desc}">'
+    )
+    lines.append(
+        f'    <rect x="{pill_rx}" y="{pill_ry}"'
+        f' width="{pill_w}" height="{pill_h}"'
+        f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
+        f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
+        f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
+    )
+    if num_lines == 1:
+        lines.append(
+            _emit_label_single_line(
+                label_text=label_text,
+                fi_x=fi_x,
+                fi_y=fi_y,
+                pill_rx=pill_rx,
+                pill_ry=pill_ry,
+                pill_w=int(pill_w),
+                pill_h=int(pill_h),
+                l_fill=l_fill,
+                l_weight=l_weight,
+                l_size=l_size,
+                render_inline_tex=render_inline_tex,
+            )
+        )
+    else:
+        text_attrs = (
+            f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
+            f' stroke="white" stroke-width="3"'
+            f' stroke-linejoin="round" paint-order="stroke fill"'
+        )
+        style_parts: list[str] = []
+        if l_weight:
+            style_parts.append(f"font-weight:{l_weight}")
+        if l_size:
+            style_parts.append(f"font-size:{l_size}")
+        style_parts.append("text-anchor:middle")
+        style_parts.append("dominant-baseline:auto")
+        style_str = ";".join(style_parts)
+        tspans = ""
+        for li, ln_text in enumerate(label_lines):
+            dy_val = f"{line_height}" if li > 0 else "0"
+            tspans += (
+                f'<tspan x="{fi_x}" dy="{dy_val}">'
+                f"{_escape_xml(ln_text)}</tspan>"
+            )
+        lines.append(
+            f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+        )
+    lines.append("  </g>")
 
 
 def emit_arrow_marker_defs(

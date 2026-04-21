@@ -63,9 +63,12 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     _LabelPlacement,
     _wrap_label_lines,
     arrow_height_above,
+    position_label_height_above,
+    position_label_height_below,
     emit_arrow_marker_defs,
     emit_arrow_svg,
     emit_plain_arrow_svg,
+    emit_position_label_svg,
 )
 
 
@@ -393,6 +396,24 @@ class PrimitiveBase(abc.ABC):
                 continue
 
             if not arrow_from:
+                # Position-only annotation: has a label and a position, but
+                # no arrow_from and no arrow=true.  Emit a pill at the
+                # computed offset from the target cell.  Plane2D-specific
+                # label drop is handled separately; this covers Array and
+                # DPTable (and any future primitive that implements
+                # resolve_annotation_point).
+                label_text = ann.get("label", "")
+                if label_text:
+                    dst_point = self.resolve_annotation_point(ann.get("target", ""))
+                    if dst_point is not None:
+                        emit_position_label_svg(
+                            parts,
+                            ann,
+                            anchor_point=dst_point,
+                            cell_height=self._arrow_cell_height,
+                            render_inline_tex=render_inline_tex,
+                            placed_labels=placed,
+                        )
                 continue
 
             src_point = self.resolve_annotation_point(arrow_from)
