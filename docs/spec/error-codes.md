@@ -206,3 +206,26 @@ documented deprecated alias.
 | E1503 | Stable layout fallback triggered. | Informational; the layout engine chose a simpler algorithm. |
 | E1504 | layout_lambda out of valid range (clamped). | Use a value within the documented range. |
 | E1505 | Invalid seed (must be non-negative integer). | Use a non-negative integer for the seed parameter. |
+
+## Smart-Label Placement Errors (E1560--E1579)
+
+Reserved block for smart-label placement invariants defined in
+[`smart-label-ruleset.md`](smart-label-ruleset.md) v2. Codes E1560–E1571
+are currently in use; E1572–E1579 are reserved for future invariants.
+Message template: `[E15xx] <Invariant-ID>: <observed> (expected <expected>) at <location>`.
+
+| Code | Invariant | Description | Detection site |
+|------|-----------|-------------|----------------|
+| E1560 | C-4 | Collision registry not reset between frames (stale entries leak across `compose_frame` calls). | `emit_arrow_svg` entry / frame boundary |
+| E1561 | C-3 | Collision registry entry mutated after `placed_labels.append(...)` (registry MUST be append-only). | `_place_pill` helper (MW-3, PROPOSED) |
+| E1562 | G-1 | Pre-clamp AABB registered (only the final post-clamp AABB MAY be recorded in the registry). | `placed_labels.append(...)` |
+| E1563 | G-4 / M-4 | Clamp applied after candidate selection produces a new collision (per-candidate clamp REQUIRED). | Per-candidate inner loop |
+| E1564 | C-2 / I-5 | Debug geometry (`SCRIBA_DEBUG_LABELS`) appears in production SVG output. | Post-render assertion |
+| E1565 | G-2 | Pill anchor inconsistency — geometric anchor ≠ render anchor for the same pill. | Render site vs. `_LabelPlacement` |
+| E1566 | D-2 / M-7 | `_nudge_candidates` yielded `(0, 0)` as a displacement (generator MUST skip the origin). | Generator self-check |
+| E1567 | T-2 / T-3 | Line break inserted inside a `$...$` math span (break points MUST respect math atoms). | `_wrap_label_lines` |
+| E1568 | AC-6 / M-9 | Primitive reported insufficient headroom for a math-bearing label (author contract violation). | Headroom helper |
+| E1569 | E-2 / AC-1 | Position-only label silently dropped — all label attempts MUST surface either a placement or a warning. | `base.emit_annotation_arrows` |
+| E1570 | M-13 | Hardcoded numeric headroom value in primitive (use the named constant from `smart-label-ruleset.md` §3). | Code review / lint |
+| E1571 | G-8 | Leader drawn below the displacement floor (leader-length MUST be ≥ the floor constant). | `emit_arrow_svg` render path |
+| E1572–E1579 | — | Reserved for future smart-label invariants. | — |
