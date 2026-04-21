@@ -86,6 +86,7 @@ A Fibonacci-style DP animation that computes the minimum cost to reach each cell
 - Use `\annotate` with `color=info` for candidate transitions and `color=good` for the chosen one. After committing, optionally `\reannotate` with `color=path` to highlight the optimal chain.
 - For 2D DP, use `\shape{dp}{DPTable}{rows=N, cols=M, ...}` and address cells as `dp.cell[r][c]`.
 - Use `\compute` and `\foreach` to avoid repetitive steps when the transition logic is uniform.
+- When several `\annotate` pills target the same cell (e.g. 4 orthogonal arrows in 2D DP), the smart-label placer avoids pill-vs-pill overlap but does **not** currently avoid pill-vs-cell-text occlusion — keep at most 2–3 labels per cell until MW-2 ships. See [`../spec/smart-label-ruleset.md`](../spec/smart-label-ruleset.md) §5 for known limitations.
 
 ---
 

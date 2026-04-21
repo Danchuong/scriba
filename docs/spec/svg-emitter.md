@@ -521,6 +521,15 @@ Annotations are attached to targets via `\annotate{target}{label=..., position=.
 color=..., ephemeral=..., arrow_from=...}`. The emitter renders them as nested groups
 inside the target's `<g data-target="...">` element.
 
+> **Placement contract**: the static position table in §8.2 is the *initial*
+> anchor only. Actual pill placement runs through the smart-label algorithm in
+> `scriba/animation/primitives/_svg_helpers.py` (center correction, 8-direction
+> nudge grid, viewBox clamp, math-aware width). All invariants, env flags
+> (`SCRIBA_DEBUG_LABELS`, `SCRIBA_LABEL_ENGINE`), and known limitations are
+> normative in [smart-label-ruleset.md](smart-label-ruleset.md). Changes to
+> `emit_arrow_svg` / `emit_plain_arrow_svg` / `emit_position_label_svg` MUST
+> follow the change procedure in §8 of that ruleset.
+
 ### 8.1 Annotation group structure
 
 ```html

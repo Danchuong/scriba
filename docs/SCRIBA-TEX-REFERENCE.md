@@ -241,6 +241,12 @@ Changes visual state. Persistent. States: `idle`, `current`, `done`, `dim`, `err
 ### 5.8 `\annotate{target}{params...}`
 Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
 
+> **Placement rules**: pill placement, collision avoidance, viewBox headroom,
+> math-aware sizing, and the `SCRIBA_DEBUG_LABELS` / `SCRIBA_LABEL_ENGINE` env
+> flags are specified in [spec/smart-label-ruleset.md](spec/smart-label-ruleset.md).
+> Read that document before changing `_svg_helpers.py` or any primitive's
+> `emit_svg`.
+
 **Parameters:**
 
 | Parameter | Type | Default | Description |

@@ -2,6 +2,12 @@
 
 Research trên 4 trục để chẩn đoán smart-labeling (annotation labels) không ổn định.
 
+> **Status**: audit findings shipped as Phase 0 (QW-1..QW-7, position-only
+> emit) + MW-1 (8-direction grid). Normative contract cho feature hiện tại
+> nằm ở **[`../../spec/smart-label-ruleset.md`](../../spec/smart-label-ruleset.md)** — đọc file
+> đó thay vì bắt đầu từ audit này nếu bạn muốn sửa code. Audit giữ lại làm
+> reference cho root-cause analysis và MW-2/3/4 roadmap.
+
 ## Files
 
 | File | Nội dung |

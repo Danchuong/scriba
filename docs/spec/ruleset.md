@@ -488,6 +488,16 @@ Use `\reannotate` to recolor annotations on a target:
 
 Unknown state → `E1109`
 
+#### Annotation pill placement
+
+Pill geometry, collision avoidance (8-direction nudge grid),
+center-corrected AABB registry, math-aware width, viewBox headroom helpers,
+and debug flags (`SCRIBA_DEBUG_LABELS`, `SCRIBA_LABEL_ENGINE`) are normative
+in [smart-label-ruleset.md](smart-label-ruleset.md). That document owns the
+invariants (I-1 … I-10) and the MW-2/3/4 roadmap. Any change to
+`scriba/animation/primitives/_svg_helpers.py` MUST follow its change
+procedure.
+
 ---
 
 ## 5. Primitives Catalog (16 types)

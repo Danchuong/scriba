@@ -156,6 +156,7 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 | [`scene-ir.md`](spec/scene-ir.md) | Scene IR datatype definitions. |
 | [`primitives.md`](spec/primitives.md) | Primitive catalog — all 16 primitive types (6 base, 5 extended, 5 data-structure). |
 | [`svg-emitter.md`](spec/svg-emitter.md) | SVG emitter specification. |
+| [`smart-label-ruleset.md`](spec/smart-label-ruleset.md) | Annotation pill placement: invariants, 8-direction nudge grid, collision registry, viewBox headroom, `SCRIBA_DEBUG_LABELS` / `SCRIBA_LABEL_ENGINE` env flags, MW-2/3/4 roadmap. Read before touching `_svg_helpers.py`. |
 | [`animation-css.md`](spec/animation-css.md) | CSS stylesheet specification. |
 | [`starlark-worker.md`](spec/starlark-worker.md) | Starlark worker wire protocol. |
 | [`ruleset.md`](spec/ruleset.md) | Comprehensive ruleset for `animation` and `diagram` environments. |

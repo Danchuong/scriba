@@ -45,7 +45,7 @@
 | E1102 | Unknown primitive type in `\shape` declaration. | Use a valid type: Array, Grid, DPTable, Graph, Tree, NumberLine, Matrix, Stack, etc. |
 | E1103 | **DEPRECATED** — legacy primitive validation mega-bucket. New code raises one of the specific `E14xx` codes below. Retained for backward compat (`scene.annotate` cap and some legacy call sites still use it). | See `E14xx` below. |
 | E1109 | Invalid `\recolor` state or missing required state/color parameter. | Use a valid state: idle, current, done, dim, error, good, highlight, path. |
-| E1112 | Unknown annotation position. | Use: above, below, left, right, inside. |
+| E1112 | Unknown annotation position. | Use: above, below, left, right, inside. See [`smart-label-ruleset.md`](smart-label-ruleset.md) for the placement contract. |
 | E1113 | Invalid or missing annotation color. | Use: info, warn, good, error, muted, path. |
 | E1114 | Unknown keyword parameter passed to a `\shape` primitive. A "did you mean X?" suggestion is included when a close match exists. | Check the parameter name against the primitive's accepted options. |
 | E1115 | Selector does not match any addressable part of the target primitive (warning — command silently dropped). | Check selector syntax against the primitive's addressable parts. |

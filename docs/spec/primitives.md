@@ -274,6 +274,12 @@ DPTable supports dependency arrows via `\annotate` with `arrow_from=` parameter:
 Arrows are rendered as SVG `<path>` elements inside a `<g class="scriba-annotation">`
 group, drawn from the source cell to the annotated target cell.
 
+> **Pill placement**: arrow labels use the smart-label placement algorithm
+> (8-direction nudge grid, center-corrected collision registry, math-aware
+> width). See [smart-label-ruleset.md](smart-label-ruleset.md) for the full
+> contract and known limitations (e.g. the registry does not yet track cell
+> text, so dense 4-arrow cases can occlude neighbor cell content).
+
 ### 5.4 SVG output
 
 ```html

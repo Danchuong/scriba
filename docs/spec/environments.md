@@ -233,6 +233,8 @@ Attaches an auxiliary label, arrow, or badge to a target. Persistent by default;
 - **Parameters (locked core):** `label=<string>`, `position=<above|below|left|right|inside>` (default `above`), `color=<info|warn|good|error|muted|path>` (default `info`), `arrow=<bool>` (default `true` for graph/tree, `false` otherwise), `ephemeral=<bool>` (default `false`), `arrow_from=<selector>` (optional, default none — specifies source target for arrow annotations, used for DPTable/Array transition arrows).
 - **Error codes:** `E1111` unknown target; `E1112` unknown position; `E1113` unknown color token.
 - **Example:** `\annotate{dp.cell[2]}{label="min", color=info}`
+- **Placement contract:** pill geometry, collision avoidance, viewBox headroom,
+  and known limitations are normative in [smart-label-ruleset.md](smart-label-ruleset.md).
 
 ### 3.9 `\reannotate{target}{color=..., arrow_from=...}`
 
