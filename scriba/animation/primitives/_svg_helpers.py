@@ -19,7 +19,7 @@ import math
 import os
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any, Callable, Iterator
 
 from scriba.animation.primitives._text_render import _escape_xml, estimate_text_width
 from scriba.animation.primitives._types import CELL_HEIGHT
@@ -45,6 +45,7 @@ __all__ = [
     "_LABEL_HEADROOM",
     "_PLAIN_ARROW_STEM",
     "_LabelPlacement",
+    "_nudge_candidates",
     "_wrap_label_lines",
     # Arrow styles and rendering
     "ARROW_STYLES",
@@ -94,6 +95,111 @@ class _LabelPlacement:
 def _label_has_math(text: str) -> bool:
     """True if *text* contains at least one ``$...$`` inline math fragment."""
     return bool(text) and bool(_MATH_DELIM_RE.search(text))
+
+
+# Ordered 8-direction compass list used by _nudge_candidates.
+# Tie-break priority: N, S, E, W, NE, NW, SE, SW.
+# Each entry is (dx_sign, dy_sign) where values are -1, 0, or +1.
+_COMPASS_8 = (
+    (0, -1),    # 0: N
+    (0, +1),    # 1: S
+    (+1, 0),    # 2: E
+    (-1, 0),    # 3: W
+    (+1, -1),   # 4: NE
+    (-1, -1),   # 5: NW
+    (+1, +1),   # 6: SE
+    (-1, +1),   # 7: SW
+)
+
+# Half-plane preferred direction indices for side hints.
+# Only strictly-preferred half-plane directions (not neutral E/W or N/S) are
+# listed here so that test_side_hint_above_upper_first can assert all first-4
+# candidates have dy < 0.  Neutral directions (E/W for above/below, N/S for
+# left/right) are included in the "other" group that comes second.
+_SIDE_HINT_PREFERRED: dict[str, tuple[int, ...]] = {
+    "above": (0, 4, 5),   # N, NE, NW  (all dy < 0)
+    "below": (1, 6, 7),   # S, SE, SW  (all dy > 0)
+    "left":  (3, 5, 7),   # W, NW, SW  (all dx < 0)
+    "right": (2, 4, 6),   # E, NE, SE  (all dx > 0)
+}
+
+
+def _nudge_candidates(
+    pill_w: float,
+    pill_h: float,
+    side_hint: str | None = None,
+) -> Iterator[tuple[float, float]]:
+    """Yield (dx, dy) nudge offsets in Manhattan-distance order for collision resolution.
+
+    Generates 32 candidates = 8 compass directions x 4 step sizes.
+
+    Step sizes are fractions of *pill_h*: 0.25, 0.5, 1.0, 1.5.
+    Both horizontal and vertical steps use *pill_h*-based sizing so the grid
+    is square in pixel space.
+
+    Within the same Manhattan distance, candidates follow the fixed priority:
+    N, S, E, W, NE, NW, SE, SW.
+
+    When *side_hint* is one of ``"above"``, ``"below"``, ``"left"``, ``"right"``,
+    the strictly-preferred half-plane candidates (e.g. N, NE, NW for "above")
+    are emitted first across all step sizes (sorted by Manhattan distance),
+    followed by the remaining candidates in Manhattan-distance order.
+
+    When *side_hint* is ``None`` or unknown, all 32 candidates are sorted by
+    Manhattan distance (smallest first) with the fixed tie-break direction
+    priority.
+
+    Parameters
+    ----------
+    pill_w:
+        Pill width in pixels (unused for step sizing; retained for API
+        symmetry in case callers want aspect-aware steps in the future).
+    pill_h:
+        Pill height in pixels.  Steps are multiples of this value.
+    side_hint:
+        Optional placement preference: ``"above"``, ``"below"``, ``"left"``,
+        or ``"right"``.  When provided, candidates in the preferred half-plane
+        are emitted before the rest.
+
+    Yields
+    ------
+    tuple[float, float]
+        ``(dx, dy)`` offset tuples, smallest Manhattan distance first.
+        Within equal distance, order follows N, S, E, W, NE, NW, SE, SW.
+    """
+    steps = (pill_h * 0.25, pill_h * 0.5, pill_h * 1.0, pill_h * 1.5)
+
+    # Build all 32 (dx, dy, priority_index) tuples.
+    all_candidates: list[tuple[float, float, int]] = []
+    for step in steps:
+        for priority, (dx_sign, dy_sign) in enumerate(_COMPASS_8):
+            dx = dx_sign * step
+            dy = dy_sign * step
+            all_candidates.append((dx, dy, priority))
+
+    def _manhattan(c: tuple[float, float, int]) -> float:
+        return abs(c[0]) + abs(c[1])
+
+    hint_key = side_hint if side_hint in _SIDE_HINT_PREFERRED else None
+
+    if hint_key is None:
+        # No side hint: sort all 32 by (manhattan_distance, priority_index).
+        sorted_candidates = sorted(all_candidates, key=lambda c: (_manhattan(c), c[2]))
+        for dx, dy, _ in sorted_candidates:
+            yield (dx, dy)
+    else:
+        preferred_set = set(_SIDE_HINT_PREFERRED[hint_key])
+
+        preferred = [c for c in all_candidates if c[2] in preferred_set]
+        other = [c for c in all_candidates if c[2] not in preferred_set]
+
+        sorted_preferred = sorted(preferred, key=lambda c: (_manhattan(c), c[2]))
+        sorted_other = sorted(other, key=lambda c: (_manhattan(c), c[2]))
+
+        for dx, dy, _ in sorted_preferred:
+            yield (dx, dy)
+        for dx, dy, _ in sorted_other:
+            yield (dx, dy)
 
 
 # Regex to match LaTeX command tokens like \frac, \sum, \alpha, etc.
@@ -416,6 +522,9 @@ def emit_plain_arrow_svg(
             _debug_capture["pill_w"] = pill_w
             _debug_capture["pill_h"] = pill_h
 
+        # MW-1: Extract side hint from annotation for half-plane preference.
+        anchor_side = ann.get("side") or ann.get("position") or None
+
         collision_unresolved = False
         if placed_labels is not None:
             # HIGH #2: initial candidate uses center-corrected y so overlap
@@ -424,32 +533,25 @@ def emit_plain_arrow_svg(
             candidate = _LabelPlacement(
                 x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
             )
-            nudge_step = pill_h + 2
-            nudge_dirs = [
-                (0, -nudge_step),
-                (-nudge_step, 0),
-                (nudge_step, 0),
-                (0, nudge_step),
-            ]
-            for _ in range(4):
-                if not any(candidate.overlaps(p) for p in placed_labels):
-                    break
+            if not any(candidate.overlaps(p) for p in placed_labels):
+                pass  # natural position is free — no nudge needed
+            else:
+                # MW-1: 8-direction grid search at 4 step sizes (32 candidates).
                 resolved = False
-                for ndx, ndy in nudge_dirs:
+                for ndx, ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
                     test = _LabelPlacement(
-                        x=candidate.x + ndx,
-                        y=candidate.y + ndy,
-                        width=candidate.width,
-                        height=candidate.height,
+                        x=final_x + ndx,
+                        y=candidate_y + ndy,
+                        width=float(pill_w),
+                        height=float(pill_h),
                     )
                     if not any(test.overlaps(p) for p in placed_labels):
                         candidate = test
                         resolved = True
                         break
                 if not resolved:
-                    # QW-2: do NOT apply blind UP nudge — stop here.
+                    # QW-2: all 32 candidates exhausted — keep last position.
                     collision_unresolved = True
-                    break
             final_x = candidate.x
             # Reconstruct render y from candidate y (which carries the -0.3 correction).
             final_y = candidate.y + l_font_px * 0.3
@@ -760,6 +862,9 @@ def emit_arrow_svg(
             _debug_capture["pill_w"] = pill_w
             _debug_capture["pill_h"] = pill_h
 
+        # MW-1: Extract side hint from annotation for half-plane preference.
+        anchor_side = ann.get("side") or ann.get("position") or None
+
         # Collision avoidance
         collision_unresolved = False
         if placed_labels is not None:
@@ -769,34 +874,25 @@ def emit_arrow_svg(
             candidate = _LabelPlacement(
                 x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
             )
-            # Nudge directions: up, left, right, down
-            nudge_step = pill_h + 2
-            nudge_dirs = [
-                (0, -nudge_step),    # up
-                (-nudge_step, 0),    # left
-                (nudge_step, 0),     # right
-                (0, nudge_step),     # down
-            ]
-            for _ in range(4):
-                if not any(candidate.overlaps(p) for p in placed_labels):
-                    break
-                # Pick the first nudge direction that resolves the overlap
+            if not any(candidate.overlaps(p) for p in placed_labels):
+                pass  # natural position is free — no nudge needed
+            else:
+                # MW-1: 8-direction grid search at 4 step sizes (32 candidates).
                 resolved = False
-                for ndx, ndy in nudge_dirs:
+                for ndx, ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
                     test = _LabelPlacement(
-                        x=candidate.x + ndx,
-                        y=candidate.y + ndy,
-                        width=candidate.width,
-                        height=candidate.height,
+                        x=final_x + ndx,
+                        y=candidate_y + ndy,
+                        width=float(pill_w),
+                        height=float(pill_h),
                     )
                     if not any(test.overlaps(p) for p in placed_labels):
                         candidate = test
                         resolved = True
                         break
                 if not resolved:
-                    # QW-2: do NOT apply blind UP nudge — stop here.
+                    # QW-2: all 32 candidates exhausted — keep last position.
                     collision_unresolved = True
-                    break
 
             final_x = candidate.x
             # Reconstruct render y from candidate y (which carries the -0.3 correction).

@@ -26,6 +26,7 @@ from scriba.animation.primitives._svg_helpers import (
     _LabelPlacement,
     _label_has_math,
     _label_width_text,
+    _nudge_candidates,
     _wrap_label_lines,
     arrow_height_above,
     emit_arrow_svg,
@@ -898,4 +899,137 @@ class TestPositionLabelHeightHelpers:
         assert effective_y >= 0, (
             f"Pill rect effective y ({raw_pill_y} + {translate_y} = {effective_y}) "
             "must be ≥ 0 (inside viewBox). ViewBox clipping bug not fixed."
+        )
+
+
+# ---------------------------------------------------------------------------
+# MW-1: 8-direction grid nudge at multiple step sizes
+# ---------------------------------------------------------------------------
+
+
+class TestMW1EightDirectionGrid:
+    """MW-1: Replace the 4-direction nudge with an 8-direction grid at 4 step sizes.
+
+    Tests for the new _nudge_candidates(pill_w, pill_h, side_hint=None) generator
+    that yields (dx, dy) tuples sorted by Manhattan distance, with 32 total
+    candidates (8 dirs x 4 steps).
+    """
+
+    def test_candidate_count_32(self) -> None:
+        """list(_nudge_candidates(40, 20)) has exactly 32 entries (8 dirs x 4 steps)."""
+        candidates = list(_nudge_candidates(40, 20))
+        assert len(candidates) == 32, (
+            f"Expected 32 candidates (8 dirs x 4 steps), got {len(candidates)}"
+        )
+
+    def test_candidates_sorted_by_manhattan(self) -> None:
+        """Manhattan distances of yielded candidates must be monotonically non-decreasing."""
+        candidates = list(_nudge_candidates(40, 20))
+        distances = [abs(dx) + abs(dy) for dx, dy in candidates]
+        for i in range(1, len(distances)):
+            assert distances[i] >= distances[i - 1], (
+                f"Candidates not sorted by Manhattan distance at index {i}: "
+                f"distance[{i}]={distances[i]} < distance[{i-1}]={distances[i-1]}"
+            )
+
+    def test_side_hint_above_upper_first(self) -> None:
+        """side_hint='above': first 4 candidates must all be in upper half-plane (dy < 0)."""
+        candidates = list(_nudge_candidates(40, 20, side_hint="above"))
+        assert len(candidates) == 32, "Still need 32 total candidates"
+        first_four = candidates[:4]
+        for i, (dx, dy) in enumerate(first_four):
+            assert dy < 0, (
+                f"Candidate {i} with side_hint='above' should have dy < 0, "
+                f"got ({dx}, {dy})"
+            )
+
+    def test_side_hint_below_lower_first(self) -> None:
+        """side_hint='below': first 4 candidates must all be in lower half-plane (dy > 0)."""
+        candidates = list(_nudge_candidates(40, 20, side_hint="below"))
+        assert len(candidates) == 32, "Still need 32 total candidates"
+        first_four = candidates[:4]
+        for i, (dx, dy) in enumerate(first_four):
+            assert dy > 0, (
+                f"Candidate {i} with side_hint='below' should have dy > 0, "
+                f"got ({dx}, {dy})"
+            )
+
+    def test_no_hint_default_order(self) -> None:
+        """side_hint=None: first candidate must be (0, -pill_h*0.25) — i.e. N at smallest step."""
+        pill_h = 20.0
+        candidates = list(_nudge_candidates(40, pill_h, side_hint=None))
+        first = candidates[0]
+        step = pill_h * 0.25
+        assert first == (0.0, -step) or first == pytest.approx((0.0, -step)), (
+            f"First candidate with no hint should be (0, -{step}), got {first}"
+        )
+
+    def test_deterministic_order(self) -> None:
+        """Calling _nudge_candidates twice with same args must yield identical lists."""
+        result1 = list(_nudge_candidates(40, 20))
+        result2 = list(_nudge_candidates(40, 20))
+        assert result1 == result2, (
+            "Two calls to _nudge_candidates with same args must produce identical results"
+        )
+
+    def test_plain_arrow_uses_8_dir_search(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Integration: emit_plain_arrow_svg uses the 8-direction grid.
+
+        Verifies behavioral integration by checking that:
+        1. With only the natural position blocked, the new emitter resolves
+           the collision WITHOUT triggering collision_unresolved (i.e. it finds
+           a free slot among the 32 candidates).
+        2. With debug labels enabled, the collision comment is NOT emitted,
+           confirming the resolver succeeded — in contrast to what a completely
+           exhausted search would produce.
+
+        This locks in that _nudge_candidates is wired into the emitter and
+        that the expanded 32-candidate search succeeds in realistic conditions.
+        """
+        monkeypatch.setattr(_svg_helpers_mod, "_DEBUG_LABELS", True)
+
+        # Step 1: get natural placement.
+        probe: list[_LabelPlacement] = []
+        emit_plain_arrow_svg(
+            [],
+            {"target": "arr.cell[0]", "label": "ptr", "color": "info"},
+            dst_point=(100.0, 90.0),
+            placed_labels=probe,
+        )
+        assert len(probe) == 1, "probe must register one placement"
+        nat_x = probe[0].x
+        nat_y = probe[0].y
+        pill_w = probe[0].width
+        pill_h = probe[0].height
+
+        # Step 2: place a single blocker at the natural position.
+        # With only this one blocker, ANY of the 32 candidate offsets that
+        # moves far enough away will resolve the collision.
+        blocker = _LabelPlacement(x=nat_x, y=nat_y, width=pill_w, height=pill_h)
+        placed: list[_LabelPlacement] = [blocker]
+
+        lines: list[str] = []
+        emit_plain_arrow_svg(
+            lines,
+            {"target": "arr.cell[0]", "label": "ptr", "color": "info"},
+            dst_point=(100.0, 90.0),
+            placed_labels=placed,
+        )
+
+        # The SVG must NOT contain the collision comment because the search
+        # resolved successfully (at least one of the 32 candidates is free).
+        svg_text = "\n".join(lines)
+        assert "scriba:label-collision" not in svg_text, (
+            "collision comment must NOT appear when a free slot exists among "
+            f"the 32 candidates. Got SVG:\n{svg_text[:400]}"
+        )
+
+        # The new registration must be different from the natural position
+        # (it was nudged to a free slot).
+        new_placements = placed[1:]  # exclude the pre-placed blocker
+        assert len(new_placements) == 1, "Must register exactly one new label"
+        new_pl = new_placements[0]
+        assert not new_pl.overlaps(blocker), (
+            f"New placement at ({new_pl.x:.1f}, {new_pl.y:.1f}) must not "
+            f"overlap the natural-position blocker at ({nat_x:.1f}, {nat_y:.1f})"
         )
