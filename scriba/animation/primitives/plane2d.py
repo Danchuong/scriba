@@ -29,6 +29,13 @@ from scriba.animation.primitives.base import (
     register_primitive,
     svg_style_attrs,
 )
+from scriba.animation.primitives._svg_helpers import (
+    _LABEL_PILL_PAD_X as _SVG_LABEL_PILL_PAD_X,
+    _LABEL_PILL_PAD_Y as _SVG_LABEL_PILL_PAD_Y,
+    _LABEL_PILL_RADIUS as _SVG_LABEL_PILL_RADIUS,
+    emit_position_label_svg,
+    _place_pill,
+)
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
 
 __all__ = ["Plane2D"]
@@ -658,8 +665,26 @@ class Plane2D(PrimitiveBase):
             text_anns = [a for a in effective_anns if not a.get("arrow_from") and not a.get("arrow")]
             if arrow_anns:
                 self.emit_annotation_arrows(parts, arrow_anns, render_inline_tex=render_inline_tex)
-            for ann in text_anns:
-                self._emit_text_annotation(parts, ann, render_inline_tex=render_inline_tex)
+            # FP-1/FP-2/FP-4 fix: route position-only annotations through
+            # emit_position_label_svg (uses _svg_helpers collision registry,
+            # viewBox clamp, and canonical pill metrics) instead of the legacy
+            # _emit_text_annotation that emitted <text> directly with hardcoded
+            # metrics and no clamp.
+            if text_anns:
+                text_placed: list[_LabelPlacement] = []
+                for ann in text_anns:
+                    target = ann.get("target", "")
+                    anchor = self.resolve_annotation_point(target)
+                    if anchor is None:
+                        continue
+                    emit_position_label_svg(
+                        parts,
+                        ann,
+                        anchor_point=anchor,
+                        cell_height=float(_ARROW_CELL_HEIGHT),
+                        render_inline_tex=render_inline_tex,
+                        placed_labels=text_placed,
+                    )
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
@@ -667,89 +692,6 @@ class Plane2D(PrimitiveBase):
 
         parts.append("</g>")
         return "".join(parts)
-
-    # ----- Text-only annotation helper --------------------------------------
-
-    def _emit_text_annotation(
-        self,
-        lines: list[str],
-        ann: dict[str, Any],
-        render_inline_tex: Callable[[str], str] | None = None,
-    ) -> None:
-        """Emit a positional text label annotation (no arrow).
-
-        Resolves the target point's SVG coordinates, offsets the label
-        based on ``position`` (above/below/left/right), and renders a
-        small pill background behind the text for readability.
-        """
-        target = ann.get("target", "")
-        point = self.resolve_annotation_point(target)
-        if point is None:
-            return
-
-        label_text = ann.get("label", "")
-        if not label_text:
-            return
-
-        px, py = point
-        position = ann.get("position", "above")
-        color = ann.get("color", "info")
-        style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
-        fill = style["label_fill"]
-        font_weight = style.get("label_weight", "600")
-        font_size = style.get("label_size", "11px")
-
-        # Compute offset and text-anchor based on position
-        text_anchor = "middle"
-        if position == "above":
-            tx, ty = int(px), int(py) - 14
-        elif position == "below":
-            tx, ty = int(px), int(py) + 16
-        elif position == "left":
-            tx, ty = int(px) - 10, int(py)
-            text_anchor = "end"
-        elif position == "right":
-            tx, ty = int(px) + 10, int(py)
-            text_anchor = "start"
-        else:
-            # Default to above for unknown positions
-            tx, ty = int(px), int(py) - 14
-
-        # Estimate pill width from label length
-        char_width = 7
-        pill_w = max(len(label_text) * char_width + 8, 20)
-        pill_h = 16
-        pill_rx = 4
-
-        # Compute pill x based on text-anchor
-        if text_anchor == "middle":
-            pill_x = tx - pill_w / 2
-        elif text_anchor == "end":
-            pill_x = tx - pill_w
-        else:  # start
-            pill_x = tx
-        pill_y = ty - pill_h + 4
-
-        # Background pill for readability
-        lines.append(
-            f'<rect x="{pill_x:.1f}" y="{pill_y:.1f}" '
-            f'width="{pill_w}" height="{pill_h}" rx="{pill_rx}" '
-            f'fill="white" opacity="0.85"/>'
-        )
-
-        # Render label text
-        lines.append(
-            _render_svg_text(
-                label_text,
-                tx,
-                ty,
-                fill=fill,
-                font_weight=font_weight,
-                font_size=font_size,
-                text_anchor=text_anchor,
-                render_inline_tex=render_inline_tex,
-            )
-        )
 
     # ----- Grid rendering --------------------------------------------------
 
@@ -1044,13 +986,15 @@ class Plane2D(PrimitiveBase):
                     )
                 )
 
-        # Line labels — with collision avoidance and viewBox clamping
-        _LINE_LABEL_CHAR_W = 7  # approx px per char at _TICK_FONT_SIZE
+        # Line labels — with collision avoidance and viewBox clamping.
+        # FP-3 fix: use canonical constants from _svg_helpers instead of
+        # hardcoded local values for PAD_X, PAD_Y, and PILL_R.
+        _LINE_LABEL_CHAR_W = 7  # approx px per char at _TICK_FONT_SIZE (line-label font)
         _LINE_LABEL_H = 14
         _LINE_LABEL_PAD = 10
-        _LINE_PILL_PAD_X = 5
-        _LINE_PILL_PAD_Y = 2
-        _LINE_PILL_R = 3
+        _LINE_PILL_PAD_X = _SVG_LABEL_PILL_PAD_X   # was: 5 (FP-3 fix)
+        _LINE_PILL_PAD_Y = _SVG_LABEL_PILL_PAD_Y   # was: 2 (FP-3 fix)
+        _LINE_PILL_R = _SVG_LABEL_PILL_RADIUS       # was: 3 (FP-3 fix)
         _LINE_NUDGE_STEP = 16
         _LINE_MAX_NUDGE = 4
 

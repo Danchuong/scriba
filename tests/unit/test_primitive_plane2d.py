@@ -439,7 +439,7 @@ class TestTextAnnotation:
         assert "A" in svg
 
     def test_text_annotation_all_positions(self) -> None:
-        """Each position (above/below/left/right) produces text at different y offsets."""
+        """Each position (above/below/left/right) produces text at different offsets."""
         positions = ["above", "below", "left", "right"]
         results: dict[str, str] = {}
         for pos in positions:
@@ -450,11 +450,14 @@ class TestTextAnnotation:
             results[pos] = p.emit_svg()
             assert "<text" in results[pos], f"position={pos} should produce <text>"
 
-        # above and below should differ in their y coordinate
+        # above and below should differ in their emitted SVG
         assert results["above"] != results["below"]
-        # left and right should differ in text-anchor
-        assert "text-anchor:end" in results["left"]
-        assert "text-anchor:start" in results["right"]
+        # left and right should differ from each other (pill is positioned differently)
+        assert results["left"] != results["right"]
+        # All four positions must produce distinct SVG output
+        assert len(set(results.values())) == 4, (
+            "Each of the four positions must produce distinct SVG output."
+        )
 
     def test_text_annotation_missing_target(self) -> None:
         """Annotating a nonexistent point produces no crash and no text output."""
@@ -477,14 +480,19 @@ class TestTextAnnotation:
         assert svg.count("opacity=\"0.85\"") == 0
 
     def test_text_annotation_has_background_pill(self) -> None:
-        """Text annotation renders a white background pill for readability."""
+        """Text annotation renders a white background pill for readability.
+
+        The canonical emitter (_svg_helpers.emit_position_label_svg) uses
+        fill-opacity="0.92" (from _LABEL_BG_OPACITY) on the pill rect.
+        """
         p = Plane2D("p", {"points": [(1, 2)]})
         p.set_annotations([
             {"target": "p.point[0]", "label": "B", "position": "above", "color": "good"},
         ])
         svg = p.emit_svg()
         assert 'fill="white"' in svg
-        assert 'opacity="0.85"' in svg
+        # Canonical emitter uses fill-opacity from _LABEL_BG_OPACITY (0.92)
+        assert 'fill-opacity="0.92"' in svg
 
 
 # ---------------------------------------------------------------
