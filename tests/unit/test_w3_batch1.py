@@ -548,3 +548,31 @@ class TestAutoSideHintZeroVector:
         assert "_abs_dx == 0 and _abs_dy == 0" in source, (
             "emit_arrow_svg must contain the zero-vector guard for R-22"
         )
+
+
+# ---------------------------------------------------------------------------
+# Security — _safe_narration_html contract (sec-review-20260422)
+# ---------------------------------------------------------------------------
+
+
+class TestSafeNarrationHtmlContract:
+    """_safe_narration_html must raise TypeError (not assert) on non-str.
+
+    assert-based guards are stripped under ``python -O`` / PYTHONOPTIMIZE,
+    so they cannot enforce a security contract.  Explicit TypeError holds
+    under any interpreter flag.
+    """
+
+    def test_str_passes_through(self) -> None:
+        from scriba.animation._html_stitcher import _safe_narration_html
+        assert _safe_narration_html("<strong>ok</strong>") == "<strong>ok</strong>"
+
+    def test_non_str_raises_typeerror(self) -> None:
+        from scriba.animation._html_stitcher import _safe_narration_html
+        with pytest.raises(TypeError, match="narration_html"):
+            _safe_narration_html(123)  # type: ignore[arg-type]
+
+    def test_none_raises_typeerror(self) -> None:
+        from scriba.animation._html_stitcher import _safe_narration_html
+        with pytest.raises(TypeError):
+            _safe_narration_html(None)  # type: ignore[arg-type]

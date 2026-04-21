@@ -13,7 +13,17 @@ import sys
 from pathlib import Path
 
 RULESET = Path("docs/spec/smart-label-ruleset.md")
-REPO_ROOT = Path(__file__).parent.parent
+REPO_ROOT = Path(__file__).parent.parent.resolve()
+
+
+def _safe_path(path: str) -> Path | None:
+    """Resolve *path* under REPO_ROOT; reject traversal attempts."""
+    fp = (REPO_ROOT / path).resolve()
+    try:
+        fp.relative_to(REPO_ROOT)
+    except ValueError:
+        return None
+    return fp
 
 
 def main() -> int:
@@ -36,7 +46,11 @@ def main() -> int:
         if not m:
             continue
         path, lineno = m.group(1), int(m.group(2))
-        fp = REPO_ROOT / path
+        fp = _safe_path(path)
+        if fp is None:
+            print(f"ERROR: code-ref path escapes repo root: {ref}")
+            errors += 1
+            continue
         if not fp.exists():
             print(f"ERROR: code-ref file missing: {ref}")
             errors += 1
@@ -57,7 +71,11 @@ def main() -> int:
         if not m:
             continue
         path = m.group(1)
-        fp = REPO_ROOT / path
+        fp = _safe_path(path)
+        if fp is None:
+            print(f"ERROR: test-ref path escapes repo root: {ref}")
+            errors += 1
+            continue
         if not fp.exists():
             print(f"ERROR: test-ref file missing: {ref}")
             errors += 1
