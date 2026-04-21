@@ -487,14 +487,21 @@ class TestMainExitCodes:
 
 
 # ---------------------------------------------------------------------------
-# Live codebase scan — detect exactly 12 unique (primitive, FP) pairs
+# Live codebase scan — detect exactly 12 unique (primitive, FP) pairs (post-PR-3 stable)
 # ---------------------------------------------------------------------------
 
 
 class TestLiveScan:
     def test_live_scan_detects_12_primitive_fp_pairs(self):
-        """Validate that the linter finds exactly 12 unique (primitive, FP) pairs
-        as documented in R3 §5.1 audit table."""
+        """Validate that the linter finds the expected unique (primitive, FP) pairs.
+
+        Post-Plane2D migration (PR-3): FP-1 is eliminated from Plane2D
+        (_emit_text_annotation removed). FP-2/FP-3 still show 4/2 primitives
+        due to lint false positives on _emit_labels (line labels, not annotation
+        labels) and the new text_placed list (intentionally isolated per-frame).
+        FP-6 picks up plane2d due to direct emit_position_label_svg call.
+        Net result: (plane2d, FP-1) removed, (plane2d, FP-6) added — total stays 12.
+        """
         primitives_path = _REPO_ROOT / "scriba" / "animation" / "primitives"
         violations = _lint.lint_primitives(primitives_path)
         pairs = {
@@ -502,11 +509,22 @@ class TestLiveScan:
             for v in violations
         }
         assert len(pairs) == 12, (
-            f"Expected 12 unique (primitive, FP) pairs, got {len(pairs)}: {sorted(pairs)}"
+            f"Expected 12 unique (primitive, FP) pairs post-Plane2D migration, "
+            f"got {len(pairs)}: {sorted(pairs)}"
         )
 
     def test_live_scan_fp_counts_match_r3_audit(self):
-        """Validate per-FP violation counts match R3 §5.1."""
+        """Validate per-FP violation counts match post-Plane2D-migration baseline.
+
+        R3 §5.1 baseline was 12 pairs before Plane2D migration. After PR-3:
+          - FP-1: 0 (Plane2D._emit_text_annotation removed — FP-1 closed)
+          - FP-2: 4 (plane2d._emit_labels + text_placed are lint false positives;
+                     Graph, Queue, NumberLine are real violations)
+          - FP-3: 2 (plane2d._LINE_LABEL_CHAR_W is a line-label FP, Graph real)
+          - FP-4: 1 (Graph only; Plane2D FP-4 was inside _emit_text_annotation)
+          - FP-5: 2 (Queue, NumberLine — unchanged)
+          - FP-6: 3 (Queue, NumberLine + plane2d flagged for emit_position_label_svg)
+        """
         import collections
 
         primitives_path = _REPO_ROOT / "scriba" / "animation" / "primitives"
@@ -518,14 +536,14 @@ class TestLiveScan:
             fname = v.file.split("/")[-1].replace(".py", "").lower()
             pairs_by_fp[v.fp].add(fname)
 
-        # R3 §5.1 expected primitive counts per FP
+        # Post-Plane2D-migration expected primitive counts per FP
         expected = {
-            "FP-1": 1,  # Plane2D
-            "FP-2": 4,  # Graph, Plane2D, Queue, NumberLine
-            "FP-3": 2,  # Plane2D, Graph
-            "FP-4": 1,  # Graph (Plane2D FP-4 is only in _emit_text_annotation which FP-1 already catches)
-            "FP-5": 2,  # Queue, NumberLine
-            "FP-6": 2,  # Queue, NumberLine
+            "FP-1": 0,  # Plane2D fixed (_emit_text_annotation removed)
+            "FP-2": 4,  # Graph, Plane2D (FP via _emit_labels+text_placed), Queue, NumberLine
+            "FP-3": 2,  # Plane2D (_LINE_LABEL_CHAR_W — line-label FP), Graph
+            "FP-4": 1,  # Graph only (Plane2D FP-4 was inside _emit_text_annotation, now gone)
+            "FP-5": 2,  # Queue, NumberLine — unchanged
+            "FP-6": 3,  # Queue, NumberLine, Plane2D (emit_position_label_svg flagged)
         }
         for fp_code, expected_count in expected.items():
             actual_count = len(pairs_by_fp.get(fp_code, set()))

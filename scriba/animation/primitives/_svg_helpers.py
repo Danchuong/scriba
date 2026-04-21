@@ -931,11 +931,15 @@ def emit_arrow_svg(
             f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
         )
 
-        # Leader line: if label was nudged far from its natural position
+        # Leader line: if label was nudged far from its natural position.
+        # A-5 non-colour cue: warn token uses a dashed leader (stroke-dasharray
+        # "3,2") to remain distinguishable from error (solid) under deuteranopia
+        # (CIEDE2000 warn/error pairwise distance 2.8 under deuteranopia).
         displacement = math.sqrt(
             (final_x - natural_x) ** 2 + (final_y - natural_y) ** 2
         )
         if displacement > 30:
+            leader_dasharray = ' stroke-dasharray="3,2"' if color == "warn" else ""
             lines.append(
                 f'    <circle cx="{curve_mid_x}" cy="{curve_mid_y}" r="2"'
                 f' fill="{s_stroke}" opacity="0.6"/>'
@@ -944,7 +948,7 @@ def emit_arrow_svg(
                 f'    <polyline points="{curve_mid_x},{curve_mid_y}'
                 f' {fi_x},{fi_y}"'
                 f' fill="none" stroke="{s_stroke}"'
-                f' stroke-width="0.75" stroke-dasharray="3,2"'
+                f' stroke-width="0.75"{leader_dasharray}'
                 f' opacity="0.6"/>'
             )
 
