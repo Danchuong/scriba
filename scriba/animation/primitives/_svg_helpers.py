@@ -7,11 +7,15 @@ backward compatibility — all existing imports from base.py continue to work.
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable
 
 from scriba.animation.primitives._text_render import _escape_xml, estimate_text_width
 from scriba.animation.primitives._types import CELL_HEIGHT
+
+# Match inline math delimited by single `$`. Non-greedy; rejects empty bodies.
+_MATH_DELIM_RE = re.compile(r"\$[^$]+?\$")
 
 if TYPE_CHECKING:  # pragma: no cover - type checking only
     pass
@@ -68,6 +72,86 @@ class _LabelPlacement:
             or self.y + self.height / 2 < other.y - other.height / 2
             or self.y - self.height / 2 > other.y + other.height / 2
         )
+
+
+def _label_has_math(text: str) -> bool:
+    """True if *text* contains at least one ``$...$`` inline math fragment."""
+    return bool(text) and bool(_MATH_DELIM_RE.search(text))
+
+
+def _label_width_text(text: str) -> str:
+    """Return *text* with ``$`` delimiters stripped for width estimation.
+
+    KaTeX renders inline math at approximately the same pixel width as its
+    source body (± a few pixels for italic/script glyphs). Stripping only
+    the dollar signs keeps the estimator's character-based approximation
+    honest.
+    """
+    return _MATH_DELIM_RE.sub(lambda m: m.group(0)[1:-1], text or "")
+
+
+def _emit_label_single_line(
+    *,
+    label_text: str,
+    fi_x: int,
+    fi_y: int,
+    pill_rx: int,
+    pill_ry: int,
+    pill_w: int,
+    pill_h: int,
+    l_fill: str,
+    l_weight: str,
+    l_size: str,
+    render_inline_tex: "Callable[[str], str] | None",
+) -> str:
+    """Emit an annotation label as either ``<text>`` or KaTeX foreignObject.
+
+    When *label_text* contains ``$...$`` math and a ``render_inline_tex``
+    callback is available, the label is emitted as an SVG
+    ``<foreignObject>`` hosting the KaTeX-rendered HTML centered inside the
+    pill rectangle.  Falls back to plain SVG ``<text>`` otherwise.
+    """
+    if render_inline_tex is not None and _label_has_math(label_text):
+        try:
+            html = render_inline_tex(label_text)
+        except Exception:
+            html = None
+        if html:
+            weight_css = f"font-weight:{l_weight};" if l_weight else ""
+            size_css = f"font-size:{l_size};" if l_size else ""
+            return (
+                f'    <foreignObject x="{pill_rx}" y="{pill_ry}"'
+                f' width="{pill_w}" height="{pill_h}"'
+                f' class="scriba-annot-fobj">'
+                f'<div xmlns="http://www.w3.org/1999/xhtml"'
+                f' class="scriba-annot-label"'
+                f' style="width:100%;height:100%;display:flex;'
+                f'align-items:center;justify-content:center;'
+                f'text-align:center;line-height:1;'
+                f'white-space:pre-wrap;gap:0.25em;'
+                f'color:{l_fill};{weight_css}{size_css}'
+                f'text-shadow:0 0 2px #fff,0 0 2px #fff;">'
+                f'{html}</div></foreignObject>'
+            )
+
+    # Fallback: plain SVG <text> with halo.
+    style_parts: list[str] = []
+    if l_weight:
+        style_parts.append(f"font-weight:{l_weight}")
+    if l_size:
+        style_parts.append(f"font-size:{l_size}")
+    style_parts.append("text-anchor:middle")
+    style_parts.append("dominant-baseline:auto")
+    style_str = ";".join(style_parts)
+    text_attrs = (
+        f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
+        f' stroke="white" stroke-width="3"'
+        f' stroke-linejoin="round" paint-order="stroke fill"'
+    )
+    return (
+        f'    <text {text_attrs} style="{style_str}">'
+        f'{_escape_xml(label_text)}</text>'
+    )
 
 
 def _wrap_label_lines(text: str, max_chars: int = _LABEL_MAX_WIDTH_CHARS) -> list[str]:
@@ -245,11 +329,18 @@ def emit_plain_arrow_svg(
         l_size = style["label_size"]
         l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else 11
 
-        label_lines = _wrap_label_lines(label_text)
+        # Do not wrap when math is present — would split inside $...$.
+        if _label_has_math(label_text):
+            label_lines = [label_text]
+        else:
+            label_lines = _wrap_label_lines(label_text)
         line_height = l_font_px + 2
         num_lines = len(label_lines)
 
-        max_line_w = max(estimate_text_width(ln, l_font_px) for ln in label_lines)
+        max_line_w = max(
+            estimate_text_width(_label_width_text(ln), l_font_px)
+            for ln in label_lines
+        )
         pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
         pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
 
@@ -310,26 +401,36 @@ def emit_plain_arrow_svg(
             f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
         )
 
-        text_attrs = (
-            f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-            f' stroke="white" stroke-width="3"'
-            f' stroke-linejoin="round" paint-order="stroke fill"'
-        )
-        style_parts = []
-        if l_weight:
-            style_parts.append(f"font-weight:{l_weight}")
-        if l_size:
-            style_parts.append(f"font-size:{l_size}")
-        style_parts.append("text-anchor:middle")
-        style_parts.append("dominant-baseline:auto")
-        style_str = ";".join(style_parts)
-
         if num_lines == 1:
             lines.append(
-                f'    <text {text_attrs} style="{style_str}">'
-                f'{_escape_xml(label_text)}</text>'
+                _emit_label_single_line(
+                    label_text=label_text,
+                    fi_x=fi_x,
+                    fi_y=fi_y,
+                    pill_rx=pill_rx,
+                    pill_ry=pill_ry,
+                    pill_w=int(pill_w),
+                    pill_h=int(pill_h),
+                    l_fill=l_fill,
+                    l_weight=l_weight,
+                    l_size=l_size,
+                    render_inline_tex=render_inline_tex,
+                )
             )
         else:
+            text_attrs = (
+                f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
+                f' stroke="white" stroke-width="3"'
+                f' stroke-linejoin="round" paint-order="stroke fill"'
+            )
+            style_parts = []
+            if l_weight:
+                style_parts.append(f"font-weight:{l_weight}")
+            if l_size:
+                style_parts.append(f"font-size:{l_size}")
+            style_parts.append("text-anchor:middle")
+            style_parts.append("dominant-baseline:auto")
+            style_str = ";".join(style_parts)
             tspans = ""
             for li, ln_text in enumerate(label_lines):
                 dy_val = f"{line_height}" if li > 0 else "0"
@@ -544,13 +645,19 @@ def emit_arrow_svg(
         l_size = style["label_size"]
         l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else 11
 
-        # Multi-line wrap
-        label_lines = _wrap_label_lines(label_text)
+        # Multi-line wrap (skip when math is present — would split inside $...$).
+        if _label_has_math(label_text):
+            label_lines = [label_text]
+        else:
+            label_lines = _wrap_label_lines(label_text)
         line_height = l_font_px + 2
         num_lines = len(label_lines)
 
-        # Measure pill dimensions
-        max_line_w = max(estimate_text_width(ln, l_font_px) for ln in label_lines)
+        # Measure pill dimensions (strip $ delimiters for math labels)
+        max_line_w = max(
+            estimate_text_width(_label_width_text(ln), l_font_px)
+            for ln in label_lines
+        )
         pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
         pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
 
@@ -636,25 +743,23 @@ def emit_arrow_svg(
                 f' opacity="0.6"/>'
             )
 
-        # Render label text with paint-order halo
+        # Render label text with paint-order halo (single-line dispatches
+        # to KaTeX foreignObject when math is present).
         if num_lines == 1:
-            # Single line — use _render_svg_text with halo attributes
-            text_attrs = (
-                f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-                f' stroke="white" stroke-width="3"'
-                f' stroke-linejoin="round" paint-order="stroke fill"'
-            )
-            style_parts = []
-            if l_weight:
-                style_parts.append(f"font-weight:{l_weight}")
-            if l_size:
-                style_parts.append(f"font-size:{l_size}")
-            style_parts.append("text-anchor:middle")
-            style_parts.append("dominant-baseline:auto")
-            style_str = ";".join(style_parts)
             lines.append(
-                f'    <text {text_attrs} style="{style_str}">'
-                f'{_escape_xml(label_text)}</text>'
+                _emit_label_single_line(
+                    label_text=label_text,
+                    fi_x=fi_x,
+                    fi_y=fi_y,
+                    pill_rx=pill_rx,
+                    pill_ry=pill_ry,
+                    pill_w=int(pill_w),
+                    pill_h=int(pill_h),
+                    l_fill=l_fill,
+                    l_weight=l_weight,
+                    l_size=l_size,
+                    render_inline_tex=render_inline_tex,
+                )
             )
         else:
             # Multi-line — use tspan elements
