@@ -162,41 +162,51 @@ class TestCellMetricsNamedTuple:
 # ---------------------------------------------------------------------------
 
 
-def _cp(arrow_index: int, layout: str, flow: FlowDirection | None):
+_DP_GRID = CellMetrics(
+    cell_width=60.0,
+    cell_height=40.0,
+    grid_cols=8,
+    grid_rows=5,
+    origin_x=0.0,
+    origin_y=0.0,
+)
+
+
+def _cp(arrow_index: int, layout: str, cell_metrics: CellMetrics | None):
     """Invoke `_compute_control_points` on a fixed horizontal pair."""
     x1, y1, x2, y2 = 0.0, 0.0, 100.0, 0.0
     dx, dy = x2 - x1, y2 - y1
     return _compute_control_points(
         x1, y1, x2, y2, dx, dy, math.hypot(dx, dy) or 1.0,
         arrow_index, 40.0, layout, "",
-        flow=flow,
+        cell_metrics=cell_metrics,
     )
 
 
 class TestStaggerFlip:
-    """The Phase C stagger-flip gate: `flow is not None and layout=='2d'`."""
+    """Phase D stagger-flip gate: ``cell_metrics is not None and layout=='2d'``."""
 
     def test_even_index_no_flip(self) -> None:
-        g0 = _cp(arrow_index=0, layout="2d", flow=FlowDirection.RIGHTWARD)
-        g1 = _cp(arrow_index=1, layout="2d", flow=FlowDirection.RIGHTWARD)
+        g0 = _cp(arrow_index=0, layout="2d", cell_metrics=_DP_GRID)
+        g1 = _cp(arrow_index=1, layout="2d", cell_metrics=_DP_GRID)
         # Horizontal source→dst, perp y flips on odd index → cp y-sign flips.
         assert g0.cp1_y != g1.cp1_y
         assert (g0.cp1_y > 0) != (g1.cp1_y > 0)
 
-    def test_flip_requires_flow_not_none(self) -> None:
-        g_no_flow = _cp(arrow_index=1, layout="2d", flow=None)
-        g_flow = _cp(arrow_index=1, layout="2d", flow=FlowDirection.RIGHTWARD)
-        assert g_no_flow.cp1_y != g_flow.cp1_y
+    def test_flip_requires_cell_metrics(self) -> None:
+        g_none = _cp(arrow_index=1, layout="2d", cell_metrics=None)
+        g_cm = _cp(arrow_index=1, layout="2d", cell_metrics=_DP_GRID)
+        assert g_none.cp1_y != g_cm.cp1_y
 
-    def test_1d_layout_ignores_flow_entirely(self) -> None:
+    def test_1d_layout_ignores_cell_metrics_entirely(self) -> None:
         # Horizontal layout uses the "bow upward" branch and never reads flow.
-        g_flow = _cp(arrow_index=1, layout="horizontal", flow=FlowDirection.RIGHTWARD)
-        g_none = _cp(arrow_index=1, layout="horizontal", flow=None)
-        assert g_flow == g_none
+        g_cm = _cp(arrow_index=1, layout="horizontal", cell_metrics=_DP_GRID)
+        g_none = _cp(arrow_index=1, layout="horizontal", cell_metrics=None)
+        assert g_cm == g_none
 
     def test_flip_preserves_magnitude(self) -> None:
-        g0 = _cp(arrow_index=0, layout="2d", flow=FlowDirection.RIGHTWARD)
-        g1 = _cp(arrow_index=1, layout="2d", flow=FlowDirection.RIGHTWARD)
+        g0 = _cp(arrow_index=0, layout="2d", cell_metrics=_DP_GRID)
+        g1 = _cp(arrow_index=1, layout="2d", cell_metrics=_DP_GRID)
         # arrow_index=1 adds one stagger step, so magnitudes differ slightly.
         # Direction MUST be mirrored, not scaled differently.
         assert math.copysign(1, g0.cp1_y) == -math.copysign(1, g1.cp1_y)

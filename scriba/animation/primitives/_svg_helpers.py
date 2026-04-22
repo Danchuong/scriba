@@ -1902,7 +1902,6 @@ def _compute_control_points(
     layout: str,
     label_text: str,
     *,
-    flow: FlowDirection | None = None,
     cell_metrics: CellMetrics | None = None,
 ) -> ArrowGeometry:
     """Pure geometry: cubic Bézier control points + label anchor.
@@ -1917,14 +1916,11 @@ def _compute_control_points(
     point via the standard quad→cubic identity
     ``cp1 = P0 + 2/3*(Q - P0); cp2 = P1 + 2/3*(Q - P1)``.
 
-    Phase C (v0.13.0): when ``flow`` is provided and ``layout == "2d"``,
+    Phase D (v0.14.0): ``cell_metrics`` presence is the sentinel for
+    grid-aware flow context. When provided and ``layout == "2d"``,
     odd-indexed stacked arrows flip the perpendicular direction so dense
     stacks distribute symmetrically instead of forming a one-sided fan.
-    ``cell_metrics`` is currently unused here (the caller already classified
-    flow with it) but accepted so downstream phases can read it without a
-    signature break.
     """
-    _ = cell_metrics  # reserved for Phase D scoring integration; caller classified flow.
     euclid = math.hypot(x2 - x1, y2 - y1)
 
     # Perfect-arrows bow+stretch arc amplitude (scalar, unitless).
@@ -1939,9 +1935,11 @@ def _compute_control_points(
     stagger = cell_height * _ARROW_STAGGER_FACTOR
     total_offset = base_offset + min(arrow_index, _ARROW_STAGGER_CAP) * stagger
 
-    # Phase C stagger-flip: odd-indexed 2D stacks bow to opposite side.
+    # Phase D stagger-flip: odd-indexed 2D stacks bow to opposite side.
+    # Gate on cell_metrics presence — its non-None value is the grid-aware
+    # context sentinel that authorises the flip.
     _perp_flip = (
-        flow is not None and layout == "2d" and (arrow_index % 2 == 1)
+        cell_metrics is not None and layout == "2d" and (arrow_index % 2 == 1)
     )
 
     if layout == "2d":
@@ -2387,13 +2385,11 @@ def emit_arrow_svg(
     # existing SVG emit code. Phase B will swap the control-point formula
     # (port of perfect-arrows bow+stretch) inside the helper with zero
     # churn here.
-    # Phase C (v0.13.0): derive flow from post-shortening dx/dy so the
-    # stagger-flip in _compute_control_points receives grid-aware classification.
-    _flow = classify_flow(dx, dy, cell_metrics) if cell_metrics is not None else None
+    # Phase D (v0.14.0): cell_metrics presence alone gates stagger-flip;
+    # the helper no longer accepts a pre-classified flow kwarg.
     _geom = _compute_control_points(
         x1, y1, x2, y2, dx, dy, dist,
         arrow_index, cell_height, layout, label_text,
-        flow=_flow,
         cell_metrics=cell_metrics,
     )
     cx1, cy1 = _geom.cp1_x, _geom.cp1_y
