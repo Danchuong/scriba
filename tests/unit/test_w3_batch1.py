@@ -124,9 +124,10 @@ class TestR07LeaderDisplacementThreshold:
         """
         import inspect
         from scriba.animation.primitives import _svg_helpers
-        source = inspect.getsource(_svg_helpers.emit_arrow_svg)
+        # Leader emission moved into _emit_label_and_pill in v0.12.1 Phase A.
+        source = inspect.getsource(_svg_helpers._emit_label_and_pill)
         assert "_LEADER_DISPLACEMENT_THRESHOLD" in source, (
-            "emit_arrow_svg must reference _LEADER_DISPLACEMENT_THRESHOLD"
+            "_emit_label_and_pill must reference _LEADER_DISPLACEMENT_THRESHOLD"
         )
         assert "max(" in source
 
@@ -543,10 +544,11 @@ class TestAutoSideHintZeroVector:
         """
         import inspect
         from scriba.animation.primitives import _svg_helpers
-        source = inspect.getsource(_svg_helpers.emit_arrow_svg)
+        # anchor_side inference moved into _emit_label_and_pill in v0.12.1 Phase A.
+        source = inspect.getsource(_svg_helpers._emit_label_and_pill)
         # HIGH-3 guard: explicit zero-vector branch
         assert "_abs_dx == 0 and _abs_dy == 0" in source, (
-            "emit_arrow_svg must contain the zero-vector guard for R-22"
+            "_emit_label_and_pill must contain the zero-vector guard for R-22"
         )
 
 

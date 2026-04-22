@@ -1864,6 +1864,263 @@ def _compute_control_points(
     )
 
 
+def _emit_label_and_pill(
+    lines: list[str],
+    label_text: str,
+    style: dict[str, Any],
+    geom: ArrowGeometry,
+    ix1: int,
+    iy1: int,
+    ix2: int,
+    iy2: int,
+    dx: float,
+    dy: float,
+    dist: float,
+    color: str,
+    s_stroke: str,
+    pill_dasharray_emit: str,
+    ann: dict[str, Any],
+    render_inline_tex: "Callable[[str], str] | None",
+    placed_labels: "list[_LabelPlacement] | None",
+    primitive_obstacles: "tuple[_Obstacle, ...] | None",
+    _debug_capture: "dict[str, Any] | None",
+) -> None:
+    """Emit pill background, leader line (when needed), and label text.
+
+    Mutates ``lines`` in place (append), and when provided also mutates
+    ``placed_labels`` (append final placement) and ``_debug_capture``
+    (populate final_y / l_font_px / pill_w / pill_h keys).
+
+    Extracted from ``emit_arrow_svg`` in Phase A/3. Zero behavior change.
+    See ``docs/plans/phase-a-v0.12.1-extraction-plan.md`` §4.
+    """
+    l_fill = style["label_fill"]
+    l_weight = style["label_weight"]
+    l_size = style["label_size"]
+    l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
+
+    # Multi-line wrap (skip when math is present — would split inside $...$).
+    if _label_has_math(label_text):
+        label_lines = [label_text]
+    else:
+        label_lines = _wrap_label_lines(label_text)
+    line_height = l_font_px + 2
+    num_lines = len(label_lines)
+
+    # Measure pill dimensions (strip $ delimiters for math labels)
+    max_line_w = max(
+        estimate_text_width(_label_width_text(ln), l_font_px)
+        for ln in label_lines
+    )
+    pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
+    pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
+
+    # Natural label position
+    natural_x = float(geom.label_ref_x)
+    natural_y = float(geom.label_ref_y)
+    final_x = natural_x
+    final_y = natural_y
+
+    # Populate debug capture dict for testing (zero overhead when None).
+    if _debug_capture is not None:
+        _debug_capture["final_y"] = final_y
+        _debug_capture["l_font_px"] = l_font_px
+        _debug_capture["pill_w"] = pill_w
+        _debug_capture["pill_h"] = pill_h
+
+    # MW-1: Extract explicit side hint from annotation for half-plane preference.
+    # R-22: auto-infer side_hint from arrow vector when no explicit hint given.
+    anchor_side = ann.get("side") or ann.get("position") or None
+    if anchor_side is None:
+        # Infer from the (dx, dy) vector between src and dst (post-shortening).
+        _abs_dx = abs(dx)
+        _abs_dy = abs(dy)
+        # HIGH-3: zero-vector guard — src == dst produces abs_dx == abs_dy == 0.
+        # No directional hint can be inferred; leave anchor_side as None so the
+        # 32-candidate symmetric search handles placement without a half-plane bias.
+        if _abs_dx == 0 and _abs_dy == 0:
+            anchor_side = None  # degenerate: no hint, use symmetric search
+        elif _abs_dx >= _abs_dy:
+            # Horizontal-ish arc: prefer ABOVE (cog P-DIR-1).
+            anchor_side = "above"
+        else:
+            # Vertical-ish arc: prefer RIGHT.
+            anchor_side = "right"
+
+    # v0.12.0 W1: Replace boolean overlaps() first-fit with _pick_best_candidate
+    # argmin (spec §1.3 commit 4).
+    collision_unresolved = False
+    if placed_labels is not None:
+        # HIGH #2: candidate_y carries the -0.3 centre-correction so the
+        # registered geometry matches the rendered pill position.
+        candidate_y = final_y - l_font_px * 0.3
+
+        # Entry shim: convert placed labels to obstacle tuple (§1.3).
+        # R-31: merge primitive segment obstacles (e.g. Plane2D lines/axes).
+        _obstacles: tuple[_Obstacle, ...] = tuple(
+            _lp_to_obstacle(p) for p in placed_labels
+        ) + (primitive_obstacles if primitive_obstacles is not None else ())
+
+        # Arc direction unit vector for P6 (reading_flow) term.
+        _arc_dist = dist  # already computed as sqrt(dx²+dy²) above; ≥1.0
+        _arc_dir: tuple[float, float] = (dx / _arc_dist, dy / _arc_dist)
+
+        _ctx = _ScoreContext(
+            natural_x=final_x,
+            natural_y=candidate_y,
+            pill_w=float(pill_w),
+            pill_h=float(pill_h),
+            side_hint=anchor_side if anchor_side in ("left", "right", "above", "below") else None,
+            arc_direction=_arc_dir,
+            color_token=color,
+            viewbox_w=max(float(ix2), float(ix1)) * 4 + float(pill_w),
+            viewbox_h=max(float(iy2), float(iy1)) * 4 + float(pill_h),
+        )
+
+        # Build candidate list: natural + 32 nudges.
+        _ea_candidates: list[tuple[float, float]] = [(final_x, candidate_y)]
+        for _ndx, _ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
+            _ea_candidates.append((final_x + _ndx, candidate_y + _ndy))
+        _cands = tuple(_ea_candidates)
+
+        _best_cx, _best_cy, _best_score = _pick_best_candidate(_cands, _obstacles, _ctx)
+        candidate_obj = _LabelPlacement(
+            x=_best_cx, y=_best_cy, width=float(pill_w), height=float(pill_h),
+        )
+        collision_unresolved = (
+            _best_score == float("inf") or _best_score > _DEGRADED_SCORE_THRESHOLD
+        )
+
+        final_x = candidate_obj.x
+        # Reconstruct render y from candidate y (which carries the -0.3 correction).
+        final_y = candidate_obj.y + l_font_px * 0.3
+        # QW-3: register clamped x so subsequent labels check the right coord.
+        clamped_x = max(final_x, pill_w / 2)
+        # QW-1: register y = candidate_obj.y (= final_y - l_font_px*0.3).
+        placed_labels.append(_LabelPlacement(
+            x=clamped_x,
+            y=candidate_obj.y,
+            width=float(pill_w),
+            height=float(pill_h),
+        ))
+
+    fi_x = int(final_x)
+    fi_y = int(final_y)
+
+    # QW-2: emit collision debug comment when all directions were exhausted.
+    # HIGH #1: gated behind _DEBUG_LABELS so it never leaks into production.
+    if collision_unresolved and _DEBUG_LABELS:
+        target_id = ann.get("target", "unknown")
+        lines.append(f"  <!-- scriba:label-collision id={target_id} -->")
+
+    # R-19: unconditional stderr warning when placement is degraded.
+    if collision_unresolved:
+        _target_id = ann.get("target", "unknown")
+        _disp = int(math.sqrt((float(fi_x) - natural_x) ** 2 + (float(fi_y) - natural_y) ** 2))
+        _log.warning(
+            "scriba:label-placement-degraded annotation=%s displacement=%dpx",
+            _target_id,
+            _disp,
+        )
+
+    # Background pill: white rect with rounded corners, before text
+    # Clamp so pill doesn't extend outside the viewBox (x/y >= 0).
+    pill_rx = max(0, int(fi_x - pill_w / 2))
+    pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
+    # If pill was clamped, shift label text to stay centered in pill
+    fi_x = max(fi_x, pill_w // 2)
+    lines.append(
+        f'    <rect x="{pill_rx}" y="{pill_ry}"'
+        f' width="{pill_w}" height="{pill_h}"'
+        f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
+        f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
+        f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"'
+        f'{pill_dasharray_emit}/>'  # R-13: mirror dash to pill border
+    )
+
+    # Leader line: if label was nudged far from its natural position.
+    # R-27: only emit leader for warn and error colors (declutter).
+    # R-07: threshold is scale-relative — max(pill_h, _LEADER_DISPLACEMENT_THRESHOLD).
+    displacement = math.sqrt(
+        (final_x - natural_x) ** 2 + (final_y - natural_y) ** 2
+    )
+    _leader_threshold = max(float(pill_h), _LEADER_DISPLACEMENT_THRESHOLD)
+    _leader_color_gate = color in {"warn", "error"}  # R-27
+    # R-27b: also emit leader for info/neutral when displacement is clearly
+    # far (>1.0×pill_h). Bypasses the _LEADER_DISPLACEMENT_THRESHOLD=20
+    # floor so mid-sized pills (pill_h~19) still trigger. Caveat: avoids
+    # declutter regression on small nudges.
+    _leader_far = displacement >= float(pill_h) * _ARROW_LEADER_FAR_FACTOR
+    if (_leader_color_gate and displacement > _leader_threshold) or _leader_far:
+        # R-08: leader endpoint at pill perimeter, not pill centre.
+        _pill_cx = float(fi_x)
+        _pill_cy = float(fi_y - l_font_px * 0.3)  # centre of rendered pill
+        _leader_ep = _line_rect_intersection(
+            float(geom.curve_mid_x), float(geom.curve_mid_y),
+            _pill_cx, _pill_cy,
+            float(pill_w), float(pill_h),
+        )
+        # HIGH-1: skip leader when origin is inside the pill (None return).
+        if _leader_ep is not None:
+            _leader_ep_x, _leader_ep_y = _leader_ep
+            leader_dasharray = ' stroke-dasharray="3,2"' if color == "warn" else ""
+            lines.append(
+                f'    <circle cx="{geom.curve_mid_x}" cy="{geom.curve_mid_y}" r="2"'
+                f' fill="{s_stroke}" opacity="0.6"/>'
+            )
+            lines.append(
+                f'    <polyline points="{geom.curve_mid_x},{geom.curve_mid_y}'
+                f' {_leader_ep_x},{_leader_ep_y}"'  # R-08: perimeter endpoint
+                f' fill="none" stroke="{s_stroke}"'
+                f' stroke-width="0.75"{leader_dasharray}'
+                f' opacity="0.6"/>'
+            )
+
+    # Render label text with paint-order halo (single-line dispatches
+    # to KaTeX foreignObject when math is present).
+    if num_lines == 1:
+        lines.append(
+            _emit_label_single_line(
+                label_text=label_text,
+                fi_x=fi_x,
+                fi_y=fi_y,
+                pill_rx=pill_rx,
+                pill_ry=pill_ry,
+                pill_w=int(pill_w),
+                pill_h=int(pill_h),
+                l_fill=l_fill,
+                l_weight=l_weight,
+                l_size=l_size,
+                render_inline_tex=render_inline_tex,
+            )
+        )
+    else:
+        # Multi-line — use tspan elements
+        text_attrs = (
+            f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
+            f' stroke="white" stroke-width="3"'
+            f' stroke-linejoin="round" paint-order="stroke fill"'
+        )
+        style_parts = []
+        if l_weight:
+            style_parts.append(f"font-weight:{l_weight}")
+        if l_size:
+            style_parts.append(f"font-size:{l_size}")
+        style_parts.append("text-anchor:middle")
+        style_parts.append("dominant-baseline:auto")
+        style_str = ";".join(style_parts)
+        tspans = ""
+        for li, ln_text in enumerate(label_lines):
+            dy_val = f'{line_height}' if li > 0 else "0"
+            tspans += (
+                f'<tspan x="{fi_x}" dy="{dy_val}">'
+                f'{_escape_xml(ln_text)}</tspan>'
+            )
+        lines.append(
+            f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+        )
+
+
 def emit_arrow_svg(
     lines: list[str],
     ann: dict[str, Any],
@@ -2050,231 +2307,23 @@ def emit_arrow_svg(
         f'    <polygon points="{arrow_points}" fill="{s_stroke}"/>'
     )
     if label_text:
-        l_fill = style["label_fill"]
-        l_weight = style["label_weight"]
-        l_size = style["label_size"]
-        l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
-
-        # Multi-line wrap (skip when math is present — would split inside $...$).
-        if _label_has_math(label_text):
-            label_lines = [label_text]
-        else:
-            label_lines = _wrap_label_lines(label_text)
-        line_height = l_font_px + 2
-        num_lines = len(label_lines)
-
-        # Measure pill dimensions (strip $ delimiters for math labels)
-        max_line_w = max(
-            estimate_text_width(_label_width_text(ln), l_font_px)
-            for ln in label_lines
+        # Phase A/3: pill + leader + label text extracted to _emit_label_and_pill.
+        _emit_label_and_pill(
+            lines=lines,
+            label_text=label_text,
+            style=style,
+            geom=_geom,
+            ix1=ix1, iy1=iy1, ix2=ix2, iy2=iy2,
+            dx=dx, dy=dy, dist=dist,
+            color=color,
+            s_stroke=s_stroke,
+            pill_dasharray_emit=pill_dasharray_emit,
+            ann=ann,
+            render_inline_tex=render_inline_tex,
+            placed_labels=placed_labels,
+            primitive_obstacles=primitive_obstacles,
+            _debug_capture=_debug_capture,
         )
-        pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
-        pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
-
-        # Natural label position
-        natural_x = float(label_ref_x)
-        natural_y = float(label_ref_y)
-        final_x = natural_x
-        final_y = natural_y
-
-        # Populate debug capture dict for testing (zero overhead when None).
-        if _debug_capture is not None:
-            _debug_capture["final_y"] = final_y
-            _debug_capture["l_font_px"] = l_font_px
-            _debug_capture["pill_w"] = pill_w
-            _debug_capture["pill_h"] = pill_h
-
-        # MW-1: Extract explicit side hint from annotation for half-plane preference.
-        # R-22: auto-infer side_hint from arrow vector when no explicit hint given.
-        anchor_side = ann.get("side") or ann.get("position") or None
-        if anchor_side is None:
-            # Infer from the (dx, dy) vector between src and dst (post-shortening).
-            _abs_dx = abs(dx)
-            _abs_dy = abs(dy)
-            # HIGH-3: zero-vector guard — src == dst produces abs_dx == abs_dy == 0.
-            # No directional hint can be inferred; leave anchor_side as None so the
-            # 32-candidate symmetric search handles placement without a half-plane bias.
-            if _abs_dx == 0 and _abs_dy == 0:
-                anchor_side = None  # degenerate: no hint, use symmetric search
-            elif _abs_dx >= _abs_dy:
-                # Horizontal-ish arc: prefer ABOVE (cog P-DIR-1).
-                anchor_side = "above"
-            else:
-                # Vertical-ish arc: prefer RIGHT.
-                anchor_side = "right"
-
-        # v0.12.0 W1: Replace boolean overlaps() first-fit with _pick_best_candidate
-        # argmin (spec §1.3 commit 4).
-        collision_unresolved = False
-        if placed_labels is not None:
-            # HIGH #2: candidate_y carries the -0.3 centre-correction so the
-            # registered geometry matches the rendered pill position.
-            candidate_y = final_y - l_font_px * 0.3
-
-            # Entry shim: convert placed labels to obstacle tuple (§1.3).
-            # R-31: merge primitive segment obstacles (e.g. Plane2D lines/axes).
-            _obstacles: tuple[_Obstacle, ...] = tuple(
-                _lp_to_obstacle(p) for p in placed_labels
-            ) + (primitive_obstacles if primitive_obstacles is not None else ())
-
-            # Arc direction unit vector for P6 (reading_flow) term.
-            _arc_dist = dist  # already computed as sqrt(dx²+dy²) above; ≥1.0
-            _arc_dir: tuple[float, float] = (dx / _arc_dist, dy / _arc_dist)
-
-            _ctx = _ScoreContext(
-                natural_x=final_x,
-                natural_y=candidate_y,
-                pill_w=float(pill_w),
-                pill_h=float(pill_h),
-                side_hint=anchor_side if anchor_side in ("left", "right", "above", "below") else None,
-                arc_direction=_arc_dir,
-                color_token=color,
-                viewbox_w=max(float(ix2), float(ix1)) * 4 + float(pill_w),
-                viewbox_h=max(float(iy2), float(iy1)) * 4 + float(pill_h),
-            )
-
-            # Build candidate list: natural + 32 nudges.
-            _ea_candidates: list[tuple[float, float]] = [(final_x, candidate_y)]
-            for _ndx, _ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
-                _ea_candidates.append((final_x + _ndx, candidate_y + _ndy))
-            _cands = tuple(_ea_candidates)
-
-            _best_cx, _best_cy, _best_score = _pick_best_candidate(_cands, _obstacles, _ctx)
-            candidate_obj = _LabelPlacement(
-                x=_best_cx, y=_best_cy, width=float(pill_w), height=float(pill_h),
-            )
-            collision_unresolved = (
-                _best_score == float("inf") or _best_score > _DEGRADED_SCORE_THRESHOLD
-            )
-
-            final_x = candidate_obj.x
-            # Reconstruct render y from candidate y (which carries the -0.3 correction).
-            final_y = candidate_obj.y + l_font_px * 0.3
-            # QW-3: register clamped x so subsequent labels check the right coord.
-            clamped_x = max(final_x, pill_w / 2)
-            # QW-1: register y = candidate_obj.y (= final_y - l_font_px*0.3).
-            placed_labels.append(_LabelPlacement(
-                x=clamped_x,
-                y=candidate_obj.y,
-                width=float(pill_w),
-                height=float(pill_h),
-            ))
-
-        fi_x = int(final_x)
-        fi_y = int(final_y)
-
-        # QW-2: emit collision debug comment when all directions were exhausted.
-        # HIGH #1: gated behind _DEBUG_LABELS so it never leaks into production.
-        if collision_unresolved and _DEBUG_LABELS:
-            target_id = ann.get("target", "unknown")
-            lines.append(f"  <!-- scriba:label-collision id={target_id} -->")
-
-        # R-19: unconditional stderr warning when placement is degraded.
-        if collision_unresolved:
-            _target_id = ann.get("target", "unknown")
-            _disp = int(math.sqrt((float(fi_x) - natural_x) ** 2 + (float(fi_y) - natural_y) ** 2))
-            _log.warning(
-                "scriba:label-placement-degraded annotation=%s displacement=%dpx",
-                _target_id,
-                _disp,
-            )
-
-        # Background pill: white rect with rounded corners, before text
-        # Clamp so pill doesn't extend outside the viewBox (x/y >= 0).
-        pill_rx = max(0, int(fi_x - pill_w / 2))
-        pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
-        # If pill was clamped, shift label text to stay centered in pill
-        fi_x = max(fi_x, pill_w // 2)
-        lines.append(
-            f'    <rect x="{pill_rx}" y="{pill_ry}"'
-            f' width="{pill_w}" height="{pill_h}"'
-            f' rx="{_LABEL_PILL_RADIUS}" ry="{_LABEL_PILL_RADIUS}"'
-            f' fill="white" fill-opacity="{_LABEL_BG_OPACITY}"'
-            f' stroke="{s_stroke}" stroke-width="0.5" stroke-opacity="0.3"'
-            f'{pill_dasharray_emit}/>'  # R-13: mirror dash to pill border
-        )
-
-        # Leader line: if label was nudged far from its natural position.
-        # R-27: only emit leader for warn and error colors (declutter).
-        # R-07: threshold is scale-relative — max(pill_h, _LEADER_DISPLACEMENT_THRESHOLD).
-        displacement = math.sqrt(
-            (final_x - natural_x) ** 2 + (final_y - natural_y) ** 2
-        )
-        _leader_threshold = max(float(pill_h), _LEADER_DISPLACEMENT_THRESHOLD)
-        _leader_color_gate = color in {"warn", "error"}  # R-27
-        # R-27b: also emit leader for info/neutral when displacement is clearly
-        # far (>1.0×pill_h). Bypasses the _LEADER_DISPLACEMENT_THRESHOLD=20
-        # floor so mid-sized pills (pill_h~19) still trigger. Caveat: avoids
-        # declutter regression on small nudges.
-        _leader_far = displacement >= float(pill_h) * _ARROW_LEADER_FAR_FACTOR
-        if (_leader_color_gate and displacement > _leader_threshold) or _leader_far:
-            # R-08: leader endpoint at pill perimeter, not pill centre.
-            _pill_cx = float(fi_x)
-            _pill_cy = float(fi_y - l_font_px * 0.3)  # centre of rendered pill
-            _leader_ep = _line_rect_intersection(
-                float(curve_mid_x), float(curve_mid_y),
-                _pill_cx, _pill_cy,
-                float(pill_w), float(pill_h),
-            )
-            # HIGH-1: skip leader when origin is inside the pill (None return).
-            if _leader_ep is not None:
-                _leader_ep_x, _leader_ep_y = _leader_ep
-                leader_dasharray = ' stroke-dasharray="3,2"' if color == "warn" else ""
-                lines.append(
-                    f'    <circle cx="{curve_mid_x}" cy="{curve_mid_y}" r="2"'
-                    f' fill="{s_stroke}" opacity="0.6"/>'
-                )
-                lines.append(
-                    f'    <polyline points="{curve_mid_x},{curve_mid_y}'
-                    f' {_leader_ep_x},{_leader_ep_y}"'  # R-08: perimeter endpoint
-                    f' fill="none" stroke="{s_stroke}"'
-                    f' stroke-width="0.75"{leader_dasharray}'
-                    f' opacity="0.6"/>'
-                )
-
-        # Render label text with paint-order halo (single-line dispatches
-        # to KaTeX foreignObject when math is present).
-        if num_lines == 1:
-            lines.append(
-                _emit_label_single_line(
-                    label_text=label_text,
-                    fi_x=fi_x,
-                    fi_y=fi_y,
-                    pill_rx=pill_rx,
-                    pill_ry=pill_ry,
-                    pill_w=int(pill_w),
-                    pill_h=int(pill_h),
-                    l_fill=l_fill,
-                    l_weight=l_weight,
-                    l_size=l_size,
-                    render_inline_tex=render_inline_tex,
-                )
-            )
-        else:
-            # Multi-line — use tspan elements
-            text_attrs = (
-                f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-                f' stroke="white" stroke-width="3"'
-                f' stroke-linejoin="round" paint-order="stroke fill"'
-            )
-            style_parts = []
-            if l_weight:
-                style_parts.append(f"font-weight:{l_weight}")
-            if l_size:
-                style_parts.append(f"font-size:{l_size}")
-            style_parts.append("text-anchor:middle")
-            style_parts.append("dominant-baseline:auto")
-            style_str = ";".join(style_parts)
-            tspans = ""
-            for li, ln_text in enumerate(label_lines):
-                dy_val = f'{line_height}' if li > 0 else "0"
-                tspans += (
-                    f'<tspan x="{fi_x}" dy="{dy_val}">'
-                    f'{_escape_xml(ln_text)}</tspan>'
-                )
-            lines.append(
-                f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
-            )
 
     lines.append("  </g>")
 
