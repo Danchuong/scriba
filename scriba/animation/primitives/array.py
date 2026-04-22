@@ -180,6 +180,8 @@ class ArrayPrimitive(PrimitiveBase):
         self,
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         """Emit SVG ``<g>`` for the array.
 
@@ -318,7 +320,13 @@ class ArrayPrimitive(PrimitiveBase):
 
         # Arrow annotations
         if effective_anns:
-            self.emit_annotation_arrows(lines, effective_anns, render_inline_tex=render_inline_tex)
+            self.emit_annotation_arrows(
+                lines,
+                effective_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:

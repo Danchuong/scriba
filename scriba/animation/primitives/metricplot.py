@@ -367,7 +367,13 @@ class MetricPlot(PrimitiveBase):
     # SVG emission
     # -----------------------------------------------------------------
 
-    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
+    def emit_svg(
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
+    ) -> str:
         """Return the SVG fragment for the current frame."""
         xmin, xmax = self._compute_xrange()
         ymin_left, ymax_left = self._compute_yrange("left")

@@ -259,7 +259,11 @@ class Queue(PrimitiveBase):
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     def emit_svg(
-        self, *, render_inline_tex: Callable[[str], str] | None = None
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         effective_anns = self._annotations
 

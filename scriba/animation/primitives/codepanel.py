@@ -173,7 +173,11 @@ class CodePanel(PrimitiveBase):
         )
 
     def emit_svg(
-        self, *, render_inline_tex: Callable[[str], str] | None = None
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         parts: list[str] = []
         panel_w = self._panel_width()

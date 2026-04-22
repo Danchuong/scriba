@@ -227,7 +227,11 @@ class HashMap(PrimitiveBase):
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     def emit_svg(
-        self, *, render_inline_tex: Callable[[str], str] | None = None
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         index_col_w = self._index_col_width()
         entries_col_w = self._max_entries_col_width

@@ -209,6 +209,8 @@ class NumberLinePrimitive(PrimitiveBase):
         self,
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         """Emit SVG ``<g>`` for the number line."""
 

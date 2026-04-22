@@ -429,10 +429,38 @@ def _emit_frame_svg(
         svg_parts.append(defs)
 
     # Primitive groups -- vertical stacking with translate
-    y_cursor = _PADDING
     vb_parts = viewbox.split()
     vb_width = int(vb_parts[2]) if len(vb_parts) >= 3 else 0
 
+    # W3-α+: pre-scan all primitives to compute their scene offsets and
+    # collect cross-primitive obstacle segments.  Order matches the emit loop
+    # (same primitives.items() iteration), ensuring deterministic ordering.
+    #
+    # scene_segments is a tuple of (ObstacleSegment, x_off, y_off, prim_id)
+    # where (x_off, y_off) are the scene-level translate for the source
+    # primitive and prim_id == id(source_primitive) for self-exclusion.
+    _pre_y: float = _PADDING
+    _prim_offsets: dict[str, tuple[float, float]] = {}  # shape_name -> (x_off, y_off)
+    for _sn, _prim in primitives.items():
+        _bbox = _prim.bounding_box()
+        _, _, _bw, _bh = _normalize_bbox(_bbox)
+        _x_off = (vb_width - _bw) // 2
+        _prim_offsets[_sn] = (float(_x_off), float(_pre_y))
+        _pre_y += _bh + _PRIMITIVE_GAP
+
+    # Build the flat scene_segments tuple: iterate primitives in scene order,
+    # then segments in per-primitive order.  No sets — stable deterministic.
+    _scene_seg_list: list[Any] = []
+    for _sn, _prim in primitives.items():
+        _x_off_p, _y_off_p = _prim_offsets[_sn]
+        _prim_id = id(_prim)
+        _seg_fn = getattr(_prim, "resolve_obstacle_segments", None)
+        if _seg_fn is not None:
+            for _seg in _seg_fn():
+                _scene_seg_list.append((_seg, _x_off_p, _y_off_p, _prim_id))
+    scene_segments: tuple[Any, ...] = tuple(_scene_seg_list)
+
+    y_cursor = _PADDING
     for shape_name, prim in primitives.items():
         # Set annotations before bounding box computation
         prim_anns = [
@@ -491,7 +519,22 @@ def _emit_frame_svg(
                 if label_val is not None and hasattr(prim, "set_label"):
                     prim.set_label(suffix, str(label_val))
         prim._highlighted = highlighted_suffixes
-        svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
+
+        # W3-α+: pass scene-level obstacle segments and this primitive's
+        # scene offset so cross-primitive pill avoidance can translate
+        # foreign-primitive segments into self's local coordinate frame.
+        # Use inspect to guard against test stubs that implement only the
+        # minimal emit_svg(*, render_inline_tex=...) signature.
+        _self_off = _prim_offsets[shape_name]
+        _emit_params = inspect.signature(prim.emit_svg).parameters
+        if "scene_segments" in _emit_params:
+            svg_parts.append(prim.emit_svg(
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments if scene_segments else None,
+                self_offset=_self_off,
+            ))
+        else:
+            svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
 
         svg_parts.append("</g>")
         y_cursor += bh + _PRIMITIVE_GAP

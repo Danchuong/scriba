@@ -620,7 +620,13 @@ class Plane2D(PrimitiveBase):
 
     # ----- SVG emission ----------------------------------------------------
 
-    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
+    def emit_svg(
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
+    ) -> str:
         effective_anns = self._annotations
         arrow_above = arrow_height_above(
             effective_anns,
@@ -665,7 +671,13 @@ class Plane2D(PrimitiveBase):
             arrow_anns = [a for a in effective_anns if a.get("arrow_from") or a.get("arrow")]
             text_anns = [a for a in effective_anns if not a.get("arrow_from") and not a.get("arrow")]
             if arrow_anns:
-                self.emit_annotation_arrows(parts, arrow_anns, render_inline_tex=render_inline_tex)
+                self.emit_annotation_arrows(
+                    parts,
+                    arrow_anns,
+                    render_inline_tex=render_inline_tex,
+                    scene_segments=scene_segments,
+                    self_offset=self_offset,
+                )
             # FP-1/FP-2/FP-4 fix: route position-only annotations through
             # emit_position_label_svg (uses _svg_helpers collision registry,
             # viewBox clamp, and canonical pill metrics) instead of the legacy

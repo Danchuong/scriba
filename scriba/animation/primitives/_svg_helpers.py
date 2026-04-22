@@ -59,6 +59,8 @@ __all__ = [
     "position_label_height_above",
     "position_label_height_below",
     "emit_arrow_marker_defs",
+    # Cross-primitive segment helpers (W3-α+)
+    "_translate_segment",
 ]
 
 
@@ -190,6 +192,39 @@ def _segment_to_obstacle(seg: "Any") -> _Obstacle:
         height=0.0,
         x2=seg.x1,
         y2=seg.y1,
+        severity=seg.severity,
+    )
+
+
+def _translate_segment(seg: "Any", dx: float, dy: float) -> "Any":
+    """Return a copy of *seg* (ObstacleSegment) with endpoints shifted by (dx, dy).
+
+    Used by cross-primitive obstacle threading (W3-α+) to re-express a
+    segment from one primitive's local SVG frame into another's local frame.
+
+    Parameters
+    ----------
+    seg:
+        An ``ObstacleSegment`` (or any object with ``kind``, ``x0``, ``y0``,
+        ``x1``, ``y1``, ``state``, ``severity`` attributes).
+    dx, dy:
+        Translation deltas: ``(other_x_off - self_x_off, other_y_off - self_y_off)``.
+
+    Returns
+    -------
+    ObstacleSegment
+        A new frozen instance with translated endpoints and identical metadata.
+    """
+    # Import here to avoid a module-level circular reference.
+    from scriba.animation.primitives._obstacle_types import ObstacleSegment
+
+    return ObstacleSegment(
+        kind=seg.kind,
+        x0=seg.x0 + dx,
+        y0=seg.y0 + dy,
+        x1=seg.x1 + dx,
+        y1=seg.y1 + dy,
+        state=seg.state,
         severity=seg.severity,
     )
 
@@ -2312,6 +2347,7 @@ def emit_position_label_svg(
     cell_height: float = CELL_HEIGHT,
     render_inline_tex: "Callable[[str], str] | None" = None,
     placed_labels: "list[_LabelPlacement] | None" = None,
+    primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
 ) -> None:
     """Emit a pill-only label for position-only annotations (no arrow, no arc).
 
@@ -2338,6 +2374,12 @@ def emit_position_label_svg(
         Callers MUST pass the **same** list to every label-emitting call
         within a single frame so that cross-annotation overlap detection
         works correctly.
+    primitive_obstacles:
+        Optional tuple of ``_Obstacle`` entries (W3-α+) representing
+        cross-primitive segments (e.g. Plane2D lines) that pills MUST or
+        SHOULD avoid.  When provided, ``_place_pill`` is used instead of
+        the simple nudge loop so that MUST-severity segments are treated
+        as hard blocks.
     """
     label_text = ann.get("label", "")
     if not label_text:
@@ -2390,52 +2432,84 @@ def emit_position_label_svg(
         final_y = ay - cell_height / 2 - pill_h / 2 - gap
 
     if placed_labels is not None:
-        # HIGH #2: initial candidate uses center-corrected y so overlap
-        # geometry during nudge matches the registered placement geometry.
-        candidate_y = final_y - l_font_px * 0.3
-        candidate = _LabelPlacement(
-            x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
-        )
-        nudge_step = pill_h + 2
-        nudge_dirs = [
-            (0, -nudge_step),
-            (-nudge_step, 0),
-            (nudge_step, 0),
-            (0, nudge_step),
-        ]
-        collision_unresolved = False
-        for _ in range(4):
-            if not any(candidate.overlaps(p) for p in placed_labels):
-                break
-            resolved = False
-            for ndx, ndy in nudge_dirs:
-                test = _LabelPlacement(
-                    x=candidate.x + ndx,
-                    y=candidate.y + ndy,
-                    width=candidate.width,
-                    height=candidate.height,
-                )
-                if not any(test.overlaps(p) for p in placed_labels):
-                    candidate = test
-                    resolved = True
+        if primitive_obstacles:
+            # W3-α+: use _place_pill so MUST-severity segment obstacles (e.g.
+            # cross-primitive Plane2D lines) are treated as hard blocks.
+            # Merge placed-label AABBs with segment obstacles into one tuple.
+            all_obs: tuple[_Obstacle, ...] = tuple(
+                _lp_to_obstacle(p) for p in placed_labels
+            ) + primitive_obstacles
+            # Use a very large viewbox so clamping does not interfere; the
+            # caller's viewbox is not available here, so use a safe sentinel.
+            _vb = 8192.0
+            placement, _fits = _place_pill(
+                natural_x=final_x,
+                natural_y=final_y - l_font_px * 0.3,
+                pill_w=float(pill_w),
+                pill_h=float(pill_h),
+                placed_labels=[],  # already baked into all_obs above
+                viewbox_w=_vb,
+                viewbox_h=_vb,
+                side_hint=position if position in ("above", "below", "left", "right") else None,
+            )
+            # _place_pill returns placement at candidate_y (already -0.3 corrected)
+            final_x = placement.x
+            final_y = placement.y + l_font_px * 0.3
+            clamped_x = max(final_x, pill_w / 2)
+            placed_labels.append(_LabelPlacement(
+                x=clamped_x,
+                y=placement.y,
+                width=float(pill_w),
+                height=float(pill_h),
+            ))
+        else:
+            # Legacy simple-nudge loop (no segment obstacles present).
+            # HIGH #2: initial candidate uses center-corrected y so overlap
+            # geometry during nudge matches the registered placement geometry.
+            candidate_y = final_y - l_font_px * 0.3
+            candidate = _LabelPlacement(
+                x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
+            )
+            nudge_step = pill_h + 2
+            nudge_dirs = [
+                (0, -nudge_step),
+                (-nudge_step, 0),
+                (nudge_step, 0),
+                (0, nudge_step),
+            ]
+            collision_unresolved = False
+            for _ in range(4):
+                if not any(candidate.overlaps(p) for p in placed_labels):
                     break
-            if not resolved:
-                collision_unresolved = True
-                break
-        final_x = candidate.x
-        # Reconstruct render y from candidate y (which carries the -0.3 correction).
-        final_y = candidate.y + l_font_px * 0.3
-        clamped_x = max(final_x, pill_w / 2)
-        # QW-1: register y = candidate.y (already = final_y - l_font_px*0.3).
-        placed_labels.append(_LabelPlacement(
-            x=clamped_x,
-            y=candidate.y,
-            width=float(pill_w),
-            height=float(pill_h),
-        ))
-        # HIGH #1: gated behind _DEBUG_LABELS so it never leaks into production.
-        if collision_unresolved and _DEBUG_LABELS:
-            lines.append(f"  <!-- scriba:label-collision id={target} -->")
+                resolved = False
+                for ndx, ndy in nudge_dirs:
+                    test = _LabelPlacement(
+                        x=candidate.x + ndx,
+                        y=candidate.y + ndy,
+                        width=candidate.width,
+                        height=candidate.height,
+                    )
+                    if not any(test.overlaps(p) for p in placed_labels):
+                        candidate = test
+                        resolved = True
+                        break
+                if not resolved:
+                    collision_unresolved = True
+                    break
+            final_x = candidate.x
+            # Reconstruct render y from candidate y (which carries the -0.3 correction).
+            final_y = candidate.y + l_font_px * 0.3
+            clamped_x = max(final_x, pill_w / 2)
+            # QW-1: register y = candidate.y (already = final_y - l_font_px*0.3).
+            placed_labels.append(_LabelPlacement(
+                x=clamped_x,
+                y=candidate.y,
+                width=float(pill_w),
+                height=float(pill_h),
+            ))
+            # HIGH #1: gated behind _DEBUG_LABELS so it never leaks into production.
+            if collision_unresolved and _DEBUG_LABELS:
+                lines.append(f"  <!-- scriba:label-collision id={target} -->")
 
     fi_x = int(final_x)
     fi_y = int(final_y)

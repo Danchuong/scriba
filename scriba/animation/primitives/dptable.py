@@ -211,6 +211,8 @@ class DPTablePrimitive(PrimitiveBase):
         self,
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         """Emit SVG ``<g>`` for the DP table."""
         effective_anns = self._annotations
@@ -238,7 +240,13 @@ class DPTablePrimitive(PrimitiveBase):
 
         # Arrow annotations
         if effective_anns:
-            self.emit_annotation_arrows(lines, effective_anns, render_inline_tex=render_inline_tex)
+            self.emit_annotation_arrows(
+                lines,
+                effective_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
 
         # Caption label
         if self.label is not None:

@@ -671,7 +671,13 @@ class Graph(PrimitiveBase):
             height=self.height + 2 * r + arrow_above,
         )
 
-    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
+    def emit_svg(
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
+    ) -> str:
         if not self.nodes:
             return (
                 f'<g data-primitive="graph" data-shape="{_escape_xml(self.name)}">'
@@ -864,7 +870,13 @@ class Graph(PrimitiveBase):
         # --- Annotation arrows (rendered on top of everything) ---
         if effective_anns:
             arrow_lines: list[str] = []
-            self.emit_annotation_arrows(arrow_lines, effective_anns, render_inline_tex=render_inline_tex)
+            self.emit_annotation_arrows(
+                arrow_lines,
+                effective_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
             parts.extend(arrow_lines)
 
         parts.append('</g>')

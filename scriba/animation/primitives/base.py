@@ -63,6 +63,7 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     _LabelPlacement,
     _Obstacle,
     _segment_to_obstacle,
+    _translate_segment,
     _wrap_label_lines,
     arrow_height_above,
     position_label_height_above,
@@ -326,8 +327,32 @@ class PrimitiveBase(abc.ABC):
         """Return the bounding box of this primitive in SVG coordinates."""
 
     @abc.abstractmethod
-    def emit_svg(self, *, render_inline_tex: "Callable[[str], str] | None" = None) -> str:
-        """Return the SVG fragment (``<g data-primitive="...">...</g>``)."""
+    def emit_svg(
+        self,
+        *,
+        render_inline_tex: "Callable[[str], str] | None" = None,
+        scene_segments: "tuple[tuple[Any, float, float, int], ...] | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
+    ) -> str:
+        """Return the SVG fragment (``<g data-primitive="...">...</g>``).
+
+        Parameters
+        ----------
+        scene_segments:
+            Cross-primitive obstacle segments injected by the scene renderer
+            (W3-α+). Each entry is ``(ObstacleSegment, x_off, y_off, prim_id)``
+            where ``(x_off, y_off)`` are the scene-level translate offsets for
+            the source primitive and ``prim_id`` is ``id(source_primitive)``
+            used to exclude self-segments.  When ``None`` (default), only
+            local ``resolve_obstacle_segments()`` results are used, which
+            preserves backward-compatible behaviour for all callers outside
+            the scene renderer.
+        self_offset:
+            The ``(x_off, y_off)`` translate of THIS primitive in the scene,
+            used to convert foreign segment coordinates into this primitive's
+            local frame.  Must be provided whenever *scene_segments* is not
+            ``None``.
+        """
 
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
         """Return SVG (x, y) center coordinates for an annotation selector.
@@ -363,6 +388,8 @@ class PrimitiveBase(abc.ABC):
         annotations: "list[dict[str, Any]]",
         *,
         render_inline_tex: "Callable[[str], str] | None" = None,
+        scene_segments: "tuple[tuple[Any, float, float, int], ...] | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
     ) -> None:
         """Emit arrow and plain-pointer SVG for *annotations* into *parts*.
 
@@ -375,20 +402,42 @@ class PrimitiveBase(abc.ABC):
             _arrow_cell_height  — virtual cell height for arc offset (default 40)
             _arrow_layout       — ``"1d"`` or ``"2d"`` (default ``"1d"``)
             _arrow_shorten      — pixels to shorten src/dst by (default 0)
+
+        Parameters
+        ----------
+        scene_segments:
+            Cross-primitive obstacle segments from the scene renderer (W3-α+).
+            Each entry: ``(ObstacleSegment, x_off, y_off, prim_id)``.
+            Segments from ``id(self)`` are skipped (self-exclusion).
+        self_offset:
+            The ``(x_off, y_off)`` translate of this primitive in the scene.
+            Required when *scene_segments* is provided.
         """
         if not annotations:
             return
 
         emit_arrow_marker_defs(parts, annotations)
 
-        # R-31: collect segment obstacles from the primitive (W3-α).
-        # resolve_obstacle_segments() is defined on all primitives; non-Plane2D
-        # stubs return [].  Convert to _Obstacle tuples once per frame so every
-        # annotation call in the loop shares the same pre-built tuple.
+        # R-31 / W3-α+: merge local segments and cross-primitive segments.
+        # 1. Start from this primitive's own local segments.
+        _merged_segs: "list[Any]" = list(self.resolve_obstacle_segments())
+
+        # 2. Append translated segments from other primitives in the scene.
+        if scene_segments and self_offset is not None:
+            self_x, self_y = self_offset
+            self_id = id(self)
+            for seg, src_x, src_y, src_prim_id in scene_segments:
+                if src_prim_id == self_id:
+                    # Skip self — already counted via resolve_obstacle_segments().
+                    continue
+                dx = src_x - self_x
+                dy = src_y - self_y
+                _merged_segs.append(_translate_segment(seg, dx, dy))
+
+        # Convert to _Obstacle tuples once per frame.
         _prim_seg_obs: "tuple[_Obstacle, ...]" = ()
-        _raw_segs = self.resolve_obstacle_segments()
-        if _raw_segs:
-            _prim_seg_obs = tuple(_segment_to_obstacle(s) for s in _raw_segs)
+        if _merged_segs:
+            _prim_seg_obs = tuple(_segment_to_obstacle(s) for s in _merged_segs)
 
         placed: "list[_LabelPlacement]" = []
         for ann in annotations:
@@ -425,6 +474,7 @@ class PrimitiveBase(abc.ABC):
                             cell_height=self._arrow_cell_height,
                             render_inline_tex=render_inline_tex,
                             placed_labels=placed,
+                            primitive_obstacles=_prim_seg_obs if _prim_seg_obs else None,
                         )
                 continue
 

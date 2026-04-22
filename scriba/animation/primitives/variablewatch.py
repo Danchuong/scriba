@@ -215,7 +215,13 @@ class VariableWatch(PrimitiveBase):
 
         return BoundingBox(x=0, y=0, width=w, height=h)
 
-    def emit_svg(self, *, render_inline_tex: Callable[[str], str] | None = None) -> str:
+    def emit_svg(
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
+    ) -> str:
         effective_anns = self._annotations
         arrow_above = arrow_height_above(
             effective_anns,
