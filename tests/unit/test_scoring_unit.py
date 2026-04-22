@@ -348,6 +348,11 @@ class TestWeightsFrozen:
         These are the W1 initial weights; calibration is post-W1.
         The env var SCRIBA_LABEL_WEIGHTS must not be set during golden
         generation — unset it before running the golden suite.
+
+        _W_EDGE_OCCLUSION raised from 8.0 → 40.0 (P7-saturate fix, R-31 ext):
+        saturating normalisation against pill short-side means any clip ≥ pill_h
+        costs 40 per segment, making 20-px displacement (cost 20) cheaper than
+        staying on a clipping annotation arrow (cost 40+).
         """
         import os
         if os.environ.get("SCRIBA_LABEL_WEIGHTS"):
@@ -358,4 +363,4 @@ class TestWeightsFrozen:
         assert _h._W_SEMANTIC      ==  2.0
         assert _h._W_WHITESPACE    ==  0.3
         assert _h._W_READING_FLOW  ==  0.8
-        assert _h._W_EDGE_OCCLUSION == 8.0
+        assert _h._W_EDGE_OCCLUSION == 40.0
