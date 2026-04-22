@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-04-22 — Phase D: flow-as-scoring-hint + CellMetrics everywhere
+
+### Changed (arrow geometry)
+
+- `_compute_control_points` no longer takes a `flow` kwarg. The
+  stagger-flip sentinel now reads `cell_metrics is not None`. One fewer
+  redundant signal threaded through the hot path; the `FlowDirection`
+  classification is deferred to scoring only.
+- `Graph` and `Tree` now construct a `CellMetrics` (node-diameter proxy:
+  `cell_width = cell_height = 2 * node_radius`, `grid_cols = len(nodes)`,
+  `grid_rows = 1`) and pass it into the emit pipeline. Stacked
+  annotations on the same target node now fan symmetrically around the
+  source-destination line via the 2D stagger-flip.
+
+### Changed (scoring)
+
+- `_ScoreContext` gained a `flow: FlowDirection | None` field, populated
+  inside `_emit_label_and_pill` via `classify_flow(dx, dy, cell_metrics)`
+  when `cell_metrics` is supplied. P7 edge-occlusion contributions from
+  `annotation_arrow`-kind segment obstacles are multiplied by `0.75`
+  when `ctx.flow is not None` — flow is a scoring hint, not a geometry
+  override. Non-`annotation_arrow` obstacles (pills, cell borders,
+  arrow shafts from prior passes) are unaffected.
+- Golden scenes (Array / DPTable / Queue) emit zero
+  `annotation_arrow`-kind segment obstacles, so net scoring drift = 0.
+  Verified: no golden regen needed.
+
+### Refactor
+
+- `emit_arrow_svg` signature tightened: `layout`, `shorten_src`,
+  `shorten_dst`, `placed_labels`, `_debug_capture`,
+  `primitive_obstacles`, `cell_metrics` are now keyword-only (the `*`
+  marker moved from before `cell_metrics` to after
+  `render_inline_tex`). All existing call sites already pass these by
+  keyword, so no caller churn.
+- `CellMetrics.grid_cols` / `grid_rows` / `origin_x` / `origin_y` marked
+  with a `TODO(v0.15.0)` comment — unused by scoring + geometry hot
+  paths; retained for the field-value regression suite and potential
+  debug tooling.
+
+### Tests
+
+- New `tests/unit/test_cell_metrics_regression.py` (6 cases): pins
+  `CellMetrics` field values passed into `emit_annotation_arrows` for
+  Array, DPTable-1D, DPTable-2D, Queue, Graph, Tree. Catches silent
+  drift in `cell_width` / `cell_height` / `grid_cols` / `grid_rows` /
+  `origin_x` / `origin_y` without a full golden SVG regen.
+- `test_scoring_unit.py` gained `TestP7FlowGatedAnnotationArrowScale`
+  (2 cases) pinning the `flow=None` baseline and the `flow=set` × 0.75
+  scale on `annotation_arrow`-kind obstacles only.
+- `test_flow_direction.py` updated: `_cp` helper now takes
+  `cell_metrics=` instead of `flow=` (D/1 signature change).
+- `3189 pass` across the filtered suite (1 pre-existing starlark fail
+  unrelated).
+
 ## [0.13.0] - 2026-04-22 — Phase C: flow-aware 2D stagger + CellMetrics/FlowDirection
 
 ### Added

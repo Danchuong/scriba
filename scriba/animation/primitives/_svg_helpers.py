@@ -376,6 +376,12 @@ class CellMetrics(NamedTuple):
 
     cell_width: float
     cell_height: float
+    # TODO(v0.15.0): grid_cols / grid_rows / origin_x / origin_y are unused
+    # by the scoring + geometry hot paths (only cell_width/cell_height feed
+    # classify_flow, and sentinel checks are identity-only). Kept on the
+    # struct for now to preserve the field-value regression suite
+    # (test_cell_metrics_regression.py) and downstream debug tooling.
+    # Candidate for removal once a real consumer is decided.
     grid_cols: int
     grid_rows: int
     origin_x: float
