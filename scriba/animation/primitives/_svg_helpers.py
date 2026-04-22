@@ -306,6 +306,29 @@ _W_EDGE_OCCLUSION: float = _parse_weight_override("edge_occlusion", 40.0)
 # (≥ 10 000 pt when all candidates overlap).
 _DEGRADED_SCORE_THRESHOLD: float = 200.0
 
+# --- Arrow curve tuning constants (Phase A extraction) ---
+# All numeric factors used by ``emit_arrow_svg`` for control-point and
+# stagger geometry. Split out so Phase B can swap the control-point formula
+# (port of perfect-arrows bow+stretch) without touching the caller.
+_ARROW_CAP_FLOOR_FACTOR: float = 1.2
+"""Cap floor: ``cell_height * 1.2`` — minimum visible bow height."""
+_ARROW_CAP_EUCLID_SCALE: float = 0.18
+"""Cap-per-euclid scale: long cross-grid arrows bow at 18% of euclidean."""
+_ARROW_BASE_FLOOR_FACTOR: float = 0.5
+"""Base-offset floor: ``cell_height * 0.5`` — prevents near-flat arrows."""
+_ARROW_SQRT_SCALE: float = 2.5
+"""Sqrt-scale multiplier for ``math.sqrt(euclid) * 2.5`` base-offset."""
+_ARROW_STAGGER_FACTOR: float = 0.3
+"""Per-index stagger step: ``cell_height * 0.3`` for same-target arrows."""
+_ARROW_STAGGER_CAP: int = 4
+"""``min(arrow_index, 4)`` — dense stacks capped so they don't fly off-canvas."""
+_ARROW_LEADER_FAR_FACTOR: float = 1.0
+"""R-27b leader-far gate: ``displacement >= pill_h * 1.0``."""
+_ARROW_VERT_ALIGN_H_SPAN: int = 4
+"""Near-vertical column threshold (px) that triggers horizontal nudge."""
+_ARROW_VERT_H_NUDGE_FACTOR: float = 0.6
+"""Horizontal nudge magnitude: ``total_offset * 0.6`` for near-vertical arrows."""
+
 
 @dataclass(frozen=True)
 class _ScoreContext:
@@ -1808,10 +1831,13 @@ def emit_arrow_svg(
     # Stagger separates multiple arrows targeting the same cell; capped so
     # dense stacks don't fly off-canvas.
     euclid = math.hypot(x2 - x1, y2 - y1)
-    cap = max(cell_height * 1.2, euclid * 0.18)
-    base_offset = min(cap, max(cell_height * 0.5, math.sqrt(euclid) * 2.5))
-    stagger = cell_height * 0.3
-    total_offset = base_offset + min(arrow_index, 4) * stagger
+    cap = max(cell_height * _ARROW_CAP_FLOOR_FACTOR, euclid * _ARROW_CAP_EUCLID_SCALE)
+    base_offset = min(
+        cap,
+        max(cell_height * _ARROW_BASE_FLOOR_FACTOR, math.sqrt(euclid) * _ARROW_SQRT_SCALE),
+    )
+    stagger = cell_height * _ARROW_STAGGER_FACTOR
+    total_offset = base_offset + min(arrow_index, _ARROW_STAGGER_CAP) * stagger
 
     if layout == "2d":
         # Perpendicular Bezier: curve away from the connecting line
@@ -1843,8 +1869,8 @@ def emit_arrow_svg(
         # in a 2D DPTable), the default control points collapse to a vertical
         # line.  Offset them horizontally to produce a visible arc.
         h_span = abs(x2 - x1)
-        if h_span < 4:
-            h_nudge = total_offset * 0.6
+        if h_span < _ARROW_VERT_ALIGN_H_SPAN:
+            h_nudge = total_offset * _ARROW_VERT_H_NUDGE_FACTOR
             cx1 = max(0, int(mid_x_f - h_nudge))
             cy1 = mid_y_val
             cx2 = max(0, int(mid_x_f - h_nudge))
@@ -2110,7 +2136,7 @@ def emit_arrow_svg(
         # far (>1.0×pill_h). Bypasses the _LEADER_DISPLACEMENT_THRESHOLD=20
         # floor so mid-sized pills (pill_h~19) still trigger. Caveat: avoids
         # declutter regression on small nudges.
-        _leader_far = displacement >= float(pill_h) * 1.0
+        _leader_far = displacement >= float(pill_h) * _ARROW_LEADER_FAR_FACTOR
         if (_leader_color_gate and displacement > _leader_threshold) or _leader_far:
             # R-08: leader endpoint at pill perimeter, not pill centre.
             _pill_cx = float(fi_x)
@@ -2250,9 +2276,16 @@ def arrow_height_above(
             if a.get("target") == target
             and j < idx
         )
+        # NOTE: uses Manhattan distance (h_dist) as a deliberately conservative
+        # upper bound for headroom estimation. Do NOT unify with the Euclidean
+        # formula in emit_arrow_svg without re-verifying all headroom callers.
+        # Also: no stagger cap here (pre-v0.12.0 behavior preserved intentionally).
         h_dist = abs(x2 - x1) + abs(y2 - y1)
-        base_offset = min(cell_height * 1.2, max(cell_height * 0.5, math.sqrt(h_dist) * 2.5))
-        stagger = cell_height * 0.3
+        base_offset = min(
+            cell_height * _ARROW_CAP_FLOOR_FACTOR,
+            max(cell_height * _ARROW_BASE_FLOOR_FACTOR, math.sqrt(h_dist) * _ARROW_SQRT_SCALE),
+        )
+        stagger = cell_height * _ARROW_STAGGER_FACTOR
         total_offset = base_offset + arrow_index * stagger
 
         if layout == "2d":
