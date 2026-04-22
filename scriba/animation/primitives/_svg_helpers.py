@@ -61,6 +61,9 @@ __all__ = [
     "emit_arrow_marker_defs",
     # Cross-primitive segment helpers (W3-α+)
     "_translate_segment",
+    # R-31 ext: prior-annotation arrow-stroke obstacle sampling
+    "_sample_arrow_segments",
+    "_BEZIER_SAMPLE_N",
 ]
 
 
@@ -263,12 +266,16 @@ def _parse_weight_override(name: str, default: float) -> float:
 
 # Kind-weight table (R-02, R-03, R-04).  Drives P1 (overlap area) term.
 # "segment" and "edge_polyline" are handled by P7 (edge occlusion) instead.
+# "annotation_arrow" (R-31 ext): prior-annotation arc segments are also handled
+# by P7 (edge occlusion) at weight 8.0 — SHOULD severity only, no hard-block.
 _KIND_WEIGHT: dict[str, float] = {
     "pill":        1.0,
     "target_cell": 3.0,   # R-02: highest priority blocker
     "axis_label":  2.0,   # R-03
     "source_cell": 0.5,   # R-04: SHOULD-level
     "grid":        0.2,
+    # annotation_arrow is a segment kind handled by P7, not P1; entry is kept
+    # here as documentation that its effective weight is _W_EDGE_OCCLUSION (8.0).
 }
 
 # Semantic rank table (R-05).  Higher rank → lower penalty.
@@ -398,7 +405,7 @@ def boundary_clearance(
     """
     min_clearance = float("inf")
     for obs in obstacles:
-        if obs.kind in ("segment", "edge_polyline"):
+        if obs.kind in ("segment", "edge_polyline", "annotation_arrow"):
             continue
         half_ow = obs.width / 2.0
         half_oh = obs.height / 2.0
@@ -524,12 +531,16 @@ def _score_candidate(
             ) > 0.0:
                 return float("inf")
 
+    # Segment-kind set: includes annotation_arrow (R-31 ext) which contributes
+    # to P7 (SHOULD severity, no hard-block) and is excluded from P1 (AABB).
+    _SEGMENT_KINDS = ("segment", "edge_polyline", "annotation_arrow")
+
     # P1 — weighted overlap area over AABB obstacles.
     p1 = sum(
         _aabb_intersect_area(obs, cx, cy, pill_w, pill_h)
         * _KIND_WEIGHT.get(obs.kind, 1.0)
         for obs in obstacles
-        if obs.kind not in ("segment", "edge_polyline")
+        if obs.kind not in _SEGMENT_KINDS
     )
 
     # P2 — displacement from natural position.
@@ -550,6 +561,7 @@ def _score_candidate(
     p6 = reading_flow_cost(cx, cy, ctx)
 
     # P7 — edge occlusion: normalised clipped segment length.
+    # Covers "segment", "edge_polyline", and "annotation_arrow" (R-31 ext).
     pill_diagonal = math.hypot(pill_w, pill_h)
     if pill_diagonal > 0.0:
         p7 = sum(
@@ -557,7 +569,7 @@ def _score_candidate(
                 obs.x, obs.y, obs.x2, obs.y2, cx, cy, pill_w, pill_h
             ) / pill_diagonal
             for obs in obstacles
-            if obs.kind in ("segment", "edge_polyline")
+            if obs.kind in _SEGMENT_KINDS
         )
     else:
         p7 = 0.0
@@ -1231,6 +1243,106 @@ def _wrap_label_lines(text: str, max_chars: int = _LABEL_MAX_WIDTH_CHARS) -> lis
 
 
 # ---------------------------------------------------------------------------
+# R-31 ext: Prior-annotation arrow-stroke obstacle sampling
+# ---------------------------------------------------------------------------
+
+# Number of evenly-spaced t-values used to sample a cubic Bezier arc.
+# N=8 yields N-1=7 line segments, providing ~7x oversampling vs a single chord.
+# Closed-form, D-1 deterministic (no iterative solver, no randomness).
+_BEZIER_SAMPLE_N: int = 8
+
+
+def _sample_arrow_segments(
+    arrow_path_points: "tuple[float, float, float, float, float, float, float, float]",
+    *,
+    state: "str" = "default",
+    is_straight: bool = False,
+) -> "list[Any]":
+    """Sample an arrow geometry into a list of ObstacleSegment instances.
+
+    For cubic Bezier arcs (``is_straight=False``):
+        Evaluates the Bezier at N=8 evenly-spaced t values and returns N-1=7
+        line segments connecting consecutive sample points.  Closed-form
+        (no iterative solver).
+
+    For straight lines (``is_straight=True``):
+        Returns a single segment from start to end.
+
+    All returned segments carry ``kind="annotation_arrow"`` and
+    ``severity="SHOULD"`` (never MUST — annotation arrows are soft-penalty
+    obstacles per R-31 ext; they penalise pill placement but do not hard-block
+    when no MUST-free position is available).
+
+    Parameters
+    ----------
+    arrow_path_points:
+        ``(x1, y1, cx1, cy1, cx2, cy2, x2, y2)`` — start point, two cubic
+        Bezier control points, and end point, all in SVG coordinates.
+        For straight lines only ``x1, y1, x2, y2`` are used.
+    state:
+        Rendering state of the arrow (propagated to the obstacle ``state``
+        field).  Defaults to ``"default"``.
+    is_straight:
+        ``True`` for straight-line arrows (``emit_plain_arrow_svg`` stem).
+        ``False`` (default) for cubic Bezier arcs.
+
+    Returns
+    -------
+    list[ObstacleSegment]
+        Sampled line-segment obstacles.  Empty list when N < 2 (degenerate).
+    """
+    from scriba.animation.primitives._obstacle_types import ObstacleSegment
+
+    x1, y1, cx1, cy1, cx2, cy2, x2, y2 = arrow_path_points
+
+    if is_straight:
+        # Single segment from stem start to stem end.
+        return [
+            ObstacleSegment(
+                kind="annotation_arrow",
+                x0=x1,
+                y0=y1,
+                x1=x2,
+                y1=y2,
+                state=state,
+                severity="SHOULD",
+            )
+        ]
+
+    # Cubic Bezier: sample at N evenly-spaced t ∈ [0, 1] and produce N-1 segments.
+    n = _BEZIER_SAMPLE_N
+    segments: list[ObstacleSegment] = []
+
+    # Pre-compute sample points.  B(t) = (1-t)³P0 + 3(1-t)²tP1 + 3(1-t)t²P2 + t³P3
+    def _bezier_point(t: float) -> tuple[float, float]:
+        mt = 1.0 - t
+        bx = mt**3 * x1 + 3 * mt**2 * t * cx1 + 3 * mt * t**2 * cx2 + t**3 * x2
+        by = mt**3 * y1 + 3 * mt**2 * t * cy1 + 3 * mt * t**2 * cy2 + t**3 * y2
+        return bx, by
+
+    pts: list[tuple[float, float]] = [
+        _bezier_point(i / (n - 1)) for i in range(n)
+    ]
+
+    for i in range(len(pts) - 1):
+        px0, py0 = pts[i]
+        px1, py1 = pts[i + 1]
+        segments.append(
+            ObstacleSegment(
+                kind="annotation_arrow",
+                x0=px0,
+                y0=py0,
+                x1=px1,
+                y1=py1,
+                state=state,
+                severity="SHOULD",
+            )
+        )
+
+    return segments
+
+
+# ---------------------------------------------------------------------------
 # Shared arrow annotation infrastructure
 # ---------------------------------------------------------------------------
 
@@ -1300,7 +1412,7 @@ def emit_plain_arrow_svg(
     placed_labels: "list[_LabelPlacement] | None" = None,
     _debug_capture: "dict[str, Any] | None" = None,
     primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
-) -> None:
+) -> "list[Any]":
     """Emit a short straight pointer arrow for ``arrow=true`` annotations.
 
     ``arrow=true`` means "draw an arrowhead pointing at the target with no
@@ -1325,6 +1437,13 @@ def emit_plain_arrow_svg(
         ``emit_plain_arrow_svg`` and ``emit_arrow_svg`` call within a single
         frame so that cross-annotation overlap detection works correctly.
         When provided, the final placement is appended to this list.
+
+    Returns
+    -------
+    list[ObstacleSegment]
+        Sampled arrow-stroke segments for use as prior-annotation obstacles
+        (R-31 ext).  Callers accumulate these across the annotation loop and
+        pass them to subsequent calls via ``primitive_obstacles``.
     """
     color = ann.get("color", "info")
     label_text = ann.get("label", "")
@@ -1564,6 +1683,14 @@ def emit_plain_arrow_svg(
 
     lines.append("  </g>")
 
+    # R-31 ext: return sampled stem segments for prior-annotation obstacle threading.
+    # Straight stem: one segment from stem start to destination point.
+    return _sample_arrow_segments(
+        (x1, y1, x1, y1, x2, y2, x2, y2),  # control points unused for straight
+        state=ann.get("color", "default"),
+        is_straight=True,
+    )
+
 
 def emit_arrow_svg(
     lines: list[str],
@@ -1579,7 +1706,7 @@ def emit_arrow_svg(
     placed_labels: "list[_LabelPlacement] | None" = None,
     _debug_capture: "dict[str, Any] | None" = None,
     primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
-) -> None:
+) -> "list[Any]":
     """Emit a cubic Bezier arrow annotation into *lines*.
 
     This is the shared arrow rendering used by Array, DPTable, and any
@@ -1623,6 +1750,13 @@ def emit_arrow_svg(
         ``emit_plain_arrow_svg`` and ``emit_arrow_svg`` call within a single
         frame so that cross-annotation overlap detection works correctly.
         When provided, the final placement is appended to this list.
+
+    Returns
+    -------
+    list[ObstacleSegment]
+        Sampled arrow-stroke segments for use as prior-annotation obstacles
+        (R-31 ext).  Callers accumulate these across the annotation loop and
+        pass them to subsequent calls via ``primitive_obstacles``.
     """
     color = ann.get("color", "info")
     label_text = ann.get("label", "")
@@ -2019,6 +2153,15 @@ def emit_arrow_svg(
             )
 
     lines.append("  </g>")
+
+    # R-31 ext: return sampled arc segments for prior-annotation obstacle threading.
+    # Bezier: sample N=8 points → 7 segments covering the arc stroke geometry.
+    return _sample_arrow_segments(
+        (float(ix1), float(iy1), float(cx1), float(cy1),
+         float(cx2), float(cy2), float(ix2), float(iy2)),
+        state=ann.get("color", "default"),
+        is_straight=False,
+    )
 
 
 def arrow_height_above(

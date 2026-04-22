@@ -75,7 +75,7 @@ class ObstacleSegment:
         ``"SHOULD"`` — soft penalty.
     """
 
-    kind: Literal["plot_line", "edge", "axis_tick", "tree_edge"]
+    kind: Literal["plot_line", "edge", "axis_tick", "tree_edge", "annotation_arrow"]
     x0: float
     y0: float
     x1: float
