@@ -61,6 +61,8 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     _LABEL_PILL_RADIUS,
     _PLAIN_ARROW_STEM,
     _LabelPlacement,
+    _Obstacle,
+    _segment_to_obstacle,
     _wrap_label_lines,
     arrow_height_above,
     position_label_height_above,
@@ -379,6 +381,15 @@ class PrimitiveBase(abc.ABC):
 
         emit_arrow_marker_defs(parts, annotations)
 
+        # R-31: collect segment obstacles from the primitive (W3-α).
+        # resolve_obstacle_segments() is defined on all primitives; non-Plane2D
+        # stubs return [].  Convert to _Obstacle tuples once per frame so every
+        # annotation call in the loop shares the same pre-built tuple.
+        _prim_seg_obs: "tuple[_Obstacle, ...]" = ()
+        _raw_segs = self.resolve_obstacle_segments()
+        if _raw_segs:
+            _prim_seg_obs = tuple(_segment_to_obstacle(s) for s in _raw_segs)
+
         placed: "list[_LabelPlacement]" = []
         for ann in annotations:
             arrow_from = ann.get("arrow_from", "")
@@ -392,6 +403,7 @@ class PrimitiveBase(abc.ABC):
                         dst_point=dst_point,
                         render_inline_tex=render_inline_tex,
                         placed_labels=placed,
+                        primitive_obstacles=_prim_seg_obs if _prim_seg_obs else None,
                     )
                 continue
 
@@ -445,6 +457,7 @@ class PrimitiveBase(abc.ABC):
                 cell_height=self._arrow_cell_height,
                 render_inline_tex=render_inline_tex,
                 placed_labels=placed,
+                primitive_obstacles=_prim_seg_obs if _prim_seg_obs else None,
                 **kwargs,
             )
 

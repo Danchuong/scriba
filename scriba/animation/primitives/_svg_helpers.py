@@ -171,6 +171,29 @@ def _lp_to_obstacle(lp: _LabelPlacement) -> _Obstacle:
     )
 
 
+def _segment_to_obstacle(seg: "Any") -> _Obstacle:
+    """Convert an ObstacleSegment (R-31) to an internal _Obstacle.
+
+    Accepts any object with ``kind``, ``x0``, ``y0``, ``x1``, ``y1``,
+    ``severity`` attributes — matching the ``ObstacleSegment`` frozen
+    dataclass from ``_obstacle_types.py``.
+
+    The ``_Obstacle`` kind is ``"segment"`` (handled by P7 edge-occlusion
+    term in ``_score_candidate``).  Width and height are left at their
+    zero defaults (unused for segment kind).
+    """
+    return _Obstacle(
+        kind="segment",
+        x=seg.x0,
+        y=seg.y0,
+        width=0.0,
+        height=0.0,
+        x2=seg.x1,
+        y2=seg.y1,
+        severity=seg.severity,
+    )
+
+
 # ---------------------------------------------------------------------------
 # v0.12.0 W1 — Scoring weights, constants, and functions
 # ---------------------------------------------------------------------------
@@ -1241,6 +1264,7 @@ def emit_plain_arrow_svg(
     render_inline_tex: "Callable[[str], str] | None" = None,
     placed_labels: "list[_LabelPlacement] | None" = None,
     _debug_capture: "dict[str, Any] | None" = None,
+    primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
 ) -> None:
     """Emit a short straight pointer arrow for ``arrow=true`` annotations.
 
@@ -1384,9 +1408,10 @@ def emit_plain_arrow_svg(
             candidate_y = final_y - l_font_px * 0.3
 
             # Entry shim: convert placed labels to obstacle tuple (§1.3).
+            # R-31: merge primitive segment obstacles (e.g. Plane2D lines/axes).
             _obstacles: tuple[_Obstacle, ...] = tuple(
                 _lp_to_obstacle(p) for p in placed_labels
-            )
+            ) + (primitive_obstacles if primitive_obstacles is not None else ())
 
             # Build ScoreContext.  Plain-arrow has no src→dst arc vector.
             _ctx = _ScoreContext(
@@ -1518,6 +1543,7 @@ def emit_arrow_svg(
     shorten_dst: float = 0.0,
     placed_labels: "list[_LabelPlacement] | None" = None,
     _debug_capture: "dict[str, Any] | None" = None,
+    primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
 ) -> None:
     """Emit a cubic Bezier arrow annotation into *lines*.
 
@@ -1798,9 +1824,10 @@ def emit_arrow_svg(
             candidate_y = final_y - l_font_px * 0.3
 
             # Entry shim: convert placed labels to obstacle tuple (§1.3).
+            # R-31: merge primitive segment obstacles (e.g. Plane2D lines/axes).
             _obstacles: tuple[_Obstacle, ...] = tuple(
                 _lp_to_obstacle(p) for p in placed_labels
-            )
+            ) + (primitive_obstacles if primitive_obstacles is not None else ())
 
             # Arc direction unit vector for P6 (reading_flow) term.
             _arc_dist = dist  # already computed as sqrt(dx²+dy²) above; ≥1.0
