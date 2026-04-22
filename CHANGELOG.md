@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-04-22 — Smart-label v2.1.0-rc (W3-α segment obstacles)
+
+### Breaking
+
+- Plane2D annotation pill positions may shift when plotted lines or axis spines are
+  present in a frame. `emit_annotation_arrows` now passes `primitive_obstacles` (segment
+  kind) to `emit_plain_arrow_svg` / `emit_arrow_svg`, changing scores for any Plane2D
+  annotation that sits near a visible line. No golden fixtures existed for annotated
+  Plane2D scenes at v0.12.0 so no corpus re-pin is needed for this wave; W3-β will
+  ship with a corpus expansion covering plane2d/graph/tree/numberline.
+
+### Added
+
+- **R-31 (W3-α)**: `Plane2D.resolve_obstacle_segments()` returns plotted lines
+  (`p.line[*]`) and axis spines in SVG pixel coordinates. Segments tagged
+  `state="current"` carry `severity="MUST"` (hard-block); `state="dim"` / `"done"`
+  carry `severity="SHOULD"` (`_W_EDGE_OCCLUSION = 8.0` penalty term P7).
+- `_segment_to_obstacle()` converter in `_svg_helpers.py` maps `ObstacleSegment` fields
+  to `_Obstacle(kind="segment", ...)` for the P7 edge-occlusion scoring term.
+- `primitive_obstacles: tuple[_Obstacle, ...] | None` parameter added to
+  `emit_plain_arrow_svg` and `emit_arrow_svg` (default `None` — no change for all
+  non-Plane2D primitives).
+- `PrimitiveBase.emit_annotation_arrows` collects `self.resolve_obstacle_segments()`
+  once per frame and passes the converted tuple to both emitters.
+
+### Ruleset
+
+- `docs/spec/smart-label-ruleset.md` bumped to v2.1.0-rc: R-31 rule card added,
+  conformance matrix §8 updated (R-31 Status=Shipped, v0.12.0 column).
+  `scripts/check_ruleset_sync.py` now expects 31 rules.
+- `docs/archive/smart-label-edge-avoidance-2026-04-22/R-31-plan.md` archived
+  (edge-avoidance design doc; triaged from convex_hull_trick step 5 user report).
+
 ## [0.11.0] - 2026-04-22 — Smart-label v2.0.0 (W3 batch)
 
 ### Breaking
@@ -52,7 +85,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Ruleset
 
 - `docs/spec/smart-label-ruleset.md` final v2.0.0: 30 unified rules (R-01..R-30) replacing
-  legacy axis IDs (A-*/B-*/C-*/D-*/G-*). Alias table in Appendix A.
+  legacy axis IDs (A-*/B-*/C-*/D-*/G-*). Alias table in Appendix A. (Superseded by
+  v2.1.0-rc in v0.12.0 which adds R-31.)
 - Code-ref and test-ref fields updated for all 13 landed rules.
 
 ## [0.9.1] - 2026-04-18

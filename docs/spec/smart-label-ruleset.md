@@ -1,21 +1,22 @@
 ---
 title: Smart-Label Ruleset
-version: 2.0.0
-status: Final
+version: 2.1.0-rc
+status: Release Candidate
 last-modified: 2026-04-22
 editors: scriba-core
-supersedes: docs/spec/smart-label-ruleset.md (v2.0.0-rc.1, 2026-04-21)
+supersedes: docs/spec/smart-label-ruleset.md (v2.0.0, 2026-04-22)
 source-audits:
   - docs/archive/smart-label-placement-pedagogy-2026-04-21/00-synthesis.md
   - docs/archive/smart-label-audit-2026-04-21/
   - docs/archive/smart-label-ruleset-audit-2026-04-21/
   - docs/archive/smart-label-ruleset-strengthening-2026-04-21/
   - docs/archive/smart-label-ruleset-hardening-2026-04-21/
+  - docs/archive/smart-label-edge-avoidance-2026-04-22/R-31-plan.md
 ---
 
 # Smart-Label Ruleset
 
-**Version:** 2.0.0 · **Supersedes:** 2.0.0-rc.1 · **Date:** 2026-04-22
+**Version:** 2.1.0-rc · **Supersedes:** 2.0.0 · **Date:** 2026-04-22
 
 > **Scope**: `\annotate` pill placement and leader rendering for every primitive that emits
 > annotations through `scriba/animation/primitives/_svg_helpers.py`
@@ -43,9 +44,11 @@ source-audits:
 ## §0 Overview and conformance levels
 
 This document replaces the axis-style invariant catalogue (G-*, C-*, T-*, A-*, D-*, E-*,
-AC-*) of v2.0.0-rc.1 with a unified 30-rule catalogue (R-01..R-30) derived from the
+AC-*) of v2.0.0-rc.1 with a unified rule catalogue (R-01..R-31) derived from the
 synthesis study at
 `docs/archive/smart-label-placement-pedagogy-2026-04-21/00-synthesis.md`.
+R-31 was added in v2.1.0-rc to address line-segment occlusion (edge-avoidance plan,
+`docs/archive/smart-label-edge-avoidance-2026-04-22/R-31-plan.md`).
 
 ### Conformance levels
 
@@ -60,7 +63,7 @@ synthesis study at
 | Release | Scope |
 |---------|-------|
 | **v0.11.0-W3** | R-01, R-07, R-08, R-11, R-12, R-13, R-14, R-15, R-16, R-19, R-22, R-25, R-27 |
-| **v0.12.0** | R-02, R-04, R-05, R-06, R-10, R-17, R-18, R-20, R-21, R-23, R-24, R-28, R-29 |
+| **v0.12.0** | R-02, R-04, R-05, R-06, R-10, R-17, R-18, R-20, R-21, R-23, R-24, R-28, R-29, R-31 |
 | **v0.13.0+** | R-03, R-09, R-26, R-30 |
 
 ### MW phases preserved
@@ -865,6 +868,45 @@ v0.11.0 release notes for the `arrow=true`/position-only silent-drop behaviour.
 
 ---
 
+### R-31 — Line-segment obstacles registered with severity
+
+**Normative:** MUST (for `state="current"` segments), SHOULD (for `state="dim"` / `state="done"`)
+**Since:** v0.12.0
+**Supersedes:** (new)
+**Source:** user report 2026-04-22 (`examples/algorithms/dp/convex_hull_trick.html` step 5)
+**Scope:** `scriba/animation/primitives/_svg_helpers.py` (`emit_plain_arrow_svg`,
+           `emit_arrow_svg`); `PrimitiveBase.emit_annotation_arrows`;
+           `PrimitiveBase.resolve_obstacle_segments`
+
+All line segments emitted by a primitive MUST be registered with the obstacle registry
+before candidate evaluation for that frame. Segments tagged `state="current"` (the
+line the current step is teaching) MUST NOT be occluded by any pill — they are assigned
+`severity="MUST"` and trigger hard-block semantics equivalent to R-02 target-cell
+blockers (infinite penalty, §2.3). Segments tagged `state="dim"` or `state="done"` are
+assigned `severity="SHOULD"` and contribute `_W_EDGE_OCCLUSION = 8.0` to the candidate
+score via the P7 term.
+
+**Rationale:** Smart-label placement was pill-vs-pill only (AABB registry). Plane2D
+envelope lines, graph edges, and tree edges were routinely occluded when a pill landed
+on them, making algorithm pedagogy unreadable. Observed failure: `convex_hull_trick.html`
+step 5, where the `L_1(3)=-4 win` annotation pill covered the active envelope line.
+Segment obstacles close the highest-severity non-AABB occlusion class with a closed-form
+Liang–Barsky clip helper (D-1 deterministic, no iterative solver).
+
+**W3-α scope (v0.12.0):** `Plane2D` only — `resolve_obstacle_segments` returns plotted
+lines and axis spines in SVG pixel coordinates. Other primitives (`Graph`, `Tree`,
+`NumberLine`) return `[]` stubs promoted to full implementations in W3-β.
+
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py` (`_segment_to_obstacle`,
+`_segment_rect_clip_length`, P7 term in `_score_candidate`);
+`scriba/animation/primitives/plane2d.py` (`resolve_obstacle_segments`);
+`scriba/animation/primitives/base.py` (`emit_annotation_arrows`)
+**Test ref:** `tests/unit/test_plane2d_segments.py`; `tests/unit/test_obstacle_protocol.py`
+**Golden ref:** No Plane2D golden fixtures exist at v0.12.0 W3-α; byte-breaking for
+plane2d/graph/tree/numberline when full W3-β is shipped.
+
+---
+
 ## §8 Conformance matrix
 
 | Rule | Title (short) | Normative | Status | v0.11.0-W3 | v0.12.0 | v0.13.0+ |
@@ -899,6 +941,7 @@ v0.11.0 release notes for the `arrow=true`/position-only silent-drop behaviour.
 | R-28 | Loud placed_labels=None warn | MUST | Gap | — | ✅ | — |
 | R-29 | Print @media dash styles | MUST | Gap | — | ✅ | — |
 | R-30 | NumberLine routing fix | MUST | Gap | — | — | ✅ |
+| R-31 | Segment obstacles (W3-α Plane2D) | MUST/SHOULD | Shipped | — | ✅ v0.12.0 | — |
 
 **Status key:** Gap = not implemented; Partial = partially implemented; Shipped = landed in production; ✅ = target/actual release.
 

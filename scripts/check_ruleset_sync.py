@@ -32,8 +32,8 @@ def main() -> int:
     code_refs = re.findall(r"\*\*Code ref:\*\* `([^`]+)`", text)
     test_refs = re.findall(r"\*\*Test ref:\*\* `([^`]+)`", text)
 
-    if len(rules) != 30:
-        print(f"ERROR: expected 30 rules, found {len(rules)}")
+    if len(rules) != 31:
+        print(f"ERROR: expected 31 rules, found {len(rules)}")
         return 1
 
     errors = 0
