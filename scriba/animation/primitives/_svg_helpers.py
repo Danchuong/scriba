@@ -329,6 +329,55 @@ _ARROW_VERT_ALIGN_H_SPAN: int = 4
 _ARROW_VERT_H_NUDGE_FACTOR: float = 0.6
 """Horizontal nudge magnitude: ``total_offset * 0.6`` for near-vertical arrows."""
 
+# --- Perfect-arrows bow+stretch constants (Phase B, v0.12.2) ---
+# Port of https://github.com/steveruizok/perfect-arrows. The curve amplitude
+# is ``arc = bow + modulate(dist, [stretch_min, stretch_max], [1, 0]) * stretch``.
+# At very short distances the arrow bows by ``bow + stretch``; at
+# ``stretch_max`` and beyond it bows only by ``bow``. The perpendicular pixel
+# offset of the quadratic control point from the midpoint equals
+# ``arc * dist``. Tuned to approximate the old cap/sqrt formula at the
+# mid-range (100–300 px) while straightening long cross-grid arrows.
+_ARROW_BOW: float = 0.05
+"""Constant-arc component. Keeps long cross-grid arrows visibly bowed."""
+_ARROW_STRETCH: float = 0.20
+"""Peak stretch component at ``dist <= stretch_min``."""
+_ARROW_STRETCH_MIN: float = 0.0
+"""Distance below which stretch saturates (1.0)."""
+_ARROW_STRETCH_MAX: float = 1000.0
+"""Distance above which stretch decays to 0 (raised from perfect-arrows
+420 default so long DP-grid cross-cell arrows still bow)."""
+_ARROW_PERP_FLOOR_FACTOR: float = 0.5
+"""Minimum perpendicular offset = ``cell_height * 0.5``; keeps short
+arrows visible even when ``arc * euclid`` is tiny."""
+
+
+def _modulate(
+    value: float,
+    from_range: tuple[float, float],
+    to_range: tuple[float, float],
+    clamp: bool = True,
+) -> float:
+    """Linear remap with optional clamping (perfect-arrows helper).
+
+    Maps ``value`` from ``from_range`` to ``to_range`` linearly; if
+    ``clamp`` is True, the result is clamped to the ``to_range`` bounds.
+    """
+    a_low, a_high = from_range
+    b_low, b_high = to_range
+    span = a_high - a_low
+    if span == 0:
+        return b_low
+    t = (value - a_low) / span
+    out = b_low + t * (b_high - b_low)
+    if clamp:
+        lo = min(b_low, b_high)
+        hi = max(b_low, b_high)
+        if out < lo:
+            out = lo
+        elif out > hi:
+            out = hi
+    return out
+
 
 @dataclass(frozen=True)
 class _ScoreContext:
@@ -1778,74 +1827,94 @@ def _compute_control_points(
     Endpoints are post-shortening; ``dx``/``dy``/``dist`` are derived
     from them and passed in to avoid recomputation. No side effects.
 
-    See ``docs/plans/phase-a-v0.12.1-extraction-plan.md`` §3.
+    See ``docs/plans/phase-a-v0.12.1-extraction-plan.md`` §3 and
+    Phase B notes (v0.12.2): the curve amplitude is now a port of
+    perfect-arrows' ``bow + modulate(dist, [smin, smax], [1, 0]) * stretch``.
+    The cubic control points are derived from the single quadratic control
+    point via the standard quad→cubic identity
+    ``cp1 = P0 + 2/3*(Q - P0); cp2 = P1 + 2/3*(Q - P1)``.
     """
     euclid = math.hypot(x2 - x1, y2 - y1)
-    cap = max(cell_height * _ARROW_CAP_FLOOR_FACTOR, euclid * _ARROW_CAP_EUCLID_SCALE)
-    base_offset = min(
-        cap,
-        max(cell_height * _ARROW_BASE_FLOOR_FACTOR, math.sqrt(euclid) * _ARROW_SQRT_SCALE),
+
+    # Perfect-arrows bow+stretch arc amplitude (scalar, unitless).
+    _bow_factor = _modulate(
+        euclid, (_ARROW_STRETCH_MIN, _ARROW_STRETCH_MAX), (1.0, 0.0)
     )
+    arc = _ARROW_BOW + _bow_factor * _ARROW_STRETCH
+
+    # Perpendicular offset from midpoint to quadratic control point.
+    # Floor against cell_height so short arrows stay visibly bowed.
+    base_offset = max(arc * euclid, cell_height * _ARROW_PERP_FLOOR_FACTOR)
     stagger = cell_height * _ARROW_STAGGER_FACTOR
     total_offset = base_offset + min(arrow_index, _ARROW_STAGGER_CAP) * stagger
 
     if layout == "2d":
-        # Perpendicular Bezier: curve away from the connecting line
-        perp_x = -dy / dist
-        perp_y = dx / dist
+        # Perpendicular to the connecting line (rotated 90° toward +perp).
+        perp_x = -dy / dist if dist else 0.0
+        perp_y = dx / dist if dist else 0.0
 
         mid_x_f = (x1 + x2) / 2
         mid_y_f = (y1 + y2) / 2
 
-        cx1 = int((x1 + mid_x_f) / 2 + perp_x * total_offset)
-        cy1 = int((y1 + mid_y_f) / 2 + perp_y * total_offset)
-        cx2 = int((x2 + mid_x_f) / 2 + perp_x * total_offset)
-        cy2 = int((y2 + mid_y_f) / 2 + perp_y * total_offset)
+        # Quadratic control point = midpoint pushed along the perpendicular.
+        qx = mid_x_f + perp_x * total_offset
+        qy = mid_y_f + perp_y * total_offset
 
-        label_ref_x = int(mid_x_f + perp_x * (total_offset + 8))
-        label_ref_y = int(mid_y_f + perp_y * (total_offset + 8))
+        # Quadratic → cubic conversion.
+        cx1 = int(x1 + 2.0 / 3.0 * (qx - x1))
+        cy1 = int(y1 + 2.0 / 3.0 * (qy - y1))
+        cx2 = int(x2 + 2.0 / 3.0 * (qx - x2))
+        cy2 = int(y2 + 2.0 / 3.0 * (qy - y2))
+
+        label_ref_x = int(qx + perp_x * 8)
+        label_ref_y = int(qy + perp_y * 8)
     else:
-        # Horizontal layout: curve upward (original formula)
+        # Horizontal layout: curve upward (negative y).
         mid_x_f = (x1 + x2) / 2
-        mid_y_val = int(min(y1, y2) - total_offset)
+        mid_y_f = (y1 + y2) / 2
 
         # R-01: estimate pill_h early so the natural anchor clears the arc.
-        # Pill height = (font_px + 2) * num_lines + LABEL_PILL_PAD_Y * 2.
-        # For estimation: use single-line height (typical case).
-        _est_l_font_px = _DEFAULT_LABEL_FONT_PX  # reuse module constant
+        _est_l_font_px = _DEFAULT_LABEL_FONT_PX
         _est_pill_h = (_est_l_font_px + 2) + _LABEL_PILL_PAD_Y * 2  # 19 px typical
 
-        # When source and target are nearly vertically aligned (same column
-        # in a 2D DPTable), the default control points collapse to a vertical
-        # line.  Offset them horizontally to produce a visible arc.
         h_span = abs(x2 - x1)
         if h_span < _ARROW_VERT_ALIGN_H_SPAN:
+            # Near-vertical / self-loop: bow up-and-sideways so the arc is
+            # visible even when src and dst share the same column (or point).
             h_nudge = total_offset * _ARROW_VERT_H_NUDGE_FACTOR
-            cx1 = max(0, int(mid_x_f - h_nudge))
-            cy1 = mid_y_val
-            cx2 = max(0, int(mid_x_f - h_nudge))
-            cy2 = mid_y_val
-            # Clamp label X so pill doesn't go negative.
-            # Estimate pill half-width from label text.
+            qx = mid_x_f - h_nudge
+            qy = min(y1, y2) - total_offset
+
+            cx1 = max(0, int(x1 + 2.0 / 3.0 * (qx - x1)))
+            cy1 = int(y1 + 2.0 / 3.0 * (qy - y1))
+            cx2 = max(0, int(x2 + 2.0 / 3.0 * (qx - x2)))
+            cy2 = int(y2 + 2.0 / 3.0 * (qy - y2))
+
             _est_pill_hw = (
                 estimate_text_width(label_text, _DEFAULT_LABEL_FONT_PX) // 2 + _LABEL_PILL_PAD_X
                 if label_text else 20
             )
-            raw_lx = int(mid_x_f - h_nudge - 8)
+            raw_lx = int(qx - 8)
             label_ref_x = max(raw_lx, _est_pill_hw)
-            label_ref_y = mid_y_val - _est_pill_h // 2 - 4  # R-01: arc clearance
+            label_ref_y = int(qy) - _est_pill_h // 2 - 4  # R-01: arc clearance
         else:
-            cx1 = int((x1 + mid_x_f) / 2)
-            cy1 = mid_y_val
-            cx2 = int((x2 + mid_x_f) / 2)
-            cy2 = mid_y_val
+            # Standard horizontal bow upward.
+            qx = mid_x_f
+            qy = min(y1, y2) - total_offset
+
+            cx1 = int(x1 + 2.0 / 3.0 * (qx - x1))
+            cy1 = int(y1 + 2.0 / 3.0 * (qy - y1))
+            cx2 = int(x2 + 2.0 / 3.0 * (qx - x2))
+            cy2 = int(y2 + 2.0 / 3.0 * (qy - y2))
+
             label_ref_x = int(mid_x_f)
-            label_ref_y = mid_y_val - _est_pill_h // 2 - 4  # R-01: arc clearance
+            # Peak of the cubic at t=0.5 for cp1.y = cp2.y = qy:
+            # B(0.5).y = 0.125*y1 + 0.375*qy + 0.375*qy + 0.125*y2
+            #         = 0.25*(y1+y2)/2 ... but we use qy directly for clearance.
+            label_ref_y = int(qy) - _est_pill_h // 2 - 4  # R-01: arc clearance
 
     # Curve midpoint B(0.5) for leader anchoring — evaluated from the actual
-    # control points so the anchor dot sits ON the rendered curve, not on the
-    # control-point plateau (which is ~25% above the true midpoint for cubic
-    # Bézier when both controls share the same coordinate).
+    # control points so the anchor dot sits ON the rendered curve.
     curve_mid_x = int(0.125 * x1 + 0.375 * cx1 + 0.375 * cx2 + 0.125 * x2)
     curve_mid_y = int(0.125 * y1 + 0.375 * cy1 + 0.375 * cy2 + 0.125 * y2)
 

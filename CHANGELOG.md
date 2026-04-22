@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-04-22 — Phase B: perfect-arrows bow+stretch port
+
+### Changed (arrow geometry)
+
+- Ported the [steveruizok/perfect-arrows](https://github.com/steveruizok/perfect-arrows)
+  bow+stretch arc-amplitude formula into `_compute_control_points`. The curve
+  amplitude is now `arc = bow + modulate(euclid, [stretch_min, stretch_max], [1, 0]) * stretch`
+  with defaults tuned for scriba's DP-grid use (`bow=0.05`, `stretch=0.20`,
+  `stretch_max=1000.0` — raised from perfect-arrows' 420 default so long
+  cross-grid arrows still bow visibly).
+- Cubic control points are now derived from a single quadratic control
+  point via the standard quad→cubic identity
+  (`cp1 = P0 + 2/3*(Q − P0); cp2 = P1 + 2/3*(Q − P1)`). This replaces the
+  ad-hoc plateau-cubic (cp1/cp2 sharing the peak y) with a more elliptical
+  curve shape.
+- Added `_modulate(value, from_range, to_range, clamp=True)` helper.
+- Added perpendicular-offset floor (`cell_height * 0.5`) so short arrows
+  stay visibly bowed even when `arc * euclid` is tiny.
+- `arrow_height_above` (Manhattan-based headroom estimator) is deliberately
+  **not** touched — it remains a conservative upper bound.
+
+### Goldens
+
+- Regenerated `tests/golden/smart_label/bug-B/expected.svg` (+ sha256).
+  The self-loop arrow's control points shift from `(28, 60)` → `(32, 66)`:
+  6 px flatter, label position unchanged. `ok-simple` and
+  `critical-2-null-byte` goldens are unchanged.
+
+### Version
+
+- `scriba.__version__`: 0.12.0 → 0.12.2 (0.12.1 was an internal refactor tag).
+
 ## [0.12.0] - 2026-04-22 — Smart-label v2.1.0-rc (W3-α segment obstacles)
 
 ### Breaking
