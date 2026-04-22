@@ -2144,11 +2144,13 @@ def _place_pill(
     overlap_pad: float = 0.0,
     _debug_capture: "dict[str, Any] | None" = None,
 ) -> "tuple[_LabelPlacement, bool]":
-    """Place a pill label using per-candidate clamp + collision avoidance.
+    """Place a pill label using weighted scoring argmin (v0.12.0 W1).
 
-    Sole placement primitive for MW-3. Closes ISSUE-A3 (clamp-race) by
-    clamping each candidate to the viewport *before* the collision check,
-    so a candidate that would collide only after clamping is rejected.
+    Replaces the boolean overlaps() first-fit loops with
+    ``_pick_best_candidate`` argmin selection (spec §1.3 commit 3).
+    Sole placement primitive for MW-3.  Closes ISSUE-A3 (clamp-race) by
+    clamping each candidate to the viewport *before* scoring, so a candidate
+    that would shift after clamping is evaluated at its actual rendered position.
 
     Parameters
     ----------
@@ -2165,10 +2167,10 @@ def _place_pill(
     viewbox_w, viewbox_h:
         Declared viewBox dimensions for clamping (G-3).
     side_hint:
-        Half-plane preference passed to ``_nudge_candidates`` (C-5).
+        Half-plane preference passed to ``_nudge_candidates`` (C-5) and
+        encoded in ``_ScoreContext`` for P3 (side-hint violation) term.
     overlap_pad:
-        Extra separation margin for ``_LabelPlacement.overlaps`` calls.
-        Defaults to 0.0 (strict AABB non-intersection per §2.3).
+        Retained for API compatibility; not used by the scoring path.
     _debug_capture:
         When provided, receives diagnostic keys ``natural_x``,
         ``natural_y``, ``final_x``, ``final_y``, ``collision_unresolved``,
@@ -2178,24 +2180,9 @@ def _place_pill(
     -------
     tuple[_LabelPlacement, bool]
         ``(placement, fits_cleanly)`` where *fits_cleanly* is ``True``
-        when the returned placement does not overlap any existing entry.
-        When all 32 candidates are exhausted the last candidate (clamped)
-        is returned with ``fits_cleanly=False`` (E-1).
-
-    Tie-breakers
-    ------------
-    G-5: below > above > right > left — encoded in the ``_nudge_candidates``
-    iterator (S, N, E, W, … priority in ``_COMPASS_8``).  When
-    ``side_hint`` is provided, the preferred half-plane comes first (C-5).
-
-    Invariants enforced
-    -------------------
-    - AC-3 (clamp pre-collision): every candidate is clamped before the
-      collision check, preventing post-selection drift.
-    - G-3 (pill inside viewport): clamp guarantees
-      ``0 <= pill_rx`` and ``pill_rx + pill_w <= viewbox_w`` etc.
-    - G-4 (clamp preserves dimensions): only the center translates.
-    - C-4 (non-overlap): checked after clamp against ``placed_labels``.
+        when the best candidate has a finite score (no hard-block violation).
+        When all candidates are hard-blocked, the least-bad candidate is
+        returned with ``fits_cleanly=False`` (E-1 / R-17 fallback).
     """
     half_w = pill_w / 2.0
     half_h = pill_h / 2.0
@@ -2206,53 +2193,51 @@ def _place_pill(
         cy = max(half_h, min(cy, viewbox_h - half_h))
         return cx, cy
 
-    # Natural position — clamp first (G-3).
-    clamped_x, clamped_y = _clamp(natural_x, natural_y)
-    natural_placement = _LabelPlacement(
-        x=clamped_x, y=clamped_y, width=pill_w, height=pill_h
+    # Build obstacles tuple from the placed-label registry (entry shim, §1.3).
+    obstacles: tuple[_Obstacle, ...] = tuple(
+        _lp_to_obstacle(p) for p in placed_labels
     )
 
-    # Check whether the natural (clamped) position is collision-free.
-    if not any(natural_placement.overlaps(p) for p in placed_labels):
-        if _debug_capture is not None:
-            _debug_capture.update({
-                "natural_x": natural_x, "natural_y": natural_y,
-                "final_x": clamped_x, "final_y": clamped_y,
-                "collision_unresolved": False, "candidates_tried": 0,
-            })
-        return natural_placement, True
+    # Build scoring context.  W1 callers don't supply arc_direction or
+    # color_token, so we use neutral defaults (P6=0, P4=constant).
+    ctx = _ScoreContext(
+        natural_x=natural_x,
+        natural_y=natural_y,
+        pill_w=pill_w,
+        pill_h=pill_h,
+        side_hint=side_hint if side_hint in ("left", "right", "above", "below") else None,
+        arc_direction=(0.0, 0.0),   # no arc info available at this call site
+        color_token="info",         # neutral P4 constant across all candidates
+        viewbox_w=viewbox_w,
+        viewbox_h=viewbox_h,
+    )
 
-    # Nudge loop — clamp each candidate BEFORE collision check (AC-3).
-    last_placement = natural_placement
-    candidates_tried = 0
+    # Build candidate list: natural (clamped) + 32 nudges (clamped).
+    # Clamp BEFORE scoring so the score reflects the actual rendered position.
+    nat_cx, nat_cy = _clamp(natural_x, natural_y)
+    all_candidates: list[tuple[float, float]] = [(nat_cx, nat_cy)]
     for ndx, ndy in _nudge_candidates(pill_w, pill_h, side_hint=side_hint):
-        cx = natural_x + ndx
-        cy = natural_y + ndy
-        cx, cy = _clamp(cx, cy)
-        candidate = _LabelPlacement(x=cx, y=cy, width=pill_w, height=pill_h)
-        last_placement = candidate
-        candidates_tried += 1
-        if not any(candidate.overlaps(p) for p in placed_labels):
-            if _debug_capture is not None:
-                _debug_capture.update({
-                    "natural_x": natural_x, "natural_y": natural_y,
-                    "final_x": cx, "final_y": cy,
-                    "collision_unresolved": False,
-                    "candidates_tried": candidates_tried,
-                })
-            return candidate, True
+        cx, cy = _clamp(natural_x + ndx, natural_y + ndy)
+        all_candidates.append((cx, cy))
+    candidates_tuple = tuple(all_candidates)
 
-    # All 32 candidates exhausted — emit last candidate per E-1.
-    if _DEBUG_LABELS:
-        pass  # callers emit the debug comment using their target id
+    # Score all candidates and pick the best.
+    best_cx, best_cy, best_score = _pick_best_candidate(candidates_tuple, obstacles, ctx)
+
+    fits_cleanly = best_score != float("inf")
+    placement = _LabelPlacement(x=best_cx, y=best_cy, width=pill_w, height=pill_h)
+
     if _debug_capture is not None:
         _debug_capture.update({
-            "natural_x": natural_x, "natural_y": natural_y,
-            "final_x": last_placement.x, "final_y": last_placement.y,
-            "collision_unresolved": True,
-            "candidates_tried": candidates_tried,
+            "natural_x": natural_x,
+            "natural_y": natural_y,
+            "final_x": best_cx,
+            "final_y": best_cy,
+            "collision_unresolved": not fits_cleanly,
+            "candidates_tried": len(candidates_tuple),
         })
-    return last_placement, False
+
+    return placement, fits_cleanly
 
 
 def emit_position_label_svg(
