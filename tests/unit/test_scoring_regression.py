@@ -103,9 +103,9 @@ SCORE_SNAPSHOTS: dict[str, dict[str, object]] = {
     },
     # Two labels at the same natural position; second must be nudged away.
     "one-collision": {
-        "min_score": 20.2,         # best non-overlapping candidate score
+        "min_score": 29.7,         # best non-overlapping+non-touching candidate score
         "max_score": 7601.2,       # worst (fully overlapping); ±5% tolerance
-        "winner_index": 14,        # first nudge direction that clears the obstacle
+        "winner_index": 22,        # first nudge direction that fully clears the obstacle
     },
 }
 

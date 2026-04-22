@@ -142,13 +142,19 @@ class TestP1OverlapArea:
         """target_cell kind has weight 3.0 (R-02)."""
         assert _h._KIND_WEIGHT["target_cell"] == 3.0
 
-    def test_p1_no_overlap_when_adjacent(self) -> None:
-        """Touching but not overlapping → area = 0."""
+    def test_p1_touching_returns_min_penalty(self) -> None:
+        """Touching (shared edge) → minimum penalty area = 1.0.
+
+        ``_LabelPlacement.overlaps`` uses strict-less-than separation, so
+        two AABBs that share an edge are considered overlapping.
+        ``_aabb_intersect_area`` mirrors that by returning at least 1.0 for
+        any touching-or-overlapping pair (inclusive boundary, spec §5.2).
+        """
         # Pill centred at (100,100), 60×20 → right edge at x=130.
-        # Obstacle centred at (160, 100) → left edge at x=130.  Touch, no overlap.
+        # Obstacle centred at (160, 100) → left edge at x=130.  Edges touch.
         obs = _pill_obs(cx=160.0, cy=100.0, w=60.0, h=20.0)
         area = _h._aabb_intersect_area(obs, 100.0, 100.0, 60.0, 20.0)
-        assert area == 0.0
+        assert area == 1.0
 
 
 class TestP2Displace:

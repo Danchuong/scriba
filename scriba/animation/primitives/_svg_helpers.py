@@ -295,8 +295,14 @@ def _aabb_intersect_area(
 ) -> float:
     """Return the overlap area (px²) between *obs* AABB and the candidate pill.
 
-    Returns 0.0 when there is no intersection.  Closed-form; no branching on
-    floating-point equality (spec §4.1).
+    Returns 0.0 when there is no intersection.
+
+    Uses an inclusive boundary convention matching ``_LabelPlacement.overlaps``:
+    two AABBs that share an edge (touching) are considered overlapping.  When
+    the geometric overlap area is exactly 0.0 (touching) a minimum penalty of
+    1.0 px² is returned so that ``_W_OVERLAP * 1.0 * kind_weight`` provides a
+    non-trivial penalty and the scorer avoids touching positions, consistent
+    with the old boolean ``overlaps()`` behaviour (spec §5.2 pill-equivalence).
     """
     half_pw = pill_w / 2.0
     half_ph = pill_h / 2.0
@@ -306,9 +312,13 @@ def _aabb_intersect_area(
     overlap_x = min(cx + half_pw, obs.x + half_ow) - max(cx - half_pw, obs.x - half_ow)
     overlap_y = min(cy + half_ph, obs.y + half_oh) - max(cy - half_ph, obs.y - half_oh)
 
-    if overlap_x <= 0.0 or overlap_y <= 0.0:
+    # Strictly disjoint — no overlap and not touching.
+    if overlap_x < 0.0 or overlap_y < 0.0:
         return 0.0
-    return overlap_x * overlap_y
+    # Touching (overlap == 0 on one axis) or truly overlapping.
+    # Return at least 1.0 to match inclusive-boundary overlaps() semantics.
+    true_area = overlap_x * overlap_y
+    return true_area if true_area >= 1.0 else 1.0
 
 
 def boundary_clearance(
@@ -1365,43 +1375,57 @@ def emit_plain_arrow_svg(
         # MW-1: Extract side hint from annotation for half-plane preference.
         anchor_side = ann.get("side") or ann.get("position") or None
 
+        # v0.12.0 W1: Replace boolean overlaps() first-fit with _pick_best_candidate
+        # argmin (spec §1.3 commit 4).
         collision_unresolved = False
         if placed_labels is not None:
-            # HIGH #2: initial candidate uses center-corrected y so overlap
-            # geometry during nudge matches the registered placement geometry.
+            # HIGH #2: candidate_y carries the -0.3 centre-correction so the
+            # registered geometry matches the rendered pill position.
             candidate_y = final_y - l_font_px * 0.3
-            candidate = _LabelPlacement(
-                x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
+
+            # Entry shim: convert placed labels to obstacle tuple (§1.3).
+            _obstacles: tuple[_Obstacle, ...] = tuple(
+                _lp_to_obstacle(p) for p in placed_labels
             )
-            if not any(candidate.overlaps(p) for p in placed_labels):
-                pass  # natural position is free — no nudge needed
-            else:
-                # MW-1: 8-direction grid search at 4 step sizes (32 candidates).
-                resolved = False
-                for ndx, ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
-                    test = _LabelPlacement(
-                        x=final_x + ndx,
-                        y=candidate_y + ndy,
-                        width=float(pill_w),
-                        height=float(pill_h),
-                    )
-                    if not any(test.overlaps(p) for p in placed_labels):
-                        candidate = test
-                        resolved = True
-                        break
-                if not resolved:
-                    # QW-2: all 32 candidates exhausted — keep last position.
-                    collision_unresolved = True
-            final_x = candidate.x
+
+            # Build ScoreContext.  Plain-arrow has no src→dst arc vector.
+            _ctx = _ScoreContext(
+                natural_x=final_x,
+                natural_y=candidate_y,
+                pill_w=float(pill_w),
+                pill_h=float(pill_h),
+                side_hint=anchor_side if anchor_side in ("left", "right", "above", "below") else None,
+                arc_direction=(0.0, 0.0),
+                color_token=color,
+                viewbox_w=float(ix2) * 4 + float(pill_w),   # generous bound; no viewbox param here
+                viewbox_h=float(iy2) * 4 + float(pill_h),
+            )
+
+            # Build candidate list: natural + 32 nudges (no clamp — emit functions
+            # do not have viewbox bounds; use post-scoring clamped_x for registration).
+            _nat_candidates: list[tuple[float, float]] = [(final_x, candidate_y)]
+            for _ndx, _ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
+                _nat_candidates.append((final_x + _ndx, candidate_y + _ndy))
+            _cands = tuple(_nat_candidates)
+
+            _best_cx, _best_cy, _best_score = _pick_best_candidate(_cands, _obstacles, _ctx)
+            candidate_obj = _LabelPlacement(
+                x=_best_cx, y=_best_cy, width=float(pill_w), height=float(pill_h),
+            )
+            collision_unresolved = (
+                _best_score == float("inf") or _best_score > _DEGRADED_SCORE_THRESHOLD
+            )
+
+            final_x = candidate_obj.x
             # Reconstruct render y from candidate y (which carries the -0.3 correction).
-            final_y = candidate.y + l_font_px * 0.3
-            # QW-3: register the clamped x so collision avoidance for
-            # subsequent labels uses the same coordinate as rendering.
+            final_y = candidate_obj.y + l_font_px * 0.3
+            # QW-3: register clamped x so collision avoidance for subsequent
+            # labels uses the same coordinate as rendering.
             clamped_x = max(final_x, pill_w / 2)
-            # QW-1: register y = candidate.y (already = final_y - l_font_px*0.3).
+            # QW-1: register y = candidate_obj.y (= final_y - l_font_px*0.3).
             placed_labels.append(_LabelPlacement(
                 x=clamped_x,
-                y=candidate.y,
+                y=candidate_obj.y,
                 width=float(pill_w),
                 height=float(pill_h),
             ))
@@ -1765,44 +1789,58 @@ def emit_arrow_svg(
                 # Vertical-ish arc: prefer RIGHT.
                 anchor_side = "right"
 
-        # Collision avoidance
+        # v0.12.0 W1: Replace boolean overlaps() first-fit with _pick_best_candidate
+        # argmin (spec §1.3 commit 4).
         collision_unresolved = False
         if placed_labels is not None:
-            # HIGH #2: initial candidate uses center-corrected y so overlap
-            # geometry during nudge matches the registered placement geometry.
+            # HIGH #2: candidate_y carries the -0.3 centre-correction so the
+            # registered geometry matches the rendered pill position.
             candidate_y = final_y - l_font_px * 0.3
-            candidate = _LabelPlacement(
-                x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
-            )
-            if not any(candidate.overlaps(p) for p in placed_labels):
-                pass  # natural position is free — no nudge needed
-            else:
-                # MW-1: 8-direction grid search at 4 step sizes (32 candidates).
-                resolved = False
-                for ndx, ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
-                    test = _LabelPlacement(
-                        x=final_x + ndx,
-                        y=candidate_y + ndy,
-                        width=float(pill_w),
-                        height=float(pill_h),
-                    )
-                    if not any(test.overlaps(p) for p in placed_labels):
-                        candidate = test
-                        resolved = True
-                        break
-                if not resolved:
-                    # QW-2: all 32 candidates exhausted — keep last position.
-                    collision_unresolved = True
 
-            final_x = candidate.x
+            # Entry shim: convert placed labels to obstacle tuple (§1.3).
+            _obstacles: tuple[_Obstacle, ...] = tuple(
+                _lp_to_obstacle(p) for p in placed_labels
+            )
+
+            # Arc direction unit vector for P6 (reading_flow) term.
+            _arc_dist = dist  # already computed as sqrt(dx²+dy²) above; ≥1.0
+            _arc_dir: tuple[float, float] = (dx / _arc_dist, dy / _arc_dist)
+
+            _ctx = _ScoreContext(
+                natural_x=final_x,
+                natural_y=candidate_y,
+                pill_w=float(pill_w),
+                pill_h=float(pill_h),
+                side_hint=anchor_side if anchor_side in ("left", "right", "above", "below") else None,
+                arc_direction=_arc_dir,
+                color_token=color,
+                viewbox_w=max(float(ix2), float(ix1)) * 4 + float(pill_w),
+                viewbox_h=max(float(iy2), float(iy1)) * 4 + float(pill_h),
+            )
+
+            # Build candidate list: natural + 32 nudges.
+            _ea_candidates: list[tuple[float, float]] = [(final_x, candidate_y)]
+            for _ndx, _ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
+                _ea_candidates.append((final_x + _ndx, candidate_y + _ndy))
+            _cands = tuple(_ea_candidates)
+
+            _best_cx, _best_cy, _best_score = _pick_best_candidate(_cands, _obstacles, _ctx)
+            candidate_obj = _LabelPlacement(
+                x=_best_cx, y=_best_cy, width=float(pill_w), height=float(pill_h),
+            )
+            collision_unresolved = (
+                _best_score == float("inf") or _best_score > _DEGRADED_SCORE_THRESHOLD
+            )
+
+            final_x = candidate_obj.x
             # Reconstruct render y from candidate y (which carries the -0.3 correction).
-            final_y = candidate.y + l_font_px * 0.3
+            final_y = candidate_obj.y + l_font_px * 0.3
             # QW-3: register clamped x so subsequent labels check the right coord.
             clamped_x = max(final_x, pill_w / 2)
-            # QW-1: register y = candidate.y (already = final_y - l_font_px*0.3).
+            # QW-1: register y = candidate_obj.y (= final_y - l_font_px*0.3).
             placed_labels.append(_LabelPlacement(
                 x=clamped_x,
-                y=candidate.y,
+                y=candidate_obj.y,
                 width=float(pill_w),
                 height=float(pill_h),
             ))
