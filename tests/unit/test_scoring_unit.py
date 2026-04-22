@@ -83,6 +83,7 @@ def _make_ctx(
     color_token: str = "info",
     viewbox_w: float = 600.0,
     viewbox_h: float = 400.0,
+    flow: "_h.FlowDirection | None" = None,
 ) -> _h._ScoreContext:
     return _h._ScoreContext(
         natural_x=natural_x,
@@ -94,6 +95,7 @@ def _make_ctx(
         color_token=color_token,
         viewbox_w=viewbox_w,
         viewbox_h=viewbox_h,
+        flow=flow,
     )
 
 
@@ -276,6 +278,48 @@ class TestP7EdgeOcclusion:
         pill_diagonal = math.hypot(60.0, 20.0)
         p7 = clip / pill_diagonal
         assert p7 == pytest.approx(40.0 / pill_diagonal, rel=1e-6)
+
+
+class TestP7FlowGatedAnnotationArrowScale:
+    """Phase D/4: annotation_arrow P7 × 0.75 when ctx.flow is not None."""
+
+    def _ann_obs(
+        self, x0: float, y0: float, x1: float, y1: float
+    ) -> _h._Obstacle:
+        return _h._Obstacle(
+            kind="annotation_arrow", x=x0, y=y0, width=0.0, height=0.0,
+            x2=x1, y2=y1, severity="SHOULD",  # type: ignore[arg-type]
+        )
+
+    def test_flow_none_no_scale(self) -> None:
+        """ctx.flow=None → annotation_arrow P7 uses full _W_EDGE_OCCLUSION."""
+        obs = self._ann_obs(80.0, 100.0, 120.0, 100.0)
+        ctx_plain = _make_ctx(natural_x=100.0, natural_y=100.0, flow=None)
+        score = _h._score_candidate(100.0, 100.0, (obs,), ctx_plain)
+        assert math.isfinite(score)
+        # Saturated P7 = 1.0 → _W_EDGE_OCCLUSION * 1.0 = 40.0.
+        # Add other penalties: P4 = (1 - info_rank/5) * _W_SEMANTIC is constant.
+        # Just assert the difference vs flow=RIGHTWARD matches the 0.25 × 40.
+        ctx_flow = _make_ctx(
+            natural_x=100.0, natural_y=100.0, flow=_h.FlowDirection.RIGHTWARD
+        )
+        score_flow = _h._score_candidate(100.0, 100.0, (obs,), ctx_flow)
+        assert score - score_flow == pytest.approx(
+            _h._W_EDGE_OCCLUSION * 0.25, abs=1e-6
+        )
+
+    def test_flow_set_scales_annotation_arrow_only(self) -> None:
+        """Only annotation_arrow obstacles are scaled; plain segments stay at 1.0."""
+        seg = _seg_obs(80.0, 100.0, 120.0, 100.0, severity="SHOULD")
+        ctx_none = _make_ctx(natural_x=100.0, natural_y=100.0, flow=None)
+        ctx_flow = _make_ctx(
+            natural_x=100.0, natural_y=100.0, flow=_h.FlowDirection.RIGHTWARD
+        )
+        # Non-annotation-arrow segment: flow should make zero difference.
+        assert (
+            _h._score_candidate(100.0, 100.0, (seg,), ctx_none)
+            == _h._score_candidate(100.0, 100.0, (seg,), ctx_flow)
+        )
 
 
 class TestMustHardBlock:

@@ -477,6 +477,10 @@ class _ScoreContext:
     color_token: str
     viewbox_w: float
     viewbox_h: float
+    # Phase D/4 (v0.14.0): grid-aware flow sector. Non-None when the caller
+    # supplied ``cell_metrics`` (i.e. grid context available). Drives P7
+    # annotation-arc scale-down; reserved for future P2 side_hint refinement.
+    flow: "FlowDirection | None" = None
 
 
 # ---------------------------------------------------------------------------
@@ -733,11 +737,18 @@ def _score_candidate(
     # staying on a clipping arrow (cost 40+), which was the root cause of
     # pills overlapping annotation-arrow strokes (R-31 ext, §P7-saturate).
     pill_short = min(pill_w, pill_h)
+    # Phase D/4 (v0.14.0): when grid context is available (ctx.flow is not None),
+    # scale the annotation_arrow P7 contribution by 0.75.  The stagger-flip in
+    # _compute_control_points distributes alternating arcs to opposite perp
+    # sides, reducing expected cross-occlusion on 2D stacks.  Non-arrow segment
+    # kinds (edges, axes, …) stay at 1.0.
+    _flow_p7_scale = 0.75 if ctx.flow is not None else 1.0
     if pill_short > 0.0:
         p7 = sum(
             min(1.0, _segment_rect_clip_length(
                 obs.x, obs.y, obs.x2, obs.y2, cx, cy, pill_w, pill_h
             ) / pill_short)
+            * (_flow_p7_scale if obs.kind == "annotation_arrow" else 1.0)
             for obs in obstacles
             if obs.kind in _SEGMENT_KINDS
         )
@@ -2050,6 +2061,8 @@ def _emit_label_and_pill(
     placed_labels: "list[_LabelPlacement] | None",
     primitive_obstacles: "tuple[_Obstacle, ...] | None",
     _debug_capture: "dict[str, Any] | None",
+    *,
+    cell_metrics: "CellMetrics | None" = None,
 ) -> None:
     """Emit pill background, leader line (when needed), and label text.
 
@@ -2131,6 +2144,14 @@ def _emit_label_and_pill(
         _arc_dist = dist  # already computed as sqrt(dx²+dy²) above; ≥1.0
         _arc_dir: tuple[float, float] = (dx / _arc_dist, dy / _arc_dist)
 
+        # Phase D/4 (v0.14.0): classify grid-aware flow when cell_metrics
+        # is available.  Non-None value enables the P7 annotation_arrow
+        # scale-down (× 0.75) in _score_candidate.
+        _flow_hint = (
+            classify_flow(dx, dy, cell_metrics)
+            if cell_metrics is not None else None
+        )
+
         _ctx = _ScoreContext(
             natural_x=final_x,
             natural_y=candidate_y,
@@ -2141,6 +2162,7 @@ def _emit_label_and_pill(
             color_token=color,
             viewbox_w=max(float(ix2), float(ix1)) * 4 + float(pill_w),
             viewbox_h=max(float(iy2), float(iy1)) * 4 + float(pill_h),
+            flow=_flow_hint,
         )
 
         # Build candidate list: natural + 32 nudges.
@@ -2494,6 +2516,7 @@ def emit_arrow_svg(
             placed_labels=placed_labels,
             primitive_obstacles=primitive_obstacles,
             _debug_capture=_debug_capture,
+            cell_metrics=cell_metrics,
         )
 
     lines.append("  </g>")
