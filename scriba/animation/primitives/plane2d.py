@@ -36,6 +36,7 @@ from scriba.animation.primitives._svg_helpers import (
     emit_position_label_svg,
     _place_pill,
 )
+from scriba.animation.primitives._obstacle_types import ObstacleSegment
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
 
 __all__ = ["Plane2D"]
@@ -1170,12 +1171,127 @@ class Plane2D(PrimitiveBase):
 
         return "".join(parts)
 
-    # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------
+    # -- obstacle protocol (v0.12.0 W3-α) ------------------------------------
 
     def resolve_obstacle_boxes(self) -> list:
         """Return AABB obstacles for the current frame. Stub — returns []."""
         return []
 
-    def resolve_obstacle_segments(self) -> list:
-        """Return segment obstacles for the current frame. Stub — returns []."""
-        return []
+    def resolve_obstacle_segments(self) -> list[ObstacleSegment]:
+        """Return segment obstacles for the current frame (R-31).
+
+        Returns all plotted lines (``p.line[*]``) and axis spines in SVG
+        pixel coordinates (the same coordinate space as pill placements).
+
+        Segment state mapping:
+            ``"current"`` → severity ``"MUST"`` (hard-block in scoring)
+            all other visible states → severity ``"SHOULD"``
+
+        Coordinate space: endpoints are computed via :meth:`math_to_svg` so
+        they live in SVG user-coordinate space, matching the space used by
+        ``_LabelPlacement.x/y`` and ``_score_candidate``.
+
+        Ordering (stable, D-1 deterministic):
+            1. Plotted lines in index order (``line[0]``, ``line[1]``, …).
+            2. Axis spines (X-spine then Y-spine) if ``self.axes`` is True.
+
+        Hidden lines and tombstoned slots are skipped.
+        """
+        segments: list[ObstacleSegment] = []
+
+        # --- 1. Plotted lines (p.line[*]) ---
+        for i, ln in enumerate(self.lines):
+            if ln is _TOMBSTONE:
+                continue
+            suffix = f"line[{i}]"
+            state = self.get_state(suffix)
+            if state == "hidden":
+                continue
+
+            slope = ln["slope"]
+            intercept_val = ln["intercept"]
+
+            if math.isinf(slope):
+                # Vertical line x = intercept_val
+                x_val = intercept_val
+                if not (self.xrange[0] <= x_val <= self.xrange[1]):
+                    continue
+                endpoints: tuple[tuple[float, float], tuple[float, float]] = (
+                    (x_val, self.yrange[0]),
+                    (x_val, self.yrange[1]),
+                )
+            else:
+                result = clip_line_to_viewport(
+                    slope, intercept_val, self.xrange, self.yrange
+                )
+                if result is None:
+                    continue
+                endpoints = result
+
+            (mx0, my0), (mx1, my1) = endpoints
+            sx0, sy0 = self.math_to_svg(mx0, my0)
+            sx1, sy1 = self.math_to_svg(mx1, my1)
+
+            # Map state → state literal for ObstacleSegment
+            obs_state: str
+            if state == "current":
+                obs_state = "current"
+            elif state in ("dim",):
+                obs_state = "dim"
+            elif state in ("done",):
+                obs_state = "done"
+            else:
+                obs_state = "default"
+
+            severity = "MUST" if obs_state == "current" else "SHOULD"
+
+            segments.append(
+                ObstacleSegment(
+                    kind="plot_line",
+                    x0=sx0,
+                    y0=sy0,
+                    x1=sx1,
+                    y1=sy1,
+                    state=obs_state,  # type: ignore[arg-type]
+                    severity=severity,  # type: ignore[arg-type]
+                )
+            )
+
+        # --- 2. Axis spines (kind="axis_tick", severity always "SHOULD") ---
+        if self.axes:
+            xmin, xmax = self.xrange
+            ymin, ymax = self.yrange
+
+            # X-axis spine: y = 0 clamped to viewport
+            y_axis_math = max(ymin, min(0.0, ymax))
+            sx_left, sy_xaxis = self.math_to_svg(xmin, y_axis_math)
+            sx_right, _ = self.math_to_svg(xmax, y_axis_math)
+            segments.append(
+                ObstacleSegment(
+                    kind="axis_tick",
+                    x0=sx_left,
+                    y0=sy_xaxis,
+                    x1=sx_right,
+                    y1=sy_xaxis,
+                    state="default",
+                    severity="SHOULD",
+                )
+            )
+
+            # Y-axis spine: x = 0 clamped to viewport
+            x_axis_math = max(xmin, min(0.0, xmax))
+            sx_yaxis, sy_bottom = self.math_to_svg(x_axis_math, ymin)
+            _, sy_top = self.math_to_svg(x_axis_math, ymax)
+            segments.append(
+                ObstacleSegment(
+                    kind="axis_tick",
+                    x0=sx_yaxis,
+                    y0=sy_bottom,
+                    x1=sx_yaxis,
+                    y1=sy_top,
+                    state="default",
+                    severity="SHOULD",
+                )
+            )
+
+        return segments

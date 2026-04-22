@@ -132,8 +132,13 @@ class TestAllPrimitivesHaveResolveObstacleSegments:
 
 
 # ---------------------------------------------------------------------------
-# Test: stubs return empty list
+# Test: stubs return empty list (for primitives still on W0-[A] stubs)
 # ---------------------------------------------------------------------------
+
+# Plane2D gained a real resolve_obstacle_segments in v0.12.0 W3-α —
+# it returns axis spines + plot lines.  It is excluded from the
+# "stubs return empty" check below.
+_SEGMENT_STUBS: list[type] = [c for c in _ALL_PRIMITIVE_CLASSES if c is not Plane2D]
 
 
 class TestStubsReturnEmptyList:
@@ -145,13 +150,28 @@ class TestStubsReturnEmptyList:
             f"{cls.__name__}.resolve_obstacle_boxes() returned {result!r}, expected []"
         )
 
-    @pytest.mark.parametrize("cls", _ALL_PRIMITIVE_CLASSES, ids=lambda c: c.__name__)
+    @pytest.mark.parametrize("cls", _SEGMENT_STUBS, ids=lambda c: c.__name__)
     def test_resolve_obstacle_segments_returns_empty(self, cls: type) -> None:
+        """Non-Plane2D primitives are still on W0-[A] stubs — must return []."""
         inst = _make_instance(cls)
         result = inst.resolve_obstacle_segments()
         assert result == [], (
             f"{cls.__name__}.resolve_obstacle_segments() returned {result!r}, expected []"
         )
+
+    def test_plane2d_resolve_obstacle_segments_returns_list_of_obstacle_segment(
+        self,
+    ) -> None:
+        """Plane2D.resolve_obstacle_segments has a real implementation (W3-α)."""
+        from scriba.animation.primitives._obstacle_types import ObstacleSegment
+
+        inst = _make_instance(Plane2D)
+        result = inst.resolve_obstacle_segments()
+        assert isinstance(result, list)
+        for seg in result:
+            assert isinstance(seg, ObstacleSegment), (
+                f"Expected ObstacleSegment, got {type(seg)!r}"
+            )
 
 
 # ---------------------------------------------------------------------------
