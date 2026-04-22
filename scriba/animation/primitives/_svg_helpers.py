@@ -291,7 +291,7 @@ _SEMANTIC_RANK_DEFAULT: int = 2
 
 # Frozen scoring weights — captured at import time (D-1, §4.4).
 _W_OVERLAP: float       = _parse_weight_override("overlap",       10.0)
-_W_DISPLACE: float      = _parse_weight_override("displace",       1.0)
+_W_DISPLACE: float      = _parse_weight_override("displace",       2.0)
 _W_SIDE_HINT: float     = _parse_weight_override("side_hint",      5.0)
 _W_SEMANTIC: float      = _parse_weight_override("semantic",       2.0)
 _W_WHITESPACE: float    = _parse_weight_override("whitespace",     0.3)
@@ -299,7 +299,12 @@ _W_READING_FLOW: float  = _parse_weight_override("reading_flow",   0.8)
 _W_EDGE_OCCLUSION: float = _parse_weight_override("edge_occlusion", 40.0)
 
 # Score threshold above which R-19 degraded-placement warning fires.
-_DEGRADED_SCORE_THRESHOLD: float = 50.0
+# Raised from 50.0 → 200.0 when _W_DISPLACE was bumped 1.0→2.0 and the P1
+# touch sentinel was bumped 1.0→3.0: the farthest clear nudge candidate can
+# legitimately score up to ~135.6 pt (_W_DISPLACE×67px), so 200.0 keeps a
+# comfortable gap above that while staying far below fully-blocked scores
+# (≥ 10 000 pt when all candidates overlap).
+_DEGRADED_SCORE_THRESHOLD: float = 200.0
 
 
 @dataclass(frozen=True)
@@ -365,9 +370,11 @@ def _aabb_intersect_area(
     Uses an inclusive boundary convention matching ``_LabelPlacement.overlaps``:
     two AABBs that share an edge (touching) are considered overlapping.  When
     the geometric overlap area is exactly 0.0 (touching) a minimum penalty of
-    1.0 px² is returned so that ``_W_OVERLAP * 1.0 * kind_weight`` provides a
-    non-trivial penalty and the scorer avoids touching positions, consistent
-    with the old boolean ``overlaps()`` behaviour (spec §5.2 pill-equivalence).
+    3.0 px² (the "touch sentinel") is returned so that
+    ``_W_OVERLAP * 3.0 * kind_weight`` provides a penalty that exceeds the P2
+    displacement cost for a 0.5×pill_h gap, preserving "clear > touch"
+    preference (spec §5.2 pill-equivalence; sentinel raised 1.0→3.0 when
+    _W_DISPLACE was raised from 1.0→2.0).
     """
     half_pw = pill_w / 2.0
     half_ph = pill_h / 2.0
@@ -381,9 +388,14 @@ def _aabb_intersect_area(
     if overlap_x < 0.0 or overlap_y < 0.0:
         return 0.0
     # Touching (overlap == 0 on one axis) or truly overlapping.
-    # Return at least 1.0 to match inclusive-boundary overlaps() semantics.
+    # Return at least 3.0 (the "touch sentinel") so that
+    # ``_W_OVERLAP (10) × 3.0 × kind_weight (1.0)`` = 30 pt for a
+    # boundary-touching candidate, which exceeds the P2 displacement cost of
+    # ``_W_DISPLACE (2.0) × 9.5 px`` ≈ 19 pt for a 0.5×pill_h gap.
+    # This preserves the "clear > touch" preference after _W_DISPLACE was
+    # raised from 1.0 → 2.0.  (spec §5.2 pill-equivalence; sentinel 1.0→3.0)
     true_area = overlap_x * overlap_y
-    return true_area if true_area >= 1.0 else 1.0
+    return true_area if true_area >= 3.0 else 3.0
 
 
 def boundary_clearance(
@@ -1789,12 +1801,17 @@ def emit_arrow_svg(
     dy = y2 - y1
     dist = math.sqrt(dx * dx + dy * dy) or 1.0
 
-    # Control points: sqrt-scaled curve height capped at 1.2x cell height,
-    # with compact stagger for multiple arrows targeting the same cell.
-    h_dist = abs(x2 - x1) + abs(y2 - y1)
-    base_offset = min(cell_height * 1.2, max(cell_height * 0.5, math.sqrt(h_dist) * 2.5))
+    # Control points: sqrt-scaled curve height. Cap floor is 1.2*cell_height
+    # but scales with euclidean distance for long cross-grid arrows so they do
+    # not appear straight (was flat cap pre-v0.12.0 tuning wave #1).
+    # Euclidean instead of Manhattan so diagonals aren't over-puffed by ~sqrt(2).
+    # Stagger separates multiple arrows targeting the same cell; capped so
+    # dense stacks don't fly off-canvas.
+    euclid = math.hypot(x2 - x1, y2 - y1)
+    cap = max(cell_height * 1.2, euclid * 0.18)
+    base_offset = min(cap, max(cell_height * 0.5, math.sqrt(euclid) * 2.5))
     stagger = cell_height * 0.3
-    total_offset = base_offset + arrow_index * stagger
+    total_offset = base_offset + min(arrow_index, 4) * stagger
 
     if layout == "2d":
         # Perpendicular Bezier: curve away from the connecting line
@@ -2089,7 +2106,12 @@ def emit_arrow_svg(
         )
         _leader_threshold = max(float(pill_h), _LEADER_DISPLACEMENT_THRESHOLD)
         _leader_color_gate = color in {"warn", "error"}  # R-27
-        if displacement > _leader_threshold and _leader_color_gate:
+        # R-27b: also emit leader for info/neutral when displacement is clearly
+        # far (>1.0×pill_h). Bypasses the _LEADER_DISPLACEMENT_THRESHOLD=20
+        # floor so mid-sized pills (pill_h~19) still trigger. Caveat: avoids
+        # declutter regression on small nudges.
+        _leader_far = displacement >= float(pill_h) * 1.0
+        if (_leader_color_gate and displacement > _leader_threshold) or _leader_far:
             # R-08: leader endpoint at pill perimeter, not pill centre.
             _pill_cx = float(fi_x)
             _pill_cy = float(fi_y - l_font_px * 0.3)  # centre of rendered pill

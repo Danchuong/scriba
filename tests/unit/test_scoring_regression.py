@@ -98,12 +98,12 @@ SCORE_SNAPSHOTS: dict[str, dict[str, object]] = {
     # Single label above cell centre; no placed labels; natural position wins.
     "no-collision": {
         "min_score": 1.2,          # W_SEMANTIC*(1-2/5) = 2*0.6 = 1.2; P2=0, P3=0, P5=0, P6=0, P7=0
-        "max_score": 68.4,         # updated for 6-step (48 candidate) grid; ±5% tolerance
+        "max_score": 135.55,       # P2=2.0 rebalance: farthest candidates cost ~2× more; ±5% tolerance
         "winner_index": 0,         # natural position (index 0) is best
     },
     # Two labels at the same natural position; second must be nudged away.
     "one-collision": {
-        "min_score": 29.7,         # best non-overlapping+non-touching candidate score
+        "min_score": 58.2,         # best non-overlapping+non-touching candidate score (P1 touch sentinel 1.0→3.0)
         "max_score": 7601.2,       # worst (fully overlapping); ±5% tolerance
         "winner_index": 22,        # first nudge direction that fully clears the obstacle
     },

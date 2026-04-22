@@ -310,9 +310,10 @@ class TestMultiAnnotationConvergence:
                 # Approximate arc control points (same formula as emit_arrow_svg).
                 x1, y1 = float(src[0]), float(src[1])
                 x2, y2 = float(dst2[0]), float(dst2[1])
-                h_dist = abs(x2 - x1) + abs(y2 - y1)
-                base_off = min(_CELL_H * 1.2,
-                               max(_CELL_H * 0.5, math.sqrt(h_dist) * 2.5))
+                euclid = math.hypot(x2 - x1, y2 - y1)
+                cap = max(_CELL_H * 1.2, euclid * 0.18)
+                base_off = min(cap,
+                               max(_CELL_H * 0.5, math.sqrt(euclid) * 2.5))
                 mid_x = (x1 + x2) / 2
                 mid_y = min(y1, y2) - base_off
                 cx1 = (x1 + mid_x) / 2

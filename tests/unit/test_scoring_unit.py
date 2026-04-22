@@ -143,18 +143,21 @@ class TestP1OverlapArea:
         assert _h._KIND_WEIGHT["target_cell"] == 3.0
 
     def test_p1_touching_returns_min_penalty(self) -> None:
-        """Touching (shared edge) → minimum penalty area = 1.0.
+        """Touching (shared edge) → minimum penalty area = 3.0 (touch sentinel).
 
         ``_LabelPlacement.overlaps`` uses strict-less-than separation, so
         two AABBs that share an edge are considered overlapping.
-        ``_aabb_intersect_area`` mirrors that by returning at least 1.0 for
+        ``_aabb_intersect_area`` mirrors that by returning at least 3.0 for
         any touching-or-overlapping pair (inclusive boundary, spec §5.2).
+        Sentinel raised 1.0→3.0 so that touching cost (30 pt) > P2 cost for a
+        0.5×pill_h displacement (≈19 pt) after _W_DISPLACE was raised 1.0→2.0.
+        (P1 touch sentinel 1.0→3.0)
         """
         # Pill centred at (100,100), 60×20 → right edge at x=130.
         # Obstacle centred at (160, 100) → left edge at x=130.  Edges touch.
         obs = _pill_obs(cx=160.0, cy=100.0, w=60.0, h=20.0)
         area = _h._aabb_intersect_area(obs, 100.0, 100.0, 60.0, 20.0)
-        assert area == 1.0
+        assert area == 3.0  # (P1 touch sentinel 1.0→3.0)
 
 
 class TestP2Displace:
@@ -358,7 +361,7 @@ class TestWeightsFrozen:
         if os.environ.get("SCRIBA_LABEL_WEIGHTS"):
             pytest.skip("SCRIBA_LABEL_WEIGHTS is set — weight override active")
         assert _h._W_OVERLAP       == 10.0
-        assert _h._W_DISPLACE      ==  1.0
+        assert _h._W_DISPLACE      ==  2.0   # P2-rebalance: prefer tighter candidates post-grid-48
         assert _h._W_SIDE_HINT     ==  5.0
         assert _h._W_SEMANTIC      ==  2.0
         assert _h._W_WHITESPACE    ==  0.3

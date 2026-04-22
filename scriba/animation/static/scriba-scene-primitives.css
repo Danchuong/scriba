@@ -333,10 +333,17 @@
 
 /* -- Cell (Array, Grid, DPTable) --------------------------- */
 /* :where() zeroes the qualifying specificity so .scriba-state-* rules
- * (specificity 0,1,1) always win for fill / stroke / stroke-width. */
-:where([data-primitive="array"]  > [data-target]) > rect,
-:where([data-primitive="grid"]   > [data-target]) > rect,
-:where([data-primitive="dptable"] > [data-target]) > rect {
+ * (specificity 0,1,1) always win for fill / stroke / stroke-width.
+ *
+ * Descendant combinator (space) instead of ``>`` for the outer step so an
+ * intermediate ``<g transform="translate(...)">`` wrapper added by
+ * ``ArrayPrimitive`` when annotations need headroom (array.py:161-163) does
+ * not break the cell rx / stroke-linecap / stroke-linejoin chain. Same class
+ * as Bug C / D in the Wave 8 audit — the text rule below got fixed, this one
+ * was missed, so annotated rows rendered as sharp-cornered rects. */
+:where([data-primitive="array"]   [data-target]) > rect,
+:where([data-primitive="grid"]    [data-target]) > rect,
+:where([data-primitive="dptable"] [data-target]) > rect {
   fill:            var(--scriba-state-idle-fill);
   stroke:          var(--scriba-state-idle-stroke);
   stroke-width:    var(--scriba-cell-stroke-width);

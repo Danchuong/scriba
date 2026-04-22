@@ -60,6 +60,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   participates in P7 edge-occlusion scoring and is excluded from P1 AABB area and
   `boundary_clearance` AABB loop.
 
+### Changed (scoring tuning)
+
+- `_W_DISPLACE` raised `1.0 → 2.0` (prefer tighter-to-natural candidates post-nudge-48).
+- P1 touch sentinel raised `1.0 → 3.0` so touching cost (~30 pt) exceeds P2 displacement
+  cost for a 0.5×pill_h gap (~19 pt) after `_W_DISPLACE` bump.
+- `_DEGRADED_SCORE_THRESHOLD` raised `50.0 → 200.0` (farthest clear nudge can score
+  ~135.6 pt after `_W_DISPLACE` bump; 200.0 keeps gap below fully-blocked ≥10 000 pt).
+- **P7**: `_W_EDGE_OCCLUSION` weight `8.0 → 40.0`, saturated against pill short-side so
+  arrows grazing long pills don't dominate scoring.
+- `_nudge_candidates`: expanded 4 steps (32 candidates) → 6 steps (48 candidates) to
+  clear dense annotation stacks (`convex_hull_trick` step 5).
+
+### Fixed
+
+- `emit_arrow_svg`: curve-height math replaced Manhattan with Euclidean distance
+  (fixes diagonal over-puff ~√2×); cap now scales with distance (`max(1.2×cell_h,
+  0.18×euclid)`) so long cross-grid arrows curve visibly instead of rendering
+  near-straight; stagger for same-target arrows capped at `min(arrow_index, 4)` so
+  dense stacks don't fly off-canvas.
+- **R-27b**: leader line now also emits when displacement ≥ `pill_h` for any color
+  (bypasses the `_LEADER_DISPLACEMENT_THRESHOLD=20` floor so mid-sized pills with
+  `pill_h~19` still trigger), in addition to the prior `warn`/`error`-only gate.
+- CSS: `array` / `grid` / `dptable` cell `rect` rules switched from child combinator
+  (`>`) to descendant combinator for the outer step, so an intermediate
+  `<g transform="translate(...)">` wrapper (added by `ArrayPrimitive` when annotations
+  need headroom) no longer breaks the cell `rx` / `stroke-linecap` / `stroke-linejoin`
+  chain. Same class as Bug C/D in the Wave 8 audit — text rule was fixed, this one
+  was missed, causing annotated rows to render as sharp-cornered rects.
+
+### Version
+
+- `scriba/_version.py`: `__version__` bumped `0.9.1 → 0.12.0`. `SCRIBA_VERSION`
+  unchanged at `3` (no core-API break; annotation scoring output bytes change, which
+  is captured by the golden re-pins in v0.11.0/v0.12.0 W3-α, not by `SCRIBA_VERSION`).
+
 ## [0.11.0] - 2026-04-22 — Smart-label v2.0.0 (W3 batch)
 
 ### Breaking
