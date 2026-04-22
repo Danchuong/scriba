@@ -15,6 +15,7 @@ call defeats overlap detection across annotation types.
 
 from __future__ import annotations
 
+import enum
 import logging
 import math
 import os
@@ -64,6 +65,10 @@ __all__ = [
     # R-31 ext: prior-annotation arrow-stroke obstacle sampling
     "_sample_arrow_segments",
     "_BEZIER_SAMPLE_N",
+    # Phase C (v0.13.0): grid-aware flow direction
+    "CellMetrics",
+    "FlowDirection",
+    "classify_flow",
 ]
 
 
@@ -349,6 +354,78 @@ _ARROW_STRETCH_MAX: float = 1000.0
 _ARROW_PERP_FLOOR_FACTOR: float = 0.5
 """Minimum perpendicular offset = ``cell_height * 0.5``; keeps short
 arrows visible even when ``arc * euclid`` is tiny."""
+
+
+# --- Phase C (v0.13.0): grid-aware flow direction ---
+# Primitives that render on a regular cell grid (Array, DPTable, Queue,
+# HashMap, LinkedList, …) pass CellMetrics to emit_arrow_svg so the
+# curve-direction helper can reason about motion in cell-space rather than
+# raw pixels. Non-grid primitives (Graph, Tree, Plane2D) pass None and
+# the classifier degrades to pure atan2.
+
+
+class CellMetrics(NamedTuple):
+    """Grid context for a single primitive at render time.
+
+    All values are in SVG pixels. ``origin_x``/``origin_y`` are the
+    top-left corner of cell[0][0] in the primitive's local coordinate
+    space (i.e. before any scene translate). For non-grid primitives,
+    pass ``cell_metrics=None`` instead of constructing a degenerate
+    instance.
+    """
+
+    cell_width: float
+    cell_height: float
+    grid_cols: int
+    grid_rows: int
+    origin_x: float
+    origin_y: float
+
+
+class FlowDirection(enum.IntEnum):
+    """8-way compass classification for a displacement vector.
+
+    Values match ``round(atan2(dy, dx) / (pi/4)) % 8`` with +y pointing
+    down (SVG convention). ``RIGHTWARD`` (0) is the safe default for
+    degenerate zero vectors.
+    """
+
+    RIGHTWARD = 0
+    SE = 1
+    DOWNWARD = 2
+    SW = 3
+    LEFTWARD = 4
+    NW = 5
+    UPWARD = 6
+    NE = 7
+
+
+def classify_flow(
+    dx: float,
+    dy: float,
+    cell_metrics: CellMetrics | None = None,
+) -> FlowDirection:
+    """Classify a displacement vector into one of 8 :class:`FlowDirection` sectors.
+
+    Zero vectors return :attr:`FlowDirection.RIGHTWARD` as a safe default.
+
+    When ``cell_metrics`` is supplied, the displacement is first normalised
+    by cell dimensions so sub-cell diagonals classify correctly on non-square
+    grids (e.g. DPTable 60×40). With ``cell_metrics=None``, pure pixel-space
+    atan2 is used and the Phase B behaviour is preserved exactly.
+    """
+    if dx == 0.0 and dy == 0.0:
+        return FlowDirection.RIGHTWARD
+    if cell_metrics is not None:
+        cw = cell_metrics.cell_width
+        ch = cell_metrics.cell_height
+        nx = dx / cw if cw else dx
+        ny = dy / ch if ch else dy
+    else:
+        nx, ny = dx, dy
+    angle = math.atan2(ny, nx)
+    sector = round(angle / (math.pi / 4)) % 8
+    return FlowDirection(sector)
 
 
 def _modulate(
