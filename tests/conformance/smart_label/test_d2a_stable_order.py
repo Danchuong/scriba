@@ -66,14 +66,14 @@ class TestInvD2NudgeSequenceDeterministic:
 
     @pytest.mark.conformance
     def test_inv_D2_yields_32_candidates(self) -> None:
-        """_nudge_candidates MUST yield exactly 32 candidates (8 dirs × 4 steps).
+        """_nudge_candidates MUST yield exactly 48 candidates (8 dirs × 6 steps).
 
         Spec §2.2 postconditions.
         """
         for side_hint in (None, "above", "below", "left", "right"):
             candidates = list(_nudge_candidates(60.0, 20.0, side_hint=side_hint))
-            assert len(candidates) == 32, (
-                f"Expected 32 candidates, got {len(candidates)} for "
+            assert len(candidates) == 48, (
+                f"Expected 48 candidates, got {len(candidates)} for "
                 f"side_hint={side_hint!r}. See spec §2.2."
             )
 

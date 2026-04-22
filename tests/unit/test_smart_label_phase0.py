@@ -120,7 +120,7 @@ class TestQW1PillYCenterRegistration:
 
 
 class TestQW2NoBlindUpNudge:
-    """When all 4 nudge directions collide, do NOT apply blind UP nudge.
+    """When all nudge candidates collide, do NOT apply blind UP nudge.
 
     Instead keep candidate at its last tested position and emit a
     <!-- scriba:label-collision id=... --> comment in the SVG output.
@@ -129,14 +129,26 @@ class TestQW2NoBlindUpNudge:
     def _build_blocker_ring(
         self, center_x: float, center_y: float, pill_w: float, pill_h: float
     ) -> list[_LabelPlacement]:
-        """Four placed labels blocking all 4 nudge directions from center."""
-        step = pill_h + 2
-        return [
-            _LabelPlacement(x=center_x, y=center_y - step, width=pill_w, height=pill_h),  # UP blocked
-            _LabelPlacement(x=center_x - step, y=center_y, width=pill_w, height=pill_h),  # LEFT blocked
-            _LabelPlacement(x=center_x + step, y=center_y, width=pill_w, height=pill_h),  # RIGHT blocked
-            _LabelPlacement(x=center_x, y=center_y + step, width=pill_w, height=pill_h),  # DOWN blocked
-        ]
+        """Dense grid of placed labels blocking all 48 nudge candidates from center.
+
+        Floods a region large enough to cover all step sizes (up to 2.5×pill_h in
+        each axis), ensuring collision_unresolved=True even with the expanded
+        48-candidate search (8 dirs × 6 steps).
+        """
+        blockers: list[_LabelPlacement] = []
+        # Cover ±3×pill_h in each direction with pill_h/2 spacing to ensure
+        # every candidate position (max offset = 2.5*pill_h*sqrt(2) ≈ 3.5*pill_h)
+        # is blocked.
+        spacing = pill_h * 0.4
+        reach = pill_h * 4.0
+        x = center_x - reach
+        while x <= center_x + reach:
+            y = center_y - reach
+            while y <= center_y + reach:
+                blockers.append(_LabelPlacement(x=x, y=y, width=pill_w, height=pill_h))
+                y += spacing
+            x += spacing
+        return blockers
 
     def test_plain_arrow_no_blind_up_nudge(self) -> None:
         """emit_plain_arrow_svg: all-collision does not blindly register an UP nudge."""
@@ -908,18 +920,18 @@ class TestPositionLabelHeightHelpers:
 
 
 class TestMW1EightDirectionGrid:
-    """MW-1: Replace the 4-direction nudge with an 8-direction grid at 4 step sizes.
+    """MW-1: Replace the 4-direction nudge with an 8-direction grid at 6 step sizes.
 
     Tests for the new _nudge_candidates(pill_w, pill_h, side_hint=None) generator
-    that yields (dx, dy) tuples sorted by Manhattan distance, with 32 total
-    candidates (8 dirs x 4 steps).
+    that yields (dx, dy) tuples sorted by Manhattan distance, with 48 total
+    candidates (8 dirs x 6 steps).
     """
 
     def test_candidate_count_32(self) -> None:
-        """list(_nudge_candidates(40, 20)) has exactly 32 entries (8 dirs x 4 steps)."""
+        """list(_nudge_candidates(40, 20)) has exactly 48 entries (8 dirs x 6 steps)."""
         candidates = list(_nudge_candidates(40, 20))
-        assert len(candidates) == 32, (
-            f"Expected 32 candidates (8 dirs x 4 steps), got {len(candidates)}"
+        assert len(candidates) == 48, (
+            f"Expected 48 candidates (8 dirs x 6 steps), got {len(candidates)}"
         )
 
     def test_candidates_sorted_by_manhattan(self) -> None:
@@ -935,7 +947,7 @@ class TestMW1EightDirectionGrid:
     def test_side_hint_above_upper_first(self) -> None:
         """side_hint='above': first 4 candidates must all be in upper half-plane (dy < 0)."""
         candidates = list(_nudge_candidates(40, 20, side_hint="above"))
-        assert len(candidates) == 32, "Still need 32 total candidates"
+        assert len(candidates) == 48, "Still need 48 total candidates"
         first_four = candidates[:4]
         for i, (dx, dy) in enumerate(first_four):
             assert dy < 0, (
@@ -946,7 +958,7 @@ class TestMW1EightDirectionGrid:
     def test_side_hint_below_lower_first(self) -> None:
         """side_hint='below': first 4 candidates must all be in lower half-plane (dy > 0)."""
         candidates = list(_nudge_candidates(40, 20, side_hint="below"))
-        assert len(candidates) == 32, "Still need 32 total candidates"
+        assert len(candidates) == 48, "Still need 48 total candidates"
         first_four = candidates[:4]
         for i, (dx, dy) in enumerate(first_four):
             assert dy > 0, (
@@ -978,13 +990,13 @@ class TestMW1EightDirectionGrid:
         Verifies behavioral integration by checking that:
         1. With only the natural position blocked, the new emitter resolves
            the collision WITHOUT triggering collision_unresolved (i.e. it finds
-           a free slot among the 32 candidates).
+           a free slot among the 48 candidates).
         2. With debug labels enabled, the collision comment is NOT emitted,
            confirming the resolver succeeded — in contrast to what a completely
            exhausted search would produce.
 
         This locks in that _nudge_candidates is wired into the emitter and
-        that the expanded 32-candidate search succeeds in realistic conditions.
+        that the expanded 48-candidate search succeeds in realistic conditions.
         """
         monkeypatch.setattr(_svg_helpers_mod, "_DEBUG_LABELS", True)
 
@@ -1003,7 +1015,7 @@ class TestMW1EightDirectionGrid:
         pill_h = probe[0].height
 
         # Step 2: place a single blocker at the natural position.
-        # With only this one blocker, ANY of the 32 candidate offsets that
+        # With only this one blocker, ANY of the 48 candidate offsets that
         # moves far enough away will resolve the collision.
         blocker = _LabelPlacement(x=nat_x, y=nat_y, width=pill_w, height=pill_h)
         placed: list[_LabelPlacement] = [blocker]
@@ -1017,11 +1029,11 @@ class TestMW1EightDirectionGrid:
         )
 
         # The SVG must NOT contain the collision comment because the search
-        # resolved successfully (at least one of the 32 candidates is free).
+        # resolved successfully (at least one of the 48 candidates is free).
         svg_text = "\n".join(lines)
         assert "scriba:label-collision" not in svg_text, (
             "collision comment must NOT appear when a free slot exists among "
-            f"the 32 candidates. Got SVG:\n{svg_text[:400]}"
+            f"the 48 candidates. Got SVG:\n{svg_text[:400]}"
         )
 
         # The new registration must be different from the natural position

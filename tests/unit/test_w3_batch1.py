@@ -55,7 +55,7 @@ class TestR07LeaderDisplacementThreshold:
         placed: list[_LabelPlacement] = []
 
         # Fill a large area around the natural label position with placed pills
-        # so that the nudge search exhausts all 32 candidates and falls back.
+        # so that the nudge search exhausts all 48 candidates and falls back.
         # Natural label position for this setup is approximately (100, 46).
         # Flood a 200x200 area to ensure full exhaustion.
         for xi in range(-5, 6):

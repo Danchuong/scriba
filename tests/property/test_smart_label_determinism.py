@@ -413,7 +413,7 @@ def test_d2a_nudge_sequence_identical(
 ) -> None:
     """D-2: _nudge_candidates yields same sequence for same inputs.
 
-    Also asserts the postcondition of exactly 32 candidates.
+    Also asserts the postcondition of exactly 48 candidates.
     """
     pill_w, pill_h, side_hint = args
     seq_a = list(_nudge_candidates(pill_w, pill_h, side_hint))
@@ -423,8 +423,8 @@ def test_d2a_nudge_sequence_identical(
         f"D-2 violation: sequence mismatch for "
         f"pill_w={pill_w}, pill_h={pill_h}, side_hint={side_hint!r}"
     )
-    assert len(seq_a) == 32, (
-        f"D-2 violation: expected 32 candidates, got {len(seq_a)}"
+    assert len(seq_a) == 48, (
+        f"D-2 violation: expected 48 candidates, got {len(seq_a)}"
     )
 
 
@@ -549,21 +549,25 @@ def test_d4_debug_flag_captured_at_import(
 
             ann = {"target": "t", "label": "L", "color": "info"}
 
-            # Pre-saturate registry so all 32 candidates collide, forcing
+            # Pre-saturate registry so all 48 candidates collide, forcing
             # collision_unresolved=True which is the only path that emits
             # the debug comment when _DEBUG_LABELS is True.
-            placed.append(
-                _LabelPlacement(x=50.0, y=20.0, width=100.0, height=30.0)
-            )
-            for i in range(40):
-                placed.append(
-                    _LabelPlacement(
-                        x=50.0 + i * 0.1,
-                        y=20.0,
-                        width=200.0,
-                        height=100.0,
+            # Use a dense flood grid centered on the natural label position
+            # (empirically ~(50, 10) for dst=(50,30)) covering ±4×pill_h
+            # to exhaust all 48 candidates (max offset = 2.5×pill_h×√2).
+            pill_h_est = 19.0  # approximate pill height for label "L"
+            spacing = pill_h_est * 0.4
+            reach = pill_h_est * 4.5
+            center_x, center_y = 50.0, 10.0
+            cx = center_x - reach
+            while cx <= center_x + reach:
+                cy = center_y - reach
+                while cy <= center_y + reach:
+                    placed.append(
+                        _LabelPlacement(x=cx, y=cy, width=40.0, height=pill_h_est)
                     )
-                )
+                    cy += spacing
+                cx += spacing
 
             emit_plain_arrow_svg(
                 lines,

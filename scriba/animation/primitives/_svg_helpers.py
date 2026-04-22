@@ -686,9 +686,9 @@ def _nudge_candidates(
 ) -> Iterator[tuple[float, float]]:
     """Yield (dx, dy) nudge offsets in Manhattan-distance order for collision resolution.
 
-    Generates 32 candidates = 8 compass directions x 4 step sizes.
+    Generates 48 candidates = 8 compass directions x 6 step sizes.
 
-    Step sizes are fractions of *pill_h*: 0.25, 0.5, 1.0, 1.5.
+    Step sizes are fractions of *pill_h*: 0.25, 0.5, 1.0, 1.5, 2.0, 2.5.
     Both horizontal and vertical steps use *pill_h*-based sizing so the grid
     is square in pixel space.
 
@@ -700,7 +700,7 @@ def _nudge_candidates(
     are emitted first across all step sizes (sorted by Manhattan distance),
     followed by the remaining candidates in Manhattan-distance order.
 
-    When *side_hint* is ``None`` or unknown, all 32 candidates are sorted by
+    When *side_hint* is ``None`` or unknown, all 48 candidates are sorted by
     Manhattan distance (smallest first) with the fixed tie-break direction
     priority.
 
@@ -722,9 +722,9 @@ def _nudge_candidates(
         ``(dx, dy)`` offset tuples, smallest Manhattan distance first.
         Within equal distance, order follows N, S, E, W, NE, NW, SE, SW.
     """
-    steps = (pill_h * 0.25, pill_h * 0.5, pill_h * 1.0, pill_h * 1.5)
+    steps = (pill_h * 0.25, pill_h * 0.5, pill_h * 1.0, pill_h * 1.5, pill_h * 2.0, pill_h * 2.5)
 
-    # Build all 32 (dx, dy, priority_index) tuples.
+    # Build all 48 (dx, dy, priority_index) tuples.
     all_candidates: list[tuple[float, float, int]] = []
     for step in steps:
         for priority, (dx_sign, dy_sign) in enumerate(_COMPASS_8):
@@ -738,7 +738,7 @@ def _nudge_candidates(
     hint_key = side_hint if side_hint in _SIDE_HINT_PREFERRED else None
 
     if hint_key is None:
-        # No side hint: sort all 32 by (manhattan_distance, priority_index).
+        # No side hint: sort all 48 by (manhattan_distance, priority_index).
         sorted_candidates = sorted(all_candidates, key=lambda c: (_manhattan(c), c[2]))
         for dx, dy, _ in sorted_candidates:
             yield (dx, dy)

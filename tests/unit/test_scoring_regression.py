@@ -98,7 +98,7 @@ SCORE_SNAPSHOTS: dict[str, dict[str, object]] = {
     # Single label above cell centre; no placed labels; natural position wins.
     "no-collision": {
         "min_score": 1.2,          # W_SEMANTIC*(1-2/5) = 2*0.6 = 1.2; P2=0, P3=0, P5=0, P6=0, P7=0
-        "max_score": 41.5,         # approximate; ±5% tolerance applied in assertion
+        "max_score": 68.4,         # updated for 6-step (48 candidate) grid; ±5% tolerance
         "winner_index": 0,         # natural position (index 0) is best
     },
     # Two labels at the same natural position; second must be nudged away.
