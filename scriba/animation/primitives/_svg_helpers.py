@@ -267,7 +267,7 @@ def _parse_weight_override(name: str, default: float) -> float:
 # Kind-weight table (R-02, R-03, R-04).  Drives P1 (overlap area) term.
 # "segment" and "edge_polyline" are handled by P7 (edge occlusion) instead.
 # "annotation_arrow" (R-31 ext): prior-annotation arc segments are also handled
-# by P7 (edge occlusion) at weight 8.0 — SHOULD severity only, no hard-block.
+# by P7 (edge occlusion) at weight 40.0 — SHOULD severity only, no hard-block.
 _KIND_WEIGHT: dict[str, float] = {
     "pill":        1.0,
     "target_cell": 3.0,   # R-02: highest priority blocker
@@ -275,7 +275,7 @@ _KIND_WEIGHT: dict[str, float] = {
     "source_cell": 0.5,   # R-04: SHOULD-level
     "grid":        0.2,
     # annotation_arrow is a segment kind handled by P7, not P1; entry is kept
-    # here as documentation that its effective weight is _W_EDGE_OCCLUSION (8.0).
+    # here as documentation that its effective weight is _W_EDGE_OCCLUSION (40.0).
 }
 
 # Semantic rank table (R-05).  Higher rank → lower penalty.
@@ -296,7 +296,7 @@ _W_SIDE_HINT: float     = _parse_weight_override("side_hint",      5.0)
 _W_SEMANTIC: float      = _parse_weight_override("semantic",       2.0)
 _W_WHITESPACE: float    = _parse_weight_override("whitespace",     0.3)
 _W_READING_FLOW: float  = _parse_weight_override("reading_flow",   0.8)
-_W_EDGE_OCCLUSION: float = _parse_weight_override("edge_occlusion", 8.0)
+_W_EDGE_OCCLUSION: float = _parse_weight_override("edge_occlusion", 40.0)
 
 # Score threshold above which R-19 degraded-placement warning fires.
 _DEGRADED_SCORE_THRESHOLD: float = 50.0
@@ -560,14 +560,20 @@ def _score_candidate(
     # P6 — reading flow / Hirsch-ladder cost (binary).
     p6 = reading_flow_cost(cx, cy, ctx)
 
-    # P7 — edge occlusion: normalised clipped segment length.
+    # P7 — edge occlusion: saturating normalised clipped segment length.
     # Covers "segment", "edge_polyline", and "annotation_arrow" (R-31 ext).
-    pill_diagonal = math.hypot(pill_w, pill_h)
-    if pill_diagonal > 0.0:
+    # Normalise against the short side of the pill so that any clip ≥ pill_h
+    # saturates to 1.0 per segment, giving _W_EDGE_OCCLUSION penalty per
+    # clipping segment.  Grazing clips (< pill_h) remain proportional.
+    # This prevents a 20-px displacement (cost 20) from being cheaper than
+    # staying on a clipping arrow (cost 40+), which was the root cause of
+    # pills overlapping annotation-arrow strokes (R-31 ext, §P7-saturate).
+    pill_short = min(pill_w, pill_h)
+    if pill_short > 0.0:
         p7 = sum(
-            _segment_rect_clip_length(
+            min(1.0, _segment_rect_clip_length(
                 obs.x, obs.y, obs.x2, obs.y2, cx, cy, pill_w, pill_h
-            ) / pill_diagonal
+            ) / pill_short)
             for obs in obstacles
             if obs.kind in _SEGMENT_KINDS
         )
