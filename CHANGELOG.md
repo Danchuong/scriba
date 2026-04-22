@@ -40,6 +40,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/archive/smart-label-edge-avoidance-2026-04-22/R-31-plan.md` archived
   (edge-avoidance design doc; triaged from convex_hull_trick step 5 user report).
 
+### Added (R-31 ext — prior-annotation arrow-stroke obstacles)
+
+- **Arrow-stroke obstacles (R-31 ext)**: prior-annotation arcs now contribute to
+  pill scoring. When a primitive has multiple `\annotate` calls, each annotation's
+  arrow geometry is sampled into `ObstacleSegment` instances (`kind="annotation_arrow"`,
+  `severity="SHOULD"`) and passed as `primitive_obstacles` to all subsequent pill
+  placement calls. This prevents later pills from landing on earlier arc strokes
+  (observed failures: `convex_hull_trick.html` step 5, `frog.html` step 5).
+- `_sample_arrow_segments()` in `_svg_helpers.py`: samples a cubic Bézier arc into
+  N=8 evenly-spaced t-values (7 chord segments) or a straight stem into 1 segment.
+  Closed-form, D-1 deterministic. Kind `"annotation_arrow"`, severity always `"SHOULD"`.
+- `emit_arrow_svg` / `emit_plain_arrow_svg` return type changed `None → list[ObstacleSegment]`
+  (backward-compatible: call sites that ignore the return value are unaffected).
+- `PrimitiveBase.emit_annotation_arrows` accumulates `prior_arrow_segments` across the
+  annotation loop and merges them into `primitive_obstacles` for each subsequent call.
+- `ObstacleSegment.kind` Literal extended with `"annotation_arrow"`.
+- `_score_candidate`: `"annotation_arrow"` added to `_SEGMENT_KINDS` set so it
+  participates in P7 edge-occlusion scoring and is excluded from P1 AABB area and
+  `boundary_clearance` AABB loop.
+
 ## [0.11.0] - 2026-04-22 — Smart-label v2.0.0 (W3 batch)
 
 ### Breaking

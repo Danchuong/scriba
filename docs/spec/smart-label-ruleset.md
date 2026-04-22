@@ -870,12 +870,16 @@ v0.11.0 release notes for the `arrow=true`/position-only silent-drop behaviour.
 
 ### R-31 — Line-segment obstacles registered with severity
 
-**Normative:** MUST (for `state="current"` segments), SHOULD (for `state="dim"` / `state="done"`)
+**Normative:** MUST (for `state="current"` segments), SHOULD (for `state="dim"` / `state="done"`,
+and for prior-annotation arrow strokes)
 **Since:** v0.12.0
+**Extended:** v0.12.0 (R-31 ext — prior-annotation arrow-stroke obstacles; same rule, wider scope)
 **Supersedes:** (new)
-**Source:** user report 2026-04-22 (`examples/algorithms/dp/convex_hull_trick.html` step 5)
+**Source:** user report 2026-04-22 (`examples/algorithms/dp/convex_hull_trick.html` step 5);
+follow-up: `frog.html` step 5 multi-annotation pill-on-arc overlap (R-31-plan.md §8 Q2)
 **Scope:** `scriba/animation/primitives/_svg_helpers.py` (`emit_plain_arrow_svg`,
-           `emit_arrow_svg`); `PrimitiveBase.emit_annotation_arrows`;
+           `emit_arrow_svg`, `_sample_arrow_segments`);
+           `PrimitiveBase.emit_annotation_arrows`;
            `PrimitiveBase.resolve_obstacle_segments`
 
 All line segments emitted by a primitive MUST be registered with the obstacle registry
@@ -886,24 +890,43 @@ blockers (infinite penalty, §2.3). Segments tagged `state="dim"` or `state="don
 assigned `severity="SHOULD"` and contribute `_W_EDGE_OCCLUSION = 8.0` to the candidate
 score via the P7 term.
 
-**Rationale:** Smart-label placement was pill-vs-pill only (AABB registry). Plane2D
-envelope lines, graph edges, and tree edges were routinely occluded when a pill landed
-on them, making algorithm pedagogy unreadable. Observed failure: `convex_hull_trick.html`
-step 5, where the `L_1(3)=-4 win` annotation pill covered the active envelope line.
-Segment obstacles close the highest-severity non-AABB occlusion class with a closed-form
-Liang–Barsky clip helper (D-1 deterministic, no iterative solver).
+**R-31 ext — Prior-annotation arrow-stroke obstacles (v0.12.0):**
+When one primitive carries multiple `\annotate{target}{label=..., arrow_from=...}` calls,
+each annotation's arrow geometry (cubic Bézier arc for arc-style, straight stem for
+`arrow=true`) is sampled into `ObstacleSegment` instances (`kind="annotation_arrow"`,
+`severity="SHOULD"`) and registered with the P7 scoring term for all *subsequent*
+annotations in the same frame. This prevents later pills from landing on earlier arc
+strokes. Sampling uses N=8 evenly-spaced t-values on the Bézier curve (7 line-segment
+chords), closed-form and D-1 deterministic. Severity is always SHOULD — annotation arcs
+are never hard-block obstacles (pills may overlap as a last resort when all candidates
+are otherwise blocked).
 
-**W3-α scope (v0.12.0):** `Plane2D` only — `resolve_obstacle_segments` returns plotted
-lines and axis spines in SVG pixel coordinates. Other primitives (`Graph`, `Tree`,
-`NumberLine`) return `[]` stubs promoted to full implementations in W3-β.
+**Rationale (ext):** The original R-31 registered cross-primitive segment obstacles
+(Plane2D lines). Within a single primitive, the annotation loop placed each pill without
+knowing about earlier annotations' arrow geometries. In scenes with multiple annotations
+targeting the same cell (e.g. `frog.html` step 5 with `+2` and `+5` pills, or
+`convex_hull_trick.html` step 5), later pills landed directly on earlier arc strokes,
+making transitions visually ambiguous. The R-31 ext closes this gap by threading prior
+arc geometry into each subsequent placement call.
+
+**W3-α scope (v0.12.0):** `Plane2D` segment obstacles from `resolve_obstacle_segments` +
+prior-annotation arrow strokes for all primitives routing through `emit_annotation_arrows`.
+Other primitive segment extraction (`Graph`, `Tree`, `NumberLine`) remains `[]` stubs
+to be promoted in W3-β.
 
 **Code ref:** `scriba/animation/primitives/_svg_helpers.py` (`_segment_to_obstacle`,
-`_segment_rect_clip_length`, P7 term in `_score_candidate`);
+`_segment_rect_clip_length`, `_sample_arrow_segments`, `_BEZIER_SAMPLE_N`,
+P7 term in `_score_candidate`, `emit_arrow_svg` return, `emit_plain_arrow_svg` return);
 `scriba/animation/primitives/plane2d.py` (`resolve_obstacle_segments`);
-`scriba/animation/primitives/base.py` (`emit_annotation_arrows`)
-**Test ref:** `tests/unit/test_plane2d_segments.py`; `tests/unit/test_obstacle_protocol.py`
+`scriba/animation/primitives/base.py` (`emit_annotation_arrows` — `prior_arrow_segments` loop);
+`scriba/animation/primitives/_obstacle_types.py` (`ObstacleSegment.kind` Literal)
+**Test ref:** `tests/unit/test_plane2d_segments.py`; `tests/unit/test_obstacle_protocol.py`;
+`tests/unit/test_arrow_stroke_obstacles.py` (R-31 ext — 23 tests)
 **Golden ref:** No Plane2D golden fixtures exist at v0.12.0 W3-α; byte-breaking for
-plane2d/graph/tree/numberline when full W3-β is shipped.
+plane2d/graph/tree/numberline when full W3-β is shipped. Prior-annotation arc obstacles
+affect pill positions in multi-annotation scenes (byte-breaking for any scene with 2+
+annotations on the same primitive where a later pill's natural position overlaps an
+earlier arc stroke).
 
 ---
 
