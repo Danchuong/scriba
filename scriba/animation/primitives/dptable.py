@@ -16,6 +16,7 @@ from scriba.animation.primitives.base import (
     CELL_GAP,
     CELL_HEIGHT,
     CELL_WIDTH,
+    CellMetrics,
     INDEX_LABEL_OFFSET,
     RANGE_RE,
     THEME,
@@ -240,12 +241,21 @@ class DPTablePrimitive(PrimitiveBase):
 
         # Arrow annotations
         if effective_anns:
+            _cell_metrics = CellMetrics(
+                cell_width=float(CELL_WIDTH),
+                cell_height=float(CELL_HEIGHT),
+                grid_cols=int(self.cols),
+                grid_rows=int(self.rows) if self.is_2d else 1,
+                origin_x=0.0,
+                origin_y=0.0,
+            )
             self.emit_annotation_arrows(
                 lines,
                 effective_anns,
                 render_inline_tex=render_inline_tex,
                 scene_segments=scene_segments,
                 self_offset=self_offset,
+                cell_metrics=_cell_metrics,
             )
 
         # Caption label

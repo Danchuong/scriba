@@ -17,6 +17,7 @@ from scriba.animation.primitives.base import (
     CELL_GAP,
     CELL_HEIGHT,
     CELL_WIDTH,
+    CellMetrics,
     INDEX_LABEL_OFFSET,
     THEME,
     BoundingBox,
@@ -410,6 +411,14 @@ class Queue(PrimitiveBase):
         if arrow_anns:
             arrow_lines: list[str] = []
             placed: list[_LabelPlacement] = []
+            _cell_metrics = CellMetrics(
+                cell_width=float(self._cell_width),
+                cell_height=float(CELL_HEIGHT),
+                grid_cols=int(self.capacity),
+                grid_rows=1,
+                origin_x=0.0,
+                origin_y=0.0,
+            )
             for idx, ann in enumerate(arrow_anns):
                 src = self.resolve_annotation_point(ann.get("arrow_from", ""))
                 dst = self.resolve_annotation_point(ann.get("target", ""))
@@ -423,6 +432,7 @@ class Queue(PrimitiveBase):
                         arrow_lines, ann, src, dst, arrow_index,
                         CELL_HEIGHT, render_inline_tex,
                         placed_labels=placed,
+                        cell_metrics=_cell_metrics,
                     )
             parts.extend(arrow_lines)
 
