@@ -171,6 +171,396 @@ def _lp_to_obstacle(lp: _LabelPlacement) -> _Obstacle:
     )
 
 
+# ---------------------------------------------------------------------------
+# v0.12.0 W1 — Scoring weights, constants, and functions
+# ---------------------------------------------------------------------------
+# Weights are frozen at import time.  Use SCRIBA_LABEL_WEIGHTS env var for
+# debugging only; golden generation scripts must unset it.
+# See docs/plans/smart-label-scoring-impl-2026-04-22.md §2.2 and §4.4.
+
+def _parse_weight_override(name: str, default: float) -> float:
+    """Parse a single weight from SCRIBA_LABEL_WEIGHTS at import time.
+
+    Format: ``SCRIBA_LABEL_WEIGHTS="overlap=20,displace=0.5"``
+
+    Returns *default* when the env var is absent or the key is not found.
+    Malformed values (non-numeric) are silently ignored and the default is
+    returned so that a misconfigured env var does not crash the process.
+    """
+    raw = os.environ.get("SCRIBA_LABEL_WEIGHTS", "")
+    if not raw:
+        return default
+    for token in raw.split(","):
+        token = token.strip()
+        if "=" not in token:
+            continue
+        key, _, val = token.partition("=")
+        if key.strip() == name:
+            try:
+                return float(val.strip())
+            except ValueError:
+                return default
+    return default
+
+
+# Kind-weight table (R-02, R-03, R-04).  Drives P1 (overlap area) term.
+# "segment" and "edge_polyline" are handled by P7 (edge occlusion) instead.
+_KIND_WEIGHT: dict[str, float] = {
+    "pill":        1.0,
+    "target_cell": 3.0,   # R-02: highest priority blocker
+    "axis_label":  2.0,   # R-03
+    "source_cell": 0.5,   # R-04: SHOULD-level
+    "grid":        0.2,
+}
+
+# Semantic rank table (R-05).  Higher rank → lower penalty.
+_SEMANTIC_RANK: dict[str, int] = {
+    "error": 5,
+    "warn":  4,
+    "good":  3,
+    "path":  3,
+    "info":  2,
+    "muted": 1,
+}
+_SEMANTIC_RANK_DEFAULT: int = 2
+
+# Frozen scoring weights — captured at import time (D-1, §4.4).
+_W_OVERLAP: float       = _parse_weight_override("overlap",       10.0)
+_W_DISPLACE: float      = _parse_weight_override("displace",       1.0)
+_W_SIDE_HINT: float     = _parse_weight_override("side_hint",      5.0)
+_W_SEMANTIC: float      = _parse_weight_override("semantic",       2.0)
+_W_WHITESPACE: float    = _parse_weight_override("whitespace",     0.3)
+_W_READING_FLOW: float  = _parse_weight_override("reading_flow",   0.8)
+_W_EDGE_OCCLUSION: float = _parse_weight_override("edge_occlusion", 8.0)
+
+# Score threshold above which R-19 degraded-placement warning fires.
+_DEGRADED_SCORE_THRESHOLD: float = 50.0
+
+
+@dataclass(frozen=True)
+class _ScoreContext:
+    """Immutable context passed to every _score_candidate call.
+
+    Carries all per-annotation data that is constant across the 32 candidates:
+    natural (un-nudged) position, pill dimensions, placement hints, and
+    viewbox bounds.
+    """
+
+    natural_x: float
+    natural_y: float
+    pill_w: float
+    pill_h: float
+    side_hint: Literal["left", "right", "above", "below"] | None
+    arc_direction: tuple[float, float]   # unit vector (dx, dy) src→dst
+    color_token: str
+    viewbox_w: float
+    viewbox_h: float
+
+
+# ---------------------------------------------------------------------------
+# Scoring helpers (closed-form, D-1 deterministic)
+# ---------------------------------------------------------------------------
+
+
+def _aabb_intersects_pill(
+    obs: _Obstacle,
+    cx: float,
+    cy: float,
+    pill_w: float,
+    pill_h: float,
+) -> bool:
+    """Return True if *obs* AABB overlaps the candidate pill AABB.
+
+    Both AABBs are described by their centres and full dimensions.
+    Uses the same non-overlap test as ``_LabelPlacement.overlaps``.
+    """
+    half_pw = pill_w / 2.0
+    half_ph = pill_h / 2.0
+    half_ow = obs.width / 2.0
+    half_oh = obs.height / 2.0
+    return not (
+        cx + half_pw < obs.x - half_ow
+        or cx - half_pw > obs.x + half_ow
+        or cy + half_ph < obs.y - half_oh
+        or cy - half_ph > obs.y + half_oh
+    )
+
+
+def _aabb_intersect_area(
+    obs: _Obstacle,
+    cx: float,
+    cy: float,
+    pill_w: float,
+    pill_h: float,
+) -> float:
+    """Return the overlap area (px²) between *obs* AABB and the candidate pill.
+
+    Returns 0.0 when there is no intersection.  Closed-form; no branching on
+    floating-point equality (spec §4.1).
+    """
+    half_pw = pill_w / 2.0
+    half_ph = pill_h / 2.0
+    half_ow = obs.width / 2.0
+    half_oh = obs.height / 2.0
+
+    overlap_x = min(cx + half_pw, obs.x + half_ow) - max(cx - half_pw, obs.x - half_ow)
+    overlap_y = min(cy + half_ph, obs.y + half_oh) - max(cy - half_ph, obs.y - half_oh)
+
+    if overlap_x <= 0.0 or overlap_y <= 0.0:
+        return 0.0
+    return overlap_x * overlap_y
+
+
+def boundary_clearance(
+    cx: float,
+    cy: float,
+    obstacles: tuple[_Obstacle, ...],
+) -> float:
+    """Return the minimum clearance (px) from pill centre to any obstacle edge.
+
+    Used for the P5 (whitespace) term.  Considers only AABB obstacles (not
+    segments).  When there are no AABB obstacles the clearance is infinite —
+    callers clamp via ``max(0, min_clearance - boundary_clearance(...))``.
+
+    The clearance to a single AABB obstacle is the minimum of the four gap
+    distances (left gap, right gap, top gap, bottom gap) between the pill
+    centre and the obstacle edges.  This is not the AABB–AABB separation
+    distance; it is the distance from the *centre* to the nearest obstacle
+    face, which captures how "hemmed in" the candidate position is.
+    """
+    min_clearance = float("inf")
+    for obs in obstacles:
+        if obs.kind in ("segment", "edge_polyline"):
+            continue
+        half_ow = obs.width / 2.0
+        half_oh = obs.height / 2.0
+        gap_left  = cx - (obs.x - half_ow)
+        gap_right = (obs.x + half_ow) - cx
+        gap_top   = cy - (obs.y - half_oh)
+        gap_bot   = (obs.y + half_oh) - cy
+        nearest = min(abs(gap_left), abs(gap_right), abs(gap_top), abs(gap_bot))
+        if nearest < min_clearance:
+            min_clearance = nearest
+    return min_clearance
+
+
+def side_hint_violation(
+    cx: float,
+    cy: float,
+    ctx: _ScoreContext,
+) -> float:
+    """Return 1.0 if the candidate is in the wrong half-plane, else 0.0.
+
+    Implements the P3 (side_hint) binary term.  The half-plane check is
+    relative to the natural position:
+
+    - ``"above"``: candidate must have ``cy < ctx.natural_y``
+    - ``"below"``: candidate must have ``cy > ctx.natural_y``
+    - ``"left"``:  candidate must have ``cx < ctx.natural_x``
+    - ``"right"``: candidate must have ``cx > ctx.natural_x``
+
+    Returns 0.0 when *side_hint* is ``None`` (no preference).
+    """
+    hint = ctx.side_hint
+    if hint is None:
+        return 0.0
+    if hint == "above":
+        return 0.0 if cy < ctx.natural_y else 1.0
+    if hint == "below":
+        return 0.0 if cy > ctx.natural_y else 1.0
+    if hint == "left":
+        return 0.0 if cx < ctx.natural_x else 1.0
+    if hint == "right":
+        return 0.0 if cx > ctx.natural_x else 1.0
+    return 0.0
+
+
+def reading_flow_cost(
+    cx: float,
+    cy: float,
+    ctx: _ScoreContext,
+) -> float:
+    """Return 0.0 if candidate is in the Hirsch-ladder preferred quadrant, else 1.0.
+
+    Implements P6 (reading_flow) per R-06 (Hirsch 1982).  The preferred
+    quadrant rotates with the arc direction:
+
+    - Horizontal-ish arc (|dx| >= |dy|): prefer NE (cx > natural_x, cy < natural_y)
+    - Vertical-ish arc   (|dy| >  |dx|): prefer NW (cx < natural_x, cy < natural_y)
+    - Zero vector: no preference, return 0.0.
+
+    The arc_direction is the (dx, dy) unit vector from source to destination.
+    """
+    adx, ady = ctx.arc_direction
+    abs_adx = abs(adx)
+    abs_ady = abs(ady)
+    if abs_adx == 0.0 and abs_ady == 0.0:
+        return 0.0
+    # Determine preferred quadrant relative to natural position.
+    if abs_adx >= abs_ady:
+        # Horizontal-ish: prefer NE (right of and above natural).
+        preferred = cx >= ctx.natural_x and cy <= ctx.natural_y
+    else:
+        # Vertical-ish: prefer NW (left of and above natural).
+        preferred = cx <= ctx.natural_x and cy <= ctx.natural_y
+    return 0.0 if preferred else 1.0
+
+
+def semantic_rank(color_token: str) -> int:
+    """Return the semantic priority rank for *color_token* (1–5).
+
+    Higher rank → label is higher priority → lower P4 penalty (better positions).
+    Unknown tokens return ``_SEMANTIC_RANK_DEFAULT`` (2).
+    """
+    return _SEMANTIC_RANK.get(color_token, _SEMANTIC_RANK_DEFAULT)
+
+
+# ---------------------------------------------------------------------------
+# Core scoring function
+# ---------------------------------------------------------------------------
+
+
+def _score_candidate(
+    cx: float,
+    cy: float,
+    obstacles: tuple[_Obstacle, ...],
+    ctx: _ScoreContext,
+) -> float:
+    """Return composite penalty score for placing a pill at (cx, cy).
+
+    Lower is better.  Returns ``float("inf")`` when a MUST-severity obstacle
+    is violated (hard-block discipline, §2.3).
+
+    Terms (spec §2.2):
+        P1  _W_OVERLAP        — weighted AABB intersection area
+        P2  _W_DISPLACE       — Euclidean distance from natural position
+        P3  _W_SIDE_HINT      — binary half-plane violation
+        P4  _W_SEMANTIC       — semantic priority cost (1 − rank/5)
+        P5  _W_WHITESPACE     — clearance deficit below required minimum
+        P6  _W_READING_FLOW   — Hirsch-ladder quadrant preference
+        P7  _W_EDGE_OCCLUSION — normalised segment-in-pill length
+    """
+    pill_w = ctx.pill_w
+    pill_h = ctx.pill_h
+
+    # Hard-block pass (§2.3) — MUST-severity violations return inf immediately.
+    for obs in obstacles:
+        if obs.severity != "MUST":
+            continue
+        if obs.kind == "target_cell":
+            if _aabb_intersects_pill(obs, cx, cy, pill_w, pill_h):
+                return float("inf")
+        elif obs.kind in ("segment", "edge_polyline"):
+            if _segment_rect_clip_length(
+                obs.x, obs.y, obs.x2, obs.y2, cx, cy, pill_w, pill_h
+            ) > 0.0:
+                return float("inf")
+
+    # P1 — weighted overlap area over AABB obstacles.
+    p1 = sum(
+        _aabb_intersect_area(obs, cx, cy, pill_w, pill_h)
+        * _KIND_WEIGHT.get(obs.kind, 1.0)
+        for obs in obstacles
+        if obs.kind not in ("segment", "edge_polyline")
+    )
+
+    # P2 — displacement from natural position.
+    p2 = math.hypot(cx - ctx.natural_x, cy - ctx.natural_y)
+
+    # P3 — side-hint half-plane violation (binary).
+    p3 = side_hint_violation(cx, cy, ctx)
+
+    # P4 — semantic priority cost.
+    p4 = 1.0 - semantic_rank(ctx.color_token) / 5.0
+
+    # P5 — whitespace / boundary clearance deficit.
+    min_clearance_required = max(4.0, pill_h * 0.15)
+    actual_clearance = boundary_clearance(cx, cy, obstacles)
+    p5 = max(0.0, min_clearance_required - actual_clearance)
+
+    # P6 — reading flow / Hirsch-ladder cost (binary).
+    p6 = reading_flow_cost(cx, cy, ctx)
+
+    # P7 — edge occlusion: normalised clipped segment length.
+    pill_diagonal = math.hypot(pill_w, pill_h)
+    if pill_diagonal > 0.0:
+        p7 = sum(
+            _segment_rect_clip_length(
+                obs.x, obs.y, obs.x2, obs.y2, cx, cy, pill_w, pill_h
+            ) / pill_diagonal
+            for obs in obstacles
+            if obs.kind in ("segment", "edge_polyline")
+        )
+    else:
+        p7 = 0.0
+
+    return (
+        _W_OVERLAP       * p1
+        + _W_DISPLACE    * p2
+        + _W_SIDE_HINT   * p3
+        + _W_SEMANTIC    * p4
+        + _W_WHITESPACE  * p5
+        + _W_READING_FLOW * p6
+        + _W_EDGE_OCCLUSION * p7
+    )
+
+
+def _pick_best_candidate(
+    candidates: tuple[tuple[float, float], ...],
+    obstacles: tuple[_Obstacle, ...],
+    ctx: _ScoreContext,
+) -> tuple[float, float, float]:
+    """Score all candidates and return the best (cx, cy, score).
+
+    Uses stable tie-break: primary key = score ascending, secondary key =
+    candidate enumeration index.  Never uses ``min()`` over a generator
+    (spec §4.2 D-1 requirement).
+
+    If all candidates return ``float("inf")`` (every position hard-blocked),
+    falls back to argmin over a fresh score pass treating MUST violations as
+    finite (R-17 fallback semantics — best available position even if blocked).
+    R-19 warning is the caller's responsibility.
+
+    Parameters
+    ----------
+    candidates:
+        Ordered tuple of ``(cx, cy)`` positions.  Enumeration index is used
+        for tie-breaking, so the order is part of the contract.
+    obstacles:
+        Tuple of active obstacles for this frame (AABB + segment kinds).
+    ctx:
+        Immutable scoring context for this annotation.
+
+    Returns
+    -------
+    tuple[float, float, float]
+        ``(best_cx, best_cy, best_score)``
+    """
+    scored: list[tuple[float, int, float, float]] = [
+        (_score_candidate(cx, cy, obstacles, ctx), i, cx, cy)
+        for i, (cx, cy) in enumerate(candidates)
+    ]
+    scored.sort(key=lambda t: (t[0], t[1]))
+
+    best_score, _, best_cx, best_cy = scored[0]
+
+    # If all candidates are hard-blocked, fall back to finite-score argmin.
+    if best_score == float("inf"):
+        finite_scored: list[tuple[float, int, float, float]] = []
+        for i, (cx, cy) in enumerate(candidates):
+            # Re-score without hard-block returns by computing terms directly.
+            # We reuse _score_candidate but strip inf: replace inf with a large
+            # finite value so the argmin finds the "least bad" position.
+            raw = _score_candidate(cx, cy, obstacles, ctx)
+            finite_scored.append((raw if raw != float("inf") else 1e18, i, cx, cy))
+        finite_scored.sort(key=lambda t: (t[0], t[1]))
+        best_score, _, best_cx, best_cy = finite_scored[0]
+        # Restore the actual score (inf) for the caller to detect degradation.
+        best_score = float("inf")
+
+    return best_cx, best_cy, best_score
+
+
 def _label_has_math(text: str) -> bool:
     """True if *text* contains at least one ``$...$`` inline math fragment."""
     return bool(text) and bool(_MATH_DELIM_RE.search(text))
