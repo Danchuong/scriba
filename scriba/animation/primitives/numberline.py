@@ -333,6 +333,16 @@ class NumberLinePrimitive(PrimitiveBase):
 
         return BoundingBox(x=0.0, y=0.0, width=float(self.width), height=float(h))
 
+    # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------
+
+    def resolve_obstacle_boxes(self) -> list:
+        """Return AABB obstacles for the current frame. Stub — returns []."""
+        return []
+
+    def resolve_obstacle_segments(self) -> list:
+        """Return segment obstacles for the current frame. Stub — returns []."""
+        return []
+
 
 # ---------------------------------------------------------------------------
 # Backward-compatible alias

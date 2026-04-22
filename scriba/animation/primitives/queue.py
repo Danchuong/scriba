@@ -509,3 +509,13 @@ class Queue(PrimitiveBase):
         if self.capacity == 0:
             return 0
         return self.capacity * self._cell_width + (self.capacity - 1) * CELL_GAP
+
+    # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------
+
+    def resolve_obstacle_boxes(self) -> list:
+        """Return AABB obstacles for the current frame. Stub — returns []."""
+        return []
+
+    def resolve_obstacle_segments(self) -> list:
+        """Return segment obstacles for the current frame. Stub — returns []."""
+        return []

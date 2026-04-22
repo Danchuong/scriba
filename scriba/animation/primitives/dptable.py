@@ -479,6 +479,16 @@ class DPTablePrimitive(PrimitiveBase):
 
         return None
 
+    # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------
+
+    def resolve_obstacle_boxes(self) -> list:
+        """Return AABB obstacles for the current frame. Stub — returns []."""
+        return []
+
+    def resolve_obstacle_segments(self) -> list:
+        """Return segment obstacles for the current frame. Stub — returns []."""
+        return []
+
     # -- internal: dimensions ----------------------------------------------
 
     def _grid_dimensions(self) -> tuple[int, int]:

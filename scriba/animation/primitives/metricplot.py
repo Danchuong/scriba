@@ -758,3 +758,13 @@ class MetricPlot(PrimitiveBase):
 
     def bounding_box(self) -> BoundingBox:
         return BoundingBox(x=0, y=0, width=self.width, height=self.height)
+
+    # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------
+
+    def resolve_obstacle_boxes(self) -> list:
+        """Return AABB obstacles for the current frame. Stub — returns []."""
+        return []
+
+    def resolve_obstacle_segments(self) -> list:
+        """Return segment obstacles for the current frame. Stub — returns []."""
+        return []

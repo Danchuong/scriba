@@ -392,6 +392,16 @@ class ArrayPrimitive(PrimitiveBase):
             return None
         return (float(result[0]), float(result[1]))
 
+    # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------
+
+    def resolve_obstacle_boxes(self) -> list:
+        """Return AABB obstacles for the current frame. Stub — returns []."""
+        return []
+
+    def resolve_obstacle_segments(self) -> list:
+        """Return segment obstacles for the current frame. Stub — returns []."""
+        return []
+
     # -- internal -----------------------------------------------------------
 
     def _total_width(self) -> int:

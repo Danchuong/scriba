@@ -29,7 +29,12 @@ from scriba.animation.primitives._protocol import (
 
 
 def _make_full_primitive(name: str = "FullPrimitive") -> type:
-    """Return a class that implements all six required protocol methods."""
+    """Return a class that implements all required protocol methods.
+
+    Includes the six original §5.1 methods plus the two obstacle-geometry
+    accessors added in v0.12.0 prep (resolve_obstacle_boxes,
+    resolve_obstacle_segments).
+    """
 
     def resolve_annotation_point(self, selector: str):
         return (0.0, 0.0)
@@ -49,6 +54,12 @@ def _make_full_primitive(name: str = "FullPrimitive") -> type:
     def dispatch_annotations(self, placed_labels, *, render_inline_tex=None):
         return []
 
+    def resolve_obstacle_boxes(self) -> list:
+        return []
+
+    def resolve_obstacle_segments(self) -> list:
+        return []
+
     return type(name, (), {
         "resolve_annotation_point": resolve_annotation_point,
         "emit_svg": emit_svg,
@@ -56,6 +67,8 @@ def _make_full_primitive(name: str = "FullPrimitive") -> type:
         "annotation_headroom_below": annotation_headroom_below,
         "register_decorations": register_decorations,
         "dispatch_annotations": dispatch_annotations,
+        "resolve_obstacle_boxes": resolve_obstacle_boxes,
+        "resolve_obstacle_segments": resolve_obstacle_segments,
     })
 
 

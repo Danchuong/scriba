@@ -1,7 +1,9 @@
 """Runtime-checkable Protocol for the Smart-Label Participation Interface.
 
 Defines the six methods a primitive class MUST implement per
-docs/spec/smart-label-ruleset.md §5.1.
+docs/spec/smart-label-ruleset.md §5.1, plus two obstacle-geometry
+accessors (``resolve_obstacle_boxes``, ``resolve_obstacle_segments``)
+added in v0.12.0 prep for R-02/R-03/R-04 and R-31.
 
 This module deliberately imports nothing from base.py to avoid circular
 imports. It may be imported by base.py after PrimitiveBase is defined.
@@ -18,6 +20,7 @@ import warnings
 from typing import TYPE_CHECKING, Callable, Protocol, runtime_checkable
 
 if TYPE_CHECKING:
+    from scriba.animation.primitives._obstacle_types import ObstacleAABB, ObstacleSegment  # noqa: F401
     from scriba.animation.primitives._svg_helpers import _LabelPlacement  # noqa: F401
 
 
@@ -89,6 +92,25 @@ class PrimitiveProtocol(Protocol):
         render_inline_tex: Callable[[str], str] | None = None,
     ) -> list[str]:
         """Render all annotations for the current frame; return SVG lines."""
+        ...
+
+    def resolve_obstacle_boxes(self) -> "list[ObstacleAABB]":
+        """Return AABB obstacles for the current frame (R-02/R-03/R-04).
+
+        Each entry describes a rectangular region that the label-placement
+        solver MUST or SHOULD treat as blocked.  Primitives return ``[]``
+        until real geometry extraction is implemented in v0.12.0 W2.
+        """
+        ...
+
+    def resolve_obstacle_segments(self) -> "list[ObstacleSegment]":
+        """Return line-segment obstacles for the current frame (R-31).
+
+        Each entry describes a line segment (graph edge, plot line, axis
+        tick, tree edge) that labels MUST or SHOULD not occlude.
+        Primitives return ``[]`` until real geometry extraction is
+        implemented in v0.12.0 W3.
+        """
         ...
 
 
