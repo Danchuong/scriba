@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-04-22 — Phase C: flow-aware 2D stagger + CellMetrics/FlowDirection
+
+### Added
+
+- `CellMetrics` NamedTuple exposing `(cell_width, cell_height, grid_cols,
+  grid_rows, origin_x, origin_y)`. Carries grid context from call sites into
+  arrow geometry so curve direction can be made flow-aware.
+- `FlowDirection` IntEnum with 8 sectors matching
+  `round(atan2(dy, dx) / (π/4)) % 8` (RIGHTWARD=0, SE=1, DOWNWARD=2, SW=3,
+  LEFTWARD=4, NW=5, UPWARD=6, NE=7). `IntEnum` so members behave as int
+  sector indices in sets/dict keys.
+- `classify_flow(dx, dy, cell_metrics=None)` helper. Degrades to pure
+  `atan2` when `cell_metrics=None`; otherwise normalises by cell
+  dimensions so non-square grids classify correctly.
+
+### Changed (arrow geometry)
+
+- `_compute_control_points` grew keyword-only `flow` and `cell_metrics`
+  params (both default `None` → no behaviour change). When `flow is not
+  None and layout == "2d"`, odd-indexed stacked arrows flip the
+  perpendicular direction so dense 2D stacks distribute symmetrically
+  instead of forming a one-sided fan.
+- `emit_arrow_svg` and `PrimitiveBase.emit_annotation_arrows` accept a
+  keyword-only `cell_metrics`. `emit_arrow_svg` classifies flow
+  internally via `classify_flow(dx, dy, cell_metrics)` after
+  shortening and forwards `flow + cell_metrics` into
+  `_compute_control_points`.
+- Array, DPTable, and Queue now construct a `CellMetrics` record from
+  their known cell dimensions and pass it into the emit pipeline.
+  Behaviour is preserved because all three use
+  `layout="horizontal"` — the 2D stagger-flip gate never triggers
+  for 1D stacks.
+- Graph, Tree, Plane2D, Grid, HashMap, LinkedList, VariableWatch, and
+  NumberLine stay on `cell_metrics=None`. They can opt in later if
+  flow-aware stacking becomes relevant.
+
+### Tests
+
+- New `tests/unit/test_flow_direction.py` (22 cases): 8-sector mapping,
+  zero-vector degenerate, tiny-nonzero stability, non-square
+  `CellMetrics` normalisation, and NamedTuple value-type semantics.
+- `3175 pass` across the full suite — same as the v0.12.2 baseline.
+
 ## [0.12.2] - 2026-04-22 — Phase B: perfect-arrows bow+stretch port
 
 ### Changed (arrow geometry)
