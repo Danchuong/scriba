@@ -20,7 +20,7 @@ import math
 import os
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Iterator
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal
 
 from scriba.animation.primitives._text_render import _escape_xml, estimate_text_width
 from scriba.animation.primitives._types import CELL_HEIGHT
@@ -106,6 +106,69 @@ class _LabelPlacement:
             or self.y + self.height / 2 < other.y - other.height / 2
             or self.y - self.height / 2 > other.y + other.height / 2
         )
+
+
+# ---------------------------------------------------------------------------
+# v0.12.0 W1 — Unified obstacle type for scoring
+# ---------------------------------------------------------------------------
+# Internal type used by the scoring engine.  Not part of the public API.
+# The public-facing W0-[A] Protocol types (ObstacleAABB, ObstacleSegment) in
+# _obstacle_types.py remain unchanged — _Obstacle is the internal unified
+# representation consumed by _score_candidate / _pick_best_candidate.
+
+ObstacleKind = Literal[
+    "pill", "target_cell", "axis_label", "source_cell", "grid",
+    "segment", "edge_polyline",
+]
+Severity = Literal["MUST", "SHOULD"]
+
+
+@dataclass(frozen=True)
+class _Obstacle:
+    """Unified internal obstacle geometry for smart-label scoring (W1).
+
+    Covers both AABB obstacles (pill, target_cell, …) and segment obstacles
+    (segment, edge_polyline) in a single type so the scoring function has one
+    uniform interface.
+
+    For AABB kinds:
+        ``x``, ``y`` are the AABB centre; ``width``, ``height`` are full dims.
+        ``x2``, ``y2`` are unused (default 0.0).
+
+    For segment kinds:
+        ``x``, ``y`` are the segment start point.
+        ``x2``, ``y2`` are the segment end point.
+        ``width``, ``height`` are unused (default 0.0).
+    """
+
+    kind: ObstacleKind
+    x: float
+    y: float
+    width: float
+    height: float
+    x2: float = 0.0
+    y2: float = 0.0
+    severity: Severity = "SHOULD"
+
+
+def _lp_to_obstacle(lp: _LabelPlacement) -> _Obstacle:
+    """Convert a placed pill label to an internal _Obstacle (SHOULD severity).
+
+    Used as the entry shim in _place_pill / emit_plain_arrow_svg /
+    emit_arrow_svg so that existing placed-label registries can be converted
+    into the obstacle tuple expected by _score_candidate.
+
+    The kind is always ``"pill"`` (kind_weight 1.0) and severity is ``"SHOULD"``
+    (pills do not trigger hard-block semantics — a new label overlapping an
+    existing pill is penalised, not forbidden).
+    """
+    return _Obstacle(
+        kind="pill",
+        x=lp.x,
+        y=lp.y,
+        width=lp.width,
+        height=lp.height,
+    )
 
 
 def _label_has_math(text: str) -> bool:
