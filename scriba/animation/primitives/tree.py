@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     svg_style_attrs,
 )
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
+from scriba.animation.primitives._svg_helpers import CellMetrics
 from scriba.animation.primitives._types import (
     _NODE_MIN_RADIUS,
     _PRIMITIVE_LABEL_Y,
@@ -706,12 +707,25 @@ class Tree(PrimitiveBase):
         # --- Annotation arrows (rendered on top of everything) ---
         if effective_anns:
             arrow_lines: list[str] = []
+            # Phase D/2 (v0.14.0): CellMetrics proxy for 2D tree → activates
+            # stagger-flip in _compute_control_points. Tree has no grid;
+            # node-diameter stands in as the local "cell" scale.
+            _diam = float(self._node_radius * 2)
+            tree_cm = CellMetrics(
+                cell_width=_diam,
+                cell_height=_diam,
+                grid_cols=len(self.nodes) or 1,
+                grid_rows=1,
+                origin_x=0.0,
+                origin_y=0.0,
+            )
             self.emit_annotation_arrows(
                 arrow_lines,
                 effective_anns,
                 render_inline_tex=render_inline_tex,
                 scene_segments=scene_segments,
                 self_offset=self_offset,
+                cell_metrics=tree_cm,
             )
             parts.extend(arrow_lines)
 
