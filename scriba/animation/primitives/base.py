@@ -53,6 +53,7 @@ from scriba.animation.primitives._text_render import (  # noqa: F401 — explici
 from scriba.animation.primitives._svg_helpers import *  # noqa: F401, F403
 from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explicit for IDEs
     ARROW_STYLES,
+    CellMetrics,
     _LABEL_BG_OPACITY,
     _LABEL_HEADROOM,
     _LABEL_MAX_WIDTH_CHARS,
@@ -390,6 +391,7 @@ class PrimitiveBase(abc.ABC):
         render_inline_tex: "Callable[[str], str] | None" = None,
         scene_segments: "tuple[tuple[Any, float, float, int], ...] | None" = None,
         self_offset: "tuple[float, float] | None" = None,
+        cell_metrics: "CellMetrics | None" = None,
     ) -> None:
         """Emit arrow and plain-pointer SVG for *annotations* into *parts*.
 
@@ -530,6 +532,7 @@ class PrimitiveBase(abc.ABC):
                 render_inline_tex=render_inline_tex,
                 placed_labels=placed,
                 primitive_obstacles=_combined_obs if _combined_obs else None,
+                cell_metrics=cell_metrics,
                 **kwargs,
             )
             if _new_segs:

@@ -2300,6 +2300,8 @@ def emit_arrow_svg(
     placed_labels: "list[_LabelPlacement] | None" = None,
     _debug_capture: "dict[str, Any] | None" = None,
     primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
+    *,
+    cell_metrics: "CellMetrics | None" = None,
 ) -> "list[Any]":
     """Emit a cubic Bezier arrow annotation into *lines*.
 
@@ -2382,9 +2384,14 @@ def emit_arrow_svg(
     # existing SVG emit code. Phase B will swap the control-point formula
     # (port of perfect-arrows bow+stretch) inside the helper with zero
     # churn here.
+    # Phase C (v0.13.0): derive flow from post-shortening dx/dy so the
+    # stagger-flip in _compute_control_points receives grid-aware classification.
+    _flow = classify_flow(dx, dy, cell_metrics) if cell_metrics is not None else None
     _geom = _compute_control_points(
         x1, y1, x2, y2, dx, dy, dist,
         arrow_index, cell_height, layout, label_text,
+        flow=_flow,
+        cell_metrics=cell_metrics,
     )
     cx1, cy1 = _geom.cp1_x, _geom.cp1_y
     cx2, cy2 = _geom.cp2_x, _geom.cp2_y
