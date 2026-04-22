@@ -1898,6 +1898,9 @@ def _compute_control_points(
     cell_height: float,
     layout: str,
     label_text: str,
+    *,
+    flow: FlowDirection | None = None,
+    cell_metrics: CellMetrics | None = None,
 ) -> ArrowGeometry:
     """Pure geometry: cubic Bézier control points + label anchor.
 
@@ -1905,12 +1908,20 @@ def _compute_control_points(
     from them and passed in to avoid recomputation. No side effects.
 
     See ``docs/plans/phase-a-v0.12.1-extraction-plan.md`` §3 and
-    Phase B notes (v0.12.2): the curve amplitude is now a port of
+    Phase B notes (v0.12.2): the curve amplitude is a port of
     perfect-arrows' ``bow + modulate(dist, [smin, smax], [1, 0]) * stretch``.
     The cubic control points are derived from the single quadratic control
     point via the standard quad→cubic identity
     ``cp1 = P0 + 2/3*(Q - P0); cp2 = P1 + 2/3*(Q - P1)``.
+
+    Phase C (v0.13.0): when ``flow`` is provided and ``layout == "2d"``,
+    odd-indexed stacked arrows flip the perpendicular direction so dense
+    stacks distribute symmetrically instead of forming a one-sided fan.
+    ``cell_metrics`` is currently unused here (the caller already classified
+    flow with it) but accepted so downstream phases can read it without a
+    signature break.
     """
+    del cell_metrics  # reserved for future scoring integration
     euclid = math.hypot(x2 - x1, y2 - y1)
 
     # Perfect-arrows bow+stretch arc amplitude (scalar, unitless).
@@ -1925,10 +1936,18 @@ def _compute_control_points(
     stagger = cell_height * _ARROW_STAGGER_FACTOR
     total_offset = base_offset + min(arrow_index, _ARROW_STAGGER_CAP) * stagger
 
+    # Phase C stagger-flip: odd-indexed 2D stacks bow to opposite side.
+    _perp_flip = (
+        flow is not None and layout == "2d" and (arrow_index % 2 == 1)
+    )
+
     if layout == "2d":
         # Perpendicular to the connecting line (rotated 90° toward +perp).
         perp_x = -dy / dist if dist else 0.0
         perp_y = dx / dist if dist else 0.0
+        if _perp_flip:
+            perp_x = -perp_x
+            perp_y = -perp_y
 
         mid_x_f = (x1 + x2) / 2
         mid_y_f = (y1 + y2) / 2
