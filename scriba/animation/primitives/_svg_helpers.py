@@ -413,6 +413,165 @@ def _line_rect_intersection(
     return int(hit_x), int(hit_y)
 
 
+# ---------------------------------------------------------------------------
+# R-31 geometry helpers — Liang–Barsky segment-vs-rect clipping
+# ---------------------------------------------------------------------------
+# Rect convention (matches _point_in_rect / _line_rect_intersection above):
+#   centre (rx, ry), full dimensions (rw, rh) → corners at
+#   (rx±rw/2, ry±rh/2).
+#
+# Both helpers are closed-form and D-1 deterministic: no iterative solvers,
+# no numpy, no randomness.  NOT added to __all__ (internal, prefix _).
+# ---------------------------------------------------------------------------
+
+
+def _segment_intersects_rect(
+    x0: float,
+    y0: float,
+    x1: float,
+    y1: float,
+    rx: float,
+    ry: float,
+    rw: float,
+    rh: float,
+) -> bool:
+    """Return True if the segment (x0,y0)→(x1,y1) intersects the axis-aligned rect.
+
+    "Intersects" means any overlap: the segment may cross an edge, lie fully
+    inside the rect, or have exactly one endpoint on the boundary.
+
+    The rect is defined by centre *(rx, ry)* and full dimensions *(rw, rh)*,
+    matching the convention used by :func:`_point_in_rect` and
+    :func:`_line_rect_intersection`.
+
+    Uses Liang–Barsky parametric clipping (closed-form, D-1 deterministic).
+
+    Args:
+        x0: Start x of segment.
+        y0: Start y of segment.
+        x1: End x of segment.
+        y1: End y of segment.
+        rx: Rect centre x.
+        ry: Rect centre y.
+        rw: Rect full width  (>= 0).
+        rh: Rect full height (>= 0).
+
+    Returns:
+        True if the segment has any point in common with the closed rect.
+    """
+    half_w = rw / 2.0
+    half_h = rh / 2.0
+    xmin = rx - half_w
+    xmax = rx + half_w
+    ymin = ry - half_h
+    ymax = ry + half_h
+
+    dx = x1 - x0
+    dy = y1 - y0
+
+    t0 = 0.0
+    t1 = 1.0
+
+    # Four Liang–Barsky half-planes: p*t <= q  →  t >= q/p (lower) or t <= q/p (upper).
+    # p < 0  →  lower bound update; p > 0  →  upper bound update; p == 0  →  reject if q < 0.
+    for p, q in (
+        (-dx, x0 - xmin),   # left   edge
+        ( dx, xmax - x0),   # right  edge
+        (-dy, y0 - ymin),   # bottom edge
+        ( dy, ymax - y0),   # top    edge
+    ):
+        if abs(p) < 1e-12:
+            # Segment is parallel to this pair of edges.
+            if q < 0.0:
+                return False  # outside this slab entirely
+            # Otherwise fully inside this slab; continue to next edges.
+        elif p < 0.0:
+            t0 = max(t0, q / p)
+        else:
+            t1 = min(t1, q / p)
+
+        if t0 > t1:
+            return False
+
+    return True
+
+
+def _segment_rect_clip_length(
+    x0: float,
+    y0: float,
+    x1: float,
+    y1: float,
+    rx: float,
+    ry: float,
+    rw: float,
+    rh: float,
+) -> float:
+    """Return the length of the portion of the segment (x0,y0)→(x1,y1) inside the rect.
+
+    Returns ``0.0`` when there is no intersection.
+
+    The rect is defined by centre *(rx, ry)* and full dimensions *(rw, rh)*,
+    matching the convention used by :func:`_point_in_rect` and
+    :func:`_line_rect_intersection`.
+
+    Uses Liang–Barsky parametric clipping.  The clipped length is:
+
+    .. code-block:: text
+
+        length = sqrt(dx**2 + dy**2) * (t1 - t0)
+
+    where *t0*, *t1* ∈ [0, 1] are the entry/exit parameters.
+
+    For a zero-length segment (x0==x1 and y0==y1) this returns ``0.0``
+    regardless of position (the "length" of a point is zero).
+
+    Args:
+        x0: Start x of segment.
+        y0: Start y of segment.
+        x1: End x of segment.
+        y1: End y of segment.
+        rx: Rect centre x.
+        ry: Rect centre y.
+        rw: Rect full width  (>= 0).
+        rh: Rect full height (>= 0).
+
+    Returns:
+        Euclidean length of the clipped portion (>= 0.0).
+    """
+    half_w = rw / 2.0
+    half_h = rh / 2.0
+    xmin = rx - half_w
+    xmax = rx + half_w
+    ymin = ry - half_h
+    ymax = ry + half_h
+
+    dx = x1 - x0
+    dy = y1 - y0
+
+    t0 = 0.0
+    t1 = 1.0
+
+    for p, q in (
+        (-dx, x0 - xmin),
+        ( dx, xmax - x0),
+        (-dy, y0 - ymin),
+        ( dy, ymax - y0),
+    ):
+        if abs(p) < 1e-12:
+            if q < 0.0:
+                return 0.0
+        elif p < 0.0:
+            t0 = max(t0, q / p)
+        else:
+            t1 = min(t1, q / p)
+
+        if t0 > t1:
+            return 0.0
+
+    seg_len = (dx * dx + dy * dy) ** 0.5
+    return seg_len * (t1 - t0)
+
+
 def _label_width_text(text: str) -> str:
     r"""Return a width-estimation string derived from *text*.
 

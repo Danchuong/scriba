@@ -576,3 +576,244 @@ class TestSafeNarrationHtmlContract:
         from scriba.animation._html_stitcher import _safe_narration_html
         with pytest.raises(TypeError):
             _safe_narration_html(None)  # type: ignore[arg-type]
+
+
+# ---------------------------------------------------------------------------
+# R-31 prep — _segment_intersects_rect / _segment_rect_clip_length
+# ---------------------------------------------------------------------------
+# Rect convention throughout: centre (rx, ry), full dims (rw, rh).
+# All tests use a reference rect centred at (100, 50) with w=40, h=20:
+#   x ∈ [80, 120],  y ∈ [40, 60].
+# ---------------------------------------------------------------------------
+
+_RX, _RY, _RW, _RH = 100.0, 50.0, 40.0, 20.0  # reference rect
+
+
+class TestSegmentRectHelpers:
+    """Unit tests for _segment_intersects_rect and _segment_rect_clip_length.
+
+    Reference rect: centre (100, 50), w=40, h=20  →  x∈[80,120], y∈[40,60].
+    """
+
+    # ------------------------------------------------------------------
+    # _segment_intersects_rect
+    # ------------------------------------------------------------------
+
+    @pytest.mark.unit
+    def test_intersects_fully_outside_left(self) -> None:
+        """Segment entirely to the left of the rect → False."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        assert not _segment_intersects_rect(
+            0.0, 45.0, 70.0, 55.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_fully_outside_right(self) -> None:
+        """Segment entirely to the right of the rect → False."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        assert not _segment_intersects_rect(
+            130.0, 45.0, 200.0, 55.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_fully_outside_above(self) -> None:
+        """Segment entirely above the rect → False."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        assert not _segment_intersects_rect(
+            85.0, 10.0, 115.0, 35.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_fully_outside_below(self) -> None:
+        """Segment entirely below the rect → False."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        assert not _segment_intersects_rect(
+            85.0, 65.0, 115.0, 80.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_fully_inside(self) -> None:
+        """Segment both endpoints inside rect → True."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        # (90,45)→(110,55) — well inside [80,120]×[40,60]
+        assert _segment_intersects_rect(
+            90.0, 45.0, 110.0, 55.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_crosses_one_edge(self) -> None:
+        """Segment with one endpoint outside and one inside → True."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        # Starts at (60, 50) outside-left, ends at (100, 50) inside.
+        assert _segment_intersects_rect(
+            60.0, 50.0, 100.0, 50.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_crosses_two_opposite_edges(self) -> None:
+        """Horizontal segment passing fully through rect left→right → True."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        # (60, 50)→(140, 50) passes through x∈[80,120] at y=50.
+        assert _segment_intersects_rect(
+            60.0, 50.0, 140.0, 50.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_diagonal_through_center(self) -> None:
+        """Diagonal segment through rect centre → True."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        assert _segment_intersects_rect(
+            70.0, 35.0, 130.0, 65.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_tangent_at_corner(self) -> None:
+        """Segment whose tip exactly touches a corner of the rect → True."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        # Corner at (80, 40); approach from (70, 30) → (80, 40).
+        assert _segment_intersects_rect(
+            70.0, 30.0, 80.0, 40.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_zero_length_inside(self) -> None:
+        """Zero-length segment (point) inside rect → True."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        assert _segment_intersects_rect(
+            100.0, 50.0, 100.0, 50.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_zero_length_outside(self) -> None:
+        """Zero-length segment (point) outside rect → False."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        assert not _segment_intersects_rect(
+            50.0, 50.0, 50.0, 50.0, _RX, _RY, _RW, _RH
+        )
+
+    @pytest.mark.unit
+    def test_intersects_endpoint_on_boundary(self) -> None:
+        """Segment with one endpoint exactly on the rect boundary → True."""
+        from scriba.animation.primitives._svg_helpers import _segment_intersects_rect
+
+        # Start on the left edge at (80, 50), end outside at (60, 50).
+        assert _segment_intersects_rect(
+            80.0, 50.0, 60.0, 50.0, _RX, _RY, _RW, _RH
+        )
+
+    # ------------------------------------------------------------------
+    # _segment_rect_clip_length
+    # ------------------------------------------------------------------
+
+    @pytest.mark.unit
+    def test_clip_length_fully_outside(self) -> None:
+        """Segment entirely outside → 0.0."""
+        from scriba.animation.primitives._svg_helpers import _segment_rect_clip_length
+
+        result = _segment_rect_clip_length(
+            0.0, 50.0, 70.0, 50.0, _RX, _RY, _RW, _RH
+        )
+        assert result == pytest.approx(0.0, abs=1e-9)
+
+    @pytest.mark.unit
+    def test_clip_length_fully_inside(self) -> None:
+        """Segment fully inside rect → full segment length."""
+        from scriba.animation.primitives._svg_helpers import _segment_rect_clip_length
+
+        # (85, 45)→(115, 55): dx=30, dy=10 → length = sqrt(900+100) = sqrt(1000)
+        expected = (30.0**2 + 10.0**2) ** 0.5
+        result = _segment_rect_clip_length(
+            85.0, 45.0, 115.0, 55.0, _RX, _RY, _RW, _RH
+        )
+        assert result == pytest.approx(expected, abs=1e-9)
+
+    @pytest.mark.unit
+    def test_clip_length_crosses_left_edge(self) -> None:
+        """Horizontal segment entering from the left; clip starts at x=80.
+
+        Segment: (60, 50)→(100, 50).  dx=40, dy=0.  total len=40.
+        Entry at left edge x=80: t_entry = (80-60)/40 = 0.5.
+        Exit at end point x=100: t_exit = 1.0 (inside rect).
+        Clip length = 40 * (1.0 - 0.5) = 20.0.
+        """
+        from scriba.animation.primitives._svg_helpers import _segment_rect_clip_length
+
+        result = _segment_rect_clip_length(
+            60.0, 50.0, 100.0, 50.0, _RX, _RY, _RW, _RH
+        )
+        assert result == pytest.approx(20.0, abs=1e-9)
+
+    @pytest.mark.unit
+    def test_clip_length_horizontal_through_rect(self) -> None:
+        """Horizontal segment passing fully through rect left→right.
+
+        Segment: (60, 50)→(160, 50).  dx=100, dy=0.  total len=100.
+        Entry at x=80: t0=(80-60)/100=0.2.
+        Exit at x=120: t1=(120-60)/100=0.6.
+        Clip length = 100 * (0.6 - 0.2) = 40.0  (= rect width).
+        """
+        from scriba.animation.primitives._svg_helpers import _segment_rect_clip_length
+
+        result = _segment_rect_clip_length(
+            60.0, 50.0, 160.0, 50.0, _RX, _RY, _RW, _RH
+        )
+        assert result == pytest.approx(40.0, abs=1e-9)
+
+    @pytest.mark.unit
+    def test_clip_length_diagonal_through_center(self) -> None:
+        """Diagonal segment passing through the rect centre.
+
+        Segment: (60, 40)→(140, 60).  dx=80, dy=20.  total len=sqrt(6800).
+        Liang–Barsky:
+          left   (p=-80, q=60-80=-20): t >= (-20)/(-80) = 0.25
+          right  (p=+80, q=120-60=60): t <= 60/80 = 0.75
+          bottom (p=-20, q=40-40=0):   t >= 0/(-20) = 0  (parallel? no, p=-20<0) → t >= 0
+          top    (p=+20, q=60-40=20):  t <= 20/20 = 1.0
+        t0=0.25, t1=0.75 → clip length = sqrt(6800) * 0.5.
+        """
+        from scriba.animation.primitives._svg_helpers import _segment_rect_clip_length
+
+        import math
+
+        total = math.sqrt(80.0**2 + 20.0**2)
+        expected = total * 0.5
+        result = _segment_rect_clip_length(
+            60.0, 40.0, 140.0, 60.0, _RX, _RY, _RW, _RH
+        )
+        assert result == pytest.approx(expected, abs=1e-9)
+
+    @pytest.mark.unit
+    def test_clip_length_zero_length_segment_inside(self) -> None:
+        """Zero-length segment (point) inside rect → 0.0 (length of a point)."""
+        from scriba.animation.primitives._svg_helpers import _segment_rect_clip_length
+
+        result = _segment_rect_clip_length(
+            100.0, 50.0, 100.0, 50.0, _RX, _RY, _RW, _RH
+        )
+        assert result == pytest.approx(0.0, abs=1e-9)
+
+    @pytest.mark.unit
+    def test_clip_length_near_parallel_to_edge(self) -> None:
+        """Numerical stability: segment nearly parallel to rect's vertical edges.
+
+        Segment: (80.0, 0.0)→(80.0 + 1e-7, 100.0).
+        Near-vertical (tiny dx, large dy).  The segment just grazes x=80
+        (left edge).  Should not raise, and the clip length must be >= 0.
+        """
+        from scriba.animation.primitives._svg_helpers import _segment_rect_clip_length
+
+        result = _segment_rect_clip_length(
+            80.0, 0.0, 80.0 + 1e-7, 100.0, _RX, _RY, _RW, _RH
+        )
+        assert result >= 0.0
