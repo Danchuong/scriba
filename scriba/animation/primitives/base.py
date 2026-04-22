@@ -439,21 +439,42 @@ class PrimitiveBase(abc.ABC):
         if _merged_segs:
             _prim_seg_obs = tuple(_segment_to_obstacle(s) for s in _merged_segs)
 
+        # R-31 ext: accumulate prior-annotation arrow-stroke segments across the
+        # annotation loop.  Each emit_*_arrow_svg call returns sampled segments
+        # which are appended here and merged into the obstacle set for the NEXT
+        # annotation's pill placement.  Segments are SHOULD-severity only (no
+        # hard-block); they contribute the P7 edge-occlusion penalty term.
+        prior_arrow_segments: "list[Any]" = []
+
         placed: "list[_LabelPlacement]" = []
         for ann in annotations:
             arrow_from = ann.get("arrow_from", "")
 
+            # Build the combined obstacle tuple for this annotation:
+            # base primitive segments + cross-primitive segments + prior arrow strokes.
+            if prior_arrow_segments:
+                _prior_obs: "tuple[_Obstacle, ...]" = tuple(
+                    _segment_to_obstacle(s) for s in prior_arrow_segments
+                )
+                _combined_obs: "tuple[_Obstacle, ...]" = (
+                    _prim_seg_obs + _prior_obs
+                )
+            else:
+                _combined_obs = _prim_seg_obs
+
             if not arrow_from and ann.get("arrow"):
                 dst_point = self.resolve_annotation_point(ann.get("target", ""))
                 if dst_point is not None:
-                    emit_plain_arrow_svg(
+                    _new_segs = emit_plain_arrow_svg(
                         parts,
                         ann,
                         dst_point=dst_point,
                         render_inline_tex=render_inline_tex,
                         placed_labels=placed,
-                        primitive_obstacles=_prim_seg_obs if _prim_seg_obs else None,
+                        primitive_obstacles=_combined_obs if _combined_obs else None,
                     )
+                    if _new_segs:
+                        prior_arrow_segments.extend(_new_segs)
                 continue
 
             if not arrow_from:
@@ -474,8 +495,9 @@ class PrimitiveBase(abc.ABC):
                             cell_height=self._arrow_cell_height,
                             render_inline_tex=render_inline_tex,
                             placed_labels=placed,
-                            primitive_obstacles=_prim_seg_obs if _prim_seg_obs else None,
+                            primitive_obstacles=_combined_obs if _combined_obs else None,
                         )
+                # Position-only annotations have no arrow geometry to accumulate.
                 continue
 
             src_point = self.resolve_annotation_point(arrow_from)
@@ -498,7 +520,7 @@ class PrimitiveBase(abc.ABC):
                 kwargs["shorten_src"] = self._arrow_shorten
                 kwargs["shorten_dst"] = self._arrow_shorten
 
-            emit_arrow_svg(
+            _new_segs = emit_arrow_svg(
                 parts,
                 ann,
                 src_point=src_point,
@@ -507,9 +529,11 @@ class PrimitiveBase(abc.ABC):
                 cell_height=self._arrow_cell_height,
                 render_inline_tex=render_inline_tex,
                 placed_labels=placed,
-                primitive_obstacles=_prim_seg_obs if _prim_seg_obs else None,
+                primitive_obstacles=_combined_obs if _combined_obs else None,
                 **kwargs,
             )
+            if _new_segs:
+                prior_arrow_segments.extend(_new_segs)
 
     def apply_command(
         self,
