@@ -2317,13 +2317,13 @@ def emit_arrow_svg(
     arrow_index: int,
     cell_height: float,
     render_inline_tex: "Callable[[str], str] | None" = None,
+    *,
     layout: str = "horizontal",
     shorten_src: float = 0.0,
     shorten_dst: float = 0.0,
     placed_labels: "list[_LabelPlacement] | None" = None,
     _debug_capture: "dict[str, Any] | None" = None,
     primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
-    *,
     cell_metrics: "CellMetrics | None" = None,
 ) -> "list[Any]":
     """Emit a cubic Bezier arrow annotation into *lines*.
