@@ -414,7 +414,10 @@ def classify_flow(
     grids (e.g. DPTable 60×40). With ``cell_metrics=None``, pure pixel-space
     atan2 is used and the Phase B behaviour is preserved exactly.
     """
-    if dx == 0.0 and dy == 0.0:
+    # Tolerance-based zero guard: floating-point subtraction in the caller
+    # (``x2 - x1`` after shortening) can leave residuals well below the
+    # sub-pixel threshold.  Treat anything under 1e-9 as the degenerate case.
+    if math.hypot(dx, dy) < 1e-9:
         return FlowDirection.RIGHTWARD
     if cell_metrics is not None:
         cw = cell_metrics.cell_width
@@ -1921,7 +1924,7 @@ def _compute_control_points(
     flow with it) but accepted so downstream phases can read it without a
     signature break.
     """
-    del cell_metrics  # reserved for future scoring integration
+    _ = cell_metrics  # reserved for Phase D scoring integration; caller classified flow.
     euclid = math.hypot(x2 - x1, y2 - y1)
 
     # Perfect-arrows bow+stretch arc amplitude (scalar, unitless).
