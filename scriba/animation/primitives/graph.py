@@ -1411,8 +1411,16 @@ class Graph(PrimitiveBase):
                         css_class="scriba-graph-weight",
                         render_inline_tex=render_inline_tex,
                     )
+                # class="scriba-graph-pill" scopes state CSS away from the
+                # pill rect (see scriba-scene-primitives.css :not() exclusion
+                # on .scriba-state-X > rect rules). Without this, horizontal
+                # edges (pill rect = direct child of state-classed edge <g>)
+                # get CSS fill override while rotated edges (pill rect wrapped
+                # in <g transform="rotate">) escape it — producing visible
+                # inter-edge color drift even when all edges share one state.
                 _pill_svg = (
-                    f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
+                    f'<rect class="scriba-graph-pill" '
+                    f'x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
                     f'width="{pill_w}" height="{pill_h}" '
                     f'rx="{_WEIGHT_PILL_R}" fill="{pill_fill}" fill-opacity="0.85" '
                     f'stroke="{edge_stroke}" stroke-width="0.5"/>'

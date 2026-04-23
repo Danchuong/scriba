@@ -177,7 +177,7 @@
    ============================================ */
 
 /* -- idle (default) ---------------------------------------- */
-.scriba-state-idle > rect,
+.scriba-state-idle > rect:not(.scriba-graph-pill),
 .scriba-state-idle > circle {
   fill:         var(--scriba-state-idle-fill);
   stroke:       var(--scriba-state-idle-stroke);
@@ -189,12 +189,12 @@
   stroke-width: var(--scriba-edge-stroke-width);
 }
 
-.scriba-state-idle > text {
+.scriba-state-idle > text:not(.scriba-graph-weight) {
   fill: var(--scriba-state-idle-text);
 }
 
 /* -- current ----------------------------------------------- */
-.scriba-state-current > rect,
+.scriba-state-current > rect:not(.scriba-graph-pill),
 .scriba-state-current > circle {
   fill:         var(--scriba-state-current-fill);
   stroke:       var(--scriba-state-current-stroke);
@@ -206,12 +206,12 @@
   stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
 }
 
-.scriba-state-current > text {
+.scriba-state-current > text:not(.scriba-graph-weight) {
   fill: var(--scriba-state-current-text);
 }
 
 /* -- done -------------------------------------------------- */
-.scriba-state-done > rect,
+.scriba-state-done > rect:not(.scriba-graph-pill),
 .scriba-state-done > circle {
   fill:         var(--scriba-state-done-fill);
   stroke:       var(--scriba-state-done-stroke);
@@ -223,12 +223,12 @@
   stroke-width: var(--scriba-edge-stroke-width);
 }
 
-.scriba-state-done > text {
+.scriba-state-done > text:not(.scriba-graph-weight) {
   fill: var(--scriba-state-done-text);
 }
 
 /* -- dim --------------------------------------------------- */
-.scriba-state-dim > rect,
+.scriba-state-dim > rect:not(.scriba-graph-pill),
 .scriba-state-dim > circle {
   fill:         var(--scriba-state-dim-fill);
   stroke:       var(--scriba-state-dim-stroke);
@@ -240,7 +240,7 @@
   stroke-width: var(--scriba-edge-stroke-width);
 }
 
-.scriba-state-dim > text {
+.scriba-state-dim > text:not(.scriba-graph-weight) {
   fill: var(--scriba-state-dim-text);
 }
 
@@ -250,7 +250,7 @@
 }
 
 /* -- error ------------------------------------------------- */
-.scriba-state-error > rect,
+.scriba-state-error > rect:not(.scriba-graph-pill),
 .scriba-state-error > circle {
   fill:         var(--scriba-state-error-fill);
   stroke:       var(--scriba-state-error-stroke);
@@ -262,12 +262,12 @@
   stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
 }
 
-.scriba-state-error > text {
+.scriba-state-error > text:not(.scriba-graph-weight) {
   fill: var(--scriba-state-error-text);
 }
 
 /* -- good -------------------------------------------------- */
-.scriba-state-good > rect,
+.scriba-state-good > rect:not(.scriba-graph-pill),
 .scriba-state-good > circle {
   fill:         var(--scriba-state-good-fill);
   stroke:       var(--scriba-state-good-stroke);
@@ -279,12 +279,12 @@
   stroke-width: calc(var(--scriba-edge-stroke-width) + 1);
 }
 
-.scriba-state-good > text {
+.scriba-state-good > text:not(.scriba-graph-weight) {
   fill: var(--scriba-state-good-text);
 }
 
 /* -- highlight (ephemeral) --------------------------------- */
-.scriba-state-highlight > rect,
+.scriba-state-highlight > rect:not(.scriba-graph-pill),
 .scriba-state-highlight > circle {
   fill:         var(--scriba-state-highlight-fill);
   stroke:       var(--scriba-state-highlight-stroke);
@@ -296,12 +296,12 @@
   stroke-width: var(--scriba-cell-stroke-width-signal);
 }
 
-.scriba-state-highlight > text {
+.scriba-state-highlight > text:not(.scriba-graph-weight) {
   fill: var(--scriba-state-highlight-text);
 }
 
 /* -- path ------------------------------------------------- */
-.scriba-state-path > rect,
+.scriba-state-path > rect:not(.scriba-graph-pill),
 .scriba-state-path > circle {
   fill:         var(--scriba-state-path-fill);
   stroke:       var(--scriba-state-path-stroke);
@@ -313,7 +313,7 @@
   stroke-width: var(--scriba-edge-stroke-width);
 }
 
-.scriba-state-path > text {
+.scriba-state-path > text:not(.scriba-graph-weight) {
   fill: var(--scriba-state-path-text);
 }
 
