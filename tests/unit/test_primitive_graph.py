@@ -549,3 +549,87 @@ class TestHierarchicalOrientation:
         })
         # Positions still computed (FR fallback), just not layered.
         assert set(g.positions.keys()) == {"a", "b"}
+
+
+class TestPillPlacementFrameStable:
+    """Edge-pill geometry must NOT depend on per-frame edge state.
+
+    Regression for the mcmf.html step 8→9 pill swap: prior versions sorted
+    edges by state priority, so a current→good transition in one edge
+    could reorder the placement cascade and shift pills on unrelated
+    edges. Placement should now be purely a function of topology.
+    """
+
+    def _extract_pill_rects(self, svg: str) -> list[tuple[str, float, float]]:
+        """Return (edge_target, pill_x, pill_y) tuples from an emitted SVG.
+
+        Each edge <g data-target="G.edge_u_v"> with a weight pill contains
+        a `<rect x=… y=…>` for the pill. Parse them in document order.
+        """
+        import re as _re
+        out: list[tuple[str, float, float]] = []
+        # Match each edge group, then the first rect (the pill rect) inside it.
+        for m in _re.finditer(
+            r'<g data-target="(?P<tgt>G\.edge[^"]+)"[^>]*>'
+            r'[^<]*<line[^/]*/>'  # the stroke line
+            r'(?P<rest>.*?)</g>',
+            svg,
+            flags=_re.DOTALL,
+        ):
+            tgt = m.group("tgt")
+            rest = m.group("rest")
+            rect_m = _re.search(
+                r'<rect\s+x="(?P<x>[-\d.]+)"\s+y="(?P<y>[-\d.]+)"',
+                rest,
+            )
+            if rect_m:
+                out.append((tgt, float(rect_m.group("x")), float(rect_m.group("y"))))
+        return out
+
+    def test_mcmf_pill_positions_frame_stable_across_state_changes(self) -> None:
+        """MCMF topology: pill positions must match frame-to-frame despite state churn."""
+        common = {
+            "nodes": ["S", "A", "B", "C", "D", "T"],
+            "edges": [
+                ("S", "A", 4), ("S", "B", 3),
+                ("A", "C", 2), ("A", "D", 3),
+                ("B", "C", 5), ("B", "D", 1),
+                ("C", "T", 4), ("D", "T", 3),
+            ],
+            "directed": True,
+            "show_weights": True,
+            "layout": "hierarchical",
+            "orientation": "LR",
+        }
+
+        g1 = Graph("G", common)
+        svg1 = g1.emit_svg()
+        rects1 = {t: (x, y) for t, x, y in self._extract_pill_rects(svg1)}
+
+        # Frame "step 8" state: mix of good/dim (all fall to prio-99 pre-fix).
+        g2 = Graph("G", common)
+        for edge, state in [
+            (("S", "A"), "good"), (("A", "D"), "good"), (("D", "T"), "good"),
+            (("S", "B"), "dim"), (("B", "C"), "dim"), (("A", "C"), "dim"),
+            (("C", "T"), "dim"),
+        ]:
+            g2.set_state(f"edge[({edge[0]},{edge[1]})]", state)
+        rects2 = {t: (x, y) for t, x, y in self._extract_pill_rects(g2.emit_svg())}
+
+        # Frame "step 9" state: path edges done, rest idle (prio-3 pre-fix).
+        g3 = Graph("G", common)
+        for edge, state in [
+            (("S", "A"), "done"), (("A", "D"), "done"), (("D", "T"), "done"),
+            (("S", "B"), "idle"), (("B", "C"), "idle"), (("A", "C"), "idle"),
+            (("C", "T"), "dim"),
+        ]:
+            g3.set_state(f"edge[({edge[0]},{edge[1]})]", state)
+        rects3 = {t: (x, y) for t, x, y in self._extract_pill_rects(g3.emit_svg())}
+
+        # All three frames must produce identical pill positions per edge.
+        assert rects1.keys() == rects2.keys() == rects3.keys()
+        for tgt in rects1:
+            assert rects1[tgt] == rects2[tgt] == rects3[tgt], (
+                f"pill for {tgt} moved across frames: "
+                f"{rects1[tgt]} vs {rects2[tgt]} vs {rects3[tgt]}"
+            )

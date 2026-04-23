@@ -140,15 +140,6 @@ class PillPlacement(NamedTuple):
     stage: str  # "origin" | "along" | "saturate" | "perp" | "leader"
 
 
-# Edge-placement ordering priority for D-1 determinism (GEP-05).
-_EDGE_STATE_PRIO: dict[str, int] = {
-    "current": 0,
-    "highlighted": 1,
-    "active": 2,
-    "idle": 3,
-    "muted": 4,
-}
-
 # Regex to parse annotation selectors like "G.node[A]" or "G.node[myNode]"
 _GRAPH_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
 
@@ -1176,18 +1167,21 @@ class Graph(PrimitiveBase):
         else:
             graph_centroid = None
 
-        # GEP-05: stable edge order — (state priority ASC, canonical edge key
-        # ASC) — so identical graphs placed in different add_edge orders
-        # produce byte-identical SVG output (D-1 determinism).
+        # Frame-stable placement order: sort by canonical edge key only.
+        # Prior versions (≤v0.15) prepended an _EDGE_STATE_PRIO bucket so
+        # current/highlighted edges claimed the best slots — but the prio
+        # map omitted good/done/dim/bad, which collapsed to 99 and sorted
+        # inconsistently as edges crossed state-group boundaries (e.g. a
+        # current→good transition would flip edge ordering, moving pills
+        # to different slots in the very next frame). The resulting
+        # "pill swap" across frames was disorienting and outweighed the
+        # pedagogical win of priority slotting. D-1 determinism is still
+        # satisfied because _edge_key is a canonical ASCII string key.
         def _edge_sort_key(
             edge: tuple[Any, Any, Any],
-        ) -> tuple[int, str]:
+        ) -> str:
             u_, v_, _w = edge
-            state_ = self.get_state(self._edge_key(u_, v_))
-            return (
-                _EDGE_STATE_PRIO.get(state_, 99),
-                self._edge_key(u_, v_),
-            )
+            return self._edge_key(u_, v_)
         parts.append('<g class="scriba-graph-edges">')
         for u, v, weight in sorted(self.edges, key=_edge_sort_key):
             edge_target = f"{self.name}.{self._edge_key(u, v)}"
