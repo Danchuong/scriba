@@ -11,12 +11,48 @@ Covers RFC-001 §4.2:
 from __future__ import annotations
 
 import math
+import os
 
 import pytest
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from scriba.animation.errors import AnimationError
-from scriba.animation.primitives.graph import Graph, _nudge_pill_placement
+from scriba.animation.primitives.graph import (
+    Graph,
+    _assert_on_stroke as _runtime_assert_on_stroke,
+    _nudge_pill_placement,
+)
 from scriba.animation.primitives._svg_helpers import _LabelPlacement
+
+
+# ---------------------------------------------------------------------------
+# Geometry helper — infinite-line perpendicular distance
+# ---------------------------------------------------------------------------
+
+
+def _point_to_line_distance(
+    px: float,
+    py: float,
+    lx1: float,
+    ly1: float,
+    lx2: float,
+    ly2: float,
+) -> float:
+    """Return the perpendicular distance from point (px, py) to the infinite
+    line passing through (lx1, ly1) and (lx2, ly2).
+
+    When the two line points are coincident the function returns the Euclidean
+    distance from the point to that single location.
+    """
+    dx, dy = lx2 - lx1, ly2 - ly1
+    l2 = dx * dx + dy * dy
+    if l2 == 0:
+        return math.hypot(px - lx1, py - ly1)
+    t = ((px - lx1) * dx + (py - ly1) * dy) / l2
+    foot_x = lx1 + t * dx
+    foot_y = ly1 + t * dy
+    return math.hypot(px - foot_x, py - foot_y)
 
 
 # ---------------------------------------------------------------------------
@@ -1183,3 +1219,247 @@ def test_perp_no_flicker_rerun() -> None:
         f"U-10 on diagonal: expected +2s={expected_2s} (same-side preferred), "
         f"got {result_a}. Opposite-side -s would be {wrong_neg_s}."
     )
+
+
+# ---------------------------------------------------------------------------
+# GEP v2.0 Phase 3 — U-04 / U-14 on-stroke invariant property test
+#
+# Rules:
+#   U-04  Pill centre lies on the edge stroke.
+#   U-14  Stages 1 (origin), 1 (along-shift), and 1.5 (saturate) must never
+#         displace the pill perpendicular to the stroke.  Stage 2 (perp
+#         fallback) is explicitly excluded from this invariant.
+#
+# Strategy: Hypothesis generates random edge angles (0..2π).  For each angle
+# three scenarios are exercised:
+#
+#   Scenario A — stage 1 origin wins (no blockers):
+#     Expected result is (mid_x, mid_y), which is on the stroke by construction.
+#
+#   Scenario B — stage 1 along-shift wins (origin blocked, budget > 0):
+#     Result is mid + k*(ux,uy) for some integer k.  Perpendicular component
+#     is zero by construction — but the test verifies it geometrically so that
+#     a future refactor can't introduce silent drift.
+#
+#   Scenario C — stage 1.5 saturate wins (origin + all stepped probes +
+#     all perp probes blocked, saturate clear):
+#     Result is mid ± max_shift_along*(ux,uy).  Perpendicular distance to the
+#     stroke must be < 0.5 px.
+#
+# Tolerance: 0.5 px covers floating-point accumulation at any angle.
+# ---------------------------------------------------------------------------
+
+_ON_STROKE_TOL: float = 0.5  # px — max allowable perp distance for stages 1–1.5
+
+# Shared pill / AABB dimensions kept identical to the saturate-test block so
+# the step sizes are deterministic regardless of angle.
+_P3_PILL_W: float = 17.0
+_P3_PILL_H: float = 17.0
+_P3_AABB_W: float = 20.0
+_P3_AABB_H: float = 20.0
+_P3_STEP_ALONG: float = _P3_AABB_W + 2   # 22.0
+_P3_STEP_PERP: float = _P3_AABB_H + 2    # 22.0
+_P3_MAX_SHIFT: float = 75.0  # budget sits between 2·step (44) and 4·step (88)
+_P3_MID_X: float = 500.0
+_P3_MID_Y: float = 300.0
+
+
+def _p3_blocker(x: float, y: float) -> _LabelPlacement:
+    return _LabelPlacement(x=x, y=y, width=_P3_AABB_W, height=_P3_AABB_H)
+
+
+def _p3_unit_vectors(theta: float) -> tuple[float, float, float, float]:
+    """Return (ux, uy, perp_x, perp_y) for edge direction angle theta."""
+    ux = math.cos(theta)
+    uy = math.sin(theta)
+    # Right-hand perpendicular: rotate (ux,uy) by -90°
+    perp_x = uy
+    perp_y = -ux
+    return ux, uy, perp_x, perp_y
+
+
+def _assert_on_stroke(
+    lx: float,
+    ly: float,
+    mid_x: float,
+    mid_y: float,
+    ux: float,
+    uy: float,
+    scenario: str,
+) -> None:
+    """Assert (lx, ly) lies within _ON_STROKE_TOL of the infinite stroke line.
+
+    The stroke passes through (mid_x, mid_y) with direction (ux, uy).  A
+    second point on the line is (mid_x + ux, mid_y + uy).
+    """
+    dist = _point_to_line_distance(
+        lx, ly,
+        mid_x, mid_y,
+        mid_x + ux, mid_y + uy,
+    )
+    assert dist < _ON_STROKE_TOL, (
+        f"U-04/U-14 violated in {scenario}: "
+        f"pill centre ({lx:.4f}, {ly:.4f}) is {dist:.4f} px "
+        f"from stroke (tol={_ON_STROKE_TOL})"
+    )
+
+
+def _check_on_stroke_invariant(theta: float) -> None:
+    """Shared body for the property test and the boundary-angle sentinel.
+    Exercises stages origin / along / saturate at edge angle `theta`."""
+    ux, uy, perp_x, perp_y = _p3_unit_vectors(theta)
+
+    # ------------------------------------------------------------------
+    # Scenario A: stage 1 origin — no blockers, function returns (mid_x, mid_y)
+    # ------------------------------------------------------------------
+    lx_a, ly_a = _nudge_pill_placement(
+        mid_x=_P3_MID_X,
+        mid_y=_P3_MID_Y,
+        ux=ux,
+        uy=uy,
+        perp_x=perp_x,
+        perp_y=perp_y,
+        pill_w=_P3_PILL_W,
+        pill_h=_P3_PILL_H,
+        aabb_w=_P3_AABB_W,
+        aabb_h=_P3_AABB_H,
+        max_shift_along=_P3_MAX_SHIFT,
+        node_aabbs=[],
+        placed_pills=[],
+    )
+    _assert_on_stroke(lx_a, ly_a, _P3_MID_X, _P3_MID_Y, ux, uy, "A-origin")
+
+    # ------------------------------------------------------------------
+    # Scenario B: stage 1 along-shift — block origin, first step is clear
+    # ------------------------------------------------------------------
+    lx_b, ly_b = _nudge_pill_placement(
+        mid_x=_P3_MID_X,
+        mid_y=_P3_MID_Y,
+        ux=ux,
+        uy=uy,
+        perp_x=perp_x,
+        perp_y=perp_y,
+        pill_w=_P3_PILL_W,
+        pill_h=_P3_PILL_H,
+        aabb_w=_P3_AABB_W,
+        aabb_h=_P3_AABB_H,
+        max_shift_along=_P3_MAX_SHIFT,
+        node_aabbs=[],
+        placed_pills=[_p3_blocker(_P3_MID_X, _P3_MID_Y)],  # block origin only
+    )
+    _assert_on_stroke(lx_b, ly_b, _P3_MID_X, _P3_MID_Y, ux, uy, "B-along-shift")
+    # Additional constraint: along-shift must NOT return the blocked origin.
+    # (If it does, the collision checker is broken — but the on-stroke check
+    # above would still pass, so we add this as a separate guard.)
+    assert (lx_b, ly_b) != (_P3_MID_X, _P3_MID_Y), (
+        "B-along-shift: returned origin despite blocker at origin"
+    )
+
+    # ------------------------------------------------------------------
+    # Scenario C: stage 1.5 saturate — block origin, all stepped stage-1
+    # probes (within budget), and all perp probes; saturate probe clear.
+    # ------------------------------------------------------------------
+    blockers_c: list[_LabelPlacement] = [
+        _p3_blocker(_P3_MID_X, _P3_MID_Y),  # origin
+    ]
+    # Block all stage-1 stepped probes that fall within the budget.
+    for off in (
+        _P3_STEP_ALONG,
+        -_P3_STEP_ALONG,
+        2 * _P3_STEP_ALONG,
+        -2 * _P3_STEP_ALONG,
+    ):
+        if abs(off) <= _P3_MAX_SHIFT:
+            blockers_c.append(
+                _p3_blocker(
+                    _P3_MID_X + ux * off,
+                    _P3_MID_Y + uy * off,
+                )
+            )
+    # Block all stage-2 perp probes so they cannot fire before saturate.
+    for off in (
+        _P3_STEP_PERP,
+        2 * _P3_STEP_PERP,
+        -_P3_STEP_PERP,
+        -2 * _P3_STEP_PERP,
+    ):
+        blockers_c.append(
+            _p3_blocker(
+                _P3_MID_X + perp_x * off,
+                _P3_MID_Y + perp_y * off,
+            )
+        )
+
+    lx_c, ly_c = _nudge_pill_placement(
+        mid_x=_P3_MID_X,
+        mid_y=_P3_MID_Y,
+        ux=ux,
+        uy=uy,
+        perp_x=perp_x,
+        perp_y=perp_y,
+        pill_w=_P3_PILL_W,
+        pill_h=_P3_PILL_H,
+        aabb_w=_P3_AABB_W,
+        aabb_h=_P3_AABB_H,
+        max_shift_along=_P3_MAX_SHIFT,
+        node_aabbs=[],
+        placed_pills=blockers_c,
+    )
+    _assert_on_stroke(lx_c, ly_c, _P3_MID_X, _P3_MID_Y, ux, uy, "C-saturate")
+    # Confirm saturate stage actually fired (not an unintended stage 2/3 fallback):
+    # result must lie at mid ± max_shift_along along (ux, uy).
+    sat_plus = (_P3_MID_X + ux * _P3_MAX_SHIFT, _P3_MID_Y + uy * _P3_MAX_SHIFT)
+    sat_minus = (_P3_MID_X - ux * _P3_MAX_SHIFT, _P3_MID_Y - uy * _P3_MAX_SHIFT)
+    assert (
+        (abs(lx_c - sat_plus[0]) < 1e-6 and abs(ly_c - sat_plus[1]) < 1e-6)
+        or (abs(lx_c - sat_minus[0]) < 1e-6 and abs(ly_c - sat_minus[1]) < 1e-6)
+    ), (
+        f"scenario C did not reach saturate stage: got ({lx_c},{ly_c}); "
+        f"expected one of {sat_plus} or {sat_minus}"
+    )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "theta",
+    [0.0, math.pi / 2, math.pi, 3 * math.pi / 2, math.pi / 4, math.pi / 6],
+    ids=["0", "pi/2", "pi", "3pi/2", "pi/4", "pi/6"],
+)
+def test_on_stroke_invariant_boundary(theta: float) -> None:
+    """U-04/U-14 boundary-angle sentinel — forces coverage of axis-aligned
+    and π/4, π/6 angles regardless of hypothesis sampling."""
+    _check_on_stroke_invariant(theta)
+
+
+@pytest.mark.unit
+@given(theta=st.floats(min_value=0.0, max_value=2 * math.pi, allow_nan=False, allow_infinity=False))
+@settings(max_examples=120, deadline=None)
+def test_on_stroke_invariant_property(theta: float) -> None:
+    """U-04/U-14 property test. See _check_on_stroke_invariant for scenarios."""
+    _check_on_stroke_invariant(theta)
+
+
+# ---------------------------------------------------------------------------
+# GEP-16 — runtime _assert_on_stroke (debug mode)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_debug_assert_fires_on_off_stroke(monkeypatch: pytest.MonkeyPatch) -> None:
+    """GEP-16: _assert_on_stroke raises when SCRIBA_DEBUG=1 and point is off-stroke.
+
+    Also verifies the guard is a no-op when SCRIBA_DEBUG is unset or 0.
+    """
+    # Point (100, 100) is 100 px off the x-axis (y=0 line through origin).
+    # ux=1.0, uy=0.0 → perp component = abs((100-0)*(-0.0) + (100-0)*1.0) = 100.
+    monkeypatch.setenv("SCRIBA_DEBUG", "1")
+    with pytest.raises(AssertionError):
+        _runtime_assert_on_stroke(100.0, 100.0, 0.0, 0.0, 1.0, 0.0, "test")
+
+    # No-op when SCRIBA_DEBUG is unset.
+    monkeypatch.delenv("SCRIBA_DEBUG", raising=False)
+    _runtime_assert_on_stroke(100.0, 100.0, 0.0, 0.0, 1.0, 0.0, "test")  # must not raise
+
+    # No-op when SCRIBA_DEBUG=0.
+    monkeypatch.setenv("SCRIBA_DEBUG", "0")
+    _runtime_assert_on_stroke(100.0, 100.0, 0.0, 0.0, 1.0, 0.0, "test")  # must not raise

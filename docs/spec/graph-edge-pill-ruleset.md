@@ -1,6 +1,6 @@
 ---
 title: Graph Edge-Pill Ruleset
-version: 1.3.1
+version: 1.3.2
 status: Released
 last-modified: 2026-04-23
 editors: scriba-core
@@ -16,7 +16,7 @@ plan:
 
 # Graph Edge-Pill Ruleset
 
-**Version:** 1.3.1 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
+**Version:** 1.3.2 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
 
 > **Scope**: weight-value pill placement for every edge rendered through
 > `Graph.emit_svg` (`scriba/animation/primitives/graph.py`). Governs pill
@@ -472,6 +472,26 @@ pre-existing `test_starlark_security` failure) runs GREEN after the reorder:
 3199 passed / 8 skipped / 1 xfailed. No example SVG golden shifts because no
 currently-committed example scene reaches the Stage-2 perp fallback (stages
 1 + 1.5 resolve every edge).
+
+---
+
+### GEP-16 — On-stroke invariant runtime check (debug mode)
+
+**Normative:** SHOULD (debug builds)
+**Since:** v1.3.2
+**Source:** GEP v2.0 plan — Phase 3 on-stroke assert (U-04, U-14).
+**Scope:** `_assert_on_stroke` helper in `scriba/animation/primitives/graph.py`.
+
+`_assert_on_stroke` SHALL be called after every successful placement in stages
+origin, along, and saturate of `_nudge_pill_placement`. When the environment
+variable `SCRIBA_DEBUG=1` is set, the helper raises `AssertionError` if the
+pill centre's perpendicular distance to the infinite edge line exceeds 0.5 px.
+When `SCRIBA_DEBUG` is unset or any value other than `"1"`, the function is a
+no-op — zero runtime cost in production.
+
+The check covers exactly the three stages that carry the U-04/U-14 on-stroke
+guarantee (origin, along-shift, saturate). Stage 2 (perp fallback) and Stage 3
+(origin fallback) are intentionally excluded.
 
 ---
 

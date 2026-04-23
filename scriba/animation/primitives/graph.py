@@ -9,6 +9,7 @@ See ``docs/spec/primitives.md`` section 6 for the authoritative specification.
 from __future__ import annotations
 
 import math
+import os
 import random
 import re
 from typing import Any, Callable, ClassVar
@@ -96,6 +97,33 @@ _GRAPH_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
 
 
 # ---------------------------------------------------------------------------
+# GEP-16 v1.3.2 — on-stroke runtime invariant check (debug mode)
+# ---------------------------------------------------------------------------
+
+
+def _assert_on_stroke(
+    cx: float,
+    cy: float,
+    mid_x: float,
+    mid_y: float,
+    ux: float,
+    uy: float,
+    stage: str,
+) -> None:
+    """U-14 runtime check. No-op unless SCRIBA_DEBUG=1.
+
+    Raises AssertionError if pill center distance to infinite edge line > 0.5 px.
+    """
+    if os.environ.get("SCRIBA_DEBUG") != "1":
+        return
+    perp_dist = abs((cx - mid_x) * (-uy) + (cy - mid_y) * ux)
+    assert perp_dist <= 0.5, (
+        f"U-14 on-stroke violated at stage {stage!r}: "
+        f"pill centre ({cx:.4f}, {cy:.4f}) is {perp_dist:.4f} px off stroke"
+    )
+
+
+# ---------------------------------------------------------------------------
 # GEP-07 v1.2 — pill nudge helper (pure, testable without SVG)
 # ---------------------------------------------------------------------------
 
@@ -135,6 +163,7 @@ def _nudge_pill_placement(
     candidate = _LabelPlacement(x=origin_lx, y=origin_ly, width=aabb_w, height=aabb_h)
 
     if not _collides(candidate):
+        _assert_on_stroke(origin_lx, origin_ly, mid_x, mid_y, ux, uy, "origin")
         return origin_lx, origin_ly
 
     # Step against the rotated AABB, not the un-rotated pill box: on angled
@@ -157,6 +186,7 @@ def _nudge_pill_placement(
         trial_ly = origin_ly + uy * offset
         trial = _LabelPlacement(x=trial_lx, y=trial_ly, width=aabb_w, height=aabb_h)
         if not _collides(trial):
+            _assert_on_stroke(trial_lx, trial_ly, mid_x, mid_y, ux, uy, "along")
             return trial_lx, trial_ly
 
     # Stage 1.5 — saturate probe (GEP-14 v1.3): try pill at exactly
@@ -168,6 +198,7 @@ def _nudge_pill_placement(
             sat_ly = origin_ly + sign * max_shift_along * uy
             sat = _LabelPlacement(x=sat_lx, y=sat_ly, width=aabb_w, height=aabb_h)
             if not _collides(sat):
+                _assert_on_stroke(sat_lx, sat_ly, mid_x, mid_y, ux, uy, "saturate")
                 return sat_lx, sat_ly
 
     # Stage 2 — perp nudge fallback (v1.3 behaviour, GEP-15).
