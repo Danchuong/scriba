@@ -4,7 +4,7 @@
 **Scope:** `scriba/animation/primitives/graph.py` edge-pill emitter (lines 735–841).
 **Goal:** Fix F1/G1 CRITICAL bugs, then rotate pill + weight text along edge angle for visual edge→pill association.
 **Research bundle:** `docs/archive/graph-edge-pill-optimization-2026-04-23/` (audit, smart-label study, external survey, synthesis).
-**Demo (gitignored):** `examples/fixes/edge_pill_rotated_demo.html`.
+**Demo (gitignored):** `examples/demos/edge_pill_rotated_demo.html`.
 
 ---
 
@@ -116,7 +116,7 @@ Add four tests (fixes T1–T4):
 
 ### Golden regen
 
-Regenerate `examples/dinic.html`, `examples/mcmf.html` via `build.sh`. Manually verify in browser that pill no longer overlaps any node circle. Commit the new SHAs.
+Regenerate `examples/demos/dinic.html`, `examples/demos/mcmf.html` via `build.sh`. Manually verify in browser that pill no longer overlaps any node circle. Commit the new SHAs.
 
 ### Acceptance
 
@@ -242,7 +242,7 @@ Add to `tests/unit/test_graph_mutation.py`:
 
 ### Golden regen
 
-Regenerate `examples/dinic.html`, `examples/mcmf.html`, `examples/maxflow.html`. SVG hash WILL change (rotation transform on every pill). Update golden SHAs in CHANGELOG.
+Regenerate `examples/demos/dinic.html`, `examples/demos/mcmf.html`, `examples/demos/maxflow.html`. SVG hash WILL change (rotation transform on every pill). Update golden SHAs in CHANGELOG.
 
 ### Acceptance
 
@@ -286,9 +286,9 @@ Phase 1 (24-candidate scoring, `EdgePillContext`, P1–P7) and Phase 2/3 (leader
 |------|---------|-----------|
 | `scriba/animation/primitives/graph.py` | edit (~50 LOC) | edit (~80 LOC) |
 | `tests/unit/test_graph_mutation.py` | +4 tests | +6 tests |
-| `examples/dinic.html` | regen | regen |
-| `examples/mcmf.html` | regen | regen |
-| `examples/maxflow.html` | regen | regen |
+| `examples/demos/dinic.html` | regen | regen |
+| `examples/demos/mcmf.html` | regen | regen |
+| `examples/demos/maxflow.html` | regen | regen |
 | `CHANGELOG.md` | entry | entry |
 | `docs/archive/graph-edge-pill-logic-<date>.md` | — | new file supersedes 2026-04-23 |
 

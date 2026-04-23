@@ -36,28 +36,28 @@ import render as render_module  # type: ignore[import-not-found]
 FIXTURES: list[dict] = [
     {
         "label": "tiny-nomath",
-        "path": "examples/fixes/05_diagram_prescan.tex",
+        "path": "examples/fixtures/pass/05_diagram_prescan.tex",
         "tier": "small",
         "has_math": False,
         "has_starlark": False,
     },
     {
         "label": "small-math",
-        "path": "examples/fixes/01_variablewatch_shrink.tex",
+        "path": "examples/fixtures/pass/01_variablewatch_shrink.tex",
         "tier": "small",
         "has_math": True,
         "has_starlark": True,
     },
     {
         "label": "medium-tutorial",
-        "path": "examples/tutorial_en.tex",
+        "path": "examples/demos/tutorial_en.tex",
         "tier": "medium",
         "has_math": True,
         "has_starlark": True,
     },
     {
         "label": "large-dinic",
-        "path": "examples/dinic.tex",
+        "path": "examples/demos/dinic.tex",
         "tier": "large",
         "has_math": True,
         "has_starlark": True,

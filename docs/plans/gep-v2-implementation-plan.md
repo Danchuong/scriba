@@ -27,7 +27,7 @@
 
 **Exit criteria**:
 - All tests pass
-- Golden regen cho `examples/maxflow.html` (D→T edge) shows pill on-stroke không fallback
+- Golden regen cho `examples/demos/maxflow.html` (D→T edge) shows pill on-stroke không fallback
 - `gitnexus_impact` < MEDIUM risk
 
 ---
@@ -88,7 +88,7 @@
 
 **Files touched**: `graph.py`, `_svg_helpers.py`, `test_graph_mutation.py`, `graph-edge-pill-ruleset.md`, `primitives.md`
 
-**Exit criteria**: K5 A→C, B→T pills có leader line; `examples/maxflow.html` regen clean.
+**Exit criteria**: K5 A→C, B→T pills có leader line; `examples/demos/maxflow.html` regen clean.
 
 ---
 

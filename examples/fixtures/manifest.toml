@@ -1,0 +1,113 @@
+# Fixture manifest: per-file intent, bug class, and (for expected-fail) pinned
+# error code. `build.sh --fixtures` reads this to classify outcomes.
+#
+# Schema:
+#   [pass.<stem>]           stem = filename without .tex
+#   description = "..."
+#   bug_class   = "..."
+#
+#   [expected_fail.<stem>]
+#   description = "..."
+#   error_code  = "..."     # token expected in stderr / raised error
+#
+# Keep alphabetical by stem inside each table.
+
+# ----- pass/ -----------------------------------------------------------------
+
+[pass.01_variablewatch_shrink]
+description = "Step 2 long string visible, not clipped"
+bug_class   = "VariableWatch monotonic width + pre-scan"
+
+[pass.02_hashmap_shrink]
+description = "Step 2 collision chain visible"
+bug_class   = "HashMap _max_entries_col_width"
+
+[pass.03_linkedlist_shrink]
+description = "Step 2 wide node value visible"
+bug_class   = "LinkedList _value_width monotonic"
+
+[pass.04_stack_shrink]
+description = "Step 2 wide cell visible after pop"
+bug_class   = "Stack _cell_width monotonic"
+
+[pass.05_diagram_prescan]
+description = "Diagram viewBox sized for post-apply value"
+bug_class   = "emit_diagram_html pre-scan hook"
+
+[pass.06_substory_prescan]
+description = "Substory viewBox accommodates wide inner value"
+bug_class   = "emit_substory_html pre-scan hook"
+
+[pass.07_prescan_no_pollution]
+description = "Step 1 shows initial state, NOT pre-scan residue"
+bug_class   = "Snapshot/restore for Queue/HashMap/LinkedList"
+
+[pass.08_foreach_value_interpolation]
+description = "\\foreach expands #1 inside value= correctly"
+bug_class   = "foreach macro body interpolation"
+
+[pass.10_selector_out_of_range]
+description = "Out-of-range index produces helpful error (not crash)"
+bug_class   = "Selector bounds-check diagnostic"
+
+[pass.12_selector_unknown_accessor]
+description = "Unknown accessor produces helpful error"
+bug_class   = "Selector accessor diagnostic"
+
+[pass.14_annotate_arrow_bool]
+description = "\\annotate arrow=true|false parses correctly"
+bug_class   = "Annotate bool param"
+
+[pass.17_empty_substory]
+description = "Empty substory body renders without error"
+bug_class   = "Empty substory tolerance"
+
+[pass.18_xss_filename]
+description = "XSS payload in filename escaped in output"
+bug_class   = "Security: filename escaping"
+
+[pass.19_path_traversal]
+description = "Path-traversal in filename rejected"
+bug_class   = "Security: path traversal"
+
+[pass.22_recursion_no_path_leak]
+description = "Recursive \\foreach does not leak path state"
+bug_class   = "Recursion state isolation"
+
+[pass.23_a11y_widget]
+description = "Widget emits ARIA attributes"
+bug_class   = "Accessibility"
+
+[pass.24_contrast_dark_mode]
+description = "Dark-mode token contrast meets WCAG"
+bug_class   = "Accessibility / theming"
+
+# ----- expected-fail/ --------------------------------------------------------
+
+[expected_fail.09_command_typo_hint]
+description = "Typo'd command name produces did-you-mean hint"
+error_code  = "UNKNOWN_COMMAND"
+
+[expected_fail.11_selector_unknown_shape]
+description = "Selector referencing unknown shape errors"
+error_code  = "UNKNOWN_SHAPE"
+
+[expected_fail.13_apply_before_shape]
+description = "\\apply before \\shape declaration errors"
+error_code  = "APPLY_BEFORE_SHAPE"
+
+[expected_fail.15_percent_in_braces]
+description = "Literal %-in-braces errors (LaTeX comment gotcha)"
+error_code  = "PERCENT_IN_BRACES"
+
+[expected_fail.16_empty_foreach_iterable]
+description = "\\foreach over empty iterable errors"
+error_code  = "EMPTY_FOREACH"
+
+[expected_fail.20_cumulative_budget]
+description = "Cumulative step-budget overflow rejected"
+error_code  = "BUDGET_EXCEEDED"
+
+[expected_fail.21_list_alloc_cap]
+description = "List allocation over cap rejected"
+error_code  = "ALLOC_CAP"

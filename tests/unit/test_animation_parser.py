@@ -621,7 +621,7 @@ class TestPercentInBraceHint:
     line, the resulting E1001 should include an explicit hint that explains the
     ``%`` comment mechanism and how to escape it.
 
-    Fixture: examples/fixes/15_percent_in_braces.tex
+    Fixture: examples/fixtures/expected-fail/15_percent_in_braces.tex
     Audit: docs/archive/ruleset-audit-2026-04-17/02-errors-edge-cases.md, test 6
     """
 

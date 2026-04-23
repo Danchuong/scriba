@@ -340,7 +340,7 @@ look connected; the pad enforces a minimum visible separation.
 **Normative:** MUST
 **Since:** Phase 0.5
 **Source:** product decision 2026-04-23; demo
-`examples/fixes/edge_pill_rotated_demo.html` (gitignored).
+`examples/demos/edge_pill_rotated_demo.html` (gitignored).
 **Scope:** `Graph.emit_svg` weight-pill emission.
 
 For every non-degenerate edge (`edge_len ≥ _WEIGHT_EDGE_MIN_LEN`),
