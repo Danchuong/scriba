@@ -833,17 +833,38 @@ class Graph(PrimitiveBase):
                 perp_x = -dy_edge / edge_len
                 perp_y = dx_edge / edge_len
 
+                # GEP-10: rotate pill + text along the visible stroke so
+                # users can map a pill to its edge instantly on dense /
+                # diagonal graphs. Normalize θ into [-π/2, π/2] so text
+                # never renders upside-down (GEP-10 upright rule).
+                # GEP-11: fall back to horizontal pill on degenerate edges
+                # (coincident nodes) — perp vector is zero there.
+                if edge_len < _WEIGHT_EDGE_MIN_LEN:
+                    theta_rad = 0.0
+                else:
+                    _raw_theta = math.atan2(dy_edge, dx_edge)
+                    if _raw_theta > math.pi / 2:
+                        theta_rad = _raw_theta - math.pi
+                    elif _raw_theta < -math.pi / 2:
+                        theta_rad = _raw_theta + math.pi
+                    else:
+                        theta_rad = _raw_theta
+                theta_deg = math.degrees(theta_rad)
+
                 # GEP-06: initial placement = midpoint + perp-bias so the pill
                 # sits perpendicular to the stroke, not an unconditional -4
                 # y-offset. Correct for any edge angle including vertical.
                 lx = mid_x + perp_x * _WEIGHT_PILL_PERP_BIAS
                 ly = mid_y + perp_y * _WEIGHT_PILL_PERP_BIAS
 
-                # GEP-09: AABB inflated by pill stroke-width (0.5 each side)
-                # so two pills declared non-overlapping never render with
-                # touching borders.
-                aabb_w = pill_w + _WEIGHT_PILL_STROKE_PAD
-                aabb_h = pill_h + _WEIGHT_PILL_STROKE_PAD
+                # GEP-09 / GEP-12: collision AABB = axis-aligned bounding
+                # box of the rotated pill rect plus stroke-width pad. Over-
+                # estimates the true OBB footprint by up to √2 on diagonals;
+                # acceptable at E ≤ 50 (Phase 1 may upgrade to SAT OBB test).
+                abs_cos = abs(math.cos(theta_rad))
+                abs_sin = abs(math.sin(theta_rad))
+                aabb_w = pill_w * abs_cos + pill_h * abs_sin + _WEIGHT_PILL_STROKE_PAD
+                aabb_h = pill_w * abs_sin + pill_h * abs_cos + _WEIGHT_PILL_STROKE_PAD
                 candidate = _LabelPlacement(
                     x=lx, y=ly, width=aabb_w, height=aabb_h
                 )
@@ -889,10 +910,15 @@ class Graph(PrimitiveBase):
                 )
                 placed_edge_labels.append(candidate)
 
-                # Background pill
+                # GEP-10: pill rect + text wrapped in a <g transform="rotate">
+                # so the pill rotates as a unit around its own centre. Text
+                # remains centred in the pill's local frame regardless of
+                # edge angle. GEP-13: rotate the outer <g>, NEVER the inner
+                # <foreignObject> (KaTeX path) — Safari has a known sub-pixel
+                # rendering bug for transforms on <foreignObject>.
                 pill_rx = lx - pill_w / 2
                 pill_ry = ly - pill_h / 2
-                weight_text = (
+                _pill_svg = (
                     f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
                     f'width="{pill_w}" height="{pill_h}" '
                     f'rx="{_WEIGHT_PILL_R}" fill="white" fill-opacity="0.85" '
@@ -905,6 +931,15 @@ class Graph(PrimitiveBase):
                     css_class="scriba-graph-weight",
                     render_inline_tex=render_inline_tex,
                 )
+                if abs(theta_deg) < 0.05:
+                    weight_text = _pill_svg
+                else:
+                    weight_text = (
+                        f'<g transform="rotate({theta_deg:.2f} '
+                        f'{lx:.1f} {ly:.1f})">'
+                        f'{_pill_svg}'
+                        f'</g>'
+                    )
             parts.append(
                 f'<g data-target="{_escape_xml(edge_target)}" '
                 f'class="{state_class(state)}" '
