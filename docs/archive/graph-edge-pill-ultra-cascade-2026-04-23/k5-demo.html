@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GEP Ultra — K5 dense graph demo</title>
+<style>
+  body { font: 13px/1.5 -apple-system, system-ui, sans-serif; background: #f8f8fa; margin: 0; padding: 24px; color: #1a1a1a; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .subtitle { color: #666; margin: 0 0 20px; font-size: 13px; }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .panel { background: white; border: 1px solid #dadce0; border-radius: 10px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .panel h2 { font-size: 15px; margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
+  .panel h2 .tag { font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; letter-spacing: 0.2px; }
+  .tag.bad  { background: #fce4e4; color: #a4262c; }
+  .tag.good { background: #e1f5e7; color: #0e7a3a; }
+  .tag.neutral { background: #e8eaed; color: #5f6368; }
+  svg { width: 100%; height: auto; background: #fcfcfc; border-radius: 6px; }
+  .edge-line { stroke: #c4c7cc; stroke-width: 1.4; fill: none; }
+  .node circle { fill: #687076; stroke: #fff; stroke-width: 2; }
+  .node text { fill: #fff; font: 600 13px/1 -apple-system; text-anchor: middle; dominant-baseline: central; }
+  .pill-aabb { fill: none; stroke-dasharray: 3 2; stroke-width: 0.6; opacity: 0.45; }
+  .pill-aabb.origin { stroke: #0e7a3a; }
+  .pill-aabb.along  { stroke: #2c6fbf; }
+  .pill-aabb.perp   { stroke: #d97070; }
+  .pill-aabb.fallback { stroke: #7b2fb3; }
+  .pill-rect { rx: 3; stroke-width: 0.6; }
+  .pill-rect.origin { fill: #f0faf2; stroke: #3b9a5a; }
+  .pill-rect.along  { fill: #eef4fc; stroke: #2c6fbf; }
+  .pill-rect.perp   { fill: #fff2f2; stroke: #d97070; }
+  .pill-rect.fallback { fill: #f5ecfa; stroke: #7b2fb3; stroke-dasharray: 2 2; }
+  .pill-text { font: 10px/1 -apple-system; text-anchor: middle; dominant-baseline: central; fill: #2e3338; }
+  .lead { stroke-dasharray: 2 2; stroke-width: 0.6; opacity: 0.7; fill: none; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+  .summary-table th, .summary-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; }
+  .summary-table th { background: #f5f5f7; font-weight: 600; color: #555; }
+  .stat-row { display: flex; gap: 12px; margin-top: 8px; font-size: 12px; }
+  .stat { padding: 4px 9px; border-radius: 5px; background: #f1f3f4; color: #444; }
+  .stat.hi { background: #e1f5e7; color: #0e7a3a; font-weight: 600; }
+  .legend { margin-top: 12px; font-size: 11px; color: #666; display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend span { display: inline-flex; align-items: center; gap: 4px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; border: 1px solid #999; }
+  .explainer { max-width: 1200px; margin: 20px auto 0; background: white; border: 1px solid #dadce0; border-radius: 10px; padding: 18px; }
+  .cascade { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 10px; font-size: 11.5px; }
+  .stage { background: #f5f5f7; border-radius: 6px; padding: 8px; border-left: 3px solid #ccc; }
+  .stage.s0 { border-color: #3b9a5a; }
+  .stage.s1 { border-color: #2c6fbf; }
+  .stage.s15 { border-color: #5ab4e0; background: #e8f3fa; }
+  .stage.s2 { border-color: #d97070; }
+  .stage.s3 { border-color: #c49330; background: #fef6e3; }
+  .stage.s4 { border-color: #b45eaa; background: #f6eaf4; }
+  .stage strong { display: block; font-size: 11px; color: #333; margin-bottom: 2px; }
+  code { background: #f5f5f7; padding: 1px 4px; border-radius: 3px; font: 11px/1.4 ui-monospace, Consolas, monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>GEP Ultra — K5 dense graph (bài toán khó)</h1>
+<p class="subtitle">5 nodes radius 78px, 10 edges đều multi-char labels ("12/20", "9/14", "5/15"…), node_r=18 — midpoints dồn về tâm, budget along cực thấp.</p>
+
+<div class="compare">
+
+<!-- Naive v1.2 -->
+<div class="panel">
+  <h2>GEP v1.2 (naive) <span class="tag bad">BAD</span></h2>
+  <svg id="svg-naive" viewBox="80 30 340 290" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="stat-row" id="stats-naive"></div>
+</div>
+
+<!-- Ultra -->
+<div class="panel">
+  <h2>GEP Ultra (2+5+3+4 combined) <span class="tag good">GOOD</span></h2>
+  <svg id="svg-ultra" viewBox="80 30 340 290" xmlns="http://www.w3.org/2000/svg"></svg>
+  <div class="stat-row" id="stats-ultra"></div>
+</div>
+
+</div>
+
+<div class="legend" style="margin: 14px 0 0 4px;">
+  <span><span class="swatch" style="background:#f0faf2; border-color:#3b9a5a"></span> origin (on-stroke)</span>
+  <span><span class="swatch" style="background:#eef4fc; border-color:#2c6fbf"></span> along-shift / saturate</span>
+  <span><span class="swatch" style="background:#fff2f2; border-color:#d97070"></span> perp (off-stroke)</span>
+  <span><span class="swatch" style="background:#f5ecfa; border-color:#7b2fb3"></span> fallback (unresolved)</span>
+</div>
+
+<div class="explainer">
+  <h2 style="margin:0 0 6px; font-size:15px;">Ultra cascade — 6 stages</h2>
+  <p style="margin:0 0 4px; color:#555; font-size:12px;">Mỗi pill thử từ trái sang phải. Dừng ngay khi stage đầu tiên resolve.</p>
+  <div class="cascade">
+    <div class="stage s0"><strong>Stage 0 — Origin</strong>Thử mid-point trước tiên (GEP-06).</div>
+    <div class="stage s1"><strong>Stage 1 — Along</strong>Probes ±step, ±2·step. Skip nếu &gt; budget.</div>
+    <div class="stage s15"><strong>Stage 1.5 — Saturate ★</strong>Nếu step &gt; budget &gt; 0, probe đúng ±budget (Opt 5).</div>
+    <div class="stage s2"><strong>Stage 2 — Perp (side-prefer)</strong>+perp, +2·perp trước, rồi flip (Opt 2 anti-flicker).</div>
+    <div class="stage s3"><strong>Stage 3 — Shrink ★</strong>Font 11→9, pad 5→3. Retry cascade (Opt 3).</div>
+    <div class="stage s4"><strong>Stage 4 — Relax node ★</strong>Budget chấp nhận pill chạm node 40% (Opt 4).</div>
+  </div>
+</div>
+
+<div class="explainer" style="margin-top:14px;">
+  <h2 style="margin:0 0 10px; font-size:15px;">Per-edge breakdown</h2>
+  <table class="summary-table" id="tbl"></table>
+</div>
+
+</div>
+
+<script>
+const data = {
+  "nodes": [
+    {
+      "id": "S",
+      "cx": 240.0,
+      "cy": 102.0,
+      "r": 18
+    },
+    {
+      "id": "A",
+      "cx": 314.2,
+      "cy": 155.9,
+      "r": 18
+    },
+    {
+      "id": "B",
+      "cx": 285.8,
+      "cy": 243.1,
+      "r": 18
+    },
+    {
+      "id": "C",
+      "cx": 194.2,
+      "cy": 243.1,
+      "r": 18
+    },
+    {
+      "id": "T",
+      "cx": 165.8,
+      "cy": 155.9,
+      "r": 18
+    }
+  ],
+  "edges": [
+    {
+      "a": "A",
+      "b": "T",
+      "label": "7/12",
+      "x1": 296.2,
+      "y1": 155.9,
+      "x2": 183.8,
+      "y2": 155.9,
+      "mid_x": 240.0,
+      "mid_y": 155.9,
+      "theta": 180.0,
+      "tl": 112.4,
+      "budget": 21.08,
+      "naive": {
+        "x": 240.0,
+        "y": 155.9,
+        "stage": "origin",
+        "pw": 34.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 240.0,
+        "y": 155.9,
+        "stage": "origin",
+        "pw": 34.2,
+        "ph": 17
+      }
+    },
+    {
+      "a": "S",
+      "b": "B",
+      "label": "8/10",
+      "x1": 245.6,
+      "y1": 119.1,
+      "x2": 280.3,
+      "y2": 226.0,
+      "mid_x": 262.9,
+      "mid_y": 172.6,
+      "theta": 72.0,
+      "tl": 112.4,
+      "budget": 21.08,
+      "naive": {
+        "x": 225.1,
+        "y": 184.8,
+        "stage": "perp+40",
+        "pw": 34.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 269.4,
+        "y": 192.6,
+        "stage": "sat+21.1",
+        "pw": 34.2,
+        "ph": 17
+      }
+    },
+    {
+      "a": "S",
+      "b": "C",
+      "label": "5/15",
+      "x1": 234.4,
+      "y1": 119.1,
+      "x2": 199.7,
+      "y2": 226.0,
+      "mid_x": 217.1,
+      "mid_y": 172.6,
+      "theta": 108.0,
+      "tl": 112.4,
+      "budget": 21.08,
+      "naive": {
+        "x": 254.9,
+        "y": 184.8,
+        "stage": "perp-40",
+        "pw": 34.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 210.6,
+        "y": 192.6,
+        "stage": "sat+21.1",
+        "pw": 34.2,
+        "ph": 17
+      }
+    },
+    {
+      "a": "A",
+      "b": "C",
+      "label": "11/11",
+      "x1": 299.6,
+      "y1": 166.5,
+      "x2": 208.7,
+      "y2": 232.5,
+      "mid_x": 254.2,
+      "mid_y": 199.5,
+      "theta": 144.0,
+      "tl": 112.4,
+      "budget": 18.06,
+      "naive": {
+        "x": 254.2,
+        "y": 199.5,
+        "stage": "origin-FB",
+        "pw": 40.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 254.2,
+        "y": 199.5,
+        "stage": "origin-FB",
+        "pw": 40.2,
+        "ph": 17
+      }
+    },
+    {
+      "a": "B",
+      "b": "T",
+      "label": "6/18",
+      "x1": 271.3,
+      "y1": 232.5,
+      "x2": 180.4,
+      "y2": 166.5,
+      "mid_x": 225.8,
+      "mid_y": 199.5,
+      "theta": -144.0,
+      "tl": 112.4,
+      "budget": 21.08,
+      "naive": {
+        "x": 225.8,
+        "y": 199.5,
+        "stage": "origin-FB",
+        "pw": 34.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 225.8,
+        "y": 199.5,
+        "stage": "origin-FB",
+        "pw": 34.2,
+        "ph": 17
+      }
+    },
+    {
+      "a": "S",
+      "b": "A",
+      "label": "12/20",
+      "x1": 254.6,
+      "y1": 112.6,
+      "x2": 299.6,
+      "y2": 145.3,
+      "mid_x": 277.1,
+      "mid_y": 128.9,
+      "theta": 36.0,
+      "tl": 55.7,
+      "budget": 0.0,
+      "naive": {
+        "x": 300.3,
+        "y": 97.1,
+        "stage": "perp-39",
+        "pw": 40.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 277.1,
+        "y": 128.9,
+        "stage": "origin",
+        "pw": 30.8,
+        "ph": 13
+      }
+    },
+    {
+      "a": "S",
+      "b": "T",
+      "label": "0/30",
+      "x1": 225.4,
+      "y1": 112.6,
+      "x2": 180.4,
+      "y2": 145.3,
+      "mid_x": 202.9,
+      "mid_y": 128.9,
+      "theta": 144.0,
+      "tl": 55.7,
+      "budget": 0.0,
+      "naive": {
+        "x": 202.9,
+        "y": 128.9,
+        "stage": "origin",
+        "pw": 34.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 202.9,
+        "y": 128.9,
+        "stage": "origin",
+        "pw": 34.2,
+        "ph": 17
+      }
+    },
+    {
+      "a": "A",
+      "b": "B",
+      "label": "9/14",
+      "x1": 308.6,
+      "y1": 173.0,
+      "x2": 291.4,
+      "y2": 226.0,
+      "mid_x": 300.0,
+      "mid_y": 199.5,
+      "theta": 108.0,
+      "tl": 55.7,
+      "budget": 0.0,
+      "naive": {
+        "x": 300.0,
+        "y": 199.5,
+        "stage": "origin",
+        "pw": 34.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 300.0,
+        "y": 199.5,
+        "stage": "origin",
+        "pw": 34.2,
+        "ph": 17
+      }
+    },
+    {
+      "a": "C",
+      "b": "T",
+      "label": "10/10",
+      "x1": 188.6,
+      "y1": 226.0,
+      "x2": 171.4,
+      "y2": 173.0,
+      "mid_x": 180.0,
+      "mid_y": 199.5,
+      "theta": -108.0,
+      "tl": 55.7,
+      "budget": 0.0,
+      "naive": {
+        "x": 180.0,
+        "y": 199.5,
+        "stage": "origin",
+        "pw": 40.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 180.0,
+        "y": 199.5,
+        "stage": "origin",
+        "pw": 40.2,
+        "ph": 17
+      }
+    },
+    {
+      "a": "B",
+      "b": "C",
+      "label": "4/9",
+      "x1": 267.8,
+      "y1": 243.1,
+      "x2": 212.2,
+      "y2": 243.1,
+      "mid_x": 240.0,
+      "mid_y": 243.1,
+      "theta": 180.0,
+      "tl": 55.7,
+      "budget": 0.0,
+      "naive": {
+        "x": 240.0,
+        "y": 243.1,
+        "stage": "origin",
+        "pw": 28.2,
+        "ph": 17
+      },
+      "ultra": {
+        "x": 240.0,
+        "y": 243.1,
+        "stage": "origin",
+        "pw": 28.2,
+        "ph": 17
+      }
+    }
+  ],
+  "naive_stats": {
+    "origin": 5,
+    "along": 0,
+    "perp": 3,
+    "fallback": 2
+  },
+  "ultra_stats": {
+    "origin": 6,
+    "along": 2,
+    "perp": 0,
+    "fallback": 2
+  }
+};
+
+function stageClass(s) {
+  if (s === 'origin') return 'origin';
+  if (s.startsWith('along') || s.startsWith('sat')) return 'along';
+  if (s.startsWith('perp')) return 'perp';
+  return 'fallback';
+}
+
+function drawGraph(svgId, kind) {
+  const svg = document.getElementById(svgId);
+  const NS = 'http://www.w3.org/2000/svg';
+  const defs = document.createElementNS(NS, 'defs');
+  defs.innerHTML = '<marker id="arr-'+svgId+'" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#c4c7cc"/></marker>';
+  svg.appendChild(defs);
+
+  // Edges first
+  for (const e of data.edges) {
+    const line = document.createElementNS(NS, 'line');
+    line.setAttribute('class', 'edge-line');
+    line.setAttribute('x1', e.x1); line.setAttribute('y1', e.y1);
+    line.setAttribute('x2', e.x2); line.setAttribute('y2', e.y2);
+    line.setAttribute('marker-end', 'url(#arr-'+svgId+')');
+    svg.appendChild(line);
+  }
+  // Pills
+  for (const e of data.edges) {
+    const p = e[kind];
+    const cls = stageClass(p.stage);
+    const isPerp = cls === 'perp';
+
+    // Leader line for off-stroke pills
+    if (isPerp) {
+      const ld = document.createElementNS(NS, 'line');
+      ld.setAttribute('class', 'lead');
+      ld.setAttribute('stroke', '#d97070');
+      ld.setAttribute('x1', e.mid_x); ld.setAttribute('y1', e.mid_y);
+      ld.setAttribute('x2', p.x); ld.setAttribute('y2', p.y);
+      svg.appendChild(ld);
+    }
+
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('transform', `rotate(${e.theta} ${p.x} ${p.y})`);
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('class', 'pill-rect ' + cls);
+    rect.setAttribute('x', p.x - p.pw/2); rect.setAttribute('y', p.y - p.ph/2);
+    rect.setAttribute('width', p.pw); rect.setAttribute('height', p.ph);
+    rect.setAttribute('rx', 3);
+    g.appendChild(rect);
+    const text = document.createElementNS(NS, 'text');
+    text.setAttribute('class', 'pill-text');
+    text.setAttribute('x', p.x); text.setAttribute('y', p.y);
+    text.textContent = e.label;
+    g.appendChild(text);
+    svg.appendChild(g);
+  }
+  // Nodes on top
+  for (const n of data.nodes) {
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'node');
+    const c = document.createElementNS(NS, 'circle');
+    c.setAttribute('cx', n.cx); c.setAttribute('cy', n.cy); c.setAttribute('r', n.r);
+    g.appendChild(c);
+    const t = document.createElementNS(NS, 'text');
+    t.setAttribute('x', n.cx); t.setAttribute('y', n.cy);
+    t.textContent = n.id;
+    g.appendChild(t);
+    svg.appendChild(g);
+  }
+}
+
+function statsBlock(id, s) {
+  const el = document.getElementById(id);
+  const total = s.origin + s.along + s.perp + s.fallback;
+  const onStroke = s.origin + s.along;
+  const pct = Math.round(onStroke * 100 / total);
+  el.innerHTML = `
+    <span class="stat ${pct>=80?'hi':''}"><strong>${onStroke}/${total}</strong> on-stroke (${pct}%)</span>
+    <span class="stat">origin ${s.origin}</span>
+    <span class="stat">along ${s.along}</span>
+    <span class="stat">perp ${s.perp}</span>
+    <span class="stat">fallback ${s.fallback}</span>
+  `;
+}
+
+function tableRows() {
+  const rows = [`<thead><tr><th>Edge</th><th>Label</th><th>len</th><th>budget</th><th>Naive stage</th><th>Ultra stage</th><th>Improvement</th></tr></thead><tbody>`];
+  for (const e of data.edges) {
+    const ns = e.naive.stage, us = e.ultra.stage;
+    const nc = stageClass(ns), uc = stageClass(us);
+    let imp = '—';
+    if (nc !== 'origin' && nc !== 'along' && (uc === 'origin' || uc === 'along')) imp = '✅ on-stroke';
+    else if (nc === uc) imp = '= unchanged';
+    else imp = '~ partial';
+    rows.push(`<tr><td>${e.a}→${e.b}</td><td><code>${e.label}</code></td><td>${e.tl}</td><td>${e.budget}</td><td style="color:${nc==='origin'||nc==='along'?'#0e7a3a':nc==='perp'?'#a4262c':'#7b2fb3'}">${ns}</td><td style="color:${uc==='origin'||uc==='along'?'#0e7a3a':uc==='perp'?'#a4262c':'#7b2fb3'}">${us}</td><td>${imp}</td></tr>`);
+  }
+  rows.push('</tbody>');
+  document.getElementById('tbl').innerHTML = rows.join('');
+}
+
+drawGraph('svg-naive', 'naive');
+drawGraph('svg-ultra', 'ultra');
+statsBlock('stats-naive', data.naive_stats);
+statsBlock('stats-ultra', data.ultra_stats);
+tableRows();
+</script>
+</body>
+</html>
