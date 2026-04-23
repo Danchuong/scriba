@@ -36,34 +36,35 @@ class TestR07LeaderDisplacementThreshold:
         import scriba.animation.primitives._svg_helpers as mod
         assert "_LEADER_DISPLACEMENT_THRESHOLD" in mod.__all__
 
-    def test_leader_emitted_when_displacement_exceeds_scale_threshold(self) -> None:
-        """Leader polyline is emitted when displacement > max(pill_h, threshold).
+    def test_leader_emitted_when_visual_gap_exceeds_threshold(self) -> None:
+        """v0.15.0: leader <polyline> fires when visual_gap >= natural_gap + pill_h.
 
-        We force collision resolution to displace the pill far enough by
-        packing the placed_labels registry with overlapping entries so that
-        every nudge candidate at the natural position is occupied, leaving
-        the pill at a position far from the anchor.
+        Setup: src=(40,60) dst=(160,60) → bezier arc peaks near y=41,
+        curve_mid ≈ (100, 45).  The pill naturally sits at cy≈15.5 (above arc)
+        giving visual_gap≈29.5 vs threshold≈32.5 — just under, no leader.
+
+        We flood a band from y=10..115 around x=100 so the collision resolver
+        is forced to push the pill up to y≈-21 (cy≈-11.5), giving
+        visual_gap≈56.5 >> threshold 32.5 → leader fires.
+
+        color="info" verifies the colour-gate is gone in v0.15.0.
         """
         from scriba.animation.primitives._svg_helpers import (
             _LabelPlacement,
             emit_arrow_svg,
         )
 
-        # Create an annotation that will be displaced far from natural position
-        # by pre-filling placed_labels with a grid of overlapping entries.
         lines: list[str] = []
         placed: list[_LabelPlacement] = []
 
-        # Fill a large area around the natural label position with placed pills
-        # so that the nudge search exhausts all 48 candidates and falls back.
-        # Natural label position for this setup is approximately (100, 46).
-        # Flood a 200x200 area to ensure full exhaustion.
-        for xi in range(-5, 6):
-            for yi in range(-5, 6):
+        # Flood a y=10..115 band around x=100 (8 rows × 9 columns of 20×15 grid).
+        # Forces the resolver above the arc where visual_gap >> threshold.
+        for xi in range(-4, 5):
+            for yi in range(0, 8):
                 placed.append(_LabelPlacement(
                     x=100.0 + xi * 20,
-                    y=46.0 + yi * 20,
-                    width=35.0,
+                    y=10.0 + yi * 15,
+                    width=40.0,
                     height=20.0,
                 ))
 
@@ -71,7 +72,7 @@ class TestR07LeaderDisplacementThreshold:
             "target": "arr.cell[2]",
             "arrow_from": "arr.cell[0]",
             "label": "far",
-            "color": "info",
+            "color": "info",  # colour-gate is gone in v0.15.0 — fires for all colours
         }
         emit_arrow_svg(
             lines=lines,
@@ -83,10 +84,11 @@ class TestR07LeaderDisplacementThreshold:
             placed_labels=placed,
         )
         svg = "\n".join(lines)
-        # When displacement exceeds threshold, a <polyline> leader is emitted.
-        # (This test verifies the leader CAN fire; exact threshold depends on pill_h.)
-        # The test is structural: if the pill is displaced at all, the path exists.
-        assert "<path" in svg, "Arrow path should be in output"
+        assert "<path" in svg, "Arrow path must be present"
+        # v0.15.0: leader fires on visual gap, not on colour.
+        assert "<polyline" in svg, (
+            "Leader <polyline> must fire when pill is visually far from curve_mid"
+        )
 
     def test_no_leader_when_not_displaced(self) -> None:
         """No leader polyline when label is not nudged from its natural position."""
@@ -116,20 +118,21 @@ class TestR07LeaderDisplacementThreshold:
         # No leader when not displaced
         assert "<polyline" not in svg
 
-    def test_scale_relative_formula_applied(self) -> None:
-        """The leader threshold formula max(pill_h, threshold) is applied.
+    def test_visual_gap_formula_applied(self) -> None:
+        """v0.15.0 visual-gap gate: _LEADER_GAP_FACTOR and _visual_gap are used.
 
-        Verify that the constant _LEADER_DISPLACEMENT_THRESHOLD is used in
-        the displacement check by inspecting the source.
+        Verifies that _emit_label_and_pill uses the new visual-gap metric
+        (replaces R-27 colour-gate + R-27b algorithmic far-gate).
         """
         import inspect
         from scriba.animation.primitives import _svg_helpers
-        # Leader emission moved into _emit_label_and_pill in v0.12.1 Phase A.
         source = inspect.getsource(_svg_helpers._emit_label_and_pill)
-        assert "_LEADER_DISPLACEMENT_THRESHOLD" in source, (
-            "_emit_label_and_pill must reference _LEADER_DISPLACEMENT_THRESHOLD"
+        assert "_LEADER_GAP_FACTOR" in source, (
+            "_emit_label_and_pill must reference _LEADER_GAP_FACTOR (v0.15.0)"
         )
-        assert "max(" in source
+        assert "_visual_gap" in source, (
+            "_emit_label_and_pill must compute _visual_gap (v0.15.0)"
+        )
 
 
 # ---------------------------------------------------------------------------

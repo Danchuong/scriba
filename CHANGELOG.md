@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-04-23 — Leader-line visual-gap gate
+
+### Changed
+- **Leader-line gate rewritten** (`emit_arrow_svg` / `_emit_label_and_pill`): the emit decision now uses a visual-gap metric (`‖pill_center − curve_mid‖`) instead of algorithmic displacement (`‖final − natural‖`). Single threshold: `pill_h/2 + 4 + pill_h × 1.0`. Leaders now fire for **every** colour when the pill is visually offset from its arrow.
+- **Rules R-27 and R-27b superseded** by R-27c (visual-gap gate). Colour-gate restriction (leaders only for `warn`/`error`) is gone; any colour emits.
+- Warn-only `stroke-dasharray="3,2"` cosmetic preserved.
+- R-08 perimeter endpoint clipping preserved.
+
+### Deprecated
+- `_LEADER_DISPLACEMENT_THRESHOLD` and `_ARROW_LEADER_FAR_FACTOR` constants in `_svg_helpers.py` — retained for import-stability, unused by the gate.
+
+### Fixed
+- DP-optimization leader audit case #6 (`dp.cell[0][6]-dp.cell[4][6]`, `final merge`): 103 px visual gap between pill and arrow now correctly emits a leader. See `docs/archive/dp-optimization-leader-analysis-2026-04-23/README.md`.
+
+### Tests
+- `test_w3_batch1.py`: `test_scale_relative_formula_applied` → `test_visual_gap_formula_applied`; `test_leader_emitted_when_displacement_exceeds_scale_threshold` → `test_leader_emitted_when_visual_gap_exceeds_threshold`. 86 pass.
+- Golden fixtures regenerated (see D10 commit).
+
 ## [0.14.0] - 2026-04-22 — Phase D: flow-as-scoring-hint + CellMetrics everywhere
 
 ### Changed (arrow geometry)

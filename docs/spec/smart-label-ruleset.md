@@ -1,10 +1,10 @@
 ---
 title: Smart-Label Ruleset
-version: 2.1.0-rc
-status: Release Candidate
-last-modified: 2026-04-22
+version: 2.1.1
+status: Released
+last-modified: 2026-04-23
 editors: scriba-core
-supersedes: docs/spec/smart-label-ruleset.md (v2.0.0, 2026-04-22)
+supersedes: docs/spec/smart-label-ruleset.md (v2.1.0-rc, 2026-04-22)
 source-audits:
   - docs/archive/smart-label-placement-pedagogy-2026-04-21/00-synthesis.md
   - docs/archive/smart-label-audit-2026-04-21/
@@ -16,7 +16,7 @@ source-audits:
 
 # Smart-Label Ruleset
 
-**Version:** 2.1.0-rc · **Supersedes:** 2.0.0 · **Date:** 2026-04-22
+**Version:** 2.1.1 · **Supersedes:** 2.1.0-rc · **Date:** 2026-04-23
 
 > **Scope**: `\annotate` pill placement and leader rendering for every primitive that emits
 > annotations through `scriba/animation/primitives/_svg_helpers.py`
@@ -467,8 +467,13 @@ Implementation cost is approximately 8 lines of geometry.
 
 ### R-27 — Leader emission gated to `warn`/`error` tokens only
 
-**Normative:** MUST
+> **Superseded in v0.15.0 by R-27c (visual-gap gate).** The color-gate restriction is
+> removed. Retained as a historical marker — do not implement this rule for new code.
+> See R-27c below and `docs/spec/leader-line.md §3` for the current gate specification.
+
+**Normative:** ~~MUST~~ (historical)
 **Since:** v0.11.0 (2026-04-22)
+**Superseded:** v0.15.0 — replaced by R-27c
 **Supersedes:** A-5b (partial) from v2.0.0-rc.1; code W-4
 **Source:** code W-4
 **Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
@@ -479,15 +484,77 @@ Leader lines (the `<circle>` origin dot and `<polyline>`) MUST be emitted only w
 benefit. The displacement threshold check (R-07) remains; `warn`/`error` tokens with
 displacement ≤ threshold MUST NOT emit leaders.
 
-**Rationale:** Leaders are a semantic emphasis signal: they indicate that a label has been
-moved from its natural position and point back to the original anchor. For `warn`/`error`
-tokens this emphasis is appropriate; for `good`/`info`/`muted`/`path` the leader creates
-clutter without meaningful disambiguation value. Restricting leaders to the two high-alert
-tokens also ensures the R-13 dash pattern is only applied where it has the most impact.
+**Rationale (historical):** Leaders are a semantic emphasis signal. For `warn`/`error`
+tokens this emphasis is appropriate; for `good`/`info`/`muted`/`path` the leader was
+judged to create clutter. This restriction was removed in v0.15.0 because the new
+visual-gap metric makes the gate color-agnostic — any color emits a leader when the pill
+is visually offset from its arrow.
 
-**Code ref:** `scriba/animation/primitives/_svg_helpers.py:1196` (`_leader_color_gate = color in {"warn", "error"}` in `emit_arrow_svg`)
-**Test ref:** `tests/unit/test_smart_label_phase0.py` (leader gating to warn/error only)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:1196` (historical — `_leader_color_gate` removed in v0.15.0)
+**Test ref:** `tests/unit/test_smart_label_phase0.py` (leader gating to warn/error only — historical)
 **Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
+
+---
+
+### R-27b — Far-gate: leader for any color when displacement ≥ pill_h × 1.0
+
+> **Superseded in v0.15.0 by R-27c (visual-gap gate).** Retained as a historical marker
+> — do not implement this rule for new code. See R-27c below and
+> `docs/spec/leader-line.md §3` for the current gate specification.
+
+**Normative:** ~~MUST~~ (historical)
+**Since:** v0.11.0 (2026-04-22)
+**Superseded:** v0.15.0 — replaced by R-27c
+**Supersedes:** (new in v0.11.0)
+**Source:** code W-4 (far-gate sub-rule)
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+
+Any color token MUST emit a leader when the algorithmic displacement (`‖final − natural‖`)
+is ≥ `pill_h × _ARROW_LEADER_FAR_FACTOR` (factor = 1.0). This bypassed the R-27
+color-gate for clearly-offset pills of any color. Superseded in v0.15.0 because the
+visual-gap metric (R-27c) provides a more reliable and color-agnostic measure of actual
+visual separation.
+
+**Code ref:** `_svg_helpers.py` (`_leader_far` check — removed in v0.15.0; `_ARROW_LEADER_FAR_FACTOR` retained for import-stability)
+**Test ref:** `tests/unit/test_w3_batch1.py` (historical — renamed in v0.15.0)
+**Golden ref:** golden fixtures regenerated in v0.15.0
+
+---
+
+### R-27c — Visual-gap gate: leader when pill is visually offset from arrow
+
+**Normative:** MUST
+**Since:** v0.15.0 (2026-04-23)
+**Supersedes:** R-27, R-27b
+**Source:** DP-optimization leader audit 2026-04-23 (`docs/archive/dp-optimization-leader-analysis-2026-04-23/README.md`)
+**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+
+Leader lines MUST be emitted when the **visual gap** between the rendered pill centre and
+the arc midpoint (`curve_mid`) meets or exceeds the threshold:
+
+```
+visual_gap = ‖pill_center − curve_mid‖
+threshold  = pill_h/2 + 4 + pill_h × _LEADER_GAP_FACTOR   (_LEADER_GAP_FACTOR = 1.0)
+```
+
+This gate applies to **all color tokens** — the color-gate restriction from R-27 is gone.
+A leader MUST be emitted whenever the pill is visually separated from its arrow by the
+threshold amount, regardless of token color. The `_LEADER_DISPLACEMENT_THRESHOLD` and
+`_ARROW_LEADER_FAR_FACTOR` constants are retained for import-stability but are unused by
+this gate.
+
+**Rationale:** The previous two-gate system (R-27 color-gate OR R-27b far-gate) operated
+on algorithmic displacement (`‖final − natural‖`), which measures movement within the
+placement algorithm rather than separation in the rendered output. When the natural anchor
+itself diverges from `curve_mid` (e.g. due to viewBox clamping or control-point extrema),
+algorithmic displacement undercounts real visual separation. The visual-gap metric
+(`‖pill_center − curve_mid‖`) directly measures what the viewer sees, making the leader
+gate robust to internal placement details. Audit case #6 (103 px visual gap, no leader
+under the old gate) was the direct motivating failure.
+
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py` (`_visual_gap`, `_leader_gap_threshold`, `_LEADER_GAP_FACTOR ≈ :330`; gate block `≈ :2235-2248`)
+**Test ref:** `tests/unit/test_w3_batch1.py::test_visual_gap_formula_applied`; `test_leader_emitted_when_visual_gap_exceeds_threshold`. 86 pass.
+**Golden ref:** golden fixtures regenerated in v0.15.0
 
 ---
 
@@ -960,7 +1027,9 @@ earlier arc stroke).
 | R-24 | Keyboard/focus a11y | MUST | Gap | — | ✅ | — |
 | R-25 | Dark-mode token collision | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-26 | Touch target ≥ 24 px | MUST | Gap | — | — | ✅ |
-| R-27 | Leader gated warn/error only | MUST | Shipped | ✅ v0.11.0 | — | — |
+| R-27 | Leader gated warn/error only | ~~MUST~~ (superseded) | Superseded v0.15.0 | ✅ v0.11.0 | — | — |
+| R-27b | Far-gate any-color displacement | ~~MUST~~ (superseded) | Superseded v0.15.0 | ✅ v0.11.0 | — | — |
+| R-27c | Visual-gap gate (any color) | MUST | Shipped | — | — | ✅ v0.15.0 |
 | R-28 | Loud placed_labels=None warn | MUST | Gap | — | ✅ | — |
 | R-29 | Print @media dash styles | MUST | Gap | — | ✅ | — |
 | R-30 | NumberLine routing fix | MUST | Gap | — | — | ✅ |
@@ -1094,3 +1163,4 @@ text.
 | 2.0-draft.r3 | 2026-04-21 | Round-3 hardening pass — ISSUE-A1..A5/below-math given FIX decisions; §9.3 blockers tagged; linked golden corpus and conformance suite. |
 | 2.0.0-rc.1 | 2026-04-21 | Wave 2 blockers landed (AC-6 dc1a6c2, A-5 b1a4ff1, MW-3 ac667fc); A-4 narrowed to semantic triad; A-5b warn dasharray normative; §M-1 rollback path documented. |
 | 2.0.0 | 2026-04-22 | Final — axis-style IDs retired; unified R-01..R-30 catalogue from pedagogy synthesis study; §8 conformance matrix; Appendix A legacy alias table; Appendix B CHANGELOG entry; v0.11.0-W3 / v0.12.0 / v0.13.0+ target releases assigned. |
+| 2.1.1 | 2026-04-23 | R-27 and R-27b marked superseded; R-27c (visual-gap gate) added; conformance matrix updated; History bumped. Corresponds to scriba v0.15.0 leader-line gate rewrite. |

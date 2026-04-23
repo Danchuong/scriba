@@ -90,6 +90,7 @@ _PLAIN_ARROW_STEM = 18
 # it scales with pill height rather than being a fixed constant.  The constant
 # below is kept for backward compatibility with any callers that reference it
 # directly; the per-call formula supersedes it in emit_arrow_svg.
+# Unused in v0.15.0+; kept for import-stability.
 _LEADER_DISPLACEMENT_THRESHOLD: float = 20.0
 
 # R-01: Default label font size in pixels.  Referenced by both the full render
@@ -328,7 +329,17 @@ _ARROW_STAGGER_FACTOR: float = 0.3
 _ARROW_STAGGER_CAP: int = 4
 """``min(arrow_index, 4)`` — dense stacks capped so they don't fly off-canvas."""
 _ARROW_LEADER_FAR_FACTOR: float = 1.0
-"""R-27b leader-far gate: ``displacement >= pill_h * 1.0``."""
+"""R-27b leader-far gate: ``displacement >= pill_h * 1.0``. Unused in v0.15.0+; kept for import-stability."""
+_LEADER_GAP_FACTOR: float = 1.0
+"""v0.15.0 visual-gap gate tune surface: lower emits more leaders, higher emits fewer.
+
+Replaces ``_ARROW_LEADER_FAR_FACTOR``; applies to the visual-gap metric
+(``‖pill_centre − curve_mid‖``) rather than the legacy algorithmic displacement."""
+_LEADER_ARC_CLEARANCE_PX: float = 4.0
+"""Natural arc-clearance baseline (px) used by the v0.15.0 visual-gap gate.
+
+Subtracted from the visual gap so an undisplaced pill sitting at its natural
+``pill_h/2 + 4`` offset above the arc peak does not emit a spurious leader."""
 _ARROW_VERT_ALIGN_H_SPAN: int = 4
 """Near-vertical column threshold (px) that triggers horizontal nudge."""
 _ARROW_VERT_H_NUDGE_FACTOR: float = 0.6
@@ -2232,23 +2243,23 @@ def _emit_label_and_pill(
         f'{pill_dasharray_emit}/>'  # R-13: mirror dash to pill border
     )
 
-    # Leader line: if label was nudged far from its natural position.
-    # R-27: only emit leader for warn and error colors (declutter).
-    # R-07: threshold is scale-relative — max(pill_h, _LEADER_DISPLACEMENT_THRESHOLD).
-    displacement = math.sqrt(
-        (final_x - natural_x) ** 2 + (final_y - natural_y) ** 2
+    # Leader line: v0.15.0 visual-gap gate.
+    # Pill centre derived from the rendered <rect>, NOT from fi_x which was
+    # mutated on line 2228 for the left-edge clamp. For a clamped pill
+    # fi_x != pill_rx + pill_w/2 — only the rect origin is reliable.
+    _pill_cx = float(pill_rx) + float(pill_w) / 2.0
+    _pill_cy = float(pill_ry) + float(pill_h) / 2.0
+    # v0.15.0 visual-gap gate: distance from the rendered pill centre to the
+    # curve-mid anchor on the arrow, minus the natural arc-clearance baseline.
+    # Fires for every colour once the pill is clearly offset from the curve —
+    # replaces R-27 (colour-gate) + R-27b (algorithmic far-gate).
+    _visual_gap = math.hypot(
+        float(geom.curve_mid_x) - _pill_cx,
+        float(geom.curve_mid_y) - _pill_cy,
     )
-    _leader_threshold = max(float(pill_h), _LEADER_DISPLACEMENT_THRESHOLD)
-    _leader_color_gate = color in {"warn", "error"}  # R-27
-    # R-27b: also emit leader for info/neutral when displacement is clearly
-    # far (>1.0×pill_h). Bypasses the _LEADER_DISPLACEMENT_THRESHOLD=20
-    # floor so mid-sized pills (pill_h~19) still trigger. Caveat: avoids
-    # declutter regression on small nudges.
-    _leader_far = displacement >= float(pill_h) * _ARROW_LEADER_FAR_FACTOR
-    if (_leader_color_gate and displacement > _leader_threshold) or _leader_far:
+    _natural_gap = float(pill_h) / 2.0 + _LEADER_ARC_CLEARANCE_PX
+    if _visual_gap >= _natural_gap + float(pill_h) * _LEADER_GAP_FACTOR:
         # R-08: leader endpoint at pill perimeter, not pill centre.
-        _pill_cx = float(fi_x)
-        _pill_cy = float(fi_y - l_font_px * 0.3)  # centre of rendered pill
         _leader_ep = _line_rect_intersection(
             float(geom.curve_mid_x), float(geom.curve_mid_y),
             _pill_cx, _pill_cy,
@@ -2264,7 +2275,7 @@ def _emit_label_and_pill(
             )
             lines.append(
                 f'    <polyline points="{geom.curve_mid_x},{geom.curve_mid_y}'
-                f' {_leader_ep_x},{_leader_ep_y}"'  # R-08: perimeter endpoint
+                f' {_leader_ep_x},{_leader_ep_y}"'
                 f' fill="none" stroke="{s_stroke}"'
                 f' stroke-width="0.75"{leader_dasharray}'
                 f' opacity="0.6"/>'
