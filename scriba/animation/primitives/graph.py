@@ -545,6 +545,7 @@ class Graph(PrimitiveBase):
         "seed",
         "show_weights",
         "label",
+        "auto_expand",
     })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
@@ -597,6 +598,7 @@ class Graph(PrimitiveBase):
         self.directed: bool = bool(params.get("directed", False))
         self.layout: str = str(params.get("layout", "force"))
         self.show_weights: bool = bool(params.get("show_weights", False))
+        self.auto_expand: bool = bool(params.get("auto_expand", False))
 
         # --- layout_seed validation (E1505) ---
         #
@@ -962,13 +964,50 @@ class Graph(PrimitiveBase):
             if self.get_state(self._node_key(n)) == "hidden"
         }
         placed_edge_labels: list[_LabelPlacement] = []
+
+        # Phase 5 / GEP v2.0 (U-15): auto-expand working positions so that
+        # no edge-weight pill falls back to leader/origin stage.
+        # self.positions is NEVER mutated — working_positions is a local copy.
+        # Opt-in via auto_expand=True; default False preserves legacy behaviour.
+        has_display_weight = any(
+            (
+                self.get_value(self._edge_key(u_, v_)) is not None
+                or (self.show_weights and w_ is not None)
+            )
+            for u_, v_, w_ in self.edges
+        )
+        working_positions: dict[Any, tuple[float, float]]
+        if self.auto_expand and has_display_weight:
+            from scriba.animation.primitives._layout_expand import _find_min_scale  # noqa: PLC0415
+            s = _find_min_scale(
+                {k: (float(v[0]), float(v[1])) for k, v in self.positions.items()},
+                self.edges,
+                float(self._node_radius),
+                self.directed,
+                float(self.width),
+                float(self.height),
+            )
+            if s > 1.0:
+                working_positions = {
+                    k: (float(v[0]) * s, float(v[1]) * s)
+                    for k, v in self.positions.items()
+                }
+            else:
+                working_positions = {
+                    k: (float(v[0]), float(v[1])) for k, v in self.positions.items()
+                }
+        else:
+            working_positions = {
+                k: (float(v[0]), float(v[1])) for k, v in self.positions.items()
+            }
+
         # GEP-03: visible node circles act as MUST-avoid AABB obstacles for
-        # edge weight pills. Prevents F1/G1 (pill overlaps node circle on
-        # short edges — confirmed in dinic.html / mcmf.html pre-fix).
+        # edge weight pills. Built from working_positions so auto-expand
+        # scaling propagates into the collision set.
         node_aabbs: list[_LabelPlacement] = [
             _LabelPlacement(
-                x=float(self.positions[n][0]),
-                y=float(self.positions[n][1]),
+                x=float(working_positions[n][0]),
+                y=float(working_positions[n][1]),
                 width=float(2 * self._node_radius),
                 height=float(2 * self._node_radius),
             )
@@ -980,11 +1019,12 @@ class Graph(PrimitiveBase):
         _visible_nodes = [n for n in self.nodes if n not in hidden_nodes]
         if _visible_nodes:
             graph_centroid: tuple[float, float] | None = (
-                sum(float(self.positions[n][0]) for n in _visible_nodes) / len(_visible_nodes),
-                sum(float(self.positions[n][1]) for n in _visible_nodes) / len(_visible_nodes),
+                sum(float(working_positions[n][0]) for n in _visible_nodes) / len(_visible_nodes),
+                sum(float(working_positions[n][1]) for n in _visible_nodes) / len(_visible_nodes),
             )
         else:
             graph_centroid = None
+
         # GEP-05: stable edge order — (state priority ASC, canonical edge key
         # ASC) — so identical graphs placed in different add_edge orders
         # produce byte-identical SVG output (D-1 determinism).
@@ -1006,8 +1046,8 @@ class Graph(PrimitiveBase):
             # render as a line going into empty space).
             if state == "hidden" or u in hidden_nodes or v in hidden_nodes:
                 continue
-            x1, y1 = self.positions[u]
-            x2, y2 = self.positions[v]
+            x1, y1 = working_positions[u]
+            x2, y2 = working_positions[v]
 
             if self.directed:
                 # Shorten line so arrowhead stops at circle boundary
@@ -1194,7 +1234,7 @@ class Graph(PrimitiveBase):
             # RFC-001 §4.4 — hidden nodes are not rendered at all.
             if state == "hidden":
                 continue
-            cx, cy = self.positions[node_id]
+            cx, cy = working_positions[node_id]
             hl_suffixes = getattr(self, "_highlighted", set())
             is_hl = self._node_key(node_id) in hl_suffixes
             # β: highlight is a state, not a dashed overlay. Promote only

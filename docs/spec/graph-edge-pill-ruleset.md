@@ -1,6 +1,6 @@
 ---
 title: Graph Edge-Pill Ruleset
-version: 1.4.0
+version: 2.0.0
 status: Released
 last-modified: 2026-04-23
 editors: scriba-core
@@ -16,7 +16,7 @@ plan:
 
 # Graph Edge-Pill Ruleset
 
-**Version:** 1.4.0 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
+**Version:** 2.0.0 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
 
 > **Scope**: weight-value pill placement for every edge rendered through
 > `Graph.emit_svg` (`scriba/animation/primitives/graph.py`). Governs pill
@@ -538,6 +538,59 @@ diagrams.
 
 ---
 
+### GEP-18 — Pre-layout auto-expansion (U-15) — v2.0.0
+
+**Normative:** SHOULD (opt-in).
+
+When `Graph(..., auto_expand=True)` is set and at least one visible edge has a
+display weight, `Graph.emit_svg` SHALL compute a minimum scale factor `s ≥ 1.0`
+such that the full cascade (origin → along → saturate → perp → leader) resolves
+with as few leader/origin-fallback placements as possible, then render the
+edge/node layer against **scaled working positions** rather than `self.positions`.
+
+`self.positions`, `self.edges`, and `self.nodes` MUST NOT be mutated (U-05).
+The working-position dict is a fresh copy constructed per `emit_svg` call.
+
+**Scale resolution** (see `scriba/animation/primitives/_layout_expand.py`):
+
+1. **Analytic lower bound.** For each edge with length `L`, node radius `r`,
+   pill width `pill_w`:
+   `s_min_edge = (pill_w + 2·r) / L`.
+   Edges with `L < 1e-9` are skipped.
+   `s_min_analytic = max(1.0, max over edges of s_min_edge)`.
+2. **Canvas clamp.** `effective_cap = min(3.0, canvas_bound_scale)` where
+   `canvas_bound_scale` is the largest `s` that keeps all scaled positions
+   within `[0, width] × [0, height]`. The hard 3.0 ceiling protects against
+   degenerate inputs.
+3. **Binary search** in `[s_min_analytic, min(s_min_analytic · 1.8, effective_cap)]`
+   with `eps = 0.02` and `max_iter = 8`. The cost function
+   `_cascade_fallback_count` is a pure dry-run of `_nudge_pill_placement` for
+   every visible weighted edge; it counts placements returning `stage="leader"`
+   or returning `stage="origin"` after the initial origin candidate collided.
+   The search returns the **upper bound** (conservative side).
+4. **Best-effort rollback.** When `s_min_analytic ≥ effective_cap`, the module
+   returns `effective_cap` and auto-expansion does nothing further. Any remaining
+   overlapping pills fall through to GEP-17 leader lines, which remain the
+   correctness floor. No exception is raised.
+
+**Determinism (U-06):** no RNG, no `set` iteration, no `dict` order assumptions
+beyond insertion-order. Binary-search bounds, `eps`, and `max_iter` are constants.
+
+**Pill rotation (U-01):** scaling preserves angles, so pill rotation derived
+from edge direction is invariant under `_find_min_scale`.
+
+**SVG byte impact:** only coordinate digit growth; no structural elements added.
+Measured worst case <5% on K7-class graphs, well inside the <15% target.
+
+**Opt-in default:** `auto_expand=False`. Callers that do not set the flag
+see pre-Phase-5 rendering byte-identical to v1.4.0.
+
+**Known limitation:** when multiple `Graph` primitives share a `Scene`, each
+scales independently in its own coordinate frame. Cross-Graph collision in
+Scene-level layout is out of scope for v2.0.0.
+
+---
+
 ## §5 Obstacle vocabulary
 
 Edge-pill placement recognizes three obstacle kinds today, with two additional
@@ -649,6 +702,7 @@ else:
 | 1.2.0   | 2026-04-23 | GEP-07 rewrite — along-edge shift as primary nudge, perp as fallback, origin as last resort. Preserves GEP-10 binding on crossing edges. Fixes mcmf B→D detachment. Factors nudge into `_nudge_pill_placement` helper. |
 | 1.3.0   | 2026-04-23 | GEP-14 — saturate probe (stage 1.5): try ±max_shift_along exact before perp fallback. Preserves U-14 on-stroke invariant. |
 | 1.4.0   | 2026-04-23 | GEP-17 — leader-line fallback (Phase 4). `_nudge_pill_placement` returns `PillPlacement` NamedTuple; adds `graph_centroid` param; emits dashed leader `<line>` when all cascade stages exhausted. Minimum-length gate `_GEP17_MIN_LEADER_PX = 4.0`. Backward-compat positional unpack preserved. |
+| 2.0.0   | 2026-04-23 | GEP-18 — pre-layout auto-expansion (Phase 5, U-15). Opt-in `Graph(..., auto_expand=True)` flag. New pure module `_layout_expand.py` (`_min_scale_analytic`, `_cascade_fallback_count`, `_find_min_scale`). Binary search `[s_min_analytic, min(·1.8, effective_cap)]`, eps=0.02, max_iter=8. Canvas clamp `min(3.0, canvas_bound_scale)`. `self.positions` never mutated; working copy per `emit_svg`. GEP-17 remains correctness floor on cap overflow. |
 
 Phase 1+ rules (GEP-15 .. GEP-19) will ship alongside the full smart-label
 scoring adoption described in
