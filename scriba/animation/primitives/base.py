@@ -47,6 +47,7 @@ from scriba.animation.primitives._text_render import (  # noqa: F401 — explici
     _escape_xml,
     _has_math,
     _render_mixed_html,
+    _render_split_label_svg,
     _render_svg_text,
     estimate_text_width,
 )

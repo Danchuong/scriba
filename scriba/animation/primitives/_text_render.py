@@ -22,6 +22,7 @@ __all__ = [
     "_has_math",
     "_render_mixed_html",
     "_render_svg_text",
+    "_render_split_label_svg",
 ]
 
 
@@ -287,4 +288,48 @@ def _render_svg_text(
         f"{inner_html}"
         f"</div>"
         f"</foreignObject>"
+    )
+
+
+def _render_split_label_svg(
+    primary: str,
+    separator: str,
+    secondary: str,
+    x: int | float,
+    y: int | float,
+    *,
+    fill: str = "#11181c",
+    css_class: str | None = None,
+    text_anchor: str | None = None,
+    dominant_baseline: str | None = None,
+    secondary_opacity: float = 0.55,
+) -> str:
+    """Render a two-value label as ``<text>`` with two ``<tspan>`` children.
+
+    Phase 6 (GEP v2.0 U-03) — hierarchy cue for dual-value edge labels
+    like capacity/flow.  Primary value renders bold at full fill; the
+    separator + secondary value render together as a single dim tspan so
+    the inline text flow is deterministic across renderers (no per-
+    character ``dx`` arithmetic required).  Callers are expected to have
+    split the label on the first separator (typically ``/``) and to pass
+    non-empty ``primary`` and ``secondary`` strings.  ``xml:space="preserve"``
+    keeps any internal whitespace intact.
+    """
+    attrs = f'xml:space="preserve" x="{x}" y="{y}" fill="{fill}"'
+    if css_class:
+        attrs = f'class="{css_class}" {attrs}'
+    style_parts: list[str] = []
+    if text_anchor:
+        style_parts.append(f"text-anchor:{text_anchor}")
+    if dominant_baseline:
+        style_parts.append(f"dominant-baseline:{dominant_baseline}")
+    if style_parts:
+        attrs += f' style="{";".join(style_parts)}"'
+    dim_style = f'style="font-weight:400;fill-opacity:{secondary_opacity:.2f}"'
+    dim_body = _escape_xml(f"{separator}{secondary}")
+    return (
+        f"<text {attrs}>"
+        f'<tspan style="font-weight:700">{_escape_xml(primary)}</tspan>'
+        f"<tspan {dim_style}>{dim_body}</tspan>"
+        f"</text>"
     )

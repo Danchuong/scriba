@@ -21,6 +21,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     THEME,
     _escape_xml,
+    _render_split_label_svg,
     _render_svg_text,
     arrow_height_above,
     estimate_text_width,
@@ -87,6 +88,36 @@ _WEIGHT_EDGE_MIN_LEN: float = 4.0
 # offset is smaller than this value the leader is suppressed and the function
 # falls back to the silent origin (leader=False, stage="origin").
 _GEP17_MIN_LEADER_PX: float = 4.0
+
+# Phase 6 (U-03) — pill background tint map keyed by source-node state.
+# Light hues that stay legible over edge strokes and preserve pill/text
+# contrast.  Returned from _pill_tint_for_state for ``tint_by_source=True``.
+#
+# NOTE: these tints are a presentation-only companion to the state colours
+# in scriba.animation.primitives.base.THEME / svg_style_attrs. They are NOT
+# derived programmatically — Phase 6 treats the tint palette as an
+# independent design surface so callers can adjust pill contrast without
+# touching node strokes / fills. Keep in sync manually when the primary
+# state palette changes; see GEP-19 in docs/spec/graph-edge-pill-ruleset.md.
+#
+# Dark-mode caveat: the palette is light-mode-only. Rendering these tints
+# on a dark scene background will drop contrast against edge strokes. A
+# dark-mode companion palette is scheduled as a fast-follow once GEP-19
+# lands visual regression coverage; until then callers wanting dark-mode
+# pills should leave tint_by_source=False.
+_PILL_TINT_BY_STATE: dict[str, str] = {
+    "idle": "#eff6ff",      # subtle blue tint
+    "active": "#dbeafe",    # stronger blue for active traversal
+    "visited": "#ecfdf5",   # pale green for already-visited
+    "complete": "#ecfdf5",
+    "highlight": "#fef3c7", # amber highlight
+    "error": "#fee2e2",     # red error
+}
+
+
+def _pill_tint_for_state(state: str) -> str:
+    """Return the pill background tint for a given source-node state (GEP-19)."""
+    return _PILL_TINT_BY_STATE.get(state, "#eff6ff")
 
 
 # ---------------------------------------------------------------------------
@@ -546,6 +577,8 @@ class Graph(PrimitiveBase):
         "show_weights",
         "label",
         "auto_expand",
+        "split_labels",
+        "tint_by_source",
     })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
@@ -599,6 +632,10 @@ class Graph(PrimitiveBase):
         self.layout: str = str(params.get("layout", "force"))
         self.show_weights: bool = bool(params.get("show_weights", False))
         self.auto_expand: bool = bool(params.get("auto_expand", False))
+        # Phase 6 (U-03) — typography + tint opt-ins. Default False keeps
+        # byte-stable SVG for existing goldens.
+        self.split_labels: bool = bool(params.get("split_labels", False))
+        self.tint_by_source: bool = bool(params.get("tint_by_source", False))
 
         # --- layout_seed validation (E1505) ---
         #
@@ -1189,19 +1226,55 @@ class Graph(PrimitiveBase):
                 # rendering bug for transforms on <foreignObject>.
                 pill_rx = lx - pill_w / 2
                 pill_ry = ly - pill_h / 2
+
+                # Phase 6 (U-03) — tint_by_source: derive pill fill from the
+                # source node's state colour instead of the default white.
+                # Uses a desaturated / alpha-blended tint so the pill stays
+                # legible over edge strokes.
+                if self.tint_by_source:
+                    src_state = self.get_state(self._node_key(u))
+                    pill_fill = _pill_tint_for_state(src_state)
+                else:
+                    pill_fill = "white"
+
+                # Phase 6 (U-03) — split_labels: when enabled AND the label
+                # contains a "/" separator with non-empty both sides, split
+                # into bold primary + dim secondary tspans; otherwise fall
+                # through to the single _render_svg_text path. Degenerate
+                # inputs ("/", "5/", "/3") skip the split to avoid emitting
+                # an empty <tspan>. Multi-slash labels ("5/3/7") split on
+                # the first "/" only, leaving the rest dim as the secondary.
+                _split_head, _split_sep, _split_tail = (
+                    display_weight.partition("/") if self.split_labels else ("", "", "")
+                )
+                if (
+                    self.split_labels
+                    and _split_sep == "/"
+                    and _split_head
+                    and _split_tail
+                ):
+                    _text_svg = _render_split_label_svg(
+                        _split_head, _split_sep, _split_tail, lx, ly,
+                        fill=THEME["fg_muted"],
+                        text_anchor="middle",
+                        dominant_baseline="central",
+                        css_class="scriba-graph-weight",
+                    )
+                else:
+                    _text_svg = _render_svg_text(
+                        display_weight, lx, ly,
+                        fill=THEME["fg_muted"],
+                        text_anchor="middle",
+                        dominant_baseline="central",
+                        css_class="scriba-graph-weight",
+                        render_inline_tex=render_inline_tex,
+                    )
                 _pill_svg = (
                     f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
                     f'width="{pill_w}" height="{pill_h}" '
-                    f'rx="{_WEIGHT_PILL_R}" fill="white" fill-opacity="0.85" '
+                    f'rx="{_WEIGHT_PILL_R}" fill="{pill_fill}" fill-opacity="0.85" '
                     f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
-                ) + _render_svg_text(
-                    display_weight, lx, ly,
-                    fill=THEME["fg_muted"],
-                    text_anchor="middle",
-                    dominant_baseline="central",
-                    css_class="scriba-graph-weight",
-                    render_inline_tex=render_inline_tex,
-                )
+                ) + _text_svg
                 if abs(theta_deg) < 0.05:
                     weight_text = leader_svg + _pill_svg
                 else:

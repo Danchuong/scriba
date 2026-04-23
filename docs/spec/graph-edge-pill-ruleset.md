@@ -591,6 +591,42 @@ Scene-level layout is out of scope for v2.0.0.
 
 ---
 
+### GEP-19 — Typography hierarchy + source-node tint (U-03) — v2.0.0
+
+**Intent.** When an edge pill carries a dual-value label (`X/Y`, e.g.
+`capacity/flow` in MCMF / max-flow animations), render the primary value
+(`X`) bold and the secondary value (`Y`) dim so viewers can read the
+hierarchy at a glance. Optionally tint the pill background with a light
+shade derived from the source-node state to reinforce edge provenance in
+dense graphs.
+
+**Opt-in flags.**
+
+- `split_labels: bool = False`.  When `True` and `"/"` appears in the
+  final display label, emit a single `<text>` with three `<tspan>`
+  children:
+  1. Primary (`font-weight: 700`, full fill).
+  2. Separator (`font-weight: 400`, `fill-opacity ≈ 0.55`).
+  3. Secondary (`font-weight: 400`, `fill-opacity ≈ 0.55`).
+  When the label has no `/`, the renderer MUST fall back to the plain
+  `<text>` path so single-value goldens stay byte-identical.
+- `tint_by_source: bool = False`.  When `True`, the pill `<rect>` fill
+  uses a state-keyed light tint (e.g. `#eff6ff` for `idle`,
+  `#fef3c7` for `highlight`) instead of the default `white`.  The pill
+  stroke and `fill-opacity` remain unchanged so contrast over edge
+  strokes stays within Phase 0 legibility budgets.
+
+**Default behavior.** Both flags default to `False`.  When both are
+`False` the emitted SVG is byte-identical to the pre-Phase-6 output,
+preserving every stored golden.
+
+**Scope.** GEP-19 is a pure presentation layer — it changes neither
+placement geometry nor obstacle vocabulary.  It interacts orthogonally
+with GEP-01..GEP-18; in particular, the rotated `<g>` wrapper continues
+to rotate the pill + label as one unit (GEP-10 invariant preserved).
+
+---
+
 ## §5 Obstacle vocabulary
 
 Edge-pill placement recognizes three obstacle kinds today, with two additional
