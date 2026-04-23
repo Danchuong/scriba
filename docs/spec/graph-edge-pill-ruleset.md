@@ -1,6 +1,6 @@
 ---
 title: Graph Edge-Pill Ruleset
-version: 1.3.2
+version: 1.4.0
 status: Released
 last-modified: 2026-04-23
 editors: scriba-core
@@ -16,7 +16,7 @@ plan:
 
 # Graph Edge-Pill Ruleset
 
-**Version:** 1.3.2 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
+**Version:** 1.4.0 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
 
 > **Scope**: weight-value pill placement for every edge rendered through
 > `Graph.emit_svg` (`scriba/animation/primitives/graph.py`). Governs pill
@@ -493,6 +493,49 @@ The check covers exactly the three stages that carry the U-04/U-14 on-stroke
 guarantee (origin, along-shift, saturate). Stage 2 (perp fallback) and Stage 3
 (origin fallback) are intentionally excluded.
 
+### GEP-17 — Leader-line fallback when all cascade stages are exhausted
+
+**Normative:** SHOULD
+**Since:** v1.4.0
+**Source:** GEP v2.0 plan — Phase 4 leader-line fallback (R-27c parallel).
+**Scope:** `_nudge_pill_placement` and `Graph.emit_svg` in `scriba/animation/primitives/graph.py`.
+
+When all placement cascade stages (origin, along-shift, saturate, perp) are
+blocked and `graph_centroid` is not `None`, implementations SHALL attempt a
+leader-line placement:
+
+1. Compute `leader_offset = 2 * aabb_h + _WEIGHT_PILL_PAD_Y`.
+2. If `leader_offset < _GEP17_MIN_LEADER_PX` (4.0 px), suppress the leader
+   and fall through to the silent-origin fallback (`leader=False`,
+   `stage="origin"`).
+3. Otherwise, push the pill **away from the centroid** along the free
+   direction from `graph_centroid` to the midpoint. Let
+   `vec = (mid_x − cx, mid_y − cy)`. If `|vec| < 1e-9` (centroid coincides
+   with midpoint), fall back to `dir = (perp_x, perp_y)`; else
+   `dir = vec / |vec|`. This free-direction push minimises the displacement
+   between pill and midpoint anchor for the given `leader_offset`, which
+   perp-projection would not.
+4. Place the pill at `(mid_x + dir_x * leader_offset,
+   mid_y + dir_y * leader_offset)` and return
+   `PillPlacement(…, leader=True, anchor_x=mid_x, anchor_y=mid_y, stage="leader")`.
+5. Emit an SVG `<line>` from `(anchor_x, anchor_y)` to the pill centre with
+   `stroke-width="0.8"` and `stroke-dasharray="3,2"` **before** the pill rect
+   inside the per-edge `<g>`, so the pill renders on top.
+
+When `graph_centroid` is `None` the legacy silent-origin fallback fires instead
+(`leader=False`, `stage="origin"`), preserving backward compatibility for call
+sites that do not supply a centroid.
+
+**Return type change:** `_nudge_pill_placement` now returns `PillPlacement`
+(a `NamedTuple` with fields `x, y, leader, anchor_x, anchor_y, stage`).
+Positional unpacking `lx, ly = _nudge_pill_placement(…)` continues to work
+unchanged because fields 0 and 1 are `x` and `y`.
+
+**Rationale.** Dense annotation stacks can exhaust all non-detached placement
+options. A short dashed leader line preserves legibility at the cost of slight
+visual detachment — following the Graphviz/Mermaid precedent for crowded
+diagrams.
+
 ---
 
 ## §5 Obstacle vocabulary
@@ -527,7 +570,7 @@ which smart-label rules apply directly, apply with edits, or do not apply.
 | R-14 (target-cell MUST-block)     | GEP-03              | **Adopted** — node-circle replaces target-cell. |
 | R-19 (degradation warning)        | Phase 1             | **Planned** — GEP-14 wiring. |
 | R-20 (candidate generation)       | Phase 1             | **Planned** — 24 `(t, side, offset)` candidates. |
-| R-27c (leader-line visual gap)    | Phase 1             | **Planned** — GEP-17. |
+| R-27c (leader-line visual gap)    | GEP-17              | **Shipped** — v1.4.0. |
 | R-31 (annotation-arrow obstacles) | N/A                 | **Not applicable** — Graph edges are not annotations. |
 | Hirsch reading-flow preference    | Phase 1             | **Planned** — `side_hint` auto-inference. |
 
@@ -605,6 +648,7 @@ else:
 | 1.1.0   | 2026-04-23 | GEP-06 bias 5.0→0.0 (pill on edge); GEP-07 nudge never commits failed candidate; adds (+step,−step,+2·step,−2·step) probe order; origin-fallback on total collision. Fixes mcmf B→D wrong-side commit. |
 | 1.2.0   | 2026-04-23 | GEP-07 rewrite — along-edge shift as primary nudge, perp as fallback, origin as last resort. Preserves GEP-10 binding on crossing edges. Fixes mcmf B→D detachment. Factors nudge into `_nudge_pill_placement` helper. |
 | 1.3.0   | 2026-04-23 | GEP-14 — saturate probe (stage 1.5): try ±max_shift_along exact before perp fallback. Preserves U-14 on-stroke invariant. |
+| 1.4.0   | 2026-04-23 | GEP-17 — leader-line fallback (Phase 4). `_nudge_pill_placement` returns `PillPlacement` NamedTuple; adds `graph_centroid` param; emits dashed leader `<line>` when all cascade stages exhausted. Minimum-length gate `_GEP17_MIN_LEADER_PX = 4.0`. Backward-compat positional unpack preserved. |
 
 Phase 1+ rules (GEP-15 .. GEP-19) will ship alongside the full smart-label
 scoring adoption described in

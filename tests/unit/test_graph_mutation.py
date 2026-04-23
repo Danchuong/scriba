@@ -11,7 +11,6 @@ Covers RFC-001 §4.2:
 from __future__ import annotations
 
 import math
-import os
 
 import pytest
 from hypothesis import given, settings
@@ -20,6 +19,7 @@ from hypothesis import strategies as st
 from scriba.animation.errors import AnimationError
 from scriba.animation.primitives.graph import (
     Graph,
+    PillPlacement,
     _assert_on_stroke as _runtime_assert_on_stroke,
     _nudge_pill_placement,
 )
@@ -539,7 +539,7 @@ def test_crossing_edges_resolved_by_along_shift() -> None:
     # A→C pill (already placed) at the on-edge midpoint, blocks B→D origin.
     placed = [_lp(199.0, 131.5)]
 
-    lx, ly = _nudge_pill_placement(
+    _pp = _nudge_pill_placement(
         mid_x=mid_x,
         mid_y=mid_y,
         ux=ux,
@@ -554,6 +554,7 @@ def test_crossing_edges_resolved_by_along_shift() -> None:
         node_aabbs=[],
         placed_pills=placed,
     )
+    lx, ly = _pp.x, _pp.y
 
     assert abs(lx - 172.38) < 0.05, f"lx={lx:.4f}, expected ~172.38"
     assert abs(ly - 140.63) < 0.05, f"ly={ly:.4f}, expected ~140.63"
@@ -591,7 +592,7 @@ def test_along_shift_respects_node_budget() -> None:
         _lp(bx, by, w=2 * node_r, h=2 * node_r),
     ]
 
-    lx, ly = _nudge_pill_placement(
+    _pp = _nudge_pill_placement(
         mid_x=mid_x,
         mid_y=mid_y,
         ux=ux,
@@ -606,6 +607,7 @@ def test_along_shift_respects_node_budget() -> None:
         node_aabbs=node_aabbs,
         placed_pills=placed,
     )
+    lx, ly = _pp.x, _pp.y
 
     # Result must not overlap either node AABB.
     result = _lp(lx, ly)
@@ -667,7 +669,7 @@ def test_along_shift_never_overlaps_node_circle() -> None:
         aabb_w = _PILL_W * abs_cos + _PILL_H * abs_sin + 1.0
         aabb_h = _PILL_W * abs_sin + _PILL_H * abs_cos + 1.0
 
-        lx, ly = _nudge_pill_placement(
+        _pp = _nudge_pill_placement(
             mid_x=mid_x,
             mid_y=mid_y,
             ux=ux,
@@ -682,6 +684,7 @@ def test_along_shift_never_overlaps_node_circle() -> None:
             node_aabbs=node_aabbs,
             placed_pills=placed,
         )
+        lx, ly = _pp.x, _pp.y
         result = _LabelPlacement(x=lx, y=ly, width=aabb_w, height=aabb_h)
         for n in node_aabbs:
             assert not result.overlaps(n), (
@@ -726,7 +729,7 @@ def test_origin_fallback_on_all_collisions() -> None:
         _lp(mid_x - perp_x * 2*step_perp, mid_y - perp_y * 2*step_perp),
     ]
 
-    lx, ly = _nudge_pill_placement(
+    _pp = _nudge_pill_placement(
         mid_x=mid_x,
         mid_y=mid_y,
         ux=ux,
@@ -741,6 +744,7 @@ def test_origin_fallback_on_all_collisions() -> None:
         node_aabbs=[],
         placed_pills=blockers,
     )
+    lx, ly = _pp.x, _pp.y
 
     assert lx == mid_x, f"expected origin lx={mid_x}, got {lx}"
     assert ly == mid_y, f"expected origin ly={mid_y}, got {ly}"
@@ -812,7 +816,7 @@ def test_saturate_resolves_hair_thin_collision() -> None:
     sat_x = _S_MID_X + _S_UX * max_shift_along  # = 575.0
     sat_y = _S_MID_Y + _S_UY * max_shift_along  # = 300.0
 
-    lx, ly = _nudge_pill_placement(
+    _pp = _nudge_pill_placement(
         mid_x=_S_MID_X,
         mid_y=_S_MID_Y,
         ux=_S_UX,
@@ -827,6 +831,7 @@ def test_saturate_resolves_hair_thin_collision() -> None:
         node_aabbs=[],
         placed_pills=blockers,
     )
+    lx, ly = _pp.x, _pp.y
 
     assert abs(lx - sat_x) < 1e-9, (
         f"saturate probe: expected lx={sat_x}, got {lx} — "
@@ -882,7 +887,7 @@ def test_saturate_respects_budget_zero() -> None:
              _S_MID_Y + _S_PERP_Y * _S_STEP_PERP),
     ]
 
-    lx, ly = _nudge_pill_placement(
+    _pp = _nudge_pill_placement(
         mid_x=_S_MID_X,
         mid_y=_S_MID_Y,
         ux=_S_UX,
@@ -897,6 +902,7 @@ def test_saturate_respects_budget_zero() -> None:
         node_aabbs=[],
         placed_pills=blockers,
     )
+    lx, ly = _pp.x, _pp.y
 
     # Must NOT return origin (blocker unresolved).
     assert (lx, ly) != (_S_MID_X, _S_MID_Y), (
@@ -951,7 +957,7 @@ def test_saturate_preserves_on_stroke_invariant() -> None:
 
     # Saturate probe at +max_shift_along is clear (no blocker near 580, 300).
 
-    lx, ly = _nudge_pill_placement(
+    _pp = _nudge_pill_placement(
         mid_x=_S_MID_X,
         mid_y=_S_MID_Y,
         ux=_S_UX,
@@ -966,6 +972,7 @@ def test_saturate_preserves_on_stroke_invariant() -> None:
         node_aabbs=[],
         placed_pills=blockers,
     )
+    lx, ly = _pp.x, _pp.y
 
     # (a) Must NOT be origin (stage-3 fallback) — saturate must have resolved it.
     assert (lx, ly) != (_S_MID_X, _S_MID_Y), (
@@ -1038,10 +1045,11 @@ def test_saturate_deterministic_same_input() -> None:
     )
 
     # Saturate must have resolved the collision — not origin fallback.
-    expected = (_S_MID_X + _S_UX * max_shift_along, _S_MID_Y + _S_UY * max_shift_along)
-    assert result_a == expected, (
-        f"U-06 + U-11: expected saturate result {expected}, got {result_a} — "
-        f"stage 1.5 saturate probe not implemented yet"
+    expected_x = _S_MID_X + _S_UX * max_shift_along
+    expected_y = _S_MID_Y + _S_UY * max_shift_along
+    assert result_a.x == expected_x and result_a.y == expected_y, (
+        f"U-06 + U-11: expected saturate result ({expected_x}, {expected_y}), "
+        f"got ({result_a.x}, {result_a.y}) — stage 1.5 saturate probe not implemented yet"
     )
 
 
@@ -1090,7 +1098,7 @@ def test_perp_side_preferred_order() -> None:
     pos_s_x = _S_MID_X + _S_PERP_X * step
     pos_s_y = _S_MID_Y + _S_PERP_Y * step
 
-    lx_a, ly_a = _nudge_pill_placement(
+    _pp_a = _nudge_pill_placement(
         mid_x=_S_MID_X,
         mid_y=_S_MID_Y,
         ux=_S_UX,
@@ -1105,6 +1113,7 @@ def test_perp_side_preferred_order() -> None:
         node_aabbs=[],
         placed_pills=blockers_a,
     )
+    lx_a, ly_a = _pp_a.x, _pp_a.y
 
     assert abs(lx_a - pos_s_x) < 1e-9 and abs(ly_a - pos_s_y) < 1e-9, (
         f"sub-scenario A: expected +s=({pos_s_x},{pos_s_y}), got ({lx_a},{ly_a})"
@@ -1125,7 +1134,7 @@ def test_perp_side_preferred_order() -> None:
     pos_neg_s_x = _S_MID_X + _S_PERP_X * (-step)
     pos_neg_s_y = _S_MID_Y + _S_PERP_Y * (-step)
 
-    lx_b, ly_b = _nudge_pill_placement(
+    _pp_b = _nudge_pill_placement(
         mid_x=_S_MID_X,
         mid_y=_S_MID_Y,
         ux=_S_UX,
@@ -1140,6 +1149,7 @@ def test_perp_side_preferred_order() -> None:
         node_aabbs=[],
         placed_pills=blockers_b,
     )
+    lx_b, ly_b = _pp_b.x, _pp_b.y
 
     # Must land at +2s (same side preferred), NOT at -s (opposite side).
     assert abs(lx_b - pos_2s_x) < 1e-9 and abs(ly_b - pos_2s_y) < 1e-9, (
@@ -1186,7 +1196,7 @@ def test_perp_no_flicker_rerun() -> None:
         ),
     ]
 
-    def call() -> tuple[float, float]:
+    def call() -> PillPlacement:
         return _nudge_pill_placement(
             mid_x=mid_x,
             mid_y=mid_y,
@@ -1312,7 +1322,7 @@ def _check_on_stroke_invariant(theta: float) -> None:
     # ------------------------------------------------------------------
     # Scenario A: stage 1 origin — no blockers, function returns (mid_x, mid_y)
     # ------------------------------------------------------------------
-    lx_a, ly_a = _nudge_pill_placement(
+    _pp_a = _nudge_pill_placement(
         mid_x=_P3_MID_X,
         mid_y=_P3_MID_Y,
         ux=ux,
@@ -1327,12 +1337,13 @@ def _check_on_stroke_invariant(theta: float) -> None:
         node_aabbs=[],
         placed_pills=[],
     )
+    lx_a, ly_a = _pp_a.x, _pp_a.y
     _assert_on_stroke(lx_a, ly_a, _P3_MID_X, _P3_MID_Y, ux, uy, "A-origin")
 
     # ------------------------------------------------------------------
     # Scenario B: stage 1 along-shift — block origin, first step is clear
     # ------------------------------------------------------------------
-    lx_b, ly_b = _nudge_pill_placement(
+    _pp_b = _nudge_pill_placement(
         mid_x=_P3_MID_X,
         mid_y=_P3_MID_Y,
         ux=ux,
@@ -1347,6 +1358,7 @@ def _check_on_stroke_invariant(theta: float) -> None:
         node_aabbs=[],
         placed_pills=[_p3_blocker(_P3_MID_X, _P3_MID_Y)],  # block origin only
     )
+    lx_b, ly_b = _pp_b.x, _pp_b.y
     _assert_on_stroke(lx_b, ly_b, _P3_MID_X, _P3_MID_Y, ux, uy, "B-along-shift")
     # Additional constraint: along-shift must NOT return the blocked origin.
     # (If it does, the collision checker is broken — but the on-stroke check
@@ -1390,7 +1402,7 @@ def _check_on_stroke_invariant(theta: float) -> None:
             )
         )
 
-    lx_c, ly_c = _nudge_pill_placement(
+    _pp_c = _nudge_pill_placement(
         mid_x=_P3_MID_X,
         mid_y=_P3_MID_Y,
         ux=ux,
@@ -1405,6 +1417,7 @@ def _check_on_stroke_invariant(theta: float) -> None:
         node_aabbs=[],
         placed_pills=blockers_c,
     )
+    lx_c, ly_c = _pp_c.x, _pp_c.y
     _assert_on_stroke(lx_c, ly_c, _P3_MID_X, _P3_MID_Y, ux, uy, "C-saturate")
     # Confirm saturate stage actually fired (not an unintended stage 2/3 fallback):
     # result must lie at mid ± max_shift_along along (ux, uy).
@@ -1463,3 +1476,354 @@ def test_debug_assert_fires_on_off_stroke(monkeypatch: pytest.MonkeyPatch) -> No
     # No-op when SCRIBA_DEBUG=0.
     monkeypatch.setenv("SCRIBA_DEBUG", "0")
     _runtime_assert_on_stroke(100.0, 100.0, 0.0, 0.0, 1.0, 0.0, "test")  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 — leader-line fallback (Phase 4)
+#
+# Design contract:
+#   _nudge_pill_placement now accepts an optional `graph_centroid` kwarg.
+#   When all cascade stages (origin / along / saturate / perp) are exhausted
+#   AND `graph_centroid` is provided, the function emits a leader instead of
+#   silently returning the origin.
+#
+#   Return type becomes PillPlacement (NamedTuple):
+#       x          – pill centre x
+#       y          – pill centre y
+#       leader     – True when leader-line mode was engaged
+#       anchor_x   – leader anchor on pill perimeter (only meaningful when leader=True)
+#       anchor_y   – leader anchor on pill perimeter (only meaningful when leader=True)
+#       stage      – "origin" | "along" | "saturate" | "perp" | "leader"
+#
+#   Minimum-length gate: _GEP17_MIN_LEADER_PX = 4.0.
+#   Below that threshold, falls through to origin (leader=False).
+#
+#   Backward compat: graph_centroid defaults to None → old tuple-fallback
+#   behaviour.  Existing tests that unpack `lx, ly = _nudge_pill_placement(...)`
+#   still work because PillPlacement[0] == x, PillPlacement[1] == y.
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Shared geometry helpers for GEP-17 tests
+# ---------------------------------------------------------------------------
+
+# Horizontal edge running left→right through the canvas centre.
+# ux=1, uy=0, perp_x=0, perp_y=1 (right-hand of stroke, pointing down).
+_G17_MID_X: float = 300.0
+_G17_MID_Y: float = 200.0
+_G17_UX: float = 1.0
+_G17_UY: float = 0.0
+_G17_PERP_X: float = 0.0   # right-hand perp for horizontal edge
+_G17_PERP_Y: float = 1.0
+
+# Pill/AABB geometry — small but large enough to trigger collisions.
+_G17_PILL_W: float = 17.0
+_G17_PILL_H: float = 17.0
+_G17_AABB_W: float = 20.0
+_G17_AABB_H: float = 20.0
+
+_G17_STEP_ALONG: float = _G17_AABB_W + 2   # 22.0
+_G17_STEP_PERP: float = _G17_AABB_H + 2    # 22.0
+_G17_MAX_SHIFT: float = 75.0               # wide budget so stage-1/1.5 probes land
+
+
+def _g17_blocker(x: float, y: float) -> _LabelPlacement:
+    return _LabelPlacement(x=x, y=y, width=_G17_AABB_W, height=_G17_AABB_H)
+
+
+def _g17_all_cascade_blockers() -> list[_LabelPlacement]:
+    """Return a blocker list that saturates every cascade probe for the
+    horizontal test edge (_G17_*), forcing the leader stage to fire."""
+    blockers: list[_LabelPlacement] = []
+    # origin
+    blockers.append(_g17_blocker(_G17_MID_X, _G17_MID_Y))
+    # stage-1 along probes
+    for off in (
+        _G17_STEP_ALONG,
+        -_G17_STEP_ALONG,
+        2 * _G17_STEP_ALONG,
+        -2 * _G17_STEP_ALONG,
+    ):
+        if abs(off) <= _G17_MAX_SHIFT:
+            blockers.append(_g17_blocker(
+                _G17_MID_X + _G17_UX * off,
+                _G17_MID_Y + _G17_UY * off,
+            ))
+    # stage-1.5 saturate probes
+    blockers.append(_g17_blocker(
+        _G17_MID_X + _G17_UX * _G17_MAX_SHIFT,
+        _G17_MID_Y + _G17_UY * _G17_MAX_SHIFT,
+    ))
+    blockers.append(_g17_blocker(
+        _G17_MID_X - _G17_UX * _G17_MAX_SHIFT,
+        _G17_MID_Y - _G17_UY * _G17_MAX_SHIFT,
+    ))
+    # stage-2 perp probes (all four)
+    for off in (
+        _G17_STEP_PERP,
+        2 * _G17_STEP_PERP,
+        -_G17_STEP_PERP,
+        -2 * _G17_STEP_PERP,
+    ):
+        blockers.append(_g17_blocker(
+            _G17_MID_X + _G17_PERP_X * off,
+            _G17_MID_Y + _G17_PERP_Y * off,
+        ))
+    return blockers
+
+
+def _call_nudge(
+    *,
+    placed_pills: list[_LabelPlacement],
+    node_aabbs: list[_LabelPlacement] | None = None,
+    max_shift_along: float = _G17_MAX_SHIFT,
+    graph_centroid: tuple[float, float] | None = None,
+    mid_x: float = _G17_MID_X,
+    mid_y: float = _G17_MID_Y,
+    aabb_h: float = _G17_AABB_H,
+) -> "PillPlacement":
+    """Thin wrapper so individual tests only supply what varies."""
+    return _nudge_pill_placement(
+        mid_x=mid_x,
+        mid_y=mid_y,
+        ux=_G17_UX,
+        uy=_G17_UY,
+        perp_x=_G17_PERP_X,
+        perp_y=_G17_PERP_Y,
+        pill_w=_G17_PILL_W,
+        pill_h=_G17_PILL_H,
+        aabb_w=_G17_AABB_W,
+        aabb_h=aabb_h,
+        max_shift_along=max_shift_along,
+        node_aabbs=node_aabbs or [],
+        placed_pills=placed_pills,
+        graph_centroid=graph_centroid,
+    )
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 test 1 — leader emitted when every cascade stage is exhausted
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_leader_emitted_on_cascade_exhaust() -> None:
+    """GEP-17 T-01: PillPlacement.leader == True and stage == 'leader' when all
+    cascade stages (origin / along / saturate / perp) are blocked.
+
+    The centroid is placed well to the left of the edge midpoint so the
+    outward direction is unambiguous (rightward).  Pill position must not
+    equal the origin (mid_x, mid_y).
+    """
+    blockers = _g17_all_cascade_blockers()
+    # Centroid clearly to the LEFT of midpoint → leader must push pill RIGHT.
+    centroid = (_G17_MID_X - 200.0, _G17_MID_Y)
+
+    result = _call_nudge(placed_pills=blockers, graph_centroid=centroid)
+
+    assert isinstance(result, PillPlacement), (
+        f"Expected PillPlacement, got {type(result)!r}"
+    )
+    assert result.leader is True, (
+        f"Expected leader=True when all stages exhausted, got leader={result.leader!r}"
+    )
+    assert result.stage == "leader", (
+        f"Expected stage='leader', got {result.stage!r}"
+    )
+    assert (result.x, result.y) != (_G17_MID_X, _G17_MID_Y), (
+        "Pill must not sit at origin when leader mode fires"
+    )
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 test 2 — leader direction is outward from centroid
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_leader_direction_outward_from_centroid() -> None:
+    """GEP-17 T-02: pill is placed on the far side of the midpoint from centroid.
+
+    Diagonal centroid (-100, -100 from mid) — discriminates free-direction push
+    from perp-projection push.  Perp-projection would collapse to one axis;
+    free-direction places the pill along the diagonal vector (mid − centroid).
+    Assertions:
+      1) dot(pill − mid, mid − centroid) > 0 — correct half-plane.
+      2) pill − mid is (approximately) parallel to mid − centroid — i.e. cross
+         product ≈ 0, which only holds for the free-direction impl.
+    """
+    import math
+
+    blockers = _g17_all_cascade_blockers()
+    centroid = (_G17_MID_X - 100.0, _G17_MID_Y - 100.0)
+
+    result = _call_nudge(placed_pills=blockers, graph_centroid=centroid)
+
+    away_x = _G17_MID_X - centroid[0]
+    away_y = _G17_MID_Y - centroid[1]
+    to_pill_x = result.x - _G17_MID_X
+    to_pill_y = result.y - _G17_MID_Y
+    dot = to_pill_x * away_x + to_pill_y * away_y
+
+    assert dot > 0, (
+        f"Pill placed in wrong half-plane: dot={dot:.4f}; "
+        f"centroid={centroid}, mid=({_G17_MID_X},{_G17_MID_Y}), "
+        f"pill=({result.x:.4f},{result.y:.4f})"
+    )
+
+    # Cross product of (mid−centroid) and (pill−mid) ≈ 0 iff parallel (free-dir).
+    away_len = math.hypot(away_x, away_y)
+    to_pill_len = math.hypot(to_pill_x, to_pill_y)
+    cross = away_x * to_pill_y - away_y * to_pill_x
+    normalised = cross / (away_len * to_pill_len)
+    assert abs(normalised) < 1e-9, (
+        f"Pill push is not parallel to (mid − centroid); normalised cross="
+        f"{normalised:.6e}. Free-direction impl required (not perp-projection)."
+    )
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 test 3 — minimum-length gate: tiny aabb_h falls through to origin
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_leader_min_length_gate() -> None:
+    """GEP-17 T-03: when 2*aabb_h + _WEIGHT_PILL_PAD_Y < _GEP17_MIN_LEADER_PX (4.0),
+    the leader is suppressed and the function returns leader=False at stage='origin'
+    (origin fallback wins over a too-short leader line).
+
+    We contrive a tiny aabb_h so the perpendicular offset falls below the gate.
+    aabb_h = 0.5 → offset = 2*0.5 + 2 = 3.0 < 4.0 → gate fires → origin fallback.
+    """
+    # With aabb_h=0.5 the leader offset = 2*0.5 + _WEIGHT_PILL_PAD_Y(=2) = 3.0 < 4.0.
+    tiny_aabb_h = 0.5
+
+    # We still need to block origin so the cascade runs; but with a tiny aabb_h
+    # the blocker must also be tiny to actually collide.  Use a 1×1 blocker at origin.
+    blockers: list[_LabelPlacement] = []
+    for b in _g17_all_cascade_blockers():
+        blockers.append(_LabelPlacement(x=b.x, y=b.y, width=1.0, height=1.0))
+
+    centroid = (_G17_MID_X - 200.0, _G17_MID_Y)
+
+    result = _call_nudge(
+        placed_pills=blockers,
+        graph_centroid=centroid,
+        aabb_h=tiny_aabb_h,
+    )
+
+    assert result.leader is False, (
+        f"Leader must be suppressed below min-length gate; got leader={result.leader!r}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 test 4 — no leader when origin succeeds (empty blockers)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_no_leader_when_origin_succeeds() -> None:
+    """GEP-17 T-04: no blockers → origin wins immediately, leader=False, stage='origin'."""
+    centroid = (_G17_MID_X - 100.0, _G17_MID_Y)
+
+    result = _call_nudge(placed_pills=[], graph_centroid=centroid)
+
+    assert isinstance(result, PillPlacement)
+    assert result.leader is False, f"Expected leader=False; got {result.leader!r}"
+    assert result.stage == "origin", f"Expected stage='origin'; got {result.stage!r}"
+    assert result.x == _G17_MID_X
+    assert result.y == _G17_MID_Y
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 test 5 — no leader when along-shift succeeds
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_no_leader_when_along_succeeds() -> None:
+    """GEP-17 T-05: only origin blocked → along-shift wins, leader=False, stage='along'."""
+    blockers = [_g17_blocker(_G17_MID_X, _G17_MID_Y)]  # block origin only
+    centroid = (_G17_MID_X - 100.0, _G17_MID_Y)
+
+    result = _call_nudge(placed_pills=blockers, graph_centroid=centroid)
+
+    assert isinstance(result, PillPlacement)
+    assert result.leader is False, f"Expected leader=False; got {result.leader!r}"
+    assert result.stage == "along", f"Expected stage='along'; got {result.stage!r}"
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 test 6 — no leader when saturate succeeds
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_no_leader_when_saturate_succeeds() -> None:
+    """GEP-17 T-06: origin + all stepped along + all perp blocked, saturate clear →
+    leader=False, stage='saturate'.
+
+    Saturate probes (±max_shift_along) are intentionally left unblocked so
+    stage-1.5 fires before the leader stage is reached.
+    """
+    blockers: list[_LabelPlacement] = []
+    # origin
+    blockers.append(_g17_blocker(_G17_MID_X, _G17_MID_Y))
+    # stage-1 along probes (within budget)
+    for off in (
+        _G17_STEP_ALONG,
+        -_G17_STEP_ALONG,
+        2 * _G17_STEP_ALONG,
+        -2 * _G17_STEP_ALONG,
+    ):
+        if abs(off) <= _G17_MAX_SHIFT:
+            blockers.append(_g17_blocker(
+                _G17_MID_X + _G17_UX * off,
+                _G17_MID_Y + _G17_UY * off,
+            ))
+    # stage-2 perp probes (all four)
+    for off in (
+        _G17_STEP_PERP,
+        2 * _G17_STEP_PERP,
+        -_G17_STEP_PERP,
+        -2 * _G17_STEP_PERP,
+    ):
+        blockers.append(_g17_blocker(
+            _G17_MID_X + _G17_PERP_X * off,
+            _G17_MID_Y + _G17_PERP_Y * off,
+        ))
+    # NOTE: saturate probes at ±max_shift_along are intentionally left clear.
+
+    centroid = (_G17_MID_X - 100.0, _G17_MID_Y)
+
+    result = _call_nudge(placed_pills=blockers, graph_centroid=centroid)
+
+    assert isinstance(result, PillPlacement)
+    assert result.leader is False, f"Expected leader=False; got {result.leader!r}"
+    assert result.stage == "saturate", f"Expected stage='saturate'; got {result.stage!r}"
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 test 7 — determinism: two identical calls produce identical PillPlacement
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_leader_deterministic() -> None:
+    """GEP-17 T-07: two calls with identical arguments return identical PillPlacement.
+
+    This covers the centroid tiebreak path (right-hand bias) described in the
+    design doc for cases where centroid lies exactly on the edge perpendicular.
+    """
+    blockers = _g17_all_cascade_blockers()
+    # Centroid placed perpendicularly above the midpoint — worst-case tiebreak.
+    centroid = (_G17_MID_X, _G17_MID_Y - 150.0)
+
+    result_a = _call_nudge(placed_pills=blockers, graph_centroid=centroid)
+    result_b = _call_nudge(placed_pills=blockers, graph_centroid=centroid)
+
+    assert result_a == result_b, (
+        f"GEP-17 determinism violated: call A={result_a!r}, call B={result_b!r}"
+    )

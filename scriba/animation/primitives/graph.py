@@ -12,7 +12,7 @@ import math
 import os
 import random
 import re
-from typing import Any, Callable, ClassVar
+from typing import Any, Callable, ClassVar, NamedTuple
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
@@ -83,6 +83,32 @@ _WEIGHT_PILL_STROKE_PAD: float = 1.0
 # Coincident-edge early-exit threshold (GEP-11).
 _WEIGHT_EDGE_MIN_LEN: float = 4.0
 
+# Minimum leader-line length gate (GEP-17).  When the computed perpendicular
+# offset is smaller than this value the leader is suppressed and the function
+# falls back to the silent origin (leader=False, stage="origin").
+_GEP17_MIN_LEADER_PX: float = 4.0
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 — PillPlacement return type (NamedTuple for positional back-compat)
+# ---------------------------------------------------------------------------
+
+class PillPlacement(NamedTuple):
+    """Return type for _nudge_pill_placement (GEP-17 v1.4.0).
+
+    Fields 0 and 1 are x/y so existing ``lx, ly = _nudge_pill_placement(...)``
+    callers continue to work without modification (NamedTuple positional
+    unpacking).
+    """
+
+    x: float
+    y: float
+    leader: bool
+    anchor_x: float
+    anchor_y: float
+    stage: str  # "origin" | "along" | "saturate" | "perp" | "leader"
+
+
 # Edge-placement ordering priority for D-1 determinism (GEP-05).
 _EDGE_STATE_PRIO: dict[str, int] = {
     "current": 0,
@@ -142,14 +168,22 @@ def _nudge_pill_placement(
     max_shift_along: float,
     node_aabbs: list[_LabelPlacement],
     placed_pills: list[_LabelPlacement],
-) -> tuple[float, float]:
-    """Return the final pill centre (lx, ly) after GEP-07 v1.2 nudge.
+    graph_centroid: tuple[float, float] | None = None,
+) -> PillPlacement:
+    """Return a PillPlacement after GEP-07 v1.2 / GEP-17 v1.4 nudge.
 
     Stage 1 — along-edge shift: slides pill on the stroke, preserving
     GEP-10 edge binding.  Skipped when max_shift_along == 0 (short edges).
+    Stage 1.5 — saturate probe: try ±max_shift_along exact (GEP-14).
     Stage 2 — perp nudge fallback: v1.1 behaviour, used only when along-
     shift is exhausted or budget is zero.
-    Stage 3 — origin fallback: a touching pill beats a detached pill.
+    Stage 3 / leader — when graph_centroid is provided and all prior stages
+    are blocked, a leader line is emitted and the pill is placed on the far
+    side of the midpoint from the centroid (GEP-17 v1.4.0).  When
+    graph_centroid is None the legacy silent-origin fallback fires.
+
+    The returned NamedTuple's fields [0] and [1] are x/y respectively, so
+    existing ``lx, ly = _nudge_pill_placement(...)`` callers continue to work.
 
     All obstacle lists are consulted as-is; caller must not mutate them
     between construction and this call.
@@ -164,7 +198,7 @@ def _nudge_pill_placement(
 
     if not _collides(candidate):
         _assert_on_stroke(origin_lx, origin_ly, mid_x, mid_y, ux, uy, "origin")
-        return origin_lx, origin_ly
+        return PillPlacement(origin_lx, origin_ly, False, mid_x, mid_y, "origin")
 
     # Step against the rotated AABB, not the un-rotated pill box: on angled
     # edges aabb_w / aabb_h swell to ~pill·√2, so step=pill_w+2 would leave
@@ -187,7 +221,7 @@ def _nudge_pill_placement(
         trial = _LabelPlacement(x=trial_lx, y=trial_ly, width=aabb_w, height=aabb_h)
         if not _collides(trial):
             _assert_on_stroke(trial_lx, trial_ly, mid_x, mid_y, ux, uy, "along")
-            return trial_lx, trial_ly
+            return PillPlacement(trial_lx, trial_ly, False, mid_x, mid_y, "along")
 
     # Stage 1.5 — saturate probe (GEP-14 v1.3): try pill at exactly
     # ±max_shift_along before falling through to perp.  Preserves U-14
@@ -199,7 +233,7 @@ def _nudge_pill_placement(
             sat = _LabelPlacement(x=sat_lx, y=sat_ly, width=aabb_w, height=aabb_h)
             if not _collides(sat):
                 _assert_on_stroke(sat_lx, sat_ly, mid_x, mid_y, ux, uy, "saturate")
-                return sat_lx, sat_ly
+                return PillPlacement(sat_lx, sat_ly, False, mid_x, mid_y, "saturate")
 
     # Stage 2 — perp nudge fallback (v1.3 behaviour, GEP-15).
     # Candidate order [+s, +2s, -s, -2s]: exhaust the right-hand side (initial
@@ -216,10 +250,52 @@ def _nudge_pill_placement(
         trial_ly = origin_ly + perp_y * offset
         trial = _LabelPlacement(x=trial_lx, y=trial_ly, width=aabb_w, height=aabb_h)
         if not _collides(trial):
-            return trial_lx, trial_ly
+            return PillPlacement(trial_lx, trial_ly, False, mid_x, mid_y, "perp")
 
-    # Stage 3 — origin fallback: touching beats detached.
-    return origin_lx, origin_ly
+    # Stage 3 / GEP-17 leader fallback.
+    # When graph_centroid is None → legacy silent-origin fallback (leader=False).
+    # When graph_centroid is provided → attempt a leader-line placement on the
+    # far side of the midpoint from the centroid.
+    if graph_centroid is not None:
+        leader_offset = 2.0 * aabb_h + _WEIGHT_PILL_PAD_Y
+        if leader_offset >= _GEP17_MIN_LEADER_PX:
+            cx, cy = graph_centroid
+            # Place the pill away from the centroid: use the unit vector from
+            # centroid toward midpoint as the push direction.
+            vec_x = mid_x - cx
+            vec_y = mid_y - cy
+            vec_len = math.hypot(vec_x, vec_y)
+            if vec_len < 1e-9:
+                # Centroid coincides with midpoint: default to (perp_x, perp_y).
+                dir_x, dir_y = perp_x, perp_y
+            else:
+                dir_x = vec_x / vec_len
+                dir_y = vec_y / vec_len
+            pill_x = mid_x + dir_x * leader_offset
+            pill_y = mid_y + dir_y * leader_offset
+            return PillPlacement(pill_x, pill_y, True, mid_x, mid_y, "leader")
+
+    # Origin fallback: touching beats detached (legacy stage 3 + min-gate path).
+    return PillPlacement(origin_lx, origin_ly, False, mid_x, mid_y, "origin")
+
+
+# ---------------------------------------------------------------------------
+# GEP-17 — leader-line SVG helper
+# ---------------------------------------------------------------------------
+
+
+def _emit_leader_line(
+    x1: float, y1: float, x2: float, y2: float, stroke_color: str
+) -> str:
+    """Return an SVG <line> string for a GEP-17 leader line.
+
+    Emitted BEFORE the pill rect so the pill renders on top.
+    stroke-dasharray="3,2" distinguishes the leader from edge strokes.
+    """
+    return (
+        f'<line x1="{x1:.1f}" y1="{y1:.1f}" x2="{x2:.1f}" y2="{y2:.1f}"'
+        f' stroke="{stroke_color}" stroke-width="0.8" stroke-dasharray="3,2"/>'
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -899,6 +975,16 @@ class Graph(PrimitiveBase):
             for n in self.nodes
             if n not in hidden_nodes
         ]
+        # GEP-17: centroid of visible node positions — used as the repulsion
+        # origin for leader-line placement when all cascade stages are blocked.
+        _visible_nodes = [n for n in self.nodes if n not in hidden_nodes]
+        if _visible_nodes:
+            graph_centroid: tuple[float, float] | None = (
+                sum(float(self.positions[n][0]) for n in _visible_nodes) / len(_visible_nodes),
+                sum(float(self.positions[n][1]) for n in _visible_nodes) / len(_visible_nodes),
+            )
+        else:
+            graph_centroid = None
         # GEP-05: stable edge order — (state priority ASC, canonical edge key
         # ASC) — so identical graphs placed in different add_edge orders
         # produce byte-identical SVG output (D-1 determinism).
@@ -1001,16 +1087,17 @@ class Graph(PrimitiveBase):
                     x=lx, y=ly, width=aabb_w, height=aabb_h
                 )
 
-                # GEP-07 v1.2: along-edge shift first (preserves GEP-10
-                # binding), perp nudge as fallback, origin as last resort.
-                # See _nudge_pill_placement for the three-stage protocol.
+                # GEP-07 v1.2 / GEP-17 v1.4: along-edge shift first (preserves
+                # GEP-10 binding), perp nudge as fallback, leader line as last
+                # resort when graph_centroid is available.
+                # See _nudge_pill_placement for the full stage protocol.
                 ux = dx_edge / edge_len
                 uy = dy_edge / edge_len
                 max_shift_along = max(
                     0.0,
                     edge_len / 2 - pill_w / 2 - self._node_radius,
                 )
-                lx, ly = _nudge_pill_placement(
+                pp = _nudge_pill_placement(
                     mid_x=lx,
                     mid_y=ly,
                     ux=ux,
@@ -1024,7 +1111,9 @@ class Graph(PrimitiveBase):
                     max_shift_along=max_shift_along,
                     node_aabbs=node_aabbs,
                     placed_pills=placed_edge_labels,
+                    graph_centroid=graph_centroid,
                 )
+                lx, ly = pp.x, pp.y
                 candidate = _LabelPlacement(
                     x=lx, y=ly, width=aabb_w, height=aabb_h
                 )
@@ -1043,6 +1132,14 @@ class Graph(PrimitiveBase):
                     x=lx, y=ly, width=aabb_w, height=aabb_h
                 )
                 placed_edge_labels.append(candidate)
+
+                # GEP-17: leader line emitted BEFORE the pill (so pill renders
+                # on top).  Anchor point is the edge midpoint (pp.anchor_x/y).
+                leader_svg = ""
+                if pp.leader:
+                    leader_svg = _emit_leader_line(
+                        pp.anchor_x, pp.anchor_y, lx, ly, edge_stroke
+                    )
 
                 # GEP-10: pill rect + text wrapped in a <g transform="rotate">
                 # so the pill rotates as a unit around its own centre. Text
@@ -1066,10 +1163,11 @@ class Graph(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
                 if abs(theta_deg) < 0.05:
-                    weight_text = _pill_svg
+                    weight_text = leader_svg + _pill_svg
                 else:
                     weight_text = (
-                        f'<g transform="rotate({theta_deg:.2f} '
+                        leader_svg
+                        + f'<g transform="rotate({theta_deg:.2f} '
                         f'{lx:.1f} {ly:.1f})">'
                         f'{_pill_svg}'
                         f'</g>'
