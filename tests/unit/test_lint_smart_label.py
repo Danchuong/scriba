@@ -492,15 +492,15 @@ class TestMainExitCodes:
 
 
 class TestLiveScan:
-    def test_live_scan_detects_12_primitive_fp_pairs(self):
+    def test_live_scan_detects_10_primitive_fp_pairs(self):
         """Validate that the linter finds the expected unique (primitive, FP) pairs.
 
-        Post-Plane2D migration (PR-3): FP-1 is eliminated from Plane2D
-        (_emit_text_annotation removed). FP-2/FP-3 still show 4/2 primitives
-        due to lint false positives on _emit_labels (line labels, not annotation
-        labels) and the new text_placed list (intentionally isolated per-frame).
-        FP-6 picks up plane2d due to direct emit_position_label_svg call.
-        Net result: (plane2d, FP-1) removed, (plane2d, FP-6) added — total stays 12.
+        Post-Plane2D migration (PR-3): FP-1 eliminated from Plane2D
+        (_emit_text_annotation removed). Post-GEP Phase 0 (2026-04-23): Graph
+        FP-3 (hardcoded pill metrics) and FP-4 (no clamp) eliminated —
+        constants promoted to module-level, viewbox clamp added. Graph now
+        shows only FP-2 (placed_edge_labels per-call list, still a real
+        violation pending full registry integration in Phase 1).
         """
         primitives_path = _REPO_ROOT / "scriba" / "animation" / "primitives"
         violations = _lint.lint_primitives(primitives_path)
@@ -508,8 +508,8 @@ class TestLiveScan:
             (v.file.split("/")[-1].replace(".py", "").lower(), v.fp)
             for v in violations
         }
-        assert len(pairs) == 12, (
-            f"Expected 12 unique (primitive, FP) pairs post-Plane2D migration, "
+        assert len(pairs) == 10, (
+            f"Expected 10 unique (primitive, FP) pairs post-GEP-Phase-0, "
             f"got {len(pairs)}: {sorted(pairs)}"
         )
 
@@ -536,12 +536,12 @@ class TestLiveScan:
             fname = v.file.split("/")[-1].replace(".py", "").lower()
             pairs_by_fp[v.fp].add(fname)
 
-        # Post-Plane2D-migration expected primitive counts per FP
+        # Post-Plane2D-migration + GEP-Phase-0 expected primitive counts per FP
         expected = {
             "FP-1": 0,  # Plane2D fixed (_emit_text_annotation removed)
             "FP-2": 4,  # Graph, Plane2D (FP via _emit_labels+text_placed), Queue, NumberLine
-            "FP-3": 2,  # Plane2D (_LINE_LABEL_CHAR_W — line-label FP), Graph
-            "FP-4": 1,  # Graph only (Plane2D FP-4 was inside _emit_text_annotation, now gone)
+            "FP-3": 1,  # Plane2D only (Graph pill constants promoted to module level)
+            "FP-4": 0,  # Graph clamp added in GEP-Phase-0
             "FP-5": 2,  # Queue, NumberLine — unchanged
             "FP-6": 3,  # Queue, NumberLine, Plane2D (emit_position_label_svg flagged)
         }

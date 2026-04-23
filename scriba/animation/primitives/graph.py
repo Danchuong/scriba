@@ -65,6 +65,27 @@ _MAX_NODES = 100
 # distance is ``2 * _NODE_RADIUS + _NODE_OVERLAP_GAP``.
 _NODE_OVERLAP_GAP = 12
 
+# Edge weight pill — see docs/spec/graph-edge-pill-ruleset.md (GEP-02/03/04).
+_WEIGHT_FONT: int = 11
+_WEIGHT_PILL_PAD_X: int = 5
+_WEIGHT_PILL_PAD_Y: int = 2
+_WEIGHT_PILL_R: int = 3
+# Perpendicular offset from stroke centerline to pill centre (GEP-06).
+_WEIGHT_PILL_PERP_BIAS: float = float(_WEIGHT_PILL_R + 2)
+# Stroke-width expansion of the pill AABB for collision (GEP-09).
+_WEIGHT_PILL_STROKE_PAD: float = 1.0
+# Coincident-edge early-exit threshold (GEP-11).
+_WEIGHT_EDGE_MIN_LEN: float = 4.0
+
+# Edge-placement ordering priority for D-1 determinism (GEP-05).
+_EDGE_STATE_PRIO: dict[str, int] = {
+    "current": 0,
+    "highlighted": 1,
+    "active": 2,
+    "idle": 3,
+    "muted": 4,
+}
+
 # Regex to parse annotation selectors like "G.node[A]" or "G.node[myNode]"
 _GRAPH_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
 
@@ -733,8 +754,33 @@ class Graph(PrimitiveBase):
             if self.get_state(self._node_key(n)) == "hidden"
         }
         placed_edge_labels: list[_LabelPlacement] = []
+        # GEP-03: visible node circles act as MUST-avoid AABB obstacles for
+        # edge weight pills. Prevents F1/G1 (pill overlaps node circle on
+        # short edges — confirmed in dinic.html / mcmf.html pre-fix).
+        node_aabbs: list[_LabelPlacement] = [
+            _LabelPlacement(
+                x=float(self.positions[n][0]),
+                y=float(self.positions[n][1]),
+                width=float(2 * self._node_radius),
+                height=float(2 * self._node_radius),
+            )
+            for n in self.nodes
+            if n not in hidden_nodes
+        ]
+        # GEP-05: stable edge order — (state priority ASC, canonical edge key
+        # ASC) — so identical graphs placed in different add_edge orders
+        # produce byte-identical SVG output (D-1 determinism).
+        def _edge_sort_key(
+            edge: tuple[Any, Any, Any],
+        ) -> tuple[int, str]:
+            u_, v_, _w = edge
+            state_ = self.get_state(self._edge_key(u_, v_))
+            return (
+                _EDGE_STATE_PRIO.get(state_, 99),
+                self._edge_key(u_, v_),
+            )
         parts.append('<g class="scriba-graph-edges">')
-        for u, v, weight in self.edges:
+        for u, v, weight in sorted(self.edges, key=_edge_sort_key):
             edge_target = f"{self.name}.{self._edge_key(u, v)}"
             state = self.get_state(self._edge_key(u, v))
             # RFC-001 §4.4 — hidden edges are not rendered at all. Also
@@ -749,10 +795,11 @@ class Graph(PrimitiveBase):
                 # Shorten line so arrowhead stops at circle boundary
                 x2, y2 = _shorten_line_to_circle(x1, y1, x2, y2, self._node_radius)
 
-            # Compute midpoint from the actually-rendered (shortened) line
-            # endpoints so the weight pill sits on the visible segment.
+            # GEP-01: pill sits on the visible segment — midpoint computed
+            # from post-shortening endpoints. Perp-bias (GEP-06) replaces
+            # the earlier magic `-4`; applied below once perp is known.
             mid_x = (x1 + x2) / 2
-            mid_y = (y1 + y2) / 2 - 4
+            mid_y = (y1 + y2) / 2
 
             marker = ' marker-end="url(#scriba-arrow-fwd)"' if self.directed else ""
             edge_colors = svg_style_attrs(state)
@@ -772,42 +819,74 @@ class Graph(PrimitiveBase):
             elif self.show_weights and weight is not None:
                 display_weight = _format_weight(weight)
             if display_weight is not None:
-                _WEIGHT_FONT = 11
-                _PILL_PAD_X = 5
-                _PILL_PAD_Y = 2
-                _PILL_R = 3
+                # GEP-02: pill dimensions from module-level constants so the
+                # constants survive ruff/style churn and share one source.
                 tw = estimate_text_width(display_weight, _WEIGHT_FONT)
                 th = _WEIGHT_FONT + 2
-                pill_w = tw + _PILL_PAD_X * 2
-                pill_h = th + _PILL_PAD_Y * 2
+                pill_w = tw + _WEIGHT_PILL_PAD_X * 2
+                pill_h = th + _WEIGHT_PILL_PAD_Y * 2
 
-                lx, ly = mid_x, mid_y
-
-                # Nudge perpendicular to edge if overlapping a placed label
-                candidate = _LabelPlacement(
-                    x=lx, y=ly, width=pill_w, height=pill_h
-                )
+                # Edge direction + unit perpendicular (left-hand of flow).
                 dx_edge = x2 - x1
                 dy_edge = y2 - y1
                 edge_len = math.hypot(dx_edge, dy_edge) or 1.0
-                # Unit perpendicular vector
                 perp_x = -dy_edge / edge_len
                 perp_y = dx_edge / edge_len
+
+                # GEP-06: initial placement = midpoint + perp-bias so the pill
+                # sits perpendicular to the stroke, not an unconditional -4
+                # y-offset. Correct for any edge angle including vertical.
+                lx = mid_x + perp_x * _WEIGHT_PILL_PERP_BIAS
+                ly = mid_y + perp_y * _WEIGHT_PILL_PERP_BIAS
+
+                # GEP-09: AABB inflated by pill stroke-width (0.5 each side)
+                # so two pills declared non-overlapping never render with
+                # touching borders.
+                aabb_w = pill_w + _WEIGHT_PILL_STROKE_PAD
+                aabb_h = pill_h + _WEIGHT_PILL_STROKE_PAD
+                candidate = _LabelPlacement(
+                    x=lx, y=ly, width=aabb_w, height=aabb_h
+                )
+
+                # GEP-07: bounded perpendicular nudge — at most 2 attempts,
+                # alternating ±perp signs from the midpoint origin, never
+                # cumulative. A touching pill beats a pill detached from its
+                # edge (GEP-R-19 degradation warning not yet wired — Phase 1).
                 nudge_step = pill_h + 2
-                # Try at most 2 nudges, alternating +perp / -perp, so the
-                # pill stays visually attached to the edge (≤1 pill-height
-                # away). A label touching another pill is better than a label
-                # disconnected from its edge.
                 _nudge_signs = (1, -1)
                 for _attempt in range(2):
-                    if not any(candidate.overlaps(p) for p in placed_edge_labels):
+                    collides_pill = any(
+                        candidate.overlaps(p) for p in placed_edge_labels
+                    )
+                    collides_node = any(
+                        candidate.overlaps(n) for n in node_aabbs
+                    )
+                    if not collides_pill and not collides_node:
                         break
                     sign = _nudge_signs[_attempt]
-                    lx = mid_x + perp_x * nudge_step * sign
-                    ly = mid_y + perp_y * nudge_step * sign
-                    candidate = _LabelPlacement(
-                        x=lx, y=ly, width=pill_w, height=pill_h
+                    lx = mid_x + perp_x * (
+                        _WEIGHT_PILL_PERP_BIAS + nudge_step * sign
                     )
+                    ly = mid_y + perp_y * (
+                        _WEIGHT_PILL_PERP_BIAS + nudge_step * sign
+                    )
+                    candidate = _LabelPlacement(
+                        x=lx, y=ly, width=aabb_w, height=aabb_h
+                    )
+
+                # GEP-08: clamp pill centre into the viewbox so a pill near
+                # the canvas boundary never spills outside.
+                lx = max(
+                    pill_w / 2,
+                    min(float(self.width) - pill_w / 2, lx),
+                )
+                ly = max(
+                    pill_h / 2,
+                    min(float(self.height) - pill_h / 2, ly),
+                )
+                candidate = _LabelPlacement(
+                    x=lx, y=ly, width=aabb_w, height=aabb_h
+                )
                 placed_edge_labels.append(candidate)
 
                 # Background pill
@@ -816,7 +895,7 @@ class Graph(PrimitiveBase):
                 weight_text = (
                     f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
                     f'width="{pill_w}" height="{pill_h}" '
-                    f'rx="{_PILL_R}" fill="white" fill-opacity="0.85" '
+                    f'rx="{_WEIGHT_PILL_R}" fill="white" fill-opacity="0.85" '
                     f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
                 ) + _render_svg_text(
                     display_weight, lx, ly,
