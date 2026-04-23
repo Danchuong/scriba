@@ -822,6 +822,7 @@ class Graph(PrimitiveBase):
                     display_weight, lx, ly,
                     fill=THEME["fg_muted"],
                     text_anchor="middle",
+                    dominant_baseline="central",
                     css_class="scriba-graph-weight",
                     render_inline_tex=render_inline_tex,
                 )
