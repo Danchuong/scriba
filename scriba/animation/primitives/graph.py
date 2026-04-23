@@ -579,6 +579,7 @@ class Graph(PrimitiveBase):
         "auto_expand",
         "split_labels",
         "tint_by_source",
+        "global_optimize",
     })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
@@ -636,6 +637,25 @@ class Graph(PrimitiveBase):
         # byte-stable SVG for existing goldens.
         self.split_labels: bool = bool(params.get("split_labels", False))
         self.tint_by_source: bool = bool(params.get("tint_by_source", False))
+        # Phase 7 (GEP-20) — opt-in simulated-annealing post-cascade refine.
+        # Default False keeps byte-stable output. The emit_svg wiring lands
+        # in v2.1; the flag is accepted here so editorials can opt in
+        # without raising E1474 once wiring ships. When the caller opts in
+        # today, surface a UserWarning so the no-op is explicit rather than
+        # silent — otherwise a misconfigured editorial could believe SA is
+        # running when in fact the cascade alone produced the output.
+        self.global_optimize: bool = bool(params.get("global_optimize", False))
+        if self.global_optimize:
+            import warnings as _w
+            _w.warn(
+                "Graph(global_optimize=True) is accepted as a v2.1 forward-"
+                "compat flag but has no runtime effect yet — the simulated-"
+                "annealing refine (GEP-20) is currently only available as a "
+                "pure primitive in scriba.animation.primitives._pill_refine. "
+                "emit_svg wiring ships in GEP v2.1.",
+                UserWarning,
+                stacklevel=2,
+            )
 
         # --- layout_seed validation (E1505) ---
         #

@@ -627,6 +627,65 @@ to rotate the pill + label as one unit (GEP-10 invariant preserved).
 
 ---
 
+### GEP-20 — Simulated-annealing global refine (Phase 7, opt-in) — v2.1 contract
+
+**Intent.** After the on-stroke → along-shift → perp → leader cascade
+(GEP-06 / GEP-07 / GEP-14 / GEP-15 / GEP-17) has placed every pill, an
+optional second pass runs a seeded simulated annealer that perturbs
+each pill along its own `(ux, uy)` and `(perp_x, perp_y)` axes to
+minimise a global energy function.  The refine is strictly opt-in and
+provides a fallback for dense graphs where pairwise cascade decisions
+leave residual overlaps.
+
+**Opt-in flag.** `global_optimize: bool = False`.  When `True`, Graph
+accepts the parameter in `ACCEPTED_PARAMS` and stores `self.global_optimize`.
+The emit_svg integration lands in v2.1; the flag is accepted in v2.0.0
+so editorials can set it forward-compatibly.
+
+**Energy function.**
+
+```
+E = Σ_{i<j} overlap_area(pill_i, pill_j)²   (collision penalty, squared)
+  + Σ_i dist(pill_i, origin_i) · w_anchor   (anchor pull toward cascade origin)
+```
+
+`overlap_area` is AABB overlap (zero when disjoint).  `origin_i` is the
+cascade-chosen anchor.  `w_anchor = 0.1` by default; higher values
+bias toward cascade fidelity, lower values toward collision-freeness.
+
+**Locked-perp invariant (U-14).**  Candidates with `locked_perp=True`
+(on-stroke pills that the cascade committed via along-shift without
+needing perp) MUST move ONLY along `(ux, uy)`.  SA forces
+`perp_delta = 0` for these candidates.  This preserves the on-stroke
+binding while still allowing along-edge slide.
+
+**Determinism (U-06).**  The refine receives `seed: int` and drives all
+randomness — iteration order, perturbation magnitudes, Metropolis dice
+— through a seeded `random.Random`.  Same input + same seed ⇒ byte-
+identical output list.  The Graph integration passes
+`seed = self.layout_seed` so SA output is deterministic across runs.
+
+**Budget.**  `max_iter = 80` by default, `T₀ = 10`, cooling `α = 0.92`.
+A 50-edge graph completes under 200 ms on CI.  SA returns the best-
+ever position per pill (not the last-accepted) so late-schedule
+regressions cannot corrupt the output.
+
+**Canvas clamp.**  Every trial position is clamped to
+`[aabb_w/2, canvas_w − aabb_w/2] × [aabb_h/2, canvas_h − aabb_h/2]`
+so GEP-08 (viewbox invariant) is preserved unconditionally.
+
+**Exit criteria.**  When opted in, the refine SHALL reduce the residual
+perpendicular-nudge count by ≥50% vs cascade-only on the Phase 7
+benchmark (dense 50-edge random graph, seed 42).  When off, output is
+byte-identical to the cascade-only path.
+
+**Module.** `scriba/animation/primitives/_pill_refine.py` —
+`_PillCandidate` frozen dataclass + `_simulated_annealing_refine`
+pure function.  No Graph dependency; the module is independently
+testable.
+
+---
+
 ## §5 Obstacle vocabulary
 
 Edge-pill placement recognizes three obstacle kinds today, with two additional
@@ -739,6 +798,7 @@ else:
 | 1.3.0   | 2026-04-23 | GEP-14 — saturate probe (stage 1.5): try ±max_shift_along exact before perp fallback. Preserves U-14 on-stroke invariant. |
 | 1.4.0   | 2026-04-23 | GEP-17 — leader-line fallback (Phase 4). `_nudge_pill_placement` returns `PillPlacement` NamedTuple; adds `graph_centroid` param; emits dashed leader `<line>` when all cascade stages exhausted. Minimum-length gate `_GEP17_MIN_LEADER_PX = 4.0`. Backward-compat positional unpack preserved. |
 | 2.0.0   | 2026-04-23 | GEP-18 — pre-layout auto-expansion (Phase 5, U-15). Opt-in `Graph(..., auto_expand=True)` flag. New pure module `_layout_expand.py` (`_min_scale_analytic`, `_cascade_fallback_count`, `_find_min_scale`). Binary search `[s_min_analytic, min(·1.8, effective_cap)]`, eps=0.02, max_iter=8. Canvas clamp `min(3.0, canvas_bound_scale)`. `self.positions` never mutated; working copy per `emit_svg`. GEP-17 remains correctness floor on cap overflow. |
+| 2.0.0-p7 | 2026-04-23 | GEP-20 contract — simulated annealing global refine (Phase 7). Opt-in `Graph(..., global_optimize=True)` flag accepted in `ACCEPTED_PARAMS`. New pure module `_pill_refine.py` (`_PillCandidate`, `_simulated_annealing_refine`). Energy `Σ overlap² + Σ dist_from_origin · w_anchor`. U-14 lock via `locked_perp=True`. Deterministic seeded Metropolis. emit_svg wiring deferred to v2.1. |
 
 Phase 1+ rules (GEP-15 .. GEP-19) will ship alongside the full smart-label
 scoring adoption described in
