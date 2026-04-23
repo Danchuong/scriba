@@ -560,10 +560,11 @@ Horizontal axis with tick marks.
 ### 7.8 Stack
 LIFO stack.
 ```latex
-\shape{s}{Stack}{items=["A","B"]}
+\shape{s}{Stack}{items=["A","B"], orientation="vertical", max_visible=10}
 ```
+**Params:** `items` (initial list), `orientation` (`"vertical"` default / `"horizontal"`), `max_visible` (int ≥1, truncates with `+N more` overflow indicator), `label` (optional caption).
 **Operations:** `\apply{s}{push="C"}`, `\apply{s}{pop=1}`
-**Selectors:** `s`, `s.item[i]` (0=bottom)
+**Selectors:** `s`, `s.item[i]` (0=bottom), `s.top`, `s.all`
 
 ### 7.9 Plane2D
 2D coordinate plane with points and lines.
@@ -581,6 +582,7 @@ Time-series metric chart.
 \shape{plot}{MetricPlot}{series=["cost","temp"], xlabel="step", ylabel="value"}
 ```
 **Operations:** `\apply{plot}{cost=10, temp=100}` (appends data point per step)
+**Optional params:** `show_current_marker` (bool, draws ring at latest value), `yrange_right` (tuple, secondary y-axis range), `ylabel_right` (str, secondary y-axis label).
 
 ### 7.11 CodePanel
 Source code with line highlighting.

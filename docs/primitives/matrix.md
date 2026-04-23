@@ -103,15 +103,20 @@ dependency — each preset is a list of (value, R, G, B) stops where value ∈ [
 and cell colors are computed by linear interpolation between the two adjacent stops. Pure
 Python implementation in `scriba/animation/primitives/colorscales.py`.
 
+> **Implementation status (2026-04-23):** Only `viridis` is currently wired in
+> `COLORSCALES`. Passing `magma`/`plasma`/`greys`/`rdbu` silently falls back to
+> `viridis` — the 9-stop RGB tables below describe the planned rendering but
+> are not yet reachable. Track in the param audit (`docs/archive/docs-param-audit-2026-04-23/`).
+
 ### 3.1 Preset definitions
 
-| Name      | Description                                              | Use case                          |
-|-----------|----------------------------------------------------------|-----------------------------------|
-| `viridis` | Perceptually uniform; purple → blue → teal → yellow      | Default; general positive data    |
-| `magma`   | Perceptually uniform; black → purple → orange → white    | High-contrast energy or intensity |
-| `plasma`  | Perceptually uniform; purple → magenta → orange → yellow | Density, frequency maps           |
-| `greys`   | Monotone light-to-dark grey                              | Monochrome, print-safe            |
-| `rdbu`    | Diverging: red (negative) → white (zero) → blue (positive) | Signed data, residuals, diffs   |
+| Name      | Status | Description                                              | Use case                          |
+|-----------|--------|----------------------------------------------------------|-----------------------------------|
+| `viridis` | ✅ wired | Perceptually uniform; purple → blue → teal → yellow      | Default; general positive data    |
+| `magma`   | 🚧 planned | Perceptually uniform; black → purple → orange → white    | High-contrast energy or intensity |
+| `plasma`  | 🚧 planned | Perceptually uniform; purple → magenta → orange → yellow | Density, frequency maps           |
+| `greys`   | 🚧 planned | Monotone light-to-dark grey                              | Monochrome, print-safe            |
+| `rdbu`    | 🚧 planned | Diverging: red (negative) → white (zero) → blue (positive) | Signed data, residuals, diffs   |
 
 The `rdbu` preset maps `vmin` to saturated red, `0.0` to white (only meaningful if `vmin <
 0 < vmax`; authors must set `vmin` and `vmax` explicitly for `rdbu` to center at zero).
@@ -225,14 +230,21 @@ NaN cells render with fill `rgb(220, 220, 220)` (neutral grey) and a dashed bord
 All selectors follow the target selector BNF in base spec §4.1. The shape name is the
 first token of every selector.
 
-| Selector                           | Addresses                                               |
-|------------------------------------|---------------------------------------------------------|
-| `m`                                | The entire matrix (whole-shape target)                  |
-| `m.cell[i][j]`                     | Single cell at row i, column j (0-indexed)              |
-| `m.row[i]`                         | All cells in row i                                      |
-| `m.col[j]`                         | All cells in column j                                   |
-| `m.range[(i1,j1):(i2,j2)]`         | Rectangular subrange, rows i1..i2, cols j1..j2 inclusive|
-| `m.all`                            | Every cell                                              |
+> **Implementation status (2026-04-23):** Only `m`, `m.cell[i][j]`, and `m.all`
+> are accepted by `MatrixPrimitive.validate_selector` today. The `m.row[i]`,
+> `m.col[j]`, and `m.range[(i1,j1):(i2,j2)]` rows describe planned broadcast
+> selectors — §5.2 / §5.3 / §5.4 apply-command shapes are the spec contract,
+> but `\apply{m.row[i]}{...}` currently raises E1106. Track in
+> `docs/archive/docs-param-audit-2026-04-23/`.
+
+| Selector                           | Status | Addresses                                               |
+|------------------------------------|--------|---------------------------------------------------------|
+| `m`                                | ✅ wired | The entire matrix (whole-shape target)                  |
+| `m.cell[i][j]`                     | ✅ wired | Single cell at row i, column j (0-indexed)              |
+| `m.row[i]`                         | 🚧 planned | All cells in row i                                      |
+| `m.col[j]`                         | 🚧 planned | All cells in column j                                   |
+| `m.range[(i1,j1):(i2,j2)]`         | 🚧 planned | Rectangular subrange, rows i1..i2, cols j1..j2 inclusive|
+| `m.all`                            | ✅ wired | Every cell                                              |
 
 Index bounds: row index must be in `[0, rows-1]`, column index in `[0, cols-1]`.
 Out-of-range indices are **E1106** (unknown target selector, from base spec §11.3).
@@ -552,9 +564,8 @@ Expected: E1421 emitted, shape not rendered.
   rows=50,
   cols=50,
   data=${dp},
-  colorscale="plasma",
-  cell_size=8,
-  title="DP surface"
+  colorscale="viridis",
+  cell_size=8
 }
 \recolor{surf.cell[0][0]}{state=good}
 \highlight{surf.cell[25][25]}
@@ -563,7 +574,7 @@ Expected: E1421 emitted, shape not rendered.
 
 Expected output:
 - SVG with viewBox `"0 0 408 408"` (50 * 8 + 8 padding both sides).
-- 2500 `<rect>` elements with plasma colorscale fills.
+- 2500 `<rect>` elements with viridis colorscale fills (only `viridis` is wired — see §3.1 status banner).
 - E1420 warning (labels auto-disabled, N·M = 2500 > 200, default show_values=false so
   warning is not raised — no warning in this case since show_values is false by default).
 - `data-target="surf.cell[0][0]"` carries class `scriba-state-good`.

@@ -303,10 +303,7 @@ overlapping cell content.
 | `layout=` value  | Algorithm                       | Determinism                        |
 |-------------------|---------------------------------|------------------------------------|
 | `"force"`         | Fruchterman-Reingold spring     | Seeded via `layout_seed` (default 42) |
-| `"circular"`      | Nodes on a circle               | Deterministic by node order        |
-| `"bipartite"`     | Two-column partition            | Deterministic by partition order   |
-| `"hierarchical"`  | Layered (Sugiyama-style)        | Deterministic by edge order        |
-| `"stable"`        | Joint simulated annealing       | Seeded via `layout_seed`; see [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) |
+| `"stable"`        | Joint simulated annealing with warm-start across frames | Seeded via `layout_seed`; see [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) |
 
 All layout algorithms run **in-process** in Python at build time. No external binary (D2,
 Graphviz, ELK) is invoked. For editorial-scale graphs (N <= 20), the in-process algorithms
