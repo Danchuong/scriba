@@ -393,3 +393,159 @@ class TestGraphSeedValidation:
         g = Graph("G", {"nodes": ["A"], "edges": []})
         # _DEFAULT_SEED is 42 per the module.
         assert g.layout_seed == 42
+
+
+# ---------------------------------------------------------------
+# Layout dispatch (layout="auto", stable-directed warning)
+# ---------------------------------------------------------------
+
+
+class TestLayoutAutoDispatch:
+    """``layout="auto"`` routes directed DAGs to Sugiyama, else FR."""
+
+    def test_directed_dag_uses_hierarchical(self) -> None:
+        g = Graph("G", {
+            "nodes": ["a", "b", "c", "d"],
+            "edges": [("a", "b"), ("b", "c"), ("c", "d")],
+            "directed": True,
+            "layout": "auto",
+        })
+        # Auto resolves to "hierarchical" when the graph is a DAG.
+        assert g.layout == "hierarchical"
+        # Chain → strictly increasing y in TB orientation.
+        ys = [g.positions[n][1] for n in ["a", "b", "c", "d"]]
+        assert ys == sorted(ys)
+
+    def test_directed_cyclic_falls_back_to_fr(self) -> None:
+        g = Graph("G", {
+            "nodes": ["a", "b", "c"],
+            "edges": [("a", "b"), ("b", "c"), ("c", "a")],
+            "directed": True,
+            "layout": "auto",
+        })
+        # Cycle detected → auto stays "auto" (not rewritten to hierarchical),
+        # positions produced by FR fallback.
+        assert g.layout == "auto"
+        assert set(g.positions.keys()) == {"a", "b", "c"}
+
+    def test_undirected_falls_back_to_fr(self) -> None:
+        g = Graph("G", {
+            "nodes": ["a", "b", "c"],
+            "edges": [("a", "b"), ("b", "c")],
+            "directed": False,
+            "layout": "auto",
+        })
+        # Undirected graphs skip the DAG probe → FR.
+        assert g.layout == "auto"
+        assert set(g.positions.keys()) == {"a", "b", "c"}
+
+    def test_directed_dag_diamond(self) -> None:
+        g = Graph("G", {
+            "nodes": ["A", "B", "C", "D"],
+            "edges": [("A", "B"), ("A", "C"), ("B", "D"), ("C", "D")],
+            "directed": True,
+            "layout": "auto",
+        })
+        assert g.layout == "hierarchical"
+        # A top, D bottom, B & C same layer.
+        assert g.positions["A"][1] < g.positions["B"][1]
+        assert g.positions["B"][1] == g.positions["C"][1]
+        assert g.positions["C"][1] < g.positions["D"][1]
+
+
+class TestStableDirectedWarning:
+    """Stable-SA + directed graph emits a UserWarning."""
+
+    def test_warns_when_stable_and_directed(self) -> None:
+        with pytest.warns(UserWarning, match="does not respect edge direction"):
+            Graph("G", {
+                "nodes": ["a", "b"],
+                "edges": [("a", "b")],
+                "directed": True,
+                "layout": "stable",
+            })
+
+    def test_no_warning_when_stable_undirected(self) -> None:
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")  # any warning becomes an error
+            Graph("G", {
+                "nodes": ["a", "b"],
+                "edges": [("a", "b")],
+                "directed": False,
+                "layout": "stable",
+            })
+
+    def test_no_warning_when_hierarchical_directed(self) -> None:
+        import warnings
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            Graph("G", {
+                "nodes": ["a", "b"],
+                "edges": [("a", "b")],
+                "directed": True,
+                "layout": "hierarchical",
+            })
+
+
+class TestHierarchicalOrientation:
+    """``orientation`` param plumbs TB/LR into hierarchical layout."""
+
+    def test_default_is_tb(self) -> None:
+        # Chain S→A→T: TB means ys strictly increasing, xs clustered.
+        g = Graph("G", {
+            "nodes": ["S", "A", "T"],
+            "edges": [("S", "A"), ("A", "T")],
+            "directed": True,
+            "layout": "hierarchical",
+        })
+        assert g.orientation == "TB"
+        ys = [g.positions[n][1] for n in ("S", "A", "T")]
+        assert ys[0] < ys[1] < ys[2]
+
+    def test_lr_orients_left_to_right(self) -> None:
+        # Same chain LR: xs strictly increasing, ys clustered.
+        g = Graph("G", {
+            "nodes": ["S", "A", "T"],
+            "edges": [("S", "A"), ("A", "T")],
+            "directed": True,
+            "layout": "hierarchical",
+            "orientation": "LR",
+        })
+        xs = [g.positions[n][0] for n in ("S", "A", "T")]
+        assert xs[0] < xs[1] < xs[2]
+
+    def test_lr_mcmf_topology(self) -> None:
+        # MCMF-shaped DAG: S leftmost, T rightmost.
+        g = Graph("G", {
+            "nodes": ["S", "A", "B", "C", "D", "T"],
+            "edges": [
+                ("S", "A"), ("S", "B"),
+                ("A", "C"), ("A", "D"),
+                ("B", "C"), ("B", "D"),
+                ("C", "T"), ("D", "T"),
+            ],
+            "directed": True,
+            "layout": "hierarchical",
+            "orientation": "LR",
+        })
+        xs = {n: g.positions[n][0] for n in g.nodes}
+        # S leftmost of all, T rightmost of all.
+        assert xs["S"] == min(xs.values())
+        assert xs["T"] == max(xs.values())
+        # Middle layers strictly between S and T.
+        for mid in ("A", "B", "C", "D"):
+            assert xs["S"] < xs[mid] < xs["T"]
+
+    def test_invalid_orientation_falls_back_to_fr(self) -> None:
+        # compute_hierarchical_layout returns None for unknown orientation
+        # → caller falls through to Fruchterman-Reingold.
+        g = Graph("G", {
+            "nodes": ["a", "b"],
+            "edges": [("a", "b")],
+            "directed": True,
+            "layout": "hierarchical",
+            "orientation": "DIAGONAL",
+        })
+        # Positions still computed (FR fallback), just not layered.
+        assert set(g.positions.keys()) == {"a", "b"}

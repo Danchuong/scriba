@@ -509,7 +509,7 @@ procedure.
 | `Array` | `size` or `n` | `data`, `labels`, `label` |
 | `Grid` | `rows`, `cols` | `data`, `label` |
 | `DPTable` | `n` (1D) or `rows`+`cols` (2D) | `data`, `labels`, `label` |
-| `Graph` | `nodes`, `edges` | `directed`, `layout`, `layout_seed`, `label` |
+| `Graph` | `nodes`, `edges` | `directed`, `layout`, `layout_seed`, `orientation`, `show_weights`, `label` |
 | `Tree` | `root` (or auto for segtree) | `nodes`, `edges`, `data`, `kind`, `label` |
 | `NumberLine` | `domain=[min,max]` | `ticks`, `labels`, `label` |
 

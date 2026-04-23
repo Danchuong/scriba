@@ -337,13 +337,14 @@ Both are required (E1103).
 | Parameter        | Type     | Default   | Description                                           |
 |------------------|----------|-----------|-------------------------------------------------------|
 | `directed`       | boolean  | `false`   | `true` for directed graph (arrowhead markers).        |
-| `layout`         | string   | `"force"` | Layout algorithm: `"force"` (Fruchterman-Reingold), `"stable"` (joint simulated annealing with warm-start), or `"hierarchical"` (Sugiyama-style layered layout for DAGs). Unknown values silently fall back to `"force"`. |
+| `layout`         | string   | `"force"` | Layout algorithm: `"force"` (Fruchterman-Reingold), `"stable"` (joint simulated annealing with warm-start), `"hierarchical"` (Sugiyama-style layered layout for DAGs), or `"auto"` (directed DAGs → hierarchical, everything else → force). Unknown values silently fall back to `"force"`. Pairing `"stable"` with `directed=true` emits a `UserWarning` since stable-SA is topology-blind (see `docs/archive/stable-layout-chaos-analysis-2026-04-23/`). |
 | `layout_seed`    | integer  | `42`      | Seed for deterministic layout. `seed` is accepted as an alias when `layout_seed` is absent. |
 | `show_weights`   | boolean  | `false`   | Render weight pills on weighted edges (3-tuple form). |
 | `auto_expand`    | boolean  | `false`   | Pre-layout canvas auto-expansion so every edge pill can satisfy the on-stroke invariant without leader fallback (GEP v2.0 Phase 5). |
 | `split_labels`   | boolean  | `false`   | Render dual-value edge labels (`"cap/flow"`) as bold/dim tspan hierarchy (GEP v2.0 Phase 6). |
 | `tint_by_source` | boolean  | `false`   | Tint edge pill fill by source-node state (GEP v2.0 Phase 6). |
 | `global_optimize`| boolean  | `false`   | v2.1 forward-compat flag for simulated-annealing post-cascade refine (GEP-20). Accepted today but emits `UserWarning` — no runtime effect until v2.1 `emit_svg` wiring lands. |
+| `orientation`    | string   | `"TB"`    | Hierarchical-only axis: `"TB"` (top→bottom) or `"LR"` (left→right). Silently ignored for non-hierarchical layouts; unknown values make the hierarchical layer return `None` and fall through to Fruchterman-Reingold. |
 | `label`          | string   | `None`    | Caption for the entire graph.                         |
 
 **`layout="stable"` constraints** (see [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md)):
@@ -356,6 +357,7 @@ Both are required (E1103).
 - Cycles are broken via DFS back-edge reversal before layering; coordinates are produced for every node.
 - O(V + E) complexity, no node-count cap. Best for DAGs (flow networks, DP state graphs, BFS trees).
 - Edge union is computed across all frames for animation stability.
+- `orientation="LR"` rotates layers left→right (useful for source→sink flow networks like MCMF). Default `"TB"` lays out top→bottom.
 
 ### 6.2 Selectors
 

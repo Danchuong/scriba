@@ -16,7 +16,8 @@ The key idea: use \textbf{Shortest Path Augmentation} (SPFA / Bellman-Ford) to a
   edges=[("S","A",4),("S","B",3),("A","C",2),("A","D",3),("B","C",5),("B","D",1),("C","T",4),("D","T",3)],
   directed=true,
   show_weights=true,
-  layout="hierarchical"
+  layout="hierarchical",
+  orientation="LR"
 }
 \recolor{G.node[S]}{state=current}
 \recolor{G.node[T]}{state=good}
@@ -32,7 +33,8 @@ Edge labels show capacity. Costs: $w(S,A)=1$, $w(S,B)=2$, $w(A,C)=3$, $w(A,D)=1$
   edges=[("S","A",4),("S","B",3),("A","C",2),("A","D",3),("B","C",5),("B","D",1),("C","T",4),("D","T",3)],
   directed=true,
   show_weights=true,
-  layout="hierarchical"
+  layout="hierarchical",
+  orientation="LR"
 }
 \shape{dist}{Array}{size=6, data=["$\\infty$","$\\infty$","$\\infty$","$\\infty$","$\\infty$","$\\infty$"], labels="0..5", label="dist[ ]"}
 \shape{vars}{VariableWatch}{names=["flow","cost","path","bottleneck"], label="State"}

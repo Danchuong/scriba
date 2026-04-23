@@ -579,6 +579,7 @@ class Graph(PrimitiveBase):
         "split_labels",
         "tint_by_source",
         "global_optimize",
+        "orientation",
     })
 
     def __init__(self, name: str, params: dict[str, Any]) -> None:
@@ -630,6 +631,25 @@ class Graph(PrimitiveBase):
         self.edges: list[tuple[str | int, str | int, float | None]] = parsed_edges
         self.directed: bool = bool(params.get("directed", False))
         self.layout: str = str(params.get("layout", "force"))
+        # Hierarchical-only axis: "TB" (top→bottom, default) or "LR"
+        # (left→right). Silently ignored for non-hierarchical layouts;
+        # compute_hierarchical_layout returns None for unknown values,
+        # which makes the caller fall back to FR.
+        self.orientation: str = str(params.get("orientation", "TB"))
+        # Emit a UserWarning when editorials pair layout="stable" with a
+        # directed graph. The stable SA optimizer is topology-blind (no
+        # edge-direction term), so DAGs frequently render upside-down or
+        # sideways. See docs/archive/stable-layout-chaos-analysis-2026-04-23.
+        if self.layout == "stable" and self.directed:
+            import warnings as _w
+            _w.warn(
+                "Graph(layout='stable', directed=True) — the stable layout "
+                "does not respect edge direction and often produces "
+                "upside-down or sideways DAGs. Use layout='hierarchical' or "
+                "layout='auto' for directed graphs.",
+                UserWarning,
+                stacklevel=2,
+            )
         self.show_weights: bool = bool(params.get("show_weights", False))
         self.auto_expand: bool = bool(params.get("auto_expand", False))
         # Phase 6 (U-03) — typography + tint opt-ins. Default False keeps
@@ -726,7 +746,27 @@ class Graph(PrimitiveBase):
                 }
                 return
             # Size guard tripped — fall through to FR default.
-        elif self.layout == "hierarchical":
+        elif self.layout == "auto":
+            # Smart dispatch: route directed DAGs to the Sugiyama layout
+            # (visible hierarchy); everything else to Fruchterman-Reingold.
+            # "Is it a DAG?" is probed by _break_cycles — an empty
+            # reversed-edge set means no back-edges were found.
+            _is_dag = False
+            if self.directed:
+                from scriba.animation.primitives.graph_layout_hierarchical import (
+                    _break_cycles,
+                )
+                _dag_edges, _rev = _break_cycles(
+                    [str(n) for n in self.nodes],
+                    [(str(u), str(v)) for u, v, _w in self.edges],
+                )
+                _is_dag = (len(_rev) == 0)
+            if _is_dag:
+                # Resolved to hierarchical — rewrite self.layout so the
+                # dispatch below + downstream code (e.g. mutation warm-start)
+                # see the concrete choice, not "auto".
+                self.layout = "hierarchical"
+        if self.layout == "hierarchical":
             from scriba.animation.primitives.graph_layout_hierarchical import (
                 compute_hierarchical_layout,
             )
@@ -738,6 +778,7 @@ class Graph(PrimitiveBase):
                 width=self.width,
                 height=self.height,
                 node_radius=self._node_radius,
+                orientation=self.orientation,
             )
             if hier is not None:
                 self.positions = {
