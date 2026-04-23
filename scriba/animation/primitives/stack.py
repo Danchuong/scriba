@@ -90,6 +90,13 @@ class Stack(PrimitiveBase):
         "all": "all items",
     }
 
+    ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset({
+        "items",
+        "orientation",
+        "max_visible",
+        "label",
+    })
+
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 

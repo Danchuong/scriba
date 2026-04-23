@@ -127,7 +127,7 @@ _SOURCE_VALUE_CHANGE = (
 
 _SOURCE_ELEMENT_ADD = (
     '\\begin{animation}[id="test-push"]\n'
-    "\\shape{s}{Stack}{capacity=5}\n"
+    "\\shape{s}{Stack}{max_visible=5}\n"
     "\n"
     "\\step\n"
     "\\narrate{Empty.}\n"

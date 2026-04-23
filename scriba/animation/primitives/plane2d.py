@@ -117,12 +117,6 @@ class Plane2D(PrimitiveBase):
     # Accepted keyword parameters for ``\\shape{name}{Plane2D}{...}``.
     # Unknown keys raise E1114 with a fuzzy "did you mean" hint via
     # :meth:`PrimitiveBase._validate_accepted_params`.
-    #
-    # ``xlabel`` / ``ylabel`` / ``label`` are accepted but currently have
-    # no rendered effect — tracked as v0.6.2 follow-up. Declaring them
-    # here prevents E1114 from rejecting cookbook files authored against
-    # a future-featureful Plane2D (e.g. ``h04_fft_butterfly.tex``,
-    # ``h06_li_chao.tex``) which would otherwise fail to compile.
     ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset(
         {
             "xrange",
@@ -137,10 +131,6 @@ class Plane2D(PrimitiveBase):
             "segments",
             "polygons",
             "regions",
-            # Reserved for future axis labeling feature (v0.6.2):
-            "xlabel",
-            "ylabel",
-            "label",
             "show_coords",
         }
     )

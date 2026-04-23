@@ -572,7 +572,6 @@ class Graph(PrimitiveBase):
         "directed",
         "layout",
         "layout_seed",
-        "layout_lambda",
         "seed",
         "show_weights",
         "label",
@@ -704,7 +703,30 @@ class Graph(PrimitiveBase):
         self._arrow_layout = "2d"
         self._arrow_shorten = float(self._node_radius)
 
-        # Compute positions
+        # Compute positions. layout="stable" routes to the stable-layout
+        # primitive so the documented flag actually takes effect on the
+        # first frame (previously it only engaged after a mutation).
+        if self.layout == "stable":
+            from scriba.animation.primitives.graph_layout_stable import (
+                compute_stable_layout,
+            )
+            frame_edges = [[(str(u), str(v)) for u, v, _w in self.edges]]
+            stable = compute_stable_layout(
+                [str(n) for n in self.nodes],
+                frame_edges,
+                seed=self.layout_seed,
+                width=self.width,
+                height=self.height,
+                node_radius=self._node_radius,
+            )
+            if stable is not None:
+                self.positions = {
+                    n: (round(stable[str(n)][0]), round(stable[str(n)][1]))
+                    for n in self.nodes
+                }
+                return
+            # Size guard tripped — fall through to FR default.
+
         self.positions: dict[str | int, tuple[int, int]] = (
             fruchterman_reingold(
                 self.nodes,

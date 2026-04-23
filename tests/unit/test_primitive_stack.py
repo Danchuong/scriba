@@ -53,23 +53,21 @@ class TestDeclare:
         with pytest.raises(ValidationError, match="E1441"):
             Stack("s", {"max_visible": 0})
 
-    def test_unknown_kwargs_ignored(self) -> None:
-        """Stack has no ``cell_width`` / ``cell_height`` / ``gap`` params.
+    def test_unknown_kwargs_rejected(self) -> None:
+        """Stack rejects unknown params via E1114.
 
-        Passing these extra keys must not raise — the spec §5.7 and the
-        code signature both omit them. They are silently ignored so that
-        stale spec examples do not break existing scenes.
+        Stack previously lacked an ``ACCEPTED_PARAMS`` frozenset, which
+        silently accepted any key. Docs-param audit 2026-04-23 flagged
+        this as a structural bug — unknown keys now raise E1114 like
+        every other primitive.
         """
-        s = Stack("s", {
-            "items": ["A"],
-            "cell_width": 999,
-            "cell_height": 999,
-            "gap": 99,
-        })
-        assert len(s.items) == 1
-        # The extras must not bleed into any Stack attribute.
-        assert not hasattr(s, "cell_width")
-        assert not hasattr(s, "gap")
+        from scriba.core.errors import ValidationError
+
+        with pytest.raises(ValidationError, match="E1114"):
+            Stack("s", {
+                "items": ["A"],
+                "cell_width": 999,
+            })
 
 
 # ---------------------------------------------------------------------------

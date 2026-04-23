@@ -96,18 +96,22 @@ class ArrayPrimitive(PrimitiveBase):
         "data",
         "labels",
         "label",
-        # Legacy alias — not consumed but accepted so that ``values=``
-        # in existing scenes passes validation and reaches the size check.
+        # ``values`` is an alias that supplies BOTH ``size`` (inferred from
+        # len) and ``data`` in a single parameter, so authors can write
+        # ``\shape{a}{Array}{values=[1,2,3]}`` without repeating themselves.
         "values",
     })
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
         super().__init__(name, params)
         size = self.params.get("size", self.params.get("n"))
+        values_alias = self.params.get("values")
+        if size is None and isinstance(values_alias, list):
+            size = len(values_alias)
         if size is None:
             raise _animation_error(
                 "E1400",
-                detail="Array requires 'size' or 'n' parameter",
+                detail="Array requires 'size', 'n', or 'values' parameter",
                 hint="example: \\shape{a}{Array}{size=10}",
             )
         size = int(size)
@@ -124,7 +128,10 @@ class ArrayPrimitive(PrimitiveBase):
                 ),
             )
 
-        data: list[Any] = list(self.params.get("data", []))
+        raw_data = self.params.get("data")
+        if raw_data is None and isinstance(values_alias, list):
+            raw_data = values_alias
+        data: list[Any] = list(raw_data or [])
         if data and len(data) != size:
             raise _animation_error(
                 "E1402",
