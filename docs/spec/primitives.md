@@ -337,7 +337,7 @@ Both are required (E1103).
 | Parameter        | Type     | Default   | Description                                           |
 |------------------|----------|-----------|-------------------------------------------------------|
 | `directed`       | boolean  | `false`   | `true` for directed graph (arrowhead markers).        |
-| `layout`         | string   | `"force"` | Layout algorithm: `"force"` (Fruchterman-Reingold) or `"stable"` (joint simulated annealing with warm-start). |
+| `layout`         | string   | `"force"` | Layout algorithm: `"force"` (Fruchterman-Reingold), `"stable"` (joint simulated annealing with warm-start), or `"hierarchical"` (Sugiyama-style layered layout for DAGs). Unknown values silently fall back to `"force"`. |
 | `layout_seed`    | integer  | `42`      | Seed for deterministic layout. `seed` is accepted as an alias when `layout_seed` is absent. |
 | `show_weights`   | boolean  | `false`   | Render weight pills on weighted edges (3-tuple form). |
 | `auto_expand`    | boolean  | `false`   | Pre-layout canvas auto-expansion so every edge pill can satisfy the on-stroke invariant without leader fallback (GEP v2.0 Phase 5). |
@@ -350,6 +350,12 @@ Both are required (E1103).
 - N <= 20 nodes (E1501 warning, fallback to force if exceeded).
 - T <= 50 frames (E1502 warning if exceeded).
 - Node positions remain stable across all animation frames.
+
+**`layout="hierarchical"`**:
+- Longest-path layer assignment with barycenter crossing minimisation (12 sweeps).
+- Cycles are broken via DFS back-edge reversal before layering; coordinates are produced for every node.
+- O(V + E) complexity, no node-count cap. Best for DAGs (flow networks, DP state graphs, BFS trees).
+- Edge union is computed across all frames for animation stability.
 
 ### 6.2 Selectors
 

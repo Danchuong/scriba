@@ -304,6 +304,7 @@ overlapping cell content.
 |-------------------|---------------------------------|------------------------------------|
 | `"force"`         | Fruchterman-Reingold spring     | Seeded via `layout_seed` (default 42) |
 | `"stable"`        | Joint simulated annealing with warm-start across frames | Seeded via `layout_seed`; see [`primitives/graph-stable-layout.md`](../primitives/graph-stable-layout.md) |
+| `"hierarchical"`  | Sugiyama-style layered layout for DAGs (longest-path ranking + barycenter crossing minimisation) | Fully deterministic; `layout_seed` only affects tie-breaking |
 
 All layout algorithms run **in-process** in Python at build time. No external binary (D2,
 Graphviz, ELK) is invoked. For editorial-scale graphs (N <= 20), the in-process algorithms
@@ -869,6 +870,7 @@ scriba/animation/primitives/
   dptable_layout.py                      # DPTable layout + arrow overlay
   graph_layout.py                        # Force-directed layout
   graph_layout_stable.py                 # Stable (SA) layout for layout="stable"
+  graph_layout_hierarchical.py           # Sugiyama layered layout for layout="hierarchical"
   tree_layout.py                         # Reingold-Tilford layout
   numberline_layout.py                   # NumberLine axis layout
 ```

@@ -726,6 +726,37 @@ class Graph(PrimitiveBase):
                 }
                 return
             # Size guard tripped — fall through to FR default.
+        elif self.layout == "hierarchical":
+            from scriba.animation.primitives.graph_layout_hierarchical import (
+                compute_hierarchical_layout,
+            )
+            frame_edges = [[(str(u), str(v)) for u, v, _w in self.edges]]
+            hier = compute_hierarchical_layout(
+                [str(n) for n in self.nodes],
+                frame_edges,
+                seed=self.layout_seed,
+                width=self.width,
+                height=self.height,
+                node_radius=self._node_radius,
+            )
+            if hier is not None:
+                self.positions = {
+                    n: (round(hier[str(n)][0]), round(hier[str(n)][1]))
+                    for n in self.nodes
+                }
+                # Expand viewport to encompass layered positions — the
+                # hierarchical layout enforces a minimum layer gap so
+                # edge pills fit, which may push coords past the
+                # default width/height. Pad by node_radius + _PADDING//2
+                # to match the layout's own interior padding.
+                if hier:
+                    pad = self._node_radius + _PADDING // 2
+                    max_x = max(pos[0] for pos in hier.values())
+                    max_y = max(pos[1] for pos in hier.values())
+                    self.width = max(self.width, int(max_x + pad))
+                    self.height = max(self.height, int(max_y + pad))
+                return
+            # Invalid orientation or empty — fall through to FR default.
 
         self.positions: dict[str | int, tuple[int, int]] = (
             fruchterman_reingold(
