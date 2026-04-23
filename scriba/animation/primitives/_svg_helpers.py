@@ -1684,6 +1684,12 @@ def emit_plain_arrow_svg(
         f"{p1x:.1f},{p1y:.1f} {p2x:.1f},{p2y:.1f} {p3x:.1f},{p3y:.1f}"
     )
 
+    # End stem line at arrowhead base (not tip) so stroke width doesn't
+    # protrude perpendicular past the triangle apex. Polygon covers the gap.
+    _head_backoff = arrow_size * 0.9
+    _line_end_x = p1x - aux * _head_backoff
+    _line_end_y = p1y - auy * _head_backoff
+
     ix1, iy1 = int(x1), int(y1)
 
     # R-13: dash-array for warn/muted on the stem line.
@@ -1707,7 +1713,7 @@ def emit_plain_arrow_svg(
         f'{aria_description_attr}>'             # R-11: raw TeX in aria-description
     )
     lines.append(
-        f'    <line x1="{ix1}" y1="{iy1}" x2="{ix2}" y2="{iy2}"'
+        f'    <line x1="{ix1}" y1="{iy1}" x2="{_line_end_x:.1f}" y2="{_line_end_y:.1f}"'
         f' stroke="{s_stroke}" stroke-width="{s_width}"{path_dasharray}/>'
     )
     lines.append(
@@ -2487,6 +2493,12 @@ def emit_arrow_svg(
         f"{p1x:.1f},{p1y:.1f} {p2x:.1f},{p2y:.1f} {p3x:.1f},{p3y:.1f}"
     )
 
+    # End path at arrowhead base (not tip) so stroke width doesn't protrude
+    # perpendicular past the triangle apex. Polygon fills the remaining gap.
+    _head_backoff = arrow_size * 0.9
+    _path_end_x = ix2 - aux * _head_backoff
+    _path_end_y = iy2 - auy * _head_backoff
+
     # R-13: dash-array for warn/muted on arrow path and pill border.
     path_dasharray = ""
     pill_dasharray_emit = ""
@@ -2508,7 +2520,7 @@ def emit_arrow_svg(
         f'{ann_aria_description_attr}>'              # R-11: raw TeX in aria-description
     )
     lines.append(
-        f'    <path d="M{ix1},{iy1} C{cx1},{cy1} {cx2},{cy2} {ix2},{iy2}" '
+        f'    <path d="M{ix1},{iy1} C{cx1},{cy1} {cx2},{cy2} {_path_end_x:.1f},{_path_end_y:.1f}" '
         f'stroke="{s_stroke}" stroke-width="{s_width}" fill="none"{path_dasharray}>'  # R-13
         f'<title>{raw_ann_desc}</title>'
         f'</path>'
