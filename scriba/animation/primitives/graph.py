@@ -159,6 +159,17 @@ def _nudge_pill_placement(
         if not _collides(trial):
             return trial_lx, trial_ly
 
+    # Stage 1.5 — saturate probe (GEP-14 v1.3): try pill at exactly
+    # ±max_shift_along before falling through to perp.  Preserves U-14
+    # on-stroke invariant because displacement is purely along (ux, uy).
+    if max_shift_along > 0:
+        for sign in (1, -1):
+            sat_lx = origin_lx + sign * max_shift_along * ux
+            sat_ly = origin_ly + sign * max_shift_along * uy
+            sat = _LabelPlacement(x=sat_lx, y=sat_ly, width=aabb_w, height=aabb_h)
+            if not _collides(sat):
+                return sat_lx, sat_ly
+
     # Stage 2 — perp nudge fallback (v1.1 behaviour).
     for offset in (
         nudge_step_perp,

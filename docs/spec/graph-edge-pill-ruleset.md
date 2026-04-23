@@ -428,6 +428,28 @@ rotated correctly in Chrome may appear unrotated or misaligned in Safari).
 
 ---
 
+### GEP-14 — Saturate probe MUST try ±budget before perp fallback
+
+**Normative:** MUST
+**Since:** v1.3
+**Source:** GEP v2.0 plan — stage 1.5 saturate probe.
+**Scope:** `_nudge_pill_placement` in `scriba/animation/primitives/graph.py`.
+
+After the along-shift loop (stage 1) exhausts all stepped probes without
+finding a clear position, and only when `max_shift_along > 0`, the nudge
+cascade SHALL try the pill at exactly `+max_shift_along` then
+`-max_shift_along` along the edge unit vector `(ux, uy)` before falling
+through to the perp nudge (stage 2). This saturate probe rescues cases where
+the step grid misses a gap that exists only at the budget boundary.
+
+The on-stroke invariant (U-14) is preserved because displacement is purely
+along `(ux, uy)`, adding zero perpendicular component.
+
+When `max_shift_along == 0` the saturate stage MUST be skipped entirely so
+the perp fallback fires unchanged (regression guard U-11).
+
+---
+
 ## §5 Obstacle vocabulary
 
 Edge-pill placement recognizes three obstacle kinds today, with two additional
@@ -537,7 +559,8 @@ else:
 | 1.0.0   | 2026-04-23 | Initial release — GEP-01 .. GEP-13 covering Phase 0 + Phase 0.5. |
 | 1.1.0   | 2026-04-23 | GEP-06 bias 5.0→0.0 (pill on edge); GEP-07 nudge never commits failed candidate; adds (+step,−step,+2·step,−2·step) probe order; origin-fallback on total collision. Fixes mcmf B→D wrong-side commit. |
 | 1.2.0   | 2026-04-23 | GEP-07 rewrite — along-edge shift as primary nudge, perp as fallback, origin as last resort. Preserves GEP-10 binding on crossing edges. Fixes mcmf B→D detachment. Factors nudge into `_nudge_pill_placement` helper. |
+| 1.3.0   | 2026-04-23 | GEP-14 — saturate probe (stage 1.5): try ±max_shift_along exact before perp fallback. Preserves U-14 on-stroke invariant. |
 
-Phase 1+ rules (GEP-14 .. GEP-19) will ship alongside the full smart-label
+Phase 1+ rules (GEP-15 .. GEP-19) will ship alongside the full smart-label
 scoring adoption described in
 `docs/archive/graph-edge-pill-optimization-2026-04-23/04-synthesis.md` §Phase 1.

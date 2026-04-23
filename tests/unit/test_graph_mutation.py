@@ -657,10 +657,11 @@ def test_along_shift_never_overlaps_node_circle() -> None:
 
 @pytest.mark.unit
 def test_origin_fallback_on_all_collisions() -> None:
-    """When all along-shift and perp-nudge probes collide, return origin.
+    """When all along-shift, saturate, and perp-nudge probes collide, return origin.
 
-    Plant 8 blocker pills: four at ±step_along along the edge and four at
-    ±step_perp perpendicular.  The helper must revert to (mid_x, mid_y).
+    Plant blockers covering every cascade stage (stage 1 stepped probes,
+    stage 1.5 saturate probes at ±max_shift_along, stage 2 perp probes).
+    The helper must revert to (mid_x, mid_y).
     """
     mid_x, mid_y = 200.0, 150.0
     ux, uy = 1.0, 0.0        # horizontal edge
@@ -668,6 +669,8 @@ def test_origin_fallback_on_all_collisions() -> None:
 
     step_along = _PILL_W + 2   # = 19
     step_perp = _PILL_H + 2    # = 19
+
+    max_shift_along = 200.0   # plenty of budget so stage 1 runs fully
 
     blockers: list[_LabelPlacement] = [
         # Origin itself
@@ -677,14 +680,15 @@ def test_origin_fallback_on_all_collisions() -> None:
         _lp(mid_x - ux * step_along,      mid_y - uy * step_along),
         _lp(mid_x + ux * 2 * step_along,  mid_y + uy * 2 * step_along),
         _lp(mid_x - ux * 2 * step_along,  mid_y - uy * 2 * step_along),
+        # Stage 1.5 saturate probes at ±budget (GEP-14).
+        _lp(mid_x + ux * max_shift_along,  mid_y + uy * max_shift_along),
+        _lp(mid_x - ux * max_shift_along,  mid_y - uy * max_shift_along),
         # Perp probes ×4
         _lp(mid_x + perp_x * step_perp,   mid_y + perp_y * step_perp),
         _lp(mid_x - perp_x * step_perp,   mid_y - perp_y * step_perp),
         _lp(mid_x + perp_x * 2*step_perp, mid_y + perp_y * 2*step_perp),
         _lp(mid_x - perp_x * 2*step_perp, mid_y - perp_y * 2*step_perp),
     ]
-
-    max_shift_along = 200.0   # plenty of budget so stage 1 runs fully
 
     lx, ly = _nudge_pill_placement(
         mid_x=mid_x,
@@ -704,3 +708,302 @@ def test_origin_fallback_on_all_collisions() -> None:
 
     assert lx == mid_x, f"expected origin lx={mid_x}, got {lx}"
     assert ly == mid_y, f"expected origin ly={mid_y}, got {ly}"
+
+
+# ---------------------------------------------------------------------------
+# GEP v2.0 — saturate probe (stage 1.5 / rule U-11) — RED tests
+#
+# These 4 tests describe the NEW cascade stage that does NOT yet exist.
+# They MUST fail against the current _nudge_pill_placement (no saturate).
+# ---------------------------------------------------------------------------
+
+# Shared geometry for the saturate tests: a clean horizontal edge so all
+# directions reduce to simple arithmetic.
+_S_MID_X: float = 500.0
+_S_MID_Y: float = 300.0
+_S_UX: float = 1.0   # unit vector along stroke (horizontal)
+_S_UY: float = 0.0
+_S_PERP_X: float = 0.0   # perpendicular (vertical)
+_S_PERP_Y: float = 1.0
+_S_PILL_W: float = 17.0
+_S_PILL_H: float = 17.0
+_S_AABB_W: float = 20.0  # rotated AABB for a horizontal edge = pill dimensions
+_S_AABB_H: float = 20.0
+_S_STEP_ALONG: float = _S_AABB_W + 2   # = 22.0  (matches nudge_step_along inside impl)
+_S_STEP_PERP: float = _S_AABB_H + 2    # = 22.0
+
+
+def _slp(x: float, y: float) -> _LabelPlacement:
+    """Convenience: saturate-test placement using shared AABB dimensions."""
+    return _LabelPlacement(x=x, y=y, width=_S_AABB_W, height=_S_AABB_H)
+
+
+@pytest.mark.unit
+def test_saturate_resolves_hair_thin_collision() -> None:
+    """Stage 1.5 saturate probe at +budget rescues a hair-thin collision.
+
+    Scenario:
+      - Origin collides (blocker planted at origin).
+      - Stage-1 stepped probes (±step_along, ±2·step_along) all collide.
+      - All four perp probes collide (so stage 2 is exhausted too).
+      - Saturate probe at +max_shift_along is clear.
+
+    Expected (U-11): function returns (mid_x + max_shift_along, mid_y).
+    Current code: no saturate stage → falls through to origin → FAIL.
+    """
+    max_shift_along = 75.0  # budget sits between 2·step (44) and ±3·step (66)
+
+    # The exact positions stage 1 probes (all must be blocked).
+    s1_offsets = [
+        _S_STEP_ALONG,
+        -_S_STEP_ALONG,
+        2 * _S_STEP_ALONG,
+        -2 * _S_STEP_ALONG,
+    ]
+
+    blockers: list[_LabelPlacement] = [
+        # Origin itself
+        _slp(_S_MID_X, _S_MID_Y),
+    ]
+    for off in s1_offsets:
+        if abs(off) <= max_shift_along:
+            blockers.append(_slp(_S_MID_X + _S_UX * off, _S_MID_Y + _S_UY * off))
+    # Block all four perp probes so stage 2 is fully exhausted.
+    for off in [_S_STEP_PERP, -_S_STEP_PERP, 2 * _S_STEP_PERP, -2 * _S_STEP_PERP]:
+        blockers.append(_slp(_S_MID_X + _S_PERP_X * off, _S_MID_Y + _S_PERP_Y * off))
+
+    # Saturate probe at +max_shift_along must be clear (no blocker there).
+    sat_x = _S_MID_X + _S_UX * max_shift_along  # = 575.0
+    sat_y = _S_MID_Y + _S_UY * max_shift_along  # = 300.0
+
+    lx, ly = _nudge_pill_placement(
+        mid_x=_S_MID_X,
+        mid_y=_S_MID_Y,
+        ux=_S_UX,
+        uy=_S_UY,
+        perp_x=_S_PERP_X,
+        perp_y=_S_PERP_Y,
+        pill_w=_S_PILL_W,
+        pill_h=_S_PILL_H,
+        aabb_w=_S_AABB_W,
+        aabb_h=_S_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=[],
+        placed_pills=blockers,
+    )
+
+    assert abs(lx - sat_x) < 1e-9, (
+        f"saturate probe: expected lx={sat_x}, got {lx} — "
+        f"stage 1.5 saturate probe not implemented yet"
+    )
+    assert abs(ly - sat_y) < 1e-9, (
+        f"saturate probe: expected ly={sat_y}, got {ly}"
+    )
+
+
+@pytest.mark.unit
+def test_saturate_respects_budget_zero() -> None:
+    """When max_shift_along == 0, saturate MUST be skipped (U-11 guard).
+
+    Scenario:
+      - max_shift_along = 0 (short edge — no along budget at all).
+      - Origin collides.
+      - Stage-1 is skipped (budget = 0).
+      - A naive saturate implementation might probe at ±0, which would
+        land on origin (still collides) and then either return origin or
+        silently fall through.  The correct implementation MUST skip the
+        saturate stage entirely when budget is zero and proceed directly
+        to the perp fallback.
+      - Perp step 1 (+step_perp) is clear.
+
+    Red condition: we additionally block the perp step-1 probe but leave
+    perp step-2 clear.  A buggy saturate impl that probes at +0 (=origin,
+    collides) and then ALSO probes at -0 (same, collides) would exit the
+    saturate loop having failed, then fall into the perp stage — which is
+    correct.  To create an observable difference we assert the EXACT perp
+    step-2 position and simultaneously assert that the result is NOT the
+    along-stroke saturate position (mid_x + 0, mid_y + 0 = origin).
+
+    This is partly a regression guard: it locks in the correct behavior
+    for budget=0 so that when the saturate stage is added it cannot
+    accidentally short-circuit the perp fallback.  The test PASSES on
+    current code (which also falls through to perp) and MUST CONTINUE
+    TO PASS after the saturate stage is added with a correct budget guard.
+    Any implementation that probes at offset=0 and introduces a bug
+    (e.g. infinite loop, incorrect short-circuit) will be caught here.
+
+    Because the current code already satisfies the assertion this test is
+    a GREEN guard (regression sentinel) rather than a strict RED test.
+    The three other saturate tests (test_saturate_resolves_hair_thin_collision,
+    test_saturate_preserves_on_stroke_invariant, test_saturate_deterministic_same_input)
+    are the primary RED tests that drive the implementation.
+    """
+    max_shift_along = 0.0
+
+    blockers: list[_LabelPlacement] = [
+        _slp(_S_MID_X, _S_MID_Y),                                # origin collides
+        _slp(_S_MID_X + _S_PERP_X * _S_STEP_PERP,               # perp step +1 blocked
+             _S_MID_Y + _S_PERP_Y * _S_STEP_PERP),
+    ]
+
+    lx, ly = _nudge_pill_placement(
+        mid_x=_S_MID_X,
+        mid_y=_S_MID_Y,
+        ux=_S_UX,
+        uy=_S_UY,
+        perp_x=_S_PERP_X,
+        perp_y=_S_PERP_Y,
+        pill_w=_S_PILL_W,
+        pill_h=_S_PILL_H,
+        aabb_w=_S_AABB_W,
+        aabb_h=_S_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=[],
+        placed_pills=blockers,
+    )
+
+    # Must NOT return origin (blocker unresolved).
+    assert (lx, ly) != (_S_MID_X, _S_MID_Y), (
+        "budget=0: must not return origin when origin collides"
+    )
+    # No along-stroke displacement — saturate at 0 must be a no-op.
+    assert abs(lx - _S_MID_X) < 1e-9, (
+        f"budget=0: expected no along-stroke displacement, got lx={lx}"
+    )
+    # Perp step 1 is blocked; perp step -1 must be the result.
+    expected_ly = _S_MID_Y - _S_STEP_PERP
+    assert abs(ly - expected_ly) < 1e-9, (
+        f"budget=0: expected ly={expected_ly} (perp step -1, since step +1 is blocked), "
+        f"got {ly} — saturate must be skipped so perp fallback fires"
+    )
+
+
+@pytest.mark.unit
+def test_saturate_preserves_on_stroke_invariant() -> None:
+    """U-14: when saturate succeeds, returned center must lie on the stroke.
+
+    Perpendicular distance from (lx, ly) to the stroke line (defined by
+    mid-point and unit direction (ux, uy)) must be < 0.5 px.
+
+    Current code: no saturate stage → falls through to either perp (off-
+    stroke) or origin.  The test blocks origin AND perp so the function
+    returns origin, which happens to be on-stroke — but that is the WRONG
+    reason (it's the fallback, not a resolved placement).  To create a
+    genuine RED condition the test asserts (a) the returned position is NOT
+    origin AND (b) the perpendicular distance is < 0.5.  Condition (a) makes
+    the test fail against current code because current code returns origin
+    (stage-3 fallback) when both stage-1 and perp are exhausted.
+    """
+    max_shift_along = 80.0
+
+    s1_offsets = [
+        _S_STEP_ALONG,
+        -_S_STEP_ALONG,
+        2 * _S_STEP_ALONG,
+        -2 * _S_STEP_ALONG,
+    ]
+
+    blockers: list[_LabelPlacement] = [
+        _slp(_S_MID_X, _S_MID_Y),  # origin
+    ]
+    for off in s1_offsets:
+        if abs(off) <= max_shift_along:
+            blockers.append(_slp(_S_MID_X + _S_UX * off, _S_MID_Y + _S_UY * off))
+    # Block all four perp probes.
+    for off in [_S_STEP_PERP, -_S_STEP_PERP, 2 * _S_STEP_PERP, -2 * _S_STEP_PERP]:
+        blockers.append(_slp(_S_MID_X + _S_PERP_X * off, _S_MID_Y + _S_PERP_Y * off))
+
+    # Saturate probe at +max_shift_along is clear (no blocker near 580, 300).
+
+    lx, ly = _nudge_pill_placement(
+        mid_x=_S_MID_X,
+        mid_y=_S_MID_Y,
+        ux=_S_UX,
+        uy=_S_UY,
+        perp_x=_S_PERP_X,
+        perp_y=_S_PERP_Y,
+        pill_w=_S_PILL_W,
+        pill_h=_S_PILL_H,
+        aabb_w=_S_AABB_W,
+        aabb_h=_S_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=[],
+        placed_pills=blockers,
+    )
+
+    # (a) Must NOT be origin (stage-3 fallback) — saturate must have resolved it.
+    assert (lx, ly) != (_S_MID_X, _S_MID_Y), (
+        "U-14: saturate probe should have resolved the collision — "
+        "not falling back to origin; stage 1.5 not implemented yet"
+    )
+
+    # (b) U-14: returned center must be on the stroke line.
+    # Perpendicular distance = |dot((lx-mid_x, ly-mid_y), (perp_x, perp_y))|
+    delta_x = lx - _S_MID_X
+    delta_y = ly - _S_MID_Y
+    perp_dist = abs(delta_x * _S_PERP_X + delta_y * _S_PERP_Y)
+    assert perp_dist < 0.5, (
+        f"U-14 on-stroke invariant violated: perp_dist={perp_dist:.4f} >= 0.5"
+    )
+
+
+@pytest.mark.unit
+def test_saturate_deterministic_same_input() -> None:
+    """U-06: two calls with identical inputs produce byte-identical output.
+
+    Saturate must not introduce any non-determinism (no random probing,
+    no mutable shared state).  This test exercises the full cascade including
+    the saturate probe path (origin + stage-1 blocked, saturate fires).
+
+    Current code: returns origin for both calls (no saturate) — both calls
+    return the same origin tuple, so determinism holds trivially.  The test
+    additionally asserts the result is NOT origin (saturate must have resolved
+    it), which makes the test RED against current code.
+    """
+    max_shift_along = 75.0
+
+    s1_offsets = [
+        _S_STEP_ALONG,
+        -_S_STEP_ALONG,
+        2 * _S_STEP_ALONG,
+        -2 * _S_STEP_ALONG,
+    ]
+
+    blockers: list[_LabelPlacement] = [
+        _slp(_S_MID_X, _S_MID_Y),
+    ]
+    for off in s1_offsets:
+        if abs(off) <= max_shift_along:
+            blockers.append(_slp(_S_MID_X + _S_UX * off, _S_MID_Y + _S_UY * off))
+    for off in [_S_STEP_PERP, -_S_STEP_PERP, 2 * _S_STEP_PERP, -2 * _S_STEP_PERP]:
+        blockers.append(_slp(_S_MID_X + _S_PERP_X * off, _S_MID_Y + _S_PERP_Y * off))
+
+    kwargs: dict[str, object] = dict(
+        mid_x=_S_MID_X,
+        mid_y=_S_MID_Y,
+        ux=_S_UX,
+        uy=_S_UY,
+        perp_x=_S_PERP_X,
+        perp_y=_S_PERP_Y,
+        pill_w=_S_PILL_W,
+        pill_h=_S_PILL_H,
+        aabb_w=_S_AABB_W,
+        aabb_h=_S_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=[],
+        placed_pills=blockers,
+    )
+
+    result_a = _nudge_pill_placement(**kwargs)  # type: ignore[arg-type]
+    result_b = _nudge_pill_placement(**kwargs)  # type: ignore[arg-type]
+
+    assert result_a == result_b, (
+        f"U-06 determinism violated: first={result_a}, second={result_b}"
+    )
+
+    # Saturate must have resolved the collision — not origin fallback.
+    expected = (_S_MID_X + _S_UX * max_shift_along, _S_MID_Y + _S_UY * max_shift_along)
+    assert result_a == expected, (
+        f"U-06 + U-11: expected saturate result {expected}, got {result_a} — "
+        f"stage 1.5 saturate probe not implemented yet"
+    )
