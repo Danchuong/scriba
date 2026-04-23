@@ -70,8 +70,11 @@ _WEIGHT_FONT: int = 11
 _WEIGHT_PILL_PAD_X: int = 5
 _WEIGHT_PILL_PAD_Y: int = 2
 _WEIGHT_PILL_R: int = 3
-# Perpendicular offset from stroke centerline to pill centre (GEP-06).
-_WEIGHT_PILL_PERP_BIAS: float = float(_WEIGHT_PILL_R + 2)
+# Perpendicular offset from stroke centerline to pill centre (GEP-06 v1.1).
+# v1.1: pill sits ON the edge stroke (Graphviz/Mermaid convention) rather than
+# floating alongside — rotated pill already binds to edge direction visually,
+# so an extra perp gap reads as detachment. Nudge only kicks in on collision.
+_WEIGHT_PILL_PERP_BIAS: float = 0.0
 # Stroke-width expansion of the pill AABB for collision (GEP-09).
 _WEIGHT_PILL_STROKE_PAD: float = 1.0
 # Coincident-edge early-exit threshold (GEP-11).
@@ -869,31 +872,41 @@ class Graph(PrimitiveBase):
                     x=lx, y=ly, width=aabb_w, height=aabb_h
                 )
 
-                # GEP-07: bounded perpendicular nudge — at most 2 attempts,
-                # alternating ±perp signs from the midpoint origin, never
-                # cumulative. A touching pill beats a pill detached from its
-                # edge (GEP-R-19 degradation warning not yet wired — Phase 1).
+                # GEP-07 v1.1: bounded perpendicular nudge — try symmetric
+                # ±k·step offsets only if the on-edge placement collides.
+                # If every candidate still collides, fall back to the on-edge
+                # origin: a touching pill beats a wrong-side pill (never
+                # commit a position user can't map to its edge).
                 nudge_step = pill_h + 2
-                _nudge_signs = (1, -1)
-                for _attempt in range(2):
-                    collides_pill = any(
-                        candidate.overlaps(p) for p in placed_edge_labels
+                _nudge_offsets = (
+                    nudge_step,
+                    -nudge_step,
+                    2 * nudge_step,
+                    -2 * nudge_step,
+                )
+                origin_lx, origin_ly = lx, ly
+
+                def _collides(c: _LabelPlacement) -> bool:
+                    return any(c.overlaps(p) for p in placed_edge_labels) or any(
+                        c.overlaps(n) for n in node_aabbs
                     )
-                    collides_node = any(
-                        candidate.overlaps(n) for n in node_aabbs
-                    )
-                    if not collides_pill and not collides_node:
-                        break
-                    sign = _nudge_signs[_attempt]
-                    lx = mid_x + perp_x * (
-                        _WEIGHT_PILL_PERP_BIAS + nudge_step * sign
-                    )
-                    ly = mid_y + perp_y * (
-                        _WEIGHT_PILL_PERP_BIAS + nudge_step * sign
-                    )
-                    candidate = _LabelPlacement(
-                        x=lx, y=ly, width=aabb_w, height=aabb_h
-                    )
+
+                if _collides(candidate):
+                    for offset in _nudge_offsets:
+                        trial_lx = origin_lx + perp_x * offset
+                        trial_ly = origin_ly + perp_y * offset
+                        trial = _LabelPlacement(
+                            x=trial_lx, y=trial_ly, width=aabb_w, height=aabb_h
+                        )
+                        if not _collides(trial):
+                            lx, ly, candidate = trial_lx, trial_ly, trial
+                            break
+                    else:
+                        # All offsets collided — revert to on-edge origin.
+                        lx, ly = origin_lx, origin_ly
+                        candidate = _LabelPlacement(
+                            x=lx, y=ly, width=aabb_w, height=aabb_h
+                        )
 
                 # GEP-08: clamp pill centre into the viewbox so a pill near
                 # the canvas boundary never spills outside.

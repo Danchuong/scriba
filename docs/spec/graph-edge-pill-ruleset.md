@@ -208,49 +208,62 @@ reshuffles the edge list and defeats golden-file testing.
 
 ## §3 Perpendicular placement and nudging
 
-### GEP-06 — Initial pill offset MUST be perpendicular to the edge
+### GEP-06 — Initial pill placement MUST be on the visible-segment midpoint
 
 **Normative:** MUST
-**Since:** Phase 0
-**Source:** audit F3 / E1 (magic `-4` y-bias).
+**Since:** v1.1 (2026-04-23)
+**Supersedes:** v1.0 perpendicular-offset rule.
+**Source:** mcmf.html audit (A→C / B→D visually detached with bias=5).
 **Scope:** `Graph.emit_svg`.
 
-The initial pill placement SHALL apply a perpendicular offset of
-`_WEIGHT_PILL_PERP_BIAS` (default 5.0 px) from the stroke centerline, along the
-left-hand-of-flow unit normal:
+The initial pill centre SHALL coincide with the visible-segment midpoint:
 
 ```python
-perp_x = -dy_edge / edge_len
-perp_y =  dx_edge / edge_len
-lx = mid_x + perp_x * _WEIGHT_PILL_PERP_BIAS
-ly = mid_y + perp_y * _WEIGHT_PILL_PERP_BIAS
+lx, ly = mid_x, mid_y   # _WEIGHT_PILL_PERP_BIAS == 0.0
 ```
 
-Unconditional screen-space y-offsets (e.g. `-4`) are **forbidden**: they are
-geometrically wrong for non-horizontal edges.
+The perpendicular unit vector (`perp_x, perp_y = -dy/len, dx/len`) is still
+computed — it is required by the GEP-07 nudge. But it is NOT applied to the
+initial candidate.
 
-**Rationale.** Smart-label-style perpendicular offsets scale correctly with
-edge angle; the magic `-4` moved pills *along* vertical edges rather than
-*above* them.
+Unconditional screen-space y-offsets (e.g. `-4`) remain **forbidden**.
 
-### GEP-07 — Nudge loop MUST be bounded and alternating
+**Rationale.** The rotated pill (GEP-10) already binds the label to the edge
+direction visually. A non-zero perp bias adds a gap that reads as
+*detachment*, not *clarity* — especially on dense scenes where the eye must
+map each pill to its edge. Graphviz/Mermaid place weights on the stroke for
+the same reason. Collision resolution is delegated to GEP-07.
+
+### GEP-07 — Nudge MUST prefer on-edge, alternate ±k·step, and never commit a failed candidate
 
 **Normative:** MUST
-**Since:** Phase 0 (preserved from commit `f3bc43d`)
-**Source:** audit F2 (runaway nudge, historical `range(6)` cumulative drift).
+**Since:** v1.1 (2026-04-23)
+**Supersedes:** v1.0 (2 attempts, committed-even-if-colliding).
+**Source:** mcmf.html audit (B→D committed at perp=−14 with unresolved collision).
 **Scope:** `Graph.emit_svg`.
 
 The collision-resolution nudge loop SHALL:
 
-1. Perform at most **2 attempts**.
-2. Each attempt sets `lx, ly = mid + perp * (bias + nudge_step * sign)` using
-   an origin-referenced offset — never `lx += …` cumulative arithmetic.
-3. Alternate `sign ∈ {+1, -1}` across attempts.
-4. Accept the last candidate even if it still collides — a pill touching
-   another pill is preferable to a pill detached from its edge.
+1. Trial the initial on-edge candidate first. If it does not collide, it wins.
+2. If the initial collides, probe perpendicular offsets in the symmetric
+   order `(+step, -step, +2·step, -2·step)` where `step = pill_h + 2`.
+   Each probe is origin-referenced (`lx = mid + perp * offset`) — never
+   cumulative.
+3. Commit the **first probe that clears all collisions** (pills and node
+   circles).
+4. If every probe still collides, revert to the **on-edge origin** — a pill
+   touching another pill is preferable to a pill the user cannot map to its
+   edge.
 
-**Rationale.** The pre-fix 6-attempt cumulative loop could drift pills up to
-114 px from their edge, leaving weights floating in empty canvas.
+Committing a colliding non-origin probe is **forbidden**: the pre-v1.1 loop
+committed whichever position was tried last regardless of collision state,
+producing wrong-side placements (e.g. mcmf B→D at perp=−14 with A→C's pill).
+
+**Rationale.** Prior to v1.1, the loop iterated exactly 2 attempts with signs
+`(+1, -1)`, mutated `(lx, ly)` each iteration without re-checking, and exited
+with the mutated values. Under genuine collision (crossing edges), the final
+state was a silently-broken wrong-side commit. The v1.1 contract tests every
+trial and guarantees either an improvement or the status-quo origin.
 
 ### GEP-08 — Pill rect MUST NOT spill outside the viewbox
 
@@ -492,6 +505,7 @@ else:
 | Version | Date       | Change                                                           |
 |---------|------------|------------------------------------------------------------------|
 | 1.0.0   | 2026-04-23 | Initial release — GEP-01 .. GEP-13 covering Phase 0 + Phase 0.5. |
+| 1.1.0   | 2026-04-23 | GEP-06 bias 5.0→0.0 (pill on edge); GEP-07 nudge never commits failed candidate; adds (+step,−step,+2·step,−2·step) probe order; origin-fallback on total collision. Fixes mcmf B→D wrong-side commit. |
 
 Phase 1+ rules (GEP-14 .. GEP-19) will ship alongside the full smart-label
 scoring adoption described in
