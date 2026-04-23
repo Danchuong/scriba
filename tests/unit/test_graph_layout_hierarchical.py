@@ -164,14 +164,18 @@ class TestAssignCoords:
             assert pos[node][0] == pytest.approx(200.0)  # centered x
 
     def test_within_bounds(self) -> None:
+        """Secondary-axis stays within passed width; primary-axis may
+        overflow when _MIN_LAYER_GAP requires more room than height
+        provides (the caller expands viewport to fit — see graph.py)."""
         layers = [["A", "B"], ["C", "D", "E"], ["F"]]
         pos = _assign_coords(
             layers, width=400, height=300, node_radius=16, orientation="TB"
         )
         pad = 16 + 10  # node_radius + _PADDING // 2
-        for x, y in pos.values():
+        for x, _y in pos.values():
             assert pad <= x <= 400 - pad + 0.001
-            assert pad <= y <= 300 - pad + 0.001
+        ys = [y for _x, y in pos.values()]
+        assert min(ys) >= pad  # top padding respected
 
 
 # ---------------------------------------------------------------------------
@@ -274,9 +278,12 @@ class TestComputeHierarchicalLayout:
             nodes, edges, width=400, height=300, node_radius=16
         )
         assert pos is not None
-        # 4 layers × min_gap=100 = 300, plus 2×pad(24) = 348 primary-axis
+        # 4 layers × min_gap => at least 3 × _MIN_LAYER_GAP between extremes.
+        from scriba.animation.primitives.graph_layout_hierarchical import (
+            _MIN_LAYER_GAP,
+        )
         ys = [y for _, y in pos.values()]
-        assert max(ys) - min(ys) >= 100 * (4 - 1) - 1  # 3 layer gaps
+        assert max(ys) - min(ys) >= _MIN_LAYER_GAP * (4 - 1) - 1
 
     def test_frame_union(self) -> None:
         """Edges from multiple frames are unioned for layering."""

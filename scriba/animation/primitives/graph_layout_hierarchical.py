@@ -42,11 +42,19 @@ _BARYCENTER_SWEEPS = 12
 _PADDING = 20
 
 # Minimum primary-axis distance between adjacent layers. Sized so that
-# after subtracting 2 × node_radius, at least one edge-weight pill
-# (~22 px tall) fits on the visible segment with margin. Falling below
-# this gap forces the GEP v2.0 cascade to escape to perp/leader stages,
-# which the caller perceives as "misaligned" labels.
-_MIN_LAYER_GAP = 100
+# the visible segment (layer_gap − 2 × node_radius) can host a rotated
+# edge-weight pill (~50 px along edge for 5-char "10/10"-style labels)
+# PLUS the forward arrow-marker footprint (~12 px at stroke-width 2)
+# and a small margin. Falling below this gap forces the GEP v2.0
+# cascade to escape to perp/leader stages or causes pills to occlude
+# the arrowhead.
+#
+# Budget:  visible = layer_gap − 2r = 140 − 40 = 100 px
+#          pill_w  ≤ 50  (5-char label at font 11)
+#          arrow   ≈ 12  (markerWidth=6 × stroke=2)
+#          margin  ≈ 2 × 8 = 16
+#          total   ≤ 78 ≪ 100 — comfortable fit
+_MIN_LAYER_GAP = 140
 
 
 # ---------------------------------------------------------------------------
