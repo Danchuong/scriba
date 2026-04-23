@@ -322,8 +322,8 @@
  * two contrast-critical states only (white-on-blue current, dark text
  * over neutral fill with red stroke error) — good/highlight already have
  * enough stroke+color contrast without a weight change. */
-.scriba-state-current > text,
-.scriba-state-error > text {
+.scriba-state-current > text:not(.scriba-graph-weight),
+.scriba-state-error > text:not(.scriba-graph-weight) {
   font-weight: 600;
 }
 
@@ -545,14 +545,14 @@
    the glyph appears to sit ON the container even when it overflows
    the rect or circle. One override per state keeps the halo in sync
    with the cell's rendered background. */
-.scriba-state-idle      > text { --scriba-halo: var(--scriba-state-idle-fill); }
-.scriba-state-current   > text { --scriba-halo: var(--scriba-state-current-fill); }
-.scriba-state-done      > text { --scriba-halo: var(--scriba-state-done-fill); }
-.scriba-state-dim       > text { --scriba-halo: var(--scriba-state-dim-fill); }
-.scriba-state-error     > text { --scriba-halo: var(--scriba-state-error-fill); }
-.scriba-state-good      > text { --scriba-halo: var(--scriba-state-good-fill); }
-.scriba-state-highlight > text { --scriba-halo: var(--scriba-state-highlight-fill); }
-.scriba-state-path      > text { --scriba-halo: var(--scriba-state-path-fill); }
+.scriba-state-idle      > text:not(.scriba-graph-weight) { --scriba-halo: var(--scriba-state-idle-fill); }
+.scriba-state-current   > text:not(.scriba-graph-weight) { --scriba-halo: var(--scriba-state-current-fill); }
+.scriba-state-done      > text:not(.scriba-graph-weight) { --scriba-halo: var(--scriba-state-done-fill); }
+.scriba-state-dim       > text:not(.scriba-graph-weight) { --scriba-halo: var(--scriba-state-dim-fill); }
+.scriba-state-error     > text:not(.scriba-graph-weight) { --scriba-halo: var(--scriba-state-error-fill); }
+.scriba-state-good      > text:not(.scriba-graph-weight) { --scriba-halo: var(--scriba-state-good-fill); }
+.scriba-state-highlight > text:not(.scriba-graph-weight) { --scriba-halo: var(--scriba-state-highlight-fill); }
+.scriba-state-path      > text:not(.scriba-graph-weight) { --scriba-halo: var(--scriba-state-path-fill); }
 
 /* Floating labels (index row under an Array cell, primitive caption,
    Graph edge weights, Plane2D tick labels) sit in the whitespace
