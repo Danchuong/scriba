@@ -19,3 +19,12 @@ Research bundle evaluating current graph edge-pill placement and proposing a sma
 ## Recommended next step
 
 Phase 0 incremental fixes (~50 LOC) close both CRITICAL bugs without introducing the full scoring pipeline. Worth committing before Phase 1 design review.
+
+## Addendum — 2026-04-23 product decision
+
+User chose **edge-aligned rotation** over Graphviz-style plain text. Rationale + spec in `04-synthesis.md` §*Rotation addendum*. Implementation plan at `docs/plans/edge-pill-rotation-impl-plan.md`. Demo: `examples/fixes/edge_pill_rotated_demo.html` (gitignored).
+
+**Phase order becomes:**
+1. Phase 0 — F1/G1 guard + determinism + clamp (~50 LOC)
+2. Phase 0.5 — Rotation (~80 LOC)
+3. Phase 1+ — Full smart-label adoption (as originally planned, updated with OBB-aware obstacles).

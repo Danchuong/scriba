@@ -6,6 +6,7 @@
 
 - Keep the current 3-step loop as a **fast path** for the ~80% of non-degenerate edges.
 - Fix the two CRITICAL bugs (F1 node-circle overlap, G1 missing check) in Phase 0 with a single AABB guard — no pipeline change.
+- **Phase 0.5 (new, 2026-04-23 product decision)**: rotate pill + text to match edge angle, normalize to `[-π/2, π/2]` for text-upright. Improves pill→edge association on dense/diagonal graphs. See §*Rotation addendum* and `docs/plans/edge-pill-rotation-impl-plan.md`.
 - Phase 1: introduce `EdgePillContext` (frozen dataclass mirroring `_ScoreContext`) and pre-build a segment obstacle set from all graph edges; reuse `_score_candidate` / `_pick_best_candidate` unchanged.
 - Candidate generation follows yFiles' `(t, side, distance)` parameterisation — 3 t-values × 2 perp sides × 4 offsets = **24 candidates per edge**.
 - Sort edges by `(state priority DESC, edge key ASC)` before the loop (fixes E4/E5 determinism).
@@ -134,6 +135,15 @@ R-27c gate transfers directly. Threshold `pill_h * 1.5 + 4` = 29.5 px at `pill_h
 - **F3/E1** (`graph.py:755`): replace `−4` with perp-derived offset `(−perp_y * (pill_h/2 + 2), +perp_x * (pill_h/2 + 2))`.
 - **E3** (`graph.py:787`): expand `_LabelPlacement` dims by `+1.0` (stroke width both sides).
 
+### Phase 0.5 — Edge-aligned rotation (~80 LOC, product decision 2026-04-23)
+
+- Compute `θ = atan2(dy_visible, dx_visible)`; normalize to `[-π/2, π/2]` so text never renders upside-down.
+- Emit pill group as `<g transform="rotate(θ_deg, mid_x, mid_y)"> <rect…> <text…> </g>` — rect + text rotate together, text remains centred in rect local frame.
+- Collision: rotated AABB becomes OBB. Minimum-viable fix: expand AABB to axis-aligned bounding box of rotated rectangle (`w' = |w·cos θ| + |h·sin θ|`, `h' = |w·sin θ| + |h·cos θ|`). Overestimates but deterministic, O(1).
+- KaTeX `<foreignObject>` pill path (`_render_svg_text` inline-TeX) requires separate handling — rotate the outer `<g>`, not `<foreignObject>` itself (Safari bug workaround).
+- Demo: `examples/fixes/edge_pill_rotated_demo.html` (gitignored) — 3 case visual comparison.
+- See `docs/plans/edge-pill-rotation-impl-plan.md` for step-by-step.
+
 ### Phase 1 — Foundation (~150 LOC in `graph.py` + ~20 in `_svg_helpers.py`)
 
 - Add `"node_circle"` to `ObstacleKind`, `_KIND_WEIGHT` (`_svg_helpers.py:130,277`).
@@ -190,6 +200,32 @@ R-27c gate transfers directly. Threshold `pill_h * 1.5 + 4` = 29.5 px at `pill_h
 
 - `test_coincident_nodes`: `positions[u] == positions[v]`. No crash, finite `x/y`.
 - `test_self_loop`: `(u, u)` edge. Pill omitted OR placed at defined offset.
+
+---
+
+## Rotation addendum (2026-04-23)
+
+**Decision:** Keep pill (not plain Graphviz-style text). Add edge-aligned rotation.
+
+**Rationale:** Scriba animates weight values across frames (`\apply` override). Plain-text labels lose readability when edges cross or when weight changes mid-animation. Pill background preserves contrast. Rotating the pill along the edge:
+- Binds pill visually to its stroke → easier user mapping on dense/diagonal graphs.
+- Pill always parallel to edge → never "cuts across" adjacent edges like a horizontal pill can.
+- Solves F3 (vertical-edge `−4` bias wrong) automatically: perp offset now always perpendicular to the stroke in screen space.
+
+**Cost:**
+- Collision obstacle: AABB → expanded AABB of rotated rect (OBB). Overestimates occupied area ~30% on diagonal edges; acceptable at E ≤ 50.
+- Readability: cartography research (Imhof 1975, Yoeli 1972) shows rotated text is 5–10% slower to read but strongly preferred for association. Acceptable trade.
+- KaTeX fallback (`<foreignObject>`): rotate via parent `<g>` only, never on `<foreignObject>` itself (Safari rendering bug).
+
+**Angle normalization rule:**
+```
+θ_raw = atan2(y2 − y1, x2 − x1)   # in [-π, π]
+if θ_raw >  π/2: θ = θ_raw − π
+elif θ_raw < -π/2: θ = θ_raw + π
+else: θ = θ_raw                    # in [-π/2, π/2]
+```
+
+**Scope:** Phase 0.5, after Phase 0 lands. Implementation plan: `docs/plans/edge-pill-rotation-impl-plan.md`.
 
 ---
 
