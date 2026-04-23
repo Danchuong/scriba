@@ -1163,11 +1163,18 @@ class Graph(PrimitiveBase):
                 # Shorten line so arrowhead stops at circle boundary
                 x2, y2 = _shorten_line_to_circle(x1, y1, x2, y2, self._node_radius)
 
-            # GEP-01: pill sits on the visible segment — midpoint computed
-            # from post-shortening endpoints. Perp-bias (GEP-06) replaces
-            # the earlier magic `-4`; applied below once perp is known.
-            mid_x = (x1 + x2) / 2
-            mid_y = (y1 + y2) / 2
+            # GEP-01: pill sits on the *visible* segment. Both endpoints
+            # are shortened to the node-circle boundary for the midpoint
+            # calculation — the stroke is drawn from node centers, but
+            # the source-side half is occluded by the source circle, so
+            # the raw-center midpoint is biased toward the source by
+            # `node_radius / 2`. Mirroring the target-side shortening
+            # gives the true visual midpoint and prevents wide pills
+            # from overlapping the source node AABB on short vertical
+            # edges (e.g. hierarchical 5-layer DAGs with layer_gap≈100).
+            vx1, vy1 = _shorten_line_to_circle(x2, y2, x1, y1, self._node_radius)
+            mid_x = (vx1 + x2) / 2
+            mid_y = (vy1 + y2) / 2
 
             marker = ' marker-end="url(#scriba-arrow-fwd)"' if self.directed else ""
             edge_colors = svg_style_attrs(state)
