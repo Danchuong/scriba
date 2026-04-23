@@ -744,14 +744,15 @@ class Graph(PrimitiveBase):
                 continue
             x1, y1 = self.positions[u]
             x2, y2 = self.positions[v]
-            # Capture midpoint before any directed shortening so the
-            # weight label stays centered on the visible segment.
-            mid_x = (x1 + x2) / 2
-            mid_y = (y1 + y2) / 2 - 4
 
             if self.directed:
                 # Shorten line so arrowhead stops at circle boundary
                 x2, y2 = _shorten_line_to_circle(x1, y1, x2, y2, self._node_radius)
+
+            # Compute midpoint from the actually-rendered (shortened) line
+            # endpoints so the weight pill sits on the visible segment.
+            mid_x = (x1 + x2) / 2
+            mid_y = (y1 + y2) / 2 - 4
 
             marker = ' marker-end="url(#scriba-arrow-fwd)"' if self.directed else ""
             edge_colors = svg_style_attrs(state)
@@ -793,11 +794,17 @@ class Graph(PrimitiveBase):
                 perp_x = -dy_edge / edge_len
                 perp_y = dx_edge / edge_len
                 nudge_step = pill_h + 2
-                for _attempt in range(6):
+                # Try at most 2 nudges, alternating +perp / -perp, so the
+                # pill stays visually attached to the edge (≤1 pill-height
+                # away). A label touching another pill is better than a label
+                # disconnected from its edge.
+                _nudge_signs = (1, -1)
+                for _attempt in range(2):
                     if not any(candidate.overlaps(p) for p in placed_edge_labels):
                         break
-                    lx += perp_x * nudge_step
-                    ly += perp_y * nudge_step
+                    sign = _nudge_signs[_attempt]
+                    lx = mid_x + perp_x * nudge_step * sign
+                    ly = mid_y + perp_y * nudge_step * sign
                     candidate = _LabelPlacement(
                         x=lx, y=ly, width=pill_w, height=pill_h
                     )
