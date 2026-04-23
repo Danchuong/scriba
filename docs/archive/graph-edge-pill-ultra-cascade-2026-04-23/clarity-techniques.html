@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>GEP Clarity Techniques — K5 Comparison</title>
+<style>
+  body { font: 13px/1.4 -apple-system, system-ui, sans-serif; margin: 16px; background: #f7f7f8; color: #222; }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  p.lede { margin: 0 0 16px; color: #555; max-width: 760px; }
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(460px, 1fr)); gap: 14px; }
+  .panel { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
+  .panel h2 { font-size: 14px; margin: 0 0 4px; }
+  .panel .desc { font-size: 11.5px; color: #666; margin-bottom: 6px; min-height: 30px; }
+  .panel .stat { font-size: 11px; color: #0a7; margin-top: 4px; font-family: ui-monospace, Menlo, monospace; }
+  .panel .stat.bad { color: #c33; }
+  svg { display: block; background: #fafafa; border-radius: 4px; }
+  .node circle { fill: #fff; stroke: #333; stroke-width: 1.5; }
+  .node text { font: 600 12px sans-serif; text-anchor: middle; dominant-baseline: central; fill: #222; }
+  .edge { stroke: #999; stroke-width: 1; fill: none; }
+  .edge.curved { stroke: #888; }
+  .pill rect { fill: #fff; stroke: #555; stroke-width: 0.8; rx: 3; }
+  .pill text { font: 10px ui-monospace, Menlo, monospace; text-anchor: middle; dominant-baseline: central; fill: #222; }
+  .pill.shrunk text { font-size: 8.5px; }
+  .pill.external rect { fill: #fffaf0; stroke: #c80; }
+  .pill.tier rect { fill: #eef; stroke: #337; }
+  .leader { stroke: #c80; stroke-width: 0.7; stroke-dasharray: 2 2; fill: none; }
+  .hint { stroke: #e66; stroke-width: 1; fill: none; stroke-dasharray: 3 2; opacity: 0.5; }
+  .legend { font: 10px ui-monospace, Menlo, monospace; fill: #333; }
+  .legend-row rect { fill: #eef; stroke: #337; }
+</style>
+</head>
+<body>
+<h1>Graph Edge Pill — Clarity Techniques (K5 hard case)</h1>
+<p class="lede">8 techniques compared side-by-side on the same K5 dense graph (5 nodes, 10 edges, multi-char labels, R=78). Reference: NAIVE v1.2 and current ULTRA cascade. Alternatives target the 20% of impossible cases that cascade falls back on.</p>
+<div class="grid" id="grid"></div>
+
+<script>
+const DATA = {"nodes":[{"id":"S","cx":240.0,"cy":102.0,"r":18},{"id":"A","cx":314.2,"cy":155.9,"r":18},{"id":"B","cx":285.8,"cy":243.1,"r":18},{"id":"C","cx":194.2,"cy":243.1,"r":18},{"id":"T","cx":165.8,"cy":155.9,"r":18}],"edges":[{"a":"A","b":"T","label":"7/12","x1":296.2,"y1":155.9,"x2":183.8,"y2":155.9,"mid_x":240.0,"mid_y":155.9,"theta":180.0,"naive":{"x":240.0,"y":155.9,"stage":"origin","pw":34.2,"ph":17},"ultra":{"x":240.0,"y":155.9,"stage":"origin","pw":34.2,"ph":17}},{"a":"S","b":"B","label":"8/10","x1":245.6,"y1":119.1,"x2":280.3,"y2":226.0,"mid_x":262.9,"mid_y":172.6,"theta":72.0,"naive":{"x":225.1,"y":184.8,"stage":"perp+40","pw":34.2,"ph":17},"ultra":{"x":269.4,"y":192.6,"stage":"sat+21","pw":34.2,"ph":17}},{"a":"S","b":"C","label":"5/15","x1":234.4,"y1":119.1,"x2":199.7,"y2":226.0,"mid_x":217.1,"mid_y":172.6,"theta":108.0,"naive":{"x":254.9,"y":184.8,"stage":"perp-40","pw":34.2,"ph":17},"ultra":{"x":210.6,"y":192.6,"stage":"sat+21","pw":34.2,"ph":17}},{"a":"A","b":"C","label":"11/11","x1":299.6,"y1":166.5,"x2":208.7,"y2":232.5,"mid_x":254.2,"mid_y":199.5,"theta":144.0,"naive":{"x":254.2,"y":199.5,"stage":"origin-FB","pw":40.2,"ph":17},"ultra":{"x":254.2,"y":199.5,"stage":"origin-FB","pw":40.2,"ph":17}},{"a":"B","b":"T","label":"6/18","x1":271.3,"y1":232.5,"x2":180.4,"y2":166.5,"mid_x":225.8,"mid_y":199.5,"theta":-144.0,"naive":{"x":225.8,"y":199.5,"stage":"origin-FB","pw":34.2,"ph":17},"ultra":{"x":225.8,"y":199.5,"stage":"origin-FB","pw":34.2,"ph":17}},{"a":"S","b":"A","label":"12/20","x1":254.6,"y1":112.6,"x2":299.6,"y2":145.3,"mid_x":277.1,"mid_y":128.9,"theta":36.0,"naive":{"x":300.3,"y":97.1,"stage":"perp-39","pw":40.2,"ph":17},"ultra":{"x":277.1,"y":128.9,"stage":"origin","pw":30.8,"ph":13}},{"a":"S","b":"T","label":"0/30","x1":225.4,"y1":112.6,"x2":180.4,"y2":145.3,"mid_x":202.9,"mid_y":128.9,"theta":144.0,"naive":{"x":202.9,"y":128.9,"stage":"origin","pw":34.2,"ph":17},"ultra":{"x":202.9,"y":128.9,"stage":"origin","pw":34.2,"ph":17}},{"a":"A","b":"B","label":"9/14","x1":308.6,"y1":173.0,"x2":291.4,"y2":226.0,"mid_x":300.0,"mid_y":199.5,"theta":108.0,"naive":{"x":300.0,"y":199.5,"stage":"origin","pw":34.2,"ph":17},"ultra":{"x":300.0,"y":199.5,"stage":"origin","pw":34.2,"ph":17}},{"a":"C","b":"T","label":"10/10","x1":188.6,"y1":226.0,"x2":171.4,"y2":173.0,"mid_x":180.0,"mid_y":199.5,"theta":-108.0,"naive":{"x":180.0,"y":199.5,"stage":"origin","pw":40.2,"ph":17},"ultra":{"x":180.0,"y":199.5,"stage":"origin","pw":40.2,"ph":17}},{"a":"B","b":"C","label":"4/9","x1":267.8,"y1":243.1,"x2":212.2,"y2":243.1,"mid_x":240.0,"mid_y":243.1,"theta":180.0,"naive":{"x":240.0,"y":243.1,"stage":"origin","pw":28.2,"ph":17},"ultra":{"x":240.0,"y":243.1,"stage":"origin","pw":28.2,"ph":17}}]};
+
+const W = 480, H = 360;
+const CX = 240, CY = 180;
+
+function nodeMap() {
+  const m = {};
+  DATA.nodes.forEach(n => m[n.id] = n);
+  return m;
+}
+
+function drawNodes(parent, nodes, scale=1, offsetX=0, offsetY=0) {
+  nodes.forEach(n => {
+    const cx = (n.cx - CX) * scale + CX + offsetX;
+    const cy = (n.cy - CY) * scale + CY + offsetY;
+    const r = n.r * scale;
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.setAttribute('class','node');
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', cx); c.setAttribute('cy', cy); c.setAttribute('r', r);
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', cx); t.setAttribute('y', cy); t.textContent = n.id;
+    g.appendChild(c); g.appendChild(t);
+    parent.appendChild(g);
+  });
+}
+
+function drawEdges(parent, edges, scale=1, offsetX=0, offsetY=0, curved=false) {
+  edges.forEach(e => {
+    const x1 = (e.x1 - CX) * scale + CX + offsetX;
+    const y1 = (e.y1 - CY) * scale + CY + offsetY;
+    const x2 = (e.x2 - CX) * scale + CX + offsetX;
+    const y2 = (e.y2 - CY) * scale + CY + offsetY;
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    if (curved) {
+      const mx = (x1+x2)/2, my = (y1+y2)/2;
+      const dx = x2-x1, dy = y2-y1;
+      const nx = -dy, ny = dx;
+      const len = Math.hypot(nx,ny) || 1;
+      const off = 18;
+      const bcx = mx + nx/len*off, bcy = my + ny/len*off;
+      path.setAttribute('d', `M${x1},${y1} Q${bcx},${bcy} ${x2},${y2}`);
+    } else {
+      path.setAttribute('d', `M${x1},${y1} L${x2},${y2}`);
+    }
+    path.setAttribute('class', curved ? 'edge curved' : 'edge');
+    parent.appendChild(path);
+  });
+}
+
+function drawPill(parent, x, y, pw, ph, label, cls='pill', pad=6, theta=0) {
+  // GEP R-25: pill rotates with edge theta; text flips if cos<0 so always upright
+  const textTheta = (theta > 90 || theta < -90) ? theta + 180 : theta;
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class', cls);
+  const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  r.setAttribute('x', x - pw/2); r.setAttribute('y', y - ph/2);
+  r.setAttribute('width', pw); r.setAttribute('height', ph);
+  if (theta) r.setAttribute('transform', `rotate(${theta}, ${x}, ${y})`);
+  const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x', x); t.setAttribute('y', y);
+  if (theta) t.setAttribute('transform', `rotate(${textTheta}, ${x}, ${y})`);
+  t.textContent = label;
+  g.appendChild(r); g.appendChild(t);
+  parent.appendChild(g);
+}
+
+function makeSVG() {
+  const s = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  s.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  s.setAttribute('width', W);
+  s.setAttribute('height', H);
+  return s;
+}
+
+function panel(title, desc, statText, statClass, svg) {
+  const p = document.createElement('div');
+  p.className = 'panel';
+  p.innerHTML = `<h2>${title}</h2><div class="desc">${desc}</div>`;
+  p.appendChild(svg);
+  const st = document.createElement('div');
+  st.className = 'stat' + (statClass ? ' ' + statClass : '');
+  st.textContent = statText;
+  p.appendChild(st);
+  return p;
+}
+
+// ---------- 1. NAIVE v1.2 ----------
+function panelNaive() {
+  const svg = makeSVG();
+  drawEdges(svg, DATA.edges);
+  drawNodes(svg, DATA.nodes);
+  DATA.edges.forEach(e => {
+    drawPill(svg, e.naive.x, e.naive.y, e.naive.pw, e.naive.ph, e.label, 'pill', 6, e.theta);
+  });
+  return panel('1. NAIVE v1.2 — baseline',
+    'Current algorithm. Origin-fallback on 2 edges (A→C, B→T) overlaps; S→B, S→C flip to far perp side (disconnected from stroke).',
+    'origin=5  perp=3  fallback=2   on-stroke 50%', 'bad', svg);
+}
+
+// ---------- 2. ULTRA cascade (current) ----------
+function panelUltra() {
+  const svg = makeSVG();
+  drawEdges(svg, DATA.edges);
+  drawNodes(svg, DATA.nodes);
+  DATA.edges.forEach(e => {
+    const cls = e.ultra.stage.startsWith('origin') && e.ultra.pw < e.naive.pw ? 'pill shrunk' : 'pill';
+    drawPill(svg, e.ultra.x, e.ultra.y, e.ultra.pw, e.ultra.ph, e.label, cls, 6, e.theta);
+  });
+  return panel('2. ULTRA cascade 2+5+3+4 — current',
+    'Origin→along→saturate±budget→perp→shrink→relax. 2 edges still collide (A→C, B→T).',
+    'origin=6  along=2  perp=0  fallback=2   on-stroke 80%', '', svg);
+}
+
+// ---------- 3. Leader-line fallback ----------
+function panelLeader() {
+  const svg = makeSVG();
+  drawEdges(svg, DATA.edges);
+  drawNodes(svg, DATA.nodes);
+  DATA.edges.forEach(e => {
+    if (e.ultra.stage === 'origin-FB') {
+      // move pill to external callout position
+      const dx = e.mid_x - CX, dy = e.mid_y - CY;
+      const len = Math.hypot(dx,dy) || 1;
+      const lx = e.mid_x + dx/len * 50;
+      const ly = e.mid_y + dy/len * 50;
+      const leader = document.createElementNS('http://www.w3.org/2000/svg','path');
+      leader.setAttribute('d', `M${e.mid_x},${e.mid_y} L${lx},${ly}`);
+      leader.setAttribute('class', 'leader');
+      svg.appendChild(leader);
+      drawPill(svg, lx, ly, e.ultra.pw, e.ultra.ph, e.label, 'pill external');
+    } else {
+      const cls = e.ultra.pw < e.naive.pw ? 'pill shrunk' : 'pill';
+      drawPill(svg, e.ultra.x, e.ultra.y, e.ultra.pw, e.ultra.ph, e.label, cls, 6, e.theta);
+    }
+  });
+  return panel('3. Leader-line fallback (callout)',
+    'When origin-fallback fires, detach pill and draw dashed leader to midpoint. Zero overlap guarantee.',
+    'origin=6  along=2  leader=2   on-stroke 80% + 2 callouts (100% legible)', '', svg);
+}
+
+// ---------- 4. External pill ring ----------
+function panelExternal() {
+  const svg = makeSVG();
+  drawEdges(svg, DATA.edges);
+  drawNodes(svg, DATA.nodes);
+  DATA.edges.forEach(e => {
+    const dx = e.mid_x - CX, dy = e.mid_y - CY;
+    const len = Math.hypot(dx,dy) || 1;
+    const dist = 70;
+    const lx = e.mid_x + dx/len * dist;
+    const ly = e.mid_y + dy/len * dist;
+    const leader = document.createElementNS('http://www.w3.org/2000/svg','path');
+    leader.setAttribute('d', `M${e.mid_x},${e.mid_y} L${lx},${ly}`);
+    leader.setAttribute('class', 'leader');
+    svg.appendChild(leader);
+    drawPill(svg, lx, ly, e.naive.pw, e.naive.ph, e.label, 'pill external');
+  });
+  return panel('4. External pill ring',
+    'All pills pushed outside convex hull. Graph interior clean. Trade-off: more leaders, larger canvas.',
+    'zero interior overlap   all external   requires +140px canvas', '', svg);
+}
+
+// ---------- 5. Curved edge routing ----------
+function panelCurved() {
+  const svg = makeSVG();
+  drawEdges(svg, DATA.edges, 1, 0, 0, true);
+  drawNodes(svg, DATA.nodes);
+  DATA.edges.forEach(e => {
+    // put pill on the curve apex
+    const mx = (e.x1+e.x2)/2, my = (e.y1+e.y2)/2;
+    const dx = e.x2-e.x1, dy = e.y2-e.y1;
+    const nx = -dy, ny = dx;
+    const len = Math.hypot(nx,ny) || 1;
+    const off = 18 * 0.5;
+    const px = mx + nx/len*off, py = my + ny/len*off;
+    drawPill(svg, px, py, e.naive.pw, e.naive.ph, e.label, 'pill', 6, e.theta);
+  });
+  return panel('5. Curved edge routing (Mermaid/Graphviz)',
+    'Bend edges in bezier arcs. Pill at apex of curve where adjacent edges fan out. On-stroke 100%.',
+    'origin=10  all on-stroke   cost: edge-hit detection vs nodes', '', svg);
+}
+
+// ---------- 6. Node spacing (bigger R) ----------
+function panelSpaced() {
+  const svg = makeSVG();
+  const scale = 1.45;
+  const scaled = { nodes: DATA.nodes.map(n => ({...n})), edges: DATA.edges.map(e => ({...e})) };
+  drawEdges(svg, DATA.edges, scale);
+  drawNodes(svg, DATA.nodes, scale);
+  DATA.edges.forEach(e => {
+    const mx = (e.mid_x - CX) * scale + CX;
+    const my = (e.mid_y - CY) * scale + CY;
+    drawPill(svg, mx, my, e.naive.pw, e.naive.ph, e.label, 'pill', 6, e.theta);
+  });
+  return panel('6. Upstream node spacing (auto-scale)',
+    'Detect pill density → expand layout radius until all pills fit on-stroke. Root-cause fix.',
+    'scale ×1.45   all origin   cost: bigger canvas', '', svg);
+}
+
+// ---------- 7. Two-tier legend ----------
+function panelLegend() {
+  const svg = makeSVG();
+  svg.setAttribute('viewBox', `0 0 ${W+120} ${H}`);
+  svg.setAttribute('width', W+120);
+  drawEdges(svg, DATA.edges);
+  drawNodes(svg, DATA.nodes);
+  DATA.edges.forEach((e, i) => {
+    const tag = `e${i+1}`;
+    drawPill(svg, e.mid_x, e.mid_y, 20, 14, tag, 'pill tier');
+  });
+  // legend on right
+  const lg = document.createElementNS('http://www.w3.org/2000/svg','g');
+  lg.setAttribute('transform', `translate(${W+8}, 30)`);
+  DATA.edges.forEach((e, i) => {
+    const row = document.createElementNS('http://www.w3.org/2000/svg','g');
+    row.setAttribute('class', 'legend-row');
+    row.setAttribute('transform', `translate(0, ${i*26})`);
+    const r = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    r.setAttribute('x', 0); r.setAttribute('y', 0); r.setAttribute('width', 22); r.setAttribute('height', 14); r.setAttribute('rx', 3);
+    const t1 = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t1.setAttribute('x', 11); t1.setAttribute('y', 7); t1.setAttribute('class','legend');
+    t1.setAttribute('text-anchor','middle'); t1.setAttribute('dominant-baseline','central');
+    t1.textContent = `e${i+1}`;
+    const t2 = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t2.setAttribute('x', 30); t2.setAttribute('y', 7); t2.setAttribute('class','legend');
+    t2.setAttribute('dominant-baseline','central');
+    t2.textContent = `${e.a}→${e.b}: ${e.label}`;
+    row.appendChild(r); row.appendChild(t1); row.appendChild(t2);
+    lg.appendChild(row);
+  });
+  svg.appendChild(lg);
+  return panel('7. Two-tier label (legend sidebar)',
+    'Edge pills show compact e₁..e₁₀ tags; side legend resolves full label. Max clarity at graph-level.',
+    'origin=10  compact tag=20×14   legend in sidebar', '', svg);
+}
+
+// ---------- 8. Orthogonal routing (right-angle) ----------
+function panelOrtho() {
+  const svg = makeSVG();
+  const nm = nodeMap();
+  // draw orthogonal edges: manhattan routing with vertical-first heuristic
+  DATA.edges.forEach((e, i) => {
+    const na = nm[e.a], nb = nm[e.b];
+    // outgoing port + bend point
+    const midY = (na.cy + nb.cy) / 2 + (i%2 === 0 ? 0 : 6);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', `M${na.cx},${na.cy} L${na.cx},${midY} L${nb.cx},${midY} L${nb.cx},${nb.cy}`);
+    path.setAttribute('class','edge');
+    svg.appendChild(path);
+    // pill on horizontal segment
+    const px = (na.cx + nb.cx) / 2;
+    const py = midY;
+    drawPill(svg, px, py, e.naive.pw, e.naive.ph, e.label);
+  });
+  drawNodes(svg, DATA.nodes);
+  return panel('8. Orthogonal routing (ER-style)',
+    'Right-angle edges with horizontal/vertical segments; pill on horizontal. Best for hierarchical graphs, overkill for K5.',
+    'all axis-aligned   pill upright   cost: losing graph geometry', '', svg);
+}
+
+const grid = document.getElementById('grid');
+[panelNaive, panelUltra, panelLeader, panelExternal, panelCurved, panelSpaced, panelLegend, panelOrtho]
+  .forEach(fn => grid.appendChild(fn()));
+</script>
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>GEP — Optimal Stack for Pedagogical Clarity</title>
+<style>
+  body { font: 13px/1.4 -apple-system, system-ui, sans-serif; margin: 16px; background: #f5f5f7; color: #222; }
+  h1 { font-size: 18px; margin: 0 0 6px; }
+  p.lede { margin: 0 0 14px; color: #555; max-width: 880px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .panel { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 12px; }
+  .panel h2 { font-size: 13px; margin: 0 0 4px; }
+  .panel .desc { font-size: 11.5px; color: #666; margin-bottom: 8px; min-height: 48px; }
+  .stats { font: 11px ui-monospace, Menlo, monospace; color: #444; margin-top: 8px; padding: 6px 8px; background: #f7f7f8; border-radius: 4px; }
+  svg { display: block; background: #fafafa; border-radius: 6px; }
+  .node text { font: 600 12px sans-serif; text-anchor: middle; dominant-baseline: central; }
+  .edge { stroke: #bbb; stroke-width: 1.1; fill: none; }
+  .arrow-head { fill: #bbb; }
+  .pill rect { fill: #fff; stroke: #555; stroke-width: 0.8; rx: 3; }
+  .pill text { font: 10.5px ui-monospace, Menlo, monospace; text-anchor: middle; dominant-baseline: central; fill: #222; }
+  .leader { stroke: #e67e22; stroke-width: 0.9; fill: none; stroke-dasharray: 2.5 2; }
+  .pill.leader-anchored rect { stroke: #e67e22; fill: #fffaf0; }
+  .takeaway { margin-top: 16px; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; font-size: 12.5px; max-width: 880px; }
+  .takeaway h3 { margin: 0 0 6px; font-size: 14px; }
+  .takeaway ol { margin: 6px 0 0; padding-left: 18px; }
+  .takeaway li { margin: 3px 0; }
+  code { background: #eee; padding: 1px 4px; border-radius: 3px; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>Optimal Pedagogical Stack — K5 hard case, 3 treatments</h1>
+<p class="lede">
+  Cùng K5 hard case từ các demo trước (5 nodes R=78, 10 edges multi-char). Progression: (1) current v1.2 = rotated pills + greedy cascade, (2) drop rotation → axis-aligned + greedy, (3) full optimal = axis + simulated-annealing (400 iter) + leader-first fallback + typography hierarchy + pill tint theo source node.
+</p>
+
+<div class="grid" id="grid"></div>
+
+<div class="takeaway">
+  <h3>Recommendation</h3>
+  <ol>
+    <li><b>Layout-first</b>: nếu graph là DAG → Dagre/Sugiyama layered (K5 không phải DAG nên bỏ qua). Layout chọn trước = root-cause fix cho pill density.</li>
+    <li><b>Axis-aligned pill</b>: text stays horizontal. Reader không nghiêng đầu. Trade off: mất pill-ôm-edge visual. Win: clarity.</li>
+    <li><b>Leader line first-class</b>: collision > threshold → external callout with dashed leader. Never silent fallback.</li>
+    <li><b>Global pass</b> (SA/force-directed): greedy cascade chỉ hit local min. SA 100–200 iter converge tốt hơn.</li>
+    <li><b>Typography hierarchy</b>: primary value bold, secondary dim. Color-code pill bg theo source node.</li>
+  </ol>
+</div>
+
+<script>
+// Same K5 hard case as other demos: 5 nodes R=78 from center, 10 edges, multi-char labels
+const K5 = {
+  nodes: [
+    {id:'S', cx:240.0, cy:102.0, r:18, color:'#43a047'},
+    {id:'A', cx:314.2, cy:155.9, r:18, color:'#1976d2'},
+    {id:'B', cx:285.8, cy:243.1, r:18, color:'#8e24aa'},
+    {id:'C', cx:194.2, cy:243.1, r:18, color:'#00838f'},
+    {id:'T', cx:165.8, cy:155.9, r:18, color:'#c62828'},
+  ],
+  edges: [
+    {a:'A',b:'T',label:'7/12'},
+    {a:'S',b:'B',label:'8/10'},
+    {a:'S',b:'C',label:'5/15'},
+    {a:'A',b:'C',label:'11/11'},
+    {a:'B',b:'T',label:'6/18'},
+    {a:'S',b:'A',label:'12/20'},
+    {a:'S',b:'T',label:'0/30'},
+    {a:'A',b:'B',label:'9/14'},
+    {a:'C',b:'T',label:'10/10'},
+    {a:'B',b:'C',label:'4/9'},
+  ],
+};
+
+const W = 480, H = 360;
+const NODE_R = 18;
+
+function nmap(g){ const m={}; g.nodes.forEach(n=>m[n.id]=n); return m; }
+
+function edgeEndpoints(na, nb) {
+  const dx = nb.cx - na.cx, dy = nb.cy - na.cy;
+  const L = Math.hypot(dx, dy) || 1;
+  const ux = dx/L, uy = dy/L;
+  return {
+    x1: na.cx + ux*NODE_R, y1: na.cy + uy*NODE_R,
+    x2: nb.cx - ux*NODE_R, y2: nb.cy - uy*NODE_R,
+  };
+}
+
+function labelWH(label, fontSize=10.5, padX=5, padY=4) {
+  return { pw: label.length * fontSize * 0.62 + padX*2, ph: fontSize + padY*2 };
+}
+
+function pillAABB(x, y, pw, ph, theta=0) {
+  const r = theta * Math.PI / 180;
+  const c = Math.abs(Math.cos(r)), s = Math.abs(Math.sin(r));
+  const aw = pw*c + ph*s, ah = pw*s + ph*c;
+  return {x1:x-aw/2, y1:y-ah/2, x2:x+aw/2, y2:y+ah/2, aw, ah};
+}
+function overlap(a, b, pad=0.5) {
+  return a.x1 < b.x2-pad && a.x2 > b.x1+pad && a.y1 < b.y2-pad && a.y2 > b.y1+pad;
+}
+function boxHitsCircle(b, cx, cy, r) {
+  const nx = Math.max(b.x1, Math.min(cx, b.x2));
+  const ny = Math.max(b.y1, Math.min(cy, b.y2));
+  return (cx-nx)**2 + (cy-ny)**2 < r*r;
+}
+function tryBox(x, y, pw, ph, theta, placed, nodes) {
+  const b = pillAABB(x, y, pw, ph, theta);
+  for (const p of placed) if (overlap(b, p)) return null;
+  for (const n of nodes) if (boxHitsCircle(b, n.cx, n.cy, n.r-1)) return null;
+  return b;
+}
+
+// ========= PANEL 1: CIRCLE + ROTATED + GREEDY CASCADE =========
+function placeRotatedGreedy(g) {
+  const nm = nmap(g);
+  const results = []; const placed = [];
+  g.edges.forEach(e => {
+    const na = nm[e.a], nb = nm[e.b];
+    const ep = edgeEndpoints(na, nb);
+    const mx = (ep.x1+ep.x2)/2, my = (ep.y1+ep.y2)/2;
+    const theta = Math.atan2(ep.y2-ep.y1, ep.x2-ep.x1) * 180/Math.PI;
+    const {pw, ph} = labelWH(e.label);
+    const tl = Math.hypot(ep.x2-ep.x1, ep.y2-ep.y1);
+    const budget = Math.max(0, tl/2 - pw/2 - NODE_R);
+    const rad = theta*Math.PI/180;
+    const cos=Math.cos(rad), sin=Math.sin(rad);
+    const aw = pw*Math.abs(cos)+ph*Math.abs(sin);
+    const ah = pw*Math.abs(sin)+ph*Math.abs(cos);
+    const sA = aw+2, sP = ah+2;
+
+    let box = tryBox(mx,my,pw,ph,theta,placed,g.nodes);
+    let stage='origin', x=mx, y=my;
+    if (!box && budget>0) {
+      for (const sg of [1,-1]) {
+        const sh = Math.min(sA, budget);
+        const tx = mx+sg*cos*sh, ty = my+sg*sin*sh;
+        const b2 = tryBox(tx,ty,pw,ph,theta,placed,g.nodes);
+        if (b2) { box=b2; x=tx; y=ty; stage='along'; break; }
+      }
+    }
+    if (!box) {
+      const px=-sin, py=cos;
+      for (const [sg,m] of [[1,1],[1,2],[-1,1],[-1,2]]) {
+        const tx=mx+sg*m*px*sP, ty=my+sg*m*py*sP;
+        const b2 = tryBox(tx,ty,pw,ph,theta,placed,g.nodes);
+        if (b2) { box=b2; x=tx; y=ty; stage='perp'; break; }
+      }
+    }
+    if (!box) { box=pillAABB(mx,my,pw,ph,theta); stage='fallback'; }
+    placed.push(box);
+    results.push({x,y,theta,pw,ph,stage,ep,label:e.label,srcColor:na.color});
+  });
+  return results;
+}
+
+// ========= PANEL 2: DAG LAYERED + AXIS-ALIGNED GREEDY =========
+function placeAxisGreedy(g) {
+  const nm = nmap(g);
+  const results = []; const placed = [];
+  g.edges.forEach(e => {
+    const na = nm[e.a], nb = nm[e.b];
+    const ep = edgeEndpoints(na, nb);
+    const mx = (ep.x1+ep.x2)/2, my = (ep.y1+ep.y2)/2;
+    const {pw, ph} = labelWH(e.label);
+    // axis-aligned: theta = 0
+    let box = tryBox(mx,my,pw,ph,0,placed,g.nodes);
+    let stage='origin', x=mx, y=my;
+    if (!box) {
+      const step = ph+3;
+      for (const [sg,m] of [[-1,1],[1,1],[-1,2],[1,2]]) {
+        const tx=mx, ty=my+sg*m*step;
+        const b2 = tryBox(tx,ty,pw,ph,0,placed,g.nodes);
+        if (b2) { box=b2; x=tx; y=ty; stage='perp'; break; }
+      }
+    }
+    if (!box) { box=pillAABB(mx,my,pw,ph,0); stage='fallback'; }
+    placed.push(box);
+    results.push({x,y,theta:0,pw,ph,stage,ep,label:e.label,srcColor:na.color});
+  });
+  return results;
+}
+
+// ========= PANEL 3: AXIS-ALIGNED + LEADER + SA GLOBAL =========
+function placeOptimal(g) {
+  const nm = nmap(g);
+  // initial greedy axis-aligned
+  const base = [];
+  g.edges.forEach(e => {
+    const na = nm[e.a], nb = nm[e.b];
+    const ep = edgeEndpoints(na, nb);
+    const mx=(ep.x1+ep.x2)/2, my=(ep.y1+ep.y2)/2;
+    const {pw, ph} = labelWH(e.label);
+    base.push({label:e.label,x:mx,y:my,pw,ph,anchor:{x:mx,y:my},ep,srcColor:na.color,leader:false});
+  });
+
+  const nodes = g.nodes;
+  // SA: minimize Σ pill-pill overlap + pill-node overlap + dist_from_anchor²
+  function energy(arr) {
+    let E = 0;
+    for (let i=0;i<arr.length;i++) {
+      const p=arr[i], b=pillAABB(p.x,p.y,p.pw,p.ph,0);
+      const d=Math.hypot(p.x-p.anchor.x, p.y-p.anchor.y);
+      E += d*d*0.04;
+      for (let j=0;j<i;j++) {
+        const q=arr[j], c=pillAABB(q.x,q.y,q.pw,q.ph,0);
+        if (overlap(b,c)) {
+          const ox = Math.max(0, Math.min(b.x2,c.x2)-Math.max(b.x1,c.x1));
+          const oy = Math.max(0, Math.min(b.y2,c.y2)-Math.max(b.y1,c.y1));
+          E += (ox*oy) * 5;
+        }
+      }
+      for (const n of nodes) if (boxHitsCircle(b,n.cx,n.cy,n.r)) E += 60;
+    }
+    return E;
+  }
+  let T = 14; const cool = 0.96;
+  for (let iter=0; iter<400; iter++) {
+    const i = Math.floor(Math.random()*base.length);
+    const cur = base[i];
+    const dx = (Math.random()*2-1) * 8;
+    const dy = (Math.random()*2-1) * 8;
+    const prev = {x:cur.x, y:cur.y};
+    const E0 = energy(base);
+    cur.x += dx; cur.y += dy;
+    const E1 = energy(base);
+    const dE = E1 - E0;
+    if (!(dE < 0 || Math.random() < Math.exp(-dE/T))) {
+      cur.x = prev.x; cur.y = prev.y;
+    }
+    T *= cool;
+  }
+  // after SA: any remaining overlap → convert to leader
+  const boxes = base.map(p => pillAABB(p.x,p.y,p.pw,p.ph,0));
+  base.forEach((p, i) => {
+    let collide = false;
+    for (let j=0;j<boxes.length;j++) if (j!==i && overlap(boxes[i],boxes[j])) collide=true;
+    for (const n of nodes) if (boxHitsCircle(boxes[i],n.cx,n.cy,n.r-1)) collide=true;
+    if (collide) {
+      // push perpendicular from anchor outward to edge direction
+      const dx = p.anchor.x - 240, dy = p.anchor.y - 180;
+      const L = Math.hypot(dx,dy)||1;
+      p.x = p.anchor.x + dx/L * 36;
+      p.y = p.anchor.y + dy/L * 36;
+      p.leader = true;
+    }
+  });
+  return base.map(p => ({...p, theta:0, stage: p.leader?'leader':'origin'}));
+}
+
+// ========= RENDER =========
+function drawArrow(svg, x2, y2, theta, color='#bbb') {
+  const a = theta * Math.PI / 180;
+  const sz = 6;
+  const bx = x2 - Math.cos(a)*sz, by = y2 - Math.sin(a)*sz;
+  const px = -Math.sin(a), py = Math.cos(a);
+  const p1 = [bx + px*sz*0.5, by + py*sz*0.5];
+  const p2 = [bx - px*sz*0.5, by - py*sz*0.5];
+  const t = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+  t.setAttribute('points', `${x2},${y2} ${p1[0]},${p1[1]} ${p2[0]},${p2[1]}`);
+  t.setAttribute('class','arrow-head');
+  t.setAttribute('fill', color);
+  svg.appendChild(t);
+}
+
+function renderSplitLabel(g, x, y, label, srcColor) {
+  // "7/12" → bold "7" + dim "/12"
+  const parts = label.split('/');
+  if (parts.length !== 2) {
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', x); t.setAttribute('y', y); t.textContent = label;
+    g.appendChild(t); return;
+  }
+  const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+  t.setAttribute('x', x); t.setAttribute('y', y);
+  const ts1 = document.createElementNS('http://www.w3.org/2000/svg','tspan');
+  ts1.setAttribute('font-weight','700'); ts1.setAttribute('fill',srcColor);
+  ts1.textContent = parts[0];
+  const ts2 = document.createElementNS('http://www.w3.org/2000/svg','tspan');
+  ts2.setAttribute('fill','#888'); ts2.setAttribute('font-weight','400');
+  ts2.textContent = '/' + parts[1];
+  t.appendChild(ts1); t.appendChild(ts2);
+  g.appendChild(t);
+}
+
+function drawGraph(g, results, opts={}) {
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+
+  // edges
+  results.forEach(r => {
+    const p = document.createElementNS('http://www.w3.org/2000/svg','path');
+    p.setAttribute('d', `M${r.ep.x1},${r.ep.y1} L${r.ep.x2},${r.ep.y2}`);
+    p.setAttribute('class','edge');
+    svg.appendChild(p);
+    const theta = Math.atan2(r.ep.y2-r.ep.y1, r.ep.x2-r.ep.x1) * 180/Math.PI;
+    drawArrow(svg, r.ep.x2, r.ep.y2, theta);
+  });
+
+  // nodes
+  g.nodes.forEach(n => {
+    const gn = document.createElementNS('http://www.w3.org/2000/svg','g');
+    gn.setAttribute('class','node');
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx', n.cx); c.setAttribute('cy', n.cy); c.setAttribute('r', NODE_R);
+    c.setAttribute('fill', opts.colorNodes ? n.color+'22' : '#fff');
+    c.setAttribute('stroke', opts.colorNodes ? n.color : '#333');
+    c.setAttribute('stroke-width', '1.8');
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x', n.cx); t.setAttribute('y', n.cy);
+    t.setAttribute('fill', opts.colorNodes ? n.color : '#222');
+    t.textContent = n.id;
+    gn.appendChild(c); gn.appendChild(t); svg.appendChild(gn);
+  });
+
+  // pills
+  results.forEach(r => {
+    if (r.stage === 'leader') {
+      const ld = document.createElementNS('http://www.w3.org/2000/svg','path');
+      const mx = (r.ep.x1+r.ep.x2)/2, my = (r.ep.y1+r.ep.y2)/2;
+      ld.setAttribute('d', `M${mx},${my} L${r.x},${r.y}`);
+      ld.setAttribute('class','leader');
+      svg.appendChild(ld);
+    }
+    const gp = document.createElementNS('http://www.w3.org/2000/svg','g');
+    gp.setAttribute('class', 'pill' + (r.stage==='leader' ? ' leader-anchored' : ''));
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x', r.x - r.pw/2); rect.setAttribute('y', r.y - r.ph/2);
+    rect.setAttribute('width', r.pw); rect.setAttribute('height', r.ph);
+    if (r.theta) rect.setAttribute('transform', `rotate(${r.theta}, ${r.x}, ${r.y})`);
+    if (opts.tintPill) rect.setAttribute('fill', r.srcColor + '14');
+    gp.appendChild(rect);
+    if (opts.typoHier) {
+      renderSplitLabel(gp, r.x, r.y, r.label, r.srcColor);
+    } else {
+      const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+      t.setAttribute('x', r.x); t.setAttribute('y', r.y);
+      if (r.theta) {
+        const tt = (r.theta > 90 || r.theta < -90) ? r.theta + 180 : r.theta;
+        t.setAttribute('transform', `rotate(${tt}, ${r.x}, ${r.y})`);
+      }
+      t.textContent = r.label;
+      gp.appendChild(t);
+    }
+    svg.appendChild(gp);
+  });
+  return svg;
+}
+
+function stats(results) {
+  const s = {origin:0, along:0, perp:0, leader:0, fallback:0};
+  results.forEach(r => s[r.stage]++);
+  return `origin=${s.origin}  along=${s.along}  perp=${s.perp}  leader=${s.leader}  fallback=${s.fallback}`;
+}
+
+function mkPanel(title, desc, svg, statText) {
+  const p = document.createElement('div');
+  p.className = 'panel';
+  p.innerHTML = `<h2>${title}</h2><div class="desc">${desc}</div>`;
+  p.appendChild(svg);
+  const s = document.createElement('div');
+  s.className = 'stats';
+  s.textContent = statText;
+  p.appendChild(s);
+  return p;
+}
+
+const grid = document.getElementById('grid');
+
+// Panel 1 — current v1.2 approach: rotated pills + greedy cascade
+{
+  const r = placeRotatedGreedy(K5);
+  grid.appendChild(mkPanel(
+    '1. CURRENT — rotated pills + greedy cascade',
+    'K5 hard case giống các demo trước. Pill rotate theo edge theta. Greedy cascade origin→along→perp. Reader phải nghiêng đầu đọc; còn overlap residual.',
+    drawGraph(K5, r), stats(r)
+  ));
+}
+
+// Panel 2 — axis-aligned pills + greedy
+{
+  const r = placeAxisGreedy(K5);
+  grid.appendChild(mkPanel(
+    '2. AXIS-ALIGNED — same K5 + pill ngang',
+    'Giữ nguyên K5 layout. Drop rotation: pill luôn ngang, text luôn đọc xuôi. Greedy perp shift. Clarity+, collision count khác.',
+    drawGraph(K5, r), stats(r)
+  ));
+}
+
+// Panel 3 — full optimal: axis + SA + leader + typography
+{
+  const r = placeOptimal(K5);
+  grid.appendChild(mkPanel(
+    '3. OPTIMAL — axis + SA 400 + leader + typography',
+    'K5 + axis-aligned + 400-iter simulated annealing (global pass) + leader-first khi collision còn sót + typography (bold primary, dim /sec) + pill tint theo source node.',
+    drawGraph(K5, r, {tintPill:true, typoHier:true, colorNodes:true}), stats(r)
+  ));
+}
+</script>
+</body>
+</html>
