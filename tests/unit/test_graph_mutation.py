@@ -15,7 +15,8 @@ import math
 import pytest
 
 from scriba.animation.errors import AnimationError
-from scriba.animation.primitives.graph import Graph
+from scriba.animation.primitives.graph import Graph, _nudge_pill_placement
+from scriba.animation.primitives._svg_helpers import _LabelPlacement
 
 
 # ---------------------------------------------------------------------------
@@ -457,3 +458,249 @@ class TestHiddenState:
         assert 'data-target="G.node[B]"' not in g.emit_svg()
         g.set_state("node[B]", "idle")
         assert 'data-target="G.node[B]"' in g.emit_svg()
+
+
+# ---------------------------------------------------------------------------
+# GEP-07 v1.2 — _nudge_pill_placement unit tests
+# ---------------------------------------------------------------------------
+
+# Shared pill geometry (single-digit weight, font=11, pad_x=5, pad_y=2).
+_TW = 7          # text width of a 1-char label
+_PILL_W = _TW + 5 * 2   # = 17
+_PILL_H = 11 + 2 + 2 * 2  # = 17
+# AABB for a near-horizontal B→D-like edge (theta ~9°).
+_AABB_W = 20.37
+_AABB_H = 20.37
+
+
+def _lp(x: float, y: float, w: float = _AABB_W, h: float = _AABB_H) -> _LabelPlacement:
+    return _LabelPlacement(x=x, y=y, width=w, height=h)
+
+
+@pytest.mark.unit
+def test_crossing_edges_resolved_by_along_shift() -> None:
+    """B→D pill slides along stroke to escape A→C pill collision.
+
+    Geometry mirrors the mcmf A→C / B→D crossing from the impl plan.
+    Step = aabb_w + 2 = 22.37 (rotated-AABB stepping, GEP-07 v1.2).
+    Expected: B→D pill lands at (172.38, 140.63) ±0.05 — on the stroke
+    (delta_perp ≈ 0), shifted along edge by one step.
+    """
+    # B→D edge: B=(293,159), D=(96,129)
+    bx, by = 293.0, 159.0
+    dx2, dy2 = 96.0, 129.0
+    edge_len = math.hypot(dx2 - bx, dy2 - by)
+    dxe = dx2 - bx
+    dye = dy2 - by
+    ux = dxe / edge_len
+    uy = dye / edge_len
+    perp_x = -dye / edge_len
+    perp_y = dxe / edge_len
+    mid_x = (bx + dx2) / 2   # 194.5
+    mid_y = (by + dy2) / 2   # 144.0
+    max_shift_along = max(0.0, edge_len / 2 - _PILL_W / 2 - 20)
+
+    # A→C pill (already placed) at the on-edge midpoint, blocks B→D origin.
+    placed = [_lp(199.0, 131.5)]
+
+    lx, ly = _nudge_pill_placement(
+        mid_x=mid_x,
+        mid_y=mid_y,
+        ux=ux,
+        uy=uy,
+        perp_x=perp_x,
+        perp_y=perp_y,
+        pill_w=_PILL_W,
+        pill_h=_PILL_H,
+        aabb_w=_AABB_W,
+        aabb_h=_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=[],
+        placed_pills=placed,
+    )
+
+    assert abs(lx - 172.38) < 0.05, f"lx={lx:.4f}, expected ~172.38"
+    assert abs(ly - 140.63) < 0.05, f"ly={ly:.4f}, expected ~140.63"
+
+    # Pill must remain on stroke: perp displacement ≈ 0.
+    # delta_perp = (lx - mid_x)*perp_x + (ly - mid_y)*perp_y
+    delta_perp = (lx - mid_x) * perp_x + (ly - mid_y) * perp_y
+    assert abs(delta_perp) < 0.1, f"delta_perp={delta_perp:.4f}, expected ≈0"
+
+
+@pytest.mark.unit
+def test_along_shift_respects_node_budget() -> None:
+    """Short edge disables along-shift; perp nudge or origin fallback used.
+
+    edge_len=48, node_r=20: max_shift_along = max(0, 24 - 8.5 - 20) = 0.
+    Along-shift must be skipped; result must not be inside any node AABB.
+    """
+    # Horizontal short edge: A=(100,100), B=(148,100)
+    ax, ay = 100.0, 100.0
+    bx, by = 148.0, 100.0
+    edge_len = math.hypot(bx - ax, by - ay)  # = 48.0
+    ux, uy = (bx - ax) / edge_len, 0.0
+    perp_x, perp_y = 0.0, 1.0  # left-hand perp for horizontal edge
+    mid_x = (ax + bx) / 2  # = 124.0
+    mid_y = ay              # = 100.0
+    node_r = 20
+    max_shift_along = max(0.0, edge_len / 2 - _PILL_W / 2 - node_r)
+    assert max_shift_along == 0.0, "precondition: short edge disables along-shift"
+
+    # Place a blocker at the origin so nudge is forced.
+    placed = [_lp(mid_x, mid_y)]
+    # Node AABBs at both endpoints.
+    node_aabbs = [
+        _lp(ax, ay, w=2 * node_r, h=2 * node_r),
+        _lp(bx, by, w=2 * node_r, h=2 * node_r),
+    ]
+
+    lx, ly = _nudge_pill_placement(
+        mid_x=mid_x,
+        mid_y=mid_y,
+        ux=ux,
+        uy=uy,
+        perp_x=perp_x,
+        perp_y=perp_y,
+        pill_w=_PILL_W,
+        pill_h=_PILL_H,
+        aabb_w=_AABB_W,
+        aabb_h=_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=node_aabbs,
+        placed_pills=placed,
+    )
+
+    # Result must not overlap either node AABB.
+    result = _lp(lx, ly)
+    for n in node_aabbs:
+        assert not result.overlaps(n), f"pill at ({lx:.1f},{ly:.1f}) overlaps node AABB"
+
+    # Stage-pinning (GEP-07 v1.2): Stage 1 skipped (budget=0); Stage 2 perp
+    # nudge lands at +2·step_perp (±1x collides nodes). Origin fallback must
+    # NOT be used here — that would leave the pill overlapping the blocker.
+    assert (lx, ly) != (mid_x, mid_y), "must not return origin (blocker unresolved)"
+    step_perp = _AABB_H + 2
+    assert abs(lx - mid_x) < 1e-9, f"lx={lx:.4f}, expected mid_x={mid_x} (pure perp)"
+    assert abs(ly - (mid_y + 2 * step_perp)) < 1e-9, (
+        f"ly={ly:.4f}, expected {mid_y + 2 * step_perp:.4f} (+2·step_perp)"
+    )
+
+
+@pytest.mark.unit
+def test_along_shift_never_overlaps_node_circle() -> None:
+    """K4 graph: every placed pill must clear all node AABBs.
+
+    Nodes at (100,80),(300,80),(300,220),(100,220).  All 6 undirected edges
+    are processed sequentially; verify no final pill overlaps a node AABB.
+    """
+    nodes = [(100.0, 80.0), (300.0, 80.0), (300.0, 220.0), (100.0, 220.0)]
+    node_r = 20
+    node_aabbs = [_lp(nx, ny, w=2 * node_r, h=2 * node_r) for nx, ny in nodes]
+
+    placed: list[_LabelPlacement] = []
+
+    # Enumerate all 6 undirected K4 edges (deterministic order).
+    edges = [
+        (nodes[i], nodes[j])
+        for i in range(len(nodes))
+        for j in range(i + 1, len(nodes))
+    ]
+
+    for (x1, y1), (x2, y2) in edges:
+        edge_len = math.hypot(x2 - x1, y2 - y1) or 1.0
+        dxe = x2 - x1
+        dye = y2 - y1
+        ux = dxe / edge_len
+        uy = dye / edge_len
+        perp_x = -dye / edge_len
+        perp_y = dxe / edge_len
+        mid_x = (x1 + x2) / 2
+        mid_y = (y1 + y2) / 2
+        max_shift_along = max(0.0, edge_len / 2 - _PILL_W / 2 - node_r)
+
+        raw_theta = math.atan2(dye, dxe)
+        if raw_theta > math.pi / 2:
+            theta = raw_theta - math.pi
+        elif raw_theta < -math.pi / 2:
+            theta = raw_theta + math.pi
+        else:
+            theta = raw_theta
+        abs_cos = abs(math.cos(theta))
+        abs_sin = abs(math.sin(theta))
+        aabb_w = _PILL_W * abs_cos + _PILL_H * abs_sin + 1.0
+        aabb_h = _PILL_W * abs_sin + _PILL_H * abs_cos + 1.0
+
+        lx, ly = _nudge_pill_placement(
+            mid_x=mid_x,
+            mid_y=mid_y,
+            ux=ux,
+            uy=uy,
+            perp_x=perp_x,
+            perp_y=perp_y,
+            pill_w=_PILL_W,
+            pill_h=_PILL_H,
+            aabb_w=aabb_w,
+            aabb_h=aabb_h,
+            max_shift_along=max_shift_along,
+            node_aabbs=node_aabbs,
+            placed_pills=placed,
+        )
+        result = _LabelPlacement(x=lx, y=ly, width=aabb_w, height=aabb_h)
+        for n in node_aabbs:
+            assert not result.overlaps(n), (
+                f"edge ({x1},{y1})->({x2},{y2}): pill at ({lx:.1f},{ly:.1f}) "
+                f"overlaps node AABB at ({n.x},{n.y})"
+            )
+        placed.append(result)
+
+
+@pytest.mark.unit
+def test_origin_fallback_on_all_collisions() -> None:
+    """When all along-shift and perp-nudge probes collide, return origin.
+
+    Plant 8 blocker pills: four at ±step_along along the edge and four at
+    ±step_perp perpendicular.  The helper must revert to (mid_x, mid_y).
+    """
+    mid_x, mid_y = 200.0, 150.0
+    ux, uy = 1.0, 0.0        # horizontal edge
+    perp_x, perp_y = 0.0, 1.0
+
+    step_along = _PILL_W + 2   # = 19
+    step_perp = _PILL_H + 2    # = 19
+
+    blockers: list[_LabelPlacement] = [
+        # Origin itself
+        _lp(mid_x, mid_y),
+        # Along-shift probes ×4
+        _lp(mid_x + ux * step_along,      mid_y + uy * step_along),
+        _lp(mid_x - ux * step_along,      mid_y - uy * step_along),
+        _lp(mid_x + ux * 2 * step_along,  mid_y + uy * 2 * step_along),
+        _lp(mid_x - ux * 2 * step_along,  mid_y - uy * 2 * step_along),
+        # Perp probes ×4
+        _lp(mid_x + perp_x * step_perp,   mid_y + perp_y * step_perp),
+        _lp(mid_x - perp_x * step_perp,   mid_y - perp_y * step_perp),
+        _lp(mid_x + perp_x * 2*step_perp, mid_y + perp_y * 2*step_perp),
+        _lp(mid_x - perp_x * 2*step_perp, mid_y - perp_y * 2*step_perp),
+    ]
+
+    max_shift_along = 200.0   # plenty of budget so stage 1 runs fully
+
+    lx, ly = _nudge_pill_placement(
+        mid_x=mid_x,
+        mid_y=mid_y,
+        ux=ux,
+        uy=uy,
+        perp_x=perp_x,
+        perp_y=perp_y,
+        pill_w=_PILL_W,
+        pill_h=_PILL_H,
+        aabb_w=_AABB_W,
+        aabb_h=_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=[],
+        placed_pills=blockers,
+    )
+
+    assert lx == mid_x, f"expected origin lx={mid_x}, got {lx}"
+    assert ly == mid_y, f"expected origin ly={mid_y}, got {ly}"

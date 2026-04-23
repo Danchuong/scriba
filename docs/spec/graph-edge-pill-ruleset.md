@@ -1,6 +1,6 @@
 ---
 title: Graph Edge-Pill Ruleset
-version: 1.0.0
+version: 1.2.0
 status: Released
 last-modified: 2026-04-23
 editors: scriba-core
@@ -16,7 +16,7 @@ plan:
 
 # Graph Edge-Pill Ruleset
 
-**Version:** 1.0.0 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
+**Version:** 1.2.0 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
 
 > **Scope**: weight-value pill placement for every edge rendered through
 > `Graph.emit_svg` (`scriba/animation/primitives/graph.py`). Governs pill
@@ -234,36 +234,66 @@ direction visually. A non-zero perp bias adds a gap that reads as
 map each pill to its edge. Graphviz/Mermaid place weights on the stroke for
 the same reason. Collision resolution is delegated to GEP-07.
 
-### GEP-07 — Nudge MUST prefer on-edge, alternate ±k·step, and never commit a failed candidate
+### GEP-07 — Nudge MUST prefer on-edge, try along-shift first, perp as fallback, and never commit a failed candidate
 
 **Normative:** MUST
-**Since:** v1.1 (2026-04-23)
-**Supersedes:** v1.0 (2 attempts, committed-even-if-colliding).
-**Source:** mcmf.html audit (B→D committed at perp=−14 with unresolved collision).
-**Scope:** `Graph.emit_svg`.
+**Since:** v1.2 (2026-04-23)
+**Supersedes:** v1.1 (perp-only nudge, 4 probes, origin fallback).
+**Source:** mcmf.html B→D detachment audit — perp nudge breaks GEP-10 binding on crossing edges.
+**Scope:** `Graph.emit_svg` and `_nudge_pill_placement` helper.
 
-The collision-resolution nudge loop SHALL:
+**Rationale.** Perpendicular nudge resolves pill-pill overlap but detaches the
+pill from its edge stroke, breaking GEP-10 binding (users can no longer map
+pill → edge by visual proximity). Along-edge shift slides the pill down the
+stroke — preserving binding — and should always be tried first. Perp nudge is
+reserved for edges too short to slide (e.g. `edge_len < 2·node_r + pill_w`).
 
-1. Trial the initial on-edge candidate first. If it does not collide, it wins.
-2. If the initial collides, probe perpendicular offsets in the symmetric
-   order `(+step, -step, +2·step, -2·step)` where `step = pill_h + 2`.
-   Each probe is origin-referenced (`lx = mid + perp * offset`) — never
-   cumulative.
-3. Commit the **first probe that clears all collisions** (pills and node
-   circles).
-4. If every probe still collides, revert to the **on-edge origin** — a pill
-   touching another pill is preferable to a pill the user cannot map to its
-   edge.
+The collision-resolution nudge SHALL implement three stages:
 
-Committing a colliding non-origin probe is **forbidden**: the pre-v1.1 loop
-committed whichever position was tried last regardless of collision state,
-producing wrong-side placements (e.g. mcmf B→D at perp=−14 with A→C's pill).
+**Stage 1 — Along-edge shift** (preserves GEP-10 binding):
 
-**Rationale.** Prior to v1.1, the loop iterated exactly 2 attempts with signs
-`(+1, -1)`, mutated `(lx, ly)` each iteration without re-checking, and exited
-with the mutated values. Under genuine collision (crossing edges), the final
-state was a silently-broken wrong-side commit. The v1.1 contract tests every
-trial and guarantees either an improvement or the status-quo origin.
+Compute the shift budget:
+```python
+max_shift_along = max(0.0, edge_len / 2 - pill_w / 2 - node_radius)
+```
+Probe along-axis offsets in the symmetric order
+`(+step_along, -step_along, +2·step_along, -2·step_along)` where
+`step_along = aabb_w + 2`. The step MUST be against the rotated AABB
+width, not the un-rotated `pill_w`: on angled edges the rotated AABB
+swells to `pill_w·|cos θ| + pill_h·|sin θ|`, so `pill_w + 2` would leave
+residual overlap between neighbouring rotated pills. Each probe is
+origin-referenced:
+```python
+trial = (mid_x + ux * offset, mid_y + uy * offset)
+```
+Skip any probe where `abs(offset) > max_shift_along`. Commit the **first
+probe that clears all collisions** and return immediately.
+
+When `max_shift_along == 0` (edge too short to slide, e.g. `edge_len ≤ 48`
+with `node_r = 20` and `pill_w = 17`), all Stage 1 probes are skipped and
+the algorithm falls through to Stage 2.
+
+**Stage 2 — Perpendicular nudge fallback** (v1.1 behaviour):
+
+Probe perp-axis offsets `(+step_perp, -step_perp, +2·step_perp, -2·step_perp)`
+where `step_perp = aabb_h + 2` (rotated AABB height, same rationale as
+Stage 1). Each probe is origin-referenced:
+```python
+trial = (mid_x + perp_x * offset, mid_y + perp_y * offset)
+```
+Commit the **first probe that clears all collisions** and return.
+
+**Stage 3 — Origin fallback**:
+
+If every Stage 1 and Stage 2 probe still collides, revert to the
+**on-edge origin** `(mid_x, mid_y)`. A touching pill is preferable to a
+detached pill the user cannot map to its edge.
+
+Committing a colliding non-origin probe remains **forbidden**.
+
+**Implementation note.** The three-stage logic is factored into the
+module-level helper `_nudge_pill_placement(...)` in `graph.py`, callable
+from tests without constructing or parsing SVG.
 
 ### GEP-08 — Pill rect MUST NOT spill outside the viewbox
 
@@ -506,6 +536,7 @@ else:
 |---------|------------|------------------------------------------------------------------|
 | 1.0.0   | 2026-04-23 | Initial release — GEP-01 .. GEP-13 covering Phase 0 + Phase 0.5. |
 | 1.1.0   | 2026-04-23 | GEP-06 bias 5.0→0.0 (pill on edge); GEP-07 nudge never commits failed candidate; adds (+step,−step,+2·step,−2·step) probe order; origin-fallback on total collision. Fixes mcmf B→D wrong-side commit. |
+| 1.2.0   | 2026-04-23 | GEP-07 rewrite — along-edge shift as primary nudge, perp as fallback, origin as last resort. Preserves GEP-10 binding on crossing edges. Fixes mcmf B→D detachment. Factors nudge into `_nudge_pill_placement` helper. |
 
 Phase 1+ rules (GEP-14 .. GEP-19) will ship alongside the full smart-label
 scoring adoption described in

@@ -74,6 +74,8 @@ _WEIGHT_PILL_R: int = 3
 # v1.1: pill sits ON the edge stroke (Graphviz/Mermaid convention) rather than
 # floating alongside — rotated pill already binds to edge direction visually,
 # so an extra perp gap reads as detachment. Nudge only kicks in on collision.
+# v1.2 (GEP-07): along-edge shift is the primary collision resolution; perp
+# nudge is a fallback only when the visible segment is too short to slide.
 _WEIGHT_PILL_PERP_BIAS: float = 0.0
 # Stroke-width expansion of the pill AABB for collision (GEP-09).
 _WEIGHT_PILL_STROKE_PAD: float = 1.0
@@ -91,6 +93,87 @@ _EDGE_STATE_PRIO: dict[str, int] = {
 
 # Regex to parse annotation selectors like "G.node[A]" or "G.node[myNode]"
 _GRAPH_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
+
+
+# ---------------------------------------------------------------------------
+# GEP-07 v1.2 — pill nudge helper (pure, testable without SVG)
+# ---------------------------------------------------------------------------
+
+
+def _nudge_pill_placement(
+    mid_x: float,
+    mid_y: float,
+    ux: float,
+    uy: float,
+    perp_x: float,
+    perp_y: float,
+    pill_w: float,
+    pill_h: float,
+    aabb_w: float,
+    aabb_h: float,
+    max_shift_along: float,
+    node_aabbs: list[_LabelPlacement],
+    placed_pills: list[_LabelPlacement],
+) -> tuple[float, float]:
+    """Return the final pill centre (lx, ly) after GEP-07 v1.2 nudge.
+
+    Stage 1 — along-edge shift: slides pill on the stroke, preserving
+    GEP-10 edge binding.  Skipped when max_shift_along == 0 (short edges).
+    Stage 2 — perp nudge fallback: v1.1 behaviour, used only when along-
+    shift is exhausted or budget is zero.
+    Stage 3 — origin fallback: a touching pill beats a detached pill.
+
+    All obstacle lists are consulted as-is; caller must not mutate them
+    between construction and this call.
+    """
+    def _collides(c: _LabelPlacement) -> bool:
+        return any(c.overlaps(p) for p in placed_pills) or any(
+            c.overlaps(n) for n in node_aabbs
+        )
+
+    origin_lx, origin_ly = mid_x, mid_y
+    candidate = _LabelPlacement(x=origin_lx, y=origin_ly, width=aabb_w, height=aabb_h)
+
+    if not _collides(candidate):
+        return origin_lx, origin_ly
+
+    # Step against the rotated AABB, not the un-rotated pill box: on angled
+    # edges aabb_w / aabb_h swell to ~pill·√2, so step=pill_w+2 would leave
+    # residual overlap between neighbouring rotated pills. Using aabb_* + 2
+    # guarantees the first probe clears the previous pill's footprint.
+    nudge_step_along = aabb_w + 2
+    nudge_step_perp = aabb_h + 2
+
+    # Stage 1 — along-edge shift (preserves GEP-10 binding).
+    for offset in (
+        nudge_step_along,
+        -nudge_step_along,
+        2 * nudge_step_along,
+        -2 * nudge_step_along,
+    ):
+        if abs(offset) > max_shift_along:
+            continue
+        trial_lx = origin_lx + ux * offset
+        trial_ly = origin_ly + uy * offset
+        trial = _LabelPlacement(x=trial_lx, y=trial_ly, width=aabb_w, height=aabb_h)
+        if not _collides(trial):
+            return trial_lx, trial_ly
+
+    # Stage 2 — perp nudge fallback (v1.1 behaviour).
+    for offset in (
+        nudge_step_perp,
+        -nudge_step_perp,
+        2 * nudge_step_perp,
+        -2 * nudge_step_perp,
+    ):
+        trial_lx = origin_lx + perp_x * offset
+        trial_ly = origin_ly + perp_y * offset
+        trial = _LabelPlacement(x=trial_lx, y=trial_ly, width=aabb_w, height=aabb_h)
+        if not _collides(trial):
+            return trial_lx, trial_ly
+
+    # Stage 3 — origin fallback: touching beats detached.
+    return origin_lx, origin_ly
 
 
 # ---------------------------------------------------------------------------
@@ -872,41 +955,33 @@ class Graph(PrimitiveBase):
                     x=lx, y=ly, width=aabb_w, height=aabb_h
                 )
 
-                # GEP-07 v1.1: bounded perpendicular nudge — try symmetric
-                # ±k·step offsets only if the on-edge placement collides.
-                # If every candidate still collides, fall back to the on-edge
-                # origin: a touching pill beats a wrong-side pill (never
-                # commit a position user can't map to its edge).
-                nudge_step = pill_h + 2
-                _nudge_offsets = (
-                    nudge_step,
-                    -nudge_step,
-                    2 * nudge_step,
-                    -2 * nudge_step,
+                # GEP-07 v1.2: along-edge shift first (preserves GEP-10
+                # binding), perp nudge as fallback, origin as last resort.
+                # See _nudge_pill_placement for the three-stage protocol.
+                ux = dx_edge / edge_len
+                uy = dy_edge / edge_len
+                max_shift_along = max(
+                    0.0,
+                    edge_len / 2 - pill_w / 2 - self._node_radius,
                 )
-                origin_lx, origin_ly = lx, ly
-
-                def _collides(c: _LabelPlacement) -> bool:
-                    return any(c.overlaps(p) for p in placed_edge_labels) or any(
-                        c.overlaps(n) for n in node_aabbs
-                    )
-
-                if _collides(candidate):
-                    for offset in _nudge_offsets:
-                        trial_lx = origin_lx + perp_x * offset
-                        trial_ly = origin_ly + perp_y * offset
-                        trial = _LabelPlacement(
-                            x=trial_lx, y=trial_ly, width=aabb_w, height=aabb_h
-                        )
-                        if not _collides(trial):
-                            lx, ly, candidate = trial_lx, trial_ly, trial
-                            break
-                    else:
-                        # All offsets collided — revert to on-edge origin.
-                        lx, ly = origin_lx, origin_ly
-                        candidate = _LabelPlacement(
-                            x=lx, y=ly, width=aabb_w, height=aabb_h
-                        )
+                lx, ly = _nudge_pill_placement(
+                    mid_x=lx,
+                    mid_y=ly,
+                    ux=ux,
+                    uy=uy,
+                    perp_x=perp_x,
+                    perp_y=perp_y,
+                    pill_w=pill_w,
+                    pill_h=pill_h,
+                    aabb_w=aabb_w,
+                    aabb_h=aabb_h,
+                    max_shift_along=max_shift_along,
+                    node_aabbs=node_aabbs,
+                    placed_pills=placed_edge_labels,
+                )
+                candidate = _LabelPlacement(
+                    x=lx, y=ly, width=aabb_w, height=aabb_h
+                )
 
                 # GEP-08: clamp pill centre into the viewbox so a pill near
                 # the canvas boundary never spills outside.
