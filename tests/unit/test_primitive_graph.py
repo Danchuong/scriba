@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from scriba.animation.primitives.graph import Graph, fruchterman_reingold
+from scriba.animation.primitives._types import svg_style_attrs
 from scriba.core.errors import ValidationError
 
 
@@ -633,3 +636,102 @@ class TestPillPlacementFrameStable:
                 f"pill for {tgt} moved across frames: "
                 f"{rects1[tgt]} vs {rects2[tgt]} vs {rects3[tgt]}"
             )
+
+
+# ---------------------------------------------------------------
+# smart-label v2.0 — pill border / tint_by_edge tests
+# ---------------------------------------------------------------
+
+
+def _make_weighted_graph(extra_params: dict | None = None) -> Graph:
+    """Return a minimal two-node weighted graph for pill SVG tests."""
+    params: dict = {
+        "nodes": ["A", "B"],
+        "edges": [("A", "B", 5)],
+        "show_weights": True,
+        "layout": "hierarchical",
+    }
+    if extra_params:
+        params.update(extra_params)
+    return Graph("G", params)
+
+
+def _pill_rect_strokes(svg: str) -> list[str]:
+    """Return all stroke= values found on pill <rect> elements in *svg*."""
+    return re.findall(r'<rect\b[^>]*stroke="([^"]+)"', svg)
+
+
+def _pill_rect_fills(svg: str) -> list[str]:
+    """Return all fill= values found on pill <rect> elements in *svg*."""
+    return re.findall(r'<rect\b[^>]*fill="([^"]+)"', svg)
+
+
+class TestPillBorderFollowsEdgeState:
+    def test_pill_border_follows_edge_state(self) -> None:
+        """Change 1: pill <rect> stroke must match edge_stroke for current state."""
+        g = _make_weighted_graph()
+        g.set_state("edge[(A,B)]", "current")
+        svg = g.emit_svg()
+        expected_stroke = svg_style_attrs("current")["stroke"]  # #0b68cb
+        strokes = _pill_rect_strokes(svg)
+        assert strokes, "no pill <rect> found in SVG"
+        assert all(s == expected_stroke for s in strokes), (
+            f"expected pill stroke {expected_stroke!r}, got {strokes}"
+        )
+
+    def test_pill_border_idle_uses_idle_stroke(self) -> None:
+        """Idle edge: pill border should use idle state stroke (not THEME['border'])."""
+        g = _make_weighted_graph()
+        svg = g.emit_svg()
+        expected_stroke = svg_style_attrs("idle")["stroke"]  # #dfe3e6
+        strokes = _pill_rect_strokes(svg)
+        assert strokes, "no pill <rect> found in SVG"
+        assert all(s == expected_stroke for s in strokes), (
+            f"expected idle pill stroke {expected_stroke!r}, got {strokes}"
+        )
+
+
+class TestTintByEdgeParam:
+    def test_tint_by_edge_flag_accepted(self) -> None:
+        """tint_by_edge must pass param validation without raising E1114."""
+        g = _make_weighted_graph({"tint_by_edge": True})
+        assert g.tint_by_edge is True
+
+    def test_tint_by_edge_default_is_false(self) -> None:
+        """tint_by_edge should default to False (backward compat)."""
+        g = _make_weighted_graph()
+        assert g.tint_by_edge is False
+
+    def test_tint_by_edge_true_uses_edge_state_palette(self) -> None:
+        """tint_by_edge=True + state=current → pill fill must be light-blue tint."""
+        g = _make_weighted_graph({"tint_by_edge": True})
+        g.set_state("edge[(A,B)]", "current")
+        svg = g.emit_svg()
+        fills = _pill_rect_fills(svg)
+        assert fills, "no pill <rect> found in SVG"
+        assert all(f == "#dbeafe" for f in fills), (
+            f"expected #dbeafe for current edge tint, got {fills}"
+        )
+
+    def test_tint_by_edge_default_is_white(self) -> None:
+        """Without tint_by_edge, pill fill should remain 'white' (backward compat)."""
+        g = _make_weighted_graph()
+        g.set_state("edge[(A,B)]", "current")
+        svg = g.emit_svg()
+        fills = _pill_rect_fills(svg)
+        assert fills, "no pill <rect> found in SVG"
+        assert all(f == "white" for f in fills), (
+            f"expected white pill fill (no tint flag), got {fills}"
+        )
+
+    def test_tint_by_edge_overrides_tint_by_source(self) -> None:
+        """When both tint_by_edge and tint_by_source are set, edge state wins."""
+        g = _make_weighted_graph({"tint_by_edge": True, "tint_by_source": True})
+        g.set_state("edge[(A,B)]", "current")
+        svg = g.emit_svg()
+        fills = _pill_rect_fills(svg)
+        assert fills, "no pill <rect> found in SVG"
+        # Should match edge-state tint, not source-node tint
+        assert all(f == "#dbeafe" for f in fills), (
+            f"expected edge-state tint #dbeafe to override tint_by_source, got {fills}"
+        )

@@ -120,6 +120,27 @@ def _pill_tint_for_state(state: str) -> str:
     return _PILL_TINT_BY_STATE.get(state, "#eff6ff")
 
 
+# Phase 7 (smart-label v2.0) — pill background tint map keyed by edge state.
+# Harmonises with the edge stroke palette so pill fill tracks edge colour
+# when tint_by_edge=True.  Light hues (~90 %+ lightness) keep text legible.
+_PILL_TINT_BY_EDGE_STATE: dict[str, str] = {
+    "idle":        "#ffffff",  # neutral — no visual noise on resting edges
+    "current":     "#dbeafe",  # light blue (matches current stroke hue)
+    "good":        "#d1fae5",  # light green
+    "bad":         "#fee2e2",  # light red
+    "done":        "#f3f4f6",  # light gray
+    "dim":         "#f9fafb",  # very light gray
+    "active":      "#dbeafe",  # same hue family as current
+    "highlighted": "#fef3c7",  # amber
+    "muted":       "#f3f4f6",  # light gray
+}
+
+
+def _pill_tint_for_edge_state(state: str) -> str:
+    """Return the pill background tint for a given edge state (smart-label v2.0)."""
+    return _PILL_TINT_BY_EDGE_STATE.get(state, "#ffffff")
+
+
 # ---------------------------------------------------------------------------
 # GEP-17 — PillPlacement return type (NamedTuple for positional back-compat)
 # ---------------------------------------------------------------------------
@@ -569,6 +590,7 @@ class Graph(PrimitiveBase):
         "auto_expand",
         "split_labels",
         "tint_by_source",
+        "tint_by_edge",
         "global_optimize",
         "orientation",
     })
@@ -647,6 +669,7 @@ class Graph(PrimitiveBase):
         # byte-stable SVG for existing goldens.
         self.split_labels: bool = bool(params.get("split_labels", False))
         self.tint_by_source: bool = bool(params.get("tint_by_source", False))
+        self.tint_by_edge: bool = bool(params.get("tint_by_edge", False))
         # Phase 7 (GEP-20) — opt-in simulated-annealing post-cascade refine.
         # Default False keeps byte-stable output. The emit_svg wiring lands
         # in v2.1; the flag is accepted here so editorials can opt in
@@ -1344,9 +1367,13 @@ class Graph(PrimitiveBase):
 
                 # Phase 6 (U-03) — tint_by_source: derive pill fill from the
                 # source node's state colour instead of the default white.
+                # Phase 7 (smart-label v2.0) — tint_by_edge takes priority:
+                # derive pill fill from the edge's own state palette.
                 # Uses a desaturated / alpha-blended tint so the pill stays
                 # legible over edge strokes.
-                if self.tint_by_source:
+                if self.tint_by_edge:
+                    pill_fill = _pill_tint_for_edge_state(state)
+                elif self.tint_by_source:
                     src_state = self.get_state(self._node_key(u))
                     pill_fill = _pill_tint_for_state(src_state)
                 else:
@@ -1388,7 +1415,7 @@ class Graph(PrimitiveBase):
                     f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
                     f'width="{pill_w}" height="{pill_h}" '
                     f'rx="{_WEIGHT_PILL_R}" fill="{pill_fill}" fill-opacity="0.85" '
-                    f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
+                    f'stroke="{edge_stroke}" stroke-width="0.5"/>'
                 ) + _text_svg
                 if abs(theta_deg) < 0.05:
                     weight_text = leader_svg + _pill_svg

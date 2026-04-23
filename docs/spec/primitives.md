@@ -343,6 +343,7 @@ Both are required (E1103).
 | `auto_expand`    | boolean  | `false`   | Pre-layout canvas auto-expansion so every edge pill can satisfy the on-stroke invariant without leader fallback (GEP v2.0 Phase 5). |
 | `split_labels`   | boolean  | `false`   | Render dual-value edge labels (`"cap/flow"`) as bold/dim tspan hierarchy (GEP v2.0 Phase 6). |
 | `tint_by_source` | boolean  | `false`   | Tint edge pill fill by source-node state (GEP v2.0 Phase 6). |
+| `tint_by_edge`   | boolean  | `false`   | Tint edge pill fill by the edge's own state palette (smart-label v2.0). Takes priority over `tint_by_source` when both are set. |
 | `global_optimize`| boolean  | `false`   | v2.1 forward-compat flag for simulated-annealing post-cascade refine (GEP-20). Accepted today but emits `UserWarning` — no runtime effect until v2.1 `emit_svg` wiring lands. |
 | `orientation`    | string   | `"TB"`    | Hierarchical-only axis: `"TB"` (top→bottom) or `"LR"` (left→right). Silently ignored for non-hierarchical layouts; unknown values make the hierarchical layer return `None` and fall through to Fruchterman-Reingold. |
 | `label`          | string   | `None`    | Caption for the entire graph.                         |
@@ -391,6 +392,12 @@ Both are required (E1103).
 
 Edges are rendered first (below nodes). Directed edges include `<marker>` arrowheads
 via `<defs>`.
+
+**Weight pill border (default ON):** When `show_weights=true`, each pill `<rect>` border
+uses the same stroke color as the edge line (`edge_stroke`, derived from the edge's CSS
+state class). This ties the pill visually to edge state without touching fill or text.
+On an idle edge the border is the idle stroke (`#dfe3e6`); on a `current` edge it becomes
+the current stroke (`#0b68cb`).
 
 ### 6.4 Examples
 
