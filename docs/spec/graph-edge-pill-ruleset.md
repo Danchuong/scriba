@@ -1,6 +1,6 @@
 ---
 title: Graph Edge-Pill Ruleset
-version: 1.2.0
+version: 1.3.1
 status: Released
 last-modified: 2026-04-23
 editors: scriba-core
@@ -16,7 +16,7 @@ plan:
 
 # Graph Edge-Pill Ruleset
 
-**Version:** 1.2.0 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
+**Version:** 1.3.1 · **Date:** 2026-04-23 · **Sister document:** [`docs/spec/smart-label-ruleset.md`](./smart-label-ruleset.md)
 
 > **Scope**: weight-value pill placement for every edge rendered through
 > `Graph.emit_svg` (`scriba/animation/primitives/graph.py`). Governs pill
@@ -447,6 +447,31 @@ along `(ux, uy)`, adding zero perpendicular component.
 
 When `max_shift_along == 0` the saturate stage MUST be skipped entirely so
 the perp fallback fires unchanged (regression guard U-11).
+
+---
+
+### GEP-15 — Stage-2 perp order MUST be [+s, +2s, -s, -2s]
+
+**Normative:** MUST
+**Since:** v1.3.1
+**Source:** GEP v2.0 plan — Phase 2 side-preferred perp (U-10).
+**Scope:** `_nudge_pill_placement` in `scriba/animation/primitives/graph.py`.
+
+Stage-2 perp candidates SHALL be tried in order `[+s, +2s, -s, -2s]` (not
+`[+s, -s, +2s, -2s]`). Exhausting both steps on the initial `+` side before
+switching to the `−` side reduces pill flicker across near-identical scenes
+where a shared perp position is occupied by one extra element.
+
+The initial `+` side is the right-hand perpendicular of the edge direction,
+determined by the existing `perp_x / perp_y` convention computed upstream
+(see `_emit_edge_pill_svg`). No random or dict-iteration-order dependence is
+introduced — the order is fully deterministic given the same inputs (U-06).
+
+**Golden impact audit (v1.3.1):** Full golden suite (`pytest tests/` minus
+pre-existing `test_starlark_security` failure) runs GREEN after the reorder:
+3199 passed / 8 skipped / 1 xfailed. No example SVG golden shifts because no
+currently-committed example scene reaches the Stage-2 perp fallback (stages
+1 + 1.5 resolve every edge).
 
 ---
 

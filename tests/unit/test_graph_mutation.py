@@ -870,10 +870,10 @@ def test_saturate_respects_budget_zero() -> None:
     assert abs(lx - _S_MID_X) < 1e-9, (
         f"budget=0: expected no along-stroke displacement, got lx={lx}"
     )
-    # Perp step 1 is blocked; perp step -1 must be the result.
-    expected_ly = _S_MID_Y - _S_STEP_PERP
+    # Perp step +1 is blocked; GEP-15 order [+s,+2s,-s,-2s] → +2s is next.
+    expected_ly = _S_MID_Y + 2 * _S_STEP_PERP
     assert abs(ly - expected_ly) < 1e-9, (
-        f"budget=0: expected ly={expected_ly} (perp step -1, since step +1 is blocked), "
+        f"budget=0: expected ly={expected_ly} (perp step +2, since step +1 is blocked), "
         f"got {ly} — saturate must be skipped so perp fallback fires"
     )
 
@@ -1006,4 +1006,180 @@ def test_saturate_deterministic_same_input() -> None:
     assert result_a == expected, (
         f"U-06 + U-11: expected saturate result {expected}, got {result_a} — "
         f"stage 1.5 saturate probe not implemented yet"
+    )
+
+
+# ---------------------------------------------------------------------------
+# GEP v2.0 Phase 2 — perp side-preferred ordering (U-10, GEP-15).
+#
+# Stage-2 candidate order is [+s, +2s, -s, -2s]: exhaust right-hand side
+# before switching. Tests below lock in that ordering and the determinism
+# property (U-06) on a distinct diagonal geometry.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.unit
+def test_perp_side_preferred_order() -> None:
+    """U-10: Stage-2 perp order must be [+s, +2s, -s, -2s] (same-side preferred).
+
+    Uses max_shift_along=0 so stages 1 and 1.5 are fully skipped, forcing
+    straight to the Stage-2 perp loop.
+
+    Sub-scenario A: only +s is clear.
+        Blockers: origin, -s, +2s, -2s.
+        Expected: pill lands at +s.
+        (Both old and new code pass this — sanity check / precondition check.)
+
+    Sub-scenario B: +s blocked, both -s and +2s clear.
+        Blockers: origin, +s only.
+        Old order [+s, -s, +2s, -2s]: after +s blocked, tries -s (clear)
+          → returns -s.  FAILS this test.
+        New order [+s, +2s, -s, -2s]: after +s blocked, tries +2s (clear)
+          → returns +2s (same side preferred).  PASSES this test.
+    """
+    # Reuse the shared horizontal-edge geometry from the saturate tests.
+    # max_shift_along = 0 so stages 1 and 1.5 are entirely skipped.
+    max_shift_along = 0.0
+    step = _S_STEP_PERP  # = 22.0
+
+    # --- Sub-scenario A: only +s clear ---
+    # Blockers: origin, -s, +2s, -2s.
+    blockers_a: list[_LabelPlacement] = [
+        _slp(_S_MID_X, _S_MID_Y),                                               # origin
+        _slp(_S_MID_X + _S_PERP_X * (-step),     _S_MID_Y + _S_PERP_Y * (-step)),     # -s
+        _slp(_S_MID_X + _S_PERP_X * (2 * step),  _S_MID_Y + _S_PERP_Y * (2 * step)),  # +2s
+        _slp(_S_MID_X + _S_PERP_X * (-2 * step), _S_MID_Y + _S_PERP_Y * (-2 * step)), # -2s
+    ]
+    # +s probe position (clear).
+    pos_s_x = _S_MID_X + _S_PERP_X * step
+    pos_s_y = _S_MID_Y + _S_PERP_Y * step
+
+    lx_a, ly_a = _nudge_pill_placement(
+        mid_x=_S_MID_X,
+        mid_y=_S_MID_Y,
+        ux=_S_UX,
+        uy=_S_UY,
+        perp_x=_S_PERP_X,
+        perp_y=_S_PERP_Y,
+        pill_w=_S_PILL_W,
+        pill_h=_S_PILL_H,
+        aabb_w=_S_AABB_W,
+        aabb_h=_S_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=[],
+        placed_pills=blockers_a,
+    )
+
+    assert abs(lx_a - pos_s_x) < 1e-9 and abs(ly_a - pos_s_y) < 1e-9, (
+        f"sub-scenario A: expected +s=({pos_s_x},{pos_s_y}), got ({lx_a},{ly_a})"
+    )
+
+    # --- Sub-scenario B: +s blocked, -s and +2s both clear (ordering assertion) ---
+    # Blockers: origin + +s only; -s, +2s, -2s are all clear.
+    # Old order [+s, -s, +2s, -2s]: skips +s (blocked), picks -s (first clear).
+    # New order [+s, +2s, -s, -2s]: skips +s (blocked), picks +2s (first clear).
+    blockers_b: list[_LabelPlacement] = [
+        _slp(_S_MID_X, _S_MID_Y),                                           # origin
+        _slp(_S_MID_X + _S_PERP_X * step, _S_MID_Y + _S_PERP_Y * step),    # +s blocked
+    ]
+    # Expected landing under new order.
+    pos_2s_x = _S_MID_X + _S_PERP_X * (2 * step)
+    pos_2s_y = _S_MID_Y + _S_PERP_Y * (2 * step)
+    # Position current code returns (wrong answer under U-10).
+    pos_neg_s_x = _S_MID_X + _S_PERP_X * (-step)
+    pos_neg_s_y = _S_MID_Y + _S_PERP_Y * (-step)
+
+    lx_b, ly_b = _nudge_pill_placement(
+        mid_x=_S_MID_X,
+        mid_y=_S_MID_Y,
+        ux=_S_UX,
+        uy=_S_UY,
+        perp_x=_S_PERP_X,
+        perp_y=_S_PERP_Y,
+        pill_w=_S_PILL_W,
+        pill_h=_S_PILL_H,
+        aabb_w=_S_AABB_W,
+        aabb_h=_S_AABB_H,
+        max_shift_along=max_shift_along,
+        node_aabbs=[],
+        placed_pills=blockers_b,
+    )
+
+    # Must land at +2s (same side preferred), NOT at -s (opposite side).
+    assert abs(lx_b - pos_2s_x) < 1e-9 and abs(ly_b - pos_2s_y) < 1e-9, (
+        f"sub-scenario B (U-10 ordering): expected +2s=({pos_2s_x},{pos_2s_y}), "
+        f"got ({lx_b},{ly_b}). "
+        f"Current order [+s,-s,+2s,-2s] returns -s=({pos_neg_s_x},{pos_neg_s_y}) "
+        f"because -s is reached before +2s — must reorder to [+s,+2s,-s,-2s]."
+    )
+
+
+@pytest.mark.unit
+def test_perp_no_flicker_rerun() -> None:
+    """U-06 + U-10 on a diagonal edge (45°).
+
+    Orthogonal to test_perp_side_preferred_order (which uses a horizontal edge):
+    diagonal geometry exercises non-axis-aligned perp_x/perp_y and confirms
+    the ordering rule holds across orientations. Also re-asserts determinism
+    across two identical calls.
+    """
+    import math
+
+    # 45° edge: mid at (400, 400), direction (cos45, sin45), perp = (-sin45, cos45).
+    c = math.cos(math.pi / 4.0)
+    s = math.sin(math.pi / 4.0)
+    mid_x, mid_y = 400.0, 400.0
+    ux, uy = c, s
+    perp_x, perp_y = -s, c
+    pill_w, pill_h = 40.0, 20.0
+    aabb_w = pill_w * abs(c) + pill_h * abs(s)
+    aabb_h = pill_w * abs(s) + pill_h * abs(c)
+    step = aabb_h + 2.0
+
+    # Block origin and +s on the diagonal perpendicular; -s and +2s remain clear.
+    # Tiny 4x4 blocker AABBs so they overlap the probe only when coincident —
+    # avoids cross-probe collisions with full-sized (aabb_w, aabb_h) blockers.
+    blk_w = blk_h = 4.0
+    blockers: list[_LabelPlacement] = [
+        _LabelPlacement(x=mid_x, y=mid_y, width=blk_w, height=blk_h),
+        _LabelPlacement(
+            x=mid_x + perp_x * step,
+            y=mid_y + perp_y * step,
+            width=blk_w,
+            height=blk_h,
+        ),
+    ]
+
+    def call() -> tuple[float, float]:
+        return _nudge_pill_placement(
+            mid_x=mid_x,
+            mid_y=mid_y,
+            ux=ux,
+            uy=uy,
+            perp_x=perp_x,
+            perp_y=perp_y,
+            pill_w=pill_w,
+            pill_h=pill_h,
+            aabb_w=aabb_w,
+            aabb_h=aabb_h,
+            max_shift_along=0.0,
+            node_aabbs=[],
+            placed_pills=blockers,
+        )
+
+    result_a = call()
+    result_b = call()
+
+    assert result_a == result_b, (
+        f"U-06 determinism violated on diagonal perp path: {result_a} vs {result_b}"
+    )
+
+    expected_2s = (mid_x + perp_x * (2 * step), mid_y + perp_y * (2 * step))
+    wrong_neg_s = (mid_x + perp_x * (-step), mid_y + perp_y * (-step))
+    assert (
+        abs(result_a[0] - expected_2s[0]) < 1e-9
+        and abs(result_a[1] - expected_2s[1]) < 1e-9
+    ), (
+        f"U-10 on diagonal: expected +2s={expected_2s} (same-side preferred), "
+        f"got {result_a}. Opposite-side -s would be {wrong_neg_s}."
     )

@@ -170,11 +170,15 @@ def _nudge_pill_placement(
             if not _collides(sat):
                 return sat_lx, sat_ly
 
-    # Stage 2 — perp nudge fallback (v1.1 behaviour).
+    # Stage 2 — perp nudge fallback (v1.3 behaviour, GEP-15).
+    # Candidate order [+s, +2s, -s, -2s]: exhaust the right-hand side (initial
+    # + direction = right-hand of edge via perp_x/perp_y) before switching
+    # sides.  Prevents pill flicker when two near-identical scenes produce
+    # different orderings under the old [+s, -s, +2s, -2s] sequence (U-10).
     for offset in (
         nudge_step_perp,
-        -nudge_step_perp,
         2 * nudge_step_perp,
+        -nudge_step_perp,
         -2 * nudge_step_perp,
     ):
         trial_lx = origin_lx + perp_x * offset
