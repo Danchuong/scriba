@@ -19,8 +19,8 @@
   xrange=[-1, 8],
   yrange=[-1, 5],
   width=480,
-  aspect=equal,
-  grid=on,
+  aspect="equal",
+  grid=true,
   points=[
     [0, 1, "A"],
     [1, 0, "B"],
@@ -34,7 +34,7 @@
 }
 
 \shape{stk}{Stack}{
-  orientation=horizontal,
+  orientation="horizontal",
   max_visible=6,
   label="Lower hull stack"
 }
@@ -292,7 +292,7 @@
 % Frame 12 — Final with polygon fill
 % =====================================================================
 \step
-\apply{plane}{add_polygon=[[0, 1], [1, 0], [5, 0], [7, 2], [6, 4]]}
+\apply{plane}{add_polygon=[[0, 1], [1, 0], [5, 0], [7, 2], [6, 4], [0, 1]]}
 \recolor{plane.polygon[0]}{state=good}
 \narrate{
   Hull as filled polygon. Thuật toán Andrew's monotone chain ngắn gọn

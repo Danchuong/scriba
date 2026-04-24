@@ -5,7 +5,7 @@
 Consider a directed weighted graph where we want to find shortest paths from node S.
 
 \begin{diagram}[id="weighted-graph", label="Directed weighted graph"]
-\shape{G}{Graph}{nodes=["S","A","B","C","D","T"], edges=[("S","A",2),("S","B",5),("A","B",1),("A","C",4),("B","D",2),("C","T",3),("D","T",1)], directed=true, show_weights=true, layout="stable"}
+\shape{G}{Graph}{nodes=["S","A","B","C","D","T"], edges=[("S","A",2),("S","B",5),("A","B",1),("A","C",4),("B","D",2),("C","T",3),("D","T",1)], directed=true, show_weights=true, layout="hierarchical", orientation="LR"}
 \recolor{G.node[S]}{state=current}
 \recolor{G.node[T]}{state=good}
 \end{diagram}
@@ -15,7 +15,7 @@ Consider a directed weighted graph where we want to find shortest paths from nod
 We explore the graph greedily, visiting the nearest unvisited node at each step.
 
 \begin{animation}[id="dijkstra-explore", label="Dijkstra-like graph exploration"]
-\shape{G}{Graph}{nodes=["S","A","B","C","D","T"], edges=[("S","A",2),("S","B",5),("A","B",1),("A","C",4),("B","D",2),("C","T",3),("D","T",1)], directed=true, show_weights=true, layout="stable"}
+\shape{G}{Graph}{nodes=["S","A","B","C","D","T"], edges=[("S","A",2),("S","B",5),("A","B",1),("A","C",4),("B","D",2),("C","T",3),("D","T",1)], directed=true, show_weights=true, layout="hierarchical", orientation="LR"}
 \shape{dist}{Array}{size=6, data=["0","?","?","?","?","?"], labels="0..5", label="$dist$"}
 \shape{vars}{VariableWatch}{names=["current","cost"], label="State"}
 

@@ -39,7 +39,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.
 
 \subsection{HashMap with Bucket Insertion}
 
-\begin{animation}[id="hashmap-demo", label="HashMap bucket insertion"]
+\begin{animation}[id="hashmap-demo-bucket", label="HashMap bucket insertion"]
 \shape{hm}{HashMap}{capacity=4, label="$map$"}
 \shape{vars}{VariableWatch}{names=["key","hash","bucket"], label="Hashing"}
 
@@ -247,25 +247,23 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.
 \apply{vars.var[op]}{value="push(B)"}
 \apply{vars.var[top]}{value="B"}
 \apply{vars.var[size]}{value="2"}
-\recolor{s.item[1]}{state=current}
+\highlight{s.item[1]}
 \narrate{Push $B$ onto the stack. $B$ is now on top.}
 
 \step
-\recolor{s.item[1]}{state=done}
 \apply{s}{push="C"}
 \apply{vars.var[op]}{value="push(C)"}
 \apply{vars.var[top]}{value="C"}
 \apply{vars.var[size]}{value="3"}
-\recolor{s.item[2]}{state=current}
+\highlight{s.item[2]}
 \narrate{Push $C$. Stack is now $[A, B, C]$ with $C$ on top.}
 
 \step
-\recolor{s.item[2]}{state=done}
 \apply{s}{push="D"}
 \apply{vars.var[op]}{value="push(D)"}
 \apply{vars.var[top]}{value="D"}
 \apply{vars.var[size]}{value="4"}
-\recolor{s.item[3]}{state=current}
+\highlight{s.item[3]}
 \narrate{Push $D$. Stack grows: $[A, B, C, D]$.}
 
 \step

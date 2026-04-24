@@ -2,24 +2,22 @@
 \shape{s}{Stack}{items=["A","B"]}
 
 \step
-\recolor{s.item[1]}{state=current}
+\highlight{s.item[1]}
 \narrate{Stack has 2 items: A (bottom), B (top).}
 
 \step
 \apply{s}{push="C"}
-\recolor{s.item[1]}{state=idle}
-\recolor{s.item[2]}{state=current}
+\highlight{s.item[2]}
 \narrate{Push C. Stack: A, B, C. New top is C.}
 
 \step
 \apply{s}{push="D"}
-\recolor{s.item[2]}{state=idle}
-\recolor{s.item[3]}{state=current}
+\highlight{s.item[3]}
 \narrate{Push D. Stack: A, B, C, D. New top is D.}
 
 \step
 \apply{s}{pop=1}
-\recolor{s.item[2]}{state=current}
+\highlight{s.item[2]}
 \narrate{Pop D. Stack: A, B, C. Top is C again.}
 
 \step
