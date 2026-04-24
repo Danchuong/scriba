@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.15.2 · MIT · Python 3.10+
+**Status:** v0.15.3 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,9 +24,9 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
-## What's new in v0.15.2
+## What's new in v0.15.3
 
-- **sdist size fix** — 0.15.1 accidentally shipped a 48.5 MiB source tarball (bundled `docs/archive/**` research HTML). 0.15.2 whitelists the sdist to ~1 MiB. No code changes from 0.15.1; prefer 0.15.2 for installs.
+- **README status fix** — 0.15.2 shipped with a stale README (showed `Status: v0.9.0`). 0.15.3 fixes README + CONTRIBUTING + packaging docs to reflect current version. No code changes; prefer 0.15.3 for installs. (0.15.1 is yanked — 48 MiB sdist bloat; 0.15.2 is yanked — stale README.)
 - **(v0.15.1)** GEP v2.0.0 graph edge pill (pre-layout expansion, typography hierarchy, simulated-annealing refinement), Sugiyama hierarchical `layout="auto"` for directed graphs, R-32 annotation-stable-layout fix (reflow-flash eliminated), TEX-REFERENCE 47-issue audit closed, examples corpus audit + cleanup.
 - **(v0.15.0)** Leader-line visual-gap gate.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full history.

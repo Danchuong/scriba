@@ -109,7 +109,7 @@ The canonical design documents live under `docs/`:
 
 ## Roadmap pointer
 
-The project is at **v0.15.2**. The `\begin{animation}` environment has
+The project is at **v0.15.3**. The `\begin{animation}` environment has
 been shipping since v0.2.0 and is fully documented in
 `docs/spec/environments.md`. Recent focus: Sugiyama graph layout (GEP v2.0.0),
 annotation-stable-layout (R-32), and examples/reference audits. See
