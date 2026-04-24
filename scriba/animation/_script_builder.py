@@ -105,14 +105,34 @@ def _build_inline_script(scene_id: str, js_frames_str: str) -> str:
     next.disabled=i===frames.length-1;
     dots.forEach(function(d,j){{d.className='scriba-dot'+(j===i?' active':j<i?' done':'');}});
   }}
+  function _annKeysIn(svgStr){{
+    var keys={{}};
+    if(!svgStr)return keys;
+    var re=/data-annotation="([^"]*)"/g,m;
+    while((m=re.exec(svgStr))!==null){{keys[m[1]]=true;}}
+    return keys;
+  }}
+  function _fadeInNewAnnotations(prevKeys){{
+    if(!_canAnim)return;
+    var els=stage.querySelectorAll('[data-annotation]');
+    for(var k=0;k<els.length;k++){{
+      var key=els[k].getAttribute('data-annotation');
+      if(prevKeys[key])continue;
+      var a=els[k].animate([{{opacity:0}},{{opacity:1}}],
+        {{duration:_dur(DUR),easing:'cubic-bezier(0.16,1,0.3,1)',fill:'forwards'}});
+      _anims.push(a);
+    }}
+  }}
   function snapToFrame(i){{
     _cancelAnims();
+    var prevKeys=_annKeysIn(frames[cur]&&frames[cur].svg);
     cur=i;
     stage.innerHTML=frames[i].svg;
     narr.innerHTML=frames[i].narration;
     subC.innerHTML=frames[i].substory||'';
     subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
     _updateControls(i);
+    _fadeInNewAnnotations(prevKeys);
   }}
   function _arrowheadAt(path,size){{
     var len=path.getTotalLength();
