@@ -268,3 +268,53 @@ class TestAddAndRemoveSameStep:
         assert len(manifest.transitions) == 2
         kinds = {t.kind for t in manifest.transitions}
         assert kinds == {"recolor"}
+
+
+class TestAnnotationCompositeKeyCollision:
+    """R-32 L4 regression surface: composite key is f\"{target}-{arrow_from}\".
+
+    Two distinct (target, arrow_from) pairs can collapse to the same composite
+    string whenever either side contains a hyphen. This test documents the
+    current format and pins expected behavior for non-colliding keys so a
+    future fix (structured separator) does not regress happy paths.
+
+    xfail: a parenthetical hyphen inside the target is enough to let two
+    different pairs share a composite — the differ still emits two distinct
+    transitions (good), but both land on the same ``data-annotation`` string
+    (the collision) so the JS runtime would mis-route them.
+    """
+
+    def test_no_hyphen_in_keys_unique_composite(self) -> None:
+        prev = _frame({}, annotations=[])
+        curr = _frame({}, annotations=[
+            {"target": "dp.cellA", "arrow_from": "dp.cellB", "color": "good"},
+            {"target": "dp.cellC", "arrow_from": "dp.cellD", "color": "bad"},
+        ])
+        manifest = compute_transitions(prev, curr)
+        adds = [t for t in manifest.transitions if t.kind == "annotation_add"]
+        targets = {t.target for t in adds}
+        assert len(adds) == 2
+        assert targets == {"dp.cellA-dp.cellB", "dp.cellC-dp.cellD"}
+
+    @pytest.mark.xfail(
+        reason="L4 known collision surface: hyphen in target/arrow_from"
+               " produces identical composite keys. Deferred fix requires"
+               " coordinated emitter ann_key format change.",
+        strict=True,
+    )
+    def test_hyphen_collision_documented(self) -> None:
+        prev = _frame({}, annotations=[])
+        curr = _frame({}, annotations=[
+            # pair A: target "a-b", arrow "c"  →  "a-b-c"
+            {"target": "a-b", "arrow_from": "c", "color": "good"},
+            # pair B: target "a",   arrow "b-c" →  "a-b-c"   ← collides
+            {"target": "a", "arrow_from": "b-c", "color": "bad"},
+        ])
+        manifest = compute_transitions(prev, curr)
+        adds = [t for t in manifest.transitions if t.kind == "annotation_add"]
+        targets = {t.target for t in adds}
+        # With the current f"{target}-{arrow_from}" composite this collapses
+        # to a single key — the assertion below expresses the intended
+        # post-fix behavior, hence the xfail(strict=True).
+        assert len(adds) == 2
+        assert len(targets) == 2

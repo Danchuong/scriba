@@ -355,6 +355,14 @@ def emit_substory_html(
         _prescan_value_widths(substory.frames, sub_primitives)
     sub_viewbox = compute_viewbox(sub_primitives) if substory.primitives else viewbox
 
+    # R-32.2/R-32.3: reserve envelope for substory primitives too so the
+    # substory stage does not snap when its own annotations spawn.
+    sub_reserved_offsets = (
+        _build_reserved_offsets(substory.frames, sub_primitives)
+        if substory.primitives
+        else None
+    )
+
     _frame_id = _get_frame_id_fn()
 
     # Build JSON frame data for substory (stored in data attribute)
@@ -364,6 +372,7 @@ def emit_substory_html(
             sub_frame, sub_primitives, scene_id, sub_viewbox, render_inline_tex,
             _frame_id_fn=_frame_id,
             _escape_fn=_escape,
+            reserved_offsets=sub_reserved_offsets,
         )
         json_frames.append({
             "svg": svg_html,
@@ -576,12 +585,19 @@ def emit_interactive_html(
                 if sub.primitives:
                     _prescan_value_widths(sub.frames, sub_prims)
                 sub_vb = compute_viewbox(sub_prims) if sub.primitives else viewbox
+                # R-32.2/R-32.3: reserve envelope for the print substory too.
+                sub_reserved = (
+                    _build_reserved_offsets(sub.frames, sub_prims)
+                    if sub.primitives
+                    else None
+                )
                 for sub_frame in sub.frames:
                     sub_svg = _emit_frame_svg(
                         sub_frame, sub_prims, scene_id, sub_vb,
                         render_inline_tex,
                         _frame_id_fn=_frame_id,
                         _escape_fn=_escape,
+                        reserved_offsets=sub_reserved,
                     )
                     print_substory += (
                         f'<div class="scriba-substory"'
