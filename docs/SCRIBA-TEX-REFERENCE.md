@@ -623,7 +623,7 @@ See §5.3 for label syntax rules (`[A-Za-z_][A-Za-z0-9._-]*`).
 | `good` | green-tinted | correct/optimal |
 | `path` | gray-blue | part of solution path |
 | `hidden` | _(omitted from SVG)_ | element exists but is not rendered |
-| `highlight` | blue outline | ephemeral focus (via `\highlight` only) |
+| `highlight` | blue outline | ephemeral focus via `\highlight` (auto-clears next frame); also accepted by `\recolor{X}{state=highlight}` as a persistent variant — use sparingly, prefer `\highlight` for transient focus |
 
 For exact CSS fill/stroke/text token values see `scriba/animation/static/scriba-scene-primitives.css`.
 
@@ -702,10 +702,13 @@ Nodes + edges with layout engine.
 | Layout | Use when | Notes |
 |---|---|---|
 | `"force"` (default) | Undirected graphs of any size | Non-deterministic across seeds — set `layout_seed=` for reproducibility |
-| `"stable"` | Small undirected graphs (≤20 nodes) | Deterministic; emits a `UserWarning` if `directed=true` |
+| `"stable"` | Small undirected graphs (≤20 nodes) | Deterministic; emits a `UserWarning` if `directed=true` (see callout below) |
 | `"hierarchical"` | DAGs, tree-like directed flows | Respects `orientation="TB"` (top→bottom) or `"LR"` (left→right) |
 | `"circular"` | Cyclic structures, ring topologies | Nodes evenly spaced on a circle; ignores `orientation` |
 | `"bipartite"` | Two-partition graphs | Requires bipartite structure; non-bipartite graphs raise `E1502` |
+
+> **⚠️ Gotcha — `layout="stable"` + `directed=true`**
+> This combination emits a `UserWarning` on every render: the stable layout was designed for undirected graphs and makes no routing guarantees for directed edges. For deterministic directed-graph layouts, use `layout="force"` with `layout_seed=<int>` (reproducible across runs). If you need a ranked DAG look, use `layout="hierarchical"` instead.
 
 ### 7.5 Tree
 Rooted tree with Reingold-Tilford layout.
@@ -935,8 +938,9 @@ Variable panel showing named values.
 A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cell[3]`, `G.node[A]`, `dp.cell[2][3]`) that addresses a sub-element of a named shape for use in commands like `\recolor`, `\apply`, `\annotate`, and `\cursor`.
 
 **Node ID quoting rule (Graph and Tree):**
-- **Unquoted** (`G.node[A]`): use when the node ID is a simple identifier matching `[A-Za-z_][A-Za-z0-9_]*`, e.g., `G.node[s]`, `G.node[src]`.
-- **Quoted** (`G.node["[0,5]"]`): required when the ID contains brackets, spaces, commas, or other special characters, e.g., segtree nodes `T.node["[0,5]"]`, `T.node["[mid+1,hi]"]`.
+- **Unquoted identifier** (`G.node[A]`): use when the node ID is a simple identifier matching `[A-Za-z_][A-Za-z0-9_]*`, e.g., `G.node[s]`, `G.node[src]`.
+- **Unquoted integer** (`G.node[1]`, `T.node[8]`): accepted when node IDs are pure integers declared as ints in `nodes=[1,2,3]`. Parser coerces the bare digits back to `int`.
+- **Quoted** (`G.node["[0,5]"]`): required when the ID contains brackets, spaces, commas, or other special characters, e.g., segtree nodes `T.node["[0,5]"]`, `T.node["[mid+1,hi]"]`. Quoted string IDs must match the declaration: if `nodes=[1,2,3]` (ints), use `G.node[1]`, not `G.node["1"]`.
 
 | Primitive | Cell/Item | Node | Edge | Tick | Range | All |
 |-----------|-----------|------|------|------|-------|-----|
@@ -1251,10 +1255,12 @@ $$dist[v] = \min_{(u,v) \in E} \bigl(dist[u] + w(u,v)\bigr)$$
 
 ## 10. Environment Options
 
+The option bracket `[...]` on `\begin{animation}` / `\begin{diagram}` is **optional**. When omitted (`\begin{animation}` alone), `id` falls back to an auto-generated slug and all other options take their default below. Providing at least `id="..."` is strongly recommended for editorials and any multi-scene document, because a deterministic scene ID is required for step-navigation anchors and cross-scene composition.
+
 | Option | Type | Default | Applies to | Meaning |
 |--------|------|---------|------------|---------|
-| `id` | ident | auto | both | Stable scene ID — charset: `[a-z][a-z0-9-]*` |
-| `label` | string | none | both | Accessibility label |
+| `id` | ident | auto-generated | both | Stable scene ID — charset: `[a-z][a-z0-9-]*`. Must be globally unique across a composed HTML bundle. |
+| `label` | string | none | both | Accessibility label (used for aria-label on the rendered scene). |
 | `width` | dimension | auto | both | ViewBox width hint (e.g. `width=800` for px, `width=8cm`) |
 | `height` | dimension | auto | both | ViewBox height hint |
 | `layout` | filmstrip\|stack | filmstrip | animation | Frame layout |
