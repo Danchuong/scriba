@@ -1,0 +1,798 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Annotation Reflow Flash — Review</title>
+<style>
+  :root {
+    /* Ink palette — warm paper, cool ink, one warning accent */
+    --paper:      #f5f1e8;
+    --paper-2:    #ebe5d6;
+    --paper-rule: #d9d1bd;
+    --ink:        #1a1713;
+    --ink-2:      #3c3830;
+    --ink-mute:   #7a7364;
+    --ink-fade:   #b4ab97;
+    --accent:     #2c5282;   /* deep blue for reserved-gutter */
+    --accent-2:   #4a6fa5;
+    --warn:       #9b5426;   /* burnt sienna for annotation */
+    --warn-2:     #c47a3f;
+    --good:       #4a6d3a;   /* forest for pass */
+    --bad:        #8b2a2a;   /* oxblood for fail */
+
+    --serif: ui-serif, "Iowan Old Style", "Charter", "Cambria", Georgia, serif;
+    --sans:  -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Helvetica, sans-serif;
+    --mono:  ui-monospace, "SF Mono", "Fira Code", "JetBrains Mono", Menlo, monospace;
+
+    --space-rhythm: clamp(1.5rem, 1rem + 2vw, 3rem);
+    --radius: 2px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.55;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    padding: clamp(1.5rem, 3vw, 3.5rem) clamp(1rem, 3vw, 3rem) 4rem;
+  }
+
+  /* --- subtle paper grain --- */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none;
+    background-image:
+      radial-gradient(circle at 12% 18%, rgba(0,0,0,.020) 0, transparent 40%),
+      radial-gradient(circle at 88% 72%, rgba(0,0,0,.025) 0, transparent 45%);
+    mix-blend-mode: multiply;
+    z-index: 0;
+  }
+  body > * { position: relative; z-index: 1; }
+
+  /* ---------- MASTHEAD ---------- */
+  .mast {
+    max-width: 1240px; margin: 0 auto clamp(1.5rem, 3vw, 2.5rem);
+    display: grid; grid-template-columns: auto 1fr auto;
+    align-items: end; gap: 1rem 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--paper-rule);
+  }
+  .mast .kicker {
+    font: 500 10px/1 var(--mono);
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: .55rem;
+  }
+  .mast h1 {
+    margin: 0;
+    font-family: var(--serif);
+    font-weight: 500;
+    font-style: italic;
+    font-size: clamp(1.8rem, 2.6vw, 2.8rem);
+    line-height: 1.05;
+    letter-spacing: -0.015em;
+  }
+  .mast h1 em {
+    font-style: normal;
+    color: var(--warn);
+    font-feature-settings: "ss01";
+  }
+  .mast .lede {
+    max-width: 48ch;
+    color: var(--ink-2);
+    font-size: 14px;
+    line-height: 1.65;
+    margin: 0;
+  }
+  .mast .lede code {
+    font: 500 12.5px/1 var(--mono);
+    color: var(--warn);
+    background: rgba(155, 84, 38, .08);
+    padding: .1em .35em;
+    border-radius: 2px;
+  }
+  .mast .meta {
+    font: 500 11px/1.5 var(--mono);
+    color: var(--ink-mute);
+    text-align: right;
+    white-space: nowrap;
+  }
+  .mast .meta b { color: var(--ink); font-weight: 600; }
+
+  /* ---------- CONTROLS ---------- */
+  .controls {
+    max-width: 1240px; margin: 0 auto 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+    padding: .9rem 1.1rem;
+    background: var(--paper-2);
+    border: 1px solid var(--paper-rule);
+  }
+  .ctl-btn {
+    appearance: none;
+    background: transparent;
+    border: 1px solid var(--ink);
+    color: var(--ink);
+    font: 500 12px/1 var(--mono);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .55rem .95rem;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease;
+  }
+  .ctl-btn:hover { background: var(--ink); color: var(--paper); }
+  .ctl-btn.is-primary {
+    background: var(--ink); color: var(--paper);
+  }
+  .ctl-btn.is-primary:hover {
+    background: var(--warn); border-color: var(--warn);
+  }
+  .ctl-step {
+    margin-left: auto;
+    display: flex; align-items: baseline; gap: .5rem;
+    font: 500 11px/1 var(--mono);
+    letter-spacing: .1em;
+    color: var(--ink-mute);
+    text-transform: uppercase;
+  }
+  .ctl-step .n {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 20px;
+    color: var(--ink);
+    letter-spacing: 0;
+  }
+
+  /* ---------- GRID ---------- */
+  .grid {
+    max-width: 1240px; margin: 0 auto;
+    display: grid; gap: 1.25rem;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  @media (max-width: 1040px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ---------- PANEL ---------- */
+  .panel {
+    background: var(--paper);
+    border: 1px solid var(--paper-rule);
+    display: flex; flex-direction: column;
+  }
+  .panel.is-broken { border-color: rgba(139, 42, 42, .35); }
+  .panel.is-a      { border-color: rgba(44, 82, 130, .35); }
+  .panel.is-ab     { border-color: rgba(74, 109, 58, .45); }
+
+  .panel-head {
+    padding: 1.1rem 1.25rem .9rem;
+    border-bottom: 1px solid var(--paper-rule);
+  }
+  .panel-eyebrow {
+    display: flex; align-items: baseline; gap: .75rem;
+    font: 500 10px/1 var(--mono);
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: .6rem;
+  }
+  .panel-eyebrow .num {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 18px;
+    letter-spacing: 0;
+    color: var(--ink);
+  }
+  .panel-eyebrow .verdict {
+    margin-left: auto;
+    padding: .2rem .45rem;
+    border-radius: 2px;
+  }
+  .verdict.fail { background: rgba(139, 42, 42, .12); color: var(--bad); }
+  .verdict.mid  { background: rgba(44, 82, 130, .12); color: var(--accent); }
+  .verdict.pass { background: rgba(74, 109, 58, .14); color: var(--good); }
+
+  .panel-title {
+    margin: 0 0 .5rem;
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    line-height: 1.15;
+    letter-spacing: -.01em;
+  }
+  .panel-title em {
+    font-style: italic;
+    color: var(--warn);
+  }
+  .panel-desc {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .panel-desc code {
+    font: 500 11.5px/1 var(--mono);
+    color: var(--ink);
+    background: var(--paper-2);
+    padding: .1em .35em;
+    border-radius: 2px;
+  }
+
+  /* ---------- STAGE ---------- */
+  .stage-wrap {
+    position: relative;
+    padding: 1.25rem;
+    background:
+      linear-gradient(var(--paper-2) 1px, transparent 1px) 0 0/100% 22px,
+      var(--paper);
+  }
+  .stage {
+    position: relative;
+    height: 360px;
+    border: 1px solid var(--paper-rule);
+    background: var(--paper);
+    overflow: hidden;
+  }
+  /* baseline ruler */
+  .stage::before {
+    content: "";
+    position: absolute; left: 0; top: 0; bottom: 0; width: 32px;
+    background:
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0, transparent 43px,
+        var(--paper-rule) 43px, var(--paper-rule) 44px
+      );
+    border-right: 1px solid var(--paper-rule);
+    z-index: 0;
+  }
+  .ruler-tick {
+    position: absolute; left: 0; width: 32px;
+    font: 500 9px/1 var(--mono);
+    color: var(--ink-fade);
+    letter-spacing: .05em;
+    text-align: right;
+    padding-right: 6px;
+    z-index: 1;
+  }
+
+  /* primitives */
+  .prim {
+    position: absolute;
+    left: 52px;
+    display: flex; align-items: flex-start; gap: 6px;
+    z-index: 2;
+  }
+  .prim[data-shape="nums"]  { top: 32px; }
+  .prim[data-shape="h"]     { top: 108px; }
+  .prim[data-shape="dp"]    { top: 184px; }
+
+  /* Variant A / AB: downstream at final y from step 0 (gutter reserved) */
+  .is-a   .prim[data-shape="h"]  { top: 160px; }
+  .is-a   .prim[data-shape="dp"] { top: 236px; }
+  .is-ab  .prim[data-shape="h"]  { top: 160px; }
+  .is-ab  .prim[data-shape="dp"] { top: 236px; }
+
+  /* Broken: snap at step 1 — no transition */
+  .is-broken.step-1 .prim[data-shape="h"]  { top: 160px; }
+  .is-broken.step-1 .prim[data-shape="dp"] { top: 236px; }
+  .is-broken .prim { transition: none; }
+
+  /* A+B: tween (here shown as confirmation the runtime would tween) */
+  .is-ab .prim { transition: top 220ms cubic-bezier(.22,.75,.26,1); }
+
+  .prim-label {
+    position: absolute;
+    left: -46px; top: 6px;
+    width: 40px;
+    text-align: right;
+    font: 500 10px/1 var(--mono);
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .cell {
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    font: 500 13px/1 var(--mono);
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--ink-2);
+    position: relative;
+  }
+  .cell::after {
+    content: ""; position: absolute; inset: 2px;
+    border: 1px solid transparent;
+    pointer-events: none;
+  }
+  .cell.hi {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .cell.dim { color: var(--ink-fade); }
+
+  /* ghost row (shows where h WAS before flash — broken variant only) */
+  .ghost {
+    position: absolute;
+    left: 52px;
+    display: flex; gap: 6px;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 1;
+    transition: opacity 300ms ease;
+  }
+  .ghost[data-shape="h"]  { top: 108px; }
+  .ghost[data-shape="dp"] { top: 184px; }
+  .ghost .cell {
+    background: transparent;
+    border: 1px dashed var(--ink-fade);
+    color: var(--ink-fade);
+  }
+  .is-broken.step-1 .ghost { opacity: 1; }
+
+  /* ---------- reserved gutter (A / A+B only) ---------- */
+  .gutter {
+    position: absolute;
+    left: 52px; right: 18px;
+    top: 82px; height: 72px;
+    border: 1px dashed transparent;
+    background: transparent;
+    transition: border-color 200ms ease, background 200ms ease;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .is-a .gutter, .is-ab .gutter {
+    border-color: rgba(44, 82, 130, .55);
+    background: rgba(44, 82, 130, .045);
+  }
+  .gutter-label {
+    position: absolute;
+    top: -14px; right: -1px;
+    font: 500 9px/1 var(--mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    padding: 3px 5px;
+    background: var(--paper);
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+  .is-a .gutter-label, .is-ab .gutter-label { opacity: 1; }
+
+  /* ---------- annotation (arrow + pill) ---------- */
+  .ann {
+    position: absolute;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 3;
+  }
+  .step-1 .ann { opacity: 1; }
+  .is-broken .ann { transition: none; }
+  .is-a      .ann { transition: none; }
+  .is-ab     .ann { transition: opacity 220ms ease-out 60ms; }
+
+  .ann-svg {
+    position: absolute;
+    overflow: visible;
+  }
+  .ann-svg path.shaft {
+    stroke: var(--warn);
+    stroke-width: 1.5;
+    fill: none;
+    stroke-linecap: round;
+  }
+  .ann-svg path.head {
+    stroke: var(--warn);
+    stroke-width: 1.5;
+    fill: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  /* A+B: the WAAPI-styled draw-in */
+  .is-ab .ann-svg path.shaft {
+    stroke-dasharray: 40;
+    stroke-dashoffset: 40;
+    transition: stroke-dashoffset 280ms cubic-bezier(.22,.75,.26,1) 120ms;
+  }
+  .is-ab.step-1 .ann-svg path.shaft { stroke-dashoffset: 0; }
+
+  .ann-pill {
+    position: absolute;
+    background: var(--paper);
+    border: 1px solid var(--warn);
+    color: var(--warn);
+    padding: .32rem .5rem;
+    font: 500 11px/1 var(--mono);
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .ann-pill::before {
+    content: ""; position: absolute;
+    left: 10px; bottom: -5px;
+    width: 8px; height: 8px;
+    background: var(--paper);
+    border-right: 1px solid var(--warn);
+    border-bottom: 1px solid var(--warn);
+    transform: rotate(45deg);
+  }
+
+  /* ---------- reflow flash marker (broken only) ---------- */
+  .flash-marker {
+    position: absolute;
+    left: 52px; right: 18px;
+    top: 108px; height: 52px;
+    border-left: 2px solid var(--bad);
+    background: linear-gradient(90deg, rgba(139, 42, 42, .10), transparent 70%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 4;
+  }
+  .flash-marker-label {
+    position: absolute;
+    left: 8px; top: 4px;
+    font: 500 9px/1 var(--mono);
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--bad);
+  }
+  .is-broken.flashing .flash-marker {
+    opacity: 1;
+    animation: flash-pulse 380ms ease-out forwards;
+  }
+  @keyframes flash-pulse {
+    0%   { opacity: 0; transform: translateY(-12px); }
+    25%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(0); }
+  }
+
+  /* ---------- metrics table ---------- */
+  .metrics {
+    border-top: 1px solid var(--paper-rule);
+    padding: .95rem 1.25rem 1.1rem;
+  }
+  .metrics dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: .5rem 1rem;
+    font: 500 11.5px/1.4 var(--mono);
+  }
+  .metrics dt {
+    color: var(--ink-mute);
+    letter-spacing: .04em;
+  }
+  .metrics dd {
+    margin: 0;
+    text-align: right;
+    color: var(--ink);
+  }
+  .metrics dd.fail { color: var(--bad); }
+  .metrics dd.mid  { color: var(--accent); }
+  .metrics dd.pass { color: var(--good); }
+  .metrics dd.mute { color: var(--ink-mute); }
+
+  /* ---------- callout strip ---------- */
+  .callout {
+    max-width: 1240px;
+    margin: 1.75rem auto 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem 1.5rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--paper-2);
+    border: 1px solid var(--paper-rule);
+  }
+  .callout .tag {
+    font: 500 10px/1 var(--mono);
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    padding-top: 2px;
+  }
+  .callout p {
+    margin: 0;
+    color: var(--ink-2);
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  .callout p + p { margin-top: .45rem; }
+  .callout code {
+    font: 500 12px/1 var(--mono);
+    color: var(--warn);
+  }
+
+  /* ---------- footer ---------- */
+  footer {
+    max-width: 1240px;
+    margin: 2rem auto 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--paper-rule);
+    font: 500 11px/1.6 var(--mono);
+    color: var(--ink-mute);
+    letter-spacing: .02em;
+    display: flex; gap: 1rem; flex-wrap: wrap;
+  }
+  footer .dot { color: var(--ink-fade); }
+</style>
+</head>
+<body>
+
+<header class="mast">
+  <div>
+    <div class="kicker">Fig. 8 · Review mockup</div>
+    <h1>Annotation-induced<br><em>reflow flash</em>, reviewed.</h1>
+  </div>
+  <p class="lede">
+    The <code>convex_hull_trick</code> scene, step 0 → 1. An <code>\annotate</code> spawn
+    grows the target primitive's bounding box; downstream arrays snap down +52 px with no
+    transition. Three treatments are compared side-by-side: the current pipeline, Approach A
+    alone, and the recommended A + B hybrid.
+  </p>
+  <div class="meta">
+    <b>2026-04-24</b><br>
+    docs/archive/<br>
+    annotation-reflow-flash<br>
+    /08-review-mockup
+  </div>
+</header>
+
+<div class="controls">
+  <button class="ctl-btn" id="reset">Reset</button>
+  <button class="ctl-btn is-primary" id="next">Advance step →</button>
+  <button class="ctl-btn" id="auto">Auto-loop</button>
+  <div class="ctl-step">
+    current frame
+    <span class="n" id="stepLabel">0</span>
+    <span>/ 1</span>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- =========== BROKEN =========== -->
+  <section class="panel is-broken" id="p-broken">
+    <div class="panel-head">
+      <div class="panel-eyebrow">
+        <span class="num">i</span>
+        <span>current pipeline</span>
+        <span class="verdict fail">fail</span>
+      </div>
+      <h2 class="panel-title">Uncorrected — the <em>flash</em>.</h2>
+      <p class="panel-desc">
+        The <code>set_min_arrow_above</code> guard at <code>_html_stitcher.py:163</code>
+        silently evaluates to <code>False</code> for <code>Array</code> and <code>DPTable</code>.
+        <code>y_cursor</code> is re-accumulated every frame; the downstream translate jumps
+        with no transition.
+      </p>
+    </div>
+    <div class="stage-wrap">
+      <div class="stage">
+        <span class="ruler-tick" style="top: 37px;">00</span>
+        <span class="ruler-tick" style="top: 113px;">76</span>
+        <span class="ruler-tick" style="top: 189px;">152</span>
+
+        <div class="gutter"><span class="gutter-label">reserved</span></div>
+
+        <!-- ghosts show where h / dp WERE before the reflow -->
+        <div class="ghost" data-shape="h">
+          <div class="cell">0</div><div class="cell">?</div><div class="cell">?</div><div class="cell">?</div><div class="cell">?</div>
+        </div>
+        <div class="ghost" data-shape="dp">
+          <div class="cell">0</div><div class="cell">?</div><div class="cell">?</div><div class="cell">?</div><div class="cell">?</div>
+        </div>
+
+        <div class="flash-marker"><span class="flash-marker-label">+52 px snap</span></div>
+
+        <div class="prim" data-shape="nums">
+          <span class="prim-label">nums</span>
+          <div class="cell">3</div><div class="cell">1</div><div class="cell">4</div><div class="cell">1</div><div class="cell">5</div>
+        </div>
+
+        <div class="prim" data-shape="h">
+          <span class="prim-label">h</span>
+          <div class="cell hi">0</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div>
+          <div class="ann">
+            <svg class="ann-svg" style="left:30px; top:-42px; width:52px; height:44px;" viewBox="0 0 52 44" aria-hidden="true">
+              <path class="shaft" d="M26 4 L26 36"/>
+              <path class="head"  d="M18 28 L26 38 L34 28"/>
+            </svg>
+            <div class="ann-pill" style="left:-6px; top:-74px;">+ h[1]²</div>
+          </div>
+        </div>
+
+        <div class="prim" data-shape="dp">
+          <span class="prim-label">dp</span>
+          <div class="cell">0</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div>
+        </div>
+      </div>
+    </div>
+    <div class="metrics">
+      <dl>
+        <dt>Δy downstream</dt>       <dd class="fail">+52 px · snap</dd>
+        <dt>arrow draw-in</dt>       <dd class="fail">pop (no fade)</dd>
+        <dt>reduced-motion</dt>      <dd class="mute">same — snap</dd>
+        <dt>goldens</dt>             <dd class="mute">pinned to broken</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- =========== A =========== -->
+  <section class="panel is-a" id="p-a">
+    <div class="panel-head">
+      <div class="panel-eyebrow">
+        <span class="num">ii</span>
+        <span>approach A</span>
+        <span class="verdict mid">structural</span>
+      </div>
+      <h2 class="panel-title">Reserve-gutter, <em>pre-scanned</em>.</h2>
+      <p class="panel-desc">
+        Max-bbox pre-scan in the stitcher walks every frame, annotates each primitive, reads
+        <code>bounding_box()</code>, emits <code>reserved_offsets</code> into
+        <code>_emit_frame_svg</code>. Downstream primitives sit at their final y from step 0.
+      </p>
+    </div>
+    <div class="stage-wrap">
+      <div class="stage">
+        <span class="ruler-tick" style="top: 37px;">00</span>
+        <span class="ruler-tick" style="top: 113px;">76</span>
+        <span class="ruler-tick" style="top: 189px;">152</span>
+
+        <div class="gutter"><span class="gutter-label">reserved&nbsp;·&nbsp;max_bbox</span></div>
+
+        <div class="prim" data-shape="nums">
+          <span class="prim-label">nums</span>
+          <div class="cell">3</div><div class="cell">1</div><div class="cell">4</div><div class="cell">1</div><div class="cell">5</div>
+        </div>
+
+        <div class="prim" data-shape="h">
+          <span class="prim-label">h</span>
+          <div class="cell hi">0</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div>
+          <div class="ann">
+            <svg class="ann-svg" style="left:30px; top:-42px; width:52px; height:44px;" viewBox="0 0 52 44" aria-hidden="true">
+              <path class="shaft" d="M26 4 L26 36"/>
+              <path class="head"  d="M18 28 L26 38 L34 28"/>
+            </svg>
+            <div class="ann-pill" style="left:-6px; top:-74px;">+ h[1]²</div>
+          </div>
+        </div>
+
+        <div class="prim" data-shape="dp">
+          <span class="prim-label">dp</span>
+          <div class="cell">0</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div>
+        </div>
+      </div>
+    </div>
+    <div class="metrics">
+      <dl>
+        <dt>Δy downstream</dt>       <dd class="pass">0 px</dd>
+        <dt>arrow draw-in</dt>       <dd class="mid">pop (no fade)</dd>
+        <dt>reduced-motion</dt>      <dd class="pass">identical · no motion needed</dd>
+        <dt>goldens</dt>             <dd class="mid">re-pin ≈ 8-20</dd>
+      </dl>
+    </div>
+  </section>
+
+  <!-- =========== A+B =========== -->
+  <section class="panel is-ab" id="p-ab">
+    <div class="panel-head">
+      <div class="panel-eyebrow">
+        <span class="num">iii</span>
+        <span>A + B · ship</span>
+        <span class="verdict pass">ship</span>
+      </div>
+      <h2 class="panel-title">Gutter, plus a <em>measured tween</em>.</h2>
+      <p class="panel-desc">
+        A preserves layout; B adds a 220&nbsp;ms group-translate tween and a 280&nbsp;ms
+        stroke-dasharray draw for the arrow. If Δy = 0 the tween is a no-op. Gated by
+        <code>_canAnim</code>; reduced-motion snaps.
+      </p>
+    </div>
+    <div class="stage-wrap">
+      <div class="stage">
+        <span class="ruler-tick" style="top: 37px;">00</span>
+        <span class="ruler-tick" style="top: 113px;">76</span>
+        <span class="ruler-tick" style="top: 189px;">152</span>
+
+        <div class="gutter"><span class="gutter-label">reserved&nbsp;·&nbsp;max_bbox</span></div>
+
+        <div class="prim" data-shape="nums">
+          <span class="prim-label">nums</span>
+          <div class="cell">3</div><div class="cell">1</div><div class="cell">4</div><div class="cell">1</div><div class="cell">5</div>
+        </div>
+
+        <div class="prim" data-shape="h">
+          <span class="prim-label">h</span>
+          <div class="cell hi">0</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div>
+          <div class="ann">
+            <svg class="ann-svg" style="left:30px; top:-42px; width:52px; height:44px;" viewBox="0 0 52 44" aria-hidden="true">
+              <path class="shaft" d="M26 4 L26 36"/>
+              <path class="head"  d="M18 28 L26 38 L34 28"/>
+            </svg>
+            <div class="ann-pill" style="left:-6px; top:-74px;">+ h[1]²</div>
+          </div>
+        </div>
+
+        <div class="prim" data-shape="dp">
+          <span class="prim-label">dp</span>
+          <div class="cell">0</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div><div class="cell dim">?</div>
+        </div>
+      </div>
+    </div>
+    <div class="metrics">
+      <dl>
+        <dt>Δy downstream</dt>       <dd class="pass">0 px · tween no-op</dd>
+        <dt>arrow draw-in</dt>       <dd class="pass">280 ms · ease-out</dd>
+        <dt>reduced-motion</dt>      <dd class="pass">instant · gated</dd>
+        <dt>goldens</dt>             <dd class="mute">same as A · JS-only polish</dd>
+      </dl>
+    </div>
+  </section>
+
+</div>
+
+<aside class="callout">
+  <span class="tag">note</span>
+  <div>
+    <p>
+      The dashed blue band is the reserved <code>gutter</code> carved by the
+      max-bbox pre-scan. The faint dashed cells in panel&nbsp;i are a ghost of h's and dp's
+      step-0 positions — the snap distance between them and their final y is the flash.
+    </p>
+    <p>
+      The burnt-sienna mark at +52&nbsp;px in panel&nbsp;i stands in for the raw
+      <code>transform="translate(x,y)"</code> delta on the outer <code>&lt;g&gt;</code> at
+      <code>_frame_renderer.py:479</code>. Panel&nbsp;ii eliminates it structurally;
+      panel&nbsp;iii adds a tween that is invisible when the delta is zero.
+    </p>
+  </div>
+</aside>
+
+<footer>
+  <span>01 mechanics</span><span class="dot">·</span>
+  <span>02 survey</span><span class="dot">·</span>
+  <span>03 prior-art</span><span class="dot">·</span>
+  <span>04 approach A</span><span class="dot">·</span>
+  <span>05 approach B</span><span class="dot">·</span>
+  <span>06 approach C</span><span class="dot">·</span>
+  <span>07 synthesis</span><span class="dot">·</span>
+  <span>08 review</span>
+</footer>
+
+<script>
+(() => {
+  const panels = ['p-broken', 'p-a', 'p-ab'].map(id => document.getElementById(id));
+  const stepLabel = document.getElementById('stepLabel');
+  let step = 0;
+  let autoTimer = null;
+
+  const apply = () => {
+    panels.forEach(p => p.classList.toggle('step-1', step === 1));
+    stepLabel.textContent = String(step);
+    if (step === 1) {
+      const broken = document.getElementById('p-broken');
+      broken.classList.add('flashing');
+      setTimeout(() => broken.classList.remove('flashing'), 420);
+    }
+  };
+
+  document.getElementById('reset').addEventListener('click', () => { step = 0; apply(); });
+  document.getElementById('next').addEventListener('click',  () => { step = step === 0 ? 1 : 0; apply(); });
+
+  const autoBtn = document.getElementById('auto');
+  autoBtn.addEventListener('click', () => {
+    if (autoTimer) {
+      clearInterval(autoTimer); autoTimer = null;
+      autoBtn.textContent = 'Auto-loop';
+    } else {
+      autoBtn.textContent = 'Stop loop';
+      autoTimer = setInterval(() => { step = step === 0 ? 1 : 0; apply(); }, 1800);
+    }
+  });
+
+  apply();
+})();
+</script>
+</body>
+</html>
