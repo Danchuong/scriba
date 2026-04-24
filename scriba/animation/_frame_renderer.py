@@ -149,6 +149,13 @@ def compute_viewbox(
         max_width = max(max_width, w)
         total_height += h
 
+    # R-32.4 purity: clear annotation state after probing so caller state
+    # doesn't leak into downstream rendering.
+    if annotations is not None:
+        for prim in primitives.values():
+            if hasattr(prim, "set_annotations"):
+                prim.set_annotations([])
+
     vb_width = max_width + 2 * _PADDING
     vb_height = total_height + 2 * _PADDING
 
