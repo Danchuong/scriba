@@ -126,6 +126,19 @@ KaTeX `0.16.11` is vendored inside the wheel (at
 `npm install -g katex` step is required**. `pip install scriba-tex` is all
 you need once Node is present.
 
+## Using Scriba with an AI assistant
+
+To have an AI write `.tex` for Scriba, give it one file:
+**[`docs/SCRIBA-TEX-REFERENCE.md`](docs/SCRIBA-TEX-REFERENCE.md)**.
+
+It's self-contained — all commands, all 15 primitives, all selectors,
+all gotchas. No other spec files needed.
+
+Prompt template:
+> Read `SCRIBA-TEX-REFERENCE.md`. Write a Scriba `.tex` file that
+> animates [algorithm]. Use only commands and primitives documented
+> in that file.
+
 ## Hello world
 
 ```python
