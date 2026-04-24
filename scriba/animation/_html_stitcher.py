@@ -22,6 +22,7 @@ from scriba.animation._script_builder import (  # noqa: F401
     _build_inline_script,
 )
 from scriba.animation.differ import compute_transitions
+from scriba.animation.primitives._svg_helpers import arrow_height_above
 
 __all__ = [
     "emit_animation_html",
@@ -160,11 +161,16 @@ def emit_animation_html(
             ]
             if hasattr(prim, "set_annotations"):
                 prim.set_annotations(prim_anns)
-            if hasattr(prim, "_arrow_height_above"):
-                try:
-                    max_ah = max(max_ah, prim._arrow_height_above(prim_anns))
-                except TypeError:
-                    max_ah = max(max_ah, prim._arrow_height_above())
+            if hasattr(prim, "resolve_annotation_point"):
+                cell_h = getattr(prim, "_cell_height", 46)
+                max_ah = max(
+                    max_ah,
+                    arrow_height_above(
+                        prim_anns,
+                        prim.resolve_annotation_point,
+                        cell_height=cell_h,
+                    ),
+                )
         prim.set_min_arrow_above(max_ah)
         if hasattr(prim, "set_annotations"):
             prim.set_annotations([])
@@ -392,11 +398,16 @@ def emit_interactive_html(
             ]
             if hasattr(prim, "set_annotations"):
                 prim.set_annotations(prim_anns)
-            if hasattr(prim, "_arrow_height_above"):
-                try:
-                    max_ah = max(max_ah, prim._arrow_height_above(prim_anns))
-                except TypeError:
-                    max_ah = max(max_ah, prim._arrow_height_above())
+            if hasattr(prim, "resolve_annotation_point"):
+                cell_h = getattr(prim, "_cell_height", 46)
+                max_ah = max(
+                    max_ah,
+                    arrow_height_above(
+                        prim_anns,
+                        prim.resolve_annotation_point,
+                        cell_height=cell_h,
+                    ),
+                )
         prim.set_min_arrow_above(max_ah)
         # Clear annotations — they'll be set per-frame during rendering
         if hasattr(prim, "set_annotations"):
