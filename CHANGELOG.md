@@ -5,7 +5,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — Annotation reflow-flash fix (R-32)
+## [Unreleased]
+
+## [0.15.1] - 2026-04-24 — GEP v2.0.0 + Sugiyama + R-32 + audits
 
 ### Fixed
 - **Reflow flash eliminated.** Annotation-induced vertical displacement (measured up to +56 px y-jump across 10 rendered examples — most severe: `dp_optimization` step 2→3, `convex_hull_trick` step 0→1, `houses_schools` step 1→2, `kruskal_mst` step 4→5) no longer snaps between frames. Layout envelope is now reserved per-scene at the max of `bounding_box()` over all frames, so primitive y-offsets are constant across frames regardless of which frames carry annotations.
@@ -46,6 +48,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   worst-case **0.52 ms** on `houses_schools` (19 frames × 3 primitives).
   `dp_optimization` 7×2 = 0.09 ms, `convex_hull_trick` 9×3 = 0.16 ms,
   `kruskal_mst` 11×3 = 0.15 ms. ~96× under budget; no memoization needed.
+
+### Graph edge pill (GEP v2.0.0)
+- Phases 0–7: node-circle guard + determinism sort, edge-aligned rotation, on-edge placement (v1.1), along-edge shift + rotated-AABB steric (v1.2), saturate probe (v1.3), side-preferred perp (v1.3.1), on-stroke invariant (v1.3.2), leader-line fallback (v1.4.0), pre-layout auto-expansion (v2.0.0-P5), typography hierarchy + soft tint (P6), simulated-annealing global refinement (P7).
+- GEP-01..GEP-13 ruleset in `docs/spec/graph-edge-pill-ruleset.md`.
+
+### Graph hierarchical layout
+- Real Sugiyama longest-path layerer + barycentric crossing reduction behind `layout="auto"` (new default for directed graphs). `orientation="LR"|"TB"` supported; legacy `stable` retained.
+- `_MIN_LAYER_GAP` 100 → 140 so pills clear the arrowhead zone.
+
+### Reference + examples audits
+- **TEX-REFERENCE** 47-issue 4-agent audit closed: Tier 1+2+3 fixes + AI-authoring callout in README. Integer node-ID quoting, `state=highlight` via `\recolor`, `layout="stable"+directed=true` gotcha, optional env bracket now documented.
+- **Examples audit** (4-agent scout+A/B/C): cleared E1115/E1462 warnings (union_find_tree reparent cascade, segtree_editorial topology, Stack pop state); consolidated corpus 113→111 (2 dup deletes, 2 moves); split into smoke/demos/fixtures for bucketed testing; `ACCEPTED_PARAMS` aligned with actual behavior; Plane2D `xlabel`/`ylabel` dropped (never rendered).
+
+### Arrow
+- End stem/path at arrowhead base, not tip.
 
 ## [0.15.0] - 2026-04-23 — Leader-line visual-gap gate
 
