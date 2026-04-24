@@ -230,3 +230,18 @@ Message template: `[E15xx] <Invariant-ID>: <observed> (expected <expected>) at <
 | E1570 | M-13 | Hardcoded numeric headroom value in primitive (use the named constant from `smart-label-ruleset.md` §3). | Code review / lint |
 | E1571 | G-8 | Leader drawn below the displacement floor (leader-length MUST be ≥ the floor constant). | `emit_arrow_svg` render path |
 | E1572–E1579 | — | Reserved for future smart-label invariants. | — |
+
+## Annotation Stable Layout Errors (R32-01--R32-05)
+
+Conformance-only codes surfaced from the R-32 (Annotation Stable Layout) test
+suite in `tests/conformance/test_r32_annotation_stable_layout.py`. R-32 is a
+build-time contract; these codes are not raised by the runtime emitter. See
+`ruleset.md` §8.9 and `docs/archive/annotation-reflow-flash-2026-04-23/09-ruleset-R32.md`.
+
+| Code | Invariant | Description | Detection site |
+|------|-----------|-------------|----------------|
+| R32-01 | R-32.1 | Primitive bbox differs across frames (intra-primitive instability). | Conformance — `test_frame_height_invariant` |
+| R32-02 | R-32.2 | Downstream y-offset differs across frames (inter-primitive instability). | Conformance — `test_downstream_y_invariant` |
+| R32-03 | R-32.4 | `bounding_box()` not pure under repeated annotation probes. | Conformance — `test_bounding_box_purity[*]` |
+| R32-04 | R-32.6 | Max-envelope computation non-deterministic across replays. | Conformance — `test_envelope_determinism` |
+| R32-05 | R-32.5 | Reduced-motion path produced layout differing from motion path. | Conformance — `test_reduced_motion_layout_parity` |

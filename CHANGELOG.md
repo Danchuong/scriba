@@ -5,7 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — Annotation reflow-flash fix (R-32)
+
+### Fixed
+- **Reflow flash eliminated.** Annotation-induced vertical displacement (measured up to +56 px y-jump across 10 rendered examples — most severe: `dp_optimization` step 2→3, `convex_hull_trick` step 0→1, `houses_schools` step 1→2, `kruskal_mst` step 4→5) no longer snaps between frames. Layout envelope is now reserved per-scene at the max of `bounding_box()` over all frames, so primitive y-offsets are constant across frames regardless of which frames carry annotations.
+- **L1 landmine** in `_html_stitcher.py`: the `set_min_arrow_above` guard used `hasattr(prim, "_arrow_height_above")` which always returned `False` (the function is module-level, not an instance method). `Array` and `DPTable` silently got `max_ah=0` — now fixed by calling `arrow_height_above` directly.
+
+### Added
+- **R-32 Annotation Stable Layout** ruleset entry — `ruleset.md` §8.9. Six normative sub-invariants: intra-bbox stability (R-32.1), inter-primitive y-cursor stability (R-32.2), max-envelope reservation (R-32.3), `bounding_box()` purity (R-32.4), reduced-motion parity (R-32.5), determinism (R-32.6).
+- Error codes `R32-01`..`R32-05` (`error-codes.md`) surfaced by the conformance suite.
+- `_html_stitcher._build_reserved_offsets()` — per-scene max-bbox pre-scan producing `dict[shape_name, (x_off, y_cursor)]`. Threaded through `emit_substory_html` and the print-substory block of `emit_interactive_html`.
+- `_frame_renderer._emit_frame_svg()` gained `reserved_offsets` kwarg; when supplied, replaces per-frame `y_cursor` accumulation with direct lookup. Falls back to legacy accumulation when `None`.
+- WAAPI opacity fade for newly-added annotations on frame navigation (`_script_builder._fadeInNewAnnotations`): 220 ms cubic-bezier(0.16,1,0.3,1), gated on `_canAnim`. Wired in `snapToFrame` only (`animateTransition` already animates draw-in via the `annotation_add` path).
+- Conformance suite `tests/conformance/test_r32_annotation_stable_layout.py` — 18 tests, 725 lines, `@pytest.mark.conformance`. Covers R-32.1 × 6 primitives, R-32.2/R-32.3 × 4 scenes, R-32.4 × 6, R-32.5 × 1, R-32.6 × 1.
+- `tests/animation/test_differ.py` regression for L4 hyphen-collision in `f"{target}-{arrow_from}"` composite key — `xfail(strict=True)` tombstone documenting the deferred fix (would require coordinated emitter format change + 6 golden re-pins).
+
+### Changed
+- `bounding_box()` purity (R-32.4) is now a normative contract — see `primitives.md` §2.6. Affects `Array`, `DPTable`, `Queue`, `Plane2D`, `Tree`, `Graph`. Pre-scan in `_build_reserved_offsets` restores `set_annotations([])` after probing.
+- L3 purity fix in `_frame_renderer.compute_viewbox`: annotation state is now cleared after the bbox-probe loop.
+
+### Docs
+- `ruleset.md` §8.9 Annotation Stable Layout (R-32).
+- `error-codes.md` — R32-01..R32-05.
+- `svg-emitter.md` §3.4 — `reserved_offsets` contract.
+- `primitives.md` §2.6 — `bounding_box()` purity contract.
+- Research archive `docs/archive/annotation-reflow-flash-2026-04-23/` — 11 files: archaeology, cross-primitive survey, approaches A/B/C, R-32 spec, implementation plan.
+
+### Affected commits
+- `272d5d6` — research archive + R-32 spec + impl plan.
+- P0.1 — L1 fix.
+- P1.1 — `_build_reserved_offsets` + `reserved_offsets` thread-through.
+- P1.2 — R-32 conformance tests.
+- P2 — WAAPI annotation fade.
+- P3 — L3 purity fix.
+- P4 — multi-hat review.
+- `2cd03b7` — P4 follow-ups (substory threading + L4 xfail).
 
 ## [0.15.0] - 2026-04-23 — Leader-line visual-gap gate
 

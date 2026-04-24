@@ -91,6 +91,40 @@ All primitives emit into a shared `<svg>` viewBox. Each primitive's root is a
 `<g data-primitive="{type_lowercase}">` group. Addressable sub-parts are
 `<g data-target="{selector}">` groups inside, with state classes applied directly.
 
+### 2.6 `bounding_box()` purity contract (R-32.4)
+
+Every annotation-bearing primitive MUST implement `bounding_box()` as a **pure
+function of the current `_annotations` state**. Formally: for any primitive
+`P` and any annotation lists `A`, `A'`, the following two probes MUST return
+equal `BoundingBox` instances:
+
+```python
+P.set_annotations(A); bb1 = P.bounding_box()
+P.set_annotations(A'); _ = P.bounding_box()   # any intervening probe
+P.set_annotations(A); bb2 = P.bounding_box()
+assert bb1 == bb2
+```
+
+Forbidden patterns:
+
+- Lazily mutated caches keyed on call count, wall-clock, or iteration order.
+- Side-effectful bbox computation that mutates `_annotations`, primitive
+  value state, or layout offsets.
+- Dependence on whether `set_annotations` was called with the same list
+  object or a fresh copy (identity vs. equality).
+
+Permitted patterns:
+
+- Memoization keyed on a stable hash/identity of the current `_annotations`
+  list (cleared on `set_annotations`).
+- Read-only inspection of immutable primitive parameters.
+
+The `_html_stitcher._build_reserved_offsets` pre-scan (see
+`svg-emitter.md` §3.4) depends on this purity invariant. Violations surface
+as `R32-03` from the R-32 conformance suite
+(`tests/conformance/test_r32_annotation_stable_layout.py`). See
+`ruleset.md` §8.9 for the full R-32 specification.
+
 ---
 
 ## 3. `Array`

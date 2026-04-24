@@ -900,6 +900,67 @@ This determinism bound is narrower than the general determinism contract
 in §12: §12 covers the whole HTML output, whereas §8.8 is specifically
 about the layout algorithm's seeded coordinate placement.
 
+### 8.9 Annotation Stable Layout (R-32)
+
+> **Rule.** The rendered bounding box of any annotation-bearing primitive MUST
+> be identical across all frames in a scene, regardless of which frames contain
+> annotations targeting that primitive. Annotation headroom MUST be reserved at
+> its per-scene maximum for the full scene duration, not only for frames in
+> which annotations are active.
+
+**Applies to** all primitives that accept `\annotate` targets: `Array`,
+`DPTable`, `Queue`, `Plane2D`, `Tree`, `Graph`, and any future primitive that
+implements `set_annotations`.
+
+**Normative sub-invariants.**
+
+- **R-32.1 — Intra-primitive bbox stability.** For any primitive `P` and any
+  two frames `f_i`, `f_j` in the same scene, the rendered bounding-box height
+  of `P` MUST satisfy `height(P, f_i) == height(P, f_j)`. Width is stable
+  likewise except where value-width pre-scan (`_prescan_value_widths`) widens
+  all frames uniformly.
+- **R-32.2 — Inter-primitive y-cursor stability.** For any pair of stacked
+  primitives `P_above`, `P_below` and any two frames `f_i`, `f_j`, the rendered
+  y-offset of `P_below` MUST satisfy `y(P_below, f_i) == y(P_below, f_j)`,
+  regardless of per-frame annotation presence on any primitive.
+- **R-32.3 — Max-envelope reservation.** The reserved layout envelope for each
+  primitive is the component-wise maximum of `bounding_box(P, annotations=A_f)`
+  over all frames `f` in the scene. The envelope MUST be computed once at
+  scene build time and applied uniformly.
+- **R-32.4 — Annotation purity.** For any primitive `P` and any annotation
+  lists `A`, `A'`, repeated probes
+  `set_annotations(A); bounding_box()` separated by any `set_annotations(A')`
+  MUST yield identical results. `bounding_box()` is a pure function of the
+  current `_annotations` state.
+- **R-32.5 — Reduced-motion parity.** When `prefers-reduced-motion: reduce`
+  is active, the rendered output MUST still satisfy R-32.1 and R-32.2. The
+  reduced-motion path disables only the cosmetic tween layer; it MUST NOT
+  bypass the reserved-envelope machinery.
+- **R-32.6 — Determinism.** The reserved-envelope computation MUST be
+  deterministic: same scene input → same envelope → byte-identical SVG emit.
+
+**Enforcement.** Build-time. `_html_stitcher._build_reserved_offsets` computes
+the per-scene max-bbox envelope; `_emit_frame_svg` accepts
+`reserved_offsets: dict[shape_name, (x_off, y_cursor)]` and skips per-frame
+`y_cursor` accumulation when supplied. See §9 `reserved_offsets` contract in
+`svg-emitter.md` and §`bounding_box()` purity contract in `primitives.md`.
+
+**Error codes.** `R32-01` … `R32-05` — see `error-codes.md`.
+
+**Rationale and background.** See
+`docs/archive/annotation-reflow-flash-2026-04-23/09-ruleset-R32.md` for the
+full invariant table, displacement-event survey (10 affected rendered examples,
+up to +56 px y-jumps), and migration notes.
+
+**Interaction with other rules.**
+
+- Orthogonal to **R-31** (arrow stroke scope) — R-31 decides arrow SVG shape,
+  R-32 decides where the owning primitive sits.
+- Prerequisite for **R-SL-*** (smart-label pill placement) — smart-label
+  scoring is only meaningful if the layout envelope is stable across frames.
+- Analogous to **U-05** (dataset-preserving) — both forbid annotation state
+  from leaking into primary layout/value state.
+
 ---
 
 ## 9. HTML Output Shape
