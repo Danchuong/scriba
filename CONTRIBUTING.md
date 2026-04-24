@@ -109,12 +109,11 @@ The canonical design documents live under `docs/`:
 
 ## Roadmap pointer
 
-The project is at **v0.9.0**. The `\begin{animation}` environment has
+The project is at **v0.15.2**. The `\begin{animation}` environment has
 been shipping since v0.2.0 and is fully documented in
-`docs/spec/environments.md`. The next milestone is **v0.9.1 / v1.0.0**
-stabilization: API surface lock, extended test coverage, and public
-documentation polish. Contributions in those areas are especially
-welcome.
+`docs/spec/environments.md`. Recent focus: Sugiyama graph layout (GEP v2.0.0),
+annotation-stable-layout (R-32), and examples/reference audits. See
+`CHANGELOG.md` for the history.
 
 By contributing, you agree that your contributions will be licensed under
 the project's MIT license.

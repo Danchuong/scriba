@@ -269,7 +269,7 @@ Scriba uses two version identifiers that serve different purposes:
 ### 10.1 `__version__` (package version)
 
 ```python
-__version__: str = "0.9.0"
+__version__: str = "0.15.2"
 ```
 
 Standard PEP 440 version string. Bumped on every PyPI release. Tracks the overall package lifecycle: new features, bug fixes, dependency bumps.

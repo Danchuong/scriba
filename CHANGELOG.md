@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.2] - 2026-04-24 — sdist size fix
+
+### Fixed
+- **sdist bloat**: 0.15.1 shipped a 48.5 MiB source tarball because the default hatch sdist target bundled `docs/archive/**` (including 1 MiB per HTML research artifact), `.claude/**`, `tmp_audit/`, and other VCS-tracked content. 0.15.2 whitelists `scriba/`, `tests/`, and user-facing metadata only — sdist drops to ~1 MiB (48× reduction). No code changes from 0.15.1.
+
 ## [0.15.1] - 2026-04-24 — GEP v2.0.0 + Sugiyama + R-32 + audits
 
 ### Fixed
