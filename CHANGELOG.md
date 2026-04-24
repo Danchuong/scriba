@@ -41,6 +41,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - P4 — multi-hat review.
 - `2cd03b7` — P4 follow-ups (substory threading + L4 xfail).
 
+### Performance
+- `_build_reserved_offsets` pre-scan benchmark (ship criterion < 50 ms):
+  worst-case **0.52 ms** on `houses_schools` (19 frames × 3 primitives).
+  `dp_optimization` 7×2 = 0.09 ms, `convex_hull_trick` 9×3 = 0.16 ms,
+  `kruskal_mst` 11×3 = 0.15 ms. ~96× under budget; no memoization needed.
+
 ## [0.15.0] - 2026-04-23 — Leader-line visual-gap gate
 
 ### Changed
