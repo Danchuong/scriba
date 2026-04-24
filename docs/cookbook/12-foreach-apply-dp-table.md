@@ -197,5 +197,5 @@ unresolved:
 - `spec/ruleset.md §6.5` — `\compute` scope (prelude vs frame-local bindings).
 - Recipe 11 (`11-loop-to-step-manual-unroll.md`) — per-iteration frames via
   manual step unroll.
-- `examples/algorithms/dp/frog_foreach.tex` — a full frog-1 animation using
+- `examples/quickstart/frog_foreach.tex` — a full frog-1 animation using
   this pattern.

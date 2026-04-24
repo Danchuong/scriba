@@ -25,11 +25,11 @@ Full worked algorithm animations live under `examples/`:
 
 ```
 examples/
-  quickstart/         4 files   (hello, binary_search, foreach_demo, diagram_intro)
+  quickstart/         5 files   (hello, binary_search, foreach_demo, diagram_intro, frog_foreach)
   algorithms/
-    graph/            5 files   (dijkstra, kruskal_mst, bfs, mcmf, union_find)
+    graph/            4 files   (dijkstra, kruskal_mst, bfs, union_find)
     tree/             4 files   (bst_operations, persistent_segtree, hld, splay)
-    dp/               5 files   (interval_dp, dp_optimization, convex_hull_trick, frog, frog_foreach)
+    dp/               4 files   (interval_dp, dp_optimization, convex_hull_trick, frog)
     string/           1 file    (kmp)
     misc/             5 files   (simulated_annealing, fft_butterfly, li_chao, convex_hull_andrew, linkedlist_reverse)
   cses/              10 files   (competitive programming editorials)

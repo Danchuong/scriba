@@ -71,7 +71,7 @@ Files have been reorganized under `examples/algorithms/`:
 examples/algorithms/dp/interval_dp.tex          (was h01_zuma_interval_dp)
 examples/algorithms/dp/dp_optimization.tex       (was h02_dp_optimization)
 examples/algorithms/misc/fft_butterfly.tex       (was h04_fft_butterfly)
-examples/algorithms/graph/mcmf.tex               (was h05_mcmf)
+examples/demos/mcmf.tex                          (was h05_mcmf; superseded flagship version)
 examples/algorithms/misc/li_chao.tex             (was h06_li_chao)
 examples/algorithms/tree/splay.tex               (was h07_splay_amortized)
 examples/algorithms/tree/persistent_segtree.tex  (was h08_persistent_segtree)

@@ -22,7 +22,6 @@ ALGORITHM_EXAMPLES: list[tuple[str, list[str]]] = [
     ("algorithms/graph/dijkstra.tex", ["Graph"]),
     ("algorithms/graph/kruskal_mst.tex", ["Graph"]),
     ("algorithms/graph/bfs.tex", ["Graph", "Tree"]),
-    ("algorithms/graph/mcmf.tex", ["Graph"]),
     ("algorithms/graph/union_find.tex", ["Graph"]),
     ("algorithms/tree/bst_operations.tex", ["Tree"]),
     ("algorithms/tree/persistent_segtree.tex", ["Tree"]),
@@ -112,8 +111,8 @@ class TestCoverageSummary:
     def test_algorithm_count(self) -> None:
         algo_dir = EXAMPLES_DIR / "algorithms"
         tex_files = list(algo_dir.rglob("*.tex"))
-        assert len(tex_files) >= 19, (
-            f"Expected >=19 algorithm examples, got {len(tex_files)}"
+        assert len(tex_files) >= 18, (
+            f"Expected >=18 algorithm examples, got {len(tex_files)}"
         )
 
     def test_primitive_count(self) -> None:
