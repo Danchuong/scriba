@@ -361,6 +361,7 @@ def _emit_frame_svg(
     *,
     _frame_id_fn: Callable[[str, Any], str],
     _escape_fn: Callable[[str], str],
+    reserved_offsets: dict[str, tuple[float, float]] | None = None,
 ) -> str:
     """Produce the ``<svg>`` element for one frame.
 
@@ -439,14 +440,23 @@ def _emit_frame_svg(
     # scene_segments is a tuple of (ObstacleSegment, x_off, y_off, prim_id)
     # where (x_off, y_off) are the scene-level translate for the source
     # primitive and prim_id == id(source_primitive) for self-exclusion.
-    _pre_y: float = _PADDING
-    _prim_offsets: dict[str, tuple[float, float]] = {}  # shape_name -> (x_off, y_off)
-    for _sn, _prim in primitives.items():
-        _bbox = _prim.bounding_box()
-        _, _, _bw, _bh = _normalize_bbox(_bbox)
-        _x_off = (vb_width - _bw) // 2
-        _prim_offsets[_sn] = (float(_x_off), float(_pre_y))
-        _pre_y += _bh + _PRIMITIVE_GAP
+    #
+    # R-32.2/R-32.3: when reserved_offsets is provided (built from the
+    # max-bbox pre-scan in _html_stitcher), use those stable y positions
+    # directly instead of re-accumulating from per-frame bounding_box() calls.
+    if reserved_offsets is not None:
+        _prim_offsets: dict[str, tuple[float, float]] = {
+            sn: reserved_offsets[sn] for sn in primitives
+        }
+    else:
+        _pre_y: float = _PADDING
+        _prim_offsets = {}
+        for _sn, _prim in primitives.items():
+            _bbox = _prim.bounding_box()
+            _, _, _bw, _bh = _normalize_bbox(_bbox)
+            _x_off = (vb_width - _bw) // 2
+            _prim_offsets[_sn] = (float(_x_off), float(_pre_y))
+            _pre_y += _bh + _PRIMITIVE_GAP
 
     # Build the flat scene_segments tuple: iterate primitives in scene order,
     # then segments in per-primitive order.  No sets — stable deterministic.
@@ -474,7 +484,15 @@ def _emit_frame_svg(
         bbox = prim.bounding_box()
         _, _, bw, bh = _normalize_bbox(bbox)
 
-        x_offset = (vb_width - bw) // 2
+        # R-32.2/R-32.3: when reserved_offsets is provided, use the stable
+        # pre-scanned y position so downstream primitives never shift between
+        # frames.  Fall back to the per-frame accumulation path when None
+        # (direct-call tests that bypass the stitcher).
+        if reserved_offsets is not None:
+            x_offset, y_cursor = reserved_offsets[shape_name]
+            x_offset = (vb_width - bw) // 2  # x is always centred on actual bbox width
+        else:
+            x_offset = (vb_width - bw) // 2
 
         svg_parts.append(f'<g transform="translate({x_offset},{y_cursor})">')
 
@@ -537,7 +555,8 @@ def _emit_frame_svg(
             svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
 
         svg_parts.append("</g>")
-        y_cursor += bh + _PRIMITIVE_GAP
+        if reserved_offsets is None:
+            y_cursor += bh + _PRIMITIVE_GAP
 
     svg_parts.append("</svg>")
     return "\n".join(svg_parts)
