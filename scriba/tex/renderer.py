@@ -303,11 +303,21 @@ class TexRenderer:
         if len(source.encode("utf-8", errors="ignore")) > MAX_SOURCE_SIZE:
             raise ValidationError(
                 f"tex source exceeds maximum size "
-                f"({MAX_SOURCE_SIZE} bytes)"
+                f"({MAX_SOURCE_SIZE} bytes)",
+                code="E1013",
             )
         return [Block(start=0, end=len(source), kind="tex", raw=source)]
 
     def render_block(self, block: Block, ctx: RenderContext) -> RenderArtifact:
+        # Boundary validation: fail fast on structurally invalid TeX
+        # (unbalanced braces, mismatched environments, odd ``$`` parity)
+        # before dispatching anything to the KaTeX worker.
+        ok, message = _validate(block.raw)
+        if not ok:
+            raise ValidationError(
+                f"invalid TeX structure: {message}",
+                code="E1015",
+            )
         html_text = self._render_source(block.raw, ctx)
         css = {"scriba-tex-content.css"}
         if self._pygments_theme in ("one-light", "github-light"):

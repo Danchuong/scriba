@@ -19,7 +19,9 @@
 | E1010 | Selector parse error: expected number, identifier, or specific character. | Unexpected character at the reported position in a selector. | Fix the token at the reported position. |
 | E1011 | Unterminated string literal in selector. | A quoted string inside a selector is missing its closing quote. | Close the string with a matching quote. |
 | E1012 | Unexpected token kind. | A token that is syntactically valid in isolation appears in the wrong context. | Check for typos or misplaced characters in the selector. |
-| E1013 | Source exceeds maximum size limit (1 MB). | The `.tex` source file is larger than 1 MiB. | Split into smaller animations or reduce content. |
+| E1013 | Source exceeds maximum size limit (1 MiB). Raised both by the animation parser and by the TeX renderer boundary (`scriba.tex.renderer.detect`). | The `.tex` source file is larger than 1 MiB. | Split into smaller documents or reduce content. |
+| E1014 | Source contains a NUL byte. NUL is reserved internally as a placeholder sentinel, so it is rejected at the render boundary (`scriba.core.pipeline.render`). | The input contains a literal `\x00` byte (e.g. a binary file passed as `.tex`). | Pass a valid UTF-8 text source with no NUL bytes. |
+| E1015 | TeX block fails structural validation (unbalanced braces, mismatched/unknown environments, or odd `$` parity). Raised by `scriba.tex.renderer.render_block` before the KaTeX worker runs. | A `.tex` block has an unclosed `{`, a `\begin`/`\end` mismatch, an unrecognized environment, or an odd number of `$` delimiters. | Balance braces and `$`, close every `\begin{env}` with a matching `\end{env}`, and use a recognized environment. |
 | E1017 | Shape id contains invalid characters or exceeds the 63-character limit; allowed charset is `[A-Za-z_][A-Za-z0-9_]{0,62}`. | A `\shape` name contains spaces, hyphens, or non-ASCII letters. | Rename the shape using only ASCII letters, digits, and underscores; start with a letter or underscore. |
 | E1018 | Duplicate shape id within the animation scope — two `\shape` declarations use the same name. | Copy-paste of a shape block without renaming the id argument. | Give each shape a unique id within its `\begin{animation}` block. |
 | E1019 | Duplicate animation id across the document — two `\begin{animation}[id=...]` blocks share the same explicit id. | Two animations in the same `.tex` file were given identical `id=` options. | Use a distinct `id=` for every `\begin{animation}` block in the document. |
@@ -50,6 +52,7 @@
 | E1114 | Unknown keyword parameter passed to a `\shape` primitive. A "did you mean X?" suggestion is included when a close match exists. | Check the parameter name against the primitive's accepted options. |
 | E1115 | Selector does not match any addressable part of the target primitive (warning — command silently dropped). | Check selector syntax against the primitive's addressable parts. |
 | E1116 | Mutation command (`\apply`, `\highlight`, `\recolor`, `\annotate`) references a shape that was never declared with `\shape`. | Add a `\shape` declaration in the animation prelude before the first `\step`, e.g. `\shape{a}{Array}{size=5}`. |
+| E1117 | Too many inline math expressions in a single document (cap: 500). Enforced at the TeX math-extraction boundary (`scriba.tex.parser.math`) to bound KaTeX worker load. | A document contains more than 500 `$...$` / `$$...$$` expressions. | Split the document into smaller files or reduce the number of math expressions. |
 
 ## Render Errors (E1200--E1249)
 

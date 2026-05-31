@@ -162,6 +162,7 @@ class Pipeline:
             raise ValidationError(
                 "source contains NUL byte (reserved for placeholders)",
                 position=nul_pos,
+                code="E1014",
             )
 
         ctx = self._prepare_ctx(ctx)

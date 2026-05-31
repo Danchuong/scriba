@@ -7,6 +7,34 @@ Error-message assertions use substring match (see PHASE2_DECISIONS.md D-08).
 
 from __future__ import annotations
 
+import pytest
+
+from scriba.core.context import RenderContext
+from scriba.core.errors import ScribaError
+
+
+def _ctx() -> RenderContext:
+    return RenderContext(resource_resolver=lambda _filename: None)
+
+
+def test_render_rejects_malformed_tex_at_boundary(pipeline):
+    """Structurally invalid TeX fails fast (E1015) before the KaTeX worker.
+
+    Regression for the previously exposed-but-unwired structural validator:
+    ``render_block`` now calls ``validate`` at the boundary.
+    """
+    with pytest.raises(ScribaError) as exc_info:
+        pipeline.render(r"\textbf{hello", _ctx())
+    # The pipeline enriches the message with block context; the structural
+    # validator's E1015 code is carried in the message text.
+    assert "E1015" in str(exc_info.value)
+
+
+def test_render_accepts_well_formed_tex(pipeline):
+    """Balanced TeX renders without tripping the boundary validator."""
+    doc = pipeline.render(r"Hello \textbf{world} with $x^2$.", _ctx())
+    assert "world" in doc.html
+
 
 def test_validate_balanced_dollars(tex_renderer):
     ok, msg = tex_renderer.validate("a $x$ b $$y$$ c")

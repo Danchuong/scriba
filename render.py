@@ -277,7 +277,9 @@ def render_file(
         title=title,
         body=body,
         css=css,
-        lang=lang,
+        # Escape the operator-supplied --lang flag before it lands in the
+        # ``<html lang="...">`` attribute (defense-in-depth; not remote input).
+        lang=html.escape(lang),
         inline_theme_script=theme_script,
     )
 

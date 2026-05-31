@@ -90,7 +90,8 @@ def extract_math(
 
     if len(items) > MAX_MATH_ITEMS:
         raise ValidationError(
-            f"too many math expressions: {len(items)} > {MAX_MATH_ITEMS}"
+            f"too many math expressions: {len(items)} > {MAX_MATH_ITEMS}",
+            code="E1117",
         )
 
     return text, items
