@@ -92,6 +92,9 @@ include = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = [
+  "unit: fast isolated unit tests",
+  "integration: cross-module integration tests",
+  "e2e: end-to-end CLI tests that exercise the render pipeline",
   "conformance: conformance-suite tests (spec-level invariants)",
   "determinism: D-axis determinism property tests",
   "slow: tests with high example counts (skip with -m 'not slow')",

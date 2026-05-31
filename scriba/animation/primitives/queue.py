@@ -38,6 +38,7 @@ from scriba.animation.primitives._protocol import register_primitive as _protoco
 from scriba.animation.primitives._types import (
     _CELL_HORIZONTAL_PADDING,
     _DEFAULT_FONT_SIZE_PX,
+    SUFFIX_CELL_RE,
 )
 
 # ---------------------------------------------------------------------------
@@ -54,8 +55,9 @@ _LABEL_PADDING = 20  # horizontal padding for pointer labels extending beyond ce
 # Selector regexes (suffix-only, without shape name prefix)
 # ---------------------------------------------------------------------------
 
-# Suffix-only regexes — local, no base.py equivalent.
-_CELL_RE = re.compile(r"^cell\[(?P<idx>\d+)\]$")
+# Suffix-only regexes. ``cell[i]`` is canonical from ._types; the rest are
+# queue-specific.
+_CELL_RE = SUFFIX_CELL_RE
 _FRONT_RE = re.compile(r"^front$")
 _REAR_RE = re.compile(r"^rear$")
 _ALL_RE = re.compile(r"^all$")

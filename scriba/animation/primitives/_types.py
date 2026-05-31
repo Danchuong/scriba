@@ -35,6 +35,11 @@ __all__ = [
     "CELL_2D_RE",
     "RANGE_RE",
     "ALL_RE",
+    # Suffix-only selector regexes (no ``name.`` prefix)
+    "SUFFIX_CELL_RE",
+    "SUFFIX_CELL_2D_RE",
+    "SUFFIX_RANGE_RE",
+    "SUFFIX_TICK_RE",
     # Numeric constants
     "_FLOAT_EPS",
     "_DEFAULT_FONT_SIZE_PX",
@@ -190,3 +195,9 @@ RANGE_RE = re.compile(
     r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$"
 )
 ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+
+# Suffix-only variants (selector already stripped of its ``name.`` prefix).
+SUFFIX_CELL_RE = re.compile(r"^cell\[(?P<idx>\d+)\]$")
+SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
+SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+SUFFIX_TICK_RE = re.compile(r"^tick\[(?P<idx>\d+)\]$")

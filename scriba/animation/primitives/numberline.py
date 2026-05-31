@@ -27,6 +27,12 @@ from scriba.animation.primitives.base import (
 
 
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
+from scriba.animation.primitives._types import (
+    ALL_RE,
+    RANGE_RE,
+    SUFFIX_RANGE_RE,
+    SUFFIX_TICK_RE,
+)
 
 # ---------------------------------------------------------------------------
 # Layout constants
@@ -45,14 +51,15 @@ NL_LABEL_Y = 42
 # Selector matching
 # ---------------------------------------------------------------------------
 
+# Tick/axis selectors are numberline-specific; range/all are canonical.
 _TICK_RE = re.compile(r"^(?P<name>\w+)\.tick\[(?P<idx>\d+)\]$")
-_RANGE_RE = re.compile(r"^(?P<name>\w+)\.range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+_RANGE_RE = RANGE_RE
 _AXIS_RE = re.compile(r"^(?P<name>\w+)\.axis$")
-_ALL_RE = re.compile(r"^(?P<name>\w+)\.all$")
+_ALL_RE = ALL_RE
 
-# Suffix-only regexes (no shape name prefix)
-_SUFFIX_TICK_RE = re.compile(r"^tick\[(?P<idx>\d+)\]$")
-_SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+# Suffix-only regexes (no shape name prefix) — canonical from ._types.
+_SUFFIX_TICK_RE = SUFFIX_TICK_RE
+_SUFFIX_RANGE_RE = SUFFIX_RANGE_RE
 
 
 # ---------------------------------------------------------------------------

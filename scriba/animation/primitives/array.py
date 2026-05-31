@@ -32,7 +32,11 @@ from scriba.animation.primitives.base import (
     svg_style_attrs,
 )
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
-from scriba.animation.primitives._types import _CELL_HORIZONTAL_PADDING
+from scriba.animation.primitives._types import (
+    _CELL_HORIZONTAL_PADDING,
+    SUFFIX_CELL_RE,
+    SUFFIX_RANGE_RE,
+)
 from scriba.animation.primitives.layout import TextBox, stack_bottom, vstack
 
 # Font sizes for each role — must match the CSS variables below. A CI
@@ -64,9 +68,9 @@ _CELL_RE = CELL_1D_RE
 _RANGE_RE = RANGE_RE
 _ALL_RE = ALL_RE
 
-# Suffix-only regexes (no shape name prefix) — local, no base.py equivalent.
-_SUFFIX_CELL_RE = re.compile(r"^cell\[(?P<idx>\d+)\]$")
-_SUFFIX_RANGE_RE = re.compile(r"^range\[(?P<lo>\d+):(?P<hi>\d+)\]$")
+# Suffix-only regexes (no shape name prefix) — canonical from ._types.
+_SUFFIX_CELL_RE = SUFFIX_CELL_RE
+_SUFFIX_RANGE_RE = SUFFIX_RANGE_RE
 
 
 # ---------------------------------------------------------------------------
