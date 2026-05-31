@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-05-31 — embedder font-scale knob + boundary validation
+
+### Added
+- **`--scriba-diagram-font-scale` CSS knob**: consumers embedding Scriba output can resize **all** diagram text with one declaration, e.g. `:root { --scriba-diagram-font-scale: 1.3; }`. Every inline SVG `font-size` is now emitted as `calc(Npx * var(--scriba-diagram-font-scale, 1))`, and the CSS role rules (cell/node/index/label/annotation, numberline tick, metricplot legend) honour it too. Default of `1` leaves rendered sizes unchanged. See [`spec/animation-css.md`](docs/spec/animation-css.md) §2.1a and the new [`guides/embedding-in-website.md`](docs/guides/embedding-in-website.md).
+- New E-codes documented in `spec/error-codes.md`: **E1013** (tex source-size cap), **E1014** (NUL byte), **E1015** (TeX structural validation failure), **E1117** (math-item cap).
+
+### Changed
+- **Rendered output bytes differ from 0.15.x** (cache-busting; `SCRIBA_VERSION` bumped 3→4): SVG `font-size` values are now `calc(...)` expressions, and substory widget ids are deterministic (`sub-{frame_id}-{substory_id}`) rather than counter-based. Default-scale rendering is *visually* identical. Consumer caches keyed on rendered HTML/SVG MUST invalidate.
+- `TexRenderer.render_block` now runs the structural validator (`scriba/tex/validate.py`) before the KaTeX worker. Structurally invalid TeX (unbalanced braces, mismatched/unknown environments, odd `$` parity) fails fast with `ValidationError(code="E1015")` instead of reaching the worker. The validator was previously exposed but unwired.
+
+### Fixed
+- **Cross-render state leaks removed.** The module-level `_substory_counter` in `_html_stitcher.py` (never reset) made in-process multi-render non-deterministic; widget ids are now derived from stable inputs. The module-level `_collected` warnings buffer in `graph_layout_stable.py` (drained only by tests, leaked across renders) was removed in favour of the per-render `RenderContext` collector.
+- Boundary `ValidationError` raises (NUL byte, source-size cap, math-item cap) now carry E-codes for scheme consistency.
+- Operator-supplied `--lang` is now HTML-escaped before the `<html lang="...">` attribute (defense-in-depth).
+
+### Internal
+- Deduplicated suffix selector regexes into `scriba/animation/primitives/_types.py`; registered `unit`/`integration`/`e2e` pytest markers; added `tests/e2e/test_cli_smoke.py` and removed the empty `tests/regression/` scaffold.
+
 ## [0.15.3] - 2026-04-24 — README status fix
 
 ### Fixed

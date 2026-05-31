@@ -71,8 +71,9 @@ exclude = [
 ]
 
 [tool.hatch.build.targets.sdist]
-# Default sdist bundles everything in VCS (~48 MB with docs/archive HTML).
-# Whitelist user-facing + packaging essentials only. Added post-0.15.1.
+# Default sdist bundles everything in VCS. Whitelist user-facing +
+# packaging essentials, then exclude heavy regenerable fixtures and
+# internal docs so the tarball stays small (0.15.3 shipped ~0.7 MB).
 include = [
   "scriba/**",
   "tests/**",
@@ -82,6 +83,16 @@ include = [
   "SECURITY.md",
   "LICENSE",
   "pyproject.toml",
+]
+exclude = [
+  # Golden HTML corpora are large (60+ MB), regenerable test fixtures —
+  # not needed to install or import the package.
+  "tests/golden/examples/corpus/**",
+  "tests/golden/smart_label/**",
+  # Internal docs / design logs / agent state never shipped to PyPI.
+  "docs/**",
+  ".claude/**",
+  "tmp_audit/**",
 ]
 
 [tool.hatch.build.targets.wheel.package-data]

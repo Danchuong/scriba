@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.15.3"
+__version__: str = "0.16.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 3
+SCRIBA_VERSION: int = 4
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -15,4 +15,9 @@ mutation APIs (RFC-001). The additions are backward-compatible at the read
 side, but consumer caches keyed on primitive rendered output MUST invalidate
 because new states (``hidden``) and new edge parsing (3-tuple weighted)
 produce strictly different SVG. This is the first SCRIBA_VERSION break
-since v0.1.1."""
+since v0.1.1.
+
+0.16.0 bumps 3→4: every SVG ``font-size`` is now emitted as
+``calc(Npx * var(--scriba-diagram-font-scale, 1))`` and substory widget ids
+became deterministic, so rendered HTML/SVG bytes differ from 0.15.x even at
+the default scale. Consumer caches keyed on rendered output MUST invalidate."""
