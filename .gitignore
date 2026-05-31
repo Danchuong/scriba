@@ -13,6 +13,8 @@ htmlcov/
 !.claude/skills/
 .gitnexus
 .opencode
+# Build artifacts — compiled examples (golden copies live in tests/golden/examples/corpus/)
+examples/**/*.html
 .DS_Store
 **/.DS_Store
 

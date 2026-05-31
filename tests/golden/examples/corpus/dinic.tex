@@ -1,0 +1,310 @@
+\section{Dinic's Algorithm --- Max Flow}
+
+\subsection{Overview}
+
+Dinic's algorithm finds max flow in $O(V^2 E)$ by repeatedly:
+\begin{enumerate}
+\item Build a \textbf{level graph} via BFS (assign distance labels from $s$)
+\item Find \textbf{blocking flows} via DFS (saturate all shortest paths at once)
+\end{enumerate}
+
+Each BFS phase increases the shortest $s$-$t$ distance by at least 1, so at most $V-1$ phases.
+
+$$\text{Time: } O(V^2 E) \quad \text{vs Edmonds-Karp } O(VE^2)$$
+
+\subsection{Walkthrough}
+
+\begin{animation}[id="dinic", label="Dinic's Algorithm"]
+\shape{G}{Graph}{
+  nodes=["S","A","B","C","D","T"],
+  edges=[("S","A"),("S","B"),("A","B"),("A","C"),("B","C"),("B","D"),("C","D"),("C","T"),("D","T")],
+  directed=true,
+  layout="hierarchical"
+}
+\shape{vars}{VariableWatch}{names=["phase","total_flow","level_S","level_A","level_B","level_C","level_D","level_T"], label="State"}
+
+\apply{G.edge[(S,A)]}{value="0/10"}
+\apply{G.edge[(S,B)]}{value="0/10"}
+\apply{G.edge[(A,B)]}{value="0/2"}
+\apply{G.edge[(A,C)]}{value="0/8"}
+\apply{G.edge[(B,C)]}{value="0/6"}
+\apply{G.edge[(B,D)]}{value="0/5"}
+\apply{G.edge[(C,D)]}{value="0/3"}
+\apply{G.edge[(C,T)]}{value="0/10"}
+\apply{G.edge[(D,T)]}{value="0/10"}
+
+\step
+\recolor{G.node[S]}{state=current}
+\recolor{G.node[T]}{state=good}
+\apply{vars.var[phase]}{value="0"}
+\apply{vars.var[total_flow]}{value="0"}
+\apply{vars.var[level_S]}{value="-"}
+\apply{vars.var[level_A]}{value="-"}
+\apply{vars.var[level_B]}{value="-"}
+\apply{vars.var[level_C]}{value="-"}
+\apply{vars.var[level_D]}{value="-"}
+\apply{vars.var[level_T]}{value="-"}
+\narrate{Flow network with 6 nodes, 8 edges. Each edge shows \textbf{flow/capacity}. Dinic's alternates BFS (level graph) and DFS (blocking flow).}
+
+\step
+\narrate{\textbf{Phase 1 --- BFS:} Build level graph. $level[S]=0$, expand layer by layer.}
+\apply{vars.var[phase]}{value="1 (BFS)"}
+\apply{vars.var[level_S]}{value="0"}
+\recolor{G.node[S]}{state=current}
+
+\step
+\narrate{From $S$: reach $A$ and $B$. $level[A]=1$, $level[B]=1$.}
+\apply{vars.var[level_A]}{value="1"}
+\apply{vars.var[level_B]}{value="1"}
+\recolor{G.node[A]}{state=highlight}
+\recolor{G.node[B]}{state=highlight}
+\recolor{G.edge[(S,A)]}{state=current}
+\recolor{G.edge[(S,B)]}{state=current}
+
+\step
+\narrate{From $A$,$B$: reach $C$ and $D$. $level[C]=2$, $level[D]=2$. Edge $A \to B$ skipped (same level).}
+\apply{vars.var[level_C]}{value="2"}
+\apply{vars.var[level_D]}{value="2"}
+\recolor{G.node[C]}{state=highlight}
+\recolor{G.node[D]}{state=highlight}
+\recolor{G.edge[(A,C)]}{state=current}
+\recolor{G.edge[(B,C)]}{state=current}
+\recolor{G.edge[(B,D)]}{state=current}
+\recolor{G.edge[(A,B)]}{state=dim}
+
+\step
+\narrate{From $C$,$D$: reach $T$. $level[T]=3$. Level graph complete. Only edges going from level $k$ to $k+1$ are kept.}
+\apply{vars.var[level_T]}{value="3"}
+\recolor{G.node[T]}{state=good}
+\recolor{G.edge[(C,T)]}{state=current}
+\recolor{G.edge[(D,T)]}{state=current}
+
+\step
+\narrate{\textbf{Phase 1 --- DFS 1:} Find path $S \to A \to C \to T$. Bottleneck $= \min(10, 8, 10) = 8$. Push 8.}
+\apply{vars.var[phase]}{value="1 (DFS)"}
+\recolor{G.edge[(S,A)]}{state=good}
+\recolor{G.edge[(A,C)]}{state=good}
+\recolor{G.edge[(C,T)]}{state=good}
+\recolor{G.edge[(S,B)]}{state=idle}
+\recolor{G.edge[(B,C)]}{state=idle}
+\recolor{G.edge[(B,D)]}{state=idle}
+\recolor{G.edge[(D,T)]}{state=idle}
+\recolor{G.node[A]}{state=good}
+\recolor{G.node[C]}{state=good}
+
+\step
+\narrate{Update: $S \to A$: 8/10, $A \to C$: 8/8 (saturated!), $C \to T$: 8/10. Total $= 8$.}
+\apply{G.edge[(S,A)]}{value="8/10"}
+\apply{G.edge[(A,C)]}{value="8/8"}
+\apply{G.edge[(C,T)]}{value="8/10"}
+\recolor{G.edge[(A,C)]}{state=error}
+\recolor{G.edge[(S,A)]}{state=done}
+\recolor{G.edge[(C,T)]}{state=done}
+\apply{vars.var[total_flow]}{value="8"}
+
+\step
+\narrate{\textbf{Phase 1 --- DFS 2:} $A \to C$ saturated. DFS backtracks, tries $S \to B \to C \to T$. Bottleneck $= \min(10, 6, 2) = 2$.}
+\recolor{G.edge[(S,B)]}{state=good}
+\recolor{G.edge[(B,C)]}{state=good}
+\recolor{G.edge[(C,T)]}{state=good}
+\recolor{G.node[B]}{state=good}
+\recolor{G.node[C]}{state=good}
+\recolor{G.node[A]}{state=idle}
+
+\step
+\narrate{Push 2. $C \to T$: 10/10 (saturated!). Total $= 10$.}
+\apply{G.edge[(S,B)]}{value="2/10"}
+\apply{G.edge[(B,C)]}{value="2/6"}
+\apply{G.edge[(C,T)]}{value="10/10"}
+\recolor{G.edge[(C,T)]}{state=error}
+\recolor{G.edge[(S,B)]}{state=done}
+\recolor{G.edge[(B,C)]}{state=done}
+\apply{vars.var[total_flow]}{value="10"}
+
+\step
+\narrate{\textbf{Phase 1 --- DFS 3:} $C \to T$ saturated. DFS tries $S \to B \to D \to T$. Bottleneck $= \min(8, 5, 10) = 5$.}
+\recolor{G.edge[(S,B)]}{state=good}
+\recolor{G.edge[(B,D)]}{state=good}
+\recolor{G.edge[(D,T)]}{state=good}
+\recolor{G.node[B]}{state=good}
+\recolor{G.node[D]}{state=good}
+\recolor{G.node[C]}{state=idle}
+
+\step
+\narrate{Push 5. $B \to D$: 5/5 (saturated!). Total $= 15$.}
+\apply{G.edge[(S,B)]}{value="7/10"}
+\apply{G.edge[(B,D)]}{value="5/5"}
+\apply{G.edge[(D,T)]}{value="5/10"}
+\recolor{G.edge[(B,D)]}{state=error}
+\recolor{G.edge[(S,B)]}{state=done}
+\recolor{G.edge[(D,T)]}{state=done}
+\apply{vars.var[total_flow]}{value="15"}
+
+\step
+\narrate{\textbf{Phase 1 --- DFS done:} No more paths to $T$ in level graph. All edges from $B$ to level-2 are saturated ($B \to C$: 2/6? No, residual $= 4$). Actually $C \to T$ saturated blocks $C$. $B \to D$ saturated blocks $D$. Blocking flow complete.}
+\recolor{G.node[A]}{state=idle}
+\recolor{G.node[B]}{state=idle}
+\recolor{G.node[C]}{state=idle}
+\recolor{G.node[D]}{state=idle}
+\recolor{G.edge[(S,A)]}{state=idle}
+\recolor{G.edge[(S,B)]}{state=idle}
+\recolor{G.edge[(A,C)]}{state=dim}
+\recolor{G.edge[(B,C)]}{state=idle}
+\recolor{G.edge[(B,D)]}{state=dim}
+\recolor{G.edge[(C,T)]}{state=dim}
+\recolor{G.edge[(D,T)]}{state=idle}
+\apply{vars.var[phase]}{value="1 done"}
+
+\step
+\narrate{\textbf{Phase 2 --- BFS:} Rebuild level graph on residual. Reverse edges now exist: $C \to A$ (cap 8), $T \to C$ (cap 10), etc.}
+\apply{vars.var[phase]}{value="2 (BFS)"}
+\apply{vars.var[level_S]}{value="0"}
+\apply{vars.var[level_A]}{value="1"}
+\apply{vars.var[level_B]}{value="1"}
+\apply{vars.var[level_C]}{value="2"}
+\apply{vars.var[level_D]}{value="2"}
+\apply{vars.var[level_T]}{value="3"}
+\recolor{G.node[S]}{state=current}
+\recolor{G.node[A]}{state=highlight}
+\recolor{G.node[B]}{state=highlight}
+\recolor{G.node[C]}{state=highlight}
+\recolor{G.node[D]}{state=highlight}
+
+\step
+\narrate{Level graph same structure ($T$ still at level 3). But available edges differ due to residual capacities. Key: $S \to A$ has 2, $A \to B$ has 2, $B \to C$ has 4, $C \to T$ saturated --- must use reverse $C \to A$ (8) and reroute.}
+\recolor{G.edge[(S,A)]}{state=current}
+\recolor{G.edge[(A,B)]}{state=current}
+\recolor{G.edge[(B,C)]}{state=current}
+\recolor{G.edge[(B,D)]}{state=dim}
+\recolor{G.edge[(C,T)]}{state=dim}
+
+\step
+\narrate{\textbf{Phase 2 --- DFS:} Path $S \to A \to B \to D \to T$ (via residual). $S \to A$: 2, $A \to B$: 2, $B \to D$ saturated\ldots no. Try $S \to B \to C \to D \to T$. $S \to B$: 3, $B \to C$: 4, $C \to D$: 3, $D \to T$: 5. Bottleneck $= 3$.}
+\apply{vars.var[phase]}{value="2 (DFS)"}
+\recolor{G.edge[(S,B)]}{state=good}
+\recolor{G.edge[(B,C)]}{state=good}
+\recolor{G.edge[(C,D)]}{state=good}
+\recolor{G.edge[(D,T)]}{state=good}
+\recolor{G.node[B]}{state=good}
+\recolor{G.node[C]}{state=good}
+\recolor{G.node[D]}{state=good}
+\recolor{G.edge[(S,A)]}{state=idle}
+\recolor{G.edge[(A,B)]}{state=idle}
+
+\step
+\narrate{Push 3. $S \to B$: 10/10 (saturated!). $B \to C$: 5/6. $C \to D$: 3/3 (saturated!). $D \to T$: 8/10. Total $= 18$.}
+\apply{G.edge[(S,B)]}{value="10/10"}
+\apply{G.edge[(B,C)]}{value="5/6"}
+\apply{G.edge[(C,D)]}{value="3/3"}
+\apply{G.edge[(D,T)]}{value="8/10"}
+\recolor{G.edge[(S,B)]}{state=error}
+\recolor{G.edge[(C,D)]}{state=error}
+\recolor{G.edge[(B,C)]}{state=done}
+\recolor{G.edge[(D,T)]}{state=done}
+\apply{vars.var[total_flow]}{value="18"}
+
+\step
+\narrate{\textbf{Phase 2 --- DFS 2:} $S \to B$ saturated. Try $S \to A$ (residual 2). $A \to B$: 2, $B \to C$: 1, but $C \to T$ saturated and $C \to D$ saturated. $A \to B \to D \to T$? $B \to D$ saturated. Dead end. Blocking flow done.}
+\recolor{G.edge[(S,A)]}{state=current}
+\recolor{G.edge[(A,B)]}{state=current}
+\recolor{G.node[A]}{state=current}
+\recolor{G.node[B]}{state=dim}
+\recolor{G.node[C]}{state=idle}
+\recolor{G.node[D]}{state=idle}
+
+\step
+\narrate{\textbf{Phase 3 --- BFS:} $S$ can reach $A$ (residual 2). From $A$: $A \to B$ (2). From $B$: $B \to C$ (1). From $C$: $C \to T$ saturated. No path to $T$ in residual $\Rightarrow$ BFS fails. \textbf{Algorithm terminates.}}
+\apply{vars.var[phase]}{value="3 (BFS fail)"}
+\recolor{G.node[S]}{state=current}
+\recolor{G.node[A]}{state=dim}
+\recolor{G.node[B]}{state=dim}
+\recolor{G.edge[(S,A)]}{state=dim}
+\recolor{G.edge[(A,B)]}{state=dim}
+\apply{vars.var[level_T]}{value="unreachable"}
+
+\step
+\narrate{\textbf{Max flow $= 18$.} Min-cut: reachable from $S$ in residual $= \{S,A,B\}$ vs $\{C,D,T\}$. Cut edges (red): $A \to C$ (8) + $B \to C$ (6) + $B \to D$ (5). Dinic's found this in 2 BFS phases.}
+\apply{vars.var[phase]}{value="done"}
+\recolor{G.node[S]}{state=error}
+\recolor{G.node[A]}{state=error}
+\recolor{G.node[B]}{state=error}
+\recolor{G.node[C]}{state=done}
+\recolor{G.node[D]}{state=done}
+\recolor{G.node[T]}{state=done}
+\recolor{G.edge[(A,C)]}{state=error}
+\recolor{G.edge[(B,C)]}{state=error}
+\recolor{G.edge[(B,D)]}{state=error}
+\recolor{G.edge[(S,A)]}{state=idle}
+\recolor{G.edge[(S,B)]}{state=idle}
+\recolor{G.edge[(A,B)]}{state=idle}
+\recolor{G.edge[(C,D)]}{state=done}
+\recolor{G.edge[(C,T)]}{state=done}
+\recolor{G.edge[(D,T)]}{state=done}
+\annotate{G.node[S]}{label="S-side", color=error}
+\annotate{G.node[T]}{label="T-side", color=good}
+
+\end{animation}
+
+\subsection{Why Dinic's is Faster}
+
+\begin{itemize}
+\item \textbf{Edmonds-Karp}: one augmenting path per BFS. $O(VE)$ paths total $\Rightarrow O(VE^2)$.
+\item \textbf{Dinic's}: one BFS builds level graph, then DFS finds \textbf{all} shortest augmenting paths (blocking flow) at once. Each phase increases shortest path length $\Rightarrow$ at most $V-1$ phases, each $O(VE)$ $\Rightarrow O(V^2 E)$.
+\end{itemize}
+
+Key optimization: the \texttt{iter[]} array (current-arc optimization) ensures each edge is examined at most once per DFS phase.
+
+\subsection{Implementation}
+
+\begin{lstlisting}[language=Python]
+from collections import deque
+
+class Dinic:
+    def __init__(self, n):
+        self.n = n
+        self.graph = [[] for _ in range(n)]
+
+    def add_edge(self, u, v, cap):
+        self.graph[u].append([v, cap, len(self.graph[v])])
+        self.graph[v].append([u, 0, len(self.graph[u]) - 1])
+
+    def bfs(self, s, t):
+        """Build level graph. Return True if t reachable."""
+        self.level = [-1] * self.n
+        self.level[s] = 0
+        q = deque([s])
+        while q:
+            u = q.popleft()
+            for v, cap, _ in self.graph[u]:
+                if cap > 0 and self.level[v] < 0:
+                    self.level[v] = self.level[u] + 1
+                    q.append(v)
+        return self.level[t] >= 0
+
+    def dfs(self, u, t, pushed):
+        """Find blocking flow via DFS with current-arc optimization."""
+        if u == t:
+            return pushed
+        while self.iter[u] < len(self.graph[u]):
+            e = self.graph[u][self.iter[u]]
+            v, cap, rev = e
+            if cap > 0 and self.level[v] == self.level[u] + 1:
+                d = self.dfs(v, t, min(pushed, cap))
+                if d > 0:
+                    e[1] -= d
+                    self.graph[v][rev][1] += d
+                    return d
+            self.iter[u] += 1
+        return 0
+
+    def max_flow(self, s, t):
+        flow = 0
+        while self.bfs(s, t):          # Phase: build level graph
+            self.iter = [0] * self.n    # Reset current-arc pointers
+            while True:                 # Find all blocking flows
+                f = self.dfs(s, t, float('inf'))
+                if f == 0:
+                    break
+                flow += f
+        return flow
+\end{lstlisting}

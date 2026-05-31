@@ -1,0 +1,310 @@
+\section{Core Idea}
+
+Model the labyrinth as an unweighted graph on walkable cells.
+
+We run two BFS passes:
+
+\begin{itemize}
+\item A \textit{multi-source BFS} from every monster cell computes
+$monster\_dist[r][c]$, the earliest minute when any monster can reach cell
+$(r,c)$.
+\item A second BFS from \texttt{A} searches only cells that are still safe when
+we arrive there.
+\end{itemize}
+
+The key invariant is the \textit{Safety Frontier Invariant}:
+
+\textit{Every cell in the player's BFS queue is reached by a path whose arrival
+time is strictly smaller than the earliest monster arrival time at every cell on
+that path. In particular, for every queued cell $v$, we have
+$player\_dist[v] < monster\_dist[v]$.}
+
+That strict inequality is the whole problem. If we ever arrive at the same time
+as the monster frontier, the cell is already unsafe.
+
+So during the player's BFS, we only relax a neighbor $v$ when
+
+$$
+player\_dist[u] + 1 < monster\_dist[v].
+$$
+
+If we reach a boundary cell under this rule, then the reconstructed BFS path is
+a valid escape. If no boundary cell is reachable, then no valid plan exists.
+
+\section{Toy Example}
+
+Use this tiny custom grid:
+
+\begin{lstlisting}
+..M..
+.A...
+.....
+.....
+\end{lstlisting}
+
+Coordinates are zero-indexed. The player starts at $(1,1)$ and the monster
+starts at $(0,2)$.
+
+This example is intentionally small, but it exposes the decisive hard step:
+
+\begin{itemize}
+\item the top boundary cell $(0,1)$ looks attractive because it is only one move
+away from \texttt{A}
+\item however, the monster also reaches $(0,1)$ in one move, so that cell is
+not safe
+\item the left boundary cell $(1,0)$ is also one move away for the player, but
+the monster needs three moves to reach it, so that exit is safe
+\end{itemize}
+
+The example is not about maze complexity. It is about why the condition must be
+\textit{strictly earlier than the monster frontier}, not ``earlier or equal''.
+
+\section{Walkthrough}
+
+The decisive step is deciding which cells are allowed into the player's BFS
+frontier. A full replay of both BFS passes would be long and low-value. The
+hard part is the strict safety test.
+
+In the toy example, the monster BFS gives these relevant arrival times:
+
+\begin{itemize}
+\item $monster\_dist(0,1) = 1$
+\item $monster\_dist(1,2) = 1$
+\item $monster\_dist(1,0) = 3$
+\item $monster\_dist(2,1) = 3$
+\end{itemize}
+
+So from $(1,1)$, the top and right moves are rejected because the player would
+arrive at exactly the same time as the monster frontier, while the left and
+down moves stay safe.
+
+\begin{animation}[id="monsters-safety-frontier", label="Monsters strict safety test"]
+\shape{maze}{Grid}{rows=4, cols=5, data=[[".",".","M",".","."],[".","A",".",".","."],[".",".",".",".","."],[".",".",".",".","."]], label="toy grid"}
+\shape{state}{VariableWatch}{names=["candidate","player_arrival","monster_arrival","safe"], label="Safety check"}
+
+\step
+\recolor{maze.cell[0][2]}{state=error}
+\recolor{maze.cell[1][1]}{state=current}
+\apply{state.var[candidate]}{value="start"}
+\apply{state.var[player_arrival]}{value="0"}
+\apply{state.var[monster_arrival]}{value="0 at M"}
+\apply{state.var[safe]}{value="use monster BFS first"}
+\narrate{First compute the earliest monster arrival time for every cell. Then run the player's BFS, but only through cells where the player arrives strictly earlier than the monsters.}
+
+\step
+\recolor{maze.cell[0][1]}{state=error}
+\annotate{maze.cell[0][1]}{label="$1 \\not< 1$", arrow_from="maze.cell[1][1]", color=error}
+\apply{state.var[candidate]}{value="(0,1)"}
+\apply{state.var[player_arrival]}{value="1"}
+\apply{state.var[monster_arrival]}{value="1"}
+\apply{state.var[safe]}{value="no"}
+\narrate{The top boundary cell looks attractive because it is one move away, but it fails the strict test. Arriving at the same time as the monster frontier is already unsafe.}
+
+\step
+\recolor{maze.cell[1][0]}{state=current}
+\annotate{maze.cell[1][0]}{label="$1 < 3$", arrow_from="maze.cell[1][1]", color=good}
+\apply{state.var[candidate]}{value="(1,0)"}
+\apply{state.var[player_arrival]}{value="1"}
+\apply{state.var[monster_arrival]}{value="3"}
+\apply{state.var[safe]}{value="yes"}
+\narrate{The left boundary cell survives. The player reaches it in one minute, while the earliest monster arrives only in three. This move stays inside the safe subgraph.}
+
+\step
+\recolor{maze.cell[1][1]}{state=path}
+\recolor{maze.cell[1][0]}{state=path}
+\apply{state.var[candidate]}{value="boundary"}
+\apply{state.var[player_arrival]}{value="1"}
+\apply{state.var[monster_arrival]}{value="3"}
+\apply{state.var[safe]}{value="stop and reconstruct"}
+\narrate{Once the player's BFS reaches a safe boundary cell, it can stop. Here the reconstructed escape path is just \texttt{L}. The second BFS is really BFS on the original grid after unsafe cells have been filtered out by the monster frontier.}
+\end{animation}
+
+\section{Proof Sketch}
+
+There are two claims to prove.
+
+\textbf{1. Monster BFS computes the correct danger time.}
+
+Start the BFS queue with all monster cells at distance $0$. Because every move
+costs one minute, standard multi-source BFS computes the shortest distance from
+the set of monsters to every walkable cell. Therefore $monster\_dist[v]$ is the
+earliest possible time when any monster can stand on $v$.
+
+\textbf{2. Player BFS finds a valid escape if and only if one exists.}
+
+We maintain the Safety Frontier Invariant:
+every queued player cell $v$ satisfies
+$player\_dist[v] < monster\_dist[v]$.
+
+This is true for the start cell because \texttt{A} is not a monster cell.
+Suppose it is true for the current cell $u$. We only push a neighbor $v$ when
+
+$$
+player\_dist[u] + 1 < monster\_dist[v].
+$$
+
+Then the path to $v$ is safe as well: every earlier cell on the path was already
+safe by the invariant, and the new final cell $v$ is safe by the inequality
+above. So the invariant is preserved.
+
+This proves \textit{soundness}: every boundary cell reached by the player's BFS
+gives a valid escape path.
+
+For \textit{completeness}, consider any valid escape path. At every cell on that
+path, the player must arrive strictly earlier than the earliest monster arrival;
+otherwise a monster can be on that cell at the same time or sooner, which is
+forbidden. So every valid escape path lies entirely inside the safe subgraph
+defined by $player\_time < monster\_time$. The player's BFS explores exactly
+that safe subgraph in increasing distance order. Therefore, if any valid escape
+exists, the BFS reaches some boundary cell and reconstructs one.
+
+\section{Complexity}
+
+Both BFS passes touch each walkable cell at most once.
+
+\begin{itemize}
+\item Time complexity: $O(nm)$
+\item Memory complexity: $O(nm)$
+\end{itemize}
+
+\section{Pitfalls}
+
+\begin{itemize}
+\item The safety test is strict. A move is allowed only when the player arrives
+\textit{before} the monsters, so the condition is
+\texttt{next\_dist < monster\_dist[nr][nc]}, not \texttt{<=}.
+\item Monster distances must come from one multi-source BFS seeded with
+\textit{all} monsters at once. Running separate BFS passes and taking minima is
+slower and easier to get wrong.
+\item Cells that monsters can never reach should keep distance \texttt{INF}. They
+are still valid for the player if the player can reach them.
+\item Path reconstruction needs the direction used to enter each cell, not just
+the distance. Store a parent cell and a move letter when you push a neighbor.
+\end{itemize}
+
+\section{Reference Implementation}
+
+\begin{lstlisting}[language=C++]
+#include <algorithm>
+#include <array>
+#include <iostream>
+#include <queue>
+#include <string>
+#include <utility>
+#include <vector>
+
+using namespace std;
+
+int main() {
+    int n, m;
+    cin >> n >> m;
+
+    vector<string> grid(n);
+    for (int i = 0; i < n; ++i) {
+        cin >> grid[i];
+    }
+
+    const int INF = 1e9;
+    const array<int, 4> DR{1, -1, 0, 0};
+    const array<int, 4> DC{0, 0, 1, -1};
+    const array<char, 4> MOVE{'D', 'U', 'R', 'L'};
+
+    auto inside = [&](int r, int c) {
+        return 0 <= r && r < n && 0 <= c && c < m;
+    };
+
+    auto is_boundary = [&](int r, int c) {
+        return r == 0 || r == n - 1 || c == 0 || c == m - 1;
+    };
+
+    vector<vector<int>> monster_dist(n, vector<int>(m, INF));
+    vector<vector<int>> player_dist(n, vector<int>(m, -1));
+    vector<vector<pair<int, int>>> parent(
+        n, vector<pair<int, int>>(m, {-1, -1}));
+    vector<vector<char>> parent_move(n, vector<char>(m, '?'));
+
+    queue<pair<int, int>> q;
+    pair<int, int> start{-1, -1};
+
+    for (int r = 0; r < n; ++r) {
+        for (int c = 0; c < m; ++c) {
+            if (grid[r][c] == 'M') {
+                monster_dist[r][c] = 0;
+                q.push({r, c});
+            } else if (grid[r][c] == 'A') {
+                start = {r, c};
+            }
+        }
+    }
+
+    while (!q.empty()) {
+        auto [r, c] = q.front();
+        q.pop();
+
+        for (int k = 0; k < 4; ++k) {
+            int nr = r + DR[k];
+            int nc = c + DC[k];
+            if (!inside(nr, nc) || grid[nr][nc] == '#') {
+                continue;
+            }
+            if (monster_dist[nr][nc] != INF) {
+                continue;
+            }
+            monster_dist[nr][nc] = monster_dist[r][c] + 1;
+            q.push({nr, nc});
+        }
+    }
+
+    q.push(start);
+    player_dist[start.first][start.second] = 0;
+
+    pair<int, int> exit_cell{-1, -1};
+
+    while (!q.empty()) {
+        auto [r, c] = q.front();
+        q.pop();
+
+        if (is_boundary(r, c)) {
+            exit_cell = {r, c};
+            break;
+        }
+
+        for (int k = 0; k < 4; ++k) {
+            int nr = r + DR[k];
+            int nc = c + DC[k];
+            if (!inside(nr, nc) || grid[nr][nc] == '#') {
+                continue;
+            }
+            if (player_dist[nr][nc] != -1) {
+                continue;
+            }
+
+            int next_dist = player_dist[r][c] + 1;
+            if (next_dist >= monster_dist[nr][nc]) {
+                continue;
+            }
+
+            player_dist[nr][nc] = next_dist;
+            parent[nr][nc] = {r, c};
+            parent_move[nr][nc] = MOVE[k];
+            q.push({nr, nc});
+        }
+    }
+
+    if (exit_cell.first == -1) {
+        cout << "NO\n";
+        return 0;
+    }
+
+    string path;
+    for (pair<int, int> cur = exit_cell; cur != start; cur = parent[cur.first][cur.second]) {
+        path += parent_move[cur.first][cur.second];
+    }
+    reverse(path.begin(), path.end());
+
+    cout << "YES\n";
+    cout << path.size() << '\n';
+    cout << path << '\n';
+    return 0;
+}
+\end{lstlisting}

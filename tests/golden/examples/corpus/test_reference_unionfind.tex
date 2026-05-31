@@ -1,0 +1,295 @@
+\section{Union-Find / Disjoint Set Union}
+
+The \textbf{Union-Find} (or \textbf{Disjoint Set Union}, DSU) data structure maintains a collection
+of disjoint sets and supports two primary operations:
+
+\begin{itemize}
+\item \textbf{Find}$(x)$: Determine which set element $x$ belongs to (returns the root representative).
+\item \textbf{Union}$(x, y)$: Merge the sets containing $x$ and $y$.
+\end{itemize}
+
+With \textit{path compression} and \textit{union by rank}, both operations achieve near-constant
+amortized time:
+
+$$\alpha(n) \approx O(1) \quad \text{(inverse Ackermann function)}$$
+
+The parent array encodes a forest of trees. For any element $x$:
+
+$$\text{Find}(x) = \begin{cases} x & \text{if } parent[x] = x \\ \text{Find}(parent[x]) & \text{otherwise} \end{cases}$$
+
+Union by rank ensures the shorter tree is attached under the taller one:
+
+$$\text{Union}(x, y): \quad \text{if } rank[r_x] < rank[r_y], \; parent[r_x] \leftarrow r_y$$
+
+\begin{diagram}[id="uf-initial-graph", label="Initial graph with 8 nodes"]
+\shape{G}{Graph}{nodes=["0","1","2","3","4","5","6","7"], edges=[("0","1"),("1","2"),("3","4"),("5","6"),("6","7"),("2","3"),("4","5")], directed=false, layout="stable", layout_seed=42}
+\recolor{G.node[0]}{state=good}
+\recolor{G.node[7]}{state=good}
+\annotate{G.node[0]}{label="start", position=above, color=info}
+\annotate{G.node[7]}{label="end", position=above, color=info}
+\end{diagram}
+
+\subsection{Step-by-Step Animation}
+
+We process edges one at a time, performing Union operations. The animation shows
+the graph, the $parent[]$ array, the $rank[]$ array, and a variable watch panel
+tracking the current operation.
+
+\begin{animation}[id="uf-walkthrough", label="Union-Find with Path Compression"]
+\compute{
+initial_parent = [0, 1, 2, 3, 4, 5, 6, 7]
+initial_rank = [0, 0, 0, 0, 0, 0, 0, 0]
+all_nodes = [0, 1, 2, 3, 4, 5, 6, 7]
+edges_to_process = ["(0,1)", "(1,2)", "(3,4)", "(5,6)", "(6,7)", "(2,3)", "(4,5)"]
+}
+
+\shape{G}{Graph}{nodes=["0","1","2","3","4","5","6","7"], edges=[("0","1"),("1","2"),("3","4"),("5","6"),("6","7"),("2","3"),("4","5")], directed=false, layout="stable", layout_seed=42}
+\shape{par}{Array}{size=8, data=[0,1,2,3,4,5,6,7], labels="0..7", label="$parent[]$"}
+\shape{rnk}{Array}{size=8, data=[0,0,0,0,0,0,0,0], labels="0..7", label="$rank[]$"}
+\shape{vars}{VariableWatch}{names=["op","x","y","root_x","root_y","step"], label="Variables"}
+
+% Step 1: Initial state
+\step
+\apply{vars.var[op]}{value="init"}
+\apply{vars.var[x]}{value="-"}
+\apply{vars.var[y]}{value="-"}
+\apply{vars.var[root_x]}{value="-"}
+\apply{vars.var[root_y]}{value="-"}
+\apply{vars.var[step]}{value="0"}
+\narrate{Initial state: 8 disjoint elements $\{0\}, \{1\}, \ldots, \{7\}$. Each element is its own parent, all ranks are 0.}
+
+% Step 2: Union(0, 1)
+\step
+\apply{vars.var[op]}{value="Union(0,1)"}
+\apply{vars.var[x]}{value="0"}
+\apply{vars.var[y]}{value="1"}
+\apply{vars.var[root_x]}{value="0"}
+\apply{vars.var[root_y]}{value="1"}
+\apply{vars.var[step]}{value="1"}
+\recolor{G.node[0]}{state=current}
+\recolor{G.node[1]}{state=current}
+\recolor{G.edge[(0,1)]}{state=current}
+\highlight{par.cell[1]}
+\narrate{Union(0, 1): Both roots have rank 0. Attach 1 under 0 and increment rank of 0.}
+
+% Step 3: Apply Union(0, 1)
+\step
+\apply{par.cell[1]}{value=0}
+\apply{rnk.cell[0]}{value=1}
+\recolor{par.cell[1]}{state=done}
+\recolor{rnk.cell[0]}{state=done}
+\recolor{G.node[0]}{state=good}
+\recolor{G.node[1]}{state=done}
+\recolor{G.edge[(0,1)]}{state=good}
+\annotate{par.cell[1]}{label="0 is root", position=below, color=good, arrow_from="par.cell[0]"}
+\narrate{After Union(0,1): $parent[1] = 0$, $rank[0] = 1$. Set $\{0, 1\}$ formed with root 0.}
+
+% Step 4: Union(1, 2)
+\step
+\apply{vars.var[op]}{value="Union(1,2)"}
+\apply{vars.var[x]}{value="1"}
+\apply{vars.var[y]}{value="2"}
+\apply{vars.var[root_x]}{value="0"}
+\apply{vars.var[root_y]}{value="2"}
+\apply{vars.var[step]}{value="2"}
+\recolor{G.node[2]}{state=current}
+\recolor{G.edge[(1,2)]}{state=current}
+\highlight{par.cell[2]}
+\narrate{Union(1, 2): Find(1) = 0 (rank 1), Find(2) = 2 (rank 0). Attach 2 under 0.}
+
+% Step 5: Apply Union(1, 2)
+\step
+\apply{par.cell[2]}{value=0}
+\recolor{par.cell[2]}{state=done}
+\recolor{G.node[2]}{state=done}
+\recolor{G.edge[(1,2)]}{state=good}
+\narrate{After Union(1,2): $parent[2] = 0$. Set $\{0, 1, 2\}$ with root 0.}
+
+% Step 6: Union(3, 4)
+\step
+\apply{vars.var[op]}{value="Union(3,4)"}
+\apply{vars.var[x]}{value="3"}
+\apply{vars.var[y]}{value="4"}
+\apply{vars.var[root_x]}{value="3"}
+\apply{vars.var[root_y]}{value="4"}
+\apply{vars.var[step]}{value="3"}
+\recolor{G.node[3]}{state=current}
+\recolor{G.node[4]}{state=current}
+\recolor{G.edge[(3,4)]}{state=current}
+\highlight{par.cell[4]}
+\narrate{Union(3, 4): Both roots have rank 0. Attach 4 under 3 and increment rank of 3.}
+
+% Step 7: Apply Union(3, 4)
+\step
+\apply{par.cell[4]}{value=3}
+\apply{rnk.cell[3]}{value=1}
+\recolor{par.cell[4]}{state=done}
+\recolor{rnk.cell[3]}{state=done}
+\recolor{G.node[3]}{state=good}
+\recolor{G.node[4]}{state=done}
+\recolor{G.edge[(3,4)]}{state=good}
+\annotate{par.cell[4]}{label="3 is root", position=below, color=good, arrow_from="par.cell[3]"}
+\narrate{After Union(3,4): $parent[4] = 3$, $rank[3] = 1$. Set $\{3, 4\}$ formed with root 3.}
+
+% Step 8: Union(5, 6)
+\step
+\apply{vars.var[op]}{value="Union(5,6)"}
+\apply{vars.var[x]}{value="5"}
+\apply{vars.var[y]}{value="6"}
+\apply{vars.var[root_x]}{value="5"}
+\apply{vars.var[root_y]}{value="6"}
+\apply{vars.var[step]}{value="4"}
+\recolor{G.node[5]}{state=current}
+\recolor{G.node[6]}{state=current}
+\recolor{G.edge[(5,6)]}{state=current}
+\highlight{par.cell[6]}
+\narrate{Union(5, 6): Both roots have rank 0. Attach 6 under 5 and increment rank of 5.}
+
+% Step 9: Apply Union(5, 6)
+\step
+\apply{par.cell[6]}{value=5}
+\apply{rnk.cell[5]}{value=1}
+\recolor{par.cell[6]}{state=done}
+\recolor{rnk.cell[5]}{state=done}
+\recolor{G.node[5]}{state=good}
+\recolor{G.node[6]}{state=done}
+\recolor{G.edge[(5,6)]}{state=good}
+\narrate{After Union(5,6): $parent[6] = 5$, $rank[5] = 1$. Set $\{5, 6\}$ formed with root 5.}
+
+% Step 10: Union(6, 7) -- Find(6) triggers path to 5
+\step
+\apply{vars.var[op]}{value="Union(6,7)"}
+\apply{vars.var[x]}{value="6"}
+\apply{vars.var[y]}{value="7"}
+\apply{vars.var[root_x]}{value="5"}
+\apply{vars.var[root_y]}{value="7"}
+\apply{vars.var[step]}{value="5"}
+\recolor{G.node[7]}{state=current}
+\recolor{G.edge[(6,7)]}{state=current}
+\highlight{par.cell[7]}
+\narrate{Union(6, 7): Find(6) = 5 (rank 1), Find(7) = 7 (rank 0). Attach 7 under 5.}
+
+% Step 11: Apply Union(6, 7)
+\step
+\apply{par.cell[7]}{value=5}
+\recolor{par.cell[7]}{state=done}
+\recolor{G.node[7]}{state=done}
+\recolor{G.edge[(6,7)]}{state=good}
+\narrate{After Union(6,7): $parent[7] = 5$. Set $\{5, 6, 7\}$ with root 5.}
+
+% Step 12: Union(2, 3) -- merges two larger sets
+\step
+\apply{vars.var[op]}{value="Union(2,3)"}
+\apply{vars.var[x]}{value="2"}
+\apply{vars.var[y]}{value="3"}
+\apply{vars.var[root_x]}{value="0"}
+\apply{vars.var[root_y]}{value="3"}
+\apply{vars.var[step]}{value="6"}
+\recolor{G.edge[(2,3)]}{state=current}
+\recolor{G.node[0]}{state=current}
+\recolor{G.node[3]}{state=current}
+\highlight{par.cell[3]}
+\annotate{par.cell[3]}{label="rank tie!", position=above, color=warn}
+\narrate{Union(2, 3): Find(2) = 0 (rank 1), Find(3) = 3 (rank 1). Equal ranks! Attach 3 under 0, increment rank of 0.}
+
+% Step 13: Apply Union(2, 3)
+\step
+\apply{par.cell[3]}{value=0}
+\apply{rnk.cell[0]}{value=2}
+\recolor{par.cell[3]}{state=done}
+\recolor{rnk.cell[0]}{state=done}
+\recolor{G.edge[(2,3)]}{state=good}
+\recolor{G.node[0]}{state=good}
+\recolor{G.node[3]}{state=done}
+\narrate{After Union(2,3): $parent[3] = 0$, $rank[0] = 2$. Set $\{0,1,2,3,4\}$ with root 0.}
+
+% Step 14: Union(4, 5) -- merges everything
+\step
+\apply{vars.var[op]}{value="Union(4,5)"}
+\apply{vars.var[x]}{value="4"}
+\apply{vars.var[y]}{value="5"}
+\apply{vars.var[root_x]}{value="0"}
+\apply{vars.var[root_y]}{value="5"}
+\apply{vars.var[step]}{value="7"}
+\recolor{G.edge[(4,5)]}{state=current}
+\highlight{par.cell[5]}
+\narrate{Union(4, 5): Find(4) $\rightarrow$ 3 $\rightarrow$ 0 (rank 2), Find(5) = 5 (rank 1). Attach 5 under 0. Path compression on Find(4)!}
+
+% Step 15: Apply Union(4, 5) with path compression
+\step
+\apply{par.cell[5]}{value=0}
+\apply{par.cell[4]}{value=0}
+\recolor{par.cell[5]}{state=done}
+\recolor{par.cell[4]}{state=path}
+\recolor{G.edge[(4,5)]}{state=good}
+\recolor{G.node[5]}{state=done}
+\annotate{par.cell[4]}{label="compressed!", position=above, color=path}
+\narrate{After Union(4,5): $parent[5] = 0$. Path compression: $parent[4]$ updated from 3 to 0 directly. All 8 elements now in one set!}
+
+% Step 16: Find(7) with path compression
+\step
+\apply{vars.var[op]}{value="Find(7)"}
+\apply{vars.var[x]}{value="7"}
+\apply{vars.var[y]}{value="-"}
+\apply{vars.var[root_x]}{value="0"}
+\apply{vars.var[root_y]}{value="-"}
+\apply{vars.var[step]}{value="8"}
+\recolor{G.node[7]}{state=current}
+\recolor{G.node[5]}{state=current}
+\recolor{G.node[0]}{state=current}
+\narrate{Find(7): traverse $7 \rightarrow 5 \rightarrow 0$. Root is 0. Now apply path compression.}
+
+% Step 17: Path compression result
+\step
+\apply{par.cell[7]}{value=0}
+\recolor{par.cell[7]}{state=path}
+\recolor{G.node[7]}{state=done}
+\recolor{G.node[5]}{state=done}
+\recolor{G.node[0]}{state=good}
+\annotate{par.cell[7]}{label="compressed!", position=above, color=path}
+\narrate{Path compression: $parent[7]$ updated from 5 to 0. Future Find(7) returns in $O(1)$.}
+
+% Step 18: Final state
+\step
+\apply{vars.var[op]}{value="done"}
+\apply{vars.var[step]}{value="done"}
+\compute{
+done_nodes = [0, 1, 2, 3, 4, 5, 6, 7]
+}
+\foreach{i}{${done_nodes}}
+  \recolor{par.cell[${i}]}{state=good}
+\endforeach
+\foreach{i}{${done_nodes}}
+  \recolor{rnk.cell[${i}]}{state=good}
+\endforeach
+\narrate{Final state: all 8 nodes belong to one set with root 0. The $parent[]$ array is nearly flat thanks to path compression.}
+
+\end{animation}
+
+\subsection{Complexity Analysis}
+
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Operation} & \textbf{Naive} & \textbf{With Optimizations} \\
+\hline
+Find & $O(n)$ & $O(\alpha(n))$ \\
+\hline
+Union & $O(n)$ & $O(\alpha(n))$ \\
+\hline
+$m$ operations on $n$ elements & $O(mn)$ & $O(m \cdot \alpha(n))$ \\
+\hline
+Space & $O(n)$ & $O(n)$ \\
+\hline
+\end{tabular}
+
+Where $\alpha(n)$ is the \textbf{inverse Ackermann function}, which grows so slowly that
+$\alpha(n) \leq 4$ for all practical values of $n$ (up to $2^{2^{2^{65536}}}$).
+
+\textbf{Key optimizations:}
+\begin{enumerate}
+\item \textbf{Path compression}: During Find, make every node on the path point directly to the root.
+\item \textbf{Union by rank}: Always attach the shorter tree under the taller one to keep trees balanced.
+\end{enumerate}
+
+Together, these guarantee that any sequence of $m$ Union/Find operations on $n$ elements
+takes $O(m \cdot \alpha(n))$ time, which is effectively $O(m)$ in practice.

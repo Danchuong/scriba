@@ -1,0 +1,27 @@
+\begin{animation}[id="stack", label="Stack Push and Pop"]
+\shape{s}{Stack}{items=["A","B"]}
+
+\step
+\highlight{s.item[1]}
+\narrate{Stack has 2 items: A (bottom), B (top).}
+
+\step
+\apply{s}{push="C"}
+\highlight{s.item[2]}
+\narrate{Push C. Stack: A, B, C. New top is C.}
+
+\step
+\apply{s}{push="D"}
+\highlight{s.item[3]}
+\narrate{Push D. Stack: A, B, C, D. New top is D.}
+
+\step
+\apply{s}{pop=1}
+\highlight{s.item[2]}
+\narrate{Pop D. Stack: A, B, C. Top is C again.}
+
+\step
+\apply{s}{pop=2}
+\recolor{s.item[0]}{state=done}
+\narrate{Pop C and B. Only A remains. Stack complete.}
+\end{animation}

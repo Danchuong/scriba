@@ -1,0 +1,21 @@
+% Regression: \annotate{target}{arrow=true,...} parsed correctly into
+% AnnotationEntry.arrow but the value was dropped at the renderer →
+% primitive serialization boundary in _snapshot_to_frame_data.
+%
+% Before fix: arrow=true annotation silently produced no arrowhead — the
+%             key was absent from the annotation dict passed to primitives,
+%             so _emit_arrow's early-return guard (if not arrow_from: return)
+%             fired and dropped the annotation entirely.
+% After fix:  arrow=true renders a short straight pointer with an arrowhead
+%             pointing INTO the target cell (no source arc).
+%             arrow_from= (a.cell[0]) renders the existing Bezier arc.
+%             Both can coexist in the same frame.
+
+\begin{animation}[id="annotate-arrow-bool", label="Arrow bool annotation fix"]
+\shape{a}{Array}{size=4, data=[10, 20, 30, 40]}
+\step
+% Plain pointer arrowhead — no source arc
+\annotate{a.cell[0]}{label="X", arrow=true}
+% Bezier arc from source — existing behaviour for visual contrast
+\annotate{a.cell[2]}{label="Y", arrow_from="a.cell[0]"}
+\end{animation}

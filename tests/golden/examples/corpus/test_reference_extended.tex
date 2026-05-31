@@ -1,0 +1,148 @@
+\section{Extended Primitives Test}
+
+This file tests Matrix/Heatmap, Plane2D, and MetricPlot primitives with animations.
+
+\subsection{Animation 1: Matrix Heatmap --- Row Scan}
+
+\begin{animation}[id="matrix-scan", label="Matrix row-by-row scan for max cell"]
+\shape{m}{Matrix}{rows=5, cols=5, data=[0.2,0.5,0.1,0.8,0.3,0.6,0.4,0.9,0.2,0.7,0.1,0.3,0.5,0.4,0.6,0.7,0.2,0.4,0.1,0.8,0.3,0.6,0.5,0.7,0.4], show_values=true}
+
+\step
+\narrate{A $5 \times 5$ matrix with float values. We will scan row by row to find the maximum.}
+
+\step
+\recolor{m.cell[0][0]}{state=current}
+\recolor{m.cell[0][1]}{state=current}
+\recolor{m.cell[0][2]}{state=current}
+\recolor{m.cell[0][3]}{state=current}
+\recolor{m.cell[0][4]}{state=current}
+\narrate{Scanning row 0: values are $0.2, 0.5, 0.1, 0.8, 0.3$. Current max is $0.8$ at cell $(0,3)$.}
+
+\step
+\recolor{m.cell[0][0]}{state=done}
+\recolor{m.cell[0][1]}{state=done}
+\recolor{m.cell[0][2]}{state=done}
+\recolor{m.cell[0][3]}{state=done}
+\recolor{m.cell[0][4]}{state=done}
+\recolor{m.cell[1][0]}{state=current}
+\recolor{m.cell[1][1]}{state=current}
+\recolor{m.cell[1][2]}{state=current}
+\recolor{m.cell[1][3]}{state=current}
+\recolor{m.cell[1][4]}{state=current}
+\narrate{Scanning row 1: values are $0.6, 0.4, 0.9, 0.2, 0.7$. New max is $0.9$ at cell $(1,2)$.}
+
+\step
+\recolor{m.cell[1][0]}{state=done}
+\recolor{m.cell[1][1]}{state=done}
+\recolor{m.cell[1][2]}{state=done}
+\recolor{m.cell[1][3]}{state=done}
+\recolor{m.cell[1][4]}{state=done}
+\recolor{m.cell[2][0]}{state=current}
+\recolor{m.cell[2][1]}{state=current}
+\recolor{m.cell[2][2]}{state=current}
+\recolor{m.cell[2][3]}{state=current}
+\recolor{m.cell[2][4]}{state=current}
+\narrate{Scanning row 2: values are $0.1, 0.3, 0.5, 0.4, 0.6$. Max remains $0.9$ at $(1,2)$.}
+
+\step
+\recolor{m.cell[2][0]}{state=done}
+\recolor{m.cell[2][1]}{state=done}
+\recolor{m.cell[2][2]}{state=done}
+\recolor{m.cell[2][3]}{state=done}
+\recolor{m.cell[2][4]}{state=done}
+\recolor{m.cell[3][0]}{state=current}
+\recolor{m.cell[3][1]}{state=current}
+\recolor{m.cell[3][2]}{state=current}
+\recolor{m.cell[3][3]}{state=current}
+\recolor{m.cell[3][4]}{state=current}
+\narrate{Scanning row 3: values are $0.7, 0.2, 0.4, 0.1, 0.8$. Max remains $0.9$ at $(1,2)$.}
+
+\step
+\recolor{m.cell[3][0]}{state=done}
+\recolor{m.cell[3][1]}{state=done}
+\recolor{m.cell[3][2]}{state=done}
+\recolor{m.cell[3][3]}{state=done}
+\recolor{m.cell[3][4]}{state=done}
+\recolor{m.cell[4][0]}{state=current}
+\recolor{m.cell[4][1]}{state=current}
+\recolor{m.cell[4][2]}{state=current}
+\recolor{m.cell[4][3]}{state=current}
+\recolor{m.cell[4][4]}{state=current}
+\narrate{Scanning row 4: values are $0.3, 0.6, 0.5, 0.7, 0.4$. Max remains $0.9$ at $(1,2)$.}
+
+\step
+\recolor{m.cell[4][0]}{state=done}
+\recolor{m.cell[4][1]}{state=done}
+\recolor{m.cell[4][2]}{state=done}
+\recolor{m.cell[4][3]}{state=done}
+\recolor{m.cell[4][4]}{state=done}
+\recolor{m.cell[1][2]}{state=good}
+\annotate{m.cell[1][2]}{label="MAX=0.9", position=above, color=good}
+\narrate{Scan complete. The maximum value $0.9$ is at cell $(1,2)$. Marked as \textbf{good}.}
+\end{animation}
+
+\subsection{Animation 2: Plane2D --- Points and Line}
+
+\begin{animation}[id="plane2d-build", label="Coordinate plane with points and line"]
+\shape{p}{Plane2D}{xrange=[-5,5], yrange=[-5,5], grid=true, axes=true}
+
+\step
+\narrate{An empty $2$D coordinate plane with grid and axes from $-5$ to $5$.}
+
+\step
+\apply{p}{add_point=(-3,2)}
+\narrate{Add point $A = (-3, 2)$.}
+
+\step
+\apply{p}{add_point=(1,4)}
+\narrate{Add point $B = (1, 4)$.}
+
+\step
+\apply{p}{add_point=(2,-1)}
+\narrate{Add point $C = (2, -1)$.}
+
+\step
+\apply{p}{add_point=(4,3)}
+\narrate{Add point $D = (4, 3)$.}
+
+\step
+\apply{p}{add_point=(-2,-3)}
+\narrate{Add point $E = (-2, -3)$.}
+
+\step
+\apply{p}{add_line=("y=x+1",1,1)}
+\narrate{Add line $y = x + 1$ (slope $1$, intercept $1$). Points $B = (1,4)$ lies above; $C = (2,-1)$ lies below.}
+\end{animation}
+
+\subsection{Animation 3: MetricPlot --- Three Series Over Six Steps}
+
+\begin{animation}[id="metric-track", label="Tracking 3 series over 6 steps"]
+\shape{plot}{MetricPlot}{series=["loss","accuracy","lr"], xlabel="step", ylabel="value"}
+
+\step
+\narrate{Begin tracking three metrics: \textbf{loss}, \textbf{accuracy}, and \textbf{lr} (learning rate).}
+
+\step
+\apply{plot}{loss=2.5, accuracy=0.1, lr=0.01}
+\narrate{Step 1: loss $= 2.5$, accuracy $= 0.1$, lr $= 0.01$.}
+
+\step
+\apply{plot}{loss=1.8, accuracy=0.3, lr=0.01}
+\narrate{Step 2: loss drops to $1.8$, accuracy rises to $0.3$.}
+
+\step
+\apply{plot}{loss=1.2, accuracy=0.55, lr=0.005}
+\narrate{Step 3: loss $= 1.2$, accuracy $= 0.55$, lr halved to $0.005$.}
+
+\step
+\apply{plot}{loss=0.7, accuracy=0.72, lr=0.005}
+\narrate{Step 4: loss $= 0.7$, accuracy $= 0.72$. Steady improvement.}
+
+\step
+\apply{plot}{loss=0.4, accuracy=0.85, lr=0.001}
+\narrate{Step 5: loss $= 0.4$, accuracy $= 0.85$, lr reduced to $0.001$.}
+
+\step
+\apply{plot}{loss=0.25, accuracy=0.91, lr=0.001}
+\narrate{Step 6: final loss $= 0.25$, accuracy $= 0.91$. Training converging nicely.}
+\end{animation}

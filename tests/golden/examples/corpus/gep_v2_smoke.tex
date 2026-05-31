@@ -1,0 +1,193 @@
+\section{GEP v2.0.0 Smoke Test}
+
+Exercises every new Phase 1-7 feature of the graph edge-pill cascade:
+saturate probe, side-preferred perp, on-stroke invariant, leader-line
+fallback, pre-layout auto-expansion, typography hierarchy + source
+tint, and the forward-compat \texttt{global\_optimize} flag.
+
+\subsection{Baseline — cascade only (no opts)}
+
+Dense K5-ish graph with dual-value capacity/flow labels forces the
+cascade into every stage: along-shift, saturate, perp, leader.
+
+\begin{diagram}[id="gep-baseline", label="Cascade only"]
+\shape{G1}{Graph}{
+  nodes=["S","A","B","C","D","T"],
+  edges=[
+    ("S","A",4),("S","B",3),
+    ("A","B",2),("A","C",3),
+    ("B","C",5),("B","D",1),
+    ("C","D",2),("C","T",4),
+    ("D","T",3),("A","D",1)
+  ],
+  directed=true,
+  show_weights=true,
+  layout="force",
+  layout_seed=1
+}
+\end{diagram}
+
+\subsection{Phase 5 — auto\_expand}
+
+Same topology with \texttt{auto\_expand=true}: the pre-layout binary
+search inflates the layout scale until the cascade can satisfy every
+pill on-stroke without leader fallback.
+
+\begin{diagram}[id="gep-auto-expand", label="auto\\_expand=true"]
+\shape{G2}{Graph}{
+  nodes=["S","A","B","C","D","T"],
+  edges=[
+    ("S","A",4),("S","B",3),
+    ("A","B",2),("A","C",3),
+    ("B","C",5),("B","D",1),
+    ("C","D",2),("C","T",4),
+    ("D","T",3),("A","D",1)
+  ],
+  directed=true,
+  show_weights=true,
+  layout="force",
+  layout_seed=1,
+  auto_expand=true
+}
+\end{diagram}
+
+\subsection{Phase 6 — split\_labels + tint\_by\_source}
+
+Dual-value labels \texttt{"cap/flow"} exercise the bold/dim tspan
+hierarchy. \texttt{tint\_by\_source} pulls pill fill from the source
+node state so provenance is visible at a glance.
+
+\begin{diagram}[id="gep-typography", label="split + tint"]
+\shape{G3}{Graph}{
+  nodes=["S","A","B","T"],
+  edges=[("S","A",4),("S","B",3),("A","B",2),("A","T",5),("B","T",1)],
+  directed=true,
+  show_weights=true,
+  layout="force",
+  layout_seed=7,
+  split_labels=true,
+  tint_by_source=true
+}
+\apply{G3.edge[(S,A)]}{value="4/3"}
+\apply{G3.edge[(S,B)]}{value="3/2"}
+\apply{G3.edge[(A,B)]}{value="2/1"}
+\apply{G3.edge[(A,T)]}{value="5/3"}
+\apply{G3.edge[(B,T)]}{value="1/1"}
+\recolor{G3.node[A]}{state=highlight}
+\recolor{G3.node[B]}{state=highlight}
+\end{diagram}
+
+\subsection{Phase 7 — global\_optimize (forward-compat flag)}
+
+Opting in emits a \texttt{UserWarning} during build; pill positions
+remain byte-identical to the cascade-only output until the v2.1
+emit\_svg wiring ships.
+
+\begin{diagram}[id="gep-sa-opt-in", label="global\\_optimize=true (no-op today)"]
+\shape{G4}{Graph}{
+  nodes=["A","B","C","D","E"],
+  edges=[
+    ("A","B",1),("B","C",2),("C","D",3),
+    ("D","E",4),("A","C",5),("B","D",6),("C","E",7)
+  ],
+  directed=true,
+  show_weights=true,
+  layout="force",
+  layout_seed=42,
+  global_optimize=true
+}
+\end{diagram}
+
+\subsection{Star topology — K1,8 hub stress}
+
+8 spokes radiating from a single hub. Every pill sits on a short
+stubby edge near the hub, so the cascade is forced to use along-shift
+and saturate probes aggressively. \texttt{auto\_expand=true} should
+keep labels on-stroke; \texttt{tint\_by\_source=true} makes the hub
+pill fill visible against the radial layout.
+
+\begin{diagram}[id="gep-star", label="K1,8 star"]
+\shape{G6}{Graph}{
+  nodes=["H","N1","N2","N3","N4","N5","N6","N7","N8"],
+  edges=[
+    ("H","N1",1),("H","N2",2),("H","N3",3),("H","N4",4),
+    ("H","N5",5),("H","N6",6),("H","N7",7),("H","N8",8)
+  ],
+  directed=true,
+  show_weights=true,
+  layout="force",
+  layout_seed=11,
+  auto_expand=true,
+  tint_by_source=true
+}
+\recolor{G6.node[H]}{state=highlight}
+\end{diagram}
+
+\subsection{K5 complete pentagon — every node connected}
+
+Pentagon with all 10 edges (\(\binom{5}{2} = 10\)). Every interior
+crossing forces cascade to resolve pill collisions via along-shift
+and saturate. \texttt{auto\_expand=true} inflates layout until
+on-stroke is achievable; \texttt{split\_labels=true} renders the
+dual-value \texttt{cap/flow} hierarchy.
+
+\begin{diagram}[id="gep-k5", label="K5 pentagon (all edges)"]
+\shape{G7}{Graph}{
+  nodes=["A","B","C","D","E"],
+  edges=[
+    ("A","B",1),("A","C",2),("A","D",3),("A","E",4),
+    ("B","C",5),("B","D",6),("B","E",7),
+    ("C","D",8),("C","E",9),
+    ("D","E",10)
+  ],
+  directed=false,
+  show_weights=true,
+  layout="force",
+  layout_seed=51,
+  auto_expand=true,
+  split_labels=true,
+  tint_by_source=true
+}
+\apply{G7.edge[(A,B)]}{value="10/4"}
+\apply{G7.edge[(A,C)]}{value="8/3"}
+\apply{G7.edge[(A,D)]}{value="6/2"}
+\apply{G7.edge[(A,E)]}{value="4/1"}
+\apply{G7.edge[(B,C)]}{value="9/5"}
+\apply{G7.edge[(B,D)]}{value="7/3"}
+\apply{G7.edge[(B,E)]}{value="5/2"}
+\apply{G7.edge[(C,D)]}{value="3/1"}
+\apply{G7.edge[(C,E)]}{value="2/1"}
+\apply{G7.edge[(D,E)]}{value="1/1"}
+\end{diagram}
+
+\subsection{All flags combined}
+
+Full Phase 5-7 stack: auto-expanded layout, dual-value typography,
+source tint, SA opt-in.
+
+\begin{diagram}[id="gep-all", label="all flags"]
+\shape{G5}{Graph}{
+  nodes=["S","A","B","C","D","T"],
+  edges=[
+    ("S","A",4),("S","B",3),
+    ("A","B",2),("A","C",3),("A","D",1),
+    ("B","C",5),("B","D",1),
+    ("C","D",2),("C","T",4),("D","T",3)
+  ],
+  directed=true,
+  show_weights=true,
+  layout="force",
+  layout_seed=3,
+  auto_expand=true,
+  split_labels=true,
+  tint_by_source=true,
+  global_optimize=true
+}
+\apply{G5.edge[(S,A)]}{value="4/4"}
+\apply{G5.edge[(S,B)]}{value="3/2"}
+\apply{G5.edge[(A,C)]}{value="3/3"}
+\apply{G5.edge[(B,D)]}{value="1/1"}
+\apply{G5.edge[(C,T)]}{value="4/4"}
+\apply{G5.edge[(D,T)]}{value="3/2"}
+\recolor{G5.node[T]}{state=highlight}
+\end{diagram}

@@ -1,0 +1,192 @@
+\section{Dijkstra's Algorithm}
+
+Cho do thi co huong co trong so $G = (V, E)$ voi $n$ dinh va $m$ canh, moi canh $(u, v)$ co trong so $w(u, v) \geq 0$.
+Cho dinh nguon $s$, tim duong di ngan nhat tu $s$ toi tat ca cac dinh con lai. Goi $d[v]$ la do dai duong di ngan nhat tu $s$ toi $v$.
+
+Cong thuc relax (noi long) la co so cua thuat toan:
+\[
+  d[v] = \min\bigl(d[v],\; d[u] + w(u, v)\bigr)
+\]
+Neu duong di qua $u$ roi toi $v$ ngan hon duong di hien tai toi $v$, ta cap nhat $d[v]$.
+
+\subsection{Input Graph}
+
+\begin{diagram}[id="dijkstra-input"]
+\shape{G}{Graph}{
+  nodes=["A","B","C","D","E"],
+  edges=[
+    ("A","B",4),
+    ("A","C",2),
+    ("B","C",1),
+    ("B","D",7),
+    ("C","D",3),
+    ("C","E",5),
+    ("D","E",1)
+  ],
+  show_weights=true,
+  directed=true,
+  layout="stable",
+  layout_seed=42
+}
+\recolor{G.node[A]}{state=current}
+\end{diagram}
+
+\subsection{Algorithm}
+
+Thuat toan Dijkstra hoat dong theo nguyen tac tham lam (greedy): tai moi buoc, chon dinh $u$ chua xu ly co $d[u]$ nho nhat,
+danh dau $u$ la da xu ly (settled), roi relax tat ca canh ke $(u, v)$. Dung priority queue (hang doi uu tien) de chon $u$
+hieu qua trong $O(\log V)$. Dieu kien: trong so canh phai khong am ($w \geq 0$).
+
+\begin{animation}[id="dijkstra-editorial", label="Dijkstra -- Duong di ngan nhat tren do thi co huong"]
+\shape{G}{Graph}{
+  nodes=["A","B","C","D","E"],
+  edges=[
+    ("A","B",4),
+    ("A","C",2),
+    ("B","C",1),
+    ("B","D",7),
+    ("C","D",3),
+    ("C","E",5),
+    ("D","E",1)
+  ],
+  show_weights=true,
+  directed=true,
+  layout="stable",
+  layout_seed=42
+}
+\shape{d}{Array}{size=5, data=["inf","inf","inf","inf","inf"], labels="0..4", label="$d[A,B,C,D,E]$"}
+
+\step
+\recolor{G.node[A]}{state=current}
+\apply{d.cell[0]}{value="0"}
+\recolor{d.cell[0]}{state=current}
+\narrate{Khoi tao: dat $d[A] = 0$ (dinh nguon), cac dinh con lai $d = \infty$. Dua $A$ vao priority queue.}
+
+\step
+\recolor{G.node[A]}{state=done}
+\recolor{d.cell[0]}{state=done}
+\recolor{G.edge[(A,B)]}{state=current}
+\apply{d.cell[1]}{value="4"}
+\recolor{d.cell[1]}{state=current}
+\narrate{Settle $A$. Relax canh $A \to B$ (trong so $4$): $d[B] = \min(\infty, 0 + 4) = 4$.}
+
+\step
+\recolor{G.edge[(A,B)]}{state=idle}
+\recolor{G.edge[(A,C)]}{state=current}
+\apply{d.cell[2]}{value="2"}
+\recolor{d.cell[2]}{state=current}
+\narrate{Relax canh $A \to C$ (trong so $2$): $d[C] = \min(\infty, 0 + 2) = 2$. Hoan tat xu ly $A$. Dinh co $d$ nho nhat trong queue la $C$ voi $d[C] = 2$.}
+
+\step
+\recolor{G.edge[(A,C)]}{state=idle}
+\recolor{d.cell[1]}{state=idle}
+\recolor{d.cell[2]}{state=idle}
+\recolor{G.node[C]}{state=current}
+\recolor{d.cell[2]}{state=current}
+\narrate{Pop $C$ (key $= 2$) tu priority queue. Settle $C$ -- day la khoang cach ngan nhat chinh xac vi moi trong so deu khong am.}
+
+\step
+\recolor{G.edge[(B,C)]}{state=current}
+\apply{d.cell[1]}{value="3"}
+\recolor{d.cell[1]}{state=current}
+\annotate{G.node[B]}{label="2+1=3", arrow_from="G.node[C]", color=good}
+\narrate{Relax canh $C \to B$ (trong so $1$): $d[B] = \min(4, 2 + 1) = 3$. Duong vong $A \to C \to B$ ngan hon canh truc tiep $A \to B$.}
+
+\step
+\recolor{G.edge[(B,C)]}{state=idle}
+\recolor{G.edge[(C,D)]}{state=current}
+\apply{d.cell[3]}{value="5"}
+\recolor{d.cell[3]}{state=current}
+\narrate{Relax canh $C \to D$ (trong so $3$): $d[D] = \min(\infty, 2 + 3) = 5$. Tam thoi -- co the tim duong ngan hon qua $B$.}
+
+\step
+\recolor{G.edge[(C,D)]}{state=idle}
+\recolor{G.edge[(C,E)]}{state=current}
+\apply{d.cell[4]}{value="7"}
+\recolor{d.cell[4]}{state=current}
+\narrate{Relax canh $C \to E$ (trong so $5$): $d[E] = \min(\infty, 2 + 5) = 7$. Tam thoi. Hoan tat xu ly $C$.}
+
+\step
+\recolor{G.edge[(C,E)]}{state=idle}
+\recolor{G.node[C]}{state=done}
+\recolor{d.cell[2]}{state=done}
+\recolor{d.cell[1]}{state=idle}
+\recolor{d.cell[3]}{state=idle}
+\recolor{d.cell[4]}{state=idle}
+\recolor{G.node[B]}{state=current}
+\recolor{d.cell[1]}{state=current}
+\narrate{Pop $B$ (key $= 3$). Settle $B$. Queue con lai: $D = 5$, $E = 7$.}
+
+\step
+\recolor{G.edge[(B,D)]}{state=current}
+\recolor{d.cell[3]}{state=current}
+\narrate{Relax canh $B \to D$ (trong so $7$): $d[D] = \min(5, 3 + 7) = 5$. Khong cap nhat -- duong qua $C$ van ngan hon. Hoan tat xu ly $B$.}
+
+\step
+\recolor{G.edge[(B,D)]}{state=idle}
+\recolor{G.node[B]}{state=done}
+\recolor{d.cell[1]}{state=done}
+\recolor{d.cell[3]}{state=idle}
+\recolor{G.node[D]}{state=current}
+\recolor{d.cell[3]}{state=current}
+\narrate{Pop $D$ (key $= 5$). Settle $D$. Queue con lai: $E = 7$.}
+
+\step
+\recolor{G.edge[(D,E)]}{state=current}
+\apply{d.cell[4]}{value="6"}
+\recolor{d.cell[4]}{state=current}
+\annotate{G.node[E]}{label="5+1=6", arrow_from="G.node[D]", color=good}
+\narrate{Relax canh $D \to E$ (trong so $1$): $d[E] = \min(7, 5 + 1) = 6$. Cap nhat! Duong $A \to C \to D \to E$ ngan hon $A \to C \to E$.}
+
+\step
+\recolor{G.edge[(D,E)]}{state=idle}
+\recolor{G.node[D]}{state=done}
+\recolor{d.cell[3]}{state=done}
+\recolor{d.cell[4]}{state=idle}
+\recolor{G.node[E]}{state=current}
+\recolor{d.cell[4]}{state=current}
+\narrate{Pop $E$ (key $= 6$). Settle $E$. Priority queue rong -- tat ca dinh da duoc xu ly.}
+
+\step
+\recolor{G.node[E]}{state=done}
+\recolor{d.cell[4]}{state=done}
+\recolor{G.edge[(A,C)]}{state=path}
+\recolor{G.edge[(C,D)]}{state=path}
+\recolor{G.edge[(D,E)]}{state=path}
+\recolor{G.edge[(B,C)]}{state=good}
+\recolor{G.edge[(A,B)]}{state=dim}
+\recolor{G.edge[(B,D)]}{state=dim}
+\recolor{G.edge[(C,E)]}{state=dim}
+\narrate{Hoan tat! Khoang cach ngan nhat: $d = [0, 3, 2, 5, 6]$. Cay duong di ngan nhat: $A \to C$, $C \to B$, $C \to D$, $D \to E$. Cac canh dim khong thuoc cay SPT.}
+\end{animation}
+
+\subsection{Complexity}
+
+Voi priority queue (binary heap), do phuc tap cua Dijkstra la $O((V + E) \log V)$:
+moi dinh duoc push/pop dung mot lan ($O(V \log V)$), moi canh duoc relax dung mot lan voi thao tac decrease-key ($O(E \log V)$).
+Neu dung Fibonacci heap, do phuc tap giam xuong $O(V \log V + E)$.
+Luu y: Dijkstra chi dung khi trong so canh khong am. Neu co canh am, dung Bellman-Ford ($O(VE)$) hoac SPFA.
+
+\subsection{Implementation}
+
+\begin{lstlisting}[language=Python]
+import heapq
+from math import inf
+
+def dijkstra(adj, src):
+    n = len(adj)
+    dist = [inf] * n
+    dist[src] = 0
+    pq = [(0, src)]
+
+    while pq:
+        d_u, u = heapq.heappop(pq)
+        if d_u > dist[u]:
+            continue
+        for v, w in adj[u]:
+            if dist[u] + w < dist[v]:
+                dist[v] = dist[u] + w
+                heapq.heappush(pq, (dist[v], v))
+
+    return dist
+\end{lstlisting}

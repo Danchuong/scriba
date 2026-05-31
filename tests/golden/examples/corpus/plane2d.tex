@@ -1,0 +1,12 @@
+\begin{animation}[id="test-plane2d"]
+\shape{p}{Plane2D}{xrange=[-3,3], yrange=[-3,3], grid=true, axes=true}
+\step
+\apply{p}{add_point=(1,2)}
+\narrate{Add point at (1,2).}
+\step
+\apply{p}{add_line=("y=x", 1, 0)}
+\narrate{Add line y=x.}
+\step
+\apply{p}{add_point=(-1,-1)}
+\narrate{Add second point at (-1,-1).}
+\end{animation}

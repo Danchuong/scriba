@@ -1,21 +1,28 @@
-"""Golden regression test for the bundled ``examples/`` corpus.
+"""Golden regression test for the rendered example corpus.
 
-Every ``examples/**/*.tex`` that ships with a sibling ``.html`` is treated
-as a golden pin: rendering the ``.tex`` through ``render.py`` must reproduce
-the committed ``.html`` byte-for-byte. This locks the current rendering
-behaviour so an upcoming refactor cannot silently change output.
+``tests/golden/examples/corpus/`` holds a self-contained, version-controlled
+snapshot of the example pairs: every ``<name>.tex`` ships with its expected
+``<name>.html``. Rendering the ``.tex`` through ``render.py`` must reproduce
+the committed ``.html`` byte-for-byte. This locks the current ``.tex -> .html``
+rendering behaviour so a refactor cannot silently change output.
 
-Each example is rendered in its **own subprocess** (mirroring real CLI
-usage). In-process batch rendering leaks global state between examples and
-produces spurious diffs; subprocess isolation matches the committed output
-for all pinned examples. To stay fast, all examples are rendered concurrently
-in a session-scoped fixture (threads blocking on subprocesses), then each
-test just compares bytes.
+The corpus is owned by the tests (kept here, not in ``examples/`` where the
+HTML is a gitignored build artifact), so the baseline survives clones and CI.
+
+Each example is rendered in its **own subprocess** (mirroring real CLI usage).
+In-process batch rendering leaks global state between examples and produces
+spurious diffs; subprocess isolation matches the committed output for all
+pinned examples. To stay fast, all examples are rendered concurrently in a
+session-scoped fixture (threads blocking on subprocesses), then each test just
+compares bytes.
 
 Usage:
     pytest tests/golden/examples/ -v
 
-Update mode (human review the diff before committing!):
+Refresh the corpus from examples/ (when example .tex files change):
+    python tests/golden/examples/sync_corpus.py
+
+Update the golden .html in place (human review the diff before committing!):
     SCRIBA_UPDATE_GOLDEN=1 pytest tests/golden/examples/ -v
 """
 from __future__ import annotations
@@ -30,23 +37,24 @@ from pathlib import Path
 
 import pytest
 
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-_EXAMPLES_ROOT = _REPO_ROOT / "examples"
+_HERE = Path(__file__).resolve().parent
+_CORPUS = _HERE / "corpus"
+_REPO_ROOT = _HERE.parents[2]
 _RENDER = _REPO_ROOT / "render.py"
 _UPDATE = os.environ.get("SCRIBA_UPDATE_GOLDEN") == "1"
 
 
 def _iter_pairs() -> list[tuple[Path, Path]]:
-    """Every ``.tex`` under examples/ that has a sibling ``.html`` golden."""
+    """Every ``.tex`` in the corpus that has a sibling ``.html`` golden."""
     return [
         (tex, tex.with_suffix(".html"))
-        for tex in sorted(_EXAMPLES_ROOT.rglob("*.tex"))
+        for tex in sorted(_CORPUS.glob("*.tex"))
         if tex.with_suffix(".html").exists()
     ]
 
 
 def _pair_id(pair: tuple[Path, Path]) -> str:
-    return str(pair[0].relative_to(_EXAMPLES_ROOT))
+    return pair[0].stem
 
 
 _PAIRS = _iter_pairs()

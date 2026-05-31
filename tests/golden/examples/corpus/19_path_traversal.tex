@@ -1,0 +1,22 @@
+% Regression fixture: H1 — Path traversal via -o flag.
+%
+% This file documents the expected behaviour when a caller passes an output
+% path that escapes the current working directory.
+%
+% Expected behaviour (with fix):
+%   uv run python render.py 19_path_traversal.tex -o /tmp/escape.html
+%   → exits with code 1
+%   → prints "refusing to write outside cwd: /private/tmp/escape.html" to stderr
+%
+% Opt-out for power users:
+%   SCRIBA_ALLOW_ANY_OUTPUT=1 uv run python render.py ... -o /tmp/escape.html
+%   → succeeds and writes to /tmp/escape.html
+%
+% See test_path_traversal.sh for the automated regression invocation.
+
+\begin{animation}[id="path-traversal", label="Path traversal regression"]
+\shape{a}{Array}{size=1, data=[1]}
+
+\step
+\narrate{Only step.}
+\end{animation}

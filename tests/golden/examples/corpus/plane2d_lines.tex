@@ -1,0 +1,38 @@
+\section{Plane2D Line Label Collision Avoidance Demo}
+
+This demo tests line label placement when multiple lines pass through or near the
+same region. Labels should avoid overlapping, have background pills for readability,
+and should not clip at viewport edges.
+
+\begin{diagram}[id="line-labels-collision", label="Line label collision avoidance"]
+\shape{p}{Plane2D}{xrange=[-5,5], yrange=[-5,5], grid=true, axes=true}
+
+% --- 5 lines through origin with labels clustering near the same area ---
+\apply{p}{add_line=("y=x",1,0)}
+\apply{p}{add_line=("y=-x",-1,0)}
+\apply{p}{add_line=("y=2x",2,0)}
+\apply{p}{add_line=("y=0.5x",0.5,0)}
+\apply{p}{add_line=("y=-0.5x",-0.5,0)}
+
+% --- A few reference points ---
+\apply{p}{add_point=(0,0)}
+\apply{p}{add_point=(3,3)}
+\apply{p}{add_point=(-3,3)}
+\apply{p}{add_point=(2,4)}
+\apply{p}{add_point=(4,2)}
+
+% --- Recolor points ---
+\recolor{p.point[0]}{state=current}
+\recolor{p.point[1]}{state=good}
+\recolor{p.point[2]}{state=good}
+\recolor{p.point[3]}{state=done}
+\recolor{p.point[4]}{state=done}
+
+% --- Annotations on points ---
+\annotate{p.point[0]}{label="All lines intersect here", position=above, color=info}
+\annotate{p.point[1]}{label="On y=x", position=right, color=good}
+\annotate{p.point[2]}{label="On y=-x", position=left, color=good}
+\annotate{p.point[3]}{label="On y=2x", position=above, color=warn}
+\annotate{p.point[4]}{label="On y=0.5x", position=below, color=warn}
+
+\end{diagram}

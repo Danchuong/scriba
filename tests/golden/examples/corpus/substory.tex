@@ -1,0 +1,18 @@
+\begin{animation}[id="test-substory"]
+\shape{a}{Array}{size=4, data=[3,1,4,1]}
+\step
+\recolor{a.cell[0]}{state=current}
+\narrate{Processing element 0.}
+\substory[title="Sub-computation for element 0"]
+\shape{sub}{Array}{size=2, data=[3,1]}
+\step
+\highlight{sub.cell[0]}
+\narrate{Compare 3 and 1.}
+\step
+\recolor{sub.all}{state=done}
+\narrate{Sub-computation complete.}
+\endsubstory
+\step
+\recolor{a.cell[0]}{state=done}
+\narrate{Element 0 processed.}
+\end{animation}

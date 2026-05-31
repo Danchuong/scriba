@@ -1,0 +1,15 @@
+\begin{animation}[id="hello", label="Hello Scriba -- your first animation"]
+\shape{a}{Array}{size=5, data=[3,1,4,1,5], label="my array"}
+
+\step
+\narrate{This is a simple array with 5 elements.}
+
+\step
+\recolor{a.cell[2]}{state=current}
+\narrate{We highlight the middle element (index 2, value 4).}
+
+\step
+\recolor{a.cell[2]}{state=done}
+\narrate{Mark it as done. That's it!}
+
+\end{animation}

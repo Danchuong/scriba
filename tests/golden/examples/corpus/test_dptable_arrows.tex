@@ -1,0 +1,56 @@
+% Test DPTable annotations with arrow_from rendering (inline arrowheads)
+% Covers: 1D arrows, 2D same-row/same-col/diagonal arrows, multi-target, reannotate
+
+% --- Scene 1: 1D DPTable with arrows between cells ---
+\begin{animation}[id="dptable-arrows-1d", label="1D DPTable arrow test"]
+\shape{dp}{DPTable}{n=6, data=["0","3","2","8","3","7"], labels="0..5", label="$dp$"}
+
+\step
+\narrate{Step 1: single arrow from cell 0 to cell 1.}
+\annotate{dp.cell[1]}{label="+3", arrow_from="dp.cell[0]", color=good}
+
+\step
+\narrate{Step 2: two arrows targeting the same cell (cell 2).}
+\annotate{dp.cell[2]}{label="from 0", arrow_from="dp.cell[0]", color=info}
+\annotate{dp.cell[2]}{label="from 1", arrow_from="dp.cell[1]", color=good}
+
+\step
+\narrate{Step 3: longer-range arrow from cell 0 to cell 4.}
+\annotate{dp.cell[4]}{label="skip", arrow_from="dp.cell[0]", color=warn}
+\annotate{dp.cell[4]}{label="adj", arrow_from="dp.cell[3]", color=good}
+
+\step
+\narrate{Step 4: reannotate -- replace annotations on cell 4 with path arrow.}
+\reannotate{dp.cell[4]}{color=path, arrow_from="dp.cell[2]"}
+\end{animation}
+
+% --- Scene 2: 2D DPTable with arrows (same-row, same-col, diagonal) ---
+\begin{animation}[id="dptable-arrows-2d", label="2D DPTable arrow test"]
+\shape{t}{DPTable}{rows=4, cols=4, data=["0","","","","","","","","","","","","","","",""], label="$t[i][j]$"}
+
+\step
+\narrate{Same-row arrow: cell[0][0] to cell[0][1].}
+\annotate{t.cell[0][1]}{label="right", arrow_from="t.cell[0][0]", color=good}
+
+\step
+\narrate{Same-column arrow: cell[0][0] to cell[1][0] (vertical).}
+\annotate{t.cell[1][0]}{label="down", arrow_from="t.cell[0][0]", color=info}
+
+\step
+\narrate{Diagonal arrow: cell[0][0] to cell[1][1].}
+\annotate{t.cell[1][1]}{label="diag", arrow_from="t.cell[0][0]", color=warn}
+
+\step
+\narrate{Multiple arrows to same 2D target: cell[2][2] from three sources.}
+\annotate{t.cell[2][2]}{label="from above", arrow_from="t.cell[1][2]", color=info}
+\annotate{t.cell[2][2]}{label="from left", arrow_from="t.cell[2][1]", color=good}
+\annotate{t.cell[2][2]}{label="from diag", arrow_from="t.cell[1][1]", color=warn}
+
+\step
+\narrate{Same-column long arrow: cell[0][3] to cell[3][3].}
+\annotate{t.cell[3][3]}{label="col skip", arrow_from="t.cell[0][3]", color=info}
+
+\step
+\narrate{Reannotate in 2D: replace annotations on cell[2][2] with a single path arrow.}
+\reannotate{t.cell[2][2]}{color=path, arrow_from="t.cell[1][1]"}
+\end{animation}

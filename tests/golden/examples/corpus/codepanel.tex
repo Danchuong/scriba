@@ -1,0 +1,20 @@
+\begin{animation}[id="codepanel_demo", label="CodePanel Line Highlighting"]
+\shape{code}{CodePanel}{lines=["for i in range(n):", "  if dp[i] < dp[j]:", "    dp[i] = dp[j]+1", "print(dp[n-1])"], label="Code"}
+
+\step
+\narrate{Source code panel with 4 lines displayed.}
+
+\step
+\recolor{code.line[1]}{state=current}
+\narrate{Highlight line 1: entering the for loop.}
+
+\step
+\recolor{code.line[1]}{state=done}
+\recolor{code.line[2]}{state=current}
+\narrate{Line 1 done. Now executing the if condition on line 2.}
+
+\step
+\recolor{code.line[2]}{state=done}
+\recolor{code.line[3]}{state=current}
+\narrate{Condition true — updating dp[i] on line 3.}
+\end{animation}

@@ -1,0 +1,12 @@
+% Regression: out-of-range selector a.cell[99] on a size=3 array must emit
+% [E1115] on stderr with an E-code, not a bare UserWarning.
+% Before fix: stderr showed only "UserWarning: selector 'a.cell[99]' does not
+%             match any addressable part of 'a'"
+% After fix:  stderr shows "[E1115] selector 'a.cell[99]' does not match any
+%             addressable part of 'a'"
+
+\begin{animation}[id="sel-out-of-range", label="Selector out of range"]
+\shape{a}{Array}{size=3}
+\step
+\highlight{a.cell[99]}
+\end{animation}

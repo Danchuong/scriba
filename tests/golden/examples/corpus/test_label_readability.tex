@@ -1,0 +1,87 @@
+\section{Label Readability Stress Test}
+
+\subsection{Scenario A: Very long label text (30+ characters)}
+
+\begin{animation}[id="readability-long", label="Very long label text"]
+\shape{dp}{DPTable}{n=8, data=[0,3,5,8,12,17,21,28], labels="0..7", label="$dp$"}
+
+\step
+\narrate{Extremely long annotation labels that will not fit in available space.}
+\annotate{dp.cell[4]}{label="min(dp[i-1]+cost(i-1,i), dp[i-2]+cost(i-2,i))", arrow_from="dp.cell[2]", color=info}
+
+\step
+\narrate{Another very long label on an adjacent cell.}
+\annotate{dp.cell[5]}{label="dp[3]+weight(3,5)+penalty(5)=17", arrow_from="dp.cell[3]", color=good}
+
+\step
+\narrate{Two long labels targeting the same cell from different sources.}
+\annotate{dp.cell[6]}{label="max(dp[4]+c(4,6), dp[3]+c(3,6))=21", arrow_from="dp.cell[4]", color=warn}
+\annotate{dp.cell[6]}{label="dp[5]+cost(5,6)+bonus(6)=21", arrow_from="dp.cell[5]", color=error}
+\end{animation}
+
+\subsection{Scenario B: Math in labels}
+
+\begin{animation}[id="readability-math", label="Math expressions in labels"]
+\shape{dp2}{DPTable}{n=6, data=[0,1,1,2,3,5], labels="0..5", label="$dp$"}
+
+\step
+\narrate{Labels containing math expressions.}
+\annotate{dp2.cell[3]}{label="$\min(dp[1], dp[2])$", arrow_from="dp2.cell[1]", color=info}
+\annotate{dp2.cell[4]}{label="$O(n^2)$ transition", arrow_from="dp2.cell[2]", color=good}
+
+\step
+\narrate{More math labels stacking on nearby cells.}
+\annotate{dp2.cell[5]}{label="$\sum_{k=0}^{4} dp[k]$", arrow_from="dp2.cell[0]", color=warn}
+\annotate{dp2.cell[5]}{label="$dp[3] \times dp[4]$", arrow_from="dp2.cell[3]", color=error}
+\end{animation}
+
+\subsection{Scenario C: Empty label with arrow (just arrow, no text)}
+
+\begin{animation}[id="readability-empty", label="Empty labels and arrows"]
+\shape{dp3}{DPTable}{n=6, data=[0,2,4,7,11,16], labels="0..5", label="$dp$"}
+
+\step
+\narrate{Arrow with no label text -- just the arrow pointing between cells.}
+\annotate{dp3.cell[3]}{label="", arrow_from="dp3.cell[0]", color=info}
+\annotate{dp3.cell[3]}{label="", arrow_from="dp3.cell[1]", color=good}
+
+\step
+\narrate{Mix of empty and non-empty labels on the same target.}
+\annotate{dp3.cell[5]}{label="", arrow_from="dp3.cell[2]", color=warn}
+\annotate{dp3.cell[5]}{label="optimal path", arrow_from="dp3.cell[4]", color=path}
+\end{animation}
+
+\subsection{Scenario D: Single character labels}
+
+\begin{animation}[id="readability-short", label="Single character labels"]
+\shape{dp4}{DPTable}{n=8, data=[0,1,2,3,4,5,6,7], labels="0..7", label="$dp$"}
+
+\step
+\narrate{Minimal single-character labels on many transitions.}
+\annotate{dp4.cell[1]}{label="+", arrow_from="dp4.cell[0]", color=info}
+\annotate{dp4.cell[2]}{label="+", arrow_from="dp4.cell[1]", color=info}
+\annotate{dp4.cell[3]}{label="+", arrow_from="dp4.cell[2]", color=info}
+\annotate{dp4.cell[4]}{label="+", arrow_from="dp4.cell[3]", color=info}
+\annotate{dp4.cell[5]}{label="+", arrow_from="dp4.cell[4]", color=info}
+\annotate{dp4.cell[6]}{label="+", arrow_from="dp4.cell[5]", color=info}
+\annotate{dp4.cell[7]}{label="+", arrow_from="dp4.cell[6]", color=info}
+
+\step
+\narrate{Add long-span annotations with single chars -- do they collide with the short ones?}
+\annotate{dp4.cell[7]}{label="*", arrow_from="dp4.cell[0]", color=good}
+\annotate{dp4.cell[6]}{label="*", arrow_from="dp4.cell[1]", color=warn}
+\annotate{dp4.cell[5]}{label="*", arrow_from="dp4.cell[2]", color=error}
+\end{animation}
+
+\subsection{Scenario E: Mixed label lengths on same target}
+
+\begin{animation}[id="readability-mixed", label="Mixed label lengths"]
+\shape{dp5}{DPTable}{n=6, data=[0,5,8,14,19,27], labels="0..5", label="$dp$"}
+
+\step
+\narrate{One cell receiving labels of vastly different lengths simultaneously.}
+\annotate{dp5.cell[4]}{label="+", arrow_from="dp5.cell[3]", color=info}
+\annotate{dp5.cell[4]}{label="dp[2]+cost(2,4)+penalty(4)=19", arrow_from="dp5.cell[2]", color=good}
+\annotate{dp5.cell[4]}{label="ok", arrow_from="dp5.cell[1]", color=warn}
+\annotate{dp5.cell[4]}{label="min(dp[0]+w(0,4), dp[1]+w(1,4), dp[2]+w(2,4), dp[3]+w(3,4))", arrow_from="dp5.cell[0]", color=error}
+\end{animation}

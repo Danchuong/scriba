@@ -1,0 +1,25 @@
+% Regression: VariableWatch column-width must NOT shrink across frames.
+% Step 2 sets a long value; step 3 sets a short value.
+% Before fix: viewBox sized to step 3 (narrow) -> step 2 overflows.
+% After fix: monotonic _value_col_width + emitter pre-scan keep viewBox wide.
+
+\begin{animation}[id="vw-shrink", label="VariableWatch shrink-width regression"]
+\shape{vars}{VariableWatch}{names=["status","detail"], label="Watch"}
+
+\step
+\narrate{Step 1: placeholders.}
+
+\step
+\apply{vars.var[status]}{value="initializing buffer"}
+\apply{vars.var[detail]}{value="this is a deliberately long descriptor to widen the value column"}
+\recolor{vars.var[status]}{state=current}
+\recolor{vars.var[detail]}{state=current}
+\narrate{Step 2: long values. ViewBox must accommodate this width.}
+
+\step
+\apply{vars.var[status]}{value="ok"}
+\apply{vars.var[detail]}{value="-"}
+\recolor{vars.var[status]}{state=good}
+\recolor{vars.var[detail]}{state=good}
+\narrate{Step 3: short values. ViewBox must NOT shrink (would clip step 2).}
+\end{animation}

@@ -1,0 +1,114 @@
+\section{Reference Document Test}
+
+This file tests whether the Scriba \texttt{.tex} reference is sufficient for writing valid sources.
+
+\subsection{Text Formatting}
+
+Here is \textbf{bold text}, \textit{italic text}, and \texttt{monospace text}.
+We can also use \emph{emphasized text} and \underline{underlined text}.
+
+\subsection{Mathematics}
+
+Inline math: the quadratic formula gives $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$.
+
+Display math:
+
+$$\sum_{i=0}^{n-1} a_i = a_0 + a_1 + \cdots + a_{n-1}$$
+
+\subsection{Itemize List}
+
+\begin{itemize}
+\item Arrays are 1D horizontal rows of indexed cells
+\item Graphs have nodes and edges with layout engines
+\item DPTables support transition arrows via annotations
+\item Each animation frame inherits the previous frame's state
+\end{itemize}
+
+\subsection{Tabular Table}
+
+\begin{tabular}{|l|c|r|}
+\hline
+Primitive & Dimension & Use Case \\
+\hline
+Array & 1D & Linear sequences \\
+\hline
+Grid & 2D & Matrix problems \\
+\hline
+Graph & Nodes+Edges & Network traversal \\
+\hline
+DPTable & 1D or 2D & Dynamic programming \\
+\hline
+\end{tabular}
+
+\subsection{Code Block}
+
+\begin{lstlisting}[language=Python]
+def prefix_sum(arr):
+    n = len(arr)
+    ps = [0] * (n + 1)
+    for i in range(n):
+        ps[i + 1] = ps[i] + arr[i]
+    return ps
+\end{lstlisting}
+
+\subsection{Animation}
+
+\begin{animation}[id="prefix-sum", label="Prefix Sum Walkthrough"]
+\shape{a}{Array}{size=5, data=[3,1,4,1,5], labels="0..4", label="$arr$"}
+\shape{ps}{Array}{size=6, data=[0,"","","","",""], labels="0..5", label="$ps$"}
+
+\step
+\narrate{We have array $arr = [3,1,4,1,5]$ and prefix sum array $ps$ initialized with $ps[0]=0$.}
+
+\step
+\recolor{a.cell[0]}{state=current}
+\recolor{ps.cell[0]}{state=done}
+\recolor{ps.cell[1]}{state=current}
+\apply{ps.cell[1]}{value=3}
+\annotate{ps.cell[1]}{label="+3", arrow_from="ps.cell[0]", color=good}
+\narrate{$ps[1] = ps[0] + arr[0] = 0 + 3 = 3$.}
+
+\step
+\recolor{a.cell[0]}{state=dim}
+\recolor{a.cell[1]}{state=current}
+\recolor{ps.cell[1]}{state=done}
+\recolor{ps.cell[2]}{state=current}
+\apply{ps.cell[2]}{value=4}
+\annotate{ps.cell[2]}{label="+1", arrow_from="ps.cell[1]", color=good}
+\narrate{$ps[2] = ps[1] + arr[1] = 3 + 1 = 4$.}
+
+\step
+\recolor{a.cell[1]}{state=dim}
+\recolor{a.cell[2]}{state=current}
+\recolor{ps.cell[2]}{state=done}
+\recolor{ps.cell[3]}{state=current}
+\apply{ps.cell[3]}{value=8}
+\annotate{ps.cell[3]}{label="+4", arrow_from="ps.cell[2]", color=good}
+\narrate{$ps[3] = ps[2] + arr[2] = 4 + 4 = 8$.}
+
+\step
+\recolor{a.cell[2]}{state=dim}
+\recolor{a.cell[3]}{state=current}
+\recolor{ps.cell[3]}{state=done}
+\recolor{ps.cell[4]}{state=current}
+\apply{ps.cell[4]}{value=9}
+\annotate{ps.cell[4]}{label="+1", arrow_from="ps.cell[3]", color=good}
+\narrate{$ps[4] = ps[3] + arr[3] = 8 + 1 = 9$.}
+
+\step
+\recolor{a.cell[3]}{state=dim}
+\recolor{a.cell[4]}{state=current}
+\recolor{ps.cell[4]}{state=done}
+\recolor{ps.cell[5]}{state=current}
+\apply{ps.cell[5]}{value=14}
+\annotate{ps.cell[5]}{label="+5", arrow_from="ps.cell[4]", color=good}
+\narrate{$ps[5] = ps[4] + arr[4] = 9 + 5 = 14$.}
+
+\step
+\recolor{a.cell[4]}{state=dim}
+\recolor{ps.cell[5]}{state=done}
+\foreach{i}{0..5}
+  \recolor{ps.cell[${i}]}{state=done}
+\endforeach
+\narrate{Complete! The prefix sum array is $ps = [0,3,4,8,9,14]$.}
+\end{animation}

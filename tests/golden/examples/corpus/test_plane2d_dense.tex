@@ -1,0 +1,73 @@
+\section{Plane2D Dense Overlap Test}
+
+This diagram tests visual rendering of Plane2D with many overlapping elements.
+
+\begin{diagram}[id="plane2d-dense", label="Dense Plane2D overlap test"]
+\shape{p}{Plane2D}{xrange=[-5,5], yrange=[-5,5], grid=true, axes=true}
+
+% --- Cluster of points near origin (overlapping labels) ---
+\apply{p}{add_point=(0,0)}
+\apply{p}{add_point=(0.3,0.2)}
+\apply{p}{add_point=(-0.2,0.4)}
+\apply{p}{add_point=(0.1,-0.3)}
+\apply{p}{add_point=(0.5,0.5)}
+
+% --- Points on integer coords (overlapping with tick labels) ---
+\apply{p}{add_point=(1,1)}
+\apply{p}{add_point=(2,2)}
+\apply{p}{add_point=(3,3)}
+\apply{p}{add_point=(-1,-1)}
+\apply{p}{add_point=(-2,-2)}
+\apply{p}{add_point=(-3,-3)}
+
+% --- Points at edges (potential clipping) ---
+\apply{p}{add_point=(5,5)}
+\apply{p}{add_point=(-5,-5)}
+\apply{p}{add_point=(5,-5)}
+\apply{p}{add_point=(-5,5)}
+\apply{p}{add_point=(4.8,4.9)}
+
+% --- Lines that cross each other ---
+\apply{p}{add_line=("y=x",1,0)}
+\apply{p}{add_line=("y=-x",-1,0)}
+\apply{p}{add_line=("y=2x+1",2,1)}
+\apply{p}{add_line=("y=-0.5x-2",-0.5,-2)}
+
+% --- Apply states to points ---
+\recolor{p.point[0]}{state=current}
+\recolor{p.point[1]}{state=current}
+\recolor{p.point[2]}{state=error}
+\recolor{p.point[3]}{state=error}
+\recolor{p.point[4]}{state=good}
+\recolor{p.point[5]}{state=done}
+\recolor{p.point[6]}{state=done}
+\recolor{p.point[7]}{state=done}
+\recolor{p.point[8]}{state=dim}
+\recolor{p.point[9]}{state=dim}
+\recolor{p.point[10]}{state=dim}
+\recolor{p.point[11]}{state=good}
+\recolor{p.point[12]}{state=error}
+\recolor{p.point[13]}{state=good}
+\recolor{p.point[14]}{state=error}
+\recolor{p.point[15]}{state=current}
+
+% --- Annotations on clustered points ---
+\annotate{p.point[0]}{label="Origin", position=above, color=info}
+\annotate{p.point[1]}{label="Near origin", position=above, color=warn}
+\annotate{p.point[2]}{label="Also near", position=below, color=error}
+\annotate{p.point[3]}{label="Cluster pt", position=left, color=good}
+\annotate{p.point[4]}{label="Close by", position=right, color=muted}
+
+% --- Annotations on diagonal points ---
+\annotate{p.point[5]}{label="(1,1)", position=above, color=info}
+\annotate{p.point[6]}{label="(2,2)", position=above, color=info}
+\annotate{p.point[7]}{label="(3,3)", position=above, color=info}
+
+% --- Annotations on corner points ---
+\annotate{p.point[11]}{label="Corner TL", position=below, color=warn}
+\annotate{p.point[12]}{label="Corner BL", position=above, color=error}
+\annotate{p.point[13]}{label="Corner TR", position=left, color=good}
+\annotate{p.point[14]}{label="Corner BR", position=above, color=error}
+\annotate{p.point[15]}{label="Near corner", position=left, color=info}
+
+\end{diagram}

@@ -1,0 +1,9 @@
+% Regression: emit_diagram_html now invokes _prescan_value_widths.
+% A diagram (single frame) using VariableWatch with a wide value must
+% produce a viewBox sized for the post-apply width, not the initial state.
+
+\begin{diagram}[id="diagram-prescan"]
+\shape{vars}{VariableWatch}{names=["state"], label="Diagnostic"}
+\apply{vars.var[state]}{value="active connection retry pending - widened value"}
+\recolor{vars.var[state]}{state=current}
+\end{diagram}
