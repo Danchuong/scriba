@@ -2,7 +2,8 @@
 
 Combines per-frame SVGs, scripts, and styles into the final HTML output
 (interactive widget, static filmstrip, diagram, substory sections).
-Stateless except for the module-level ``_substory_counter``.
+Stateless — substory widget ids derive deterministically from the parent
+frame id and the substory's own id (no module-level counter).
 """
 
 from __future__ import annotations
@@ -323,9 +324,6 @@ def emit_animation_html(
 # ---------------------------------------------------------------------------
 
 
-_substory_counter = 0
-
-
 def emit_substory_html(
     scene_id: str,
     parent_frame_id: str,
@@ -340,12 +338,14 @@ def emit_substory_html(
     so no ``<script>`` is needed inside the substory section.  The parent
     widget's initialiser calls ``_initSubWidget()`` after injection.
     """
-    global _substory_counter
-    _substory_counter += 1
-    widget_id = f"sub-{scene_id}-{_substory_counter}"
+    sub_id = substory.substory_id
+    # Deterministic widget id: the parent frame id is already scene-qualified
+    # and unique, and ``sub_id`` is unique within a parse. Combining them
+    # avoids a module-level counter, so identical input yields byte-identical
+    # output across successive renders in the same process.
+    widget_id = f"sub-{parent_frame_id}-{sub_id}"
 
     depth = substory.depth
-    sub_id = substory.substory_id
     title = substory.title
     sub_frame_count = len(substory.frames)
 

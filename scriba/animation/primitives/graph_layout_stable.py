@@ -19,7 +19,7 @@ import json
 import logging
 import math
 import random
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover - type checking only
     from scriba.core.context import RenderContext
@@ -33,39 +33,10 @@ _MAX_FRAMES = 50
 _LAMBDA_MIN = 0.01
 _LAMBDA_MAX = 10.0
 
-# ---------------------------------------------------------------------------
-# SF-5 / SF-6 promotion scaffold (RFC-002)
-# ---------------------------------------------------------------------------
-#
-# The module-level ``_collected`` list + ``_collect``/``_drain_collected``
-# helpers are retained because tests read warnings via ``_drain_collected``.
-# As of v0.9.0, production paths also call ``_emit_warning(ctx, ...)`` when
-# a ``RenderContext`` is supplied (see ``compute_stable_layout`` ctx param).
-# Do not remove this scaffold until the tests are rewritten to read from
-# ``Document.warnings`` instead.
-_collected: list[dict[str, Any]] = []
-
-
-def _collect(code: str, message: str, severity: str) -> None:
-    """Append a structured warning entry for W6.3's collector to drain."""
-    _collected.append(
-        {
-            "code": code,
-            "message": message,
-            "severity": severity,
-        }
-    )
-
-
-def _drain_collected() -> list[dict[str, Any]]:
-    """Drain and return pending warning entries.
-
-    Called from the merged RenderContext path once W6.3 lands.
-    Resets the module-level buffer so subsequent renders start clean.
-    """
-    global _collected
-    out, _collected = _collected, []
-    return out
+# SF-5 / SF-6 promotion (RFC-002): warnings are emitted through the
+# per-render ``RenderContext`` collector via ``_emit_warning(ctx, ...)``.
+# There is intentionally no module-level buffer — that would leak warnings
+# across renders sharing the same process.
 
 
 def _segments_intersect(
@@ -234,7 +205,6 @@ def compute_stable_layout(
             f"layout_lambda={lambda_weight} outside "
             f"[{_LAMBDA_MIN},{_LAMBDA_MAX}], clamping"
         )
-        _collect("E1504", _msg_e1504, "hidden")
         if ctx is not None:
             from scriba.core.warnings import _emit_warning
             _emit_warning(ctx, "E1504", _msg_e1504, severity="hidden")
@@ -248,8 +218,6 @@ def compute_stable_layout(
         logger.warning("E1503: falling back to force layout")
         _msg_e1501 = f"{len(nodes)} nodes exceeds limit of {_MAX_NODES}"
         _msg_e1503 = "stable layout fallback triggered (force layout)"
-        _collect("E1501", _msg_e1501, "dangerous")
-        _collect("E1503", _msg_e1503, "dangerous")
         if ctx is not None:
             from scriba.core.warnings import _emit_warning
             _emit_warning(ctx, "E1501", _msg_e1501, severity="dangerous")
@@ -266,8 +234,6 @@ def compute_stable_layout(
         logger.warning("E1503: falling back to force layout")
         _msg_e1502 = f"{len(frame_edge_sets)} frames exceeds limit of {_MAX_FRAMES}"
         _msg_e1503b = "stable layout fallback triggered (force layout)"
-        _collect("E1502", _msg_e1502, "dangerous")
-        _collect("E1503", _msg_e1503b, "dangerous")
         if ctx is not None:
             from scriba.core.warnings import _emit_warning
             _emit_warning(ctx, "E1502", _msg_e1502, severity="dangerous")
@@ -353,7 +319,6 @@ def compute_stable_layout(
             f"final objective ({current_obj:.4f}) exceeds 10x initial "
             f"({initial_obj:.4f})"
         )
-        _collect("E1500", _msg_e1500, "hidden")
         if ctx is not None:
             from scriba.core.warnings import _emit_warning
             _emit_warning(ctx, "E1500", _msg_e1500, severity="hidden")

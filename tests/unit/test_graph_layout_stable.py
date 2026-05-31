@@ -13,19 +13,23 @@ import pytest
 from scriba.animation.primitives.graph_layout_stable import (
     _count_edge_crossings,
     _distance_penalty,
-    _drain_collected,
     _segments_intersect,
     compute_stable_layout,
 )
+from scriba.core.context import RenderContext
 from scriba.core.errors import ValidationError
 
 
-@pytest.fixture(autouse=True)
-def _drain_warnings_between_tests() -> None:
-    """Ensure W6.2 warning collector is empty before each test."""
-    _drain_collected()
-    yield
-    _drain_collected()
+def _ctx_with_collector() -> RenderContext:
+    """A RenderContext carrying a fresh, per-call warnings collector.
+
+    Each context owns its own list, so warnings never leak between renders
+    — the property the module-level collector used to violate.
+    """
+    return RenderContext(
+        resource_resolver=lambda _filename: None,
+        warnings_collector=[],
+    )
 
 
 class TestSABasic:
@@ -368,80 +372,92 @@ class TestWarmStart:
 
 
 class TestCollectorPromotion:
-    """SF-5/SF-6 promotion: logger.warning still fires AND _collected grows."""
+    """SF-5/SF-6: logger.warning still fires AND warnings reach ctx collector."""
 
     def test_e1504_collected_hidden(self) -> None:
         """Lambda outside [0.01, 10] emits an E1504 hidden warning."""
-        _drain_collected()  # start clean
+        ctx = _ctx_with_collector()
         compute_stable_layout(
             nodes=["A", "B"],
             frame_edge_sets=[[("A", "B")]],
             seed=42,
             lambda_weight=100.0,
+            ctx=ctx,
         )
-        entries = _drain_collected()
-        assert any(e["code"] == "E1504" for e in entries)
-        e1504 = next(e for e in entries if e["code"] == "E1504")
-        assert e1504["severity"] == "hidden"
-        assert "layout_lambda" in e1504["message"]
+        entries = ctx.warnings_collector
+        assert any(e.code == "E1504" for e in entries)
+        e1504 = next(e for e in entries if e.code == "E1504")
+        assert e1504.severity == "hidden"
+        assert "layout_lambda" in e1504.message
 
     def test_e1501_collected_dangerous(self) -> None:
         """N > 20 emits E1501 + E1503 dangerous warnings."""
-        _drain_collected()
+        ctx = _ctx_with_collector()
         nodes = [f"n{i}" for i in range(25)]
         edges = [(f"n{i}", f"n{i+1}") for i in range(24)]
         result = compute_stable_layout(
-            nodes=nodes, frame_edge_sets=[edges], seed=42
+            nodes=nodes, frame_edge_sets=[edges], seed=42, ctx=ctx
         )
         assert result is None
-        entries = _drain_collected()
-        codes = {e["code"] for e in entries}
+        codes = {e.code for e in ctx.warnings_collector}
         assert "E1501" in codes
         assert "E1503" in codes
-        for e in entries:
-            if e["code"] in {"E1501", "E1503"}:
-                assert e["severity"] == "dangerous"
+        for e in ctx.warnings_collector:
+            if e.code in {"E1501", "E1503"}:
+                assert e.severity == "dangerous"
 
     def test_e1502_collected_dangerous(self) -> None:
         """Too many frames emits E1502 + E1503 dangerous warnings."""
-        _drain_collected()
+        ctx = _ctx_with_collector()
         result = compute_stable_layout(
             nodes=["A", "B"],
             frame_edge_sets=[[("A", "B")]] * 60,
             seed=42,
+            ctx=ctx,
         )
         assert result is None
-        entries = _drain_collected()
-        codes = {e["code"] for e in entries}
+        codes = {e.code for e in ctx.warnings_collector}
         assert "E1502" in codes
         assert "E1503" in codes
 
-    def test_drain_is_idempotent(self) -> None:
-        """Draining twice yields an empty list the second time."""
-        _drain_collected()
+    def test_collector_is_per_context_no_leak(self) -> None:
+        """Each context owns its collector — warnings never leak across renders.
+
+        Regression for the old module-level ``_collected`` buffer, which
+        accumulated across calls in the same process.
+        """
+        ctx1 = _ctx_with_collector()
         compute_stable_layout(
             nodes=["A", "B"],
             frame_edge_sets=[[("A", "B")]],
             seed=42,
             lambda_weight=100.0,
+            ctx=ctx1,
         )
-        first = _drain_collected()
-        second = _drain_collected()
-        assert len(first) >= 1
-        assert second == []
+        assert any(e.code == "E1504" for e in ctx1.warnings_collector)
 
-    def test_ok_path_no_warnings(self) -> None:
-        """A normal call adds nothing to the collector."""
-        _drain_collected()
+        # A fresh context starts clean — no carry-over from ctx1.
+        ctx2 = _ctx_with_collector()
         compute_stable_layout(
             nodes=["A", "B", "C"],
             frame_edge_sets=[[("A", "B"), ("B", "C")]],
             seed=42,
+            ctx=ctx2,
         )
-        entries = _drain_collected()
+        assert all(e.code != "E1504" for e in ctx2.warnings_collector)
+
+    def test_ok_path_no_warnings(self) -> None:
+        """A normal call adds nothing dangerous to the collector."""
+        ctx = _ctx_with_collector()
+        compute_stable_layout(
+            nodes=["A", "B", "C"],
+            frame_edge_sets=[[("A", "B"), ("B", "C")]],
+            seed=42,
+            ctx=ctx,
+        )
         # SA may emit E1500 on pathological cases but this graph
         # should not trip the 10x initial objective bound.
-        codes = {e["code"] for e in entries}
+        codes = {e.code for e in ctx.warnings_collector}
         assert "E1501" not in codes
         assert "E1502" not in codes
         assert "E1503" not in codes
