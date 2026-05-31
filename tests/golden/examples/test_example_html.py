@@ -25,6 +25,7 @@ Refresh the corpus from examples/ (when example .tex files change):
 Update the golden .html in place (human review the diff before committing!):
     SCRIBA_UPDATE_GOLDEN=1 pytest tests/golden/examples/ -v
 """
+
 from __future__ import annotations
 
 import difflib

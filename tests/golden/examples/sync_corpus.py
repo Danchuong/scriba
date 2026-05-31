@@ -9,6 +9,7 @@ suite to review and accept the new output.
     python tests/golden/examples/sync_corpus.py
     pytest tests/golden/examples/ -v
 """
+
 from __future__ import annotations
 
 import shutil
