@@ -87,6 +87,13 @@
   --scriba-label-font:             600 11px ui-monospace, monospace;
   --scriba-label-color:            var(--scriba-fg-muted);
 
+  /* Global diagram font-size scale. Consumers embedding Scriba output can
+   * resize ALL diagram text with a single declaration, e.g.
+   *   :root { --scriba-diagram-font-scale: 1.3; }
+   * Every SVG <text> font-size (inline and the role rules below) is
+   * multiplied by this factor; the default of 1 leaves sizes unchanged. */
+  --scriba-diagram-font-scale:     1;
+
   /* Annotation */
   --scriba-annotation-font:        600 11px ui-monospace, monospace;
   --scriba-annotation-arrow-width: 2.0;
@@ -373,6 +380,7 @@
 :where([data-primitive="grid"]    [data-target]) > text,
 :where([data-primitive="dptable"] [data-target]) > text {
   font:                  var(--scriba-cell-font);
+  font-size:             calc(14px * var(--scriba-diagram-font-scale, 1));
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
   font-synthesis:        none;         /* broad compat: Firefox ≤106, Safari ≤16.3 */
@@ -392,6 +400,7 @@
  * centered under each cell. */
 [data-primitive] .scriba-index-label {
   font:              var(--scriba-cell-index-font);
+  font-size:         calc(10px * var(--scriba-diagram-font-scale, 1));
   fill:              var(--scriba-cell-index-color);
   text-anchor:       middle;
   dominant-baseline: hanging;
@@ -411,6 +420,7 @@
 :where([data-primitive="graph"] .scriba-graph-nodes > [data-target]) > text,
 :where([data-primitive="tree"]  .scriba-tree-nodes > [data-target]) > text {
   font:                  var(--scriba-node-font);
+  font-size:             calc(14px * var(--scriba-diagram-font-scale, 1));
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
   font-synthesis:        none;         /* broad compat: Firefox ≤106, Safari ≤16.3 */
@@ -442,6 +452,7 @@
 
 :where([data-primitive="numberline"] > [data-target]) > text {
   font:              var(--scriba-cell-index-font);
+  font-size:         calc(10px * var(--scriba-diagram-font-scale, 1));
   fill:              var(--scriba-fg);
   text-anchor:       middle;
   dominant-baseline: hanging;
@@ -455,6 +466,7 @@
  * ``start`` the caption drifted right by half its width. */
 [data-primitive] > .scriba-primitive-label {
   font:              var(--scriba-label-font);
+  font-size:         calc(11px * var(--scriba-diagram-font-scale, 1));
   fill:              var(--scriba-label-color);
   text-anchor:       middle;
   dominant-baseline: central;
@@ -473,6 +485,7 @@
 
 .scriba-annotation > text {
   font:        var(--scriba-annotation-font);
+  font-size:   calc(11px * var(--scriba-diagram-font-scale, 1));
   text-anchor: middle;
 }
 
@@ -811,12 +824,12 @@
    ============================================ */
 
 .scriba-metricplot-legend-label {
-  font-size: 11px;
+  font-size: calc(11px * var(--scriba-diagram-font-scale, 1));
   fill: var(--scriba-fg);
 }
 
 .scriba-metricplot-right-axis-label {
-  font-size: 11px;
+  font-size: calc(11px * var(--scriba-diagram-font-scale, 1));
   fill: var(--scriba-fg-muted);
 }
 

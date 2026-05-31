@@ -501,7 +501,9 @@ class MetricPlot(PrimitiveBase):
             label = self._format_tick(xt)
             parts.append(
                 f'<text x="{sx}" y="{H - pb + 14}"'
-                f' text-anchor="middle" font-size="10">{_escape_xml(label)}</text>'
+                f' text-anchor="middle"'
+                f' style="font-size:calc(10px * var(--scriba-diagram-font-scale, 1))">'
+                f'{_escape_xml(label)}</text>'
             )
         parts.append("</g>")
 
@@ -518,7 +520,9 @@ class MetricPlot(PrimitiveBase):
             label = self._format_tick(yt)
             parts.append(
                 f'<text x="{pl - 8}" y="{round(sy + 4, 2)}"'
-                f' text-anchor="end" font-size="10">{_escape_xml(label)}</text>'
+                f' text-anchor="end"'
+                f' style="font-size:calc(10px * var(--scriba-diagram-font-scale, 1))">'
+                f'{_escape_xml(label)}</text>'
             )
         parts.append("</g>")
 
@@ -536,7 +540,9 @@ class MetricPlot(PrimitiveBase):
                 label = self._format_tick(yt)
                 parts.append(
                     f'<text x="{W - pr + 8}" y="{round(sy + 4, 2)}"'
-                    f' text-anchor="start" font-size="10">{_escape_xml(label)}</text>'
+                    f' text-anchor="start"'
+                    f' style="font-size:calc(10px * var(--scriba-diagram-font-scale, 1))">'
+                    f'{_escape_xml(label)}</text>'
                 )
             parts.append("</g>")
 

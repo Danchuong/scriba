@@ -1367,7 +1367,11 @@ def _emit_label_single_line(
             html = None
         if html:
             weight_css = f"font-weight:{l_weight};" if l_weight else ""
-            size_css = f"font-size:{l_size};" if l_size else ""
+            size_css = (
+                f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1));"
+                if l_size
+                else ""
+            )
             return (
                 f'    <foreignObject x="{pill_rx}" y="{pill_ry}"'
                 f' width="{pill_w}" height="{pill_h}"'
@@ -1388,7 +1392,7 @@ def _emit_label_single_line(
     if l_weight:
         style_parts.append(f"font-weight:{l_weight}")
     if l_size:
-        style_parts.append(f"font-size:{l_size}")
+        style_parts.append(f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1))")
     style_parts.append("text-anchor:middle")
     style_parts.append("dominant-baseline:auto")
     style_str = ";".join(style_parts)
@@ -1870,7 +1874,7 @@ def emit_plain_arrow_svg(
             if l_weight:
                 style_parts.append(f"font-weight:{l_weight}")
             if l_size:
-                style_parts.append(f"font-size:{l_size}")
+                style_parts.append(f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1))")
             style_parts.append("text-anchor:middle")
             style_parts.append("dominant-baseline:auto")
             style_str = ";".join(style_parts)
@@ -2316,7 +2320,7 @@ def _emit_label_and_pill(
         if l_weight:
             style_parts.append(f"font-weight:{l_weight}")
         if l_size:
-            style_parts.append(f"font-size:{l_size}")
+            style_parts.append(f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1))")
         style_parts.append("text-anchor:middle")
         style_parts.append("dominant-baseline:auto")
         style_str = ";".join(style_parts)
@@ -3121,7 +3125,7 @@ def emit_position_label_svg(
         if l_weight:
             style_parts.append(f"font-weight:{l_weight}")
         if l_size:
-            style_parts.append(f"font-size:{l_size}")
+            style_parts.append(f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1))")
         style_parts.append("text-anchor:middle")
         style_parts.append("dominant-baseline:auto")
         style_str = ";".join(style_parts)

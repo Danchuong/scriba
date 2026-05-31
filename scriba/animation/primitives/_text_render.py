@@ -23,7 +23,29 @@ __all__ = [
     "_render_mixed_html",
     "_render_svg_text",
     "_render_split_label_svg",
+    "_scaled_font_size",
 ]
+
+# Global diagram font-size scale knob. Every inline font-size emitted into
+# SVG text is multiplied by this CSS custom property so a consumer embedding
+# Scriba output can resize ALL diagram text with a single declaration:
+#   :root { --scriba-diagram-font-scale: 1.3; }
+# Default (var unset) resolves to 1, leaving rendered size unchanged.
+_FONT_SCALE_VAR = "--scriba-diagram-font-scale"
+
+
+def _scaled_font_size(font_size: str) -> str:
+    """Return a CSS ``font-size`` value scaled by the global font-scale var.
+
+    ``font_size`` may be a bare number (treated as ``px``) or already carry a
+    unit (``px``/``em``/``rem``/``%``).
+    """
+    fs = (
+        font_size
+        if any(font_size.endswith(u) for u in ("px", "em", "rem", "%"))
+        else f"{font_size}px"
+    )
+    return f"calc({fs} * var({_FONT_SCALE_VAR}, 1))"
 
 
 def _char_display_width(ch: str) -> float:
@@ -205,8 +227,7 @@ def _render_svg_text(
         if font_weight:
             style_parts.append(f"font-weight:{font_weight}")
         if font_size:
-            fs = font_size if any(font_size.endswith(u) for u in ("px", "em", "rem", "%")) else f"{font_size}px"
-            style_parts.append(f"font-size:{fs}")
+            style_parts.append(f"font-size:{_scaled_font_size(font_size)}")
         if style_parts:
             attrs += f' style="{";".join(style_parts)}"'
         if text_outline:
@@ -277,8 +298,7 @@ def _render_svg_text(
     if font_weight:
         style_parts.append(f"font-weight:{font_weight}")
     if font_size:
-        fs = font_size if any(font_size.endswith(u) for u in ("px", "em", "rem", "%")) else f"{font_size}px"
-        style_parts.append(f"font-size:{fs}")
+        style_parts.append(f"font-size:{_scaled_font_size(font_size)}")
 
     style = ";".join(style_parts)
 

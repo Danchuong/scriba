@@ -82,6 +82,9 @@ Declared on `:root` in `scriba-scene-primitives.css`:
   --scriba-label-font:             600 11px ui-monospace, monospace;
   --scriba-label-color:            var(--scriba-fg-muted);
 
+  /* Global diagram font-size scale (default 1) */
+  --scriba-diagram-font-scale:     1;
+
   /* Annotation */
   --scriba-annotation-font:        600 11px ui-monospace, monospace;
   --scriba-annotation-arrow-width: 2.0;
@@ -97,6 +100,28 @@ Declared on `:root` in `scriba-scene-primitives.css`:
   --scriba-progress-fill:          var(--scriba-link);
 }
 ```
+
+### 2.1a Scaling diagram text (`--scriba-diagram-font-scale`)
+
+Every font size inside a rendered diagram — both the CSS-class roles above
+(`--scriba-cell-font`, `--scriba-node-font`, `--scriba-label-font`,
+`--scriba-cell-index-font`, `--scriba-annotation-font`) and the per-primitive
+sizes emitted inline on `<text>` elements (queue, hashmap, variablewatch,
+graph weights, plane2d/metricplot axis ticks, codepanel, matrix, stack,
+linkedlist) — is multiplied by `--scriba-diagram-font-scale`. A consumer
+embedding Scriba output resizes **all** diagram text with a single rule:
+
+```css
+:root { --scriba-diagram-font-scale: 1.3; }   /* 30% larger diagram text */
+```
+
+The default of `1` leaves every rendered size unchanged (output is
+byte-identical without the override). The scale affects only text; SVG
+geometry (cell/node sizes, viewBox) is fixed, so very large scales can cause
+text to overflow its shapes — increase the factor in moderation. This is the
+only document-wide font knob; for finer control, redefine the individual
+`--scriba-*-font` tokens. TeX prose text outside diagrams is unaffected (it
+scales via the host page's `font-size` on `.scriba-tex-content`).
 
 ### 2.2 State color tokens (Wong CVD-safe palette)
 
