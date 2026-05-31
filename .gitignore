@@ -13,8 +13,6 @@ htmlcov/
 !.claude/skills/
 .gitnexus
 .opencode
-# Build artifacts — compiled examples
-examples/**/*.html
 .DS_Store
 **/.DS_Store
 
