@@ -1,0 +1,6 @@
+\begin{animation}[id="d", label="reparent cycle"]
+\shape{T}{Tree}{root=A, nodes=[A,B,C,D], edges=[(A,B),(B,C),(C,D)]}
+\step
+\apply{T}{reparent={node="B", parent="D"}}
+\narrate{Reparenting B under its own descendant D creates a cycle.}
+\end{animation}

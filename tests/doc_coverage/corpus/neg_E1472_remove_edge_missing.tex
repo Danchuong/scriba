@@ -1,0 +1,6 @@
+\begin{animation}[id="d", label="remove_edge missing"]
+\shape{G}{Graph}{nodes=["A","B","C"], edges=[("A","B")]}
+\step
+\apply{G}{remove_edge={from="A", to="C"}}
+\narrate{Edge A-C does not exist.}
+\end{animation}

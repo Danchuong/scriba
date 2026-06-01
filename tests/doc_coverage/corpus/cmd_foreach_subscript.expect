@@ -1,0 +1,2 @@
+ok
+feature: \foreach subscript ${arr[i]}

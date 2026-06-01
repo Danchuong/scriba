@@ -1,0 +1,10 @@
+\begin{animation}[id="d", label="l"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+    \compute{
+        n = 3
+        vals = [i * 2 for i in range(n)]
+        total = sum(vals)
+    }
+\step
+\narrate{total=${total}.}
+\end{animation}

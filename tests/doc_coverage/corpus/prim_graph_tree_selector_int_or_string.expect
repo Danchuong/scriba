@@ -1,0 +1,2 @@
+ok
+feature: Tree node[8] and node["8"] are the same node (str-normalized)

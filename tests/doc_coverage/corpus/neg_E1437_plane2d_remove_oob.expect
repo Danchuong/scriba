@@ -1,0 +1,2 @@
+error E1437
+feature: Plane2D remove_* index out of range / tombstoned (§7.9/§15)

@@ -1,0 +1,2 @@
+error E1170
+feature: §14 foreach nesting exceeds 3 levels (E1170)

@@ -1,0 +1,11 @@
+\begin{animation}[id="reannot-ephemeral", label="Reannotate ephemeral"]
+\shape{dp}{DPTable}{rows=3, cols=3}
+\step[label=s1]
+\annotate{dp.cell[1][1]}{label="orig", color=info}
+\narrate{Original annotation.}
+\step[label=s2]
+\reannotate{dp.cell[1][1]}{color=warn, ephemeral=true}
+\narrate{Ephemeral reannotation, cleared next step.}
+\step[label=s3]
+\narrate{Annotation cleared.}
+\end{animation}

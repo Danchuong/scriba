@@ -1,0 +1,14 @@
+\begin{animation}[id="d", label="l"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\compute{
+  def f(x):
+      if x > 0:
+          return x
+      return 0
+  acc = 0
+  for k in range(3):
+      acc = acc + f(k)
+}
+\step
+\narrate{Computed ${acc}.}
+\end{animation}

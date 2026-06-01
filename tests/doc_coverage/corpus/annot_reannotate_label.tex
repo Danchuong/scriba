@@ -1,0 +1,9 @@
+\begin{animation}[id="reannot-label", label="Reannotate label"]
+\shape{dp}{DPTable}{rows=3, cols=3}
+\step[label=s1]
+\annotate{dp.cell[1][1]}{label="orig", color=info}
+\narrate{Original label.}
+\step[label=s2]
+\reannotate{dp.cell[1][1]}{color=good, label="updated"}
+\narrate{Replace annotation text.}
+\end{animation}

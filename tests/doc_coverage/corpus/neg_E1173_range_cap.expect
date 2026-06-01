@@ -1,0 +1,2 @@
+error E1173
+feature: \foreach iterable exceeds 1,000,000-element cap (§14/§15)

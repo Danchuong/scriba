@@ -1,0 +1,2 @@
+error E1159
+feature: ${name} selector index references unknown \compute binding outside \foreach (§13.2/§15)

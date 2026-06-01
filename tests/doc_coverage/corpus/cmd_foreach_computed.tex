@@ -1,0 +1,9 @@
+\begin{diagram}[id="d", label="l"]
+\shape{a}{Array}{size=5, data=[1,2,3,4,5]}
+\compute{
+  even_indices = [0, 2, 4]
+}
+\foreach{i}{${even_indices}}
+  \recolor{a.cell[${i}]}{state=good}
+\endforeach
+\end{diagram}

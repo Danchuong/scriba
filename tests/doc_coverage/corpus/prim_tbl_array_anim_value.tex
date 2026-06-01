@@ -1,0 +1,11 @@
+\begin{animation}[id="t", label="array anim value"]
+\shape{a}{Array}{size=4, data=[0,0,0,0]}
+\step
+\apply{a.cell[0]}{value=5}
+\recolor{a.cell[0]}{state=current}
+\narrate{Set first cell to $5$.}
+\step
+\apply{a.cell[1]}{value=9}
+\recolor{a.cell[0]}{state=done}
+\narrate{Set second cell to $9$.}
+\end{animation}

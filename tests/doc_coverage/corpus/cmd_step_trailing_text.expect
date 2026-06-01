@@ -1,0 +1,2 @@
+error E1052
+feature: \step trailing non-whitespace after ] -> E1052

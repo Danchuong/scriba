@@ -1,0 +1,2 @@
+ok
+feature: MetricPlot per-series dict {name,color,axis,scale}

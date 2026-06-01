@@ -1,0 +1,6 @@
+\begin{animation}[id="t"]
+\shape{T}{Tree}{root="A", nodes=["A","B","C"], edges=[("A","B"),("A","C")]}
+\step
+\apply{T}{reparent={node="B"}}
+\narrate{Reparent with malformed spec (missing parent).}
+\end{animation}

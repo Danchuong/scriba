@@ -1,0 +1,9 @@
+\begin{diagram}[id="d", label="l"]
+\shape{dp}{Array}{size=5, data=[0,0,0,0,0]}
+\compute{
+  dp_vals = [0, 1, 3, 6, 10]
+}
+\foreach{i}{0..4}
+  \apply{dp.cell[${i}]}{value=${dp_vals[i]}}
+\endforeach
+\end{diagram}

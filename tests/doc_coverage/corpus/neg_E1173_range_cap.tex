@@ -1,0 +1,9 @@
+\begin{animation}[id="d", label="foreach range cap"]
+\compute{ big = range(2000000) }
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\step
+\foreach{i}{${big}}
+  \recolor{a.cell[0]}{state=done}
+\endforeach
+\narrate{Range exceeds 1,000,000 element cap.}
+\end{animation}

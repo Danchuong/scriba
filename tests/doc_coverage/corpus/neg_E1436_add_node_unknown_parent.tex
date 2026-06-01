@@ -1,0 +1,6 @@
+\begin{animation}[id="d", label="add_node unknown parent"]
+\shape{T}{Tree}{root=A, nodes=[A,B], edges=[(A,B)]}
+\step
+\apply{T}{add_node={id="C", parent="Z"}}
+\narrate{Parent Z does not exist.}
+\end{animation}

@@ -1,0 +1,9 @@
+\begin{animation}[id="stack-gotcha-ok", label="Stack recolor pushed item next step"]
+\shape{s}{Stack}{items=["A","B"]}
+\step
+\apply{s}{push="C"}
+\narrate{Push C onto the stack.}
+\step
+\recolor{s.item[2]}{state=current}
+\narrate{Now the new top is addressable.}
+\end{animation}

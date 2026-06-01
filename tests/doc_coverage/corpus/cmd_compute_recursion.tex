@@ -1,0 +1,12 @@
+\begin{animation}[id="d", label="l"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\compute{
+  def fib(k):
+      if k < 2:
+          return k
+      return fib(k-1) + fib(k-2)
+  result = fib(6)
+}
+\step
+\narrate{fib(6)=${result}.}
+\end{animation}

@@ -1,0 +1,9 @@
+\begin{animation}[id="queue-enq-deq", label="Queue enqueue and dequeue"]
+\shape{q}{Queue}{capacity=6, data=[1,2]}
+\step
+\apply{q}{enqueue=3}
+\narrate{Enqueue 3 at the rear.}
+\step
+\apply{q}{dequeue=true}
+\narrate{Dequeue fires on truthy true.}
+\end{animation}

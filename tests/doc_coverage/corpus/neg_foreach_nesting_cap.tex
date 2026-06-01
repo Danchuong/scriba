@@ -1,0 +1,14 @@
+\begin{animation}[id="d", label="foreach nesting cap"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\step
+\foreach{i}{0..1}
+  \foreach{j}{0..1}
+    \foreach{k}{0..1}
+      \foreach{l}{0..1}
+        \recolor{a.cell[0]}{state=done}
+      \endforeach
+    \endforeach
+  \endforeach
+\endforeach
+\narrate{Four nested foreach exceeds depth 3.}
+\end{animation}

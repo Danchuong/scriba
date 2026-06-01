@@ -1,0 +1,11 @@
+\begin{animation}[id="t"]
+\shape{sst}{Tree}{kind="sparse_segtree", range_lo=0, range_hi=7}
+\step
+\recolor{sst.node["[0,7]"]}{state=current}
+\narrate{Root node covers full range [0,7].}
+\step
+\apply{sst}{add_node={id="[0,3]", parent="[0,7]"}}
+\apply{sst}{add_node={id="[4,7]", parent="[0,7]"}}
+\recolor{sst.node["[0,3]"]}{state=current}
+\narrate{Split root into [0,3] and [4,7].}
+\end{animation}

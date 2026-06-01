@@ -1,0 +1,2 @@
+ok
+feature: \compute 10**9 legal (literal cap 10^7, computed values exempt)

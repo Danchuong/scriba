@@ -1,0 +1,2 @@
+error E1154
+feature: §13.6/§14 Starlark int literal >10^7 (999999999) rejected as E1154 (doc pins no code)

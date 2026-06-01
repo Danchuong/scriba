@@ -1,0 +1,2 @@
+error E1451
+feature: 7.12 HashMap capacity must be positive (E1451)

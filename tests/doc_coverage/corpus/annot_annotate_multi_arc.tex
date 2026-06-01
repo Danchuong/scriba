@@ -1,0 +1,8 @@
+\begin{animation}[id="annot-multi-arc", label="Annotate multiple arcs"]
+\shape{dp}{DPTable}{rows=3, cols=3}
+\step[label=s1]
+\annotate{dp.cell[2][2]}{label="diagonal", arrow_from="dp.cell[1][1]", color=good}
+\annotate{dp.cell[2][2]}{label="from left", arrow_from="dp.cell[2][1]", color=info}
+\annotate{dp.cell[2][2]}{label="from above", arrow_from="dp.cell[1][2]", color=info}
+\narrate{Three arcs to the same target, staggered automatically.}
+\end{animation}

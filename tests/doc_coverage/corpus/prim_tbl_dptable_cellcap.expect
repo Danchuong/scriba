@@ -1,0 +1,2 @@
+error E1425
+feature: DPTable cell-count exceeds 250000 (E1425)

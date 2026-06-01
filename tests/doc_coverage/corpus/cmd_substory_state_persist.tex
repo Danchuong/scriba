@@ -1,0 +1,12 @@
+\begin{animation}[id="d", label="l"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\step
+\narrate{Parent frame.}
+\substory[title="Sub"]
+\step
+\recolor{a.cell[0]}{state=good}
+\narrate{Recolor inside substory.}
+\endsubstory
+\step
+\narrate{Parent continues; cell 0 stays good.}
+\end{animation}

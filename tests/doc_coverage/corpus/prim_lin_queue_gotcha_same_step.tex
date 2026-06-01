@@ -1,0 +1,7 @@
+\begin{animation}[id="queue-gotcha", label="Queue recolor freshly enqueued same step"]
+\shape{q}{Queue}{capacity=6, data=[1,2]}
+\step
+\apply{q}{enqueue=3}
+\recolor{q.cell[2]}{state=current}
+\narrate{Recolor of just-enqueued cell dropped (13.1), still renders.}
+\end{animation}

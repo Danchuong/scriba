@@ -1,0 +1,6 @@
+\begin{animation}[id="d", label="codepanel line0"]
+\shape{code}{CodePanel}{lines=["for i in range(n):", "  ans += a[i]"], label="Code"}
+\step
+\recolor{code.line[0]}{state=current}
+\narrate{1-based indexing — line[0] warns (E1115) and is dropped, still renders.}
+\end{animation}
