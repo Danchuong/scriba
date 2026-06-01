@@ -151,6 +151,63 @@ class TestAddElements:
 
 
 # ---------------------------------------------------------------
+# Malformed add-spec tests (B5 — loud E1467 instead of silent drop)
+# ---------------------------------------------------------------
+
+
+class TestMalformedAddSpecsRaiseE1467:
+    """B5: malformed add-specs must raise E1467, not silently drop.
+
+    Previously each ``_add_*_internal`` had an ``else: return`` (or simply
+    did nothing) on wrong-shaped input, so ``\\apply{p}{add_point=<garbage>}``
+    added nothing with no signal. These tests pin the loud-error behaviour.
+    """
+
+    def test_add_point_malformed_raises(self) -> None:
+        p = Plane2D("p", {})
+        with pytest.raises(ValidationError, match="E1467"):
+            p.apply_command({"add_point": "nope"})
+        assert len(p.points) == 0
+
+    def test_add_point_short_tuple_raises(self) -> None:
+        p = Plane2D("p", {})
+        with pytest.raises(ValidationError, match="E1467"):
+            p.apply_command({"add_point": (1,)})
+        assert len(p.points) == 0
+
+    def test_add_line_malformed_raises(self) -> None:
+        p = Plane2D("p", {})
+        with pytest.raises(ValidationError, match="E1467"):
+            p.apply_command({"add_line": "nope"})
+        assert len(p.lines) == 0
+
+    def test_add_line_wrong_arity_tuple_raises(self) -> None:
+        p = Plane2D("p", {})
+        # 4-element tuple matches neither the 3-arg nor 2-arg+dict forms.
+        with pytest.raises(ValidationError, match="E1467"):
+            p.apply_command({"add_line": ("L", 1, 2, 3)})
+        assert len(p.lines) == 0
+
+    def test_add_segment_malformed_raises(self) -> None:
+        p = Plane2D("p", {})
+        with pytest.raises(ValidationError, match="E1467"):
+            p.apply_command({"add_segment": "nope"})
+        assert len(p.segments) == 0
+
+    def test_add_polygon_malformed_raises(self) -> None:
+        p = Plane2D("p", {})
+        with pytest.raises(ValidationError, match="E1467"):
+            p.apply_command({"add_polygon": "nope"})
+        assert len(p.polygons) == 0
+
+    def test_add_region_malformed_raises(self) -> None:
+        p = Plane2D("p", {})
+        with pytest.raises(ValidationError, match="E1467"):
+            p.apply_command({"add_region": [(0, 0), (1, 1)]})
+        assert len(p.regions) == 0
+
+
+# ---------------------------------------------------------------
 # Element cap tests (hard-limit E1466)
 # ---------------------------------------------------------------
 

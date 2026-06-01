@@ -247,7 +247,11 @@ class Plane2D(PrimitiveBase):
             x, y = float(pt["x"]), float(pt["y"])
             label = pt.get("label")
         else:
-            return
+            raise _animation_error(
+                "E1467",
+                f"malformed point add-spec: {pt!r}",
+                hint="expected (x, y), (x, y, label), or {x, y, label?}",
+            )
         # Warn if outside viewport — SF-2 (RFC-002): hidden severity,
         # never auto-raised, always observable via Document.warnings.
         if not (self.xrange[0] <= x <= self.xrange[1] and self.yrange[0] <= y <= self.yrange[1]):
@@ -291,13 +295,23 @@ class Plane2D(PrimitiveBase):
                     slope = -a / b
                     intercept_val = c / b
             else:
-                return
+                raise _animation_error(
+                    "E1467",
+                    f"malformed line add-spec: {ln!r}",
+                    hint="expected (label, slope, intercept) or "
+                    "(label, {a, b, c}) for ax+by=c",
+                )
         elif isinstance(ln, dict):
             label = ln.get("label")
             slope = float(ln.get("slope", 0))
             intercept_val = float(ln.get("intercept", 0))
         else:
-            return
+            raise _animation_error(
+                "E1467",
+                f"malformed line add-spec: {ln!r}",
+                hint="expected (label, slope, intercept), "
+                "(label, {a, b, c}), or {label?, slope, intercept}",
+            )
         self.lines.append({"label": label, "slope": slope, "intercept": intercept_val})
 
     def _add_segment_internal(self, seg: Any) -> None:
@@ -310,7 +324,11 @@ class Plane2D(PrimitiveBase):
             x1, y1 = float(seg["x1"]), float(seg["y1"])
             x2, y2 = float(seg["x2"]), float(seg["y2"])
         else:
-            return
+            raise _animation_error(
+                "E1467",
+                f"malformed segment add-spec: {seg!r}",
+                hint="expected ((x1, y1), (x2, y2)) or {x1, y1, x2, y2}",
+            )
         self.segments.append({"x1": x1, "y1": y1, "x2": x2, "y2": y2, "label": None})
 
     def _add_polygon_internal(self, poly: Any) -> None:
@@ -345,6 +363,12 @@ class Plane2D(PrimitiveBase):
                 )
                 pts.append(pts[0])
             self.polygons.append({"points": pts})
+        else:
+            raise _animation_error(
+                "E1467",
+                f"malformed polygon add-spec: {poly!r}",
+                hint="expected [(x, y), ...] or {points: [(x, y), ...]}",
+            )
 
     def _add_region_internal(self, reg: Any) -> None:
         self._check_cap()
@@ -352,6 +376,12 @@ class Plane2D(PrimitiveBase):
             pts = [(float(p[0]), float(p[1])) for p in reg.get("polygon", [])]
             fill = reg.get("fill", "rgba(0,114,178,0.2)")
             self.regions.append({"polygon": pts, "fill": fill})
+        else:
+            raise _animation_error(
+                "E1467",
+                f"malformed region add-spec: {reg!r}",
+                hint="expected {polygon: [(x, y), ...], fill?: <color>}",
+            )
 
     # ----- apply commands --------------------------------------------------
 
