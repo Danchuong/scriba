@@ -229,6 +229,8 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
 
+**Booleans are lowercase `true` / `false` only.** Python-case `True` / `False` is parsed as the literal string `"True"`/`"False"`, not a boolean — e.g. `dequeue=False` becomes a truthy string. Always write `directed=true`, `show_weights=false`, etc. An unknown parameter key raises **E1114** (with a "did you mean" hint).
+
 ### 5.2 `\compute{...Starlark...}`
 Runs Starlark code. Bindings available via `${name}` interpolation.
 - Allowed: `def`, `for`, `if`, list/dict comprehensions, recursion
@@ -285,7 +287,7 @@ Binds the frame to the identifier `base-case`. The label:
   `id="{scene-id}-base-case"` and adds `data-label="base-case"` on the
   `<li>` element, instead of the default `id="{scene-id}-frame-{N}"`.
 - Enables `\hl{base-case}{…}` cross-references inside any `\narrate`
-  block in the same animation (§7.1 of the spec). The CSS `:target`
+  block in the same animation (see §5.13). The CSS `:target`
   pseudo-class highlights the narration text when the frame is active —
   no JavaScript required.
 - Must be unique within the animation. A duplicate label raises `E1005`.
@@ -329,13 +331,13 @@ Frames without a `[label=…]` bracket receive the automatic id
 Attaches narration to current frame. Supports inline math and text formatting.
 
 ### 5.5 `\apply{target}{params...}`
-Sets values. Persistent. Common: `value=`, `label=`, `tooltip=`.
+Sets values and runs primitive operations. Persistent. Common: `value=`, `label=`. Primitive-specific operation keys (e.g. `push=`, `enqueue=`, `add_edge=`, `insert=`) are listed per primitive in §7.
 
 ### 5.6 `\highlight{target}`
 Ephemeral focus marker. Cleared at next `\step`.
 
 ### 5.7 `\recolor{target}{state=...}`
-Changes visual state. Persistent. States: `idle`, `current`, `done`, `dim`, `error`, `good`, `path`, `hidden`.
+Changes visual state. Persistent. The 9 valid states are: `idle`, `current`, `done`, `dim`, `error`, `good`, `highlight`, `path`, `hidden` (full table in §6).
 
 ### 5.8 `\annotate{target}{params...}`
 Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
@@ -668,7 +670,7 @@ Nodes + edges with layout engine.
   layout_seed=42
 }
 ```
-**Layout options:** `"force"` (default), `"circular"`, `"bipartite"`, `"hierarchical"`, `"stable"` (≤20 nodes).
+**Layout options:** `"force"` (default), `"stable"` (≤20 nodes), `"hierarchical"`, `"auto"` (picks hierarchical for DAGs, else force). Any other value silently falls back to force.
 **Weighted edges:** `edges=[("A","B",4),("B","C",2)]` with `show_weights=true`.
 **Dynamic edge labels:** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other.
 **Selectors:** `G`, `G.node[id]`, `G.node["A"]`, `G.edge[("A","B")]`, `G.all`
@@ -704,8 +706,7 @@ Nodes + edges with layout engine.
 | `"force"` (default) | Undirected graphs of any size | Non-deterministic across seeds — set `layout_seed=` for reproducibility |
 | `"stable"` | Small undirected graphs (≤20 nodes) | Deterministic; emits a `UserWarning` if `directed=true` (see callout below) |
 | `"hierarchical"` | DAGs, tree-like directed flows | Respects `orientation="TB"` (top→bottom) or `"LR"` (left→right) |
-| `"circular"` | Cyclic structures, ring topologies | Nodes evenly spaced on a circle; ignores `orientation` |
-| `"bipartite"` | Two-partition graphs | Requires bipartite structure; non-bipartite graphs raise `E1502` |
+| `"auto"` | Let Scriba choose | Picks `hierarchical` when the graph is a DAG, otherwise `force` |
 
 > **⚠️ Gotcha — `layout="stable"` + `directed=true`**
 > This combination emits a `UserWarning` on every render: the stable layout was designed for undirected graphs and makes no routing guarantees for directed edges. For deterministic directed-graph layouts, use `layout="force"` with `layout_seed=<int>` (reproducible across runs). If you need a ranked DAG look, use `layout="hierarchical"` instead.
@@ -937,10 +938,14 @@ Variable panel showing named values.
 
 A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cell[3]`, `G.node[A]`, `dp.cell[2][3]`) that addresses a sub-element of a named shape for use in commands like `\recolor`, `\apply`, `\annotate`, and `\cursor`.
 
-**Node ID quoting rule (Graph and Tree):**
+**Node ID quoting rule:**
 - **Unquoted identifier** (`G.node[A]`): use when the node ID is a simple identifier matching `[A-Za-z_][A-Za-z0-9_]*`, e.g., `G.node[s]`, `G.node[src]`.
-- **Unquoted integer** (`G.node[1]`, `T.node[8]`): accepted when node IDs are pure integers declared as ints in `nodes=[1,2,3]`. Parser coerces the bare digits back to `int`.
-- **Quoted** (`G.node["[0,5]"]`): required when the ID contains brackets, spaces, commas, or other special characters, e.g., segtree nodes `T.node["[0,5]"]`, `T.node["[mid+1,hi]"]`. Quoted string IDs must match the declaration: if `nodes=[1,2,3]` (ints), use `G.node[1]`, not `G.node["1"]`.
+- **Unquoted integer** (`G.node[1]`, `T.node[8]`): accepted when node IDs are numeric. The parser coerces the bare digits back to `int`.
+- **Quoted** (`G.node["[0,5]"]`): required when the ID contains brackets, spaces, commas, or other special characters, e.g., segtree nodes `T.node["[0,5]"]`, `T.node["[mid+1,hi]"]`.
+
+> **Graph vs Tree — node-id type matters differently:**
+> - **Graph** keeps node-id types **strict**: an id declared as `int` (`nodes=[1,2,3]`) must be addressed as `G.node[1]`, not `G.node["1"]`, and an edge mutation `add_edge={from=1,...}` must use the same type as declared.
+> - **Tree** normalizes every node id to **string** at construction and on all mutations, so `T.node[8]` and `T.node["8"]` are the same node, and `add_node={parent=3}` and `add_node={parent="3"}` are interchangeable. Mixing `int` declarations with string refs is safe for Tree only.
 
 | Primitive | Cell/Item | Node | Edge | Tick | Range | All |
 |-----------|-----------|------|------|------|-------|-----|
@@ -1352,38 +1357,30 @@ in the **same** `\step`. Split across two steps:
 ```
 Same applies to Queue `enqueue`.
 
-### 13.2 `${interpolation}` works reliably inside `\foreach`, use literal indices elsewhere
-`${var}` interpolation from `\compute` bindings is **guaranteed** inside `\foreach`
-loop bodies (the loop variable is substituted textually). Outside `\foreach`, use
-literal indices in `\recolor` / `\apply` / `\annotate` commands:
+### 13.2 `${interpolation}` resolves in `\foreach` bodies, in `\apply` values, and in selector indices
+`${var}` interpolation from `\compute` bindings resolves in all of these positions:
 ```latex
-% RELIABLE — inside foreach
+% Inside foreach — loop variable substituted textually
 \compute{ indices = [0, 2, 4] }
 \foreach{i}{${indices}}
   \recolor{a.cell[${i}]}{state=done}     % works
 \endforeach
 
-% RELIABLE — literal index
+% Literal index
 \recolor{a.cell[3]}{state=good}           % works
 
-% UNRELIABLE — compute var outside foreach
+% Compute var in a selector index OUTSIDE foreach — resolves against the binding
 \compute{ target = 4 }
-\recolor{a.cell[${target}]}{state=good}   % may fail
+\recolor{a.cell[${target}]}{state=good}   % works → a.cell[4]
+
+% Compute var in an \apply value position — resolves
+\apply{a.cell[0]}{value=${target}}        % works → value 4
 ```
 
-**Why `${var}` outside `\foreach` is unreliable** — *deferred resolution vs textual substitution:*
-Inside a `\foreach` body, the renderer expands the body as a text template once per iteration, replacing `${var}` before parsing the resulting command. This textual substitution is unconditional. Outside a `\foreach`, `${var}` references go through a *deferred resolver* that looks up the binding at render time — but not all command positions are wired to trigger that lookup (selector index positions in particular). The result is a silent `UserWarning` and a no-op command.
-
-**Workaround — single-iteration `\foreach` wrapper:**
-If you genuinely need `\compute`-bound scalar in a one-shot selector, wrap it in a single-iteration loop:
-```latex
-\compute{ target = 4 }
-
-% Single-iteration wrapper — ${target} is substituted as text:
-\foreach{i}{${target}}
-  \recolor{a.cell[${i}]}{state=good}    % expands exactly once, to cell[4]
-\endforeach
-```
+**Fail-loud on unbound names.** If a `${name}` in a selector index has no matching
+`\compute` binding, the command now raises **E1159** (it no longer silently no-ops).
+Bare identifiers without `${...}` are still treated as literal string keys — always
+use the `${...}` form for interpolation (see §5.11).
 
 ### 13.3 No `\documentclass` or `\begin{document}`
 Files are body content directly. Adding `\documentclass{article}` or
@@ -1427,7 +1424,7 @@ The layout engine reserves vertical space for annotations based on the **maximum
 \recolor{code.line[0]}{state=current}  % WARNING: index 0 does not exist
 ```
 
-### 13.10 `Graph(layout="stable", directed=True)` emits a UserWarning
+### 13.10 `Graph(layout="stable", directed=true)` emits a UserWarning
 The stable SA layout optimizer is topology-blind — it has no edge-direction term, so directed graphs often render upside-down or sideways. When both `layout="stable"` and `directed=true` are set, a `UserWarning` is emitted at `\shape` parse time. Use `layout="hierarchical"` for DAGs.
 
 ### 13.11 `Graph(global_optimize=True)` is a no-op in the current release
@@ -1490,4 +1487,8 @@ Top author-facing codes. Full catalog: `scriba/animation/errors.py` → `ERROR_C
 | E1366 | UserWarning | `\substory` block has no `\step` commands — produces no output |
 | E1400 | Validation | `Array` missing required `size=` parameter |
 | E1470 | Validation | `Graph` has an empty `nodes=` list |
-| E1501 | Layout warning | Too many nodes for stable layout — falling back to force layout |
+| E1474 | Validation | `Graph` edge has a bad shape, or weighted and unweighted edges are mixed |
+| E1501 | Validation | `Graph` exceeds the 100-node hard limit (force layout) |
+| E1159 | Validation | `${name}` selector index references an unknown `\compute` binding outside `\foreach` |
+| E1321 | Validation | `\hl` references an unknown step-id (no matching `\step` label or `step{N}`) |
+| E1467 | Validation | Malformed Plane2D `add_*` element spec |
