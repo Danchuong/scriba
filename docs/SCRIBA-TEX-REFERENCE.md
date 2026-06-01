@@ -518,7 +518,7 @@ lookup. Only the `${...}` form triggers interpolation.
 |------|----------------------|--------|
 | `a.cell[${i}]` | `InterpolationRef(name="i")` — resolved at expansion time | `a.cell[0]`, `a.cell[1]`, … |
 | `a.cell[i]` | Literal string `"i"` — unchanged by substitution | Targets literal cell `"i"` (out of range) |
-| `value=${i}` | `InterpolationRef` in value position — resolved to iteration value | `value=0`, `value=1`, … (supported since v0.8.2) |
+| `value=${i}` | `InterpolationRef` in value position — resolved to iteration value | `value=0`, `value=1`, … |
 | `value=i` | Literal string `"i"` — not substituted | Cell displays the string `"i"` |
 
 **Silent failure mode.** When bare `i` is used inside a selector and the loop
@@ -740,7 +740,7 @@ Nodes + edges with layout engine.
 **Layout options:** `"force"` (default), `"stable"` (≤20 nodes), `"hierarchical"`, `"auto"` (picks hierarchical for DAGs, else force). Any other value silently falls back to force.
 **Weighted edges:** `edges=[("A","B",4),("B","C",2)]` with `show_weights=true`.
 **Dynamic edge labels:** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other.
-**Selectors:** `G`, `G.node[id]`, `G.node["A"]`, `G.edge[("A","B")]`, `G.all`
+**Selectors:** `G`, `G.node[id]`, `G.edge[("A","B")]`, `G.all` (node-id quoting rules in §8)
 
 **Additional construction params:**
 
@@ -1092,15 +1092,15 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | Graph | — | `.node[id]` | `.edge[(u,v)]` | — | — | `.all` |
 | Tree | — | `.node[id]` | `.edge[(p,c)]` | — | — | `.all` |
 | NumberLine | — | — | — | `.tick[i]` | `.range[lo:hi]` | `.all` |
-| Stack | `.item[i]` | — | — | — | — | — |
-| CodePanel | `.line[i]` | — | — | — | — | — |
-| HashMap | `.bucket[i]` | — | — | — | — | — |
-| LinkedList | — | `.node[i]` | `.link[i]` | — | — | — |
+| Stack | `.item[i]`, `.top` | — | — | — | — | `.all` |
+| CodePanel | `.line[i]` (1-based) | — | — | — | — | `.all` |
+| HashMap | `.bucket[i]` | — | — | — | — | `.all` |
+| LinkedList | — | `.node[i]` | `.link[i]` | — | — | `.all` |
 | Queue | `.cell[i]` | — | — | — | — | `.front`, `.rear`, `.all` |
-| VariableWatch | `.var[name]` | — | — | — | — | — |
+| VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
-| Plane2D | `.point[i]` | — | — | — | — | `.all` |
-| MetricPlot | — | — | — | — | — | — |
+| Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]` | — | — | — | — | `.all` |
+| MetricPlot | — | — | — | — | — | `.all` |
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
 
@@ -1545,7 +1545,7 @@ Use `10**9` instead of `999999999` for large sentinel values:
 Commands not in the supported set (§2) pass through as literal text, not as errors.
 Common traps: `\LaTeX`, `\footnote`, `\caption`, `\cite`, `\ref`.
 
-### 13.8 Annotation headroom is reserved at the per-scene maximum (R-32)
+### 13.8 Annotation headroom is reserved at the per-scene maximum
 The layout engine reserves vertical space for annotations based on the **maximum** annotation count across all frames in the scene, not just the current frame. This means a scene where only frame 5 has two annotation pills above a cell will have that headroom reserved in every frame — including frame 1 where no annotation is visible yet.
 
 **Consequence:** Adding annotations to a scene always increases the scene's bounding box height, even for frames where those annotations are absent. If you notice unexpected top padding in early frames, check for annotations that appear only in later frames — they are pushing the layout for the whole scene.
@@ -1622,6 +1622,14 @@ Top author-facing codes. Full catalog with explanations: [spec/error-codes.md](s
 | E1159 | Validation | `${name}` selector index references an unknown `\compute` binding outside `\foreach` |
 | E1321 | Validation | `\hl` references an unknown step-id (no matching `\step` label or `step{N}`) |
 | E1467 | Validation | Malformed Plane2D `add_*` element spec |
+| E1005 | Parse error | Duplicate or empty `\step[label=...]` |
+| E1113 | Validation | `\reannotate` is missing the required `color=` |
+| E1320 | Validation | `\hl` used outside a `\narrate` body |
+| E1433–E1436 | Validation | Tree mutation errors (cycle / root-without-cascade / bad reparent spec / unknown `add_node` parent) |
+| E1437 | Validation | Plane2D `remove_*` index out of range or already tombstoned |
+| E1471 / E1472 | Validation | Graph `add_edge` unknown endpoint / `remove_edge` on a missing edge |
+
+Codes cited elsewhere in this doc but not listed here are in [spec/error-codes.md](spec/error-codes.md).
 
 ---
 
