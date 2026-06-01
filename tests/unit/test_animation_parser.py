@@ -165,6 +165,35 @@ class TestParseComputeCommand:
         assert len(ir.frames[0].compute) == 1
         assert "x = 1" in ir.frames[0].compute[0].source
 
+    def test_indented_compute_body_is_dedented(self, parser: SceneParser) -> None:
+        # A multi-line \compute{...} with a uniformly indented body must be
+        # dedented so Starlark does not reject it with "unexpected indent".
+        src = "\\compute{\n  n = 8\n  evens = [i for i in range(n) if i % 2 == 0]\n}"
+        ir = parser.parse(src)
+        source = ir.prelude_compute[0].source
+        # No line may start with leading whitespace after dedent.
+        assert not any(
+            line[:1] in (" ", "\t") for line in source.splitlines() if line.strip()
+        ), repr(source)
+        assert "n = 8" in source
+
+    def test_indented_compute_preserves_relative_indent(
+        self, parser: SceneParser
+    ) -> None:
+        # Relative indentation inside loops must survive the dedent.
+        src = (
+            "\\compute{\n"
+            "  total = 0\n"
+            "  for i in range(3):\n"
+            "      total = total + i\n"
+            "}"
+        )
+        source = parser.parse(src).prelude_compute[0].source
+        lines = source.splitlines()
+        assert lines[0] == "total = 0"
+        assert lines[1] == "for i in range(3):"
+        assert lines[2] == "    total = total + i"  # 4-space body retained
+
 
 class TestParseStepCommand:
     def test_step_creates_frame(self, parser: SceneParser) -> None:

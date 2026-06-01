@@ -6,6 +6,7 @@ public API.  Methods access SceneParser instance state via the MRO.
 
 from __future__ import annotations
 
+import textwrap as _textwrap
 import warnings as _warnings_mod
 from typing import TYPE_CHECKING
 
@@ -30,7 +31,13 @@ class _ComputeMixin:
 
     def _parse_compute(self) -> ComputeCommand:
         tok = self._advance()
-        body = self._read_raw_brace_arg(tok).strip()
+        # Dedent before stripping: a multi-line ``\compute{...}`` body is
+        # naturally indented under the brace, and Starlark (like Python)
+        # rejects top-level indentation. ``textwrap.dedent`` removes the
+        # common leading whitespace while preserving relative indentation
+        # inside ``for``/``if`` blocks; ``.strip()`` then trims the blank
+        # first/last lines around the braces.
+        body = _textwrap.dedent(self._read_raw_brace_arg(tok)).strip()
         # Best-effort extraction of top-level bindings for static interpolation
         # checks.  Failures silently fall through — Starlark binding analysis
         # is runtime-accurate only, so this is intentionally loose.
