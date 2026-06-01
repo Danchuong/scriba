@@ -897,8 +897,8 @@ LIFO stack.
 ```latex
 \shape{s}{Stack}{items=["A","B"], orientation="vertical", max_visible=10}
 ```
-**Params:** `items` (initial list), `orientation` (`"vertical"` default / `"horizontal"`), `max_visible` (int ≥1, truncates with `+N more` overflow indicator), `label` (optional caption).
-**Operations:** `\apply{s}{push="C"}`, `\apply{s}{pop=1}`
+**Params:** `items` (initial list — each entry is a string **or** a `{label, value?}` dict), `orientation` (`"vertical"` default / `"horizontal"`), `max_visible` (int ≥1, truncates with `+N more` overflow indicator), `label` (optional caption).
+**Operations:** `\apply{s}{push="C"}` or `\apply{s}{push={label="C", value=3}}`, `\apply{s}{pop=1}`
 **Selectors:** `s`, `s.item[i]` (0=bottom), `s.top`, `s.all`
 
 ### 7.9 Plane2D
@@ -915,12 +915,14 @@ LIFO stack.
 | Param | Type | Default | Description |
 |---|---|---|---|
 | `aspect` | `"equal"` / `"auto"` | `"equal"` | `"equal"` locks x/y scale ratio; `"auto"` allows independent stretching |
-| `points` | list | `[]` | Inline batch of points to add at construction time |
-| `lines` | list | `[]` | Inline batch of infinite lines |
-| `segments` | list | `[]` | Inline batch of finite segments |
-| `polygons` | list | `[]` | Inline batch of closed polygons |
-| `regions` | list | `[]` | Inline batch of shaded regions |
+| `points` | list | `[]` | Inline batch of points — each element uses the `add_point` shape (below) |
+| `lines` | list | `[]` | Inline batch of lines — each uses the `add_line` shape `(label, slope, intercept)` or `(label,{a,b,c})` |
+| `segments` | list | `[]` | Inline batch of segments — each uses the `add_segment` shape `((x1,y1),(x2,y2))` |
+| `polygons` | list | `[]` | Inline batch of polygons — each uses the `add_polygon` shape `[(x,y),…]` |
+| `regions` | list | `[]` | Inline batch of regions — each uses the `add_region` dict `{polygon,fill?}` |
 | `width` | int | `320` | SVG width in px |
+
+(Element shapes are identical to the dynamic `add_*` operations below.)
 
 **Dynamic operations:**
 
@@ -982,6 +984,8 @@ Time-series metric chart.
 ```
 
 Per-series keys: `name` (required), `color` (`"auto"` or CSS color), `axis` (`"left"` / `"right"`), `scale` (`"linear"` / `"log"`).
+
+**Constraints:** ≤8 series (E1481), ≤1000 points per series (E1483), unique series names (E1485). Series sharing the same axis must use the same `scale` (E1487). A fixed `xrange`/`yrange` with equal endpoints raises E1486.
 
 ### 7.11 CodePanel
 Source code with line highlighting.
@@ -1046,7 +1050,7 @@ FIFO queue.
 | `data` | list | `[]` | no | initial contents (truncated to `capacity`) |
 | `label` | string | none | no | caption |
 
-**Operations:** `\apply{q}{enqueue=2}`, `\apply{q}{dequeue=true}` (`dequeue` fires only on truthy `true`; `dequeue=false` is a no-op).
+**Operations:** `\apply{q}{enqueue=2}`, `\apply{q}{dequeue=true}` (`dequeue` fires only on truthy `true`; `dequeue=false` is a no-op). Set a specific cell's text directly with `\apply{q.cell[i]}{value=...}`.
 **Selectors:** `q`, `q.cell[i]`, `q.front`, `q.rear`, `q.all`
 
 `q.front` addresses the front-of-queue pointer cell; `q.rear` addresses the rear pointer cell. Both can be used with `\recolor` and `\highlight`.
