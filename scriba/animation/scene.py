@@ -601,9 +601,66 @@ class SceneState:
             return {k: self._resolve_interp(v) for k, v in value.items()}
         return value
 
+    def _resolve_selector(self, sel: Selector | str | None) -> Selector | str | None:
+        """Resolve ``InterpolationRef`` index expressions in a selector.
+
+        Mirrors the textual ``\\foreach`` substitution path: a ``${name}``
+        used in a selector-index position (e.g. ``a.cell[${target}]``) is
+        looked up in ``self.bindings`` at apply time and replaced with the
+        concrete value, so ``_selector_to_str`` renders a real key such as
+        ``a.cell[4]`` instead of leaking the ``InterpolationRef`` repr.
+
+        This eliminates the audit-finding B3 footgun where such selectors
+        silently created a phantom target outside a ``\\foreach``.  An
+        ``${name}`` whose binding is absent is a hard error (E1159) rather
+        than a silent no-op.
+        """
+        if not isinstance(sel, Selector) or sel.accessor is None:
+            return sel
+        acc = sel.accessor
+        updates: dict[str, Any] = {}
+        changed = False
+        for f in fields(acc):
+            old_val = getattr(acc, f.name)
+            new_val = self._resolve_index_expr(old_val)
+            if new_val is not old_val:
+                updates[f.name] = new_val
+                changed = True
+        if not changed:
+            return sel
+        return replace(sel, accessor=replace(acc, **updates))
+
+    def _resolve_index_expr(self, expr: Any) -> Any:
+        """Resolve ``InterpolationRef`` index exprs against compute bindings."""
+        if isinstance(expr, InterpolationRef):
+            if expr.name not in self.bindings:
+                raise _animation_error(
+                    "E1159",
+                    f"selector index '${{{expr.name}}}' is not a known"
+                    " \\compute binding",
+                    hint=(
+                        f"define '{expr.name}' in a \\compute block before"
+                        " using it in a selector index, e.g."
+                        " \\compute{{ {0} = ... }}".format(expr.name)
+                    ),
+                )
+            resolved = self._resolve_interp(expr)
+            if isinstance(resolved, bool):
+                return resolved
+            if isinstance(resolved, int):
+                return resolved
+            text = str(resolved)
+            try:
+                return int(text)
+            except (ValueError, TypeError):
+                return text
+        if isinstance(expr, tuple):
+            return tuple(self._resolve_index_expr(item) for item in expr)
+        return expr
+
     def _apply_apply(self, cmd: ApplyCommand) -> None:
         """\\apply — persistent value + optional label + custom params."""
-        target_str = _selector_to_str(cmd.target)
+        target_str = _selector_to_str(self._resolve_selector(cmd.target))
         target_state = self._ensure_target(target_str)
         value = self._resolve_interp(cmd.params.get("value"))
         new_value = str(value) if value is not None else target_state.value
@@ -632,7 +689,7 @@ class SceneState:
 
     def _apply_recolor(self, cmd: RecolorCommand) -> None:
         """\\recolor — persistent state replacement and/or annotation recolor."""
-        target_str = _selector_to_str(cmd.target)
+        target_str = _selector_to_str(self._resolve_selector(cmd.target))
 
         # Apply cell/node state change if specified
         if cmd.state is not None:
@@ -659,7 +716,7 @@ class SceneState:
 
     def _apply_reannotate(self, cmd: ReannotateCommand) -> None:
         """\\reannotate — recolor matching annotations on a target."""
-        target_str = _selector_to_str(cmd.target)
+        target_str = _selector_to_str(self._resolve_selector(cmd.target))
         new_color = cmd.color
         arrow_from_str = cmd.arrow_from
         for i, ann in enumerate(self.annotations):
@@ -677,7 +734,7 @@ class SceneState:
 
     def _apply_highlight(self, cmd: HighlightCommand) -> None:
         """\\highlight — ephemeral, cleared at next step."""
-        target_str = _selector_to_str(cmd.target)
+        target_str = _selector_to_str(self._resolve_selector(cmd.target))
         shape_name = target_str.split(".", 1)[0]
         if shape_name not in self.shape_states:
             raise _animation_error(
@@ -690,7 +747,7 @@ class SceneState:
 
     def _apply_annotate(self, cmd: AnnotateCommand) -> None:
         """\\annotate — persistent by default, ephemeral if flagged."""
-        target_str = _selector_to_str(cmd.target)
+        target_str = _selector_to_str(self._resolve_selector(cmd.target))
 
         # Validate that the target shape exists
         shape_name = target_str.split(".", 1)[0]
@@ -713,7 +770,11 @@ class SceneState:
                 code="E1103",
             )
 
-        arrow_from_str = _selector_to_str(cmd.arrow_from) if cmd.arrow_from else None
+        arrow_from_str = (
+            _selector_to_str(self._resolve_selector(cmd.arrow_from))
+            if cmd.arrow_from
+            else None
+        )
         self.annotations.append(
             AnnotationEntry(
                 target=target_str,

@@ -27,6 +27,7 @@ from scriba.animation.parser.ast import (
     Selector,
     ShapeCommand,
 )
+from scriba.animation.errors import AnimationError
 from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.scene import SceneState
 from scriba.core.errors import ValidationError
@@ -608,3 +609,88 @@ class TestForeachEndToEnd:
         snap = state.apply_frame(ir.frames[0], starlark_host=host)
 
         assert snap.shape_states["a"]["a.cell[0]"].value == "99"
+
+
+class TestSelectorIndexInterpolationOutsideForeach:
+    """Audit finding B3 — ``${var}`` in a selector-index position outside
+    a ``\\foreach`` must resolve against the ``\\compute`` binding, not be
+    silently dropped (doc §13.2 footgun)."""
+
+    def test_recolor_selector_index_resolves_scalar_binding(self):
+        """``\\recolor{a.cell[${target}]}`` with ``target=4`` recolors cell 4."""
+        host = MockStarlarkHost()
+        state = SceneState()
+        state.apply_prelude(
+            shapes=(_shape("a"),),
+            prelude_compute=(ComputeCommand(line=0, col=0, source="target = 4"),),
+            starlark_host=host,
+        )
+
+        recolor = RecolorCommand(
+            line=0, col=0,
+            target=Selector(
+                shape_name="a",
+                accessor=CellAccessor(indices=(InterpolationRef(name="target"),)),
+            ),
+            state="good",
+        )
+
+        frame = _frame(commands=(recolor,))
+        snap = state.apply_frame(frame, starlark_host=host)
+
+        # The real cell 4 must carry the state — not a phantom repr key.
+        assert "a.cell[4]" in snap.shape_states["a"]
+        assert snap.shape_states["a"]["a.cell[4]"].state == "good"
+        # No phantom InterpolationRef-repr key may leak into the state.
+        assert all(
+            "InterpolationRef" not in k for k in snap.shape_states["a"]
+        )
+
+    def test_apply_selector_index_resolves_scalar_binding(self):
+        """``\\apply{a.cell[${target}]}{value=...}`` targets the resolved cell."""
+        host = MockStarlarkHost()
+        state = SceneState()
+        state.apply_prelude(
+            shapes=(_shape("a"),),
+            prelude_compute=(ComputeCommand(line=0, col=0, source="target = 2"),),
+            starlark_host=host,
+        )
+
+        apply = ApplyCommand(
+            line=0, col=0,
+            target=Selector(
+                shape_name="a",
+                accessor=CellAccessor(indices=(InterpolationRef(name="target"),)),
+            ),
+            params={"value": "X"},
+        )
+
+        frame = _frame(commands=(apply,))
+        snap = state.apply_frame(frame, starlark_host=host)
+
+        assert "a.cell[2]" in snap.shape_states["a"]
+        assert snap.shape_states["a"]["a.cell[2]"].value == "X"
+
+    def test_recolor_selector_index_unknown_binding_errors_loudly(self):
+        """An unbound ``${target}`` selector index is a loud error, not a no-op."""
+        state = SceneState()
+        state.apply_prelude(shapes=(_shape("a"),))
+
+        recolor = RecolorCommand(
+            line=0, col=0,
+            target=Selector(
+                shape_name="a",
+                accessor=CellAccessor(indices=(InterpolationRef(name="target"),)),
+            ),
+            state="good",
+        )
+
+        frame = _frame(commands=(recolor,))
+        with pytest.raises(AnimationError) as exc_info:
+            state.apply_frame(frame)
+
+        assert exc_info.value.code == "E1159"
+        # And no phantom target was created.
+        assert all(
+            "InterpolationRef" not in k for k in state.shape_states["a"]
+        )
