@@ -30,6 +30,7 @@ from scriba.animation.primitives._protocol import register_primitive as _protoco
 # ---------------------------------------------------------------------------
 
 _LINE_HEIGHT = 24
+_HEADER_HEIGHT = 26  # title bar above the code, IDE-tab style
 _PADDING_X = 12
 _PADDING_Y = 8
 _CHAR_WIDTH = 8.4  # approximate monospace character width at 14px (Menlo/Monaco/Consolas)
@@ -132,7 +133,7 @@ class CodePanel(PrimitiveBase):
         n = max(len(self.lines), 1)
         height = _PADDING_Y + n * _LINE_HEIGHT + _PADDING_Y
         if self.label:
-            height += 20
+            height += _HEADER_HEIGHT  # reserved for the top title bar
         return height
 
     # ----- Primitive interface ---------------------------------------------
@@ -208,6 +209,9 @@ class CodePanel(PrimitiveBase):
             parts.append("</g>")
             return "".join(parts)
 
+        # Code lines start below the title bar when a label is present.
+        header_h = _HEADER_HEIGHT if self.label is not None else 0
+
         # Resolve "all" state — applies to every line unless overridden
         all_state = self.get_state("all")
 
@@ -223,8 +227,8 @@ class CodePanel(PrimitiveBase):
 
             colors = svg_style_attrs(line_state)
 
-            # Vertical position for this line
-            line_y = _PADDING_Y + i * _LINE_HEIGHT
+            # Vertical position for this line (offset by the title bar)
+            line_y = header_h + _PADDING_Y + i * _LINE_HEIGHT
             text_y = line_y + _LINE_HEIGHT // 2
 
             parts.append(
@@ -277,18 +281,32 @@ class CodePanel(PrimitiveBase):
 
             parts.append("</g>")
 
-        # Caption / label
+        # Title bar — IDE-tab style header across the top of the panel.
         if self.label is not None:
-            label_y = panel_h - 4
-            label_x = panel_w // 2
+            r = _BORDER_RADIUS
+            # Header fill with rounded top corners that match the panel.
+            parts.append(
+                f'<path d="M 0 {_HEADER_HEIGHT} L 0 {r} '
+                f'Q 0 0 {r} 0 L {panel_w - r} 0 '
+                f'Q {panel_w} 0 {panel_w} {r} '
+                f'L {panel_w} {_HEADER_HEIGHT} Z" '
+                f'fill="{THEME["bg_alt"]}"/>'
+            )
+            # Divider between the header and the code area.
+            parts.append(
+                f'<line x1="0" y1="{_HEADER_HEIGHT}" '
+                f'x2="{panel_w}" y2="{_HEADER_HEIGHT}" '
+                f'stroke="{_PANEL_BORDER}" stroke-width="1"/>'
+            )
             parts.append(
                 _render_svg_text(
                     self.label,
-                    label_x,
-                    label_y,
+                    _PADDING_X,
+                    _HEADER_HEIGHT // 2,
                     fill=THEME["fg_muted"],
                     font_size="12",
-                    text_anchor="middle",
+                    text_anchor="start",
+                    dominant_baseline="central",
                     css_class="scriba-primitive-label",
                     render_inline_tex=render_inline_tex,
                 )
