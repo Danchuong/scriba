@@ -22,7 +22,8 @@ from scriba.core.errors import ValidationError
 class TestSingleNodeTree:
     def test_root_only(self) -> None:
         t = Tree("T", {"root": 1, "nodes": [1], "edges": []})
-        assert t.root == 1
+        # Node ids normalize to str (so "3" and 3 are the same node).
+        assert t.root == "1"
         assert len(t.nodes) == 1
         assert len(t.edges) == 0
 
@@ -90,7 +91,8 @@ class TestWideTree:
         nodes = list(range(11))
         edges = [(0, i) for i in range(1, 11)]
         t = Tree("T", {"root": 0, "nodes": nodes, "edges": edges})
-        child_ys = {t.positions[i][1] for i in range(1, 11)}
+        # positions are keyed by the str-normalized node ids
+        child_ys = {t.positions[str(i)][1] for i in range(1, 11)}
         # All children should be at the same depth (same y)
         assert len(child_ys) == 1
 
@@ -242,8 +244,10 @@ class TestTreeIntegerNodeIds:
             "nodes": [0, 1, 2, 3],
             "edges": [(0, 1), (0, 2), (1, 3)],
         })
-        assert t.root == 0
-        assert 0 in t.nodes
+        # Integer literals are accepted but normalized to str ids, so an
+        # int and its string form (0 / "0") address the same node.
+        assert t.root == "0"
+        assert "0" in t.nodes
 
     def test_integer_node_ids_svg(self) -> None:
         t = Tree("T", {
@@ -490,4 +494,5 @@ class TestTreeRootAutoInsert:
             "nodes": [2, 3],
             "edges": [(1, 2), (1, 3)],
         })
-        assert 1 in t.nodes
+        # root is auto-inserted; node ids are str-normalized
+        assert "1" in t.nodes

@@ -121,7 +121,8 @@ class TestTreeConstruction:
             "edges": [(1, 2), (1, 3), (2, 4), (2, 5)],
         })
         assert t.name == "T"
-        assert t.root == 1
+        # Node ids are normalized to str so numeric and string refs match.
+        assert t.root == "1"
         assert len(t.nodes) == 5
         assert len(t.edges) == 4
         assert t.kind is None

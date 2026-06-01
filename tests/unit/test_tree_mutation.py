@@ -124,6 +124,27 @@ class TestAddNode:
             t.apply_command({"add_node": {"id": "Z", "parent": "NOPE"}})
         assert _err_code(ei.value) == "E1436"
 
+    def test_int_nodes_string_parent_ref_matches(self) -> None:
+        """Numeric node ids and a string parent ref address the same node.
+
+        ``nodes=[8, 3, 10]`` builds str-normalized ids, so ``parent="3"``
+        resolves to node 3 instead of raising E1436.
+        """
+        t = Tree(
+            "T",
+            {
+                "root": 8,
+                "nodes": [8, 3, 10],
+                "edges": [(8, 3), (8, 10)],
+            },
+        )
+        t.apply_command({"add_node": {"id": "E", "parent": "3"}})
+        assert ("3", "E") in t.edges
+        assert "E" in t.children_map["3"]
+        # An int parent ref resolves to the same normalized node.
+        t.apply_command({"add_node": {"id": "F", "parent": 10}})
+        assert ("10", "F") in t.edges
+
     def test_add_duplicate_id_raises_E1436(self) -> None:
         t = _make_simple_tree()
         with pytest.raises(AnimationError) as ei:

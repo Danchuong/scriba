@@ -157,11 +157,15 @@ class Tree(PrimitiveBase):
                 hint="example: Tree{t}{root=\"A\", nodes=[...], edges=[...]}",
             )
 
-        self.root: str | int = root
-        self.nodes: list[str | int] = list(params.get("nodes", []))
+        # Node ids are normalized to ``str`` so numeric literals
+        # (``nodes=[8,3,10]``) and string refs (``parent="3"``) match — the
+        # id ``3`` and ``"3"`` are the same node.  Labels still display the
+        # original text via ``str``.
+        self.root: str | int = str(root)
+        self.nodes: list[str | int] = [str(n) for n in params.get("nodes", [])]
         raw_edges = params.get("edges", [])
         self.edges: list[tuple[str | int, str | int]] = [
-            (e[0], e[1]) for e in raw_edges
+            (str(e[0]), str(e[1])) for e in raw_edges
         ]
         self.node_labels: dict[str | int, str] = {
             n: str(n) for n in self.nodes
@@ -294,6 +298,9 @@ class Tree(PrimitiveBase):
     def _add_node_internal(
         self, node_id: str | int, parent_id: str | int
     ) -> None:
+        # Match the str-normalized node ids set up at construction.
+        node_id = str(node_id)
+        parent_id = str(parent_id)
         if parent_id not in self.children_map:
             raise _animation_error(
                 "E1436",
@@ -333,6 +340,7 @@ class Tree(PrimitiveBase):
     def _remove_node_internal(
         self, node_id: str | int, *, cascade: bool
     ) -> None:
+        node_id = str(node_id)
         if node_id not in self.children_map:
             raise _animation_error(
                 "E1436",
@@ -407,6 +415,8 @@ class Tree(PrimitiveBase):
     def _reparent_internal(
         self, node_id: str | int, new_parent_id: str | int
     ) -> None:
+        node_id = str(node_id)
+        new_parent_id = str(new_parent_id)
         if node_id not in self.children_map:
             raise _animation_error(
                 "E1436",
