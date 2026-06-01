@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-06-01 — fix indented `\compute` blocks
+
+### Fixed
+- **Multi-line `\compute{...}` blocks with an indented body no longer fail with `E1150` ("unexpected indent").** The parser now `textwrap.dedent`s the compute body before handing it to Starlark, removing the common leading whitespace while preserving relative indentation inside `for`/`if` blocks. The naturally-indented examples in `docs/SCRIBA-TEX-REFERENCE.md` §5.2 (filtered comprehension and the nested-loop matrix-chain DP) now render. (`SCRIBA_VERSION` unchanged — this is a parse fix and does not alter rendered output bytes.)
+
 ## [0.17.0] - 2026-06-01 — fail-loud validation, render fixes, reference overhaul
 
 ### Added
