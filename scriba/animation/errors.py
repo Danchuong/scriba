@@ -11,6 +11,7 @@ The catalog is grouped by subsystem:
 * ``E1100``--``E1149`` — parser / general command validation
 * ``E1150``--``E1179`` — Starlark sandbox and ``\\foreach``
 * ``E1180``--``E1199`` — frame / cursor limits
+* ``E1320``--``E1329`` — ``\\hl`` cross-reference macro
 * ``E1360``--``E1369`` — substory
 * ``E1400``--``E1459`` — primitive parameter validation (new Wave 2 split;
   was historically mega-bucket ``E1103``)
@@ -207,6 +208,10 @@ ERROR_CATALOG: dict[str, str] = {
     "E1154": "Starlark forbidden construct (import, while, class, lambda, etc.).",
     "E1155": "Starlark memory limit exceeded.",
     "E1156": "eval_raw removed; use \\compute{...} instead.",
+    "E1159": (
+        "Interpolation references an unknown \\compute binding in a selector "
+        "index outside \\foreach (e.g. a.cell[${name}] where 'name' is unbound)."
+    ),
     # --- Foreach errors (E1170 -- E1179) ---
     "E1170": "\\foreach nesting depth exceeds maximum (3).",
     "E1171": "\\foreach with empty body.",
@@ -228,6 +233,9 @@ ERROR_CATALOG: dict[str, str] = {
         "an index parameter."
     ),
     "E1182": "Invalid \\cursor prev_state or curr_state value.",
+    # --- \hl cross-reference macro errors (E1320 -- E1329) ---
+    "E1320": "\\hl used outside a \\narrate body.",
+    "E1321": "\\hl references an unknown step-id (no matching \\step label or step{N}).",
     # --- Substory errors (E1360 -- E1369) ---
     "E1360": "Substory nesting depth exceeds maximum.",
     "E1361": "Unclosed \\substory (missing \\endsubstory).",
@@ -380,6 +388,7 @@ ERROR_CATALOG: dict[str, str] = {
     "E1465": "Invalid aspect value (must be 'equal' or 'auto').",
     # reserved: E1466 logged when the element cap is reached; not raised.
     "E1466": "Plane2D element cap reached.",
+    "E1467": "Malformed Plane2D add-element spec (point/line/segment/polygon/region).",
     # --- Graph primitive errors (E1470 -- E1479) ---
     "E1470": (
         "Graph requires a non-empty 'nodes' list. "
