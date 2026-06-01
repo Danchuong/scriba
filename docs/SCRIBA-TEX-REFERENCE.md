@@ -258,6 +258,16 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 \end{diagram}
 ```
 
+**`animation` vs `diagram`:**
+
+| | `animation` | `diagram` |
+|---|---|---|
+| Frames | multiple (`\step`) | single |
+| `\step` / `\narrate` | required | not allowed (E1050/E1054) |
+| `\shape`, `\apply`, `\recolor`, `\annotate` | yes | yes |
+| Playback controls | yes | none (static) |
+| Use for | step-through walkthroughs | one-shot figures |
+
 ---
 
 ## 5. Inner Commands (13 total)
@@ -900,6 +910,7 @@ LIFO stack.
 **Params:** `items` (initial list — each entry is a string **or** a `{label, value?}` dict), `orientation` (`"vertical"` default / `"horizontal"`), `max_visible` (int ≥1, truncates with `+N more` overflow indicator), `label` (optional caption).
 **Operations:** `\apply{s}{push="C"}` or `\apply{s}{push={label="C", value=3}}`, `\apply{s}{pop=1}`
 **Selectors:** `s`, `s.item[i]` (0=bottom), `s.top`, `s.all`
+> Gotcha: a freshly `push`ed item is not addressable in the same `\step` — see §13.1.
 
 ### 7.9 Plane2D
 2D coordinate plane with points and lines.
@@ -1000,6 +1011,7 @@ Source code with line highlighting.
 | `label` | string | none | no | title — rendered as a **top header bar** (IDE-tab style), not a bottom caption |
 
 **Operations:** none. **Selectors:** `code`, `code.line[i]` (**1-based** — `code.line[0]` is rejected with an E1115 warning), `code.all`
+> Gotcha: line indices are 1-based, unlike the 0-based Array/Grid — see §13.9.
 
 ### 7.12 HashMap
 Hash table with buckets.
@@ -1054,6 +1066,7 @@ FIFO queue.
 **Selectors:** `q`, `q.cell[i]`, `q.front`, `q.rear`, `q.all`
 
 `q.front` addresses the front-of-queue pointer cell; `q.rear` addresses the rear pointer cell. Both can be used with `\recolor` and `\highlight`.
+> Gotcha: a freshly `enqueue`d cell is not addressable in the same `\step` — see §13.1.
 
 ### 7.15 VariableWatch
 Variable panel showing named values.
@@ -1116,6 +1129,29 @@ Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
 | `.all` | All live elements | — |
 
 All five families (plus `.all`) work with `\recolor`, `\highlight`, and `\annotate`. Indices are stable across frames: removing an element tombstones its slot so later indices remain valid (e.g. after `remove_point=1`, `point[2]` still refers to the original third point). Out-of-range or tombstoned selectors raise **E1437**.
+
+### Indexing conventions
+
+Indices are **0-based everywhere except CodePanel**:
+
+| Primitive | Base | Note |
+|---|---|---|
+| Array, Grid, DPTable, Matrix, Plane2D, LinkedList, Queue, HashMap | 0-based | `cell[0]` is the first element |
+| Stack | 0-based | `item[0]` is the **bottom** of the stack; `.top` is the newest |
+| CodePanel | **1-based** | `line[1]` is the first line; `line[0]` is rejected (E1115) |
+
+### What `label` means by context
+
+`label` is reused in four unrelated places — they do not interact:
+
+| Where | Meaning |
+|---|---|
+| `\shape{…}{Type}{label="…"}` | the primitive's caption (e.g. array/graph title) |
+| `\annotate{…}{label="…"}` | the text shown inside an annotation pill |
+| `\step[label=…]` | a frame identifier for `\hl` cross-references |
+| `\begin{animation}[label="…"]` | the scene's accessibility (aria) label |
+
+(Note: `labels`, plural, is a separate per-tick/per-index label spec — see Array/NumberLine in §7.)
 
 ---
 
