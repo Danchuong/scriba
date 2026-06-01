@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-06-01 — fail-loud validation, render fixes, reference overhaul
+
+### Added
+- New author-facing error codes, replacing silent failures: **E1159** (a `${name}` selector index outside `\foreach` with no matching `\compute` binding), **E1321** (`\hl` references an unknown step-id), **E1467** (malformed Plane2D `add_*` element spec), and **E1421** is now raised for an unknown Matrix `colorscale` (only `viridis` is supported).
+
+### Changed
+- **Rendered output bytes differ from 0.16.x** (cache-busting; `SCRIBA_VERSION` bumped 4→5): the animation viewBox is now sized to the **maximum extent across all frames**, so size-changing primitives (Stack, Queue) are no longer clipped when they grow; and `CodePanel` renders its `label` as a **top header bar** (IDE-tab style) instead of a bottom caption. Consumer caches keyed on rendered HTML/SVG MUST invalidate.
+- **Tree node ids are normalized to string.** A standard tree built from numeric literals (`nodes=[8,3,10]`) now matches both `T.node[8]` and `parent="3"`-style string refs — numeric and string node references are interchangeable for Tree. (Graph keeps strict node-id typing.)
+- Fail-loud where Scriba previously silently dropped a command or rendered wrong output: unknown `colorscale`, malformed Plane2D add-specs, unknown `\hl` step-ids, and unbound `${name}` selector indices now raise instead of no-opping. Sources relying on the old silent behavior will now error.
+
+### Fixed
+- **`\apply` value interpolation now resolves.** `\apply{...}{value=${x}}` and the subscript form `${dp_vals[i]}` previously leaked an `InterpolationRef` repr into the cell; they now resolve against `\compute` bindings. `${var}` also resolves in selector-index positions outside `\foreach`.
+- **`\hl` cross-reference spans are no longer HTML-escaped** in narration — the highlight markup now renders as a real `<span>` instead of literal `&lt;span&gt;` text.
+
+### Docs
+- Major overhaul of `docs/SCRIBA-TEX-REFERENCE.md`: added a table of contents and an index-by-task, a full parameter table for every primitive, corrected field specs (`colorscale`, Plane2D `add_region`/`add_line`, Matrix/Grid `data` shape, NumberLine `ticks`, `label` vs `labels`), moved phantom/forward-compat items into an appendix, and fixed stale claims (graph layouts, Tree vs Graph node-id rules, interpolation reliability, error-code meanings).
+
 ## [0.16.0] - 2026-05-31 — embedder font-scale knob + boundary validation
 
 ### Added

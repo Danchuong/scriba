@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.16.0"
+__version__: str = "0.17.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 4
+SCRIBA_VERSION: int = 5
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -20,4 +20,10 @@ since v0.1.1.
 0.16.0 bumps 3→4: every SVG ``font-size`` is now emitted as
 ``calc(Npx * var(--scriba-diagram-font-scale, 1))`` and substory widget ids
 became deterministic, so rendered HTML/SVG bytes differ from 0.15.x even at
-the default scale. Consumer caches keyed on rendered output MUST invalidate."""
+the default scale. Consumer caches keyed on rendered output MUST invalidate.
+
+0.17.0 bumps 4→5: the animation viewBox is now sized to the maximum extent
+across all frames (size-changing primitives like Stack/Queue no longer clip),
+and ``CodePanel`` renders its label as a top header bar instead of a bottom
+caption. Both change rendered SVG/HTML bytes from 0.16.x; consumer caches
+keyed on rendered output MUST invalidate."""
