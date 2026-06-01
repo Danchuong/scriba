@@ -91,6 +91,12 @@ class TestDeclare:
         inst = MatrixPrimitive("m", {"rows": 1, "cols": 1})
         assert inst.colorscale == "viridis"
 
+    def test_unknown_colorscale_raises_e1421(self) -> None:
+        # Unknown colorscale must fail loud instead of silently
+        # falling back to viridis (audit B4).
+        with pytest.raises(ValidationError, match="E1421"):
+            MatrixPrimitive("m", {"rows": 1, "cols": 1, "colorscale": "plasma"})
+
     def test_show_values_default_false(self) -> None:
         inst = MatrixPrimitive("m", {"rows": 1, "cols": 1})
         assert inst.show_values is False

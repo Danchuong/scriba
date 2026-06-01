@@ -207,6 +207,15 @@ class MatrixPrimitive(PrimitiveBase):
             ]
 
         colorscale = str(self.params.get("colorscale", "viridis"))
+        if colorscale not in COLORSCALES:
+            raise _animation_error(
+                "E1421",
+                detail=(
+                    f"Matrix colorscale {colorscale!r} is unknown; "
+                    f"valid: {', '.join(sorted(COLORSCALES))}"
+                ),
+                hint="only registered colorscales are supported",
+            )
         show_values = bool(self.params.get("show_values", False))
         cell_size = int(self.params.get("cell_size", _DEFAULT_CELL_SIZE))
         vmin = self.params.get("vmin")
