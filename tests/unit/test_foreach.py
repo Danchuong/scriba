@@ -561,3 +561,50 @@ class TestForeachEndToEnd:
             key = f"a.cell[{idx}]"
             assert key in snap.shape_states["a"]
             assert snap.shape_states["a"][key].state == "path"
+
+    def test_foreach_subscript_value_resolves(self):
+        """``\\apply{...}{value=${dp_vals[i]}}`` resolves the compute-bound
+        list element instead of leaking the InterpolationRef repr."""
+        ir = _parse(
+            "\\shape{dp}{Array}{size=5, data=[\"\",\"\",\"\",\"\",\"\"]}\n"
+            "\\compute{dp_vals = [0, 1, 3, 6, 10]}\n"
+            "\\step\n"
+            "\\foreach{i}{0..4}\n"
+            "\\apply{dp.cell[${i}]}{value=${dp_vals[i]}}\n"
+            "\\endforeach\n"
+        )
+
+        host = MockStarlarkHost()
+        state = SceneState()
+        state.apply_prelude(
+            shapes=ir.shapes,
+            prelude_compute=ir.prelude_compute,
+            starlark_host=host,
+        )
+        snap = state.apply_frame(ir.frames[0], starlark_host=host)
+
+        expected = ["0", "1", "3", "6", "10"]
+        for idx, want in enumerate(expected):
+            key = f"dp.cell[{idx}]"
+            assert key in snap.shape_states["dp"]
+            assert snap.shape_states["dp"][key].value == want
+
+    def test_apply_scalar_value_resolves(self):
+        """A plain ``value=${x}`` apply resolves the scalar binding."""
+        ir = _parse(
+            "\\shape{a}{Array}{size=1, data=[\"\"]}\n"
+            "\\compute{x = 99}\n"
+            "\\step\n"
+            "\\apply{a.cell[0]}{value=${x}}\n"
+        )
+
+        host = MockStarlarkHost()
+        state = SceneState()
+        state.apply_prelude(
+            shapes=ir.shapes,
+            prelude_compute=ir.prelude_compute,
+            starlark_host=host,
+        )
+        snap = state.apply_frame(ir.frames[0], starlark_host=host)
+
+        assert snap.shape_states["a"]["a.cell[0]"].value == "99"

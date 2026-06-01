@@ -459,10 +459,20 @@ class SceneState:
                 return tuple(_sub_value(item) for item in v)
             if isinstance(v, Selector):
                 return _sub_selector(v)
-            if isinstance(v, InterpolationRef) and v.name == variable:
+            if isinstance(v, InterpolationRef):
+                if v.name == variable:
+                    if v.subscripts:
+                        return _sub_index_expr(v)
+                    return value if isinstance(value, int) else val_str
+                # name != variable (e.g. ``${dp_vals[i]}`` with loop var
+                # ``i``): the ref resolves against a compute binding, but
+                # the loop variable inside its subscripts must still be
+                # substituted before resolution.
                 if v.subscripts:
-                    return _sub_index_expr(v)
-                return value if isinstance(value, int) else val_str
+                    new_subs = tuple(_sub_index_expr(s) for s in v.subscripts)
+                    if new_subs != v.subscripts:
+                        return replace(v, subscripts=new_subs)
+                return v
             return v
 
         def _sub_selector(sel: Selector) -> Selector:
@@ -501,6 +511,11 @@ class SceneState:
                     return value
                 return val_str
             if isinstance(expr, str):
+                # Bare identifier subscript equal to the loop variable
+                # (e.g. the ``i`` in ``${dp_vals[i]}``) is the loop var,
+                # not a literal dict key — substitute the concrete value.
+                if expr == variable:
+                    return value if isinstance(value, int) else val_str
                 result = expr.replace(placeholder, val_str)
                 # Try to convert back to int if the result is purely numeric
                 try:
@@ -560,18 +575,48 @@ class SceneState:
         elif isinstance(cmd, CursorCommand):
             self._apply_cursor(cmd)
 
+    def _resolve_interp(self, value: Any) -> Any:
+        """Resolve ``InterpolationRef`` values against compute bindings.
+
+        Mirrors the renderer's shape-param resolver so ``\\apply`` values
+        such as ``${dp_vals[i]}`` are looked up at expansion time instead
+        of leaking the ``InterpolationRef`` repr.  Recurses into lists and
+        dicts (e.g. ``insert={index=1, value=${x}}``).  Unknown names fall
+        back to the bare name, matching the renderer's behaviour.
+        """
+        if isinstance(value, InterpolationRef):
+            result: Any = self.bindings.get(value.name, value.name)
+            for sub in value.subscripts:
+                try:
+                    if isinstance(sub, int) and isinstance(result, (list, tuple)):
+                        result = result[sub]
+                    elif isinstance(sub, str) and isinstance(result, dict):
+                        result = result[sub]
+                except (IndexError, KeyError):
+                    break
+            return result
+        if isinstance(value, list):
+            return [self._resolve_interp(v) for v in value]
+        if isinstance(value, dict):
+            return {k: self._resolve_interp(v) for k, v in value.items()}
+        return value
+
     def _apply_apply(self, cmd: ApplyCommand) -> None:
         """\\apply — persistent value + optional label + custom params."""
         target_str = _selector_to_str(cmd.target)
         target_state = self._ensure_target(target_str)
-        value = cmd.params.get("value")
+        value = self._resolve_interp(cmd.params.get("value"))
         new_value = str(value) if value is not None else target_state.value
-        label = cmd.params.get("label")
+        label = self._resolve_interp(cmd.params.get("label"))
         new_label = str(label) if label is not None else target_state.label
         # Store push/pop and other custom params for primitives like Stack/Queue.
         # Accumulate into a list so multiple \apply commands on the same target
         # in one frame are all preserved (e.g. two enqueue calls).
-        extra = {k: v for k, v in cmd.params.items() if k not in ("value", "label")}
+        extra = {
+            k: self._resolve_interp(v)
+            for k, v in cmd.params.items()
+            if k not in ("value", "label")
+        }
         if extra:
             new_apply_params = list(target_state.apply_params) if target_state.apply_params else []
             new_apply_params.append(extra)
