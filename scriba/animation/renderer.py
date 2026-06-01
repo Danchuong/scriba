@@ -110,10 +110,43 @@ def _scene_id(raw: str, *, position: int = 0) -> str:
     return f"scriba-{digest}"
 
 
+def _collect_valid_hl_ids(ir: AnimationIR) -> frozenset[str]:
+    r"""Return the set of step-ids that ``\hl`` may legitimately reference.
+
+    The valid set is the union of:
+
+    * every explicit ``\step[label=...]`` label (top-level frames and,
+      conservatively, substory frames — labels are unique within a scope
+      but ``\hl`` resolution is documented at animation scope), and
+    * the implicit ids ``step{N}`` for ``N = 1..frame_count`` (top-level
+      frame count), e.g. ``step3`` for the third ``\step``.
+
+    Used to enforce **E1321** in :func:`process_hl_macros`.
+    """
+    ids: set[str] = set()
+
+    def _add_labels(frames: tuple) -> None:
+        for frame in frames:
+            label = getattr(frame, "label", None)
+            if label:
+                ids.add(label)
+            for sub in getattr(frame, "substories", ()):
+                _add_labels(getattr(sub, "frames", ()))
+
+    _add_labels(ir.frames)
+
+    # Implicit step{N} ids cover the top-level frame sequence.
+    for n in range(1, len(ir.frames) + 1):
+        ids.add(f"step{n}")
+
+    return frozenset(ids)
+
+
 def _render_narration(
     text: str | None,
     scene_id: str,
     ctx: RenderContext,
+    valid_hl_ids: frozenset[str] | None = None,
 ) -> str:
     """Render narration text through hl macros and optional TeX.
 
@@ -153,6 +186,7 @@ def _render_narration(
         render_inline_tex=ctx.render_inline_tex,
         escape_plain_text=not has_tex,
         span_wrapper=_stash_span if has_tex else None,
+        valid_step_ids=valid_hl_ids,
     )
     if has_tex:
         processed = ctx.render_inline_tex(processed)
@@ -229,6 +263,7 @@ def _snapshot_to_frame_data(
     ctx: RenderContext,
     substories: list[SubstoryData] | None = None,
     label: str | None = None,
+    valid_hl_ids: frozenset[str] | None = None,
 ) -> FrameData:
     """Convert a FrameSnapshot into a FrameData for the emitter.
 
@@ -277,7 +312,7 @@ def _snapshot_to_frame_data(
         for a in snap.annotations
     ]
 
-    narration_html = _render_narration(snap.narration, scene_id, ctx)
+    narration_html = _render_narration(snap.narration, scene_id, ctx, valid_hl_ids)
 
     return FrameData(
         step_number=snap.index,
@@ -580,6 +615,9 @@ class AnimationRenderer:
             starlark_host=self._starlark_host,
         )
 
+        # Valid \hl cross-reference ids (labels + implicit step{N}) for E1321.
+        valid_hl_ids = _collect_valid_hl_ids(ir)
+
         total_frames = len(ir.frames)
         frame_data_list: list[FrameData] = []
         snapshots: list[FrameSnapshot] = []
@@ -595,6 +633,7 @@ class AnimationRenderer:
                 for sub_block in frame_ir.substories:
                     sub_data = self._materialise_substory(
                         state, sub_block, ctx, scene_id, depth=1,
+                        valid_hl_ids=valid_hl_ids,
                     )
                     substory_data.append(sub_data)
 
@@ -602,6 +641,7 @@ class AnimationRenderer:
                 snap, total_frames, scene_id, ctx,
                 substories=substory_data,
                 label=frame_ir.label,
+                valid_hl_ids=valid_hl_ids,
             )
             frame_data_list.append(fd)
 
@@ -615,8 +655,16 @@ class AnimationRenderer:
         ctx: RenderContext,
         scene_id: str,
         depth: int,
+        valid_hl_ids: frozenset[str] | None = None,
     ) -> SubstoryData:
-        """Materialise a substory block into SubstoryData."""
+        """Materialise a substory block into SubstoryData.
+
+        ``valid_hl_ids`` carries the animation-scoped set of legal ``\\hl``
+        step-ids from the parent.  Substory frames may also legitimately
+        reference their own ``\\step[label=...]`` labels and substory-local
+        ``step{N}`` ids, so those are unioned in before narration rendering
+        to avoid spurious E1321 errors.
+        """
         # Instantiate substory-local primitives
         sub_primitives: dict[str, Any] | None = None
         if substory.shapes:
@@ -631,6 +679,18 @@ class AnimationRenderer:
             substory, starlark_host=self._starlark_host,
         )
         sub_total = len(sub_snapshots)
+
+        # Extend the valid \hl id set with substory-local labels + step{N}
+        # so cross-references within the substory are not flagged E1321.
+        if valid_hl_ids is not None:
+            local_ids: set[str] = set(valid_hl_ids)
+            for sub_frame in substory.frames:
+                sub_lbl = getattr(sub_frame, "label", None)
+                if sub_lbl:
+                    local_ids.add(sub_lbl)
+            for n in range(1, len(substory.frames) + 1):
+                local_ids.add(f"step{n}")
+            valid_hl_ids = frozenset(local_ids)
         sub_frames: list[FrameData] = []
         for i, sub_snap in enumerate(sub_snapshots):
             # Check for nested substories in substory frames
@@ -640,6 +700,7 @@ class AnimationRenderer:
                 for nested_block in substory.frames[i].substories:
                     nd = self._materialise_substory(
                         state, nested_block, ctx, scene_id, depth=depth + 1,
+                        valid_hl_ids=valid_hl_ids,
                     )
                     nested_data.append(nd)
 
@@ -652,6 +713,7 @@ class AnimationRenderer:
                 sub_snap, sub_total, scene_id, ctx,
                 substories=nested_data,
                 label=sub_label,
+                valid_hl_ids=valid_hl_ids,
             )
             sub_frames.append(fd)
 

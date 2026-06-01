@@ -12,6 +12,8 @@ import html
 import re
 from typing import Callable
 
+from scriba.animation.errors import _animation_error, _suggest_closest
+
 # Matches the start of \hl{ — balanced-brace extraction follows.
 _HL_START_RE = re.compile(r"\\hl\{")
 
@@ -54,6 +56,7 @@ def process_hl_macros(
     render_inline_tex: Callable[[str], str] | None = None,
     escape_plain_text: bool = True,
     span_wrapper: Callable[[str], str] | None = None,
+    valid_step_ids: frozenset[str] | None = None,
 ) -> str:
     r"""Replace ``\hl{step-id}{tex}`` macros with highlighted ``<span>`` elements.
 
@@ -83,6 +86,14 @@ def process_hl_macros(
         ``<``/``>`` in free text) does not clobber the span HTML; the real
         span is restored after TeX rendering.  When *None* the span HTML
         is emitted directly.
+    valid_step_ids:
+        Optional set of step-ids that ``\hl`` may legitimately reference
+        — the union of declared ``\step[label=...]`` labels and the
+        implicit ``step{N}`` ids (``N = 1..frame_count``).  When supplied,
+        any ``\hl`` whose step-id is not in the set raises **E1321** so a
+        typo'd cross-reference fails loud instead of emitting a dead span.
+        When *None* (default) no validation is performed — preserving the
+        legacy contract for callers that do not know the valid set.
 
     Returns
     -------
@@ -104,6 +115,25 @@ def process_hl_macros(
         # step-id must be non-empty
         if not step_id:
             continue
+
+        # Validate the step-id against the known label/step{N} set (E1321).
+        # Only enforced when the caller threads the valid set through; a
+        # typo'd id otherwise produces a dead cross-reference with no signal.
+        if valid_step_ids is not None and step_id not in valid_step_ids:
+            suggestion = _suggest_closest(step_id, valid_step_ids)
+            hint = (
+                f"did you mean '{suggestion}'?"
+                if suggestion is not None
+                else (
+                    "reference a \\step[label=...] declared in this "
+                    "animation, or the implicit id step{N} (N = frame number)"
+                )
+            )
+            raise _animation_error(
+                "E1321",
+                f"\\hl references unknown step-id {step_id!r}",
+                hint=hint,
+            )
 
         # The tex body must follow immediately in another braced group.
         if after_step >= len(narration) or narration[after_step] != "{":

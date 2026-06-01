@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 
+from scriba.animation.errors import AnimationError
 from scriba.animation.extensions.hl_macro import process_hl_macros
 
 
@@ -98,3 +99,51 @@ class TestEdgeCases:
         result = process_hl_macros(r"\hl{s1}{}", scene_id="s1")
         assert 'data-hl-step="s1"' in result
         assert "></span>" in result
+
+
+class TestStepIdValidation:
+    """E1321 — unknown step-id raises instead of silently emitting a span."""
+
+    def test_unknown_step_id_raises_e1321(self) -> None:
+        with pytest.raises(AnimationError) as exc:
+            process_hl_macros(
+                r"\hl{nonexistent}{x}",
+                scene_id="s1",
+                valid_step_ids=frozenset({"init", "step1"}),
+            )
+        assert exc.value.code == "E1321"
+        assert "nonexistent" in str(exc.value)
+
+    def test_known_label_passes(self) -> None:
+        result = process_hl_macros(
+            r"\hl{init}{x}",
+            scene_id="s1",
+            valid_step_ids=frozenset({"init", "step1"}),
+        )
+        assert 'data-hl-step="init"' in result
+
+    def test_implicit_step_n_passes(self) -> None:
+        result = process_hl_macros(
+            r"\hl{step1}{x}",
+            scene_id="s1",
+            valid_step_ids=frozenset({"init", "step1"}),
+        )
+        assert 'data-hl-step="step1"' in result
+
+    def test_no_valid_set_skips_validation(self) -> None:
+        # Backward-compatible: when valid_step_ids is None, no validation.
+        result = process_hl_macros(
+            r"\hl{whatever}{x}", scene_id="s1", valid_step_ids=None
+        )
+        assert 'data-hl-step="whatever"' in result
+
+    def test_e1321_hint_suggests_close_match(self) -> None:
+        with pytest.raises(AnimationError) as exc:
+            process_hl_macros(
+                r"\hl{inot}{x}",
+                scene_id="s1",
+                valid_step_ids=frozenset({"init", "fill"}),
+            )
+        assert exc.value.code == "E1321"
+        assert exc.value.hint is not None
+        assert "init" in exc.value.hint
