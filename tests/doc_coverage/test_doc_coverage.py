@@ -39,28 +39,11 @@ CORPUS_DIR = Path(__file__).resolve().parent / "corpus"
 # GREEN today but a future fix that aligns code with the docs will XPASS and
 # force us to remove the entry.
 # --------------------------------------------------------------------------- #
-KNOWN_BUGS: dict[str, str] = {
-    "prim_graph_tree_cycle_E1433": (
-        "Tree-cycle reparent: docs/.expect say E1433, code raises E1435."
-    ),
-    "neg_E1433_reparent_cycle": (
-        "Tree-cycle reparent: docs/.expect say E1433, code raises E1435."
-    ),
-    "annot_hl_outside_narrate": (
-        r"\hl outside \narrate: docs/.expect say E1320, parser raises E1006 first."
-    ),
-    "neg_E1320_hl_outside_narrate": (
-        r"\hl outside \narrate: docs/.expect say E1320, parser raises E1006 first."
-    ),
-    "cmd_step_label_valid": (
-        r"\step[label=base-case] (hyphen) documented ok, code raises E1012 "
-        "(label charset bug)."
-    ),
-    "latex_opt_width_cm": (
-        "Env option width=8cm documented ok, code raises E1012 "
-        "(env-option unit-suffix bug)."
-    ),
-}
+# All four originally-surfaced doc/code mismatches were fixed (E1433 tree
+# cycle, E1320 \hl-outside-narrate, E1012 step-label charset, E1012 env-option
+# unit suffix), so there are no known-failing entries. New mismatches go here
+# as {test_id: reason} to xfail(strict) them until fixed.
+KNOWN_BUGS: dict[str, str] = {}
 
 
 def _expected_outcome(expect_path: Path) -> tuple[str, str | None]:
