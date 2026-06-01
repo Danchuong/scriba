@@ -3,6 +3,42 @@
 > **Single-file reference for AI agents.** Read this one file to write valid Scriba `.tex` sources.
 > Scriba renders LaTeX → HTML for competitive programming editorials with animated algorithm visualizations.
 
+## Contents
+
+0. [How to Render](#0-how-to-render)
+1. [File Structure](#1-file-structure)
+2. [Supported LaTeX Commands](#2-supported-latex-commands)
+3. [Animation Environment](#3-animation-environment)
+4. [Diagram Environment](#4-diagram-environment)
+5. [Inner Commands](#5-inner-commands-13-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\recolor` `\annotate` `\reannotate` `\cursor` `\foreach` `\substory` `\hl`
+6. [Visual States](#6-visual-states)
+7. [All 15 Primitives](#7-all-15-primitives)
+8. [Selector Quick Reference](#8-selector-quick-reference)
+9. [Complete Examples](#9-complete-examples)
+10. [Environment Options](#10-environment-options)
+11. [Annotation Colors](#11-annotation-colors)
+12. [Common Patterns](#12-common-patterns)
+13. [Gotchas & Known Limitations](#13-gotchas--known-limitations)
+14. [Limits](#14-limits)
+15. [Error Code Quick Reference](#15-error-code-quick-reference)
+- [Appendix A — Internal / Forward-Compat](#appendix-a--internal--forward-compat)
+
+### Index by task
+
+| I want to… | Go to |
+|---|---|
+| Render a `.tex` file | §0 |
+| Pick a primitive + its params | §7 |
+| Color a cell / node by state | §6, `\recolor` §5.7 |
+| Move a cursor through an array | `\cursor` §5.10, §12 |
+| Draw a DP transition arrow | `\annotate` …`arrow_from=` §5.8, §12 |
+| Loop over indices / a computed list | `\foreach` §5.11 |
+| Compute values in Starlark | `\compute` §5.2 |
+| Cross-reference a step from narration | `\hl` §5.13 |
+| Use `${var}` in a selector / value | §5.11, §13.2 |
+| Address a sub-element (selector syntax) | §8 |
+| Look up an error code | §15 |
+
 ---
 
 ## 0. How to Render
@@ -342,11 +378,10 @@ Changes visual state. Persistent. The 9 valid states are: `idle`, `current`, `do
 ### 5.8 `\annotate{target}{params...}`
 Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
 
-> **Placement rules**: pill placement, collision avoidance, viewBox headroom,
-> math-aware sizing, and the `SCRIBA_DEBUG_LABELS` / `SCRIBA_LABEL_ENGINE` env
-> flags are specified in [spec/smart-label-ruleset.md](spec/smart-label-ruleset.md).
-> Read that document before changing `_svg_helpers.py` or any primitive's
-> `emit_svg`.
+> **Maintainer note:** the pill-placement engine internals (collision
+> avoidance, viewBox headroom, math-aware sizing, debug env flags) are
+> specified in [spec/smart-label-ruleset.md](spec/smart-label-ruleset.md).
+> Authors do not need it — everything below is sufficient to place annotations.
 
 **Parameters:**
 
@@ -358,18 +393,10 @@ Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
 | `ephemeral` | bool | `false` | When `true`, the annotation is cleared at the next `\step` boundary |
 | `arrow` | bool | `false` | When `true`, adds a pointer arrowhead on the annotation pill pointing at the target cell (no source cell required) |
 | `arrow_from` | selector | _(none)_ | Draws a Bezier arc **from** the specified source cell **to** the target, with an arrowhead at the destination |
-| `side` | enum | _(auto)_ | Override the auto-inferred pill half-plane: `"left"`, `"right"`, `"above"`, `"below"`. When omitted, the placement engine infers the preferred side from the arrow direction vector (R-22, v0.11.0+). |
+| `side` | enum | _(auto)_ | Force the pill's half-plane: `"left"`, `"right"`, `"above"`, `"below"`. When omitted, Scriba auto-picks a side from the arrow direction. |
 
-**`side_hint` auto-inference (R-22, v0.11.0+):**
-
-When no explicit `side=` key is present, the smart-label placer computes a `side_hint`
-from the arrow direction vector (`src_point → dst_point`). For left-to-right arcs the
-hint is `"above"`, causing pill candidates to favour the upper half-plane (consistent with
-the Hirsch 1982 NE-preference ladder; see R-06 for full NE-before-NW ordering, planned
-v0.12.0). For `arrow=true` (no source), the hint defaults to the `position` parameter.
-
-Default pill placement for L→R arcs: pills appear above the arc midpoint (above-arc
-first candidate). Override with `side="below"` for arcs where clearance is better below.
+By default, a left-to-right arc places its pill above the arc midpoint. Override with
+`side="below"` when there is more clearance underneath.
 
 ```latex
 % auto side — pill above arc (default for left-to-right arrow)
@@ -724,7 +751,8 @@ Nodes + edges with layout engine.
 | `split_labels` | bool | `false` | Split long node labels across two lines |
 | `tint_by_source` | bool | `false` | Tint edge-weight pills with the source node's state color |
 | `tint_by_edge` | bool | `false` | Tint edge-weight pills with the edge's own state color |
-| `global_optimize` | bool | `false` | Forward-compat flag for SA post-refine (GEP-20); currently a no-op — emits a `UserWarning` |
+
+(`global_optimize` is a no-op forward-compat flag — see Appendix A.)
 
 **Dynamic edge mutation:**
 
@@ -1532,18 +1560,9 @@ The layout engine reserves vertical space for annotations based on the **maximum
 ### 13.10 `Graph(layout="stable", directed=true)` emits a UserWarning
 The stable SA layout optimizer is topology-blind — it has no edge-direction term, so directed graphs often render upside-down or sideways. When both `layout="stable"` and `directed=true` are set, a `UserWarning` is emitted at `\shape` parse time. Use `layout="hierarchical"` for DAGs.
 
-### 13.11 `Graph(global_optimize=True)` is a no-op in the current release
-`global_optimize=True` is accepted as a forward-compatibility flag for the v2.1 simulated-annealing cascade refine (GEP-20). It has **no runtime effect yet**. Setting it emits a `UserWarning` so the no-op is explicit rather than silent.
-
-### 13.12 Smart-label engine flags (`SCRIBA_DEBUG_LABELS`, `SCRIBA_LABEL_ENGINE`)
-Two environment variables control annotation label placement internals:
-
-| Variable | Values | Effect |
-|----------|--------|--------|
-| `SCRIBA_DEBUG_LABELS=1` | `0` (default) / `1` | Annotates each rendered pill with its placement score and candidates tried. Useful for diagnosing label collisions. Never enable in production HTML. |
-| `SCRIBA_LABEL_ENGINE` | `unified` (default) / `legacy` / `both` | Selects the label placement engine. `unified` is the default since v0.10.0. `legacy` is deprecated and will be removed in v3.0. `both` runs both engines and cross-checks output (slow; only for engine development). |
-
-These variables are consumed at module import time in `scriba/animation/primitives/_svg_helpers.py`.
+Forward-compat flags and dev-only env vars (`global_optimize`, the diagram
+`grid` option, `SCRIBA_DEBUG_LABELS`, `SCRIBA_LABEL_ENGINE`) are not needed for
+authoring — see [Appendix A](#appendix-a--internal--forward-compat).
 
 ---
 
@@ -1568,7 +1587,7 @@ These variables are consumed at module import time in `scriba/animation/primitiv
 
 ## 15. Error Code Quick Reference
 
-Top author-facing codes. Full catalog: `scriba/animation/errors.py` → `ERROR_CATALOG`.
+Top author-facing codes. Full catalog with explanations: [spec/error-codes.md](spec/error-codes.md) (source of truth: `scriba/animation/errors.py` → `ERROR_CATALOG`).
 
 | Code | When you see it | One-line meaning |
 |------|----------------|-----------------|
@@ -1597,3 +1616,20 @@ Top author-facing codes. Full catalog: `scriba/animation/errors.py` → `ERROR_C
 | E1159 | Validation | `${name}` selector index references an unknown `\compute` binding outside `\foreach` |
 | E1321 | Validation | `\hl` references an unknown step-id (no matching `\step` label or `step{N}`) |
 | E1467 | Validation | Malformed Plane2D `add_*` element spec |
+
+---
+
+## Appendix A — Internal / Forward-Compat
+
+These are accepted but **not needed for authoring**. Listed for completeness so
+their presence in old sources or tooling is explained.
+
+| Item | Where | Status |
+|---|---|---|
+| `global_optimize` | Graph param | **No-op** forward-compat flag (SA post-refine, GEP-20). Emits a `UserWarning`; has no runtime effect. |
+| `grid` | `\begin{diagram}` option | Accepted but **ignored** — forward-compat placeholder. |
+| `SCRIBA_DEBUG_LABELS` | env var | `1` annotates each pill with its placement score (collision debugging). Never enable in production HTML. |
+| `SCRIBA_LABEL_ENGINE` | env var | `unified` (default) / `legacy` (deprecated) / `both` (cross-check, slow). Engine-development only. |
+
+Pill-placement engine internals (collision avoidance, headroom, sizing) live in
+[spec/smart-label-ruleset.md](spec/smart-label-ruleset.md) — maintainer reference, not authoring.
