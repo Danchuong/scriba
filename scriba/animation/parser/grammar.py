@@ -6,7 +6,7 @@ import hashlib
 import unicodedata
 from typing import Any, Iterable, NoReturn
 
-from scriba.animation.errors import _suggest_closest
+from scriba.animation.errors import _animation_error, _suggest_closest
 from scriba.core.errors import ValidationError
 
 from .ast import (
@@ -371,7 +371,24 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
     )
 
     def _raise_unknown_command(self, tok: Token) -> None:
-        """Raise ``E1006`` for an unknown backslash command token."""
+        """Raise ``E1006`` for an unknown backslash command token.
+
+        Special-case ``\\hl``: it is a narration-only macro that is valid only
+        inside a ``\\narrate{...}`` body (handled by ``process_hl_macros`` on
+        the narration text). When it appears as a standalone animation-body
+        command the lexer emits it as an ``UNKNOWN_COMMAND`` token, so without
+        this guard it would be reported as a generic E1006. Raise the
+        documented **E1320** instead (docs §5.13 / §15).
+        """
+        if tok.value == "hl":
+            raise _animation_error(
+                "E1320",
+                detail="`\\hl` is only valid inside a `\\narrate{...}` body",
+                line=tok.line,
+                col=tok.col,
+                hint="move the `\\hl{step}{tex}` macro into a `\\narrate{...}` body",
+                source_line=self._source_line_at(tok.line),
+            )
         suggestion = _suggest_closest(tok.value, self._VALID_COMMAND_NAMES)
         hint = f" did you mean `\\{suggestion}`?" if suggestion else ""
         raise ValidationError(
@@ -490,7 +507,19 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
             if val_tok.kind == TokenKind.STRING:
                 pass  # already the string value
             elif val_tok.kind in (TokenKind.IDENT, TokenKind.NUMBER):
-                pass
+                # A numeric option value may carry a dimension unit suffix
+                # (e.g. width=8cm), which the lexer splits into NUMBER + IDENT.
+                # Re-attach a contiguous unit IDENT so width/height accept
+                # "8cm" as documented in §10. Contiguity (same line, adjacent
+                # column) avoids swallowing the next "key" after whitespace.
+                if (
+                    val_tok.kind == TokenKind.NUMBER
+                    and not self._at_end()
+                    and self._peek().kind == TokenKind.IDENT
+                    and self._peek().line == val_tok.line
+                    and self._peek().col == val_tok.col + len(str(val_tok.value))
+                ):
+                    val = f"{val}{self._advance().value}"
             else:
                 raise ValidationError(
                     "invalid option value",

@@ -379,6 +379,15 @@ class _TokensMixin:
                     line=val_tok.line,
                     col=val_tok.col,
                 )
+            # A bare (unquoted) label may use the full documented charset
+            # ``[A-Za-z_][A-Za-z0-9._-]*`` (SCRIBA-TEX-REFERENCE §5.3, e.g.
+            # ``base-case``).  The lexer splits ``-``/``.`` out as separate
+            # CHAR/NUMBER/IDENT tokens, so reassemble the contiguous run into
+            # a single value.  Quoted (STRING) values are taken verbatim.
+            if val_tok.kind == TokenKind.IDENT:
+                val_value = self._read_bare_label_tail(val_tok)
+            else:
+                val_value = val_tok.value
             if key_tok.value != "label":
                 self._raise_unknown_enum(
                     "\\step option key",
@@ -396,7 +405,7 @@ class _TokensMixin:
                     line=key_tok.line,
                     col=key_tok.col,
                 )
-            label = val_tok.value
+            label = val_value
             # Validate label shape: identifier-friendly so it can appear
             # in HTML ids and \hl{step-id}{...} references.
             if not label or not label.replace("-", "_").replace(".", "_").isidentifier():
@@ -422,6 +431,43 @@ class _TokensMixin:
             )
         self._advance()  # consume ]
         return label
+
+    def _read_bare_label_tail(self, first_tok: Token) -> str:
+        """Reassemble a bare step-label value starting at *first_tok*.
+
+        The lexer emits ``-`` and ``.`` as standalone CHAR tokens and splits
+        runs like ``base-case`` into ``IDENT CHAR(-) IDENT``.  The documented
+        label charset (SCRIBA-TEX-REFERENCE §5.3 ``[A-Za-z_][A-Za-z0-9._-]*``)
+        permits those, so consume every *contiguous* charset token — one that
+        begins exactly where the previous token ended, with no intervening
+        whitespace — and concatenate their text.  A gap (space/newline) or a
+        non-charset token ends the run, leaving the cursor for the caller's
+        ``,``/``]`` handling.  Leading-character validation is performed by the
+        caller's existing E1005 charset check.
+        """
+        parts = [first_tok.value]
+        prev = first_tok
+        # ``-`` lexes as CHAR, ``.`` as DOT; ``IDENT``/``NUMBER`` cover the
+        # alphanumeric/underscore runs.
+        _charset_kinds = (
+            TokenKind.IDENT,
+            TokenKind.NUMBER,
+            TokenKind.DOT,
+            TokenKind.CHAR,
+        )
+        while not self._at_end():
+            nxt = self._peek()
+            if nxt.kind not in _charset_kinds:
+                break
+            # Contiguity: the next token must abut the previous one.
+            if nxt.line != prev.line or nxt.col != prev.col + len(prev.value):
+                break
+            if nxt.kind == TokenKind.CHAR and nxt.value != "-":
+                break
+            self._advance()
+            parts.append(nxt.value)
+            prev = nxt
+        return "".join(parts)
 
     def _check_step_trailing(self, step_line: int) -> None:
         """Check there is no non-whitespace on the same line after \\step.

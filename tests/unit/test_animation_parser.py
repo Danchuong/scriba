@@ -998,6 +998,61 @@ class TestStepLabel:
         sub = ir.frames[0].substories[0]
         assert sub.frames[0].label == "inner"
 
+    def test_step_label_with_hyphen(self, parser: SceneParser) -> None:
+        """SCRIBA-TEX-REFERENCE §5.3 documents the hyphen in label values
+        (example ``\\step[label=base-case]``).  Previously raised E1012."""
+        src = "\\step[label=base-case]\n\\narrate{Hello}\n"
+        ir = parser.parse(src)
+        assert ir.frames[0].label == "base-case"
+
+    def test_step_label_full_charset(self, parser: SceneParser) -> None:
+        """Letters, digits, ``_``, ``-``, ``.`` are all valid after a
+        leading letter/underscore (§5.3 charset ``[A-Za-z_][A-Za-z0-9._-]*``)."""
+        src = "\\step[label=a.b_c-d]\n\\narrate{Hello}\n"
+        ir = parser.parse(src)
+        assert ir.frames[0].label == "a.b_c-d"
+
+    def test_step_label_leading_digit_still_invalid(
+        self, parser: SceneParser,
+    ) -> None:
+        """Leading digit violates the documented charset and must still
+        raise (label must start with a letter or underscore)."""
+        src = "\\step[label=1bad]\n"
+        with pytest.raises(ValidationError, match="E1005"):
+            parser.parse(src)
+
+
+class TestEnvOptionDimension:
+    """SCRIBA-TEX-REFERENCE §10 documents ``width`` as a dimension:
+    ``width=8cm`` (px-equivalent) as well as the bare ``width=800``.
+    The env-option bracket parser previously raised E1012 on the unit
+    suffix.
+    """
+
+    # The env-option value reader (``grammar.py:_try_parse_options``) now
+    # re-attaches a contiguous dimension unit suffix, so ``width=8cm`` parses.
+    def test_width_with_cm_unit(self, parser: SceneParser) -> None:
+        # SceneParser consumes the option bracket (``[...]``) at the head of
+        # the environment body; the ``\begin{...}`` wrapper is stripped by the
+        # detector before the body reaches the parser.
+        src = '[id="x", width=8cm]\n\\step\n'
+        ir = parser.parse(src)
+        assert ir is not None
+        assert ir.options.width == "8cm"
+
+    def test_width_with_px_unit(self, parser: SceneParser) -> None:
+        src = '[id="x", width=640px]\n\\step\n'
+        ir = parser.parse(src)
+        assert ir is not None
+        assert ir.options.width == "640px"
+
+    def test_bare_integer_width_still_parses(
+        self, parser: SceneParser,
+    ) -> None:
+        src = '[id=demo, width=800]\n\\step\n'
+        ir = parser.parse(src)
+        assert ir is not None
+
 
 class TestSelectorErrorLineCol:
     """Wave 4A Cluster 1 fix #1 / 09-H4: selector errors propagate real
