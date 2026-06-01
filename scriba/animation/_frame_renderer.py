@@ -16,6 +16,7 @@ from scriba.animation.primitives.base import BoundingBox
 
 __all__ = [
     "compute_viewbox",
+    "compute_stable_viewbox",
     "emit_shared_defs",
 ]
 
@@ -160,6 +161,76 @@ def compute_viewbox(
     vb_height = total_height + 2 * _PADDING
 
     return f"0 0 {int(vb_width)} {int(vb_height)}"
+
+
+def compute_stable_viewbox(
+    frames: list[Any],
+    primitives: dict[str, Any],
+) -> str:
+    """Compute the max viewBox across all frames, replaying structural
+    push/pop operations on *copies* of the primitives.
+
+    ``compute_viewbox`` only measures a primitive in its current state.
+    Size-changing primitives (Stack, Queue) grow when ``\\apply`` push/pop
+    commands run during the animation, so a viewBox sized from the initial
+    state clips the grown frames.  This helper simulates the frame timeline
+    on deep-copied primitives so the returned viewBox covers the largest
+    extent.  The real *primitives* are left untouched.
+    """
+    import copy as _copy
+
+    if not primitives:
+        return "0 0 0 0"
+
+    # Detach non-copyable render context before cloning; bbox probing
+    # never needs it, and warnings collectors may not deep-copy cleanly.
+    saved_ctx: dict[str, Any] = {}
+    for name, prim in primitives.items():
+        if hasattr(prim, "_ctx"):
+            saved_ctx[name] = prim._ctx
+            prim._ctx = None
+    try:
+        sim = {name: _copy.deepcopy(prim) for name, prim in primitives.items()}
+    finally:
+        for name, ctx in saved_ctx.items():
+            primitives[name]._ctx = ctx
+
+    max_w = 0
+    max_h = 0
+
+    def _track(vb: str) -> None:
+        nonlocal max_w, max_h
+        parts = vb.split()
+        max_w = max(max_w, int(parts[2]))
+        max_h = max(max_h, int(parts[3]))
+
+    # Initial (pre-frame) extent.
+    _track(compute_viewbox(sim))
+
+    for frame in frames:
+        # Replay structural commands cumulatively (mirrors the pre-pass in
+        # _emit_frame_svg) so item counts grow as the animation advances.
+        for shape_name, prim in sim.items():
+            if not hasattr(prim, "apply_command"):
+                continue
+            shape_state = frame.shape_states.get(shape_name, {})
+            accepts_suffix = "target_suffix" in inspect.signature(
+                prim.apply_command
+            ).parameters
+            for target_key, target_data in shape_state.items():
+                if not isinstance(target_data, dict):
+                    continue
+                ap = target_data.get("apply_params")
+                if not ap:
+                    continue
+                suffix = target_key
+                if suffix.startswith(shape_name + "."):
+                    suffix = suffix[len(shape_name) + 1:]
+                params_list = ap if isinstance(ap, list) else [ap]
+                _apply_param_list(prim, params_list, suffix, accepts_suffix)
+        _track(compute_viewbox(sim, annotations=frame.annotations))
+
+    return f"0 0 {max_w} {max_h}"
 
 
 # ---------------------------------------------------------------------------

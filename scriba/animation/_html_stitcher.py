@@ -18,6 +18,7 @@ from scriba.animation._frame_renderer import (
     _emit_frame_svg,
     _normalize_bbox,
     _prescan_value_widths,
+    compute_stable_viewbox,
     compute_viewbox,
 )
 from scriba.animation._minify import _minify_html  # noqa: F401
@@ -206,20 +207,9 @@ def emit_animation_html(
     # Compute the max viewbox across ALL frames so the stage size stays
     # stable.  Without this, frames with arrow annotations are taller
     # than frames without, causing the array to visually shrink/grow.
-    max_vb_width = 0
-    max_vb_height = 0
-    for f in frames:
-        vb_str = compute_viewbox(primitives, annotations=f.annotations)
-        parts = vb_str.split()
-        max_vb_width = max(max_vb_width, int(parts[2]))
-        max_vb_height = max(max_vb_height, int(parts[3]))
-    # Also consider the base (no annotations) for primitives that change
-    # size via push/pop (Stack, Queue).
-    base_vb = compute_viewbox(primitives)
-    base_parts = base_vb.split()
-    max_vb_width = max(max_vb_width, int(base_parts[2]))
-    max_vb_height = max(max_vb_height, int(base_parts[3]))
-    viewbox = f"0 0 {max_vb_width} {max_vb_height}"
+    # compute_stable_viewbox also replays push/pop on copies so primitives
+    # that grow over the timeline (Stack, Queue) are not clipped.
+    viewbox = compute_stable_viewbox(frames, primitives)
 
     # Set per-primitive min_arrow_above for stable cell positioning
     for shape_name, prim in primitives.items():
@@ -457,18 +447,9 @@ def emit_interactive_html(
     _prescan_value_widths(frames, primitives)
 
     # Compute max viewbox across ALL frames so stage size stays stable.
-    max_vb_width = 0
-    max_vb_height = 0
-    for f in frames:
-        vb_str = compute_viewbox(primitives, annotations=f.annotations)
-        parts = vb_str.split()
-        max_vb_width = max(max_vb_width, int(parts[2]))
-        max_vb_height = max(max_vb_height, int(parts[3]))
-    base_vb = compute_viewbox(primitives)
-    base_parts = base_vb.split()
-    max_vb_width = max(max_vb_width, int(base_parts[2]))
-    max_vb_height = max(max_vb_height, int(base_parts[3]))
-    viewbox = f"0 0 {max_vb_width} {max_vb_height}"
+    # Replays push/pop on copies so size-changing primitives (Stack,
+    # Queue) are sized to their largest extent and never clipped.
+    viewbox = compute_stable_viewbox(frames, primitives)
 
     # Set per-primitive min_arrow_above so cells stay at stable Y
     # positions across frames (no jumping when arrows appear/disappear).
@@ -787,8 +768,10 @@ def emit_diagram_html(
         )
 
     _prescan_value_widths(frames, primitives)
-    viewbox = compute_viewbox(primitives)
     frame = frames[0]
+    # Size to the rendered frame's extent (replays its push/pop on a copy)
+    # so a single-frame diagram with structural ops is not clipped.
+    viewbox = compute_stable_viewbox([frame], primitives)
     svg_html = _emit_frame_svg(
         frame, primitives, scene_id, viewbox, render_inline_tex,
         _frame_id_fn=_frame_id,
