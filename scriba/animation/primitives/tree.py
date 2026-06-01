@@ -428,20 +428,22 @@ class Tree(PrimitiveBase):
                 detail=f"reparent parent {new_parent_id!r} is not in the tree",
             )
         if node_id == self.root:
+            # The root is an ancestor of every other node, so attaching it
+            # under any node would close a cycle.
             raise _animation_error(
-                "E1435",
-                detail="cannot reparent the root node",
+                "E1433",
+                detail="reparent would create a cycle (root node)",
             )
         if node_id == new_parent_id:
             raise _animation_error(
-                "E1435",
+                "E1433",
                 detail="reparent would create a cycle (self-parent)",
             )
 
         # Cycle check: new_parent_id must not be a descendant of node_id.
         if self._is_ancestor(node_id, new_parent_id):
             raise _animation_error(
-                "E1435",
+                "E1433",
                 detail="reparent would create a cycle",
                 hint=(
                     f"{new_parent_id!r} is a descendant of {node_id!r}"

@@ -279,26 +279,27 @@ class TestReparent:
         assert "D" not in t.children_map["B"]
         assert "D" in t.children_map["C"]
 
-    def test_reparent_creates_cycle_raises_E1435(self) -> None:
+    def test_reparent_creates_cycle_raises_E1433(self) -> None:
         t = _make_simple_tree()
-        # Make B the parent of A — this is a cycle.
+        # Make B the parent of A (the root) — this is a cycle.
         with pytest.raises(AnimationError) as ei:
             t.apply_command({"reparent": {"node": "A", "parent": "B"}})
-        # Root reparent rejected first as E1435.
-        assert _err_code(ei.value) == "E1435"
+        # Reparenting the root under any node would create a cycle.
+        assert _err_code(ei.value) == "E1433"
 
-    def test_reparent_under_own_descendant_raises_E1435(self) -> None:
+    def test_reparent_under_own_descendant_raises_E1433(self) -> None:
         t = _make_simple_tree()
         # D is a descendant of B; reparenting B under D creates a cycle.
         with pytest.raises(AnimationError) as ei:
             t.apply_command({"reparent": {"node": "B", "parent": "D"}})
-        assert _err_code(ei.value) == "E1435"
+        assert _err_code(ei.value) == "E1433"
 
-    def test_reparent_self_raises_E1435(self) -> None:
+    def test_reparent_self_raises_E1433(self) -> None:
         t = _make_simple_tree()
+        # Reparenting a node under itself is a (degenerate) cycle.
         with pytest.raises(AnimationError) as ei:
             t.apply_command({"reparent": {"node": "B", "parent": "B"}})
-        assert _err_code(ei.value) == "E1435"
+        assert _err_code(ei.value) == "E1433"
 
     def test_reparent_missing_node_raises_E1436(self) -> None:
         t = _make_simple_tree()
@@ -320,6 +321,28 @@ class TestReparent:
         with pytest.raises(AnimationError) as ei2:
             t.apply_command({"reparent": {"parent": "A"}})
         assert _err_code(ei2.value) == "E1435"
+
+    def test_reparent_cycle_via_descendant_is_E1433_not_E1435(self) -> None:
+        """Doc-coverage regression: a genuine cycle must surface E1433.
+
+        Per SCRIBA-TEX-REFERENCE §7.5/§15, E1433 = "cycle would be
+        created" and E1435 = "reparent spec malformed". Moving a node
+        under one of its own descendants is a true cycle, so it must
+        raise E1433, never E1435.
+        """
+        t = _make_simple_tree()
+        # D is a descendant of B (A -> B -> D). Reparenting B under D
+        # would create a cycle.
+        with pytest.raises(AnimationError) as ei:
+            t.apply_command({"reparent": {"node": "B", "parent": "D"}})
+        assert _err_code(ei.value) == "E1433"
+
+    def test_reparent_malformed_spec_missing_parent_is_E1435(self) -> None:
+        """A malformed reparent spec (missing ``parent``) stays E1435."""
+        t = _make_simple_tree()
+        with pytest.raises(AnimationError) as ei:
+            t.apply_command({"reparent": {"node": "A"}})
+        assert _err_code(ei.value) == "E1435"
 
     def test_reparent_changes_positions(self) -> None:
         t = _make_simple_tree()
