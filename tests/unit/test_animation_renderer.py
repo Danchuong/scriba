@@ -56,6 +56,41 @@ def ctx_with_tex() -> RenderContext:
     )
 
 
+class TestNarrationHlSurvivesTex:
+    """\\hl spans must survive the downstream TeX-render escape pass."""
+
+    def test_hl_span_not_escaped_by_tex_render(self) -> None:
+        from scriba.animation.renderer import _render_narration
+
+        def escaping_tex(text: str) -> str:
+            # Mimic the real KaTeX path: free text is HTML-escaped after
+            # math extraction.  No math here, so the whole string escapes.
+            return (
+                text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+            )
+
+        ctx = RenderContext(
+            resource_resolver=lambda n: n,
+            theme="light",
+            dark_mode=False,
+            metadata={"output_mode": "static"},
+            render_inline_tex=escaping_tex,
+        )
+
+        out = _render_narration(
+            r"See \hl{step1}{the base} here.", "sc", ctx
+        )
+
+        # The span is real HTML, not escaped into &lt;span&gt;.
+        assert '<span class="scriba-hl" data-hl-step="step1">' in out
+        assert "the base" in out
+        assert "&lt;span" not in out
+        # Surrounding plain text is still present.
+        assert "See " in out and " here." in out
+
+
 class TestDetect:
     """detect() returns correct blocks."""
 

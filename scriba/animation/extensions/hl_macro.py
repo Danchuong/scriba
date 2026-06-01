@@ -53,6 +53,7 @@ def process_hl_macros(
     scene_id: str,
     render_inline_tex: Callable[[str], str] | None = None,
     escape_plain_text: bool = True,
+    span_wrapper: Callable[[str], str] | None = None,
 ) -> str:
     r"""Replace ``\hl{step-id}{tex}`` macros with highlighted ``<span>`` elements.
 
@@ -75,6 +76,13 @@ def process_hl_macros(
         text), so pre-escaping here would double-process the ``<`` inside
         math delimiters and break KaTeX parsing (e.g. ``$\min_{j<1}$``
         becomes ``$\min_{j&lt;1}$`` which KaTeX rejects).
+    span_wrapper:
+        Optional callback applied to each generated ``<span>`` before it
+        is appended.  ``_render_narration`` uses this to swap the span for
+        a placeholder token so the downstream TeX renderer (which escapes
+        ``<``/``>`` in free text) does not clobber the span HTML; the real
+        span is restored after TeX rendering.  When *None* the span HTML
+        is emitted directly.
 
     Returns
     -------
@@ -114,11 +122,12 @@ def process_hl_macros(
         # Assemble output. Plain-text escape is conditional — see
         # ``escape_plain_text`` doc above.
         parts.append(escape_fn(narration[pos : m.start()]))
-        parts.append(
+        span_html = (
             f'<span class="scriba-hl" '
             f'data-hl-step="{_escape_attr(step_id)}">'
             f"{rendered}</span>"
         )
+        parts.append(span_wrapper(span_html) if span_wrapper else span_html)
         pos = after_tex
 
     # Trailing plain text after the last macro — same conditional escape.

@@ -136,14 +136,28 @@ def _render_narration(
     if text is None:
         return ""
     has_tex = ctx.render_inline_tex is not None
+
+    # When TeX rendering follows, stash each \hl span behind a placeholder
+    # token so the renderer's plain-text escape doesn't turn the span HTML
+    # into &lt;span&gt;…; the spans are restored after rendering.  The token
+    # uses control chars that never appear in narration or survive escaping.
+    hl_spans: list[str] = []
+
+    def _stash_span(span_html: str) -> str:
+        hl_spans.append(span_html)
+        return f"\x00HL{len(hl_spans) - 1}\x00"
+
     processed = process_hl_macros(
         text,
         scene_id=scene_id,
         render_inline_tex=ctx.render_inline_tex,
         escape_plain_text=not has_tex,
+        span_wrapper=_stash_span if has_tex else None,
     )
     if has_tex:
         processed = ctx.render_inline_tex(processed)
+        for i, span_html in enumerate(hl_spans):
+            processed = processed.replace(f"\x00HL{i}\x00", span_html)
     # Expand \textbf{...}, \texttt{...}, etc. AFTER TeX rendering so the
     # produced HTML tags are not HTML-escaped by the TeX renderer.
     return apply_text_commands(processed)
