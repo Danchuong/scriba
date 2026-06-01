@@ -887,7 +887,7 @@ The `data` is either a **flat** list of length `rows*cols` (row-major) or a nest
 | `data` | flat or 2D list | zeros | flat `rows*cols` (row-major) or nested 2D (E1422) |
 | `colorscale` | string | `"viridis"` | **only `"viridis"` is supported** — any other name raises E1421 |
 | `show_values` | bool | `false` | print the numeric value inside each cell |
-| `cell_size` | int | auto | cell size in px |
+| `cell_size` | int | `24` | cell size in px |
 | `vmin` / `vmax` | float | data min/max | clamp the color-map low/high end |
 | `row_labels` / `col_labels` | list | none | left-axis / top-axis labels |
 | `label` | string | none | caption |
@@ -1111,7 +1111,7 @@ Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
 | `.region[i]` | Shaded region *i* | Not resolvable for annotation anchors |
 | `.all` | All live elements | — |
 
-All six forms work with `\recolor`, `\highlight`, and `\annotate`. Indices are stable across frames: removing an element tombstones its slot so later indices remain valid (e.g. after `remove_point=1`, `point[2]` still refers to the original third point). Out-of-range or tombstoned selectors raise **E1437**.
+All five families (plus `.all`) work with `\recolor`, `\highlight`, and `\annotate`. Indices are stable across frames: removing an element tombstones its slot so later indices remain valid (e.g. after `remove_point=1`, `point[2]` still refers to the original third point). Out-of-range or tombstoned selectors raise **E1437**.
 
 ---
 
@@ -1402,7 +1402,7 @@ The option bracket `[...]` on `\begin{animation}` / `\begin{diagram}` is **optio
 | `width` | dimension | auto | both | ViewBox width hint (e.g. `width=800` for px, `width=8cm`) |
 | `height` | dimension | auto | both | ViewBox height hint |
 | `layout` | filmstrip\|stack | filmstrip | animation | Frame layout |
-| `grid` | bool | _(n/a)_ | diagram | Accepted but currently ignored (forward-compat placeholder) |
+| `grid` | bool | _(n/a)_ | diagram | Accepted but ignored — see [Appendix A](#appendix-a--internal--forward-compat) |
 
 ---
 
@@ -1582,6 +1582,8 @@ authoring — see [Appendix A](#appendix-a--internal--forward-compat).
 | substory nesting | 3 levels max |
 | Graph nodes (force layout) | ≤100 nodes (E1501) |
 | Graph stable layout | ≤20 nodes, ≤50 frames |
+| MetricPlot series | ≤8 series (E1481); ≤1000 points/series (E1483) |
+| Plane2D elements | ≤500 per frame (E1466) |
 
 ---
 
