@@ -640,6 +640,17 @@ For exact CSS fill/stroke/text token values see `scriba/animation/static/scriba-
 ```latex
 \shape{a}{Array}{size=8, data=[1,3,5,7,9,11,13,15], labels="0..7", label="$arr$"}
 ```
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `size` | int | — | one of size/n/values | cell count, 1..10000 |
+| `n` | int | — | alias of `size` | same as `size` |
+| `values` | list | — | alias | supplies both size (=len) and data |
+| `data` | list | `[""]×size` | no | initial cell contents; len must equal size (E1402) |
+| `labels` | string | none | no | **index-label format string** `"0..7"` or `"dp[0]..dp[7]"` — NOT a list |
+| `label` | string | none | no | caption below the array |
+
+**Operations:** none (Array is immutable; set cell text via `\apply{a.cell[i]}{value=...}`).
 **Selectors:** `a`, `a.cell[i]`, `a.cell[${i}]`, `a.range[i:j]`, `a.all`
 
 ### 7.2 Grid
@@ -647,7 +658,15 @@ For exact CSS fill/stroke/text token values see `scriba/animation/static/scriba-
 ```latex
 \shape{g}{Grid}{rows=3, cols=3, data=${matrix_data}, label="Board"}
 ```
-**Selectors:** `g`, `g.cell[r][c]`, `g.all`
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `rows` | int | — | yes | row count, 1..500 |
+| `cols` | int | — | yes | col count, 1..500 |
+| `data` | flat **or** 2D list | `[""]×r×c` | no | flat list of length `rows*cols`, or a nested `rows×cols` list (E1412 on mismatch) |
+| `label` | string | none | no | caption |
+
+**Operations:** none. **Selectors:** `g`, `g.cell[r][c]`, `g.all`
 
 ### 7.3 DPTable
 DP state table (1D or 2D) with transition arrows.
@@ -657,6 +676,16 @@ DP state table (1D or 2D) with transition arrows.
 % 2D
 \shape{dp}{DPTable}{rows=6, cols=6, label="dp[l][r]"}
 ```
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `n` | int | — | `n` OR (`rows`+`cols`) | 1D table size |
+| `rows` | int | — | with `cols` → 2D | 2D row count |
+| `cols` | int | — | with `rows` → 2D | 2D col count |
+| `data` | **flat** list | `[""]` | no | length `n` (1D) or `rows*cols` (2D) — always flat, never nested (E1429) |
+| `labels` | string | none | no | index-label format string, 1D only (same form as Array) |
+| `label` | string | none | no | caption |
+
+**Operations:** none (fill cells via `\apply{dp.cell[i]}{value=...}`).
 **Selectors:** Same as Array (1D) or Grid (2D). Supports `\annotate` with `arrow_from=` for transition arrows.
 
 ### 7.4 Graph
@@ -670,6 +699,17 @@ Nodes + edges with layout engine.
   layout_seed=42
 }
 ```
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `nodes` | list | — | yes (non-empty) | node ids, str or int, kept **type-strict**; ≤100 (E1470/E1501) |
+| `edges` | list | `[]` | no | `(u,v)` or weighted `(u,v,w)` tuples; don't mix the two (E1474) |
+| `directed` | bool | `false` | no | draw arrowheads |
+| `layout` | enum | `"force"` | no | see layout options below |
+| `layout_seed` | int | `42` | no | deterministic seed (alias `seed`; `layout_seed` wins) |
+| `show_weights` | bool | `false` | no | render edge-weight pills |
+| `label` | string | none | no | caption |
+
 **Layout options:** `"force"` (default), `"stable"` (≤20 nodes), `"hierarchical"`, `"auto"` (picks hierarchical for DAGs, else force). Any other value silently falls back to force.
 **Weighted edges:** `edges=[("A","B",4),("B","C",2)]` with `show_weights=true`.
 **Dynamic edge labels:** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other.
@@ -695,7 +735,12 @@ Nodes + edges with layout engine.
 
 % Remove an edge at runtime (E1472 if edge does not exist)
 \apply{G}{remove_edge={from="A", to="B"}}
+
+% Change an existing edge's weight
+\apply{G}{set_weight={from="A", to="C", value=9}}
 ```
+
+Graph has **no** `add_node`/`remove_node` — declare all nodes up front. (Node mutation is a Tree feature, §7.5.)
 
 **Node count limit:** ≤100 nodes for force-directed layout (E1501). Use `layout="stable"` for small graphs (≤20 nodes).
 
@@ -723,6 +768,19 @@ Rooted tree with Reingold-Tilford layout.
 % Sparse segment tree
 \shape{st}{Tree}{kind="sparse_segtree", range_lo=0, range_hi=7}
 ```
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `root` | str/int | — | yes (standard kind) | root id (**str-normalized** — see §8) |
+| `nodes` | list | `[]` | no | node ids (str-normalized) |
+| `edges` | list | `[]` | no | `(parent, child)` tuples (str-normalized) |
+| `kind` | enum | none | no | `segtree`, `sparse_segtree`, or omit for a standard tree |
+| `data` | list | — | yes if `kind=segtree` | leaf values |
+| `range_lo` / `range_hi` | int | — | yes if `kind=sparse_segtree` | range bounds |
+| `show_sum` | bool | `false` | no | append `=sum` to segtree node labels |
+| `label` | string | none | no | caption |
+
+**Operations:** `add_node={id,parent}`, `remove_node=id` or `{id,cascade?}`, `reparent={node,parent}` (E1433–E1436).
 **Selectors:** `T`, `T.node[id]`, `T.node["[0,5]"]` (segtree), `T.edge[(p,c)]`, `T.all`
 
 **Segtree node topology:** Nodes are split by `mid = (lo+hi)//2`. Left child = `[lo, mid]`,
@@ -778,25 +836,33 @@ Horizontal axis with tick marks.
 ```latex
 \shape{nl}{NumberLine}{domain=[0,24], ticks=25, label="Range"}
 ```
-**Selectors:** `nl`, `nl.tick[i]`, `nl.range[lo:hi]`, `nl.axis`, `nl.all`
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `domain` | 2-element list | — | yes | `[min, max]` axis bounds (E1452/E1453) |
+| `ticks` | int | auto | no | **number of tick marks** (a count, not a spacing), 1..1000 |
+| `labels` | list **or** string | auto | no | list of tick labels, or a `"0..10"` format string |
+| `label` | string | none | no | caption |
+
+**Operations:** none. **Selectors:** `nl`, `nl.tick[i]`, `nl.range[lo:hi]`, `nl.axis`, `nl.all`
 
 ### 7.7 Matrix / Heatmap
-2D matrix with heatmap coloring. (`Heatmap` is alias for `Matrix`.)
+2D matrix with heatmap coloring. (`Heatmap` is an alias for `Matrix`.)
 ```latex
-\shape{m}{Matrix}{rows=4, cols=4, data=[0.1,0.3,...], show_values=true}
+\shape{m}{Matrix}{rows=4, cols=4, data=[0.1, 0.3, 0.5, 0.9, ...], show_values=true}
 ```
-**Selectors:** `m`, `m.cell[r][c]`, `m.all`
-
-**Additional params:**
+The `data` is either a **flat** list of length `rows*cols` (row-major) or a nested `rows×cols` list. **Operations:** none. **Selectors:** `m`, `m.cell[r][c]`, `m.all`
 
 | Param | Type | Default | Description |
 |---|---|---|---|
-| `colorscale` | string | `"viridis"` | Named colorscale for heatmap cells |
-| `vmin` | float | _(data min)_ | Clamp the color-map low end |
-| `vmax` | float | _(data max)_ | Clamp the color-map high end |
-| `row_labels` | list | _(none)_ | Labels displayed along the left axis |
-| `col_labels` | list | _(none)_ | Labels displayed along the top axis |
-| `cell_size` | int | _(auto)_ | Cell size in px |
+| `rows` / `cols` | int | — | required; `rows*cols` ≤ 250000 |
+| `data` | flat or 2D list | zeros | flat `rows*cols` (row-major) or nested 2D (E1422) |
+| `colorscale` | string | `"viridis"` | **only `"viridis"` is supported** — any other name raises E1421 |
+| `show_values` | bool | `false` | print the numeric value inside each cell |
+| `cell_size` | int | auto | cell size in px |
+| `vmin` / `vmax` | float | data min/max | clamp the color-map low/high end |
+| `row_labels` / `col_labels` | list | none | left-axis / top-axis labels |
+| `label` | string | none | caption |
 
 ### 7.8 Stack
 LIFO stack.
@@ -831,12 +897,18 @@ LIFO stack.
 **Dynamic operations:**
 
 ```latex
-% Add
-\apply{p}{add_point=(1,2)}
-\apply{p}{add_line=("y=x",1,0)}
-\apply{p}{add_segment=((0,0),(3,4))}
-\apply{p}{add_polygon=[(0,0),(1,2),(2,0)]}
-\apply{p}{add_region=...}
+% Add — point: (x, y) or (x, y, label)
+\apply{p}{add_point=(1, 2)}
+% line: (label, slope, intercept) → element 0 is a label, NOT a coordinate
+\apply{p}{add_line=("y=x", 1, 0)}
+% line via implicit form ax + by = c: (label, {a, b, c})
+\apply{p}{add_line=("L", {a=1, b=-1, c=0})}
+% segment: ((x1,y1), (x2,y2))
+\apply{p}{add_segment=((0,0), (3,4))}
+% polygon: a bare list of points (auto-closes)
+\apply{p}{add_polygon=[(0,0), (1,2), (2,0)]}
+% region: a DICT only — {polygon=[...], fill?="rgba(...)"}
+\apply{p}{add_region={polygon=[(0,0),(1,2),(2,0)], fill="rgba(0,114,178,0.2)"}}
 
 % Remove by zero-based index (tombstone semantics — later indices remain stable)
 \apply{p}{remove_point=1}
@@ -846,7 +918,7 @@ LIFO stack.
 \apply{p}{remove_region=0}
 ```
 
-Out-of-range or tombstoned selectors raise **E1437**.
+A malformed add-spec raises **E1467**; an out-of-range or tombstoned remove index raises **E1437**.
 
 ### 7.10 MetricPlot
 Time-series metric chart.
@@ -888,22 +960,41 @@ Source code with line highlighting.
 ```latex
 \shape{code}{CodePanel}{lines=["for i in range(n):", "  if dp[i] < best:", "    best = dp[i]"], label="Code"}
 ```
-**Selectors:** `code`, `code.line[i]` (1-indexed)
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `lines` | list | — | one of `lines`/`source` | explicit list of code lines |
+| `source` | string | — | one of `lines`/`source` | newline-separated source (one leading/trailing `\n` stripped) |
+| `label` | string | none | no | title — rendered as a **top header bar** (IDE-tab style), not a bottom caption |
+
+**Operations:** none. **Selectors:** `code`, `code.line[i]` (**1-based** — `code.line[0]` is rejected with an E1115 warning), `code.all`
 
 ### 7.12 HashMap
 Hash table with buckets.
 ```latex
 \shape{hm}{HashMap}{capacity=4, label="$map$"}
 ```
-**Operations:** `\apply{hm.bucket[i]}{value="key:val"}`
-**Selectors:** `hm`, `hm.bucket[i]`
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `capacity` | int | — | yes | bucket count, positive (E1450/E1451) |
+| `label` | string | none | no | caption |
+
+**Operations:** `\apply{hm.bucket[i]}{value="key:val"}` sets a bucket's display text (no push/delete op).
+**Selectors:** `hm`, `hm.bucket[i]`, `hm.all`
 
 ### 7.13 LinkedList
 Singly-linked list.
 ```latex
 \shape{ll}{LinkedList}{data=[3,7,1,9], label="$list$"}
 ```
-**Selectors:** `ll`, `ll.node[i]`, `ll.link[i]`
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `data` | list | `[]` | no | node values (also accepts a JSON string like `"[3,7,1]"`) |
+| `label` | string | none | no | caption |
+
+**Selectors:** `ll`, `ll.node[i]`, `ll.link[i]` (`link[i]` is the arrow `node[i]→node[i+1]`, valid `0 ≤ i < len−1`), `ll.all`
 
 **Dynamic operations:**
 
@@ -920,7 +1011,14 @@ FIFO queue.
 ```latex
 \shape{q}{Queue}{capacity=6, data=[1], label="$Q$"}
 ```
-**Operations:** `\apply{q}{enqueue=2}`, `\apply{q}{dequeue=true}`
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `capacity` | int | `8` | no | fixed capacity, positive (E1440) |
+| `data` | list | `[]` | no | initial contents (truncated to `capacity`) |
+| `label` | string | none | no | caption |
+
+**Operations:** `\apply{q}{enqueue=2}`, `\apply{q}{dequeue=true}` (`dequeue` fires only on truthy `true`; `dequeue=false` is a no-op).
 **Selectors:** `q`, `q.cell[i]`, `q.front`, `q.rear`, `q.all`
 
 `q.front` addresses the front-of-queue pointer cell; `q.rear` addresses the rear pointer cell. Both can be used with `\recolor` and `\highlight`.
@@ -930,7 +1028,14 @@ Variable panel showing named values.
 ```latex
 \shape{vars}{VariableWatch}{names=["i","j","min_val","result"], label="Variables"}
 ```
-**Selectors:** `vars`, `vars.var[name]` (e.g., `vars.var[i]`, `vars.var[min_val]`)
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `names` | list | `[]` | effectively yes (empty → warning) | tracked variable names (also accepts a comma string `"i,j,k"`); each name must match `[A-Za-z_]\w*` |
+| `label` | string | none | no | caption |
+
+**Operations:** targeted `\apply{vars.var[name]}{value=X}`, or bulk `\apply{vars}{i=3, j=5}` (each param key matching a tracked name sets it).
+**Selectors:** `vars`, `vars.var[name]` (e.g., `vars.var[i]`, `vars.var[min_val]`), `vars.all`
 
 ---
 
