@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-06-02 — render-content fixes (narration interpolation, captions, recolor, defs)
+
+### Changed
+- **Rendered output bytes differ from 0.17.x** (cache-busting; `SCRIBA_VERSION` bumped 5→6). Consumer caches keyed on rendered HTML/SVG MUST invalidate. Drivers of the change are the fixes below: state classes now appear on the NumberLine axis and MetricPlot root, directed graphs emit one arrow-marker `<defs>` instead of two, narration text resolves `${...}`, and `\apply`/`\reannotate`/`position=inside` now produce their intended markup.
+- **Trust-renderer reconciliation of two documented "gotchas"** (the renderer behaviour was the desirable one; docs/`.expect` were corrected): a Graph `int` node can be addressed as a string (`G.node["1"]` matches `G.node[1]`), and a Stack/Queue item recoloured in the **same** `\step` as its `push`/`enqueue` now applies to the committed frame. Updated §13.1 and the Graph node-id note in `docs/SCRIBA-TEX-REFERENCE.md`.
+
+### Fixed
+- **`\narrate` resolves `${name}` interpolation.** A `\compute` binding referenced in narration (e.g. `\narrate{fib(6)=${result}.}`) now renders its value instead of leaking the literal `${result}`. An unknown name is left verbatim (narration never errors); scope follows the compute rules (prelude bindings reach every step, step-local bindings do not leak forward).
+- **`${...}` no longer collides with `$...$` math.** An unresolved `${name}` adjacent to a stray `$` is shielded before math parsing, so it stays literal instead of being mis-parsed into `$...$` (e.g. `${y}$` no longer renders as KaTeX). A properly-closed `$...$` is always its own math. See §13.4.
+- **`\apply{p}{label="..."}` renders the caption.** A bare-shape label was previously dropped; it now updates the primitive's caption.
+- **`\reannotate` re-points the arc and replaces the text per §5.9.** `arrow_from` now replaces the arc source (it was mistakenly treated as a match filter) and `label` replaces the annotation text (it was unparsed). `color` still replaces as before.
+- **`\annotate{...}{position=inside}` is now distinct.** The pill is centred on the cell instead of falling through to the `above` placement.
+- **`\recolor` is no longer inert on the NumberLine axis or MetricPlot.** `\recolor{nl.axis}{state=...}` and `\recolor{plot.all}{state=...}` now emit the `scriba-state-*` class (the axis was hardcoded idle; MetricPlot had no state emission).
+- **`{\large text}` group-scoped size switch no longer leaks braces.** The brace-before-command form (`{\tiny a}{\small b}…`) now scopes correctly instead of leaking literal `{`/`}` and mis-sizing trailing text.
+- **Directed graphs emit the arrow-marker `<defs>` once.** The Graph primitive no longer emits its own copy on top of the shared root `<defs>`, removing a duplicate `id="scriba-arrow-fwd"` (invalid SVG).
+
 ## [0.17.1] - 2026-06-01 — fix indented `\compute` blocks
 
 ### Fixed

@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.17.1"
+__version__: str = "0.18.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 5
+SCRIBA_VERSION: int = 6
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -26,4 +26,12 @@ the default scale. Consumer caches keyed on rendered output MUST invalidate.
 across all frames (size-changing primitives like Stack/Queue no longer clip),
 and ``CodePanel`` renders its label as a top header bar instead of a bottom
 caption. Both change rendered SVG/HTML bytes from 0.16.x; consumer caches
-keyed on rendered output MUST invalidate."""
+keyed on rendered output MUST invalidate.
+
+0.18.0 bumps 5→6: Phase-2 render-content fixes alter SVG/HTML bytes — the
+NumberLine axis and MetricPlot root now carry a ``scriba-state-*`` class
+(``\\recolor`` honoured), directed graphs emit the arrow-marker ``<defs>``
+once instead of twice, ``\\narrate`` resolves ``${compute}`` bindings,
+``\\apply`` captions and ``\\reannotate`` updates now render, and
+``position=inside`` annotations are centred. Consumer caches keyed on
+rendered output MUST invalidate."""
