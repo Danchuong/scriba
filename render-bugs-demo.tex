@@ -1,0 +1,175 @@
+Scriba render-bug demo — Phase 2 findings (2026-06-01). Each block below renders "ok" but the output does NOT match the .tex intent. Compare what the caption says SHOULD happen vs what you see.
+
+==================================================
+BUG 1 — \compute result not interpolated into \narrate
+Expect narration to read "fib(6)=8". BUG: shows the literal placeholder text instead of 8.
+
+\begin{animation}[id="b1a", label="compute recursion"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\compute{
+  def fib(k):
+      if k < 2:
+          return k
+      return fib(k-1) + fib(k-2)
+  result = fib(6)
+}
+\step
+\narrate{fib(6)=${result}.}
+\end{animation}
+
+Expect "Got [0, 2, 4, 6]". BUG: shows the literal placeholder instead of the list.
+
+\begin{animation}[id="b1b", label="compute comprehension"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\compute{
+  n = 8
+  even_indices = [i for i in range(n) if i % 2 == 0]
+}
+\step
+\narrate{Got ${even_indices}.}
+\end{animation}
+
+Expect "Computed 3". BUG: shows the literal placeholder instead of 3.
+
+\begin{animation}[id="b1c", label="compute def/for/if"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\compute{
+  def f(x):
+      if x > 0:
+          return x
+      return 0
+  acc = 0
+  for k in range(3):
+      acc = acc + f(k)
+}
+\step
+\narrate{Computed ${acc}.}
+\end{animation}
+
+Expect "total=6". BUG: shows the literal placeholder instead of 6.
+
+\begin{animation}[id="b1d", label="compute indented body"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\compute{
+  n = 3
+  vals = [i * 2 for i in range(n)]
+  total = sum(vals)
+}
+\step
+\narrate{total=${total}.}
+\end{animation}
+
+Expect "INF=1000000000". BUG: shows the literal placeholder instead of the number.
+
+\begin{animation}[id="b1e", label="compute int pow"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\compute{
+  INF = 10**9
+}
+\step
+\narrate{INF=${INF}.}
+\end{animation}
+
+==================================================
+BUG 2 — custom label/caption text dropped
+
+\apply label="my array" — expect a caption "my array". BUG: caption absent.
+
+\begin{animation}[id="b2a", label="apply label"]
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\step
+\apply{a}{label="my array"}
+\narrate{Set caption.}
+\end{animation}
+
+==================================================
+BUG 3 — \reannotate is a no-op (step 2 update ignored)
+
+Step 2 should change label "orig" -> "updated" and color info -> good. BUG: stays "orig" + info.
+
+\begin{animation}[id="b3a", label="reannotate label"]
+\shape{dp}{DPTable}{rows=3, cols=3}
+\step[label=s1]
+\annotate{dp.cell[1][1]}{label="orig", color=info}
+\narrate{Original label.}
+\step[label=s2]
+\reannotate{dp.cell[1][1]}{color=good, label="updated"}
+\narrate{Replace annotation text.}
+\end{animation}
+
+Step 2 should re-point the arc source cell[1][1] -> cell[0][0] and recolor. BUG: arc + color unchanged.
+
+\begin{animation}[id="b3b", label="reannotate arrow_from"]
+\shape{dp}{DPTable}{rows=3, cols=3}
+\step[label=s1]
+\annotate{dp.cell[2][2]}{label="orig", arrow_from="dp.cell[1][1]", color=info}
+\narrate{Original arc.}
+\step[label=s2]
+\reannotate{dp.cell[2][2]}{color=path, arrow_from="dp.cell[0][0]"}
+\narrate{Re-point arc to a new source.}
+\end{animation}
+
+==================================================
+BUG 4 — annotate position=inside not distinct
+
+Expect label INSIDE the cell. BUG: rendered identical to position=above, sits outside the cell.
+
+\begin{animation}[id="b4a", label="annotate position inside"]
+\shape{dp}{DPTable}{rows=3, cols=3}
+\step[label=s1]
+\annotate{dp.cell[1][1]}{label="in", position=inside}
+\narrate{Position inside.}
+\end{animation}
+
+==================================================
+BUG 5 — \recolor inert on some selectors
+
+NumberLine nl.axis state=dim — expect dimmed axis. BUG: axis hardcoded idle, no state class.
+
+\begin{diagram}[id="b5a"]
+\shape{nl}{NumberLine}{domain=[0,10], ticks=11}
+\recolor{nl.axis}{state=dim}
+\end{diagram}
+
+MetricPlot plot.all state=done — expect all elements recolored. BUG: MetricPlot emits zero state classes.
+
+\begin{diagram}[id="b5b"]
+\shape{plot}{MetricPlot}{series=["cost"]}
+\recolor{plot.all}{state=done}
+\end{diagram}
+
+==================================================
+BUG 6 — size brace leaks literal braces in TeX text
+Expect sized text with no visible braces. BUG: literal { } leak / misplaced span boundaries:
+
+Text {\large bigger} normal.
+
+{\tiny a}{\scriptsize b}{\small c}{\normalsize d}{\large e}{\Large f}{\LARGE g}{\huge h}{\Huge i}
+
+==================================================
+BUG 7 (CONTESTED — renderer vs doc) — recolor applied where docs say "dropped"
+
+Graph node selector G.node["1"] (string) vs int nodes [1,2,3] — docs/E1115 say no match, drop. BUG?: node 1 IS recolored current.
+
+\begin{diagram}[id="b7a"]
+\shape{G}{Graph}{nodes=[1,2,3], edges=[(1,2)]}
+\recolor{G.node["1"]}{state=current}
+\end{diagram}
+
+Stack: push C then recolor s.item[2] in SAME step — §13.1 says recolor dropped. BUG?: item[2] shows current.
+
+\begin{animation}[id="b7b", label="stack gotcha same step"]
+\shape{s}{Stack}{items=["A","B"]}
+\step
+\apply{s}{push="C"}
+\recolor{s.item[2]}{state=current}
+\narrate{Recolor of the just-pushed item should be dropped (13.1).}
+\end{animation}
+
+==================================================
+BUG 8 — directed graph emits duplicate arrow-marker <defs> (SVG-internal; view source)
+Renders fine visually, but the SVG carries two <defs> with the same id="scriba-arrow-fwd" (invalid SVG).
+
+\begin{diagram}[id="b8a"]
+\shape{G}{Graph}{nodes=["A","B"], edges=[("A","B")], directed=true}
+\end{diagram}
