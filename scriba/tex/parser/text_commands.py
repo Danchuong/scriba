@@ -48,20 +48,38 @@ def apply_size_commands(text: str) -> str:
         cls = f"scriba-tex-size-{cmd}"
         text = _replace_balanced(text, cmd, f'<span class="{cls}">', "</span>")
 
+    cmd_alt = "|".join(re.escape(c) for c in SIZE_COMMANDS)
+
+    # Group-scoped switch form: ``{\large text}`` — a brace group beginning
+    # with a size command scopes the switch to the group. The surrounding
+    # braces are consumed (TeX grouping), so they do not leak into output.
+    # Body stops at the group's closing brace; nested braces are not handled
+    # (size commands run after text commands, so the body is plain text/HTML).
+    braced_switch_re = re.compile(
+        r"\{\s*\\(" + cmd_alt + r")\b\s*([^{}]*?)\s*\}"
+    )
+
+    def _braced_sub(m: re.Match[str]) -> str:
+        cmd = m.group(1)
+        cls = f"scriba-tex-size-{cmd}"
+        return f'<span class="{cls}">{m.group(2)}</span>'
+
+    text = braced_switch_re.sub(_braced_sub, text)
+
     # Switch form: ``\large foo`` consumes ``foo`` until the next size cmd
     # or another backslash command. Implemented as one combined regex over
     # all nine commands so order isn't fragile.
     #
-    # NOTE: The [^\\] in the body group stops at ANY backslash, not just
-    # known TeX commands. This is intentional — by the time size commands
-    # run, text commands (\\textbf, \\emph, etc.) have already been expanded
-    # to HTML tags (which use ``<``/``>`` not ``\``). So any remaining ``\``
-    # genuinely marks the start of another TeX command and is a correct
-    # termination point.
-    cmd_alt = "|".join(re.escape(c) for c in SIZE_COMMANDS)
+    # NOTE: The body group stops at ANY backslash (not just known TeX
+    # commands) and at brace boundaries. The backslash stop is intentional —
+    # by the time size commands run, text commands (\\textbf, \\emph, etc.)
+    # have already been expanded to HTML tags (which use ``<``/``>`` not
+    # ``\``), so any remaining ``\`` genuinely marks the next TeX command.
+    # Stopping at ``{``/``}`` keeps a bare switch from swallowing the braces
+    # of an adjacent group.
     switch_re = re.compile(
         r"\\(" + cmd_alt + r")\b\s*"
-        r"((?:(?!\\(?:" + cmd_alt + r")\b)[^\\])*)"
+        r"((?:(?!\\(?:" + cmd_alt + r")\b)[^\\{}])*)"
     )
 
     def _switch_sub(m: re.Match[str]) -> str:

@@ -74,12 +74,16 @@ def _apply(
 
 
 def _reannotate(
-    target: str, color: str = "good", arrow_from: str | None = None,
+    target: str,
+    color: str = "good",
+    arrow_from: str | None = None,
+    label: str | None = None,
 ) -> ReannotateCommand:
     return ReannotateCommand(
         target=_sel(target),
         color=color,
         arrow_from=arrow_from,
+        label=label,
     )
 
 
@@ -145,36 +149,40 @@ class TestReannotateScene:
         assert colors_by_target["a.cell[0]"] == "warn"
         assert colors_by_target["a.cell[1]"] == "info"
 
-    def test_reannotate_with_arrow_from_filter(self) -> None:
-        """``arrow_from`` narrows matching annotations to those with a source."""
+    def test_reannotate_arrow_from_replaces_arc_source(self) -> None:
+        """``arrow_from`` re-points the arc source (§5.9), not a filter."""
         state = SceneState()
         state.apply_prelude(shapes=(_shape("a"),))
 
-        # Create two annotations on the same target, only one with arrow_from.
-        state.annotations = [
-            # Use the internal structure directly to seed both variants.
-        ]
-        # Use the parser-produced command flow to get one annotation with arrow_from.
         with_arrow = AnnotateCommand(
             line=0,
             col=0,
             target=_sel("a.cell[0]"),
-            label="with",
+            label="note",
             color="info",
             arrow_from=_sel("a.cell[5]"),
         )
-        without_arrow = _annotate("a.cell[0]", "without", color="info")
-        state.apply_frame(_frame(with_arrow, without_arrow))
+        state.apply_frame(_frame(with_arrow))
 
-        # Reannotate only those with arrow_from=a.cell[5].
         snap = state.apply_frame(
-            _frame(_reannotate("a.cell[0]", color="good", arrow_from="a.cell[5]")),
+            _frame(_reannotate("a.cell[0]", color="good", arrow_from="a.cell[3]")),
         )
-        targets = [(a.text, a.color) for a in snap.annotations if a.target == "a.cell[0]"]
-        # The one with arrow_from got recolored, the other kept "info".
-        colors = {t: c for t, c in targets}
-        assert colors["with"] == "good"
-        assert colors["without"] == "info"
+        ann = next(a for a in snap.annotations if a.target == "a.cell[0]")
+        assert ann.color == "good"
+        assert ann.arrow_from == "a.cell[3]"  # re-pointed, not the original a.cell[5]
+
+    def test_reannotate_label_replaces_text(self) -> None:
+        """``label`` replaces the annotation text (§5.9)."""
+        state = SceneState()
+        state.apply_prelude(shapes=(_shape("a"),))
+
+        state.apply_frame(_frame(_annotate("a.cell[0]", "orig", color="info")))
+        snap = state.apply_frame(
+            _frame(_reannotate("a.cell[0]", color="good", label="updated")),
+        )
+        ann = next(a for a in snap.annotations if a.target == "a.cell[0]")
+        assert ann.text == "updated"
+        assert ann.color == "good"
 
     def test_reannotate_no_matching_annotation_is_noop(self) -> None:
         """Reannotating a target with no existing annotation does not crash."""
@@ -331,3 +339,71 @@ class TestComputeInterpolationBridge:
         )
         snap = state.apply_frame(frame, starlark_host=host)
         assert snap.bindings.get("n") == 5
+
+
+# ===========================================================================
+# \narrate ${...} interpolation
+# ===========================================================================
+
+
+class TestNarrationInterpolation:
+    """``${name}`` in ``\\narrate`` resolves against ``\\compute`` bindings."""
+
+    def test_narration_resolves_compute_binding(self) -> None:
+        """A computed value is interpolated into the narration text."""
+        host = _MockStarlarkHost()
+        state = SceneState()
+        state.apply_prelude(shapes=(_shape("a"),), starlark_host=host)
+
+        frame = FrameIR(
+            line=0,
+            commands=(),
+            compute=(ComputeCommand(line=0, col=0, source="even = [i for i in range(8) if i % 2 == 0]"),),
+            narrate_body="Got ${even}.",
+        )
+        snap = state.apply_frame(frame, starlark_host=host)
+        assert snap.narration == "Got [0, 2, 4, 6]."
+
+    def test_narration_unknown_name_stays_literal(self) -> None:
+        """An unbound ``${name}`` is left verbatim — narration never errors."""
+        state = SceneState()
+        state.apply_prelude(shapes=(_shape("a"),))
+
+        frame = FrameIR(line=0, commands=(), narrate_body="Price is ${total} dollars.")
+        snap = state.apply_frame(frame)
+        assert snap.narration == "Price is ${total} dollars."
+
+    def test_narration_mixes_bound_and_unbound(self) -> None:
+        """Only known bindings substitute; unknown names pass through."""
+        host = _MockStarlarkHost()
+        state = SceneState()
+        state.apply_prelude(shapes=(_shape("a"),), starlark_host=host)
+
+        frame = FrameIR(
+            line=0,
+            commands=(),
+            compute=(ComputeCommand(line=0, col=0, source="x = 42"),),
+            narrate_body="Answer ${x}, but ${missing} stays.",
+        )
+        snap = state.apply_frame(frame, starlark_host=host)
+        assert snap.narration == "Answer 42, but ${missing} stays."
+
+    def test_frame_local_binding_not_visible_to_later_narration(self) -> None:
+        """A binding made inside a step is frame-local; a later narration keeps the literal."""
+        host = _MockStarlarkHost()
+        state = SceneState()
+        state.apply_prelude(shapes=(_shape("a"),), starlark_host=host)
+
+        state.apply_frame(
+            FrameIR(
+                line=0,
+                commands=(),
+                compute=(ComputeCommand(line=0, col=0, source="k = 5"),),
+            ),
+            starlark_host=host,
+        )
+        snap2 = state.apply_frame(
+            FrameIR(line=0, commands=(), narrate_body="k is ${k}."),
+            starlark_host=host,
+        )
+        assert snap2.narration == "k is ${k}."

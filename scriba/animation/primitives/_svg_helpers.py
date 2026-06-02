@@ -2976,6 +2976,10 @@ def emit_position_label_svg(
     elif position == "right":
         final_x = ax + pill_w / 2 + gap
         final_y = ay
+    elif position == "inside":
+        # Centred directly on the cell — no offset from the anchor.
+        final_x = ax
+        final_y = ay
     else:
         # Default: above
         final_x = ax

@@ -219,7 +219,7 @@ class SceneState:
 
         snapshot = self.snapshot(
             self._frame_counter,
-            frame_ir.narrate_body,
+            self._interpolate_narration(frame_ir.narrate_body),
         )
 
         # Clear apply_params after snapshot (they are ephemeral per-frame)
@@ -575,6 +575,40 @@ class SceneState:
         elif isinstance(cmd, CursorCommand):
             self._apply_cursor(cmd)
 
+    def _interpolate_narration(self, body: str | None) -> str | None:
+        """Substitute ``${name}`` / ``${name[idx]}`` in narration text with
+        ``\\compute`` binding values.
+
+        Mirrors the shape-param and selector resolvers so a narration like
+        ``fib(6)=${result}`` renders the computed value instead of leaking
+        the literal placeholder.  An unknown name is left untouched (matching
+        the renderer's bare-name fallback elsewhere), which also leaves any
+        non-binding ``${...}`` text intact.
+        """
+        if not body or "${" not in body:
+            return body
+
+        def _replace(m: re.Match[str]) -> str:
+            name, _, rest = m.group(1).strip().partition("[")
+            name = name.strip()
+            if name not in self.bindings:
+                return m.group(0)
+            value: Any = self.bindings[name]
+            for sub in re.findall(r"\[\s*([^\]]+?)\s*\]", "[" + rest):
+                key = sub.strip().strip("'\"")
+                try:
+                    if isinstance(value, (list, tuple)):
+                        value = value[int(key)]
+                    elif isinstance(value, dict):
+                        value = value[key]
+                    else:
+                        return m.group(0)
+                except (ValueError, IndexError, KeyError):
+                    return m.group(0)
+            return str(value)
+
+        return re.sub(r"\$\{([^}]+)\}", _replace, body)
+
     def _resolve_interp(self, value: Any) -> Any:
         """Resolve ``InterpolationRef`` values against compute bindings.
 
@@ -715,22 +749,27 @@ class SceneState:
                         )
 
     def _apply_reannotate(self, cmd: ReannotateCommand) -> None:
-        """\\reannotate — recolor matching annotations on a target."""
+        """\\reannotate — update existing annotations on a target (§5.9).
+
+        Replaces ``color`` (required) and, when supplied, re-points the arc
+        source (``arrow_from``) and replaces the annotation text (``label``).
+        All annotations matching the target are updated.
+        """
         target_str = _selector_to_str(self._resolve_selector(cmd.target))
         new_color = cmd.color
         arrow_from_str = cmd.arrow_from
+        new_label = cmd.label
         for i, ann in enumerate(self.annotations):
             if ann.target == target_str:
-                if arrow_from_str is None or ann.arrow_from == arrow_from_str:
-                    self.annotations[i] = AnnotationEntry(
-                        target=ann.target,
-                        text=ann.text,
-                        ephemeral=ann.ephemeral,
-                        arrow_from=ann.arrow_from,
-                        color=new_color,
-                        position=ann.position,
-                        arrow=ann.arrow,
-                    )
+                self.annotations[i] = AnnotationEntry(
+                    target=ann.target,
+                    text=new_label if new_label is not None else ann.text,
+                    ephemeral=ann.ephemeral,
+                    arrow_from=arrow_from_str if arrow_from_str is not None else ann.arrow_from,
+                    color=new_color,
+                    position=ann.position,
+                    arrow=ann.arrow,
+                )
 
     def _apply_highlight(self, cmd: HighlightCommand) -> None:
         """\\highlight — ephemeral, cleared at next step."""

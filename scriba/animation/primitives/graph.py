@@ -487,32 +487,6 @@ def fruchterman_reingold(
 # ---------------------------------------------------------------------------
 
 
-def _arrow_marker_defs() -> str:
-    """Return an SVG ``<defs>`` block with the shared arrowhead markers.
-
-    Two markers are emitted for SVG 1.1 compatibility (Firefox ESR ≤ 88
-    does not support ``orient="auto-start-reverse"``):
-
-    * ``scriba-arrow-fwd`` — forward arrowhead, ``orient="auto"``.
-    * ``scriba-arrow-rev`` — reverse arrowhead, path rotated 180°,
-      ``orient="auto"``.
-    """
-    return (
-        '<defs>'
-        '<marker id="scriba-arrow-fwd" viewBox="0 0 10 10" refX="10" refY="5" '
-        'markerWidth="6" markerHeight="6" orient="auto">'
-        '<title>Arrowhead (forward)</title>'
-        '<path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor"/>'
-        '</marker>'
-        '<marker id="scriba-arrow-rev" viewBox="0 0 10 10" refX="0" refY="5" '
-        'markerWidth="6" markerHeight="6" orient="auto">'
-        '<title>Arrowhead (reverse)</title>'
-        '<path d="M 10 0 L 0 5 L 10 10 z" fill="currentColor"/>'
-        '</marker>'
-        '</defs>'
-    )
-
-
 def _format_weight(weight: float) -> str:
     """Format an edge weight for SVG display.
 
@@ -1116,9 +1090,11 @@ class Graph(PrimitiveBase):
                 )
             )
 
-        # Arrowhead defs for directed graphs
-        if self.directed:
-            parts.append(_arrow_marker_defs())
+        # NOTE: arrowhead marker <defs> are emitted once per SVG at the stage
+        # root by `emit_shared_defs` (driven by `_has_directed_graph`).  The
+        # primitive must NOT emit its own copy — doing so produced a duplicate
+        # `id="scriba-arrow-fwd"` (invalid SVG).  Edges reference the shared
+        # marker via `marker-end="url(#scriba-arrow-fwd)"`.
 
         # --- Edge layer (rendered first, below nodes) ---
         # Pre-compute the set of hidden node keys so edges incident on a

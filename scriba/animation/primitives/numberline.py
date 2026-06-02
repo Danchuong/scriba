@@ -11,7 +11,6 @@ from typing import Any, Callable, ClassVar
 from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     _LabelPlacement,
-    STATE_COLORS,
     THEME,
     BoundingBox,
     PrimitiveBase,
@@ -235,15 +234,17 @@ class NumberLinePrimitive(PrimitiveBase):
         # Emit arrowhead marker defs
         emit_arrow_marker_defs(lines, effective_anns)
 
-        # Axis line — always idle color
-        idle_colors = STATE_COLORS["idle"]
+        # Axis line — honours \recolor{nl.axis}{state=...}
+        axis_state = self.resolve_effective_state("axis")
+        axis_css = state_class(axis_state)
+        axis_colors = svg_style_attrs(axis_state)
         lines.append(
-            f'  <g data-target="{self.name}.axis">'
+            f'  <g data-target="{self.name}.axis" class="{axis_css}">'
         )
         lines.append(
             f'    <line x1="{NL_PADDING}" y1="{NL_AXIS_Y}" '
             f'x2="{self.width - NL_PADDING}" y2="{NL_AXIS_Y}" '
-            f'stroke="{idle_colors["stroke"]}" stroke-width="2"/>'
+            f'stroke="{axis_colors["stroke"]}" stroke-width="2"/>'
         )
         lines.append("  </g>")
 

@@ -595,6 +595,13 @@ def _emit_frame_svg(
                 if target_key == shape_name:
                     if target_data.get("highlighted"):
                         highlighted_suffixes.add("")
+                    # A bare-shape ``\apply{p}{label=...}`` updates the
+                    # primitive's caption.  It has no addressable-part suffix,
+                    # so set the caption attribute directly rather than going
+                    # through set_label (which would warn on the empty suffix).
+                    label_val = target_data.get("label")
+                    if label_val is not None and hasattr(prim, "label"):
+                        prim.label = str(label_val)
                     continue
 
                 state_val = target_data.get("state", "idle")

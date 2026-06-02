@@ -910,7 +910,7 @@ LIFO stack.
 **Params:** `items` (initial list — each entry is a string **or** a `{label, value?}` dict), `orientation` (`"vertical"` default / `"horizontal"`), `max_visible` (int ≥1, truncates with `+N more` overflow indicator), `label` (optional caption).
 **Operations:** `\apply{s}{push="C"}` or `\apply{s}{push={label="C", value=3}}`, `\apply{s}{pop=1}`
 **Selectors:** `s`, `s.item[i]` (0=bottom), `s.top`, `s.all`
-> Gotcha: a freshly `push`ed item is not addressable in the same `\step` — see §13.1.
+> Note: a freshly `push`ed item is addressable for `\recolor` in the same `\step` — see §13.1.
 
 ### 7.9 Plane2D
 2D coordinate plane with points and lines.
@@ -1066,7 +1066,7 @@ FIFO queue.
 **Selectors:** `q`, `q.cell[i]`, `q.front`, `q.rear`, `q.all`
 
 `q.front` addresses the front-of-queue pointer cell; `q.rear` addresses the rear pointer cell. Both can be used with `\recolor` and `\highlight`.
-> Gotcha: a freshly `enqueue`d cell is not addressable in the same `\step` — see §13.1.
+> Note: a freshly `enqueue`d cell is addressable for `\recolor` in the same `\step` — see §13.1.
 
 ### 7.15 VariableWatch
 Variable panel showing named values.
@@ -1094,7 +1094,7 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 - **Quoted** (`G.node["[0,5]"]`): required when the ID contains brackets, spaces, commas, or other special characters, e.g., segtree nodes `T.node["[0,5]"]`, `T.node["[mid+1,hi]"]`.
 
 > **Graph vs Tree — node-id type matters differently:**
-> - **Graph** keeps node-id types **strict**: an id declared as `int` (`nodes=[1,2,3]`) must be addressed as `G.node[1]`, not `G.node["1"]`, and an edge mutation `add_edge={from=1,...}` must use the same type as declared.
+> - **Graph** normalizes node-id type when **addressing**: an id declared as `int` (`nodes=[1,2,3]`) can be selected as either `G.node[1]` or `G.node["1"]` — both resolve to the same node. For **edge mutations** (`add_edge={from=1,...}`), use the same type as declared.
 > - **Tree** normalizes every node id to **string** at construction and on all mutations, so `T.node[8]` and `T.node["8"]` are the same node, and `add_node={parent=3}` and `add_node={parent="3"}` are interchangeable. Mixing `int` declarations with string refs is safe for Tree only.
 
 | Primitive | Cell/Item | Node | Edge | Tick | Range | All |
@@ -1510,27 +1510,31 @@ The option bracket `[...]` on `\begin{animation}` / `\begin{diagram}` is **optio
 
 ## 13. Gotchas & Known Limitations
 
-### 13.1 Stack/Queue: recolor newly pushed items in the NEXT step
-When you `\apply{s}{push="X"}`, the new item is not addressable for `\recolor`
-in the **same** `\step`. Split across two steps:
+### 13.1 Stack/Queue: recolor a freshly pushed item in the same step
+When you `\apply{s}{push="X"}`, the new item **is** addressable for `\recolor`
+in the same `\step` — the frame snapshot is taken after the push, so the
+recolor lands on the committed frame:
 ```latex
-% WRONG — s.item[2] not yet addressable
+% OK — push then recolor the new top in one step
 \step
 \apply{s}{push="C"}
-\recolor{s.item[2]}{state=current}    % WARNING: selector not found
-
-% CORRECT — push first, recolor next step
+\recolor{s.item[2]}{state=current}
+\narrate{Push C and highlight the new top.}
+```
+If you instead want the push and the highlight to read as two distinct
+beats, split them across two steps:
+```latex
 \step
 \apply{s}{push="C"}
 \narrate{Push C onto the stack.}
 
 \step
 \recolor{s.item[2]}{state=current}
-\narrate{Now we can highlight the new top.}
+\narrate{Now we highlight the new top.}
 ```
 Same applies to Queue `enqueue`.
 
-### 13.2 `${interpolation}` resolves in `\foreach` bodies, in `\apply` values, and in selector indices
+### 13.2 `${interpolation}` resolves in `\foreach` bodies, `\apply` values, selector indices, and `\narrate` text
 `${var}` interpolation from `\compute` bindings resolves in all of these positions:
 ```latex
 % Inside foreach — loop variable substituted textually
@@ -1548,10 +1552,19 @@ Same applies to Queue `enqueue`.
 
 % Compute var in an \apply value position — resolves
 \apply{a.cell[0]}{value=${target}}        % works → value 4
+
+% Compute var in narration text — resolves to the value's string form
+\compute{ result = fib(6) }
+\narrate{fib(6)=${result}.}               % works → "fib(6)=8."
 ```
 
-**Fail-loud on unbound names.** If a `${name}` in a selector index has no matching
-`\compute` binding, the command now raises **E1159** (it no longer silently no-ops).
+**Resolution is unambiguous — only known bindings substitute.** A `${name}` is
+replaced only when `name` is a `\compute` binding **in scope**. Scope follows the
+compute rules (§13 above): prelude `\compute` bindings reach every step; a binding
+made *inside* a `\step` is frame-local. In `\narrate`, a `${name}` with no matching
+binding is left **verbatim** (e.g. `${not_a_binding}` renders literally) — narration
+never errors on an unknown name. In a *selector index*, by contrast, an unbound
+`${name}` is fail-loud and raises **E1159** (it no longer silently no-ops).
 Bare identifiers without `${...}` are still treated as literal string keys — always
 use the `${...}` form for interpolation (see §5.11).
 

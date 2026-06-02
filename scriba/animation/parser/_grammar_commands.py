@@ -191,6 +191,12 @@ class _CommandsMixin:
         if isinstance(af_raw, str):
             arrow_from = af_raw
 
+        # label is optional — replaces the annotation text (§5.9)
+        label: str | None = None
+        label_raw = params.get("label")
+        if label_raw is not None:
+            label = str(label_raw)
+
         sel = parse_selector(
             target_str,
             line=tok.line,
@@ -201,6 +207,7 @@ class _CommandsMixin:
             target=sel,
             color=color,
             arrow_from=arrow_from,
+            label=label,
             line=tok.line,
             col=tok.col,
         )

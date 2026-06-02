@@ -200,11 +200,12 @@ class RecolorCommand:
 
 @dataclass(frozen=True, slots=True)
 class ReannotateCommand:
-    """``\\reannotate{target}{color=..., arrow_from=...}``."""
+    """``\\reannotate{target}{color=..., arrow_from=..., label=...}``."""
 
     target: Selector | str
     color: str  # info/warn/good/error/muted/path
     arrow_from: str | None = None
+    label: str | None = None  # replace annotation text (§5.9)
     line: int = 0
     col: int = 0
 

@@ -22,6 +22,7 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_svg_text,
     register_primitive,
+    state_class,
 )
 
 __all__ = ["MetricPlot"]
@@ -383,10 +384,18 @@ class MetricPlot(PrimitiveBase):
 
         series_names_str = ",".join(s.name for s in self._series)
 
+        # Whole-plot state from \recolor{plot.all}{state=...}.  The lone
+        # addressable part is the shape name, so ``.all`` lands at that suffix.
+        plot_state = self.resolve_effective_state(self.name)
+        state_attr = (
+            f' class="{state_class(plot_state)}"' if plot_state != "idle" else ""
+        )
+
         parts: list[str] = []
         parts.append(
             f'<g data-primitive="metricplot" data-shape="{_escape_xml(self.name)}"'
             f' data-target="{_escape_xml(self.name)}"'
+            f'{state_attr}'
             f' data-scriba-series="{_escape_xml(series_names_str)}">'
         )
 
