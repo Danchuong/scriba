@@ -89,6 +89,10 @@ exclude = [
   # not needed to install or import the package.
   "tests/golden/examples/corpus/**",
   "tests/golden/smart_label/**",
+  # Doc-coverage corpus: the rendered .html are gitignored, regenerable
+  # fixtures (60+ MB). Keep the small .tex/.expect inputs so the shipped
+  # doc-coverage test can re-render; drop only the rendered output.
+  "tests/doc_coverage/corpus/*.html",
   # Internal docs / design logs / agent state never shipped to PyPI.
   "docs/**",
   ".claude/**",
