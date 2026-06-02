@@ -423,7 +423,16 @@ class TexRenderer:
                 return m.group(0)
             return _stash(self._render_inline(inner))
 
-        text = re.sub(r"\$\$([\s\S]*?)\$\$", _display_math_sub, raw)
+        # Shield ``${...}`` interpolation literals from the math parser.
+        # ``${name}`` is interpolation syntax (resolved earlier against
+        # \compute bindings); an *unresolved* one left in the text must not be
+        # mis-read as ``$...$`` math when a stray ``$`` follows it.
+        text = re.sub(
+            r"\$\{[^}]*\}",
+            lambda m: _stash(_html.escape(m.group(0), quote=False)),
+            raw,
+        )
+        text = re.sub(r"\$\$([\s\S]*?)\$\$", _display_math_sub, text)
         text = re.sub(r"\$([^\$]+?)\$", _math_sub, text)
 
         # 2. Escape literals before HTML escape. \$ is already stashed as

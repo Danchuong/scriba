@@ -819,3 +819,28 @@ def test_katex_macros_expand_in_real_worker():
             r.close()
     finally:
         pool.close()
+
+
+# ===========================================================================
+# ${...} interpolation literals are shielded from the $...$ math parser
+# ===========================================================================
+
+
+def test_interpolation_literal_not_parsed_as_math(tex_renderer):
+    """An unresolved ``${name}`` next to a stray ``$`` stays literal — it must
+    NOT be paired with the trailing ``$`` and rendered as ``$...$`` math."""
+    out = tex_renderer.render_inline_text("Value ${y}$ trailing.")
+    assert "${y}$" in out
+    assert "scriba-tex-math-inline" not in out
+
+
+def test_interpolation_literal_alone_stays_literal(tex_renderer):
+    out = tex_renderer.render_inline_text("Got ${even_indices}.")
+    assert "${even_indices}" in out
+
+
+def test_real_math_still_renders_alongside_interpolation_literal(tex_renderer):
+    """Genuine ``$...$`` math still renders even when a ``${...}`` literal is present."""
+    out = tex_renderer.render_inline_text("Math $z^2$ and ${x}.")
+    assert "scriba-tex-math-inline" in out  # $z^2$ became math
+    assert "${x}" in out                    # ${x} left literal

@@ -1576,6 +1576,11 @@ Files are body content directly. Adding `\documentclass{article}` or
 Use `$...$` (inline) and `$$...$$` (display) only. `\[...\]` and `\(...\)`
 are NOT supported and will render as literal text.
 
+`${name}` interpolation (§13.2) never clashes with math: a `${...}` run is
+shielded before math parsing, so an unresolved `${name}` sitting next to a
+stray `$` stays literal instead of being paired into `$...$`. A resolved
+`${name}` is already replaced by its value before math runs.
+
 ### 13.5 No `\section*{}` (starred variants)
 Use `\section{}` without the star. Scriba never emits section numbers anyway.
 
