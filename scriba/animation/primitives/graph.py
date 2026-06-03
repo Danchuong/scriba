@@ -67,6 +67,15 @@ _MAX_NODES = 100
 # distance is ``2 * _NODE_RADIUS + _NODE_OVERLAP_GAP``.
 _NODE_OVERLAP_GAP = 12
 
+# Height (in px) of the band along the bottom reserved for the isolated-node
+# lane when a force layout has degree-0 nodes.  Connected nodes are clamped to
+# ``[_PADDING, height - _PADDING - _ISOLATED_LANE_BAND]`` and the lane sits at
+# ``height - _PADDING - _NODE_RADIUS``.  Sized so the lane's y is at least the
+# min center-to-center separation (``2*_NODE_RADIUS + _NODE_OVERLAP_GAP``)
+# below the lowest possible connected node, making isolated-vs-connected
+# overlap impossible regardless of x.
+_ISOLATED_LANE_BAND = 3 * _NODE_RADIUS + _NODE_OVERLAP_GAP
+
 # Edge weight pill — see docs/spec/graph-edge-pill-ruleset.md (GEP-02/03/04).
 _WEIGHT_FONT: int = 11
 _WEIGHT_PILL_PAD_X: int = 5
@@ -353,6 +362,7 @@ def _resolve_overlaps(
     width: int,
     height: int,
     passes: int = 10,
+    max_y: float | None = None,
 ) -> None:
     """Push apart any node pair closer than *min_sep* (in-place).
 
@@ -361,9 +371,13 @@ def _resolve_overlaps(
     the line connecting them.  Multiple passes handle cascades where
     resolving one collision creates another.
 
-    Clamped to ``[_PADDING, width/height - _PADDING]`` so nodes stay
-    inside the canvas.
+    Clamped to ``[_PADDING, width - _PADDING]`` in x and
+    ``[_PADDING, max_y]`` in y so nodes stay inside the canvas.  *max_y*
+    defaults to ``height - _PADDING``; pass a smaller value to reserve a
+    band along the bottom (e.g. for an isolated-node lane).
     """
+    if max_y is None:
+        max_y = height - _PADDING
     for _ in range(passes):
         moved = False
         for i, u in enumerate(nodes):
@@ -382,14 +396,47 @@ def _resolve_overlaps(
                     shift_y = deficit * dy / d
                     pos[u] = (
                         max(_PADDING, min(width - _PADDING, pos[u][0] + shift_x)),
-                        max(_PADDING, min(height - _PADDING, pos[u][1] + shift_y)),
+                        max(_PADDING, min(max_y, pos[u][1] + shift_y)),
                     )
                     pos[v] = (
                         max(_PADDING, min(width - _PADDING, pos[v][0] - shift_x)),
-                        max(_PADDING, min(height - _PADDING, pos[v][1] - shift_y)),
+                        max(_PADDING, min(max_y, pos[v][1] - shift_y)),
                     )
         if not moved:
             break
+
+
+def _place_isolated_lane(
+    connected_pos: dict[str | int, tuple[float, float]],
+    isolated: list[str | int],
+    width: int,
+    height: int,
+) -> dict[str | int, tuple[int, int]]:
+    """Round connected positions and append *isolated* nodes in a tidy lane.
+
+    Isolated (degree-0) nodes are placed in a deterministic reserved lane: a
+    single evenly-spaced row inside the reserved bottom band at
+    ``height - _PADDING - _NODE_RADIUS`` (strictly inside the canvas, not on
+    the bottom border), spanning ``[_PADDING, width - _PADDING]`` in
+    node-declaration order.  This keeps them inside the canvas instead of
+    being flung to a corner by repulsion.
+    """
+    result: dict[str | int, tuple[int, int]] = {
+        node: (round(x), round(y)) for node, (x, y) in connected_pos.items()
+    }
+    if not isolated:
+        return result
+
+    lane_y = height - _PADDING - _NODE_RADIUS
+    count = len(isolated)
+    if count == 1:
+        xs = [width / 2.0]
+    else:
+        span = (width - 2 * _PADDING) / (count - 1)
+        xs = [_PADDING + i * span for i in range(count)]
+    for node, x in zip(isolated, xs):
+        result[node] = (round(x), round(lane_y))
+    return result
 
 
 def fruchterman_reingold(
@@ -417,25 +464,56 @@ def fruchterman_reingold(
     if n == 1:
         return {nodes[0]: (width // 2, height // 2)}
 
+    # Isolated nodes (degree 0) feel only repulsion, so the force solve flings
+    # them to a corner.  Exclude them from the solve and place them
+    # deterministically in a reserved lane afterwards.  When there are no
+    # isolated nodes, ``connected`` == ``nodes`` and the solve below is
+    # byte-identical to running on ``nodes`` directly.
+    incident: set[str | int] = set()
+    for u, v in edges:
+        incident.add(u)
+        incident.add(v)
+    connected = [node for node in nodes if node in incident]
+    isolated = [node for node in nodes if node not in incident]
+
+    if not connected:
+        # Every node is isolated (no edges at all): lay them out in a tidy
+        # even row instead of leaving them random-cornered.
+        return _place_isolated_lane({}, isolated, width, height)
+
+    n = len(connected)
+    if n == 1:
+        pos_single = {connected[0]: (width / 2.0, height / 2.0)}
+        return _place_isolated_lane(pos_single, isolated, width, height)
+
+    # When isolated nodes exist, reserve a band along the bottom for their
+    # lane and keep the connected solve in the upper region so the two regions
+    # are disjoint in y (no isolated-vs-connected overlap is possible).  With
+    # no isolated nodes the clamp stays ``height - _PADDING`` so the solve is
+    # byte-identical to the pre-fix behaviour.
+    solve_max_y = height - _PADDING
+    if isolated:
+        solve_max_y = height - _PADDING - _ISOLATED_LANE_BAND
+
     area = width * height
     k = math.sqrt(area / n)  # optimal inter-node distance
 
     rng = random.Random(seed)
     pos: dict[str | int, tuple[float, float]] = {
         node: (rng.uniform(_PADDING, width - _PADDING),
-               rng.uniform(_PADDING, height - _PADDING))
-        for node in nodes
+               rng.uniform(_PADDING, solve_max_y))
+        for node in connected
     }
 
     t = width / 10.0  # initial temperature
     dt = t / (iterations + 1)
 
     for _ in range(iterations):
-        disp: dict[str | int, list[float]] = {node: [0.0, 0.0] for node in nodes}
+        disp: dict[str | int, list[float]] = {node: [0.0, 0.0] for node in connected}
 
         # Repulsive forces between all node pairs
-        for i, u in enumerate(nodes):
-            for v in nodes[i + 1:]:
+        for i, u in enumerate(connected):
+            for v in connected[i + 1:]:
                 dx = pos[u][0] - pos[v][0]
                 dy = pos[u][1] - pos[v][1]
                 d = max(math.sqrt(dx * dx + dy * dy), 0.01)
@@ -461,13 +539,13 @@ def fruchterman_reingold(
             disp[v][1] += fy
 
         # Apply displacement with temperature limit
-        for node in nodes:
+        for node in connected:
             ndx, ndy = disp[node]
             d = max(math.sqrt(ndx * ndx + ndy * ndy), 0.01)
             move_x = ndx / d * min(abs(ndx), t)
             move_y = ndy / d * min(abs(ndy), t)
             new_x = max(_PADDING, min(width - _PADDING, pos[node][0] + move_x))
-            new_y = max(_PADDING, min(height - _PADDING, pos[node][1] + move_y))
+            new_y = max(_PADDING, min(solve_max_y, pos[node][1] + move_y))
             pos[node] = (new_x, new_y)
 
         t -= dt
@@ -477,9 +555,9 @@ def fruchterman_reingold(
     # 2*radius of each other when repulsion is balanced by attractive
     # edge forces or boundary constraints.
     min_sep = 2.0 * node_radius + _NODE_OVERLAP_GAP
-    _resolve_overlaps(pos, nodes, min_sep, width, height)
+    _resolve_overlaps(pos, connected, min_sep, width, height, max_y=solve_max_y)
 
-    return {node: (round(x), round(y)) for node, (x, y) in pos.items()}
+    return _place_isolated_lane(pos, isolated, width, height)
 
 
 # ---------------------------------------------------------------------------

@@ -55,6 +55,87 @@ class TestFruchtermanReingold:
             assert 20 <= x <= 380
             assert 20 <= y <= 280
 
+    def test_isolated_node_in_lane_not_corner(self) -> None:
+        # D has no incident edge -> degree 0.  It must land in the reserved
+        # bottom lane (mid-band x, strictly inside the canvas), not flung to a
+        # canvas corner and not on the bottom border.
+        nodes = ["A", "B", "C", "D"]
+        edges = [("A", "B"), ("A", "C")]
+        pos = fruchterman_reingold(nodes, edges, width=400, height=300, seed=42)
+        dx, dy = pos["D"]
+        # A single isolated node centres horizontally; sits inside the band.
+        assert dx == 200
+        assert dy == 300 - 20 - 20  # height - _PADDING - _NODE_RADIUS
+        # Not pinned into a corner (corners are x in {20, 380}).
+        assert dx not in (20, 380)
+        # Strictly above the bottom border.
+        assert dy < 300 - 20
+        # Does not overlap any connected node (min separation = 2*20 + 12).
+        for node in ("A", "B", "C"):
+            cx, cy = pos[node]
+            dist = ((cx - dx) ** 2 + (cy - dy) ** 2) ** 0.5
+            assert dist >= 2 * 20 + 12
+
+    def test_isolated_vs_connected_no_overlap_multi_seed(self) -> None:
+        # Sweep many seeds across several topologies that each have >=1
+        # isolated node.  Every isolated node must stay at least the min
+        # center-to-center separation away from every connected node, and
+        # strictly off the bottom border.  This fails on the old
+        # ``lane_y = height - _PADDING`` (lane collided with the bottom clamp).
+        min_sep = 2 * 20 + 12  # 2*_NODE_RADIUS + _NODE_OVERLAP_GAP
+        width, height = 400, 300
+        topologies = [
+            (["A", "B", "C", "D"], [("A", "B"), ("A", "C")], {"D"}),
+            (["A", "B", "C", "D", "E"], [("A", "B"), ("C", "D")], {"E"}),
+            (["A", "B", "C", "D", "E"], [("A", "B")], {"C", "D", "E"}),
+            (
+                ["A", "B", "C", "D", "E", "F"],
+                [("A", "B"), ("B", "C"), ("C", "A")],
+                {"D", "E", "F"},
+            ),
+            (list(range(8)), [(0, 1), (1, 2), (2, 3), (3, 0)], {4, 5, 6, 7}),
+        ]
+        for nodes, edges, iso_ids in topologies:
+            connected_ids = [n for n in nodes if n not in iso_ids]
+            for seed in range(50):
+                pos = fruchterman_reingold(
+                    nodes, edges, width=width, height=height, seed=seed
+                )
+                for iso in iso_ids:
+                    ix, iy = pos[iso]
+                    # Strictly above the bottom border.
+                    assert iy < height - 20, (seed, iso, iy)
+                    for c in connected_ids:
+                        cx, cy = pos[c]
+                        dist = ((cx - ix) ** 2 + (cy - iy) ** 2) ** 0.5
+                        assert dist >= min_sep, (seed, iso, c, dist)
+
+    def test_connected_only_layout_unchanged(self) -> None:
+        # No degree-0 node -> the connected solve must be byte-identical to the
+        # pre-fix behaviour (snapshot of current force-solver output).
+        nodes = ["A", "B", "C", "D"]
+        edges = [("A", "B"), ("B", "C"), ("C", "D")]
+        pos = fruchterman_reingold(nodes, edges, width=400, height=300, seed=42)
+        assert pos == {
+            "A": (20, 20),
+            "B": (20, 200),
+            "C": (203, 280),
+            "D": (380, 259),
+        }
+
+    def test_all_isolated_nodes_even_row(self) -> None:
+        # No edges at all: every node is isolated -> tidy even row inside the
+        # reserved band (not on the bottom border) instead of random-cornered.
+        nodes = ["A", "B", "C", "D"]
+        pos = fruchterman_reingold(nodes, [], width=400, height=300, seed=42)
+        lane_y = 300 - 20 - 20  # height - _PADDING - _NODE_RADIUS
+        assert pos == {
+            "A": (20, lane_y),
+            "B": (140, lane_y),
+            "C": (260, lane_y),
+            "D": (380, lane_y),
+        }
+
 
 # ---------------------------------------------------------------
 # Graph construction tests
