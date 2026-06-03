@@ -881,7 +881,12 @@ class Graph(PrimitiveBase):
         w: float | None = float(weight) if weight is not None else None
         self.edges.append((u, v, w))
         self._invalidate_addressable_cache()  # Opt-4: topology changed
-        self._relayout_with_warm_start()
+        # A1 position-pinning: the node set never changes for a Graph
+        # (no add_node/remove_node), so an edge mutation must NOT move any
+        # node — nodes keep their construction-time coordinates and the new
+        # edge is simply drawn between them. This keeps multi-step edge
+        # mutations visually stable instead of re-solving the whole layout
+        # each frame. See docs/plans/graph-position-pinning-analysis-2026-06-03.md.
 
     def _remove_edge_internal(self, u: str | int, v: str | int) -> None:
         idx = self._find_edge_index(u, v)
@@ -892,7 +897,8 @@ class Graph(PrimitiveBase):
             )
         self.edges.pop(idx)
         self._invalidate_addressable_cache()  # Opt-4: topology changed
-        self._relayout_with_warm_start()
+        # A1 position-pinning: removing an edge leaves every node in place
+        # (the node set is unchanged); only the edge line disappears.
 
     def _set_weight_internal(
         self,
@@ -927,42 +933,6 @@ class Graph(PrimitiveBase):
             if not self.directed and eu == v and ev == u:
                 return i
         return None
-
-    def _relayout_with_warm_start(self) -> None:
-        """Recompute positions after a mutation using warm-start layout."""
-        from scriba.animation.primitives.graph_layout_stable import (
-            compute_stable_layout,
-        )
-
-        old_positions: dict[str, tuple[float, float]] = {
-            str(n): (float(self.positions[n][0]), float(self.positions[n][1]))
-            for n in self.nodes
-            if n in self.positions
-        }
-        frame_edges = [[(str(u), str(v)) for u, v, _w in self.edges]]
-        result = compute_stable_layout(
-            [str(n) for n in self.nodes],
-            frame_edges,
-            seed=self.layout_seed,
-            initial_positions=old_positions,
-            width=self.width,
-            height=self.height,
-            node_radius=self._node_radius,
-        )
-        if result is not None:
-            self.positions = {
-                n: (round(result[str(n)][0]), round(result[str(n)][1]))
-                for n in self.nodes
-            }
-        else:
-            # Size guard tripped — fall back to force layout.
-            self.positions = fruchterman_reingold(
-                self.nodes,
-                [(u, v) for u, v, _w in self.edges],
-                width=self.width,
-                height=self.height,
-                seed=self.layout_seed,
-            )
 
     # ----- selector helpers ------------------------------------------------
 

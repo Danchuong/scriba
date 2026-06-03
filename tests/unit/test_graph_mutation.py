@@ -209,21 +209,6 @@ class TestShowWeights:
 # ---------------------------------------------------------------------------
 
 
-def _positions_close(
-    a: dict[str | int, tuple[int, int]],
-    b: dict[str | int, tuple[int, int]],
-    tolerance: float,
-) -> bool:
-    for k in a:
-        if k not in b:
-            return False
-        dx = a[k][0] - b[k][0]
-        dy = a[k][1] - b[k][1]
-        if math.sqrt(dx * dx + dy * dy) > tolerance:
-            return False
-    return True
-
-
 class TestApplyCommand:
     """apply_command dispatches to add_edge/remove_edge/set_weight."""
 
@@ -354,10 +339,15 @@ class TestApplyCommand:
 # ---------------------------------------------------------------------------
 
 
-class TestWarmStartRelayout:
-    """Positions before and after a mutation should stay close."""
+class TestEdgeMutationPinsPositions:
+    """A1 position-pinning: edge mutations must leave every node in place.
 
-    def test_add_edge_warm_start_keeps_positions_close(self) -> None:
+    The node set never changes for a Graph (no add_node/remove_node), so
+    adding or removing an edge must NOT move any node — positions are pinned
+    to their construction-time coordinates and only the edge geometry changes.
+    """
+
+    def test_add_edge_pins_positions(self) -> None:
         g = Graph(
             "G",
             {"nodes": ["A", "B", "C", "D"], "edges": [("A", "B"), ("C", "D")]},
@@ -365,16 +355,9 @@ class TestWarmStartRelayout:
         before = dict(g.positions)
         g.apply_command({"add_edge": {"from": "B", "to": "C"}})
         after = dict(g.positions)
-        # Both should exist with same keys.
-        assert set(before.keys()) == set(after.keys())
-        # Warm-start layout should stay within ~75% of the canvas
-        # diagonal — looser than zero because SA re-anneals from
-        # high temperature, but still much tighter than the ~full
-        # canvas excursion a cold init would permit.
-        tolerance = 0.75 * math.sqrt(g.width ** 2 + g.height ** 2)
-        assert _positions_close(before, after, tolerance)
+        assert before == after  # exact pin — no node moved
 
-    def test_remove_edge_warm_start_keeps_positions_close(self) -> None:
+    def test_remove_edge_pins_positions(self) -> None:
         g = Graph(
             "G",
             {
@@ -385,8 +368,7 @@ class TestWarmStartRelayout:
         before = dict(g.positions)
         g.apply_command({"remove_edge": {"from": "A", "to": "B"}})
         after = dict(g.positions)
-        tolerance = 0.75 * math.sqrt(g.width ** 2 + g.height ** 2)
-        assert _positions_close(before, after, tolerance)
+        assert before == after  # exact pin — no node moved
 
     def test_set_weight_does_not_relayout(self) -> None:
         """Weight changes must not disturb geometry."""
