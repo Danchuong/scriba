@@ -480,6 +480,86 @@ class TestGraphSeedValidation:
 
 
 # ---------------------------------------------------------------
+# Phase 3 — auto-seed selection
+# ---------------------------------------------------------------
+
+
+class TestGraphAutoSeed:
+    """Force layouts without a pinned seed sweep candidates for the best."""
+
+    NODES = ["A", "B", "C", "D", "E"]
+    EDGES = [("A", "B"), ("B", "C"), ("C", "D"), ("D", "E"), ("E", "A")]
+    WIDTH = 400
+    HEIGHT = 300
+
+    def _default_seed_score(self) -> float:
+        from scriba.animation.primitives.graph import (
+            _DEFAULT_SEED,
+            fruchterman_reingold,
+        )
+        from scriba.animation.primitives.graph_layout_score import score_layout
+
+        fr_edges = [(u, v) for u, v in self.EDGES]
+        pos = fruchterman_reingold(
+            self.NODES, fr_edges, width=self.WIDTH, height=self.HEIGHT,
+            seed=_DEFAULT_SEED,
+        )
+        return score_layout(pos, fr_edges, self.WIDTH, self.HEIGHT)
+
+    def test_auto_seed_never_worse_than_default(self) -> None:
+        from scriba.animation.primitives.graph_layout_score import score_layout
+
+        g = Graph("G", {"nodes": self.NODES, "edges": self.EDGES})
+        fr_edges = [(u, v) for u, v in self.EDGES]
+        auto_score = score_layout(
+            g.positions, fr_edges, g.width, g.height
+        )
+        assert auto_score <= self._default_seed_score()
+
+    def test_auto_seed_deterministic(self) -> None:
+        g1 = Graph("G", {"nodes": self.NODES, "edges": self.EDGES})
+        g2 = Graph("G", {"nodes": self.NODES, "edges": self.EDGES})
+        assert g1.positions == g2.positions
+        # The chosen seed is exposed for introspection and must be stable.
+        assert g1._auto_seed == g2._auto_seed
+
+    def test_pinned_seed_no_sweep_byte_identical(self) -> None:
+        from scriba.animation.primitives.graph import fruchterman_reingold
+
+        g = Graph(
+            "G",
+            {"nodes": self.NODES, "edges": self.EDGES, "layout_seed": 3},
+        )
+        expected = fruchterman_reingold(
+            self.NODES,
+            [(u, v) for u, v in self.EDGES],
+            width=g.width,
+            height=g.height,
+            seed=3,
+        )
+        assert g.positions == expected
+        # No sweep -> no _auto_seed attribute set.
+        assert not hasattr(g, "_auto_seed")
+
+    def test_pinned_seed_alias_no_sweep(self) -> None:
+        from scriba.animation.primitives.graph import fruchterman_reingold
+
+        g = Graph(
+            "G",
+            {"nodes": self.NODES, "edges": self.EDGES, "seed": 5},
+        )
+        expected = fruchterman_reingold(
+            self.NODES,
+            [(u, v) for u, v in self.EDGES],
+            width=g.width,
+            height=g.height,
+            seed=5,
+        )
+        assert g.positions == expected
+        assert not hasattr(g, "_auto_seed")
+
+
+# ---------------------------------------------------------------
 # Layout dispatch (layout="auto", stable-directed warning)
 # ---------------------------------------------------------------
 

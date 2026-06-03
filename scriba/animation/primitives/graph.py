@@ -48,6 +48,14 @@ _PADDING = 20
 _DEFAULT_SEED = 42
 _DEFAULT_ITERATIONS = 50
 
+# Auto-seed sweep (Phase 3): when the author does NOT pin a seed, a force
+# layout tries this many candidate seeds, scores each with score_layout, and
+# keeps the lowest-scoring (most readable) result. Candidates are the first
+# _AUTO_SEED_COUNT integers (0..N-1), a deterministic set; ties break toward
+# the smallest seed. Kept small because each candidate is a full O(N^2) FR
+# solve and _MAX_NODES already bounds N.
+_AUTO_SEED_COUNT = 8
+
 # Maximum node count for force-directed Graph layout.
 #
 # The Fruchterman-Reingold implementation below is O(N^2) per
@@ -748,6 +756,11 @@ class Graph(PrimitiveBase):
         # ``seed`` as an alias if ``layout_seed`` was not supplied (for
         # convenience and because ``fruchterman_reingold`` itself uses
         # ``seed=``).  If both are present, ``layout_seed`` wins.
+        # Track whether the author explicitly pinned a seed. An explicit seed
+        # (even one equal to the default 42) must always win for
+        # reproducibility — no auto-seed sweep. Absent seed -> auto-seed
+        # selection for layout="force" (Phase 3).
+        self._seed_pinned: bool = "layout_seed" in params or "seed" in params
         if "layout_seed" in params:
             raw_seed: Any = params["layout_seed"]
         elif "seed" in params:
@@ -865,15 +878,50 @@ class Graph(PrimitiveBase):
                 return
             # Invalid orientation or empty — fall through to FR default.
 
-        self.positions: dict[str | int, tuple[int, int]] = (
-            fruchterman_reingold(
-                self.nodes,
-                [(u, v) for u, v, _w in self.edges],
-                width=self.width,
-                height=self.height,
-                seed=self.layout_seed,
+        fr_edges = [(u, v) for u, v, _w in self.edges]
+        if self._seed_pinned:
+            # Author pinned a seed (or alias): use it directly, no sweep.
+            # Byte-identical to the pre-Phase-3 behaviour.
+            self.positions: dict[str | int, tuple[int, int]] = (
+                fruchterman_reingold(
+                    self.nodes,
+                    fr_edges,
+                    width=self.width,
+                    height=self.height,
+                    seed=self.layout_seed,
+                )
             )
-        )
+        else:
+            # No pinned seed: sweep candidate seeds, score each layout, keep
+            # the best (lowest score). Tie-break toward the smallest seed via
+            # the (score, seed) key so the choice is fully deterministic.
+            from scriba.animation.primitives.graph_layout_score import (
+                score_layout,
+            )
+            best_positions: dict[str | int, tuple[int, int]] | None = None
+            best_key: tuple[float, int] | None = None
+            for cand in range(_AUTO_SEED_COUNT):
+                cand_pos = fruchterman_reingold(
+                    self.nodes,
+                    fr_edges,
+                    width=self.width,
+                    height=self.height,
+                    seed=cand,
+                )
+                cand_score = score_layout(
+                    cand_pos, fr_edges, self.width, self.height
+                )
+                cand_key = (cand_score, cand)
+                if best_key is None or cand_key < best_key:
+                    best_key = cand_key
+                    best_positions = cand_pos
+            assert best_positions is not None  # _AUTO_SEED_COUNT >= 1
+            self.positions = best_positions
+            # Record the auto-selected seed for introspection / debugging
+            # WITHOUT clobbering self.layout_seed (which keeps reporting the
+            # resolved default for backward compatibility — see
+            # test_default_seed_when_omitted).
+            self._auto_seed: int = best_key[1]
 
     # ----- mutation API ----------------------------------------------------
 
