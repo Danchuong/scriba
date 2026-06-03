@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-06-03 — Graph layout stability (pinning, isolated-node lane, auto-seed)
+
+### Changed
+- **Rendered output bytes differ from 0.18.x** for graphs (cache-busting;
+  `SCRIBA_VERSION` bumped 6→7). Graphs that mutate edges, contain isolated nodes,
+  or rely on the default `layout_seed` now render different SVG. Consumer caches
+  keyed on rendered HTML/SVG MUST invalidate.
+- **`layout_seed` is now an optional/advanced knob.** Authoring guidance in
+  `docs/SCRIBA-TEX-REFERENCE.md` §7.4 now recommends declaring full topology +
+  `\recolor` (or `layout="stable"`) instead of seed-guessing; `layout_seed` is
+  documented as cosmetic/reproducibility only.
+
+### Fixed
+- **Graph node positions are pinned across edge mutations.** `\apply` `add_edge`/
+  `remove_edge` no longer re-solve the whole layout each frame — nodes keep their
+  construction-time coordinates and only the edge geometry/weight changes. This
+  removes the "nodes teleport every step" instability (the node set never changes
+  for a Graph). `set_weight` already did not relayout.
+- **Isolated (degree-0) nodes no longer get flung to a corner.** They are placed
+  in a deterministic, evenly-spaced lane inside a reserved inner band, disjoint
+  from the connected-node region (no overlap, not on the border).
+
+### Added
+- **Auto-seed selection for `layout="force"`.** When the author does not pin a
+  `layout_seed`/`seed`, the Graph constructor sweeps candidate seeds (0–7), scores
+  each layout with a new readability scorer (`graph_layout_score.score_layout` —
+  penalises edge crossings, border-hugging, poor spread), and keeps the best
+  (tie-break smallest seed). An explicit seed always wins with byte-identical
+  output; `stable`/`hierarchical` layouts are unaffected.
+- **Isolated-node warning.** A Graph that declares edges but leaves a node
+  unconnected now emits a soft, one-time `UserWarning` naming the isolated node(s)
+  and pointing to the fix. A pure node-set with no edges does not warn.
+
 ## [0.18.0] - 2026-06-02 — render-content fixes (narration interpolation, captions, recolor, defs)
 
 ### Changed
