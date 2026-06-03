@@ -702,6 +702,28 @@ class Graph(PrimitiveBase):
                 detail="edges list mixes weighted and unweighted entries",
             )
         self.edges: list[tuple[str | int, str | int, float | None]] = parsed_edges
+        # Author guidance (Phase 4): a partially-connected graph that leaves
+        # some node with no edge places that node in the isolated-node lane.
+        # That is usually an oversight, so surface a soft, one-time note
+        # pointing to the fix. Only warn when the graph DOES have edges (a
+        # pure node-set with no edges is an intentional display, not a slip).
+        if self.edges:
+            _incident: set[str | int] = set()
+            for _u, _v, _w in self.edges:
+                _incident.add(_u)
+                _incident.add(_v)
+            _isolated = [n for n in self.nodes if n not in _incident]
+            if _isolated:
+                import warnings as _w
+                _w.warn(
+                    f"Graph '{name}' has node(s) with no edges "
+                    f"({', '.join(str(n) for n in _isolated)}); they are "
+                    "placed in a separate lane. If this is unintended, declare "
+                    "their edges up front, or use layout='stable' for a small "
+                    "graph. See docs/SCRIBA-TEX-REFERENCE.md §7.4 best practices.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         self.directed: bool = bool(params.get("directed", False))
         self.layout: str = str(params.get("layout", "force"))
         # Hierarchical-only axis: "TB" (top→bottom, default) or "LR"

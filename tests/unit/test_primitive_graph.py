@@ -896,3 +896,34 @@ class TestTintByEdgeParam:
         assert all(f == "#dbeafe" for f in fills), (
             f"expected edge-state tint #dbeafe to override tint_by_source, got {fills}"
         )
+
+
+class TestIsolatedNodeWarning:
+    """Phase 4: a partially-connected graph warns about isolated nodes."""
+
+    def test_isolated_node_emits_warning(self) -> None:
+        import warnings
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            Graph("G", {"nodes": ["A", "B", "C", "D"],
+                        "edges": [("A", "B"), ("A", "C")]})
+        msgs = [str(w.message) for w in caught if issubclass(w.category, UserWarning)]
+        iso = [m for m in msgs if "no edges" in m]
+        assert len(iso) == 1
+        assert "D" in iso[0]
+
+    def test_fully_connected_no_warning(self) -> None:
+        import warnings
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            Graph("G", {"nodes": ["A", "B", "C"],
+                        "edges": [("A", "B"), ("B", "C")]})
+        assert not [w for w in caught if "no edges" in str(w.message)]
+
+    def test_pure_node_set_no_warning(self) -> None:
+        """No edges at all is an intentional node-set display — no warning."""
+        import warnings
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            Graph("G", {"nodes": ["A", "B", "C"], "edges": []})
+        assert not [w for w in caught if "no edges" in str(w.message)]
