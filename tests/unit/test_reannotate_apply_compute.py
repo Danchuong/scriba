@@ -407,3 +407,46 @@ class TestNarrationInterpolation:
             starlark_host=host,
         )
         assert snap2.narration == "k is ${k}."
+
+
+# ===========================================================================
+# remove_edge purges persistent edge decorations (E1115 noise fix)
+# ===========================================================================
+
+
+class TestRemoveEdgePurgesDecoration:
+    """Removing an edge drops any persistent recolor/state keyed on it, so a
+    later frame does not warn E1115 for a now-deleted (but once-valid) edge."""
+
+    def test_remove_edge_clears_persistent_recolor(self) -> None:
+        ir = _parse(
+            '\\shape{G}{Graph}{nodes=["A","B","C"], edges=[("A","B"),("A","C")]}\n'
+            "\\step\n"
+            "\\recolor{G.edge[(A,B)]}{state=current}\n"
+            "\\step\n"
+            '\\apply{G}{remove_edge={from="A", to="B"}}\n'
+        )
+        state = SceneState()
+        state.apply_prelude(shapes=ir.shapes)
+
+        snap1 = state.apply_frame(ir.frames[0])
+        # Recolor is active while the edge exists.
+        assert "G.edge[(A,B)]" in snap1.shape_states["G"]
+
+        snap2 = state.apply_frame(ir.frames[1])
+        # After remove_edge the decoration is gone — no stale selector to warn on.
+        assert "G.edge[(A,B)]" not in snap2.shape_states["G"]
+
+    def test_remove_edge_undirected_either_order(self) -> None:
+        ir = _parse(
+            '\\shape{G}{Graph}{nodes=["A","B"], edges=[("A","B")]}\n'
+            "\\step\n"
+            "\\recolor{G.edge[(A,B)]}{state=current}\n"
+            "\\step\n"
+            '\\apply{G}{remove_edge={from="B", to="A"}}\n'  # reverse order
+        )
+        state = SceneState()
+        state.apply_prelude(shapes=ir.shapes)
+        state.apply_frame(ir.frames[0])
+        snap2 = state.apply_frame(ir.frames[1])
+        assert "G.edge[(A,B)]" not in snap2.shape_states["G"]

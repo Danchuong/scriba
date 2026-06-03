@@ -719,7 +719,26 @@ class SceneState:
             label=new_label,
             apply_params=new_apply_params,
         )
-        self.shape_states[target_str.split(".", 1)[0]][target_str] = target_state
+        shape_name = target_str.split(".", 1)[0]
+        self.shape_states[shape_name][target_str] = target_state
+
+        # When an edge is removed, drop any persistent decoration (recolor
+        # state / highlight) keyed on that edge. Otherwise the decoration
+        # survives into the frame where the edge no longer exists and the
+        # renderer warns E1115 ("invalid selector") for a selector that was
+        # valid when the author wrote it — confusing noise, not a real typo.
+        remove_spec = cmd.params.get("remove_edge")
+        if isinstance(remove_spec, dict):
+            u, v = remove_spec.get("from"), remove_spec.get("to")
+            if u is not None and v is not None:
+                targets = self.shape_states.get(shape_name)
+                for key in (
+                    f"{shape_name}.edge[({u},{v})]",
+                    f"{shape_name}.edge[({v},{u})]",  # undirected: either order
+                ):
+                    if targets is not None:
+                        targets.pop(key, None)
+                    self.highlights.discard(key)
 
     def _apply_recolor(self, cmd: RecolorCommand) -> None:
         """\\recolor — persistent state replacement and/or annotation recolor."""

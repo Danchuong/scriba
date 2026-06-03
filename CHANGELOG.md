@@ -28,6 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Isolated (degree-0) nodes no longer get flung to a corner.** They are placed
   in a deterministic, evenly-spaced lane inside a reserved inner band, disjoint
   from the connected-node region (no overlap, not on the border).
+- **`remove_edge` clears persistent edge decorations.** A `\recolor` on an edge
+  that is later removed no longer triggers a spurious `E1115 invalid selector`
+  warning in the frame where the edge is gone — the decoration is dropped when
+  the edge is removed (rendered output unchanged; this removes warning noise).
 
 ### Added
 - **Auto-seed selection for `layout="force"`.** When the author does not pin a
