@@ -743,7 +743,7 @@ Nodes + edges with layout engine.
 | `edges` | list | `[]` | no | `(u,v)` or weighted `(u,v,w)` tuples; don't mix the two (E1474) |
 | `directed` | bool | `false` | no | draw arrowheads |
 | `layout` | enum | `"force"` | no | see layout options below |
-| `layout_seed` | int | `42` | no | deterministic seed (alias `seed`; `layout_seed` wins) |
+| `layout_seed` | int | `42` | no | **optional, advanced** — RNG seed for the `force` layout's random start. Controls *reproducibility*, not quality. Most authors can omit it (see best-practices callout below). Alias `seed`; `layout_seed` wins. |
 | `show_weights` | bool | `false` | no | render edge-weight pills |
 | `label` | string | none | no | caption |
 
@@ -780,6 +780,13 @@ Nodes + edges with layout engine.
 
 Graph has **no** `add_node`/`remove_node` — declare all nodes up front. (Node mutation is a Tree feature, §7.5.)
 
+**Node positions are pinned across edge mutations.** Adding or removing an edge
+does **not** move any node — nodes keep their construction-time coordinates and
+only the edge line (and its weight) changes. So the layout you get is decided
+**once, from the nodes and edges declared at construction.** A node that has no
+edge *at construction time* will be pushed to a corner and will stay there even
+after a later `add_edge` connects it.
+
 **Node count limit:** ≤100 nodes for force-directed layout (E1501). Use `layout="stable"` for small graphs (≤20 nodes).
 
 #### 7.4.1 Layout Decision Guide
@@ -793,6 +800,23 @@ Graph has **no** `add_node`/`remove_node` — declare all nodes up front. (Node 
 
 > **⚠️ Gotcha — `layout="stable"` + `directed=true`**
 > This combination emits a `UserWarning` on every render: the stable layout was designed for undirected graphs and makes no routing guarantees for directed edges. For deterministic directed-graph layouts, use `layout="force"` with `layout_seed=<int>` (reproducible across runs). If you need a ranked DAG look, use `layout="hierarchical"` instead.
+
+> **✅ Graph layout — best practices (read this first)**
+> Most authors should **not** need to think about `layout_seed`. To get a clean,
+> stable layout without seed-guessing:
+> 1. **Declare all nodes _and_ all edges up front**, then tell the story with
+>    `\recolor` / state (dim, highlight, mark done) and `\hl` instead of
+>    `add_edge`/`remove_edge`. Full topology at construction means no isolated
+>    node gets flung to a corner, and (because positions are pinned) the graph
+>    stays put across every step.
+> 2. For small graphs (**≤20 nodes**) prefer **`layout="stable"`** — it spreads
+>    nodes evenly, is deterministic, and you never touch a seed.
+> 3. Reach for **`layout_seed`** only as a last-resort cosmetic tweak when the
+>    auto-layout looks lopsided; pin a value you like and move on.
+>
+> If you *must* grow the graph with `add_edge`, remember the node it connects is
+> placed from the **construction-time** topology — so still declare that node's
+> first edge up front when you can.
 
 ### 7.5 Tree
 Rooted tree with Reingold-Tilford layout.
