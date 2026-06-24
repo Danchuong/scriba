@@ -1124,7 +1124,7 @@
    ============================================ */
 
 .scriba-stage {
-  padding: 1.25rem 1rem;
+  padding: 0.875rem 0.875rem;
   display: flex;
   justify-content: center;
   min-height: 100px;
@@ -1135,6 +1135,56 @@
   width: 100%;
   height: auto;
   max-height: 80vh;
+}
+
+/* ============================================
+   C1: Overlay controls
+   The control bar floats as a translucent pill over the stage, reclaiming
+   the full top bar. Scoped to `.scriba-stage-wrap > .scriba-controls` so the
+   substory widget's reuse of the base `.scriba-controls` top bar is unaffected.
+   ============================================ */
+
+.scriba-stage-wrap {
+  position: relative;
+}
+
+.scriba-stage-wrap > .scriba-stage {
+  padding-bottom: 3.25rem; /* clear room so the pill never covers animation content */
+}
+
+.scriba-stage-wrap > .scriba-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: auto;
+  gap: 0.6rem;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid rgba(205, 211, 218, 0.7);
+  border-bottom: 1px solid rgba(205, 211, 218, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 18px rgba(16, 24, 40, 0.12);
+}
+
+.scriba-stage-wrap > .scriba-controls button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-step-counter {
+  min-width: 0;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-progress {
+  margin-left: 0;
 }
 
 /* ============================================
@@ -1153,12 +1203,10 @@
 
 .scriba-narration {
   margin: 0;
-  padding: 0.75rem 1rem;
-  font-size: 0.92rem;
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.85rem;
   line-height: 1.55;
-  color: #11181c;
-  border-top: 1px solid #e6e8eb;
-  min-height: 2.5rem;
+  color: #475467;
 }
 
 /* ============================================
@@ -1223,6 +1271,7 @@
 [data-theme="dark"] .scriba-controls { background: #202425; border-color: #313538; }
 [data-theme="dark"] .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
 [data-theme="dark"] .scriba-controls button:hover { background: #313538; }
+[data-theme="dark"] .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
 [data-theme="dark"] .scriba-step-counter { color: #9ba1a6; }
 [data-theme="dark"] .scriba-narration { color: #ecedee; border-color: #2b2f31; }
 [data-theme="dark"] .scriba-dot { background: #313538; }
@@ -1238,6 +1287,7 @@
   :root:not([data-theme="light"]) .scriba-controls { background: #202425; border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
   :root:not([data-theme="light"]) .scriba-controls button:hover { background: #313538; }
+  :root:not([data-theme="light"]) .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-step-counter { color: #9ba1a6; }
   :root:not([data-theme="light"]) .scriba-narration { color: #ecedee; border-color: #2b2f31; }
   :root:not([data-theme="light"]) .scriba-dot { background: #313538; }
@@ -1413,7 +1463,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 % A diagram (single frame) using VariableWatch with a wide value must
 % produce a viewBox sized for the post-apply width, not the initial state.</p>
 
-<figure class="scriba-diagram" data-scriba-scene="diagram-prescan"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 535 100" style="max-width:535px" role="img" aria-labelledby="diagram-prescan-frame-1-narration" xmlns="http://www.w3.org/2000/svg"><title>diagram-prescan</title><g transform="translate(16,16)"><g data-primitive="variablewatch" data-shape="vars"><clipPath id="vw-clip-vars"><rect x="4" y="4" width="495" height="40" rx="4"/></clipPath><g clip-path="url(#vw-clip-vars)"><g data-target="vars.var[state]" class="scriba-state-current"><rect x="104" y="4" width="395" height="40" fill="#0070d5" stroke="none"/><text x="54" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:calc(12px * var(--scriba-diagram-font-scale, 1))">state</text><text x="301" y="24" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:calc(13px * var(--scriba-diagram-font-scale, 1))">active connection retry pending - widened value</text></g></g><rect x="4" y="4" width="495" height="40" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="104" y1="4" x2="104" y2="44" stroke="#dfe3e6" stroke-width="1"/><text class="scriba-primitive-label" x="251" y="64" fill="#687076" style="text-anchor:middle">Diagnostic</text></g></g></svg></div></figure>
+<figure class="scriba-diagram" data-scriba-scene="diagram-prescan"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 527 92" style="max-width:527px" role="img" aria-labelledby="diagram-prescan-frame-1-narration" xmlns="http://www.w3.org/2000/svg"><title>diagram-prescan</title><g transform="translate(12,12)"><g data-primitive="variablewatch" data-shape="vars"><clipPath id="vw-clip-vars"><rect x="4" y="4" width="495" height="40" rx="4"/></clipPath><g clip-path="url(#vw-clip-vars)"><g data-target="vars.var[state]" class="scriba-state-current"><rect x="104" y="4" width="395" height="40" fill="#0070d5" stroke="none"/><text x="54" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:calc(12px * var(--scriba-diagram-font-scale, 1))">state</text><text x="301" y="24" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:calc(13px * var(--scriba-diagram-font-scale, 1))">active connection retry pending - widened value</text></g></g><rect x="4" y="4" width="495" height="40" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="104" y1="4" x2="104" y2="44" stroke="#dfe3e6" stroke-width="1"/><text class="scriba-primitive-label" x="251" y="64" fill="#687076" style="text-anchor:middle">Diagnostic</text></g></g></svg></div></figure>
 <script>
 document.addEventListener('click',function(e){
   var btn=e.target.closest('[data-scriba-action="theme-toggle"]');

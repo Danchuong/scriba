@@ -1124,7 +1124,7 @@
    ============================================ */
 
 .scriba-stage {
-  padding: 1.25rem 1rem;
+  padding: 0.875rem 0.875rem;
   display: flex;
   justify-content: center;
   min-height: 100px;
@@ -1135,6 +1135,56 @@
   width: 100%;
   height: auto;
   max-height: 80vh;
+}
+
+/* ============================================
+   C1: Overlay controls
+   The control bar floats as a translucent pill over the stage, reclaiming
+   the full top bar. Scoped to `.scriba-stage-wrap > .scriba-controls` so the
+   substory widget's reuse of the base `.scriba-controls` top bar is unaffected.
+   ============================================ */
+
+.scriba-stage-wrap {
+  position: relative;
+}
+
+.scriba-stage-wrap > .scriba-stage {
+  padding-bottom: 3.25rem; /* clear room so the pill never covers animation content */
+}
+
+.scriba-stage-wrap > .scriba-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: auto;
+  gap: 0.6rem;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid rgba(205, 211, 218, 0.7);
+  border-bottom: 1px solid rgba(205, 211, 218, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 18px rgba(16, 24, 40, 0.12);
+}
+
+.scriba-stage-wrap > .scriba-controls button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-step-counter {
+  min-width: 0;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-progress {
+  margin-left: 0;
 }
 
 /* ============================================
@@ -1153,12 +1203,10 @@
 
 .scriba-narration {
   margin: 0;
-  padding: 0.75rem 1rem;
-  font-size: 0.92rem;
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.85rem;
   line-height: 1.55;
-  color: #11181c;
-  border-top: 1px solid #e6e8eb;
-  min-height: 2.5rem;
+  color: #475467;
 }
 
 /* ============================================
@@ -1223,6 +1271,7 @@
 [data-theme="dark"] .scriba-controls { background: #202425; border-color: #313538; }
 [data-theme="dark"] .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
 [data-theme="dark"] .scriba-controls button:hover { background: #313538; }
+[data-theme="dark"] .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
 [data-theme="dark"] .scriba-step-counter { color: #9ba1a6; }
 [data-theme="dark"] .scriba-narration { color: #ecedee; border-color: #2b2f31; }
 [data-theme="dark"] .scriba-dot { background: #313538; }
@@ -1238,6 +1287,7 @@
   :root:not([data-theme="light"]) .scriba-controls { background: #202425; border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
   :root:not([data-theme="light"]) .scriba-controls button:hover { background: #313538; }
+  :root:not([data-theme="light"]) .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-step-counter { color: #9ba1a6; }
   :root:not([data-theme="light"]) .scriba-narration { color: #ecedee; border-color: #2b2f31; }
   :root:not([data-theme="light"]) .scriba-dot { background: #313538; }
@@ -1409,13 +1459,13 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 <body>
 <button class="theme-toggle" data-scriba-action="theme-toggle">Toggle theme</button>
 <h1>08_foreach_value_interpolation</h1>
-<div class="scriba-widget" id="foreach-value-interp" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-atomic="true">Step 1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>Next</button><div class="scriba-progress" aria-hidden="true"><div class="scriba-dot active"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" dir="auto" id="foreach-value-interp-narration" aria-live="polite">Each cell should show its index: 0, 1, 2, 3.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 278 72" style="max-width:278px" role="img" aria-labelledby="foreach-value-interp-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Each cell should show its index: 0, 1, 2, 3.</title><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c">0</text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c">1</text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c">2</text></g><g data-target="a.cell[3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c">3</text></g></g></g></svg></div><p class="scriba-narration" id="foreach-value-interp-print-1-narration">Each cell should show its index: 0, 1, 2, 3.</p></div></div></div>
+<div class="scriba-widget" id="foreach-value-interp" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="foreach-value-interp-narration" aria-live="polite">Each cell should show its index: 0, 1, 2, 3.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 270 64" style="max-width:270px" role="img" aria-labelledby="foreach-value-interp-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Each cell should show its index: 0, 1, 2, 3.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c">0</text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c">1</text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c">2</text></g><g data-target="a.cell[3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c">3</text></g></g></g></svg></div><p class="scriba-narration" id="foreach-value-interp-print-1-narration">Each cell should show its index: 0, 1, 2, 3.</p></div></div></div>
 <script>(function(){
   var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
   var W=document.getElementById('foreach-value-interp');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 278 72" style="max-width:278px" role="img" aria-labelledby="foreach-value-interp-narration" xmlns="http://www.w3.org/2000/svg"><title>Each cell should show its index: 0, 1, 2, 3.</title>
-<g transform="translate(16.0,16)">
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 270 64" style="max-width:270px" role="img" aria-labelledby="foreach-value-interp-narration" xmlns="http://www.w3.org/2000/svg"><title>Each cell should show its index: 0, 1, 2, 3.</title>
+<g transform="translate(12.0,12)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">
     <rect x="1.0" y="1.0" width="58.0" height="38.0"/>
@@ -1468,7 +1518,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
     var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
     function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
-      sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+      sr.textContent=(i+1)+' / '+fd.length;
       sp.disabled=i===0;sx.disabled=i===fd.length-1;
       sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
@@ -1477,7 +1527,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     sh(0);
   }
   function _updateControls(i){
-    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    ctr.textContent=(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
     dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});

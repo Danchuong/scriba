@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriba — Compact Chrome Study</title>
+<style>
+  :root{
+    --paper:#fbfcfd;--surface:#fff;--ink:#1f2933;--muted:#6b7280;--hairline:#e6e9ee;
+    --panel:#fafbfc;--accent:#2563eb;--good-fg:#1b6e3c;--good-bg:#e6f4ea;--good-bd:#9ed3b3;
+    --dim-fg:#9aa0a6;--dim-bg:#f3f4f6;--dim-bd:#e2e5e9;--cell-bd:#cdd3da;
+    --warn-bg:#fff4e5;--warn-bd:#f6d8a8;--warn-fg:#9a5b00;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+    --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+    --serif:"Iowan Old Style",Georgia,serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.55;padding:48px 24px 96px;}
+  .wrap{max-width:1180px;margin:0 auto;}
+  .mast{border-bottom:1px solid var(--hairline);padding-bottom:26px;margin-bottom:36px;}
+  .eyebrow{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin:0 0 10px;}
+  .mast h1{font-family:var(--serif);font-weight:600;font-size:32px;line-height:1.12;margin:0 0 12px;letter-spacing:.1px;text-wrap:balance;max-width:20ch;}
+  .mast p{margin:0;color:var(--muted);font-size:15px;max-width:66ch;}
+  h2{font-family:var(--serif);font-weight:600;font-size:21px;margin:0 0 4px;}
+  .sec{margin-top:50px;}
+  .sec-intro{color:var(--muted);font-size:14px;margin:0 0 22px;max-width:72ch;}
+  .prose{font-size:14px;color:#33414f;max-width:74ch;}
+  .prose code{font-family:var(--mono);font-size:12.5px;background:var(--panel);border:1px solid var(--hairline);border-radius:5px;padding:1px 6px;}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:30px;align-items:start;}
+  @media (max-width:1080px){.grid{grid-template-columns:1fr;}}
+  .specimen{background:var(--surface);border:1px solid var(--hairline);border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgba(31,41,51,.04),0 10px 30px -22px rgba(31,41,51,.25);}
+  .specimen-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 16px;border-bottom:1px solid var(--hairline);background:var(--panel);}
+  .specimen-name{font-weight:600;font-size:13.5px;}
+  .specimen-name b{font-family:var(--mono);font-weight:600;color:var(--accent);font-size:12px;margin-right:8px;}
+  .tag{font-family:var(--mono);font-size:10.5px;padding:3px 8px;border-radius:999px;border:1px solid var(--hairline);color:var(--muted);background:var(--surface);white-space:nowrap;}
+  .tag.win{color:var(--good-fg);background:var(--good-bg);border-color:var(--good-bd);}
+  .tag.warn{color:var(--warn-fg);background:var(--warn-bg);border-color:var(--warn-bd);}
+  .stageframe{padding:26px 22px;background:linear-gradient(180deg,#fcfdfe,#f6f8fa);display:flex;justify-content:center;}
+  .stageframe > *{width:100%;}
+  .cap{font-size:11px;color:var(--muted);padding:0 16px 13px;display:flex;align-items:center;gap:6px;}
+  .cap::before{content:"";width:7px;height:7px;border-radius:2px;background:var(--accent);}
+
+  /* baseline current-chrome mock */
+  .b0{max-width:520px;margin:0 auto;border:1px solid #dfe3e6;border-radius:10px;background:#fff;overflow:hidden;}
+  .b0-controls{display:flex;align-items:center;gap:.75rem;padding:.6rem 1rem;background:#f8f9fa;border-bottom:1px solid #dfe3e6;}
+  .b0-btn{background:#fff;border:1px solid #dfe3e6;border-radius:6px;padding:.3rem .7rem;font-size:.8rem;color:#11181c;}
+  .b0-btn:disabled{opacity:.35;}
+  .b0-count{font:600 .78rem var(--mono);color:#687076;min-width:5rem;text-align:center;}
+  .b0-dots{display:flex;gap:4px;margin-left:auto;}
+  .b0-dot{width:8px;height:8px;border-radius:50%;background:#dfe3e6;}
+  .b0-dot.done{background:#c1c8cd;}.b0-dot.active{background:#0070d5;}
+  .b0-stage{padding:1.25rem 1rem;display:flex;justify-content:center;gap:14px;}
+  .b0-cell{width:40px;height:40px;border:1px solid var(--cell-bd);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;}
+  .b0-cell.good{background:var(--good-bg);border-color:var(--good-bd);color:var(--good-fg);}
+  .b0-cell.dim{background:var(--dim-bg);border-color:var(--dim-bd);color:var(--dim-fg);}
+  .b0-cells{display:flex;flex-direction:column;gap:6px;align-items:center;}
+  .b0-row{display:flex;gap:4px;}
+  .b0-narr{margin:0;padding:.75rem 1rem;font-size:.92rem;line-height:1.55;color:#11181c;border-top:1px solid #e6e8eb;min-height:2.5rem;}
+
+  /* height bars */
+  .aspects{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+  .asp{display:grid;grid-template-columns:230px 1fr 110px;align-items:center;gap:14px;}
+  .asp .lab{font-size:13px;}.asp .lab b{font-family:var(--mono);font-size:11px;color:var(--accent);margin-right:7px;}
+  .asp .track{height:22px;background:var(--panel);border:1px solid var(--hairline);border-radius:6px;overflow:hidden;}
+  .asp .fill{height:100%;background:linear-gradient(90deg,var(--good-bd),var(--good-bg));}
+  .asp.bad .fill{background:linear-gradient(90deg,#f1b0a6,#fde8e4);}
+  .asp .num{font-family:var(--mono);font-size:12px;color:var(--muted);text-align:right;}
+
+  table.rec{width:100%;border-collapse:collapse;font-size:13.5px;}
+  table.rec th,table.rec td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--hairline);vertical-align:top;}
+  table.rec th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  table.rec td b{font-family:var(--mono);color:var(--accent);font-size:12px;}
+  .pill{display:inline-block;font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--hairline);}
+  .pill.low{color:var(--good-fg);background:var(--good-bg);border-color:var(--good-bd);}
+  .pill.med{color:var(--warn-fg);background:var(--warn-bg);border-color:var(--warn-bd);}
+  .foot{margin-top:54px;padding-top:22px;border-top:1px solid var(--hairline);font-size:12px;color:var(--muted);}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">Scriba · Animation widget · Chrome study</p>
+    <h1>Reclaiming the space the controls bar and narration box waste</h1>
+    <p>The widget spends a full padded top bar (prev/next + counter + dots) and a bordered bottom box (min-height 2.5rem) on chrome. Four ways to shrink it — same scene, same visual system, shown against the current baseline.</p>
+  </header>
+
+  <section>
+    <p class="prose">Today's chrome in <code>scriba-embed.css</code>: <code>.scriba-controls</code> = <code>padding:.6rem 1rem</code> + bg + bottom border (~44&nbsp;px); <code>.scriba-step-counter</code> = <code>min-width:5rem</code> (far wider than "5 / 5" needs); <code>.scriba-narration</code> = <code>padding:.75rem 1rem</code> + top border + <code>min-height:2.5rem</code> (~64&nbsp;px). Combined that's <strong>~108&nbsp;px of chrome</strong> wrapping a small animation.</p>
+  </section>
+
+  <!-- BASELINE -->
+  <section class="sec">
+    <h2>Baseline — what ships today</h2>
+    <p class="sec-intro">Full top bar, bordered narration box with a minimum height even for short text.</p>
+    <div class="specimen">
+      <div class="specimen-head"><span class="specimen-name"><b>now</b>Two padded bands</span><span class="tag warn">chrome ≈ 108 px</span></div>
+      <div class="stageframe">
+        <div class="b0">
+          <div class="b0-controls">
+            <button class="b0-btn">&#10094;</button>
+            <span class="b0-count">5 / 5</span>
+            <button class="b0-btn" disabled>&#10095;</button>
+            <span class="b0-dots"><i class="b0-dot done"></i><i class="b0-dot done"></i><i class="b0-dot done"></i><i class="b0-dot done"></i><i class="b0-dot active"></i></span>
+          </div>
+          <div class="b0-stage">
+            <div class="b0-cells"><div class="b0-row"><div class="b0-cell dim">45</div><div class="b0-cell good">60</div><div class="b0-cell good">80</div></div><span style="font-size:10px;color:var(--muted)">sorted desired sizes</span></div>
+            <div class="b0-cells"><div class="b0-row"><div class="b0-cell dim">30</div><div class="b0-cell good">60</div><div class="b0-cell good">75</div></div><span style="font-size:10px;color:var(--muted)">sorted apartment sizes</span></div>
+          </div>
+          <p class="b0-narr">The same rule handles the final pair: |80−75| = 5, so we match them and finish with 2 matches. Once one array is exhausted, no further match is possible.</p>
+        </div>
+      </div>
+      <p class="cap">Top bar ~44px + narration box ~64px = ~108px of chrome around a ~90px stage</p>
+    </div>
+  </section>
+
+  <!-- OPTIONS -->
+  <section class="sec">
+    <h2>Four compact directions</h2>
+    <p class="sec-intro">Each fragment is the real proposed widget. The caption under each states its measured total height and which <code>scriba-embed.css</code> rules change.</p>
+    <div class="grid">
+
+      <div class="specimen">
+        <div class="specimen-head"><span class="specimen-name"><b>C1</b>Overlay controls</span><span class="tag win">no top bar</span></div>
+        <div class="stageframe">
+<section class="c1"><style>
+.c1{--good-fg:#1b6e3c;--good-bg:#e6f4ea;--good-bd:#9ed3b3;--dim-fg:#9aa0a6;--dim-bg:#f3f4f6;--dim-bd:#e2e5e9;--cell-fg:#1f2933;--cell-bg:#fff;--cell-bd:#cdd3da;--ink:#1f2933;--muted:#6b7280;--surface:#fff;--panel:#fafbfc;--hairline:#e6e9ee;--accent:#2563eb;--dot-active:#0070d5;--dot-done:#c1c8cd;--dot-idle:#dfe3e6;
+--mono:ui-monospace,"SF Mono",Menlo,monospace;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+box-sizing:border-box;width:100%;max-width:560px;margin:0;border:1px solid var(--hairline);border-radius:10px;background:var(--surface);box-shadow:0 1px 3px rgba(16,24,40,.08),0 4px 14px rgba(16,24,40,.05);overflow:hidden;font-family:var(--sans);color:var(--ink);}
+.c1 *{box-sizing:border-box;}
+.c1-stage{position:relative;background:var(--panel);padding:18px 16px 14px;}
+.c1-scene{display:flex;align-items:flex-start;justify-content:center;gap:18px;flex-wrap:wrap;}
+.c1-arr{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.c1-cells{display:flex;gap:5px;}
+.c1-cell{width:40px;height:40px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:600;background:var(--cell-bg);border:1px solid var(--cell-bd);color:var(--cell-fg);position:relative;}
+.c1-cell.is-good{background:var(--good-bg);border-color:var(--good-bd);color:var(--good-fg);}
+.c1-cell.is-dim{background:var(--dim-bg);border-color:var(--dim-bd);color:var(--dim-fg);}
+.c1-cell .idx{position:absolute;top:-13px;left:0;right:0;text-align:center;font-size:9px;font-weight:500;color:var(--muted);font-family:var(--mono);}
+.c1-cap{font-size:10.5px;color:var(--muted);letter-spacing:.01em;}
+.c1-state{display:flex;flex-direction:column;gap:5px;align-self:center;}
+.c1-chip{font-family:var(--mono);font-size:11px;line-height:1;padding:5px 8px;border-radius:6px;border:1px solid var(--hairline);background:var(--surface);color:var(--ink);white-space:nowrap;}
+.c1-chip b{color:var(--good-fg);font-weight:700;}
+.c1-chip .k{color:var(--muted);}
+.c1-pill{position:absolute;left:50%;bottom:9px;transform:translateX(-50%);display:flex;align-items:center;gap:9px;padding:4px 6px 4px 5px;border-radius:999px;background:rgba(255,255,255,.78);-webkit-backdrop-filter:blur(8px) saturate(1.2);backdrop-filter:blur(8px) saturate(1.2);border:1px solid rgba(205,211,218,.7);box-shadow:0 1px 2px rgba(16,24,40,.06),0 6px 18px rgba(16,24,40,.12);}
+.c1-nav{width:26px;height:26px;border-radius:50%;border:1px solid var(--hairline);background:var(--surface);color:var(--ink);font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .12s,border-color .12s,transform .08s,box-shadow .12s;}
+.c1-nav:hover:not(:disabled){background:#f0f6ff;border-color:var(--accent);color:var(--accent);}
+.c1-nav:active:not(:disabled){transform:scale(.92);}
+.c1-nav:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.c1-nav:disabled{opacity:.34;cursor:not-allowed;}
+.c1-count{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--ink);letter-spacing:.02em;min-width:30px;text-align:center;}
+.c1-dots{display:flex;gap:5px;align-items:center;padding-right:3px;}
+.c1-dot{width:6px;height:6px;border-radius:50%;background:var(--dot-idle);}
+.c1-dot.done{background:var(--dot-done);}
+.c1-dot.active{background:var(--dot-active);width:7px;height:7px;box-shadow:0 0 0 2px rgba(0,112,213,.18);}
+.c1-narr{padding:9px 16px 11px;font-size:12.5px;line-height:1.45;color:var(--muted);font-family:var(--sans);}
+.c1-narr code{font-family:var(--mono);font-size:11.5px;color:var(--ink);background:var(--panel);padding:1px 4px;border-radius:4px;}
+</style>
+<div class="c1-stage">
+  <div class="c1-scene">
+    <div class="c1-arr">
+      <div class="c1-cells">
+        <div class="c1-cell is-dim"><span class="idx">0</span>45</div>
+        <div class="c1-cell is-good"><span class="idx">1</span>60</div>
+        <div class="c1-cell is-good"><span class="idx">2</span>80</div>
+      </div>
+      <div class="c1-cap">sorted desired sizes</div>
+    </div>
+    <div class="c1-arr">
+      <div class="c1-cells">
+        <div class="c1-cell is-dim"><span class="idx">0</span>30</div>
+        <div class="c1-cell is-good"><span class="idx">1</span>60</div>
+        <div class="c1-cell is-good"><span class="idx">2</span>75</div>
+      </div>
+      <div class="c1-cap">sorted apartment sizes</div>
+    </div>
+    <div class="c1-state">
+      <div class="c1-chip"><span class="k">i</span>=end</div>
+      <div class="c1-chip"><span class="k">j</span>=end</div>
+      <div class="c1-chip"><span class="k">matches</span>=<b>2</b></div>
+    </div>
+  </div>
+  <div class="c1-pill" role="group" aria-label="Step navigation">
+    <button class="c1-nav" type="button" aria-label="Previous step">&#10094;</button>
+    <span class="c1-count" aria-live="polite">5 / 5</span>
+    <button class="c1-nav" type="button" aria-label="Next step" disabled>&#10095;</button>
+    <span class="c1-dots" aria-hidden="true">
+      <i class="c1-dot done"></i><i class="c1-dot done"></i><i class="c1-dot done"></i><i class="c1-dot done"></i><i class="c1-dot active"></i>
+    </span>
+  </div>
+</div>
+<p class="c1-narr">The same rule handles the final pair: <code>|80&minus;75| = 5</code>, so we match them and finish with 2 matches. Once one array is exhausted, no further match is possible.</p>
+<p class="cap">Overlay pill over stage · borderless caption · chrome ≈ 40px</p>
+</section>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-head"><span class="specimen-name"><b>C2</b>Unified footer</span><span class="tag win">one band</span></div>
+        <div class="stageframe">
+<section class="c2"><style>
+.c2{
+  --good-fg:#1b6e3c; --good-bg:#e6f4ea; --good-bd:#9ed3b3;
+  --dim-fg:#9aa0a6; --dim-bg:#f3f4f6; --dim-bd:#e2e5e9;
+  --cell-fg:#1f2933; --cell-bg:#fff; --cell-bd:#cdd3da;
+  --ink:#1f2933; --muted:#6b7280; --surface:#fff; --panel:#fafbfc;
+  --hairline:#e6e9ee; --accent:#2563eb; --dot-active:#0070d5;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  display:block;
+  font-family:var(--sans);
+  color:var(--ink);
+  max-width:560px;
+  margin:0 auto;
+  background:var(--surface);
+  border:1px solid var(--hairline);
+  border-radius:10px;
+  box-shadow:0 1px 2px rgba(16,24,40,.04),0 4px 16px rgba(16,24,40,.06);
+  overflow:hidden;
+  box-sizing:border-box;
+}
+.c2 *,.c2 *::before,.c2 *::after{box-sizing:border-box;}
+.c2-stage{background:var(--panel);padding:14px 16px;display:flex;flex-direction:column;gap:10px;}
+.c2-row{display:flex;align-items:center;gap:10px;}
+.c2-rlabel{font-family:var(--mono);font-size:10.5px;letter-spacing:.02em;color:var(--muted);width:74px;flex:none;text-align:right;line-height:1.25;}
+.c2-cells{display:flex;gap:6px;}
+.c2-cell{width:40px;height:40px;border:1px solid var(--cell-bd);border-radius:6px;background:var(--cell-bg);color:var(--cell-fg);font-family:var(--mono);font-size:14px;display:flex;align-items:center;justify-content:center;position:relative;}
+.c2-cell .c2-idx{position:absolute;top:-13px;left:0;right:0;font-size:9px;color:var(--muted);text-align:center;}
+.c2-cell.good{background:var(--good-bg);border-color:var(--good-bd);color:var(--good-fg);}
+.c2-cell.dim{background:var(--dim-bg);border-color:var(--dim-bd);color:var(--dim-fg);}
+.c2-cap{font-size:10.5px;color:var(--muted);}
+.c2-chips{display:flex;gap:6px;flex-wrap:wrap;padding-top:2px;}
+.c2-chip{font-family:var(--mono);font-size:10.5px;color:var(--ink);background:var(--surface);border:1px solid var(--hairline);border-radius:999px;padding:2px 8px;line-height:1.4;}
+.c2-chip b{color:var(--accent);font-weight:600;}
+.c2-chip.match b{color:var(--good-fg);}
+.c2-foot{position:relative;display:flex;align-items:center;gap:12px;padding:8px 12px;border-top:1px solid var(--hairline);background:var(--surface);}
+.c2-prog{position:absolute;top:0;left:0;right:0;height:2px;background:var(--hairline);}
+.c2-prog::after{content:"";position:absolute;inset:0;width:100%;background:var(--accent);transform-origin:left;}
+.c2-nav{display:flex;align-items:center;gap:4px;flex:none;}
+.c2-btn{font-family:var(--sans);width:26px;height:26px;display:flex;align-items:center;justify-content:center;border:1px solid var(--hairline);border-radius:6px;background:var(--surface);color:var(--ink);font-size:13px;cursor:pointer;transition:background .12s ease,border-color .12s ease,color .12s ease;}
+.c2-btn:hover:not([disabled]){background:var(--panel);border-color:#cfd5dd;}
+.c2-btn:active:not([disabled]){background:#eef1f4;}
+.c2-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.c2-btn[disabled]{color:#c2c7cd;background:var(--panel);cursor:not-allowed;}
+.c2-count{font-family:var(--mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums;padding:0 2px 0 4px;flex:none;}
+.c2-count b{color:var(--ink);font-weight:600;}
+.c2-sep{width:1px;align-self:stretch;background:var(--hairline);margin:2px 0;flex:none;}
+.c2-narr{font-size:12px;line-height:1.4;color:var(--ink);flex:1 1 auto;min-width:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;cursor:default;}
+.c2-narr:hover,.c2-narr:focus-visible{-webkit-line-clamp:unset;overflow:visible;}
+.c2-narr:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px;}
+.c2-narr code{font-family:var(--mono);font-size:11px;color:var(--ink);}
+@media (prefers-reduced-motion:reduce){.c2-btn{transition:none;}}
+</style>
+  <div class="c2-stage">
+    <div class="c2-row">
+      <span class="c2-rlabel">desired</span>
+      <div class="c2-cells">
+        <div class="c2-cell dim"><span class="c2-idx">0</span>45</div>
+        <div class="c2-cell good"><span class="c2-idx">1</span>60</div>
+        <div class="c2-cell good"><span class="c2-idx">2</span>80</div>
+      </div>
+      <span class="c2-cap">sorted desired sizes</span>
+    </div>
+    <div class="c2-row">
+      <span class="c2-rlabel">apt</span>
+      <div class="c2-cells">
+        <div class="c2-cell dim"><span class="c2-idx">0</span>30</div>
+        <div class="c2-cell good"><span class="c2-idx">1</span>60</div>
+        <div class="c2-cell good"><span class="c2-idx">2</span>75</div>
+      </div>
+      <span class="c2-cap">sorted apartment sizes</span>
+    </div>
+    <div class="c2-chips">
+      <span class="c2-chip">i = <b>end</b></span>
+      <span class="c2-chip">j = <b>end</b></span>
+      <span class="c2-chip match">matches = <b>2</b></span>
+    </div>
+  </div>
+  <div class="c2-foot">
+    <div class="c2-prog" role="progressbar" aria-valuenow="5" aria-valuemin="1" aria-valuemax="5" aria-label="Step 5 of 5"></div>
+    <div class="c2-nav">
+      <button class="c2-btn" type="button" aria-label="Previous step">&#10094;</button>
+      <button class="c2-btn" type="button" aria-label="Next step" disabled>&#10095;</button>
+    </div>
+    <span class="c2-count" aria-hidden="true"><b>5</b> / 5</span>
+    <span class="c2-sep" aria-hidden="true"></span>
+    <p class="c2-narr" tabindex="0">The same rule handles the final pair: <code>|80&minus;75| = 5</code>, so we match them and finish with 2 matches. Once one array is exhausted, no further match is possible.</p>
+  </div>
+  <p class="cap" style="font-size:11px;color:#6b7280;padding:8px 12px;margin:0;border-top:1px solid #e6e9ee;">Unified footer (nav + clamped narration + 2px progress) · chrome ≈ 44px</p>
+</section>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-head"><span class="specimen-name"><b>C3</b>Slim two-zone</span><span class="tag win">least risk</span></div>
+        <div class="stageframe">
+<section class="c3"><style>
+.c3{--good-fg:#1b6e3c;--good-bg:#e6f4ea;--good-bd:#9ed3b3;--dim-fg:#9aa0a6;--dim-bg:#f3f4f6;--dim-bd:#e2e5e9;--cell-fg:#1f2933;--cell-bg:#fff;--cell-bd:#cdd3da;--ink:#1f2933;--muted:#6b7280;--surface:#fff;--panel:#fafbfc;--hairline:#e6e9ee;--accent:#2563eb;--dot-active:#0070d5;--dot-done:#c1c8cd;--dot-idle:#dfe3e6;--mono:ui-monospace,"SF Mono",Menlo,monospace;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;display:block;font-family:var(--sans);color:var(--ink);max-width:420px;margin:0 auto;background:var(--surface);border:1px solid var(--hairline);border-radius:10px;box-shadow:0 1px 3px rgba(31,41,51,.08),0 4px 14px rgba(31,41,51,.06);overflow:hidden}
+.c3 *{box-sizing:border-box}
+.c3-bar{display:flex;align-items:center;gap:.5rem;padding:.25rem .5rem;background:var(--panel);border-bottom:1px solid var(--hairline)}
+.c3-nav{display:flex;gap:.2rem}
+.c3-btn{font-family:var(--sans);font-size:.8rem;line-height:1;width:22px;height:22px;display:flex;align-items:center;justify-content:center;padding:0;border:1px solid var(--cell-bd);border-radius:5px;background:var(--surface);color:var(--ink);cursor:pointer;transition:background .12s,border-color .12s,color .12s}
+.c3-btn:hover:not(:disabled){background:var(--good-bg);border-color:var(--good-bd);color:var(--good-fg)}
+.c3-btn:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.c3-btn:disabled{opacity:.4;cursor:not-allowed}
+.c3-count{font-family:var(--mono);font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.c3-dots{display:inline-flex;gap:4px;margin-left:auto;align-items:center}
+.c3-dot{width:5px;height:5px;border-radius:50%;background:var(--dot-idle)}
+.c3-dot.done{background:var(--dot-done)}
+.c3-dot.active{width:7px;height:7px;background:var(--dot-active)}
+.c3-stage{display:flex;gap:.85rem;justify-content:center;align-items:flex-start;padding:.7rem .6rem .55rem}
+.c3-arr{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.c3-cells{display:flex;gap:.25rem}
+.c3-cell{position:relative;width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.82rem;border-radius:6px;border:1px solid var(--cell-bd);background:var(--cell-bg);color:var(--cell-fg)}
+.c3-cell .idx{position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:.55rem;color:var(--muted);font-family:var(--mono)}
+.c3-cell.good{background:var(--good-bg);border-color:var(--good-bd);color:var(--good-fg)}
+.c3-cell.dim{background:var(--dim-bg);border-color:var(--dim-bd);color:var(--dim-fg)}
+.c3-cap{font-size:.62rem;color:var(--muted);letter-spacing:.02em}
+.c3-chips{display:flex;justify-content:center;gap:.3rem;padding:0 .6rem .15rem;flex-wrap:wrap}
+.c3-chip{font-family:var(--mono);font-size:.62rem;padding:.1rem .35rem;border-radius:99px;background:var(--panel);border:1px solid var(--hairline);color:var(--muted)}
+.c3-chip b{color:var(--good-fg);font-weight:600}
+.c3-narr{font-family:var(--sans);font-size:.8rem;line-height:1.4;padding:.4rem .6rem;color:var(--ink);background:var(--surface)}
+.c3-narr code{font-family:var(--mono);font-size:.92em;color:var(--accent)}
+</style>
+  <div class="c3-bar">
+    <div class="c3-nav">
+      <button class="c3-btn" type="button" aria-label="Previous step">&#10094;</button>
+      <button class="c3-btn" type="button" aria-label="Next step" disabled>&#10095;</button>
+    </div>
+    <span class="c3-count">5 / 5</span>
+    <span class="c3-dots" aria-hidden="true">
+      <span class="c3-dot done"></span><span class="c3-dot done"></span><span class="c3-dot done"></span><span class="c3-dot done"></span><span class="c3-dot active"></span>
+    </span>
+  </div>
+  <div class="c3-stage">
+    <div class="c3-arr">
+      <div class="c3-cells">
+        <span class="c3-cell dim"><span class="idx">0</span>45</span>
+        <span class="c3-cell good"><span class="idx">1</span>60</span>
+        <span class="c3-cell good"><span class="idx">2</span>80</span>
+      </div>
+      <span class="c3-cap">sorted desired sizes</span>
+    </div>
+    <div class="c3-arr">
+      <div class="c3-cells">
+        <span class="c3-cell dim"><span class="idx">0</span>30</span>
+        <span class="c3-cell good"><span class="idx">1</span>60</span>
+        <span class="c3-cell good"><span class="idx">2</span>75</span>
+      </div>
+      <span class="c3-cap">sorted apartment sizes</span>
+    </div>
+  </div>
+  <div class="c3-chips">
+    <span class="c3-chip">i = end</span>
+    <span class="c3-chip">j = end</span>
+    <span class="c3-chip">matches = <b>2</b></span>
+  </div>
+  <p class="c3-narr">The same rule handles the final pair: <code>|80&minus;75| = 5</code>, so we match them and finish with 2 matches. Once one array is exhausted, no further match is possible.</p>
+  <p class="cap" style="font-size:11px;color:#6b7280;padding:6px 10px;margin:0;border-top:1px dashed #e6e9ee;">Crushed top row + borderless narration · CSS-only · chrome ≈ 50px</p>
+</section>
+        </div>
+      </div>
+
+      <div class="specimen">
+        <div class="specimen-head"><span class="specimen-name"><b>C4</b>Edge progress + collapsed narration</span><span class="tag win">most compact</span></div>
+        <div class="stageframe">
+<section class="c4"><style>
+.c4{
+  --good-fg:#1b6e3c;--good-bg:#e6f4ea;--good-bd:#9ed3b3;
+  --dim-fg:#9aa0a6;--dim-bg:#f3f4f6;--dim-bd:#e2e5e9;
+  --cell-fg:#1f2933;--cell-bg:#fff;--cell-bd:#cdd3da;
+  --ink:#1f2933;--muted:#6b7280;--surface:#fff;--panel:#fafbfc;
+  --hairline:#e6e9ee;--accent:#2563eb;--progress:#0070d5;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  position:relative;display:block;max-width:520px;margin:0 auto;
+  border:1px solid var(--hairline);border-radius:10px;
+  background:var(--surface);overflow:hidden;
+  box-shadow:0 1px 2px rgba(31,41,51,.04),0 4px 14px rgba(31,41,51,.06);
+  font-family:var(--sans);color:var(--ink);
+}
+.c4 *{box-sizing:border-box}
+.c4-prog{position:absolute;inset:0 0 auto 0;height:2px;background:var(--hairline);z-index:3}
+.c4-prog::after{content:"";position:absolute;inset:0 0 0 0;width:100%;background:var(--progress);transition:width .35s cubic-bezier(.16,1,.3,1)}
+.c4-stage{padding:18px 16px 14px;display:flex;flex-direction:column;gap:12px}
+.c4-row{display:flex;align-items:flex-start;gap:14px}
+.c4-arr{display:flex;flex-direction:column;gap:4px;min-width:0}
+.c4-cells{display:flex;gap:6px}
+.c4-cell{width:40px;height:40px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;border:1px solid var(--cell-bd);background:var(--cell-bg);color:var(--cell-fg)}
+.c4-cell.is-good{background:var(--good-bg);border-color:var(--good-bd);color:var(--good-fg)}
+.c4-cell.is-dim{background:var(--dim-bg);border-color:var(--dim-bd);color:var(--dim-fg)}
+.c4-idx{display:flex;gap:6px}
+.c4-idx span{width:40px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}
+.c4-cap{font-size:11px;color:var(--muted);letter-spacing:.01em}
+.c4-arr-name{font-family:var(--mono);font-size:11px;color:var(--ink);font-weight:600;align-self:center;min-width:34px}
+.c4-chips{display:flex;gap:6px;flex-wrap:wrap;padding-top:2px}
+.c4-chip{font-family:var(--mono);font-size:11px;color:var(--ink);background:var(--panel);border:1px solid var(--hairline);border-radius:999px;padding:2px 9px;font-variant-numeric:tabular-nums}
+.c4-chip b{color:var(--good-fg);font-weight:600}
+.c4-narr{position:relative;border-top:1px solid var(--hairline);padding:8px 12px}
+.c4-toggle{position:absolute;opacity:0;pointer-events:none}
+.c4-cap-text{display:block;font-size:12.5px;line-height:1.45;color:var(--ink);padding-right:54px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c4-toggle:checked ~ .c4-cap-text{white-space:normal;overflow:visible}
+.c4-more{position:absolute;top:7px;right:10px;display:inline-flex;align-items:center;gap:2px;font-family:var(--sans);font-size:11px;color:var(--accent);cursor:pointer;user-select:none;padding:1px 5px;border-radius:5px;line-height:1.4}
+.c4-more:hover{background:rgba(37,99,235,.08)}
+.c4-more .c4-chev{transition:transform .2s ease;font-size:10px}
+.c4-toggle:checked ~ .c4-more .c4-chev{transform:rotate(180deg)}
+.c4-more .lbl-more{display:inline}.c4-more .lbl-less{display:none}
+.c4-toggle:checked ~ .c4-more .lbl-more{display:none}
+.c4-toggle:checked ~ .c4-more .lbl-less{display:inline}
+.c4-toggle:focus-visible ~ .c4-more{outline:2px solid var(--accent);outline-offset:1px}
+.c4-pill{position:absolute;left:10px;bottom:46px;z-index:4;display:inline-flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--hairline);border-radius:999px;padding:2px 3px;box-shadow:0 1px 3px rgba(31,41,51,.1)}
+.c4-nav{width:22px;height:22px;border:0;background:transparent;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--ink);cursor:pointer;line-height:1}
+.c4-nav:hover:not(:disabled){background:var(--panel)}
+.c4-nav:disabled{color:var(--dim-fg);cursor:default}
+.c4-nav:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.c4-count{font-family:var(--mono);font-size:11px;color:var(--muted);padding:0 4px;font-variant-numeric:tabular-nums}
+@media (prefers-reduced-motion:reduce){.c4-prog::after,.c4-more .c4-chev{transition:none}}
+</style>
+  <div class="c4-prog" role="progressbar" aria-label="Step progress" aria-valuemin="1" aria-valuemax="5" aria-valuenow="5"></div>
+  <div class="c4-stage">
+    <div class="c4-row">
+      <span class="c4-arr-name">desired</span>
+      <div class="c4-arr">
+        <div class="c4-cells">
+          <div class="c4-cell is-dim">45</div>
+          <div class="c4-cell is-good">60</div>
+          <div class="c4-cell is-good">80</div>
+        </div>
+        <div class="c4-idx"><span>0</span><span>1</span><span>2</span></div>
+        <span class="c4-cap">sorted desired sizes</span>
+      </div>
+    </div>
+    <div class="c4-row">
+      <span class="c4-arr-name">apt</span>
+      <div class="c4-arr">
+        <div class="c4-cells">
+          <div class="c4-cell is-dim">30</div>
+          <div class="c4-cell is-good">60</div>
+          <div class="c4-cell is-good">75</div>
+        </div>
+        <div class="c4-idx"><span>0</span><span>1</span><span>2</span></div>
+        <span class="c4-cap">sorted apartment sizes</span>
+      </div>
+    </div>
+    <div class="c4-chips">
+      <span class="c4-chip">i&nbsp;=&nbsp;end</span>
+      <span class="c4-chip">j&nbsp;=&nbsp;end</span>
+      <span class="c4-chip">matches&nbsp;=&nbsp;<b>2</b></span>
+    </div>
+  </div>
+  <div class="c4-pill">
+    <button class="c4-nav" type="button" aria-label="Previous step">&#10094;</button>
+    <span class="c4-count">5&nbsp;/&nbsp;5</span>
+    <button class="c4-nav" type="button" aria-label="Next step" disabled>&#10095;</button>
+  </div>
+  <div class="c4-narr">
+    <input class="c4-toggle" type="checkbox" id="c4-narr-toggle" aria-hidden="true" tabindex="-1">
+    <label class="c4-more" for="c4-narr-toggle" tabindex="0" role="button" aria-expanded="false">
+      <span class="lbl-more">more</span><span class="lbl-less">less</span><span class="c4-chev" aria-hidden="true">&#8964;</span>
+    </label>
+    <span class="c4-cap-text">The same rule handles the final pair: |80&minus;75| = 5, so we match them and finish with 2 matches. Once one array is exhausted, no further match is possible.</span>
+  </div>
+  <p class="cap" style="font-size:11px;color:#6b7280;padding:6px 10px;margin:0;">Edge progress bar + control pill + 1-line narration (click "more") · chrome ≈ 34px</p>
+</section>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- HEIGHTS -->
+  <section class="sec">
+    <h2>Chrome height, to scale</h2>
+    <p class="sec-intro">Approximate chrome (controls + narration) height; the stage is identical across all. Shorter = better.</p>
+    <div class="aspects">
+      <div class="asp bad"><span class="lab"><b>now</b>Two padded bands</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="num">~108 px</span></div>
+      <div class="asp"><span class="lab"><b>C3</b>Slim two-zone</span><span class="track"><span class="fill" style="width:46%"></span></span><span class="num">~50 px</span></div>
+      <div class="asp"><span class="lab"><b>C2</b>Unified footer</span><span class="track"><span class="fill" style="width:41%"></span></span><span class="num">~44 px</span></div>
+      <div class="asp"><span class="lab"><b>C1</b>Overlay controls</span><span class="track"><span class="fill" style="width:37%"></span></span><span class="num">~40 px</span></div>
+      <div class="asp"><span class="lab"><b>C4</b>Edge + collapsed</span><span class="track"><span class="fill" style="width:31%"></span></span><span class="num">~34 px</span></div>
+    </div>
+  </section>
+
+  <!-- RECOMMENDATION -->
+  <section class="sec">
+    <h2>Recommendation &amp; what changes in <code>scriba-embed.css</code></h2>
+    <div style="overflow-x:auto;">
+    <table class="rec">
+      <thead><tr><th>Direction</th><th>How it saves space</th><th>CSS / HTML change</th><th>Risk</th></tr></thead>
+      <tbody>
+        <tr><td><b>C3</b> Slim two-zone</td><td>Same layout, crushed: tiny control padding, counter loses <code>min-width:5rem</code>, smaller dots, borderless narration with no <code>min-height</code>.</td><td>CSS-only. Tune <code>.scriba-controls</code>, <code>.scriba-step-counter</code>, <code>.scriba-dot</code>, <code>.scriba-narration</code>. No markup change.</td><td><span class="pill low">Low</span></td></tr>
+        <tr><td><b>C2</b> Unified footer</td><td>Drops the top bar; one strip holds nav + clamped narration; dots → 2px progress bar.</td><td>Markup: move controls into the narration footer. CSS rework + line-clamp.</td><td><span class="pill med">Medium</span></td></tr>
+        <tr><td><b>C1</b> Overlay controls</td><td>Controls float as a pill over the stage (reclaims whole top bar); borderless caption.</td><td>Markup: re-parent controls into the stage as an absolute overlay; needs backdrop blur.</td><td><span class="pill med">Medium</span></td></tr>
+        <tr><td><b>C4</b> Edge + collapsed</td><td>Dots → top-edge hairline bar; controls → tiny pill; narration clamps to 1 line with expand.</td><td>Markup + CSS-only expander (checkbox/<code>:has</code>). Most new structure.</td><td><span class="pill med">Medium</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="prose" style="margin-top:20px;"><strong>Suggested:</strong> ship <b style="font-family:var(--mono);color:var(--accent)">C3</b> now — pure CSS, ~54% chrome reduction, zero markup/JS change, no risk to the step controller. If you want it tighter and are OK touching the emit markup, <b style="font-family:var(--mono);color:var(--accent)">C2</b> (unified footer) or <b style="font-family:var(--mono);color:var(--accent)">C4</b> (edge progress) cut chrome by ~60–70%. <b style="font-family:var(--mono);color:var(--accent)">C1</b> overlay looks slickest but the pill over a small stage can crowd content.</p>
+  </section>
+
+  <footer class="foot">Scriba chrome study · final frame of <span style="font-family:var(--mono)">apartments-two-pointers</span> · heights are design estimates, confirm against rendered widget after implementation.</footer>
+
+</div>
+</body>
+</html>

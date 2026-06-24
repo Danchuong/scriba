@@ -1124,7 +1124,7 @@
    ============================================ */
 
 .scriba-stage {
-  padding: 1.25rem 1rem;
+  padding: 0.875rem 0.875rem;
   display: flex;
   justify-content: center;
   min-height: 100px;
@@ -1135,6 +1135,56 @@
   width: 100%;
   height: auto;
   max-height: 80vh;
+}
+
+/* ============================================
+   C1: Overlay controls
+   The control bar floats as a translucent pill over the stage, reclaiming
+   the full top bar. Scoped to `.scriba-stage-wrap > .scriba-controls` so the
+   substory widget's reuse of the base `.scriba-controls` top bar is unaffected.
+   ============================================ */
+
+.scriba-stage-wrap {
+  position: relative;
+}
+
+.scriba-stage-wrap > .scriba-stage {
+  padding-bottom: 3.25rem; /* clear room so the pill never covers animation content */
+}
+
+.scriba-stage-wrap > .scriba-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: auto;
+  gap: 0.6rem;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid rgba(205, 211, 218, 0.7);
+  border-bottom: 1px solid rgba(205, 211, 218, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 18px rgba(16, 24, 40, 0.12);
+}
+
+.scriba-stage-wrap > .scriba-controls button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-step-counter {
+  min-width: 0;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-progress {
+  margin-left: 0;
 }
 
 /* ============================================
@@ -1153,12 +1203,10 @@
 
 .scriba-narration {
   margin: 0;
-  padding: 0.75rem 1rem;
-  font-size: 0.92rem;
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.85rem;
   line-height: 1.55;
-  color: #11181c;
-  border-top: 1px solid #e6e8eb;
-  min-height: 2.5rem;
+  color: #475467;
 }
 
 /* ============================================
@@ -1223,6 +1271,7 @@
 [data-theme="dark"] .scriba-controls { background: #202425; border-color: #313538; }
 [data-theme="dark"] .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
 [data-theme="dark"] .scriba-controls button:hover { background: #313538; }
+[data-theme="dark"] .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
 [data-theme="dark"] .scriba-step-counter { color: #9ba1a6; }
 [data-theme="dark"] .scriba-narration { color: #ecedee; border-color: #2b2f31; }
 [data-theme="dark"] .scriba-dot { background: #313538; }
@@ -1238,6 +1287,7 @@
   :root:not([data-theme="light"]) .scriba-controls { background: #202425; border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
   :root:not([data-theme="light"]) .scriba-controls button:hover { background: #313538; }
+  :root:not([data-theme="light"]) .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-step-counter { color: #9ba1a6; }
   :root:not([data-theme="light"]) .scriba-narration { color: #ecedee; border-color: #2b2f31; }
   :root:not([data-theme="light"]) .scriba-dot { background: #313538; }
@@ -1409,7 +1459,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 <body>
 <button class="theme-toggle" data-scriba-action="theme-toggle">Toggle theme</button>
 <h1>diagram_multi</h1>
-<figure class="scriba-diagram" data-scriba-scene="array-tree-view"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 482 536" style="max-width:482px" role="img" aria-labelledby="array-tree-view-frame-1-narration" xmlns="http://www.w3.org/2000/svg"><title>array-tree-view</title><g transform="translate(25.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-current"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#ffffff">1</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#687076">0</text><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c">2</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#687076">1</text><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c">3</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#687076">2</text><g data-target="a.cell[3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c">4</text></g><text class="scriba-index-label idx" x="216" y="56" fill="#687076">3</text><g data-target="a.cell[4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c">5</text></g><text class="scriba-index-label idx" x="278" y="56" fill="#687076">4</text><g data-target="a.cell[5]" class="scriba-state-idle"><rect x="311.0" y="1.0" width="58.0" height="38.0"/><text x="340" y="20" fill="#11181c">6</text></g><text class="scriba-index-label idx" x="340" y="56" fill="#687076">5</text><g data-target="a.cell[6]" class="scriba-state-idle"><rect x="373.0" y="1.0" width="58.0" height="38.0"/><text x="402" y="20" fill="#11181c">7</text></g><text class="scriba-index-label idx" x="402" y="56" fill="#687076">6</text><text class="scriba-primitive-label" x="216" y="80" fill="#687076">Heap array</text></g></g><g transform="translate(16,152.0)"><g data-primitive="tree" data-shape="T" transform="translate(20,20)"><text class="scriba-primitive-label" x="205" y="14" fill="#687076" style="text-anchor:middle">Heap tree</text><g transform="translate(0,28)"><g class="scriba-tree-edges"><g data-target="T.edge[(1,2)]" class="scriba-state-idle"><line x1="191" y1="44" x2="102" y2="136" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(1,3)]" class="scriba-state-idle"><line x1="219" y1="44" x2="308" y2="136" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(2,4)]" class="scriba-state-idle"><line x1="79" y1="168" x2="39" y2="252" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(2,5)]" class="scriba-state-idle"><line x1="97" y1="168" x2="138" y2="252" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(3,6)]" class="scriba-state-idle"><line x1="313" y1="168" x2="272" y2="252" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(3,7)]" class="scriba-state-idle"><line x1="331" y1="168" x2="371" y2="252" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g></g><g class="scriba-tree-nodes"><g data-target="T.node[1]" data-node-x="205" data-node-y="30" class="scriba-state-current"><circle cx="205" cy="30" r="20" fill="#0070d5" stroke="#0b68cb" stroke-width="2"/><text x="205" y="30" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">1</text></g><g data-target="T.node[2]" data-node-x="88" data-node-y="150" class="scriba-state-idle"><circle cx="88" cy="150" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="88" y="150" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">2</text></g><g data-target="T.node[3]" data-node-x="322" data-node-y="150" class="scriba-state-idle"><circle cx="322" cy="150" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="322" y="150" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">3</text></g><g data-target="T.node[4]" data-node-x="30" data-node-y="270" class="scriba-state-idle"><circle cx="30" cy="270" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="30" y="270" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">4</text></g><g data-target="T.node[5]" data-node-x="147" data-node-y="270" class="scriba-state-idle"><circle cx="147" cy="270" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="147" y="270" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">5</text></g><g data-target="T.node[6]" data-node-x="263" data-node-y="270" class="scriba-state-idle"><circle cx="263" cy="270" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="263" y="270" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">6</text></g><g data-target="T.node[7]" data-node-x="380" data-node-y="270" class="scriba-state-idle"><circle cx="380" cy="270" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="380" y="270" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">7</text></g></g></g></g></g></svg></div></figure>
+<figure class="scriba-diagram" data-scriba-scene="array-tree-view"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 474 506" style="max-width:474px" role="img" aria-labelledby="array-tree-view-frame-1-narration" xmlns="http://www.w3.org/2000/svg"><title>array-tree-view</title><g transform="translate(21.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-current"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#ffffff">1</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#687076">0</text><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c">2</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#687076">1</text><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c">3</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#687076">2</text><g data-target="a.cell[3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c">4</text></g><text class="scriba-index-label idx" x="216" y="56" fill="#687076">3</text><g data-target="a.cell[4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c">5</text></g><text class="scriba-index-label idx" x="278" y="56" fill="#687076">4</text><g data-target="a.cell[5]" class="scriba-state-idle"><rect x="311.0" y="1.0" width="58.0" height="38.0"/><text x="340" y="20" fill="#11181c">6</text></g><text class="scriba-index-label idx" x="340" y="56" fill="#687076">5</text><g data-target="a.cell[6]" class="scriba-state-idle"><rect x="373.0" y="1.0" width="58.0" height="38.0"/><text x="402" y="20" fill="#11181c">7</text></g><text class="scriba-index-label idx" x="402" y="56" fill="#687076">6</text><text class="scriba-primitive-label" x="216" y="80" fill="#687076">Heap array</text></g></g><g transform="translate(12,126.0)"><g data-primitive="tree" data-shape="T" transform="translate(20,20)"><text class="scriba-primitive-label" x="205" y="14" fill="#687076" style="text-anchor:middle">Heap tree</text><g transform="translate(0,28)"><g class="scriba-tree-edges"><g data-target="T.edge[(1,2)]" class="scriba-state-idle"><line x1="191" y1="44" x2="102" y2="136" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(1,3)]" class="scriba-state-idle"><line x1="219" y1="44" x2="308" y2="136" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(2,4)]" class="scriba-state-idle"><line x1="79" y1="168" x2="39" y2="252" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(2,5)]" class="scriba-state-idle"><line x1="97" y1="168" x2="138" y2="252" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(3,6)]" class="scriba-state-idle"><line x1="313" y1="168" x2="272" y2="252" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g><g data-target="T.edge[(3,7)]" class="scriba-state-idle"><line x1="331" y1="168" x2="371" y2="252" fill="none" stroke="#dfe3e6" stroke-width="1.5"/></g></g><g class="scriba-tree-nodes"><g data-target="T.node[1]" data-node-x="205" data-node-y="30" class="scriba-state-current"><circle cx="205" cy="30" r="20" fill="#0070d5" stroke="#0b68cb" stroke-width="2"/><text x="205" y="30" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central">1</text></g><g data-target="T.node[2]" data-node-x="88" data-node-y="150" class="scriba-state-idle"><circle cx="88" cy="150" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="88" y="150" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">2</text></g><g data-target="T.node[3]" data-node-x="322" data-node-y="150" class="scriba-state-idle"><circle cx="322" cy="150" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="322" y="150" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">3</text></g><g data-target="T.node[4]" data-node-x="30" data-node-y="270" class="scriba-state-idle"><circle cx="30" cy="270" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="30" y="270" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">4</text></g><g data-target="T.node[5]" data-node-x="147" data-node-y="270" class="scriba-state-idle"><circle cx="147" cy="270" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="147" y="270" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">5</text></g><g data-target="T.node[6]" data-node-x="263" data-node-y="270" class="scriba-state-idle"><circle cx="263" cy="270" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="263" y="270" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">6</text></g><g data-target="T.node[7]" data-node-x="380" data-node-y="270" class="scriba-state-idle"><circle cx="380" cy="270" r="20" fill="#f8f9fa" stroke="#dfe3e6" stroke-width="1.5"/><text x="380" y="270" fill="#11181c" style="text-anchor:middle;dominant-baseline:central">7</text></g></g></g></g></g></svg></div></figure>
 <script>
 document.addEventListener('click',function(e){
   var btn=e.target.closest('[data-scriba-action="theme-toggle"]');

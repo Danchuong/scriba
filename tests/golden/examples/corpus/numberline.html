@@ -1124,7 +1124,7 @@
    ============================================ */
 
 .scriba-stage {
-  padding: 1.25rem 1rem;
+  padding: 0.875rem 0.875rem;
   display: flex;
   justify-content: center;
   min-height: 100px;
@@ -1135,6 +1135,56 @@
   width: 100%;
   height: auto;
   max-height: 80vh;
+}
+
+/* ============================================
+   C1: Overlay controls
+   The control bar floats as a translucent pill over the stage, reclaiming
+   the full top bar. Scoped to `.scriba-stage-wrap > .scriba-controls` so the
+   substory widget's reuse of the base `.scriba-controls` top bar is unaffected.
+   ============================================ */
+
+.scriba-stage-wrap {
+  position: relative;
+}
+
+.scriba-stage-wrap > .scriba-stage {
+  padding-bottom: 3.25rem; /* clear room so the pill never covers animation content */
+}
+
+.scriba-stage-wrap > .scriba-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: auto;
+  gap: 0.6rem;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid rgba(205, 211, 218, 0.7);
+  border-bottom: 1px solid rgba(205, 211, 218, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 18px rgba(16, 24, 40, 0.12);
+}
+
+.scriba-stage-wrap > .scriba-controls button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-step-counter {
+  min-width: 0;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-progress {
+  margin-left: 0;
 }
 
 /* ============================================
@@ -1153,12 +1203,10 @@
 
 .scriba-narration {
   margin: 0;
-  padding: 0.75rem 1rem;
-  font-size: 0.92rem;
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.85rem;
   line-height: 1.55;
-  color: #11181c;
-  border-top: 1px solid #e6e8eb;
-  min-height: 2.5rem;
+  color: #475467;
 }
 
 /* ============================================
@@ -1223,6 +1271,7 @@
 [data-theme="dark"] .scriba-controls { background: #202425; border-color: #313538; }
 [data-theme="dark"] .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
 [data-theme="dark"] .scriba-controls button:hover { background: #313538; }
+[data-theme="dark"] .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
 [data-theme="dark"] .scriba-step-counter { color: #9ba1a6; }
 [data-theme="dark"] .scriba-narration { color: #ecedee; border-color: #2b2f31; }
 [data-theme="dark"] .scriba-dot { background: #313538; }
@@ -1238,6 +1287,7 @@
   :root:not([data-theme="light"]) .scriba-controls { background: #202425; border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
   :root:not([data-theme="light"]) .scriba-controls button:hover { background: #313538; }
+  :root:not([data-theme="light"]) .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-step-counter { color: #9ba1a6; }
   :root:not([data-theme="light"]) .scriba-narration { color: #ecedee; border-color: #2b2f31; }
   :root:not([data-theme="light"]) .scriba-dot { background: #313538; }
@@ -1409,15 +1459,15 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 <body>
 <button class="theme-toggle" data-scriba-action="theme-toggle">Toggle theme</button>
 <h1>numberline</h1>
-<div class="scriba-widget" id="numline" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-atomic="true">Step 1 / 2</span><button class="scriba-btn-next" aria-label="Next step">Next</button><div class="scriba-progress" aria-hidden="true"><div class="scriba-dot active"></div><div class="scriba-dot"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" dir="auto" id="numline-narration" aria-live="polite">Query range [3, 7] highlighted.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 512 131" style="max-width:512px" role="img" aria-labelledby="numline-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Query range [3, 7] highlighted.</title><g transform="translate(16.0,16)"><g data-primitive="numberline" data-shape="nl"><g transform="translate(0, 57)"><g data-target="nl.axis" class="scriba-state-idle"><line x1="20" y1="20" x2="460" y2="20" stroke="#dfe3e6" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-idle"><line x1="20" y1="12" x2="20" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="20" y="42" fill="#11181c">0</text></g><g data-target="nl.tick[1]" class="scriba-state-idle"><line x1="64" y1="12" x2="64" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="64" y="42" fill="#11181c">1</text></g><g data-target="nl.tick[2]" class="scriba-state-idle"><line x1="108" y1="12" x2="108" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="108" y="42" fill="#11181c">2</text></g><g data-target="nl.tick[3]" class="scriba-state-current"><line x1="152" y1="12" x2="152" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="152" y="42" fill="#11181c">3</text></g><g data-target="nl.tick[4]" class="scriba-state-current"><line x1="196" y1="12" x2="196" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="196" y="42" fill="#11181c">4</text></g><g data-target="nl.tick[5]" class="scriba-state-current"><line x1="240" y1="12" x2="240" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="240" y="42" fill="#11181c">5</text></g><g data-target="nl.tick[6]" class="scriba-state-current"><line x1="284" y1="12" x2="284" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="284" y="42" fill="#11181c">6</text></g><g data-target="nl.tick[7]" class="scriba-state-current"><line x1="328" y1="12" x2="328" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="328" y="42" fill="#11181c">7</text></g><g data-target="nl.tick[8]" class="scriba-state-idle"><line x1="372" y1="12" x2="372" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="372" y="42" fill="#11181c">8</text></g><g data-target="nl.tick[9]" class="scriba-state-idle"><line x1="416" y1="12" x2="416" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="416" y="42" fill="#11181c">9</text></g><g data-target="nl.tick[10]" class="scriba-state-idle"><line x1="460" y1="12" x2="460" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="460" y="42" fill="#11181c">10</text></g></g></g></g></svg></div><p class="scriba-narration" id="numline-print-1-narration">Query range [3, 7] highlighted.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">Step 2 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 512 131" style="max-width:512px" role="img" aria-labelledby="numline-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>Midpoint at 5. Range [3,7] processed.</title><g transform="translate(16.0,16)"><g data-primitive="numberline" data-shape="nl"><g transform="translate(0, 57)"><g data-target="nl.axis" class="scriba-state-idle"><line x1="20" y1="20" x2="460" y2="20" stroke="#dfe3e6" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-idle"><line x1="20" y1="12" x2="20" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="20" y="42" fill="#11181c">0</text></g><g data-target="nl.tick[1]" class="scriba-state-idle"><line x1="64" y1="12" x2="64" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="64" y="42" fill="#11181c">1</text></g><g data-target="nl.tick[2]" class="scriba-state-idle"><line x1="108" y1="12" x2="108" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="108" y="42" fill="#11181c">2</text></g><g data-target="nl.tick[3]" class="scriba-state-done"><line x1="152" y1="12" x2="152" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="152" y="42" fill="#11181c">3</text></g><g data-target="nl.tick[4]" class="scriba-state-done"><line x1="196" y1="12" x2="196" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="196" y="42" fill="#11181c">4</text></g><g data-target="nl.tick[5]" class="scriba-state-done"><line x1="240" y1="12" x2="240" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="240" y="42" fill="#11181c">5</text></g><g data-target="nl.tick[6]" class="scriba-state-done"><line x1="284" y1="12" x2="284" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="284" y="42" fill="#11181c">6</text></g><g data-target="nl.tick[7]" class="scriba-state-done"><line x1="328" y1="12" x2="328" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="328" y="42" fill="#11181c">7</text></g><g data-target="nl.tick[8]" class="scriba-state-idle"><line x1="372" y1="12" x2="372" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="372" y="42" fill="#11181c">8</text></g><g data-target="nl.tick[9]" class="scriba-state-idle"><line x1="416" y1="12" x2="416" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="416" y="42" fill="#11181c">9</text></g><g data-target="nl.tick[10]" class="scriba-state-idle"><line x1="460" y1="12" x2="460" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="460" y="42" fill="#11181c">10</text></g><g class="scriba-annotation scriba-annotation-good" data-annotation="nl.tick[5]-nl.tick[2]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from nl.tick[2] to nl.tick[5]: +3"><path d="M108,12 C152,-7 196,-7 231.7,8.4" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from nl.tick[2] to nl.tick[5]: +3</title></path><polygon points="240.0,12.0 228.8,12.6 232.8,3.4" fill="#027a55"/><rect x="160" y="-43" width="27" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="174" y="-30" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:700;font-size:calc(12px * var(--scriba-diagram-font-scale, 1));text-anchor:middle;dominant-baseline:auto">+3</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="nl.tick[7]-nl.tick[3]" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from nl.tick[3] to nl.tick[7]: +4"><path d="M152,12 C210,-13 269,-13 319.7,8.5" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from nl.tick[3] to nl.tick[7]: +4</title></path><polygon points="328.0,12.0 316.8,12.7 320.7,3.5" fill="#506882"/><rect x="227" y="-50" width="26" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="239" cy="-6" r="2" fill="#506882" opacity="0.6"/><polyline points="239,-6 239,-31" fill="none" stroke="#506882" stroke-width="0.75" opacity="0.6"/><text x="240" y="-38" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:calc(11px * var(--scriba-diagram-font-scale, 1));text-anchor:middle;dominant-baseline:auto">+4</text></g></g></g></g></svg></div><p class="scriba-narration" id="numline-print-2-narration">Midpoint at 5. Range [3,7] processed.</p></div></div></div>
+<div class="scriba-widget" id="numline" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 2</span><button class="scriba-btn-next" aria-label="Next step">&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="numline-narration" aria-live="polite">Query range [3, 7] highlighted.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 504 164" style="max-width:504px" role="img" aria-labelledby="numline-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Query range [3, 7] highlighted.</title><g transform="translate(12.0,12)"><g data-primitive="numberline" data-shape="nl"><g transform="translate(0, 84)"><g data-target="nl.axis" class="scriba-state-idle"><line x1="20" y1="20" x2="460" y2="20" stroke="#dfe3e6" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-idle"><line x1="20" y1="12" x2="20" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="20" y="42" fill="#11181c">0</text></g><g data-target="nl.tick[1]" class="scriba-state-idle"><line x1="64" y1="12" x2="64" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="64" y="42" fill="#11181c">1</text></g><g data-target="nl.tick[2]" class="scriba-state-idle"><line x1="108" y1="12" x2="108" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="108" y="42" fill="#11181c">2</text></g><g data-target="nl.tick[3]" class="scriba-state-current"><line x1="152" y1="12" x2="152" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="152" y="42" fill="#11181c">3</text></g><g data-target="nl.tick[4]" class="scriba-state-current"><line x1="196" y1="12" x2="196" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="196" y="42" fill="#11181c">4</text></g><g data-target="nl.tick[5]" class="scriba-state-current"><line x1="240" y1="12" x2="240" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="240" y="42" fill="#11181c">5</text></g><g data-target="nl.tick[6]" class="scriba-state-current"><line x1="284" y1="12" x2="284" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="284" y="42" fill="#11181c">6</text></g><g data-target="nl.tick[7]" class="scriba-state-current"><line x1="328" y1="12" x2="328" y2="28" stroke="#0070d5" stroke-width="2.5"/><text x="328" y="42" fill="#11181c">7</text></g><g data-target="nl.tick[8]" class="scriba-state-idle"><line x1="372" y1="12" x2="372" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="372" y="42" fill="#11181c">8</text></g><g data-target="nl.tick[9]" class="scriba-state-idle"><line x1="416" y1="12" x2="416" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="416" y="42" fill="#11181c">9</text></g><g data-target="nl.tick[10]" class="scriba-state-idle"><line x1="460" y1="12" x2="460" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="460" y="42" fill="#11181c">10</text></g></g></g></g></svg></div><p class="scriba-narration" id="numline-print-1-narration">Query range [3, 7] highlighted.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">2 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 504 164" style="max-width:504px" role="img" aria-labelledby="numline-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>Midpoint at 5. Range [3,7] processed.</title><g transform="translate(12.0,12)"><g data-primitive="numberline" data-shape="nl"><g transform="translate(0, 84)"><g data-target="nl.axis" class="scriba-state-idle"><line x1="20" y1="20" x2="460" y2="20" stroke="#dfe3e6" stroke-width="2"/></g><g data-target="nl.tick[0]" class="scriba-state-idle"><line x1="20" y1="12" x2="20" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="20" y="42" fill="#11181c">0</text></g><g data-target="nl.tick[1]" class="scriba-state-idle"><line x1="64" y1="12" x2="64" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="64" y="42" fill="#11181c">1</text></g><g data-target="nl.tick[2]" class="scriba-state-idle"><line x1="108" y1="12" x2="108" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="108" y="42" fill="#11181c">2</text></g><g data-target="nl.tick[3]" class="scriba-state-done"><line x1="152" y1="12" x2="152" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="152" y="42" fill="#11181c">3</text></g><g data-target="nl.tick[4]" class="scriba-state-done"><line x1="196" y1="12" x2="196" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="196" y="42" fill="#11181c">4</text></g><g data-target="nl.tick[5]" class="scriba-state-done"><line x1="240" y1="12" x2="240" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="240" y="42" fill="#11181c">5</text></g><g data-target="nl.tick[6]" class="scriba-state-done"><line x1="284" y1="12" x2="284" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="284" y="42" fill="#11181c">6</text></g><g data-target="nl.tick[7]" class="scriba-state-done"><line x1="328" y1="12" x2="328" y2="28" stroke="#e6e8eb" stroke-width="2.5"/><text x="328" y="42" fill="#11181c">7</text></g><g data-target="nl.tick[8]" class="scriba-state-idle"><line x1="372" y1="12" x2="372" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="372" y="42" fill="#11181c">8</text></g><g data-target="nl.tick[9]" class="scriba-state-idle"><line x1="416" y1="12" x2="416" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="416" y="42" fill="#11181c">9</text></g><g data-target="nl.tick[10]" class="scriba-state-idle"><line x1="460" y1="12" x2="460" y2="28" stroke="#f8f9fa" stroke-width="1.5"/><text x="460" y="42" fill="#11181c">10</text></g><g class="scriba-annotation scriba-annotation-good" data-annotation="nl.tick[5]-nl.tick[2]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from nl.tick[2] to nl.tick[5]: +3"><path d="M108,12 C152,-7 196,-7 231.7,8.4" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from nl.tick[2] to nl.tick[5]: +3</title></path><polygon points="240.0,12.0 228.8,12.6 232.8,3.4" fill="#027a55"/><rect x="160" y="-43" width="27" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="174" y="-30" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:700;font-size:calc(12px * var(--scriba-diagram-font-scale, 1));text-anchor:middle;dominant-baseline:auto">+3</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="nl.tick[7]-nl.tick[3]" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from nl.tick[3] to nl.tick[7]: +4"><path d="M152,12 C210,-13 269,-13 319.7,8.5" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from nl.tick[3] to nl.tick[7]: +4</title></path><polygon points="328.0,12.0 316.8,12.7 320.7,3.5" fill="#506882"/><rect x="227" y="-50" width="26" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="239" cy="-6" r="2" fill="#506882" opacity="0.6"/><polyline points="239,-6 239,-31" fill="none" stroke="#506882" stroke-width="0.75" opacity="0.6"/><text x="240" y="-38" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:calc(11px * var(--scriba-diagram-font-scale, 1));text-anchor:middle;dominant-baseline:auto">+4</text></g></g></g></g></svg></div><p class="scriba-narration" id="numline-print-2-narration">Midpoint at 5. Range [3,7] processed.</p></div></div></div>
 <script>(function(){
   var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
   var W=document.getElementById('numline');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 512 131" style="max-width:512px" role="img" aria-labelledby="numline-narration" xmlns="http://www.w3.org/2000/svg"><title>Query range [3, 7] highlighted.</title>
-<g transform="translate(16.0,16)">
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 504 164" style="max-width:504px" role="img" aria-labelledby="numline-narration" xmlns="http://www.w3.org/2000/svg"><title>Query range [3, 7] highlighted.</title>
+<g transform="translate(12.0,12)">
 <g data-primitive="numberline" data-shape="nl">
-  <g transform="translate(0, 57)">
+  <g transform="translate(0, 84)">
   <g data-target="nl.axis" class="scriba-state-idle">
     <line x1="20" y1="20" x2="460" y2="20" stroke="#dfe3e6" stroke-width="2"/>
   </g>
@@ -1469,10 +1519,10 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 </g>
 </g>
 </svg>`,narration:`Query range [3, 7] highlighted.`,substory:``,label:``,tr:null,fs:0},
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 512 131" style="max-width:512px" role="img" aria-labelledby="numline-narration" xmlns="http://www.w3.org/2000/svg"><title>Midpoint at 5. Range [3,7] processed.</title>
-<g transform="translate(16.0,16)">
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 504 164" style="max-width:504px" role="img" aria-labelledby="numline-narration" xmlns="http://www.w3.org/2000/svg"><title>Midpoint at 5. Range [3,7] processed.</title>
+<g transform="translate(12.0,12)">
 <g data-primitive="numberline" data-shape="nl">
-  <g transform="translate(0, 57)">
+  <g transform="translate(0, 84)">
   <g data-target="nl.axis" class="scriba-state-idle">
     <line x1="20" y1="20" x2="460" y2="20" stroke="#dfe3e6" stroke-width="2"/>
   </g>
@@ -1570,7 +1620,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
     var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
     function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
-      sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+      sr.textContent=(i+1)+' / '+fd.length;
       sp.disabled=i===0;sx.disabled=i===fd.length-1;
       sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
@@ -1579,7 +1629,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     sh(0);
   }
   function _updateControls(i){
-    ctr.textContent='Step '+(i+1)+' / '+frames.length;
+    ctr.textContent=(i+1)+' / '+frames.length;
     prev.disabled=i===0;
     next.disabled=i===frames.length-1;
     dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
