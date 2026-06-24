@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scriba — Layout Redesign Study</title>
+<style>
+  :root{
+    --paper:#fbfcfd; --surface:#ffffff; --ink:#1f2933; --muted:#6b7280;
+    --hairline:#e6e9ee; --panel:#fafbfc; --accent:#2563eb;
+    --good-fg:#1b6e3c; --good-bg:#e6f4ea; --good-bd:#9ed3b3;
+    --dim-fg:#9aa0a6; --dim-bg:#f3f4f6; --dim-bd:#e2e5e9;
+    --cell-fg:#1f2933; --cell-bg:#ffffff; --cell-bd:#cdd3da;
+    --warn-bg:#fff4e5; --warn-bd:#f6d8a8; --warn-fg:#9a5b00;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif: "Iowan Old Style", Georgia, serif;
+  }
+  *{box-sizing:border-box;}
+  html{ -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--sans); line-height:1.55;
+    padding:48px 24px 96px;
+  }
+  .wrap{ max-width:1180px; margin:0 auto; }
+
+  /* ---- masthead ---- */
+  .mast{ border-bottom:1px solid var(--hairline); padding-bottom:26px; margin-bottom:38px; }
+  .eyebrow{ font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--accent); margin:0 0 10px; }
+  .mast h1{ font-family:var(--serif); font-weight:600; font-size:34px; line-height:1.12; margin:0 0 12px; letter-spacing:.1px; text-wrap:balance; max-width:18ch; }
+  .mast p{ margin:0; color:var(--muted); font-size:15px; max-width:64ch; }
+
+  h2{ font-family:var(--serif); font-weight:600; font-size:21px; margin:0 0 4px; letter-spacing:.1px; }
+  .sec{ margin-top:54px; }
+  .sec-intro{ color:var(--muted); font-size:14px; margin:0 0 22px; max-width:70ch; }
+
+  /* ---- finding callout ---- */
+  .finding{
+    display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+    background:var(--hairline); border:1px solid var(--hairline);
+    border-radius:12px; overflow:hidden; margin-bottom:26px;
+  }
+  .finding .f{ background:var(--surface); padding:18px 20px; }
+  .finding .k{ font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 0 8px; }
+  .finding .v{ font-family:var(--mono); font-size:24px; color:var(--ink); font-variant-numeric:tabular-nums; }
+  .finding .v small{ font-size:13px; color:var(--muted); }
+  .finding .v.bad{ color:#b42318; }
+
+  .prose{ font-size:14px; color:#33414f; max-width:74ch; }
+  .prose code{ font-family:var(--mono); font-size:12.5px; background:var(--panel); border:1px solid var(--hairline); border-radius:5px; padding:1px 6px; color:var(--ink); }
+  .prose strong{ color:var(--ink); }
+
+  /* ---- column frame: an honest 700px document column ---- */
+  .grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px; align-items:start; }
+  @media (max-width:1024px){ .grid{ grid-template-columns:1fr; } }
+
+  .specimen{ background:var(--surface); border:1px solid var(--hairline); border-radius:14px; overflow:hidden; box-shadow:0 1px 2px rgba(31,41,51,.04), 0 10px 30px -22px rgba(31,41,51,.25); }
+  .specimen-head{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:13px 16px; border-bottom:1px solid var(--hairline); background:var(--panel); }
+  .specimen-name{ font-weight:600; font-size:13.5px; }
+  .specimen-name b{ font-family:var(--mono); font-weight:600; color:var(--accent); font-size:12px; margin-right:8px; }
+  .tag{ font-family:var(--mono); font-size:10.5px; padding:3px 8px; border-radius:999px; border:1px solid var(--hairline); color:var(--muted); background:var(--surface); white-space:nowrap; }
+  .tag.win{ color:var(--good-fg); background:var(--good-bg); border-color:var(--good-bd); }
+  .tag.warn{ color:var(--warn-fg); background:var(--warn-bg); border-color:var(--warn-bd); }
+
+  /* the column: fixed 700-ish, ruled background to read like a doc column */
+  .column{
+    padding:24px;
+    background:
+      linear-gradient(90deg, transparent 0 23px, rgba(37,99,235,.04) 23px 24px, transparent 24px),
+      repeating-linear-gradient(180deg, transparent 0 31px, rgba(31,41,51,.025) 31px 32px);
+    display:flex; justify-content:center;
+  }
+  .col-inner{ width:100%; max-width:700px; }
+  .col-note{ font-size:11px; color:var(--muted); padding:0 16px 13px; display:flex; align-items:center; gap:6px; }
+  .col-note::before{ content:""; width:7px; height:7px; border-radius:2px; background:var(--accent); }
+
+  /* ---- baseline (current) mock — honest portrait ---- */
+  .b0{ margin:0 auto; max-width:240px; border:1px solid var(--hairline); border-radius:10px; background:var(--surface); overflow:hidden; }
+  .b0-stage{ padding:20px 16px; display:flex; flex-direction:column; align-items:center; gap:50px; }
+  .b0-arr{ display:flex; flex-direction:column; align-items:center; gap:7px; }
+  .b0-cap{ font-size:11px; color:var(--muted); }
+  .b0-row{ display:flex; gap:2px; }
+  .b0-cell{ width:60px; height:40px; border:1px solid var(--cell-bd); background:var(--cell-bg); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:15px; }
+  .b0-cell.good{ background:var(--good-bg); border-color:var(--good-bd); color:var(--good-fg); }
+  .b0-cell.dim{ background:var(--dim-bg); border-color:var(--dim-bd); color:var(--dim-fg); opacity:.55; }
+  .b0-idx{ display:flex; gap:2px; }
+  .b0-idx span{ width:60px; text-align:center; font-family:var(--mono); font-size:10px; color:var(--muted); }
+  .b0-watch{ width:208px; border:1px solid var(--hairline); border-radius:8px; padding:8px; }
+  .b0-wt{ font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:6px; }
+  .b0-wr{ display:flex; justify-content:space-between; padding:7px 4px; border-top:1px solid var(--hairline); font-size:13px; }
+  .b0-wr:first-of-type{ border-top:0; }
+  .b0-wr .n{ color:var(--muted); } .b0-wr .v{ font-family:var(--mono); }
+  .b0-foot{ border-top:1px solid var(--hairline); padding:9px 12px; font-size:11px; color:var(--muted); }
+
+  /* ---- aspect comparison bars ---- */
+  .aspects{ display:flex; flex-direction:column; gap:10px; margin-top:8px; }
+  .asp{ display:grid; grid-template-columns:200px 1fr 90px; align-items:center; gap:14px; }
+  .asp .lab{ font-size:13px; } .asp .lab b{ font-family:var(--mono); font-size:11px; color:var(--accent); margin-right:7px; }
+  .asp .track{ height:22px; background:var(--panel); border:1px solid var(--hairline); border-radius:6px; overflow:hidden; position:relative; }
+  .asp .fill{ height:100%; background:linear-gradient(90deg, var(--good-bd), var(--good-bg)); }
+  .asp.bad .fill{ background:linear-gradient(90deg, #f1b0a6, #fde8e4); }
+  .asp .num{ font-family:var(--mono); font-size:12px; color:var(--muted); text-align:right; font-variant-numeric:tabular-nums; }
+
+  /* ---- recommendation table ---- */
+  table.rec{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.rec th, table.rec td{ text-align:left; padding:12px 14px; border-bottom:1px solid var(--hairline); vertical-align:top; }
+  table.rec th{ font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  table.rec td b{ font-family:var(--mono); color:var(--accent); font-size:12px; }
+  table.rec .pill{ display:inline-block; font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:999px; border:1px solid var(--hairline); }
+  .pill.low{ color:var(--good-fg); background:var(--good-bg); border-color:var(--good-bd); }
+  .pill.med{ color:var(--warn-fg); background:var(--warn-bg); border-color:var(--warn-bd); }
+  .pill.high{ color:#b42318; background:#fdecea; border-color:#f3b9b1; }
+  .foot{ margin-top:56px; padding-top:22px; border-top:1px solid var(--hairline); font-size:12px; color:var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="mast">
+    <p class="eyebrow">Scriba · Animation &amp; Diagram · Layout Study</p>
+    <h1>The widget is too tall because the layout only stacks vertically</h1>
+    <p>An investigation into why embedded Scriba scenes read as a cramped portrait strip — and four ground-up layout directions that trade height for width, shown at honest scale inside a 700&nbsp;px document column.</p>
+  </header>
+
+  <!-- FINDINGS -->
+  <section>
+    <div class="finding">
+      <div class="f"><p class="k">Current viewBox</p><p class="v">240 × 452 <small>px</small></p></div>
+      <div class="f"><p class="k">Aspect (W : H)</p><p class="v bad">1 : 1.88 <small>portrait</small></p></div>
+      <div class="f"><p class="k">Layout modes that change geometry</p><p class="v">1 <small>vertical-stack only</small></p></div>
+    </div>
+    <p class="prose">
+      The root cause is structural, not cosmetic. <code>compute_viewbox()</code> in <code>_frame_renderer.py</code>
+      <strong>always</strong> stacks primitives top-to-bottom: <code>total_height += h + _PRIMITIVE_GAP</code> while
+      <code>width = max(primitive widths)</code>. So width is pinned to the single widest primitive (~208&nbsp;px) while
+      height is the <em>sum</em> of all of them plus two 50&nbsp;px gaps. Three primitives already give a 1.88 portrait;
+      every primitive you add makes it taller and narrower. The <code>layout: filmstrip&nbsp;|&nbsp;stack</code> option only
+      writes a <code>data-layout</code> attribute — it never touches the geometry. The four directions below all reclaim the
+      empty horizontal space a document column gives you for free.
+    </p>
+  </section>
+
+  <!-- BASELINE -->
+  <section class="sec">
+    <h2>Baseline — what ships today</h2>
+    <p class="sec-intro">The same final frame as everything below, at its real proportions in the column. Note how far it runs vertically and how much horizontal room sits unused on either side.</p>
+    <div class="specimen" style="max-width:none;">
+      <div class="specimen-head">
+        <span class="specimen-name"><b>now</b>Vertical stack</span>
+        <span class="tag warn">1 : 1.88 · runs tall</span>
+      </div>
+      <div class="column">
+        <div class="col-inner">
+          <div class="b0">
+            <div class="b0-stage">
+              <div class="b0-arr">
+                <span class="b0-cap">sorted desired sizes</span>
+                <div class="b0-row"><div class="b0-cell dim">45</div><div class="b0-cell good">60</div><div class="b0-cell good">80</div></div>
+                <div class="b0-idx"><span>0</span><span>1</span><span>2</span></div>
+              </div>
+              <div class="b0-arr">
+                <span class="b0-cap">sorted apartment sizes</span>
+                <div class="b0-row"><div class="b0-cell dim">30</div><div class="b0-cell good">60</div><div class="b0-cell good">75</div></div>
+                <div class="b0-idx"><span>0</span><span>1</span><span>2</span></div>
+              </div>
+              <div class="b0-watch">
+                <div class="b0-wt">State</div>
+                <div class="b0-wr"><span class="n">i</span><span class="v">end</span></div>
+                <div class="b0-wr"><span class="n">j</span><span class="v">end</span></div>
+                <div class="b0-wr"><span class="n">matches</span><span class="v">2</span></div>
+              </div>
+            </div>
+            <div class="b0-foot">|80−75| = 5, so we match them and finish with 2 matches.</div>
+          </div>
+        </div>
+      </div>
+      <p class="col-note">700&nbsp;px column · the widget occupies a 240&nbsp;px strip down the middle</p>
+    </div>
+  </section>
+
+  <!-- PROPOSALS -->
+  <section class="sec">
+    <h2>Four directions</h2>
+    <p class="sec-intro">Same scene, same shared visual system (cells, colours, type) — only the spatial arrangement changes, so the comparison is about layout, not restyling. Each is shown in the same 700&nbsp;px column.</p>
+
+    <div class="grid">
+
+      <!-- D1 -->
+      <div class="specimen">
+        <div class="specimen-head"><span class="specimen-name"><b>D1</b>Landscape Filmstrip</span><span class="tag win">≈ 2.97 : 1</span></div>
+        <div class="column"><div class="col-inner">
+<!-- BEGIN d1 -->
+<section class="d1">
+  <style>
+    .d1 {
+      --good-fg:#1b6e3c; --good-bg:#e6f4ea; --good-bd:#9ed3b3;
+      --dim-fg:#9aa0a6; --dim-bg:#f3f4f6; --dim-bd:#e2e5e9;
+      --cell-fg:#1f2933; --cell-bg:#ffffff; --cell-bd:#cdd3da;
+      --ink:#1f2933; --muted:#6b7280; --surface:#ffffff; --panel:#fafbfc;
+      --hairline:#e6e9ee; --accent:#2563eb;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --serif: "Iowan Old Style", Georgia, serif;
+      max-width:700px; box-sizing:border-box; font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased;
+    }
+    .d1 *, .d1 *::before, .d1 *::after { box-sizing:border-box; }
+    .d1-card { background:var(--surface); border:1px solid var(--hairline); border-radius:10px; box-shadow:0 1px 2px rgba(31,41,51,.04), 0 6px 20px -12px rgba(31,41,51,.18); padding:18px 20px 14px; }
+    .d1-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:14px; }
+    .d1-eyebrow { font-family:var(--serif); font-size:13px; font-weight:600; letter-spacing:.01em; color:var(--ink); }
+    .d1-step { font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--good-fg); background:var(--good-bg); border:1px solid var(--good-bd); padding:2px 8px; border-radius:999px; }
+    .d1-strip { display:flex; align-items:stretch; gap:18px; }
+    .d1-arrays { display:flex; align-items:flex-start; gap:14px; flex:1 1 auto; }
+    .d1-array { display:flex; flex-direction:column; gap:6px; }
+    .d1-array-cap { font-family:var(--sans); font-size:11px; color:var(--muted); letter-spacing:.01em; white-space:nowrap; }
+    .d1-row { display:flex; gap:8px; }
+    .d1-cellwrap { display:flex; flex-direction:column; align-items:center; gap:4px; }
+    .d1-cell { width:52px; height:52px; border-radius:8px; border:1px solid var(--cell-bd); background:var(--cell-bg); color:var(--cell-fg); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:17px; font-weight:500; font-variant-numeric:tabular-nums; transition:transform .15s ease, box-shadow .15s ease; }
+    .d1-cell.good { background:var(--good-bg); border-color:var(--good-bd); color:var(--good-fg); }
+    .d1-cellwrap.dim { opacity:.55; }
+    .d1-cell.dim { background:var(--dim-bg); border-color:var(--dim-bd); color:var(--dim-fg); }
+    .d1-cell:hover { transform:translateY(-1px); box-shadow:0 4px 10px -6px rgba(31,41,51,.4); }
+    .d1-idx { font-family:var(--mono); font-size:10px; color:var(--muted); font-variant-numeric:tabular-nums; }
+    .d1-gutter { align-self:center; width:1px; height:46px; background:linear-gradient(var(--hairline), var(--hairline)); position:relative; margin-top:18px; }
+    .d1-div { width:1px; background:var(--hairline); align-self:stretch; }
+    .d1-watch { flex:0 0 auto; min-width:150px; background:var(--panel); border:1px solid var(--hairline); border-radius:10px; padding:9px 11px 10px; display:flex; flex-direction:column; gap:2px; }
+    .d1-watch-title { font-family:var(--sans); font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; }
+    .d1-vrow { display:flex; align-items:center; justify-content:space-between; gap:14px; padding:3px 0; }
+    .d1-vrow + .d1-vrow { border-top:1px solid var(--hairline); }
+    .d1-vname { font-family:var(--sans); font-size:12px; color:var(--muted); }
+    .d1-vval { font-family:var(--mono); font-size:12.5px; color:var(--ink); font-variant-numeric:tabular-nums; background:#fff; border:1px solid var(--hairline); border-radius:6px; padding:1px 8px; min-width:42px; text-align:center; }
+    .d1-vval.match { color:var(--good-fg); background:var(--good-bg); border-color:var(--good-bd); font-weight:600; }
+    .d1-narr { margin:13px 0 0; padding-top:11px; border-top:1px solid var(--hairline); font-family:var(--sans); font-size:12px; line-height:1.5; color:var(--muted); display:flex; align-items:flex-start; gap:7px; text-wrap:pretty; }
+    .d1-narr .d1-q { font-family:var(--mono); color:var(--ink); }
+    .d1-meta { margin:10px 2px 0; font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:.01em; }
+    @media (max-width:560px) { .d1-strip { flex-direction:column; gap:14px; } .d1-div { display:none; } .d1-watch { min-width:0; } }
+  </style>
+  <div class="d1-card">
+    <div class="d1-head"><span class="d1-eyebrow">Two-pointer match</span><span class="d1-step">Step 5 / done</span></div>
+    <div class="d1-strip">
+      <div class="d1-arrays">
+        <div class="d1-array">
+          <span class="d1-array-cap">sorted desired sizes</span>
+          <div class="d1-row">
+            <div class="d1-cellwrap dim"><div class="d1-cell dim">45</div><span class="d1-idx">0</span></div>
+            <div class="d1-cellwrap"><div class="d1-cell good">60</div><span class="d1-idx">1</span></div>
+            <div class="d1-cellwrap"><div class="d1-cell good">80</div><span class="d1-idx">2</span></div>
+          </div>
+        </div>
+        <div class="d1-gutter" aria-hidden="true"></div>
+        <div class="d1-array">
+          <span class="d1-array-cap">sorted apartment sizes</span>
+          <div class="d1-row">
+            <div class="d1-cellwrap dim"><div class="d1-cell dim">30</div><span class="d1-idx">0</span></div>
+            <div class="d1-cellwrap"><div class="d1-cell good">60</div><span class="d1-idx">1</span></div>
+            <div class="d1-cellwrap"><div class="d1-cell good">75</div><span class="d1-idx">2</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="d1-div" aria-hidden="true"></div>
+      <div class="d1-watch">
+        <div class="d1-watch-title">State</div>
+        <div class="d1-vrow"><span class="d1-vname">i</span><span class="d1-vval">end</span></div>
+        <div class="d1-vrow"><span class="d1-vname">j</span><span class="d1-vval">end</span></div>
+        <div class="d1-vrow"><span class="d1-vname">matches</span><span class="d1-vval match">2</span></div>
+      </div>
+    </div>
+    <p class="d1-narr"><span class="d1-q">|80−75| = 5</span>, so we match them and finish with 2 matches.</p>
+  </div>
+</section>
+<!-- END d1 -->
+        </div></div>
+        <p class="col-note">Arrays flow left→right, State docked right · shortest height</p>
+      </div>
+
+      <!-- D2 -->
+      <div class="specimen">
+        <div class="specimen-head"><span class="specimen-name"><b>D2</b>Bento Grid</span><span class="tag">≈ 2.33 : 1</span></div>
+        <div class="column"><div class="col-inner">
+<!-- BEGIN d2 -->
+<section class="d2">
+  <style>
+    .d2 {
+      --good-fg:#1b6e3c; --good-bg:#e6f4ea; --good-bd:#9ed3b3;
+      --dim-fg:#9aa0a6; --dim-bg:#f3f4f6; --dim-bd:#e2e5e9;
+      --cell-fg:#1f2933; --cell-bg:#ffffff; --cell-bd:#cdd3da;
+      --ink:#1f2933; --muted:#6b7280; --surface:#ffffff; --panel:#fafbfc;
+      --hairline:#e6e9ee; --accent:#2563eb;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      --serif: "Iowan Old Style", Georgia, serif;
+      max-width:700px; margin:0; color:var(--ink); font-family:var(--sans); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    .d2 *, .d2 *::before, .d2 *::after { box-sizing:border-box; }
+    .d2-card { background:var(--surface); border:1px solid var(--hairline); border-radius:10px; box-shadow:0 1px 2px rgba(31,41,51,.05), 0 8px 24px -16px rgba(31,41,51,.22); padding:16px; }
+    .d2-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:13px; }
+    .d2-title { font-family:var(--serif); font-size:15px; font-weight:600; letter-spacing:.1px; color:var(--ink); margin:0; }
+    .d2-step { font-family:var(--sans); font-size:10.5px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--good-fg); background:var(--good-bg); border:1px solid var(--good-bd); border-radius:999px; padding:3px 9px; white-space:nowrap; }
+    .d2-bento { display:grid; grid-template-columns: minmax(0,1.45fr) minmax(0,1fr); gap:12px; }
+    .d2-pane { background:var(--panel); border:1px solid var(--hairline); border-radius:12px; box-shadow:0 1px 1px rgba(31,41,51,.03); padding:13px 14px 14px; }
+    .d2-pane-label { font-size:10px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); margin:0 0 11px; }
+    .d2-pair { display:flex; flex-direction:column; gap:9px; }
+    .d2-arr-cap { font-size:11px; color:var(--muted); margin:0 0 5px; }
+    .d2-cols { display:grid; grid-template-columns:repeat(3, 52px); gap:9px; justify-content:start; }
+    .d2-idxrow { margin-bottom:3px; }
+    .d2-idx { font-family:var(--mono); font-size:10px; color:var(--muted); text-align:center; font-variant-numeric:tabular-nums; }
+    .d2-cell { height:52px; border-radius:8px; border:1px solid var(--cell-bd); background:var(--cell-bg); color:var(--cell-fg); font-family:var(--mono); font-size:17px; font-weight:500; display:flex; align-items:center; justify-content:center; font-variant-numeric:tabular-nums; }
+    .d2-cell.is-good { background:var(--good-bg); color:var(--good-fg); border-color:var(--good-bd); }
+    .d2-cell.is-dim  { background:var(--dim-bg); color:var(--dim-fg); border-color:var(--dim-bd); opacity:.55; }
+    .d2-link { display:grid; grid-template-columns:repeat(3, 52px); gap:9px; justify-content:start; height:14px; margin:1px 0; }
+    .d2-link span { align-self:stretch; justify-self:center; width:1.5px; background:repeating-linear-gradient(to bottom, var(--dim-bd) 0 2px, transparent 2px 4px); }
+    .d2-link span.is-match { background:var(--good-bd); box-shadow:0 0 0 0 transparent; }
+    .d2-link .tick { position:relative; width:auto; background:none; display:flex; align-items:center; justify-content:center; }
+    .d2-link .tick::before { content:"="; font-family:var(--mono); font-size:10px; line-height:1; color:var(--good-fg); background:var(--good-bg); border:1px solid var(--good-bd); border-radius:999px; width:15px; height:15px; display:flex; align-items:center; justify-content:center; }
+    .d2-state { display:flex; flex-direction:column; gap:7px; }
+    .d2-row { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:7px 10px; background:var(--surface); border:1px solid var(--hairline); border-radius:8px; }
+    .d2-name { font-family:var(--mono); font-size:12px; color:var(--muted); }
+    .d2-val { font-family:var(--mono); font-size:12.5px; color:var(--ink); background:var(--dim-bg); border:1px solid var(--dim-bd); border-radius:6px; padding:2px 8px; font-variant-numeric:tabular-nums; }
+    .d2-row.is-key { background:var(--good-bg); border-color:var(--good-bd); }
+    .d2-row.is-key .d2-name { color:var(--good-fg); }
+    .d2-row.is-key .d2-val { background:var(--surface); border-color:var(--good-bd); color:var(--good-fg); font-weight:600; font-size:13px; }
+    .d2-foot { margin-top:12px; padding:9px 12px; background:var(--panel); border:1px solid var(--hairline); border-radius:8px; display:flex; align-items:center; gap:9px; }
+    .d2-foot::before { content:""; flex:none; width:3px; height:15px; border-radius:2px; background:var(--accent); }
+    .d2-foot p { margin:0; font-size:11.5px; line-height:1.4; color:var(--ink); }
+    .d2-foot code { font-family:var(--mono); font-size:11px; color:var(--ink); background:var(--surface); border:1px solid var(--hairline); border-radius:4px; padding:1px 4px; }
+    .d2-meta { margin:9px 2px 0; font-family:var(--mono); font-size:10.5px; color:var(--muted); letter-spacing:.01em; }
+    @media (max-width:560px) { .d2-bento { grid-template-columns:1fr; } }
+  </style>
+  <div class="d2-card">
+    <div class="d2-head"><h3 class="d2-title">Pairing sizes element-by-element</h3><span class="d2-step">Step 5 / done</span></div>
+    <div class="d2-bento">
+      <div class="d2-pane">
+        <p class="d2-pane-label">Compare</p>
+        <div class="d2-pair">
+          <div>
+            <p class="d2-arr-cap">sorted desired sizes &middot; <span style="font-family:var(--mono)">desired</span></p>
+            <div class="d2-cols d2-idxrow" aria-hidden="true"><div class="d2-idx">0</div><div class="d2-idx">1</div><div class="d2-idx">2</div></div>
+            <div class="d2-cols"><div class="d2-cell is-dim">45</div><div class="d2-cell is-good">60</div><div class="d2-cell is-good">80</div></div>
+          </div>
+          <div class="d2-link" aria-hidden="true"><span></span><span class="is-match tick"></span><span class="is-match tick"></span></div>
+          <div>
+            <div class="d2-cols"><div class="d2-cell is-dim">30</div><div class="d2-cell is-good">60</div><div class="d2-cell is-good">75</div></div>
+            <div class="d2-cols d2-idxrow" aria-hidden="true" style="margin:3px 0 0;"><div class="d2-idx">0</div><div class="d2-idx">1</div><div class="d2-idx">2</div></div>
+            <p class="d2-arr-cap" style="margin:5px 0 0;">sorted apartment sizes &middot; <span style="font-family:var(--mono)">apt</span></p>
+          </div>
+        </div>
+      </div>
+      <div class="d2-pane">
+        <p class="d2-pane-label">State</p>
+        <div class="d2-state">
+          <div class="d2-row"><span class="d2-name">i</span><span class="d2-val">end</span></div>
+          <div class="d2-row"><span class="d2-name">j</span><span class="d2-val">end</span></div>
+          <div class="d2-row is-key"><span class="d2-name">matches</span><span class="d2-val">2</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="d2-foot"><p><code>|80&minus;75| = 5</code>, so we match them and finish with <strong>2 matches</strong>.</p></div>
+  </div>
+</section>
+<!-- END d2 -->
+        </div></div>
+        <p class="col-note">Paired arrays share index columns; State isolated as a card</p>
+      </div>
+
+      <!-- D3 -->
+      <div class="specimen">
+        <div class="specimen-head"><span class="specimen-name"><b>D3</b>Linked Pair + State Rail</span><span class="tag">≈ 2.67 : 1</span></div>
+        <div class="column"><div class="col-inner">
+<!-- BEGIN d3 -->
+<section class="d3">
+  <style>
+    .d3 {
+      --good-fg:#1b6e3c; --good-bg:#e6f4ea; --good-bd:#9ed3b3;
+      --dim-fg:#9aa0a6; --dim-bg:#f3f4f6; --dim-bd:#e2e5e9;
+      --cell-fg:#1f2933; --cell-bg:#ffffff; --cell-bd:#cdd3da;
+      --ink:#1f2933; --muted:#6b7280; --surface:#ffffff; --panel:#fafbfc;
+      --hairline:#e6e9ee; --accent:#2563eb;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      --serif: "Iowan Old Style", Georgia, serif;
+      color: var(--ink); font-family: var(--sans); max-width: 700px; box-sizing: border-box;
+    }
+    .d3 *, .d3 *::before, .d3 *::after { box-sizing: border-box; }
+    .d3-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; box-shadow: 0 1px 2px rgba(31,41,51,.04), 0 6px 18px rgba(31,41,51,.06); padding: 18px 20px 14px; }
+    .d3-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding-bottom: 12px; margin-bottom: 14px; border-bottom: 1px solid var(--hairline); }
+    .d3-title { font-family: var(--serif); font-size: 17px; font-weight: 600; letter-spacing: .1px; margin: 0; }
+    .d3-step { font-family: var(--sans); font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+    .d3-step b { color: var(--good-fg); font-weight: 600; }
+    .d3-body { display: grid; grid-template-columns: 1fr auto; gap: 22px; align-items: start; }
+    .d3-pair { min-width: 0; }
+    .d3-arr { display: grid; }
+    .d3-arr-label { font-size: 11px; color: var(--muted); letter-spacing: .02em; margin-bottom: 6px; }
+    .d3-row { display: grid; grid-template-columns: repeat(3, 52px); gap: 10px; }
+    .d3-cell { width: 52px; height: 52px; border-radius: 8px; border: 1px solid var(--cell-bd); background: var(--cell-bg); color: var(--cell-fg); display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 17px; font-variant-numeric: tabular-nums; position: relative; }
+    .d3-cell .d3-idx { position: absolute; top: -15px; left: 1px; font-family: var(--sans); font-size: 10px; color: var(--muted); letter-spacing: .02em; }
+    .d3-cell.good { background: var(--good-bg); color: var(--good-fg); border-color: var(--good-bd); }
+    .d3-cell.dim  { background: var(--dim-bg); color: var(--dim-fg); border-color: var(--dim-bd); opacity: .55; }
+    .d3-arr.apt .d3-idx { display: none; }
+    .d3-link { height: 26px; display: grid; grid-template-columns: repeat(3, 52px); gap: 10px; margin: 2px 0; }
+    .d3-link span { position: relative; display: flex; align-items: center; justify-content: center; }
+    .d3-link span.match::before { content: ""; position: absolute; top: 0; bottom: 0; width: 1px; background: var(--good-bd); }
+    .d3-link span.match::after { content: "="; position: relative; z-index: 1; font-family: var(--mono); font-size: 12px; line-height: 1; color: var(--good-fg); background: var(--surface); border: 1px solid var(--good-bd); border-radius: 999px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; }
+    .d3-arr-label.apt { margin-top: 6px; }
+    .d3-rail { align-self: stretch; border-left: 1px solid var(--hairline); padding-left: 20px; display: flex; flex-direction: column; gap: 9px; min-width: 128px; }
+    .d3-rail-cap { font-family: var(--serif); font-size: 12px; font-weight: 600; color: var(--ink); letter-spacing: .02em; margin-bottom: 1px; }
+    .d3-pill { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 8px 11px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--panel); }
+    .d3-pill .k { font-family: var(--sans); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    .d3-pill .v { font-family: var(--mono); font-size: 14px; font-variant-numeric: tabular-nums; color: var(--ink); }
+    .d3-pill.match { background: var(--good-bg); border-color: var(--good-bd); }
+    .d3-pill.match .k { color: var(--good-fg); }
+    .d3-pill.match .v { color: var(--good-fg); font-size: 18px; font-weight: 600; }
+    .d3-foot { margin-top: 14px; padding-top: 11px; border-top: 1px solid var(--hairline); font-family: var(--serif); font-style: italic; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+    .d3-foot b { color: var(--ink); font-style: normal; font-family: var(--mono); font-size: 12px; }
+    .d3-meta { margin: 8px 2px 0; font-family: var(--sans); font-size: 10px; color: var(--muted); letter-spacing: .01em; }
+  </style>
+  <div class="d3-card">
+    <div class="d3-head"><h3 class="d3-title">Greedy match — sorted sizes</h3><div class="d3-step">step 5 / 5 · <b>done</b></div></div>
+    <div class="d3-body">
+      <div class="d3-pair">
+        <div class="d3-arr desired">
+          <div class="d3-arr-label">sorted desired sizes</div>
+          <div class="d3-row">
+            <div class="d3-cell dim"><span class="d3-idx">0</span>45</div>
+            <div class="d3-cell good"><span class="d3-idx">1</span>60</div>
+            <div class="d3-cell good"><span class="d3-idx">2</span>80</div>
+          </div>
+        </div>
+        <div class="d3-link"><span></span><span class="match"></span><span class="match"></span></div>
+        <div class="d3-arr apt">
+          <div class="d3-row">
+            <div class="d3-cell dim"><span class="d3-idx">0</span>30</div>
+            <div class="d3-cell good"><span class="d3-idx">1</span>60</div>
+            <div class="d3-cell good"><span class="d3-idx">2</span>75</div>
+          </div>
+          <div class="d3-arr-label apt">sorted apartment sizes</div>
+        </div>
+      </div>
+      <div class="d3-rail">
+        <div class="d3-rail-cap">State</div>
+        <div class="d3-pill"><span class="k">i</span><span class="v">end</span></div>
+        <div class="d3-pill"><span class="k">j</span><span class="v">end</span></div>
+        <div class="d3-pill match"><span class="k">matches</span><span class="v">2</span></div>
+      </div>
+    </div>
+    <p class="d3-foot"><b>|80−75| = 5</b>, so we match them and finish with 2 matches.</p>
+  </div>
+</section>
+<!-- END d3 -->
+        </div></div>
+        <p class="col-note">Vertically aligned compare columns + "=" connectors · slim state rail</p>
+      </div>
+
+      <!-- D4 -->
+      <div class="specimen">
+        <div class="specimen-head"><span class="specimen-name"><b>D4</b>Refined Tight Stack</span><span class="tag win">≈ 1.19 : 1 · least code</span></div>
+        <div class="column"><div class="col-inner">
+<!-- BEGIN d4 -->
+<section class="d4">
+  <style>
+    .d4 {
+      --good-fg:#1b6e3c; --good-bg:#e6f4ea; --good-bd:#9ed3b3;
+      --dim-fg:#9aa0a6; --dim-bg:#f3f4f6; --dim-bd:#e2e5e9;
+      --cell-fg:#1f2933; --cell-bg:#ffffff; --cell-bd:#cdd3da;
+      --ink:#1f2933; --muted:#6b7280; --surface:#ffffff; --panel:#fafbfc;
+      --hairline:#e6e9ee; --accent:#2563eb;
+      --mono: ui-monospace, "SF Mono", Menlo, monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      --gutter: 92px; --cell: 46px;
+      display:flex; justify-content:center; padding:20px; font-family:var(--sans); color:var(--ink); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    .d4 *, .d4 *::before, .d4 *::after { box-sizing:border-box; }
+    .d4-card { width:296px; background:var(--surface); border:1px solid var(--hairline); border-radius:10px; box-shadow:0 1px 2px rgba(31,41,51,.05), 0 6px 18px rgba(31,41,51,.06); padding:14px 16px 13px; display:flex; flex-direction:column; gap:14px; }
+    .d4-head { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+    .d4-title { font-size:12.5px; font-weight:600; letter-spacing:.01em; color:var(--ink); }
+    .d4-step { font-family:var(--mono); font-size:10px; letter-spacing:.04em; color:var(--accent); background:#eef3fe; border:1px solid #d6e2fc; border-radius:999px; padding:2px 8px; }
+    .d4-stack { display:flex; flex-direction:column; gap:10px; }
+    .d4-row { display:flex; align-items:center; gap:12px; }
+    .d4-label { width:var(--gutter); flex:0 0 var(--gutter); text-align:right; font-size:11px; line-height:1.25; color:var(--muted); font-weight:500; text-wrap:balance; }
+    .d4-cells { display:flex; gap:6px; }
+    .d4-cell { width:var(--cell); height:var(--cell); border-radius:8px; border:1px solid var(--cell-bd); background:var(--cell-bg); display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
+    .d4-cell .v { font-family:var(--mono); font-size:16px; font-weight:500; color:var(--cell-fg); font-variant-numeric:tabular-nums; line-height:1; }
+    .d4-cell .i { position:absolute; top:3px; left:5px; font-family:var(--mono); font-size:10px; color:var(--muted); line-height:1; }
+    .d4-cell.good { background:var(--good-bg); border-color:var(--good-bd); }
+    .d4-cell.good .v { color:var(--good-fg); }
+    .d4-cell.good .i { color:var(--good-fg); opacity:.6; }
+    .d4-cell.dim { background:var(--dim-bg); border-color:var(--dim-bd); opacity:.55; }
+    .d4-cell.dim .v { color:var(--dim-fg); }
+    .d4-state { display:flex; align-items:center; gap:12px; padding-left:0; }
+    .d4-state .skey { width:var(--gutter); flex:0 0 var(--gutter); text-align:right; font-size:11px; color:var(--muted); font-weight:500; }
+    .d4-chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .d4-chip { display:inline-flex; align-items:center; gap:5px; background:var(--panel); border:1px solid var(--hairline); border-radius:999px; padding:3px 9px; }
+    .d4-chip .n { font-size:10.5px; color:var(--muted); font-weight:500; letter-spacing:.02em; }
+    .d4-chip .x { font-family:var(--mono); font-size:11.5px; color:var(--ink); font-variant-numeric:tabular-nums; line-height:1; }
+    .d4-chip.match { background:var(--good-bg); border-color:var(--good-bd); }
+    .d4-chip.match .n { color:var(--good-fg); }
+    .d4-chip.match .x { color:var(--good-fg); font-weight:600; }
+    .d4-foot { border-top:1px solid var(--hairline); padding-top:9px; font-size:11px; line-height:1.45; color:var(--muted); text-wrap:pretty; }
+    .d4-foot b { color:var(--ink); font-weight:600; }
+    .d4-foot code { font-family:var(--mono); font-size:10.5px; color:var(--ink); }
+    .d4-meta { margin:11px 0 0; font-family:var(--mono); font-size:10px; color:var(--muted); text-align:center; letter-spacing:.01em; }
+  </style>
+  <div class="d4-card">
+    <div class="d4-head"><span class="d4-title">Match apartment sizes</span><span class="d4-step">step 5 / done</span></div>
+    <div class="d4-stack">
+      <div class="d4-row">
+        <span class="d4-label">sorted desired sizes</span>
+        <div class="d4-cells">
+          <div class="d4-cell dim"><span class="i">0</span><span class="v">45</span></div>
+          <div class="d4-cell good"><span class="i">1</span><span class="v">60</span></div>
+          <div class="d4-cell good"><span class="i">2</span><span class="v">80</span></div>
+        </div>
+      </div>
+      <div class="d4-row">
+        <span class="d4-label">sorted apartment sizes</span>
+        <div class="d4-cells">
+          <div class="d4-cell dim"><span class="i">0</span><span class="v">30</span></div>
+          <div class="d4-cell good"><span class="i">1</span><span class="v">60</span></div>
+          <div class="d4-cell good"><span class="i">2</span><span class="v">75</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="d4-state">
+      <span class="skey">state</span>
+      <div class="d4-chips">
+        <span class="d4-chip"><span class="n">i</span><span class="x">end</span></span>
+        <span class="d4-chip"><span class="n">j</span><span class="x">end</span></span>
+        <span class="d4-chip match"><span class="n">matches</span><span class="x">2</span></span>
+      </div>
+    </div>
+    <p class="d4-foot"><code>|80&minus;75| = 5</code>, so we <b>match them</b> and finish with <b>2 matches</b>.</p>
+  </div>
+</section>
+<!-- END d4 -->
+        </div></div>
+        <p class="col-note">Same stack order, gaps 50→16px, inline labels, state as chip strip</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ASPECT COMPARISON -->
+  <section class="sec">
+    <h2>Height, to scale</h2>
+    <p class="sec-intro">Bars are proportional to rendered height in a 700&nbsp;px column (shorter = better). The current design is the outlier.</p>
+    <div class="aspects">
+      <div class="asp bad"><span class="lab"><b>now</b>Vertical stack</span><span class="track"><span class="fill" style="width:100%"></span></span><span class="num">1318 px</span></div>
+      <div class="asp"><span class="lab"><b>D4</b>Refined Tight Stack</span><span class="track"><span class="fill" style="width:19%"></span></span><span class="num">~248 px</span></div>
+      <div class="asp"><span class="lab"><b>D1</b>Landscape Filmstrip</span><span class="track"><span class="fill" style="width:18%"></span></span><span class="num">~236 px</span></div>
+      <div class="asp"><span class="lab"><b>D3</b>Linked Pair + Rail</span><span class="track"><span class="fill" style="width:20%"></span></span><span class="num">~262 px</span></div>
+      <div class="asp"><span class="lab"><b>D2</b>Bento Grid</span><span class="track"><span class="fill" style="width:23%"></span></span><span class="num">~300 px</span></div>
+    </div>
+  </section>
+
+  <!-- RECOMMENDATION -->
+  <section class="sec">
+    <h2>Recommendation &amp; engineering effort</h2>
+    <p class="sec-intro">Ranked by value-for-effort against the Scriba codebase. All four need a horizontal-capable layout pass in <code>compute_viewbox()</code> except D4, which only retunes constants.</p>
+    <div style="overflow-x:auto;">
+    <table class="rec">
+      <thead><tr><th>Direction</th><th>What changes in Scriba</th><th>Eng. effort</th><th>Risk</th><th>Best when</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><b>D4</b> Refined Tight Stack</td>
+          <td>Shrink <code>_PRIMITIVE_GAP</code> 50→16, inline array captions, render VariableWatch as a horizontal chip row. No new layout engine.</td>
+          <td><span class="pill low">Low</span></td>
+          <td><span class="pill low">Low</span></td>
+          <td>Ship now. Pairs with the upscale fix already applied.</td>
+        </tr>
+        <tr>
+          <td><b>D1</b> Landscape Filmstrip</td>
+          <td>Add a horizontal pack mode to <code>compute_viewbox</code> (sum widths, max height). Honour the existing <code>layout</code> option.</td>
+          <td><span class="pill med">Medium</span></td>
+          <td><span class="pill low">Low</span></td>
+          <td>≤3 primitives. Shortest height; best default for embeds.</td>
+        </tr>
+        <tr>
+          <td><b>D3</b> Linked Pair + Rail</td>
+          <td>Horizontal pack + a "linked pair" relationship between two same-shape arrays + a side rail slot for watches.</td>
+          <td><span class="pill med">Medium</span></td>
+          <td><span class="pill med">Medium</span></td>
+          <td>Comparison algorithms (two-pointer, merge) where pairing is the story.</td>
+        </tr>
+        <tr>
+          <td><b>D2</b> Bento Grid</td>
+          <td>Full grid layout engine: assign primitives to cells, auto-flow by count/aspect. Largest change.</td>
+          <td><span class="pill high">High</span></td>
+          <td><span class="pill med">Medium</span></td>
+          <td>4+ primitives / dashboards. Scales best long-term.</td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+    <p class="prose" style="margin-top:20px;">
+      <strong>Suggested path:</strong> ship <b style="font-family:var(--mono);color:var(--accent)">D4</b> immediately (constants only, stacks
+      with the <code>max-width</code> upscale fix already in <code>_frame_renderer.py</code>), then build the horizontal pack mode that
+      unlocks <b style="font-family:var(--mono);color:var(--accent)">D1</b> as the embed default and
+      <b style="font-family:var(--mono);color:var(--accent)">D3</b> for comparison scenes. Keep
+      <b style="font-family:var(--mono);color:var(--accent)">D2</b> on the roadmap for when scenes routinely exceed three primitives.
+    </p>
+  </section>
+
+  <footer class="foot">
+    Scriba layout study · final frame of <span style="font-family:var(--mono)">apartments-two-pointers</span> ·
+    mockups are CSS reconstructions of the real primitives at the shared visual system · aspect figures are design targets,
+    to be confirmed against rendered <code>viewBox</code> after implementation.
+  </footer>
+
+</div>
+</body>
+</html>

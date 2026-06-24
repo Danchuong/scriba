@@ -1,0 +1,19 @@
+\begin{animation}[id="graph-edge-mut", label="Dynamic edge mutation"]
+\shape{G}{Graph}{nodes=["A","B","C","D"], edges=[("A","B",4),("A","C",2)], directed=false, layout="force", show_weights=true}
+
+\step
+\recolor{G.edge[(A,B)]}{state=current}
+\narrate{Đồ thị có trọng số, layout force với seed cố định.}
+
+\step
+\apply{G}{add_edge={from="B", to="D", weight=5}}
+\narrate{Thêm cạnh B-D trọng số 5.}
+
+\step
+\apply{G}{set_weight={from="A", to="C", value=9}}
+\narrate{Đổi trọng số cạnh A-C thành 9.}
+
+\step
+\apply{G}{remove_edge={from="A", to="B"}}
+\narrate{Gỡ cạnh A-B.}
+\end{animation}

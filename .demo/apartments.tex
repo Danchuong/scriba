@@ -1,0 +1,45 @@
+\begin{animation}[id="apartments-two-pointers", label="Apartments greedy walkthrough"]
+\shape{desired}{Array}{size=3, data=[45,60,80], labels="0..2", label="sorted desired sizes"}
+\shape{apt}{Array}{size=3, data=[30,60,75], labels="0..2", label="sorted apartment sizes"}
+\shape{state}{VariableWatch}{names=["i","j","matches"], label="State"}
+\apply{state.var[i]}{value="0"}
+\apply{state.var[j]}{value="0"}
+\apply{state.var[matches]}{value="0"}
+
+\step
+\recolor{desired.cell[0]}{state=current}
+\recolor{apt.cell[0]}{state=current}
+\narrate{After sorting, we compare the smallest remaining desired size with the smallest remaining apartment. The invariant is that everything strictly before the pointers has already been processed optimally.}
+
+\step
+\recolor{apt.cell[0]}{state=dim}
+\recolor{desired.cell[0]}{state=current}
+\recolor{apt.cell[1]}{state=current}
+\apply{state.var[j]}{value="1"}
+\narrate{Compare $45$ with $30$. Since $30 < 45-5 = 40$, this apartment is too small for the current applicant and for every later applicant as well. Discarding the apartment is forced, so only $j$ moves.}
+
+\step
+\recolor{desired.cell[0]}{state=dim}
+\recolor{desired.cell[1]}{state=current}
+\recolor{apt.cell[1]}{state=current}
+\apply{state.var[i]}{value="1"}
+\narrate{Now compare $45$ with $60$. Since $60 > 45+5 = 50$, this apartment is too large for the current applicant, and later apartments are no smaller. Discarding the applicant is forced, so only $i$ moves.}
+
+\step
+\recolor{desired.cell[1]}{state=good}
+\recolor{apt.cell[1]}{state=good}
+\recolor{desired.cell[2]}{state=current}
+\recolor{apt.cell[2]}{state=current}
+\apply{state.var[i]}{value="2"}
+\apply{state.var[j]}{value="2"}
+\apply{state.var[matches]}{value="1"}
+\narrate{Now $60$ and $60$ are compatible, so we match them. This is safe because we use the smallest feasible apartment for the smallest remaining applicant, which leaves the most flexibility for everything later.}
+
+\step
+\recolor{desired.cell[2]}{state=good}
+\recolor{apt.cell[2]}{state=good}
+\apply{state.var[i]}{value="end"}
+\apply{state.var[j]}{value="end"}
+\apply{state.var[matches]}{value="2"}
+\narrate{The same rule handles the final pair: $|80-75| = 5$, so we match them and finish with $2$ matches. Once one array is exhausted, no further match is possible.}
+\end{animation}
