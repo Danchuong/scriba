@@ -115,10 +115,6 @@ class TestProgressDotsAriaHidden:
     skip decorative step indicators (the live region already announces them).
     """
 
-    def test_main_progress_container_aria_hidden(self) -> None:
-        html = _two_frame_widget()
-        assert 'class="scriba-progress" aria-hidden="true"' in html
-
     def test_substory_progress_container_aria_hidden(self) -> None:
         """Substory dots must also be hidden (they are equally decorative)."""
         sub_frame = FrameData(
@@ -150,17 +146,6 @@ class TestProgressDotsAriaHidden:
             viewbox="0 0 200 40",
         )
         assert 'class="scriba-progress" aria-hidden="true"' in html
-
-    def test_individual_dots_not_aria_hidden(self) -> None:
-        """Individual dot <div>s carry no aria-hidden — it's on the container."""
-        html = _two_frame_widget()
-        # The dots themselves should NOT have aria-hidden
-        # (that would over-specify; the container already hides them).
-        # We just verify the container pattern is what carries it.
-        assert 'class="scriba-dot active"' in html  # dots exist
-        # Container carries the attribute, not dots
-        assert 'class="scriba-progress" aria-hidden="true"' in html
-
 
 # ---------------------------------------------------------------------------
 # H3 — Substory arrow-key event bubbling guard

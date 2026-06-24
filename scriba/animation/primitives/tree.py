@@ -19,6 +19,7 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_svg_text,
     arrow_height_above,
+    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -566,12 +567,16 @@ class Tree(PrimitiveBase):
             cell_height=float(self._node_radius * 2),
             layout="2d",
         )
+        pos_below = position_label_height_below(
+            self._annotations,
+            cell_height=float(self._node_radius * 2),
+        )
         label_h = _LABEL_HEIGHT if self.label is not None else 0
         return BoundingBox(
             x=0,
             y=0,
             width=self.width + 2 * r,
-            height=self.height + 2 * r + arrow_above + label_h,
+            height=self.height + 2 * r + arrow_above + pos_below + label_h,
         )
 
     def emit_svg(

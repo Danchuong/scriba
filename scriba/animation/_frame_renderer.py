@@ -24,8 +24,8 @@ __all__ = [
 # Layout constants (shared with _html_stitcher via emitter re-export)
 # ---------------------------------------------------------------------------
 
-_PADDING = 16
-_PRIMITIVE_GAP = 50
+_PADDING = 12
+_PRIMITIVE_GAP = 28
 
 
 # ---------------------------------------------------------------------------

@@ -52,7 +52,7 @@
       var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
       var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
       function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
-        sr.textContent='Sub-step '+(i+1)+' / '+fd.length;
+        sr.textContent=(i+1)+' / '+fd.length;
         sp.disabled=i===0;sx.disabled=i===fd.length-1;
         sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
       }
@@ -61,7 +61,7 @@
       sh(0);
     }
     function _updateControls(i){
-      ctr.textContent='Step '+(i+1)+' / '+frames.length;
+      ctr.textContent=(i+1)+' / '+frames.length;
       prev.disabled=i===0;
       next.disabled=i===frames.length-1;
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});

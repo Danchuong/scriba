@@ -365,6 +365,13 @@ _ARROW_STRETCH_MAX: float = 1000.0
 _ARROW_PERP_FLOOR_FACTOR: float = 0.5
 """Minimum perpendicular offset = ``cell_height * 0.5``; keeps short
 arrows visible even when ``arc * euclid`` is tiny."""
+_ARROW_STROKE_PAD: float = 3.0
+"""Headroom-reservation pad (px) for painted stroke/halo beyond geometry.
+
+The arrow ``<path>`` stroke (up to ~2.5px wide → ~1.25px beyond the
+centerline) paints past the geometric arc peak. ``arrow_height_above`` adds
+this constant so painted pixels stay within the reserved box. (The label's
+own white halo is covered by the bounded one-pill nudge margin instead.)"""
 
 
 # --- Phase C (v0.13.0): grid-aware flow direction ---
@@ -2564,6 +2571,32 @@ def emit_arrow_svg(
     )
 
 
+def _arrow_label_pill_h(arrow_anns: list[dict[str, Any]]) -> float:
+    """Upper-bound the rendered pill height (px) over labeled arrow annotations.
+
+    Mirrors the real ``pill_h`` computed in the full render path
+    (``pill_h = num_lines * (font_px + 2) + 2 * _LABEL_PILL_PAD_Y``) so the
+    bounded nudge margin in :func:`arrow_height_above` scales with multi-line
+    pills. A conservative ``font_px`` of 12 (the largest ``label_size`` in the
+    annotation style table) is used so the estimate is independent of the
+    per-annotation colour/state and stays an upper bound.
+
+    Returns the single-line height (one ``font_px`` line) when there are no
+    labels, matching the natural-anchor estimate used elsewhere.
+    """
+    font_px = 12  # max label_size across annotation states (see _ARROW_STYLES)
+    line_height = font_px + 2
+    max_lines = 1
+    for ann in arrow_anns:
+        label = ann.get("label")
+        if not label:
+            continue
+        # Math labels are not wrapped (would split inside $...$); count as 1.
+        lines = 1 if _label_has_math(label) else len(_wrap_label_lines(label))
+        max_lines = max(max_lines, lines)
+    return max_lines * line_height + _LABEL_PILL_PAD_Y * 2
+
+
 def arrow_height_above(
     annotations: list[dict[str, Any]],
     cell_center_resolver: "Callable[[str], tuple[float, float] | None]",
@@ -2622,17 +2655,44 @@ def arrow_height_above(
             if a.get("target") == target
             and j < idx
         )
-        # NOTE: uses Manhattan distance (h_dist) as a deliberately conservative
-        # upper bound for headroom estimation. Do NOT unify with the Euclidean
-        # formula in emit_arrow_svg without re-verifying all headroom callers.
-        # Also: no stagger cap here (pre-v0.12.0 behavior preserved intentionally).
+        # The arc peak must be reserved as a safe UPPER BOUND on what
+        # ``_compute_control_points`` actually paints, otherwise long arcs and
+        # their pills paint above this reservation and overlap the primitive
+        # stacked above once the inter-primitive gap is tightened.
+        #
+        # ``_compute_control_points`` uses the perfect-arrows bow+stretch arc
+        #   arc = _ARROW_BOW + modulate(euclid, [STRETCH_MIN, STRETCH_MAX], [1,0]) * _ARROW_STRETCH
+        #   base_offset = max(arc * euclid, cell_height * _ARROW_PERP_FLOOR_FACTOR)
+        # with an UNCAPPED ``arc * euclid`` term. The previous reservation here
+        # capped base_offset at ``cell_height * _ARROW_CAP_FLOOR_FACTOR``, which
+        # under-reserved long arrows (real arc far exceeds the cap). Mirror the
+        # real Euclidean formula so the reservation tracks the real peak.
+        #
+        # We additionally keep the legacy Manhattan ``sqrt(h_dist) * scale``
+        # floor so the result NEVER drops below the old reservation for any
+        # input (this function is a safety upper bound and must be monotone
+        # non-decreasing vs the pre-existing value).
+        euclid = math.hypot(x2 - x1, y2 - y1)
         h_dist = abs(x2 - x1) + abs(y2 - y1)
-        base_offset = min(
-            cell_height * _ARROW_CAP_FLOOR_FACTOR,
-            max(cell_height * _ARROW_BASE_FLOOR_FACTOR, math.sqrt(h_dist) * _ARROW_SQRT_SCALE),
+        _bow_factor = _modulate(
+            euclid, (_ARROW_STRETCH_MIN, _ARROW_STRETCH_MAX), (1.0, 0.0)
+        )
+        _arc = _ARROW_BOW + _bow_factor * _ARROW_STRETCH
+        base_offset = max(
+            _arc * euclid,  # real (uncapped) bow+stretch peak
+            cell_height * _ARROW_BASE_FLOOR_FACTOR,  # real perp floor (== 0.5)
+            math.sqrt(h_dist) * _ARROW_SQRT_SCALE,  # legacy floor: never < old
         )
         stagger = cell_height * _ARROW_STAGGER_FACTOR
+        # Keep the pre-v0.12.0 UNCAPPED per-index stagger here. The real path
+        # caps at ``min(arrow_index, _ARROW_STAGGER_CAP)``; the uncapped form is
+        # >= the real stagger for every index, so it stays a valid upper bound
+        # and never decreases the reservation.
         total_offset = base_offset + arrow_index * stagger
+        # Halo/stroke pad: the arrow ``<path>`` stroke (up to ~1.25px beyond the
+        # centerline) is painted beyond the geometric arc peak. Reserve a small
+        # constant so painted pixels never exceed the reservation.
+        total_offset += _ARROW_STROKE_PAD
 
         if layout == "2d":
             # For 2D layouts the curve bows perpendicular to the line
@@ -2657,9 +2717,23 @@ def arrow_height_above(
     if has_label:
         # QW-7: use 32 px headroom when any arrow label contains math
         # (fractions, large operators overflow the 24 px default).
+        # ``headroom_extra`` covers the pill at its NATURAL anchor, which sits
+        # at ``qy - pill_h/2 - 4`` above the arc peak (top ≈ pill_h + 4 px above
+        # the peak — ~23 px for a one-line pill, hence the 24 px baseline).
         has_math = any(_label_has_math(a.get("label", "")) for a in arrow_anns)
         headroom_extra = 32 if has_math else _LABEL_HEADROOM
-        max_height += headroom_extra
+        # Bounded nudge margin: the pill placer (_nudge_candidates /
+        # _pick_best_candidate) can push a pill UP to dodge collisions, in steps
+        # that are multiples of pill_h up to 2.5*pill_h. Reserving the full
+        # 2.5*pill_h would bloat EVERY annotated scene, so we reserve roughly one
+        # pill height — enough to absorb a typical upward nudge. The pathological
+        # max-nudge case (a pill driven the full 2.5*pill_h up by a dense
+        # collision) is intentionally NOT fully reserved; that rare residual is
+        # absorbed by the inter-primitive gap rather than inflating every scene.
+        # White label halo (stroke-width=3 → ~1.5px beyond the glyph) is also
+        # covered within this one-pill margin.
+        nudge_margin = int(_arrow_label_pill_h(arrow_anns))
+        max_height += headroom_extra + nudge_margin
 
     return max(max_height, plain_height)
 

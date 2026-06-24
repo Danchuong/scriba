@@ -283,7 +283,7 @@ def emit_animation_html(
             f'      <header class="scriba-frame-header">\n'
             f"        "
             f'<span class="scriba-step-label">'
-            f"Step {step} / {frame_count}</span>\n"
+            f"{step} / {frame_count}</span>\n"
             f"      </header>\n"
             f'      <div class="scriba-stage">\n'
             f"        {svg_html}\n"
@@ -383,10 +383,10 @@ def emit_substory_html(
         f'        <div class="scriba-substory-widget" id="{widget_id}"\n'
         f'             data-scriba-frames="{frames_json}">\n'
         f'          <div class="scriba-controls scriba-substory-controls">\n'
-        f'            <button class="scriba-btn-prev" aria-label="Previous sub-step" disabled>Prev</button>\n'
-        f'            <span class="scriba-step-counter">Sub-step 1 / {sub_frame_count}</span>\n'
+        f'            <button class="scriba-btn-prev" aria-label="Previous sub-step" disabled>&#10094;</button>\n'
+        f'            <span class="scriba-step-counter">1 / {sub_frame_count}</span>\n'
         f'            <button class="scriba-btn-next" aria-label="Next sub-step"'
-        f'{"" if sub_frame_count > 1 else " disabled"}>Next</button>\n'
+        f'{"" if sub_frame_count > 1 else " disabled"}>&#10095;</button>\n'
         f'            <div class="scriba-progress" aria-hidden="true">\n'
         f'              {dots_html}\n'
         f'            </div>\n'
@@ -591,7 +591,7 @@ def emit_interactive_html(
         print_frame_items.append(
             f'<div class="scriba-print-frame" data-step="{step}"{data_label_attr}>\n'
             f'  <span class="scriba-step-label">'
-            f'Step {step} / {frame_count}</span>\n'
+            f'{step} / {frame_count}</span>\n'
             f'  <div class="scriba-stage">{print_svg}</div>\n'
             f'  <p class="scriba-narration"'
             f' id="{_escape(print_narration_id)}">'
@@ -644,12 +644,6 @@ def emit_interactive_html(
             raw["tr"] = tr_val
             raw["fs"] = 1 if _needs_sync[idx] else 0
 
-    # Build progress dots
-    dots_html = "\n      ".join(
-        f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
-        for i in range(frame_count)
-    )
-
     _aria_label = _escape(label) if label else "Animation"
 
     # Build the script block: inline or external.
@@ -660,15 +654,14 @@ def emit_interactive_html(
 
     widget_html = f"""\
 <div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1" role="region" aria-label="{_aria_label}">
-  <div class="scriba-controls">
-    <button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button>
-    <span class="scriba-step-counter" aria-atomic="true">Step 1 / {frame_count}</span>
-    <button class="scriba-btn-next" aria-label="Next step"{"" if frame_count > 1 else " disabled"}>Next</button>
-    <div class="scriba-progress" aria-hidden="true">
-      {dots_html}
+  <div class="scriba-stage-wrap">
+    <div class="scriba-stage"></div>
+    <div class="scriba-controls">
+      <button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button>
+      <span class="scriba-step-counter" aria-atomic="true">1 / {frame_count}</span>
+      <button class="scriba-btn-next" aria-label="Next step"{"" if frame_count > 1 else " disabled"}>&#10095;</button>
     </div>
   </div>
-  <div class="scriba-stage"></div>
   <p class="scriba-narration" dir="auto" id="{_escape(scene_id)}-narration" aria-live="polite">{_safe_narration_html(frames[0].narration_html)}</p>
   <div class="scriba-substory-container"></div>
   <div class="scriba-print-frames" style="display:none">

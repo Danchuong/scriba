@@ -22,6 +22,7 @@ from scriba.animation.primitives.base import (
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
+    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -304,6 +305,8 @@ class GridPrimitive(PrimitiveBase):
         )
         arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
+        pos_below = position_label_height_below(self._annotations, cell_height=CELL_HEIGHT)
+        h += pos_below
         return BoundingBox(x=0, y=0, width=tw, height=h)
 
     # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------

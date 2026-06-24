@@ -26,6 +26,7 @@ from scriba.animation.primitives.base import (
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
+    position_label_height_below,
     _LabelPlacement,
     emit_arrow_marker_defs,
     emit_arrow_svg,
@@ -259,6 +260,7 @@ class Queue(PrimitiveBase):
             h += 20
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
+        h += position_label_height_below(self._annotations, cell_height=CELL_HEIGHT)
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     def emit_svg(

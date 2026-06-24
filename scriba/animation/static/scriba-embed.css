@@ -103,7 +103,7 @@
    ============================================ */
 
 .scriba-stage {
-  padding: 1.25rem 1rem;
+  padding: 0.875rem 0.875rem;
   display: flex;
   justify-content: center;
   min-height: 100px;
@@ -114,6 +114,56 @@
   width: 100%;
   height: auto;
   max-height: 80vh;
+}
+
+/* ============================================
+   C1: Overlay controls
+   The control bar floats as a translucent pill over the stage, reclaiming
+   the full top bar. Scoped to `.scriba-stage-wrap > .scriba-controls` so the
+   substory widget's reuse of the base `.scriba-controls` top bar is unaffected.
+   ============================================ */
+
+.scriba-stage-wrap {
+  position: relative;
+}
+
+.scriba-stage-wrap > .scriba-stage {
+  padding-bottom: 3.25rem; /* clear room so the pill never covers animation content */
+}
+
+.scriba-stage-wrap > .scriba-controls {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  width: auto;
+  gap: 0.6rem;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(8px) saturate(1.2);
+  backdrop-filter: blur(8px) saturate(1.2);
+  border: 1px solid rgba(205, 211, 218, 0.7);
+  border-bottom: 1px solid rgba(205, 211, 218, 0.7);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 18px rgba(16, 24, 40, 0.12);
+}
+
+.scriba-stage-wrap > .scriba-controls button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-step-counter {
+  min-width: 0;
+}
+
+.scriba-stage-wrap > .scriba-controls .scriba-progress {
+  margin-left: 0;
 }
 
 /* ============================================
@@ -132,12 +182,10 @@
 
 .scriba-narration {
   margin: 0;
-  padding: 0.75rem 1rem;
-  font-size: 0.92rem;
+  padding: 0.5rem 1rem 0.75rem;
+  font-size: 0.85rem;
   line-height: 1.55;
-  color: #11181c;
-  border-top: 1px solid #e6e8eb;
-  min-height: 2.5rem;
+  color: #475467;
 }
 
 /* ============================================
@@ -202,6 +250,7 @@
 [data-theme="dark"] .scriba-controls { background: #202425; border-color: #313538; }
 [data-theme="dark"] .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
 [data-theme="dark"] .scriba-controls button:hover { background: #313538; }
+[data-theme="dark"] .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
 [data-theme="dark"] .scriba-step-counter { color: #9ba1a6; }
 [data-theme="dark"] .scriba-narration { color: #ecedee; border-color: #2b2f31; }
 [data-theme="dark"] .scriba-dot { background: #313538; }
@@ -217,6 +266,7 @@
   :root:not([data-theme="light"]) .scriba-controls { background: #202425; border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-controls button { background: #2b2f31; border-color: #313538; color: #ecedee; }
   :root:not([data-theme="light"]) .scriba-controls button:hover { background: #313538; }
+  :root:not([data-theme="light"]) .scriba-stage-wrap > .scriba-controls { background: rgba(26, 29, 30, 0.82); border-color: #313538; }
   :root:not([data-theme="light"]) .scriba-step-counter { color: #9ba1a6; }
   :root:not([data-theme="light"]) .scriba-narration { color: #ecedee; border-color: #2b2f31; }
   :root:not([data-theme="light"]) .scriba-dot { background: #313538; }

@@ -124,14 +124,17 @@ def test_next_button_has_aria_label(widget_html: str) -> None:
 
 @pytest.mark.unit
 def test_prev_button_keeps_visible_text(widget_html: str) -> None:
-    # Visible text is preserved for sighted users; aria-label adds a
-    # screen-reader-friendly description without replacing it.
-    assert ">Prev</button>" in widget_html
+    # The button shows a language-neutral chevron glyph (❮); the
+    # screen-reader-friendly description lives in aria-label so the icon
+    # stays operable without English text.
+    assert ">&#10094;</button>" in widget_html
+    assert 'aria-label="Previous step"' in widget_html
 
 
 @pytest.mark.unit
 def test_next_button_keeps_visible_text(widget_html: str) -> None:
-    assert ">Next</button>" in widget_html
+    assert ">&#10095;</button>" in widget_html
+    assert 'aria-label="Next step"' in widget_html
 
 
 # ---------------------------------------------------------------------------

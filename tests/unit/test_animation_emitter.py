@@ -113,22 +113,22 @@ class TestComputeViewbox:
     def test_single_primitive(self) -> None:
         prim = _StubPrimitive(shape_name="a", _bbox=(0, 0, 200, 40))
         vb = compute_viewbox({"a": prim})
-        # width = 200 + 2*16 = 232, height = 40 + 2*16 = 72
-        assert vb == "0 0 232 72"
+        # width = 200 + 2*_PADDING(12) = 224, height = 40 + 2*_PADDING(12) = 64
+        assert vb == "0 0 224 64"
 
     def test_multiple_primitives_stacked(self) -> None:
         p1 = _StubPrimitive(shape_name="a", _bbox=(0, 0, 200, 40))
         p2 = _StubPrimitive(shape_name="b", _bbox=(0, 0, 300, 60))
         vb = compute_viewbox({"a": p1, "b": p2})
-        # width = max(200,300) + 32 = 332
-        # height = 40 + 50(gap) + 60 + 32(padding) = 182
-        assert vb == "0 0 332 182"
+        # width = max(200,300) + 2*_PADDING(12) = 324
+        # height = 40 + _PRIMITIVE_GAP(28) + 60 + 2*_PADDING(12) = 152
+        assert vb == "0 0 324 152"
 
     def test_bounding_box_dataclass(self) -> None:
         """BoundingBox (from Graph) is handled correctly."""
         prim = _StubGraph(shape_name="G", _bbox=BoundingBox(0, 0, 400, 300))
         vb = compute_viewbox({"G": prim})
-        assert vb == "0 0 432 332"
+        assert vb == "0 0 424 324"
 
 
 class TestSharedDefs:
@@ -158,7 +158,7 @@ class TestStaticMode:
         assert 'data-scriba-scene="test-1"' in html
         assert 'data-frame-count="1"' in html
         assert 'data-layout="filmstrip"' in html
-        assert "Step 1 / 1" in html
+        assert "1 / 1" in html
         assert "Hello world" in html
         assert 'class="scriba-narration"' in html
 
@@ -213,13 +213,16 @@ class TestInteractiveMode:
         assert 'class="scriba-btn-next"' in html
         assert 'class="scriba-step-counter"' in html
 
-    def test_progress_dots(self) -> None:
+    def test_no_progress_dots(self) -> None:
+        # The overlay control pill dropped the progress-dots row; the step
+        # counter is now the sole progress indicator in the main widget.
         prim = _StubPrimitive(shape_name="a")
         frames = [_frame(step=1, total=3), _frame(step=2, total=3)]
         html = emit_interactive_html("dots", frames, {"a": prim})
 
-        assert 'class="scriba-dot active"' in html
-        assert 'class="scriba-dot"' in html
+        assert 'class="scriba-dot active"' not in html
+        assert 'class="scriba-dot"' not in html
+        assert 'class="scriba-step-counter"' in html
 
     def test_narration_in_frames_data(self) -> None:
         prim = _StubPrimitive(shape_name="a")
@@ -273,9 +276,9 @@ class TestMultiFrame:
         ]
         html = emit_animation_html("multi", frames, {"a": prim})
 
-        assert "Step 1 / 3" in html
-        assert "Step 2 / 3" in html
-        assert "Step 3 / 3" in html
+        assert "1 / 3" in html
+        assert "2 / 3" in html
+        assert "3 / 3" in html
 
     def test_data_step_attributes(self) -> None:
         prim = _StubPrimitive(shape_name="a")
@@ -377,7 +380,7 @@ class TestMultiplePrimitives:
         p2 = _StubPrimitive(shape_name="b", _bbox=(0, 0, 300, 60))
         frame = _frame(step=1, total=1)
         html = emit_animation_html("vb", [frame], {"a": p1, "b": p2})
-        assert 'viewBox="0 0 332 182"' in html
+        assert 'viewBox="0 0 324 152"' in html
 
 
 class TestHtmlEscaping:

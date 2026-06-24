@@ -26,6 +26,7 @@ from scriba.animation.primitives.base import (
     THEME,
     _render_svg_text,
     arrow_height_above,
+    position_label_height_below,
     register_primitive,
     svg_style_attrs,
 )
@@ -631,11 +632,15 @@ class Plane2D(PrimitiveBase):
             cell_height=float(_ARROW_CELL_HEIGHT),
             layout="2d",
         )
+        pos_below = position_label_height_below(
+            self._annotations,
+            cell_height=float(_ARROW_CELL_HEIGHT),
+        )
         return BoundingBox(
             x=0,
             y=0,
             width=self.width,
-            height=self.height + arrow_above,
+            height=self.height + arrow_above + pos_below,
         )
 
     # ----- SVG emission ----------------------------------------------------

@@ -16,6 +16,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _render_svg_text,
     arrow_height_above,
+    position_label_height_below,
     emit_arrow_marker_defs,
     emit_arrow_svg,
     estimate_text_width,
@@ -340,6 +341,10 @@ class NumberLinePrimitive(PrimitiveBase):
 
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
+        pos_below = position_label_height_below(
+            self._annotations, cell_height=NL_TICK_BOTTOM - NL_TICK_TOP
+        )
+        h += pos_below
 
         return BoundingBox(x=0.0, y=0.0, width=float(self.width), height=float(h))
 

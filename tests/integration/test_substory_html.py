@@ -120,4 +120,4 @@ class TestSubstoryHtmlOutput:
         sub = _make_substory(frame_count=3)
         frames = [_make_frame(1, 1, "", substories=[sub])]
         html = emit_animation_html("test-scene", frames, {})
-        assert "Sub-step 1 / 3" in html
+        assert "1 / 3" in html

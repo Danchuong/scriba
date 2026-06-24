@@ -123,8 +123,8 @@ class TestRenderBlock:
 
         assert 'data-frame-count="2"' in artifact.html
         assert "scriba-animation" in artifact.html
-        assert "Step 1 / 2" in artifact.html
-        assert "Step 2 / 2" in artifact.html
+        assert "1 / 2" in artifact.html
+        assert "2 / 2" in artifact.html
 
     def test_render_block_with_narration(
         self,

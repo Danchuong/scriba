@@ -26,6 +26,7 @@ from scriba.animation.primitives.base import (
     _render_svg_text,
     arrow_height_above,
     position_label_height_above,
+    position_label_height_below,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -400,6 +401,8 @@ class ArrayPrimitive(PrimitiveBase):
         pos_above = position_label_height_above(effective_anns, cell_height=CELL_HEIGHT)
         arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
+        pos_below = position_label_height_below(effective_anns, cell_height=CELL_HEIGHT)
+        h += pos_below
         return BoundingBox(x=0, y=0, width=float(w), height=float(h))
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:

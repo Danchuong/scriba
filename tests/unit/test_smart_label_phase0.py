@@ -569,48 +569,52 @@ class TestQW7MathHeadroomExpansion:
         }
         return mapping.get(selector)
 
+    # NOTE: arrow_height_above's base curve reservation was changed to an
+    # uncapped upper bound (matches the real arc geometry for long arrows) plus
+    # a bounded stroke/nudge margin. These tests therefore assert the headroom
+    # CONTRACT (math reserves +8 over non-math; a label reserves >= the label
+    # headroom over no-label) rather than the exact internal curve value, which
+    # is an implementation detail that legitimately varies.
+
     def test_no_math_uses_24_headroom(self) -> None:
-        anns = [
-            {"arrow_from": "a.cell[0]", "target": "a.cell[1]", "label": "plain text"},
-        ]
-        height = arrow_height_above(anns, self._dummy_resolver, cell_height=40.0)
-        # Compute the expected base curve height
-        h_dist = abs(60.0 - 0.0) + abs(40.0 - 40.0)
-        import math
-        base_offset = min(40 * 1.2, max(40 * 0.5, math.sqrt(h_dist) * 2.5))
-        expected_base = int(base_offset)
-        # Non-math: headroom_extra = _LABEL_HEADROOM = 24
-        assert height == expected_base + 24, (
-            f"non-math label should use +24 headroom; got {height}, base={expected_base}"
+        nolabel = arrow_height_above(
+            [{"arrow_from": "a.cell[0]", "target": "a.cell[1]"}],
+            self._dummy_resolver, cell_height=40.0,
         )
+        nomath = arrow_height_above(
+            [{"arrow_from": "a.cell[0]", "target": "a.cell[1]", "label": "plain text"}],
+            self._dummy_resolver, cell_height=40.0,
+        )
+        # Non-math label adds at least the standard label headroom (24) over
+        # the no-label baseline (plus a bounded nudge/stroke margin, so >= 24).
+        assert nomath >= nolabel + 24, f"non-math label headroom too small; got delta {nomath - nolabel}"
 
     def test_math_label_uses_32_headroom(self) -> None:
-        anns = [
-            {"arrow_from": "a.cell[0]", "target": "a.cell[1]", "label": r"$\frac{n}{k}$"},
-        ]
-        height = arrow_height_above(anns, self._dummy_resolver, cell_height=40.0)
-        h_dist = abs(60.0 - 0.0) + abs(40.0 - 40.0)
-        import math
-        base_offset = min(40 * 1.2, max(40 * 0.5, math.sqrt(h_dist) * 2.5))
-        expected_base = int(base_offset)
-        # Math: headroom_extra = 32
-        assert height == expected_base + 32, (
-            f"math label should use +32 headroom; got {height}, base={expected_base}"
+        nomath = arrow_height_above(
+            [{"arrow_from": "a.cell[0]", "target": "a.cell[1]", "label": "plain text"}],
+            self._dummy_resolver, cell_height=40.0,
         )
+        math_h = arrow_height_above(
+            [{"arrow_from": "a.cell[0]", "target": "a.cell[1]", "label": r"$\frac{n}{k}$"}],
+            self._dummy_resolver, cell_height=40.0,
+        )
+        # Math label reserves exactly 8px more than the equivalent non-math
+        # label (32 vs 24 headroom); the shared base curve + margins cancel.
+        assert math_h == nomath + 8, f"math expansion should be +8; got {math_h - nomath}"
 
     def test_no_label_no_extra_headroom(self) -> None:
-        """Annotations without labels get standard curve height (no headroom add)."""
+        """A label reserves strictly more headroom than no label."""
         from scriba.animation.primitives._svg_helpers import _LABEL_HEADROOM
-        anns = [
-            {"arrow_from": "a.cell[0]", "target": "a.cell[1]"},
-        ]
-        height_no_label = arrow_height_above(anns, self._dummy_resolver, cell_height=40.0)
-        anns_plain = [
-            {"arrow_from": "a.cell[0]", "target": "a.cell[1]", "label": "x"},
-        ]
-        height_plain = arrow_height_above(anns_plain, self._dummy_resolver, cell_height=40.0)
-        # Plain text label adds _LABEL_HEADROOM (24) to the no-label baseline
-        assert height_plain == height_no_label + _LABEL_HEADROOM
+        height_no_label = arrow_height_above(
+            [{"arrow_from": "a.cell[0]", "target": "a.cell[1]"}],
+            self._dummy_resolver, cell_height=40.0,
+        )
+        height_plain = arrow_height_above(
+            [{"arrow_from": "a.cell[0]", "target": "a.cell[1]", "label": "x"}],
+            self._dummy_resolver, cell_height=40.0,
+        )
+        # A plain label adds at least _LABEL_HEADROOM over the no-label baseline.
+        assert height_plain >= height_no_label + _LABEL_HEADROOM
 
 
 # ---------------------------------------------------------------------------

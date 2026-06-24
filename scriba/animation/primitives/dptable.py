@@ -27,6 +27,7 @@ from scriba.animation.primitives.base import (
     _render_svg_text,
     arrow_height_above,
     position_label_height_above,
+    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -355,6 +356,8 @@ class DPTablePrimitive(PrimitiveBase):
         pos_above = position_label_height_above(self._annotations, cell_height=CELL_HEIGHT)
         arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
+        pos_below = position_label_height_below(self._annotations, cell_height=CELL_HEIGHT)
+        h += pos_below
         return BoundingBox(x=0, y=0, width=float(tw), height=h)
 
     # -- internal: cell emission -------------------------------------------

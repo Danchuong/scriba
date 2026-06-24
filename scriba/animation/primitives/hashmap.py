@@ -22,6 +22,7 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_svg_text,
     arrow_height_above,
+    position_label_height_below,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -223,6 +224,8 @@ class HashMap(PrimitiveBase):
             cell_height=_ROW_HEIGHT,
         )
         h += arrow_above
+        pos_below = position_label_height_below(self._annotations, cell_height=_ROW_HEIGHT)
+        h += pos_below
 
         return BoundingBox(x=0, y=0, width=w, height=h)
 

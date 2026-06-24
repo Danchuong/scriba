@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     _render_split_label_svg,
     _render_svg_text,
     arrow_height_above,
+    position_label_height_below,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -1153,11 +1154,15 @@ class Graph(PrimitiveBase):
             cell_height=float(self._node_radius * 2),
             layout="2d",
         )
+        pos_below = position_label_height_below(
+            self._annotations,
+            cell_height=float(self._node_radius * 2),
+        )
         return BoundingBox(
             x=0,
             y=0,
             width=self.width + 2 * r,
-            height=self.height + 2 * r + arrow_above,
+            height=self.height + 2 * r + arrow_above + pos_below,
         )
 
     def emit_svg(
