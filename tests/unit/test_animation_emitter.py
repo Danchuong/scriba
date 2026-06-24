@@ -121,8 +121,8 @@ class TestComputeViewbox:
         p2 = _StubPrimitive(shape_name="b", _bbox=(0, 0, 300, 60))
         vb = compute_viewbox({"a": p1, "b": p2})
         # width = max(200,300) + 2*_PADDING(12) = 324
-        # height = 40 + _PRIMITIVE_GAP(28) + 60 + 2*_PADDING(12) = 152
-        assert vb == "0 0 324 152"
+        # height = 40 + _PRIMITIVE_GAP(20) + 60 + 2*_PADDING(12) = 144
+        assert vb == "0 0 324 144"
 
     def test_bounding_box_dataclass(self) -> None:
         """BoundingBox (from Graph) is handled correctly."""
@@ -380,7 +380,7 @@ class TestMultiplePrimitives:
         p2 = _StubPrimitive(shape_name="b", _bbox=(0, 0, 300, 60))
         frame = _frame(step=1, total=1)
         html = emit_animation_html("vb", [frame], {"a": p1, "b": p2})
-        assert 'viewBox="0 0 324 152"' in html
+        assert 'viewBox="0 0 324 144"' in html
 
 
 class TestHtmlEscaping:
