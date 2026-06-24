@@ -259,22 +259,24 @@ class VariableWatch(PrimitiveBase):
             parts.append("</g>")
             return "".join(parts)
 
-        # Outer border
         row_count = len(self.var_names)
         table_h = row_count * _ROW_HEIGHT
-        parts.append(
-            f'<rect x="{_PADDING}" y="{_PADDING}" '
-            f'width="{self._total_width}" height="{table_h}" '
-            f'fill="none" stroke="{THEME["border"]}" stroke-width="1" rx="4"/>'
-        )
-
-        # Column divider
         divider_x = _PADDING + self._name_col_width
+
+        # Clip the per-row value-cell fills to the rounded table outline so
+        # their square corners never poke past the rx=4 border.  The outer
+        # border, column divider and row dividers are drawn AFTER the rows
+        # (below), on top of the fills, so the fills can no longer paint over
+        # them — previously the idle fill (#f8f9fa) erased the right border and
+        # column divider on the value column.
+        clip_id = f"vw-clip-{self.name}"
         parts.append(
-            f'<line x1="{divider_x}" y1="{_PADDING}" '
-            f'x2="{divider_x}" y2="{_PADDING + table_h}" '
-            f'stroke="{THEME["border"]}" stroke-width="1"/>'
+            f'<clipPath id="{_escape_xml(clip_id)}">'
+            f'<rect x="{_PADDING}" y="{_PADDING}" '
+            f'width="{self._total_width}" height="{table_h}" rx="4"/>'
+            f"</clipPath>"
         )
+        parts.append(f'<g clip-path="url(#{_escape_xml(clip_id)})">')
 
         for row_idx, vn in enumerate(self.var_names):
             suffix = f"var[{vn}]"
@@ -295,14 +297,6 @@ class VariableWatch(PrimitiveBase):
                 f'class="{state_class(state)}">'
             )
 
-            # Row divider (skip first row)
-            if row_idx > 0:
-                parts.append(
-                    f'<line x1="{_PADDING}" y1="{row_y}" '
-                    f'x2="{_PADDING + self._total_width}" y2="{row_y}" '
-                    f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
-                )
-
             # Value cell background (right column)
             value_x = _PADDING + self._name_col_width
             parts.append(
@@ -311,9 +305,10 @@ class VariableWatch(PrimitiveBase):
                 f'fill="{colors["fill"]}" stroke="none"/>'
             )
 
-            # Name text (left column, left-aligned, gray)
-            name_fo_width = self._name_col_width - 12
-            name_tx = _PADDING + 8
+            # Name text (left column, centered, gray) — centered to match the
+            # value column so both columns read as centered.
+            name_fo_width = self._name_col_width
+            name_tx = _PADDING + self._name_col_width // 2
             name_ty = row_y + _ROW_HEIGHT // 2
             parts.append(
                 _render_svg_text(
@@ -322,7 +317,7 @@ class VariableWatch(PrimitiveBase):
                     name_ty,
                     fill=THEME["fg_muted"],
                     font_size=_NAME_FONT_SIZE,
-                    text_anchor="start",
+                    text_anchor="middle",
                     dominant_baseline="central",
                     fo_width=name_fo_width,
                     fo_height=_ROW_HEIGHT,
@@ -351,6 +346,29 @@ class VariableWatch(PrimitiveBase):
             )
 
             parts.append("</g>")
+
+        parts.append("</g>")  # end clipped value-cell fills
+
+        # Borders on top of the fills — crisp 1px outline, column divider and
+        # interior row dividers that the value-cell backgrounds can no longer
+        # cover.
+        parts.append(
+            f'<rect x="{_PADDING}" y="{_PADDING}" '
+            f'width="{self._total_width}" height="{table_h}" '
+            f'fill="none" stroke="{THEME["border"]}" stroke-width="1" rx="4"/>'
+        )
+        parts.append(
+            f'<line x1="{divider_x}" y1="{_PADDING}" '
+            f'x2="{divider_x}" y2="{_PADDING + table_h}" '
+            f'stroke="{THEME["border"]}" stroke-width="1"/>'
+        )
+        for _row_idx in range(1, row_count):
+            _div_y = _PADDING + _row_idx * _ROW_HEIGHT
+            parts.append(
+                f'<line x1="{_PADDING}" y1="{_div_y}" '
+                f'x2="{_PADDING + self._total_width}" y2="{_div_y}" '
+                f'stroke="{THEME["border"]}" stroke-width="0.5"/>'
+            )
 
         # Caption / label
         if self.label is not None:

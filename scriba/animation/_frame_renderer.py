@@ -494,8 +494,17 @@ def _emit_frame_svg(
         _title_text = scene_id
     # Re-encode for safe embedding inside <title>…</title>.
     _title_escaped = _html_mod.escape(_html_mod.unescape(_title_text))
+    # Give the SVG an intrinsic max width equal to its natural viewBox width.
+    # A viewBox-only SVG has no intrinsic pixel size, so the package CSS
+    # ``width:100%`` would upscale a small drawing to the full container width
+    # (unbounded height).  Capping max-width lets ``width:100%`` only shrink,
+    # never magnify -- the scene renders at its natural size on wide columns.
+    vb_parts = viewbox.split()
+    vb_width = int(vb_parts[2]) if len(vb_parts) >= 3 else 0
+
     svg_parts: list[str] = [
         f'<svg class="scriba-stage-svg" viewBox="{viewbox}" '
+        f'style="max-width:{vb_width}px" '
         f'role="img" '
         f'aria-labelledby="{_escape_fn(narration_id)}" '
         f'xmlns="http://www.w3.org/2000/svg">'
@@ -508,8 +517,7 @@ def _emit_frame_svg(
         svg_parts.append(defs)
 
     # Primitive groups -- vertical stacking with translate
-    vb_parts = viewbox.split()
-    vb_width = int(vb_parts[2]) if len(vb_parts) >= 3 else 0
+    # (vb_width parsed above, before the <svg> open tag)
 
     # W3-α+: pre-scan all primitives to compute their scene offsets and
     # collect cross-primitive obstacle segments.  Order matches the emit loop

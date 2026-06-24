@@ -1053,6 +1053,7 @@
   border-radius: 10px;
   background: #ffffff;
   overflow: hidden;
+  max-width: 100%;
 }
 
 /* ============================================
@@ -1127,11 +1128,13 @@
   display: flex;
   justify-content: center;
   min-height: 100px;
+  overflow: auto;
 }
 
 .scriba-stage-svg {
   width: 100%;
   height: auto;
+  max-height: 80vh;
 }
 
 /* ============================================
@@ -1422,12 +1425,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 %
 % See test_path_traversal.sh for the automated regression invocation.</p>
 
-<div class="scriba-widget" id="path-traversal" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-atomic="true">Step 1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>Next</button><div class="scriba-progress" aria-hidden="true"><div class="scriba-dot active"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" dir="auto" id="path-traversal-narration" aria-live="polite">Only step.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 92 72" role="img" aria-labelledby="path-traversal-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Only step.</title><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c">1</text></g></g></g></svg></div><p class="scriba-narration" id="path-traversal-print-1-narration">Only step.</p></div></div></div>
+<div class="scriba-widget" id="path-traversal" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-atomic="true">Step 1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>Next</button><div class="scriba-progress" aria-hidden="true"><div class="scriba-dot active"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" dir="auto" id="path-traversal-narration" aria-live="polite">Only step.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 92 72" style="max-width:92px" role="img" aria-labelledby="path-traversal-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Only step.</title><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c">1</text></g></g></g></svg></div><p class="scriba-narration" id="path-traversal-print-1-narration">Only step.</p></div></div></div>
 <script>(function(){
   var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
   var W=document.getElementById('path-traversal');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 92 72" role="img" aria-labelledby="path-traversal-narration" xmlns="http://www.w3.org/2000/svg"><title>Only step.</title>
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 92 72" style="max-width:92px" role="img" aria-labelledby="path-traversal-narration" xmlns="http://www.w3.org/2000/svg"><title>Only step.</title>
 <g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">

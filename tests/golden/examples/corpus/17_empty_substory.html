@@ -1053,6 +1053,7 @@
   border-radius: 10px;
   background: #ffffff;
   overflow: hidden;
+  max-width: 100%;
 }
 
 /* ============================================
@@ -1127,11 +1128,13 @@
   display: flex;
   justify-content: center;
   min-height: 100px;
+  overflow: auto;
 }
 
 .scriba-stage-svg {
   width: 100%;
   height: auto;
+  max-height: 80vh;
 }
 
 /* ============================================
@@ -1418,12 +1421,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 %            and will render nothing. Add at least one \step inside
 %            the substory block.</p>
 
-<div class="scriba-widget" id="fix-17-empty-substory" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-atomic="true">Step 1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>Next</button><div class="scriba-progress" aria-hidden="true"><div class="scriba-dot active"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" dir="auto" id="fix-17-empty-substory-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 0 0" role="img" aria-labelledby="fix-17-empty-substory-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>fix-17-empty-substory</title></svg></div><p class="scriba-narration" id="fix-17-empty-substory-print-1-narration"></p></div></div></div>
+<div class="scriba-widget" id="fix-17-empty-substory" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-atomic="true">Step 1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>Next</button><div class="scriba-progress" aria-hidden="true"><div class="scriba-dot active"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" dir="auto" id="fix-17-empty-substory-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 0 0" style="max-width:0px" role="img" aria-labelledby="fix-17-empty-substory-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>fix-17-empty-substory</title></svg></div><p class="scriba-narration" id="fix-17-empty-substory-print-1-narration"></p></div></div></div>
 <script>(function(){
   var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
   var W=document.getElementById('fix-17-empty-substory');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 0 0" role="img" aria-labelledby="fix-17-empty-substory-narration" xmlns="http://www.w3.org/2000/svg"><title>fix-17-empty-substory</title>
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 0 0" style="max-width:0px" role="img" aria-labelledby="fix-17-empty-substory-narration" xmlns="http://www.w3.org/2000/svg"><title>fix-17-empty-substory</title>
 </svg>`,narration:``,substory:`      <section class="scriba-substory" role="group"
                aria-label="Sub-computation: empty — triggers E1366"
                data-substory-id="substory1"

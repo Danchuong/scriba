@@ -1053,6 +1053,7 @@
   border-radius: 10px;
   background: #ffffff;
   overflow: hidden;
+  max-width: 100%;
 }
 
 /* ============================================
@@ -1127,11 +1128,13 @@
   display: flex;
   justify-content: center;
   min-height: 100px;
+  overflow: auto;
 }
 
 .scriba-stage-svg {
   width: 100%;
   height: auto;
+  max-height: 80vh;
 }
 
 /* ============================================
@@ -1413,12 +1416,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 % After fix:  stderr shows "[E1115] selector 'a.cell[99]' does not match any
 %             addressable part of 'a'"</p>
 
-<div class="scriba-widget" id="sel-out-of-range" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-atomic="true">Step 1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>Next</button><div class="scriba-progress" aria-hidden="true"><div class="scriba-dot active"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" dir="auto" id="sel-out-of-range-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 216 72" role="img" aria-labelledby="sel-out-of-range-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>sel-out-of-range</title><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c"></text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c"></text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c"></text></g></g></g></svg></div><p class="scriba-narration" id="sel-out-of-range-print-1-narration"></p></div></div></div>
+<div class="scriba-widget" id="sel-out-of-range" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>Prev</button><span class="scriba-step-counter" aria-atomic="true">Step 1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>Next</button><div class="scriba-progress" aria-hidden="true"><div class="scriba-dot active"></div></div></div><div class="scriba-stage"></div><p class="scriba-narration" dir="auto" id="sel-out-of-range-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">Step 1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 216 72" style="max-width:216px" role="img" aria-labelledby="sel-out-of-range-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>sel-out-of-range</title><g transform="translate(16.0,16)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c"></text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c"></text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c"></text></g></g></g></svg></div><p class="scriba-narration" id="sel-out-of-range-print-1-narration"></p></div></div></div>
 <script>(function(){
   var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
   var W=document.getElementById('sel-out-of-range');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 216 72" role="img" aria-labelledby="sel-out-of-range-narration" xmlns="http://www.w3.org/2000/svg"><title>sel-out-of-range</title>
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 216 72" style="max-width:216px" role="img" aria-labelledby="sel-out-of-range-narration" xmlns="http://www.w3.org/2000/svg"><title>sel-out-of-range</title>
 <g transform="translate(16.0,16)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">
