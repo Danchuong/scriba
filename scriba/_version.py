@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.19.0"
+__version__: str = "0.20.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 7
+SCRIBA_VERSION: int = 8
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -43,4 +43,17 @@ reserved inner lane instead of a canvas corner, and an unpinned
 ``layout="force"`` graph auto-selects the best-scoring seed (0–7) instead of
 always using seed 42. Graphs that mutate edges, contain isolated nodes, or
 rely on the default seed render different SVG bytes; consumer caches keyed on
+rendered output MUST invalidate.
+
+0.20.0 bumps 7→8: interactive-widget chrome and primitive spacing changed. The
+step controls now float as an overlay pill over the stage (the top control bar
+is gone) and the narration is a borderless caption; the progress-dots row was
+removed (the counter is the sole indicator); prev/next use chevron glyphs and
+the counter dropped the "Step"/"Sub-step" word ("N / M"). The stage ``<svg>``
+now carries an intrinsic ``max-width`` so a viewBox-only drawing is never
+upscaled. Every primitive's ``bounding_box`` now reserves ``position=below``
+annotation-pill headroom and ``arrow_height_above`` is a true upper bound on
+arrow/label extent, so the inter-primitive gap could tighten (50→20) with
+``_PADDING`` 16→12 without overlap. VariableWatch borders/centering were also
+fixed. Rendered HTML/SVG bytes differ from 0.19.x; consumer caches keyed on
 rendered output MUST invalidate."""

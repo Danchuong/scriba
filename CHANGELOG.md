@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-06-24 — Compact embed widget (overlay controls, tidy spacing, overlap-safe annotations)
+
+### Changed
+- **Rendered HTML/SVG bytes differ from 0.19.x** (`SCRIBA_VERSION` bumped 7→8).
+  Consumer caches keyed on rendered output MUST invalidate.
+- Interactive widget chrome is far more compact: the step controls now float as
+  a translucent pill over the stage instead of a full top bar, and the narration
+  is a borderless caption (no bordered box, no `min-height`).
+- Controls are language-neutral: prev/next render as chevron glyphs (❮ ❯) and the
+  step counter dropped the "Step"/"Sub-step" word (just "N / M"). `aria-label`s
+  keep the English description for screen readers.
+- Inter-primitive spacing tightened: `_PRIMITIVE_GAP` 50→20 and `_PADDING` 16→12;
+  stage padding trimmed.
+
+### Added
+- The stage `<svg>` now carries an intrinsic `max-width` equal to its viewBox
+  width, so a viewBox-only drawing is never upscaled past its natural size when
+  embedded in a wide column — rendered height stays bounded. CSS gains a
+  `max-height` / `overflow` guard.
+- Every annotation-bearing primitive's `bounding_box` now reserves
+  `position=below` pill headroom (via `position_label_height_below`), and
+  `arrow_height_above` is now a verified upper bound on the real arrow-arc +
+  label extent (long arrows, stroke/halo, upward nudge). Together these make the
+  tightened inter-primitive gap overlap-safe.
+
+### Removed
+- The progress-dots row in the main interactive widget — the step counter is the
+  sole progress indicator now (substory widgets keep their dots).
+
+### Fixed
+- VariableWatch table borders no longer break: the outer border, column divider
+  and row dividers are drawn on top of the value-cell fills (previously the idle
+  fill painted over them), the fills are clipped to the rounded outline, and the
+  name column is centered to match the value column.
+
 ## [0.19.0] - 2026-06-03 — Graph layout stability (pinning, isolated-node lane, auto-seed)
 
 ### Changed
