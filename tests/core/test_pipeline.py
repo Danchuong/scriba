@@ -28,8 +28,12 @@ def test_pipeline_aggregates_js_assets(pipeline):
 
 
 def test_pipeline_versions_dict(pipeline, ctx):
+    from scriba import SCRIBA_VERSION
+
     doc = pipeline.render("Hello", ctx)
-    assert doc.versions == {"core": 3, "tex": 1}
+    # "core" mirrors SCRIBA_VERSION — assert against the constant so this
+    # doesn't go stale on every cache-bust bump.
+    assert doc.versions == {"core": SCRIBA_VERSION, "tex": 1}
 
 
 def test_pipeline_close_propagates(worker_pool):
