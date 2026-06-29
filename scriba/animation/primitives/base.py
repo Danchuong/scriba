@@ -58,18 +58,21 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     _LABEL_BG_OPACITY,
     _LABEL_HEADROOM,
     _LABEL_MAX_WIDTH_CHARS,
+    _LABEL_PILL_MAX_W_PX,
     _LABEL_PILL_PAD_X,
     _LABEL_PILL_PAD_Y,
     _LABEL_PILL_RADIUS,
     _PLAIN_ARROW_STEM,
     _LabelPlacement,
     _Obstacle,
+    _label_has_math,
     _segment_to_obstacle,
     _translate_segment,
     _wrap_label_lines,
     arrow_height_above,
     position_label_height_above,
     position_label_height_below,
+    position_below_lane_height,
     emit_arrow_marker_defs,
     emit_arrow_svg,
     emit_plain_arrow_svg,
@@ -365,6 +368,39 @@ class PrimitiveBase(abc.ABC):
         """
         return None
 
+    def resolve_label_anchor(self, selector: str) -> tuple[float, float] | None:
+        """Return the anchor for a position-only pill label.
+
+        Defaults to :meth:`resolve_annotation_point` (the arrow anchor), which
+        is correct for the primitives whose arrow anchor is already the element
+        center. A primitive whose arrow anchor is an *edge* (e.g. Array returns
+        the cell top so arrows curve above) overrides this to return the
+        element *center*, because ``emit_position_label_svg`` offsets a pill by
+        ``± cell_height / 2`` from the anchor assuming it is the center
+        (Defect 1a). Arrow geometry keeps using ``resolve_annotation_point``.
+        """
+        return self.resolve_annotation_point(selector)
+
+    def resolve_annotation_box(self, selector: str):
+        """Return the ``BoundingBox`` of the annotated element, or ``None``.
+
+        Used to register the annotated element as a MUST blocker so a pill is
+        never placed over the thing it labels (Defect 1b, spec R-02). Defaults
+        to ``None`` (no blocker) — only rectangular-cell primitives whose cell
+        geometry is well-defined (e.g. Array) override this. Returning ``None``
+        leaves placement unchanged, so non-overriding primitives are
+        unaffected.
+        """
+        return None
+
+    def resolve_below_baseline(self) -> "float | None":
+        """Local-frame y below which ``position=below`` pills should be placed
+        so they clear any index-label / caption stack (callout lane). ``None``
+        → legacy cell-relative placement. Only primitives with a bottom stack
+        (e.g. Array with index labels / a caption) override this.
+        """
+        return None
+
     def _is_highlighted(self, suffix: str) -> bool:
         """Return True if *suffix* is in the highlighted set.
 
@@ -486,11 +522,40 @@ class PrimitiveBase(abc.ABC):
                 # computed offset from the target cell.  Plane2D-specific
                 # label drop is handled separately; this covers Array and
                 # DPTable (and any future primitive that implements
-                # resolve_annotation_point).
+                # resolve_annotation_point).  Pills anchor at the element
+                # *center* via resolve_label_anchor (Defect 1a); the base
+                # default delegates to resolve_annotation_point so non-Array
+                # primitives are unaffected.
                 label_text = ann.get("label", "")
                 if label_text:
-                    dst_point = self.resolve_annotation_point(ann.get("target", ""))
+                    dst_point = self.resolve_label_anchor(ann.get("target", ""))
                     if dst_point is not None:
+                        # Defect 1b — register the annotated cell as a MUST
+                        # blocker so the placement nudger never pushes the pill
+                        # back onto the cell it labels (spec R-02, scoped to the
+                        # *annotated* cell only). Limited to ``position=below``,
+                        # where the over-cell failure occurs; ``above``/``left``/
+                        # ``right`` pills are already offset clear of the cell,
+                        # so adding the blocker there only perturbs placement.
+                        # Primitives without a box (default ``None``) add
+                        # nothing → unaffected.
+                        _cell_obs = _combined_obs
+                        target_box = self.resolve_annotation_box(
+                            ann.get("target", "")
+                        )
+                        _cell_w = float(target_box.width) if target_box is not None else None
+                        if target_box is not None and ann.get("position") == "below":
+                            bx, by, bw, bh = target_box
+                            _cell_obs = _cell_obs + (
+                                _Obstacle(
+                                    kind="target_cell",
+                                    x=float(bx) + float(bw) / 2.0,
+                                    y=float(by) + float(bh) / 2.0,
+                                    width=float(bw),
+                                    height=float(bh),
+                                    severity="MUST",
+                                ),
+                            )
                         emit_position_label_svg(
                             parts,
                             ann,
@@ -498,7 +563,9 @@ class PrimitiveBase(abc.ABC):
                             cell_height=self._arrow_cell_height,
                             render_inline_tex=render_inline_tex,
                             placed_labels=placed,
-                            primitive_obstacles=_combined_obs if _combined_obs else None,
+                            primitive_obstacles=_cell_obs if _cell_obs else None,
+                            cell_width=_cell_w,
+                            below_baseline=self.resolve_below_baseline(),
                         )
                 # Position-only annotations have no arrow geometry to accumulate.
                 continue

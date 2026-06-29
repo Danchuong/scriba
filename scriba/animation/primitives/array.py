@@ -23,10 +23,14 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _escape_xml,
     _inset_rect_attrs,
+    _label_has_math,
+    _LABEL_PILL_MAX_W_PX,
+    _LABEL_PILL_PAD_X,
     _render_svg_text,
+    _wrap_label_lines,
     arrow_height_above,
     position_label_height_above,
-    position_label_height_below,
+    position_below_lane_height,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -58,6 +62,18 @@ _FONT_SIZE_CAPTION: int = 11
 # combination of font sizes within the ±5 % cross-font drift envelope
 # absorbed by this gap. See ``layout.py`` for the invariant contract.
 _STACK_GAP: int = 9
+
+# Extra horizontal padding added to the measured caption width when sizing the
+# bounding box. ``estimate_text_width`` is a heuristic (flat 0.62 em for
+# non-wide glyphs) that can under-estimate mixed-Latin / diacritic captions, so
+# a small safety pad keeps a long caption inside the viewBox. See Defect 6 in
+# ``_bmad-output/.../scriba-smart-label-overflow-investigation.md``.
+_CAPTION_SAFETY_PAD: int = 8
+
+# Minimum width (px) a caption wraps to. A long caption wraps to the cell-row
+# width, but for tiny arrays that would force an absurdly tall tower, so it
+# never wraps narrower than this readable budget.
+_CAPTION_MIN_WRAP_W: int = 200
 
 
 # ---------------------------------------------------------------------------
@@ -219,30 +235,12 @@ class ArrayPrimitive(PrimitiveBase):
         if arrow_above > 0:
             lines.append(f'  <g transform="translate(0, {arrow_above})">')
 
-        # Pre-compute the bottom stack (index labels + caption) once, via
-        # the vstack helper which guarantees glyph boxes cannot overlap
-        # regardless of baseline or font size. See ``layout.py`` for the
-        # Wave 8 rationale. The ``stack_items`` list is built in visual
-        # top-to-bottom order; the returned coordinates are keyed back to
-        # their role so the cell loop below and the caption emission
-        # after it can look them up without counting positions.
-        stack_items: list[TextBox] = []
-        if self.labels is not None:
-            stack_items.append(
-                TextBox(
-                    font_size=_FONT_SIZE_INDEX,
-                    role="label",
-                    baseline="hanging",
-                )
-            )
-        if self.label is not None:
-            stack_items.append(
-                TextBox(
-                    font_size=_FONT_SIZE_CAPTION,
-                    role="caption",
-                    baseline="central",
-                )
-            )
+        # Bottom area, visual top-to-bottom: index row → callout lane
+        # (position=below pills) → caption. Only the index row is in this
+        # vstack; the lane and caption are placed below it (see the caption
+        # block after the cell loop) so the caption is always the bottom-most
+        # element, beneath any callout pills.
+        stack_items = self._index_stack_items()
         stack_ys = vstack(
             stack_items,
             start_y=CELL_HEIGHT + INDEX_LABEL_OFFSET,
@@ -251,6 +249,13 @@ class ArrayPrimitive(PrimitiveBase):
         stack_y_by_role: dict[str, int] = {
             box.role: int(y) for box, y in zip(stack_items, stack_ys)
         }
+
+        # Defect 6 — when a caption is wider than the cell row, the footprint
+        # (bbox) widens but the renderer centers the whole group on bbox width
+        # and ignores bbox.x. Shift the cell row right by ``row_dx`` so cells
+        # stay centered under the caption. Anchors apply the same shift
+        # (``_cell_center`` / ``_range_center``) so annotations track the row.
+        row_dx = self._row_dx()
 
         for i in range(self.size):
             target = f"{self.name}.cell[{i}]"
@@ -268,7 +273,7 @@ class ArrayPrimitive(PrimitiveBase):
             colors = svg_style_attrs(effective_state)
 
             cw = self._cell_width
-            x = int(i * (cw + CELL_GAP))
+            x = int(i * (cw + CELL_GAP)) + row_dx
             y = 0
 
             lines.append(
@@ -313,23 +318,52 @@ class ArrayPrimitive(PrimitiveBase):
                     )
                 )
 
-        # Caption label below the array — y computed once by vstack above
-        if self.label is not None:
-            total_width = self._total_width()
-            center_x = int(total_width // 2)
-            lines.append(
-                "  "
-                + _render_svg_text(
-                    self.label,
-                    center_x,
-                    stack_y_by_role["caption"],
-                    fill=THEME["fg_muted"],
-                    css_class="scriba-primitive-label",
-                    fo_width=total_width,
-                    fo_height=20,
-                    render_inline_tex=render_inline_tex,
+        # Caption — the figure's description — placed BELOW the callout lane so
+        # it is the bottom-most element (not buried between the index row and
+        # the position=below pills). Wrapped to multiple lines so a long caption
+        # never overflows the viewBox. Centered on the footprint width; cells
+        # (shifted by row_dx) share the same center line.
+        caption_lines = self._caption_lines()
+        if caption_lines:
+            bbox_width = self._bbox_width()
+            center_x = int(bbox_width // 2)
+            line_h = _FONT_SIZE_CAPTION + 2
+            lane_h = position_below_lane_height(effective_anns, cell_height=CELL_HEIGHT)
+            caption_top = int(self.resolve_below_baseline() + lane_h + _STACK_GAP)
+            if len(caption_lines) == 1:
+                # Single line (incl. math captions) — shared renderer keeps the
+                # KaTeX foreignObject path for ``$...$``.
+                lines.append(
+                    "  "
+                    + _render_svg_text(
+                        caption_lines[0],
+                        center_x,
+                        caption_top + _FONT_SIZE_CAPTION // 2,
+                        fill=THEME["fg_muted"],
+                        css_class="scriba-primitive-label",
+                        fo_width=bbox_width,
+                        fo_height=20,
+                        render_inline_tex=render_inline_tex,
+                    )
                 )
-            )
+            else:
+                # Multi-line plain text — tspans. Inline text-anchor/font-size
+                # because the ``[data-primitive] > .scriba-primitive-label`` CSS
+                # child-combinator does not reach text nested in the translate
+                # group.
+                y0 = caption_top + _FONT_SIZE_CAPTION
+                tspans = "".join(
+                    f'<tspan x="{center_x}" dy="{0 if i == 0 else line_h}">'
+                    f"{_escape_xml(ln)}</tspan>"
+                    for i, ln in enumerate(caption_lines)
+                )
+                lines.append(
+                    f'  <text class="scriba-primitive-label" x="{center_x}"'
+                    f' y="{y0}" fill="{THEME["fg_muted"]}"'
+                    f' style="text-anchor:middle;'
+                    f'font-size:calc({_FONT_SIZE_CAPTION}px * '
+                    f'var(--scriba-diagram-font-scale, 1))">{tspans}</text>'
+                )
 
         # Arrow annotations
         if effective_anns:
@@ -366,63 +400,112 @@ class ArrayPrimitive(PrimitiveBase):
         or a caption are present.
         """
         effective_anns = self._annotations
-        w = self._total_width()
+        # Defect 6 — the caption width participates in the footprint so a
+        # caption wider than the cell row is not clipped by the viewBox.
+        w = self._bbox_width()
 
-        # Rebuild the stack descriptor used by emit_svg — must stay in
-        # sync with the branches above. ``stack_bottom`` returns the
-        # visual pixel where the last glyph box ends, so the bounding
-        # box is exactly tight against the rendered content.
-        stack_items: list[TextBox] = []
-        if self.labels is not None:
-            stack_items.append(
-                TextBox(
-                    font_size=_FONT_SIZE_INDEX,
-                    role="label",
-                    baseline="hanging",
-                )
-            )
-        if self.label is not None:
-            stack_items.append(
-                TextBox(
-                    font_size=_FONT_SIZE_CAPTION,
-                    role="caption",
-                    baseline="central",
-                )
-            )
-        h = stack_bottom(
-            stack_items,
-            start_y=CELL_HEIGHT + INDEX_LABEL_OFFSET,
-            gap=_STACK_GAP,
-        ) if stack_items else float(CELL_HEIGHT)
+        # Bottom area in visual order: index row → callout lane → caption.
+        # ``resolve_below_baseline`` is the bottom of the index row (or the
+        # cell bottom when there is no index); the lane and the (possibly
+        # multi-line) caption stack below it. Single source shared with
+        # emit_svg so geometry never drifts.
+        below_baseline = self.resolve_below_baseline() or float(CELL_HEIGHT)
+        lane_h = position_below_lane_height(effective_anns, cell_height=CELL_HEIGHT)
+        bottom = below_baseline + lane_h
+        caption_lines = self._caption_lines()
+        if caption_lines:
+            line_h = _FONT_SIZE_CAPTION + 2
+            bottom = below_baseline + lane_h + _STACK_GAP + len(caption_lines) * line_h
 
         computed = arrow_height_above(
             effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
         )
         pos_above = position_label_height_above(effective_anns, cell_height=CELL_HEIGHT)
         arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
-        h += arrow_above
-        pos_below = position_label_height_below(effective_anns, cell_height=CELL_HEIGHT)
-        h += pos_below
-        return BoundingBox(x=0, y=0, width=float(w), height=float(h))
+        return BoundingBox(x=0, y=0, width=float(w), height=float(arrow_above + bottom))
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
-        """Return the ``(cx, cy)`` pixel center of a cell selector."""
+        """Return the ``(cx, cy)`` pixel center of a cell selector.
+
+        ``cx`` includes ``_row_dx`` so anchors track the cell row when a wide
+        caption shifts it (Defect 6 keeps content and anchors in sync).
+        """
         m = _CELL_RE.match(selector_str)
         if m and m.group("name") == self.name:
             i = int(m.group("idx"))
             if 0 <= i < self.size:
                 cw = self._cell_width
-                x = int(i * (cw + CELL_GAP) + cw // 2)
+                x = int(i * (cw + CELL_GAP) + cw // 2) + self._row_dx()
                 y = 0  # top edge of cell — arrows curve above
                 return (x, y)
         return None
 
+    def _range_center(self, selector_str: str) -> tuple[int, int] | None:
+        """Return the ``(cx, cy)`` anchor for a ``range[lo:hi]`` selector.
+
+        Defect 5 — ``range`` targets previously had no anchor, so a position
+        label or arrow on a range was silently dropped. The span is inclusive
+        (cells ``lo..hi``), matching the renderer's range expansion
+        (``_frame_renderer.py`` ``range(lo, hi + 1)``). ``cx`` is the midpoint
+        of the span's outer edges; ``cy`` is the cell top edge like cells.
+        """
+        m = _RANGE_RE.match(selector_str)
+        if m and m.group("name") == self.name:
+            lo, hi = int(m.group("lo")), int(m.group("hi"))
+            if 0 <= lo <= hi < self.size:
+                cw = self._cell_width
+                left = lo * (cw + CELL_GAP)
+                right = hi * (cw + CELL_GAP) + cw
+                x = int((left + right) // 2) + self._row_dx()
+                return (x, 0)
+        return None
+
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
-        """Delegate to ``_cell_center`` for annotation arrow resolution."""
+        """Resolve a cell or range selector to its arrow anchor (cell top)."""
         result = self._cell_center(selector)
+        if result is None:
+            result = self._range_center(selector)
         if result is None:
             return None
         return (float(result[0]), float(result[1]))
+
+    def resolve_label_anchor(self, selector: str) -> tuple[float, float] | None:
+        """Anchor for position-only pill labels — the cell *center*.
+
+        Defect 1a — pill offsets in ``emit_position_label_svg`` are measured
+        from the element center (``ay ± cell_height/2``), but Array's arrow
+        anchor is the cell *top* (``y=0``, so arrows curve above). Returning
+        the top here makes a ``position=below`` pill land ``cell_height/2`` too
+        high — inside the cell body. Shift to the center for labels while
+        leaving ``resolve_annotation_point`` (arrows) on the top edge.
+        """
+        pt = self.resolve_annotation_point(selector)
+        if pt is None:
+            return None
+        return (pt[0], pt[1] + CELL_HEIGHT / 2)
+
+    def resolve_annotation_box(self, selector: str) -> BoundingBox | None:
+        """Return the cell (or range) AABB so the pill placer treats it as a
+        MUST blocker (Defect 1b). Coordinates are local and include ``_row_dx``
+        so the box tracks the (possibly caption-shifted) cell row.
+        """
+        cw = self._cell_width
+        m = _CELL_RE.match(selector)
+        if m and m.group("name") == self.name:
+            i = int(m.group("idx"))
+            if 0 <= i < self.size:
+                x = i * (cw + CELL_GAP) + self._row_dx()
+                return BoundingBox(x=int(x), y=0, width=int(cw), height=int(CELL_HEIGHT))
+        m = _RANGE_RE.match(selector)
+        if m and m.group("name") == self.name:
+            lo, hi = int(m.group("lo")), int(m.group("hi"))
+            if 0 <= lo <= hi < self.size:
+                left = lo * (cw + CELL_GAP) + self._row_dx()
+                right = hi * (cw + CELL_GAP) + cw + self._row_dx()
+                return BoundingBox(
+                    x=int(left), y=0, width=int(right - left), height=int(CELL_HEIGHT)
+                )
+        return None
 
     # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------
 
@@ -436,10 +519,114 @@ class ArrayPrimitive(PrimitiveBase):
 
     # -- internal -----------------------------------------------------------
 
+    def _index_stack_items(self) -> list[TextBox]:
+        """The index-label row (the only fixed bottom-stack item).
+
+        Visual bottom order is: index row → callout lane → caption. The lane
+        and caption are placed *below* the index row (not in this vstack), so
+        the caption always reads as the figure's description at the very
+        bottom, beneath any ``position=below`` callout pills.
+        """
+        if self.labels is None:
+            return []
+        return [TextBox(font_size=_FONT_SIZE_INDEX, role="label", baseline="hanging")]
+
+    def _caption_lines(self) -> list[str]:
+        """Caption wrapped to multiple lines (compact, never clipped).
+
+        Wraps to the cell-row width (min readable budget) so a long caption
+        becomes a 2-3 line block aligned with the array instead of one wide
+        line that overflows the viewBox. Math captions are not wrapped.
+        """
+        if self.label is None:
+            return []
+        s = str(self.label)
+        if _label_has_math(s):
+            return [s]
+        target = max(self._total_width(), _CAPTION_MIN_WRAP_W)
+        return _wrap_label_lines(s, max_px=target, font_px=_FONT_SIZE_CAPTION)
+
+    def resolve_below_baseline(self) -> float | None:
+        """Y where ``position=below`` callout pills start — just below the index
+        row (or the cells when there is no index row). Pills sit here, and the
+        caption is placed below them.
+        """
+        items = self._index_stack_items()
+        if not items:
+            return float(CELL_HEIGHT)
+        return float(
+            stack_bottom(items, start_y=CELL_HEIGHT + INDEX_LABEL_OFFSET, gap=_STACK_GAP)
+        )
+
     def _total_width(self) -> int:
+        """Width of the cell row only (no caption)."""
         if self.size == 0:
             return 0
         return self.size * self._cell_width + (self.size - 1) * CELL_GAP
+
+    def _caption_width(self) -> int:
+        """Widest wrapped caption line + padding, or 0 when there is no caption.
+
+        Uses the wrapped lines (not the full string), so the footprint matches
+        the multi-line caption block actually rendered — a long caption wraps
+        instead of widening the viewBox.
+        """
+        lines = self._caption_lines()
+        if not lines:
+            return 0
+        widest = max(
+            estimate_text_width(ln, _FONT_SIZE_CAPTION) for ln in lines
+        )
+        return widest + 2 * _CELL_HORIZONTAL_PADDING + _CAPTION_SAFETY_PAD
+
+    def _below_pill_width(self, label: str) -> int:
+        """Rendered width of a ``position=below`` callout pill for *label*
+        (wrapped the same way ``emit_position_label_svg`` wraps it)."""
+        s = str(label)
+        if _label_has_math(s):
+            lines = [s]
+        else:
+            lines = _wrap_label_lines(s, max_px=_LABEL_PILL_MAX_W_PX, font_px=11)
+        widest = max((estimate_text_width(ln, 11) for ln in lines), default=0)
+        return widest + 2 * _LABEL_PILL_PAD_X
+
+    def _bbox_width(self) -> int:
+        """Footprint width: wide enough for the cell row, the caption, AND the
+        ``position=below`` callout pills (which are centred on their cell and
+        can extend past the row on edge cells — otherwise they clip).
+
+        Defect 6 (caption) + lane-pill extent. Single source of truth shared
+        by ``emit_svg`` and ``bounding_box``. Computed in content-local space
+        (cells before ``row_dx``), centred on the cell-row centre, so the
+        result is symmetric and ``row_dx`` keeps everything centred.
+        """
+        content = self._total_width()
+        cw = self._cell_width
+        half = max(content / 2.0, self._caption_width() / 2.0)
+        center = content / 2.0
+        for a in self._annotations:
+            if (
+                a.get("label")
+                and a.get("position") == "below"
+                and not a.get("arrow_from")
+                and not a.get("arrow")
+            ):
+                target = a.get("target", "")
+                m = _CELL_RE.match(target)
+                if m and m.group("name") == self.name and 0 <= int(m.group("idx")) < self.size:
+                    cell_cx = int(m.group("idx")) * (cw + CELL_GAP) + cw / 2.0
+                elif (mr := _RANGE_RE.match(target)) and mr.group("name") == self.name:
+                    lo, hi = int(mr.group("lo")), int(mr.group("hi"))
+                    cell_cx = (lo * (cw + CELL_GAP) + hi * (cw + CELL_GAP) + cw) / 2.0
+                else:
+                    continue
+                half = max(half, abs(cell_cx - center) + self._below_pill_width(a["label"]) / 2.0)
+        return int(2 * half)
+
+    def _row_dx(self) -> int:
+        """Horizontal shift that keeps the cell row centered under a wider
+        caption. Zero unless the caption widens the footprint."""
+        return (self._bbox_width() - self._total_width()) // 2
 
 
 # ---------------------------------------------------------------------------

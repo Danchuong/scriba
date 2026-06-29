@@ -77,6 +77,15 @@ __all__ = [
 # ---------------------------------------------------------------------------
 
 _LABEL_MAX_WIDTH_CHARS = 24
+# Pixel width budget for wrapping a position-only pill's text (content width,
+# before pill padding). A 60px cell can't hold a multi-word label without an
+# absurdly tall tower, so we wrap to a readable ~20-char budget instead and let
+# the leader line tie the (still wider-than-cell) pill back to its cell.
+_LABEL_PILL_MAX_W_PX = 132
+# Vertical gap between the bottom stack (caption) and a callout-lane below-pill.
+# Larger than the normal pill gap so the leader line has a visible run between
+# the cell column and the pill in the lane.
+_LABEL_LANE_GAP = 14
 _LABEL_PILL_PAD_X = 6
 _LABEL_PILL_PAD_Y = 3
 _LABEL_PILL_RADIUS = 4
@@ -1414,15 +1423,32 @@ def _emit_label_single_line(
     )
 
 
-def _wrap_label_lines(text: str, max_chars: int = _LABEL_MAX_WIDTH_CHARS) -> list[str]:
-    """Split label text into lines at natural break points if it exceeds *max_chars*.
+def _wrap_label_lines(
+    text: str,
+    max_chars: int = _LABEL_MAX_WIDTH_CHARS,
+    *,
+    max_px: "float | None" = None,
+    font_px: int = _DEFAULT_LABEL_FONT_PX,
+) -> list[str]:
+    """Split label text into lines at natural break points.
+
+    Two modes:
+
+    - **char mode** (default, ``max_px=None``): wrap when the text exceeds
+      *max_chars* characters. This is the legacy behaviour used by arrow
+      labels; left unchanged for byte-stability.
+    - **pixel mode** (``max_px`` set): greedily pack tokens so each rendered
+      line stays within *max_px* pixels (measured with the same
+      ``estimate_text_width`` the pill sizing uses). Used by position-only
+      pills so a long sentence becomes a compact multi-line block instead of
+      one wide line that spans neighbouring cells.
 
     Split characters: space, comma, ``+``, ``=``.  The ``-`` character is
     intentionally excluded from splitting to avoid breaking LaTeX math
     expressions like ``$f(x)=-4$`` across lines.  Inside ``$...$`` delimiters
     no splitting occurs at all (``in_math`` guard).
     """
-    if len(text) <= max_chars:
+    if max_px is None and len(text) <= max_chars:
         return [text]
     # Split at spaces, operators, commas — but NOT inside $...$ math regions.
     tokens: list[str] = []
@@ -1440,6 +1466,19 @@ def _wrap_label_lines(text: str, max_chars: int = _LABEL_MAX_WIDTH_CHARS) -> lis
 
     lines: list[str] = []
     line = ""
+    if max_px is not None:
+        for tok in tokens:
+            cand = line + tok
+            if line and estimate_text_width(
+                _label_width_text(cand.rstrip()), font_px
+            ) > max_px:
+                lines.append(line.rstrip())
+                line = tok
+            else:
+                line = cand
+        if line:
+            lines.append(line.rstrip())
+        return lines if lines else [text]
     for tok in tokens:
         if line and len(line) + len(tok) > max_chars:
             lines.append(line.rstrip())
@@ -2797,11 +2836,23 @@ def position_label_height_above(
     has_math = any(_label_has_math(a.get("label", "")) for a in pos_anns)
     headroom_extra = 32 if has_math else _LABEL_HEADROOM
 
-    # Worst-case pill_h is pill_h_base (single line); multi-line makes it taller
-    # but also pushes its center further — here we use pill_h_base as the
-    # conservative minimum (taller pills need more room, but we match the
-    # same conservative estimate used for arrow_height_above).
-    pill_h = pill_h_base
+    # Reserve for the TALLEST wrapped pill — must match the wrap the renderer
+    # applies in ``emit_position_label_svg`` (same ``max_px`` policy), else a
+    # multi-line above-pill clips at the top. Math labels never wrap (1 line).
+    max_lines = max(
+        (
+            1
+            if _label_has_math(a.get("label", ""))
+            else len(
+                _wrap_label_lines(
+                    a.get("label", ""), max_px=_LABEL_PILL_MAX_W_PX, font_px=l_font_px
+                )
+            )
+            for a in pos_anns
+        ),
+        default=1,
+    )
+    pill_h = max_lines * line_height + _LABEL_PILL_PAD_Y * 2
     final_y = -cell_height / 2 - pill_h / 2 - gap
     pill_ry = final_y - pill_h / 2 - l_font_px * 0.3
     # headroom = how much above y=0 the pill extends, plus label readability buffer
@@ -2840,7 +2891,23 @@ def position_label_height_below(
         return 0
 
     line_height = l_font_px + 2
-    pill_h = line_height + _LABEL_PILL_PAD_Y * 2
+    # Reserve for the tallest wrapped below-pill — must match the renderer's
+    # wrap (same max_px policy) so a multi-line pill is not clipped at the
+    # bottom. Math labels never wrap (1 line).
+    max_lines = max(
+        (
+            1
+            if _label_has_math(a.get("label", ""))
+            else len(
+                _wrap_label_lines(
+                    a.get("label", ""), max_px=_LABEL_PILL_MAX_W_PX, font_px=l_font_px
+                )
+            )
+            for a in pos_anns
+        ),
+        default=1,
+    )
+    pill_h = max_lines * line_height + _LABEL_PILL_PAD_Y * 2
     gap = max(4.0, cell_height * 0.1)
 
     # AC-6: mirror the math-headroom branch from position_label_height_above.
@@ -2853,6 +2920,46 @@ def position_label_height_below(
     # extra = pill_bottom - cell_height
     pill_bottom = cell_height / 2 + pill_h + gap + l_font_px * 0.3 + math_extra
     return max(0, int(math.ceil(pill_bottom - cell_height)))
+
+
+def position_below_lane_height(
+    annotations: list[dict[str, Any]],
+    *,
+    l_font_px: int = 11,
+    cell_height: float = CELL_HEIGHT,
+) -> int:
+    """Pixels needed BELOW the ``resolve_below_baseline`` for ``position=below``
+    pills placed in a callout lane (their own footprint: gap + wrapped pill).
+
+    Unlike :func:`position_label_height_below` (which measures from the cell),
+    this measures from the stack baseline — used by primitives that place
+    below-pills below their full index/caption stack. Returns 0 when there are
+    no below pills. Wrap (``max_px``) matches the renderer so a multi-line pill
+    is reserved correctly.
+    """
+    pos_anns = [
+        a for a in _position_only_anns(annotations)
+        if a.get("position") == "below"
+    ]
+    if not pos_anns:
+        return 0
+    line_height = l_font_px + 2
+    max_lines = max(
+        (
+            1
+            if _label_has_math(a.get("label", ""))
+            else len(
+                _wrap_label_lines(
+                    a.get("label", ""), max_px=_LABEL_PILL_MAX_W_PX, font_px=l_font_px
+                )
+            )
+            for a in pos_anns
+        ),
+        default=1,
+    )
+    pill_h = max_lines * line_height + _LABEL_PILL_PAD_Y * 2
+    math_extra = 8 if any(_label_has_math(a.get("label", "")) for a in pos_anns) else 0
+    return int(math.ceil(_LABEL_LANE_GAP + pill_h + l_font_px * 0.3 + math_extra))
 
 
 def _place_pill(
@@ -2972,6 +3079,8 @@ def emit_position_label_svg(
     render_inline_tex: "Callable[[str], str] | None" = None,
     placed_labels: "list[_LabelPlacement] | None" = None,
     primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
+    cell_width: "float | None" = None,
+    below_baseline: "float | None" = None,
 ) -> None:
     """Emit a pill-only label for position-only annotations (no arrow, no arc).
 
@@ -3024,7 +3133,9 @@ def emit_position_label_svg(
     if _label_has_math(label_text):
         label_lines = [label_text]
     else:
-        label_lines = _wrap_label_lines(label_text)
+        label_lines = _wrap_label_lines(
+            label_text, max_px=_LABEL_PILL_MAX_W_PX, font_px=l_font_px
+        )
     line_height = l_font_px + 2
     num_lines = len(label_lines)
 
@@ -3043,7 +3154,13 @@ def emit_position_label_svg(
         final_y = ay - cell_height / 2 - pill_h / 2 - gap
     elif position == "below":
         final_x = ax
-        final_y = ay + cell_height / 2 + pill_h / 2 + gap
+        if below_baseline is not None:
+            # Callout lane: place below the whole index/caption stack, not just
+            # under the cell, so the pill never overlaps the index/caption rows.
+            # The larger lane gap leaves room for a visible leader line.
+            final_y = below_baseline + _LABEL_LANE_GAP + pill_h / 2
+        else:
+            final_y = ay + cell_height / 2 + pill_h / 2 + gap
     elif position == "left":
         final_x = ax - pill_w / 2 - gap
         final_y = ay
@@ -3169,6 +3286,40 @@ def emit_position_label_svg(
         f' aria-label="{_escape_xml(speech_pos_label)}"'           # R-11: speech form
         f'{pos_aria_description_attr}>'                            # R-11: raw TeX
     )
+    # Leader line (R-07/R-08) — when the pill is pushed horizontally off its
+    # target cell (by edge-clamp or collision-nudge), a wide pill can span
+    # neighbouring cells and read as belonging to the wrong one. Draw a thin
+    # connector from the cell edge facing the pill to the pill perimeter so the
+    # label↔cell association is unambiguous. Fires when the pill is wider than
+    # its target cell (so a centred pill still spills over neighbours) OR when
+    # it is pushed horizontally off the cell. A short pill sitting squarely
+    # under/over its own cell gets none (no clutter).
+    # Scoped to callers that pass ``cell_width`` (rectangular-cell primitives,
+    # e.g. Array). Other primitives (plane2d points/lines/…) pass ``None`` and
+    # are unaffected — keeps the leader change off their placement.
+    _pill_cx = pill_rx + pill_w / 2.0
+    _pill_cy = pill_ry + pill_h / 2.0
+    _pill_spans_neighbours = cell_width is not None and pill_w > float(cell_width) + 1.0
+    if _pill_spans_neighbours:
+        # Leader origin. Default = the anchor (cell centre): always outside the
+        # offset pill, so R-08 gives a connector visibly rooted in the cell.
+        # In lane mode the pill sits far below the index/caption stack, so a
+        # leader from the cell centre would strike vertically through the index
+        # digit and caption text. Root it at the lane baseline (just below the
+        # caption) instead — a clean connector into the lane, no strike-through.
+        _lead_ox = ax
+        _lead_oy = float(below_baseline) if (below_baseline is not None and position == "below") else ay
+        _lead_ep = _line_rect_intersection(
+            _lead_ox, _lead_oy, _pill_cx, _pill_cy, float(pill_w), float(pill_h)
+        )
+        if _lead_ep is not None:
+            _lead_x, _lead_y = _lead_ep
+            lines.append(
+                f'    <line x1="{int(_lead_ox)}" y1="{int(_lead_oy)}"'
+                f' x2="{_lead_x}" y2="{_lead_y}"'
+                f' stroke="{s_stroke}" stroke-width="0.75" stroke-opacity="0.45"/>'
+            )
+
     lines.append(
         f'    <rect x="{pill_rx}" y="{pill_ry}"'
         f' width="{pill_w}" height="{pill_h}"'
@@ -3207,9 +3358,14 @@ def emit_position_label_svg(
         style_parts.append("text-anchor:middle")
         style_parts.append("dominant-baseline:auto")
         style_str = ";".join(style_parts)
+        # Vertically center the N-line block on fi_y: lift the first baseline by
+        # half the block height, then step each line down by line_height. (The
+        # old code put line 1 AT fi_y and grew downward only — bottom-heavy,
+        # overflowing the pill for N>=3.)
+        first_dy = f"{-line_height * (num_lines - 1) / 2.0:.1f}"
         tspans = ""
         for li, ln_text in enumerate(label_lines):
-            dy_val = f"{line_height}" if li > 0 else "0"
+            dy_val = f"{line_height}" if li > 0 else first_dy
             tspans += (
                 f'<tspan x="{fi_x}" dy="{dy_val}">'
                 f"{_escape_xml(ln_text)}</tspan>"

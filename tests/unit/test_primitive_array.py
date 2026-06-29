@@ -151,3 +151,82 @@ class TestBoundingBox:
         # 3 cells * 60 + 2 gaps * 2 = 184
         assert w == 184.0
         assert h == 40.0  # just cell height, no labels
+
+
+# ---------------------------------------------------------------------------
+# Defect 6 — caption width participates in the bounding box (no clipping)
+# ---------------------------------------------------------------------------
+
+
+class TestCaptionWidthInBbox:
+    def test_long_caption_widens_bbox(self) -> None:
+        narrow = ArrayPrimitive("a", {"size": 1, "data": [1]})
+        wide = ArrayPrimitive(
+            "a",
+            {
+                "size": 1,
+                "data": [1],
+                "label": "a caption far wider than a single cell row",
+            },
+        )
+        assert wide.bounding_box().width > narrow.bounding_box().width
+
+    def test_short_caption_does_not_widen(self) -> None:
+        # Caption narrower than the cell row must leave width unchanged so
+        # only long-caption fixtures rebaseline (Defect 6 scope guard).
+        plain = ArrayPrimitive("a", {"size": 5})
+        capt = ArrayPrimitive("a", {"size": 5, "label": "x"})
+        assert plain.bounding_box().width == capt.bounding_box().width
+
+    def test_caption_centered_within_widened_bbox(self) -> None:
+        inst = ArrayPrimitive(
+            "a", {"size": 1, "data": [1], "label": "a very long descriptive caption"}
+        )
+        svg = inst.emit_svg()
+        # Caption still rendered; content shifted so cells stay centered.
+        assert "scriba-primitive-label" in svg
+
+
+# ---------------------------------------------------------------------------
+# Defect 5 — range[a:b] annotation targets resolve to an anchor
+# ---------------------------------------------------------------------------
+
+
+class TestRangeAnchor:
+    def test_range_resolves(self) -> None:
+        inst = ArrayPrimitive("scale", {"size": 5})
+        assert inst.resolve_annotation_point("scale.range[1:4]") is not None
+
+    def test_range_center_between_endpoint_cells(self) -> None:
+        inst = ArrayPrimitive("scale", {"size": 5})
+        c1 = inst.resolve_annotation_point("scale.cell[1]")
+        c4 = inst.resolve_annotation_point("scale.cell[4]")
+        rng = inst.resolve_annotation_point("scale.range[1:4]")
+        assert rng is not None and c1 is not None and c4 is not None
+        # Inclusive span 1..4 — anchor sits strictly between the endpoints.
+        assert c1[0] < rng[0] < c4[0]
+
+    def test_range_out_of_bounds_returns_none(self) -> None:
+        inst = ArrayPrimitive("scale", {"size": 5})
+        assert inst.resolve_annotation_point("scale.range[0:9]") is None
+
+
+# ---------------------------------------------------------------------------
+# Defect 1a — position-only pill labels anchor at the cell CENTER, not top
+# ---------------------------------------------------------------------------
+
+
+class TestLabelAnchor:
+    def test_label_anchor_below_arrow_anchor(self) -> None:
+        from scriba.animation.primitives.base import CELL_HEIGHT
+
+        inst = ArrayPrimitive("a", {"size": 3})
+        arrow = inst.resolve_annotation_point("a.cell[1]")  # cell top (y=0)
+        label = inst.resolve_label_anchor("a.cell[1]")  # cell center
+        assert arrow is not None and label is not None
+        assert label[1] == arrow[1] + CELL_HEIGHT / 2
+        assert label[0] == arrow[0]  # same x
+
+    def test_label_anchor_unknown_returns_none(self) -> None:
+        inst = ArrayPrimitive("a", {"size": 3})
+        assert inst.resolve_label_anchor("a.cell[9]") is None
