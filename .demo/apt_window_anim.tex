@@ -1,0 +1,22 @@
+\begin{animation}[id="apartments-window-anim", label="Cửa sổ ghép căn hộ"]
+\shape{scale}{Array}{size=5, data=[30,40,45,50,60], labels="0..4", label="kích thước căn hộ y so với ứng viên x=45, cửa sổ [x-k,x+k]=[40,50]"}
+
+\step
+\annotate{scale.cell[2]}{label="x=45", position=above}
+\narrate{Ứng viên có nhu cầu $x=45$, sai số cho phép $k=5$, nên cửa sổ ghép là $[x-k, x+k] = [40, 50]$.}
+
+\step
+\recolor{scale.range[1:4]}{state=good}
+\annotate{scale.range[1:4]}{label="(C) ghép", position=above, color=good}
+\narrate{Mọi căn hộ có kích thước trong $[40,50]$ — tức ô $40, 45, 50$ — đều ghép được với ứng viên này.}
+
+\step
+\recolor{scale.cell[0]}{state=dim}
+\annotate{scale.cell[0]}{label="(A) quá nhỏ: bỏ căn hộ", position=below, color=muted}
+\narrate{Căn hộ $30 < 40$: quá nhỏ cho ứng viên hiện tại và cho mọi ứng viên sau (đã sort). Bỏ căn hộ — chỉ $j$ tiến.}
+
+\step
+\recolor{scale.cell[4]}{state=dim}
+\annotate{scale.cell[4]}{label="(B) quá lớn: bỏ ứng viên", position=below, color=muted}
+\narrate{Căn hộ $60 > 50$: quá lớn cho ứng viên hiện tại, các căn sau không nhỏ hơn. Bỏ ứng viên — chỉ $i$ tiến.}
+\end{animation}
