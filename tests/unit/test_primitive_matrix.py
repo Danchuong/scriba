@@ -268,3 +268,65 @@ class TestHeatmapAlias:
         })
         assert isinstance(inst, MatrixPrimitive)
         assert inst.primitive_type == "matrix"
+
+
+# ---------------------------------------------------------------------------
+# Annotations — position pills + arrows (Layer B/C)
+#
+# Regression: Matrix accepted cell selectors (validate_selector) and stored
+# annotations (set_annotations) but emit_svg rendered none of them — they were
+# silently dropped. Matrix now resolves cell anchors and routes annotations
+# through the shared engine (mirrors Grid), reserving space in bounding_box().
+# Matrices without annotations are byte-stable (no reservation, no group).
+# ---------------------------------------------------------------------------
+
+from scriba.animation.primitives.matrix import _CELL_GAP as _MX_GAP
+
+
+class TestAnnotations:
+    def test_cell_anchor_center(self) -> None:
+        m = MatrixPrimitive("m", {"rows": 2, "cols": 3})
+        cs = m.cell_size
+        assert m.resolve_annotation_point("m.cell[0][0]") == (
+            float(cs // 2),
+            float(cs // 2),
+        )
+        assert m.resolve_annotation_point("m.cell[1][2]") == (
+            float(2 * (cs + _MX_GAP) + cs // 2),
+            float(1 * (cs + _MX_GAP) + cs // 2),
+        )
+
+    def test_invalid_cell_no_anchor(self) -> None:
+        m = MatrixPrimitive("m", {"rows": 2, "cols": 3})
+        assert m.resolve_annotation_point("m.cell[5][5]") is None
+
+    def test_position_pill_above_renders(self) -> None:
+        m = MatrixPrimitive("m", {"rows": 2, "cols": 3})
+        m.set_annotations(
+            [{"target": "m.cell[0][1]", "label": "HOT", "position": "above"}]
+        )
+        svg = m.emit_svg()
+        assert "HOT" in svg  # was silently dropped
+        assert "scriba-annotation" in svg
+
+    def test_position_pill_below_renders(self) -> None:
+        m = MatrixPrimitive("m", {"rows": 2, "cols": 3})
+        m.set_annotations(
+            [{"target": "m.cell[1][1]", "label": "COLD", "position": "below"}]
+        )
+        assert "COLD" in m.emit_svg()
+
+    def test_no_annotation_bbox_unchanged(self) -> None:
+        """Regression: an unannotated matrix reserves no annotation space."""
+        plain = MatrixPrimitive("m", {"rows": 2, "cols": 3})
+        _, _, _, h0 = plain.bounding_box()
+        # height equals content (+ caption=0) with no annotation reservation
+        assert h0 == float(plain._total_height())
+
+    def test_annotation_reserves_space_above(self) -> None:
+        m = MatrixPrimitive("m", {"rows": 2, "cols": 3})
+        h_before = m.bounding_box().height
+        m.set_annotations(
+            [{"target": "m.cell[0][1]", "label": "HOT", "position": "above"}]
+        )
+        assert m.bounding_box().height > h_before  # reserved arrow space

@@ -21,7 +21,10 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _inset_rect_attrs,
     _render_svg_text,
+    arrow_height_above,
     estimate_text_width,
+    position_label_height_above,
+    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -248,6 +251,10 @@ class MatrixPrimitive(PrimitiveBase):
         self.label: str | None = label
         self.row_label_offset: int = row_label_offset
         self.col_label_offset: int = col_label_offset
+        # Annotation geometry (Layer B/C): 2D layout; the "cell height" the
+        # shared engine uses to offset pills/arrows from a cell anchor.
+        self._arrow_layout = "2d"
+        self._arrow_cell_height = float(self.cell_size)
 
     # -- PrimitiveBase interface --------------------------------------------
 
@@ -270,6 +277,24 @@ class MatrixPrimitive(PrimitiveBase):
 
         return suffix == "all"
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Return the SVG center of a ``cell[r][c]`` selector for annotations.
+
+        Matrix previously had no anchor resolver, so any annotation on a matrix
+        cell was silently dropped. Coordinates include the row/col header
+        offsets so anchors track the rendered cell grid.
+        """
+        m = _CELL_2D_RE.match(selector)
+        if m and m.group("name") == self.name:
+            r, c = int(m.group("row")), int(m.group("col"))
+            if 0 <= r < self.rows and 0 <= c < self.cols:
+                x_offset = self.row_label_offset if self.row_labels else 0
+                y_offset = self.col_label_offset if self.col_labels else 0
+                x = x_offset + c * (self.cell_size + _CELL_GAP) + self.cell_size // 2
+                y = y_offset + r * (self.cell_size + _CELL_GAP) + self.cell_size // 2
+                return (float(x), float(y))
+        return None
+
     def emit_svg(
         self,
         *,
@@ -281,10 +306,27 @@ class MatrixPrimitive(PrimitiveBase):
 
         stops = COLORSCALES.get(self.colorscale, VIRIDIS)
         effective_vmin, effective_vmax = self._compute_range()
+        effective_anns = self._annotations
 
         lines: list[str] = [
             f'<g data-primitive="matrix" data-shape="{self.name}">'
         ]
+
+        # Reserve vertical space above the grid for annotation arrows/pills and
+        # shift content down so curves have room. No annotations -> arrow_above
+        # is 0 and no group is opened, so output stays byte-identical.
+        arrow_above = max(
+            arrow_height_above(
+                effective_anns,
+                self.resolve_annotation_point,
+                cell_height=self.cell_size,
+                layout="2d",
+            ),
+            position_label_height_above(effective_anns, cell_height=self.cell_size),
+            getattr(self, "_min_arrow_above", 0),
+        )
+        if arrow_above > 0:
+            lines.append(f'  <g transform="translate(0, {arrow_above})">')
 
         # Compute offsets for row/col labels (use dynamic values)
         x_offset = self.row_label_offset if self.row_labels else 0
@@ -402,6 +444,19 @@ class MatrixPrimitive(PrimitiveBase):
                 render_inline_tex=render_inline_tex,
             )
 
+        # Annotations (arrows + position pills) via the shared engine, inside
+        # the translate group so anchors share the content frame (Layer B/C).
+        if effective_anns:
+            self.emit_annotation_arrows(
+                lines,
+                effective_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
+
+        if arrow_above > 0:
+            lines.append("  </g>")
         lines.append("</g>")
         return "\n".join(lines)
 
@@ -411,6 +466,21 @@ class MatrixPrimitive(PrimitiveBase):
         # Layer A: fold the (wrapped) caption width into the footprint.
         w = max(content_w, self._caption_block_width(content_w))
         h = self._total_height() + self._caption_block_height(content_w)
+        # Layer B/C: reserve space for annotation arrows + position pills
+        # (mirrors Grid/DPTable). No annotations -> all terms are 0, so the box
+        # is byte-stable.
+        arrow_above = max(
+            arrow_height_above(
+                self._annotations,
+                self.resolve_annotation_point,
+                cell_height=self.cell_size,
+                layout="2d",
+            ),
+            position_label_height_above(self._annotations, cell_height=self.cell_size),
+            getattr(self, "_min_arrow_above", 0),
+        )
+        h += arrow_above
+        h += position_label_height_below(self._annotations, cell_height=self.cell_size)
         return BoundingBox(x=0, y=0, width=float(w), height=float(h))
 
     # -- internal -----------------------------------------------------------
