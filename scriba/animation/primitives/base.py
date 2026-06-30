@@ -36,7 +36,9 @@ from scriba.animation.primitives._types import (  # noqa: F401 — explicit for 
     THEME,
     VALID_STATES,
     BoundingBox,
+    _CELL_HORIZONTAL_PADDING,
     _CELL_STROKE_INSET,
+    _PRIMITIVE_LABEL_Y,
     _inset_rect_attrs,
     svg_style_attrs,
 )
@@ -169,6 +171,12 @@ def get_primitive_registry() -> dict[str, type["PrimitiveBase"]]:
 _CAPTION_FONT_PX: int = 11          # must match --scriba-label-font / array._FONT_SIZE_CAPTION
 _CAPTION_MIN_WRAP_W: int = 200      # caption never wraps narrower than this
 _CAPTION_SAFETY_PAD: int = 8        # estimate_text_width under-counts; pad
+
+# Top-band caption (tree, graph) — caption sits ABOVE the content.
+_TOP_CAPTION_BAND: int = 28         # historical single-line band height
+# top_y so the CSS `dominant-baseline: central` lands the line on the
+# historical baseline (_PRIMITIVE_LABEL_Y): top_y + font//2 == baseline.
+_TOP_CAPTION_TOP_Y: int = _PRIMITIVE_LABEL_Y - _CAPTION_FONT_PX // 2
 
 
 # ---------------------------------------------------------------------------
@@ -447,16 +455,24 @@ class PrimitiveBase(abc.ABC):
         content_width: float,
         footprint_width: int,
         top_y: int,
+        origin_x: int = 0,
         render_inline_tex: "Callable[[str], str] | None" = None,
     ) -> None:
         """Emit the (possibly multi-line) caption centered on *footprint_width*,
         its first line at *top_y*. Single line uses the shared text renderer
         (keeps the KaTeX foreignObject path for ``$…$``); multi-line uses
-        tspans with inline styling."""
+        tspans with inline styling.
+
+        *origin_x* is the frame-local x at which the footprint's left edge sits;
+        pass a negative value when the caption is emitted inside a translated
+        ``<g>`` (e.g. tree/graph's ``translate(r, …)``) so the caption still
+        centers on the footprint rather than on the shifted frame. Defaults to
+        0 — the common case where the emit frame and the footprint share an
+        origin."""
         lines = self._caption_lines(content_width)
         if not lines:
             return
-        center_x = int(footprint_width // 2)
+        center_x = int(footprint_width // 2) + origin_x
         line_h = _CAPTION_FONT_PX + 2
         if len(lines) == 1:
             out.append(
@@ -485,6 +501,38 @@ class PrimitiveBase(abc.ABC):
                 f' style="text-anchor:middle;font-size:{_CAPTION_FONT_PX}px">'
                 f"{tspans}</text>"
             )
+
+    def _top_caption_band(self, content_width: float) -> int:
+        """Height reserved ABOVE the content for a top-band caption
+        (tree, graph). Keeps the historical single-line band and grows only
+        when the caption wraps to multiple lines."""
+        if getattr(self, "label", None) is None:
+            return 0
+        block = _TOP_CAPTION_TOP_Y + self._caption_block_height(content_width)
+        return max(_TOP_CAPTION_BAND, block)
+
+    def _emit_top_caption(
+        self,
+        out: "list[str]",
+        *,
+        content_width: float,
+        footprint_width: int,
+        frame_radius: float,
+        render_inline_tex: "Callable[[str], str] | None" = None,
+    ) -> None:
+        """Emit a top-band caption for a primitive whose content is wrapped in a
+        ``translate(frame_radius, …)`` group (tree, graph). Centers on the
+        footprint despite the frame shift, wraps to the footprint width, and
+        anchors on the historical baseline so single-line captions are
+        byte-stable."""
+        self._emit_caption(
+            out,
+            content_width=content_width,
+            footprint_width=footprint_width,
+            top_y=_TOP_CAPTION_TOP_Y,
+            origin_x=-int(frame_radius),
+            render_inline_tex=render_inline_tex,
+        )
 
     def _is_highlighted(self, suffix: str) -> bool:
         """Return True if *suffix* is in the highlighted set.

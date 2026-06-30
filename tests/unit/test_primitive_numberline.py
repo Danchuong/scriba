@@ -166,4 +166,4 @@ class TestBoundingBox:
         inst = NumberLinePrimitive("nl", {"domain": [0, 5], "label": "Axis"})
         x, y, w, h = inst.bounding_box()
         assert w == 400.0
-        assert h == 72.0  # 56 + 16 for caption
+        assert h == 69.0  # 56 + 13 (one wrapped caption line, font 11 + 2)

@@ -23,8 +23,12 @@ from scriba.animation.primitives._text_render import estimate_text_width
 
 from tests.unit.test_obstacle_protocol import _ALL_PRIMITIVE_CLASSES, _make_instance
 
-# Primitives whose caption width is reflected in bounding_box() (migrated).
+# Primitives whose caption is guaranteed to fit bounding_box().width.
 # GROWS as primitives adopt the shared caption layer. Never shrinks.
+# Most achieve this by folding the caption width into the footprint and
+# wrapping (the centered Layer-A helper). ``codepanel`` is the exception: its
+# label is a single-line, left-aligned IDE-tab title whose width is driven by
+# the code, so it fits by ellipsis truncation instead of widening the panel.
 _CAPTION_MIGRATED: set[str] = {
     "array",
     "queue",
@@ -33,6 +37,12 @@ _CAPTION_MIGRATED: set[str] = {
     "variablewatch",
     "matrix",
     "stack",
+    "grid",
+    "numberline",
+    "dptable",
+    "tree",
+    "graph",
+    "codepanel",
 }
 
 # Long enough to exceed any minimally-constructed primitive's content width.

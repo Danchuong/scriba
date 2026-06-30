@@ -263,23 +263,15 @@ class GridPrimitive(PrimitiveBase):
                 )
                 lines.append("  </g>")
 
-        # Caption label below the grid
+        # Caption label below the grid (wrapped, width folded into bbox — Layer A)
         if self.label is not None:
             tw, th = self._grid_dimensions()
-            center_x = int(tw // 2)
-            label_y = int(th + INDEX_LABEL_OFFSET)
-            lines.append(
-                "  "
-                + _render_svg_text(
-                    self.label,
-                    center_x,
-                    label_y,
-                    fill=THEME["fg_muted"],
-                    css_class="scriba-primitive-label",
-                    fo_width=tw,
-                    fo_height=20,
-                    render_inline_tex=render_inline_tex,
-                )
+            self._emit_caption(
+                lines,
+                content_width=tw,
+                footprint_width=int(self.bounding_box().width),
+                top_y=int(th),
+                render_inline_tex=render_inline_tex,
             )
 
         # Arrow annotations
@@ -296,9 +288,10 @@ class GridPrimitive(PrimitiveBase):
     def bounding_box(self) -> BoundingBox:
         """Return the bounding box of this grid."""
         tw, th = self._grid_dimensions()
-        h = th
-        if self.label:
-            h += INDEX_LABEL_OFFSET
+        # Layer A: fold the (wrapped) caption width into the footprint and
+        # reserve the wrapped block's height below the grid.
+        w = max(tw, self._caption_block_width(tw))
+        h = th + self._caption_block_height(tw)
         computed = arrow_height_above(
             self._annotations, self.resolve_annotation_point,
             cell_height=CELL_HEIGHT, layout="2d",
@@ -307,7 +300,7 @@ class GridPrimitive(PrimitiveBase):
         h += arrow_above
         pos_below = position_label_height_below(self._annotations, cell_height=CELL_HEIGHT)
         h += pos_below
-        return BoundingBox(x=0, y=0, width=tw, height=h)
+        return BoundingBox(x=0, y=0, width=w, height=h)
 
     # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------
 
