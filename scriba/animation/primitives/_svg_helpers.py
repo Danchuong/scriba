@@ -3210,6 +3210,15 @@ def emit_position_label_svg(
     gap = max(4.0, cell_height * 0.1)
 
     if position == "above":
+        # DESIGN: an above pill sits directly above ITS element (anchor-relative),
+        # which is correct for the common case (top row / a single-row 1D
+        # structure). For a *middle* element of a tall multi-row/vertical
+        # structure it can overlap the element above — by design there is no
+        # "above lane": relocating every above pill to a band above the whole
+        # structure would move (regress) all existing above-pill output and
+        # detach the pill from its element. To annotate a middle element, use
+        # ``position="right"`` (or ``left``) — beside the element, vertically
+        # aligned, and clip-safe via the per-primitive horizontal reservation.
         final_x = ax
         final_y = ay - cell_height / 2 - pill_h / 2 - gap
     elif position == "below":
