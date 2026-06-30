@@ -11,7 +11,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, _animation_error
+from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     CELL_1D_RE,
     CELL_GAP,
