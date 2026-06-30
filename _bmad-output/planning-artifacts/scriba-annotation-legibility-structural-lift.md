@@ -108,16 +108,28 @@ above rebaseline (gaining the previously-dropped pill). Pre-existing lint in the
 touched files (unused imports, ambiguous `l`, dead `end`) cleaned out in
 follow-up chore commits.
 
-**Deferred (explicit, NOT silent debt — different annotation model, 0 corpus):**
-- **codepanel** (code-line annotations) and **metricplot** (plot-point
-  annotations) still drop position annotations. They are specialized
-  visualization primitives (a code editor / a continuous chart), not cell-grids;
-  annotation support there is a distinct design (line-anchor / data-point anchor)
-  rather than the cell-anchor model lifted here. The annotation-render ratchet
-  skips them with that rationale, so the gap is visible, not hidden.
-- **Layer C below-lane polish**: a `position=below` pill on NumberLine sits in
-  the tick-label band; pushing it fully clear needs the caption-below-lane rework
-  (the caption and the below-lane compete for the same space). 0 corpus; tracked.
+### Follow-up — remaining tail closed (2026-06-30)
+
+- **codepanel** — line annotations now render: `resolve_annotation_point`
+  (1-based line anchor) + bbox reservation + shared-engine emit. Added to the
+  ratchet.
+- **metricplot** — **not a bug.** Its only selector is `all` (the whole plot);
+  it has no addressable data points. `all`-targeted position annotations are
+  universally not rendered (array/grid drop them too — you annotate elements,
+  not "everything"), so metricplot is correctly outside the position-pill model.
+  No element-level annotation feature exists to drop. Left as-is by design.
+- **NumberLine `position=below`** — fixed: `resolve_below_baseline = NL_HEIGHT`
+  puts below pills in lane mode below the tick labels (y≈66, was ≈33 in the
+  label band); the box is reordered content → below-lane → caption so the
+  caption sits beneath the lane. No below pills → lane 0 → caption at NL_HEIGHT
+  (byte-stable, zero churn).
+
+**Status: the annotation-drop defect class is fully closed.** Every primitive
+with addressable elements renders position annotations, CI-guarded by
+`test_annotation_renders.py`. The only non-participants (metricplot, plane2d's
+freeform model) are correct by design, not gaps. The pre-existing horizontal
+overflow of `position=right/left` pills (Array overflows too) is a separate,
+general annotation-engine limitation — not in scope for this epic.
 
 ## Blast radius (agent 3)
 ~42 distinct goldens total (~14 re-churn across multi-primitive scenes). Only 2 mandatory unit-literal edits (grid:168, numberline:169). Range fix = 0 golden churn → needs new unit tests. Cluster co-occurring primitives (test_reference_datastruct, 07_prescan, test_reference_edge_cases) to rebaseline once.
