@@ -38,7 +38,7 @@ from scriba.animation.primitives._types import (
     SUFFIX_CELL_2D_RE,
     SUFFIX_RANGE_RE,
 )
-from scriba.animation.primitives.layout import TextBox, stack_bottom, vstack
+from scriba.animation.primitives.layout import TextBox, stack_bottom
 
 # Per-role font sizes — must match the CSS variables in
 # ``scriba-scene-primitives.css``. See the matching constants in
@@ -264,49 +264,17 @@ class DPTablePrimitive(PrimitiveBase):
                 cell_metrics=_cell_metrics,
             )
 
-        # Caption label
+        # Caption label — wrapped, width-folded, centered on the footprint
+        # (shared Layer-A helper). ``_caption_top_y`` is the single source for
+        # the caption's vertical placement (also used by ``bounding_box``), so
+        # the drawn caption and the reserved box can never drift apart.
         if self.label is not None:
-            tw, th = self._grid_dimensions()
-            center_x = int(tw // 2)
-            # For the 1D-with-labels layout the caption is the second
-            # item of a two-item vstack (index labels then caption) —
-            # reuse the same helper Array uses. For the 2D layout the
-            # caption sits directly below the cells with no index row
-            # to clear, so a simple translation by ``INDEX_LABEL_OFFSET``
-            # is fine. See ``layout.py`` for the Wave 8 rationale.
-            if not self.is_2d and self.labels:
-                caption_items = [
-                    TextBox(
-                        font_size=_FONT_SIZE_INDEX,
-                        role="label",
-                        baseline="hanging",
-                    ),
-                    TextBox(
-                        font_size=_FONT_SIZE_CAPTION,
-                        role="caption",
-                        baseline="central",
-                    ),
-                ]
-                stack_ys = vstack(
-                    caption_items,
-                    start_y=th + INDEX_LABEL_OFFSET,
-                    gap=_STACK_GAP,
-                )
-                label_y = int(stack_ys[1])
-            else:
-                label_y = int(th + INDEX_LABEL_OFFSET)
-            lines.append(
-                "  "
-                + _render_svg_text(
-                    self.label,
-                    center_x,
-                    label_y,
-                    fill=THEME["fg_muted"],
-                    css_class="scriba-primitive-label",
-                    fo_width=tw,
-                    fo_height=20,
-                    render_inline_tex=render_inline_tex,
-                )
+            self._emit_caption(
+                lines,
+                content_width=float(self._grid_dimensions()[0]),
+                footprint_width=int(self.bounding_box().width),
+                top_y=self._caption_top_y(),
+                render_inline_tex=render_inline_tex,
             )
 
         # Close the translate group if we opened one for arrow space
@@ -316,39 +284,47 @@ class DPTablePrimitive(PrimitiveBase):
         lines.append("</g>")
         return "\n".join(lines)
 
-    def bounding_box(self) -> BoundingBox:
-        """Return ``(x, y, width, height)``.
+    def _caption_top_y(self) -> int:
+        """Y of the caption block's top edge — the single source shared by
+        ``bounding_box`` and ``emit_svg`` so the reserved box and the drawn
+        caption never drift.
 
-        For the 1D-with-labels case the height is computed from
-        ``stack_bottom`` so the box is exactly tight against the
-        vstack-positioned index labels and caption. Other cases keep
-        the simpler ``INDEX_LABEL_OFFSET`` translation.
+        For the 1D-with-labels layout the caption clears the index-label row;
+        otherwise (2D, or 1D without index labels) it sits directly below the
+        cells by ``INDEX_LABEL_OFFSET``.
         """
-        tw, th = self._grid_dimensions()
-        h = float(th)
+        _, th = self._grid_dimensions()
         if not self.is_2d and self.labels:
-            stack_items: list[TextBox] = [
-                TextBox(
-                    font_size=_FONT_SIZE_INDEX,
-                    role="label",
-                    baseline="hanging",
-                )
-            ]
-            if self.label:
-                stack_items.append(
-                    TextBox(
-                        font_size=_FONT_SIZE_CAPTION,
-                        role="caption",
-                        baseline="central",
-                    )
-                )
-            h = stack_bottom(
-                stack_items,
+            index_bottom = stack_bottom(
+                [TextBox(font_size=_FONT_SIZE_INDEX, role="label", baseline="hanging")],
                 start_y=th + INDEX_LABEL_OFFSET,
                 gap=_STACK_GAP,
             )
-        elif self.label:
-            h += INDEX_LABEL_OFFSET
+            return int(index_bottom + _STACK_GAP)
+        return int(th + INDEX_LABEL_OFFSET)
+
+    def bounding_box(self) -> BoundingBox:
+        """Return ``(x, y, width, height)``.
+
+        The caption width participates in the footprint (Defect 6) so a caption
+        wider than the cell grid is folded into the box rather than clipped, and
+        its (possibly wrapped) height is reserved below ``_caption_top_y`` — the
+        same anchor ``emit_svg`` draws from. The no-caption index-row case keeps
+        the tight ``stack_bottom`` height.
+        """
+        tw, th = self._grid_dimensions()
+        content_w = float(tw)
+        w = max(content_w, float(self._caption_block_width(content_w)))
+        if self.label is not None:
+            h = float(self._caption_top_y() + self._caption_block_height(content_w))
+        elif not self.is_2d and self.labels:
+            h = stack_bottom(
+                [TextBox(font_size=_FONT_SIZE_INDEX, role="label", baseline="hanging")],
+                start_y=th + INDEX_LABEL_OFFSET,
+                gap=_STACK_GAP,
+            )
+        else:
+            h = float(th)
         # Reserve space above for arrow annotations and position=above labels.
         computed = arrow_height_above(
             self._annotations, self.resolve_annotation_point, cell_height=CELL_HEIGHT
@@ -358,7 +334,7 @@ class DPTablePrimitive(PrimitiveBase):
         h += arrow_above
         pos_below = position_label_height_below(self._annotations, cell_height=CELL_HEIGHT)
         h += pos_below
-        return BoundingBox(x=0, y=0, width=float(tw), height=h)
+        return BoundingBox(x=0, y=0, width=w, height=h)
 
     # -- internal: cell emission -------------------------------------------
 
