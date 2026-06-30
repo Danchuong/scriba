@@ -62,18 +62,8 @@ _FONT_SIZE_CAPTION: int = 11
 # combination of font sizes within the ±5 % cross-font drift envelope
 # absorbed by this gap. See ``layout.py`` for the invariant contract.
 _STACK_GAP: int = 9
-
-# Extra horizontal padding added to the measured caption width when sizing the
-# bounding box. ``estimate_text_width`` is a heuristic (flat 0.62 em for
-# non-wide glyphs) that can under-estimate mixed-Latin / diacritic captions, so
-# a small safety pad keeps a long caption inside the viewBox. See Defect 6 in
-# ``_bmad-output/.../scriba-smart-label-overflow-investigation.md``.
-_CAPTION_SAFETY_PAD: int = 8
-
-# Minimum width (px) a caption wraps to. A long caption wraps to the cell-row
-# width, but for tiny arrays that would force an absurdly tall tower, so it
-# never wraps narrower than this readable budget.
-_CAPTION_MIN_WRAP_W: int = 200
+# Caption wrap/pad constants now live in base (PrimitiveBase Layer A helpers,
+# shared by all caption-bearing primitives).
 
 
 # ---------------------------------------------------------------------------
@@ -323,7 +313,7 @@ class ArrayPrimitive(PrimitiveBase):
         # the position=below pills). Wrapped to multiple lines so a long caption
         # never overflows the viewBox. Centered on the footprint width; cells
         # (shifted by row_dx) share the same center line.
-        caption_lines = self._caption_lines()
+        caption_lines = self._caption_lines(self._total_width())
         if caption_lines:
             bbox_width = self._bbox_width()
             center_x = int(bbox_width // 2)
@@ -411,7 +401,7 @@ class ArrayPrimitive(PrimitiveBase):
         below_baseline = self.resolve_below_baseline() or float(CELL_HEIGHT)
         lane_h = position_below_lane_height(effective_anns, cell_height=CELL_HEIGHT)
         bottom = below_baseline + lane_h
-        caption_lines = self._caption_lines()
+        caption_lines = self._caption_lines(self._total_width())
         if caption_lines:
             line_h = _FONT_SIZE_CAPTION + 2
             bottom = below_baseline + lane_h + _STACK_GAP + len(caption_lines) * line_h
@@ -530,21 +520,6 @@ class ArrayPrimitive(PrimitiveBase):
             return []
         return [TextBox(font_size=_FONT_SIZE_INDEX, role="label", baseline="hanging")]
 
-    def _caption_lines(self) -> list[str]:
-        """Caption wrapped to multiple lines (compact, never clipped).
-
-        Wraps to the cell-row width (min readable budget) so a long caption
-        becomes a 2-3 line block aligned with the array instead of one wide
-        line that overflows the viewBox. Math captions are not wrapped.
-        """
-        if self.label is None:
-            return []
-        s = str(self.label)
-        if _label_has_math(s):
-            return [s]
-        target = max(self._total_width(), _CAPTION_MIN_WRAP_W)
-        return _wrap_label_lines(s, max_px=target, font_px=_FONT_SIZE_CAPTION)
-
     def resolve_below_baseline(self) -> float | None:
         """Y where ``position=below`` callout pills start — just below the index
         row (or the cells when there is no index row). Pills sit here, and the
@@ -563,20 +538,6 @@ class ArrayPrimitive(PrimitiveBase):
             return 0
         return self.size * self._cell_width + (self.size - 1) * CELL_GAP
 
-    def _caption_width(self) -> int:
-        """Widest wrapped caption line + padding, or 0 when there is no caption.
-
-        Uses the wrapped lines (not the full string), so the footprint matches
-        the multi-line caption block actually rendered — a long caption wraps
-        instead of widening the viewBox.
-        """
-        lines = self._caption_lines()
-        if not lines:
-            return 0
-        widest = max(
-            estimate_text_width(ln, _FONT_SIZE_CAPTION) for ln in lines
-        )
-        return widest + 2 * _CELL_HORIZONTAL_PADDING + _CAPTION_SAFETY_PAD
 
     def _below_pill_width(self, label: str) -> int:
         """Rendered width of a ``position=below`` callout pill for *label*
@@ -601,7 +562,7 @@ class ArrayPrimitive(PrimitiveBase):
         """
         content = self._total_width()
         cw = self._cell_width
-        half = max(content / 2.0, self._caption_width() / 2.0)
+        half = max(content / 2.0, self._caption_block_width(self._total_width()) / 2.0)
         center = content / 2.0
         for a in self._annotations:
             if (

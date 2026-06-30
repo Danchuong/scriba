@@ -164,6 +164,14 @@ def get_primitive_registry() -> dict[str, type["PrimitiveBase"]]:
 
 
 # ---------------------------------------------------------------------------
+# Shared caption (Layer A) constants — see PrimitiveBase._caption_* helpers.
+# ---------------------------------------------------------------------------
+_CAPTION_FONT_PX: int = 11          # must match --scriba-label-font / array._FONT_SIZE_CAPTION
+_CAPTION_MIN_WRAP_W: int = 200      # caption never wraps narrower than this
+_CAPTION_SAFETY_PAD: int = 8        # estimate_text_width under-counts; pad
+
+
+# ---------------------------------------------------------------------------
 # Abstract base for all animation primitives
 # ---------------------------------------------------------------------------
 
@@ -400,6 +408,83 @@ class PrimitiveBase(abc.ABC):
         (e.g. Array with index labels / a caption) override this.
         """
         return None
+
+    # -- Layer A: shared caption block (wrap + width-in-bbox) ----------------
+    # Lifted from Array so every caption-bearing primitive folds its caption
+    # width into the bounding box and wraps a long caption instead of clipping.
+    # A primitive opts in by feeding its content width through these helpers in
+    # bounding_box()/emit_svg(). Placement (top vs bottom) stays per-primitive.
+
+    def _caption_lines(self, content_width: float) -> list[str]:
+        """Wrap ``self.label`` to (at least) the content width. Math captions
+        are never wrapped. Empty list when there is no caption."""
+        s = getattr(self, "label", None)
+        if not s:
+            return []
+        s = str(s)
+        if _label_has_math(s):
+            return [s]
+        target = max(float(content_width), float(_CAPTION_MIN_WRAP_W))
+        return _wrap_label_lines(s, max_px=target, font_px=_CAPTION_FONT_PX)
+
+    def _caption_block_width(self, content_width: float) -> int:
+        """Width of the wrapped caption block (widest line + padding), or 0."""
+        lines = self._caption_lines(content_width)
+        if not lines:
+            return 0
+        widest = max(estimate_text_width(ln, _CAPTION_FONT_PX) for ln in lines)
+        return int(widest + 2 * _CELL_HORIZONTAL_PADDING + _CAPTION_SAFETY_PAD)
+
+    def _caption_block_height(self, content_width: float) -> int:
+        """Total height of the wrapped caption block, or 0."""
+        n = len(self._caption_lines(content_width))
+        return n * (_CAPTION_FONT_PX + 2) if n else 0
+
+    def _emit_caption(
+        self,
+        out: "list[str]",
+        *,
+        content_width: float,
+        footprint_width: int,
+        top_y: int,
+        render_inline_tex: "Callable[[str], str] | None" = None,
+    ) -> None:
+        """Emit the (possibly multi-line) caption centered on *footprint_width*,
+        its first line at *top_y*. Single line uses the shared text renderer
+        (keeps the KaTeX foreignObject path for ``$…$``); multi-line uses
+        tspans with inline styling."""
+        lines = self._caption_lines(content_width)
+        if not lines:
+            return
+        center_x = int(footprint_width // 2)
+        line_h = _CAPTION_FONT_PX + 2
+        if len(lines) == 1:
+            out.append(
+                "  "
+                + _render_svg_text(
+                    lines[0],
+                    center_x,
+                    top_y + _CAPTION_FONT_PX // 2,
+                    fill=THEME["fg_muted"],
+                    css_class="scriba-primitive-label",
+                    fo_width=footprint_width,
+                    fo_height=20,
+                    render_inline_tex=render_inline_tex,
+                )
+            )
+        else:
+            y0 = top_y + _CAPTION_FONT_PX
+            tspans = "".join(
+                f'<tspan x="{center_x}" dy="{0 if i == 0 else line_h}">'
+                f"{_escape_xml(ln)}</tspan>"
+                for i, ln in enumerate(lines)
+            )
+            out.append(
+                f'  <text class="scriba-primitive-label" x="{center_x}"'
+                f' y="{y0}" fill="{THEME["fg_muted"]}"'
+                f' style="text-anchor:middle;font-size:{_CAPTION_FONT_PX}px">'
+                f"{tspans}</text>"
+            )
 
     def _is_highlighted(self, suffix: str) -> bool:
         """Return True if *suffix* is in the highlighted set.

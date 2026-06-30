@@ -393,22 +393,13 @@ class MatrixPrimitive(PrimitiveBase):
 
         # Caption label below the matrix
         if self.label is not None:
-            total_w = self._total_width()
-            center_x = total_w // 2
-            label_y = self._total_height() + 14
-            lines.append(
-                "  "
-                + _render_svg_text(
-                    self.label,
-                    center_x,
-                    label_y,
-                    fill=THEME["fg_muted"],
-                    css_class="scriba-primitive-label",
-                    text_anchor="middle",
-                    fo_width=total_w,
-                    fo_height=20,
-                    render_inline_tex=render_inline_tex,
-                )
+            content_w = self._total_width()
+            self._emit_caption(
+                lines,
+                content_width=content_w,
+                footprint_width=int(self.bounding_box().width),
+                top_y=self._total_height(),
+                render_inline_tex=render_inline_tex,
             )
 
         lines.append("</g>")
@@ -416,10 +407,10 @@ class MatrixPrimitive(PrimitiveBase):
 
     def bounding_box(self) -> BoundingBox:
         """Return ``(x, y, width, height)``."""
-        w = self._total_width()
-        h = self._total_height()
-        if self.label:
-            h += 20
+        content_w = self._total_width()
+        # Layer A: fold the (wrapped) caption width into the footprint.
+        w = max(content_w, self._caption_block_width(content_w))
+        h = self._total_height() + self._caption_block_height(content_w)
         return BoundingBox(x=0, y=0, width=float(w), height=float(h))
 
     # -- internal -----------------------------------------------------------

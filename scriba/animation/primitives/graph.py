@@ -44,6 +44,10 @@ from scriba.animation.primitives._types import (
 _DEFAULT_WIDTH = 400
 _DEFAULT_HEIGHT = 300
 _NODE_RADIUS = 20
+# Vertical band reserved above the content for the caption (matches
+# ``tree.py:_LABEL_HEIGHT``); shifts edges/nodes down so the caption never
+# overlaps the top nodes.
+_GRAPH_LABEL_HEIGHT = 28
 _EDGE_STROKE_WIDTH = 2
 _PADDING = 20
 _DEFAULT_SEED = 42
@@ -1158,11 +1162,14 @@ class Graph(PrimitiveBase):
             self._annotations,
             cell_height=float(self._node_radius * 2),
         )
+        # Reserve a top band for the caption and shift content below it, so the
+        # caption never overlaps the top nodes (mirrors Tree; was missing here).
+        label_h = _GRAPH_LABEL_HEIGHT if self.label is not None else 0
         return BoundingBox(
             x=0,
             y=0,
             width=self.width + 2 * r,
-            height=self.height + 2 * r + arrow_above + pos_below,
+            height=self.height + 2 * r + arrow_above + pos_below + label_h,
         )
 
     def emit_svg(
@@ -1197,8 +1204,10 @@ class Graph(PrimitiveBase):
             f' transform="translate({r},{ty})">'
         )
 
-        # Optional label / caption
+        # Optional label / caption (in the reserved top band)
+        label_offset = 0
         if self.label is not None:
+            label_offset = _GRAPH_LABEL_HEIGHT
             parts.append(
                 _render_svg_text(
                     str(self.label),
@@ -1212,6 +1221,10 @@ class Graph(PrimitiveBase):
                     render_inline_tex=render_inline_tex,
                 )
             )
+        # Shift all edges/nodes/annotations below the caption band (mirrors
+        # Tree) so the caption no longer overlaps the top nodes.
+        if label_offset:
+            parts.append(f'<g transform="translate(0,{label_offset})">')
 
         # NOTE: arrowhead marker <defs> are emitted once per SVG at the stage
         # root by `emit_shared_defs` (driven by `_has_directed_graph`).  The
@@ -1609,6 +1622,8 @@ class Graph(PrimitiveBase):
             )
             parts.extend(arrow_lines)
 
+        if label_offset:
+            parts.append('</g>')  # close the caption-band content shift
         parts.append('</g>')
         return ''.join(parts)
 

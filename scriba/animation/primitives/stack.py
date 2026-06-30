@@ -206,8 +206,10 @@ class Stack(PrimitiveBase):
             w = cw + 2 * _PADDING
             h = visible * (_CELL_HEIGHT + _CELL_GAP) - _CELL_GAP + 2 * _PADDING
 
-        if self.label:
-            h += 20
+        # Layer A: fold the (wrapped) caption width into the footprint.
+        content_w = w
+        w = max(w, self._caption_block_width(content_w))
+        h += self._caption_block_height(content_w)
 
         return BoundingBox(x=0, y=0, width=w, height=h)
 
@@ -330,21 +332,19 @@ class Stack(PrimitiveBase):
 
         # Caption
         if self.label is not None:
+            visible = min(len(self.items), self.max_visible) or 1
+            cw = self._cell_width
+            if self.orientation == "horizontal":
+                content_w = visible * (cw + _CELL_GAP) - _CELL_GAP + 2 * _PADDING
+            else:
+                content_w = cw + 2 * _PADDING
             bbox = self.bounding_box()
-            cx = bbox.width // 2
-            cy = bbox.height - 4
-            parts.append(
-                _render_svg_text(
-                    str(self.label),
-                    cx,
-                    cy,
-                    fill=THEME["fg_muted"],
-                    css_class="scriba-primitive-label",
-                    text_anchor="middle",
-                    fo_width=bbox.width,
-                    fo_height=20,
-                    render_inline_tex=render_inline_tex,
-                )
+            self._emit_caption(
+                parts,
+                content_width=content_w,
+                footprint_width=int(bbox.width),
+                top_y=int(bbox.height - self._caption_block_height(content_w)),
+                render_inline_tex=render_inline_tex,
             )
 
         parts.append("</g>")
