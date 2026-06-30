@@ -477,6 +477,12 @@ class ArrayPrimitive(PrimitiveBase):
         """Return the cell (or range) AABB so the pill placer treats it as a
         MUST blocker (Defect 1b). Coordinates are local and include ``_row_dx``
         so the box tracks the (possibly caption-shifted) cell row.
+
+        Unconditional (not scoped to below pills like the newer cell primitives):
+        Array's box predates the unified scoping and its committed output already
+        includes the R-07/R-08 spanning leader on wide above-cell pills; scoping
+        it would *remove* those established leaders. The newer primitives scope
+        instead so they don't *introduce* such leaders (both choices = 0 churn).
         """
         cw = self._cell_width
         m = _CELL_RE.match(selector)
