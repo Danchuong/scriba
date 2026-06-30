@@ -427,7 +427,7 @@ def _parse_label_string(fmt: str, tick_count: int) -> list[str]:
     """Parse label format strings like ``"0..10"``."""
     m = re.match(r"^(\d+)\.\.(\d+)$", fmt)
     if m:
-        start, end = int(m.group(1)), int(m.group(2))
+        start = int(m.group(1))
         return [str(i) for i in range(start, start + tick_count)]
 
     # Fallback: plain indices
