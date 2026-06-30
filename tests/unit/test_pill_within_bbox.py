@@ -19,12 +19,30 @@ import re
 
 import pytest
 
+from scriba.animation.primitives.stack import Stack
+
 from tests.unit.test_obstacle_protocol import _ALL_PRIMITIVE_CLASSES, _make_instance
+
+# Stack's minimal _make_instance is item-less (no cells to annotate); build it
+# with items so the guard has a target.
+_RICH_CTOR: dict[type, tuple[str, dict]] = {
+    Stack: ("s", {"items": [1, 2, 3]}),
+}
 
 # Primitives whose bounding_box() reserves horizontal space for left/right
 # pills. GROWS as primitives opt in. Never shrinks.
 _H_RESERVED: set[str] = {
     "grid",
+    "dptable",
+    "matrix",
+    "queue",
+    "hashmap",
+    "linkedlist",
+    "variablewatch",
+    "stack",
+    "codepanel",
+    "tree",
+    "graph",
 }
 
 
@@ -48,7 +66,8 @@ def _first_cell_target(inst) -> str | None:
 @pytest.mark.parametrize("cls", _ALL_PRIMITIVE_CLASSES, ids=lambda c: c.__name__)
 @pytest.mark.parametrize("position", ["right", "left"])
 def test_side_pill_within_bbox(cls: type, position: str) -> None:
-    inst = _make_instance(cls)
+    rich = _RICH_CTOR.get(cls)
+    inst = cls(*rich) if rich else _make_instance(cls)
     if inst.primitive_type not in _H_RESERVED:
         pytest.skip(f"{cls.__name__} not yet horizontal-reserved")
     target = _first_cell_target(inst)

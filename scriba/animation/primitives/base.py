@@ -410,6 +410,24 @@ class PrimitiveBase(abc.ABC):
         """
         return None
 
+    def _target_has_below_pill(self, selector: str) -> bool:
+        """True if a ``position=below`` pill targets *selector*.
+
+        Scopes ``resolve_annotation_box`` on cell/node primitives: base feeds the
+        box width to *every* position pill as ``cell_width`` (which drives the
+        R-07/R-08 spanning leader), so returning a box for an above/left/right
+        target spuriously adds a leader on a narrow cell/node. Gating the cell
+        box on an actual below pill keeps the box's effect inside the below lane,
+        leaving above/left/right pills byte-stable. (Range boxes, used for the
+        span bracket regardless of position, are NOT gated by this.)
+        """
+        return any(
+            a.get("target") == selector
+            and a.get("position") == "below"
+            and not a.get("arrow_from")
+            for a in self._annotations
+        )
+
     def resolve_below_baseline(self) -> "float | None":
         """Local-frame y below which ``position=below`` pills should be placed
         so they clear any index-label / caption stack (callout lane). ``None``

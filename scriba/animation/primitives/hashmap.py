@@ -14,7 +14,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, _animation_error
+from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
@@ -22,7 +22,6 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_svg_text,
     arrow_height_above,
-    position_label_height_below,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -117,7 +116,6 @@ class HashMap(PrimitiveBase):
     def _index_col_width(self) -> int:
         """Compute index column width based on the number of digits needed."""
         max_idx = self.capacity - 1
-        digit_count = len(str(max_idx))
         # For 1-2 digits the default is fine; for 3+ digits widen
         needed = estimate_text_width(str(max_idx), font_size=int(_INDEX_FONT_SIZE)) + 16
         return max(_MIN_INDEX_COL_WIDTH, needed)
@@ -211,11 +209,17 @@ class HashMap(PrimitiveBase):
                 return (cx, cy)
         return None
 
+    def resolve_below_baseline(self) -> "float | None":
+        """``position=below`` pills sit below the whole table (callout lane),
+        clear of the bucket rows. Matches the content bottom reserved by
+        :meth:`bounding_box`."""
+        return float(self.capacity * _ROW_HEIGHT + 2 * _PADDING)
+
     def bounding_box(self) -> BoundingBox:
         content_w = self._panel_width()
         h = self.capacity * _ROW_HEIGHT + 2 * _PADDING
         # Layer A: fold the (wrapped) caption width into the footprint.
-        w = max(content_w + 2 * _PADDING, self._caption_block_width(content_w))
+        core_w = max(content_w + 2 * _PADDING, self._caption_block_width(content_w))
         h += self._caption_block_height(content_w)
 
         arrow_above = arrow_height_above(
@@ -224,8 +228,12 @@ class HashMap(PrimitiveBase):
             cell_height=_ROW_HEIGHT,
         )
         h += arrow_above
-        pos_below = position_label_height_below(self._annotations, cell_height=_ROW_HEIGHT)
-        h += pos_below
+        # Layer C: below-pill callout lane (0 without below pills → byte-stable).
+        h += self._below_lane_height()
+        # #1: reserve horizontal room for position=left/right pills. Both pads
+        # are 0 (int) without left/right pills, so the box stays byte-stable.
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(core_w, right_reach)
 
         return BoundingBox(x=0, y=0, width=w, height=h)
 
@@ -246,6 +254,9 @@ class HashMap(PrimitiveBase):
             self.resolve_annotation_point,
             cell_height=_ROW_HEIGHT,
         )
+        # #1: shift content right for position=left pills (0 when none →
+        # "translate(0, …)", byte-identical to the pre-#1 output).
+        left_pad, _ = self._h_label_pad()
 
         parts: list[str] = []
         parts.append(
@@ -253,9 +264,9 @@ class HashMap(PrimitiveBase):
             f'data-shape="{_escape_xml(self.name)}">'
         )
 
-        # Shift content down so arrows curve into valid space above y=0
-        if arrow_above > 0:
-            parts.append(f'<g transform="translate(0, {arrow_above})">')
+        # Shift content down (arrows) and right (left pills) into valid space.
+        if arrow_above > 0 or left_pad > 0:
+            parts.append(f'<g transform="translate({left_pad}, {arrow_above})">')
 
         table_h = self.capacity * _ROW_HEIGHT
 
@@ -371,8 +382,8 @@ class HashMap(PrimitiveBase):
         if effective_anns:
             self.emit_annotation_arrows(parts, effective_anns, render_inline_tex=render_inline_tex)
 
-        # Close translate group if opened for arrow space
-        if arrow_above > 0:
+        # Close the translate group if we opened one
+        if arrow_above > 0 or left_pad > 0:
             parts.append("</g>")
 
         parts.append("</g>")

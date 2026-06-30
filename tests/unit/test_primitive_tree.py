@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from scriba.animation.primitives.tree import Tree, _build_segtree as build_segtree, _reingold_tilford as reingold_tilford
@@ -347,3 +349,105 @@ class TestTreeStateApplication:
             "edges": [],
         })
         assert t.get_state("node[1]") == "idle"
+
+
+# ---------------------------------------------------------------
+# Annotation-layout migration (mirrors Grid f980ecc):
+#   #1 reserve horizontal room for position=left/right pills
+#   #2 position=below pills in a callout lane below the content + leader
+# ---------------------------------------------------------------
+
+
+def _pill_rects_xyw(svg: str) -> list[tuple[float, float, float]]:
+    """``(x, y, width)`` of each annotation pill ``<rect>``.
+
+    Captures the geometric ``width``, not the trailing ``stroke-width`` attr
+    (the fixed-length ``(?<!stroke-)`` lookbehind skips it).
+    """
+    out: list[tuple[float, float, float]] = []
+    for block in re.findall(r'<g class="scriba-annotation[^"]*".*?</g>', svg, re.S):
+        for m in re.finditer(
+            r'<rect x="([\-\d.]+)" y="([\-\d.]+)"[^>]*?(?<!stroke-)width="([\-\d.]+)"',
+            block,
+        ):
+            out.append((float(m.group(1)), float(m.group(2)), float(m.group(3))))
+    return out
+
+
+def _mk_tree() -> Tree:
+    return Tree(
+        "T",
+        {"root": "A", "nodes": ["A", "B", "C"], "edges": [("A", "B"), ("A", "C")]},
+    )
+
+
+class TestTreeAnnotationLayout:
+    @pytest.mark.parametrize("position", ["right", "left"])
+    def test_side_pill_fits_bbox_width(self, position: str) -> None:
+        """#1: a position=left/right pill stays inside ``bounding_box().width``
+        (left edge >= 0, right edge <= width)."""
+        t = _mk_tree()
+        t.set_annotations([
+            {"target": "T.node[A]", "label": "a fairly long side note",
+             "position": position},
+        ])
+        svg = t.emit_svg()
+        bbox_w = float(t.bounding_box().width)
+        rects = _pill_rects_xyw(svg)
+        assert rects, f"{position} pill not rendered"
+        for x, _y, w in rects:
+            assert x >= -1.0, f"{position} pill left edge {x:.0f} clips x=0"
+            assert x + w <= bbox_w + 1.0, (
+                f"{position} pill right edge {x + w:.0f} exceeds bbox width {bbox_w:.0f}"
+            )
+
+    def test_below_pill_in_lane_with_leader(self) -> None:
+        """#2: a position=below pill drops into a callout lane below the content
+        (below ``self.height``) and gets a leader line back to the node."""
+        plain_h = _mk_tree().bounding_box().height
+        t = _mk_tree()
+        t.set_annotations([
+            {"target": "T.node[A]", "label": "below note here",
+             "position": "below"},
+        ])
+        svg = t.emit_svg()
+
+        lane = t._below_lane_height()
+        assert lane > 0, "below pill must reserve a callout lane"
+        # the lane is the only extra height a position=below pill adds.
+        assert t.bounding_box().height == plain_h + lane
+        # leader line (position-label leader uses stroke-opacity=0.45).
+        assert 'stroke-opacity="0.45"' in svg, "below pill has no leader line"
+        assert "<line " in svg
+        # pill sits at/below the content baseline (self.height), in content-local
+        # coords (same frame the pill rect is emitted in).
+        rects = _pill_rects_xyw(svg)
+        assert rects, "below pill not rendered"
+        assert rects[0][1] >= float(t.height), "below pill is not below the content"
+
+    def test_unannotated_byte_stable_invariants(self) -> None:
+        """An unannotated tree triggers neither #1 nor #2, so its bbox/SVG are
+        byte-identical to the pre-migration output."""
+        t = _mk_tree()
+        r = t._node_radius
+        assert t._h_label_pad() == (0, 0)
+        assert t._below_lane_height() == 0
+        # frame is the original unshifted translate(r, r) (arrow_above == 0).
+        assert f'transform="translate({r},{r})"' in t.emit_svg()
+        content_w = float(t.width + 2 * r)
+        assert t.bounding_box().width == max(
+            t.width + 2 * r, t._caption_block_width(content_w)
+        )
+
+    def test_arrow_annotation_byte_stable_invariants(self) -> None:
+        """An arrow annotation (the corpus-golden case) triggers neither the
+        lane (#2) nor the horizontal pad (#1) — no golden churn."""
+        t = _mk_tree()
+        t.set_annotations([
+            {"target": "T.node[B]", "arrow_from": "T.node[A]", "label": "visit"},
+        ])
+        r = t._node_radius
+        assert t._h_label_pad() == (0, 0)
+        assert t._below_lane_height() == 0
+        # x-translate is exactly r (no horizontal shift); y carries arrow space.
+        assert f'transform="translate({r},' in t.emit_svg()

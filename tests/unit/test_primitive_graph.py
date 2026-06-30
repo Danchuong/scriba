@@ -927,3 +927,104 @@ class TestIsolatedNodeWarning:
             warnings.simplefilter("always")
             Graph("G", {"nodes": ["A", "B", "C"], "edges": []})
         assert not [w for w in caught if "no edges" in str(w.message)]
+
+
+# ---------------------------------------------------------------
+# Annotation-layout migration (mirrors Grid f980ecc):
+#   #1 reserve horizontal room for position=left/right pills
+#   #2 position=below pills in a callout lane below the content + leader
+# ---------------------------------------------------------------
+
+
+def _pill_rects_xyw(svg: str) -> list[tuple[float, float, float]]:
+    """``(x, y, width)`` of each annotation pill ``<rect>``.
+
+    Captures the geometric ``width``, not the trailing ``stroke-width`` attr
+    (the fixed-length ``(?<!stroke-)`` lookbehind skips it).
+    """
+    out: list[tuple[float, float, float]] = []
+    for block in re.findall(r'<g class="scriba-annotation[^"]*".*?</g>', svg, re.S):
+        for m in re.finditer(
+            r'<rect x="([\-\d.]+)" y="([\-\d.]+)"[^>]*?(?<!stroke-)width="([\-\d.]+)"',
+            block,
+        ):
+            out.append((float(m.group(1)), float(m.group(2)), float(m.group(3))))
+    return out
+
+
+def _mk_graph() -> Graph:
+    return Graph(
+        "G", {"nodes": ["A", "B"], "edges": [("A", "B")], "layout_seed": 42}
+    )
+
+
+class TestGraphAnnotationLayout:
+    @pytest.mark.parametrize("position", ["right", "left"])
+    def test_side_pill_fits_bbox_width(self, position: str) -> None:
+        """#1: a position=left/right pill stays inside ``bounding_box().width``
+        (left edge >= 0, right edge <= width)."""
+        g = _mk_graph()
+        g.set_annotations([
+            {"target": "G.node[A]", "label": "a fairly long side note",
+             "position": position},
+        ])
+        svg = g.emit_svg()
+        bbox_w = float(g.bounding_box().width)
+        rects = _pill_rects_xyw(svg)
+        assert rects, f"{position} pill not rendered"
+        for x, _y, w in rects:
+            assert x >= -1.0, f"{position} pill left edge {x:.0f} clips x=0"
+            assert x + w <= bbox_w + 1.0, (
+                f"{position} pill right edge {x + w:.0f} exceeds bbox width {bbox_w:.0f}"
+            )
+
+    def test_below_pill_in_lane_with_leader(self) -> None:
+        """#2: a position=below pill drops into a callout lane below the content
+        (below ``self.height``) and gets a leader line back to the node."""
+        plain_h = _mk_graph().bounding_box().height
+        g = _mk_graph()
+        g.set_annotations([
+            {"target": "G.node[A]", "label": "below note here",
+             "position": "below"},
+        ])
+        svg = g.emit_svg()
+
+        lane = g._below_lane_height()
+        assert lane > 0, "below pill must reserve a callout lane"
+        # the lane is the only extra height a position=below pill adds.
+        assert g.bounding_box().height == plain_h + lane
+        # leader line (position-label leader uses stroke-opacity=0.45).
+        assert 'stroke-opacity="0.45"' in svg, "below pill has no leader line"
+        assert "<line " in svg
+        # pill sits at/below the content baseline (self.height), in content-local
+        # coords (same frame the pill rect is emitted in).
+        rects = _pill_rects_xyw(svg)
+        assert rects, "below pill not rendered"
+        assert rects[0][1] >= float(g.height), "below pill is not below the content"
+
+    def test_unannotated_byte_stable_invariants(self) -> None:
+        """An unannotated graph triggers neither #1 nor #2, so its bbox/SVG are
+        byte-identical to the pre-migration output."""
+        g = _mk_graph()
+        r = g._node_radius
+        assert g._h_label_pad() == (0, 0)
+        assert g._below_lane_height() == 0
+        # frame is the original unshifted translate(r, r) (arrow_above == 0).
+        assert f'transform="translate({r},{r})"' in g.emit_svg()
+        content_w = float(g.width + 2 * r)
+        assert g.bounding_box().width == max(
+            g.width + 2 * r, g._caption_block_width(content_w)
+        )
+
+    def test_arrow_annotation_byte_stable_invariants(self) -> None:
+        """An arrow annotation (the corpus-golden case) triggers neither the
+        lane (#2) nor the horizontal pad (#1) — no golden churn."""
+        g = _mk_graph()
+        g.set_annotations([
+            {"target": "G.node[B]", "arrow_from": "G.node[A]", "label": "visit"},
+        ])
+        r = g._node_radius
+        assert g._h_label_pad() == (0, 0)
+        assert g._below_lane_height() == 0
+        # x-translate is exactly r (no horizontal shift); y carries arrow space.
+        assert f'transform="translate({r},' in g.emit_svg()

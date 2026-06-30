@@ -22,7 +22,6 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     estimate_text_width,
     position_label_height_above,
-    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -197,8 +196,14 @@ class CodePanel(PrimitiveBase):
                 )
         return None
 
+    def resolve_below_baseline(self) -> "float | None":
+        """``position=below`` pills sit below the whole panel (callout lane),
+        clear of the code lines. The panel bottom is the full panel height
+        (header + code rows), matching :meth:`_panel_height`."""
+        return float(self._panel_height())
+
     def bounding_box(self) -> BoundingBox:
-        w = self._panel_width()
+        core_w = self._panel_width()
         h = self._panel_height()
         # Layer B/C: reserve space for annotation arrows + position pills.
         # No annotations -> all terms are 0, so the box is byte-stable.
@@ -211,7 +216,12 @@ class CodePanel(PrimitiveBase):
             getattr(self, "_min_arrow_above", 0),
         )
         h += arrow_above
-        h += position_label_height_below(self._annotations, cell_height=_LINE_HEIGHT)
+        # Layer C: below-pill callout lane sits below the panel.
+        h += self._below_lane_height()
+        # #1: reserve horizontal room for position=left/right pills. Both pads
+        # are 0 (int) without left/right pills, so the box stays byte-stable.
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(core_w, right_reach)
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     def _header_label(self) -> str:
@@ -269,8 +279,13 @@ class CodePanel(PrimitiveBase):
             position_label_height_above(effective_anns, cell_height=_LINE_HEIGHT),
             getattr(self, "_min_arrow_above", 0),
         )
-        if arrow_above > 0:
-            parts.append(f'  <g transform="translate(0, {arrow_above})">')
+        # #1: shift content right to make room for position=left pills (0 when
+        # none → "translate(0, …)", byte-identical to the pre-#1 output). Empty
+        # panels resolve no anchors, so left_pad stays 0 and the early return
+        # below never sits inside an open group.
+        left_pad, _right = self._h_label_pad()
+        if arrow_above > 0 or left_pad > 0:
+            parts.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
 
         # Panel background border
         parts.append(
@@ -406,7 +421,7 @@ class CodePanel(PrimitiveBase):
                 self_offset=self_offset,
             )
 
-        if arrow_above > 0:
+        if arrow_above > 0 or left_pad > 0:
             parts.append("  </g>")
         parts.append("</g>")
         return "".join(parts)

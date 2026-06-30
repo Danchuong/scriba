@@ -6,14 +6,35 @@ vmin/vmax, bounding box, and the Heatmap alias.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from scriba.animation.primitives.matrix import (
     MatrixPrimitive,
     interpolate_color,
     VIRIDIS,
+    _CELL_GAP as _MX_GAP,
 )
 from scriba.core.errors import ValidationError
+
+
+def _annotation_rects(svg: str) -> list[dict[str, float]]:
+    """Parse every annotation pill ``<rect>`` into a numeric attr dict.
+
+    Robust to attribute order and to look-alike attrs (``rx``/``stroke-width``):
+    each attribute is parsed by its full name, so ``width`` is the pill width,
+    never ``stroke-width``.
+    """
+    rects: list[dict[str, float]] = []
+    for block in re.findall(r'<g class="scriba-annotation.*?</g>', svg, re.S):
+        for rect in re.findall(r"<rect\b[^>]*/>", block):
+            attrs = dict(re.findall(r'([a-zA-Z][\w-]*)="([^"]*)"', rect))
+            try:
+                rects.append({k: float(attrs[k]) for k in ("x", "y", "width", "height")})
+            except (KeyError, ValueError):
+                pass
+    return rects
 
 
 # ---------------------------------------------------------------------------
@@ -280,8 +301,6 @@ class TestHeatmapAlias:
 # Matrices without annotations are byte-stable (no reservation, no group).
 # ---------------------------------------------------------------------------
 
-from scriba.animation.primitives.matrix import _CELL_GAP as _MX_GAP
-
 
 class TestAnnotations:
     def test_cell_anchor_center(self) -> None:
@@ -330,3 +349,80 @@ class TestAnnotations:
             [{"target": "m.cell[0][1]", "label": "HOT", "position": "above"}]
         )
         assert m.bounding_box().height > h_before  # reserved arrow space
+
+
+# ---------------------------------------------------------------------------
+# #1 horizontal pill reservation + #2 below-lane callout (mirrors Grid)
+#
+# #1: bounding_box() reserves horizontal room for position=left/right pills so a
+#     right pill fits within bbox.width (no viewBox clip / left-clamp).
+# #2: position=below pills sit in a callout lane below the WHOLE matrix (below
+#     resolve_below_baseline), not just under the labelled cell.
+# Byte-stability: an unannotated matrix's bbox is unchanged (ratchet).
+# ---------------------------------------------------------------------------
+
+
+class TestHorizontalReservationAndBelowLane:
+    def test_unannotated_bbox_unchanged(self) -> None:
+        # Captured pre-change values — byte-stability ratchet for this migration.
+        assert tuple(
+            MatrixPrimitive("m", {"rows": 3, "cols": 4, "cell_size": 24}).bounding_box()
+        ) == (0, 0, 99.0, 74.0)
+
+    def test_right_pill_fits_bbox_width(self) -> None:
+        m = MatrixPrimitive("m", {"rows": 2, "cols": 3})
+        m.set_annotations(
+            [{"target": "m.cell[1][2]", "label": "a fairly long side note",
+              "position": "right"}]
+        )
+        rects = _annotation_rects(m.emit_svg())
+        assert rects, "right pill not rendered"
+        bbox_w = float(m.bounding_box().width)
+        for r in rects:
+            assert r["x"] >= -1.0, f"left edge {r['x']} clips viewBox"
+            assert r["x"] + r["width"] <= bbox_w + 1.0, (
+                f"right edge {r['x'] + r['width']} exceeds bbox width {bbox_w}"
+            )
+
+    def test_below_pill_on_top_cell_sits_below_content(self) -> None:
+        # A below pill on the TOP row must clear the whole matrix (callout lane),
+        # not sit under row 0 where it would overlap the lower rows.
+        m = MatrixPrimitive("m", {"rows": 3, "cols": 3})
+        m.set_annotations(
+            [{"target": "m.cell[0][0]", "label": "lane", "position": "below"}]
+        )
+        rects = _annotation_rects(m.emit_svg())
+        assert rects, "below pill not rendered"
+        content_bottom = float(m._total_height())  # 74
+        assert m.resolve_below_baseline() >= content_bottom
+        assert min(r["y"] for r in rects) >= content_bottom
+
+    def test_cell_box_added(self) -> None:
+        # Layer C: Matrix gained a cell AABB (offset-aware), returned ONLY for a
+        # cell that carries a position=below pill (scoped so a wide above pill
+        # over a narrow cell never trips the spanning leader).
+        m = MatrixPrimitive("m", {"rows": 3, "cols": 3})
+        assert m.resolve_annotation_box("m.cell[0][0]") is None  # no below pill
+        m.set_annotations(
+            [
+                {"target": "m.cell[0][0]", "label": "a", "position": "below"},
+                {"target": "m.cell[1][2]", "label": "b", "position": "below"},
+            ]
+        )
+        assert tuple(m.resolve_annotation_box("m.cell[0][0]")) == (0, 0, 24, 24)
+        assert tuple(m.resolve_annotation_box("m.cell[1][2]")) == (50, 25, 24, 24)
+        assert m.resolve_annotation_box("m.cell[9][9]") is None
+
+    def test_cell_box_offset_aware_with_labels(self) -> None:
+        # With row/col headers, the box shifts by the same offsets as the anchor.
+        m = MatrixPrimitive(
+            "m",
+            {"rows": 2, "cols": 2, "row_labels": ["r0", "r1"], "col_labels": ["c0", "c1"]},
+        )
+        m.set_annotations(
+            [{"target": "m.cell[0][0]", "label": "a", "position": "below"}]
+        )
+        box = m.resolve_annotation_box("m.cell[0][0]")
+        assert box is not None
+        assert box.x == m.row_label_offset
+        assert box.y == m.col_label_offset

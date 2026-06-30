@@ -6,6 +6,7 @@ SVG output, and edge cases (1-based indexing).
 
 from __future__ import annotations
 
+import re
 
 from scriba.animation.primitives.codepanel import CodePanel
 
@@ -244,3 +245,80 @@ class TestAnnotations:
     def test_unannotated_bbox_unchanged(self) -> None:
         c = CodePanel("c", {"source": "a = 1\nb = 2"})
         assert c.bounding_box().height == float(c._panel_height())
+
+
+# ---------------------------------------------------------------------------
+# Annotation layout — #1 horizontal pill reservation + #2 below-pill lane
+#
+# A position=right pill must fit inside bounding_box().width (it was clipped
+# when the box reserved only vertical space). A position=below pill is placed
+# in a callout lane BELOW the panel (panel bottom = _panel_height). CodePanel
+# gets lane mode but NO leader line (no resolve_annotation_box per spec). With
+# no left/right or below pills the box stays byte-stable.
+# ---------------------------------------------------------------------------
+
+
+def _pill_rects(svg: str) -> list[tuple[float, float, float, float]]:
+    """(x, y, width, height) of every annotation pill ``<rect>`` in *svg*."""
+    out: list[tuple[float, float, float, float]] = []
+    for block in re.findall(r'<g class="scriba-annotation[^"]*".*?</g>', svg, re.S):
+        for m in re.finditer(
+            r'<rect x="([\-\d.]+)" y="([\-\d.]+)" '
+            r'width="([\-\d.]+)" height="([\-\d.]+)"',
+            block,
+        ):
+            out.append(
+                (
+                    float(m.group(1)),
+                    float(m.group(2)),
+                    float(m.group(3)),
+                    float(m.group(4)),
+                )
+            )
+    return out
+
+
+class TestAnnotationLayout:
+    def test_right_pill_fits_bbox(self) -> None:
+        c = CodePanel("c", {"source": "a = 1\nb = 2\nc = 3"})
+        c.set_annotations(
+            [{"target": "c.line[2]", "label": "a fairly long side note",
+              "position": "right"}]
+        )
+        rects = _pill_rects(c.emit_svg())
+        assert rects, "right pill not rendered"
+        bbox_w = float(c.bounding_box().width)
+        for x, _y, w, _h in rects:
+            assert x >= -1.0
+            assert x + w <= bbox_w + 1.0
+
+    def test_below_pill_in_lane(self) -> None:
+        c = CodePanel("c", {"source": "a = 1\nb = 2\nc = 3"})
+        c.set_annotations(
+            [{"target": "c.line[2]", "label": "note", "position": "below"}]
+        )
+        rects = _pill_rects(c.emit_svg())
+        assert rects, "below pill not rendered"
+        content_bottom = c.resolve_below_baseline()
+        bbox_h = float(c.bounding_box().height)
+        for _x, y, _w, h in rects:
+            assert y >= content_bottom  # below the panel
+            assert y + h <= bbox_h + 1.0  # lane fits inside the bbox
+
+    def test_below_pill_has_no_leader_line(self) -> None:
+        """Spec: CodePanel gets lane mode but NO leader (no resolve_annotation_box)."""
+        c = CodePanel("c", {"source": "a = 1\nb = 2\nc = 3"})
+        c.set_annotations(
+            [{"target": "c.line[2]", "label": "note", "position": "below"}]
+        )
+        blocks = re.findall(
+            r'<g class="scriba-annotation[^"]*".*?</g>', c.emit_svg(), re.S
+        )
+        assert blocks, "below pill not rendered"
+        assert all("<line" not in b for b in blocks)
+
+    def test_unannotated_bbox_width_unchanged(self) -> None:
+        c = CodePanel("c", {"source": "a = 1\nb = 2"})
+        bbox = c.bounding_box()
+        assert bbox.width == c._panel_width()
+        assert bbox.height == float(c._panel_height())

@@ -5,10 +5,30 @@ Covers 1D and 2D modes, selectors, SVG output, arrows, and error handling.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from scriba.animation.primitives.dptable import DPTablePrimitive
 from scriba.core.errors import ValidationError
+
+
+def _annotation_rects(svg: str) -> list[dict[str, float]]:
+    """Parse every annotation pill ``<rect>`` into a numeric attr dict.
+
+    Robust to attribute order and to look-alike attrs (``rx``/``stroke-width``):
+    each attribute is parsed by its full name, so ``width`` is the pill width,
+    never ``stroke-width``.
+    """
+    rects: list[dict[str, float]] = []
+    for block in re.findall(r'<g class="scriba-annotation.*?</g>', svg, re.S):
+        for rect in re.findall(r"<rect\b[^>]*/>", block):
+            attrs = dict(re.findall(r'([a-zA-Z][\w-]*)="([^"]*)"', rect))
+            try:
+                rects.append({k: float(attrs[k]) for k in ("x", "y", "width", "height")})
+            except (KeyError, ValueError):
+                pass
+    return rects
 
 
 # ---------------------------------------------------------------------------
@@ -288,3 +308,70 @@ class TestRangeAnnotation:
         """Regression: plain cell anchors keep their center coordinates."""
         inst = DPTablePrimitive("dp", {"n": 5})
         assert inst.resolve_annotation_point("dp.cell[2]") == (154.0, 20.0)
+
+
+# ---------------------------------------------------------------------------
+# #1 horizontal pill reservation + #2 below-lane callout (mirrors Grid)
+#
+# #1: bounding_box() reserves horizontal room for position=left/right pills so a
+#     right pill fits within bbox.width (no viewBox clip / left-clamp).
+# #2: position=below pills sit in a callout lane below the WHOLE table (below
+#     resolve_below_baseline), not just under the labelled cell.
+# Byte-stability: an unannotated table's bbox is unchanged (ratchet).
+# ---------------------------------------------------------------------------
+
+
+class TestHorizontalReservationAndBelowLane:
+    def test_unannotated_bbox_unchanged(self) -> None:
+        # Captured pre-change values — byte-stability ratchet for this migration.
+        assert tuple(DPTablePrimitive("dp", {"n": 5}).bounding_box()) == (
+            0, 0, 308.0, 40.0
+        )
+        assert tuple(DPTablePrimitive("dp", {"rows": 3, "cols": 3}).bounding_box()) == (
+            0, 0, 184.0, 124.0
+        )
+
+    def test_right_pill_fits_bbox_width(self) -> None:
+        inst = DPTablePrimitive("dp", {"n": 5})
+        inst.set_annotations(
+            [{"target": "dp.cell[4]", "label": "a fairly long side note",
+              "position": "right"}]
+        )
+        rects = _annotation_rects(inst.emit_svg())
+        assert rects, "right pill not rendered"
+        bbox_w = float(inst.bounding_box().width)
+        for r in rects:
+            assert r["x"] >= -1.0, f"left edge {r['x']} clips viewBox"
+            assert r["x"] + r["width"] <= bbox_w + 1.0, (
+                f"right edge {r['x'] + r['width']} exceeds bbox width {bbox_w}"
+            )
+
+    def test_below_pill_on_top_cell_sits_below_content(self) -> None:
+        # A below pill on the TOP row must clear the whole table (callout lane),
+        # not sit under row 0 where it would overlap the lower rows.
+        inst = DPTablePrimitive("dp", {"rows": 3, "cols": 3})
+        inst.set_annotations(
+            [{"target": "dp.cell[0][0]", "label": "lane", "position": "below"}]
+        )
+        rects = _annotation_rects(inst.emit_svg())
+        assert rects, "below pill not rendered"
+        content_bottom = float(inst._grid_dimensions()[1])  # 124
+        assert inst.resolve_below_baseline() >= content_bottom
+        assert min(r["y"] for r in rects) >= content_bottom
+
+    def test_single_cell_box_added(self) -> None:
+        # Layer C: a single cell returns a cell AABB ONLY when it carries a
+        # position=below pill (scoped so a wide above pill never trips the
+        # spanning leader). The 1D range box stays unconditional (span bracket).
+        d1 = DPTablePrimitive("dp", {"n": 5})
+        assert d1.resolve_annotation_box("dp.cell[2]") is None  # no below pill
+        d1.set_annotations(
+            [{"target": "dp.cell[2]", "label": "x", "position": "below"}]
+        )
+        assert tuple(d1.resolve_annotation_box("dp.cell[2]")) == (124, 0, 60, 40)
+        assert d1.resolve_annotation_box("dp.range[1:3]") is not None  # unconditional
+        d2 = DPTablePrimitive("dp", {"rows": 3, "cols": 3})
+        d2.set_annotations(
+            [{"target": "dp.cell[1][2]", "label": "x", "position": "below"}]
+        )
+        assert tuple(d2.resolve_annotation_box("dp.cell[1][2]")) == (124, 42, 60, 40)

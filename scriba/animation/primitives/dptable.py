@@ -26,7 +26,6 @@ from scriba.animation.primitives.base import (
     _render_svg_text,
     arrow_height_above,
     position_label_height_above,
-    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -230,14 +229,17 @@ class DPTablePrimitive(PrimitiveBase):
         )
         pos_above = position_label_height_above(effective_anns, cell_height=CELL_HEIGHT)
         arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
+        # #1: shift content right to make room for position=left pills (0 when
+        # none → "translate(0, …)", byte-identical to the pre-#1 output).
+        left_pad, _right = self._h_label_pad()
 
         lines: list[str] = [
             f'<g data-primitive="dptable" data-shape="{self.name}">'
         ]
 
-        # Shift all content down so arrows curve into valid space above y=0
-        if arrow_above > 0:
-            lines.append(f'  <g transform="translate(0, {arrow_above})">')
+        # Shift content down (arrows) and right (left pills) into valid space.
+        if arrow_above > 0 or left_pad > 0:
+            lines.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
 
         if self.is_2d:
             self._emit_2d_cells(lines, render_inline_tex=render_inline_tex)
@@ -268,16 +270,18 @@ class DPTablePrimitive(PrimitiveBase):
         # the caption's vertical placement (also used by ``bounding_box``), so
         # the drawn caption and the reserved box can never drift apart.
         if self.label is not None:
+            content_w = float(self._grid_dimensions()[0])
+            core_w = max(content_w, float(self._caption_block_width(content_w)))
             self._emit_caption(
                 lines,
-                content_width=float(self._grid_dimensions()[0]),
-                footprint_width=int(self.bounding_box().width),
-                top_y=self._caption_top_y(),
+                content_width=content_w,
+                footprint_width=int(core_w),
+                top_y=self._caption_top_y() + self._below_lane_height(),
                 render_inline_tex=render_inline_tex,
             )
 
-        # Close the translate group if we opened one for arrow space
-        if arrow_above > 0:
+        # Close the translate group if we opened one
+        if arrow_above > 0 or left_pad > 0:
             lines.append("  </g>")
 
         lines.append("</g>")
@@ -302,6 +306,12 @@ class DPTablePrimitive(PrimitiveBase):
             return int(index_bottom + _STACK_GAP)
         return int(th + INDEX_LABEL_OFFSET)
 
+    def resolve_below_baseline(self) -> "float | None":
+        """``position=below`` pills sit below the whole table in a callout lane
+        (clear of the cells/index labels), with a leader line back to the
+        labelled cell. ``_caption_top_y`` is the content bottom (the lane top)."""
+        return float(self._caption_top_y())
+
     def bounding_box(self) -> BoundingBox:
         """Return ``(x, y, width, height)``.
 
@@ -313,17 +323,23 @@ class DPTablePrimitive(PrimitiveBase):
         """
         tw, th = self._grid_dimensions()
         content_w = float(tw)
-        w = max(content_w, float(self._caption_block_width(content_w)))
+        # Layer A: fold the (wrapped) caption width into the footprint.
+        core_w = max(content_w, float(self._caption_block_width(content_w)))
+        # Layer C: below-pill callout lane sits between the content bottom and
+        # the caption (0 when there are no position=below pills → byte-stable).
+        lane = self._below_lane_height()
         if self.label is not None:
-            h = float(self._caption_top_y() + self._caption_block_height(content_w))
+            h = float(
+                self._caption_top_y() + lane + self._caption_block_height(content_w)
+            )
         elif not self.is_2d and self.labels:
             h = stack_bottom(
                 [TextBox(font_size=_FONT_SIZE_INDEX, role="label", baseline="hanging")],
                 start_y=th + INDEX_LABEL_OFFSET,
                 gap=_STACK_GAP,
-            )
+            ) + lane
         else:
-            h = float(th)
+            h = float(th) + lane
         # Reserve space above for arrow annotations and position=above labels.
         computed = arrow_height_above(
             self._annotations, self.resolve_annotation_point, cell_height=CELL_HEIGHT
@@ -331,8 +347,10 @@ class DPTablePrimitive(PrimitiveBase):
         pos_above = position_label_height_above(self._annotations, cell_height=CELL_HEIGHT)
         arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
-        pos_below = position_label_height_below(self._annotations, cell_height=CELL_HEIGHT)
-        h += pos_below
+        # #1: reserve horizontal room for position=left/right pills. Both pads
+        # are 0 (int) without left/right pills, so the box stays byte-stable.
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(core_w, right_reach)
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     # -- internal: cell emission -------------------------------------------
@@ -483,24 +501,45 @@ class DPTablePrimitive(PrimitiveBase):
         return None
 
     def resolve_annotation_box(self, selector: str) -> BoundingBox | None:
-        """Return the 1D ``range`` span AABB so the range gets a span bracket and
-        is treated as a blocker by the pill placer (Layer B). Local coords, cell
-        top at ``y=0``.
+        """Return the AABB of the annotated element (Layer C) so a ``position=below``
+        pill gets a leader line back to it and the placer treats it as a blocker.
 
-        Scoped to ranges: single-cell targets keep the base default (``None``)
-        so existing cell-annotation placement is byte-stable — the cell-obstacle
-        refinement (Layer C) is tracked separately.
+        1D ``range[lo:hi]`` returns the span AABB (also drives the span bracket);
+        single cells return the cell AABB — 1D ``cell[i]`` and 2D ``cell[r][c]``.
+        Local coords, cell top at ``y=0``. Mirrors Grid's cell box.
         """
-        if self.is_2d:
+        if not self.is_2d:
+            m = _RANGE_RE.match(selector)
+            if m and m.group("name") == self.name:
+                lo, hi = int(m.group("lo")), int(m.group("hi"))
+                if 0 <= lo <= hi < self.cols:
+                    left = lo * (CELL_WIDTH + CELL_GAP)
+                    right = hi * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH
+                    return BoundingBox(
+                        x=int(left), y=0, width=int(right - left), height=int(CELL_HEIGHT)
+                    )
+            # Single-cell boxes are scoped to below-pill targets; the range box
+            # above is NOT (it also drives the span bracket for any position).
+            if self._target_has_below_pill(selector):
+                m = _CELL_1D_RE.match(selector)
+                if m and m.group("name") == self.name:
+                    i = int(m.group("idx"))
+                    if 0 <= i < self.cols:
+                        x = i * (CELL_WIDTH + CELL_GAP)
+                        return BoundingBox(
+                            x=int(x), y=0, width=int(CELL_WIDTH), height=int(CELL_HEIGHT)
+                        )
             return None
-        m = _RANGE_RE.match(selector)
+        if not self._target_has_below_pill(selector):
+            return None
+        m = _CELL_2D_RE.match(selector)
         if m and m.group("name") == self.name:
-            lo, hi = int(m.group("lo")), int(m.group("hi"))
-            if 0 <= lo <= hi < self.cols:
-                left = lo * (CELL_WIDTH + CELL_GAP)
-                right = hi * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH
+            r, c = int(m.group("row")), int(m.group("col"))
+            if 0 <= r < self.rows and 0 <= c < self.cols:
+                x = c * (CELL_WIDTH + CELL_GAP)
+                y = r * (CELL_HEIGHT + CELL_GAP)
                 return BoundingBox(
-                    x=int(left), y=0, width=int(right - left), height=int(CELL_HEIGHT)
+                    x=int(x), y=int(y), width=int(CELL_WIDTH), height=int(CELL_HEIGHT)
                 )
         return None
 

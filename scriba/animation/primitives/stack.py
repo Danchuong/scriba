@@ -22,7 +22,6 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     estimate_text_width,
     position_label_height_above,
-    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -234,6 +233,16 @@ class Stack(PrimitiveBase):
             y = _PADDING + rev_vi * (_CELL_HEIGHT + _CELL_GAP)
         return (float(x + cw / 2), float(y + _CELL_HEIGHT / 2))
 
+    def resolve_below_baseline(self) -> "float | None":
+        """``position=below`` pills sit below the whole stack (callout lane),
+        clear of the cells. Orientation-dependent: the content bottom is one
+        cell row for horizontal, the visible-window column height for vertical
+        — mirrors :meth:`bounding_box`'s content height per orientation."""
+        visible = min(len(self.items), self.max_visible) or 1
+        if self.orientation == "horizontal":
+            return float(_CELL_HEIGHT + 2 * _PADDING)
+        return float(visible * (_CELL_HEIGHT + _CELL_GAP) - _CELL_GAP + 2 * _PADDING)
+
     def bounding_box(self) -> BoundingBox:
         visible = min(len(self.items), self.max_visible)
         if visible == 0:
@@ -249,7 +258,7 @@ class Stack(PrimitiveBase):
 
         # Layer A: fold the (wrapped) caption width into the footprint.
         content_w = w
-        w = max(w, self._caption_block_width(content_w))
+        core_w = max(w, self._caption_block_width(content_w))
         h += self._caption_block_height(content_w)
 
         # Layer B/C: reserve space for annotation arrows + position pills.
@@ -263,7 +272,13 @@ class Stack(PrimitiveBase):
             getattr(self, "_min_arrow_above", 0),
         )
         h += arrow_above
-        h += position_label_height_below(self._annotations, cell_height=_CELL_HEIGHT)
+        # Layer C: below-pill callout lane sits below the content + caption.
+        h += self._below_lane_height()
+
+        # #1: reserve horizontal room for position=left/right pills. Both pads
+        # are 0 (int) without left/right pills, so the box stays byte-stable.
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(core_w, right_reach)
 
         return BoundingBox(x=0, y=0, width=w, height=h)
 
@@ -310,8 +325,11 @@ class Stack(PrimitiveBase):
             position_label_height_above(effective_anns, cell_height=_CELL_HEIGHT),
             getattr(self, "_min_arrow_above", 0),
         )
-        if arrow_above > 0:
-            parts.append(f'  <g transform="translate(0, {arrow_above})">')
+        # #1: shift content right to make room for position=left pills (0 when
+        # none → "translate(0, …)", byte-identical to the pre-#1 output).
+        left_pad, _right = self._h_label_pad()
+        if arrow_above > 0 or left_pad > 0:
+            parts.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
 
         visible_count = min(len(self.items), self.max_visible)
         # Show the top N items (most recent at top in vertical)
@@ -426,7 +444,7 @@ class Stack(PrimitiveBase):
                 self_offset=self_offset,
             )
 
-        if arrow_above > 0:
+        if arrow_above > 0 or left_pad > 0:
             parts.append("  </g>")
         parts.append("</g>")
         return "".join(parts)

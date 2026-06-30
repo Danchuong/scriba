@@ -18,7 +18,6 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_svg_text,
     arrow_height_above,
-    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -556,6 +555,36 @@ class Tree(PrimitiveBase):
                 return (float(cx), float(cy))
         return None
 
+    def resolve_below_baseline(self) -> "float | None":
+        """``position=below`` pills sit in a callout lane below the whole tree
+        (clear of the lowest node), with a leader line back to the node. The
+        baseline is the content height; every node's ``cy + radius`` stays at or
+        above it (Reingold-Tilford keeps nodes inside ``height``)."""
+        return float(self.height)
+
+    def resolve_annotation_box(self, selector: str) -> "BoundingBox | None":
+        """Annotated node's circle AABB (Layer C) so a ``position=below`` pill
+        gets a leader line and the placer treats the node as a MUST blocker.
+        Coords are content-local (pre-frame-translate), matching
+        ``resolve_annotation_point``.
+
+        Scoped to selectors that actually carry a below pill: base.py feeds the
+        returned width to *every* position pill as ``cell_width`` (which drives
+        the R-07/R-08 spanning-leader), and a node's diameter is narrow enough
+        that an above/left/right pill would spuriously trip that leader. Gating
+        on an actual below pill keeps the box's effect limited to the below lane,
+        so existing above/left/right corpus pills stay byte-stable."""
+        if not self._target_has_below_pill(selector):
+            return None
+        pt = self.resolve_annotation_point(selector)
+        if pt is None:
+            return None
+        cx, cy = pt
+        r = self._node_radius
+        return BoundingBox(
+            x=int(cx - r), y=int(cy - r), width=int(2 * r), height=int(2 * r)
+        )
+
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
         arrow_above = arrow_height_above(
@@ -564,22 +593,24 @@ class Tree(PrimitiveBase):
             cell_height=float(self._node_radius * 2),
             layout="2d",
         )
-        pos_below = position_label_height_below(
-            self._annotations,
-            cell_height=float(self._node_radius * 2),
-        )
         # Defect 6 — the caption width participates in the footprint so a
         # caption wider than the tree is folded into the box, not clipped.
         # Keep the int footprint when no widening is needed so the downstream
         # transform stays byte-stable (only a genuinely wider caption grows it).
         content_w = float(self.width + 2 * r)
-        w = max(self.width + 2 * r, self._caption_block_width(content_w))
+        core_w = max(self.width + 2 * r, self._caption_block_width(content_w))
         label_h = self._top_caption_band(content_w)
+        # #1: reserve horizontal room for position=left/right pills. Both pads
+        # are 0 (int) without left/right pills, so the box stays byte-stable.
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(core_w, right_reach)
+        # #2: position=below pills occupy a callout lane below the content; the
+        # lane is 0 px without below pills, so this stays byte-stable too.
         return BoundingBox(
             x=0,
             y=0,
             width=w,
-            height=self.height + 2 * r + arrow_above + pos_below + label_h,
+            height=self.height + 2 * r + arrow_above + self._below_lane_height() + label_h,
         )
 
     def emit_svg(
@@ -603,6 +634,10 @@ class Tree(PrimitiveBase):
             cell_height=float(self._node_radius * 2),
             layout="2d",
         )
+        # #1: shift content right by left_pad so position=left pills clear the
+        # viewBox. left_pad is 0 (int) without left pills, so the transform is
+        # byte-identical to the pre-#1 "translate({r},{ty})".
+        left_pad, _right = self._h_label_pad()
 
         parts: list[str] = []
         # Offset by node radius so nodes at edge positions don't clip.
@@ -611,7 +646,7 @@ class Tree(PrimitiveBase):
         ty = r + arrow_above
         parts.append(
             f'<g data-primitive="tree" data-shape="{_escape_xml(self.name)}"'
-            f' transform="translate({r},{ty})">'
+            f' transform="translate({r + left_pad},{ty})">'
         )
 
         # Optional label / caption

@@ -25,7 +25,6 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_svg_text,
     arrow_height_above,
-    position_label_height_below,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -219,11 +218,17 @@ class LinkedList(PrimitiveBase):
                 return (float(x), float(y))
         return None
 
+    def resolve_below_baseline(self) -> "float | None":
+        """``position=below`` pills sit below the whole list (nodes + index
+        labels) in a callout lane, clear of the content. Matches the content
+        bottom reserved by :meth:`bounding_box`."""
+        return float(2 * _PADDING + _NODE_HEIGHT + _INDEX_LABEL_OFFSET)
+
     def bounding_box(self) -> BoundingBox:
         n = max(len(self.values), 1)
         content_w = n * self._node_width + (n - 1) * _LINK_GAP
         # Layer A: fold the (wrapped) caption width into the footprint.
-        w = max(2 * _PADDING + content_w, self._caption_block_width(content_w))
+        core_w = max(2 * _PADDING + content_w, self._caption_block_width(content_w))
         h = 2 * _PADDING + _NODE_HEIGHT + _INDEX_LABEL_OFFSET
         h += self._caption_block_height(content_w)
         arrow_above = arrow_height_above(
@@ -231,7 +236,12 @@ class LinkedList(PrimitiveBase):
             cell_height=_NODE_HEIGHT,
         )
         h += arrow_above
-        h += position_label_height_below(self._annotations, cell_height=_NODE_HEIGHT)
+        # Layer C: below-pill callout lane (0 without below pills → byte-stable).
+        h += self._below_lane_height()
+        # #1: reserve horizontal room for position=left/right pills. Both pads
+        # are 0 (int) without left/right pills, so the box stays byte-stable.
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(core_w, right_reach)
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     # ----- SVG rendering ---------------------------------------------------
@@ -250,6 +260,9 @@ class LinkedList(PrimitiveBase):
             effective_anns, self.resolve_annotation_point,
             cell_height=_NODE_HEIGHT,
         )
+        # #1: shift content right for position=left pills (0 when none →
+        # "translate(0, …)", byte-identical to the pre-#1 output).
+        left_pad, _ = self._h_label_pad()
 
         parts: list[str] = []
         parts.append(
@@ -257,9 +270,9 @@ class LinkedList(PrimitiveBase):
             f' data-shape="{_escape_xml(self.name)}">'
         )
 
-        # Shift all content down so arrows curve into valid space above y=0
-        if arrow_above > 0:
-            parts.append(f'<g transform="translate(0, {arrow_above})">')
+        # Shift content down (arrows) and right (left pills) into valid space.
+        if arrow_above > 0 or left_pad > 0:
+            parts.append(f'<g transform="translate({left_pad}, {arrow_above})">')
 
         # --- Arrowhead marker definition ---
         ah = self._arrowhead_size
@@ -462,8 +475,8 @@ class LinkedList(PrimitiveBase):
             self.emit_annotation_arrows(arrow_lines, effective_anns, render_inline_tex=render_inline_tex)
             parts.extend(arrow_lines)
 
-        # Close the translate group if we opened one for arrow space
-        if arrow_above > 0:
+        # Close the translate group if we opened one
+        if arrow_above > 0 or left_pad > 0:
             parts.append("</g>")
 
         parts.append("</g>")

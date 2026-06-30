@@ -6,6 +6,8 @@ overflow, and bounding box.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from scriba.animation.primitives.stack import Stack
@@ -237,3 +239,86 @@ class TestBoundingBox:
         bbox = s.bounding_box()
         assert bbox.width > 0
         assert bbox.height > 0
+
+
+# ---------------------------------------------------------------------------
+# Annotation layout — #1 horizontal pill reservation + #2 below-pill lane
+#
+# A position=right pill must fit inside bounding_box().width (it was clipped
+# when the box reserved only vertical space). A position=below pill is placed
+# in a callout lane BELOW the cell stack (orientation-dependent baseline), not
+# over the cells. With no left/right or below pills the box is byte-stable.
+# ---------------------------------------------------------------------------
+
+
+def _pill_rects(svg: str) -> list[tuple[float, float, float, float]]:
+    """(x, y, width, height) of every annotation pill ``<rect>`` in *svg*."""
+    out: list[tuple[float, float, float, float]] = []
+    for block in re.findall(r'<g class="scriba-annotation[^"]*".*?</g>', svg, re.S):
+        for m in re.finditer(
+            r'<rect x="([\-\d.]+)" y="([\-\d.]+)" '
+            r'width="([\-\d.]+)" height="([\-\d.]+)"',
+            block,
+        ):
+            out.append(
+                (
+                    float(m.group(1)),
+                    float(m.group(2)),
+                    float(m.group(3)),
+                    float(m.group(4)),
+                )
+            )
+    return out
+
+
+class TestAnnotationLayout:
+    def test_right_pill_fits_bbox(self) -> None:
+        s = Stack("s", {"items": ["A", "B", "C"]})
+        s.set_annotations(
+            [{"target": "s.item[1]", "label": "a fairly long side note",
+              "position": "right"}]
+        )
+        rects = _pill_rects(s.emit_svg())
+        assert rects, "right pill not rendered"
+        bbox_w = float(s.bounding_box().width)
+        for x, _y, w, _h in rects:
+            assert x >= -1.0
+            assert x + w <= bbox_w + 1.0
+
+    def test_below_pill_in_lane_vertical(self) -> None:
+        s = Stack("s", {"items": ["A", "B", "C"]})
+        s.set_annotations(
+            [{"target": "s.item[1]", "label": "note", "position": "below"}]
+        )
+        rects = _pill_rects(s.emit_svg())
+        assert rects, "below pill not rendered"
+        content_bottom = s.resolve_below_baseline()
+        bbox_h = float(s.bounding_box().height)
+        for _x, y, _w, h in rects:
+            assert y >= content_bottom  # below the cell stack
+            assert y + h <= bbox_h + 1.0  # lane fits inside the bbox
+
+    def test_below_pill_in_lane_horizontal(self) -> None:
+        s = Stack("s", {"items": ["A", "B"], "orientation": "horizontal"})
+        s.set_annotations(
+            [{"target": "s.item[0]", "label": "note", "position": "below"}]
+        )
+        rects = _pill_rects(s.emit_svg())
+        assert rects, "below pill not rendered"
+        content_bottom = s.resolve_below_baseline()
+        bbox_h = float(s.bounding_box().height)
+        for _x, y, _w, h in rects:
+            assert y >= content_bottom  # below the single cell row
+            assert y + h <= bbox_h + 1.0
+
+    def test_unannotated_bbox_unchanged_vertical(self) -> None:
+        s = Stack("s", {"items": ["A", "B", "C"]})
+        bbox = s.bounding_box()
+        assert bbox.width == 80 + 2 * 8
+        assert bbox.height == 3 * 36 + 2 * 4 + 2 * 8
+
+    def test_unannotated_bbox_unchanged_horizontal(self) -> None:
+        s = Stack("s", {"items": ["A", "B"], "orientation": "horizontal"})
+        bbox = s.bounding_box()
+        assert bbox.width == 2 * 80 + 1 * 4 + 2 * 8
+        assert bbox.height == 36 + 2 * 8

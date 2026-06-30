@@ -198,7 +198,11 @@ class GridPrimitive(PrimitiveBase):
 
     def resolve_annotation_box(self, selector: str) -> "BoundingBox | None":
         """Cell AABB (Layer C) so a below-pill gets a leader line and the placer
-        treats the labelled cell as a blocker."""
+        treats the labelled cell as a blocker. Scoped to below-pill targets so a
+        wide above/left/right pill on a cell never spuriously trips the spanning
+        leader."""
+        if not self._target_has_below_pill(selector):
+            return None
         m = _CELL_2D_RE.match(selector)
         if m and m.group("name") == self.name:
             r = int(m.group("row"))

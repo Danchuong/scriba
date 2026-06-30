@@ -23,7 +23,6 @@ from scriba.animation.primitives.base import (
     arrow_height_above,
     estimate_text_width,
     position_label_height_above,
-    position_label_height_below,
     register_primitive,
     state_class,
 )
@@ -293,6 +292,35 @@ class MatrixPrimitive(PrimitiveBase):
                 return (float(x), float(y))
         return None
 
+    def resolve_below_baseline(self) -> "float | None":
+        """``position=below`` pills sit below the whole matrix in a callout lane
+        (clear of the cells), with a leader line back to the labelled cell.
+        ``_total_height`` is the content bottom (the lane top)."""
+        return float(self._total_height())
+
+    def resolve_annotation_box(self, selector: str) -> BoundingBox | None:
+        """Cell AABB (Layer C) so a ``position=below`` pill gets a leader line and
+        the placer treats the labelled cell as a blocker. Includes the row/col
+        header offsets so the box tracks the rendered cell — same offsets as
+        :meth:`resolve_annotation_point`. Scoped to below-pill targets so a wide
+        above/left/right pill over a narrow cell never trips the spanning
+        leader."""
+        if not self._target_has_below_pill(selector):
+            return None
+        m = _CELL_2D_RE.match(selector)
+        if m and m.group("name") == self.name:
+            r, c = int(m.group("row")), int(m.group("col"))
+            if 0 <= r < self.rows and 0 <= c < self.cols:
+                x_offset = self.row_label_offset if self.row_labels else 0
+                y_offset = self.col_label_offset if self.col_labels else 0
+                x = x_offset + c * (self.cell_size + _CELL_GAP)
+                y = y_offset + r * (self.cell_size + _CELL_GAP)
+                return BoundingBox(
+                    x=int(x), y=int(y),
+                    width=int(self.cell_size), height=int(self.cell_size),
+                )
+        return None
+
     def emit_svg(
         self,
         *,
@@ -323,8 +351,11 @@ class MatrixPrimitive(PrimitiveBase):
             position_label_height_above(effective_anns, cell_height=self.cell_size),
             getattr(self, "_min_arrow_above", 0),
         )
-        if arrow_above > 0:
-            lines.append(f'  <g transform="translate(0, {arrow_above})">')
+        # #1: shift content right to make room for position=left pills (0 when
+        # none → "translate(0, …)", byte-identical to the pre-#1 output).
+        left_pad, _right = self._h_label_pad()
+        if arrow_above > 0 or left_pad > 0:
+            lines.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
 
         # Compute offsets for row/col labels (use dynamic values)
         x_offset = self.row_label_offset if self.row_labels else 0
@@ -431,14 +462,17 @@ class MatrixPrimitive(PrimitiveBase):
 
                 lines.append("  </g>")
 
-        # Caption label below the matrix
+        # Caption label below the matrix, beneath the below-pill lane. Drawn
+        # inside the left_pad translate group, so it centers on the matrix core
+        # width (not the left/right-padded bbox width).
         if self.label is not None:
             content_w = self._total_width()
+            core_w = max(content_w, self._caption_block_width(content_w))
             self._emit_caption(
                 lines,
                 content_width=content_w,
-                footprint_width=int(self.bounding_box().width),
-                top_y=self._total_height(),
+                footprint_width=int(core_w),
+                top_y=self._total_height() + self._below_lane_height(),
                 render_inline_tex=render_inline_tex,
             )
 
@@ -453,7 +487,7 @@ class MatrixPrimitive(PrimitiveBase):
                 self_offset=self_offset,
             )
 
-        if arrow_above > 0:
+        if arrow_above > 0 or left_pad > 0:
             lines.append("  </g>")
         lines.append("</g>")
         return "\n".join(lines)
@@ -462,9 +496,15 @@ class MatrixPrimitive(PrimitiveBase):
         """Return ``(x, y, width, height)``."""
         content_w = self._total_width()
         # Layer A: fold the (wrapped) caption width into the footprint.
-        w = max(content_w, self._caption_block_width(content_w))
-        h = self._total_height() + self._caption_block_height(content_w)
-        # Layer B/C: reserve space for annotation arrows + position pills
+        core_w = max(content_w, self._caption_block_width(content_w))
+        # Layer C: below-pill callout lane sits between the matrix and the
+        # caption (0 when there are no position=below pills → byte-stable).
+        h = (
+            self._total_height()
+            + self._below_lane_height()
+            + self._caption_block_height(content_w)
+        )
+        # Layer B/C: reserve space for annotation arrows + position=above pills
         # (mirrors Grid/DPTable). No annotations -> all terms are 0, so the box
         # is byte-stable.
         arrow_above = max(
@@ -478,7 +518,10 @@ class MatrixPrimitive(PrimitiveBase):
             getattr(self, "_min_arrow_above", 0),
         )
         h += arrow_above
-        h += position_label_height_below(self._annotations, cell_height=self.cell_size)
+        # #1: reserve horizontal room for position=left/right pills. Both pads
+        # are 0 (int) without left/right pills, so the box stays byte-stable.
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(core_w, right_reach)
         return BoundingBox(x=0, y=0, width=float(w), height=float(h))
 
     # -- internal -----------------------------------------------------------

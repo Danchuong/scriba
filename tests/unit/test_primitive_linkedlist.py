@@ -6,6 +6,8 @@ SVG output, insert/remove operations, and edge cases.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from scriba.animation.primitives.linkedlist import LinkedList
@@ -235,3 +237,75 @@ class TestEdgeCases:
         svg = inst.emit_svg()
         # The last node draws a diagonal line for null
         assert "<line" in svg
+
+
+# ---------------------------------------------------------------------------
+# Annotation-pill space reservation (#1 left/right width, #2 below-lane)
+# ---------------------------------------------------------------------------
+
+
+def _ann_pills(svg: str) -> list[tuple[str, float, float, float, float]]:
+    """Parse ``(data-annotation, x, y, w, h)`` for each rendered pill rect."""
+    pills: list[tuple[str, float, float, float, float]] = []
+    for block in re.findall(r'<g class="scriba-annotation[^"]*".*?</g>', svg, re.S):
+        key = re.search(r'data-annotation="([^"]*)"', block)
+        rect = re.search(
+            r'<rect x="([\-\d.]+)" y="([\-\d.]+)" '
+            r'width="([\-\d.]+)" height="([\-\d.]+)"',
+            block,
+        )
+        if rect:
+            x, y, w, h = (float(g) for g in rect.groups())
+            pills.append((key.group(1) if key else "", x, y, w, h))
+    return pills
+
+
+class TestAnnotationReservation:
+    """#1 horizontal pill reservation + #2 below-pill callout lane."""
+
+    @pytest.mark.parametrize("position", ["right", "left"])
+    def test_side_pill_fits_bbox_width(self, position: str) -> None:
+        inst = LinkedList("ll", {"data": [1, 2, 3]})
+        inst.set_annotations(
+            [{
+                "target": "ll.node[0]",
+                "label": "a fairly long side note",
+                "position": position,
+            }]
+        )
+        pills = _ann_pills(inst.emit_svg())
+        assert pills, f"{position} pill not rendered"
+        width = float(inst.bounding_box().width)
+        for _key, x, _y, w, _h in pills:
+            assert x >= -1.0, f"{position} pill left edge {x} clips the viewBox"
+            assert x + w <= width + 1.0, (
+                f"{position} pill right edge {x + w} exceeds bbox width {width}"
+            )
+
+    def test_below_pill_sits_below_content(self) -> None:
+        inst = LinkedList("ll", {"data": [1, 2, 3]})
+        inst.set_annotations(
+            [{"target": "ll.node[1]", "label": "below note", "position": "below"}]
+        )
+        bbox = inst.bounding_box()
+        baseline = inst.resolve_below_baseline()
+        assert baseline is not None
+        below = [
+            p for p in _ann_pills(inst.emit_svg()) if p[0].endswith("position-below")
+        ]
+        assert below, "below pill not rendered"
+        for _key, _x, y, _w, h in below:
+            assert y >= baseline, (
+                f"below pill top {y} is not below content bottom {baseline}"
+            )
+            assert y + h <= bbox.height + 1.0, "below pill clipped at bbox bottom"
+
+    def test_unannotated_bbox_unchanged(self) -> None:
+        inst = LinkedList("ll", {"data": [1, 2, 3]})
+        # No left/right or below pills → zero reservation (byte-stable footprint).
+        assert inst._h_label_pad() == (0, 0)
+        assert inst._below_lane_height() == 0
+        bbox = inst.bounding_box()
+        # No caption/annotations: height collapses to the content bottom.
+        assert bbox.height == inst.resolve_below_baseline()
+        assert (bbox.width, bbox.height) == (324, 80)
