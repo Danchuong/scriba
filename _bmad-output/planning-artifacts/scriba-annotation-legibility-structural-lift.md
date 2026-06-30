@@ -73,13 +73,51 @@ CI-enforced (`_CAPTION_MIGRATED` is monotonic — any regression fails the gate)
   golden rebaselines per primitive, each verified to be the intended geometry
   delta only (no cell/text drift).
 
-**Deferred (explicit, NOT silent debt — separate defect class, needs new tests):**
-- **Layer B** (range anchor + `┌──┐` bracket) for dptable/numberline and
-  **Layer C** (below-lane + leader) for the cell-grid set. The mechanism is
-  already in base/`_svg_helpers` (gated on `cell_width is not None` + `is_range`);
-  what's missing is per-primitive opt-in + **new unit tests** (0 corpus coverage —
-  no example uses range/below annotations on a non-Array primitive). Tracked here;
-  to be picked up as a follow-up epic, not blocking the caption fix.
+## Migration status — Layer B/C COMPLETE for the data-structure class (2026-06-30)
+
+**The "annotation accepted but silently dropped" defect is eliminated for every
+data-structure primitive**, CI-guarded by `tests/unit/test_annotation_renders.py`
+(a ratchet asserting each tracked primitive renders a position pill on its first
+target — monotonic, like the caption guard).
+
+Two real, corpus-demonstrated drops were found and fixed:
+- **NumberLine** — `\annotate{nl.tick[10]}{position=above}` ("Found!") in
+  `test_reference_grid_numline` never drew.
+- **Matrix** — `\annotate{m.cell[1][2]}{position=above}` ("MAX=0.9") in
+  `test_reference_extended` never drew.
+
+**Fixed (render annotations now):**
+- **DPTable** — Layer B: `_range_center` + `resolve_annotation_box` (1D range
+  anchor + span bracket; range was dropped). Range-scoped box → 0 cell churn.
+- **NumberLine** — range anchor in `resolve_annotation_point`; non-arrow
+  annotations routed through the shared `emit_annotation_arrows` (it only emitted
+  `arrow_from` before). Bespoke arrow path untouched → arrow fixtures byte-stable.
+- **Matrix** — full annotation scaffold (offset-aware `resolve_annotation_point`,
+  `_arrow_*`, bbox reservation, translate-group emit).
+- **Queue** — non-arrow annotations routed through the shared engine (had a
+  bespoke arrow-only path like NumberLine).
+- **Stack** — full scaffold; `resolve_annotation_point` reuses the exact
+  render-time item geometry (orientation, reversed vertical order, `max_visible`
+  window) so anchors track the drawn item.
+- Already rendered (no change): array, grid, hashmap, linkedlist, variablewatch,
+  tree, graph, **plane2d** (own coordinate-anchor model).
+
+All five fixes are byte-stable when unannotated (no reservation, no group), so
+unannotated fixtures have **zero golden churn**; only the two corpus examples
+above rebaseline (gaining the previously-dropped pill). Pre-existing lint in the
+touched files (unused imports, ambiguous `l`, dead `end`) cleaned out in
+follow-up chore commits.
+
+**Deferred (explicit, NOT silent debt — different annotation model, 0 corpus):**
+- **codepanel** (code-line annotations) and **metricplot** (plot-point
+  annotations) still drop position annotations. They are specialized
+  visualization primitives (a code editor / a continuous chart), not cell-grids;
+  annotation support there is a distinct design (line-anchor / data-point anchor)
+  rather than the cell-anchor model lifted here. The annotation-render ratchet
+  skips them with that rationale, so the gap is visible, not hidden.
+- **Layer C below-lane polish**: a `position=below` pill on NumberLine sits in
+  the tick-label band; pushing it fully clear needs the caption-below-lane rework
+  (the caption and the below-lane compete for the same space). 0 corpus; tracked.
 
 ## Blast radius (agent 3)
 ~42 distinct goldens total (~14 re-churn across multi-primitive scenes). Only 2 mandatory unit-literal edits (grid:168, numberline:169). Range fix = 0 golden churn → needs new unit tests. Cluster co-occurring primitives (test_reference_datastruct, 07_prescan, test_reference_edge_cases) to rebaseline once.
