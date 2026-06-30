@@ -11,11 +11,10 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, _animation_error
+from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     ALL_RE,
     CELL_2D_RE,
-    DEFAULT_STATE,
     THEME,
     BoundingBox,
     PrimitiveBase,
@@ -27,7 +26,6 @@ from scriba.animation.primitives.base import (
     position_label_height_below,
     register_primitive,
     state_class,
-    svg_style_attrs,
 )
 
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
@@ -230,7 +228,7 @@ class MatrixPrimitive(PrimitiveBase):
         # Dynamic label offset based on actual label content
         row_label_offset = 0
         if row_labels:
-            max_label_w = max(estimate_text_width(str(l), 10) for l in row_labels)
+            max_label_w = max(estimate_text_width(str(lbl), 10) for lbl in row_labels)
             row_label_offset = max(_LABEL_OFFSET, max_label_w + 4)
 
         col_label_offset = 0
