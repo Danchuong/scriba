@@ -34,6 +34,7 @@ _CAPTION_MIGRATED: set[str] = {
     "matrix",
     "stack",
     "grid",
+    "numberline",
 }
 
 # Long enough to exceed any minimally-constructed primitive's content width.
