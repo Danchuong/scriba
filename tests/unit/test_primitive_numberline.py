@@ -167,3 +167,50 @@ class TestBoundingBox:
         x, y, w, h = inst.bounding_box()
         assert w == 400.0
         assert h == 69.0  # 56 + 13 (one wrapped caption line, font 11 + 2)
+
+
+# ---------------------------------------------------------------------------
+# Layer B/C — position pills + 1D range annotations
+#
+# Regression: numberline only rendered `arrow_from` annotations; a
+# `position=above/below` pill (and any `range[lo:hi]` target) was silently
+# dropped even though bounding_box() reserved space for it. Route non-arrow
+# annotations through the shared annotation engine so pills and ranges render.
+# ---------------------------------------------------------------------------
+
+
+class TestPositionAndRangeAnnotation:
+    def test_position_pill_renders(self) -> None:
+        nl = NumberLinePrimitive("nl", {"domain": [0, 15], "ticks": 16})
+        nl.set_annotations(
+            [{"target": "nl.tick[10]", "label": "Found!", "position": "above"}]
+        )
+        svg = nl.emit_svg()
+        assert "Found!" in svg  # was silently dropped
+        assert "scriba-annotation" in svg  # rendered as a pill
+
+    def test_range_anchor_not_none(self) -> None:
+        nl = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 11})
+        assert nl.resolve_annotation_point("nl.range[1:3]") is not None
+
+    def test_range_anchor_is_span_midpoint(self) -> None:
+        nl = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 11})
+        pt = nl.resolve_annotation_point("nl.range[1:3]")
+        ticks = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 11})
+        mid = (ticks._tick_x(1) + ticks._tick_x(3)) / 2.0
+        assert pt is not None and abs(pt[0] - mid) < 0.5
+
+    def test_range_position_pill_renders(self) -> None:
+        nl = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 11})
+        nl.set_annotations(
+            [{"target": "nl.range[1:3]", "label": "RNG", "position": "above"}]
+        )
+        assert "RNG" in nl.emit_svg()
+
+    def test_arrow_annotation_still_renders(self) -> None:
+        """Regression: existing arrow annotations keep working."""
+        nl = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 11})
+        nl.set_annotations(
+            [{"target": "nl.tick[3]", "arrow_from": "nl.tick[1]", "label": "mv"}]
+        )
+        assert "mv" in nl.emit_svg()

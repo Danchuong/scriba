@@ -157,6 +157,9 @@ class NumberLinePrimitive(PrimitiveBase):
         self.tick_labels: list[str] = tick_labels
         self.label: str | None = label
         self.width: int = width
+        # Tick band height — the "cell height" the shared annotation engine uses
+        # to offset position pills from the tick anchor (Layer B/C pill path).
+        self._arrow_cell_height = float(NL_TICK_BOTTOM - NL_TICK_TOP)
 
     # -- internal: tick position ---------------------------------------------
 
@@ -170,7 +173,12 @@ class NumberLinePrimitive(PrimitiveBase):
     # -- PrimitiveBase interface --------------------------------------------
 
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
-        """Map ``'N.tick[3]'`` to the SVG center of that tick mark."""
+        """Map ``'N.tick[3]'`` or ``'N.range[1:3]'`` to its SVG anchor.
+
+        Layer B — a ``range[lo:hi]`` target validated true but had no anchor, so
+        the annotation was silently dropped. The range anchor is the midpoint
+        between its end ticks (top edge, arrows curve above).
+        """
         prefix = f"{self.name}."
         local = selector[len(prefix):] if selector.startswith(prefix) else selector
         m = _SUFFIX_TICK_RE.match(local)
@@ -180,6 +188,12 @@ class NumberLinePrimitive(PrimitiveBase):
                 x = float(self._tick_x(idx))
                 y = float(NL_TICK_TOP)  # top of tick — arrows curve above
                 return (x, y)
+        m = _SUFFIX_RANGE_RE.match(local)
+        if m:
+            lo, hi = int(m.group("lo")), int(m.group("hi"))
+            if 0 <= lo <= hi < self.tick_count:
+                x = (self._tick_x(lo) + self._tick_x(hi)) / 2.0
+                return (float(x), float(NL_TICK_TOP))
         return None
 
     def addressable_parts(self) -> list[str]:
@@ -299,7 +313,7 @@ class NumberLinePrimitive(PrimitiveBase):
                 render_inline_tex=render_inline_tex,
             )
 
-        # Arrow annotations
+        # Arrow annotations (bespoke tick-geometry path, unchanged).
         arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
         tick_height = NL_TICK_BOTTOM - NL_TICK_TOP
         placed: list[_LabelPlacement] = []
@@ -317,6 +331,21 @@ class NumberLinePrimitive(PrimitiveBase):
                     tick_height, render_inline_tex,
                     placed_labels=placed,
                 )
+
+        # Position pills + range targets (non-arrow annotations): route through
+        # the shared annotation engine so position=above/below pills and range
+        # spans render. Previously numberline only emitted arrow_from
+        # annotations, so these were silently dropped despite bounding_box()
+        # reserving space for them.
+        pill_anns = [a for a in effective_anns if not a.get("arrow_from")]
+        if pill_anns:
+            self.emit_annotation_arrows(
+                lines,
+                pill_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
 
         # Close translate group if opened for arrow space
         if arrow_above > 0:
