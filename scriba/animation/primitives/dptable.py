@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, _animation_error
+from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     ALL_RE,
     CELL_1D_RE,
@@ -22,7 +22,6 @@ from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
     PrimitiveBase,
-    _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
