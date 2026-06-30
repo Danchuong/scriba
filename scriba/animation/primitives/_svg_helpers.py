@@ -3032,6 +3032,7 @@ def _place_pill(
     viewbox_h: float,
     side_hint: "str | None" = None,
     overlap_pad: float = 0.0,
+    extra_obstacles: "tuple[_Obstacle, ...]" = (),
     _debug_capture: "dict[str, Any] | None" = None,
 ) -> "tuple[_LabelPlacement, bool]":
     """Place a pill label using weighted scoring argmin (v0.12.0 W1).
@@ -3061,6 +3062,11 @@ def _place_pill(
         encoded in ``_ScoreContext`` for P3 (side-hint violation) term.
     overlap_pad:
         Retained for API compatibility; not used by the scoring path.
+    extra_obstacles:
+        Additional obstacles merged into the scoring set alongside the
+        placed-label AABBs — e.g. cross-primitive segment obstacles from
+        ``resolve_obstacle_segments`` (W3-α+).  Empty by default so every
+        existing caller's obstacle set is unchanged.
     _debug_capture:
         When provided, receives diagnostic keys ``natural_x``,
         ``natural_y``, ``final_x``, ``final_y``, ``collision_unresolved``,
@@ -3083,10 +3089,12 @@ def _place_pill(
         cy = max(half_h, min(cy, viewbox_h - half_h))
         return cx, cy
 
-    # Build obstacles tuple from the placed-label registry (entry shim, §1.3).
+    # Build obstacles tuple from the placed-label registry (entry shim, §1.3),
+    # plus any caller-supplied extra obstacles (cross-primitive segment
+    # obstacles from resolve_obstacle_segments — W3-α+).
     obstacles: tuple[_Obstacle, ...] = tuple(
         _lp_to_obstacle(p) for p in placed_labels
-    )
+    ) + extra_obstacles
 
     # Build scoring context.  W1 callers don't supply arc_direction or
     # color_token, so we use neutral defaults (P6=0, P4=constant).
@@ -3248,18 +3256,11 @@ def emit_position_label_svg(
     if placed_labels is not None:
         if primitive_obstacles:
             # W3-α+: use _place_pill so MUST-severity segment obstacles (e.g.
-            # cross-primitive Plane2D lines) are treated as hard blocks.
-            # Merge placed-label AABBs with segment obstacles into one tuple.
-            # FIXME(pre-existing latent bug): all_obs is computed but never
-            # passed — _place_pill below is called with placed_labels=[] and no
-            # obstacle argument, so cross-primitive obstacle avoidance via this
-            # path is currently inert. It can't be passed as-is (all_obs is
-            # tuple[_Obstacle], _place_pill.placed_labels is list[_LabelPlacement]) —
-            # the _place_pill refactor orphaned this merge. Needs a W3-α+ owner to
-            # restore obstacle plumbing; flagged rather than silently deleted.
-            all_obs: tuple[_Obstacle, ...] = tuple(  # noqa: F841 — see FIXME above
-                _lp_to_obstacle(p) for p in placed_labels
-            ) + primitive_obstacles
+            # cross-primitive Plane2D lines) are treated as hard blocks, merged
+            # with the already-placed pill AABBs from the registry.  The segment
+            # obstacles flow through ``extra_obstacles`` (the placed-label AABBs
+            # are derived from ``placed_labels`` inside _place_pill), so both
+            # obstacle classes reach the scoring argmin.
             # Use a very large viewbox so clamping does not interfere; the
             # caller's viewbox is not available here, so use a safe sentinel.
             _vb = 8192.0
@@ -3268,7 +3269,8 @@ def emit_position_label_svg(
                 natural_y=final_y - l_font_px * 0.3,
                 pill_w=float(pill_w),
                 pill_h=float(pill_h),
-                placed_labels=[],  # already baked into all_obs above
+                placed_labels=placed_labels,
+                extra_obstacles=primitive_obstacles,
                 viewbox_w=_vb,
                 viewbox_h=_vb,
                 side_hint=position if position in ("above", "below", "left", "right") else None,
