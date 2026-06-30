@@ -25,7 +25,7 @@ from tests.unit.test_obstacle_protocol import _ALL_PRIMITIVE_CLASSES, _make_inst
 
 # Primitives whose caption width is reflected in bounding_box() (migrated).
 # GROWS as primitives adopt the shared caption layer. Never shrinks.
-_CAPTION_MIGRATED: set[str] = {"array"}
+_CAPTION_MIGRATED: set[str] = {"array", "queue"}
 
 # Long enough to exceed any minimally-constructed primitive's content width.
 _LONG_CAPTION = (
