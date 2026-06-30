@@ -153,8 +153,6 @@ class TestPillShiftsAwayFromCrossPrimitiveSegment:
         # Add a line to plane2d that, when translated to Array's frame, lands
         # exactly where the pill would be placed by default (above cell[2]).
         # Array cell[2] center in Array-local coords:
-        from scriba.animation.primitives._types import CELL_WIDTH, CELL_GAP
-        cell_cx = (CELL_WIDTH + CELL_GAP) * 2 + CELL_WIDTH / 2
         # Natural pill y for position=above is approx cell_cx_y - some offset above 0
         # In Array's local frame with arrow_above, default pill y is negative
         # (above y=0 of the translate group).  We construct a horizontal MUST

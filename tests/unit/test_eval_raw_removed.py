@@ -34,7 +34,7 @@ class TestEvalRawRemoved:
         """Wire-level op='eval_raw' must return E1156 with a migration hint."""
         pool = SubprocessWorkerPool()
         try:
-            host = StarlarkHost(pool)
+            StarlarkHost(pool)
             worker = pool.get("starlark")
             response = worker.send(
                 {"op": "eval_raw", "id": "canary-01", "globals": {}, "source": "x = 1"},

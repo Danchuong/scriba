@@ -82,7 +82,7 @@ class TestInterpolationBindingPositivePaths:
         )
         with warnings.catch_warnings(record=True) as caught:
             warnings.simplefilter("always")
-            ir = parser.parse(src)
+            parser.parse(src)
 
         assert _binding_warnings(caught) == [], (
             f"expected no binding warning, got: {_binding_warnings(caught)}"

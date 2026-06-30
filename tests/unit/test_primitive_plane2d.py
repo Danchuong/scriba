@@ -362,14 +362,14 @@ class TestEmitSvg:
         """Non-closed polygon emits E1462 warning."""
         import logging
         with caplog.at_level(logging.WARNING):
-            p = Plane2D("p", {"polygons": [[(0, 0), (1, 0), (1, 1)]]})
+            Plane2D("p", {"polygons": [[(0, 0), (1, 0), (1, 1)]]})
         assert any("E1462" in r.message for r in caplog.records)
 
     def test_point_outside_viewport_warning(self, caplog: pytest.LogCaptureFixture) -> None:
         """Point outside viewport emits E1463 warning."""
         import logging
         with caplog.at_level(logging.WARNING):
-            p = Plane2D("p", {"xrange": [0, 5], "yrange": [0, 5], "points": [(-10, -10)]})
+            Plane2D("p", {"xrange": [0, 5], "yrange": [0, 5], "points": [(-10, -10)]})
         assert any("E1463" in r.message for r in caplog.records)
 
     def test_wrapper_has_data_attributes(self) -> None:

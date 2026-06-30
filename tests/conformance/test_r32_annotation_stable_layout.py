@@ -318,7 +318,6 @@ def _parse_frame_translate_ys(html: str, shape_name: str) -> list[float]:
     every occurrence of the outer translate-Y wrapper for shape_name.
     """
     # Split on frame boundaries — each frame is wrapped in a data-frame div
-    frame_re = re.compile(r'data-frame="\d+"[^>]*>(.*?)(?=data-frame="\d+"|$)', re.DOTALL)
     # Simpler: just collect ALL translate-Y values for the shape across the
     # whole HTML blob, one per frame (the shape appears exactly once per frame).
     outer_translate_re = re.compile(

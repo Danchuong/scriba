@@ -90,7 +90,7 @@ class TestBreakCycles:
         assert len(rev) == 1  # exactly one back edge reversed
         # After reversal the graph is acyclic — _assign_layers should terminate
         layers = _assign_layers(nodes, dag)
-        assert sum(len(l) for l in layers) == 3
+        assert sum(len(layer) for layer in layers) == 3
 
     def test_self_loop_dropped(self) -> None:
         dag, rev = _break_cycles(["a"], [("a", "a")])
@@ -106,7 +106,7 @@ class TestBreakCycles:
         dag, rev = _break_cycles(nodes, edges)
         assert len(rev) == 2  # one back edge per cycle
         layers = _assign_layers(nodes, dag)
-        assert sum(len(l) for l in layers) == 6
+        assert sum(len(layer) for layer in layers) == 6
 
 
 # ---------------------------------------------------------------------------

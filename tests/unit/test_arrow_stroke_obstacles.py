@@ -300,7 +300,6 @@ class TestMultiAnnotationConvergence:
 
         # Re-sample arcs for checking (we know the geometry).
         # Use a generous pill size for the intersection check.
-        pill_w, pill_h = 50.0, 20.0
 
         # For each pill, assert no arc segment has significant clip length inside it.
         for pill in placed:

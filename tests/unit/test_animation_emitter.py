@@ -586,7 +586,7 @@ class TestDuplicateFrameLabelRaises:
 
     def test_unsafe_duplicate_labels_do_not_raise(self) -> None:
         """Duplicates amongst non-id-safe labels are harmless."""
-        prim = _StubPrimitive(shape_name="a")
+        _StubPrimitive(shape_name="a")
         frames = [
             _frame(step=1, total=2, label="Free form text"),
             _frame(step=2, total=2, label="Free form text"),

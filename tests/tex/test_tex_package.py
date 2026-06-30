@@ -57,7 +57,8 @@ def test_provider_installs_callback_when_tex_renderer_present(tex_renderer):
 def test_provider_is_idempotent_when_callback_already_set(tex_renderer):
     """If the context already has ``render_inline_tex``, the provider leaves
     it alone and returns the context unchanged."""
-    existing = lambda s: f"<stub:{s}>"
+    def existing(s):
+        return f"<stub:{s}>"
     ctx = _make_ctx(render_inline_tex=existing)
 
     result = tex_inline_provider(ctx, [tex_renderer])

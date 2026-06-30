@@ -321,7 +321,6 @@ def test_placeholder_uses_fresh_nonce_per_render():
     ensuring that output from render #1 cannot pollute render #2.
     """
 
-    seen_nonces: list[str] = []
 
     class SnoopRenderer:
         name = "snoop"
