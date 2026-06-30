@@ -10,12 +10,11 @@ Covers:
 
 from __future__ import annotations
 
-import pytest
 
 from scriba.animation.primitives.array import ArrayPrimitive
 from scriba.animation.primitives.base import emit_plain_arrow_svg
 from scriba.animation.renderer import _snapshot_to_frame_data
-from scriba.animation.scene import AnnotationEntry, FrameSnapshot, SceneState
+from scriba.animation.scene import AnnotationEntry, FrameSnapshot
 from scriba import RenderContext
 
 

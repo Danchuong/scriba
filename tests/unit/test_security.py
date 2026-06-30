@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import resource
-import sys
 
 import pytest
 

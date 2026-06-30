@@ -8,10 +8,9 @@ M7 — prefers-reduced-motion live MediaQueryList listener
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-import pytest
 
 from scriba.animation.emitter import (
     FrameData,

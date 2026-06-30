@@ -5,10 +5,9 @@ Wave 8 Round A — P7 A01 regression guard.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
-import pytest
 
 from scriba.animation.emitter import FrameData, emit_animation_html
 

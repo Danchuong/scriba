@@ -38,7 +38,6 @@ from scriba.animation.primitives.queue import Queue as QueuePrimitive
 from scriba.animation.primitives.plane2d import Plane2D as Plane2DPrimitive
 from scriba.animation.primitives.tree import Tree as TreePrimitive
 from scriba.animation.primitives.graph import Graph as GraphPrimitive
-from scriba.animation.primitives._types import BoundingBox
 from scriba.animation.primitives._svg_helpers import arrow_height_above, position_label_height_above
 from scriba.animation.renderer import AnimationRenderer
 from scriba.core.context import RenderContext

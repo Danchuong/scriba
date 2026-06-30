@@ -13,7 +13,6 @@ from scriba.animation.primitives._svg_helpers import (
     _LabelPlacement,
     emit_arrow_svg,
     emit_plain_arrow_svg,
-    emit_position_label_svg,
 )
 
 

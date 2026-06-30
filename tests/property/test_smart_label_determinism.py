@@ -14,7 +14,6 @@ D-4  test_d4_debug_flag_captured_at_import     — _DEBUG_LABELS frozen at impor
 """
 from __future__ import annotations
 
-import os
 import random
 import re
 from unittest import mock

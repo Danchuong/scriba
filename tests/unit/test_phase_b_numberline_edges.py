@@ -13,9 +13,7 @@ from scriba.animation.primitives.numberline import (
     NL_PADDING,
     NL_WIDTH,
     NumberLinePrimitive,
-    _resolve_labels,
 )
-from scriba.animation.primitives.base import STATE_COLORS
 from scriba.core.errors import ValidationError
 
 

@@ -7,7 +7,6 @@ H1 — Path traversal via -o flag            (render.py lines 246-254)
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 

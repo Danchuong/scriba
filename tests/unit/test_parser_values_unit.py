@@ -19,7 +19,7 @@ from __future__ import annotations
 
 import pytest
 
-from scriba.animation.parser.grammar import SceneParser, ApplyCommand, ShapeCommand
+from scriba.animation.parser.grammar import SceneParser, ApplyCommand
 from scriba.animation.parser.ast import InterpolationRef
 from scriba.core.errors import ValidationError
 

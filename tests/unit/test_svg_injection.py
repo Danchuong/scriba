@@ -28,13 +28,10 @@ from __future__ import annotations
 
 import re
 
-import pytest
 
 from scriba.animation.emitter import (
     FrameData,
     emit_animation_html,
-    emit_html,
-    emit_interactive_html,
 )
 from scriba.animation.primitives.array import ArrayPrimitive
 from scriba.animation.primitives.graph import Graph

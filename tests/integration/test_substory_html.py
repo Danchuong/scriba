@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import re
 
 from scriba.animation.emitter import (
     FrameData,
     SubstoryData,
     emit_animation_html,
-    emit_substory_html,
 )
 
 

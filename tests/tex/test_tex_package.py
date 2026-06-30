@@ -9,10 +9,9 @@ from __future__ import annotations
 
 import dataclasses
 
-import pytest
 
 import scriba.tex as scriba_tex
-from scriba import RenderContext, SubprocessWorkerPool
+from scriba import RenderContext
 from scriba.tex import TexRenderer, tex_inline_provider
 
 

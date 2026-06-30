@@ -14,7 +14,7 @@ from scriba.animation.parser.ast import (
     Selector,
     ShapeCommand,
 )
-from scriba.animation.scene import AnnotationEntry, SceneState, ShapeTargetState
+from scriba.animation.scene import SceneState
 
 
 # ---------------------------------------------------------------------------

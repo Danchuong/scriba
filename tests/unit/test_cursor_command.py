@@ -14,7 +14,6 @@ import pytest
 from scriba.animation.parser.ast import (
     CursorCommand,
     FrameIR,
-    InterpolationRef,
     ShapeCommand,
 )
 from scriba.animation.parser.grammar import SceneParser

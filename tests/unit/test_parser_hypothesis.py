@@ -21,7 +21,6 @@ from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.parser.selectors import (
     AllAccessor,
     CellAccessor,
-    NamedAccessor,
     NodeAccessor,
     Selector,
     parse_selector,

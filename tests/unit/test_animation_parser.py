@@ -5,16 +5,11 @@ from __future__ import annotations
 import pytest
 
 from scriba.animation.parser.grammar import (
-    AnimationIR,
     AnnotateCommand,
     ApplyCommand,
-    ComputeCommand,
-    FrameIR,
     HighlightCommand,
-    NarrateCommand,
     RecolorCommand,
     SceneParser,
-    ShapeCommand,
 )
 from scriba.animation.parser.selectors import (
     AllAccessor,

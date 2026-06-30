@@ -8,7 +8,7 @@ from __future__ import annotations
 import pytest
 
 from scriba.animation.renderer import AnimationRenderer, DiagramRenderer
-from scriba.core.artifact import Block, RenderArtifact
+from scriba.core.artifact import RenderArtifact
 from scriba.core.context import RenderContext
 
 

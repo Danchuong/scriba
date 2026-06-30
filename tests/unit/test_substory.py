@@ -255,8 +255,6 @@ class TestSubstorySceneState:
     def test_scope_isolation_parent_state_restored(self):
         """Parent state is restored after substory."""
         from scriba.animation.parser.ast import (
-            ApplyCommand,
-            ComputeCommand,
             RecolorCommand,
             Selector,
             ShapeCommand,

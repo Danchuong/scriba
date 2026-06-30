@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import pytest
 
-from scriba import SubprocessWorkerPool
 from scriba.tex import TexRenderer
 
 

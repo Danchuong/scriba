@@ -7,18 +7,13 @@ to shape instantiation.
 from __future__ import annotations
 
 from typing import Any
-from unittest.mock import MagicMock
 
-import pytest
 
 from scriba.animation.parser.ast import (
-    AnimationIR,
-    AnimationOptions,
     ComputeCommand,
     FrameIR,
-    ShapeCommand,
 )
-from scriba.animation.renderer import _instantiate_primitive, _resolve_params
+from scriba.animation.renderer import _resolve_params
 from scriba.animation.scene import SceneState
 
 

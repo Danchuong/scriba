@@ -25,7 +25,6 @@ from __future__ import annotations
 
 import unicodedata
 
-import pytest
 
 from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.primitives.array import ArrayPrimitive

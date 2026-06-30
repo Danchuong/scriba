@@ -15,7 +15,6 @@ exercise it directly with synthetic candidates.
 
 from __future__ import annotations
 
-import math
 import time
 
 import pytest

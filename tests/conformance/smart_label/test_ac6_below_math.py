@@ -8,8 +8,6 @@ from __future__ import annotations
 import pytest
 
 from scriba.animation.primitives._svg_helpers import (
-    _LABEL_HEADROOM,
-    _LABEL_PILL_PAD_Y,
     position_label_height_above,
     position_label_height_below,
 )

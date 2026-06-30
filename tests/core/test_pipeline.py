@@ -98,7 +98,6 @@ def test_pipeline_empty_renderers_raises():
 
 
 def test_pipeline_block_data_roundtrip():
-    from pathlib import Path
 
     class DataRenderer:
         name = "data"
@@ -130,7 +129,6 @@ def test_pipeline_block_data_roundtrip():
 
 
 def test_pipeline_asset_namespace_avoids_collision(tmp_path):
-    from pathlib import Path
 
     a_css = tmp_path / "a" / "style.css"
     b_css = tmp_path / "b" / "style.css"

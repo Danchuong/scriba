@@ -10,7 +10,7 @@ import pytest
 
 from scriba.animation.detector import detect_diagram_blocks
 from scriba.animation.renderer import AnimationRenderer, DiagramRenderer
-from scriba.core.artifact import Block, RenderArtifact
+from scriba.core.artifact import RenderArtifact
 from scriba.core.context import RenderContext
 from scriba.core.errors import ValidationError
 

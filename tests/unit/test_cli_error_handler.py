@@ -10,7 +10,6 @@ import sys
 import textwrap
 from pathlib import Path
 
-import pytest
 
 
 def _render_py() -> str:

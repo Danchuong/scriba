@@ -15,7 +15,6 @@ import pytest
 from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.parser.ast import (
     SubstoryBlock,
-    HighlightCommand,
     RecolorCommand,
     ApplyCommand,
     ComputeCommand,

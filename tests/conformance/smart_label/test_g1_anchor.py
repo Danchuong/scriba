@@ -10,8 +10,6 @@ import pytest
 
 from scriba.animation.primitives._svg_helpers import (
     _LabelPlacement,
-    _LABEL_PILL_PAD_X,
-    emit_arrow_svg,
     emit_plain_arrow_svg,
     _place_pill,
 )

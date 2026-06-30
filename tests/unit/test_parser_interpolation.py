@@ -17,11 +17,8 @@ import pytest
 from scriba.animation.parser.grammar import SceneParser
 from scriba.animation.parser.ast import (
     ApplyCommand,
-    ForeachCommand,
-    HighlightCommand,
     InterpolationRef,
 )
-from scriba.core.errors import ValidationError
 
 # Sentinel text that appears in the warning emitted by
 # _check_interpolation_binding when no binding is found.

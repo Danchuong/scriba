@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from scriba.animation.extensions.keyframes import (
     KEYFRAME_PRESETS,

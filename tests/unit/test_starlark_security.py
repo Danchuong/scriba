@@ -12,8 +12,6 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
-import time
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -24,9 +22,7 @@ from scriba.animation.starlark_worker import (
     _safe_list,
     _safe_set,
     _safe_tuple,
-    consume_cumulative_budget,
     _format_compute_traceback,
-    reset_cumulative_budget,
 )
 from scriba.core.errors import WorkerError
 from scriba.core.workers import SubprocessWorkerPool

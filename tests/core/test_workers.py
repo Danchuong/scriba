@@ -176,7 +176,6 @@ def test_persistent_worker_send_uses_ensure_ascii_true():
     corrupt the newline-delimited protocol.
     """
     import json
-    import sys
 
     captured: dict[str, str] = {}
 
@@ -253,7 +252,6 @@ def test_oneshot_worker_uses_ensure_ascii_true():
     We verify by pointing the worker at a python -c that echoes the raw
     stdin line back on stdout.
     """
-    import json
 
     argv = [
         sys.executable,

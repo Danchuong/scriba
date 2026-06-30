@@ -10,7 +10,6 @@ Covers:
 
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -222,8 +221,6 @@ class TestNarrationDirAuto:
 
     def test_narration_p_has_dir_auto(self) -> None:
         """emit_interactive_html must include dir=\"auto\" on scriba-narration."""
-        from dataclasses import dataclass, field
-        from typing import Any
 
         from scriba.animation.emitter import FrameData, emit_interactive_html
         from scriba.animation.primitives.array import ArrayPrimitive

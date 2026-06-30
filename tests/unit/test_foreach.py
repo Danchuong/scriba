@@ -8,9 +8,7 @@ Covers:
 
 from __future__ import annotations
 
-import copy
 from typing import Any
-from unittest.mock import MagicMock
 
 import pytest
 
@@ -21,7 +19,6 @@ from scriba.animation.parser.ast import (
     ComputeCommand,
     ForeachCommand,
     FrameIR,
-    HighlightCommand,
     InterpolationRef,
     RecolorCommand,
     Selector,

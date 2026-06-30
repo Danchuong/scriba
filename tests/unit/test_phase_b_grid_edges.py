@@ -9,7 +9,6 @@ from __future__ import annotations
 import pytest
 
 from scriba.animation.primitives.grid import GridPrimitive
-from scriba.animation.primitives.base import STATE_COLORS
 from scriba.core.errors import ValidationError
 
 

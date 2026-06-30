@@ -6,10 +6,9 @@ pop from empty, selectors, max_visible overflow, state, and highlight.
 
 from __future__ import annotations
 
-import pytest
 
-from scriba.animation.primitives.stack import Stack, StackItem
-from scriba.animation.primitives.base import BoundingBox, STATE_COLORS
+from scriba.animation.primitives.stack import Stack
+from scriba.animation.primitives.base import BoundingBox
 
 
 # ---------------------------------------------------------------------------

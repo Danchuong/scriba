@@ -17,7 +17,6 @@ from scriba import (
     ALLOWED_ATTRS,
     ALLOWED_TAGS,
     Document,
-    Pipeline,
     Renderer,
     RendererAssets,
     RenderArtifact,

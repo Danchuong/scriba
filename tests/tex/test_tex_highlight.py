@@ -14,7 +14,6 @@ Cluster 8 coverage push — tests only, no source edits.
 
 from __future__ import annotations
 
-import pytest
 
 from scriba.tex.highlight import _heuristic_detect, highlight_code
 

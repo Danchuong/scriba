@@ -24,7 +24,6 @@ import pytest
 import scriba.animation.primitives._svg_helpers as _svg_helpers_mod
 from scriba.animation.primitives._svg_helpers import (
     _LabelPlacement,
-    _label_has_math,
     _label_width_text,
     _nudge_candidates,
     _wrap_label_lines,

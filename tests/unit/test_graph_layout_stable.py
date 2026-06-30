@@ -13,7 +13,6 @@ import pytest
 from scriba.animation.primitives.graph_layout_stable import (
     _count_edge_crossings,
     _distance_penalty,
-    _segments_intersect,
     compute_stable_layout,
 )
 from scriba.core.context import RenderContext

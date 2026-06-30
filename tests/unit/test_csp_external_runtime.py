@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 import re
 
-import pytest
 
 from scriba.animation.emitter import FrameData, emit_html, emit_interactive_html
 

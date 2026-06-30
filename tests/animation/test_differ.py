@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from scriba.animation.differ import Transition, TransitionManifest, compute_transitions
+from scriba.animation.differ import compute_transitions
 from scriba.animation.emitter import FrameData
 
 GOLDEN_DIR = Path(__file__).parent.parent / "golden" / "animation"

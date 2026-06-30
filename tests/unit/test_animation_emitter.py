@@ -634,7 +634,6 @@ class TestSubstoryFrameLabelPropagation:
         """
         from scriba.animation.parser.grammar import SceneParser
         from scriba.animation.renderer import _snapshot_to_frame_data  # noqa: F401
-        from scriba.animation.scene import SceneState
 
         src = (
             "\\shape{a}{Array}{size=5}\n"
