@@ -8,7 +8,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, _animation_error
+from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     ALL_RE,
     CELL_1D_RE,
@@ -552,35 +552,46 @@ class ArrayPrimitive(PrimitiveBase):
 
     def _bbox_width(self) -> int:
         """Footprint width: wide enough for the cell row, the caption, AND the
-        ``position=below`` callout pills (which are centred on their cell and
-        can extend past the row on edge cells — otherwise they clip).
+        ``position=below``/``left``/``right`` callout pills (which extend past
+        the row on edge cells — otherwise they clip).
 
-        Defect 6 (caption) + lane-pill extent. Single source of truth shared
-        by ``emit_svg`` and ``bounding_box``. Computed in content-local space
-        (cells before ``row_dx``), centred on the cell-row centre, so the
-        result is symmetric and ``row_dx`` keeps everything centred.
+        Defect 6 (caption) + lane-pill extent + #1 left/right extent. Single
+        source of truth shared by ``emit_svg`` and ``bounding_box``. Computed in
+        content-local space (cells before ``row_dx``), centred on the cell-row
+        centre, so the result is symmetric and ``row_dx`` keeps everything
+        centred. (Anchors include ``row_dx`` so this stays non-circular by using
+        content-local cell centres, not ``resolve_label_anchor``.)
         """
         content = self._total_width()
         cw = self._cell_width
         half = max(content / 2.0, self._caption_block_width(self._total_width()) / 2.0)
         center = content / 2.0
+        gap = max(4.0, CELL_HEIGHT * 0.1)
         for a in self._annotations:
+            pos = a.get("position", "above")
             if (
-                a.get("label")
-                and a.get("position") == "below"
-                and not a.get("arrow_from")
-                and not a.get("arrow")
+                not a.get("label")
+                or pos not in ("below", "left", "right")
+                or a.get("arrow_from")
+                or a.get("arrow")
             ):
-                target = a.get("target", "")
-                m = _CELL_RE.match(target)
-                if m and m.group("name") == self.name and 0 <= int(m.group("idx")) < self.size:
-                    cell_cx = int(m.group("idx")) * (cw + CELL_GAP) + cw / 2.0
-                elif (mr := _RANGE_RE.match(target)) and mr.group("name") == self.name:
-                    lo, hi = int(mr.group("lo")), int(mr.group("hi"))
-                    cell_cx = (lo * (cw + CELL_GAP) + hi * (cw + CELL_GAP) + cw) / 2.0
-                else:
-                    continue
-                half = max(half, abs(cell_cx - center) + self._below_pill_width(a["label"]) / 2.0)
+                continue
+            target = a.get("target", "")
+            m = _CELL_RE.match(target)
+            if m and m.group("name") == self.name and 0 <= int(m.group("idx")) < self.size:
+                cell_cx = int(m.group("idx")) * (cw + CELL_GAP) + cw / 2.0
+            elif (mr := _RANGE_RE.match(target)) and mr.group("name") == self.name:
+                lo, hi = int(mr.group("lo")), int(mr.group("hi"))
+                cell_cx = (lo * (cw + CELL_GAP) + hi * (cw + CELL_GAP) + cw) / 2.0
+            else:
+                continue
+            pw = self._below_pill_width(a["label"])
+            if pos == "below":
+                half = max(half, abs(cell_cx - center) + pw / 2.0)
+            elif pos == "right":
+                half = max(half, (cell_cx + pw + gap) - center)
+            else:  # left
+                half = max(half, center - (cell_cx - pw - gap))
         return int(2 * half)
 
     def _row_dx(self) -> int:

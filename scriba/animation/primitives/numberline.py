@@ -237,14 +237,16 @@ class NumberLinePrimitive(PrimitiveBase):
 
         effective_anns = self._annotations
         arrow_above = self._arrow_height_above(effective_anns)
+        # #1: shift content right for position=left pills (0 when none).
+        left_pad, _right = self._h_label_pad()
 
         lines: list[str] = [
             f'<g data-primitive="numberline" data-shape="{self.name}">'
         ]
 
-        # Shift content down so arrows curve into valid space above y=0
-        if arrow_above > 0:
-            lines.append(f'  <g transform="translate(0, {arrow_above})">')
+        # Shift content down (arrows) and right (left pills) into valid space.
+        if arrow_above > 0 or left_pad > 0:
+            lines.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
 
         # Emit arrowhead marker defs
         emit_arrow_marker_defs(lines, effective_anns)
@@ -312,7 +314,11 @@ class NumberLinePrimitive(PrimitiveBase):
             self._emit_caption(
                 lines,
                 content_width=self.width,
-                footprint_width=int(self.bounding_box().width),
+                # Core width (not the left/right-padded bbox width): the caption
+                # is inside the left_pad-shifted group, so it centers on content.
+                footprint_width=int(
+                    max(float(self.width), float(self._caption_block_width(self.width)))
+                ),
                 top_y=int(NL_HEIGHT + below_lane),
                 render_inline_tex=render_inline_tex,
             )
@@ -351,8 +357,8 @@ class NumberLinePrimitive(PrimitiveBase):
                 self_offset=self_offset,
             )
 
-        # Close translate group if opened for arrow space
-        if arrow_above > 0:
+        # Close translate group if opened for arrow/left-pad space
+        if arrow_above > 0 or left_pad > 0:
             lines.append("  </g>")
 
         lines.append("</g>")
@@ -380,6 +386,11 @@ class NumberLinePrimitive(PrimitiveBase):
 
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
+
+        # #1: reserve horizontal room for position=left/right pills (0 without
+        # them, so the box is byte-stable in the common case).
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(w, float(right_reach))
 
         return BoundingBox(x=0.0, y=0.0, width=w, height=float(h))
 

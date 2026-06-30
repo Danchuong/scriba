@@ -32,6 +32,7 @@ _RICH_CTOR: dict[type, tuple[str, dict]] = {
 # Primitives whose bounding_box() reserves horizontal space for left/right
 # pills. GROWS as primitives opt in. Never shrinks.
 _H_RESERVED: set[str] = {
+    "array",
     "grid",
     "dptable",
     "matrix",
@@ -43,6 +44,7 @@ _H_RESERVED: set[str] = {
     "codepanel",
     "tree",
     "graph",
+    "numberline",
 }
 
 
