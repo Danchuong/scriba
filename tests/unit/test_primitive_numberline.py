@@ -214,3 +214,42 @@ class TestPositionAndRangeAnnotation:
             [{"target": "nl.tick[3]", "arrow_from": "nl.tick[1]", "label": "mv"}]
         )
         assert "mv" in nl.emit_svg()
+
+
+# ---------------------------------------------------------------------------
+# Layer C — position=below pill clears the tick labels (caption-below-lane)
+# ---------------------------------------------------------------------------
+
+
+class TestBelowPillLane:
+    def test_below_pill_clears_tick_labels(self) -> None:
+        """A position=below pill sits below the tick labels (NL_LABEL_Y), not
+        in the label band where it used to land."""
+        import re
+        from scriba.animation.primitives.numberline import NL_LABEL_Y
+
+        nl = NumberLinePrimitive("nl", {"domain": [0, 10], "ticks": 11})
+        nl.set_annotations(
+            [{"target": "nl.tick[5]", "label": "BELOW", "position": "below"}]
+        )
+        svg = nl.emit_svg()
+        m = re.search(
+            r'scriba-annotation.*?<rect x="[\d.]+" y="([\d.]+)"', svg, re.S
+        )
+        assert m is not None, "below pill not rendered"
+        assert float(m.group(1)) > NL_LABEL_Y
+
+    def test_below_pill_and_caption_coexist(self) -> None:
+        """With both a below pill and a caption, both render and the caption
+        sits below the below-pill lane."""
+        nl = NumberLinePrimitive("nl", {"domain": [0, 5], "label": "Scale"})
+        nl.set_annotations(
+            [{"target": "nl.tick[2]", "label": "HERE", "position": "below"}]
+        )
+        svg = nl.emit_svg()
+        assert "HERE" in svg and "Scale" in svg
+
+    def test_caption_only_bbox_unchanged(self) -> None:
+        """No below pills -> lane is 0 -> caption stays at NL_HEIGHT (byte-stable)."""
+        nl = NumberLinePrimitive("nl", {"domain": [0, 5], "label": "Axis"})
+        assert nl.bounding_box().height == 69.0  # 56 + 13, unchanged

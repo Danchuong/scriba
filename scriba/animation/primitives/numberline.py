@@ -16,7 +16,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _render_svg_text,
     arrow_height_above,
-    position_label_height_below,
+    position_below_lane_height,
     emit_arrow_marker_defs,
     emit_arrow_svg,
     estimate_text_width,
@@ -303,13 +303,17 @@ class NumberLinePrimitive(PrimitiveBase):
             )
             lines.append("  </g>")
 
-        # Caption label
+        # Caption label — below the below-pill lane (lane is 0 when there are no
+        # below pills, so the caption stays at NL_HEIGHT in the common case).
         if self.label is not None:
+            below_lane = position_below_lane_height(
+                effective_anns, cell_height=NL_TICK_BOTTOM - NL_TICK_TOP
+            )
             self._emit_caption(
                 lines,
                 content_width=self.width,
                 footprint_width=int(self.bounding_box().width),
-                top_y=int(NL_HEIGHT),
+                top_y=int(NL_HEIGHT + below_lane),
                 render_inline_tex=render_inline_tex,
             )
 
@@ -354,20 +358,28 @@ class NumberLinePrimitive(PrimitiveBase):
         lines.append("</g>")
         return "\n".join(lines)
 
+    def resolve_below_baseline(self) -> float | None:
+        """Y where ``position=below`` pills start — below the tick labels, so a
+        below pill clears the axis labels (lane mode) instead of landing in the
+        label band. The caption is then placed beneath the below-pill lane.
+        """
+        return float(NL_HEIGHT)
+
     def bounding_box(self) -> BoundingBox:
         """Return ``(x, y, width, height)``."""
-        h = NL_HEIGHT
-        # Layer A: fold the (wrapped) caption width into the footprint and
-        # reserve the wrapped block's height below the line.
+        h = float(NL_HEIGHT)
+        # Layer A: fold the (wrapped) caption width into the footprint.
         w = max(float(self.width), float(self._caption_block_width(self.width)))
-        h += self._caption_block_height(self.width)
+        # Below-pill lane first, then the caption beneath it (mirrors Array's
+        # content -> lane -> caption order). No below pills -> lane is 0 and the
+        # caption stays at NL_HEIGHT, so the box is byte-stable.
+        below_lane = position_below_lane_height(
+            self._annotations, cell_height=NL_TICK_BOTTOM - NL_TICK_TOP
+        )
+        h += below_lane + self._caption_block_height(self.width)
 
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
-        pos_below = position_label_height_below(
-            self._annotations, cell_height=NL_TICK_BOTTOM - NL_TICK_TOP
-        )
-        h += pos_below
 
         return BoundingBox(x=0.0, y=0.0, width=w, height=float(h))
 
