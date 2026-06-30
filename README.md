@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.15.3 · MIT · Python 3.10+
+**Status:** v0.21.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,11 +24,22 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
-## What's new in v0.15.3
+## What's new in v0.21.0
 
-- **README status fix** — 0.15.2 shipped with a stale README (showed `Status: v0.9.0`). 0.15.3 fixes README + CONTRIBUTING + packaging docs to reflect current version. No code changes; prefer 0.15.3 for installs. (0.15.1 is yanked — 48 MiB sdist bloat; 0.15.2 is yanked — stale README.)
-- **(v0.15.1)** GEP v2.0.0 graph edge pill (pre-layout expansion, typography hierarchy, simulated-annealing refinement), Sugiyama hierarchical `layout="auto"` for directed graphs, R-32 annotation-stable-layout fix (reflow-flash eliminated), TEX-REFERENCE 47-issue audit closed, examples corpus audit + cleanup.
-- **(v0.15.0)** Leader-line visual-gap gate.
+- **Annotation & caption legibility across all primitives** — long `label=`
+  captions wrap and fold into every primitive's bounding box (no more clipping
+  at the figure edge); `range[a:b]` and `position=below` annotation targets that
+  were silently dropped now render on all data-structure primitives;
+  `position=below` labels sit in a leader-connected callout lane, wide
+  `left`/`right` pills reserve horizontal space, competing above-labels stack
+  (ranges get a span bracket), and cross-primitive obstacle avoidance is
+  restored. Rendered output bytes differ (`SCRIBA_VERSION` 8→9) — caches keyed
+  on rendered output MUST invalidate.
+- **(v0.20.0)** Compact embed widget — overlay step controls, tidy spacing, overlap-safe annotations.
+- **(v0.19.0)** Graph layout stability — node pinning, isolated-node lane, auto-seed.
+- **(v0.18.0)** Render-content fixes — narration interpolation, captions, recolor, shared defs.
+- **(v0.17.0)** Fail-loud validation, render fixes, reference overhaul.
+- **(v0.16.0)** Embedder font-scale knob + boundary validation.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full history.
 
 <details>
