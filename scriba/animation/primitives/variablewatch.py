@@ -201,11 +201,11 @@ class VariableWatch(PrimitiveBase):
 
     def bounding_box(self) -> BoundingBox:
         row_count = max(len(self.var_names), 1)
+        content_w = self._total_width
         h = row_count * _ROW_HEIGHT + 2 * _PADDING
-        w = self._total_width + 2 * _PADDING
-
-        if self.label:
-            h += 20
+        # Layer A: fold the (wrapped) caption width into the footprint.
+        w = max(content_w + 2 * _PADDING, self._caption_block_width(content_w))
+        h += self._caption_block_height(content_w)
 
         arrow_above = arrow_height_above(
             self._annotations,
@@ -375,21 +375,14 @@ class VariableWatch(PrimitiveBase):
 
         # Caption / label
         if self.label is not None:
+            content_w = self._total_width
             bbox = self.bounding_box()
-            cx = bbox.width // 2
-            cy = bbox.height - 4
-            parts.append(
-                _render_svg_text(
-                    str(self.label),
-                    cx,
-                    cy,
-                    fill=THEME["fg_muted"],
-                    css_class="scriba-primitive-label",
-                    text_anchor="middle",
-                    fo_width=bbox.width,
-                    fo_height=20,
-                    render_inline_tex=render_inline_tex,
-                )
+            self._emit_caption(
+                parts,
+                content_width=content_w,
+                footprint_width=int(bbox.width),
+                top_y=int(bbox.height - self._caption_block_height(content_w)),
+                render_inline_tex=render_inline_tex,
             )
 
         # Arrow annotations
