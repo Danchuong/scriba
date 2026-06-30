@@ -38,6 +38,11 @@ _ANNOTATION_BEARERS: set[str] = {
     "queue",
     "stack",
     "codepanel",
+    "hashmap",
+    "linkedlist",
+    "variablewatch",
+    "tree",
+    "graph",
 }
 
 # Selector suffixes that are not concrete targets.
