@@ -6,7 +6,6 @@ SVG output, and edge cases (1-based indexing).
 
 from __future__ import annotations
 
-import pytest
 
 from scriba.animation.primitives.codepanel import CodePanel
 
