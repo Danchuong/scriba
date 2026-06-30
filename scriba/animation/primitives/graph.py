@@ -34,7 +34,6 @@ from scriba.animation.primitives._protocol import register_primitive as _protoco
 from scriba.animation.primitives._svg_helpers import CellMetrics
 from scriba.animation.primitives._types import (
     _NODE_MIN_RADIUS,
-    _PRIMITIVE_LABEL_Y,
 )
 
 # ---------------------------------------------------------------------------
@@ -44,10 +43,6 @@ from scriba.animation.primitives._types import (
 _DEFAULT_WIDTH = 400
 _DEFAULT_HEIGHT = 300
 _NODE_RADIUS = 20
-# Vertical band reserved above the content for the caption (matches
-# ``tree.py:_LABEL_HEIGHT``); shifts edges/nodes down so the caption never
-# overlaps the top nodes.
-_GRAPH_LABEL_HEIGHT = 28
 _EDGE_STROKE_WIDTH = 2
 _PADDING = 20
 _DEFAULT_SEED = 42
@@ -1163,12 +1158,18 @@ class Graph(PrimitiveBase):
             cell_height=float(self._node_radius * 2),
         )
         # Reserve a top band for the caption and shift content below it, so the
-        # caption never overlaps the top nodes (mirrors Tree; was missing here).
-        label_h = _GRAPH_LABEL_HEIGHT if self.label is not None else 0
+        # caption never overlaps the top nodes (mirrors Tree). Defect 6 — the
+        # caption width participates in the footprint so a wide caption is folded
+        # into the box rather than clipped.
+        # Keep the int footprint when no widening is needed so the downstream
+        # transform stays byte-stable (only a genuinely wider caption grows it).
+        content_w = float(self.width + 2 * r)
+        w = max(self.width + 2 * r, self._caption_block_width(content_w))
+        label_h = self._top_caption_band(content_w)
         return BoundingBox(
             x=0,
             y=0,
-            width=self.width + 2 * r,
+            width=w,
             height=self.height + 2 * r + arrow_above + pos_below + label_h,
         )
 
@@ -1207,19 +1208,14 @@ class Graph(PrimitiveBase):
         # Optional label / caption (in the reserved top band)
         label_offset = 0
         if self.label is not None:
-            label_offset = _GRAPH_LABEL_HEIGHT
-            parts.append(
-                _render_svg_text(
-                    str(self.label),
-                    self.width // 2,
-                    _PRIMITIVE_LABEL_Y,
-                    fill=THEME["fg_muted"],
-                    css_class="scriba-primitive-label",
-                    text_anchor="middle",
-                    fo_width=self.width,
-                    fo_height=24,
-                    render_inline_tex=render_inline_tex,
-                )
+            content_w = float(self.width + 2 * r)
+            label_offset = self._top_caption_band(content_w)
+            self._emit_top_caption(
+                parts,
+                content_width=content_w,
+                footprint_width=int(self.bounding_box().width),
+                frame_radius=r,
+                render_inline_tex=render_inline_tex,
             )
         # Shift all edges/nodes/annotations below the caption band (mirrors
         # Tree) so the caption no longer overlaps the top nodes.

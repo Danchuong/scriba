@@ -36,6 +36,8 @@ _CAPTION_MIGRATED: set[str] = {
     "grid",
     "numberline",
     "dptable",
+    "tree",
+    "graph",
 }
 
 # Long enough to exceed any minimally-constructed primitive's content width.

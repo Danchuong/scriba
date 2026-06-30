@@ -15,7 +15,6 @@ from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
-    THEME,
     _escape_xml,
     _render_svg_text,
     arrow_height_above,
@@ -28,7 +27,6 @@ from scriba.animation.primitives._protocol import register_primitive as _protoco
 from scriba.animation.primitives._svg_helpers import CellMetrics
 from scriba.animation.primitives._types import (
     _NODE_MIN_RADIUS,
-    _PRIMITIVE_LABEL_Y,
 )
 from scriba.animation.primitives.tree_layout import *  # noqa: F401, F403
 from scriba.animation.primitives.tree_layout import (
@@ -50,7 +48,6 @@ _LAYER_GAP = 60
 _MIN_H_GAP = 50
 _EDGE_STROKE_WIDTH = 1.5
 _PADDING = 30
-_LABEL_HEIGHT = 28  # vertical space reserved for the caption when label is set
 
 # Regex to parse annotation selectors like "T.node[5]" or "T.node[[0,3]]"
 _TREE_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
@@ -571,11 +568,17 @@ class Tree(PrimitiveBase):
             self._annotations,
             cell_height=float(self._node_radius * 2),
         )
-        label_h = _LABEL_HEIGHT if self.label is not None else 0
+        # Defect 6 — the caption width participates in the footprint so a
+        # caption wider than the tree is folded into the box, not clipped.
+        # Keep the int footprint when no widening is needed so the downstream
+        # transform stays byte-stable (only a genuinely wider caption grows it).
+        content_w = float(self.width + 2 * r)
+        w = max(self.width + 2 * r, self._caption_block_width(content_w))
+        label_h = self._top_caption_band(content_w)
         return BoundingBox(
             x=0,
             y=0,
-            width=self.width + 2 * r,
+            width=w,
             height=self.height + 2 * r + arrow_above + pos_below + label_h,
         )
 
@@ -614,19 +617,14 @@ class Tree(PrimitiveBase):
         # Optional label / caption
         label_offset = 0
         if self.label is not None:
-            label_offset = _LABEL_HEIGHT
-            parts.append(
-                _render_svg_text(
-                    str(self.label),
-                    self.width // 2,
-                    _PRIMITIVE_LABEL_Y,
-                    fill=THEME["fg_muted"],
-                    css_class="scriba-primitive-label",
-                    text_anchor="middle",
-                    fo_width=self.width,
-                    fo_height=24,
-                    render_inline_tex=render_inline_tex,
-                )
+            content_w = float(self.width + 2 * r)
+            label_offset = self._top_caption_band(content_w)
+            self._emit_top_caption(
+                parts,
+                content_width=content_w,
+                footprint_width=int(self.bounding_box().width),
+                frame_radius=r,
+                render_inline_tex=render_inline_tex,
             )
 
         # Shift edges + nodes below the label when present
