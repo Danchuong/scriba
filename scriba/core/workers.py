@@ -338,8 +338,6 @@ def _warn_subprocess_worker_alias(caller_module: str, stacklevel: int = 2) -> ty
     *stacklevel* is forwarded to :func:`warnings.warn` so the warning
     points at the external call site rather than this helper.
     """
-    import warnings
-
     is_internal = caller_module == "scriba" or caller_module.startswith(
         "scriba."
     )

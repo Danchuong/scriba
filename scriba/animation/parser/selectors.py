@@ -214,7 +214,6 @@ class SelectorParser:
 
     def _parse_string(self) -> str:
         self._expect('"')
-        start = self._pos
         chars: list[str] = []
         while self._pos < len(self._text):
             ch = self._text[self._pos]
