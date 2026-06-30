@@ -17,7 +17,9 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _escape_xml,
+    _label_has_math,
     _render_svg_text,
+    estimate_text_width,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -31,6 +33,7 @@ from scriba.animation.primitives._protocol import register_primitive as _protoco
 
 _LINE_HEIGHT = 24
 _HEADER_HEIGHT = 26  # title bar above the code, IDE-tab style
+_HEADER_FONT_PX = 12  # title-bar label font (IDE-tab style)
 _PADDING_X = 12
 _PADDING_Y = 8
 _CHAR_WIDTH = 8.4  # approximate monospace character width at 14px (Menlo/Monaco/Consolas)
@@ -173,6 +176,32 @@ class CodePanel(PrimitiveBase):
             height=self._panel_height(),
         )
 
+    def _header_label(self) -> str:
+        """The title-bar label, ellipsized to fit the header width.
+
+        The header is a single-line, left-aligned IDE-tab title — unlike the
+        centered captions on the data primitives, a long title truncates with
+        ``…`` rather than overflowing the panel (the panel width is driven by
+        the code, not the title). Math titles are left intact (the
+        foreignObject path renders them; truncating the source would corrupt
+        the markup)."""
+        if self.label is None:
+            return ""
+        text = str(self.label)
+        if not text or _label_has_math(text):
+            return text
+        # Left pad + right pad inset inside the full-width header.
+        avail = self._panel_width() - 2 * _PADDING_X
+        if estimate_text_width(text, _HEADER_FONT_PX) <= avail:
+            return text
+        ellipsis = "…"
+        clipped = text
+        while clipped and estimate_text_width(
+            clipped + ellipsis, _HEADER_FONT_PX
+        ) > avail:
+            clipped = clipped[:-1]
+        return clipped + ellipsis if clipped else ellipsis
+
     def emit_svg(
         self,
         *,
@@ -300,11 +329,11 @@ class CodePanel(PrimitiveBase):
             )
             parts.append(
                 _render_svg_text(
-                    self.label,
+                    self._header_label(),
                     _PADDING_X,
                     _HEADER_HEIGHT // 2,
                     fill=THEME["fg_muted"],
-                    font_size="12",
+                    font_size=str(_HEADER_FONT_PX),
                     text_anchor="start",
                     dominant_baseline="central",
                     css_class="scriba-primitive-label",
