@@ -13,6 +13,12 @@ htmlcov/
 !.claude/skills/
 .gitnexus
 .opencode
+
+# Secrets / local env — never commit
+.env
+*.env
+key.env
+.pypirc
 # Build artifacts — compiled examples (golden copies live in tests/golden/examples/corpus/)
 examples/**/*.html
 .DS_Store
