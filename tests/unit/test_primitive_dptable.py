@@ -240,3 +240,51 @@ class TestBoundingBox:
         # 3*60 + 2*2 = 184 wide, 3*40 + 2*2 = 124 tall
         assert w == 184.0
         assert h == 124.0
+
+
+# ---------------------------------------------------------------------------
+# Layer B — range annotation anchor + span bracket (1D)
+#
+# Regression: a `range[lo:hi]` annotation target validated true but
+# resolve_annotation_point returned None, so the annotation was silently
+# dropped (no arrow, no label). 1D range targets must resolve to an anchor and
+# render, mirroring Array's Defect-5 fix.
+# ---------------------------------------------------------------------------
+
+
+class TestRangeAnnotation:
+    def test_range_anchor_not_none(self) -> None:
+        inst = DPTablePrimitive("dp", {"n": 5})
+        # was None -> annotation dropped
+        assert inst.resolve_annotation_point("dp.range[1:3]") is not None
+
+    def test_range_anchor_is_span_midpoint(self) -> None:
+        inst = DPTablePrimitive("dp", {"n": 5})
+        pt = inst.resolve_annotation_point("dp.range[1:3]")
+        # cells 1..3 inclusive: left=1*(60+2)=62, right=3*(60+2)+60=246; mid=154
+        assert pt == (154.0, 20.0)
+
+    def test_range_out_of_bounds_no_anchor(self) -> None:
+        inst = DPTablePrimitive("dp", {"n": 5})
+        assert inst.resolve_annotation_point("dp.range[1:9]") is None
+
+    def test_range_annotation_renders_label(self) -> None:
+        inst = DPTablePrimitive("dp", {"n": 5})
+        inst.set_annotations(
+            [{"target": "dp.range[1:3]", "label": "RNG", "position": "above"}]
+        )
+        svg = inst.emit_svg()
+        assert "RNG" in svg  # was silently dropped
+
+    def test_range_annotation_box_spans_cells(self) -> None:
+        inst = DPTablePrimitive("dp", {"n": 5})
+        box = inst.resolve_annotation_box("dp.range[1:3]")
+        assert box is not None
+        # left edge of cell 1, width spanning to right edge of cell 3
+        assert box.x == 62
+        assert box.width == 246 - 62
+
+    def test_cell_anchor_unchanged(self) -> None:
+        """Regression: plain cell anchors keep their center coordinates."""
+        inst = DPTablePrimitive("dp", {"n": 5})
+        assert inst.resolve_annotation_point("dp.cell[2]") == (154.0, 20.0)

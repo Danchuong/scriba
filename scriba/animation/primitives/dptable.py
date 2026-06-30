@@ -457,11 +457,53 @@ class DPTablePrimitive(PrimitiveBase):
                 lines.append("  </g>")
 
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
-        """Delegate to ``_cell_center`` for annotation arrow resolution."""
+        """Resolve a cell or 1D ``range`` selector to its arrow anchor.
+
+        Layer B — a ``range[lo:hi]`` target validates true but previously had no
+        anchor, so the annotation was silently dropped (no arrow, no label).
+        Mirrors Array's Defect-5 fix; range is 1D-only.
+        """
         result = self._cell_center(selector)
+        if result is None:
+            result = self._range_center(selector)
         if result is None:
             return None
         return (float(result[0]), float(result[1]))
+
+    def _range_center(self, selector_str: str) -> tuple[int, int] | None:
+        """Center anchor for a 1D ``range[lo:hi]`` selector (inclusive span)."""
+        if self.is_2d:
+            return None
+        m = _RANGE_RE.match(selector_str)
+        if m and m.group("name") == self.name:
+            lo, hi = int(m.group("lo")), int(m.group("hi"))
+            if 0 <= lo <= hi < self.cols:
+                left = lo * (CELL_WIDTH + CELL_GAP)
+                right = hi * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH
+                return (int((left + right) // 2), int(CELL_HEIGHT // 2))
+        return None
+
+    def resolve_annotation_box(self, selector: str) -> BoundingBox | None:
+        """Return the 1D ``range`` span AABB so the range gets a span bracket and
+        is treated as a blocker by the pill placer (Layer B). Local coords, cell
+        top at ``y=0``.
+
+        Scoped to ranges: single-cell targets keep the base default (``None``)
+        so existing cell-annotation placement is byte-stable — the cell-obstacle
+        refinement (Layer C) is tracked separately.
+        """
+        if self.is_2d:
+            return None
+        m = _RANGE_RE.match(selector)
+        if m and m.group("name") == self.name:
+            lo, hi = int(m.group("lo")), int(m.group("hi"))
+            if 0 <= lo <= hi < self.cols:
+                left = lo * (CELL_WIDTH + CELL_GAP)
+                right = hi * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH
+                return BoundingBox(
+                    x=int(left), y=0, width=int(right - left), height=int(CELL_HEIGHT)
+                )
+        return None
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:
         """Return the ``(cx, cy)`` pixel center of a cell selector."""
