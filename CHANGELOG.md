@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **`--scriba-diagram-font-scale` now scales the whole diagram uniformly** (the
+  factor is applied to the `<svg>` viewport `max-width`; font sizes are fixed
+  in user-coordinate space). Text and geometry scale by the same ratio, so text
+  can never overflow its shapes at any factor — superseding the previous
+  text-only behavior where large factors could overflow. **Rendered HTML/SVG
+  bytes differ** (per-text `font-size:calc(... * var(...))` → fixed `Npx`; the
+  `<svg>` gains `max-width:calc(... * var(...))`); consumer caches keyed on
+  rendered output MUST invalidate.
+
+### Fixed
+- **Array position labels are readable and unambiguous.** `range[a:b]`
+  annotation targets now resolve (previously dropped); long captions wrap and
+  sit at the bottom (figure description) instead of clipping or being buried;
+  `position=below` labels render in a callout lane beneath the index/caption
+  stack — wrapped compact, never overlapping the cell, each with a leader line
+  back to its cell; the annotated cell is a collision blocker; the bounding box
+  reserves the caption, lane, and lane-pill horizontal extent so nothing clips.
+- **`range[a:b]` position labels show a span bracket** across the range's cells
+  (with a stem to the label), so a range annotation's extent is unambiguous;
+  single-cell labels get none (no clutter).
+
 ## [0.20.0] - 2026-06-24 — Compact embed widget (overlay controls, tidy spacing, overlap-safe annotations)
 
 ### Changed

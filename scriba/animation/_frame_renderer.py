@@ -499,12 +499,15 @@ def _emit_frame_svg(
     # ``width:100%`` would upscale a small drawing to the full container width
     # (unbounded height).  Capping max-width lets ``width:100%`` only shrink,
     # never magnify -- the scene renders at its natural size on wide columns.
+    # ``--scriba-diagram-font-scale`` scales the whole viewport here (text is
+    # fixed px in user units), so text and geometry scale by the same ratio and
+    # text can never overflow its shapes at any scale.
     vb_parts = viewbox.split()
     vb_width = int(vb_parts[2]) if len(vb_parts) >= 3 else 0
 
     svg_parts: list[str] = [
         f'<svg class="scriba-stage-svg" viewBox="{viewbox}" '
-        f'style="max-width:{vb_width}px" '
+        f'style="max-width:calc({vb_width}px * var(--scriba-diagram-font-scale, 1))" '
         f'role="img" '
         f'aria-labelledby="{_escape_fn(narration_id)}" '
         f'xmlns="http://www.w3.org/2000/svg">'

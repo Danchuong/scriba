@@ -1384,7 +1384,7 @@ def _emit_label_single_line(
         if html:
             weight_css = f"font-weight:{l_weight};" if l_weight else ""
             size_css = (
-                f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1));"
+                f"font-size:{l_size};"
                 if l_size
                 else ""
             )
@@ -1408,7 +1408,7 @@ def _emit_label_single_line(
     if l_weight:
         style_parts.append(f"font-weight:{l_weight}")
     if l_size:
-        style_parts.append(f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1))")
+        style_parts.append(f"font-size:{l_size}")
     style_parts.append("text-anchor:middle")
     style_parts.append("dominant-baseline:auto")
     style_str = ";".join(style_parts)
@@ -1920,7 +1920,7 @@ def emit_plain_arrow_svg(
             if l_weight:
                 style_parts.append(f"font-weight:{l_weight}")
             if l_size:
-                style_parts.append(f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1))")
+                style_parts.append(f"font-size:{l_size}")
             style_parts.append("text-anchor:middle")
             style_parts.append("dominant-baseline:auto")
             style_str = ";".join(style_parts)
@@ -2366,7 +2366,7 @@ def _emit_label_and_pill(
         if l_weight:
             style_parts.append(f"font-weight:{l_weight}")
         if l_size:
-            style_parts.append(f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1))")
+            style_parts.append(f"font-size:{l_size}")
         style_parts.append("text-anchor:middle")
         style_parts.append("dominant-baseline:auto")
         style_str = ";".join(style_parts)
@@ -3081,6 +3081,7 @@ def emit_position_label_svg(
     primitive_obstacles: "tuple[_Obstacle, ...] | None" = None,
     cell_width: "float | None" = None,
     below_baseline: "float | None" = None,
+    is_range: bool = False,
 ) -> None:
     """Emit a pill-only label for position-only annotations (no arrow, no arc).
 
@@ -3319,6 +3320,38 @@ def emit_position_label_svg(
                 f' x2="{_lead_x}" y2="{_lead_y}"'
                 f' stroke="{s_stroke}" stroke-width="0.75" stroke-opacity="0.45"/>'
             )
+    elif (
+        is_range
+        and cell_width is not None
+        and float(cell_width) > pill_w + 1.0
+        and position in ("above", "below")
+    ):
+        # A range[a:b] target wider than the label: the label alone can't show
+        # which cells it covers, so draw a span bracket (┌────┐ / └────┘) across
+        # the range's width with a stem to the pill, so the extent is
+        # unambiguous. Single-cell targets never get a bracket (no clutter).
+        _half = float(cell_width) / 2.0
+        _bx0, _bx1 = int(ax - _half), int(ax + _half)
+        if position == "above":
+            _edge = ay - cell_height / 2.0          # cell-row top
+            _brk_y = int(_edge - 4)
+            _tick = 3                                # end ticks point down to cells
+            _pill_near = pill_ry + pill_h           # pill bottom
+        else:
+            _edge = ay + cell_height / 2.0          # cell-row bottom
+            _brk_y = int(_edge + 4)
+            _tick = -3                              # end ticks point up to cells
+            _pill_near = pill_ry                    # pill top
+        lines.append(
+            f'    <path d="M{_bx0},{_brk_y + _tick} L{_bx0},{_brk_y}'
+            f' L{_bx1},{_brk_y} L{_bx1},{_brk_y + _tick}" fill="none"'
+            f' stroke="{s_stroke}" stroke-width="0.75" stroke-opacity="0.45"/>'
+        )
+        lines.append(
+            f'    <line x1="{int(ax)}" y1="{int(_pill_near)}"'
+            f' x2="{int(ax)}" y2="{_brk_y}"'
+            f' stroke="{s_stroke}" stroke-width="0.75" stroke-opacity="0.45"/>'
+        )
 
     lines.append(
         f'    <rect x="{pill_rx}" y="{pill_ry}"'
@@ -3354,7 +3387,7 @@ def emit_position_label_svg(
         if l_weight:
             style_parts.append(f"font-weight:{l_weight}")
         if l_size:
-            style_parts.append(f"font-size:calc({l_size} * var(--scriba-diagram-font-scale, 1))")
+            style_parts.append(f"font-size:{l_size}")
         style_parts.append("text-anchor:middle")
         style_parts.append("dominant-baseline:auto")
         style_str = ";".join(style_parts)

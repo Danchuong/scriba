@@ -200,7 +200,7 @@ class CodePanel(PrimitiveBase):
             parts.append(
                 f'<text x="{panel_w // 2}" y="{panel_h // 2}" '
                 f'style="font-family:monospace;'
-                f"font-size:calc(11px * var(--scriba-diagram-font-scale, 1));"
+                f"font-size:11px;"
                 f"font-weight:400;"
                 f"text-anchor:middle;"
                 f'dominant-baseline:central" '
@@ -254,7 +254,7 @@ class CodePanel(PrimitiveBase):
             parts.append(
                 f'<text x="{line_num_x}" y="{text_y}" '
                 f'style="font-family:monospace;'
-                f"font-size:calc({_FONT_SIZE - 1}px * var(--scriba-diagram-font-scale, 1));"
+                f"font-size:{_FONT_SIZE - 1}px;"
                 f"font-weight:400;"
                 f"text-anchor:end;"
                 f'dominant-baseline:central" '
@@ -271,7 +271,7 @@ class CodePanel(PrimitiveBase):
             parts.append(
                 f'<text x="{code_x}" y="{text_y}" '
                 f'style="font-family:monospace;'
-                f"font-size:calc({_FONT_SIZE}px * var(--scriba-diagram-font-scale, 1));"
+                f"font-size:{_FONT_SIZE}px;"
                 f"font-weight:400;"
                 f"text-anchor:start;"
                 f'dominant-baseline:central" '

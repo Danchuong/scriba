@@ -35,17 +35,20 @@ _FONT_SCALE_VAR = "--scriba-diagram-font-scale"
 
 
 def _scaled_font_size(font_size: str) -> str:
-    """Return a CSS ``font-size`` value scaled by the global font-scale var.
+    """Return a CSS ``font-size`` value in SVG user units (fixed px).
+
+    The global ``--scriba-diagram-font-scale`` is applied uniformly by scaling
+    the whole ``<svg>`` viewport (its ``max-width`` carries the var), NOT each
+    font-size. Scaling the viewport scales text AND geometry by the same ratio,
+    so text can never overflow its shapes at any scale — see the SVG sizing in
+    ``_frame_renderer.render_frame``. This returns the bare unit-bearing size.
 
     ``font_size`` may be a bare number (treated as ``px``) or already carry a
     unit (``px``/``em``/``rem``/``%``).
     """
-    fs = (
-        font_size
-        if any(font_size.endswith(u) for u in ("px", "em", "rem", "%"))
-        else f"{font_size}px"
-    )
-    return f"calc({fs} * var({_FONT_SCALE_VAR}, 1))"
+    if any(font_size.endswith(u) for u in ("px", "em", "rem", "%")):
+        return font_size
+    return f"{font_size}px"
 
 
 def _char_display_width(ch: str) -> float:

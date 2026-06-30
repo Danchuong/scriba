@@ -566,6 +566,7 @@ class PrimitiveBase(abc.ABC):
                             primitive_obstacles=_cell_obs if _cell_obs else None,
                             cell_width=_cell_w,
                             below_baseline=self.resolve_below_baseline(),
+                            is_range="range[" in ann.get("target", ""),
                         )
                 # Position-only annotations have no arrow geometry to accumulate.
                 continue

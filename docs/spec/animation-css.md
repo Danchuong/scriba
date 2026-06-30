@@ -103,25 +103,28 @@ Declared on `:root` in `scriba-scene-primitives.css`:
 
 ### 2.1a Scaling diagram text (`--scriba-diagram-font-scale`)
 
-Every font size inside a rendered diagram — both the CSS-class roles above
-(`--scriba-cell-font`, `--scriba-node-font`, `--scriba-label-font`,
-`--scriba-cell-index-font`, `--scriba-annotation-font`) and the per-primitive
-sizes emitted inline on `<text>` elements (queue, hashmap, variablewatch,
-graph weights, plane2d/metricplot axis ticks, codepanel, matrix, stack,
-linkedlist) — is multiplied by `--scriba-diagram-font-scale`. A consumer
-embedding Scriba output resizes **all** diagram text with a single rule:
+`--scriba-diagram-font-scale` scales the **whole rendered diagram uniformly**.
+The factor is applied to the `<svg>` element's `max-width` (emitted inline as
+`max-width: calc(<viewBox-width>px * var(--scriba-diagram-font-scale, 1))`), so
+the entire viewBox — text *and* geometry — renders at the same ratio. Every
+font size (the CSS-class roles `--scriba-cell-font`, `--scriba-node-font`,
+`--scriba-label-font`, `--scriba-cell-index-font`, `--scriba-annotation-font`,
+and the per-primitive sizes emitted inline on `<text>` elements) is a **fixed**
+value in the SVG user-coordinate space — it is NOT multiplied per-text. A
+consumer resizes the whole diagram with a single rule:
 
 ```css
-:root { --scriba-diagram-font-scale: 1.3; }   /* 30% larger diagram text */
+:root { --scriba-diagram-font-scale: 1.3; }   /* 30% larger diagram */
 ```
 
 The default of `1` leaves every rendered size unchanged (output is
-byte-identical without the override). The scale affects only text; SVG
-geometry (cell/node sizes, viewBox) is fixed, so very large scales can cause
-text to overflow its shapes — increase the factor in moderation. This is the
-only document-wide font knob; for finer control, redefine the individual
-`--scriba-*-font` tokens. TeX prose text outside diagrams is unaffected (it
-scales via the host page's `font-size` on `.scriba-tex-content`).
+byte-identical without the override). Because text and geometry share the
+viewBox coordinate space and scale by the same ratio, **text can never overflow
+its shapes at any factor** (this supersedes the earlier text-only behavior,
+where large scales could overflow). This is the only document-wide font knob;
+for finer control, redefine the individual `--scriba-*-font` tokens (the global
+factor scales the viewport on top of those). TeX prose text outside diagrams is
+unaffected (it scales via the host page's `font-size` on `.scriba-tex-content`).
 
 ### 2.2 State color tokens (Wong CVD-safe palette)
 

@@ -117,12 +117,13 @@ the most reliable when embedding fragments.
 
 ### What it does and does not affect
 
-- ✅ All diagram/animation SVG text (array, dptable, graph, tree, queue,
+- ✅ The **whole diagram/animation** — text *and* geometry — scales uniformly.
+  The factor scales the `<svg>` viewport (its `max-width`), and because every
+  font size is a fixed value in the SVG's user-coordinate space, text and
+  shapes scale by the same ratio. Text can **never** overflow its shapes, at
+  any factor. (Applies to every primitive: array, dptable, graph, tree, queue,
   stack, hashmap, linkedlist, variablewatch, matrix, plane2d, metricplot,
-  codepanel, numberline) and annotation labels.
-- ⚠️ **Only text** scales. SVG geometry (cell sizes, node radius, viewBox) is
-  fixed, so very large factors can make text overflow its shapes. Adjust in
-  moderation (≈ 0.8–1.6 is the comfortable range).
+  codepanel, numberline, and annotation labels.)
 - ❌ TeX prose text outside diagrams is **not** governed by this knob. Scale
   that the normal way — set `font-size` on the `.scriba-tex-content` container
   (it inherits the host page's size):
@@ -134,7 +135,7 @@ the most reliable when embedding fragments.
 ### Finer control
 
 For per-role sizing instead of a single global factor, redefine the individual
-tokens (each is also multiplied by the scale):
+tokens (the global factor scales the whole viewport on top of these):
 
 ```css
 :root {

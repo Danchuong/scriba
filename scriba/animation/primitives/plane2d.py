@@ -1186,7 +1186,7 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<text x="{sx:.2f}" y="{sy + _TICK_FONT_SIZE + 2:.2f}" '
                 f'text-anchor="middle" '
-                f'style="font-size:calc({_TICK_FONT_SIZE}px * var(--scriba-diagram-font-scale, 1))" '
+                f'style="font-size:{_TICK_FONT_SIZE}px" '
                 f'fill="{THEME["fg_muted"]}">{label}</text>'
             )
             prev_sx = sx
@@ -1203,7 +1203,7 @@ class Plane2D(PrimitiveBase):
             parts.append(
                 f'<text x="{sx - _LABEL_OFFSET:.2f}" y="{sy + 3:.2f}" '
                 f'text-anchor="end" '
-                f'style="font-size:calc({_TICK_FONT_SIZE}px * var(--scriba-diagram-font-scale, 1))" '
+                f'style="font-size:{_TICK_FONT_SIZE}px" '
                 f'fill="{THEME["fg_muted"]}">{label}</text>'
             )
             prev_sy = sy

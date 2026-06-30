@@ -387,7 +387,7 @@
 :where([data-primitive="grid"]    [data-target]) > text,
 :where([data-primitive="dptable"] [data-target]) > text {
   font:                  var(--scriba-cell-font);
-  font-size:             calc(14px * var(--scriba-diagram-font-scale, 1));
+  font-size:             14px;
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
   font-synthesis:        none;         /* broad compat: Firefox ≤106, Safari ≤16.3 */
@@ -407,7 +407,7 @@
  * centered under each cell. */
 [data-primitive] .scriba-index-label {
   font:              var(--scriba-cell-index-font);
-  font-size:         calc(10px * var(--scriba-diagram-font-scale, 1));
+  font-size:         10px;
   fill:              var(--scriba-cell-index-color);
   text-anchor:       middle;
   dominant-baseline: hanging;
@@ -427,7 +427,7 @@
 :where([data-primitive="graph"] .scriba-graph-nodes > [data-target]) > text,
 :where([data-primitive="tree"]  .scriba-tree-nodes > [data-target]) > text {
   font:                  var(--scriba-node-font);
-  font-size:             calc(14px * var(--scriba-diagram-font-scale, 1));
+  font-size:             14px;
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
   font-synthesis:        none;         /* broad compat: Firefox ≤106, Safari ≤16.3 */
@@ -459,7 +459,7 @@
 
 :where([data-primitive="numberline"] > [data-target]) > text {
   font:              var(--scriba-cell-index-font);
-  font-size:         calc(10px * var(--scriba-diagram-font-scale, 1));
+  font-size:         10px;
   fill:              var(--scriba-fg);
   text-anchor:       middle;
   dominant-baseline: hanging;
@@ -473,7 +473,7 @@
  * ``start`` the caption drifted right by half its width. */
 [data-primitive] > .scriba-primitive-label {
   font:              var(--scriba-label-font);
-  font-size:         calc(11px * var(--scriba-diagram-font-scale, 1));
+  font-size:         11px;
   fill:              var(--scriba-label-color);
   text-anchor:       middle;
   dominant-baseline: central;
@@ -492,7 +492,7 @@
 
 .scriba-annotation > text {
   font:        var(--scriba-annotation-font);
-  font-size:   calc(11px * var(--scriba-diagram-font-scale, 1));
+  font-size:   11px;
   text-anchor: middle;
 }
 
@@ -831,12 +831,12 @@
    ============================================ */
 
 .scriba-metricplot-legend-label {
-  font-size: calc(11px * var(--scriba-diagram-font-scale, 1));
+  font-size: 11px;
   fill: var(--scriba-fg);
 }
 
 .scriba-metricplot-right-axis-label {
-  font-size: calc(11px * var(--scriba-diagram-font-scale, 1));
+  font-size: 11px;
   fill: var(--scriba-fg-muted);
 }
 
@@ -1466,12 +1466,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 %
 % Expected: the rendered HTML contains &amp;lt;img rather than &lt;img in the title/h1.</p>
 
-<div class="scriba-widget" id="xss-fixture" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="xss-fixture-narration" aria-live="polite">Only step.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 84 64" style="max-width:84px" role="img" aria-labelledby="xss-fixture-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Only step.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c">1</text></g></g></g></svg></div><p class="scriba-narration" id="xss-fixture-print-1-narration">Only step.</p></div></div></div>
+<div class="scriba-widget" id="xss-fixture" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="xss-fixture-narration" aria-live="polite">Only step.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 84 64" style="max-width:calc(84px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="xss-fixture-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Only step.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c">1</text></g></g></g></svg></div><p class="scriba-narration" id="xss-fixture-print-1-narration">Only step.</p></div></div></div>
 <script>(function(){
   var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
   var W=document.getElementById('xss-fixture');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 84 64" style="max-width:84px" role="img" aria-labelledby="xss-fixture-narration" xmlns="http://www.w3.org/2000/svg"><title>Only step.</title>
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 84 64" style="max-width:calc(84px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="xss-fixture-narration" xmlns="http://www.w3.org/2000/svg"><title>Only step.</title>
 <g transform="translate(12.0,12)">
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">
