@@ -14,11 +14,10 @@ from __future__ import annotations
 import logging
 import math
 import re
-from typing import Any, Callable, ClassVar, Sequence
+from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _emit_warning, _animation_error
 from scriba.animation.primitives.base import (
-    ARROW_STYLES,
     _LabelPlacement,
     BoundingBox,
     PrimitiveBase,
@@ -35,7 +34,6 @@ from scriba.animation.primitives._svg_helpers import (
     _LABEL_PILL_PAD_Y as _SVG_LABEL_PILL_PAD_Y,
     _LABEL_PILL_RADIUS as _SVG_LABEL_PILL_RADIUS,
     emit_position_label_svg,
-    _place_pill,
 )
 from scriba.animation.primitives._obstacle_types import ObstacleSegment
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
@@ -865,7 +863,6 @@ class Plane2D(PrimitiveBase):
             state = self.get_state(suffix)
             if state == "hidden":
                 continue
-            colors = svg_style_attrs(state)
             r_px = pt.get("radius", _POINT_RADIUS)
             r_math = r_px / scale_factor
             is_hl = suffix in hl_suffixes

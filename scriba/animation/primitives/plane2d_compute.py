@@ -177,7 +177,7 @@ def lower_envelope(
 
     # Sort by slope DESCENDING so that the line with the largest slope
     # (which dominates at x → -∞) comes first, and pieces go left-to-right.
-    sorted_lines = sorted(lines, key=lambda l: (-l[0], l[1]))
+    sorted_lines = sorted(lines, key=lambda ln: (-ln[0], ln[1]))
 
     # Remove dominated lines: among parallel lines, only keep lowest intercept
     deduped: list[LineSI] = []

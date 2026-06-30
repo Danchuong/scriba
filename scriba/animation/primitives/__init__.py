@@ -3,6 +3,12 @@
 See ``docs/spec/primitives.md`` for the authoritative specification.
 """
 
+# ruff: noqa: E402 — the primitive imports below MUST follow the
+# ``warnings.filterwarnings`` call (the protocol-advisory filter has to be
+# installed before the primitive modules import, since they warn at
+# class-definition time). The "imports not at top of file" ordering is
+# therefore intentional, not an oversight.
+
 from __future__ import annotations
 
 import warnings

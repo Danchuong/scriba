@@ -2489,8 +2489,6 @@ def emit_arrow_svg(
     )
     cx1, cy1 = _geom.cp1_x, _geom.cp1_y
     cx2, cy2 = _geom.cp2_x, _geom.cp2_y
-    label_ref_x, label_ref_y = _geom.label_ref_x, _geom.label_ref_y
-    curve_mid_x, curve_mid_y = _geom.curve_mid_x, _geom.curve_mid_y
 
     ix1, iy1 = int(x1), int(y1)
     ix2, iy2 = int(x2), int(y2)
@@ -2824,7 +2822,6 @@ def position_label_height_above(
         return 0
 
     line_height = l_font_px + 2
-    pill_h_base = line_height + _LABEL_PILL_PAD_Y * 2  # single-line pill height
     gap = max(4.0, cell_height * 0.1)
 
     # The label center sits at:
@@ -3244,7 +3241,14 @@ def emit_position_label_svg(
             # W3-α+: use _place_pill so MUST-severity segment obstacles (e.g.
             # cross-primitive Plane2D lines) are treated as hard blocks.
             # Merge placed-label AABBs with segment obstacles into one tuple.
-            all_obs: tuple[_Obstacle, ...] = tuple(
+            # FIXME(pre-existing latent bug): all_obs is computed but never
+            # passed — _place_pill below is called with placed_labels=[] and no
+            # obstacle argument, so cross-primitive obstacle avoidance via this
+            # path is currently inert. It can't be passed as-is (all_obs is
+            # tuple[_Obstacle], _place_pill.placed_labels is list[_LabelPlacement]) —
+            # the _place_pill refactor orphaned this merge. Needs a W3-α+ owner to
+            # restore obstacle plumbing; flagged rather than silently deleted.
+            all_obs: tuple[_Obstacle, ...] = tuple(  # noqa: F841 — see FIXME above
                 _lp_to_obstacle(p) for p in placed_labels
             ) + primitive_obstacles
             # Use a very large viewbox so clamping does not interfere; the
