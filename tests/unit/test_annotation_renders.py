@@ -37,6 +37,7 @@ _ANNOTATION_BEARERS: set[str] = {
     "matrix",
     "queue",
     "stack",
+    "codepanel",
 }
 
 # Selector suffixes that are not concrete targets.

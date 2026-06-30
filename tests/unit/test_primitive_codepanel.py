@@ -204,3 +204,44 @@ class TestEdgeCases:
         svg = inst.emit_svg()
         # Both lines should reflect done state (not idle)
         assert svg.count("scriba-state-done") >= 2
+
+
+# ---------------------------------------------------------------------------
+# Annotations — line anchors + position pills (Layer B/C)
+#
+# Regression: CodePanel had no annotation resolver, so a line annotation was
+# silently dropped (accepted by validate_selector, stored, never rendered).
+# Lines are 1-based; the anchor is the line's vertical center.
+# ---------------------------------------------------------------------------
+
+
+class TestAnnotations:
+    def test_line_anchor_resolves(self) -> None:
+        c = CodePanel("c", {"source": "a = 1\nb = 2\nc = 3"})
+        assert c.resolve_annotation_point("c.line[1]") is not None
+        assert c.resolve_annotation_point("c.line[3]") is not None
+
+    def test_line_anchor_centers_descend(self) -> None:
+        """Later lines anchor lower than earlier ones."""
+        c = CodePanel("c", {"source": "a = 1\nb = 2\nc = 3"})
+        y1 = c.resolve_annotation_point("c.line[1]")[1]
+        y3 = c.resolve_annotation_point("c.line[3]")[1]
+        assert y3 > y1
+
+    def test_invalid_line_no_anchor(self) -> None:
+        c = CodePanel("c", {"source": "a = 1\nb = 2"})
+        assert c.resolve_annotation_point("c.line[0]") is None  # 1-based
+        assert c.resolve_annotation_point("c.line[5]") is None
+
+    def test_position_pill_renders(self) -> None:
+        c = CodePanel("c", {"source": "a = 1\nb = 2\nc = 3"})
+        c.set_annotations(
+            [{"target": "c.line[2]", "label": "O(n)", "position": "above"}]
+        )
+        svg = c.emit_svg()
+        assert "O(n)" in svg  # was silently dropped
+        assert "scriba-annotation" in svg
+
+    def test_unannotated_bbox_unchanged(self) -> None:
+        c = CodePanel("c", {"source": "a = 1\nb = 2"})
+        assert c.bounding_box().height == float(c._panel_height())

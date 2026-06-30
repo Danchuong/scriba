@@ -19,7 +19,10 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _label_has_math,
     _render_svg_text,
+    arrow_height_above,
     estimate_text_width,
+    position_label_height_above,
+    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -111,6 +114,10 @@ class CodePanel(PrimitiveBase):
 
         # Pre-compute dynamic gutter width based on line count
         self._gutter_width: int = self._line_num_gutter_width()
+        # Annotation geometry (Layer B/C): a line is the "cell"; pills/arrows
+        # offset from a line anchor by the line height.
+        self._arrow_layout = "1d"
+        self._arrow_cell_height = float(_LINE_HEIGHT)
 
     # ----- helpers ---------------------------------------------------------
 
@@ -168,13 +175,44 @@ class CodePanel(PrimitiveBase):
 
         return False
 
+    def _line_anchor_y(self, line_num: int) -> float:
+        """Vertical center of 1-based ``line_num`` in the content frame."""
+        header_h = _HEADER_HEIGHT if self.label is not None else 0
+        return header_h + _PADDING_Y + (line_num - 1) * _LINE_HEIGHT + _LINE_HEIGHT / 2
+
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Center anchor for a 1-based ``line[k]`` selector, so annotations
+        track a code line. CodePanel previously had no resolver, so any line
+        annotation was silently dropped.
+        """
+        prefix = f"{self.name}."
+        local = selector[len(prefix):] if selector.startswith(prefix) else selector
+        m = _LINE_RE.match(local)
+        if m:
+            line_num = int(m.group("idx"))
+            if 1 <= line_num <= len(self.lines):
+                return (
+                    float(self._panel_width() // 2),
+                    self._line_anchor_y(line_num),
+                )
+        return None
+
     def bounding_box(self) -> BoundingBox:
-        return BoundingBox(
-            x=0,
-            y=0,
-            width=self._panel_width(),
-            height=self._panel_height(),
+        w = self._panel_width()
+        h = self._panel_height()
+        # Layer B/C: reserve space for annotation arrows + position pills.
+        # No annotations -> all terms are 0, so the box is byte-stable.
+        arrow_above = max(
+            arrow_height_above(
+                self._annotations, self.resolve_annotation_point,
+                cell_height=_LINE_HEIGHT,
+            ),
+            position_label_height_above(self._annotations, cell_height=_LINE_HEIGHT),
+            getattr(self, "_min_arrow_above", 0),
         )
+        h += arrow_above
+        h += position_label_height_below(self._annotations, cell_height=_LINE_HEIGHT)
+        return BoundingBox(x=0, y=0, width=w, height=h)
 
     def _header_label(self) -> str:
         """The title-bar label, ellipsized to fit the header width.
@@ -217,6 +255,22 @@ class CodePanel(PrimitiveBase):
             f'<g data-primitive="codepanel" '
             f'data-shape="{_escape_xml(self.name)}">'
         )
+
+        # Reserve space above the panel for annotation arrows/pills and shift
+        # the panel down. No annotations -> arrow_above is 0 and no group opens
+        # (byte-stable). Empty panels carry no line annotations, so the early
+        # return below never sits inside an open group.
+        effective_anns = self._annotations
+        arrow_above = max(
+            arrow_height_above(
+                effective_anns, self.resolve_annotation_point,
+                cell_height=_LINE_HEIGHT,
+            ),
+            position_label_height_above(effective_anns, cell_height=_LINE_HEIGHT),
+            getattr(self, "_min_arrow_above", 0),
+        )
+        if arrow_above > 0:
+            parts.append(f'  <g transform="translate(0, {arrow_above})">')
 
         # Panel background border
         parts.append(
@@ -341,6 +395,19 @@ class CodePanel(PrimitiveBase):
                 )
             )
 
+        # Annotations (arrows + position pills) via the shared engine, inside
+        # the translate group so anchors share the content frame (Layer B/C).
+        if effective_anns:
+            self.emit_annotation_arrows(
+                parts,
+                effective_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
+
+        if arrow_above > 0:
+            parts.append("  </g>")
         parts.append("</g>")
         return "".join(parts)
 
