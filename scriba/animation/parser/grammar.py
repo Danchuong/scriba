@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import unicodedata
-from typing import Any, Iterable, NoReturn
+from typing import Iterable, NoReturn
 
 from scriba.animation.errors import _animation_error, _suggest_closest
 from scriba.core.errors import ValidationError
@@ -12,24 +12,19 @@ from scriba.core.errors import ValidationError
 from .ast import (
     AnimationIR,
     AnimationOptions,
-    AnnotateCommand,
-    ApplyCommand,
+    AnnotateCommand as AnnotateCommand,
+    ApplyCommand as ApplyCommand,
     ComputeCommand,
-    CursorCommand,
-    ForeachCommand,
     FrameIR,
-    HighlightCommand,
-    InterpolationRef,
+    HighlightCommand as HighlightCommand,
     MutationCommand as Command,
     NarrateCommand,
-    ParamValue,
-    ReannotateCommand,
-    RecolorCommand,
+    RecolorCommand as RecolorCommand,
     ShapeCommand,
     StepCommand,
     SubstoryBlock,
 )
-from .lexer import Lexer, Token, TokenKind, _percent_hint_for_source_line
+from .lexer import Lexer, Token, TokenKind
 from ._grammar_commands import _CommandsMixin
 from ._grammar_compute import _ComputeMixin
 from ._grammar_foreach import _ForeachMixin
@@ -40,11 +35,7 @@ from ._grammar_values import _ValuesMixin
 import warnings as _warnings_mod
 
 from scriba.animation.constants import (
-    VALID_ANNOTATION_COLORS,
-    VALID_ANNOTATION_POSITIONS,
     VALID_OPTION_KEYS,
-    VALID_STATES,
-    VALID_SUBSTORY_OPTION_KEYS,
 )
 
 def _lazy_primitive_registry() -> dict:

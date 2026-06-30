@@ -36,7 +36,7 @@ from scriba.animation.uniqueness import (
     check_duplicate_shape_ids,
     validate_shape_id_charset,
 )
-from scriba.animation.errors import AnimationError, _animation_error
+from scriba.animation.errors import _animation_error
 from scriba.core.errors import ValidationError
 
 __all__ = ["SceneState", "FrameSnapshot"]

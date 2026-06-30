@@ -17,7 +17,6 @@ Pipeline (end-to-end):
 from __future__ import annotations
 
 import hashlib
-import html as _html
 import logging
 import re
 from importlib.resources import files
@@ -26,11 +25,10 @@ from typing import Any
 
 from scriba.core.artifact import traversable_to_path
 from scriba.animation.detector import detect_animation_blocks
-from scriba.animation.emitter import FrameData, SubstoryData, emit_animation_html, emit_html, scene_id_from_source
+from scriba.animation.emitter import FrameData, SubstoryData, emit_html, scene_id_from_source
 from scriba.animation.errors import FrameCountError, _animation_error
 from scriba.animation.extensions.hl_macro import process_hl_macros
 from scriba.core.text_utils import apply_text_commands
-from scriba.animation.extensions.keyframes import generate_keyframe_styles
 from scriba.animation.parser.ast import (
     AnimationIR,
     AnnotateCommand,
@@ -46,7 +44,7 @@ from scriba.animation.primitives import get_primitive_registry  # noqa: F401 —
 from scriba.animation.scene import FrameSnapshot, SceneState
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
-from scriba.core.errors import RendererError, ValidationError
+from scriba.core.errors import ValidationError
 
 __all__ = ["AnimationRenderer", "DiagramRenderer"]
 

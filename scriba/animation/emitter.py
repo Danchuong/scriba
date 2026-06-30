@@ -15,35 +15,25 @@ from __future__ import annotations
 
 import hashlib
 import re as _re
-import warnings
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from scriba.animation._frame_renderer import *  # noqa: F401, F403
 from scriba.animation._frame_renderer import (
-    _apply_param_list,
-    _emit_frame_svg,
-    _expand_selectors,
-    _normalize_bbox,
-    _prescan_value_widths,
-    _validate_expanded_selectors,
+    _validate_expanded_selectors as _validate_expanded_selectors,
     compute_viewbox,
     emit_shared_defs,
 )
 from scriba.animation._html_stitcher import *  # noqa: F401, F403
 from scriba.animation._html_stitcher import (
-    _escape,
-    _escape_js,
+    _escape_js as _escape_js,
     emit_animation_html,
-    emit_diagram_html,
     emit_html,
     emit_interactive_html,
     emit_substory_html,
 )
 from scriba.animation._minify import *  # noqa: F401, F403
 from scriba.animation._script_builder import *  # noqa: F401, F403
-from scriba.animation.differ import compute_transitions
-from scriba.animation.primitives.base import BoundingBox
 from scriba.core.errors import ValidationError
 
 __all__ = [

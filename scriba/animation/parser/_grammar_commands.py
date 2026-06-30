@@ -15,11 +15,9 @@ from .ast import (
     ApplyCommand,
     CursorCommand,
     HighlightCommand,
-    MutationCommand as Command,
     NarrateCommand,
     ReannotateCommand,
     RecolorCommand,
-    Selector,
 )
 from .lexer import Token, TokenKind
 from .selectors import parse_selector
