@@ -48,5 +48,21 @@ Parametrized test over the registry × scenarios (no-ann / long caption / positi
 
 Each step: TDD/new tests for range (no corpus coverage) + full suite + `SCRIBA_UPDATE_GOLDEN` reviewed per phase + flip _MIGRATED + self-review. Anything not reached stays xfail-tracked by the guard = explicit, not silent debt.
 
+## Migration status (2026-06-30)
+
+**Done + committed** (branch `feat/annotation-legibility-structural-lift`):
+- Foundation: Layer A caption helpers lifted to `PrimitiveBase`; Array de-duplicated onto them.
+- Regrowth-guard ratchet (`tests/unit/test_caption_within_bbox.py`): `_CAPTION_MIGRATED` set; the rest assert-still-clip → monotonic, CI-enforced.
+- graph caption overlap fixed (reserve band + shift, mirrors Tree).
+- Layer A caption (wrap + width-in-bbox) migrated for: **array, queue, hashmap, linkedlist, variablewatch, matrix, stack** (7).
+
+**Remaining (ratchet-tracked = explicit, not silent debt):**
+- **dptable, grid, numberline** — bottom-caption but with the `translate(0, arrow_above)` frame AND a `position_label_height_below` zone competing for the space below content; needs the Array-style below-baseline/lane treatment (Layer C) to place caption + below-annotations correctly, not the flat idiom. Higher risk; do with focused care.
+- **tree, graph** — node-layout TOP captions; width-in-bbox + wrap needs the band height to grow AND the node layout to shift (content_dx on the layout origin). Node anchors stay center+`_arrow_shorten` (carve-out).
+- **codepanel** — top header, out of the bottom-caption Layer A scope.
+- Layer B (range anchor + bracket) for dptable/numberline and Layer C (below-lane) for the cell-grid set: deferred; 0 golden coverage (no corpus uses range annotations on non-Array), needs new unit tests.
+
+The ratchet test fails the moment any remaining primitive's caption fix lands until it is added to `_CAPTION_MIGRATED`, so the set can only grow — the bug class cannot silently regrow.
+
 ## Blast radius (agent 3)
 ~42 distinct goldens total (~14 re-churn across multi-primitive scenes). Only 2 mandatory unit-literal edits (grid:168, numberline:169). Range fix = 0 golden churn → needs new unit tests. Cluster co-occurring primitives (test_reference_datastruct, 07_prescan, test_reference_edge_cases) to rebaseline once.
