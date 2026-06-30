@@ -335,7 +335,6 @@ def compute_stable_layout(
     # optimizer didn't eliminate.  Imports the shared helper from graph.py.
     from scriba.animation.primitives.graph import (
         _NODE_OVERLAP_GAP,
-        _PADDING,
         _resolve_overlaps,
     )
 
