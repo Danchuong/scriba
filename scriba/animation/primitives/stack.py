@@ -19,7 +19,10 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
+    arrow_height_above,
     estimate_text_width,
+    position_label_height_above,
+    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -127,6 +130,10 @@ class Stack(PrimitiveBase):
                 self.items.append(StackItem(label=str(item)))
 
         self._cell_width: int = self._compute_cell_width()
+        # Annotation geometry (Layer B/C): linear layout; the cell height the
+        # shared engine uses to offset pills/arrows from an item anchor.
+        self._arrow_layout = "1d"
+        self._arrow_cell_height = float(_CELL_HEIGHT)
 
     # ----- internal: dynamic sizing ----------------------------------------
 
@@ -193,6 +200,40 @@ class Stack(PrimitiveBase):
 
         return False
 
+    def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
+        """Center anchor for an ``item[i]`` (or ``top``) selector.
+
+        Reuses the exact render-time positioning (orientation, reversed vertical
+        order, and the ``max_visible`` window) so anchors track the drawn item.
+        Items scrolled out of the visible window have no anchor. Stack annotations
+        were previously dropped entirely (no resolver, no emit path).
+        """
+        prefix = f"{self.name}."
+        local = selector[len(prefix):] if selector.startswith(prefix) else selector
+        if _TOP_RE.match(local) and self.items:
+            local = f"item[{len(self.items) - 1}]"
+        m = _ITEM_RE.match(local)
+        if not m:
+            return None
+        idx = int(m.group("idx"))
+        n = len(self.items)
+        if not (0 <= idx < n):
+            return None
+        visible_count = min(n, self.max_visible)
+        start_idx = max(0, n - visible_count)
+        if idx < start_idx:
+            return None  # scrolled out of the visible window
+        vi = idx - start_idx
+        cw = self._cell_width
+        if self.orientation == "horizontal":
+            x = _PADDING + vi * (cw + _CELL_GAP)
+            y = _PADDING
+        else:
+            rev_vi = (visible_count - 1) - vi
+            x = _PADDING
+            y = _PADDING + rev_vi * (_CELL_HEIGHT + _CELL_GAP)
+        return (float(x + cw / 2), float(y + _CELL_HEIGHT / 2))
+
     def bounding_box(self) -> BoundingBox:
         visible = min(len(self.items), self.max_visible)
         if visible == 0:
@@ -210,6 +251,19 @@ class Stack(PrimitiveBase):
         content_w = w
         w = max(w, self._caption_block_width(content_w))
         h += self._caption_block_height(content_w)
+
+        # Layer B/C: reserve space for annotation arrows + position pills.
+        # No annotations -> all terms are 0, so the box is byte-stable.
+        arrow_above = max(
+            arrow_height_above(
+                self._annotations, self.resolve_annotation_point,
+                cell_height=_CELL_HEIGHT,
+            ),
+            position_label_height_above(self._annotations, cell_height=_CELL_HEIGHT),
+            getattr(self, "_min_arrow_above", 0),
+        )
+        h += arrow_above
+        h += position_label_height_below(self._annotations, cell_height=_CELL_HEIGHT)
 
         return BoundingBox(x=0, y=0, width=w, height=h)
 
@@ -244,6 +298,20 @@ class Stack(PrimitiveBase):
             )
             parts.append("</g>")
             return "".join(parts)
+
+        # Reserve space above for annotation arrows/pills and shift content down.
+        # No annotations -> arrow_above is 0 and no group opens (byte-stable).
+        effective_anns = self._annotations
+        arrow_above = max(
+            arrow_height_above(
+                effective_anns, self.resolve_annotation_point,
+                cell_height=_CELL_HEIGHT,
+            ),
+            position_label_height_above(effective_anns, cell_height=_CELL_HEIGHT),
+            getattr(self, "_min_arrow_above", 0),
+        )
+        if arrow_above > 0:
+            parts.append(f'  <g transform="translate(0, {arrow_above})">')
 
         visible_count = min(len(self.items), self.max_visible)
         # Show the top N items (most recent at top in vertical)
@@ -347,6 +415,19 @@ class Stack(PrimitiveBase):
                 render_inline_tex=render_inline_tex,
             )
 
+        # Annotations (arrows + position pills) via the shared engine, inside
+        # the translate group so anchors share the content frame (Layer B/C).
+        if effective_anns:
+            self.emit_annotation_arrows(
+                parts,
+                effective_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
+
+        if arrow_above > 0:
+            parts.append("  </g>")
         parts.append("</g>")
         return "".join(parts)
 

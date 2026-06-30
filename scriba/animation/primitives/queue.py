@@ -435,6 +435,20 @@ class Queue(PrimitiveBase):
                     )
             parts.extend(arrow_lines)
 
+        # Position pills + range targets (non-arrow annotations): route through
+        # the shared annotation engine so position=above/below pills render.
+        # Previously only arrow_from annotations were emitted, so pills were
+        # silently dropped despite bounding_box() reserving space for them.
+        pill_anns = [a for a in effective_anns if not a.get("arrow_from")]
+        if pill_anns:
+            self.emit_annotation_arrows(
+                parts,
+                pill_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
+
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
             parts.append("  </g>")
