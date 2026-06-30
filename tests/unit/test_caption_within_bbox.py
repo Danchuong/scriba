@@ -20,8 +20,18 @@ import re
 import pytest
 
 from scriba.animation.primitives._text_render import estimate_text_width
+from scriba.animation.primitives.stack import Stack
 
 from tests.unit.test_obstacle_protocol import _ALL_PRIMITIVE_CLASSES, _make_instance
+
+# A few caption-capable primitives render nothing when minimally empty, so
+# _make_instance's bare recipe would make the guard silently skip them (an
+# item-less Stack draws no caption). Build those with enough content that the
+# caption actually renders and is therefore asserted — otherwise a "migrated"
+# primitive could regress unnoticed (a hole in the no-regrowth guarantee).
+_RICH_CTOR: dict[type, tuple[str, dict]] = {
+    Stack: ("s", {"items": [1, 2, 3]}),
+}
 
 # Primitives whose caption is guaranteed to fit bounding_box().width.
 # GROWS as primitives adopt the shared caption layer. Never shrinks.
@@ -76,7 +86,8 @@ def _caption_drawn_width(svg: str) -> float:
 
 @pytest.mark.parametrize("cls", _ALL_PRIMITIVE_CLASSES, ids=lambda c: c.__name__)
 def test_caption_fits_bounding_box(cls: type) -> None:
-    inst = _make_instance(cls)
+    rich = _RICH_CTOR.get(cls)
+    inst = cls(*rich) if rich else _make_instance(cls)
     if not hasattr(inst, "label"):
         pytest.skip(f"{cls.__name__} has no caption attribute")
     inst.label = _LONG_CAPTION
