@@ -511,7 +511,7 @@ class MetricPlot(PrimitiveBase):
             parts.append(
                 f'<text x="{sx}" y="{H - pb + 14}"'
                 f' text-anchor="middle"'
-                f' style="font-size:calc(10px * var(--scriba-diagram-font-scale, 1))">'
+                f' style="font-size:10px">'
                 f'{_escape_xml(label)}</text>'
             )
         parts.append("</g>")
@@ -530,7 +530,7 @@ class MetricPlot(PrimitiveBase):
             parts.append(
                 f'<text x="{pl - 8}" y="{round(sy + 4, 2)}"'
                 f' text-anchor="end"'
-                f' style="font-size:calc(10px * var(--scriba-diagram-font-scale, 1))">'
+                f' style="font-size:10px">'
                 f'{_escape_xml(label)}</text>'
             )
         parts.append("</g>")
@@ -550,7 +550,7 @@ class MetricPlot(PrimitiveBase):
                 parts.append(
                     f'<text x="{W - pr + 8}" y="{round(sy + 4, 2)}"'
                     f' text-anchor="start"'
-                    f' style="font-size:calc(10px * var(--scriba-diagram-font-scale, 1))">'
+                    f' style="font-size:10px">'
                     f'{_escape_xml(label)}</text>'
                 )
             parts.append("</g>")

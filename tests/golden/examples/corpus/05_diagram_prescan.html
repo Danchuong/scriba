@@ -387,7 +387,7 @@
 :where([data-primitive="grid"]    [data-target]) > text,
 :where([data-primitive="dptable"] [data-target]) > text {
   font:                  var(--scriba-cell-font);
-  font-size:             calc(14px * var(--scriba-diagram-font-scale, 1));
+  font-size:             14px;
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
   font-synthesis:        none;         /* broad compat: Firefox ≤106, Safari ≤16.3 */
@@ -407,7 +407,7 @@
  * centered under each cell. */
 [data-primitive] .scriba-index-label {
   font:              var(--scriba-cell-index-font);
-  font-size:         calc(10px * var(--scriba-diagram-font-scale, 1));
+  font-size:         10px;
   fill:              var(--scriba-cell-index-color);
   text-anchor:       middle;
   dominant-baseline: hanging;
@@ -427,7 +427,7 @@
 :where([data-primitive="graph"] .scriba-graph-nodes > [data-target]) > text,
 :where([data-primitive="tree"]  .scriba-tree-nodes > [data-target]) > text {
   font:                  var(--scriba-node-font);
-  font-size:             calc(14px * var(--scriba-diagram-font-scale, 1));
+  font-size:             14px;
   font-variant-numeric:  tabular-nums lining-nums slashed-zero;
   font-feature-settings: "tnum" 1, "lnum" 1, "zero" 1, "ss01" 1;
   font-synthesis:        none;         /* broad compat: Firefox ≤106, Safari ≤16.3 */
@@ -459,7 +459,7 @@
 
 :where([data-primitive="numberline"] > [data-target]) > text {
   font:              var(--scriba-cell-index-font);
-  font-size:         calc(10px * var(--scriba-diagram-font-scale, 1));
+  font-size:         10px;
   fill:              var(--scriba-fg);
   text-anchor:       middle;
   dominant-baseline: hanging;
@@ -473,7 +473,7 @@
  * ``start`` the caption drifted right by half its width. */
 [data-primitive] > .scriba-primitive-label {
   font:              var(--scriba-label-font);
-  font-size:         calc(11px * var(--scriba-diagram-font-scale, 1));
+  font-size:         11px;
   fill:              var(--scriba-label-color);
   text-anchor:       middle;
   dominant-baseline: central;
@@ -492,7 +492,7 @@
 
 .scriba-annotation > text {
   font:        var(--scriba-annotation-font);
-  font-size:   calc(11px * var(--scriba-diagram-font-scale, 1));
+  font-size:   11px;
   text-anchor: middle;
 }
 
@@ -831,12 +831,12 @@
    ============================================ */
 
 .scriba-metricplot-legend-label {
-  font-size: calc(11px * var(--scriba-diagram-font-scale, 1));
+  font-size: 11px;
   fill: var(--scriba-fg);
 }
 
 .scriba-metricplot-right-axis-label {
-  font-size: calc(11px * var(--scriba-diagram-font-scale, 1));
+  font-size: 11px;
   fill: var(--scriba-fg-muted);
 }
 
@@ -1463,7 +1463,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 % A diagram (single frame) using VariableWatch with a wide value must
 % produce a viewBox sized for the post-apply width, not the initial state.</p>
 
-<figure class="scriba-diagram" data-scriba-scene="diagram-prescan"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 527 92" style="max-width:527px" role="img" aria-labelledby="diagram-prescan-frame-1-narration" xmlns="http://www.w3.org/2000/svg"><title>diagram-prescan</title><g transform="translate(12,12)"><g data-primitive="variablewatch" data-shape="vars"><clipPath id="vw-clip-vars"><rect x="4" y="4" width="495" height="40" rx="4"/></clipPath><g clip-path="url(#vw-clip-vars)"><g data-target="vars.var[state]" class="scriba-state-current"><rect x="104" y="4" width="395" height="40" fill="#0070d5" stroke="none"/><text x="54" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:calc(12px * var(--scriba-diagram-font-scale, 1))">state</text><text x="301" y="24" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:calc(13px * var(--scriba-diagram-font-scale, 1))">active connection retry pending - widened value</text></g></g><rect x="4" y="4" width="495" height="40" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="104" y1="4" x2="104" y2="44" stroke="#dfe3e6" stroke-width="1"/><text class="scriba-primitive-label" x="251" y="64" fill="#687076" style="text-anchor:middle">Diagnostic</text></g></g></svg></div></figure>
+<figure class="scriba-diagram" data-scriba-scene="diagram-prescan"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 527 92" style="max-width:calc(527px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="diagram-prescan-frame-1-narration" xmlns="http://www.w3.org/2000/svg"><title>diagram-prescan</title><g transform="translate(12,12)"><g data-primitive="variablewatch" data-shape="vars"><clipPath id="vw-clip-vars"><rect x="4" y="4" width="495" height="40" rx="4"/></clipPath><g clip-path="url(#vw-clip-vars)"><g data-target="vars.var[state]" class="scriba-state-current"><rect x="104" y="4" width="395" height="40" fill="#0070d5" stroke="none"/><text x="54" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">state</text><text x="301" y="24" fill="#ffffff" style="text-anchor:middle;dominant-baseline:central;font-size:13px">active connection retry pending - widened value</text></g></g><rect x="4" y="4" width="495" height="40" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="104" y1="4" x2="104" y2="44" stroke="#dfe3e6" stroke-width="1"/><text class="scriba-primitive-label" x="251" y="64" fill="#687076" style="text-anchor:middle">Diagnostic</text></g></g></svg></div></figure>
 <script>
 document.addEventListener('click',function(e){
   var btn=e.target.closest('[data-scriba-action="theme-toggle"]');

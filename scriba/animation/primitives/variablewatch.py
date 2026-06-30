@@ -254,7 +254,7 @@ class VariableWatch(PrimitiveBase):
                 f'y="{_PADDING + _ROW_HEIGHT // 2}" '
                 f'text-anchor="middle" dominant-baseline="central" '
                 f'fill="{THEME["fg_dim"]}" '
-                f'style="font-size:calc(11px * var(--scriba-diagram-font-scale, 1))">'
+                f'style="font-size:11px">'
                 f'no variables</text>'
             )
             if arrow_above > 0:

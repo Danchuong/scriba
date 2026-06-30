@@ -1,10 +1,10 @@
 \begin{diagram}[id="apartments-window"]
 \shape{scale}{Array}{size=5, data=[30,40,45,50,60], labels="0..4", label="kích thước căn hộ y nằm đâu so với ứng viên x=45, cửa sổ [x-k,x+k]=[40,50]"}
-\recolor{scale.range[1:4]}{state=good}
+\recolor{scale.range[1:3]}{state=good}
 \recolor{scale.cell[0]}{state=dim}
 \recolor{scale.cell[4]}{state=dim}
 \annotate{scale.cell[2]}{label="x=45", position=above}
-\annotate{scale.range[1:4]}{label="(C) ghép", position=above, color=good}
+\annotate{scale.range[1:3]}{label="(C) ghép", position=above, color=good}
 \annotate{scale.cell[0]}{label="(A) quá nhỏ: bỏ căn hộ", position=below, color=muted}
 \annotate{scale.cell[4]}{label="(B) quá lớn: bỏ ứng viên", position=below, color=muted}
 \end{diagram}

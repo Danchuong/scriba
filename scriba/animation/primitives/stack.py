@@ -237,7 +237,7 @@ class Stack(PrimitiveBase):
                 f'y="{_PADDING + _CELL_HEIGHT // 2}" '
                 f'text-anchor="middle" dominant-baseline="central" '
                 f'fill="{THEME["fg_dim"]}" '
-                f'style="font-size:calc(11px * var(--scriba-diagram-font-scale, 1))">'
+                f'style="font-size:11px">'
                 f'empty</text>'
             )
             parts.append("</g>")
@@ -324,7 +324,7 @@ class Stack(PrimitiveBase):
                 f'<text x="{ox}" y="{oy}" '
                 f'text-anchor="middle" dominant-baseline="central" '
                 f'fill="{THEME["fg_muted"]}" '
-                f'style="font-size:calc(11px * var(--scriba-diagram-font-scale, 1))">'
+                f'style="font-size:11px">'
                 f'+{overflow} more</text>'
             )
 

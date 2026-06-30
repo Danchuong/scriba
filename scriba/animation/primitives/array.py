@@ -361,8 +361,7 @@ class ArrayPrimitive(PrimitiveBase):
                     f'  <text class="scriba-primitive-label" x="{center_x}"'
                     f' y="{y0}" fill="{THEME["fg_muted"]}"'
                     f' style="text-anchor:middle;'
-                    f'font-size:calc({_FONT_SIZE_CAPTION}px * '
-                    f'var(--scriba-diagram-font-scale, 1))">{tspans}</text>'
+                    f'font-size:{_FONT_SIZE_CAPTION}px">{tspans}</text>'
                 )
 
         # Arrow annotations
