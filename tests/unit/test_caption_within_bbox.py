@@ -32,6 +32,7 @@ _CAPTION_MIGRATED: set[str] = {
     "linkedlist",
     "variablewatch",
     "matrix",
+    "stack",
 }
 
 # Long enough to exceed any minimally-constructed primitive's content width.
