@@ -7,27 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-06-30 — Annotation & caption legibility across all primitives
+
 ### Changed
+- **Rendered HTML/SVG bytes differ from 0.20.x** (`SCRIBA_VERSION` bumped 8→9).
+  Consumer caches keyed on rendered output MUST invalidate.
 - **`--scriba-diagram-font-scale` now scales the whole diagram uniformly** (the
   factor is applied to the `<svg>` viewport `max-width`; font sizes are fixed
   in user-coordinate space). Text and geometry scale by the same ratio, so text
   can never overflow its shapes at any factor — superseding the previous
-  text-only behavior where large factors could overflow. **Rendered HTML/SVG
-  bytes differ** (per-text `font-size:calc(... * var(...))` → fixed `Npx`; the
-  `<svg>` gains `max-width:calc(... * var(...))`); consumer caches keyed on
-  rendered output MUST invalidate.
+  text-only behavior where large factors could overflow (per-text
+  `font-size:calc(... * var(...))` → fixed `Npx`; the `<svg>` gains
+  `max-width:calc(... * var(...))`).
 
 ### Fixed
-- **Array position labels are readable and unambiguous.** `range[a:b]`
-  annotation targets now resolve (previously dropped); long captions wrap and
-  sit at the bottom (figure description) instead of clipping or being buried;
-  `position=below` labels render in a callout lane beneath the index/caption
-  stack — wrapped compact, never overlapping the cell, each with a leader line
-  back to its cell; the annotated cell is a collision blocker; the bounding box
-  reserves the caption, lane, and lane-pill horizontal extent so nothing clips.
+- **Captions fit their figure on every primitive.** Long `label=` captions wrap
+  and their width *and* height are folded into the bounding box across all 13
+  caption-bearing primitives (Array, Queue, Stack, Matrix, HashMap, LinkedList,
+  VariableWatch, Grid, NumberLine, DPTable, Tree, Graph, and CodePanel via title
+  ellipsis), so a caption can no longer clip at the figure edge or overlap
+  content. (Layer A.)
+- **Position annotations are no longer silently dropped.** `range[a:b]` and
+  `position=below` targets now resolve and render on every data-structure
+  primitive — previously dropped on Array, DPTable, NumberLine, Queue, Stack,
+  Matrix, HashMap, LinkedList, VariableWatch, Grid, and CodePanel. (Layer B/C.)
+- **`position=below` labels sit in a callout lane** beneath the index/caption
+  stack — wrapped compact, never overlapping the element, each with a leader
+  line back to its cell; the annotated element is a collision blocker; the
+  bounding box reserves the lane so nothing clips. NumberLine below-pills clear
+  the tick labels.
+- **Wide pills reserve horizontal space.** `position=left`/`right` and wide
+  above/below pills extend the bounding box (left overhang + right reach) so a
+  pill can no longer clip at the figure's left or right edge.
+- **Competing above-annotations stack instead of dropping.** A spanning
+  `range[a:b]` above-label and a single-cell above-label that contend for the
+  same zone are placed at different heights (range gets a span bracket + leader),
+  so neither is dropped or overlapped.
 - **`range[a:b]` position labels show a span bracket** across the range's cells
   (with a stem to the label), so a range annotation's extent is unambiguous;
   single-cell labels get none (no clutter).
+- **Cross-primitive obstacle avoidance restored.** Position-pill placement again
+  treats cross-primitive segment obstacles (e.g. neighboring Plane2D lines) as
+  hard blocks — the merged obstacle set was computed but dropped before reaching
+  the placement scorer, leaving avoidance inert.
 
 ## [0.20.0] - 2026-06-24 — Compact embed widget (overlay controls, tidy spacing, overlap-safe annotations)
 
