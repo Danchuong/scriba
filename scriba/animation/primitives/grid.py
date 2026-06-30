@@ -8,21 +8,18 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.errors import E1103, _animation_error
+from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
     ALL_RE,
     CELL_2D_RE,
     CELL_GAP,
     CELL_HEIGHT,
     CELL_WIDTH,
-    INDEX_LABEL_OFFSET,
-    THEME,
     BoundingBox,
     PrimitiveBase,
     _inset_rect_attrs,
     _render_svg_text,
     arrow_height_above,
-    position_label_height_below,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -194,6 +191,26 @@ class GridPrimitive(PrimitiveBase):
                 return (float(x), float(y))
         return None
 
+    def resolve_below_baseline(self) -> "float | None":
+        """``position=below`` pills sit below the whole grid (callout lane),
+        clear of the cells, with a leader line back to the labelled cell."""
+        return float(self._grid_dimensions()[1])
+
+    def resolve_annotation_box(self, selector: str) -> "BoundingBox | None":
+        """Cell AABB (Layer C) so a below-pill gets a leader line and the placer
+        treats the labelled cell as a blocker."""
+        m = _CELL_2D_RE.match(selector)
+        if m and m.group("name") == self.name:
+            r = int(m.group("row"))
+            c = int(m.group("col"))
+            if 0 <= r < self.rows and 0 <= c < self.cols:
+                x = c * (CELL_WIDTH + CELL_GAP)
+                y = r * (CELL_HEIGHT + CELL_GAP)
+                return BoundingBox(
+                    x=int(x), y=int(y), width=int(CELL_WIDTH), height=int(CELL_HEIGHT)
+                )
+        return None
+
     def emit_svg(
         self,
         *,
@@ -210,14 +227,17 @@ class GridPrimitive(PrimitiveBase):
             cell_height=CELL_HEIGHT, layout="2d",
         )
         arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
+        # #1: shift content right to make room for position=left pills (0 when
+        # none → "translate(0, …)", byte-identical to the pre-#1 output).
+        left_pad, _right = self._h_label_pad()
 
         lines: list[str] = [
             f'<g data-primitive="grid" data-shape="{self.name}">'
         ]
 
-        # Shift all content down so arrows curve into valid space above y=0
-        if arrow_above > 0:
-            lines.append(f'  <g transform="translate(0, {arrow_above})">')
+        # Shift content down (arrows) and right (left pills) into valid space.
+        if arrow_above > 0 or left_pad > 0:
+            lines.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
 
         for r in range(self.rows):
             for c in range(self.cols):
@@ -263,23 +283,25 @@ class GridPrimitive(PrimitiveBase):
                 )
                 lines.append("  </g>")
 
-        # Caption label below the grid (wrapped, width folded into bbox — Layer A)
+        # Caption below the grid, beneath the below-pill lane (Layer A/C). It is
+        # drawn inside the left_pad translate group, so it centers on the grid
+        # core width, not the (possibly left/right-padded) bbox width.
         if self.label is not None:
             tw, th = self._grid_dimensions()
             self._emit_caption(
                 lines,
                 content_width=tw,
-                footprint_width=int(self.bounding_box().width),
-                top_y=int(th),
+                footprint_width=max(tw, self._caption_block_width(tw)),
+                top_y=int(th + self._below_lane_height()),
                 render_inline_tex=render_inline_tex,
             )
 
-        # Arrow annotations
+        # Arrow + position-pill annotations
         if effective_anns:
             self.emit_annotation_arrows(lines, effective_anns, render_inline_tex=render_inline_tex)
 
-        # Close the translate group if we opened one for arrow space
-        if arrow_above > 0:
+        # Close the translate group if we opened one
+        if arrow_above > 0 or left_pad > 0:
             lines.append("  </g>")
 
         lines.append("</g>")
@@ -288,18 +310,20 @@ class GridPrimitive(PrimitiveBase):
     def bounding_box(self) -> BoundingBox:
         """Return the bounding box of this grid."""
         tw, th = self._grid_dimensions()
-        # Layer A: fold the (wrapped) caption width into the footprint and
-        # reserve the wrapped block's height below the grid.
-        w = max(tw, self._caption_block_width(tw))
-        h = th + self._caption_block_height(tw)
+        # Layer A: fold the (wrapped) caption width into the footprint.
+        core_w = max(tw, self._caption_block_width(tw))
+        # Layer C: below-pill callout lane sits between the grid and the caption.
+        h = th + self._below_lane_height() + self._caption_block_height(tw)
         computed = arrow_height_above(
             self._annotations, self.resolve_annotation_point,
             cell_height=CELL_HEIGHT, layout="2d",
         )
         arrow_above = max(computed, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
-        pos_below = position_label_height_below(self._annotations, cell_height=CELL_HEIGHT)
-        h += pos_below
+        # #1: reserve horizontal room for position=left/right pills. Both pads
+        # are 0 (int) without left/right pills, so the box stays byte-stable.
+        left_pad, right_reach = self._h_label_pad()
+        w = left_pad + max(core_w, right_reach)
         return BoundingBox(x=0, y=0, width=w, height=h)
 
     # -- obstacle protocol stubs (v0.12.0 prep) -----------------------------

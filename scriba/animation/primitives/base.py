@@ -72,6 +72,7 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     _translate_segment,
     _wrap_label_lines,
     arrow_height_above,
+    position_label_h_extents,
     position_label_height_above,
     position_label_height_below,
     position_below_lane_height,
@@ -416,6 +417,30 @@ class PrimitiveBase(abc.ABC):
         (e.g. Array with index labels / a caption) override this.
         """
         return None
+
+    def _below_lane_height(self) -> int:
+        """Px reserved below ``resolve_below_baseline()`` for ``position=below``
+        callout pills. 0 when there are no below pills (so reserving it is a
+        no-op for the common case). Shared by ``bounding_box``/caption placement
+        of every primitive that opts into the lane."""
+        return position_below_lane_height(self._annotations)
+
+    def _h_label_pad(self) -> "tuple[int, int]":
+        """``(left_overhang, right_reach)`` for ``position=left``/``right`` pills —
+        the horizontal space to reserve so they don't clip the viewBox, rounded
+        up to whole px. Both 0 when there are no left/right pills, so the no-pill
+        case keeps an integer footprint (byte-stable). Shared single source for
+        ``bounding_box`` (grow width) and ``emit_svg`` (shift content right by
+        the left overhang). Uses ``resolve_label_anchor`` + ``_arrow_cell_height``
+        so the estimate matches what ``emit_position_label_svg`` draws."""
+        left, right = position_label_h_extents(
+            self._annotations,
+            self.resolve_label_anchor,
+            cell_height=getattr(self, "_arrow_cell_height", CELL_HEIGHT),
+        )
+        import math
+
+        return int(math.ceil(left)), int(math.ceil(right))
 
     # -- Layer A: shared caption block (wrap + width-in-bbox) ----------------
     # Lifted from Array so every caption-bearing primitive folds its caption

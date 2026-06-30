@@ -2860,6 +2860,68 @@ def position_label_height_above(
     return max(0, raw_headroom)
 
 
+def _position_pill_width(label: str, color: str = "info") -> float:
+    """Rendered width (px) of a position-only pill for *label*.
+
+    MUST stay byte-identical to the pill-width formula in
+    ``emit_position_label_svg`` (the ``pill_w`` computation): same per-color font
+    size, same wrap policy, same padding. A drift-guard unit test asserts this
+    equals the emitted ``<rect>`` width.
+    """
+    style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    l_size = style["label_size"]
+    l_font_px = (
+        int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
+    )
+    if _label_has_math(label):
+        lines = [label]
+    else:
+        lines = _wrap_label_lines(label, max_px=_LABEL_PILL_MAX_W_PX, font_px=l_font_px)
+    widest = max(
+        estimate_text_width(_label_width_text(ln), l_font_px) for ln in lines
+    )
+    return widest + _LABEL_PILL_PAD_X * 2
+
+
+def position_label_h_extents(
+    annotations: list[dict[str, Any]],
+    label_anchor_resolver: "Callable[[str], tuple[float, float] | None]",
+    *,
+    cell_height: float = CELL_HEIGHT,
+) -> tuple[float, float]:
+    """Return ``(left_overhang, right_reach)`` in content-local px for
+    ``position=left``/``right`` pills — the horizontal space a primitive must
+    reserve so those pills do not clip the viewBox.
+
+    - ``left_overhang``: how far left pills extend past ``x=0`` (>= 0). Shift the
+      content right by this and grow the box by it.
+    - ``right_reach``: the absolute local x of the rightmost right-pill edge
+      (0 if none). Grow the box width to at least this.
+
+    Both 0 when there are no left/right position-only pills, so reserving them is
+    an opt-in no-op for the common case. Mirrors the gap/offset and pill width in
+    ``emit_position_label_svg`` (``final_x = ax ∓ pill_w/2 ∓ gap``; the pill edge
+    is ``ax ∓ (pill_w + gap)``).
+    """
+    gap = max(4.0, cell_height * 0.1)
+    left_overhang = 0.0
+    right_reach = 0.0
+    for a in _position_only_anns(annotations):
+        pos = a.get("position", "above")
+        if pos not in ("left", "right"):
+            continue
+        pt = label_anchor_resolver(a.get("target", ""))
+        if pt is None:
+            continue
+        ax = float(pt[0])
+        pill_w = _position_pill_width(a.get("label", ""), a.get("color", "info"))
+        if pos == "right":
+            right_reach = max(right_reach, ax + pill_w + gap)
+        else:  # left
+            left_overhang = max(left_overhang, (pill_w + gap) - ax)
+    return max(0.0, left_overhang), max(0.0, right_reach)
+
+
 def position_label_height_below(
     annotations: list[dict[str, Any]],
     *,
