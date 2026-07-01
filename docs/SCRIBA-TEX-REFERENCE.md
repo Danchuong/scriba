@@ -342,8 +342,8 @@ Binds the frame to the identifier `base-case`. The label:
 
 | Constraint | Detail |
 |---|---|
-| Characters | Letters, digits, `_`, `-`, `.` — matches `[A-Za-z_][A-Za-z0-9._-]*` |
-| Leading char | Must be a letter or `_` (not a digit or `-`) |
+| Characters | Unicode letters, digits, `_`, `-`, `.` — matches `[^\W\d][\w.-]*` (e.g. `base-case`, `đáp-án`) |
+| Leading char | Must be a letter (any script) or `_` (not a digit) |
 | Empty | Not allowed — raises `E1005` |
 | Unknown key | Any key other than `label` raises `E1004` |
 

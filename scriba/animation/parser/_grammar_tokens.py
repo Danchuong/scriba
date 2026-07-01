@@ -380,7 +380,7 @@ class _TokensMixin:
                     col=val_tok.col,
                 )
             # A bare (unquoted) label may use the full documented charset
-            # ``[A-Za-z_][A-Za-z0-9._-]*`` (SCRIBA-TEX-REFERENCE §5.3, e.g.
+            # ``[^\W\d][\w.-]*`` (SCRIBA-TEX-REFERENCE §5.3, e.g.
             # ``base-case``).  The lexer splits ``-``/``.`` out as separate
             # CHAR/NUMBER/IDENT tokens, so reassemble the contiguous run into
             # a single value.  Quoted (STRING) values are taken verbatim.
@@ -437,7 +437,7 @@ class _TokensMixin:
 
         The lexer emits ``-`` and ``.`` as standalone CHAR tokens and splits
         runs like ``base-case`` into ``IDENT CHAR(-) IDENT``.  The documented
-        label charset (SCRIBA-TEX-REFERENCE §5.3 ``[A-Za-z_][A-Za-z0-9._-]*``)
+        label charset (SCRIBA-TEX-REFERENCE §5.3 ``[^\W\d][\w.-]*``)
         permits those, so consume every *contiguous* charset token — one that
         begins exactly where the previous token ended, with no intervening
         whitespace — and concatenate their text.  A gap (space/newline) or a

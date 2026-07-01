@@ -56,7 +56,14 @@ __all__ = [
 # constructed ``FrameData`` instances with free-form labels (used by
 # older tests that repurposed ``FrameData.label`` as an aria-label
 # string) fall back gracefully to the index-based ``frame-N`` id.
-_LABEL_ID_RE = _re.compile(r"^[A-Za-z_][A-Za-z0-9._-]*$")
+#
+# The leading class is Unicode-aware (``[^\W\d]`` — a Unicode letter or
+# underscore, never a digit), mirroring the parser's ``isidentifier()``
+# gate. Unicode letters are valid XML ``NameStartChar`` and valid HTML id
+# chars, so a non-ASCII label (e.g. Vietnamese ``đáp``) is a usable anchor
+# rather than being silently downgraded to ``frame-N`` (SCRIBA-TEX-REFERENCE
+# §5.3). Spaces / punctuation outside ``._-`` remain unsafe.
+_LABEL_ID_RE = _re.compile(r"^[^\W\d][\w.-]*$")
 
 # ---------------------------------------------------------------------------
 # Layout constants (kept here for direct backward-compat; also live in

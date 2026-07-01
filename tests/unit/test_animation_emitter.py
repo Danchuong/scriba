@@ -489,6 +489,19 @@ class TestFrameIdFromLabel:
         # And the legacy ``frame-N`` id must NOT appear.
         assert 'id="scene-frame-1"' not in html
 
+    def test_static_id_uses_unicode_label(self) -> None:
+        """A non-ASCII-*leading* \\step label (e.g. Vietnamese ``đáp``) is a
+        valid XML ``NameStartChar`` and must be used as the frame id, not
+        silently downgraded to ``frame-N``. Spec §5.3 label charset extended
+        to Unicode letters (parser already accepts them via isidentifier)."""
+        prim = _StubPrimitive(shape_name="a")
+        frame = _frame(step=1, total=1, label="đáp")
+        html = emit_animation_html("scene", [frame], {"a": prim})
+        assert 'id="scene-đáp"' in html
+        assert 'id="scene-đáp-narration"' in html
+        # The legacy fallback id must NOT appear.
+        assert 'id="scene-frame-1"' not in html
+
     def test_static_id_falls_back_to_step_when_no_label(self) -> None:
         """Unlabeled frames keep the ``frame-N`` id."""
         prim = _StubPrimitive(shape_name="a")
