@@ -101,7 +101,10 @@ class _ForeachMixin:
 
         # Static interpolation check for ${name} references inside iterable_raw.
         # Looks for top-level ${ident} — subscripts are skipped (tracked below).
-        for m in _re.finditer(r"\$\{([A-Za-z_]\w*)", iterable_raw):
+        # Leading class is Unicode-aware (``[^\W\d]``) to match the loop-var
+        # ``isidentifier()`` gate and _check_interpolation_binding; an ASCII-only
+        # ``[A-Za-z_]`` silently skipped non-ASCII-leading refs (e.g. ``đáp``).
+        for m in _re.finditer(r"\$\{([^\W\d]\w*)", iterable_raw):
             self._check_interpolation_binding(m.group(1), tok.line, tok.col)
 
         # Make the loop variable visible to static interpolation checks

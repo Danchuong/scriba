@@ -203,6 +203,31 @@ class TestInterpolationBindingErrorPaths:
         assert msgs, "expected warning about undefined binding 'undefined_list'"
         assert "undefined_list" in msgs[0]
 
+    def test_undefined_unicode_interpolation_in_foreach_iterable_warns(
+        self, parser: SceneParser
+    ) -> None:
+        """A non-ASCII-*leading* ${ref} in a foreach iterable must still be
+        scanned for binding checks — parity with the Unicode-aware
+        ``name.isidentifier()`` gate in _check_interpolation_binding.
+
+        Regression: the ``${ident}`` scanner used an ASCII-only ``[A-Za-z_]``
+        leading class and silently skipped Unicode-leading refs, so undefined
+        ones (e.g. Vietnamese ``đáp_list``) never warned."""
+        src = (
+            "\\shape{a}{Array}{size=4}\n"
+            "\\step\n"
+            "\\foreach{i}{${đáp_list}}\n"
+            "  \\recolor{a.cell[${i}]}{state=done}\n"
+            "\\endforeach\n"
+        )
+        with warnings.catch_warnings(record=True) as caught:
+            warnings.simplefilter("always")
+            parser.parse(src)
+
+        msgs = _binding_warnings(caught)
+        assert msgs, "expected warning about undefined binding 'đáp_list'"
+        assert "đáp_list" in msgs[0]
+
     def test_undefined_interpolation_in_apply_param_value_warns(
         self, parser: SceneParser
     ) -> None:

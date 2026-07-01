@@ -219,6 +219,48 @@ class TestEdgeCases:
 
 
 # ---------------------------------------------------------------------------
+# Unicode / non-ASCII variable names
+# ---------------------------------------------------------------------------
+
+
+class TestUnicodeNames:
+    """Non-ASCII-*leading* variable names must be addressable, matching the
+    Unicode-aware lexer identifier grammar (``_IDENT_RE = [^\\W\\d]\\w*``).
+
+    Regression: ``_VAR_RE`` used an ASCII-only ``[A-Za-z_]`` leading class, so
+    a name starting with e.g. Vietnamese ``đ`` or an accented vowel rendered as
+    a row but was silently un-addressable (E1115 drop on set).
+    """
+
+    def test_validate_selector_leading_non_ascii(self) -> None:
+        inst = VariableWatch("w", {"names": ["đáp", "giá"]})
+        assert inst.validate_selector("var[đáp]") is True
+        assert inst.validate_selector("var[giá]") is True
+
+    def test_apply_command_leading_non_ascii(self) -> None:
+        inst = VariableWatch("w", {"names": ["đáp", "giá"]})
+        inst.apply_command({"value": "1"}, target_suffix="var[đáp]")
+        inst.apply_command({"value": "2"}, target_suffix="var[giá]")
+        assert inst._values["đáp"] == "1"
+        assert inst._values["giá"] == "2"
+
+    def test_set_value_leading_accented_vowel(self) -> None:
+        inst = VariableWatch("w", {"names": ["ánh"]})
+        inst.set_value("var[ánh]", "7")
+        assert inst._values["ánh"] == "7"
+
+    def test_resolve_annotation_point_leading_non_ascii(self) -> None:
+        inst = VariableWatch("w", {"names": ["đáp"]})
+        assert inst.resolve_annotation_point("w.var[đáp]") is not None
+
+    def test_digit_leading_still_rejected(self) -> None:
+        # ``[^\\W\\d]`` (not bare ``\\w``): identifiers cannot start with a
+        # digit, matching the lexer's ``_IDENT_RE``.
+        inst = VariableWatch("w", {"names": ["i"]})
+        assert inst.validate_selector("var[1x]") is False
+
+
+# ---------------------------------------------------------------------------
 # Annotation-pill space reservation (#1 left/right width, #2 below-lane)
 # ---------------------------------------------------------------------------
 

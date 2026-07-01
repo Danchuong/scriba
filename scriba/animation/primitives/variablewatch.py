@@ -42,7 +42,11 @@ _NAME_FONT_SIZE_INT = 12
 # Selector regex
 # ---------------------------------------------------------------------------
 
-_VAR_RE = re.compile(r"^var\[(?P<varname>[A-Za-z_]\w*)\]$")
+# Leading class mirrors the lexer's identifier grammar
+# (``_IDENT_RE = [^\W\d]\w*``, parser/lexer.py): a Unicode letter or
+# underscore, never a digit. An ASCII-only ``[A-Za-z_]`` here silently
+# dropped non-ASCII-leading names (e.g. ``đáp``) that the lexer accepts.
+_VAR_RE = re.compile(r"^var\[(?P<varname>[^\W\d]\w*)\]$")
 _ALL_RE = re.compile(r"^all$")
 
 # ---------------------------------------------------------------------------
