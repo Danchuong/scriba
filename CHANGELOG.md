@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-07-01 — Unicode identifier support
+
+### Added
+- **Unicode-letter `\step` labels are now valid HTML frame ids.** A label with a
+  non-ASCII leading letter (e.g. Vietnamese `đáp`) is emitted as
+  `id="{scene}-đáp"` and participates in `\hl{…}` cross-references and JS
+  deep-linking, instead of being silently downgraded to the `frame-N` fallback.
+  The SCRIBA-TEX-REFERENCE §5.3 label charset is widened to `[^\W\d][\w.-]*`.
+  `SCRIBA_VERSION` is unchanged: ASCII output is byte-identical — only
+  previously-degraded non-ASCII output changes.
+
+### Fixed
+- **VariableWatch `var[…]` selectors accept non-ASCII-leading variable names.**
+  A name like `đáp` rendered as a row but its value updates were silently dropped
+  (`E1115`) because `_VAR_RE` used an ASCII-only leading class while the lexer is
+  Unicode-aware. Aligned to `[^\W\d]\w*`.
+- **`\foreach` `${…}` interpolation binding-check scans Unicode-leading refs.** An
+  undefined non-ASCII `${đáp}` reference in a foreach iterable is now reported
+  instead of silently skipped — the scanner regex was ASCII-only while the
+  loop-variable and binding checks were already Unicode-aware.
+
 ## [0.21.0] - 2026-06-30 — Annotation & caption legibility across all primitives
 
 ### Changed

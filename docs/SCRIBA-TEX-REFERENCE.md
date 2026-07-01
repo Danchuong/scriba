@@ -2,6 +2,7 @@
 
 > **Single-file reference for AI agents.** Read this one file to write valid Scriba `.tex` sources.
 > Scriba renders LaTeX → HTML for competitive programming editorials with animated algorithm visualizations.
+> **Target:** v0.21.1
 
 ## Contents
 

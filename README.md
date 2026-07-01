@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.21.0 · MIT · Python 3.10+
+**Status:** v0.21.1 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -16,7 +16,7 @@ asset basenames needed to display it.
   plus a namespaced set of required CSS and JS basenames and a block-data
   map — consumers decide how to serve the static assets.
 - **`\begin{animation}` environment** (shipping since 0.2.0) for step-through
-  editorial walkthroughs with 16 built-in primitives (arrays, grids, graphs,
+  editorial walkthroughs with 15 built-in primitives (arrays, grids, graphs,
   trees, DP tables, number lines, matrices/heatmaps, stacks, plane-2D,
   metric plots, and the 5 data-structure primitives: code panel, hash map,
   linked list, queue, variable watch). `\begin{diagram}` for inline
