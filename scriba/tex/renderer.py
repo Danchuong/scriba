@@ -320,9 +320,11 @@ class TexRenderer:
             )
         html_text = self._render_source(block.raw, ctx)
         css = {"scriba-tex-content.css"}
-        if self._pygments_theme in ("one-light", "github-light"):
+        if self._pygments_theme != "none":
+            # The two files form a pair: the light sheet is the base and the
+            # dark sheet is entirely [data-theme="dark"]-guarded, so both
+            # ship together and the runtime theme toggle picks the palette.
             css.add("scriba-tex-pygments-light.css")
-        elif self._pygments_theme in ("one-dark", "github-dark"):
             css.add("scriba-tex-pygments-dark.css")
         js: set[str] = set()
         if self._enable_copy_buttons:
@@ -336,9 +338,10 @@ class TexRenderer:
     def assets(self) -> RendererAssets:
         static = files("scriba.tex").joinpath("static")
         css: set[Path] = {traversable_to_path(static / "scriba-tex-content.css")}
-        if self._pygments_theme in ("one-light", "github-light"):
+        if self._pygments_theme != "none":
+            # Light base + [data-theme="dark"]-guarded dark variant ship as
+            # a pair (see render_block).
             css.add(traversable_to_path(static / "scriba-tex-pygments-light.css"))
-        elif self._pygments_theme in ("one-dark", "github-dark"):
             css.add(traversable_to_path(static / "scriba-tex-pygments-dark.css"))
         js: set[Path] = set()
         if self._enable_copy_buttons:

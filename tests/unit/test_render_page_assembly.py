@@ -69,3 +69,29 @@ class TestDeclaredCssShipped:
 
     def test_pygments_css_still_bundled(self, page: str) -> None:
         assert ".scriba-tex-content .highlight" in page
+
+    def test_pygments_dark_variant_ships_for_the_theme_toggle(self, page: str) -> None:
+        # the dark file is entirely [data-theme="dark"]-guarded, so it must
+        # ship ALONGSIDE light — the page has a runtime theme toggle and
+        # token colors must follow it
+        assert '[data-theme="dark"] .scriba-tex-content .highlight' in page
+
+
+class TestRendererDeclaresThemePair:
+    def test_artifact_declares_light_and_dark(self) -> None:
+        from scriba.core.artifact import Block
+        from scriba.core.context import RenderContext
+        from scriba.core.workers import SubprocessWorkerPool
+        from scriba.tex.renderer import TexRenderer
+
+        pool = SubprocessWorkerPool()
+        try:
+            r = TexRenderer(worker_pool=pool)
+            art = r.render_block(
+                Block(start=0, end=4, kind="tex", raw="text"),
+                RenderContext(resource_resolver=lambda name: name),
+            )
+        finally:
+            pool.close()
+        assert "scriba-tex-pygments-light.css" in art.css_assets
+        assert "scriba-tex-pygments-dark.css" in art.css_assets
