@@ -245,6 +245,10 @@
       var tr=frames[toIdx]&&frames[toIdx].tr;
       if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
       _animState='animating';
+      // Commit the target index BEFORE the transition runs: a click landing
+      // mid-animation must step from the committed frame, not the stale one
+      // (stale cur swallowed rapid Next clicks and blocked Prev entirely).
+      cur=toIdx;
       _updateControls(toIdx);
       var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
       var pending=[];
@@ -257,7 +261,7 @@
       for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
       var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
       function _finish(fullSync){
-        cur=toIdx;
+        if(_animState!=='animating')return; // superseded by a snap/cancel — don't overwrite the stage
         if(fullSync){
           stage.innerHTML=frames[toIdx].svg;
         }

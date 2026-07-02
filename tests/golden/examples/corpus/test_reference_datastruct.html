@@ -2405,6 +2405,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     var tr=frames[toIdx]&&frames[toIdx].tr;
     if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
     _animState='animating';
+    cur=toIdx;
     narr.innerHTML=frames[toIdx].narration;
     _updateControls(toIdx);
     var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
@@ -2418,7 +2419,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
     var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){
-      cur=toIdx;
+      if(_animState!=='animating')return;
       if(fullSync){
         stage.innerHTML=frames[toIdx].svg;
       }
@@ -2773,6 +2774,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     var tr=frames[toIdx]&&frames[toIdx].tr;
     if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
     _animState='animating';
+    cur=toIdx;
     narr.innerHTML=frames[toIdx].narration;
     _updateControls(toIdx);
     var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
@@ -2786,7 +2788,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
     var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){
-      cur=toIdx;
+      if(_animState!=='animating')return;
       if(fullSync){
         stage.innerHTML=frames[toIdx].svg;
       }
@@ -3133,6 +3135,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     var tr=frames[toIdx]&&frames[toIdx].tr;
     if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
     _animState='animating';
+    cur=toIdx;
     narr.innerHTML=frames[toIdx].narration;
     _updateControls(toIdx);
     var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
@@ -3146,7 +3149,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
     var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){
-      cur=toIdx;
+      if(_animState!=='animating')return;
       if(fullSync){
         stage.innerHTML=frames[toIdx].svg;
       }
@@ -3829,6 +3832,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     var tr=frames[toIdx]&&frames[toIdx].tr;
     if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
     _animState='animating';
+    cur=toIdx;
     narr.innerHTML=frames[toIdx].narration;
     _updateControls(toIdx);
     var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
@@ -3842,7 +3846,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
     var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){
-      cur=toIdx;
+      if(_animState!=='animating')return;
       if(fullSync){
         stage.innerHTML=frames[toIdx].svg;
       }
@@ -4176,6 +4180,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     var tr=frames[toIdx]&&frames[toIdx].tr;
     if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
     _animState='animating';
+    cur=toIdx;
     narr.innerHTML=frames[toIdx].narration;
     _updateControls(toIdx);
     var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
@@ -4189,7 +4194,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
     var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){
-      cur=toIdx;
+      if(_animState!=='animating')return;
       if(fullSync){
         stage.innerHTML=frames[toIdx].svg;
       }
@@ -4544,6 +4549,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     var tr=frames[toIdx]&&frames[toIdx].tr;
     if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
     _animState='animating';
+    cur=toIdx;
     narr.innerHTML=frames[toIdx].narration;
     _updateControls(toIdx);
     var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
@@ -4557,7 +4563,7 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
     var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
     function _finish(fullSync){
-      cur=toIdx;
+      if(_animState!=='animating')return;
       if(fullSync){
         stage.innerHTML=frames[toIdx].svg;
       }
