@@ -1,5 +1,14 @@
 # Case: label-rendering — cụm bug render label trong scriba
 
+> **STATUS: CLOSED 2026-07-02** — toàn bộ backlog label đã land qua 10 commits
+> (math caption → Array Layer-A → exact painted-extent reservation 4 phía →
+> sole placement → structural batch S1–S7: pill math wrap + FO font parity +
+> node overflow parity + inline caption anchor + CSS descendant + env options
+> wired (label/width/height/layout, `grid` rejected E1004) + diagram ARIA +
+> tspan copy spaces). Suite 4104 xanh; SCRIBA_VERSION 11. Còn lại duy nhất:
+> refactor thuần không phải bug (plain-arrow delegate, DRY preamble,
+> caption-width font-metrics — cần browser metrics, đã bounded + guarded).
+
 ## Hand-off Brief (rough — sẽ viết lại ở Outcome 5)
 
 Sáu triệu chứng label sai/mất khi render doc tiếng Việt (Number Spiral editorial). Evidence Confirmed từ artifacts render phiên 2026-07-02. Đang truy root cause trong `scriba/animation/{labels,primitives,emitter}`.
