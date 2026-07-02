@@ -1,0 +1,111 @@
+# Case: label-rendering — cụm bug render label trong scriba
+
+## Hand-off Brief (rough — sẽ viết lại ở Outcome 5)
+
+Sáu triệu chứng label sai/mất khi render doc tiếng Việt (Number Spiral editorial). Evidence Confirmed từ artifacts render phiên 2026-07-02. Đang truy root cause trong `scriba/animation/{labels,primitives,emitter}`.
+
+## Case Info
+
+- **Ngày mở:** 2026-07-02
+- **Người mở:** Chuong (qua Claude)
+- **Chế độ:** symptom-driven, multi-symptom cluster
+- **Pause protocol:** user mandate "fix triệt để, nghiên cứu sâu" → chạy liền các Outcome, không dừng giữa chừng.
+
+## Problem Statement (hypothesis của user — cần verify độc lập)
+
+1. Grid `label=` trong **animation**: SVG text 1 dòng, neo đáy-phải, clip mất chữ ("Xoắn ốc số (hàng y xuố"), đè hàng cuối grid. Cùng label ở **diagram** wrap 3 tspan đúng.
+2. Label chứa `$math$` đi path `foreignObject` 1 dòng cố định (673×20, `overflow:hidden`): label dài xén dọc (scrollH 34 > clientH 20), vỡ layout.
+3. `display:flex` trong foreignObject nuốt space quanh inline math ("thử mathm²và").
+4. `VariableWatch` `label="f = nền + d"` drop hoàn toàn khỏi HTML (0 match).
+5. Animation env `label="Number Spiral: …"` drop; widget hardcode `aria-label="Animation"`.
+6. tspan wrap strip space → copy-paste dính chữ ("sangphải", "tớim^2").
+
+## Evidence Inventory
+
+| # | Evidence | Grade | Nguồn |
+|---|----------|-------|-------|
+| E1 | `<text class="scriba-primitive-label" …><tspan>…cột x sang</tspan><tspan>phải.…</tspan>` — không space cuối dòng | Confirmed | number_spiral.html (plain-label build) |
+| E2 | `<foreignObject x="0" y="203" width="673" height="20"><div style="display:flex;…overflow:hidden;text-overflow:ellipsis">` quanh caption có KaTeX | Confirmed | number_spiral.html (math-label build) |
+| E3 | caption math-label: scrollWidth 673 = clientWidth, scrollHeight 34 > clientHeight 20 → xén dọc | Confirmed | đo headless Chromium |
+| E4 | `grep -c 'f = nền + d'` = 0 trong HTML | Confirmed | number_spiral.html |
+| E5 | `aria-label="Animation"` trên `role="region"` widget; label env 0 match | Confirmed | number_spiral.html |
+| E6 | Animation grid label render 1 dòng, bbox w=312 tại x=640, hiển thị cắt tại biên SVG; diagram label wrap 3 tspan | Confirmed | screenshots anim_frame1.png + bbox eval |
+| E7 | Diagram svg `aria-labelledby="spiral-overview-frame-1-narration"` — id không tồn tại | Confirmed | number_spiral.html |
+| E8 | Label ngắn + math render KaTeX đúng nhưng mất space quanh math | Confirmed | short_label.png |
+
+## Hypotheses
+
+| # | Hypothesis | Status | Resolution |
+|---|-----------|--------|------------|
+| H1 | Animation vs diagram đi 2 code path label khác nhau (frame_renderer vs static?) | Open | |
+| H2 | Math-label đi path foreignObject 1 dòng không wrap (thiết kế cho label ngắn) | Open | |
+| H3 | `display:flex` gây collapse whitespace text-node | Open | |
+| H4 | VariableWatch không implement render label | Open | |
+| H5 | Emitter hardcode aria-label, không đọc env label | Confirmed (sửa: không phải hardcode — là fallback else-branch; drop tại renderer.py:503-509 không forward) | Refutation pass: grep toàn codebase 0 consumer của `ir.options.label`; plumbing emit_html/emit_interactive_html đã sẵn nhưng không được gọi với label |
+| H6 | Text-wrap engine split theo space rồi join không giữ space | Open | |
+
+## Investigation Backlog
+
+- [ ] Map code path: ai emit `scriba-primitive-label` (tspan path vs foreignObject path), điều kiện branch
+- [ ] Vì sao animation Grid label 1 dòng không wrap còn diagram wrap
+- [ ] VariableWatch label: có đọc param không, emit ở đâu
+- [ ] Env label → emitter/aria; tìm chuỗi hardcode "Animation"
+- [ ] tspan wrap: chỗ split/join space
+- [ ] Kiểm tra test coverage hiện có quanh label
+
+## Timeline
+
+- 2026-07-02: render number_spiral.tex → 6 triệu chứng; thí nghiệm math-label ngắn/dài; mở case.
+
+## Source Code Trace
+
+### Symptom 5 — env label drop (H5: CONFIRMED, sửa lại chi tiết)
+
+- Parser CAPTURE OK: `scriba/animation/parser/grammar.py:545` (`label=opts.get("label")`) → `AnimationOptions.label` (`scriba/animation/parser/ast.py:298`). KHÔNG chết ở parser.
+- **Drop point: `scriba/animation/renderer.py:503-509`** — `render_block` chỉ đọc `ir.options.id`, không bao giờ forward `ir.options.label` vào `emit_html(...)`.
+- Plumbing hạ nguồn ĐÃ TỒN TẠI nhưng chưa nối dây: `emit_html(label="" …)` (`_html_stitcher.py:686`) → forward `emit_interactive_html(label=…)` (`:730`, param `:410`) → dùng tại `:647` `_aria_label = _escape(label) if label else "Animation"` → tag `:656`.
+- `grep ir.options.label` toàn codebase = 0 consumer. Docs intent: env label = aria-label cho figure (`docs/spec/environments.md:120`, REFERENCE `:1177,:1466`).
+- Static filmstrip `emit_animation_html` + `emit_diagram_html` không có param label (cần thêm nếu muốn triệt để).
+- Phân biệt 2 loại label: FRAME label (`\step[label=]` → FrameData.label, hoạt động, có test) vs ENV label (bug này).
+
+### Symptom 7 (ARIA) — dangling aria-labelledby ở diagram (CONFIRMED)
+
+- `scriba/animation/_frame_renderer.py:454` build `narration_id = … f"{frame_id}-narration"`, `:512` emit `aria-labelledby` **vô điều kiện**.
+- Animation có `<p class="scriba-narration" id="…-narration">` nên hợp lệ; diagram (`emit_diagram_html` `_html_stitcher.py:745-781`) KHÔNG emit narration → dangling.
+- Spec `docs/spec/environments.md:542-554` (§8.2): diagram svg `role="img"` **không có** aria-labelledby → fix = suppress/override cho diagram path.
+- Diagram wrapper không có `id=` (chỉ `data-scriba-scene`, `_html_stitcher.py:774-781`) — **khớp spec §8.1/§8.2**, không phải bug; widget animation có id là do code path riêng (`:656`).
+
+### Test coverage gap (ARIA)
+
+- `tests/unit/test_filmstrip_aria.py`: chỉ cover FRAME-label trên static filmstrip. KHÔNG cover: env label → widget aria-label; emit_interactive_html label param; diagram dangling aria-labelledby.
+
+### Baseline test suite (2026-07-02)
+
+- `pytest -x`: 3474 passed; 1 fail `test_recursive_dos.py::test_graph_with_100_self_loops_completes` — flaky timing (pass khi chạy riêng, 2.17s); không liên quan.
+
+## Follow-up: 2026-07-02 — scope thu hẹp theo user
+
+User chốt scope: **chỉ fix render `$math$` trong label** (symptom 2+3). Symptom 1, 4, 5, 6, 7 → backlog (findings giữ nguyên làm tài liệu). Hai agent điều tra symptom 4/5 bị user stop — phần env-label/ARIA đã ghi ở Source Code Trace phía trên.
+
+### Root cause (Confirmed) — math trong shape label
+
+1. `scriba/animation/primitives/base.py:476-477` (trước fix) — `_caption_lines`: `if _label_has_math(s): return [s]` — math caption không bao giờ wrap → 1 dòng dài.
+2. `base.py:520-533` (trước fix) — nhánh single-line gọi `_render_svg_text(..., fo_width=footprint_width, fo_height=20)` không `font_size` → hộp cố định footprint×20, chữ KaTeX cỡ kế thừa (to hơn 11px caption).
+3. `scriba/animation/primitives/_text_render.py:289-300` (trước fix) — FO div `display:flex;align-items:center;justify-content:…;line-height:1;overflow:hidden` → (a) flex biến mỗi text-node/span thành flex item, **nuốt whitespace** giữa chúng; (b) label dài wrap bên trong flex item → content 34px trong hộp 20px → **xén dọc**; (c) `css_class` bị bỏ qua ở FO path (fast path `<text>` thì có).
+4. Phát hiện kéo theo khi fix: `<text>` fast path không inline `text-anchor` — CSS `[data-primitive] > .scriba-primitive-label` không phủ mọi context nhúng → dòng plain lệch phải từ center_x (họ hàng với symptom 1 animation — root cause chung "phụ thuộc CSS direct-child").
+
+### Fix (đã land)
+
+- `_text_render.py` `_render_svg_text` FO path: bỏ flex → inline flow + `white-space:nowrap` + `line-height:{h}px` (center dọc, giữ space); `class` đặt lên `<foreignObject>` (khớp selector + tooling).
+- `base.py`: `_caption_lines` wrap luôn cả math (`_wrap_label_lines` vốn `$…$`-safe, đo qua `_label_width_text` strip-$ + 1.15x); `_caption_block_width` đo math qua `_label_width_text`; `_caption_block_height` dùng `_MATH_CAPTION_LINE_H=18`/dòng cho block math (KaTeX strut ~15px @11px); `_emit_caption` nhánh mới: math + callback → mỗi dòng 1 `_render_svg_text` box (`text_anchor="middle"`, `dominant_baseline="central"`, `font_size=11`); không callback → fallback tspan wrap như plain.
+- Plain label: byte-stable (mọi thay đổi gate sau `_has_math`/`_label_has_math`).
+
+### Verification
+
+- TDD: `tests/unit/test_caption_math_wrap.py` — 18 tests (RED→GREEN).
+- Headless Chromium đo: FO scrollH=clientH=18 (hết xén), display:block (hết flex), 3 dòng center-y 217/235/253 (stack đúng 18px), KaTeX render, space quanh math nguyên. Screenshot `diagram_fixed2.png`.
+- Impact: CRITICAL hub (`_render_svg_text` 19 callers, `_caption_lines` 25 flows) — guard bằng full suite + fixtures (đang chạy).
+
+## Conclusion
+
+**Confidence: High** (root cause Confirmed từng dòng, repro deterministic, fix verified bằng test + đo browser). Scope đã fix: math-in-label. Backlog còn: symptom 1 (animation label lệch/clip — nghi cùng họ "CSS direct-child không áp trong animation context", có manh mối mới từ mục 4), symptom 4 (VariableWatch label drop), symptom 5 (env label → renderer.py:503-509, fix 1 dòng + plumbing), symptom 6 (tspan strip space khi copy), symptom 7 (dangling aria-labelledby — `_frame_renderer.py:512` thiếu guard).

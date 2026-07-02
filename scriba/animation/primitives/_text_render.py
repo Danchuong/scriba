@@ -277,24 +277,24 @@ def _render_svg_text(
 
     # Match text alignment inside the div to the requested anchor
     if text_anchor == "start":
-        h_align = "flex-start"
         t_align = "left"
     elif text_anchor == "end":
-        h_align = "flex-end"
         t_align = "right"
     else:
-        h_align = "center"
         t_align = "center"
 
+    # Normal inline flow, NOT flex: a flex container turns every text node
+    # and KaTeX span into its own flex item and drops the whitespace between
+    # them ("a $x$ b" rendered as "ax b"). Single-line semantics are pinned
+    # with white-space:nowrap; line-height:{h}px vertically centres the line
+    # inside the box (callers wrap long captions into one box per line).
     style_parts: list[str] = [
-        "display:flex",
-        "align-items:center",
-        f"justify-content:{h_align}",
         f"width:{w}px",
         f"height:{h}px",
+        f"line-height:{h}px",
         f"color:{fill}",
         f"text-align:{t_align}",
-        "line-height:1",
+        "white-space:nowrap",
         "overflow:hidden",
         "text-overflow:ellipsis",
     ]
@@ -305,8 +305,14 @@ def _render_svg_text(
 
     style = ";".join(style_parts)
 
+    fo_attrs = f'x="{fo_x}" y="{fo_y}" width="{w}" height="{h}"'
+    if css_class:
+        # The <text> fast path carries css_class; mirror it here so CSS
+        # (font, halo) and tooling see the same hook on the math path.
+        fo_attrs = f'class="{css_class}" {fo_attrs}'
+
     return (
-        f'<foreignObject x="{fo_x}" y="{fo_y}" width="{w}" height="{h}">'
+        f"<foreignObject {fo_attrs}>"
         f'<div xmlns="http://www.w3.org/1999/xhtml" style="{style}">'
         f"{inner_html}"
         f"</div>"

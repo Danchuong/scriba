@@ -68,6 +68,7 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     _LabelPlacement,
     _Obstacle,
     _label_has_math,
+    _label_width_text,
     _segment_to_obstacle,
     _translate_segment,
     _wrap_label_lines,
@@ -172,6 +173,10 @@ def get_primitive_registry() -> dict[str, type["PrimitiveBase"]]:
 _CAPTION_FONT_PX: int = 11          # must match --scriba-label-font / array._FONT_SIZE_CAPTION
 _CAPTION_MIN_WRAP_W: int = 200      # caption never wraps narrower than this
 _CAPTION_SAFETY_PAD: int = 8        # estimate_text_width under-counts; pad
+# Per-line box height for captions containing $...$ math. KaTeX inline
+# spans at 11px reach ~15px (superscript strut), so the plain 13px line
+# would clip them; 18px clears the strut with 1-2px of air.
+_MATH_CAPTION_LINE_H: int = 18
 
 # Top-band caption (tree, graph) — caption sits ABOVE the content.
 _TOP_CAPTION_BAND: int = 28         # historical single-line band height
@@ -468,13 +473,13 @@ class PrimitiveBase(abc.ABC):
 
     def _caption_lines(self, content_width: float) -> list[str]:
         """Wrap ``self.label`` to (at least) the content width. Math captions
-        are never wrapped. Empty list when there is no caption."""
+        wrap too — ``_wrap_label_lines`` never splits inside ``$...$`` and
+        measures math via ``_label_width_text``. Empty list when there is no
+        caption."""
         s = getattr(self, "label", None)
         if not s:
             return []
         s = str(s)
-        if _label_has_math(s):
-            return [s]
         target = max(float(content_width), float(_CAPTION_MIN_WRAP_W))
         return _wrap_label_lines(s, max_px=target, font_px=_CAPTION_FONT_PX)
 
@@ -483,13 +488,24 @@ class PrimitiveBase(abc.ABC):
         lines = self._caption_lines(content_width)
         if not lines:
             return 0
-        widest = max(estimate_text_width(ln, _CAPTION_FONT_PX) for ln in lines)
+        widest = max(
+            estimate_text_width(
+                _label_width_text(ln) if _label_has_math(ln) else ln,
+                _CAPTION_FONT_PX,
+            )
+            for ln in lines
+        )
         return int(widest + 2 * _CELL_HORIZONTAL_PADDING + _CAPTION_SAFETY_PAD)
 
     def _caption_block_height(self, content_width: float) -> int:
-        """Total height of the wrapped caption block, or 0."""
-        n = len(self._caption_lines(content_width))
-        return n * (_CAPTION_FONT_PX + 2) if n else 0
+        """Total height of the wrapped caption block, or 0. Math lines use
+        the taller ``_MATH_CAPTION_LINE_H`` box (KaTeX strut clearance)."""
+        lines = self._caption_lines(content_width)
+        if not lines:
+            return 0
+        if any(_label_has_math(ln) for ln in lines):
+            return len(lines) * _MATH_CAPTION_LINE_H
+        return len(lines) * (_CAPTION_FONT_PX + 2)
 
     def _emit_caption(
         self,
@@ -517,6 +533,33 @@ class PrimitiveBase(abc.ABC):
             return
         center_x = int(footprint_width // 2) + origin_x
         line_h = _CAPTION_FONT_PX + 2
+        if render_inline_tex is not None and any(
+            _label_has_math(ln) for ln in lines
+        ):
+            # Math caption: one KaTeX-capable box per wrapped line, so a
+            # long caption stacks below the content instead of clipping
+            # inside a single fixed-height foreignObject. Plain lines in
+            # the block go through the same call and come out as centred
+            # <text> (dominant-baseline keeps both variants on one axis).
+            math_h = _MATH_CAPTION_LINE_H
+            for i, ln in enumerate(lines):
+                out.append(
+                    "  "
+                    + _render_svg_text(
+                        ln,
+                        center_x,
+                        top_y + math_h // 2 + i * math_h,
+                        fill=THEME["fg_muted"],
+                        css_class="scriba-primitive-label",
+                        font_size=str(_CAPTION_FONT_PX),
+                        text_anchor="middle",
+                        dominant_baseline="central",
+                        fo_width=footprint_width,
+                        fo_height=math_h,
+                        render_inline_tex=render_inline_tex,
+                    )
+                )
+            return
         if len(lines) == 1:
             out.append(
                 "  "
