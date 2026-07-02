@@ -166,6 +166,25 @@ Nguyên tắc: **một nguồn sự thật hình học** — extent tính từ C
 - **Nghiệm thu:** browser Chromium trên goldens mới: dptable_arrows 96→**59=painted**, label_overlap_1d 116→**88=painted**, kmp 70→**74** (hết âm 4px), number_spiral grid 114→**0** — **waste = 0.0 mọi case**. Ảnh đối chứng overlap_old/new.png: nội dung pixel-identical, chỉ cắt phần trắng chết. Suite **4071 pass**; R-32 conformance nguyên vẹn (semantics max-over-frames GIỮ — chỉ con số exact); goldens regen 49 files; SCRIBA_VERSION 9→10; REFERENCE §13.8 cập nhật.
 - **Còn lại (phase kế):** Phase 2 hard-bound nudge (chặn candidate vượt lane — chiều "thiếu" từ cross-primitive scene_segments, hiếm, đang được honesty test canh); exact hóa chiều NGANG (`_h_label_pad` family — hiện lệch 0.2px stroke bleed, `_EPS_X=0.5` đánh dấu trong test); dọn `arrow_height_above` legacy (giờ chỉ tests dùng).
 
+### Follow-up #5 — sweep bug cùng class "estimate-vs-actual / twin-drift / fudge" (3 agents, sau khi land exact reservation)
+
+**ĐÃ DRIFT (confirmed) — 2 cái vá ngay cùng ngày (commit "fix(animation): wire print-substory reservation, measure <line>..."):**
+- Print-substory thiếu `_apply_min_arrow_above` (`_html_stitcher.py:550-567`) → print vs widget lệch lane. FIXED.
+- Blind spot chung 2 extent parsers: `<line>` (plain-arrow stem `:1766`, leader `:3396,:3428`) không được đo — bịt cả 2 phía, giữ double-blind. FIXED.
+
+**ĐÃ DRIFT — còn lại (chưa fix, chờ quyết):**
+- **Multi-line pill bottom-heavy:** fix căn giữa dọc (`first_dy=-line_h*(n-1)/2`, `:3475` + comment ghi rõ bug cũ) chỉ land ở copy position-label; arc-label (`:2375`) + plain-arrow (`:1929`) vẫn "dòng 1 tại fi_y, mọc xuống" → label ≥3 dòng tràn đáy pill. Fix: extract `_emit_pill_tspans` dùng 3 nơi. LOW effort, visual bug sống.
+- **Legacy boolean placement loop còn sống** (`:3288-3335`): position-pill KHÔNG có obstacles rơi vào first-fit 4 hướng, bỏ qua scoring engine — trái docstring `_place_pill` "sole placement primitive" (`:3038-3041`). Fix: route qua `_place_pill`, mở rộng nó nhận arc_direction/flow. MED.
+- **Array `_below_pill_width` drift kép** (`array.py:513`): hardcode font 11 trong khi ARROW_STYLES có màu 12px (`:1610,:1650`) → under-reserve → clip cạnh; và không dùng `_label_width_text` cho math → over-count lệch tâm. MED.
+
+**ESTIMATE SỐNG cùng class (chưa drift, sẽ drift được):**
+- **🎯 Đòn bẩy lớn nhất (agent chỉ ra):** `measure_painted_extent` ĐÃ trả đủ 4 phía (min_x/max_x/max_y) của chính emit thật — nhưng `annotation_height_above` chỉ dùng min_y, VỨT 3 phía, rồi 3 họ estimator song song (`position_label_h_extents`/`_position_pill_width`/`_h_label_pad`; `position_below_lane_height`/`position_label_height_below`; array `_below_pill_width`/`_bbox_width`) tự đoán lại — và KHÔNG model collision-nudge (multi-pill relocation → tràn không guard, `_EPS_X=0.5` đang che 0.2px). Fix = tiêu thụ nốt 3 phía của phép đo có sẵn → retire trọn 3 họ, exact ngang+dưới by construction. Đây là "phase kế" tự nhiên.
+- Pill-dimension formula mirror 7 chỗ (`:1791,:2167,:3215` emit vs `:2611,:2860,:2792,:2922,:2984`, `array.py:513`) — chỉ `_position_pill_width` có drift-guard test. Fix: single `pill_dimensions()`.
+- `_est_pill_h=19px` anchor trong `_compute_control_points` (:2059) — pill multi-line cao hơn → anchor sát arc; chỉ aesthetics (extent đã exact). LOW.
+- Caption width: `_CAPTION_SAFETY_PAD=8` + 1.15x math scale trên `estimate_text_width` 0.62em — không exact được thuần Python (cần font metrics thật); bounded + guarded (`test_css_font_sync`). Chấp nhận, ghi nhận.
+
+**DỌN (an toàn):** stack estimator cũ production-dead: `arrow_height_above` + `_arrow_label_pill_h` + `position_label_height_above` + fudges A-class (`_ARROW_STROKE_PAD=3.0` — double-count với `_extent.py:176` nếu tái dùng; `_LABEL_HEADROOM` 24/32 prod-side; nudge margin; uncapped stagger; sqrt floor) — chỉ tests còn gọi; dead import `_html_stitcher.py:30` + re-export base.py:78/`__all__:59`. DRY nhẹ: `_reserved_arrow_above()` base (~30 sites `max(extent,_min)`), `_annotations_for()` (8 sites filter), `_prepare_scene_layout()` (preamble 4-call byte-identical ×2), `emit_plain_arrow_svg` → delegate `_emit_label_and_pill` (copy ~byte-level `:1773-1936` vs `:2149-2382`).
+
 ## Follow-up: 2026-07-02 — scope thu hẹp theo user
 
 User chốt scope: **chỉ fix render `$math$` trong label** (symptom 2+3). Symptom 1, 4, 5, 6, 7 → backlog (findings giữ nguyên làm tài liệu). Hai agent điều tra symptom 4/5 bị user stop — phần env-label/ARIA đã ghi ở Source Code Trace phía trên.
