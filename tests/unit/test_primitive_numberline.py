@@ -166,7 +166,7 @@ class TestBoundingBox:
         inst = NumberLinePrimitive("nl", {"domain": [0, 5], "label": "Axis"})
         x, y, w, h = inst.bounding_box()
         assert w == 400.0
-        assert h == 69.0  # 56 + 13 (one wrapped caption line, font 11 + 2)
+        assert h == 77.0  # 56 + 8 (_CAPTION_CLEAR_GAP) + 13 (one caption line)
 
 
 # ---------------------------------------------------------------------------
@@ -252,4 +252,4 @@ class TestBelowPillLane:
     def test_caption_only_bbox_unchanged(self) -> None:
         """No below pills -> lane is 0 -> caption stays at NL_HEIGHT (byte-stable)."""
         nl = NumberLinePrimitive("nl", {"domain": [0, 5], "label": "Axis"})
-        assert nl.bounding_box().height == 69.0  # 56 + 13, unchanged
+        assert nl.bounding_box().height == 77.0  # 56 + 8 (gap) + 13

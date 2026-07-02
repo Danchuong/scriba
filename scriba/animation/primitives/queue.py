@@ -13,6 +13,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    _CAPTION_CLEAR_GAP,
     CELL_1D_RE,
     CELL_GAP,
     CELL_HEIGHT,
@@ -325,6 +326,8 @@ class Queue(PrimitiveBase):
         core_w = max(content_w + 2 * _LABEL_PADDING, self._caption_block_width(content_w))
         h = _POINTER_HEIGHT + _POINTER_LABEL_GAP + CELL_HEIGHT + INDEX_LABEL_OFFSET
         h += self._caption_block_height(content_w)
+        if self.label is not None:
+            h += _CAPTION_CLEAR_GAP
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
         # Layer C: below-pill callout lane between the queue and the caption
@@ -470,7 +473,14 @@ class Queue(PrimitiveBase):
         if self.label is not None:
             content_w = self._total_width()
             bbox = self.bounding_box()
-            caption_top = int(bbox.height - self._caption_block_height(content_w))
+            # minus arrow_above (emitted inside the translate group) so the
+            # caption stays inside the bbox; the +GAP in bounding_box keeps
+            # it clear of the index-label baseline it used to sit on.
+            caption_top = int(
+                bbox.height
+                - self._caption_block_height(content_w)
+                - self._arrow_height_above(self._annotations)
+            )
             self._emit_caption(
                 parts,
                 content_width=content_w,

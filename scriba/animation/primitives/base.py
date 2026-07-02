@@ -182,6 +182,11 @@ def get_primitive_registry() -> dict[str, type["PrimitiveBase"]]:
 _CAPTION_FONT_PX: int = 11          # must match --scriba-label-font / array._FONT_SIZE_CAPTION
 _CAPTION_MIN_WRAP_W: int = 200      # caption never wraps narrower than this
 _CAPTION_SAFETY_PAD: int = 8        # estimate_text_width under-counts; pad
+# Vertical clearance between a primitive's content bottom and its caption.
+# One constant for every primitive: Array/DPTable historically used 9
+# (_STACK_GAP), Stack 8, Grid/Matrix/NumberLine 0 (the caption glyphs sat
+# ON the cell border), Queue 0 (overlapping its own index labels).
+_CAPTION_CLEAR_GAP: int = 8
 # Per-line box height for captions containing $...$ math. KaTeX inline
 # spans at 11px reach ~15px (superscript strut), so the plain 13px line
 # would clip them; 18px clears the strut with 1-2px of air.
@@ -704,7 +709,9 @@ class PrimitiveBase(abc.ABC):
                 + _render_svg_text(
                     lines[0],
                     center_x,
-                    top_y + _CAPTION_FONT_PX // 2,
+                    # +2: center-anchored text otherwise puts its glyph top AT
+                    # top_y, ~3px tighter than the multi-line/math branches.
+                    top_y + _CAPTION_FONT_PX // 2 + 2,
                     fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
                     # Inline anchor: the CSS direct-child rule does not reach

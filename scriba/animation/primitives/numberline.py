@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
+    _CAPTION_CLEAR_GAP,
     _LabelPlacement,
     THEME,
     BoundingBox,
@@ -312,7 +313,7 @@ class NumberLinePrimitive(PrimitiveBase):
                 footprint_width=int(
                     max(float(self.width), float(self._caption_block_width(self.width)))
                 ),
-                top_y=int(NL_HEIGHT + below_lane),
+                top_y=int(NL_HEIGHT + below_lane + _CAPTION_CLEAR_GAP),
                 render_inline_tex=render_inline_tex,
             )
 
@@ -374,6 +375,8 @@ class NumberLinePrimitive(PrimitiveBase):
         # caption stays at NL_HEIGHT, so the box is byte-stable.
         below_lane = self._below_lane_height()
         h += below_lane + self._caption_block_height(self.width)
+        if self.label is not None:
+            h += _CAPTION_CLEAR_GAP
 
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above

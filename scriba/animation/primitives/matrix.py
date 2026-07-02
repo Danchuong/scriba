@@ -13,6 +13,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    _CAPTION_CLEAR_GAP,
     ALL_RE,
     CELL_2D_RE,
     THEME,
@@ -475,7 +476,7 @@ class MatrixPrimitive(PrimitiveBase):
                 lines,
                 content_width=content_w,
                 footprint_width=int(core_w),
-                top_y=self._total_height() + self._below_lane_height(),
+                top_y=self._total_height() + self._below_lane_height() + _CAPTION_CLEAR_GAP,
                 render_inline_tex=render_inline_tex,
             )
 
@@ -506,6 +507,7 @@ class MatrixPrimitive(PrimitiveBase):
             self._total_height()
             + self._below_lane_height()
             + self._caption_block_height(content_w)
+            + (_CAPTION_CLEAR_GAP if self.label is not None else 0)
         )
         # Layer B/C: reserve space for annotation arrows + position=above pills
         # (mirrors Grid/DPTable). No annotations -> all terms are 0, so the box

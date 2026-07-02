@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    _CAPTION_CLEAR_GAP,
     CellMetrics,
     ALL_RE,
     CELL_2D_RE,
@@ -317,7 +318,7 @@ class GridPrimitive(PrimitiveBase):
                 lines,
                 content_width=tw,
                 footprint_width=max(tw, self._caption_block_width(tw)),
-                top_y=int(th + self._below_lane_height()),
+                top_y=int(th + self._below_lane_height() + _CAPTION_CLEAR_GAP),
                 render_inline_tex=render_inline_tex,
             )
 
@@ -346,6 +347,8 @@ class GridPrimitive(PrimitiveBase):
         core_w = max(tw, self._caption_block_width(tw))
         # Layer C: below-pill callout lane sits between the grid and the caption.
         h = th + self._below_lane_height() + self._caption_block_height(tw)
+        if self.label is not None:
+            h += _CAPTION_CLEAR_GAP
         arrow_above = self._reserved_arrow_above()
         h += arrow_above
         # #1: reserve horizontal room for position=left/right pills. Both pads

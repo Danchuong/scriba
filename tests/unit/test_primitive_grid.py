@@ -164,5 +164,5 @@ class TestBoundingBox:
     def test_dimensions_with_label(self) -> None:
         inst = GridPrimitive("g", {"rows": 2, "cols": 2, "label": "test"})
         _, _, _, h = inst.bounding_box()
-        # 2*40 + 1*2 = 82 (grid) + 13 (one wrapped caption line, font 11 + 2) = 95
-        assert h == 95.0
+        # 2*40 + 1*2 = 82 (grid) + 8 (_CAPTION_CLEAR_GAP) + 13 (one caption line) = 103
+        assert h == 103.0

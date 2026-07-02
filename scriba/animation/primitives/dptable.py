@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    _CAPTION_CLEAR_GAP,
     ALL_RE,
     CELL_1D_RE,
     CELL_2D_RE,
@@ -46,7 +47,7 @@ _FONT_SIZE_CAPTION: int = 11
 # Vertical whitespace between consecutive items in the bottom stack
 # (index-label row → caption row). ``vstack`` guarantees no glyph-box
 # overlap for any baseline/font-size combination; see ``layout.py``.
-_STACK_GAP: int = 9
+_STACK_GAP: int = _CAPTION_CLEAR_GAP  # single source for caption clearance
 
 
 # ---------------------------------------------------------------------------

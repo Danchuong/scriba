@@ -19,6 +19,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
+    _CAPTION_CLEAR_GAP,
     THEME,
     BoundingBox,
     PrimitiveBase,
@@ -230,6 +231,8 @@ class LinkedList(PrimitiveBase):
         core_w = max(2 * _PADDING + content_w, self._caption_block_width(content_w))
         h = 2 * _PADDING + _NODE_HEIGHT + _INDEX_LABEL_OFFSET
         h += self._caption_block_height(content_w)
+        if self.label is not None:
+            h += _CAPTION_CLEAR_GAP
         arrow_above = self._reserved_arrow_above()
         h += arrow_above
         # Layer C: below-pill callout lane (0 without below pills → byte-stable).
@@ -458,7 +461,15 @@ class LinkedList(PrimitiveBase):
                 parts,
                 content_width=content_w,
                 footprint_width=int(bbox.width),
-                top_y=int(bbox.height - self._caption_block_height(content_w)),
+                # minus arrow_above: the caption is emitted INSIDE the
+                # translate(_, arrow_above) group, so anchoring at raw
+                # bbox.height painted it arrow_above px PAST the bbox
+                # bottom, eating the inter-primitive gap.
+                top_y=int(
+                    bbox.height
+                    - self._caption_block_height(content_w)
+                    - self._reserved_arrow_above()
+                ),
                 render_inline_tex=render_inline_tex,
             )
 

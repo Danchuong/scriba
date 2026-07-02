@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    _CAPTION_CLEAR_GAP,
     ALL_RE,
     CELL_1D_RE,
     CELL_GAP,
@@ -58,7 +59,7 @@ _FONT_SIZE_CAPTION: int = 11
 # magic number. ``vstack`` guarantees glyph boxes cannot overlap for any
 # combination of font sizes within the ±5 % cross-font drift envelope
 # absorbed by this gap. See ``layout.py`` for the invariant contract.
-_STACK_GAP: int = 9
+_STACK_GAP: int = _CAPTION_CLEAR_GAP  # single source for caption clearance
 # Caption wrap/pad constants now live in base (PrimitiveBase Layer A helpers,
 # shared by all caption-bearing primitives).
 

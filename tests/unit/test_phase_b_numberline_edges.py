@@ -288,7 +288,7 @@ class TestBoundingBoxCorrect:
     def test_with_label_dimensions(self) -> None:
         inst = NumberLinePrimitive("nl", {"domain": [0, 5], "label": "Test"})
         x, y, w, h = inst.bounding_box()
-        assert h == 69.0  # 56 + 13 (one wrapped caption line, font 11 + 2)
+        assert h == 77.0  # 56 + 8 (_CAPTION_CLEAR_GAP) + 13 (one caption line)
 
 
 # ---------------------------------------------------------------------------
