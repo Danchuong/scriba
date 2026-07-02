@@ -176,6 +176,7 @@ def _render_svg_text(
     fo_height: int = 0,
     render_inline_tex: "Callable[[str], str] | None" = None,
     text_outline: str | None = None,
+    clip_overflow: bool = True,
 ) -> str:
     """Render a text value as either a plain ``<text>`` or a ``<foreignObject>``.
 
@@ -295,9 +296,15 @@ def _render_svg_text(
         f"color:{fill}",
         f"text-align:{t_align}",
         "white-space:nowrap",
-        "overflow:hidden",
-        "text-overflow:ellipsis",
     ]
+    if clip_overflow:
+        style_parts.append("overflow:hidden")
+        style_parts.append("text-overflow:ellipsis")
+    else:
+        # Overflow parity with plain <text>: node labels and floating axis
+        # labels are allowed to spill past their box exactly like their
+        # plain-text twins do (halo-for-overflow design).
+        style_parts.append("overflow:visible")
     if font_weight:
         style_parts.append(f"font-weight:{font_weight}")
     if font_size:
@@ -306,6 +313,10 @@ def _render_svg_text(
     style = ";".join(style_parts)
 
     fo_attrs = f'x="{fo_x}" y="{fo_y}" width="{w}" height="{h}"'
+    if not clip_overflow:
+        # UA stylesheets default <foreignObject> to overflow:hidden — the
+        # attribute opens it so the div's visible overflow can paint.
+        fo_attrs += ' overflow="visible"'
     if css_class:
         # The <text> fast path carries css_class; mirror it here so CSS
         # (font, halo) and tooling see the same hook on the math path.

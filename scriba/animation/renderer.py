@@ -500,8 +500,13 @@ class AnimationRenderer:
         minify = ctx.metadata.get("minify", True)
         inline_runtime = ctx.metadata.get("inline_runtime", True)
         asset_base_url = ctx.metadata.get("asset_base_url", "")
+        _opts = getattr(ir, "options", None)
         html = emit_html(
             scene_id, frames, primitives, mode=output_mode,
+            label=(getattr(_opts, "label", None) or ""),
+            width=getattr(_opts, "width", None),
+            height=getattr(_opts, "height", None),
+            layout=(getattr(_opts, "layout", None) or "filmstrip"),
             render_inline_tex=ctx.render_inline_tex,
             minify=minify,
             inline_runtime=inline_runtime,

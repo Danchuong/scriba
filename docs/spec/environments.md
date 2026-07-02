@@ -114,12 +114,11 @@ Both environments accept an optional `[key=value,...]` block immediately after `
 
 | Key       | Type                   | Default      | Applies to          | Meaning                                                                 |
 |-----------|------------------------|--------------|---------------------|-------------------------------------------------------------------------|
-| `width`   | dimension (`ex`, `%`)  | `auto`       | animation, diagram  | Hint for stage viewBox width. `auto` lets the primitive choose.         |
-| `height`  | dimension (`ex`)       | `auto`       | animation, diagram  | Hint for stage viewBox height.                                          |
+| `width`   | dimension (`px`, `cm`, `%`) | `auto`  | animation, diagram  | `max-width` constraint on the rendered widget/figure. Bare numbers are px. |
+| `height`  | dimension (`px`, `cm`)  | `auto`      | animation, diagram  | `max-height` constraint on the rendered widget/figure.                  |
 | `id`      | ident                  | auto-hashed  | animation, diagram  | Stable scene id used in `data-scriba-scene`. Must be `[a-z][a-z0-9-]*`. |
-| `label`   | string                 | none         | animation, diagram  | `aria-label` for the outer `<figure>`.                                  |
-| `layout`  | `filmstrip`\|`stack`   | `filmstrip`  | animation only      | Default viewport layout. Print always falls back to `stack`.            |
-| `grid`    | `on`\|`off`            | `off`        | diagram only        | Show debug grid (authoring aid only; never in production output).       |
+| `label`   | string                 | none         | animation, diagram  | `aria-label` for the outer widget/`<figure>`.                            |
+| `layout`  | `filmstrip`\|`stack`   | `filmstrip`  | animation only      | Emitted as `data-layout` on the static filmstrip figure.                 |
 
 Unknown keys are `E1004` (error, not warning — keep options forward-compatible by versioning, not by silent acceptance).
 

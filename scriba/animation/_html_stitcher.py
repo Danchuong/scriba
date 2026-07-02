@@ -9,6 +9,7 @@ frame id and the substory's own id (no module-level counter).
 from __future__ import annotations
 
 import html as _html
+import re
 import json as _json
 from typing import Any, Callable
 
@@ -110,6 +111,25 @@ def _build_reserved_offsets(
 # ---------------------------------------------------------------------------
 
 
+def _size_style_attr(width: "str | None", height: "str | None") -> str:
+    """`` style="max-width:...;max-height:..."`` from env width/height.
+
+    Bare numbers get ``px``; values with units (``8cm``) pass through.
+    Returns "" when neither is set, keeping output byte-stable.
+    """
+    parts: list[str] = []
+    for prop, val in (("max-width", width), ("max-height", height)):
+        if not val:
+            continue
+        v = str(val)
+        if re.fullmatch(r"[\d.]+", v):
+            v += "px"
+        parts.append(f"{prop}:{v}")
+    if not parts:
+        return ""
+    return f' style="{";".join(parts)}"'
+
+
 def _escape(text: str) -> str:
     """Escape text for use in HTML attributes."""
     return _html.escape(text, quote=True)
@@ -208,6 +228,9 @@ def emit_animation_html(
     primitives: dict[str, Any],
     css_assets: set[str] | None = None,
     render_inline_tex: Callable[[str], str] | None = None,
+    label: str = "",
+    layout: str = "filmstrip",
+    size_style: str = "",
 ) -> str:
     """Produce the complete ``<figure>`` HTML for an animation.
 
@@ -223,8 +246,8 @@ def emit_animation_html(
             f'<figure class="scriba-animation" '
             f'data-scriba-scene="{_escape(scene_id)}" '
             f'data-frame-count="0" '
-            f'data-layout="filmstrip" '
-            f'aria-label="Animation">\n'
+            f'data-layout="{_escape(layout)}"{size_style} '
+            f'aria-label="{_escape(label) if label else "Animation"}">\n'
             f'  <ol class="scriba-frames">\n'
             f"  </ol>\n"
             f"</figure>"
@@ -247,13 +270,14 @@ def emit_animation_html(
     # frames so downstream primitives never shift when annotations appear.
     reserved_offsets = _build_reserved_offsets(frames, primitives)
 
-    # aria-label from first frame with a label, or fall back to "Animation"
-    # (matches the interactive widget's fallback at emit_interactive_html)
-    aria_label = "Animation"
-    for f in frames:
-        if f.label:
-            aria_label = f.label
-            break
+    # aria-label: env label first (the documented scene description),
+    # then the first frame label, then the generic fallback.
+    aria_label = label or "Animation"
+    if not label:
+        for f in frames:
+            if f.label:
+                aria_label = f.label
+                break
 
     frame_items: list[str] = []
     for frame in frames:
@@ -306,7 +330,7 @@ def emit_animation_html(
         f'<figure class="scriba-animation" '
         f'data-scriba-scene="{_escape(scene_id)}" '
         f'data-frame-count="{frame_count}" '
-        f'data-layout="filmstrip" '
+        f'data-layout="{_escape(layout)}"{size_style} '
         f'aria-label="{_escape(aria_label)}">\n'
         f'  <ol class="scriba-frames">\n'
         f"{frames_html}\n"
@@ -417,6 +441,7 @@ def emit_interactive_html(
     scene_id: str,
     frames: list[Any],
     primitives: dict[str, Any],
+    size_style: str = "",
     label: str = "",
     render_inline_tex: Callable[[str], str] | None = None,
     inline_runtime: bool = True,
@@ -642,7 +667,7 @@ def emit_interactive_html(
         _script_block = _build_external_script(scene_id, _json_frames_raw, asset_base_url)
 
     widget_html = f"""\
-<div class="scriba-widget" id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1" role="region" aria-label="{_aria_label}">
+<div class="scriba-widget"{size_style} id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1" role="region" aria-label="{_aria_label}">
   <div class="scriba-stage-wrap">
     <div class="scriba-stage"></div>
     <div class="scriba-controls">
@@ -673,6 +698,9 @@ def emit_html(
     primitives: dict[str, Any],
     mode: str = "interactive",
     label: str = "",
+    width: "str | None" = None,
+    height: "str | None" = None,
+    layout: str = "filmstrip",
     render_inline_tex: Callable[[str], str] | None = None,
     minify: bool = True,
     inline_runtime: bool = True,
@@ -706,13 +734,16 @@ def emit_html(
     # screen-reader focus, so fail fast with E1005.
     validate_frame_labels_unique(frames)
 
+    _size_attr = _size_style_attr(width, height)
     if mode == "static":
         result = emit_animation_html(
             scene_id, frames, primitives, render_inline_tex=render_inline_tex,
+            label=label, layout=layout, size_style=_size_attr,
         )
     elif mode == "diagram":
         result = emit_diagram_html(
             scene_id, frames, primitives, render_inline_tex=render_inline_tex,
+            label=label, size_style=_size_attr,
         )
     else:
         result = emit_interactive_html(
@@ -720,6 +751,7 @@ def emit_html(
             render_inline_tex=render_inline_tex,
             inline_runtime=inline_runtime,
             asset_base_url=asset_base_url,
+            size_style=_size_attr,
         )
     if minify:
         result = _minify_html(result)
@@ -736,6 +768,8 @@ def emit_diagram_html(
     frames: list[Any],
     primitives: dict[str, Any],
     render_inline_tex: Callable[[str], str] | None = None,
+    label: str = "",
+    size_style: str = "",
 ) -> str:
     """Produce a static ``<figure class="scriba-diagram">`` with no controls."""
     _frame_id = _get_frame_id_fn()
@@ -758,11 +792,15 @@ def emit_diagram_html(
         frame, primitives, scene_id, viewbox, render_inline_tex,
         _frame_id_fn=_frame_id,
         _escape_fn=_escape,
+        # A diagram has no narration element — an aria-labelledby pointing
+        # at "{frame}-narration" would dangle (spec §8.2: role="img" only).
+        narration_id_override="",
     )
 
+    _aria = f' aria-label="{_escape(label)}"' if label else ""
     return (
         f'<figure class="scriba-diagram" '
-        f'data-scriba-scene="{_escape(scene_id)}">\n'
+        f'data-scriba-scene="{_escape(scene_id)}"{_aria}{size_style}>\n'
         f'  <div class="scriba-stage">\n'
         f'    {svg_html}\n'
         f'  </div>\n'

@@ -275,6 +275,7 @@ class GridPrimitive(PrimitiveBase):
                         text_x,
                         text_y,
                         fill=colors["text"],
+                        font_size="14",
                         fo_width=CELL_WIDTH,
                         fo_height=CELL_HEIGHT,
                         render_inline_tex=render_inline_tex,

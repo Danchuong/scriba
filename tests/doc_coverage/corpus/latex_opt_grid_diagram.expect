@@ -1,2 +1,2 @@
-ok
-feature: option grid (diagram, accepted but ignored)
+error E1004
+feature: option grid (dropped 0.21.2 — unknown option keys fail fast)

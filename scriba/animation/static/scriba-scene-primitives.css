@@ -450,7 +450,7 @@
   stroke-width: var(--scriba-tick-stroke-width);
 }
 
-:where([data-primitive="numberline"] > [data-target]) > text {
+:where([data-primitive="numberline"] [data-target]) > text {
   font:              var(--scriba-cell-index-font);
   font-size:         10px;
   fill:              var(--scriba-fg);
@@ -464,7 +464,7 @@
  * horizontal center as the ``x`` coordinate and the total width as
  * ``fo_width``, i.e. the caller expects middle-anchored rendering. Under
  * ``start`` the caption drifted right by half its width. */
-[data-primitive] > .scriba-primitive-label {
+[data-primitive] .scriba-primitive-label {
   font:              var(--scriba-label-font);
   font-size:         11px;
   fill:              var(--scriba-label-color);

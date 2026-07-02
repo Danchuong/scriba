@@ -1618,9 +1618,11 @@ class Graph(PrimitiveBase):
                 fill=node_colors["text"],
                 text_anchor="middle",
                 dominant_baseline="central",
+                font_size="14",
                 fo_width=self._node_radius * 2,
                 fo_height=self._node_radius * 2,
                 render_inline_tex=render_inline_tex,
+                clip_overflow=False,
                 # Wave 9: no inline text_outline — CSS halo cascade owns it.
             )
             parts.append(

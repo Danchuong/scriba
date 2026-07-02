@@ -17,6 +17,8 @@ from typing import Any, Callable, ClassVar
 from scriba.animation.errors import _emit_warning, _animation_error
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives.base import (
+    _label_width_text,
+    estimate_text_width,
     BoundingBox,
     PrimitiveBase,
     _escape_xml,
@@ -562,7 +564,10 @@ class MetricPlot(PrimitiveBase):
                 self.xlabel, cx, H - 6,
                 font_size="11",
                 text_anchor="middle",
+                fo_width=estimate_text_width(_label_width_text(str(self.xlabel)), 11) + 12,
+                fo_height=16,
                 render_inline_tex=render_inline_tex,
+                clip_overflow=False,
             )
         )
         cy = round((pt + H - pb) / 2, 2)
@@ -570,7 +575,10 @@ class MetricPlot(PrimitiveBase):
             self.ylabel, 12, cy,
             font_size="11",
             text_anchor="middle",
+            fo_width=estimate_text_width(_label_width_text(str(self.ylabel)), 11) + 12,
+            fo_height=16,
             render_inline_tex=render_inline_tex,
+            clip_overflow=False,
         )
         parts.append(
             f'<g transform="rotate(-90, 12, {cy})">{ylabel_svg}</g>'
@@ -581,7 +589,10 @@ class MetricPlot(PrimitiveBase):
                 font_size="11",
                 text_anchor="middle",
                 css_class="scriba-metricplot-right-axis-label",
+                fo_width=estimate_text_width(_label_width_text(str(self.ylabel_right)), 11) + 12,
+                fo_height=16,
                 render_inline_tex=render_inline_tex,
+                clip_overflow=False,
             )
             parts.append(
                 f'<g transform="rotate(90, {W - 10}, {cy})">{ylabel_right_svg}</g>'
@@ -751,7 +762,11 @@ class MetricPlot(PrimitiveBase):
                     s.name, legend_x + 26, round(y + 4, 2),
                     css_class="scriba-metricplot-legend-label",
                     font_size="11",
+                    text_anchor="start",
+                    fo_width=estimate_text_width(_label_width_text(str(s.name)), 11) + 12,
+                    fo_height=16,
                     render_inline_tex=render_inline_tex,
+                    clip_overflow=False,
                 )
             )
 

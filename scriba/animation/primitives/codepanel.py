@@ -13,6 +13,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
+    _label_width_text,
     THEME,
     BoundingBox,
     PrimitiveBase,
@@ -390,6 +391,11 @@ class CodePanel(PrimitiveBase):
                     text_anchor="start",
                     dominant_baseline="central",
                     css_class="scriba-primitive-label",
+                    fo_width=estimate_text_width(
+                        _label_width_text(str(self._header_label())),
+                        _HEADER_FONT_PX,
+                    ) + 12,
+                    fo_height=_HEADER_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )
             )

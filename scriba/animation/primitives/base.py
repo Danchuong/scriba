@@ -695,6 +695,12 @@ class PrimitiveBase(abc.ABC):
                     top_y + _CAPTION_FONT_PX // 2,
                     fill=THEME["fg_muted"],
                     css_class="scriba-primitive-label",
+                    # Inline anchor: the CSS direct-child rule does not reach
+                    # a caption nested inside a translate group (animation
+                    # frames with a reserved lane), where the SVG default
+                    # text-anchor:start made the line run off to the right.
+                    text_anchor="middle",
+                    dominant_baseline="central",
                     fo_width=footprint_width,
                     fo_height=20,
                     render_inline_tex=render_inline_tex,
@@ -702,9 +708,12 @@ class PrimitiveBase(abc.ABC):
             )
         else:
             y0 = top_y + _CAPTION_FONT_PX
+            # Trailing space on every non-final line: SVG trims it visually,
+            # but textContent keeps it, so select-copy does not glue the
+            # wrapped words together ("sang" + "phải" -> "sangphải").
             tspans = "".join(
                 f'<tspan x="{center_x}" dy="{0 if i == 0 else line_h}">'
-                f"{_escape_xml(ln)}</tspan>"
+                f"{_escape_xml(ln)}{'' if i == len(lines) - 1 else ' '}</tspan>"
                 for i, ln in enumerate(lines)
             )
             out.append(

@@ -451,7 +451,13 @@ def _emit_frame_svg(
     _escape_fn:
         Callable ``(text) -> str`` — HTML-attribute escaper from emitter.
     """
-    narration_id = narration_id_override or f"{_frame_id_fn(scene_id, frame)}-narration"
+    # None -> derive the default id; "" -> suppress the attribute entirely
+    # (diagram: no narration element exists, a derived id would dangle).
+    narration_id = (
+        narration_id_override
+        if narration_id_override is not None
+        else f"{_frame_id_fn(scene_id, frame)}-narration"
+    )
 
     # Pre-pass: apply push/pop commands so bounding boxes are correct
     for shape_name, prim in primitives.items():
@@ -509,7 +515,8 @@ def _emit_frame_svg(
         f'<svg class="scriba-stage-svg" viewBox="{viewbox}" '
         f'style="max-width:calc({vb_width}px * var(--scriba-diagram-font-scale, 1))" '
         f'role="img" '
-        f'aria-labelledby="{_escape_fn(narration_id)}" '
+        + (f'aria-labelledby="{_escape_fn(narration_id)}" ' if narration_id else "")
+        + 
         f'xmlns="http://www.w3.org/2000/svg">'
         f'<title>{_title_escaped}</title>',  # R-15: title first child
     ]

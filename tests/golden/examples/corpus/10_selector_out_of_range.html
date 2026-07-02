@@ -457,7 +457,7 @@
   stroke-width: var(--scriba-tick-stroke-width);
 }
 
-:where([data-primitive="numberline"] > [data-target]) > text {
+:where([data-primitive="numberline"] [data-target]) > text {
   font:              var(--scriba-cell-index-font);
   font-size:         10px;
   fill:              var(--scriba-fg);
@@ -471,7 +471,7 @@
  * horizontal center as the ``x`` coordinate and the total width as
  * ``fo_width``, i.e. the caller expects middle-anchored rendering. Under
  * ``start`` the caption drifted right by half its width. */
-[data-primitive] > .scriba-primitive-label {
+[data-primitive] .scriba-primitive-label {
   font:              var(--scriba-label-font);
   font-size:         11px;
   fill:              var(--scriba-label-color);
@@ -1466,7 +1466,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 % After fix:  stderr shows "[E1115] selector 'a.cell[99]' does not match any
 %             addressable part of 'a'"</p>
 
-<div class="scriba-widget" id="sel-out-of-range" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="sel-out-of-range-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 208 64" style="max-width:calc(208px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="sel-out-of-range-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>sel-out-of-range</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c"></text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c"></text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c"></text></g></g></g></svg></div><p class="scriba-narration" id="sel-out-of-range-print-1-narration"></p></div></div></div>
+<div class="scriba-widget" id="sel-out-of-range" tabindex="0" data-scriba-speed="1" role="region" aria-label="Selector out of range"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="sel-out-of-range-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 208 64" style="max-width:calc(208px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="sel-out-of-range-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>sel-out-of-range</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px"></text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px"></text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px"></text></g></g></g></svg></div><p class="scriba-narration" id="sel-out-of-range-print-1-narration"></p></div></div></div>
 <script>(function(){
   var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
   var W=document.getElementById('sel-out-of-range');
@@ -1476,15 +1476,15 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 <g data-primitive="array" data-shape="a">
   <g data-target="a.cell[0]" class="scriba-state-idle">
     <rect x="1.0" y="1.0" width="58.0" height="38.0"/>
-    <text x="30" y="20" fill="#11181c"></text>
+    <text x="30" y="20" fill="#11181c" style="font-size:14px"></text>
   </g>
   <g data-target="a.cell[1]" class="scriba-state-idle">
     <rect x="63.0" y="1.0" width="58.0" height="38.0"/>
-    <text x="92" y="20" fill="#11181c"></text>
+    <text x="92" y="20" fill="#11181c" style="font-size:14px"></text>
   </g>
   <g data-target="a.cell[2]" class="scriba-state-idle">
     <rect x="125.0" y="1.0" width="58.0" height="38.0"/>
-    <text x="154" y="20" fill="#11181c"></text>
+    <text x="154" y="20" fill="#11181c" style="font-size:14px"></text>
   </g>
 </g>
 </g>

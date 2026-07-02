@@ -42,8 +42,11 @@ VALID_ANNOTATION_POSITIONS = frozenset({
 })
 
 # Valid animation option keys
+# "grid" was dropped in 0.21.2: it was accepted by this validator but was
+# never an AnimationOptions field — silently discarded. Unknown keys now
+# fail fast with E1004.
 VALID_OPTION_KEYS = frozenset({
-    "width", "height", "id", "label", "layout", "grid"
+    "width", "height", "id", "label", "layout"
 })
 
 # Valid substory option keys

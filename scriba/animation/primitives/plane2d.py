@@ -18,6 +18,8 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _emit_warning, _animation_error
 from scriba.animation.primitives.base import (
+    _label_width_text,
+    estimate_text_width,
     _LabelPlacement,
     BoundingBox,
     PrimitiveBase,
@@ -1003,7 +1005,12 @@ class Plane2D(PrimitiveBase):
                         round(sy - _LABEL_OFFSET),
                         fill=THEME["fg"],
                         font_size=str(_TICK_FONT_SIZE),
+                        fo_width=estimate_text_width(
+                            _label_width_text(str(label_text)), _TICK_FONT_SIZE
+                        ) + 12,
+                        fo_height=16,
                         render_inline_tex=render_inline_tex,
+                        clip_overflow=False,
                     )
                 )
 
@@ -1099,7 +1106,10 @@ class Plane2D(PrimitiveBase):
                         fill=THEME["fg"],
                         font_size=str(_TICK_FONT_SIZE),
                         text_anchor="middle",
+                        fo_width=int(pill_w),
+                        fo_height=int(pill_h),
                         render_inline_tex=render_inline_tex,
+                        clip_overflow=False,
                     )
                 )
 

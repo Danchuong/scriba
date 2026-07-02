@@ -292,6 +292,7 @@ class NumberLinePrimitive(PrimitiveBase):
                     x,
                     NL_LABEL_Y,
                     fill=text_color,
+                    font_size="10",
                     fo_width=40,
                     fo_height=20,
                     render_inline_tex=render_inline_tex,

@@ -3,7 +3,7 @@
 __version__: str = "0.21.1"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 10
+SCRIBA_VERSION: int = 11
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -79,4 +79,16 @@ ignored ``set_min_arrow_above`` now honour the cross-frame floor and substory
 scenes receive the reservation for the first time. Every annotated scene's
 viewBox height and translate offsets change; consumer caches keyed on
 rendered output MUST invalidate.
+
+0.21.2 bumps 10→11 (same release, second byte-shape change): annotation pill
+labels containing $...$ now WRAP like plain labels and render KaTeX per line;
+foreignObject text carries explicit font-size matching its plain-text twin
+(cells 14px, index/tick 10-11px); graph/tree math node labels overflow like
+plain node text instead of clipping; metricplot/plane2d/codepanel floating
+labels get measured boxes; single-line captions carry an inline
+text-anchor; the primitive-label CSS rule is a descendant selector;
+wrapped tspans keep a trailing space per line (copy-paste word breaks);
+env options label/width/height/layout are now honoured in output and the
+dead `grid` option key is rejected (E1004). Rendered bytes differ across
+all annotated/labelled scenes; consumer caches MUST invalidate.
 """
