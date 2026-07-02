@@ -555,6 +555,18 @@ class PrimitiveBase(abc.ABC):
             for a in self._annotations
         )
 
+    def resolve_self_content_rects(self) -> "list[BoundingBox]":
+        """Content AABBs of THIS primitive (cells, rows, nodes) that pill
+        labels should avoid covering.
+
+        Merged into the placement obstacle set as SHOULD ``content_cell``
+        obstacles (W1 space-utilisation): without them every scoring term is
+        blind to content occlusion and an arc pill happily parks on top of
+        the cells at its natural anchor. Default ``[]`` — opt-in per
+        primitive; non-overriding primitives are unaffected.
+        """
+        return []
+
     def resolve_below_baseline(self) -> "float | None":
         """Local-frame y below which ``position=below`` pills should be placed
         so they clear any index-label / caption stack (callout lane). ``None``
@@ -831,6 +843,22 @@ class PrimitiveBase(abc.ABC):
         _prim_seg_obs: "tuple[_Obstacle, ...]" = ()
         if _merged_segs:
             _prim_seg_obs = tuple(_segment_to_obstacle(s) for s in _merged_segs)
+
+        # W1: this primitive's own content cells join the obstacle set as
+        # light SHOULD AABBs so P1/P5 can see (and avoid) content occlusion.
+        _content_rects = self.resolve_self_content_rects()
+        if _content_rects:
+            _prim_seg_obs = _prim_seg_obs + tuple(
+                _Obstacle(
+                    kind="content_cell",
+                    x=float(b.x) + float(b.width) / 2.0,
+                    y=float(b.y) + float(b.height) / 2.0,
+                    width=float(b.width),
+                    height=float(b.height),
+                    severity="SHOULD",
+                )
+                for b in _content_rects
+            )
 
         # R-31 ext: accumulate prior-annotation arrow-stroke segments across the
         # annotation loop.  Each emit_*_arrow_svg call returns sampled segments

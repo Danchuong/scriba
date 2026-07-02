@@ -27,7 +27,9 @@ _TOL = 1.5
 def _painted_top(prim) -> float:
     """How far the emitted annotations paint above y=0 (test-side parser)."""
     parts: list[str] = []
-    prim.emit_annotation_arrows(parts, prim._annotations)
+    # Run the SAME hook production measures through (it threads the
+    # primitive's cell_metrics — geometry diverges without it).
+    prim._measure_emit(parts)
     ext = painted_extent("\n".join(parts))
     if ext is None:
         return 0.0

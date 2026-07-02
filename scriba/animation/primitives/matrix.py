@@ -290,6 +290,20 @@ class MatrixPrimitive(PrimitiveBase):
                 return (float(x), float(y))
         return None
 
+    def resolve_self_content_rects(self) -> "list[BoundingBox]":
+        """Cell boxes — pill content-occlusion obstacles."""
+        cs = float(self.cell_size)
+        return [
+            BoundingBox(
+                x=self._col_label_offset_x + c * cs if hasattr(self, "_col_label_offset_x") else c * cs,
+                y=r * cs,
+                width=cs,
+                height=cs,
+            )
+            for r in range(int(self.rows))
+            for c in range(int(self.cols))
+        ]
+
     def resolve_below_baseline(self) -> "float | None":
         """``position=below`` pills sit below the whole matrix in a callout lane
         (clear of the cells), with a leader line back to the labelled cell.

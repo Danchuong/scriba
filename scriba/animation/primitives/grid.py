@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    CellMetrics,
     ALL_RE,
     CELL_2D_RE,
     CELL_GAP,
@@ -190,6 +191,30 @@ class GridPrimitive(PrimitiveBase):
                 return (float(x), float(y))
         return None
 
+    def resolve_self_content_rects(self) -> "list[BoundingBox]":
+        """Every cell box — pills should not sit on top of the grid body."""
+        return [
+            BoundingBox(
+                x=float(c * (CELL_WIDTH + CELL_GAP)),
+                y=float(r * (CELL_HEIGHT + CELL_GAP)),
+                width=float(CELL_WIDTH),
+                height=float(CELL_HEIGHT),
+            )
+            for r in range(self.rows)
+            for c in range(self.cols)
+        ]
+
+    def _annotation_cell_metrics(self) -> "CellMetrics":
+        """Grid-aware flow context — single source for render AND measurement."""
+        return CellMetrics(
+            cell_width=float(CELL_WIDTH),
+            cell_height=float(CELL_HEIGHT),
+            grid_cols=int(self.cols),
+            grid_rows=int(self.rows),
+            origin_x=0.0,
+            origin_y=0.0,
+        )
+
     def resolve_below_baseline(self) -> "float | None":
         """``position=below`` pills sit below the whole grid (callout lane),
         clear of the cells, with a leader line back to the labelled cell."""
@@ -298,7 +323,14 @@ class GridPrimitive(PrimitiveBase):
 
         # Arrow + position-pill annotations
         if effective_anns:
-            self.emit_annotation_arrows(lines, effective_anns, render_inline_tex=render_inline_tex)
+            self.emit_annotation_arrows(
+                lines,
+                effective_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+                cell_metrics=self._annotation_cell_metrics(),
+            )
 
         # Close the translate group if we opened one
         if arrow_above > 0 or left_pad > 0:

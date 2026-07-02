@@ -547,12 +547,14 @@ class TestAutoSideHintZeroVector:
         """
         import inspect
         from scriba.animation.primitives import _svg_helpers
-        # anchor_side inference moved into _emit_label_and_pill in v0.12.1 Phase A.
-        source = inspect.getsource(_svg_helpers._emit_label_and_pill)
-        # HIGH-3 guard: explicit zero-vector branch
-        assert "_abs_dx == 0 and _abs_dy == 0" in source, (
-            "_emit_label_and_pill must contain the zero-vector guard for R-22"
+        # anchor_side inference now lives in the shared _infer_side_hint
+        # helper (W3 four-quadrant hints); the HIGH-3 zero-vector guard moved
+        # with it.
+        source = inspect.getsource(_svg_helpers._infer_side_hint)
+        assert "abs_dx == 0 and abs_dy == 0" in source, (
+            "_infer_side_hint must contain the zero-vector guard for R-22"
         )
+        assert _svg_helpers._infer_side_hint(0.0, 0.0) is None
 
 
 # ---------------------------------------------------------------------------

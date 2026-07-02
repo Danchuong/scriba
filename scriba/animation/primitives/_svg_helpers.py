@@ -293,6 +293,12 @@ _KIND_WEIGHT: dict[str, float] = {
     "axis_label":  2.0,   # R-03
     "source_cell": 0.5,   # R-04: SHOULD-level
     "grid":        0.2,
+    # W1 (space-utilisation): a primitive's own content cells. Deliberately
+    # light — covering one full 60x40 cell costs 10*0.02*2400 = 480 pt,
+    # comfortably above the worst-case escape displacement (~2.0*160 = 320 pt)
+    # while a few-px graze (~200 px²) costs only ~40 pt, so pills may still
+    # tuck against a cell edge when space is tight.
+    "content_cell": 0.02,
     # annotation_arrow is a segment kind handled by P7, not P1; entry is kept
     # here as documentation that its effective weight is _W_EDGE_OCCLUSION (40.0).
 }
@@ -318,11 +324,11 @@ _W_READING_FLOW: float  = _parse_weight_override("reading_flow",   0.8)
 _W_EDGE_OCCLUSION: float = _parse_weight_override("edge_occlusion", 40.0)
 
 # Score threshold above which R-19 degraded-placement warning fires.
-# Raised from 50.0 → 200.0 when _W_DISPLACE was bumped 1.0→2.0 and the P1
-# touch sentinel was bumped 1.0→3.0: the farthest clear nudge candidate can
-# legitimately score up to ~135.6 pt (_W_DISPLACE×67px), so 200.0 keeps a
-# comfortable gap above that while staying far below fully-blocked scores
-# (≥ 10 000 pt when all candidates overlap).
+# Raised from 50.0 → 200.0 when _W_DISPLACE was bumped 1.0→2.0. Compared
+# against the score MINUS the content_cell baseline (R-33): inside a dense
+# grid every position grazes some cell, so that environmental floor is
+# subtracted before the check — R-19 flags being stuck between pills and
+# segments, not standing near your own content (see _content_cell_penalty).
 _DEGRADED_SCORE_THRESHOLD: float = 200.0
 
 # --- Arrow curve tuning constants (Phase A extraction) ---
@@ -1405,6 +1411,61 @@ def pill_dimensions(
 _PILL_EDGE_CLEAR: int = 1
 
 
+
+
+def _arc_wrap_px(cell_metrics: "CellMetrics | None") -> "float | None":
+    """Wrap budget for arc/plain pill labels.
+
+    With grid context the label may use the primitive's full content span
+    (the whole point of the horizontal space) instead of the ~24-char
+    budget that stacked long labels into tall towers over the cells.
+    ``None`` -> legacy char-mode wrap (primitives without cell metrics).
+    """
+    if cell_metrics is None:
+        return None
+    span = float(cell_metrics.grid_cols) * float(cell_metrics.cell_width)
+    return max(float(_LABEL_PILL_MAX_W_PX), span - 2.0 * _LABEL_PILL_PAD_X)
+
+
+def _content_cell_penalty(
+    cx: float,
+    cy: float,
+    pill_w: float,
+    pill_h: float,
+    obstacles: "tuple[_Obstacle, ...]",
+) -> float:
+    """P1 share contributed by ``content_cell`` obstacles at (cx, cy).
+
+    R-19 degraded-placement detection subtracts this baseline before
+    comparing against the threshold: inside a dense grid EVERY position
+    grazes some cell (R-33), so the raw score carries an environmental
+    floor that says nothing about being stuck between pills/segments —
+    the condition R-19 is meant to flag.
+    """
+    return _W_OVERLAP * sum(
+        _aabb_intersect_area(obs, cx, cy, pill_w, pill_h)
+        * _KIND_WEIGHT.get(obs.kind, 1.0)
+        for obs in obstacles
+        if obs.kind == "content_cell"
+    )
+
+def _infer_side_hint(dx: float, dy: float) -> "str | None":
+    """R-22: infer the pill's preferred half-plane from the arrow vector.
+
+    Horizontal-ish arcs prefer ABOVE (cog P-DIR-1). Vertical-ish arcs
+    prefer the side the arrow leans toward — historically this could only
+    ever return "right", which biased down-LEFT arrows away from the empty
+    left region; it now covers both horizontal sides. Zero vector
+    (self-loop) -> None: symmetric candidate search.
+    """
+    abs_dx = abs(dx)
+    abs_dy = abs(dy)
+    if abs_dx == 0 and abs_dy == 0:
+        return None
+    if abs_dx >= abs_dy:
+        return "above"
+    return "right" if dx >= 0 else "left"
+
 def _emit_pill_label_text(
     lines: list[str],
     label_lines: list[str],
@@ -1965,7 +2026,7 @@ def emit_plain_arrow_svg(
                 viewbox_h=float(iy2) * 4 + float(pill_h),
             )
 
-            # Build candidate list: natural + 32 nudges (no clamp — emit functions
+            # Build candidate list: natural + 48 nudges (no clamp — emit functions
             # do not have viewbox bounds; use post-scoring clamped_x for registration).
             _nat_candidates: list[tuple[float, float]] = [(final_x, candidate_y)]
             for _ndx, _ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
@@ -1976,8 +2037,12 @@ def emit_plain_arrow_svg(
             candidate_obj = _LabelPlacement(
                 x=_best_cx, y=_best_cy, width=float(pill_w), height=float(pill_h),
             )
+            _env_floor = _content_cell_penalty(
+                _best_cx, _best_cy, float(pill_w), float(pill_h), _obstacles
+            )
             collision_unresolved = (
-                _best_score == float("inf") or _best_score > _DEGRADED_SCORE_THRESHOLD
+                _best_score == float("inf")
+                or _best_score - _env_floor > _DEGRADED_SCORE_THRESHOLD
             )
 
             final_x = candidate_obj.x
@@ -2269,9 +2334,10 @@ def _emit_label_and_pill(
     l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
 
     # Wrap + measure via the shared single source (math wraps too —
-    # _wrap_label_lines never splits inside $...$).
+    # _wrap_label_lines never splits inside $...$). With grid context the
+    # budget follows the content span (W2 space-utilisation).
     label_lines, line_height, pill_w, pill_h = pill_dimensions(
-        label_text, l_font_px
+        label_text, l_font_px, wrap_px=_arc_wrap_px(cell_metrics)
     )
     num_lines = len(label_lines)
 
@@ -2293,19 +2359,7 @@ def _emit_label_and_pill(
     anchor_side = ann.get("side") or ann.get("position") or None
     if anchor_side is None:
         # Infer from the (dx, dy) vector between src and dst (post-shortening).
-        _abs_dx = abs(dx)
-        _abs_dy = abs(dy)
-        # HIGH-3: zero-vector guard — src == dst produces abs_dx == abs_dy == 0.
-        # No directional hint can be inferred; leave anchor_side as None so the
-        # 32-candidate symmetric search handles placement without a half-plane bias.
-        if _abs_dx == 0 and _abs_dy == 0:
-            anchor_side = None  # degenerate: no hint, use symmetric search
-        elif _abs_dx >= _abs_dy:
-            # Horizontal-ish arc: prefer ABOVE (cog P-DIR-1).
-            anchor_side = "above"
-        else:
-            # Vertical-ish arc: prefer RIGHT.
-            anchor_side = "right"
+        anchor_side = _infer_side_hint(dx, dy)
 
     # v0.12.0 W1: Replace boolean overlaps() first-fit with _pick_best_candidate
     # argmin (spec §1.3 commit 4).
@@ -2346,7 +2400,7 @@ def _emit_label_and_pill(
             flow=_flow_hint,
         )
 
-        # Build candidate list: natural + 32 nudges.
+        # Build candidate list: natural + 48 nudges.
         _ea_candidates: list[tuple[float, float]] = [(final_x, candidate_y)]
         for _ndx, _ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
             _ea_candidates.append((final_x + _ndx, candidate_y + _ndy))
@@ -2356,8 +2410,12 @@ def _emit_label_and_pill(
         candidate_obj = _LabelPlacement(
             x=_best_cx, y=_best_cy, width=float(pill_w), height=float(pill_h),
         )
+        _env_floor = _content_cell_penalty(
+            _best_cx, _best_cy, float(pill_w), float(pill_h), _obstacles
+        )
         collision_unresolved = (
-            _best_score == float("inf") or _best_score > _DEGRADED_SCORE_THRESHOLD
+            _best_score == float("inf")
+            or _best_score - _env_floor > _DEGRADED_SCORE_THRESHOLD
         )
 
         final_x = candidate_obj.x
@@ -2582,7 +2640,9 @@ def emit_arrow_svg(
     )
     _real_pill_h: "float | None" = None
     if label_text:
-        _, _, _, _real_pill_h = pill_dimensions(label_text, _l_font_early)
+        _, _, _, _real_pill_h = pill_dimensions(
+            label_text, _l_font_early, wrap_px=_arc_wrap_px(cell_metrics)
+        )
 
     _geom = _compute_control_points(
         x1, y1, x2, y2, dx, dy, dist,
@@ -3279,7 +3339,7 @@ def _place_pill(
         viewbox_h=viewbox_h,
     )
 
-    # Build candidate list: natural (clamped) + 32 nudges (clamped).
+    # Build candidate list: natural (clamped) + 48 nudges (clamped).
     # Clamp BEFORE scoring so the score reflects the actual rendered position.
     nat_cx, nat_cy = _clamp(natural_x, natural_y)
     all_candidates: list[tuple[float, float]] = [(nat_cx, nat_cy)]

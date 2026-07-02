@@ -18,7 +18,10 @@ from scriba.animation.primitives.array import ArrayPrimitive
 
 _TSPAN_DY_RE = re.compile(r'<tspan x="[-\d.]+" dy="(-?[\d.]+)">')
 
-_THREE_LINE_LABEL = "so sánh phần tử rồi hoán đổi vị trí ngay lập tức"
+_THREE_LINE_LABEL = (
+    "so sánh phần tử hiện tại với phần tử kế tiếp rồi hoán đổi vị trí của cả hai "
+    "ngay lập tức trước khi tiếp tục quét phần còn lại của dãy"
+)
 
 
 def _first_dys(svg: str) -> list[float]:
@@ -63,10 +66,11 @@ def test_position_pill_multiline_block_stays_centered() -> None:
     assert all(dy < 0 for dy in firsts)
 
 
-def test_all_three_paths_agree_on_layout() -> None:
-    # Same label, three annotation kinds — the first-dy magnitude must be the
-    # same formula (line_height * (n-1) / 2) in every path.
-    results: dict[str, float] = {}
+def test_all_three_paths_use_the_centered_formula() -> None:
+    # Same label, three annotation kinds. Wrap budgets legitimately differ
+    # (arc adapts to the content span, position uses the 132px cap), so the
+    # LINE COUNTS differ — but every path must apply the same centered
+    # first-dy formula: -line_height * (n - 1) / 2.
     for kind, kv in {
         "arc": {"arrow_from": "a.cell[1]"},
         "plain": {"arrow": True},
@@ -74,7 +78,12 @@ def test_all_three_paths_agree_on_layout() -> None:
     }.items():
         arr = ArrayPrimitive("a", {"size": 8, "data": list(range(8))})
         _annotate(arr, "a.cell[6]", label=_THREE_LINE_LABEL, **kv)
-        firsts = _first_dys(arr.emit_svg())
-        assert firsts, kind
-        results[kind] = firsts[0]
-    assert len(set(results.values())) == 1, results
+        svg = arr.emit_svg()
+        blocks = re.findall(
+            r"<text [^>]*>((?:<tspan[^>]*>.*?</tspan>){2,})</text>", svg
+        )
+        assert blocks, kind
+        dys = _TSPAN_DY_RE.findall(blocks[0])
+        n = len(dys)
+        line_h = float(dys[1])
+        assert float(dys[0]) == -line_h * (n - 1) / 2.0, (kind, dys)

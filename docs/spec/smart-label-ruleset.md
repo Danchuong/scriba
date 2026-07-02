@@ -395,9 +395,11 @@ larger gaps at larger type sizes.
 
 `side_hint` MUST be auto-computed from the arrow direction vector
 `(src_point → dst_point)` when no explicit `side` or `position` key is present in the
-annotation dict. The current implementation defaults to a symmetric 32-direction search
-with no directional preference, producing visually arbitrary label positions for unlabelled-
-side arcs.
+annotation dict. Horizontal-ish arcs (|dx| ≥ |dy|) hint `above`; vertical-ish arcs hint
+the horizontal side the arrow leans toward — `right` when dx ≥ 0, `left` when dx < 0
+(v0.21.2: previously only `above`/`right` were ever produced, which biased down-left
+arrows away from empty space on the left). Zero vector (self-loop) → no hint
+(symmetric candidate search). Implementation: `_infer_side_hint`.
 
 **Rationale:** Auto-inferring `side_hint` from arrow direction closes the most common cause
 of mis-placed labels (majority of un-positioned arc annotations) with a small code change.
@@ -408,6 +410,26 @@ candidate ordering is tested as a unit.
 **Code ref:** `scriba/animation/primitives/_svg_helpers.py:1101` (auto-infer `side_hint` from arrow direction vector in `emit_arrow_svg`)
 **Test ref:** `tests/unit/test_smart_label_phase0.py::TestSideHintUpperFirst` (side_hint direction preference)
 **Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
+
+---
+
+### R-33 — Content-cell occlusion (SHOULD obstacles)
+
+**Normative:** SHOULD
+**Since:** v0.21.2
+
+A primitive MAY declare its own content AABBs via
+`PrimitiveBase.resolve_self_content_rects()` (cells, rows, nodes). The
+annotation engine merges them into the placement obstacle set as
+`content_cell` obstacles (SHOULD severity, kind-weight 0.02) so P1/P5 see —
+and steer pills away from — the primitive's own body. Without this the
+scoring is blind to content occlusion and an arc pill parks on the cells at
+its natural anchor even when adjacent space is empty. Rects MUST be
+expressed in the same frame as `resolve_annotation_point` anchors.
+
+**Code ref:** `scriba/animation/primitives/base.py` (`resolve_self_content_rects`,
+obstacle merge in `emit_annotation_arrows`); overrides in grid/array/dptable/matrix.
+**Test ref:** `tests/unit/test_content_obstacles.py`
 
 ---
 

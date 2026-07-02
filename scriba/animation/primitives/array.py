@@ -489,6 +489,24 @@ class ArrayPrimitive(PrimitiveBase):
             return []
         return [TextBox(font_size=_FONT_SIZE_INDEX, role="label", baseline="hanging")]
 
+    def resolve_self_content_rects(self) -> "list[BoundingBox]":
+        """Cell boxes (content frame) — pills should not bury the row."""
+        cw = self._cell_width
+        # Same frame as resolve_annotation_point: Array bakes _row_dx into
+        # its anchors, so the content rects must carry it too (it is 0 in
+        # the measurement frame), or the placement obstacles sit offset
+        # from the anchors at render time and measured != painted.
+        dx = self._row_dx()
+        return [
+            BoundingBox(
+                x=float(i * (cw + CELL_GAP) + dx),
+                y=0.0,
+                width=float(cw),
+                height=float(CELL_HEIGHT),
+            )
+            for i in range(self.size)
+        ]
+
     def resolve_below_baseline(self) -> float | None:
         """Y where ``position=below`` callout pills start — just below the index
         row (or the cells when there is no index row). Pills sit here, and the

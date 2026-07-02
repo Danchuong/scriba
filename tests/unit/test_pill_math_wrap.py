@@ -94,7 +94,10 @@ class TestMathPillEmission:
         arr = ArrayPrimitive("a", {"size": 8, "data": list(range(8))})
         _annotate(
             arr, "a.cell[6]",
-            label="so sánh phần tử rồi hoán đổi vị trí ngay lập tức",
+            label=(
+                "so sánh phần tử hiện tại với phần tử kế tiếp rồi hoán đổi "
+                "vị trí của cả hai ngay lập tức trước khi quét tiếp"
+            ),
             arrow_from="a.cell[1]",
         )
         svg = arr.emit_svg(render_inline_tex=_fake_tex)

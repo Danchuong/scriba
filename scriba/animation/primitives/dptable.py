@@ -303,6 +303,20 @@ class DPTablePrimitive(PrimitiveBase):
             return int(index_bottom + _STACK_GAP)
         return int(th + INDEX_LABEL_OFFSET)
 
+    def resolve_self_content_rects(self) -> "list[BoundingBox]":
+        """Cell boxes (1D row or 2D grid) — pill content-occlusion obstacles."""
+        rows = int(self.rows) if self.is_2d else 1
+        return [
+            BoundingBox(
+                x=float(c * (CELL_WIDTH + CELL_GAP)),
+                y=float(r * (CELL_HEIGHT + CELL_GAP)),
+                width=float(CELL_WIDTH),
+                height=float(CELL_HEIGHT),
+            )
+            for r in range(rows)
+            for c in range(int(self.cols))
+        ]
+
     def resolve_below_baseline(self) -> "float | None":
         """``position=below`` pills sit below the whole table in a callout lane
         (clear of the cells/index labels), with a leader line back to the
