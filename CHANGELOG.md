@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **One runtime source.** The inline widget `<script>` is now DERIVED from
+  `static/scriba.js` (sentinel-sliced at import, token substitution — no
+  `str.format`); `_script_builder.py` authors no runtime JS anymore. The two
+  hand-maintained copies had drifted bidirectionally: the asset's A#03
+  narration-defer a11y fix never shipped on default (inline) pages, and the
+  inline's annotation fade-on-snap never reached the asset. Both features now
+  ship everywhere (`_fadeInNewAnnotations` lives in `scriba.js`), and a
+  byte-equality test pins the derivation so the copies cannot drift again.
+- **Scene layout is measured by one shared replay** (`measure_scene_layout`):
+  the viewBox and the per-primitive stacking offsets derive from the same
+  per-frame checkpoints, replaying structural push/pop AND mid-timeline
+  captions. Previously the offsets replayed neither — a Stack growing above
+  an Array overlapped it by up to 90px, and a late `\apply{p}{label=…}`
+  caption painted past the viewBox and into the next primitive.
+
+### Fixed
+- **Orphaned staggered transition no longer corrupts a superseded frame.**
+  A `setTimeout(_runPhase2)` scheduled during the phase-1→phase-2 stagger
+  survived a supersede/cancel and applied phase-2 recolors/value-changes onto
+  the snapped stage (a quick Next→Prev left frame 1 showing frame-2 values).
+  A generation token (`_gen`, bumped in `_cancelAnims`) now aborts orphaned
+  callbacks at the top of `_runPhase2` and `_finish` — covering all four
+  async completion paths.
+
 ## [0.21.2] - 2026-07-02 — Exact reservation, content-aware pills, math everywhere
 
 ### Changed

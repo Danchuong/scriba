@@ -8,10 +8,10 @@ settled — so any click landing mid-animation read the stale index
 blocked Prev on the first transition entirely).
 
 Contract pinned here (source-inspection — the runtime has no JS test rig),
-against BOTH copies of the runtime: the external asset ``static/scriba.js``
-AND the inline builder ``_script_builder.py`` (the first fix landed in only
-one of them and the browser behaviour didn't change — the duplication is a
-trap, so both sources are pinned to the same contract):
+against the canonical asset ``static/scriba.js`` AND the inline ``<script>``
+EMITTED by ``_build_inline_script`` (since unification the builder derives
+the inline runtime from the asset; pinning the emitted output proves the
+derivation carries the contract):
 1. ``animateTransition`` commits ``cur=toIdx`` up front, before it starts
    parsing/animating, so every later click steps from the committed target.
 2. ``_finish`` starts with an ``_animState`` guard: once a snap/cancel
@@ -27,13 +27,13 @@ from importlib.resources import files
 
 import pytest
 
+from scriba.animation._script_builder import _build_inline_script
+
 _SOURCES = {
     "external_asset": (files("scriba.animation") / "static" / "scriba.js").read_text(
         "utf-8"
     ),
-    "inline_builder": (files("scriba.animation") / "_script_builder.py").read_text(
-        "utf-8"
-    ),
+    "inline_emitted": _build_inline_script("pin-scene", "[]"),
 }
 
 

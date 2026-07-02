@@ -2,8 +2,6 @@
 // Loaded via <script src="scriba.<hash>.js" defer> for CSP-strict deployments.
 // Zero per-render variability — fully cacheable and SRI-hashable.
 (function(){
-  var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
-
   // Theme toggle: delegated from data-scriba-action="theme-toggle"
   document.addEventListener('click',function(e){
     var btn=e.target.closest('[data-scriba-action="theme-toggle"]');
@@ -13,11 +11,14 @@
     }
   });
 
-  // Guard: only attach the global MutationObserver once per page.
-  var _moAttached=false;
-  var _allWidgetRefresh=[];
-
+  // Everything between the CORE sentinels is the per-widget state machine.
+  // _script_builder._build_inline_script slices this region verbatim into
+  // the inline <script> (binding its own W/frames), so the inline runtime
+  // is DERIVED from this file — never authored separately. Keep the region
+  // self-contained: no references to module-scope state.
   function _scribaInit(W,frames){
+  // __SCRIBA_CORE_START__
+    var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
     var cur=0;
     var stage=W.querySelector('.scriba-stage');
     var narr=W.querySelector('.scriba-narration');
@@ -28,6 +29,10 @@
     var dots=W.querySelectorAll('.scriba-dot');
     var _anims=[];
     var _animState='idle';
+    // Transition generation: bumped on every supersede (_cancelAnims).
+    // Orphaned async callbacks (setTimeout/Promise) captured under an older
+    // generation self-abort instead of mutating the superseding frame.
+    var _gen=0;
     var _motionMQ=window.matchMedia('(prefers-reduced-motion:reduce)');
     var _canAnim=(typeof Element.prototype.animate==='function')&&!_motionMQ.matches;
     (function(){var _mh=function(ev){_canAnim=(typeof Element.prototype.animate==='function')&&!ev.matches;};if(_motionMQ.addEventListener){_motionMQ.addEventListener('change',_mh);}else if(_motionMQ.addListener){_motionMQ.addListener(function(mq){_mh({matches:mq.matches});});}})();
@@ -43,6 +48,7 @@
     var _speed=parseFloat(W.getAttribute('data-scriba-speed'))||1;
     function _dur(ms){return Math.round(ms/_speed);}
     function _cancelAnims(){
+      _gen++;
       for(var k=0;k<_anims.length;k++)try{_anims[k].finish();}catch(e){}
       _anims=[];_animState='idle';
     }
@@ -66,14 +72,34 @@
       next.disabled=i===frames.length-1;
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
+    function _annKeysIn(svgStr){
+      var keys={};
+      if(!svgStr)return keys;
+      var re=/data-annotation="([^"]*)"/g,m;
+      while((m=re.exec(svgStr))!==null){keys[m[1]]=true;}
+      return keys;
+    }
+    function _fadeInNewAnnotations(prevKeys){
+      if(!_canAnim)return;
+      var els=stage.querySelectorAll('[data-annotation]');
+      for(var k=0;k<els.length;k++){
+        var key=els[k].getAttribute('data-annotation');
+        if(prevKeys[key])continue;
+        var a=els[k].animate([{opacity:0},{opacity:1}],
+          {duration:_dur(DUR),easing:'cubic-bezier(0.16,1,0.3,1)',fill:'forwards'});
+        _anims.push(a);
+      }
+    }
     function snapToFrame(i){
       _cancelAnims();
+      var prevKeys=_annKeysIn(frames[cur]&&frames[cur].svg);
       cur=i;
       stage.innerHTML=frames[i].svg;
       narr.innerHTML=frames[i].narration;
       subC.innerHTML=frames[i].substory||'';
       subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
       _updateControls(i);
+      _fadeInNewAnnotations(prevKeys);
     }
     function _arrowheadAt(path,size){
       var len=path.getTotalLength();
@@ -245,6 +271,7 @@
       var tr=frames[toIdx]&&frames[toIdx].tr;
       if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
       _animState='animating';
+      var myGen=_gen;
       // Commit the target index BEFORE the transition runs: a click landing
       // mid-animation must step from the committed frame, not the stale one
       // (stale cur swallowed rapid Next clicks and blocked Prev entirely).
@@ -261,7 +288,7 @@
       for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
       var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
       function _finish(fullSync){
-        if(_animState!=='animating')return; // superseded by a snap/cancel — don't overwrite the stage
+        if(_animState!=='animating'||myGen!==_gen)return; // superseded — a rapid re-animate resets _animState, so the generation check is load-bearing
         if(fullSync){
           stage.innerHTML=frames[toIdx].svg;
         }
@@ -274,6 +301,7 @@
         _anims=[];_animState='idle';
       }
       function _runPhase2(){
+        if(myGen!==_gen)return; // orphaned staggered callback after a supersede — never touch the snapped stage
         for(var j=0;j<phase2.length;j++){
           _applyTransition(phase2[j],parsed,pending);
         }
@@ -306,21 +334,15 @@
       if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1,false);}
     });
 
-    // Register for global MutationObserver refresh
-    _allWidgetRefresh.push(function(){_cancelAnims();if(cur>=0)snapToFrame(cur);});
-
+    if(typeof MutationObserver!=='undefined'){
+      new MutationObserver(function(){_cancelAnims();if(cur>=0)snapToFrame(cur);})
+        .observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+    }
     show(0,false);
+  // __SCRIBA_CORE_END__
   }
 
   function _initAll(){
-    // Attach global MutationObserver once for theme switching
-    if(!_moAttached&&typeof MutationObserver!=='undefined'){
-      _moAttached=true;
-      new MutationObserver(function(){
-        for(var i=0;i<_allWidgetRefresh.length;i++)_allWidgetRefresh[i]();
-      }).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-    }
-
     // Find all widgets that have an associated JSON data island
     var islands=document.querySelectorAll('script[type="application/json"][id^="scriba-frames-"]');
     for(var i=0;i<islands.length;i++){

@@ -2151,7 +2151,6 @@ down moves stay safe.</p></div>
 
 <div class="scriba-widget" id="monsters-safety-frontier" tabindex="0" data-scriba-speed="1" role="region" aria-label="Monsters strict safety test"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 4</span><button class="scriba-btn-next" aria-label="Next step">&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="monsters-safety-frontier-narration" aria-live="polite">First compute the earliest monster arrival time for every cell. Then run the player's BFS, but only through cells where the player arrives strictly earlier than the monsters.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>First compute the earliest monster arrival time for every cell. Then run the player&#x27;s BFS, but only through cells where the player arrives strictly earlier than the monsters.</title><g transform="translate(20,12)"><g data-primitive="grid" data-shape="maze"><g transform="translate(0, 20)"><g data-target="maze.cell[0][0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][2]" class="scriba-state-error"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">M</text></g><g data-target="maze.cell[0][3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][0]" class="scriba-state-idle"><rect x="1.0" y="43.0" width="58.0" height="38.0"/><text x="30" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][1]" class="scriba-state-current"><rect x="63.0" y="43.0" width="58.0" height="38.0"/><text x="92" y="62" fill="#ffffff" style="font-size:14px">A</text></g><g data-target="maze.cell[1][2]" class="scriba-state-idle"><rect x="125.0" y="43.0" width="58.0" height="38.0"/><text x="154" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][3]" class="scriba-state-idle"><rect x="187.0" y="43.0" width="58.0" height="38.0"/><text x="216" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][4]" class="scriba-state-idle"><rect x="249.0" y="43.0" width="58.0" height="38.0"/><text x="278" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][0]" class="scriba-state-idle"><rect x="1.0" y="85.0" width="58.0" height="38.0"/><text x="30" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][1]" class="scriba-state-idle"><rect x="63.0" y="85.0" width="58.0" height="38.0"/><text x="92" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][2]" class="scriba-state-idle"><rect x="125.0" y="85.0" width="58.0" height="38.0"/><text x="154" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][3]" class="scriba-state-idle"><rect x="187.0" y="85.0" width="58.0" height="38.0"/><text x="216" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][4]" class="scriba-state-idle"><rect x="249.0" y="85.0" width="58.0" height="38.0"/><text x="278" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][0]" class="scriba-state-idle"><rect x="1.0" y="127.0" width="58.0" height="38.0"/><text x="30" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][1]" class="scriba-state-idle"><rect x="63.0" y="127.0" width="58.0" height="38.0"/><text x="92" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][2]" class="scriba-state-idle"><rect x="125.0" y="127.0" width="58.0" height="38.0"/><text x="154" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][3]" class="scriba-state-idle"><rect x="187.0" y="127.0" width="58.0" height="38.0"/><text x="216" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][4]" class="scriba-state-idle"><rect x="249.0" y="127.0" width="58.0" height="38.0"/><text x="278" y="146" fill="#11181c" style="font-size:14px">.</text></g><text class="scriba-primitive-label" x="154" y="181" fill="#687076" style="text-anchor:middle;dominant-baseline:central">toy grid</text></g></g></g><g transform="translate(12,239)"><g data-primitive="variablewatch" data-shape="state"><clipPath id="vw-clip-state"><rect x="4" y="4" width="317" height="160" rx="4"/></clipPath><g clip-path="url(#vw-clip-state)"><g data-target="state.var[candidate]" class="scriba-state-idle"><rect x="136" y="4" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">candidate</text><text x="228" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">start</text></g><g data-target="state.var[player_arrival]" class="scriba-state-idle"><rect x="136" y="44" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">player_arrival</text><text x="228" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">0</text></g><g data-target="state.var[monster_arrival]" class="scriba-state-idle"><rect x="136" y="84" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">monster_arrival</text><text x="228" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">0 at M</text></g><g data-target="state.var[safe]" class="scriba-state-idle"><rect x="136" y="124" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">safe</text><text x="228" y="144" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">use monster BFS first</text></g></g><rect x="4" y="4" width="317" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="136" y1="4" x2="136" y2="164" stroke="#dfe3e6" stroke-width="1"/><line x1="4" y1="44" x2="321" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="84" x2="321" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="124" x2="321" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><text class="scriba-primitive-label" x="162" y="183" fill="#687076" style="text-anchor:middle;dominant-baseline:central">Safety check</text></g></g></svg></div><p class="scriba-narration" id="monsters-safety-frontier-print-1-narration">First compute the earliest monster arrival time for every cell. Then run the player's BFS, but only through cells where the player arrives strictly earlier than the monsters.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">2 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>The top boundary cell looks attractive because it is one move away, but it fails the strict test. Arriving at the same time as the monster frontier is already unsafe.</title><g transform="translate(20,12)"><g data-primitive="grid" data-shape="maze"><g transform="translate(0, 20)"><g data-target="maze.cell[0][0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][1]" class="scriba-state-error"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][2]" class="scriba-state-error"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">M</text></g><g data-target="maze.cell[0][3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][0]" class="scriba-state-idle"><rect x="1.0" y="43.0" width="58.0" height="38.0"/><text x="30" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][1]" class="scriba-state-current"><rect x="63.0" y="43.0" width="58.0" height="38.0"/><text x="92" y="62" fill="#ffffff" style="font-size:14px">A</text></g><g data-target="maze.cell[1][2]" class="scriba-state-idle"><rect x="125.0" y="43.0" width="58.0" height="38.0"/><text x="154" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][3]" class="scriba-state-idle"><rect x="187.0" y="43.0" width="58.0" height="38.0"/><text x="216" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][4]" class="scriba-state-idle"><rect x="249.0" y="43.0" width="58.0" height="38.0"/><text x="278" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][0]" class="scriba-state-idle"><rect x="1.0" y="85.0" width="58.0" height="38.0"/><text x="30" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][1]" class="scriba-state-idle"><rect x="63.0" y="85.0" width="58.0" height="38.0"/><text x="92" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][2]" class="scriba-state-idle"><rect x="125.0" y="85.0" width="58.0" height="38.0"/><text x="154" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][3]" class="scriba-state-idle"><rect x="187.0" y="85.0" width="58.0" height="38.0"/><text x="216" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][4]" class="scriba-state-idle"><rect x="249.0" y="85.0" width="58.0" height="38.0"/><text x="278" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][0]" class="scriba-state-idle"><rect x="1.0" y="127.0" width="58.0" height="38.0"/><text x="30" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][1]" class="scriba-state-idle"><rect x="63.0" y="127.0" width="58.0" height="38.0"/><text x="92" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][2]" class="scriba-state-idle"><rect x="125.0" y="127.0" width="58.0" height="38.0"/><text x="154" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][3]" class="scriba-state-idle"><rect x="187.0" y="127.0" width="58.0" height="38.0"/><text x="216" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][4]" class="scriba-state-idle"><rect x="249.0" y="127.0" width="58.0" height="38.0"/><text x="278" y="146" fill="#11181c" style="font-size:14px">.</text></g><text class="scriba-primitive-label" x="154" y="181" fill="#687076" style="text-anchor:middle;dominant-baseline:central">toy grid</text><g class="scriba-annotation scriba-annotation-error" data-annotation="maze.cell[0][1]-maze.cell[1][1]" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[0][1]: 1 not&lt; 1" aria-description="$1 \not&lt; 1$"><path d="M92,62 C105,48 105,34 98.1,26.6" stroke="#c6282d" stroke-width="2.0" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[0][1]: $1 \not&lt; 1$</title></path><polygon points="92.0,20.0 102.5,23.9 95.1,30.7" fill="#c6282d"/><rect x="93" y="-18" width="53" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#c6282d" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="101" cy="41" r="2" fill="#c6282d" opacity="0.6"/><polyline points="101,41 115,1" fill="none" stroke="#c6282d" stroke-width="0.75" opacity="0.6"/><foreignObject x="93" y="-18" width="53" height="19" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#c6282d;font-weight:600;font-size:11px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;̸</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1 \not&lt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mord vbox"><span class="thinbox"><span class="rlap"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="inner"><span class="mord"><span class="mrel"></span></span></span><span class="fix"></span></span></span></span></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></div></foreignObject></g></g></g></g><g transform="translate(12,239)"><g data-primitive="variablewatch" data-shape="state"><clipPath id="vw-clip-state"><rect x="4" y="4" width="317" height="160" rx="4"/></clipPath><g clip-path="url(#vw-clip-state)"><g data-target="state.var[candidate]" class="scriba-state-idle"><rect x="136" y="4" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">candidate</text><text x="228" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">(0,1)</text></g><g data-target="state.var[player_arrival]" class="scriba-state-idle"><rect x="136" y="44" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">player_arrival</text><text x="228" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="state.var[monster_arrival]" class="scriba-state-idle"><rect x="136" y="84" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">monster_arrival</text><text x="228" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="state.var[safe]" class="scriba-state-idle"><rect x="136" y="124" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">safe</text><text x="228" y="144" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">no</text></g></g><rect x="4" y="4" width="317" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="136" y1="4" x2="136" y2="164" stroke="#dfe3e6" stroke-width="1"/><line x1="4" y1="44" x2="321" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="84" x2="321" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="124" x2="321" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><text class="scriba-primitive-label" x="162" y="183" fill="#687076" style="text-anchor:middle;dominant-baseline:central">Safety check</text></g></g></svg></div><p class="scriba-narration" id="monsters-safety-frontier-print-2-narration">The top boundary cell looks attractive because it is one move away, but it fails the strict test. Arriving at the same time as the monster frontier is already unsafe.</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">3 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-print-3-narration" xmlns="http://www.w3.org/2000/svg"><title>The left boundary cell survives. The player reaches it in one minute, while the earliest monster arrives only in three. This move stays inside the safe subgraph.</title><g transform="translate(20,12)"><g data-primitive="grid" data-shape="maze"><g transform="translate(0, 20)"><g data-target="maze.cell[0][0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][1]" class="scriba-state-error"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][2]" class="scriba-state-error"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">M</text></g><g data-target="maze.cell[0][3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][0]" class="scriba-state-current"><rect x="1.0" y="43.0" width="58.0" height="38.0"/><text x="30" y="62" fill="#ffffff" style="font-size:14px">.</text></g><g data-target="maze.cell[1][1]" class="scriba-state-current"><rect x="63.0" y="43.0" width="58.0" height="38.0"/><text x="92" y="62" fill="#ffffff" style="font-size:14px">A</text></g><g data-target="maze.cell[1][2]" class="scriba-state-idle"><rect x="125.0" y="43.0" width="58.0" height="38.0"/><text x="154" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][3]" class="scriba-state-idle"><rect x="187.0" y="43.0" width="58.0" height="38.0"/><text x="216" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][4]" class="scriba-state-idle"><rect x="249.0" y="43.0" width="58.0" height="38.0"/><text x="278" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][0]" class="scriba-state-idle"><rect x="1.0" y="85.0" width="58.0" height="38.0"/><text x="30" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][1]" class="scriba-state-idle"><rect x="63.0" y="85.0" width="58.0" height="38.0"/><text x="92" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][2]" class="scriba-state-idle"><rect x="125.0" y="85.0" width="58.0" height="38.0"/><text x="154" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][3]" class="scriba-state-idle"><rect x="187.0" y="85.0" width="58.0" height="38.0"/><text x="216" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][4]" class="scriba-state-idle"><rect x="249.0" y="85.0" width="58.0" height="38.0"/><text x="278" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][0]" class="scriba-state-idle"><rect x="1.0" y="127.0" width="58.0" height="38.0"/><text x="30" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][1]" class="scriba-state-idle"><rect x="63.0" y="127.0" width="58.0" height="38.0"/><text x="92" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][2]" class="scriba-state-idle"><rect x="125.0" y="127.0" width="58.0" height="38.0"/><text x="154" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][3]" class="scriba-state-idle"><rect x="187.0" y="127.0" width="58.0" height="38.0"/><text x="216" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][4]" class="scriba-state-idle"><rect x="249.0" y="127.0" width="58.0" height="38.0"/><text x="278" y="146" fill="#11181c" style="font-size:14px">.</text></g><text class="scriba-primitive-label" x="154" y="181" fill="#687076" style="text-anchor:middle;dominant-baseline:central">toy grid</text><g class="scriba-annotation scriba-annotation-error" data-annotation="maze.cell[0][1]-maze.cell[1][1]" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[0][1]: 1 not&lt; 1" aria-description="$1 \not&lt; 1$"><path d="M92,62 C105,48 105,34 98.1,26.6" stroke="#c6282d" stroke-width="2.0" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[0][1]: $1 \not&lt; 1$</title></path><polygon points="92.0,20.0 102.5,23.9 95.1,30.7" fill="#c6282d"/><rect x="93" y="-18" width="53" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#c6282d" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="101" cy="41" r="2" fill="#c6282d" opacity="0.6"/><polyline points="101,41 115,1" fill="none" stroke="#c6282d" stroke-width="0.75" opacity="0.6"/><foreignObject x="93" y="-18" width="53" height="19" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#c6282d;font-weight:600;font-size:11px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;̸</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1 \not&lt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mord vbox"><span class="thinbox"><span class="rlap"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="inner"><span class="mord"><span class="mrel"></span></span></span><span class="fix"></span></span></span></span></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></div></foreignObject></g><g class="scriba-annotation scriba-annotation-good" data-annotation="maze.cell[1][0]-maze.cell[1][1]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[1][0]: 1 &lt; 3" aria-description="$1 &lt; 3$"><path d="M92,62 C71,48 50,48 37.4,56.8" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[1][0]: $1 &lt; 3$</title></path><polygon points="30.0,62.0 35.3,52.2 41.1,60.4" fill="#027a55"/><rect x="32" y="-19" width="57" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="60" cy="51" r="2" fill="#027a55" opacity="0.6"/><polyline points="60,51 60,1" fill="none" stroke="#027a55" stroke-width="0.75" opacity="0.6"/><foreignObject x="32" y="-19" width="57" height="20" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#027a55;font-weight:700;font-size:12px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">1 &lt; 3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span></div></foreignObject></g></g></g></g><g transform="translate(12,239)"><g data-primitive="variablewatch" data-shape="state"><clipPath id="vw-clip-state"><rect x="4" y="4" width="317" height="160" rx="4"/></clipPath><g clip-path="url(#vw-clip-state)"><g data-target="state.var[candidate]" class="scriba-state-idle"><rect x="136" y="4" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">candidate</text><text x="228" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">(1,0)</text></g><g data-target="state.var[player_arrival]" class="scriba-state-idle"><rect x="136" y="44" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">player_arrival</text><text x="228" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="state.var[monster_arrival]" class="scriba-state-idle"><rect x="136" y="84" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">monster_arrival</text><text x="228" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">3</text></g><g data-target="state.var[safe]" class="scriba-state-idle"><rect x="136" y="124" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">safe</text><text x="228" y="144" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">yes</text></g></g><rect x="4" y="4" width="317" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="136" y1="4" x2="136" y2="164" stroke="#dfe3e6" stroke-width="1"/><line x1="4" y1="44" x2="321" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="84" x2="321" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="124" x2="321" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><text class="scriba-primitive-label" x="162" y="183" fill="#687076" style="text-anchor:middle;dominant-baseline:central">Safety check</text></g></g></svg></div><p class="scriba-narration" id="monsters-safety-frontier-print-3-narration">The left boundary cell survives. The player reaches it in one minute, while the earliest monster arrives only in three. This move stays inside the safe subgraph.</p></div><div class="scriba-print-frame" data-step="4"><span class="scriba-step-label">4 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-print-4-narration" xmlns="http://www.w3.org/2000/svg"><title>Once the player&#x27;s BFS reaches a safe boundary cell, it can stop. Here the reconstructed escape path is just  L . The second BFS is really BFS on the original grid after unsafe cells have been filtered out by the monster frontier.</title><g transform="translate(20,12)"><g data-primitive="grid" data-shape="maze"><g transform="translate(0, 20)"><g data-target="maze.cell[0][0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][1]" class="scriba-state-error"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][2]" class="scriba-state-error"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">M</text></g><g data-target="maze.cell[0][3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][0]" class="scriba-state-path"><rect x="1.0" y="43.0" width="58.0" height="38.0"/><text x="30" y="62" fill="#5e6669" style="font-size:14px">.</text></g><g data-target="maze.cell[1][1]" class="scriba-state-path"><rect x="63.0" y="43.0" width="58.0" height="38.0"/><text x="92" y="62" fill="#5e6669" style="font-size:14px">A</text></g><g data-target="maze.cell[1][2]" class="scriba-state-idle"><rect x="125.0" y="43.0" width="58.0" height="38.0"/><text x="154" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][3]" class="scriba-state-idle"><rect x="187.0" y="43.0" width="58.0" height="38.0"/><text x="216" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][4]" class="scriba-state-idle"><rect x="249.0" y="43.0" width="58.0" height="38.0"/><text x="278" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][0]" class="scriba-state-idle"><rect x="1.0" y="85.0" width="58.0" height="38.0"/><text x="30" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][1]" class="scriba-state-idle"><rect x="63.0" y="85.0" width="58.0" height="38.0"/><text x="92" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][2]" class="scriba-state-idle"><rect x="125.0" y="85.0" width="58.0" height="38.0"/><text x="154" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][3]" class="scriba-state-idle"><rect x="187.0" y="85.0" width="58.0" height="38.0"/><text x="216" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][4]" class="scriba-state-idle"><rect x="249.0" y="85.0" width="58.0" height="38.0"/><text x="278" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][0]" class="scriba-state-idle"><rect x="1.0" y="127.0" width="58.0" height="38.0"/><text x="30" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][1]" class="scriba-state-idle"><rect x="63.0" y="127.0" width="58.0" height="38.0"/><text x="92" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][2]" class="scriba-state-idle"><rect x="125.0" y="127.0" width="58.0" height="38.0"/><text x="154" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][3]" class="scriba-state-idle"><rect x="187.0" y="127.0" width="58.0" height="38.0"/><text x="216" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][4]" class="scriba-state-idle"><rect x="249.0" y="127.0" width="58.0" height="38.0"/><text x="278" y="146" fill="#11181c" style="font-size:14px">.</text></g><text class="scriba-primitive-label" x="154" y="181" fill="#687076" style="text-anchor:middle;dominant-baseline:central">toy grid</text><g class="scriba-annotation scriba-annotation-error" data-annotation="maze.cell[0][1]-maze.cell[1][1]" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[0][1]: 1 not&lt; 1" aria-description="$1 \not&lt; 1$"><path d="M92,62 C105,48 105,34 98.1,26.6" stroke="#c6282d" stroke-width="2.0" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[0][1]: $1 \not&lt; 1$</title></path><polygon points="92.0,20.0 102.5,23.9 95.1,30.7" fill="#c6282d"/><rect x="93" y="-18" width="53" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#c6282d" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="101" cy="41" r="2" fill="#c6282d" opacity="0.6"/><polyline points="101,41 115,1" fill="none" stroke="#c6282d" stroke-width="0.75" opacity="0.6"/><foreignObject x="93" y="-18" width="53" height="19" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#c6282d;font-weight:600;font-size:11px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;̸</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1 \not&lt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mord vbox"><span class="thinbox"><span class="rlap"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="inner"><span class="mord"><span class="mrel"></span></span></span><span class="fix"></span></span></span></span></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></div></foreignObject></g><g class="scriba-annotation scriba-annotation-good" data-annotation="maze.cell[1][0]-maze.cell[1][1]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[1][0]: 1 &lt; 3" aria-description="$1 &lt; 3$"><path d="M92,62 C71,48 50,48 37.4,56.8" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[1][0]: $1 &lt; 3$</title></path><polygon points="30.0,62.0 35.3,52.2 41.1,60.4" fill="#027a55"/><rect x="32" y="-19" width="57" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="60" cy="51" r="2" fill="#027a55" opacity="0.6"/><polyline points="60,51 60,1" fill="none" stroke="#027a55" stroke-width="0.75" opacity="0.6"/><foreignObject x="32" y="-19" width="57" height="20" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#027a55;font-weight:700;font-size:12px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">1 &lt; 3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span></div></foreignObject></g></g></g></g><g transform="translate(12,239)"><g data-primitive="variablewatch" data-shape="state"><clipPath id="vw-clip-state"><rect x="4" y="4" width="317" height="160" rx="4"/></clipPath><g clip-path="url(#vw-clip-state)"><g data-target="state.var[candidate]" class="scriba-state-idle"><rect x="136" y="4" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">candidate</text><text x="228" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">boundary</text></g><g data-target="state.var[player_arrival]" class="scriba-state-idle"><rect x="136" y="44" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">player_arrival</text><text x="228" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="state.var[monster_arrival]" class="scriba-state-idle"><rect x="136" y="84" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">monster_arrival</text><text x="228" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">3</text></g><g data-target="state.var[safe]" class="scriba-state-idle"><rect x="136" y="124" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">safe</text><text x="228" y="144" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">stop and reconstruct</text></g></g><rect x="4" y="4" width="317" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="136" y1="4" x2="136" y2="164" stroke="#dfe3e6" stroke-width="1"/><line x1="4" y1="44" x2="321" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="84" x2="321" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="124" x2="321" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><text class="scriba-primitive-label" x="162" y="183" fill="#687076" style="text-anchor:middle;dominant-baseline:central">Safety check</text></g></g></svg></div><p class="scriba-narration" id="monsters-safety-frontier-print-4-narration">Once the player's BFS reaches a safe boundary cell, it can stop. Here the reconstructed escape path is just <code class="scriba-tex-code-inline">L</code>. The second BFS is really BFS on the original grid after unsafe cells have been filtered out by the monster frontier.</p></div></div></div>
 <script>(function(){
-  var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
   var W=document.getElementById('monsters-safety-frontier');
   var frames=[
     {svg:`<svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-narration" xmlns="http://www.w3.org/2000/svg"><title>First compute the earliest monster arrival time for every cell. Then run the player&#x27;s BFS, but only through cells where the player arrives strictly earlier than the monsters.</title>
@@ -2563,310 +2562,315 @@ down moves stay safe.</p></div>
 </g>
 </svg>`,narration:`Once the player's BFS reaches a safe boundary cell, it can stop. Here the reconstructed escape path is just <code class="scriba-tex-code-inline">L</code>. The second BFS is really BFS on the original grid after unsafe cells have been filtered out by the monster frontier.`,substory:``,label:``,tr:[["maze.cell[1][0]","state","current","path","recolor"],["maze.cell[1][1]","state","current","path","recolor"],["state.var[candidate]","value","(1,0)","boundary","value_change"],["state.var[safe]","value","yes","stop and reconstruct","value_change"]],fs:1}
   ];
-  var cur=0;
-  var stage=W.querySelector('.scriba-stage');
-  var narr=W.querySelector('.scriba-narration');
-  var subC=W.querySelector('.scriba-substory-container');
-  var ctr=W.querySelector('.scriba-step-counter');
-  var prev=W.querySelector('.scriba-btn-prev');
-  var next=W.querySelector('.scriba-btn-next');
-  var dots=W.querySelectorAll('.scriba-dot');
-  var _anims=[];
-  var _animState='idle';
-  var _motionMQ=window.matchMedia('(prefers-reduced-motion:reduce)');
-  var _canAnim=(typeof Element.prototype.animate==='function')&&!_motionMQ.matches;
-  (function(){var _mh=function(ev){_canAnim=(typeof Element.prototype.animate==='function')&&!ev.matches;};if(_motionMQ.addEventListener){_motionMQ.addEventListener('change',_mh);}else if(_motionMQ.addListener){_motionMQ.addListener(function(mq){_mh({matches:mq.matches});});}})()
-  var DUR=180;
-  var DUR_PATH_DRAW=120;
-  var DUR_VALUE=100;
-  var DUR_ARROWHEAD=36;
-  var DUR_STAGGER=50;
-  var DUR_SYNC_FUDGE=20;
-  var _speed=parseFloat(W.getAttribute('data-scriba-speed'))||1;
-  function _dur(ms){return Math.round(ms/_speed);}
-  function _cancelAnims(){
-    for(var k=0;k<_anims.length;k++)try{_anims[k].finish();}catch(e){}
-    _anims=[];_animState='idle';
-  }
-  function initSub(el){
-    var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
-    var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
-    var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
-    var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
-    function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
-      sr.textContent=(i+1)+' / '+fd.length;
-      sp.disabled=i===0;sx.disabled=i===fd.length-1;
-      sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
-    }
-    sp.addEventListener('click',function(){if(sc>0)sh(sc-1);});
-    sx.addEventListener('click',function(){if(sc<fd.length-1)sh(sc+1);});
-    sh(0);
-  }
-  function _updateControls(i){
-    ctr.textContent=(i+1)+' / '+frames.length;
-    prev.disabled=i===0;
-    next.disabled=i===frames.length-1;
-    dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
-  }
-  function _annKeysIn(svgStr){
-    var keys={};
-    if(!svgStr)return keys;
-    var re=/data-annotation="([^"]*)"/g,m;
-    while((m=re.exec(svgStr))!==null){keys[m[1]]=true;}
-    return keys;
-  }
-  function _fadeInNewAnnotations(prevKeys){
-    if(!_canAnim)return;
-    var els=stage.querySelectorAll('[data-annotation]');
-    for(var k=0;k<els.length;k++){
-      var key=els[k].getAttribute('data-annotation');
-      if(prevKeys[key])continue;
-      var a=els[k].animate([{opacity:0},{opacity:1}],
-        {duration:_dur(DUR),easing:'cubic-bezier(0.16,1,0.3,1)',fill:'forwards'});
-      _anims.push(a);
-    }
-  }
-  function snapToFrame(i){
-    _cancelAnims();
-    var prevKeys=_annKeysIn(frames[cur]&&frames[cur].svg);
-    cur=i;
-    stage.innerHTML=frames[i].svg;
-    narr.innerHTML=frames[i].narration;
-    subC.innerHTML=frames[i].substory||'';
-    subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
-    _updateControls(i);
-    _fadeInNewAnnotations(prevKeys);
-  }
-  function _arrowheadAt(path,size){
-    var len=path.getTotalLength();
-    var tip=path.getPointAtLength(len);
-    var back=path.getPointAtLength(Math.max(0,len-size*1.5));
-    var dx=tip.x-back.x,dy=tip.y-back.y;
-    var d=Math.sqrt(dx*dx+dy*dy)||1;
-    var ux=dx/d,uy=dy/d,px=-uy,py=ux;
-    var hw=size*0.5;
-    return tip.x+','+tip.y+' '+(tip.x-ux*size+px*hw)+','+(tip.y-uy*size+py*hw)+' '+(tip.x-ux*size-px*hw)+','+(tip.y-uy*size-py*hw);
-  }
-  function _applyTransition(rec,parsed,pending){
-    var target=rec[0],prop=rec[1],fromVal=rec[2],toVal=rec[3],kind=rec[4];
-    var sel='[data-target="'+_cssEscape(target)+'"]';
-    if(kind==='recolor'){
-      var el=stage.querySelector(sel);
-      if(el){
-        var cls=el.className.baseVal||el.className||'';
-        cls=cls.replace('scriba-state-'+fromVal,'scriba-state-'+toVal);
-        if(el.className.baseVal!==undefined)el.className.baseVal=cls;
-        else el.className=cls;
-      }
-    }else if(kind==='value_change'){
-      var el2=stage.querySelector(sel);
-      if(el2){var txt=el2.querySelector('text');if(txt){
-        txt.textContent=toVal;
-        if(_canAnim){txt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
-          {duration:_dur(DUR_VALUE),easing:'ease-out'});}
-      }}
-    }else if(kind==='highlight_on'){
-      var el3=stage.querySelector(sel);
-      if(el3){
-        var c3=el3.className.baseVal||el3.className||'';
-        if(c3.indexOf('scriba-highlighted')===-1){
-          c3+=' scriba-highlighted';
-          if(el3.className.baseVal!==undefined)el3.className.baseVal=c3;
-          else el3.className=c3;
-        }
-      }
-    }else if(kind==='highlight_off'){
-      var el4=stage.querySelector(sel);
-      if(el4){
-        var c4=el4.className.baseVal||el4.className||'';
-        c4=c4.replace(/\s*scriba-highlighted/g,'');
-        if(el4.className.baseVal!==undefined)el4.className.baseVal=c4;
-        else el4.className=c4;
-      }
-    }else if(kind==='element_remove'){
-      var el5=stage.querySelector(sel);
-      if(el5){
-        var a5=el5.animate([{opacity:1},{opacity:0}],
-          {duration:_dur(DUR),easing:'ease-in',fill:'forwards'});
-        _anims.push(a5);pending.push(a5.finished);
-      }
-    }else if(kind==='element_add'){
-      var src=parsed.querySelector(sel);
-      if(src){
-        var clone=document.adoptNode(src.cloneNode(true));
-        clone.style.opacity='0';
-        var srcP=src.parentNode;
-        var pShape=null;
-        while(srcP&&srcP.nodeType===1){
-          var ds2=srcP.getAttribute&&srcP.getAttribute('data-shape');
-          if(ds2){pShape=stage.querySelector('[data-shape="'+_cssEscape(ds2)+'"]');break;}
-          srcP=srcP.parentNode;
-        }
-        var ct=pShape||stage.querySelector('svg');
-        if(ct){ct.appendChild(clone);
-          var a6=clone.animate([{opacity:0},{opacity:1}],
-            {duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
-          _anims.push(a6);pending.push(a6.finished);
-        }
-      }
-    }else if(kind==='position_move'){
-      var el9=stage.querySelector(sel);
-      if(el9){
-        var pf=fromVal.split(',');
-        var pt=toVal.split(',');
-        var dx=parseFloat(pf[0])-parseFloat(pt[0]);
-        var dy=parseFloat(pf[1])-parseFloat(pt[1]);
-        var a9=el9.animate([
-          {transform:'translate('+dx+'px,'+dy+'px)'},
-          {transform:'translate(0,0)'}
-        ],{duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
-        _anims.push(a9);pending.push(a9.finished);
-      }
-    }else if(kind==='annotation_remove'){
-      var el7=stage.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
-      if(el7){
-        var a7=el7.animate([{opacity:1},{opacity:0}],
-          {duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
-        _anims.push(a7);pending.push(a7.finished);
-      }
-    }else if(kind==='annotation_add'){
-      var src8=parsed.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
-      if(src8){
-        var clone8=document.adoptNode(src8.cloneNode(true));
-        var srcParent=src8.parentNode;
-        var parentShape=null;
-        var _midTransforms=[];
-        while(srcParent&&srcParent.nodeType===1){
-          var ds=srcParent.getAttribute&&srcParent.getAttribute('data-shape');
-          if(ds){parentShape=stage.querySelector('[data-shape="'+_cssEscape(ds)+'"]');break;}
-          var _tr=srcParent.getAttribute('transform');
-          if(_tr)_midTransforms.push(_tr);
-          srcParent=srcParent.parentNode;
-        }
-        var container=parentShape||stage.querySelector('svg');
-        if(container){
-          var _insertNode=clone8;
-          for(var _ti=0;_ti<_midTransforms.length;_ti++){
-            var _wg=document.createElementNS('http://www.w3.org/2000/svg','g');
-            _wg.setAttribute('transform',_midTransforms[_ti]);
-            _wg.appendChild(_insertNode);
-            _insertNode=_wg;
-          }
-          var pathEl=clone8.querySelector('path');
-          if(pathEl&&typeof pathEl.getTotalLength==='function'){
-            clone8.style.opacity='1';
-            container.appendChild(_insertNode);
-            var len=pathEl.getTotalLength();
-            pathEl.style.strokeDasharray=len;
-            pathEl.style.strokeDashoffset=len+'px';
-            var polyEl=clone8.querySelector('polygon');
-            if(polyEl)polyEl.setAttribute('opacity','0');
-            var textEl=clone8.querySelector('text');
-            if(textEl)textEl.setAttribute('opacity','0');
-            var drawDone=new Promise(function(resolve){
-              var start=performance.now();
-              var headShown=false;
-              function tick(now){
-                var t=Math.min((now-start)/_dur(DUR_PATH_DRAW),1);
-                var eased=1-Math.pow(1-t,3);
-                pathEl.style.strokeDashoffset=(len*(1-eased))+'px';
-                if(!headShown&&t>=0.7){
-                  headShown=true;
-                  if(polyEl){
-                    polyEl.animate([{opacity:0},{opacity:1}],
-                      {duration:_dur(DUR_ARROWHEAD),easing:'ease-out',fill:'forwards'});
-                  }
-                  if(textEl){
-                    textEl.animate([{opacity:0},{opacity:1}],
-                      {duration:_dur(DUR_ARROWHEAD),easing:'ease-out',fill:'forwards'});
-                  }
-                }
-                if(t<1){requestAnimationFrame(tick);}
-                else{
-                  pathEl.style.strokeDashoffset='0';
-                  if(polyEl)polyEl.setAttribute('opacity','1');
-                  resolve();
-                }
-              }
-              requestAnimationFrame(tick);
-            });
-            pending.push(drawDone);
-          }else{
-            clone8.style.opacity='0';
-            container.appendChild(_insertNode);
-            var a8=clone8.animate([{opacity:0},{opacity:1}],
-              {duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
-            _anims.push(a8);pending.push(a8.finished);
-          }
-        }
-      }
-    }
-  }
-  function animateTransition(toIdx){
-    if(_animState==='animating'){_cancelAnims();snapToFrame(toIdx);return;}
-    var tr=frames[toIdx]&&frames[toIdx].tr;
-    if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
-    _animState='animating';
-    cur=toIdx;
-    narr.innerHTML=frames[toIdx].narration;
-    _updateControls(toIdx);
-    var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
-    var pending=[];
-    var phase1=[],phase2=[];
-    for(var t=0;t<tr.length;t++){
-      var k=tr[t][4];
-      if(k==='annotation_add'||k==='highlight_on')phase1.push(tr[t]);
-      else phase2.push(tr[t]);
-    }
-    for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
-    var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
-    function _finish(fullSync){
-      if(_animState!=='animating')return;
-      if(fullSync){
-        stage.innerHTML=frames[toIdx].svg;
-      }
-      subC.innerHTML=frames[toIdx].substory||'';
-      subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+    var _cssEscape=(typeof CSS!=='undefined'&&CSS.escape)?CSS.escape:function(s){return String(s).replace(/[^a-zA-Z0-9_-]/g,function(c){return '\\'+c.charCodeAt(0).toString(16)+' ';});};
+    var cur=0;
+    var stage=W.querySelector('.scriba-stage');
+    var narr=W.querySelector('.scriba-narration');
+    var subC=W.querySelector('.scriba-substory-container');
+    var ctr=W.querySelector('.scriba-step-counter');
+    var prev=W.querySelector('.scriba-btn-prev');
+    var next=W.querySelector('.scriba-btn-next');
+    var dots=W.querySelectorAll('.scriba-dot');
+    var _anims=[];
+    var _animState='idle';
+    var _gen=0;
+    var _motionMQ=window.matchMedia('(prefers-reduced-motion:reduce)');
+    var _canAnim=(typeof Element.prototype.animate==='function')&&!_motionMQ.matches;
+    (function(){var _mh=function(ev){_canAnim=(typeof Element.prototype.animate==='function')&&!ev.matches;};if(_motionMQ.addEventListener){_motionMQ.addEventListener('change',_mh);}else if(_motionMQ.addListener){_motionMQ.addListener(function(mq){_mh({matches:mq.matches});});}})();
+    var DUR=180;
+    var DUR_PATH_DRAW=120;
+    var DUR_VALUE=100;
+    var DUR_ARROWHEAD=36;
+    var DUR_STAGGER=50;
+    var DUR_SYNC_FUDGE=20;
+    var _speed=parseFloat(W.getAttribute('data-scriba-speed'))||1;
+    function _dur(ms){return Math.round(ms/_speed);}
+    function _cancelAnims(){
+      _gen++;
+      for(var k=0;k<_anims.length;k++)try{_anims[k].finish();}catch(e){}
       _anims=[];_animState='idle';
     }
-    function _runPhase2(){
-      for(var j=0;j<phase2.length;j++){
-        _applyTransition(phase2[j],parsed,pending);
+    function initSub(el){
+      var fd=JSON.parse(el.getAttribute('data-scriba-frames'));
+      var sc=0,ss=el.querySelector('.scriba-stage'),sn=el.querySelector('.scriba-narration');
+      var sp=el.querySelector('.scriba-btn-prev'),sx=el.querySelector('.scriba-btn-next');
+      var sr=el.querySelector('.scriba-step-counter'),sd=el.querySelectorAll('.scriba-dot');
+      function sh(i){sc=i;ss.innerHTML=fd[i].svg;sn.innerHTML=fd[i].narration;
+        sr.textContent=(i+1)+' / '+fd.length;
+        sp.disabled=i===0;sx.disabled=i===fd.length-1;
+        sd.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
       }
-      if(pending.length>0){
-        Promise.all(pending).then(function(){_finish(needsSync||true);}).catch(function(){_finish(true);});
-      }else if(needsSync){
-        setTimeout(function(){_finish(true);},_dur(DUR)+DUR_SYNC_FUDGE);
+      sp.addEventListener('click',function(){if(sc>0)sh(sc-1);});
+      sx.addEventListener('click',function(){if(sc<fd.length-1)sh(sc+1);});
+      sh(0);
+    }
+    function _updateControls(i){
+      ctr.textContent=(i+1)+' / '+frames.length;
+      prev.disabled=i===0;
+      next.disabled=i===frames.length-1;
+      dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
+    }
+    function _annKeysIn(svgStr){
+      var keys={};
+      if(!svgStr)return keys;
+      var re=/data-annotation="([^"]*)"/g,m;
+      while((m=re.exec(svgStr))!==null){keys[m[1]]=true;}
+      return keys;
+    }
+    function _fadeInNewAnnotations(prevKeys){
+      if(!_canAnim)return;
+      var els=stage.querySelectorAll('[data-annotation]');
+      for(var k=0;k<els.length;k++){
+        var key=els[k].getAttribute('data-annotation');
+        if(prevKeys[key])continue;
+        var a=els[k].animate([{opacity:0},{opacity:1}],
+          {duration:_dur(DUR),easing:'cubic-bezier(0.16,1,0.3,1)',fill:'forwards'});
+        _anims.push(a);
+      }
+    }
+    function snapToFrame(i){
+      _cancelAnims();
+      var prevKeys=_annKeysIn(frames[cur]&&frames[cur].svg);
+      cur=i;
+      stage.innerHTML=frames[i].svg;
+      narr.innerHTML=frames[i].narration;
+      subC.innerHTML=frames[i].substory||'';
+      subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+      _updateControls(i);
+      _fadeInNewAnnotations(prevKeys);
+    }
+    function _arrowheadAt(path,size){
+      var len=path.getTotalLength();
+      var tip=path.getPointAtLength(len);
+      var back=path.getPointAtLength(Math.max(0,len-size*1.5));
+      var dx=tip.x-back.x,dy=tip.y-back.y;
+      var d=Math.sqrt(dx*dx+dy*dy)||1;
+      var ux=dx/d,uy=dy/d,px=-uy,py=ux;
+      var hw=size*0.5;
+      return tip.x+','+tip.y+' '+(tip.x-ux*size+px*hw)+','+(tip.y-uy*size+py*hw)+' '+(tip.x-ux*size-px*hw)+','+(tip.y-uy*size-py*hw);
+    }
+    function _applyTransition(rec,parsed,pending){
+      var target=rec[0],prop=rec[1],fromVal=rec[2],toVal=rec[3],kind=rec[4];
+      var sel='[data-target="'+_cssEscape(target)+'"]';
+      if(kind==='recolor'){
+        var el=stage.querySelector(sel);
+        if(el){
+          var cls=el.className.baseVal||el.className||'';
+          cls=cls.replace('scriba-state-'+fromVal,'scriba-state-'+toVal);
+          if(el.className.baseVal!==undefined)el.className.baseVal=cls;
+          else el.className=cls;
+        }
+      }else if(kind==='value_change'){
+        var el2=stage.querySelector(sel);
+        if(el2){var txt=el2.querySelector('text');if(txt){
+          txt.textContent=toVal;
+          if(_canAnim){txt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
+            {duration:_dur(DUR_VALUE),easing:'ease-out'});}
+        }}
+      }else if(kind==='highlight_on'){
+        var el3=stage.querySelector(sel);
+        if(el3){
+          var c3=el3.className.baseVal||el3.className||'';
+          if(c3.indexOf('scriba-highlighted')===-1){
+            c3+=' scriba-highlighted';
+            if(el3.className.baseVal!==undefined)el3.className.baseVal=c3;
+            else el3.className=c3;
+          }
+        }
+      }else if(kind==='highlight_off'){
+        var el4=stage.querySelector(sel);
+        if(el4){
+          var c4=el4.className.baseVal||el4.className||'';
+          c4=c4.replace(/\s*scriba-highlighted/g,'');
+          if(el4.className.baseVal!==undefined)el4.className.baseVal=c4;
+          else el4.className=c4;
+        }
+      }else if(kind==='element_remove'){
+        var el5=stage.querySelector(sel);
+        if(el5){
+          var a5=el5.animate([{opacity:1},{opacity:0}],
+            {duration:_dur(DUR),easing:'ease-in',fill:'forwards'});
+          _anims.push(a5);pending.push(a5.finished);
+        }
+      }else if(kind==='element_add'){
+        var src=parsed.querySelector(sel);
+        if(src){
+          var clone=document.adoptNode(src.cloneNode(true));
+          clone.style.opacity='0';
+          var srcP=src.parentNode;
+          var pShape=null;
+          while(srcP&&srcP.nodeType===1){
+            var ds2=srcP.getAttribute&&srcP.getAttribute('data-shape');
+            if(ds2){pShape=stage.querySelector('[data-shape="'+_cssEscape(ds2)+'"]');break;}
+            srcP=srcP.parentNode;
+          }
+          var ct=pShape||stage.querySelector('svg');
+          if(ct){ct.appendChild(clone);
+            var a6=clone.animate([{opacity:0},{opacity:1}],
+              {duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
+            _anims.push(a6);pending.push(a6.finished);
+          }
+        }
+      }else if(kind==='position_move'){
+        var el9=stage.querySelector(sel);
+        if(el9){
+          var pf=fromVal.split(',');
+          var pt=toVal.split(',');
+          var dx=parseFloat(pf[0])-parseFloat(pt[0]);
+          var dy=parseFloat(pf[1])-parseFloat(pt[1]);
+          var a9=el9.animate([
+            {transform:'translate('+dx+'px,'+dy+'px)'},
+            {transform:'translate(0,0)'}
+          ],{duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
+          _anims.push(a9);pending.push(a9.finished);
+        }
+      }else if(kind==='annotation_remove'){
+        var el7=stage.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
+        if(el7){
+          var a7=el7.animate([{opacity:1},{opacity:0}],
+            {duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
+          _anims.push(a7);pending.push(a7.finished);
+        }
+      }else if(kind==='annotation_add'){
+        var src8=parsed.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
+        if(src8){
+          var clone8=document.adoptNode(src8.cloneNode(true));
+          var srcParent=src8.parentNode;
+          var parentShape=null;
+          var _midTransforms=[];
+          while(srcParent&&srcParent.nodeType===1){
+            var ds=srcParent.getAttribute&&srcParent.getAttribute('data-shape');
+            if(ds){parentShape=stage.querySelector('[data-shape="'+_cssEscape(ds)+'"]');break;}
+            var _tr=srcParent.getAttribute('transform');
+            if(_tr)_midTransforms.push(_tr);
+            srcParent=srcParent.parentNode;
+          }
+          var container=parentShape||stage.querySelector('svg');
+          if(container){
+            var _insertNode=clone8;
+            for(var _ti=0;_ti<_midTransforms.length;_ti++){
+              var _wg=document.createElementNS('http://www.w3.org/2000/svg','g');
+              _wg.setAttribute('transform',_midTransforms[_ti]);
+              _wg.appendChild(_insertNode);
+              _insertNode=_wg;
+            }
+            var pathEl=clone8.querySelector('path');
+            if(pathEl&&typeof pathEl.getTotalLength==='function'){
+              clone8.style.opacity='1';
+              container.appendChild(_insertNode);
+              var len=pathEl.getTotalLength();
+              pathEl.style.strokeDasharray=len;
+              pathEl.style.strokeDashoffset=len+'px';
+              var polyEl=clone8.querySelector('polygon');
+              if(polyEl)polyEl.setAttribute('opacity','0');
+              var textEl=clone8.querySelector('text');
+              if(textEl)textEl.setAttribute('opacity','0');
+              var drawDone=new Promise(function(resolve){
+                var start=performance.now();
+                var headShown=false;
+                function tick(now){
+                  var t=Math.min((now-start)/_dur(DUR_PATH_DRAW),1);
+                  var eased=1-Math.pow(1-t,3);
+                  pathEl.style.strokeDashoffset=(len*(1-eased))+'px';
+                  if(!headShown&&t>=0.7){
+                    headShown=true;
+                    if(polyEl){
+                      polyEl.animate([{opacity:0},{opacity:1}],
+                        {duration:_dur(DUR_ARROWHEAD),easing:'ease-out',fill:'forwards'});
+                    }
+                    if(textEl){
+                      textEl.animate([{opacity:0},{opacity:1}],
+                        {duration:_dur(DUR_ARROWHEAD),easing:'ease-out',fill:'forwards'});
+                    }
+                  }
+                  if(t<1){requestAnimationFrame(tick);}
+                  else{
+                    pathEl.style.strokeDashoffset='0';
+                    if(polyEl)polyEl.setAttribute('opacity','1');
+                    resolve();
+                  }
+                }
+                requestAnimationFrame(tick);
+              });
+              pending.push(drawDone);
+            }else{
+              clone8.style.opacity='0';
+              container.appendChild(_insertNode);
+              var a8=clone8.animate([{opacity:0},{opacity:1}],
+                {duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
+              _anims.push(a8);pending.push(a8.finished);
+            }
+          }
+        }
+      }
+    }
+    function animateTransition(toIdx){
+      if(_animState==='animating'){_cancelAnims();snapToFrame(toIdx);return;}
+      var tr=frames[toIdx]&&frames[toIdx].tr;
+      if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
+      _animState='animating';
+      var myGen=_gen;
+      cur=toIdx;
+      _updateControls(toIdx);
+      var parsed=new DOMParser().parseFromString(frames[toIdx].svg,'image/svg+xml');
+      var pending=[];
+      var phase1=[],phase2=[];
+      for(var t=0;t<tr.length;t++){
+        var k=tr[t][4];
+        if(k==='annotation_add'||k==='highlight_on')phase1.push(tr[t]);
+        else phase2.push(tr[t]);
+      }
+      for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
+      var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
+      function _finish(fullSync){
+        if(_animState!=='animating'||myGen!==_gen)return;
+        if(fullSync){
+          stage.innerHTML=frames[toIdx].svg;
+        }
+        narr.innerHTML=frames[toIdx].narration;
+        subC.innerHTML=frames[toIdx].substory||'';
+        subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
+        _anims=[];_animState='idle';
+      }
+      function _runPhase2(){
+        if(myGen!==_gen)return;
+        for(var j=0;j<phase2.length;j++){
+          _applyTransition(phase2[j],parsed,pending);
+        }
+        if(pending.length>0){
+          Promise.all(pending).then(function(){_finish(needsSync||true);}).catch(function(){_finish(true);});
+        }else if(needsSync){
+          setTimeout(function(){_finish(true);},_dur(DUR)+DUR_SYNC_FUDGE);
+        }else{
+          _finish(false);
+        }
+      }
+      if(phase1.length>0&&phase2.length>0){
+        setTimeout(_runPhase2,_dur(DUR_STAGGER));
       }else{
-        _finish(false);
+        _runPhase2();
       }
     }
-    if(phase1.length>0&&phase2.length>0){
-      setTimeout(_runPhase2,_dur(DUR_STAGGER));
-    }else{
-      _runPhase2();
+    function show(i,animate){
+      if(animate&&i===cur+1&&frames[i]&&frames[i].tr&&_canAnim){
+        animateTransition(i);
+      }else{
+        snapToFrame(i);
+      }
     }
-  }
-  function show(i,animate){
-    if(animate&&i===cur+1&&frames[i]&&frames[i].tr&&_canAnim){
-      animateTransition(i);
-    }else{
-      snapToFrame(i);
+    prev.addEventListener('click',function(){if(cur>0)show(cur-1,false);});
+    next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1,true);});
+    W.addEventListener('keydown',function(e){
+      if(e.target.closest('.scriba-substory-widget'))return;
+      if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1,true);}
+      if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1,false);}
+    });
+    if(typeof MutationObserver!=='undefined'){
+      new MutationObserver(function(){_cancelAnims();if(cur>=0)snapToFrame(cur);})
+        .observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
     }
-  }
-  prev.addEventListener('click',function(){if(cur>0)show(cur-1,false);});
-  next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1,true);});
-  W.addEventListener('keydown',function(e){
-    if(e.target.closest('.scriba-substory-widget'))return;
-    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1,true);}
-    if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1,false);}
-  });
-  if(typeof MutationObserver!=='undefined'){
-    new MutationObserver(function(){_cancelAnims();if(cur>=0)snapToFrame(cur);})
-      .observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
-  }
-  show(0,false);
-})();</script>
+    show(0,false);
+  })();</script>
 
 <div class="scriba-tex-content"><h2 id="proof-sketch" class="scriba-tex-heading scriba-tex-heading-2">Proof Sketch</h2><p class="scriba-tex-paragraph">There are two claims to prove.</p><p class="scriba-tex-paragraph"><strong>1. Monster BFS computes the correct danger time.</strong></p><p class="scriba-tex-paragraph">Start the BFS queue with all monster cells at distance <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn></mrow><annotation encoding="application/x-tex">0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>. Because every move
 costs one minute, standard multi-source BFS computes the shortest distance from
