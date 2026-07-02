@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.21.2] - 2026-07-02 — Exact reservation, content-aware pills, math everywhere
+
+### Changed
+- **Rendered HTML/SVG bytes differ from 0.21.1** (`SCRIBA_VERSION` bumped 9→11,
+  two byte-shape changes in one release). Consumer caches keyed on rendered
+  output MUST invalidate.
+- **The annotation lane above every primitive is now the EXACT painted extent**
+  instead of a heuristic upper bound. `annotation_height_above` runs the real
+  annotation emitters into a scratch buffer and measures the output
+  (closed-form cubic-Bézier extrema, stroke folded in), so reserved space
+  shrinks to what is painted — and grows where the old estimate under-reserved
+  (self-loop arrows were clipped). The same exactness applies horizontally and
+  below: painted ⊆ declared bounding box within 0.01px on all four sides.
+  Substory scenes and print frames receive the reservation for the first time.
+- **All pill placement goes through one scorer** (`_place_pill`); the legacy
+  first-fit loops and seven height/width estimators are retired. Multi-line
+  pills center their text block; math pill labels wrap like plain labels and
+  render KaTeX per line.
+- **Captions clear their content by a uniform 8px gap** on every primitive and
+  every branch (single-line, wrapped, math). Grid/Matrix/NumberLine captions sat
+  at −0.6px (glyphs touching the cells); Queue captions shared the index-label
+  baseline; VariableWatch-family captions painted past the bounding box when an
+  arrow lane was reserved (double-counted `arrow_above`).
+- **TeX page regions are wrapped in `.scriba-tex-content`** and the standalone
+  page CSS bundle ships whatever the renderer artifacts declare. Previously the
+  wrapper was missing and the content stylesheet was never bundled, so all 71
+  typography rules and the 53 pygments rules silently never matched — code
+  blocks had no background/highlighting and a long code line stretched the
+  whole page on narrow viewports instead of scrolling inside its block.
+
+### Added
+- **Pills are content-aware (spec R-33/R-34).** A primitive's own cells join
+  the placement scoring as soft obstacles, arc labels wrap to the primitive's
+  content span instead of a fixed character budget, the auto side-hint covers
+  all four quadrants, and short arrows deep inside a grid escape to the clear
+  lane above/below the content — previously the pill parked on the cells at its
+  natural anchor (covering, for short vertical arrows, its own target cell).
+- **`$…$` math renders on every user-visible text surface**, now pinned by a
+  guard matrix (cell values, `\apply value=`, watch names/values, matrix
+  row/col labels, stack items, hashmap entries, plane2d point/line labels,
+  codepanel captions, graph edge weights incl. `split_labels`). The one real
+  engine gap — graph split edge labels escaping `$` raw — is fixed; the
+  canonical KaTeX-sites list in `docs/spec/environments.md` §8.4 is rewritten
+  (12 site families plus the deliberately-verbatim list).
+- **Animation env options are honoured end-to-end:** `label=` becomes the
+  widget `aria-label`, `width=`/`height=` become max-size constraints,
+  `layout=` lands as `data-layout`; the documented-but-dead `grid` option is
+  rejected with `E1004`.
+- **Pygments light + dark sheets ship as a pair** — the dark sheet is entirely
+  `[data-theme="dark"]`-guarded, so code token colors follow the runtime theme
+  toggle instead of staying light-on-dark.
+
+### Fixed
+- **Rapid Next/Prev clicks no longer swallow frames.** The runtime committed
+  the current-frame index only after the ~250ms transition settled, so clicks
+  landing mid-animation stepped from a stale index (4 fast Next clicks advanced
+  2-3 frames; Next then a quick Prev did nothing). Both runtime copies (external
+  asset and inline builder) are patched and pinned to the same contract.
+- Mixed text+math labels in a `foreignObject` no longer clip vertically or have
+  their spaces eaten by flex layout; FO text carries an explicit font-size
+  matching its plain-text twin; graph/tree math node labels overflow like plain
+  node text instead of clipping.
+- Wrapped `<tspan>` lines keep a trailing space so copied text keeps word
+  breaks; diagram-mode widgets no longer emit a dangling `aria-labelledby`;
+  single-line caption anchoring is CSS-independent.
+- Array captions route through the shared caption helper (raw `$` no longer
+  leaks in the bespoke multi-line branch).
+- R-19 degraded-placement warnings are measured against the score minus the
+  unavoidable content-cell floor, restoring the threshold's meaning in dense
+  grids (13 false warnings → 0).
+
 ## [0.21.1] - 2026-07-01 — Unicode identifier support
 
 ### Added

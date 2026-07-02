@@ -1,6 +1,6 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.21.1"
+__version__: str = "0.21.2"
 """PyPI SemVer. Bumped on every release."""
 
 SCRIBA_VERSION: int = 11
@@ -91,4 +91,14 @@ wrapped tspans keep a trailing space per line (copy-paste word breaks);
 env options label/width/height/layout are now honoured in output and the
 dead `grid` option key is rejected (E1004). Rendered bytes differ across
 all annotated/labelled scenes; consumer caches MUST invalidate.
+
+Also folded into the 11 byte-shape (same 0.21.2 release): pills treat the
+primitive's own cells as obstacles and wrap to the content span (R-33),
+short in-grid arrows escape to the clear lane above/below the content
+(R-34), every caption clears its content by a uniform 8px gap, graph split
+edge labels with math yield to the KaTeX path, and the interactive-widget
+inline runtime commits the frame index before the transition (rapid
+Next/Prev no longer swallowed). Page-level output additionally changed:
+TeX regions are wrapped in ``.scriba-tex-content`` and the CSS bundle now
+ships the artifact-declared content + pygments light/dark sheets.
 """
