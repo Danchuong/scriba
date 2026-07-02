@@ -17,7 +17,14 @@ from typing import TYPE_CHECKING, Any, Callable, ClassVar
 if TYPE_CHECKING:  # pragma: no cover - type checking only
     from scriba.core.context import RenderContext
 
-from scriba.animation.primitives._extent import measure_painted_extent
+from scriba.animation.primitives._extent import (
+    PaintedExtent,
+    measure_painted_extent,
+)
+
+# Cache sentinel: annotations measured, nothing painted (distinct from
+# ``None`` = cache invalidated).
+_NO_EXTENT = object()
 
 # ---------------------------------------------------------------------------
 # Re-export everything from the split sub-modules so all existing import
@@ -242,7 +249,8 @@ class PrimitiveBase(abc.ABC):
         self._values: dict[str, str] = {}  # target suffix -> display value
         self._labels: dict[str, str] = {}  # target suffix -> display label
         self._annotations: list[dict[str, Any]] = []
-        self._extent_above_cache: int | None = None
+        # PaintedExtent | _NO_EXTENT | None(=invalidated)
+        self._extent_above_cache: object | None = None
         self._highlighted: set[str] = set()
         # Arrow rendering defaults — subclasses override in __init__ as needed.
         self._arrow_cell_height: float = float(CELL_HEIGHT)
@@ -357,18 +365,57 @@ class PrimitiveBase(abc.ABC):
         annotation list (the emitters and the measurement are pure with
         respect to everything else).
         """
+        ext = self._annotation_extent()
+        if ext is None or ext.min_y >= 0:
+            return 0
+        return int(math.ceil(-ext.min_y))
+
+    def _annotation_extent(self) -> "PaintedExtent | None":
+        """Exact painted bbox of the current annotations, or ``None``.
+
+        Single measurement consumed by ALL four reservation directions
+        (above / left / right / below) — the same numbers the vertical
+        lane already uses, so the horizontal and below reservations are
+        exact by the same construction and include collision-nudge
+        relocations between this primitive's own pills.
+        """
         cached = getattr(self, "_extent_above_cache", None)
         if cached is not None:
-            return cached
-        value = 0
+            return cached if cached is not _NO_EXTENT else None
+        ext: "PaintedExtent | None" = None
         if self._annotations:
             parts: list[str] = []
             self._measure_emit(parts)
             ext = measure_painted_extent("\n".join(parts))
-            if ext is not None and ext.min_y < 0:
-                value = int(math.ceil(-ext.min_y))
-        self._extent_above_cache = value
-        return value
+        self._extent_above_cache = ext if ext is not None else _NO_EXTENT
+        return ext
+
+    def annotation_h_pads(self) -> "tuple[int, int]":
+        """Exact ``(left_overhang, right_reach)`` of the annotations.
+
+        ``left_overhang`` — px painted left of x=0 (content shifts right
+        by this). ``right_reach`` — rightmost painted x (bbox width grows
+        to at least this). Replaces the ``position_label_h_extents``
+        estimate, which modelled only the natural single-pill anchor and
+        missed collision-nudge relocations entirely.
+        """
+        ext = self._annotation_extent()
+        if ext is None:
+            return 0, 0
+        left = int(math.ceil(-ext.min_x)) if ext.min_x < 0 else 0
+        right = int(math.ceil(ext.max_x)) if ext.max_x > 0 else 0
+        return left, right
+
+    def annotation_below_overhang(self, baseline: float) -> int:
+        """Exact px the annotations paint below *baseline*.
+
+        Replaces the ``position_below_lane_height`` /
+        ``position_label_height_below`` formula mirrors.
+        """
+        ext = self._annotation_extent()
+        if ext is None or ext.max_y <= baseline:
+            return 0
+        return int(math.ceil(ext.max_y - baseline))
 
     def _annotation_cell_metrics(self) -> "CellMetrics | None":
         """Grid-aware flow context passed to the annotation engine.
@@ -508,27 +555,31 @@ class PrimitiveBase(abc.ABC):
 
     def _below_lane_height(self) -> int:
         """Px reserved below ``resolve_below_baseline()`` for ``position=below``
-        callout pills. 0 when there are no below pills (so reserving it is a
-        no-op for the common case). Shared by ``bounding_box``/caption placement
-        of every primitive that opts into the lane."""
-        return position_below_lane_height(self._annotations)
+        callout pills. 0 when nothing paints below the baseline (no-op for the
+        common case). Shared by ``bounding_box``/caption placement of every
+        primitive that opts into the lane.
+
+        Exact painted extent below the baseline — includes downward collision
+        nudges the retired ``position_below_lane_height`` formula never
+        modelled."""
+        baseline = self.resolve_below_baseline()
+        if baseline is None:
+            return 0
+        return self.annotation_below_overhang(float(baseline))
 
     def _h_label_pad(self) -> "tuple[int, int]":
-        """``(left_overhang, right_reach)`` for ``position=left``/``right`` pills —
-        the horizontal space to reserve so they don't clip the viewBox, rounded
-        up to whole px. Both 0 when there are no left/right pills, so the no-pill
-        case keeps an integer footprint (byte-stable). Shared single source for
+        """``(left_overhang, right_reach)`` of the annotations — the horizontal
+        space to reserve so nothing clips the viewBox. Both 0 with no
+        annotations (byte-stable footprint). Shared single source for
         ``bounding_box`` (grow width) and ``emit_svg`` (shift content right by
-        the left overhang). Uses ``resolve_label_anchor`` + ``_arrow_cell_height``
-        so the estimate matches what ``emit_position_label_svg`` draws."""
-        left, right = position_label_h_extents(
-            self._annotations,
-            self.resolve_label_anchor,
-            cell_height=getattr(self, "_arrow_cell_height", CELL_HEIGHT),
-        )
-        import math
+        the left overhang).
 
-        return int(math.ceil(left)), int(math.ceil(right))
+        Now the exact painted extent (same measurement as the vertical lane),
+        so it covers left/right pills INCLUDING collision-nudge relocations,
+        over-wide arc pills, and arrowheads — the retired
+        ``position_label_h_extents`` estimate modelled only the natural
+        single-pill anchor."""
+        return self.annotation_h_pads()
 
     # -- Layer A: shared caption block (wrap + width-in-bbox) ----------------
     # Lifted from Array so every caption-bearing primitive folds its caption

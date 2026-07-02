@@ -320,7 +320,7 @@ class ArrayPrimitive(PrimitiveBase):
         # never overflows the viewBox. Centered on the footprint width; cells
         # (shifted by row_dx) share the same center line.
         if self._caption_lines(self._total_width()):
-            lane_h = position_below_lane_height(effective_anns, cell_height=CELL_HEIGHT)
+            lane_h = self._below_lane_height()
             caption_top = int(self.resolve_below_baseline() + lane_h + _STACK_GAP)
             self._emit_caption(
                 lines,
@@ -367,7 +367,7 @@ class ArrayPrimitive(PrimitiveBase):
         # multi-line) caption stack below it. Single source shared with
         # emit_svg so geometry never drifts.
         below_baseline = self.resolve_below_baseline() or float(CELL_HEIGHT)
-        lane_h = position_below_lane_height(effective_anns, cell_height=CELL_HEIGHT)
+        lane_h = self._below_lane_height()
         bottom = below_baseline + lane_h
         caption_h = self._caption_block_height(self._total_width())
         if caption_h:
@@ -510,65 +510,53 @@ class ArrayPrimitive(PrimitiveBase):
         return self.size * self._cell_width + (self.size - 1) * CELL_GAP
 
 
-    def _below_pill_width(self, label: str) -> int:
-        """Rendered width of a ``position=below`` callout pill for *label*
-        (wrapped the same way ``emit_position_label_svg`` wraps it)."""
-        s = str(label)
-        if _label_has_math(s):
-            lines = [s]
-        else:
-            lines = _wrap_label_lines(s, max_px=_LABEL_PILL_MAX_W_PX, font_px=11)
-        widest = max((estimate_text_width(ln, 11) for ln in lines), default=0)
-        return widest + 2 * _LABEL_PILL_PAD_X
+    def _measure_emit(self, parts: "list[str]") -> None:
+        """Measure annotations in the CONTENT frame (``_row_dx`` forced 0).
 
-    def _bbox_width(self) -> int:
-        """Footprint width: wide enough for the cell row, the caption, AND the
-        ``position=below``/``left``/``right`` callout pills (which extend past
-        the row on edge cells — otherwise they clip).
+        Array's selector anchors include ``_row_dx``, which itself depends on
+        the annotation extent — measuring with the live ``_row_dx`` would
+        recurse. Since ``_row_dx`` is a pure horizontal translation, measuring
+        at 0 and shifting by the final ``_row_dx`` afterwards is exact.
+        """
+        self._extent_content_frame = True
+        try:
+            super()._measure_emit(parts)
+        finally:
+            self._extent_content_frame = False
 
-        Defect 6 (caption) + lane-pill extent + #1 left/right extent. Single
-        source of truth shared by ``emit_svg`` and ``bounding_box``. Computed in
-        content-local space (cells before ``row_dx``), centred on the cell-row
-        centre, so the result is symmetric and ``row_dx`` keeps everything
-        centred. (Anchors include ``row_dx`` so this stays non-circular by using
-        content-local cell centres, not ``resolve_label_anchor``.)
+    def _h_shift(self) -> int:
+        """Symmetric horizontal margin around the cell row.
+
+        Exact: the painted annotation extent (measured in the content frame)
+        and the centered caption block both must fit; ``S`` is the smallest
+        symmetric margin that contains them, so ``bbox = content + 2*S`` and
+        the row shifts right by exactly ``S``. Replaces the pill-width
+        formula estimate (which hardcoded 11px against 12px label colors and
+        never modelled collision nudges).
         """
         content = self._total_width()
-        cw = self._cell_width
-        half = max(content / 2.0, self._caption_block_width(self._total_width()) / 2.0)
-        center = content / 2.0
-        gap = max(4.0, CELL_HEIGHT * 0.1)
-        for a in self._annotations:
-            pos = a.get("position", "above")
-            if (
-                not a.get("label")
-                or pos not in ("below", "left", "right")
-                or a.get("arrow_from")
-                or a.get("arrow")
-            ):
-                continue
-            target = a.get("target", "")
-            m = _CELL_RE.match(target)
-            if m and m.group("name") == self.name and 0 <= int(m.group("idx")) < self.size:
-                cell_cx = int(m.group("idx")) * (cw + CELL_GAP) + cw / 2.0
-            elif (mr := _RANGE_RE.match(target)) and mr.group("name") == self.name:
-                lo, hi = int(mr.group("lo")), int(mr.group("hi"))
-                cell_cx = (lo * (cw + CELL_GAP) + hi * (cw + CELL_GAP) + cw) / 2.0
-            else:
-                continue
-            pw = self._below_pill_width(a["label"])
-            if pos == "below":
-                half = max(half, abs(cell_cx - center) + pw / 2.0)
-            elif pos == "right":
-                half = max(half, (cell_cx + pw + gap) - center)
-            else:  # left
-                half = max(half, center - (cell_cx - pw - gap))
-        return int(2 * half)
+        cap_half = (self._caption_block_width(content) - content) / 2.0
+        need = max(0.0, cap_half)
+        ext = self._annotation_extent()
+        if ext is not None:
+            need = max(need, -ext.min_x, ext.max_x - content)
+        import math
+
+        return int(math.ceil(need))
+
+    def _bbox_width(self) -> int:
+        """Footprint width: cell row + symmetric margin for the caption and
+        the exact painted annotation extent. Single source of truth shared by
+        ``emit_svg`` and ``bounding_box``."""
+        return self._total_width() + 2 * self._h_shift()
 
     def _row_dx(self) -> int:
-        """Horizontal shift that keeps the cell row centered under a wider
-        caption. Zero unless the caption widens the footprint."""
-        return (self._bbox_width() - self._total_width()) // 2
+        """Horizontal shift that keeps the cell row centered inside the
+        footprint. Zero in the content measurement frame (see
+        ``_measure_emit``)."""
+        if getattr(self, "_extent_content_frame", False):
+            return 0
+        return self._h_shift()
 
 
 # ---------------------------------------------------------------------------

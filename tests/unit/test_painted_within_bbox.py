@@ -25,10 +25,9 @@ from tests.helpers.painted_extent import painted_extent
 # Painted pixels may legally exceed the geometric bbox by nothing.
 # (Stroke halves are already folded into the measurement.)
 _EPS = 0.01
-# Horizontal reservation (_h_label_pad / array._bbox_width) is still the
-# legacy estimate: a pill clamped to x=0 bleeds half its 0.5px border left.
-# Allowed until the horizontal family moves to the exact painted extent.
-_EPS_X = 0.5
+# Horizontal reservation now consumes the same painted-extent measurement
+# as the vertical lane, so it gets the same strict budget.
+_EPS_X = 0.01
 
 
 def _assert_painted_within_bbox(prim) -> None:
@@ -130,3 +129,42 @@ class TestPlainPointer:
         arr = ArrayPrimitive("a", {"size": 5, "data": [1, 2, 3, 4, 5]})
         _annotate(arr, "a.cell[1]", label="here", arrow=True)
         _assert_painted_within_bbox(arr)
+
+class TestHorizontalAndBelowExact:
+    """Multi-pill collision nudges relocate pills; the reservation must
+    contain the RELOCATED pill, which the legacy formula never modelled."""
+
+    def test_three_right_pills_nudged_stay_inside(self) -> None:
+        arr = ArrayPrimitive("a", {"size": 4, "data": [1, 2, 3, 4]})
+        for i in (1, 2, 3):
+            _annotate(arr, f"a.cell[{i}]", label=f"nhãn phải {i}", position="right")
+        _assert_painted_within_bbox(arr)
+
+    def test_three_left_pills_nudged_stay_inside(self) -> None:
+        arr = ArrayPrimitive("a", {"size": 4, "data": [1, 2, 3, 4]})
+        for i in (0, 1, 2):
+            _annotate(arr, f"a.cell[{i}]", label=f"nhãn trái dài {i}", position="left")
+        _assert_painted_within_bbox(arr)
+
+    def test_stacked_below_pills_stay_inside(self) -> None:
+        arr = ArrayPrimitive("a", {"size": 5, "data": [1, 2, 3, 4, 5]})
+        for i in (1, 2, 3):
+            _annotate(arr, f"a.cell[{i}]", label=f"ghi chú dưới {i}", position="below")
+        _assert_painted_within_bbox(arr)
+
+    def test_wide_math_arc_pill_horizontal(self) -> None:
+        g = GridPrimitive("g", {"rows": 3, "cols": 3})
+        _annotate(
+            g, "g.cell[0][2]",
+            label="$dp[i][j] = \\min(dp[i-1][j], dp[i][j-1]) + c$",
+            arrow_from="g.cell[2][0]",
+        )
+        _assert_painted_within_bbox(g)
+
+    def test_12px_color_below_pill(self) -> None:
+        # ARROW_STYLES has 12px label colors; the legacy array estimator
+        # hardcoded 11px and under-reserved these.
+        arr = ArrayPrimitive("a", {"size": 4, "data": [1, 2, 3, 4]})
+        _annotate(arr, "a.cell[0]", label="một nhãn khá dài rõ ràng", position="below", color="bad")
+        _assert_painted_within_bbox(arr)
+

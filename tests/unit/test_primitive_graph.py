@@ -1007,7 +1007,12 @@ class TestGraphAnnotationLayout:
         byte-identical to the pre-migration output."""
         g = _mk_graph()
         r = g._node_radius
-        assert g._h_label_pad() == (0, 0)
+        # Exact-extent semantics: left overhang must stay 0 (no x shift) and
+        # the painted right reach must stay inside the existing width — the
+        # invariant is "no bbox growth", not "no measurement".
+        left_pad, right_reach = g._h_label_pad()
+        assert left_pad == 0
+        assert right_reach <= g.bounding_box().width
         assert g._below_lane_height() == 0
         # frame is the original unshifted translate(r, r) (arrow_above == 0).
         assert f'transform="translate({r},{r})"' in g.emit_svg()
@@ -1024,7 +1029,12 @@ class TestGraphAnnotationLayout:
             {"target": "G.node[B]", "arrow_from": "G.node[A]", "label": "visit"},
         ])
         r = g._node_radius
-        assert g._h_label_pad() == (0, 0)
+        # Exact-extent semantics: left overhang must stay 0 (no x shift) and
+        # the painted right reach must stay inside the existing width — the
+        # invariant is "no bbox growth", not "no measurement".
+        left_pad, right_reach = g._h_label_pad()
+        assert left_pad == 0
+        assert right_reach <= g.bounding_box().width
         assert g._below_lane_height() == 0
         # x-translate is exactly r (no horizontal shift); y carries arrow space.
         assert f'transform="translate({r},' in g.emit_svg()

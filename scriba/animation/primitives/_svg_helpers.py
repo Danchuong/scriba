@@ -1355,6 +1355,59 @@ def _label_width_text(text: str) -> str:
     return result
 
 
+
+# Left-edge clamp for pills: the pill <rect> carries a 0.5px border, so a
+# rect pinned at x=0 paints its stroke 0.25px OUTSIDE the viewBox. Clamp to
+# 1px so the border stays fully inside (painted ⊆ declared bbox, exactly).
+_PILL_EDGE_CLEAR: int = 1
+
+
+def _emit_pill_label_text(
+    lines: list[str],
+    label_lines: list[str],
+    fi_x: int,
+    fi_y: int,
+    line_height: int,
+    l_fill: str,
+    l_weight: str,
+    l_size: str,
+) -> None:
+    """Emit a multi-line pill label as one ``<text>`` with centered tspans.
+
+    Vertically centers the N-line block on *fi_y*: the first baseline is
+    lifted by half the block height, then each line steps down by
+    *line_height*. (The old per-caller copies put line 1 AT fi_y and grew
+    downward only — bottom-heavy, overflowing the pill for N>=3; the fix
+    had landed only in the position-label copy.) Shared by the arc-arrow,
+    plain-arrow, and position-label emitters — single source, no drift.
+    """
+    text_attrs = (
+        f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
+        f' stroke="white" stroke-width="3"'
+        f' stroke-linejoin="round" paint-order="stroke fill"'
+    )
+    style_parts: list[str] = []
+    if l_weight:
+        style_parts.append(f"font-weight:{l_weight}")
+    if l_size:
+        style_parts.append(f"font-size:{l_size}")
+    style_parts.append("text-anchor:middle")
+    style_parts.append("dominant-baseline:auto")
+    style_str = ";".join(style_parts)
+    num_lines = len(label_lines)
+    first_dy = f"{-line_height * (num_lines - 1) / 2.0:.1f}"
+    tspans = ""
+    for li, ln_text in enumerate(label_lines):
+        dy_val = f"{line_height}" if li > 0 else first_dy
+        tspans += (
+            f'<tspan x="{fi_x}" dy="{dy_val}">'
+            f"{_escape_xml(ln_text)}</tspan>"
+        )
+    lines.append(
+        f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+    )
+
+
 def _emit_label_single_line(
     *,
     label_text: str,
@@ -1882,9 +1935,9 @@ def emit_plain_arrow_svg(
                 _disp,
             )
 
-        pill_rx = max(0, int(fi_x - pill_w / 2))
+        pill_rx = max(_PILL_EDGE_CLEAR, int(fi_x - pill_w / 2))
         pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
-        fi_x = max(fi_x, pill_w // 2)
+        fi_x = max(fi_x, pill_w // 2 + _PILL_EDGE_CLEAR)
         lines.append(
             f'    <rect x="{pill_rx}" y="{pill_ry}"'
             f' width="{pill_w}" height="{pill_h}"'
@@ -1911,28 +1964,9 @@ def emit_plain_arrow_svg(
                 )
             )
         else:
-            text_attrs = (
-                f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-                f' stroke="white" stroke-width="3"'
-                f' stroke-linejoin="round" paint-order="stroke fill"'
-            )
-            style_parts = []
-            if l_weight:
-                style_parts.append(f"font-weight:{l_weight}")
-            if l_size:
-                style_parts.append(f"font-size:{l_size}")
-            style_parts.append("text-anchor:middle")
-            style_parts.append("dominant-baseline:auto")
-            style_str = ";".join(style_parts)
-            tspans = ""
-            for li, ln_text in enumerate(label_lines):
-                dy_val = f"{line_height}" if li > 0 else "0"
-                tspans += (
-                    f'<tspan x="{fi_x}" dy="{dy_val}">'
-                    f"{_escape_xml(ln_text)}</tspan>"
-                )
-            lines.append(
-                f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+            _emit_pill_label_text(
+                lines, label_lines, fi_x, fi_y, line_height,
+                l_fill, l_weight, l_size,
             )
 
     lines.append("  </g>")
@@ -2286,10 +2320,10 @@ def _emit_label_and_pill(
 
     # Background pill: white rect with rounded corners, before text
     # Clamp so pill doesn't extend outside the viewBox (x/y >= 0).
-    pill_rx = max(0, int(fi_x - pill_w / 2))
+    pill_rx = max(_PILL_EDGE_CLEAR, int(fi_x - pill_w / 2))
     pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
     # If pill was clamped, shift label text to stay centered in pill
-    fi_x = max(fi_x, pill_w // 2)
+    fi_x = max(fi_x, pill_w // 2 + _PILL_EDGE_CLEAR)
     lines.append(
         f'    <rect x="{pill_rx}" y="{pill_ry}"'
         f' width="{pill_w}" height="{pill_h}"'
@@ -2356,29 +2390,10 @@ def _emit_label_and_pill(
             )
         )
     else:
-        # Multi-line — use tspan elements
-        text_attrs = (
-            f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-            f' stroke="white" stroke-width="3"'
-            f' stroke-linejoin="round" paint-order="stroke fill"'
-        )
-        style_parts = []
-        if l_weight:
-            style_parts.append(f"font-weight:{l_weight}")
-        if l_size:
-            style_parts.append(f"font-size:{l_size}")
-        style_parts.append("text-anchor:middle")
-        style_parts.append("dominant-baseline:auto")
-        style_str = ";".join(style_parts)
-        tspans = ""
-        for li, ln_text in enumerate(label_lines):
-            dy_val = f'{line_height}' if li > 0 else "0"
-            tspans += (
-                f'<tspan x="{fi_x}" dy="{dy_val}">'
-                f'{_escape_xml(ln_text)}</tspan>'
-            )
-        lines.append(
-            f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+        # Multi-line — shared centered-tspan emitter
+        _emit_pill_label_text(
+            lines, label_lines, fi_x, fi_y, line_height,
+            l_fill, l_weight, l_size,
         )
 
 
@@ -3337,9 +3352,9 @@ def emit_position_label_svg(
     fi_x = int(final_x)
     fi_y = int(final_y)
 
-    pill_rx = max(0, int(fi_x - pill_w / 2))
+    pill_rx = max(_PILL_EDGE_CLEAR, int(fi_x - pill_w / 2))
     pill_ry = int(fi_y - pill_h / 2 - l_font_px * 0.3)
-    fi_x = max(fi_x, pill_w // 2)
+    fi_x = max(fi_x, pill_w // 2 + _PILL_EDGE_CLEAR)
 
     # R-11: speech form for aria-label; raw TeX in aria-description when math.
     speech_pos_label = _latex_to_speech(label_text)
@@ -3455,33 +3470,9 @@ def emit_position_label_svg(
             )
         )
     else:
-        text_attrs = (
-            f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'
-            f' stroke="white" stroke-width="3"'
-            f' stroke-linejoin="round" paint-order="stroke fill"'
-        )
-        style_parts: list[str] = []
-        if l_weight:
-            style_parts.append(f"font-weight:{l_weight}")
-        if l_size:
-            style_parts.append(f"font-size:{l_size}")
-        style_parts.append("text-anchor:middle")
-        style_parts.append("dominant-baseline:auto")
-        style_str = ";".join(style_parts)
-        # Vertically center the N-line block on fi_y: lift the first baseline by
-        # half the block height, then step each line down by line_height. (The
-        # old code put line 1 AT fi_y and grew downward only — bottom-heavy,
-        # overflowing the pill for N>=3.)
-        first_dy = f"{-line_height * (num_lines - 1) / 2.0:.1f}"
-        tspans = ""
-        for li, ln_text in enumerate(label_lines):
-            dy_val = f"{line_height}" if li > 0 else first_dy
-            tspans += (
-                f'<tspan x="{fi_x}" dy="{dy_val}">'
-                f"{_escape_xml(ln_text)}</tspan>"
-            )
-        lines.append(
-            f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+        _emit_pill_label_text(
+            lines, label_lines, fi_x, fi_y, line_height,
+            l_fill, l_weight, l_size,
         )
     lines.append("  </g>")
 

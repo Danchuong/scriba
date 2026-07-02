@@ -303,9 +303,7 @@ class NumberLinePrimitive(PrimitiveBase):
         # Caption label — below the below-pill lane (lane is 0 when there are no
         # below pills, so the caption stays at NL_HEIGHT in the common case).
         if self.label is not None:
-            below_lane = position_below_lane_height(
-                effective_anns, cell_height=NL_TICK_BOTTOM - NL_TICK_TOP
-            )
+            below_lane = self._below_lane_height()
             self._emit_caption(
                 lines,
                 content_width=self.width,
@@ -374,9 +372,7 @@ class NumberLinePrimitive(PrimitiveBase):
         # Below-pill lane first, then the caption beneath it (mirrors Array's
         # content -> lane -> caption order). No below pills -> lane is 0 and the
         # caption stays at NL_HEIGHT, so the box is byte-stable.
-        below_lane = position_below_lane_height(
-            self._annotations, cell_height=NL_TICK_BOTTOM - NL_TICK_TOP
-        )
+        below_lane = self._below_lane_height()
         h += below_lane + self._caption_block_height(self.width)
 
         arrow_above = self._arrow_height_above(self._annotations)

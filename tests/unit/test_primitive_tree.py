@@ -430,7 +430,12 @@ class TestTreeAnnotationLayout:
         byte-identical to the pre-migration output."""
         t = _mk_tree()
         r = t._node_radius
-        assert t._h_label_pad() == (0, 0)
+        # Exact-extent semantics: left overhang must stay 0 (no x shift) and
+        # the painted right reach must stay inside the existing width — the
+        # invariant is "no bbox growth", not "no measurement".
+        left_pad, right_reach = t._h_label_pad()
+        assert left_pad == 0
+        assert right_reach <= t.bounding_box().width
         assert t._below_lane_height() == 0
         # frame is the original unshifted translate(r, r) (arrow_above == 0).
         assert f'transform="translate({r},{r})"' in t.emit_svg()
@@ -447,7 +452,12 @@ class TestTreeAnnotationLayout:
             {"target": "T.node[B]", "arrow_from": "T.node[A]", "label": "visit"},
         ])
         r = t._node_radius
-        assert t._h_label_pad() == (0, 0)
+        # Exact-extent semantics: left overhang must stay 0 (no x shift) and
+        # the painted right reach must stay inside the existing width — the
+        # invariant is "no bbox growth", not "no measurement".
+        left_pad, right_reach = t._h_label_pad()
+        assert left_pad == 0
+        assert right_reach <= t.bounding_box().width
         assert t._below_lane_height() == 0
         # x-translate is exactly r (no horizontal shift); y carries arrow space.
         assert f'transform="translate({r},' in t.emit_svg()

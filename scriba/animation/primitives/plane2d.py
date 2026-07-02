@@ -626,10 +626,7 @@ class Plane2D(PrimitiveBase):
         arrow_above = max(
             self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
-        pos_below = position_label_height_below(
-            self._annotations,
-            cell_height=float(_ARROW_CELL_HEIGHT),
-        )
+        pos_below = self.annotation_below_overhang(float(self.height))
         return BoundingBox(
             x=0,
             y=0,
