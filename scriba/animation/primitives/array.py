@@ -27,8 +27,6 @@ from scriba.animation.primitives.base import (
     _LABEL_PILL_PAD_X,
     _render_svg_text,
     _wrap_label_lines,
-    arrow_height_above,
-    position_label_height_above,
     position_below_lane_height,
     estimate_text_width,
     register_primitive,
@@ -194,6 +192,17 @@ class ArrayPrimitive(PrimitiveBase):
 
         return suffix == "all"
 
+    def _annotation_cell_metrics(self) -> "CellMetrics":
+        """Grid-aware flow context — single source for render AND measurement."""
+        return CellMetrics(
+            cell_width=float(self._cell_width),
+            cell_height=float(CELL_HEIGHT),
+            grid_cols=int(self.size),
+            grid_rows=1,
+            origin_x=0.0,
+            origin_y=0.0,
+        )
+
     def emit_svg(
         self,
         *,
@@ -210,11 +219,9 @@ class ArrayPrimitive(PrimitiveBase):
 
         # Compute vertical space needed above cells for arrow curves and
         # position=above pill labels.
-        computed = arrow_height_above(
-            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
-        pos_above = position_label_height_above(effective_anns, cell_height=CELL_HEIGHT)
-        arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
 
         lines: list[str] = [
             f'<g data-primitive="array" data-shape="{self.name}">'
@@ -325,21 +332,13 @@ class ArrayPrimitive(PrimitiveBase):
 
         # Arrow annotations
         if effective_anns:
-            _cell_metrics = CellMetrics(
-                cell_width=float(self._cell_width),
-                cell_height=float(CELL_HEIGHT),
-                grid_cols=int(self.size),
-                grid_rows=1,
-                origin_x=0.0,
-                origin_y=0.0,
-            )
             self.emit_annotation_arrows(
                 lines,
                 effective_anns,
                 render_inline_tex=render_inline_tex,
                 scene_segments=scene_segments,
                 self_offset=self_offset,
-                cell_metrics=_cell_metrics,
+                cell_metrics=self._annotation_cell_metrics(),
             )
 
         # Close the translate group if we opened one for arrow space
@@ -374,11 +373,9 @@ class ArrayPrimitive(PrimitiveBase):
         if caption_h:
             bottom = below_baseline + lane_h + _STACK_GAP + caption_h
 
-        computed = arrow_height_above(
-            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
-        pos_above = position_label_height_above(effective_anns, cell_height=CELL_HEIGHT)
-        arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
         return BoundingBox(x=0, y=0, width=float(w), height=float(arrow_above + bottom))
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:

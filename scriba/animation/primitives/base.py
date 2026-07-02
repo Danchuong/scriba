@@ -10,11 +10,14 @@ See ``docs/spec/primitives.md`` for the authoritative catalog.
 from __future__ import annotations
 
 import abc
+import math
 import warnings
 from typing import TYPE_CHECKING, Any, Callable, ClassVar
 
 if TYPE_CHECKING:  # pragma: no cover - type checking only
     from scriba.core.context import RenderContext
+
+from scriba.animation.primitives._extent import measure_painted_extent
 
 # ---------------------------------------------------------------------------
 # Re-export everything from the split sub-modules so all existing import
@@ -74,7 +77,6 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     _wrap_label_lines,
     arrow_height_above,
     position_label_h_extents,
-    position_label_height_above,
     position_label_height_below,
     position_below_lane_height,
     emit_arrow_marker_defs,
@@ -240,6 +242,7 @@ class PrimitiveBase(abc.ABC):
         self._values: dict[str, str] = {}  # target suffix -> display value
         self._labels: dict[str, str] = {}  # target suffix -> display label
         self._annotations: list[dict[str, Any]] = []
+        self._extent_above_cache: int | None = None
         self._highlighted: set[str] = set()
         # Arrow rendering defaults — subclasses override in __init__ as needed.
         self._arrow_cell_height: float = float(CELL_HEIGHT)
@@ -327,8 +330,70 @@ class PrimitiveBase(abc.ABC):
         self._labels[suffix] = label
 
     def set_annotations(self, annotations: list[dict[str, Any]]) -> None:
-        """Set annotations for this primitive."""
+        """Set annotations for this primitive.
+
+        The only sanctioned mutation point for ``self._annotations`` —
+        the exact-reservation cache keys off it.
+        """
         self._annotations = annotations
+        self._extent_above_cache = None
+
+    def annotation_height_above(self) -> int:
+        """Exact px the current annotations paint above y=0.
+
+        Runs the REAL annotation emitters (``emit_annotation_arrows``)
+        into a scratch buffer and measures the painted extent of the
+        output (closed-form Bézier extrema, stroke included). Reserved
+        space therefore equals painted space by construction — no
+        heuristic upper bound, and it cannot drift from the renderer.
+
+        Measured in the natural (pre-collision) scene: cross-primitive
+        ``scene_segments`` are not available before offsets exist, so a
+        collision nudge from a neighbouring primitive is not part of the
+        measurement; the placement engine is bounded to the reserved lane
+        instead (see ``emit_annotation_arrows``).
+
+        The result is cached until ``set_annotations`` replaces the
+        annotation list (the emitters and the measurement are pure with
+        respect to everything else).
+        """
+        cached = getattr(self, "_extent_above_cache", None)
+        if cached is not None:
+            return cached
+        value = 0
+        if self._annotations:
+            parts: list[str] = []
+            self._measure_emit(parts)
+            ext = measure_painted_extent("\n".join(parts))
+            if ext is not None and ext.min_y < 0:
+                value = int(math.ceil(-ext.min_y))
+        self._extent_above_cache = value
+        return value
+
+    def _annotation_cell_metrics(self) -> "CellMetrics | None":
+        """Grid-aware flow context passed to the annotation engine.
+
+        Single source of truth: ``emit_svg`` AND the extent measurement
+        must call this same hook, otherwise measured geometry can diverge
+        from rendered geometry (2D stagger-flip is gated on it).
+        Default ``None`` — primitives with a grid/diameter proxy override.
+        """
+        return None
+
+    def _measure_emit(self, parts: "list[str]") -> None:
+        """Emit the current annotations exactly as ``emit_svg`` would.
+
+        The extent measurement runs THIS hook into a scratch buffer.
+        The default covers every primitive that routes annotations through
+        ``emit_annotation_arrows``; a primitive with a custom annotation
+        path (e.g. Queue's slot-pointer arrows) must override it to run
+        that same custom path, or measured != painted.
+        """
+        self.emit_annotation_arrows(
+            parts,
+            self._annotations,
+            cell_metrics=self._annotation_cell_metrics(),
+        )
 
     def set_min_arrow_above(self, value: int) -> None:
         """Set minimum vertical space to reserve above cells for arrows.

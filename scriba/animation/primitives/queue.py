@@ -25,7 +25,6 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
-    arrow_height_above,
     _LabelPlacement,
     emit_arrow_marker_defs,
     emit_arrow_svg,
@@ -252,12 +251,72 @@ class Queue(PrimitiveBase):
             _POINTER_HEIGHT + _POINTER_LABEL_GAP + CELL_HEIGHT + INDEX_LABEL_OFFSET
         )
 
+    def _annotation_cell_metrics(self) -> "CellMetrics":
+        """Grid-aware flow context — single source for render AND measurement."""
+        return CellMetrics(
+            cell_width=float(self._cell_width),
+            cell_height=float(CELL_HEIGHT),
+            grid_cols=int(self.capacity),
+            grid_rows=1,
+            origin_x=0.0,
+            origin_y=0.0,
+        )
+
+    def _emit_queue_annotations(
+        self,
+        parts: "list[str]",
+        effective_anns: "list[dict]",
+        *,
+        render_inline_tex=None,
+        scene_segments=None,
+        self_offset=None,
+    ) -> None:
+        """Queue's custom annotation path: direct arrows + shared pills.
+
+        Called by BOTH ``emit_svg`` and ``_measure_emit`` so the reserved
+        lane is measured from exactly what gets painted.
+        """
+        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
+        if arrow_anns:
+            arrow_lines: list[str] = []
+            placed: list[_LabelPlacement] = []
+            _cell_metrics = self._annotation_cell_metrics()
+            for idx, ann in enumerate(arrow_anns):
+                src = self.resolve_annotation_point(ann.get("arrow_from", ""))
+                dst = self.resolve_annotation_point(ann.get("target", ""))
+                if src and dst:
+                    arrow_index = sum(
+                        1
+                        for prev in arrow_anns[:idx]
+                        if prev.get("target") == ann.get("target")
+                    )
+                    emit_arrow_svg(
+                        arrow_lines, ann, src, dst, arrow_index,
+                        CELL_HEIGHT, render_inline_tex,
+                        placed_labels=placed,
+                        cell_metrics=_cell_metrics,
+                    )
+            parts.extend(arrow_lines)
+
+        # Position pills + range targets (non-arrow annotations): route through
+        # the shared annotation engine so position=above/below pills render.
+        pill_anns = [a for a in effective_anns if not a.get("arrow_from")]
+        if pill_anns:
+            self.emit_annotation_arrows(
+                parts,
+                pill_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
+
+    def _measure_emit(self, parts: "list[str]") -> None:
+        self._emit_queue_annotations(parts, self._annotations)
+
+
     def _arrow_height_above(self, annotations: list[dict]) -> int:
         """Compute arrow height above, locked to cross-frame max to prevent jitter."""
-        computed = arrow_height_above(
-            annotations, self.resolve_annotation_point,
-            cell_height=CELL_HEIGHT,
-        )
+        computed = self.annotation_height_above()
         return max(computed, getattr(self, "_min_arrow_above", 0))
 
     def bounding_box(self) -> BoundingBox:
@@ -421,49 +480,15 @@ class Queue(PrimitiveBase):
                 render_inline_tex=render_inline_tex,
             )
 
-        # Annotation arrow rendering
-        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
-        if arrow_anns:
-            arrow_lines: list[str] = []
-            placed: list[_LabelPlacement] = []
-            _cell_metrics = CellMetrics(
-                cell_width=float(self._cell_width),
-                cell_height=float(CELL_HEIGHT),
-                grid_cols=int(self.capacity),
-                grid_rows=1,
-                origin_x=0.0,
-                origin_y=0.0,
-            )
-            for idx, ann in enumerate(arrow_anns):
-                src = self.resolve_annotation_point(ann.get("arrow_from", ""))
-                dst = self.resolve_annotation_point(ann.get("target", ""))
-                if src and dst:
-                    arrow_index = sum(
-                        1
-                        for prev in arrow_anns[:idx]
-                        if prev.get("target") == ann.get("target")
-                    )
-                    emit_arrow_svg(
-                        arrow_lines, ann, src, dst, arrow_index,
-                        CELL_HEIGHT, render_inline_tex,
-                        placed_labels=placed,
-                        cell_metrics=_cell_metrics,
-                    )
-            parts.extend(arrow_lines)
-
-        # Position pills + range targets (non-arrow annotations): route through
-        # the shared annotation engine so position=above/below pills render.
-        # Previously only arrow_from annotations were emitted, so pills were
-        # silently dropped despite bounding_box() reserving space for them.
-        pill_anns = [a for a in effective_anns if not a.get("arrow_from")]
-        if pill_anns:
-            self.emit_annotation_arrows(
-                parts,
-                pill_anns,
-                render_inline_tex=render_inline_tex,
-                scene_segments=scene_segments,
-                self_offset=self_offset,
-            )
+        # Annotation arrows + position pills — via the shared split helper so
+        # the extent measurement (_measure_emit) runs the exact same path.
+        self._emit_queue_annotations(
+            parts,
+            effective_anns,
+            render_inline_tex=render_inline_tex,
+            scene_segments=scene_segments,
+            self_offset=self_offset,
+        )
 
         # Close the translate group if we opened one
         if arrow_above > 0 or left_pad > 0:

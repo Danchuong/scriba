@@ -3,7 +3,7 @@
 __version__: str = "0.21.1"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 9
+SCRIBA_VERSION: int = 10
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -68,4 +68,15 @@ dropped now resolve and render on all data-structure primitives (Layer B/C);
 dropping, and ``range`` labels gain a span bracket. Cross-primitive
 segment-obstacle avoidance for position pills was also restored, and the
 diagram font-scale now scales the whole viewport uniformly. Consumer caches
-keyed on rendered output MUST invalidate."""
+keyed on rendered output MUST invalidate.
+0.21.2 bumps 9→10: the annotation lane above every primitive is now the
+EXACT painted extent instead of a heuristic upper bound. Each primitive's
+``annotation_height_above`` runs the real annotation emitters into a scratch
+buffer and measures the output (closed-form Bézier extrema, stroke included),
+so the reserved translate offset shrinks (or, for under-reserved self-loop
+arrows, grows) to exactly what is painted; six primitives that previously
+ignored ``set_min_arrow_above`` now honour the cross-frame floor and substory
+scenes receive the reservation for the first time. Every annotated scene's
+viewBox height and translate offsets change; consumer caches keyed on
+rendered output MUST invalidate.
+"""

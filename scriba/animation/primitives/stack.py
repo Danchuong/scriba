@@ -19,9 +19,7 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
-    arrow_height_above,
     estimate_text_width,
-    position_label_height_above,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -264,12 +262,7 @@ class Stack(PrimitiveBase):
         # Layer B/C: reserve space for annotation arrows + position pills.
         # No annotations -> all terms are 0, so the box is byte-stable.
         arrow_above = max(
-            arrow_height_above(
-                self._annotations, self.resolve_annotation_point,
-                cell_height=_CELL_HEIGHT,
-            ),
-            position_label_height_above(self._annotations, cell_height=_CELL_HEIGHT),
-            getattr(self, "_min_arrow_above", 0),
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         h += arrow_above
         # Layer C: below-pill callout lane sits below the content + caption.
@@ -318,12 +311,7 @@ class Stack(PrimitiveBase):
         # No annotations -> arrow_above is 0 and no group opens (byte-stable).
         effective_anns = self._annotations
         arrow_above = max(
-            arrow_height_above(
-                effective_anns, self.resolve_annotation_point,
-                cell_height=_CELL_HEIGHT,
-            ),
-            position_label_height_above(effective_anns, cell_height=_CELL_HEIGHT),
-            getattr(self, "_min_arrow_above", 0),
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         # #1: shift content right to make room for position=left pills (0 when
         # none → "translate(0, …)", byte-identical to the pre-#1 output).

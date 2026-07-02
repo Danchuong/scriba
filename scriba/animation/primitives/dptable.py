@@ -24,8 +24,6 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _inset_rect_attrs,
     _render_svg_text,
-    arrow_height_above,
-    position_label_height_above,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -212,6 +210,17 @@ class DPTablePrimitive(PrimitiveBase):
 
         return suffix == "all"
 
+    def _annotation_cell_metrics(self) -> "CellMetrics":
+        """Grid-aware flow context — single source for render AND measurement."""
+        return CellMetrics(
+            cell_width=float(CELL_WIDTH),
+            cell_height=float(CELL_HEIGHT),
+            grid_cols=int(self.cols),
+            grid_rows=int(self.rows) if self.is_2d else 1,
+            origin_x=0.0,
+            origin_y=0.0,
+        )
+
     def emit_svg(
         self,
         *,
@@ -224,11 +233,9 @@ class DPTablePrimitive(PrimitiveBase):
 
         # Compute vertical space needed above cells for arrow curves and
         # position=above pill labels.
-        computed = arrow_height_above(
-            effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
-        pos_above = position_label_height_above(effective_anns, cell_height=CELL_HEIGHT)
-        arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
         # #1: shift content right to make room for position=left pills (0 when
         # none → "translate(0, …)", byte-identical to the pre-#1 output).
         left_pad, _right = self._h_label_pad()
@@ -248,21 +255,13 @@ class DPTablePrimitive(PrimitiveBase):
 
         # Arrow annotations
         if effective_anns:
-            _cell_metrics = CellMetrics(
-                cell_width=float(CELL_WIDTH),
-                cell_height=float(CELL_HEIGHT),
-                grid_cols=int(self.cols),
-                grid_rows=int(self.rows) if self.is_2d else 1,
-                origin_x=0.0,
-                origin_y=0.0,
-            )
             self.emit_annotation_arrows(
                 lines,
                 effective_anns,
                 render_inline_tex=render_inline_tex,
                 scene_segments=scene_segments,
                 self_offset=self_offset,
-                cell_metrics=_cell_metrics,
+                cell_metrics=self._annotation_cell_metrics(),
             )
 
         # Caption label — wrapped, width-folded, centered on the footprint
@@ -341,11 +340,9 @@ class DPTablePrimitive(PrimitiveBase):
         else:
             h = float(th) + lane
         # Reserve space above for arrow annotations and position=above labels.
-        computed = arrow_height_above(
-            self._annotations, self.resolve_annotation_point, cell_height=CELL_HEIGHT
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
-        pos_above = position_label_height_above(self._annotations, cell_height=CELL_HEIGHT)
-        arrow_above = max(computed, pos_above, getattr(self, "_min_arrow_above", 0))
         h += arrow_above
         # #1: reserve horizontal room for position=left/right pills. Both pads
         # are 0 (int) without left/right pills, so the box stays byte-stable.

@@ -17,7 +17,6 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _escape_xml,
     _render_svg_text,
-    arrow_height_above,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -216,10 +215,8 @@ class VariableWatch(PrimitiveBase):
         core_w = max(content_w + 2 * _PADDING, self._caption_block_width(content_w))
         h += self._caption_block_height(content_w)
 
-        arrow_above = arrow_height_above(
-            self._annotations,
-            self.resolve_annotation_point,
-            cell_height=_ROW_HEIGHT,
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         h += arrow_above
 
@@ -240,10 +237,8 @@ class VariableWatch(PrimitiveBase):
         self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         effective_anns = self._annotations
-        arrow_above = arrow_height_above(
-            effective_anns,
-            self.resolve_annotation_point,
-            cell_height=_ROW_HEIGHT,
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         # #1: shift content right for position=left pills (0 when none →
         # "translate(0, …)", byte-identical to the pre-#1 output).

@@ -24,7 +24,6 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     THEME,
     _render_svg_text,
-    arrow_height_above,
     position_label_height_below,
     register_primitive,
     svg_style_attrs,
@@ -624,11 +623,8 @@ class Plane2D(PrimitiveBase):
     # ----- bounding box ----------------------------------------------------
 
     def bounding_box(self) -> BoundingBox:
-        arrow_above = arrow_height_above(
-            self._annotations,
-            self.resolve_annotation_point,
-            cell_height=float(_ARROW_CELL_HEIGHT),
-            layout="2d",
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         pos_below = position_label_height_below(
             self._annotations,
@@ -651,11 +647,8 @@ class Plane2D(PrimitiveBase):
         self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         effective_anns = self._annotations
-        arrow_above = arrow_height_above(
-            effective_anns,
-            self.resolve_annotation_point,
-            cell_height=float(_ARROW_CELL_HEIGHT),
-            layout="2d",
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
 
         parts: list[str] = []

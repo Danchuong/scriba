@@ -17,7 +17,6 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _escape_xml,
     _render_svg_text,
-    arrow_height_above,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -585,13 +584,24 @@ class Tree(PrimitiveBase):
             x=int(cx - r), y=int(cy - r), width=int(2 * r), height=int(2 * r)
         )
 
+    def _annotation_cell_metrics(self) -> "CellMetrics":
+        """Phase D/2 CellMetrics proxy — node diameter stands in as the local
+        "cell" scale (activates 2D stagger-flip). Single source for render
+        AND measurement."""
+        _diam = float(self._node_radius * 2)
+        return CellMetrics(
+            cell_width=_diam,
+            cell_height=_diam,
+            grid_cols=len(self.nodes) or 1,
+            grid_rows=1,
+            origin_x=0.0,
+            origin_y=0.0,
+        )
+
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
-        arrow_above = arrow_height_above(
-            self._annotations,
-            self.resolve_annotation_point,
-            cell_height=float(self._node_radius * 2),
-            layout="2d",
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         # Defect 6 — the caption width participates in the footprint so a
         # caption wider than the tree is folded into the box, not clipped.
@@ -628,11 +638,8 @@ class Tree(PrimitiveBase):
 
         r = self._node_radius
         effective_anns = self._annotations
-        arrow_above = arrow_height_above(
-            effective_anns,
-            self.resolve_annotation_point,
-            cell_height=float(self._node_radius * 2),
-            layout="2d",
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         # #1: shift content right by left_pad so position=left pills clear the
         # viewBox. left_pad is 0 (int) without left pills, so the transform is
@@ -757,25 +764,13 @@ class Tree(PrimitiveBase):
         # --- Annotation arrows (rendered on top of everything) ---
         if effective_anns:
             arrow_lines: list[str] = []
-            # Phase D/2 (v0.14.0): CellMetrics proxy for 2D tree → activates
-            # stagger-flip in _compute_control_points. Tree has no grid;
-            # node-diameter stands in as the local "cell" scale.
-            _diam = float(self._node_radius * 2)
-            tree_cm = CellMetrics(
-                cell_width=_diam,
-                cell_height=_diam,
-                grid_cols=len(self.nodes) or 1,
-                grid_rows=1,
-                origin_x=0.0,
-                origin_y=0.0,
-            )
             self.emit_annotation_arrows(
                 arrow_lines,
                 effective_anns,
                 render_inline_tex=render_inline_tex,
                 scene_segments=scene_segments,
                 self_offset=self_offset,
-                cell_metrics=tree_cm,
+                cell_metrics=self._annotation_cell_metrics(),
             )
             parts.extend(arrow_lines)
 

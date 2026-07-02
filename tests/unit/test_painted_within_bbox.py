@@ -1,0 +1,132 @@
+"""Bbox honesty: everything a primitive paints must fit its declared bbox.
+
+Guard for the reservation redesign (exact painted-extent reservation).
+Today ``arrow_height_above`` is a heuristic upper bound that can UNDER-reserve
+(kmp corpus: self-loop arrows paint ~4px above the reserved lane) and
+over-reserve (grid 2D: 114px reserved, 0px used). This test pins the safety
+half of the contract — painted ⊆ declared — measured from the emitted SVG
+itself (dense-sampled bezier arcs, stroke-padded), so it stays true no matter
+how the reservation is computed.
+
+The tightness half (reserved ≈ painted) is asserted separately once the exact
+measurer lands.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+from scriba.animation.primitives.array import ArrayPrimitive
+from scriba.animation.primitives.dptable import DPTablePrimitive
+from scriba.animation.primitives.grid import GridPrimitive
+
+from tests.helpers.painted_extent import painted_extent
+
+# Painted pixels may legally exceed the geometric bbox by nothing.
+# (Stroke halves are already folded into the measurement.)
+_EPS = 0.01
+# Horizontal reservation (_h_label_pad / array._bbox_width) is still the
+# legacy estimate: a pill clamped to x=0 bleeds half its 0.5px border left.
+# Allowed until the horizontal family moves to the exact painted extent.
+_EPS_X = 0.5
+
+
+def _assert_painted_within_bbox(prim) -> None:
+    svg = prim.emit_svg()
+    ext = painted_extent(svg)
+    assert ext is not None, "nothing painted?"
+    bb = prim.bounding_box()
+    problems = []
+    if ext.min_y < -_EPS:
+        problems.append(f"paints {-ext.min_y:.1f}px ABOVE the bbox top")
+    if ext.max_y > bb.height + _EPS:
+        problems.append(
+            f"paints {ext.max_y - bb.height:.1f}px BELOW the bbox bottom"
+        )
+    if ext.min_x < -_EPS_X:
+        problems.append(f"paints {-ext.min_x:.1f}px LEFT of the bbox")
+    if ext.max_x > bb.width + _EPS_X:
+        problems.append(
+            f"paints {ext.max_x - bb.width:.1f}px RIGHT of the bbox"
+        )
+    assert not problems, (
+        f"{type(prim).__name__} bbox {bb.width:.0f}x{bb.height:.0f}, painted "
+        f"[{ext.min_x:.1f},{ext.min_y:.1f}..{ext.max_x:.1f},{ext.max_y:.1f}]: "
+        + "; ".join(problems)
+    )
+
+
+def _annotate(prim, target: str, **kv) -> None:
+    prim.set_annotations(prim._annotations + [{"target": target, **kv}])
+
+
+class TestSelfLoopArrows:
+    """kmp regression: arrow_from == target (self-loop) under-reserved."""
+
+    def test_single_self_loop_with_label(self) -> None:
+        arr = ArrayPrimitive("F", {"size": 9, "data": [0] * 9, "labels": "0..8"})
+        _annotate(
+            arr, "F.cell[3]", label="j=F[3]=2", arrow_from="F.cell[3]", color="warn"
+        )
+        _assert_painted_within_bbox(arr)
+
+    def test_kmp_shape_four_self_loops(self) -> None:
+        arr = ArrayPrimitive("F", {"size": 9, "data": [0] * 9, "labels": "0..8"})
+        for i, lbl in [(3, "j=F[3]=2"), (1, "j=F[1]=0"), (2, "j=F[2]=1"), (0, "j=F[0]=0")]:
+            _annotate(
+                arr,
+                f"F.cell[{i}]",
+                label=lbl,
+                arrow_from=f"F.cell[{i}]",
+                color="warn",
+            )
+        _assert_painted_within_bbox(arr)
+
+
+class TestArcArrows:
+    def test_long_diagonal_arrow_on_grid(self) -> None:
+        g = GridPrimitive("g", {"rows": 5, "cols": 5})
+        _annotate(
+            g,
+            "g.cell[3][1]",
+            label="m chẵn: vào từ trên-phải, xuống rồi trái",
+            arrow_from="g.cell[0][3]",
+            color="good",
+        )
+        _assert_painted_within_bbox(g)
+
+    def test_adjacent_cells_short_arrow(self) -> None:
+        arr = ArrayPrimitive("a", {"size": 6, "data": list(range(6))})
+        _annotate(arr, "a.cell[3]", label="swap", arrow_from="a.cell[2]")
+        _assert_painted_within_bbox(arr)
+
+    def test_stacked_arrows_same_target(self) -> None:
+        d = DPTablePrimitive("dp", {"n": 8})
+        for src in (1, 2, 4, 5, 6):
+            _annotate(d, "dp.cell[7]", label=f"from {src}", arrow_from=f"dp.cell[{src}]")
+        _assert_painted_within_bbox(d)
+
+    def test_extreme_span_arrow(self) -> None:
+        arr = ArrayPrimitive("a", {"size": 19, "data": [0] * 19})
+        _annotate(arr, "a.cell[18]", label="wrap", arrow_from="a.cell[0]")
+        _assert_painted_within_bbox(arr)
+
+
+class TestPositionPills:
+    @pytest.mark.parametrize("position", ["above", "below", "left", "right"])
+    def test_position_pill(self, position: str) -> None:
+        arr = ArrayPrimitive("a", {"size": 5, "data": [1, 2, 3, 4, 5]})
+        _annotate(arr, "a.cell[2]", label="một nhãn khá dài", position=position)
+        _assert_painted_within_bbox(arr)
+
+    def test_math_label_above(self) -> None:
+        arr = ArrayPrimitive("a", {"size": 5, "data": [1, 2, 3, 4, 5]})
+        _annotate(arr, "a.cell[2]", label="$\\frac{a}{b}$ tổng", position="above")
+        _assert_painted_within_bbox(arr)
+
+
+class TestPlainPointer:
+    def test_plain_arrow_with_label(self) -> None:
+        arr = ArrayPrimitive("a", {"size": 5, "data": [1, 2, 3, 4, 5]})
+        _annotate(arr, "a.cell[1]", label="here", arrow=True)
+        _assert_painted_within_bbox(arr)

@@ -74,6 +74,24 @@ def capture_queue_cell_metrics(monkeypatch: pytest.MonkeyPatch):
     return captured
 
 
+def _sole_metrics(captured):
+    """All captured cell_metrics must agree; return that single value.
+
+    The exact-reservation redesign runs the annotation emitters twice per
+    render — once inside ``annotation_height_above`` (scratch measurement)
+    and once for the real SVG — so the spy sees two calls. Both MUST carry
+    the same CellMetrics (that equality is exactly what keeps measured
+    geometry identical to painted geometry).
+    """
+    non_null = [c for c in captured if c is not None]
+    assert non_null, "no cell_metrics captured"
+    first = non_null[0]
+    assert all(c == first for c in non_null), captured
+    # No call may go through WITHOUT metrics when the primitive defines them.
+    assert all(c is not None for c in captured), captured
+    return first
+
+
 # ---------------------------------------------------------------------------
 # Array
 # ---------------------------------------------------------------------------
@@ -89,9 +107,7 @@ class TestArrayCellMetrics:
         )
         inst.emit_svg()
 
-        assert len(capture_cell_metrics) == 1
-        cm = capture_cell_metrics[0]
-        assert cm is not None
+        cm = _sole_metrics(capture_cell_metrics)
         assert cm.cell_width == float(CELL_WIDTH)
         assert cm.cell_height == float(CELL_HEIGHT)
         assert cm.grid_cols == 5
@@ -115,9 +131,7 @@ class TestDPTable1DCellMetrics:
         )
         inst.emit_svg()
 
-        assert len(capture_cell_metrics) == 1
-        cm = capture_cell_metrics[0]
-        assert cm is not None
+        cm = _sole_metrics(capture_cell_metrics)
         assert cm.cell_width == float(CELL_WIDTH)
         assert cm.cell_height == float(CELL_HEIGHT)
         assert cm.grid_cols == 5
@@ -148,9 +162,7 @@ class TestDPTable2DCellMetrics:
         )
         inst.emit_svg()
 
-        assert len(capture_cell_metrics) == 1
-        cm = capture_cell_metrics[0]
-        assert cm is not None
+        cm = _sole_metrics(capture_cell_metrics)
         assert cm.cell_width == float(CELL_WIDTH)
         assert cm.cell_height == float(CELL_HEIGHT)
         assert cm.grid_cols == 4
@@ -172,9 +184,7 @@ class TestQueueCellMetrics:
         )
         inst.emit_svg()
 
-        assert len(capture_queue_cell_metrics) == 1
-        cm = capture_queue_cell_metrics[0]
-        assert cm is not None
+        cm = _sole_metrics(capture_queue_cell_metrics)
         assert cm.cell_height == float(CELL_HEIGHT)
         assert cm.grid_cols == 4
         assert cm.grid_rows == 1
@@ -200,9 +210,7 @@ class TestGraphCellMetrics:
         )
         g.emit_svg()
 
-        assert len(capture_cell_metrics) == 1
-        cm = capture_cell_metrics[0]
-        assert cm is not None
+        cm = _sole_metrics(capture_cell_metrics)
         expected_diam = float(g._node_radius * 2)
         assert cm.cell_width == expected_diam
         assert cm.cell_height == expected_diam
@@ -230,9 +238,7 @@ class TestTreeCellMetrics:
         )
         t.emit_svg()
 
-        assert len(capture_cell_metrics) == 1
-        cm = capture_cell_metrics[0]
-        assert cm is not None
+        cm = _sole_metrics(capture_cell_metrics)
         expected_diam = float(t._node_radius * 2)
         assert cm.cell_width == expected_diam
         assert cm.cell_height == expected_diam

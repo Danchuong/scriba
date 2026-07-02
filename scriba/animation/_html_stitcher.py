@@ -172,6 +172,37 @@ def _get_is_id_safe_label_fn() -> Callable[[Any], bool]:
 # ---------------------------------------------------------------------------
 
 
+def _apply_min_arrow_above(frames: "list[FrameData]", primitives: "dict[str, Any]") -> None:
+    """R-32.3: pin the cross-frame max annotation lane per primitive.
+
+    Measures the EXACT painted extent of each frame's annotations —
+    ``annotation_height_above`` runs the real emitters into a scratch
+    buffer and measures the output — and stores the maximum via
+    ``set_min_arrow_above`` so the translate offset (and therefore the
+    layout) is identical in every frame of the scene. Replaces the
+    ``arrow_height_above`` heuristic scan, which both over-reserved
+    (uncapped arc + fixed headroom + guessed nudge margin) and read the
+    wrong per-primitive cell height (``getattr(prim, "_cell_height", 46)``).
+    """
+    for shape_name, prim in primitives.items():
+        if not hasattr(prim, "set_min_arrow_above"):
+            continue
+        max_ah = 0
+        for f in frames:
+            prim_anns = [
+                a for a in f.annotations
+                if a.get("target", "").startswith(shape_name + ".")
+            ]
+            if hasattr(prim, "set_annotations"):
+                prim.set_annotations(prim_anns)
+            if hasattr(prim, "annotation_height_above"):
+                max_ah = max(max_ah, prim.annotation_height_above())
+        prim.set_min_arrow_above(max_ah)
+        # Clear annotations — they'll be set per-frame during rendering.
+        if hasattr(prim, "set_annotations"):
+            prim.set_annotations([])
+
+
 def emit_animation_html(
     scene_id: str,
     frames: list[Any],
@@ -211,31 +242,7 @@ def emit_animation_html(
     # that grow over the timeline (Stack, Queue) are not clipped.
     viewbox = compute_stable_viewbox(frames, primitives)
 
-    # Set per-primitive min_arrow_above for stable cell positioning
-    for shape_name, prim in primitives.items():
-        if not hasattr(prim, "set_min_arrow_above"):
-            continue
-        max_ah = 0
-        for f in frames:
-            prim_anns = [
-                a for a in f.annotations
-                if a.get("target", "").startswith(shape_name + ".")
-            ]
-            if hasattr(prim, "set_annotations"):
-                prim.set_annotations(prim_anns)
-            if hasattr(prim, "resolve_annotation_point"):
-                cell_h = getattr(prim, "_cell_height", 46)
-                max_ah = max(
-                    max_ah,
-                    arrow_height_above(
-                        prim_anns,
-                        prim.resolve_annotation_point,
-                        cell_height=cell_h,
-                    ),
-                )
-        prim.set_min_arrow_above(max_ah)
-        if hasattr(prim, "set_annotations"):
-            prim.set_annotations([])
+    _apply_min_arrow_above(frames, primitives)
 
     # R-32.2/R-32.3: build stable per-primitive stacking offsets across all
     # frames so downstream primitives never shift when annotations appear.
@@ -347,6 +354,10 @@ def emit_substory_html(
 
     # R-32.2/R-32.3: reserve envelope for substory primitives too so the
     # substory stage does not snap when its own annotations spawn.
+    if substory.primitives:
+        # Same uniform-lane contract as the parent scene — previously the
+        # substory never received the cross-frame reservation at all.
+        _apply_min_arrow_above(substory.frames, sub_primitives)
     sub_reserved_offsets = (
         _build_reserved_offsets(substory.frames, sub_primitives)
         if substory.primitives
@@ -451,33 +462,7 @@ def emit_interactive_html(
     # Queue) are sized to their largest extent and never clipped.
     viewbox = compute_stable_viewbox(frames, primitives)
 
-    # Set per-primitive min_arrow_above so cells stay at stable Y
-    # positions across frames (no jumping when arrows appear/disappear).
-    for shape_name, prim in primitives.items():
-        if not hasattr(prim, "set_min_arrow_above"):
-            continue
-        max_ah = 0
-        for f in frames:
-            prim_anns = [
-                a for a in f.annotations
-                if a.get("target", "").startswith(shape_name + ".")
-            ]
-            if hasattr(prim, "set_annotations"):
-                prim.set_annotations(prim_anns)
-            if hasattr(prim, "resolve_annotation_point"):
-                cell_h = getattr(prim, "_cell_height", 46)
-                max_ah = max(
-                    max_ah,
-                    arrow_height_above(
-                        prim_anns,
-                        prim.resolve_annotation_point,
-                        cell_height=cell_h,
-                    ),
-                )
-        prim.set_min_arrow_above(max_ah)
-        # Clear annotations — they'll be set per-frame during rendering
-        if hasattr(prim, "set_annotations"):
-            prim.set_annotations([])
+    _apply_min_arrow_above(frames, primitives)
 
     # R-32.2/R-32.3: build stable per-primitive stacking offsets across all
     # frames so downstream primitives never shift when annotations appear.

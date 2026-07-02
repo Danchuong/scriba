@@ -23,7 +23,6 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_split_label_svg,
     _render_svg_text,
-    arrow_height_above,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -1175,13 +1174,24 @@ class Graph(PrimitiveBase):
             x=int(cx - r), y=int(cy - r), width=int(2 * r), height=int(2 * r)
         )
 
+    def _annotation_cell_metrics(self) -> "CellMetrics":
+        """Phase D/2 CellMetrics proxy — node diameter stands in as the local
+        "cell" scale (activates 2D stagger-flip). Single source for render
+        AND measurement."""
+        _diam = float(self._node_radius * 2)
+        return CellMetrics(
+            cell_width=_diam,
+            cell_height=_diam,
+            grid_cols=len(self.nodes) or 1,
+            grid_rows=1,
+            origin_x=0.0,
+            origin_y=0.0,
+        )
+
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
-        arrow_above = arrow_height_above(
-            self._annotations,
-            self.resolve_annotation_point,
-            cell_height=float(self._node_radius * 2),
-            layout="2d",
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         # Reserve a top band for the caption and shift content below it, so the
         # caption never overlaps the top nodes (mirrors Tree). Defect 6 — the
@@ -1220,11 +1230,8 @@ class Graph(PrimitiveBase):
 
         r = self._node_radius
         effective_anns = self._annotations
-        arrow_above = arrow_height_above(
-            effective_anns,
-            self.resolve_annotation_point,
-            cell_height=float(self._node_radius * 2),
-            layout="2d",
+        arrow_above = max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         # #1: shift content right by left_pad so position=left pills clear the
         # viewBox. left_pad is 0 (int) without left pills, so the transform is
@@ -1632,25 +1639,13 @@ class Graph(PrimitiveBase):
         # --- Annotation arrows (rendered on top of everything) ---
         if effective_anns:
             arrow_lines: list[str] = []
-            # Phase D/2 (v0.14.0): CellMetrics proxy for 2D graph → activates
-            # stagger-flip in _compute_control_points. Graph has no grid;
-            # node-diameter stands in as the local "cell" scale.
-            _diam = float(self._node_radius * 2)
-            graph_cm = CellMetrics(
-                cell_width=_diam,
-                cell_height=_diam,
-                grid_cols=len(self.nodes) or 1,
-                grid_rows=1,
-                origin_x=0.0,
-                origin_y=0.0,
-            )
             self.emit_annotation_arrows(
                 arrow_lines,
                 effective_anns,
                 render_inline_tex=render_inline_tex,
                 scene_segments=scene_segments,
                 self_offset=self_offset,
-                cell_metrics=graph_cm,
+                cell_metrics=self._annotation_cell_metrics(),
             )
             parts.extend(arrow_lines)
 

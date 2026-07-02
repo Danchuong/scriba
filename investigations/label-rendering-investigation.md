@@ -115,6 +115,57 @@ Sáu triệu chứng label sai/mất khi render doc tiếng Việt (Number Spira
 - **Fix direction (2 nhát, độc lập, nên làm cả 2):** (1) inline `text_anchor="middle"` + `dominant_baseline="central"` tại base.py:566; (2) CSS child → descendant `[data-primitive] .scriba-primitive-label` (template sẵn: index-label css:401).
 - Ghi chú: watch label "f = nền + d" + hàng `val` bị cắt đáy widget = cùng chuỗi hệ quả nesting/clip trong animation (xem H4).
 
+### Follow-up #3 — "dư space phía trên" trong animation (user report, đo thực nghiệm)
+
+- **User đúng: lane trống KHÔNG được frame nào dùng.** Đo headless mọi frame (viewBox 342×518): cells top y=127; annotation cao nhất f3=229, f4=188, f5=146 — tất cả DƯỚI mép cells. Vùng reserve 114px (grid `translate(0,114)`, diagram chỉ 58) = 0% sử dụng.
+- **Nguồn con số 114:** `arrow_height_above` (`_svg_helpers.py:2637-2776`) là **safe upper bound cố ý** ("must be monotone non-decreasing"): arc-peak uncapped (mirror perfect-arrows `_arc*euclid`) + `headroom_extra` 24 (plain) + `nudge_margin ≈ 1 pill_h` (~48 với pill 3 dòng frame 5). `_html_stitcher` lấy max qua mọi frame → `set_min_arrow_above` → áp cho cả 5 frame.
+- **Vì sao thực tế 0 dùng:** placement engine (nudge/_pick_best) đặt pill GIỮA grid (đè cells — chính symptom #1) và arc 2d của arrow 10→15 không vượt lên trên hàng 0. **Reservation và placement là 2 hệ độc lập không đối soát** → dự phòng chết + pill vẫn đè nội dung: một sự bất đồng bộ, hai triệu chứng.
+- Fix direction: reservation đọc bbox placement THẬT (sau nudge) per frame, hoặc post-trim lane theo bbox thực; max-over-frames giữ để chống layout shift nhưng trừ phần không dùng.
+
+### Follow-up #4 — thiết kế exact reservation (agents R + P; chờ C)
+
+**Baseline định lượng (đo browser, corpus):** number_spiral grid: reserve 114 / dùng 0; test_dptable_arrows: 96/59 (thừa 37); test_label_overlap_1d: 116/88 (thừa 28); kmp: 70/**74** (**THIẾU 4px** — âm!). Heuristic fail 2 chiều. Baseline: `overreserve_baseline.json` (scratchpad).
+
+**Agent P (geometry/seam) — facts:**
+- Arc = quad→cubic bezier; control points closed-form, pure (`_compute_control_points` :1976, ArrowGeometry :1949). Extrema closed-form khả thi (quadratic roots); sampler `_bezier_point` :1565 có sẵn.
+- Pill final rect chính xác tại `_svg_helpers.py:2289-2290` (arc pill) / `:3214-3324` (position pill); sub-steps pure, orchestrators side-effect (extract được).
+- **Placement KHÔNG phụ thuộc reservation** (zero reads arrow_above trong placement; clamp dùng sentinel 8192, không viewBox thật) → exact reservation không gây feedback loop primitive-level. Caveat: collision-nudge phụ thuộc scene_segments (build sau offsets) → chỉ natural extent là scene-independent.
+- Determinism sạch (RNG chỉ trong SA-refine chưa wired; sort có tie-break).
+- Seams: (a-lite) thay ruột `arrow_height_above` bằng công thức THẬT (capped stagger, real base_offset, natural pill top `label_ref_y − pill_h/2`); (a-full) extract pure `_resolve_label_rect` dùng chung emit+measure; (b) emit-returns-bbox: FATAL ordering flaw (bbox cần trước emit); (c) two-pass: wasteful.
+
+**Agent R (pipeline map) — facts:**
+- `arrow_height_above` = seam tiêu thụ duy nhất: stitcher scan ×2 (`_html_stitcher.py:214-238`, `:454-480`, chỉ scan arrow_height_above, cell_h=getattr('_cell_height',46)) + bounding_box/emit_svg 14 primitives (pattern `max(computed, pos_above, _min_arrow_above)`).
+- 2 amplifiers: cross-frame max (`set_min_arrow_above`) + `_build_reserved_offsets` component-wise max bbox height (`:76-85`) → tallest frame inflate mọi frame + `compute_stable_viewbox` (:166-233) bake vào viewBox uniform.
+- **6/14 primitives không đọc `_min_arrow_above`** (tree, plane2d, linkedlist, graph, variablewatch, hashmap — setter là no-op).
+- Tests: KHÔNG pin exact 114/58. Pins: deltas (+24 label/+32 math/+8 below-math), R32-1 invariant `h_bare==h_annotated` sau set_min (GIỮ ĐƯỢC nếu giữ floor mechanism), 2 formula-replication asserts cho `position_label_height_above` (`test_smart_label_phase0.py:815-822,838-844` — sẽ update), horizontal ratchet `test_pill_within_bbox.py`.
+- cell_height nguồn không nhất quán (stitcher 46 default vs primitives đủ kiểu) — reconcile khi sửa.
+- Horizontal siblings (`position_label_h_extents`/`_h_label_pad`/array `_bbox_width`) ít lệch hơn (dùng real anchors + real pill width) nhưng cùng family — exact hóa cùng đợt để nhất quán.
+
+### Follow-up #4 (tiếp) — Agent C (contracts/history) + DESIGN chốt
+
+**Agent C facts:** (1) Origin upper-bound = commit 8ec08ca v0.20.0: arc capped cũ under-reserve → pill đè primitive trên khi siết gap 50→20/pad 16→12 — exact PHẢI ≥ painted peak mọi input. (2) Docs NORMATIVE: `docs/spec/ruleset.md` §8.9 (R-32) quy định max-over-frames uniform là SPEC → exact chỉ đổi CON SỐ, giữ semantics. (3) Test blast: chỉ 2 golden suites vỡ (regen); R-32 suite là relative — survive. (4) **2 guard gaps:** không test nào assert painted ≤ reserved (dọc) — chính là lỗ kmp −4px; không test non-overlap pixel giữa primitives. (5) Substory không set_min_arrow_above (gap). (6) Land phải: bump SCRIBA_VERSION 9→10, regen goldens, update docs; svg-emitter.md có stale padding=16 (code 12). (7) Không cache nào tồn tại — solver chạy pre-pass sẽ x2 nếu không memo.
+
+### DESIGN — "Exact Painted-Extent Reservation" (đề xuất, chờ user duyệt)
+
+Nguyên tắc: **một nguồn sự thật hình học** — extent tính từ CHÍNH các hàm geometry mà emit dùng (không công thức song song, không hằng đoán).
+
+- **Phase 0 — guard tests trước (RED có sẵn):** property test painted ≤ reserved (parse arc extrema + pill rects + arrowhead + halo từ SVG emit, so với arrow_above) trên corpus + hypothesis — hiện FAIL thật với ca kmp −4px; test non-overlap 2 primitives stacked.
+- **Phase 1 — pure measurer + swap ruột:** extract `_resolve_arc_pill_rect` pure từ `_emit_label_and_pill` (emit gọi lại chính nó — không drift); thêm `_cubic_y_extrema` closed-form trên ArrowGeometry THẬT (capped stagger); `annotation_painted_extent(...)` → 4 phía (thay cả family `position_label_height_*`/`h_extents` cùng nguồn); `arrow_height_above` giữ signature, ruột = `ceil(−extent.top)`; reconcile cell_height (stitcher getattr('_cell_height',46) → `_arrow_cell_height` thật); wire substory set_min.
+- **Phase 2 — invariant by construction:** placement nhận reserved_top làm HARD BOUND — nudge candidates vượt lên trên reserve bị loại (đi ngang/xuống/leader thay thế) → painted ≤ reserved thành bất biến cấu trúc, hết vĩnh viễn chiều "thiếu" mà không đoán 2.5×pill_h.
+- **Phase 3 — land:** SCRIBA_VERSION 10; regen 2 golden suites; docs §8.9/§13.8 giữ semantics (sửa câu mô tả estimator), fix stale padding note; update 2 formula-replication asserts + QW-7 delta nếu exact cho số khác hằng cũ; memo extent per (prim, frame) trong pre-pass; đo perf build corpus trước/sau.
+- **Nghiệm thu:** re-run `measure_overreserve.py`: waste ≈ 0 (±3px stroke pad), zero ca âm; number_spiral 114→~0; suite + R-32 xanh.
+- **Quan hệ:** độc lập với structural-lift plan (Layer A caption — Array migration 2026-07-02 là một mảnh của nó); constraint "DO NOT change formulas" của plan đó thuộc đợt lift additive, không ràng effort này.
+
+### Follow-up #4 — LANDED (Phase 0 + 1): Exact Painted-Extent Reservation
+
+**Kiến trúc chốt (khác design ban đầu một bậc tốt hơn):** thay vì mirror công thức (drift risk vĩnh viễn), reservation **đo chính output của emit**: `PrimitiveBase.annotation_height_above()` chạy `_measure_emit()` (mặc định = `emit_annotation_arrows` với `_annotation_cell_metrics()` hook) vào scratch buffer rồi đo bằng `_extent.py::measure_painted_extent` — closed-form cubic Bézier extrema (nghiệm quadratic của B'(t)=0), stroke folded. Reserved ≡ painted by construction.
+
+- Phase 0: `tests/helpers/painted_extent.py` (parser ĐỘC LẬP, sampling dày — double-blind với production) + `tests/unit/test_painted_within_bbox.py` (honesty 4 phía; RED tái tạo kmp self-loop **6.2px trên bbox**) .
+- Phase 1: `_extent.py` mới; base method + cache (invalidate tại `set_annotations` — mutation point duy nhất); 14 primitives swap `max(exact, _min_arrow_above)` (bỏ pos_above term — extent phủ position pills); 6 non-readers (tree/graph/plane2d/linkedlist/variablewatch/hashmap) giờ TÔN TRỌNG floor (hết jitter); stitcher scan ×2 → `_apply_min_arrow_above` helper (fix luôn cell_h getattr('_cell_height',46) sai nguồn); substory wired lần đầu; Queue custom path extract `_emit_queue_annotations` + override `_measure_emit`; cell_metrics hooks (array/dptable/graph/tree/queue) — spy tests bắt được 2 lệch nguồn tiềm ẩn này trước khi thành bug.
+- Tightness: `tests/unit/test_annotation_extent_exact.py` — reserved == painted ±1.5px, so bằng parser độc lập.
+- **Nghiệm thu:** browser Chromium trên goldens mới: dptable_arrows 96→**59=painted**, label_overlap_1d 116→**88=painted**, kmp 70→**74** (hết âm 4px), number_spiral grid 114→**0** — **waste = 0.0 mọi case**. Ảnh đối chứng overlap_old/new.png: nội dung pixel-identical, chỉ cắt phần trắng chết. Suite **4071 pass**; R-32 conformance nguyên vẹn (semantics max-over-frames GIỮ — chỉ con số exact); goldens regen 49 files; SCRIBA_VERSION 9→10; REFERENCE §13.8 cập nhật.
+- **Còn lại (phase kế):** Phase 2 hard-bound nudge (chặn candidate vượt lane — chiều "thiếu" từ cross-primitive scene_segments, hiếm, đang được honesty test canh); exact hóa chiều NGANG (`_h_label_pad` family — hiện lệch 0.2px stroke bleed, `_EPS_X=0.5` đánh dấu trong test); dọn `arrow_height_above` legacy (giờ chỉ tests dùng).
+
 ## Follow-up: 2026-07-02 — scope thu hẹp theo user
 
 User chốt scope: **chỉ fix render `$math$` trong label** (symptom 2+3). Symptom 1, 4, 5, 6, 7 → backlog (findings giữ nguyên làm tài liệu). Hai agent điều tra symptom 4/5 bị user stop — phần env-label/ARIA đã ghi ở Source Code Trace phía trên.

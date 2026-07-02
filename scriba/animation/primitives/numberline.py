@@ -15,7 +15,6 @@ from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
-    arrow_height_above,
     position_below_lane_height,
     emit_arrow_marker_defs,
     emit_arrow_svg,
@@ -219,11 +218,7 @@ class NumberLinePrimitive(PrimitiveBase):
 
     def _arrow_height_above(self, annotations: "list[dict]") -> int:
         """Compute arrow height above, locked to cross-frame max to prevent jitter."""
-        computed = arrow_height_above(
-            annotations,
-            self.resolve_annotation_point,
-            cell_height=NL_TICK_BOTTOM - NL_TICK_TOP,
-        )
+        computed = self.annotation_height_above()
         return max(computed, getattr(self, "_min_arrow_above", 0))
 
     def emit_svg(

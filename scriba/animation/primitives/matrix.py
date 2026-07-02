@@ -20,9 +20,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _inset_rect_attrs,
     _render_svg_text,
-    arrow_height_above,
     estimate_text_width,
-    position_label_height_above,
     register_primitive,
     state_class,
 )
@@ -342,14 +340,7 @@ class MatrixPrimitive(PrimitiveBase):
         # shift content down so curves have room. No annotations -> arrow_above
         # is 0 and no group is opened, so output stays byte-identical.
         arrow_above = max(
-            arrow_height_above(
-                effective_anns,
-                self.resolve_annotation_point,
-                cell_height=self.cell_size,
-                layout="2d",
-            ),
-            position_label_height_above(effective_anns, cell_height=self.cell_size),
-            getattr(self, "_min_arrow_above", 0),
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         # #1: shift content right to make room for position=left pills (0 when
         # none → "translate(0, …)", byte-identical to the pre-#1 output).
@@ -508,14 +499,7 @@ class MatrixPrimitive(PrimitiveBase):
         # (mirrors Grid/DPTable). No annotations -> all terms are 0, so the box
         # is byte-stable.
         arrow_above = max(
-            arrow_height_above(
-                self._annotations,
-                self.resolve_annotation_point,
-                cell_height=self.cell_size,
-                layout="2d",
-            ),
-            position_label_height_above(self._annotations, cell_height=self.cell_size),
-            getattr(self, "_min_arrow_above", 0),
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
         h += arrow_above
         # #1: reserve horizontal room for position=left/right pills. Both pads

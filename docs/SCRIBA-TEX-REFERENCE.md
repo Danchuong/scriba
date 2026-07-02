@@ -1625,9 +1625,9 @@ Commands not in the supported set (§2) pass through as literal text, not as err
 Common traps: `\LaTeX`, `\footnote`, `\caption`, `\cite`, `\ref`.
 
 ### 13.8 Annotation headroom is reserved at the per-scene maximum
-The layout engine reserves vertical space for annotations based on the **maximum** annotation count across all frames in the scene, not just the current frame. This means a scene where only frame 5 has two annotation pills above a cell will have that headroom reserved in every frame — including frame 1 where no annotation is visible yet.
+The layout engine reserves vertical space for annotations at the **per-scene maximum across all frames** (R-32), so every frame keeps a stable layout even when annotations appear only later. Since v0.21.2 the amount reserved per frame is the **exact painted extent** of that frame's annotations — the engine renders them into a scratch buffer and measures the output — not a heuristic estimate. An arrow or pill that stays inside the primitive's own body therefore reserves nothing.
 
-**Consequence:** Adding annotations to a scene always increases the scene's bounding box height, even for frames where those annotations are absent. If you notice unexpected top padding in early frames, check for annotations that appear only in later frames — they are pushing the layout for the whole scene.
+**Consequence:** Annotations that actually paint above the primitive (e.g. an arc arriving at the top row, or a `position=above` pill) increase the scene's bounding box height in every frame, at exactly the painted amount. If you notice top padding in early frames, check for a later frame whose annotation genuinely extends above the primitive.
 
 **Workaround:** Use `ephemeral=true` on annotations that are only relevant for a single frame and do not need to persist. This can reduce the headroom reservation if ephemeral annotations are not the maximum across any given frame.
 
