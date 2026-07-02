@@ -150,25 +150,20 @@ class TestPillShiftsAwayFromCrossPrimitiveSegment:
         """A Plane2D MUST segment at the natural pill y must cause a shift."""
         plane, arr = self._make_scene()
 
-        # Add a line to plane2d that, when translated to Array's frame, lands
-        # exactly where the pill would be placed by default (above cell[2]).
-        # Array cell[2] center in Array-local coords:
-        # Natural pill y for position=above is approx cell_cx_y - some offset above 0
-        # In Array's local frame with arrow_above, default pill y is negative
-        # (above y=0 of the translate group).  We construct a horizontal MUST
-        # segment that covers the entire width of the array at that y level in
-        # scene coordinates, which translates to the pill's natural local y.
-
-        # A simpler approach: inject a synthetic MUST obstacle segment directly
-        # into Array's local coordinate frame via scene_segments translation.
-        # We want a horizontal segment at Array-local y = -40 (typical pill y),
-        # which means in scene coords it's at y = array_y_off + (-40) = 396.
-        # We place the Plane2D line at scene y = array_y_off - 40 = 396.
-        # Since plane_y_off=16, Plane2D-local y for the segment = 396 - 16 = 380.
-        # We create an ObstacleSegment directly.
-
-        target_scene_y = _ARRAY_Y_OFF - 40.0   # = 396 in scene coords
-        plane_local_y = target_scene_y - _PLANE_Y_OFF  # = 380 in Plane2D-local
+        # Measure the pill's REAL natural position first, then plant a MUST
+        # segment straight through its center. (The original test guessed
+        # "typical pill y = -40", which never actually intersected the pill;
+        # it passed only because the old placement path clamped every
+        # candidate to y >= pill_h/2, which moved the with-segments pill for
+        # an unrelated reason.)
+        self._annotate_cell2_above(arr)
+        svg_baseline = self._emit_without_cross_segs(arr)
+        base_pills = _extract_pill_xy(svg_baseline)
+        assert base_pills, "baseline must have at least 1 pill"
+        # rect y is the pill top; pill_h for one 11px line is 19px.
+        pill_center_local_y = base_pills[0][1] + 19.0 / 2.0
+        target_scene_y = _ARRAY_Y_OFF + pill_center_local_y
+        plane_local_y = target_scene_y - _PLANE_Y_OFF
 
         must_seg = ObstacleSegment(
             kind="plot_line",
@@ -185,9 +180,6 @@ class TestPillShiftsAwayFromCrossPrimitiveSegment:
         original_resolve = plane.resolve_obstacle_segments
         plane.resolve_obstacle_segments = lambda: [must_seg]  # type: ignore[method-assign]
 
-        self._annotate_cell2_above(arr)
-
-        svg_baseline = self._emit_without_cross_segs(arr)
         svg_with = self._emit_with_cross_segs(plane, arr)
 
         pills_baseline = _extract_pill_xy(svg_baseline)

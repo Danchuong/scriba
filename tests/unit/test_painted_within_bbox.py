@@ -168,3 +168,41 @@ class TestHorizontalAndBelowExact:
         _annotate(arr, "a.cell[0]", label="một nhãn khá dài rõ ràng", position="below", color="bad")
         _assert_painted_within_bbox(arr)
 
+
+class TestPillsDoNotOverlapEachOther:
+    """Placement must resolve pill-pill collisions through the scoring
+    engine — the retired 4-direction first-fit loop gave up after one
+    round and left pills stacked on top of each other."""
+
+    @staticmethod
+    def _pill_rects(svg: str):
+        import re as _re
+
+        rects = []
+        for m in _re.finditer(
+            r'<rect x="([-\d.]+)" y="([-\d.]+)" width="([\d.]+)" height="([\d.]+)"'
+            r'[^>]*fill="white"',
+            svg,
+        ):
+            x, y, w, h = map(float, m.groups())
+            rects.append((x, y, w, h))
+        return rects
+
+    def test_four_above_pills_same_cell_do_not_stack(self) -> None:
+        arr = ArrayPrimitive("a", {"size": 6, "data": list(range(6))})
+        for i in range(4):
+            _annotate(arr, "a.cell[2]", label=f"chú thích {i}", position="above")
+        svg = arr.emit_svg()
+        rects = self._pill_rects(svg)
+        assert len(rects) == 4
+        for i in range(len(rects)):
+            for j in range(i + 1, len(rects)):
+                ax, ay, aw, ah = rects[i]
+                bx, by, bw, bh = rects[j]
+                ix = min(ax + aw, bx + bw) - max(ax, bx)
+                iy = min(ay + ah, by + bh) - max(ay, by)
+                overlap = max(0.0, ix) * max(0.0, iy)
+                assert overlap <= 0.25 * min(aw * ah, bw * bh), (
+                    f"pills {i} and {j} overlap heavily: {rects[i]} vs {rects[j]}"
+                )
+        _assert_painted_within_bbox(arr)

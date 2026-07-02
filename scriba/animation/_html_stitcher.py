@@ -27,7 +27,6 @@ from scriba.animation._script_builder import (  # noqa: F401
     _build_inline_script,
 )
 from scriba.animation.differ import compute_transitions
-from scriba.animation.primitives._svg_helpers import arrow_height_above
 from scriba.animation.primitives.base import BoundingBox
 
 __all__ = [

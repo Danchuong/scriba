@@ -230,9 +230,7 @@ class LinkedList(PrimitiveBase):
         core_w = max(2 * _PADDING + content_w, self._caption_block_width(content_w))
         h = 2 * _PADDING + _NODE_HEIGHT + _INDEX_LABEL_OFFSET
         h += self._caption_block_height(content_w)
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         h += arrow_above
         # Layer C: below-pill callout lane (0 without below pills → byte-stable).
         h += self._below_lane_height()
@@ -254,9 +252,7 @@ class LinkedList(PrimitiveBase):
         effective_anns = self._annotations
 
         # Compute vertical space needed above nodes for arrow curves
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         # #1: shift content right for position=left pills (0 when none →
         # "translate(0, …)", byte-identical to the pre-#1 output).
         left_pad, _ = self._h_label_pad()

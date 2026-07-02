@@ -205,9 +205,7 @@ class CodePanel(PrimitiveBase):
         h = self._panel_height()
         # Layer B/C: reserve space for annotation arrows + position pills.
         # No annotations -> all terms are 0, so the box is byte-stable.
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         h += arrow_above
         # Layer C: below-pill callout lane sits below the panel.
         h += self._below_lane_height()
@@ -264,9 +262,7 @@ class CodePanel(PrimitiveBase):
         # (byte-stable). Empty panels carry no line annotations, so the early
         # return below never sits inside an open group.
         effective_anns = self._annotations
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         # #1: shift content right to make room for position=left pills (0 when
         # none → "translate(0, …)", byte-identical to the pre-#1 output). Empty
         # panels resolve no anchors, so left_pad stays 0 and the early return

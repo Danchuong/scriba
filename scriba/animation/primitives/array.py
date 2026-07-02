@@ -219,9 +219,7 @@ class ArrayPrimitive(PrimitiveBase):
 
         # Compute vertical space needed above cells for arrow curves and
         # position=above pill labels.
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
 
         lines: list[str] = [
             f'<g data-primitive="array" data-shape="{self.name}">'
@@ -373,9 +371,7 @@ class ArrayPrimitive(PrimitiveBase):
         if caption_h:
             bottom = below_baseline + lane_h + _STACK_GAP + caption_h
 
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         return BoundingBox(x=0, y=0, width=float(w), height=float(arrow_above + bottom))
 
     def _cell_center(self, selector_str: str) -> tuple[int, int] | None:

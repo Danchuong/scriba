@@ -442,6 +442,16 @@ class PrimitiveBase(abc.ABC):
             cell_metrics=self._annotation_cell_metrics(),
         )
 
+    def _reserved_arrow_above(self) -> int:
+        """Reserved annotation lane above the content: the exact painted
+        extent of this frame's annotations, floored by the cross-frame
+        maximum the stitcher pinned via ``set_min_arrow_above`` (R-32
+        uniform-layout contract). Single source for every primitive's
+        ``bounding_box``/``emit_svg``."""
+        return max(
+            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
+        )
+
     def set_min_arrow_above(self, value: int) -> None:
         """Set minimum vertical space to reserve above cells for arrows.
 

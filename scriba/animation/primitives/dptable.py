@@ -233,9 +233,7 @@ class DPTablePrimitive(PrimitiveBase):
 
         # Compute vertical space needed above cells for arrow curves and
         # position=above pill labels.
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         # #1: shift content right to make room for position=left pills (0 when
         # none → "translate(0, …)", byte-identical to the pre-#1 output).
         left_pad, _right = self._h_label_pad()
@@ -340,9 +338,7 @@ class DPTablePrimitive(PrimitiveBase):
         else:
             h = float(th) + lane
         # Reserve space above for arrow annotations and position=above labels.
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         h += arrow_above
         # #1: reserve horizontal room for position=left/right pills. Both pads
         # are 0 (int) without left/right pills, so the box stays byte-stable.

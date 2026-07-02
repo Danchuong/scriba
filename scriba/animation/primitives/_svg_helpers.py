@@ -2624,7 +2624,15 @@ def emit_arrow_svg(
 
 
 def _arrow_label_pill_h(arrow_anns: list[dict[str, Any]]) -> float:
-    """Upper-bound the rendered pill height (px) over labeled arrow annotations.
+    """
+
+    .. deprecated:: 0.21.2
+        LEGACY — no production callers. Reservation now measures the
+        exact painted extent (``PrimitiveBase.annotation_height_above``
+        / ``annotation_h_pads`` / ``annotation_below_overhang``). Kept
+        for the conformance/contract tests that pin its formula.
+
+    Upper-bound the rendered pill height (px) over labeled arrow annotations.
 
     Mirrors the real ``pill_h`` computed in the full render path
     (``pill_h = num_lines * (font_px + 2) + 2 * _LABEL_PILL_PAD_Y``) so the
@@ -2655,7 +2663,15 @@ def arrow_height_above(
     cell_height: float = CELL_HEIGHT,
     layout: str = "horizontal",
 ) -> int:
-    """Compute the max vertical extent above y=0 that arrows need.
+    """
+
+    .. deprecated:: 0.21.2
+        LEGACY — no production callers. Reservation now measures the
+        exact painted extent (``PrimitiveBase.annotation_height_above``
+        / ``annotation_h_pads`` / ``annotation_below_overhang``). Kept
+        for the conformance/contract tests that pin its formula.
+
+    Compute the max vertical extent above y=0 that arrows need.
 
     Parameters
     ----------
@@ -2810,7 +2826,15 @@ def position_label_height_above(
     l_font_px: int = 11,
     cell_height: float = CELL_HEIGHT,
 ) -> int:
-    """Compute the max vertical headroom needed above y=0 for position=above labels.
+    """
+
+    .. deprecated:: 0.21.2
+        LEGACY — no production callers. Reservation now measures the
+        exact painted extent (``PrimitiveBase.annotation_height_above``
+        / ``annotation_h_pads`` / ``annotation_below_overhang``). Kept
+        for the conformance/contract tests that pin its formula.
+
+    Compute the max vertical headroom needed above y=0 for position=above labels.
 
     Parameters
     ----------
@@ -2873,7 +2897,15 @@ def position_label_height_above(
 
 
 def _position_pill_width(label: str, color: str = "info") -> float:
-    """Rendered width (px) of a position-only pill for *label*.
+    """
+
+    .. deprecated:: 0.21.2
+        LEGACY — no production callers. Reservation now measures the
+        exact painted extent (``PrimitiveBase.annotation_height_above``
+        / ``annotation_h_pads`` / ``annotation_below_overhang``). Kept
+        for the conformance/contract tests that pin its formula.
+
+    Rendered width (px) of a position-only pill for *label*.
 
     MUST stay byte-identical to the pill-width formula in
     ``emit_position_label_svg`` (the ``pill_w`` computation): same per-color font
@@ -2901,7 +2933,15 @@ def position_label_h_extents(
     *,
     cell_height: float = CELL_HEIGHT,
 ) -> tuple[float, float]:
-    """Return ``(left_overhang, right_reach)`` in content-local px for
+    """
+
+    .. deprecated:: 0.21.2
+        LEGACY — no production callers. Reservation now measures the
+        exact painted extent (``PrimitiveBase.annotation_height_above``
+        / ``annotation_h_pads`` / ``annotation_below_overhang``). Kept
+        for the conformance/contract tests that pin its formula.
+
+    Return ``(left_overhang, right_reach)`` in content-local px for
     ``position=left``/``right`` pills — the horizontal space a primitive must
     reserve so those pills do not clip the viewBox.
 
@@ -2940,7 +2980,15 @@ def position_label_height_below(
     l_font_px: int = 11,
     cell_height: float = CELL_HEIGHT,
 ) -> int:
-    """Compute extra height needed BELOW the cell bottom for position=below labels.
+    """
+
+    .. deprecated:: 0.21.2
+        LEGACY — no production callers. Reservation now measures the
+        exact painted extent (``PrimitiveBase.annotation_height_above``
+        / ``annotation_h_pads`` / ``annotation_below_overhang``). Kept
+        for the conformance/contract tests that pin its formula.
+
+    Compute extra height needed BELOW the cell bottom for position=below labels.
 
     Parameters
     ----------
@@ -3002,7 +3050,15 @@ def position_below_lane_height(
     l_font_px: int = 11,
     cell_height: float = CELL_HEIGHT,
 ) -> int:
-    """Pixels needed BELOW the ``resolve_below_baseline`` for ``position=below``
+    """
+
+    .. deprecated:: 0.21.2
+        LEGACY — no production callers. Reservation now measures the
+        exact painted extent (``PrimitiveBase.annotation_height_above``
+        / ``annotation_h_pads`` / ``annotation_below_overhang``). Kept
+        for the conformance/contract tests that pin its formula.
+
+    Pixels needed BELOW the ``resolve_below_baseline`` for ``position=below``
     pills placed in a callout lane (their own footprint: gap + wrapped pill).
 
     Unlike :func:`position_label_height_below` (which measures from the cell),
@@ -3048,6 +3104,8 @@ def _place_pill(
     side_hint: "str | None" = None,
     overlap_pad: float = 0.0,
     extra_obstacles: "tuple[_Obstacle, ...]" = (),
+    viewbox_min_x: float = 0.0,
+    viewbox_min_y: float = 0.0,
     _debug_capture: "dict[str, Any] | None" = None,
 ) -> "tuple[_LabelPlacement, bool]":
     """Place a pill label using weighted scoring argmin (v0.12.0 W1).
@@ -3099,9 +3157,17 @@ def _place_pill(
     half_h = pill_h / 2.0
 
     def _clamp(cx: float, cy: float) -> tuple[float, float]:
-        """Translate center so the AABB stays within [0, viewbox_w] × [0, viewbox_h]."""
-        cx = max(half_w, min(cx, viewbox_w - half_w))
-        cy = max(half_h, min(cy, viewbox_h - half_h))
+        """Translate center so the AABB stays within the allowed region.
+
+        The region floor defaults to (0, 0) for legacy callers; the
+        position-pill caller opens it downward/upward because its local
+        frame legitimately extends into negative y (the annotation lane is
+        reserved from the exact painted extent AFTER placement, so the
+        placer must not be fenced to y >= 0 — that fence squashed every
+        above-pill candidate onto one row and made same-cell pills stack).
+        """
+        cx = max(viewbox_min_x + half_w, min(cx, viewbox_w - half_w))
+        cy = max(viewbox_min_y + half_h, min(cy, viewbox_h - half_h))
         return cx, cy
 
     # Build obstacles tuple from the placed-label registry (entry shim, §1.3),
@@ -3269,85 +3335,38 @@ def emit_position_label_svg(
         final_y = ay - cell_height / 2 - pill_h / 2 - gap
 
     if placed_labels is not None:
-        if primitive_obstacles:
-            # W3-α+: use _place_pill so MUST-severity segment obstacles (e.g.
-            # cross-primitive Plane2D lines) are treated as hard blocks, merged
-            # with the already-placed pill AABBs from the registry.  The segment
-            # obstacles flow through ``extra_obstacles`` (the placed-label AABBs
-            # are derived from ``placed_labels`` inside _place_pill), so both
-            # obstacle classes reach the scoring argmin.
-            # Use a very large viewbox so clamping does not interfere; the
-            # caller's viewbox is not available here, so use a safe sentinel.
-            _vb = 8192.0
-            placement, _fits = _place_pill(
-                natural_x=final_x,
-                natural_y=final_y - l_font_px * 0.3,
-                pill_w=float(pill_w),
-                pill_h=float(pill_h),
-                placed_labels=placed_labels,
-                extra_obstacles=primitive_obstacles,
-                viewbox_w=_vb,
-                viewbox_h=_vb,
-                side_hint=position if position in ("above", "below", "left", "right") else None,
-            )
-            # _place_pill returns placement at candidate_y (already -0.3 corrected)
-            final_x = placement.x
-            final_y = placement.y + l_font_px * 0.3
-            clamped_x = max(final_x, pill_w / 2)
-            placed_labels.append(_LabelPlacement(
-                x=clamped_x,
-                y=placement.y,
-                width=float(pill_w),
-                height=float(pill_h),
-            ))
-        else:
-            # Legacy simple-nudge loop (no segment obstacles present).
-            # HIGH #2: initial candidate uses center-corrected y so overlap
-            # geometry during nudge matches the registered placement geometry.
-            candidate_y = final_y - l_font_px * 0.3
-            candidate = _LabelPlacement(
-                x=final_x, y=candidate_y, width=float(pill_w), height=float(pill_h),
-            )
-            nudge_step = pill_h + 2
-            nudge_dirs = [
-                (0, -nudge_step),
-                (-nudge_step, 0),
-                (nudge_step, 0),
-                (0, nudge_step),
-            ]
-            collision_unresolved = False
-            for _ in range(4):
-                if not any(candidate.overlaps(p) for p in placed_labels):
-                    break
-                resolved = False
-                for ndx, ndy in nudge_dirs:
-                    test = _LabelPlacement(
-                        x=candidate.x + ndx,
-                        y=candidate.y + ndy,
-                        width=candidate.width,
-                        height=candidate.height,
-                    )
-                    if not any(test.overlaps(p) for p in placed_labels):
-                        candidate = test
-                        resolved = True
-                        break
-                if not resolved:
-                    collision_unresolved = True
-                    break
-            final_x = candidate.x
-            # Reconstruct render y from candidate y (which carries the -0.3 correction).
-            final_y = candidate.y + l_font_px * 0.3
-            clamped_x = max(final_x, pill_w / 2)
-            # QW-1: register y = candidate.y (already = final_y - l_font_px*0.3).
-            placed_labels.append(_LabelPlacement(
-                x=clamped_x,
-                y=candidate.y,
-                width=float(pill_w),
-                height=float(pill_h),
-            ))
-            # HIGH #1: gated behind _DEBUG_LABELS so it never leaks into production.
-            if collision_unresolved and _DEBUG_LABELS:
-                lines.append(f"  <!-- scriba:label-collision id={target} -->")
+        # W3-α+ / sole-placement: EVERY position pill goes through _place_pill
+        # so pill-pill collisions and MUST-severity segment obstacles both
+        # reach the scoring argmin. (The previous no-obstacle branch fell back
+        # to a 4-direction first-fit loop that gave up after one round and
+        # left same-cell pills stacked on top of each other, ignoring the
+        # side-hint / reading-flow / clearance scoring entirely.)
+        # Use a very large viewbox so clamping does not interfere; the
+        # caller's viewbox is not available here, so use a safe sentinel.
+        _vb = 8192.0
+        placement, _fits = _place_pill(
+            natural_x=final_x,
+            natural_y=final_y - l_font_px * 0.3,
+            pill_w=float(pill_w),
+            pill_h=float(pill_h),
+            placed_labels=placed_labels,
+            extra_obstacles=primitive_obstacles if primitive_obstacles else (),
+            viewbox_w=_vb,
+            viewbox_h=_vb,
+            viewbox_min_x=-_vb,
+            viewbox_min_y=-_vb,
+            side_hint=position if position in ("above", "below", "left", "right") else None,
+        )
+        # _place_pill returns placement at candidate_y (already -0.3 corrected)
+        final_x = placement.x
+        final_y = placement.y + l_font_px * 0.3
+        clamped_x = max(final_x, pill_w / 2)
+        placed_labels.append(_LabelPlacement(
+            x=clamped_x,
+            y=placement.y,
+            width=float(pill_w),
+            height=float(pill_h),
+        ))
 
     fi_x = int(final_x)
     fi_y = int(final_y)

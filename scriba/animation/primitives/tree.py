@@ -600,9 +600,7 @@ class Tree(PrimitiveBase):
 
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         # Defect 6 — the caption width participates in the footprint so a
         # caption wider than the tree is folded into the box, not clipped.
         # Keep the int footprint when no widening is needed so the downstream
@@ -638,9 +636,7 @@ class Tree(PrimitiveBase):
 
         r = self._node_radius
         effective_anns = self._annotations
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         # #1: shift content right by left_pad so position=left pills clear the
         # viewBox. left_pad is 0 (int) without left pills, so the transform is
         # byte-identical to the pre-#1 "translate({r},{ty})".

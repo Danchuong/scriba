@@ -623,9 +623,7 @@ class Plane2D(PrimitiveBase):
     # ----- bounding box ----------------------------------------------------
 
     def bounding_box(self) -> BoundingBox:
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         pos_below = self.annotation_below_overhang(float(self.height))
         return BoundingBox(
             x=0,
@@ -644,9 +642,7 @@ class Plane2D(PrimitiveBase):
         self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         effective_anns = self._annotations
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
 
         parts: list[str] = []
         parts.append(

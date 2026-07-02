@@ -218,8 +218,7 @@ class NumberLinePrimitive(PrimitiveBase):
 
     def _arrow_height_above(self, annotations: "list[dict]") -> int:
         """Compute arrow height above, locked to cross-frame max to prevent jitter."""
-        computed = self.annotation_height_above()
-        return max(computed, getattr(self, "_min_arrow_above", 0))
+        return self._reserved_arrow_above()
 
     def emit_svg(
         self,

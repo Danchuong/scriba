@@ -215,9 +215,7 @@ class VariableWatch(PrimitiveBase):
         core_w = max(content_w + 2 * _PADDING, self._caption_block_width(content_w))
         h += self._caption_block_height(content_w)
 
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         h += arrow_above
 
         # Layer C: below-pill callout lane (0 without below pills → byte-stable).
@@ -237,9 +235,7 @@ class VariableWatch(PrimitiveBase):
         self_offset: "tuple[float, float] | None" = None,
     ) -> str:
         effective_anns = self._annotations
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         # #1: shift content right for position=left pills (0 when none →
         # "translate(0, …)", byte-identical to the pre-#1 output).
         left_pad, _ = self._h_label_pad()

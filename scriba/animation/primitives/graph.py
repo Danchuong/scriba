@@ -1190,9 +1190,7 @@ class Graph(PrimitiveBase):
 
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         # Reserve a top band for the caption and shift content below it, so the
         # caption never overlaps the top nodes (mirrors Tree). Defect 6 — the
         # caption width participates in the footprint so a wide caption is folded
@@ -1230,9 +1228,7 @@ class Graph(PrimitiveBase):
 
         r = self._node_radius
         effective_anns = self._annotations
-        arrow_above = max(
-            self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
-        )
+        arrow_above = self._reserved_arrow_above()
         # #1: shift content right by left_pad so position=left pills clear the
         # viewBox. left_pad is 0 (int) without left pills, so the transform is
         # byte-identical to the pre-#1 "translate({r},{ty})".
