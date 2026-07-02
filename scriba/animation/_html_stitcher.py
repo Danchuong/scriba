@@ -550,6 +550,11 @@ def emit_interactive_html(
                 sub_prims = sub.primitives if sub.primitives else primitives
                 if sub.primitives:
                     _prescan_value_widths(sub.frames, sub_prims)
+                    # Same uniform-lane contract as the interactive substory
+                    # widget (emit_substory_html) — without this, the PRINT
+                    # rendering of the same substory reserves a different
+                    # annotation lane than the widget.
+                    _apply_min_arrow_above(sub.frames, sub_prims)
                 sub_vb = compute_viewbox(sub_prims) if sub.primitives else viewbox
                 # R-32.2/R-32.3: reserve envelope for the print substory too.
                 sub_reserved = (

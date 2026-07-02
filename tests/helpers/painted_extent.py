@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-_TAG_RE = re.compile(r"<(/?)(g|rect|circle|polygon|polyline|path)\b([^>]*)>")
+_TAG_RE = re.compile(r"<(/?)(g|rect|circle|polygon|polyline|line|path)\b([^>]*)>")
 _TRANSLATE_RE = re.compile(r'transform="translate\(([-\d.]+)[,\s]\s*([-\d.]+)\)"')
 _ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
 _NUM_RE = re.compile(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?")
@@ -122,6 +122,10 @@ def painted_extent(svg: str) -> Extent | None:
             r = float(attrs.get("r", 0))
             ext.include(ox + cx - r, oy + cy - r, pad)
             ext.include(ox + cx + r, oy + cy + r, pad)
+            found = True
+        elif tag == "line":
+            ext.include(ox + float(attrs.get("x1", 0)), oy + float(attrs.get("y1", 0)), pad)
+            ext.include(ox + float(attrs.get("x2", 0)), oy + float(attrs.get("y2", 0)), pad)
             found = True
         elif tag in ("polygon", "polyline"):
             nums = [float(n) for n in _NUM_RE.findall(attrs.get("points", ""))]

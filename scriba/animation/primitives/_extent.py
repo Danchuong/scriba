@@ -25,7 +25,7 @@ from typing import NamedTuple
 
 __all__ = ["PaintedExtent", "measure_painted_extent"]
 
-_TAG_RE = re.compile(r"<(/?)(g|rect|circle|polygon|polyline|path)\b([^>]*)>")
+_TAG_RE = re.compile(r"<(/?)(g|rect|circle|polygon|polyline|line|path)\b([^>]*)>")
 _TRANSLATE_RE = re.compile(r'transform="translate\(([-\d.]+)[,\s]\s*([-\d.]+)\)"')
 _ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
 _NUM_RE = re.compile(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?")
@@ -165,6 +165,10 @@ def measure_painted_extent(svg: str) -> PaintedExtent | None:
             r = float(attrs.get("r", 0))
             acc.add(ox + cx - r, oy + cy - r, pad)
             acc.add(ox + cx + r, oy + cy + r, pad)
+        elif tag == "line":
+            pad = (float(sw) if sw else 0.0) / 2.0
+            acc.add(ox + float(attrs.get("x1", 0)), oy + float(attrs.get("y1", 0)), pad)
+            acc.add(ox + float(attrs.get("x2", 0)), oy + float(attrs.get("y2", 0)), pad)
         elif tag in ("polygon", "polyline"):
             pad = (float(sw) if sw else 0.0) / 2.0
             nums = [float(n) for n in _NUM_RE.findall(attrs.get("points", ""))]
