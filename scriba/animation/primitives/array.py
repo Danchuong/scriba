@@ -21,7 +21,6 @@ from scriba.animation.primitives.base import (
     THEME,
     BoundingBox,
     PrimitiveBase,
-    _escape_xml,
     _inset_rect_attrs,
     _label_has_math,
     _LABEL_PILL_MAX_W_PX,
@@ -313,46 +312,16 @@ class ArrayPrimitive(PrimitiveBase):
         # the position=below pills). Wrapped to multiple lines so a long caption
         # never overflows the viewBox. Centered on the footprint width; cells
         # (shifted by row_dx) share the same center line.
-        caption_lines = self._caption_lines(self._total_width())
-        if caption_lines:
-            bbox_width = self._bbox_width()
-            center_x = int(bbox_width // 2)
-            line_h = _FONT_SIZE_CAPTION + 2
+        if self._caption_lines(self._total_width()):
             lane_h = position_below_lane_height(effective_anns, cell_height=CELL_HEIGHT)
             caption_top = int(self.resolve_below_baseline() + lane_h + _STACK_GAP)
-            if len(caption_lines) == 1:
-                # Single line (incl. math captions) — shared renderer keeps the
-                # KaTeX foreignObject path for ``$...$``.
-                lines.append(
-                    "  "
-                    + _render_svg_text(
-                        caption_lines[0],
-                        center_x,
-                        caption_top + _FONT_SIZE_CAPTION // 2,
-                        fill=THEME["fg_muted"],
-                        css_class="scriba-primitive-label",
-                        fo_width=bbox_width,
-                        fo_height=20,
-                        render_inline_tex=render_inline_tex,
-                    )
-                )
-            else:
-                # Multi-line plain text — tspans. Inline text-anchor/font-size
-                # because the ``[data-primitive] > .scriba-primitive-label`` CSS
-                # child-combinator does not reach text nested in the translate
-                # group.
-                y0 = caption_top + _FONT_SIZE_CAPTION
-                tspans = "".join(
-                    f'<tspan x="{center_x}" dy="{0 if i == 0 else line_h}">'
-                    f"{_escape_xml(ln)}</tspan>"
-                    for i, ln in enumerate(caption_lines)
-                )
-                lines.append(
-                    f'  <text class="scriba-primitive-label" x="{center_x}"'
-                    f' y="{y0}" fill="{THEME["fg_muted"]}"'
-                    f' style="text-anchor:middle;'
-                    f'font-size:{_FONT_SIZE_CAPTION}px">{tspans}</text>'
-                )
+            self._emit_caption(
+                lines,
+                content_width=self._total_width(),
+                footprint_width=self._bbox_width(),
+                top_y=caption_top,
+                render_inline_tex=render_inline_tex,
+            )
 
         # Arrow annotations
         if effective_anns:
@@ -401,10 +370,9 @@ class ArrayPrimitive(PrimitiveBase):
         below_baseline = self.resolve_below_baseline() or float(CELL_HEIGHT)
         lane_h = position_below_lane_height(effective_anns, cell_height=CELL_HEIGHT)
         bottom = below_baseline + lane_h
-        caption_lines = self._caption_lines(self._total_width())
-        if caption_lines:
-            line_h = _FONT_SIZE_CAPTION + 2
-            bottom = below_baseline + lane_h + _STACK_GAP + len(caption_lines) * line_h
+        caption_h = self._caption_block_height(self._total_width())
+        if caption_h:
+            bottom = below_baseline + lane_h + _STACK_GAP + caption_h
 
         computed = arrow_height_above(
             effective_anns, self.resolve_annotation_point, cell_height=CELL_HEIGHT

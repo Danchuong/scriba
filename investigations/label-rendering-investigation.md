@@ -40,7 +40,7 @@ Sáu triệu chứng label sai/mất khi render doc tiếng Việt (Number Spira
 | H1 | Animation vs diagram đi 2 code path label khác nhau (frame_renderer vs static?) | Open | |
 | H2 | Math-label đi path foreignObject 1 dòng không wrap (thiết kế cho label ngắn) | Open | |
 | H3 | `display:flex` gây collapse whitespace text-node | Open | |
-| H4 | VariableWatch không implement render label | Open | |
+| H4 | VariableWatch không implement render label | **Refuted** | Label RENDER ĐẦY ĐỦ: variablewatch.py:98 lưu, :394-403 emit qua `_emit_caption` (agent sweep, verified). Quan sát "0 match" ban đầu (E4) là **false negative của công cụ đo**: `grep 'f = nền + d'` chạy qua RTK/Rust-regex — `+` là quantifier, không literal. Grep lại không dùng `+`: chuỗi có trong HTML. Không thấy trên màn hình vì caption bị CLIP đáy widget animation (cùng class clip với grid label + hàng `val`) — chuyển triệu chứng sang class "animation clip". |
 | H5 | Emitter hardcode aria-label, không đọc env label | Confirmed (sửa: không phải hardcode — là fallback else-branch; drop tại renderer.py:503-509 không forward) | Refutation pass: grep toàn codebase 0 consumer của `ir.options.label`; plumbing emit_html/emit_interactive_html đã sẵn nhưng không được gọi với label |
 | H6 | Text-wrap engine split theo space rồi join không giữ space | Open | |
 
@@ -82,6 +82,21 @@ Sáu triệu chứng label sai/mất khi render doc tiếng Việt (Number Spira
 ### Baseline test suite (2026-07-02)
 
 - `pytest -x`: 3474 passed; 1 fail `test_recursive_dos.py::test_graph_with_100_self_loops_completes` — flaky timing (pass khi chạy riêng, 2.17s); không liên quan.
+
+## Follow-up: 2026-07-02 #2 — sweep bug class tương tự (3 agents)
+
+### Agent D (parsed-but-unconsumed) — kết quả
+
+- **Premise correction:** VariableWatch label KHÔNG dead (xem H4 — false negative do grep `+` metachar qua RTK). 13/13 primitives nhận `label` đều render (matrix đầy đủ trong agent log); MetricPlot/Plane2D không nhận `label` (E1114 — không phải dead).
+- **Dead surface THẬT lớn hơn dự đoán — 5 env option keys chết:**
+  - `label` — parsed (grammar.py:545 → ast.py:298), 0 reads; renderer.py:503-509 không forward vào emit_html (param sẵn ở _html_stitcher.py:686). Docs REFERENCE:1177 hứa "aria label" → documented-but-broken. **HIGH**.
+  - `width` — parsed kỹ (có unit-suffix handling grammar.py:501-513!) → 0 reads; stage auto-size từ bbox (_frame_renderer.py:119-160). **MEDIUM**.
+  - `height` — như width. **MEDIUM**.
+  - `layout` — parsed (filmstrip|stack) → 0 reads; `data-layout="filmstrip"` hardcode (_html_stitcher.py:196,303). **MEDIUM**.
+  - `grid` — trong VALID_OPTION_KEYS (constants.py:46) nhưng KHÔNG là field của AnimationOptions → accept rồi vứt im lặng tại grammar.py:533. **LOW/vestigial**.
+  - Chỉ `id` sống (renderer.py:474-475, 794-795).
+- Command params (\annotate ephemeral/position/color/arrow_from, \recolor, \step label): **tất cả live** (consumers cited).
+- Fix direction: (a) forward `ir.options.label` (1 dòng + plumb static/diagram); (b) wire hoặc reject width/height/layout; (c) bỏ `grid` khỏi VALID_OPTION_KEYS.
 
 ## Follow-up: 2026-07-02 — scope thu hẹp theo user
 

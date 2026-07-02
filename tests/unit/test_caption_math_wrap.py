@@ -244,6 +244,34 @@ class TestEmitCaptionMathMultiline:
         assert "<foreignObject" not in svg
         assert svg.count("<tspan") >= 2
 
+    def test_array_long_math_caption_renders_katex_not_raw_dollars(self) -> None:
+        # Array kept a bespoke caption emitter (predating the shared Layer-A
+        # helper). Once _caption_lines started wrapping math, its multi-line
+        # branch escaped the raw $...$ into tspans instead of rendering KaTeX.
+        from scriba.animation.primitives.array import ArrayPrimitive
+
+        inst = ArrayPrimitive("a", {"size": 4, "data": [1, 2, 3, 4]})
+        inst.label = _LONG_MATH_LABEL
+        svg = inst.emit_svg(render_inline_tex=_fake_tex)
+        assert "$(m-1)^2+1$" not in svg
+        assert "$m^2$" not in svg
+        assert "fake-katex" in svg
+        ys = _caption_center_ys(svg)
+        assert len(ys) >= 2
+        assert {b - a for a, b in zip(ys, ys[1:])} == {_MATH_CAPTION_LINE_H}
+
+    def test_array_math_caption_bbox_reserves_math_line_height(self) -> None:
+        from scriba.animation.primitives.array import ArrayPrimitive
+
+        plain = ArrayPrimitive("a", {"size": 4, "data": [1, 2, 3, 4]})
+        mathy = ArrayPrimitive("a", {"size": 4, "data": [1, 2, 3, 4]})
+        plain.label = "x"
+        mathy.label = "$x$ " + "dài " * 40  # forces a wrapped math block
+        n = len(mathy._caption_lines(mathy._total_width()))
+        assert n >= 2
+        delta = mathy.bounding_box().height - plain.bounding_box().height
+        assert delta == n * _MATH_CAPTION_LINE_H - (_CAPTION_FONT_PX + 2)
+
     def test_caption_does_not_overhang_grid_rows(self) -> None:
         # The old fixed 673×20 box started at the grid's last row; the new
         # per-line boxes must sit fully below the content (top_y >= rows px).
