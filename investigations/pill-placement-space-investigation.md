@@ -1,6 +1,6 @@
 # Case: pill-placement-space — pill đè nội dung trong khi không gian ngang bỏ trống
 
-**Mở:** 2026-07-02 · symptom-driven (screenshot user: grid 5×5 frame 5, pill arc 3 dòng đè cells 2/3/8/9, hai dải trống trái/phải grid không dùng) · 3 research agents · Status: **DIAGNOSED — chờ duyệt phương án**
+**Mở:** 2026-07-02 · symptom-driven (screenshot user: grid 5×5 frame 5, pill arc 3 dòng đè cells 2/3/8/9, hai dải trống trái/phải grid không dùng) · 3 research agents · Status: **CLOSED — W1+W2+W3 landed 2026-07-02** (commit "feat(animation): pills respect content and use the horizontal span")
 
 ## Hand-off Brief
 
@@ -32,3 +32,12 @@ Pill của arc annotation đứng nguyên tại natural anchor (đỉnh bow củ
 5. Spec: thêm rule content-occlusion mới vào smart-label-ruleset (đóng lỗ spec) + sửa comment "32 nudges" stale.
 
 **Dự đoán case user sau W1+W2:** pill 1–2 dòng, bị content-obstacles đẩy khỏi cells trong reach hiện có → đậu lane trên grid (trống, đã reserve exact) hoặc mép phải-trên; hết che nội dung mà không cần W4.
+
+
+## Resolution (landed)
+
+- **W1** `resolve_self_content_rects()` + `content_cell` SHOULD obstacles (weight 0.02) — grid/array/dptable/matrix; rects cùng frame với anchors (Array cộng `_row_dx`, =0 trong measurement frame → measured ≡ painted giữ nguyên). Spec **R-33** thêm vào smart-label-ruleset.
+- **W2** `_arc_wrap_px(cell_metrics)` — arc/plain pill wrap theo content span (fallback char-mode khi không grid context); cùng budget cho phép đo pill-height ở natural anchor; Grid bắt đầu truyền cell_metrics (mở luôn stagger-flip 2d bị thiếu).
+- **W3** `_infer_side_hint` 4 hướng (left mới) — spec R-22 cập nhật.
+- **R-19 recalibrate:** degraded so trên score − content_cell floor (`_content_cell_penalty`); threshold về 200 nguyên nghĩa. Đo thật: f3=609→~150 sau trừ floor (im), f5=143.
+- **Kết quả case user:** pill 2 dòng 272×34 đậu lane trên grid (y=−38), 0 cell bị che, 0 warning. Suite 4112 xanh; goldens regen. W4 (edge candidates) KHÔNG cần.
