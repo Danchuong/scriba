@@ -103,6 +103,92 @@ class TestAdaptiveWrap:
         assert len(re.findall(r"<tspan", svg)) <= 2
 
 
+def _coverage(svg: str) -> float:
+    px, py, pw, ph = _pill_rect(svg)
+    covered = 0.0
+    for cx, cy, cw, chh in _cell_rects(svg):
+        ix = max(0.0, min(px + pw, cx + cw) - max(px, cx))
+        iy = max(0.0, min(py + ph, cy + chh) - max(py, cy))
+        covered += ix * iy
+    return covered
+
+
+class TestEscapeLanes:
+    """W4 (R-34): a short arrow deep inside the grid can't nudge free.
+
+    The 48-nudge scan reaches 2.5*pill_h (~50px) from the natural anchor;
+    an anchor on the middle row of a 5-row grid is ~110px from the nearest
+    clear lane, so the pill settled on the least-covered cells — covering
+    the annotation's own target cell. Lane candidates derived from the
+    content extent close the gap (measured: lane scores 193 vs 482 for the
+    best in-grid candidate, so the scorer picks the lane on merit).
+    """
+
+    def _short_arrow_case(self, label: str, src: str, dst: str) -> str:
+        g = GridPrimitive("g", {"rows": 5, "cols": 5})
+        g.set_annotations([
+            {"target": dst, "label": label, "arrow_from": src, "color": "good"}
+        ])
+        return g.emit_svg()
+
+    def test_mid_grid_vertical_arrow_escapes_cells(self) -> None:
+        # user doc frame 4: pill buried the arrow's own target cell ("8")
+        svg = self._short_arrow_case(
+            "rẽ lên tới ô đích", "g.cell[2][2]", "g.cell[1][2]"
+        )
+        assert _coverage(svg) == 0.0, _pill_rect(svg)
+
+    def test_mid_grid_horizontal_arrow_escapes_cells(self) -> None:
+        # user doc frame 3
+        svg = self._short_arrow_case(
+            "m lẻ: đi phải, +1 mỗi ô", "g.cell[2][0]", "g.cell[2][2]"
+        )
+        assert _coverage(svg) == 0.0, _pill_rect(svg)
+
+    def test_lane_pill_keeps_clearance_from_content(self) -> None:
+        svg = self._short_arrow_case(
+            "rẽ lên tới ô đích", "g.cell[2][2]", "g.cell[1][2]"
+        )
+        px, py, pw, ph = _pill_rect(svg)
+        cells = _cell_rects(svg)
+        top = min(c[1] for c in cells)
+        bottom = max(c[1] + c[3] for c in cells)
+        outside = py + ph <= top or py >= bottom
+        assert outside
+        gap = (top - (py + ph)) if py + ph <= top else (py - bottom)
+        assert gap >= 4 - 0.01, gap
+
+    def test_helper_yields_both_lanes(self) -> None:
+        from scriba.animation.primitives._svg_helpers import (
+            _Obstacle,
+            _escape_lane_candidates,
+        )
+
+        # _Obstacle x/y are CENTERS: rows span y 0..40 and y 168..208
+        obs = (
+            _Obstacle(kind="content_cell", x=30, y=20, width=60, height=40,
+                      severity="SHOULD"),
+            _Obstacle(kind="content_cell", x=30, y=188, width=60, height=40,
+                      severity="SHOULD"),
+        )
+        cands = _escape_lane_candidates(obs, natural_x=100.0, pill_h=20.0)
+        assert (100.0, 0 - 10.0 - 4.0) in cands
+        assert (100.0, 208 + 10.0 + 4.0) in cands
+        assert len(cands) == 2
+
+    def test_helper_empty_without_content_obstacles(self) -> None:
+        from scriba.animation.primitives._svg_helpers import (
+            _Obstacle,
+            _escape_lane_candidates,
+        )
+
+        obs = (
+            _Obstacle(kind="pill", x=0, y=0, width=60, height=20,
+                      severity="SHOULD"),
+        )
+        assert _escape_lane_candidates(obs, natural_x=50.0, pill_h=20.0) == []
+
+
 class TestSideHintQuadrants:
     def test_down_left_hints_left(self) -> None:
         assert _infer_side_hint(-10.0, 100.0) == "left"

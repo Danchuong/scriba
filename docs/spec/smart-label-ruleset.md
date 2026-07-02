@@ -433,6 +433,31 @@ obstacle merge in `emit_annotation_arrows`); overrides in grid/array/dptable/mat
 
 ---
 
+### R-34 — Escape-lane candidates
+
+**Normative:** SHOULD
+**Since:** v0.21.2
+
+When the obstacle set contains `content_cell` obstacles (R-33), the
+candidate list MUST additionally include one candidate per clear lane above
+and below the content extent: `cy = extent_edge ∓ (pill_h/2 + 4)` at the
+natural `cx`. Rationale: the nudge scan reaches at most `2.5 × pill_h` from
+the natural anchor, so an anchor deep inside a tall primitive (e.g. the
+middle row of a 5-row grid, ~110 px from the nearest lane) can never leave
+the content area and the least-bad candidate still covers cells —
+including, for short vertical arrows, the annotation's own target cell.
+Lane candidates carry no special weight: the scorer arbitrates, and a lane
+wins only when every in-content candidate accrues more content-occlusion
+penalty (R-33) than the lane's extra displacement (P2). Callers with a
+clamp region clamp lane candidates like any other candidate.
+
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py`
+(`_escape_lane_candidates`; consumed by `_emit_label_and_pill` and
+`_place_pill`).
+**Test ref:** `tests/unit/test_content_obstacles.py::TestEscapeLanes`
+
+---
+
 ## §3 Leader lines
 
 Rules governing when, how, and where leader lines are drawn.

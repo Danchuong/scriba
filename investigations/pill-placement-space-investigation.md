@@ -41,3 +41,11 @@ Pill của arc annotation đứng nguyên tại natural anchor (đỉnh bow củ
 - **W3** `_infer_side_hint` 4 hướng (left mới) — spec R-22 cập nhật.
 - **R-19 recalibrate:** degraded so trên score − content_cell floor (`_content_cell_penalty`); threshold về 200 nguyên nghĩa. Đo thật: f3=609→~150 sau trừ floor (im), f5=143.
 - **Kết quả case user:** pill 2 dòng 272×34 đậu lane trên grid (y=−38), 0 cell bị che, 0 warning. Suite 4112 xanh; goldens regen. W4 (edge candidates) KHÔNG cần.
+
+## Follow-up: 2026-07-02 — W4 hóa ra CẦN (arrow ngắn giữa grid)
+
+- **Symptom mới (acceptance sweep):** 3 pill vẫn đè cells trong doc user — arrow NGẮN nằm sâu trong grid (vd (2,2)→(1,2)): nudge scan tối đa 2.5×pill_h ≈ 50px < ~110px tới lane; pill nhỏ (138×20) đè ~2600px² chỉ tốn ~52đ content-penalty < 186đ displacement tới lane → kẹt, che cả Ô ĐÍCH của chính annotation (frame 4, số "8").
+- **Đo quyết định:** candidate lane trên score 193 vs best-trong-tầm 482 — scorer chọn lane ngay nếu candidate TỒN TẠI → lỗ hổng thuần search-space, không phải weight.
+- **Fix (R-34):** `_escape_lane_candidates(obstacles, natural_x, pill_h)` — derive content extent từ chính obstacles `content_cell` (zero API change), thêm 1 candidate/lane (trên + dưới, clearance 4px), nối vào CẢ `_emit_label_and_pill` (arc) lẫn `_place_pill` (position, clamp như thường). Scorer arbitrate — không weight đặc biệt.
+- **Bẫy đã sập 1 lần:** `_Obstacle` mang tọa độ TÂM (mọi term dùng `obs.x ± width/2`) — bản đầu đọc `o.y` như top-left → lane trên hụt 20px (P1=42.2, thua), lane dưới thừa 20px + degraded warning 162px. Fix: `top = min(o.y − o.height/2)`.
+- **Kết quả:** arrow lên → lane trên (cùng phía mũi tên), arrow ngang đáy → lane dưới gần anchor; browser đo 0.0px² pill∩cell cả 5 frames; 0 degraded warning; suite 4134 xanh; 5 corpus goldens re-pin. Spec R-34 thêm vào smart-label-ruleset.

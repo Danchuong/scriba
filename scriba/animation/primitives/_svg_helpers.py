@@ -1410,6 +1410,43 @@ def pill_dimensions(
 # 1px so the border stays fully inside (painted ⊆ declared bbox, exactly).
 _PILL_EDGE_CLEAR: int = 1
 
+# R-34: visual gap between an escape-lane pill and the content extent it
+# escaped from. Half the caption gap — enough separation to read as "outside
+# the grid" without inflating the reserved lane.
+_ESCAPE_LANE_CLEAR: float = 4.0
+
+
+def _escape_lane_candidates(
+    obstacles: "tuple[_Obstacle, ...]",
+    natural_x: float,
+    pill_h: float,
+) -> "list[tuple[float, float]]":
+    """R-34 (escape lanes): candidates in the clear lanes above/below the
+    primitive's own content extent.
+
+    The 48-nudge scan reaches at most 2.5*pill_h from the natural anchor, so
+    an anchor deep inside a tall grid can never leave the content area and
+    the pill settles on the least-covered cells — still covering some
+    (including, for a short vertical arrow, the annotation's own target
+    cell). The content extent is recovered from the ``content_cell``
+    obstacles already in scope; one candidate per lane, ``natural_x``
+    preserved so the leader stays vertical. The scorer arbitrates — a lane
+    candidate wins only when every in-content candidate carries more
+    content-occlusion penalty than the lane's extra displacement.
+    """
+    # _Obstacle carries CENTER coordinates (see the obstacle-build sites and
+    # every scoring term: edges are obs.x ± width/2).
+    content = [o for o in obstacles if o.kind == "content_cell"]
+    if not content:
+        return []
+    top = min(o.y - o.height / 2.0 for o in content)
+    bottom = max(o.y + o.height / 2.0 for o in content)
+    half_h = pill_h / 2.0
+    return [
+        (natural_x, top - half_h - _ESCAPE_LANE_CLEAR),
+        (natural_x, bottom + half_h + _ESCAPE_LANE_CLEAR),
+    ]
+
 
 
 
@@ -2400,10 +2437,13 @@ def _emit_label_and_pill(
             flow=_flow_hint,
         )
 
-        # Build candidate list: natural + 48 nudges.
+        # Build candidate list: natural + 48 nudges + escape lanes (R-34).
         _ea_candidates: list[tuple[float, float]] = [(final_x, candidate_y)]
         for _ndx, _ndy in _nudge_candidates(float(pill_w), float(pill_h), side_hint=anchor_side):
             _ea_candidates.append((final_x + _ndx, candidate_y + _ndy))
+        _ea_candidates.extend(
+            _escape_lane_candidates(_obstacles, final_x, float(pill_h))
+        )
         _cands = tuple(_ea_candidates)
 
         _best_cx, _best_cy, _best_score = _pick_best_candidate(_cands, _obstacles, _ctx)
@@ -3339,13 +3379,16 @@ def _place_pill(
         viewbox_h=viewbox_h,
     )
 
-    # Build candidate list: natural (clamped) + 48 nudges (clamped).
-    # Clamp BEFORE scoring so the score reflects the actual rendered position.
+    # Build candidate list: natural (clamped) + 48 nudges (clamped) +
+    # escape lanes (R-34, clamped — a lane outside the caller's allowed
+    # region degrades to the fence position, which scores like any other).
     nat_cx, nat_cy = _clamp(natural_x, natural_y)
     all_candidates: list[tuple[float, float]] = [(nat_cx, nat_cy)]
     for ndx, ndy in _nudge_candidates(pill_w, pill_h, side_hint=side_hint):
         cx, cy = _clamp(natural_x + ndx, natural_y + ndy)
         all_candidates.append((cx, cy))
+    for ecx, ecy in _escape_lane_candidates(obstacles, natural_x, pill_h):
+        all_candidates.append(_clamp(ecx, ecy))
     candidates_tuple = tuple(all_candidates)
 
     # Score all candidates and pick the best.
