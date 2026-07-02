@@ -1335,6 +1335,552 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] body { background: #151718; color: #ecedee; }
 [data-theme="dark"] .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
 
+/* Scriba TeX Content Styles
+ * Scoped under .scriba-tex-content
+ * Uses --scriba-* CSS variables — see :root block below for defaults.
+ * Dark mode via [data-theme="dark"] ancestor selector.
+ */
+
+/* ============================================
+   Design tokens
+   ============================================ */
+
+:root {
+  /* Text and background — β slate */
+  --scriba-fg: #11181c;
+  --scriba-fg-muted: #687076;
+  --scriba-bg: #ffffff;
+  --scriba-bg-code: #f8f9fa;
+  --scriba-bg-inline-code: rgba(17, 24, 28, 0.08);
+
+  /* Borders and lines */
+  --scriba-border: #dfe3e6;
+  --scriba-border-strong: #889096;
+
+  /* Links — β blue */
+  --scriba-link: #0b68cb;
+  --scriba-link-hover: #0954a5;
+
+  /* Errors — β red */
+  --scriba-error: #e5484d;
+  --scriba-error-bg: #feecee;
+
+  /* Epigraph */
+  --scriba-epigraph-border: #687076;
+
+  /* Copy button */
+  --scriba-copy-btn-bg: #f8f9fa;
+  --scriba-copy-btn-fg: #11181c;
+  --scriba-copy-btn-bg-hover: #e6e8eb;
+  --scriba-copy-btn-fg-hover: #0b68cb;
+  --scriba-copy-btn-bg-copied: #e4f6ea;
+  --scriba-copy-btn-fg-copied: #2a7e3b;
+
+  /* Diagram */
+  --scriba-diagram-dim-opacity: 0.2;
+  --scriba-diagram-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --scriba-diagram-active-fill: #0b68cb;
+  --scriba-diagram-active-stroke: #0b68cb;
+
+  /* Geometry and typography */
+  --scriba-radius: 6px;
+  --scriba-code-font: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+
+  /* TeX size commands */
+  --scriba-font-size-tiny: 0.625em;
+  --scriba-font-size-scriptsize: 0.75em;
+  --scriba-font-size-footnotesize: 0.85em;
+  --scriba-font-size-small: 0.9em;
+  --scriba-font-size-normalsize: 1em;
+  --scriba-font-size-large: 1.2em;
+  --scriba-font-size-Large: 1.4em;
+  --scriba-font-size-LARGE: 1.6em;
+  --scriba-font-size-huge: 1.9em;
+  --scriba-font-size-Huge: 2.3em;
+}
+
+[data-theme="dark"] {
+  /* β slate dark */
+  --scriba-fg: #ecedee;
+  --scriba-fg-muted: #9ba1a6;
+  --scriba-bg: #151718;
+  --scriba-bg-code: #1a1d1e;
+  --scriba-bg-inline-code: rgba(236, 237, 238, 0.08);
+  --scriba-border: #313538;
+  --scriba-border-strong: #6e767d;
+  --scriba-link: #70b8ff;
+  --scriba-link-hover: #a2ceff;
+  --scriba-error: #ff6369;
+  --scriba-error-bg: rgba(229, 72, 77, 0.15);
+  --scriba-epigraph-border: #9ba1a6;
+  --scriba-copy-btn-bg: #202425;
+  --scriba-copy-btn-fg: #ecedee;
+  --scriba-copy-btn-bg-hover: #2b2f31;
+  --scriba-copy-btn-fg-hover: #70b8ff;
+  --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
+  --scriba-copy-btn-fg-copied: #65ba74;
+  --scriba-diagram-active-fill: #70b8ff;
+  --scriba-diagram-active-stroke: #70b8ff;
+}
+
+/* ============================================
+   Typography — container
+   ============================================ */
+
+.scriba-tex-content {
+  color: var(--scriba-fg);
+  line-height: 1.65;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  font-size: inherit;
+}
+
+.scriba-tex-content strong,
+.scriba-tex-content b {
+  font-weight: 600;
+}
+
+.scriba-tex-content em,
+.scriba-tex-content i {
+  font-style: italic;
+}
+
+.scriba-tex-content .scriba-tex-smallcaps {
+  font-variant-caps: small-caps;
+}
+
+.scriba-tex-content .scriba-tex-paragraph {
+  margin: 0 0 0.75rem 0;
+}
+
+.scriba-tex-content .scriba-tex-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   Math (KaTeX)
+   KaTeX owns .katex / .katex-display globally —
+   these rules remain unscoped to avoid double-scoping issues.
+   ============================================ */
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+  margin: 1rem 0;
+}
+
+.katex-display > .katex {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: inherit;
+}
+
+.katex-display > .katex > .katex-html {
+  white-space: normal;
+}
+
+.katex {
+  font-size: 1em;
+}
+
+.katex-error {
+  color: var(--scriba-error);
+  background: var(--scriba-error-bg);
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+}
+
+[data-theme="dark"] .katex {
+  color: var(--scriba-fg);
+}
+
+[data-theme="dark"] .katex .mord,
+[data-theme="dark"] .katex .mop,
+[data-theme="dark"] .katex .mrel,
+[data-theme="dark"] .katex .mbin,
+[data-theme="dark"] .katex .minner,
+[data-theme="dark"] .katex .mpunct {
+  color: inherit;
+}
+
+/* Scriba math wrappers */
+.scriba-tex-content .scriba-tex-math-inline {
+  display: inline;
+}
+
+.scriba-tex-content .scriba-tex-math-display,
+.scriba-tex-content .scriba-tex-math-display .katex-display,
+.scriba-tex-content .scriba-tex-math-display .katex {
+  display: block;
+  text-align: center;
+}
+
+.scriba-tex-content .scriba-tex-math-display {
+  margin: 1rem 0;
+}
+
+.scriba-tex-content .scriba-tex-math-error {
+  color: var(--scriba-error);
+  background: var(--scriba-error-bg);
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+  font-family: var(--scriba-code-font);
+  font-size: 0.9em;
+}
+
+.scriba-tex-content .katex-fallback {
+  color: var(--scriba-error);
+  font-family: var(--scriba-code-font);
+}
+
+/* ============================================
+   Headings
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-heading {
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--scriba-fg);
+  scroll-margin-top: 4.5rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-2 {
+  font-size: 1.25rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-3 {
+  font-size: 1.125rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-4 {
+  font-size: 1rem;
+}
+
+/* ============================================
+   Lists
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-list {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.scriba-tex-content .scriba-tex-list-unordered {
+  list-style: disc;
+}
+
+.scriba-tex-content .scriba-tex-list-ordered {
+  list-style: decimal;
+}
+
+.scriba-tex-content .scriba-tex-list-item {
+  margin: 0.125rem 0;
+}
+
+/* ============================================
+   Tables
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-table {
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  max-width: 100%;
+}
+
+.scriba-tex-content .scriba-tex-table-row {
+  /* no-op wrapper */
+}
+
+.scriba-tex-content .scriba-tex-table-cell {
+  padding: 0.375rem 0.625rem;
+  border-color: var(--scriba-border);
+  vertical-align: middle;
+}
+
+.scriba-tex-content .scriba-tex-align-left {
+  text-align: left;
+}
+
+.scriba-tex-content .scriba-tex-align-center {
+  text-align: center;
+}
+
+.scriba-tex-content .scriba-tex-align-right {
+  text-align: right;
+}
+
+.scriba-tex-content .scriba-tex-border-top {
+  border-top: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-bottom {
+  border-bottom: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-left {
+  border-left: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-right {
+  border-right: 1px solid var(--scriba-border);
+}
+
+/* ============================================
+   Images
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-image {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
+.scriba-tex-content .scriba-tex-image-missing {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border: 1px dashed var(--scriba-border-strong);
+  color: var(--scriba-fg-muted);
+  font-family: var(--scriba-code-font);
+  font-size: 0.85em;
+  border-radius: var(--scriba-radius);
+}
+
+/* ============================================
+   Code — inline and blocks, plus copy button
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-code-inline {
+  font-family: var(--scriba-code-font);
+  font-size: 0.9em;
+  background: var(--scriba-bg-inline-code);
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  color: var(--scriba-fg);
+}
+
+.scriba-tex-content .scriba-tex-code-block {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: var(--scriba-radius);
+  background: var(--scriba-bg-code);
+  border: 1px solid var(--scriba-border);
+  overflow: hidden;
+}
+
+.scriba-tex-content .scriba-tex-code-block pre {
+  margin: 0;
+  padding: 0.75rem;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: var(--scriba-code-font);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  background: transparent;
+  color: var(--scriba-fg);
+}
+
+.scriba-tex-content .scriba-tex-code-block pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+}
+
+.scriba-tex-content .scriba-tex-code-plain {
+  font-family: var(--scriba-code-font);
+}
+
+.scriba-tex-content .scriba-tex-code-block .highlight {
+  background: transparent;
+  border-radius: var(--scriba-radius);
+}
+
+.scriba-tex-content .scriba-tex-code-block .highlight pre {
+  background: transparent;
+}
+
+.scriba-tex-content .scriba-tex-copy-btn {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 26px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--scriba-border);
+  border-radius: 4px;
+  background: var(--scriba-copy-btn-bg);
+  color: var(--scriba-copy-btn-fg);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.scriba-tex-content .scriba-tex-code-block:hover .scriba-tex-copy-btn,
+.scriba-tex-content .scriba-tex-copy-btn:focus-visible {
+  opacity: 1;
+}
+
+.scriba-tex-content .scriba-tex-copy-btn:hover {
+  background: var(--scriba-copy-btn-bg-hover);
+  color: var(--scriba-copy-btn-fg-hover);
+}
+
+.scriba-tex-content .scriba-tex-copy-btn.copied {
+  opacity: 1;
+  background: var(--scriba-copy-btn-bg-copied);
+  color: var(--scriba-copy-btn-fg-copied);
+}
+
+/* ============================================
+   Epigraph
+   ============================================ */
+
+/* Epigraph follows the LaTeX `epigraph` package convention: a narrow
+   block floated to the right margin with the attribution right-aligned
+   and a thin rule between quote and author. */
+.scriba-tex-content .scriba-tex-epigraph {
+  float: right;
+  clear: right;
+  width: 45%;
+  max-width: 28rem;
+  margin: 0.5rem 0 1rem 1.5rem;
+  padding: 0.25rem 0;
+  font-style: italic;
+  color: var(--scriba-fg);
+  text-align: right;
+}
+
+.scriba-tex-content .scriba-tex-epigraph-quote {
+  margin: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--scriba-epigraph-border);
+}
+
+.scriba-tex-content .scriba-tex-epigraph-attribution {
+  margin-top: 0.25rem;
+  color: var(--scriba-fg-muted);
+  font-style: normal;
+  font-size: 0.9em;
+}
+
+.scriba-tex-content .scriba-tex-epigraph-attribution::before {
+  content: "— ";
+}
+
+/* Make sure following content clears the floated epigraph so it doesn't
+   wrap awkwardly when the epigraph is the last thing in a section. */
+.scriba-tex-content .scriba-tex-epigraph + * {
+  clear: both;
+}
+
+/* ============================================
+   Links
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-link {
+  color: var(--scriba-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.scriba-tex-content .scriba-tex-link:hover {
+  color: var(--scriba-link-hover);
+}
+
+.scriba-tex-content .scriba-tex-link-disabled {
+  color: var(--scriba-fg-muted);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Size commands
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-size-tiny {
+  font-size: var(--scriba-font-size-tiny);
+}
+
+.scriba-tex-content .scriba-tex-size-scriptsize {
+  font-size: var(--scriba-font-size-scriptsize);
+}
+
+.scriba-tex-content .scriba-tex-size-footnotesize {
+  font-size: var(--scriba-font-size-footnotesize);
+}
+
+.scriba-tex-content .scriba-tex-size-small {
+  font-size: var(--scriba-font-size-small);
+}
+
+.scriba-tex-content .scriba-tex-size-normalsize {
+  font-size: var(--scriba-font-size-normalsize);
+}
+
+.scriba-tex-content .scriba-tex-size-large {
+  font-size: var(--scriba-font-size-large);
+}
+
+.scriba-tex-content .scriba-tex-size-Large {
+  font-size: var(--scriba-font-size-Large);
+}
+
+.scriba-tex-content .scriba-tex-size-LARGE {
+  font-size: var(--scriba-font-size-LARGE);
+}
+
+.scriba-tex-content .scriba-tex-size-huge {
+  font-size: var(--scriba-font-size-huge);
+}
+
+.scriba-tex-content .scriba-tex-size-Huge {
+  font-size: var(--scriba-font-size-Huge);
+}
+
+/* ============================================
+   Utility — center, Pygments wrapper
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-center {
+  text-align: center;
+}
+
+/* text-align: center only centers inline content. Block-level children
+   like <table> need margin auto to actually horizontally center. */
+.scriba-tex-content .scriba-tex-center > table,
+.scriba-tex-content .scriba-tex-center > .scriba-tex-table {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.scriba-tex-content .highlight {
+  background: var(--scriba-bg-code);
+  color: var(--scriba-fg);
+  border-radius: var(--scriba-radius);
+}
+
+.scriba-tex-content .highlight pre {
+  margin: 0;
+  background: transparent;
+}
+
 /* Scriba Pygments theme — One Light
  * Scoped under .scriba-tex-content .highlight
  * Uses Pygments `.tok-*` token class names.
@@ -1459,7 +2005,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 <body>
 <button class="theme-toggle" data-scriba-action="theme-toggle">Toggle theme</button>
 <h1>tutorial_en</h1>
-<h2 id="core-idea" class="scriba-tex-heading scriba-tex-heading-2">Core Idea</h2><p class="scriba-tex-paragraph">Model the labyrinth as an unweighted graph on walkable cells.</p><p class="scriba-tex-paragraph">We run two BFS passes:</p><ul class="scriba-tex-list scriba-tex-list-unordered"><li class="scriba-tex-list-item">A <em>multi-source BFS</em> from every monster cell computes
+<div class="scriba-tex-content"><h2 id="core-idea" class="scriba-tex-heading scriba-tex-heading-2">Core Idea</h2><p class="scriba-tex-paragraph">Model the labyrinth as an unweighted graph on walkable cells.</p><p class="scriba-tex-paragraph">We run two BFS passes:</p><ul class="scriba-tex-list scriba-tex-list-unordered"><li class="scriba-tex-list-item">A <em>multi-source BFS</em> from every monster cell computes
 <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>o</mi><mi>n</mi><mi>s</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">_</mi><mi>d</mi><mi>i</mi><mi>s</mi><mi>t</mi><mo stretchy="false">[</mo><mi>r</mi><mo stretchy="false">]</mo><mo stretchy="false">[</mo><mi>c</mi><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">monster\_dist[r][c]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.06em;vertical-align:-0.31em;"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">o</span><span class="mord mathnormal">n</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right:0.02778em;">er</span><span class="mord" style="margin-right:0.02778em;">_</span><span class="mord mathnormal">d</span><span class="mord mathnormal">i</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mclose">]</span><span class="mopen">[</span><span class="mord mathnormal">c</span><span class="mclose">]</span></span></span></span></span>, the earliest minute when any monster can reach cell
 <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mi>r</mi><mo separator="true">,</mo><mi>c</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(r,c)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord mathnormal">c</span><span class="mclose">)</span></span></span></span></span>.</li><li class="scriba-tex-list-item">A second BFS from <code class="scriba-tex-code-inline">A</code> searches only cells that are still safe when
 we arrive there.</li></ul><p class="scriba-tex-paragraph">The key invariant is the <em>Safety Frontier Invariant</em>:</p><p class="scriba-tex-paragraph"><em>Every cell in the player's BFS queue is reached by a path whose arrival
@@ -1484,7 +2030,7 @@ the monster needs three moves to reach it, so that exit is safe</li></ul><p clas
 frontier. A full replay of both BFS passes would be long and low-value. The
 hard part is the strict safety test.</p><p class="scriba-tex-paragraph">In the toy example, the monster BFS gives these relevant arrival times:</p><ul class="scriba-tex-list scriba-tex-list-unordered"><li class="scriba-tex-list-item"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>o</mi><mi>n</mi><mi>s</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">_</mi><mi>d</mi><mi>i</mi><mi>s</mi><mi>t</mi><mo stretchy="false">(</mo><mn>0</mn><mo separator="true">,</mo><mn>1</mn><mo stretchy="false">)</mo><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">monster\_dist(0,1) = 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.06em;vertical-align:-0.31em;"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">o</span><span class="mord mathnormal">n</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right:0.02778em;">er</span><span class="mord" style="margin-right:0.02778em;">_</span><span class="mord mathnormal">d</span><span class="mord mathnormal">i</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mopen">(</span><span class="mord">0</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></li><li class="scriba-tex-list-item"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>o</mi><mi>n</mi><mi>s</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">_</mi><mi>d</mi><mi>i</mi><mi>s</mi><mi>t</mi><mo stretchy="false">(</mo><mn>1</mn><mo separator="true">,</mo><mn>2</mn><mo stretchy="false">)</mo><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">monster\_dist(1,2) = 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.06em;vertical-align:-0.31em;"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">o</span><span class="mord mathnormal">n</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right:0.02778em;">er</span><span class="mord" style="margin-right:0.02778em;">_</span><span class="mord mathnormal">d</span><span class="mord mathnormal">i</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">2</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></li><li class="scriba-tex-list-item"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>o</mi><mi>n</mi><mi>s</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">_</mi><mi>d</mi><mi>i</mi><mi>s</mi><mi>t</mi><mo stretchy="false">(</mo><mn>1</mn><mo separator="true">,</mo><mn>0</mn><mo stretchy="false">)</mo><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">monster\_dist(1,0) = 3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.06em;vertical-align:-0.31em;"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">o</span><span class="mord mathnormal">n</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right:0.02778em;">er</span><span class="mord" style="margin-right:0.02778em;">_</span><span class="mord mathnormal">d</span><span class="mord mathnormal">i</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">0</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span></li><li class="scriba-tex-list-item"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>o</mi><mi>n</mi><mi>s</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">_</mi><mi>d</mi><mi>i</mi><mi>s</mi><mi>t</mi><mo stretchy="false">(</mo><mn>2</mn><mo separator="true">,</mo><mn>1</mn><mo stretchy="false">)</mo><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">monster\_dist(2,1) = 3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.06em;vertical-align:-0.31em;"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">o</span><span class="mord mathnormal">n</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right:0.02778em;">er</span><span class="mord" style="margin-right:0.02778em;">_</span><span class="mord mathnormal">d</span><span class="mord mathnormal">i</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mopen">(</span><span class="mord">2</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span></li></ul><p class="scriba-tex-paragraph">So from <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false">(</mo><mn>1</mn><mo separator="true">,</mo><mn>1</mn><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">(1,1)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mopen">(</span><span class="mord">1</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">1</span><span class="mclose">)</span></span></span></span></span>, the top and right moves are rejected because the player would
 arrive at exactly the same time as the monster frontier, while the left and
-down moves stay safe.</p>
+down moves stay safe.</p></div>
 
 <div class="scriba-widget" id="monsters-safety-frontier" tabindex="0" data-scriba-speed="1" role="region" aria-label="Monsters strict safety test"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 4</span><button class="scriba-btn-next" aria-label="Next step">&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="monsters-safety-frontier-narration" aria-live="polite">First compute the earliest monster arrival time for every cell. Then run the player's BFS, but only through cells where the player arrives strictly earlier than the monsters.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>First compute the earliest monster arrival time for every cell. Then run the player&#x27;s BFS, but only through cells where the player arrives strictly earlier than the monsters.</title><g transform="translate(20,12)"><g data-primitive="grid" data-shape="maze"><g transform="translate(0, 20)"><g data-target="maze.cell[0][0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][2]" class="scriba-state-error"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">M</text></g><g data-target="maze.cell[0][3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][0]" class="scriba-state-idle"><rect x="1.0" y="43.0" width="58.0" height="38.0"/><text x="30" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][1]" class="scriba-state-current"><rect x="63.0" y="43.0" width="58.0" height="38.0"/><text x="92" y="62" fill="#ffffff" style="font-size:14px">A</text></g><g data-target="maze.cell[1][2]" class="scriba-state-idle"><rect x="125.0" y="43.0" width="58.0" height="38.0"/><text x="154" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][3]" class="scriba-state-idle"><rect x="187.0" y="43.0" width="58.0" height="38.0"/><text x="216" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][4]" class="scriba-state-idle"><rect x="249.0" y="43.0" width="58.0" height="38.0"/><text x="278" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][0]" class="scriba-state-idle"><rect x="1.0" y="85.0" width="58.0" height="38.0"/><text x="30" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][1]" class="scriba-state-idle"><rect x="63.0" y="85.0" width="58.0" height="38.0"/><text x="92" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][2]" class="scriba-state-idle"><rect x="125.0" y="85.0" width="58.0" height="38.0"/><text x="154" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][3]" class="scriba-state-idle"><rect x="187.0" y="85.0" width="58.0" height="38.0"/><text x="216" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][4]" class="scriba-state-idle"><rect x="249.0" y="85.0" width="58.0" height="38.0"/><text x="278" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][0]" class="scriba-state-idle"><rect x="1.0" y="127.0" width="58.0" height="38.0"/><text x="30" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][1]" class="scriba-state-idle"><rect x="63.0" y="127.0" width="58.0" height="38.0"/><text x="92" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][2]" class="scriba-state-idle"><rect x="125.0" y="127.0" width="58.0" height="38.0"/><text x="154" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][3]" class="scriba-state-idle"><rect x="187.0" y="127.0" width="58.0" height="38.0"/><text x="216" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][4]" class="scriba-state-idle"><rect x="249.0" y="127.0" width="58.0" height="38.0"/><text x="278" y="146" fill="#11181c" style="font-size:14px">.</text></g><text class="scriba-primitive-label" x="154" y="181" fill="#687076" style="text-anchor:middle;dominant-baseline:central">toy grid</text></g></g></g><g transform="translate(12,239)"><g data-primitive="variablewatch" data-shape="state"><clipPath id="vw-clip-state"><rect x="4" y="4" width="317" height="160" rx="4"/></clipPath><g clip-path="url(#vw-clip-state)"><g data-target="state.var[candidate]" class="scriba-state-idle"><rect x="136" y="4" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">candidate</text><text x="228" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">start</text></g><g data-target="state.var[player_arrival]" class="scriba-state-idle"><rect x="136" y="44" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">player_arrival</text><text x="228" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">0</text></g><g data-target="state.var[monster_arrival]" class="scriba-state-idle"><rect x="136" y="84" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">monster_arrival</text><text x="228" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">0 at M</text></g><g data-target="state.var[safe]" class="scriba-state-idle"><rect x="136" y="124" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">safe</text><text x="228" y="144" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">use monster BFS first</text></g></g><rect x="4" y="4" width="317" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="136" y1="4" x2="136" y2="164" stroke="#dfe3e6" stroke-width="1"/><line x1="4" y1="44" x2="321" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="84" x2="321" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="124" x2="321" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><text class="scriba-primitive-label" x="162" y="183" fill="#687076" style="text-anchor:middle;dominant-baseline:central">Safety check</text></g></g></svg></div><p class="scriba-narration" id="monsters-safety-frontier-print-1-narration">First compute the earliest monster arrival time for every cell. Then run the player's BFS, but only through cells where the player arrives strictly earlier than the monsters.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">2 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>The top boundary cell looks attractive because it is one move away, but it fails the strict test. Arriving at the same time as the monster frontier is already unsafe.</title><g transform="translate(20,12)"><g data-primitive="grid" data-shape="maze"><g transform="translate(0, 20)"><g data-target="maze.cell[0][0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][1]" class="scriba-state-error"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][2]" class="scriba-state-error"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">M</text></g><g data-target="maze.cell[0][3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][0]" class="scriba-state-idle"><rect x="1.0" y="43.0" width="58.0" height="38.0"/><text x="30" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][1]" class="scriba-state-current"><rect x="63.0" y="43.0" width="58.0" height="38.0"/><text x="92" y="62" fill="#ffffff" style="font-size:14px">A</text></g><g data-target="maze.cell[1][2]" class="scriba-state-idle"><rect x="125.0" y="43.0" width="58.0" height="38.0"/><text x="154" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][3]" class="scriba-state-idle"><rect x="187.0" y="43.0" width="58.0" height="38.0"/><text x="216" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][4]" class="scriba-state-idle"><rect x="249.0" y="43.0" width="58.0" height="38.0"/><text x="278" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][0]" class="scriba-state-idle"><rect x="1.0" y="85.0" width="58.0" height="38.0"/><text x="30" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][1]" class="scriba-state-idle"><rect x="63.0" y="85.0" width="58.0" height="38.0"/><text x="92" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][2]" class="scriba-state-idle"><rect x="125.0" y="85.0" width="58.0" height="38.0"/><text x="154" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][3]" class="scriba-state-idle"><rect x="187.0" y="85.0" width="58.0" height="38.0"/><text x="216" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][4]" class="scriba-state-idle"><rect x="249.0" y="85.0" width="58.0" height="38.0"/><text x="278" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][0]" class="scriba-state-idle"><rect x="1.0" y="127.0" width="58.0" height="38.0"/><text x="30" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][1]" class="scriba-state-idle"><rect x="63.0" y="127.0" width="58.0" height="38.0"/><text x="92" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][2]" class="scriba-state-idle"><rect x="125.0" y="127.0" width="58.0" height="38.0"/><text x="154" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][3]" class="scriba-state-idle"><rect x="187.0" y="127.0" width="58.0" height="38.0"/><text x="216" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][4]" class="scriba-state-idle"><rect x="249.0" y="127.0" width="58.0" height="38.0"/><text x="278" y="146" fill="#11181c" style="font-size:14px">.</text></g><text class="scriba-primitive-label" x="154" y="181" fill="#687076" style="text-anchor:middle;dominant-baseline:central">toy grid</text><g class="scriba-annotation scriba-annotation-error" data-annotation="maze.cell[0][1]-maze.cell[1][1]" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[0][1]: 1 not&lt; 1" aria-description="$1 \not&lt; 1$"><path d="M92,62 C105,48 105,34 98.1,26.6" stroke="#c6282d" stroke-width="2.0" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[0][1]: $1 \not&lt; 1$</title></path><polygon points="92.0,20.0 102.5,23.9 95.1,30.7" fill="#c6282d"/><rect x="93" y="-18" width="53" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#c6282d" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="101" cy="41" r="2" fill="#c6282d" opacity="0.6"/><polyline points="101,41 115,1" fill="none" stroke="#c6282d" stroke-width="0.75" opacity="0.6"/><foreignObject x="93" y="-18" width="53" height="19" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#c6282d;font-weight:600;font-size:11px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;̸</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1 \not&lt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mord vbox"><span class="thinbox"><span class="rlap"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="inner"><span class="mord"><span class="mrel"></span></span></span><span class="fix"></span></span></span></span></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></div></foreignObject></g></g></g></g><g transform="translate(12,239)"><g data-primitive="variablewatch" data-shape="state"><clipPath id="vw-clip-state"><rect x="4" y="4" width="317" height="160" rx="4"/></clipPath><g clip-path="url(#vw-clip-state)"><g data-target="state.var[candidate]" class="scriba-state-idle"><rect x="136" y="4" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">candidate</text><text x="228" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">(0,1)</text></g><g data-target="state.var[player_arrival]" class="scriba-state-idle"><rect x="136" y="44" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">player_arrival</text><text x="228" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="state.var[monster_arrival]" class="scriba-state-idle"><rect x="136" y="84" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">monster_arrival</text><text x="228" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="state.var[safe]" class="scriba-state-idle"><rect x="136" y="124" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">safe</text><text x="228" y="144" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">no</text></g></g><rect x="4" y="4" width="317" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="136" y1="4" x2="136" y2="164" stroke="#dfe3e6" stroke-width="1"/><line x1="4" y1="44" x2="321" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="84" x2="321" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="124" x2="321" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><text class="scriba-primitive-label" x="162" y="183" fill="#687076" style="text-anchor:middle;dominant-baseline:central">Safety check</text></g></g></svg></div><p class="scriba-narration" id="monsters-safety-frontier-print-2-narration">The top boundary cell looks attractive because it is one move away, but it fails the strict test. Arriving at the same time as the monster frontier is already unsafe.</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">3 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-print-3-narration" xmlns="http://www.w3.org/2000/svg"><title>The left boundary cell survives. The player reaches it in one minute, while the earliest monster arrives only in three. This move stays inside the safe subgraph.</title><g transform="translate(20,12)"><g data-primitive="grid" data-shape="maze"><g transform="translate(0, 20)"><g data-target="maze.cell[0][0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][1]" class="scriba-state-error"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][2]" class="scriba-state-error"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">M</text></g><g data-target="maze.cell[0][3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][0]" class="scriba-state-current"><rect x="1.0" y="43.0" width="58.0" height="38.0"/><text x="30" y="62" fill="#ffffff" style="font-size:14px">.</text></g><g data-target="maze.cell[1][1]" class="scriba-state-current"><rect x="63.0" y="43.0" width="58.0" height="38.0"/><text x="92" y="62" fill="#ffffff" style="font-size:14px">A</text></g><g data-target="maze.cell[1][2]" class="scriba-state-idle"><rect x="125.0" y="43.0" width="58.0" height="38.0"/><text x="154" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][3]" class="scriba-state-idle"><rect x="187.0" y="43.0" width="58.0" height="38.0"/><text x="216" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][4]" class="scriba-state-idle"><rect x="249.0" y="43.0" width="58.0" height="38.0"/><text x="278" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][0]" class="scriba-state-idle"><rect x="1.0" y="85.0" width="58.0" height="38.0"/><text x="30" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][1]" class="scriba-state-idle"><rect x="63.0" y="85.0" width="58.0" height="38.0"/><text x="92" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][2]" class="scriba-state-idle"><rect x="125.0" y="85.0" width="58.0" height="38.0"/><text x="154" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][3]" class="scriba-state-idle"><rect x="187.0" y="85.0" width="58.0" height="38.0"/><text x="216" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][4]" class="scriba-state-idle"><rect x="249.0" y="85.0" width="58.0" height="38.0"/><text x="278" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][0]" class="scriba-state-idle"><rect x="1.0" y="127.0" width="58.0" height="38.0"/><text x="30" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][1]" class="scriba-state-idle"><rect x="63.0" y="127.0" width="58.0" height="38.0"/><text x="92" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][2]" class="scriba-state-idle"><rect x="125.0" y="127.0" width="58.0" height="38.0"/><text x="154" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][3]" class="scriba-state-idle"><rect x="187.0" y="127.0" width="58.0" height="38.0"/><text x="216" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][4]" class="scriba-state-idle"><rect x="249.0" y="127.0" width="58.0" height="38.0"/><text x="278" y="146" fill="#11181c" style="font-size:14px">.</text></g><text class="scriba-primitive-label" x="154" y="181" fill="#687076" style="text-anchor:middle;dominant-baseline:central">toy grid</text><g class="scriba-annotation scriba-annotation-error" data-annotation="maze.cell[0][1]-maze.cell[1][1]" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[0][1]: 1 not&lt; 1" aria-description="$1 \not&lt; 1$"><path d="M92,62 C105,48 105,34 98.1,26.6" stroke="#c6282d" stroke-width="2.0" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[0][1]: $1 \not&lt; 1$</title></path><polygon points="92.0,20.0 102.5,23.9 95.1,30.7" fill="#c6282d"/><rect x="93" y="-18" width="53" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#c6282d" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="101" cy="41" r="2" fill="#c6282d" opacity="0.6"/><polyline points="101,41 115,1" fill="none" stroke="#c6282d" stroke-width="0.75" opacity="0.6"/><foreignObject x="93" y="-18" width="53" height="19" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#c6282d;font-weight:600;font-size:11px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;̸</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1 \not&lt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mord vbox"><span class="thinbox"><span class="rlap"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="inner"><span class="mord"><span class="mrel"></span></span></span><span class="fix"></span></span></span></span></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></div></foreignObject></g><g class="scriba-annotation scriba-annotation-good" data-annotation="maze.cell[1][0]-maze.cell[1][1]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[1][0]: 1 &lt; 3" aria-description="$1 &lt; 3$"><path d="M92,62 C71,48 50,48 37.4,56.8" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[1][0]: $1 &lt; 3$</title></path><polygon points="30.0,62.0 35.3,52.2 41.1,60.4" fill="#027a55"/><rect x="32" y="-19" width="57" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="60" cy="51" r="2" fill="#027a55" opacity="0.6"/><polyline points="60,51 60,1" fill="none" stroke="#027a55" stroke-width="0.75" opacity="0.6"/><foreignObject x="32" y="-19" width="57" height="20" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#027a55;font-weight:700;font-size:12px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">1 &lt; 3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span></div></foreignObject></g></g></g></g><g transform="translate(12,239)"><g data-primitive="variablewatch" data-shape="state"><clipPath id="vw-clip-state"><rect x="4" y="4" width="317" height="160" rx="4"/></clipPath><g clip-path="url(#vw-clip-state)"><g data-target="state.var[candidate]" class="scriba-state-idle"><rect x="136" y="4" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">candidate</text><text x="228" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">(1,0)</text></g><g data-target="state.var[player_arrival]" class="scriba-state-idle"><rect x="136" y="44" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">player_arrival</text><text x="228" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="state.var[monster_arrival]" class="scriba-state-idle"><rect x="136" y="84" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">monster_arrival</text><text x="228" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">3</text></g><g data-target="state.var[safe]" class="scriba-state-idle"><rect x="136" y="124" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">safe</text><text x="228" y="144" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">yes</text></g></g><rect x="4" y="4" width="317" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="136" y1="4" x2="136" y2="164" stroke="#dfe3e6" stroke-width="1"/><line x1="4" y1="44" x2="321" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="84" x2="321" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="124" x2="321" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><text class="scriba-primitive-label" x="162" y="183" fill="#687076" style="text-anchor:middle;dominant-baseline:central">Safety check</text></g></g></svg></div><p class="scriba-narration" id="monsters-safety-frontier-print-3-narration">The left boundary cell survives. The player reaches it in one minute, while the earliest monster arrives only in three. This move stays inside the safe subgraph.</p></div><div class="scriba-print-frame" data-step="4"><span class="scriba-step-label">4 / 4</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 349 440" style="max-width:calc(349px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="monsters-safety-frontier-print-4-narration" xmlns="http://www.w3.org/2000/svg"><title>Once the player&#x27;s BFS reaches a safe boundary cell, it can stop. Here the reconstructed escape path is just  L . The second BFS is really BFS on the original grid after unsafe cells have been filtered out by the monster frontier.</title><g transform="translate(20,12)"><g data-primitive="grid" data-shape="maze"><g transform="translate(0, 20)"><g data-target="maze.cell[0][0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][1]" class="scriba-state-error"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][2]" class="scriba-state-error"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">M</text></g><g data-target="maze.cell[0][3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[0][4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][0]" class="scriba-state-path"><rect x="1.0" y="43.0" width="58.0" height="38.0"/><text x="30" y="62" fill="#5e6669" style="font-size:14px">.</text></g><g data-target="maze.cell[1][1]" class="scriba-state-path"><rect x="63.0" y="43.0" width="58.0" height="38.0"/><text x="92" y="62" fill="#5e6669" style="font-size:14px">A</text></g><g data-target="maze.cell[1][2]" class="scriba-state-idle"><rect x="125.0" y="43.0" width="58.0" height="38.0"/><text x="154" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][3]" class="scriba-state-idle"><rect x="187.0" y="43.0" width="58.0" height="38.0"/><text x="216" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[1][4]" class="scriba-state-idle"><rect x="249.0" y="43.0" width="58.0" height="38.0"/><text x="278" y="62" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][0]" class="scriba-state-idle"><rect x="1.0" y="85.0" width="58.0" height="38.0"/><text x="30" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][1]" class="scriba-state-idle"><rect x="63.0" y="85.0" width="58.0" height="38.0"/><text x="92" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][2]" class="scriba-state-idle"><rect x="125.0" y="85.0" width="58.0" height="38.0"/><text x="154" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][3]" class="scriba-state-idle"><rect x="187.0" y="85.0" width="58.0" height="38.0"/><text x="216" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[2][4]" class="scriba-state-idle"><rect x="249.0" y="85.0" width="58.0" height="38.0"/><text x="278" y="104" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][0]" class="scriba-state-idle"><rect x="1.0" y="127.0" width="58.0" height="38.0"/><text x="30" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][1]" class="scriba-state-idle"><rect x="63.0" y="127.0" width="58.0" height="38.0"/><text x="92" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][2]" class="scriba-state-idle"><rect x="125.0" y="127.0" width="58.0" height="38.0"/><text x="154" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][3]" class="scriba-state-idle"><rect x="187.0" y="127.0" width="58.0" height="38.0"/><text x="216" y="146" fill="#11181c" style="font-size:14px">.</text></g><g data-target="maze.cell[3][4]" class="scriba-state-idle"><rect x="249.0" y="127.0" width="58.0" height="38.0"/><text x="278" y="146" fill="#11181c" style="font-size:14px">.</text></g><text class="scriba-primitive-label" x="154" y="181" fill="#687076" style="text-anchor:middle;dominant-baseline:central">toy grid</text><g class="scriba-annotation scriba-annotation-error" data-annotation="maze.cell[0][1]-maze.cell[1][1]" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[0][1]: 1 not&lt; 1" aria-description="$1 \not&lt; 1$"><path d="M92,62 C105,48 105,34 98.1,26.6" stroke="#c6282d" stroke-width="2.0" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[0][1]: $1 \not&lt; 1$</title></path><polygon points="92.0,20.0 102.5,23.9 95.1,30.7" fill="#c6282d"/><rect x="93" y="-18" width="53" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#c6282d" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="101" cy="41" r="2" fill="#c6282d" opacity="0.6"/><polyline points="101,41 115,1" fill="none" stroke="#c6282d" stroke-width="0.75" opacity="0.6"/><foreignObject x="93" y="-18" width="53" height="19" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#c6282d;font-weight:600;font-size:11px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;̸</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1 \not&lt; 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel"><span class="mord vbox"><span class="thinbox"><span class="rlap"><span class="strut" style="height:0.8889em;vertical-align:-0.1944em;"></span><span class="inner"><span class="mord"><span class="mrel"></span></span></span><span class="fix"></span></span></span></span></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span></span></div></foreignObject></g><g class="scriba-annotation scriba-annotation-good" data-annotation="maze.cell[1][0]-maze.cell[1][1]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from maze.cell[1][1] to maze.cell[1][0]: 1 &lt; 3" aria-description="$1 &lt; 3$"><path d="M92,62 C71,48 50,48 37.4,56.8" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from maze.cell[1][1] to maze.cell[1][0]: $1 &lt; 3$</title></path><polygon points="30.0,62.0 35.3,52.2 41.1,60.4" fill="#027a55"/><rect x="32" y="-19" width="57" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><circle cx="60" cy="51" r="2" fill="#027a55" opacity="0.6"/><polyline points="60,51 60,1" fill="none" stroke="#027a55" stroke-width="0.75" opacity="0.6"/><foreignObject x="32" y="-19" width="57" height="20" class="scriba-annot-fobj"><div xmlns="http://www.w3.org/1999/xhtml" class="scriba-annot-label" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:pre-wrap;gap:0.25em;color:#027a55;font-weight:700;font-size:12px;text-shadow:0 0 2px #fff,0 0 2px #fff;"><span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mo>&lt;</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">1 &lt; 3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6835em;vertical-align:-0.0391em;"></span><span class="mord">1</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&lt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span></div></foreignObject></g></g></g></g><g transform="translate(12,239)"><g data-primitive="variablewatch" data-shape="state"><clipPath id="vw-clip-state"><rect x="4" y="4" width="317" height="160" rx="4"/></clipPath><g clip-path="url(#vw-clip-state)"><g data-target="state.var[candidate]" class="scriba-state-idle"><rect x="136" y="4" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="24" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">candidate</text><text x="228" y="24" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">boundary</text></g><g data-target="state.var[player_arrival]" class="scriba-state-idle"><rect x="136" y="44" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="64" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">player_arrival</text><text x="228" y="64" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">1</text></g><g data-target="state.var[monster_arrival]" class="scriba-state-idle"><rect x="136" y="84" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="104" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">monster_arrival</text><text x="228" y="104" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">3</text></g><g data-target="state.var[safe]" class="scriba-state-idle"><rect x="136" y="124" width="185" height="40" fill="#f8f9fa" stroke="none"/><text x="70" y="144" fill="#687076" style="text-anchor:middle;dominant-baseline:central;font-size:12px">safe</text><text x="228" y="144" fill="#11181c" style="text-anchor:middle;dominant-baseline:central;font-size:13px">stop and reconstruct</text></g></g><rect x="4" y="4" width="317" height="160" fill="none" stroke="#dfe3e6" stroke-width="1" rx="4"/><line x1="136" y1="4" x2="136" y2="164" stroke="#dfe3e6" stroke-width="1"/><line x1="4" y1="44" x2="321" y2="44" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="84" x2="321" y2="84" stroke="#dfe3e6" stroke-width="0.5"/><line x1="4" y1="124" x2="321" y2="124" stroke="#dfe3e6" stroke-width="0.5"/><text class="scriba-primitive-label" x="162" y="183" fill="#687076" style="text-anchor:middle;dominant-baseline:central">Safety check</text></g></g></svg></div><p class="scriba-narration" id="monsters-safety-frontier-print-4-narration">Once the player's BFS reaches a safe boundary cell, it can stop. Here the reconstructed escape path is just <code class="scriba-tex-code-inline">L</code>. The second BFS is really BFS on the original grid after unsafe cells have been filtered out by the monster frontier.</p></div></div></div>
 <script>(function(){
@@ -2204,7 +2750,7 @@ down moves stay safe.</p>
   show(0,false);
 })();</script>
 
-<h2 id="proof-sketch" class="scriba-tex-heading scriba-tex-heading-2">Proof Sketch</h2><p class="scriba-tex-paragraph">There are two claims to prove.</p><p class="scriba-tex-paragraph"><strong>1. Monster BFS computes the correct danger time.</strong></p><p class="scriba-tex-paragraph">Start the BFS queue with all monster cells at distance <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn></mrow><annotation encoding="application/x-tex">0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>. Because every move
+<div class="scriba-tex-content"><h2 id="proof-sketch" class="scriba-tex-heading scriba-tex-heading-2">Proof Sketch</h2><p class="scriba-tex-paragraph">There are two claims to prove.</p><p class="scriba-tex-paragraph"><strong>1. Monster BFS computes the correct danger time.</strong></p><p class="scriba-tex-paragraph">Start the BFS queue with all monster cells at distance <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0</mn></mrow><annotation encoding="application/x-tex">0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>. Because every move
 costs one minute, standard multi-source BFS computes the shortest distance from
 the set of monsters to every walkable cell. Therefore <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi><mi>o</mi><mi>n</mi><mi>s</mi><mi>t</mi><mi>e</mi><mi>r</mi><mi mathvariant="normal">_</mi><mi>d</mi><mi>i</mi><mi>s</mi><mi>t</mi><mo stretchy="false">[</mo><mi>v</mi><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">monster\_dist[v]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1.06em;vertical-align:-0.31em;"></span><span class="mord mathnormal">m</span><span class="mord mathnormal">o</span><span class="mord mathnormal">n</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mord mathnormal" style="margin-right:0.02778em;">er</span><span class="mord" style="margin-right:0.02778em;">_</span><span class="mord mathnormal">d</span><span class="mord mathnormal">i</span><span class="mord mathnormal">s</span><span class="mord mathnormal">t</span><span class="mopen">[</span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span><span class="mclose">]</span></span></span></span></span> is the
 earliest possible time when any monster can stand on <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>v</mi></mrow><annotation encoding="application/x-tex">v</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.03588em;">v</span></span></span></span></span>.</p><p class="scriba-tex-paragraph"><strong>2. Player BFS finds a valid escape if and only if one exists.</strong></p><p class="scriba-tex-paragraph">We maintain the Safety Frontier Invariant:
@@ -2469,7 +3015,7 @@ int main() {
 <span class="tok-w">    </span><span class="tok-k">return</span><span class="tok-w"> </span><span class="tok-mi">0</span><span class="tok-p">;</span>
 <span class="tok-p">}</span>
 </pre></div>
-</div>
+</div></div>
 <script>
 document.addEventListener('click',function(e){
   var btn=e.target.closest('[data-scriba-action="theme-toggle"]');

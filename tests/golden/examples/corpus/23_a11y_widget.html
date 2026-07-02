@@ -1335,6 +1335,552 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] body { background: #151718; color: #ecedee; }
 [data-theme="dark"] .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
 
+/* Scriba TeX Content Styles
+ * Scoped under .scriba-tex-content
+ * Uses --scriba-* CSS variables — see :root block below for defaults.
+ * Dark mode via [data-theme="dark"] ancestor selector.
+ */
+
+/* ============================================
+   Design tokens
+   ============================================ */
+
+:root {
+  /* Text and background — β slate */
+  --scriba-fg: #11181c;
+  --scriba-fg-muted: #687076;
+  --scriba-bg: #ffffff;
+  --scriba-bg-code: #f8f9fa;
+  --scriba-bg-inline-code: rgba(17, 24, 28, 0.08);
+
+  /* Borders and lines */
+  --scriba-border: #dfe3e6;
+  --scriba-border-strong: #889096;
+
+  /* Links — β blue */
+  --scriba-link: #0b68cb;
+  --scriba-link-hover: #0954a5;
+
+  /* Errors — β red */
+  --scriba-error: #e5484d;
+  --scriba-error-bg: #feecee;
+
+  /* Epigraph */
+  --scriba-epigraph-border: #687076;
+
+  /* Copy button */
+  --scriba-copy-btn-bg: #f8f9fa;
+  --scriba-copy-btn-fg: #11181c;
+  --scriba-copy-btn-bg-hover: #e6e8eb;
+  --scriba-copy-btn-fg-hover: #0b68cb;
+  --scriba-copy-btn-bg-copied: #e4f6ea;
+  --scriba-copy-btn-fg-copied: #2a7e3b;
+
+  /* Diagram */
+  --scriba-diagram-dim-opacity: 0.2;
+  --scriba-diagram-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --scriba-diagram-active-fill: #0b68cb;
+  --scriba-diagram-active-stroke: #0b68cb;
+
+  /* Geometry and typography */
+  --scriba-radius: 6px;
+  --scriba-code-font: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+
+  /* TeX size commands */
+  --scriba-font-size-tiny: 0.625em;
+  --scriba-font-size-scriptsize: 0.75em;
+  --scriba-font-size-footnotesize: 0.85em;
+  --scriba-font-size-small: 0.9em;
+  --scriba-font-size-normalsize: 1em;
+  --scriba-font-size-large: 1.2em;
+  --scriba-font-size-Large: 1.4em;
+  --scriba-font-size-LARGE: 1.6em;
+  --scriba-font-size-huge: 1.9em;
+  --scriba-font-size-Huge: 2.3em;
+}
+
+[data-theme="dark"] {
+  /* β slate dark */
+  --scriba-fg: #ecedee;
+  --scriba-fg-muted: #9ba1a6;
+  --scriba-bg: #151718;
+  --scriba-bg-code: #1a1d1e;
+  --scriba-bg-inline-code: rgba(236, 237, 238, 0.08);
+  --scriba-border: #313538;
+  --scriba-border-strong: #6e767d;
+  --scriba-link: #70b8ff;
+  --scriba-link-hover: #a2ceff;
+  --scriba-error: #ff6369;
+  --scriba-error-bg: rgba(229, 72, 77, 0.15);
+  --scriba-epigraph-border: #9ba1a6;
+  --scriba-copy-btn-bg: #202425;
+  --scriba-copy-btn-fg: #ecedee;
+  --scriba-copy-btn-bg-hover: #2b2f31;
+  --scriba-copy-btn-fg-hover: #70b8ff;
+  --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
+  --scriba-copy-btn-fg-copied: #65ba74;
+  --scriba-diagram-active-fill: #70b8ff;
+  --scriba-diagram-active-stroke: #70b8ff;
+}
+
+/* ============================================
+   Typography — container
+   ============================================ */
+
+.scriba-tex-content {
+  color: var(--scriba-fg);
+  line-height: 1.65;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  font-size: inherit;
+}
+
+.scriba-tex-content strong,
+.scriba-tex-content b {
+  font-weight: 600;
+}
+
+.scriba-tex-content em,
+.scriba-tex-content i {
+  font-style: italic;
+}
+
+.scriba-tex-content .scriba-tex-smallcaps {
+  font-variant-caps: small-caps;
+}
+
+.scriba-tex-content .scriba-tex-paragraph {
+  margin: 0 0 0.75rem 0;
+}
+
+.scriba-tex-content .scriba-tex-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   Math (KaTeX)
+   KaTeX owns .katex / .katex-display globally —
+   these rules remain unscoped to avoid double-scoping issues.
+   ============================================ */
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+  margin: 1rem 0;
+}
+
+.katex-display > .katex {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: inherit;
+}
+
+.katex-display > .katex > .katex-html {
+  white-space: normal;
+}
+
+.katex {
+  font-size: 1em;
+}
+
+.katex-error {
+  color: var(--scriba-error);
+  background: var(--scriba-error-bg);
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+}
+
+[data-theme="dark"] .katex {
+  color: var(--scriba-fg);
+}
+
+[data-theme="dark"] .katex .mord,
+[data-theme="dark"] .katex .mop,
+[data-theme="dark"] .katex .mrel,
+[data-theme="dark"] .katex .mbin,
+[data-theme="dark"] .katex .minner,
+[data-theme="dark"] .katex .mpunct {
+  color: inherit;
+}
+
+/* Scriba math wrappers */
+.scriba-tex-content .scriba-tex-math-inline {
+  display: inline;
+}
+
+.scriba-tex-content .scriba-tex-math-display,
+.scriba-tex-content .scriba-tex-math-display .katex-display,
+.scriba-tex-content .scriba-tex-math-display .katex {
+  display: block;
+  text-align: center;
+}
+
+.scriba-tex-content .scriba-tex-math-display {
+  margin: 1rem 0;
+}
+
+.scriba-tex-content .scriba-tex-math-error {
+  color: var(--scriba-error);
+  background: var(--scriba-error-bg);
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+  font-family: var(--scriba-code-font);
+  font-size: 0.9em;
+}
+
+.scriba-tex-content .katex-fallback {
+  color: var(--scriba-error);
+  font-family: var(--scriba-code-font);
+}
+
+/* ============================================
+   Headings
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-heading {
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--scriba-fg);
+  scroll-margin-top: 4.5rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-2 {
+  font-size: 1.25rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-3 {
+  font-size: 1.125rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-4 {
+  font-size: 1rem;
+}
+
+/* ============================================
+   Lists
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-list {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.scriba-tex-content .scriba-tex-list-unordered {
+  list-style: disc;
+}
+
+.scriba-tex-content .scriba-tex-list-ordered {
+  list-style: decimal;
+}
+
+.scriba-tex-content .scriba-tex-list-item {
+  margin: 0.125rem 0;
+}
+
+/* ============================================
+   Tables
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-table {
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  max-width: 100%;
+}
+
+.scriba-tex-content .scriba-tex-table-row {
+  /* no-op wrapper */
+}
+
+.scriba-tex-content .scriba-tex-table-cell {
+  padding: 0.375rem 0.625rem;
+  border-color: var(--scriba-border);
+  vertical-align: middle;
+}
+
+.scriba-tex-content .scriba-tex-align-left {
+  text-align: left;
+}
+
+.scriba-tex-content .scriba-tex-align-center {
+  text-align: center;
+}
+
+.scriba-tex-content .scriba-tex-align-right {
+  text-align: right;
+}
+
+.scriba-tex-content .scriba-tex-border-top {
+  border-top: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-bottom {
+  border-bottom: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-left {
+  border-left: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-right {
+  border-right: 1px solid var(--scriba-border);
+}
+
+/* ============================================
+   Images
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-image {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
+.scriba-tex-content .scriba-tex-image-missing {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border: 1px dashed var(--scriba-border-strong);
+  color: var(--scriba-fg-muted);
+  font-family: var(--scriba-code-font);
+  font-size: 0.85em;
+  border-radius: var(--scriba-radius);
+}
+
+/* ============================================
+   Code — inline and blocks, plus copy button
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-code-inline {
+  font-family: var(--scriba-code-font);
+  font-size: 0.9em;
+  background: var(--scriba-bg-inline-code);
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  color: var(--scriba-fg);
+}
+
+.scriba-tex-content .scriba-tex-code-block {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: var(--scriba-radius);
+  background: var(--scriba-bg-code);
+  border: 1px solid var(--scriba-border);
+  overflow: hidden;
+}
+
+.scriba-tex-content .scriba-tex-code-block pre {
+  margin: 0;
+  padding: 0.75rem;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: var(--scriba-code-font);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  background: transparent;
+  color: var(--scriba-fg);
+}
+
+.scriba-tex-content .scriba-tex-code-block pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+}
+
+.scriba-tex-content .scriba-tex-code-plain {
+  font-family: var(--scriba-code-font);
+}
+
+.scriba-tex-content .scriba-tex-code-block .highlight {
+  background: transparent;
+  border-radius: var(--scriba-radius);
+}
+
+.scriba-tex-content .scriba-tex-code-block .highlight pre {
+  background: transparent;
+}
+
+.scriba-tex-content .scriba-tex-copy-btn {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 26px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--scriba-border);
+  border-radius: 4px;
+  background: var(--scriba-copy-btn-bg);
+  color: var(--scriba-copy-btn-fg);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.scriba-tex-content .scriba-tex-code-block:hover .scriba-tex-copy-btn,
+.scriba-tex-content .scriba-tex-copy-btn:focus-visible {
+  opacity: 1;
+}
+
+.scriba-tex-content .scriba-tex-copy-btn:hover {
+  background: var(--scriba-copy-btn-bg-hover);
+  color: var(--scriba-copy-btn-fg-hover);
+}
+
+.scriba-tex-content .scriba-tex-copy-btn.copied {
+  opacity: 1;
+  background: var(--scriba-copy-btn-bg-copied);
+  color: var(--scriba-copy-btn-fg-copied);
+}
+
+/* ============================================
+   Epigraph
+   ============================================ */
+
+/* Epigraph follows the LaTeX `epigraph` package convention: a narrow
+   block floated to the right margin with the attribution right-aligned
+   and a thin rule between quote and author. */
+.scriba-tex-content .scriba-tex-epigraph {
+  float: right;
+  clear: right;
+  width: 45%;
+  max-width: 28rem;
+  margin: 0.5rem 0 1rem 1.5rem;
+  padding: 0.25rem 0;
+  font-style: italic;
+  color: var(--scriba-fg);
+  text-align: right;
+}
+
+.scriba-tex-content .scriba-tex-epigraph-quote {
+  margin: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--scriba-epigraph-border);
+}
+
+.scriba-tex-content .scriba-tex-epigraph-attribution {
+  margin-top: 0.25rem;
+  color: var(--scriba-fg-muted);
+  font-style: normal;
+  font-size: 0.9em;
+}
+
+.scriba-tex-content .scriba-tex-epigraph-attribution::before {
+  content: "— ";
+}
+
+/* Make sure following content clears the floated epigraph so it doesn't
+   wrap awkwardly when the epigraph is the last thing in a section. */
+.scriba-tex-content .scriba-tex-epigraph + * {
+  clear: both;
+}
+
+/* ============================================
+   Links
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-link {
+  color: var(--scriba-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.scriba-tex-content .scriba-tex-link:hover {
+  color: var(--scriba-link-hover);
+}
+
+.scriba-tex-content .scriba-tex-link-disabled {
+  color: var(--scriba-fg-muted);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Size commands
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-size-tiny {
+  font-size: var(--scriba-font-size-tiny);
+}
+
+.scriba-tex-content .scriba-tex-size-scriptsize {
+  font-size: var(--scriba-font-size-scriptsize);
+}
+
+.scriba-tex-content .scriba-tex-size-footnotesize {
+  font-size: var(--scriba-font-size-footnotesize);
+}
+
+.scriba-tex-content .scriba-tex-size-small {
+  font-size: var(--scriba-font-size-small);
+}
+
+.scriba-tex-content .scriba-tex-size-normalsize {
+  font-size: var(--scriba-font-size-normalsize);
+}
+
+.scriba-tex-content .scriba-tex-size-large {
+  font-size: var(--scriba-font-size-large);
+}
+
+.scriba-tex-content .scriba-tex-size-Large {
+  font-size: var(--scriba-font-size-Large);
+}
+
+.scriba-tex-content .scriba-tex-size-LARGE {
+  font-size: var(--scriba-font-size-LARGE);
+}
+
+.scriba-tex-content .scriba-tex-size-huge {
+  font-size: var(--scriba-font-size-huge);
+}
+
+.scriba-tex-content .scriba-tex-size-Huge {
+  font-size: var(--scriba-font-size-Huge);
+}
+
+/* ============================================
+   Utility — center, Pygments wrapper
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-center {
+  text-align: center;
+}
+
+/* text-align: center only centers inline content. Block-level children
+   like <table> need margin auto to actually horizontally center. */
+.scriba-tex-content .scriba-tex-center > table,
+.scriba-tex-content .scriba-tex-center > .scriba-tex-table {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.scriba-tex-content .highlight {
+  background: var(--scriba-bg-code);
+  color: var(--scriba-fg);
+  border-radius: var(--scriba-radius);
+}
+
+.scriba-tex-content .highlight pre {
+  margin: 0;
+  background: transparent;
+}
+
 /* Scriba Pygments theme — One Light
  * Scoped under .scriba-tex-content .highlight
  * Uses Pygments `.tok-*` token class names.
@@ -1459,9 +2005,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 <body>
 <button class="theme-toggle" data-scriba-action="theme-toggle">Toggle theme</button>
 <h1>23_a11y_widget</h1>
-<p class="scriba-tex-paragraph">% Accessibility fix regression fixture (issue 23).
+<div class="scriba-tex-content"><p class="scriba-tex-paragraph">% Accessibility fix regression fixture (issue 23).
 % Verifies: role="region", aria-label, aria-hidden on progress dots,
-% substory arrow-key bubbling guard, and live prefers-reduced-motion.</p>
+% substory arrow-key bubbling guard, and live prefers-reduced-motion.</p></div>
 
 <div class="scriba-widget" id="a11y-widget" tabindex="0" data-scriba-speed="1" role="region" aria-label="Accessibility test animation"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter" aria-atomic="true">1 / 3</span><button class="scriba-btn-next" aria-label="Next step">&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="a11y-widget-narration" aria-live="polite">Step 1: highlight the first element.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 208 64" style="max-width:calc(208px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="a11y-widget-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Step 1: highlight the first element.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-current"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#ffffff" style="font-size:14px">1</text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">2</text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">3</text></g></g></g></svg></div><p class="scriba-narration" id="a11y-widget-print-1-narration">Step 1: highlight the first element.</p><div class="scriba-substory" data-substory-id="substory1"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 146 64" style="max-width:calc(146px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="a11y-widget-frame-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Sub-step 1: inspect left sub-element.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="sub"><g data-target="sub.cell[0]" class="scriba-state-highlight"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#0b68cb" style="font-size:14px">1</text></g><g data-target="sub.cell[1]" class="scriba-state-done"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">2</text></g></g></g></svg></div><p class="scriba-narration">Sub-step 1: inspect left sub-element.</p></div><div class="scriba-substory" data-substory-id="substory1"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 146 64" style="max-width:calc(146px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="a11y-widget-frame-2-narration" xmlns="http://www.w3.org/2000/svg"><title>Sub-step 2: sub-computation complete.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="sub"><g data-target="sub.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">1</text></g><g data-target="sub.cell[1]" class="scriba-state-done"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">2</text></g></g></g></svg></div><p class="scriba-narration">Sub-step 2: sub-computation complete.</p></div></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">2 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 208 64" style="max-width:calc(208px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="a11y-widget-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>Step 2: element 0 processed.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">1</text></g><g data-target="a.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">2</text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">3</text></g></g></g></svg></div><p class="scriba-narration" id="a11y-widget-print-2-narration">Step 2: element 0 processed.</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">3 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 208 64" style="max-width:calc(208px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="a11y-widget-print-3-narration" xmlns="http://www.w3.org/2000/svg"><title>Step 3: highlight the second element.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="a"><g data-target="a.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">1</text></g><g data-target="a.cell[1]" class="scriba-state-current"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#ffffff" style="font-size:14px">2</text></g><g data-target="a.cell[2]" class="scriba-state-idle"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">3</text></g></g></g></svg></div><p class="scriba-narration" id="a11y-widget-print-3-narration">Step 3: highlight the second element.</p></div></div></div>
 <script>(function(){

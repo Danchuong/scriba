@@ -1335,6 +1335,552 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] body { background: #151718; color: #ecedee; }
 [data-theme="dark"] .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
 
+/* Scriba TeX Content Styles
+ * Scoped under .scriba-tex-content
+ * Uses --scriba-* CSS variables — see :root block below for defaults.
+ * Dark mode via [data-theme="dark"] ancestor selector.
+ */
+
+/* ============================================
+   Design tokens
+   ============================================ */
+
+:root {
+  /* Text and background — β slate */
+  --scriba-fg: #11181c;
+  --scriba-fg-muted: #687076;
+  --scriba-bg: #ffffff;
+  --scriba-bg-code: #f8f9fa;
+  --scriba-bg-inline-code: rgba(17, 24, 28, 0.08);
+
+  /* Borders and lines */
+  --scriba-border: #dfe3e6;
+  --scriba-border-strong: #889096;
+
+  /* Links — β blue */
+  --scriba-link: #0b68cb;
+  --scriba-link-hover: #0954a5;
+
+  /* Errors — β red */
+  --scriba-error: #e5484d;
+  --scriba-error-bg: #feecee;
+
+  /* Epigraph */
+  --scriba-epigraph-border: #687076;
+
+  /* Copy button */
+  --scriba-copy-btn-bg: #f8f9fa;
+  --scriba-copy-btn-fg: #11181c;
+  --scriba-copy-btn-bg-hover: #e6e8eb;
+  --scriba-copy-btn-fg-hover: #0b68cb;
+  --scriba-copy-btn-bg-copied: #e4f6ea;
+  --scriba-copy-btn-fg-copied: #2a7e3b;
+
+  /* Diagram */
+  --scriba-diagram-dim-opacity: 0.2;
+  --scriba-diagram-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  --scriba-diagram-active-fill: #0b68cb;
+  --scriba-diagram-active-stroke: #0b68cb;
+
+  /* Geometry and typography */
+  --scriba-radius: 6px;
+  --scriba-code-font: ui-monospace, "SF Mono", "Cascadia Mono", "Roboto Mono", monospace;
+
+  /* TeX size commands */
+  --scriba-font-size-tiny: 0.625em;
+  --scriba-font-size-scriptsize: 0.75em;
+  --scriba-font-size-footnotesize: 0.85em;
+  --scriba-font-size-small: 0.9em;
+  --scriba-font-size-normalsize: 1em;
+  --scriba-font-size-large: 1.2em;
+  --scriba-font-size-Large: 1.4em;
+  --scriba-font-size-LARGE: 1.6em;
+  --scriba-font-size-huge: 1.9em;
+  --scriba-font-size-Huge: 2.3em;
+}
+
+[data-theme="dark"] {
+  /* β slate dark */
+  --scriba-fg: #ecedee;
+  --scriba-fg-muted: #9ba1a6;
+  --scriba-bg: #151718;
+  --scriba-bg-code: #1a1d1e;
+  --scriba-bg-inline-code: rgba(236, 237, 238, 0.08);
+  --scriba-border: #313538;
+  --scriba-border-strong: #6e767d;
+  --scriba-link: #70b8ff;
+  --scriba-link-hover: #a2ceff;
+  --scriba-error: #ff6369;
+  --scriba-error-bg: rgba(229, 72, 77, 0.15);
+  --scriba-epigraph-border: #9ba1a6;
+  --scriba-copy-btn-bg: #202425;
+  --scriba-copy-btn-fg: #ecedee;
+  --scriba-copy-btn-bg-hover: #2b2f31;
+  --scriba-copy-btn-fg-hover: #70b8ff;
+  --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
+  --scriba-copy-btn-fg-copied: #65ba74;
+  --scriba-diagram-active-fill: #70b8ff;
+  --scriba-diagram-active-stroke: #70b8ff;
+}
+
+/* ============================================
+   Typography — container
+   ============================================ */
+
+.scriba-tex-content {
+  color: var(--scriba-fg);
+  line-height: 1.65;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  font-size: inherit;
+}
+
+.scriba-tex-content strong,
+.scriba-tex-content b {
+  font-weight: 600;
+}
+
+.scriba-tex-content em,
+.scriba-tex-content i {
+  font-style: italic;
+}
+
+.scriba-tex-content .scriba-tex-smallcaps {
+  font-variant-caps: small-caps;
+}
+
+.scriba-tex-content .scriba-tex-paragraph {
+  margin: 0 0 0.75rem 0;
+}
+
+.scriba-tex-content .scriba-tex-paragraph:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================
+   Math (KaTeX)
+   KaTeX owns .katex / .katex-display globally —
+   these rules remain unscoped to avoid double-scoping issues.
+   ============================================ */
+
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5rem 0;
+  margin: 1rem 0;
+}
+
+.katex-display > .katex {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  text-align: inherit;
+}
+
+.katex-display > .katex > .katex-html {
+  white-space: normal;
+}
+
+.katex {
+  font-size: 1em;
+}
+
+.katex-error {
+  color: var(--scriba-error);
+  background: var(--scriba-error-bg);
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+}
+
+[data-theme="dark"] .katex {
+  color: var(--scriba-fg);
+}
+
+[data-theme="dark"] .katex .mord,
+[data-theme="dark"] .katex .mop,
+[data-theme="dark"] .katex .mrel,
+[data-theme="dark"] .katex .mbin,
+[data-theme="dark"] .katex .minner,
+[data-theme="dark"] .katex .mpunct {
+  color: inherit;
+}
+
+/* Scriba math wrappers */
+.scriba-tex-content .scriba-tex-math-inline {
+  display: inline;
+}
+
+.scriba-tex-content .scriba-tex-math-display,
+.scriba-tex-content .scriba-tex-math-display .katex-display,
+.scriba-tex-content .scriba-tex-math-display .katex {
+  display: block;
+  text-align: center;
+}
+
+.scriba-tex-content .scriba-tex-math-display {
+  margin: 1rem 0;
+}
+
+.scriba-tex-content .scriba-tex-math-error {
+  color: var(--scriba-error);
+  background: var(--scriba-error-bg);
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+  font-family: var(--scriba-code-font);
+  font-size: 0.9em;
+}
+
+.scriba-tex-content .katex-fallback {
+  color: var(--scriba-error);
+  font-family: var(--scriba-code-font);
+}
+
+/* ============================================
+   Headings
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-heading {
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--scriba-fg);
+  scroll-margin-top: 4.5rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-2 {
+  font-size: 1.25rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-3 {
+  font-size: 1.125rem;
+}
+
+.scriba-tex-content .scriba-tex-heading-4 {
+  font-size: 1rem;
+}
+
+/* ============================================
+   Lists
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-list {
+  padding-left: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.scriba-tex-content .scriba-tex-list-unordered {
+  list-style: disc;
+}
+
+.scriba-tex-content .scriba-tex-list-ordered {
+  list-style: decimal;
+}
+
+.scriba-tex-content .scriba-tex-list-item {
+  margin: 0.125rem 0;
+}
+
+/* ============================================
+   Tables
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-table {
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+  max-width: 100%;
+}
+
+.scriba-tex-content .scriba-tex-table-row {
+  /* no-op wrapper */
+}
+
+.scriba-tex-content .scriba-tex-table-cell {
+  padding: 0.375rem 0.625rem;
+  border-color: var(--scriba-border);
+  vertical-align: middle;
+}
+
+.scriba-tex-content .scriba-tex-align-left {
+  text-align: left;
+}
+
+.scriba-tex-content .scriba-tex-align-center {
+  text-align: center;
+}
+
+.scriba-tex-content .scriba-tex-align-right {
+  text-align: right;
+}
+
+.scriba-tex-content .scriba-tex-border-top {
+  border-top: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-bottom {
+  border-bottom: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-left {
+  border-left: 1px solid var(--scriba-border);
+}
+
+.scriba-tex-content .scriba-tex-border-right {
+  border-right: 1px solid var(--scriba-border);
+}
+
+/* ============================================
+   Images
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-image {
+  max-width: 100%;
+  height: auto;
+  display: inline-block;
+}
+
+.scriba-tex-content .scriba-tex-image-missing {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border: 1px dashed var(--scriba-border-strong);
+  color: var(--scriba-fg-muted);
+  font-family: var(--scriba-code-font);
+  font-size: 0.85em;
+  border-radius: var(--scriba-radius);
+}
+
+/* ============================================
+   Code — inline and blocks, plus copy button
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-code-inline {
+  font-family: var(--scriba-code-font);
+  font-size: 0.9em;
+  background: var(--scriba-bg-inline-code);
+  padding: 0.125rem 0.25rem;
+  border-radius: 3px;
+  color: var(--scriba-fg);
+}
+
+.scriba-tex-content .scriba-tex-code-block {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: var(--scriba-radius);
+  background: var(--scriba-bg-code);
+  border: 1px solid var(--scriba-border);
+  overflow: hidden;
+}
+
+.scriba-tex-content .scriba-tex-code-block pre {
+  margin: 0;
+  padding: 0.75rem;
+  overflow-x: auto;
+  white-space: pre;
+  font-family: var(--scriba-code-font);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  background: transparent;
+  color: var(--scriba-fg);
+}
+
+.scriba-tex-content .scriba-tex-code-block pre code {
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  font-size: inherit;
+  font-family: inherit;
+  color: inherit;
+}
+
+.scriba-tex-content .scriba-tex-code-plain {
+  font-family: var(--scriba-code-font);
+}
+
+.scriba-tex-content .scriba-tex-code-block .highlight {
+  background: transparent;
+  border-radius: var(--scriba-radius);
+}
+
+.scriba-tex-content .scriba-tex-code-block .highlight pre {
+  background: transparent;
+}
+
+.scriba-tex-content .scriba-tex-copy-btn {
+  position: absolute;
+  top: 0.375rem;
+  right: 0.375rem;
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 52px;
+  height: 26px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--scriba-border);
+  border-radius: 4px;
+  background: var(--scriba-copy-btn-bg);
+  color: var(--scriba-copy-btn-fg);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.scriba-tex-content .scriba-tex-code-block:hover .scriba-tex-copy-btn,
+.scriba-tex-content .scriba-tex-copy-btn:focus-visible {
+  opacity: 1;
+}
+
+.scriba-tex-content .scriba-tex-copy-btn:hover {
+  background: var(--scriba-copy-btn-bg-hover);
+  color: var(--scriba-copy-btn-fg-hover);
+}
+
+.scriba-tex-content .scriba-tex-copy-btn.copied {
+  opacity: 1;
+  background: var(--scriba-copy-btn-bg-copied);
+  color: var(--scriba-copy-btn-fg-copied);
+}
+
+/* ============================================
+   Epigraph
+   ============================================ */
+
+/* Epigraph follows the LaTeX `epigraph` package convention: a narrow
+   block floated to the right margin with the attribution right-aligned
+   and a thin rule between quote and author. */
+.scriba-tex-content .scriba-tex-epigraph {
+  float: right;
+  clear: right;
+  width: 45%;
+  max-width: 28rem;
+  margin: 0.5rem 0 1rem 1.5rem;
+  padding: 0.25rem 0;
+  font-style: italic;
+  color: var(--scriba-fg);
+  text-align: right;
+}
+
+.scriba-tex-content .scriba-tex-epigraph-quote {
+  margin: 0;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--scriba-epigraph-border);
+}
+
+.scriba-tex-content .scriba-tex-epigraph-attribution {
+  margin-top: 0.25rem;
+  color: var(--scriba-fg-muted);
+  font-style: normal;
+  font-size: 0.9em;
+}
+
+.scriba-tex-content .scriba-tex-epigraph-attribution::before {
+  content: "— ";
+}
+
+/* Make sure following content clears the floated epigraph so it doesn't
+   wrap awkwardly when the epigraph is the last thing in a section. */
+.scriba-tex-content .scriba-tex-epigraph + * {
+  clear: both;
+}
+
+/* ============================================
+   Links
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-link {
+  color: var(--scriba-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.scriba-tex-content .scriba-tex-link:hover {
+  color: var(--scriba-link-hover);
+}
+
+.scriba-tex-content .scriba-tex-link-disabled {
+  color: var(--scriba-fg-muted);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+/* ============================================
+   Size commands
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-size-tiny {
+  font-size: var(--scriba-font-size-tiny);
+}
+
+.scriba-tex-content .scriba-tex-size-scriptsize {
+  font-size: var(--scriba-font-size-scriptsize);
+}
+
+.scriba-tex-content .scriba-tex-size-footnotesize {
+  font-size: var(--scriba-font-size-footnotesize);
+}
+
+.scriba-tex-content .scriba-tex-size-small {
+  font-size: var(--scriba-font-size-small);
+}
+
+.scriba-tex-content .scriba-tex-size-normalsize {
+  font-size: var(--scriba-font-size-normalsize);
+}
+
+.scriba-tex-content .scriba-tex-size-large {
+  font-size: var(--scriba-font-size-large);
+}
+
+.scriba-tex-content .scriba-tex-size-Large {
+  font-size: var(--scriba-font-size-Large);
+}
+
+.scriba-tex-content .scriba-tex-size-LARGE {
+  font-size: var(--scriba-font-size-LARGE);
+}
+
+.scriba-tex-content .scriba-tex-size-huge {
+  font-size: var(--scriba-font-size-huge);
+}
+
+.scriba-tex-content .scriba-tex-size-Huge {
+  font-size: var(--scriba-font-size-Huge);
+}
+
+/* ============================================
+   Utility — center, Pygments wrapper
+   ============================================ */
+
+.scriba-tex-content .scriba-tex-center {
+  text-align: center;
+}
+
+/* text-align: center only centers inline content. Block-level children
+   like <table> need margin auto to actually horizontally center. */
+.scriba-tex-content .scriba-tex-center > table,
+.scriba-tex-content .scriba-tex-center > .scriba-tex-table {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.scriba-tex-content .highlight {
+  background: var(--scriba-bg-code);
+  color: var(--scriba-fg);
+  border-radius: var(--scriba-radius);
+}
+
+.scriba-tex-content .highlight pre {
+  margin: 0;
+  background: transparent;
+}
+
 /* Scriba Pygments theme — One Light
  * Scoped under .scriba-tex-content .highlight
  * Uses Pygments `.tok-*` token class names.
@@ -1459,9 +2005,9 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 <body>
 <button class="theme-toggle" data-scriba-action="theme-toggle">Toggle theme</button>
 <h1>plane2d_lines</h1>
-<h2 id="plane2d-line-label-collision-avoidance-demo" class="scriba-tex-heading scriba-tex-heading-2">Plane2D Line Label Collision Avoidance Demo</h2><p class="scriba-tex-paragraph">This demo tests line label placement when multiple lines pass through or near the
+<div class="scriba-tex-content"><h2 id="plane2d-line-label-collision-avoidance-demo" class="scriba-tex-heading scriba-tex-heading-2">Plane2D Line Label Collision Avoidance Demo</h2><p class="scriba-tex-paragraph">This demo tests line label placement when multiple lines pass through or near the
 same region. Labels should avoid overlapping, have background pills for readability,
-and should not clip at viewport edges.</p>
+and should not clip at viewport edges.</p></div>
 
 <figure class="scriba-diagram" data-scriba-scene="line-labels-collision"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 344 344" style="max-width:calc(344px * var(--scriba-diagram-font-scale, 1))" role="img" xmlns="http://www.w3.org/2000/svg"><title>line-labels-collision</title><g transform="translate(12,12)"><g data-primitive="plane2d" data-shape="p" data-scriba-xrange="-5 5" data-scriba-yrange="-5 5"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="57.60" y1="32.00" x2="57.60" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="83.20" y1="32.00" x2="83.20" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="108.80" y1="32.00" x2="108.80" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="134.40" y1="32.00" x2="134.40" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="160.00" y1="32.00" x2="160.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="185.60" y1="32.00" x2="185.60" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="211.20" y1="32.00" x2="211.20" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="236.80" y1="32.00" x2="236.80" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="262.40" y1="32.00" x2="262.40" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="288.00" y1="32.00" x2="288.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="288.00" x2="288.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="262.40" x2="288.00" y2="262.40" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="236.80" x2="288.00" y2="236.80" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="211.20" x2="288.00" y2="211.20" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="185.60" x2="288.00" y2="185.60" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="134.40" x2="288.00" y2="134.40" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="108.80" x2="288.00" y2="108.80" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="83.20" x2="288.00" y2="83.20" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="57.60" x2="288.00" y2="57.60" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#11181c" stroke-width="1.5"/><path d="M 288.00 160.00 l -6 -3 l 0 6 Z" fill="#11181c"/><line x1="160.00" y1="288.00" x2="160.00" y2="32.00" stroke="#11181c" stroke-width="1.5"/><path d="M 160.00 32.00 l -3 6 l 6 0 Z" fill="#11181c"/></g><g class="scriba-plane-content" transform="translate(160.0000, 160.0000) scale(25.6000, -25.6000)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="-5.0" x2="5" y2="5.0" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="5.0" x2="5" y2="-5.0" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[2]" class="scriba-plane-line scriba-state-idle"><line x1="-2.5" y1="-5" x2="2.5" y2="5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[3]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="-2.5" x2="5" y2="2.5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[4]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="2.5" x2="5" y2="-2.5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[0]" class="scriba-plane-point scriba-state-current"><circle cx="0.0" cy="0.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[1]" class="scriba-plane-point scriba-state-good"><circle cx="3.0" cy="3.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[2]" class="scriba-plane-point scriba-state-good"><circle cx="-3.0" cy="3.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[3]" class="scriba-plane-point scriba-state-done"><circle cx="2.0" cy="4.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[4]" class="scriba-plane-point scriba-state-done"><circle cx="4.0" cy="2.0" r="0.1562" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="57.60" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">-4</text><text x="108.80" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">-2</text><text x="211.20" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">2</text><text x="262.40" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">4</text><text x="154.00" y="265.40" text-anchor="end" style="font-size:10px" fill="#687076">-4</text><text x="154.00" y="214.20" text-anchor="end" style="font-size:10px" fill="#687076">-2</text><text x="154.00" y="111.80" text-anchor="end" style="font-size:10px" fill="#687076">2</text><text x="154.00" y="60.60" text-anchor="end" style="font-size:10px" fill="#687076">4</text><rect x="251.0" y="16.0" width="43" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="272" y="26" fill="#11181c" style="text-anchor:middle;font-size:10px">y=x</text><rect x="244.0" y="272.0" width="50" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="269" y="282" fill="#11181c" style="text-anchor:middle;font-size:10px">y=-x</text><rect x="205.0" y="16.0" width="50" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="230" y="26" fill="#11181c" style="text-anchor:middle;font-size:10px">y=2x</text><rect x="230.0" y="80.0" width="64" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="262" y="90" fill="#11181c" style="text-anchor:middle;font-size:10px">y=0.5x</text><rect x="223.0" y="208.0" width="71" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="258" y="218" fill="#11181c" style="text-anchor:middle;font-size:10px">y=-0.5x</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="p.point[0]-position-above" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="All lines intersect here"><rect x="89" y="102" width="142" height="32" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><text x="160" y="122" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto"><tspan x="160" dy="-6.5">All lines intersect </tspan><tspan x="160" dy="13">here</tspan></text></g><g class="scriba-annotation scriba-annotation-good" data-annotation="p.point[1]-position-right" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=x"><rect x="240" y="69" width="57" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="269" y="83" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:700;font-size:12px;text-anchor:middle;dominant-baseline:auto">On y=x</text></g><g class="scriba-annotation scriba-annotation-good" data-annotation="p.point[2]-position-left" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=-x"><rect x="15" y="69" width="64" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="47" y="83" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:700;font-size:12px;text-anchor:middle;dominant-baseline:auto">On y=-x</text></g><g class="scriba-annotation scriba-annotation-warn" data-annotation="p.point[3]-position-above" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=2x"><rect x="181" y="13" width="60" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#92600a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="3,2"/><text x="211" y="26" fill="#92600a" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto">On y=2x</text></g><g class="scriba-annotation scriba-annotation-warn" data-annotation="p.point[4]-position-below" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=0.5x"><rect x="225" y="136" width="73" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#92600a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="3,2"/><text x="262" y="149" fill="#92600a" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto">On y=0.5x</text></g></g></g></svg></div></figure>
 <script>

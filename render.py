@@ -189,9 +189,19 @@ def render_file(
         )
 
     # 3. Render in source order: TeX gaps + animation/diagram blocks.
+    # TeX region HTML is scoped under .scriba-tex-content — every rule in
+    # scriba-tex-content.css / the pygments themes requires that wrapper, so
+    # each gap gets one (widgets stay outside the typography scope). The CSS
+    # bundle takes whatever the TeX artifacts declare via css_assets instead
+    # of a hardcoded list that silently drifts from the renderer.
     html_parts: list[str] = []
     all_snapshots: list[object] = []
+    tex_css_assets: set[str] = set()
     cursor = 0
+
+    def _wrap_tex(artifact) -> str:
+        tex_css_assets.update(artifact.css_assets)
+        return f'<div class="scriba-tex-content">{artifact.html}</div>'
 
     for start, end, kind, block in special_blocks:
         # Render the TeX gap before this block.
@@ -202,7 +212,7 @@ def render_file(
                 gap_block = CoreBlock(start=0, end=len(gap_source),
                                       kind="tex", raw=gap_source)
                 gap_artifact = tex_renderer.render_block(gap_block, ctx)
-                html_parts.append(gap_artifact.html)
+                html_parts.append(_wrap_tex(gap_artifact))
 
         # Render the special block.
         if kind == "animation":
@@ -223,7 +233,7 @@ def render_file(
             gap_block = CoreBlock(start=0, end=len(trailing),
                                   kind="tex", raw=trailing)
             gap_artifact = tex_renderer.render_block(gap_block, ctx)
-            html_parts.append(gap_artifact.html)
+            html_parts.append(_wrap_tex(gap_artifact))
 
     starlark_host.close()
     worker_pool.close()
@@ -244,8 +254,10 @@ def render_file(
         ),
     ]
 
-    # Add Pygments syntax highlighting CSS
-    css_parts.append(load_css("scriba-tex-pygments-light.css"))
+    # TeX assets exactly as the artifacts declared them (content typography
+    # + the active pygments theme). Empty when the document has no TeX gap.
+    if tex_css_assets:
+        css_parts.append(load_css(*sorted(tex_css_assets)))
 
     # Opt-3: skip the ~380 KB KaTeX CSS+fonts blob when the document has no
     # math.  A document is math-free when it has no animation/diagram blocks
