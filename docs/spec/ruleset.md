@@ -924,9 +924,13 @@ implements `set_annotations`.
   y-offset of `P_below` MUST satisfy `y(P_below, f_i) == y(P_below, f_j)`,
   regardless of per-frame annotation presence on any primitive.
 - **R-32.3 — Max-envelope reservation.** The reserved layout envelope for each
-  primitive is the component-wise maximum of `bounding_box(P, annotations=A_f)`
-  over all frames `f` in the scene. The envelope MUST be computed once at
-  scene build time and applied uniformly.
+  primitive is the component-wise maximum of `bounding_box()` over all frames
+  `f` in the scene, measured with the frame's annotations AND every emit-loop
+  mutation replayed (structural `apply_command` growth and the caption/label
+  channel — a growing Stack or a mid-timeline `\apply{p}{label=…}` reserves
+  space just like an annotation lane). The envelope MUST be computed once at
+  scene build time from the same replay that produces the scene viewBox
+  (`measure_scene_layout`) and applied uniformly.
 - **R-32.4 — Annotation purity.** For any primitive `P` and any annotation
   lists `A`, `A'`, repeated probes
   `set_annotations(A); bounding_box()` separated by any `set_annotations(A')`
@@ -939,10 +943,12 @@ implements `set_annotations`.
 - **R-32.6 — Determinism.** The reserved-envelope computation MUST be
   deterministic: same scene input → same envelope → byte-identical SVG emit.
 
-**Enforcement.** Build-time. `_html_stitcher._build_reserved_offsets` computes
-the per-scene max-bbox envelope; `_emit_frame_svg` accepts
+**Enforcement.** Build-time. `_frame_renderer.measure_scene_layout` replays
+the frame timeline once on deep copies and yields the viewBox and the
+per-scene max-bbox envelope from the same checkpoints (no-drift by
+construction; real primitives are never mutated). `_emit_frame_svg` accepts
 `reserved_offsets: dict[shape_name, (x_off, y_cursor)]` and skips per-frame
-`y_cursor` accumulation when supplied. See §9 `reserved_offsets` contract in
+`y_cursor` accumulation when supplied. See the R-32 section in
 `svg-emitter.md` and §`bounding_box()` purity contract in `primitives.md`.
 
 **Error codes.** `R32-01` … `R32-05` — see `error-codes.md`.

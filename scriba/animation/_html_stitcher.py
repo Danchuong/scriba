@@ -14,12 +14,10 @@ import json as _json
 from typing import Any, Callable
 
 from scriba.animation._frame_renderer import (
-    _PADDING,
-    _PRIMITIVE_GAP,
     _emit_frame_svg,
-    _normalize_bbox,
     _prescan_value_widths,
     compute_stable_viewbox,
+    measure_scene_layout,
 )
 from scriba.animation._minify import _minify_html  # noqa: F401
 from scriba.animation._script_builder import (  # noqa: F401
@@ -27,7 +25,6 @@ from scriba.animation._script_builder import (  # noqa: F401
     _build_inline_script,
 )
 from scriba.animation.differ import compute_transitions
-from scriba.animation.primitives.base import BoundingBox
 
 __all__ = [
     "emit_animation_html",
@@ -47,62 +44,12 @@ def _build_reserved_offsets(
     frames: list[Any],
     primitives: dict[str, Any],
 ) -> dict[str, tuple[float, float]]:
-    """Compute per-primitive (x_off, y_cursor) envelope across all frames.
-
-    For each primitive, probes bounding_box() with every frame's annotation
-    set and takes the component-wise max of (width, height).  Builds the
-    stable stacking offsets (reserved_offsets) that are threaded into
-    _emit_frame_svg so y_cursor never changes between frames (R-32.2/R-32.3).
-
-    After probing, annotations are cleared on every primitive (R-32.4 purity).
-    Primitives without set_annotations are probed with their current state.
+    """Per-primitive stable stacking offsets (R-32.2/R-32.3) — thin wrapper
+    over the single shared replay (``measure_scene_layout``), so the offsets
+    can never disagree with the viewBox. Kept for single-consumer callers;
+    the full pipelines call ``measure_scene_layout`` once for both values.
     """
-    max_bbox: dict[str, BoundingBox] = {}
-
-    for frame in frames:
-        for shape_name, prim in primitives.items():
-            prim_anns = [
-                a for a in frame.annotations
-                if a.get("target", "").startswith(shape_name + ".")
-            ]
-            if hasattr(prim, "set_annotations"):
-                prim.set_annotations(prim_anns)
-            bbox = prim.bounding_box()
-            # Normalise to BoundingBox so we always have .width / .height
-            if not isinstance(bbox, BoundingBox):
-                _, _, w, h = _normalize_bbox(bbox)
-                bbox = BoundingBox(x=0, y=0, width=w, height=h)
-            prev = max_bbox.get(shape_name)
-            max_bbox[shape_name] = (
-                bbox if prev is None
-                else BoundingBox(
-                    x=prev.x,
-                    y=prev.y,
-                    width=max(prev.width, bbox.width),
-                    height=max(prev.height, bbox.height),
-                )
-            )
-
-    # Restore purity — clear annotation state after probing (R-32.4)
-    for prim in primitives.values():
-        if hasattr(prim, "set_annotations"):
-            prim.set_annotations([])
-
-    # Build stable stacking offsets in scene-declaration order (dict insertion
-    # order is guaranteed in Python 3.7+ and is deterministic per R-32.6).
-    reserved_offsets: dict[str, tuple[float, float]] = {}
-    y_cursor: float = _PADDING
-    for shape_name, prim in primitives.items():
-        bb = max_bbox[shape_name]
-        _, _, bw, _ = _normalize_bbox(bb)
-        # x_off is centred on max bbox width; stored as 0 here because the
-        # actual x centring depends on the viewbox width, which is computed
-        # per-call in _emit_frame_svg.  We store the y position only;
-        # x will be recomputed from the actual per-frame bbox width.
-        reserved_offsets[shape_name] = (0.0, y_cursor)
-        y_cursor += bb.height + _PRIMITIVE_GAP
-
-    return reserved_offsets
+    return measure_scene_layout(frames, primitives)[1]
 
 
 # ---------------------------------------------------------------------------
@@ -264,17 +211,11 @@ def emit_animation_html(
     # primitive's caption clipped past the bottom edge.
     _apply_min_arrow_above(frames, primitives)
 
-    # Compute the max viewbox across ALL frames so the stage size stays
-    # stable.  Without this, frames with arrow annotations are taller
-    # than frames without, causing the array to visually shrink/grow.
-    # compute_stable_viewbox also replays push/pop on copies so primitives
-    # that grow over the timeline (Stack, Queue) are not clipped; the
-    # deepcopy carries the floor with it.
-    viewbox = compute_stable_viewbox(frames, primitives)
-
-    # R-32.2/R-32.3: build stable per-primitive stacking offsets across all
-    # frames so downstream primitives never shift when annotations appear.
-    reserved_offsets = _build_reserved_offsets(frames, primitives)
+    # One shared replay yields BOTH the max viewBox and the stable stacking
+    # offsets (R-32.2/R-32.3) from the same per-frame checkpoints — they
+    # cannot drift. The replay covers structural push/pop AND mid-timeline
+    # captions; the deepcopy carries the floor with it.
+    viewbox, reserved_offsets = measure_scene_layout(frames, primitives)
 
     # aria-label: env label first (the documented scene description),
     # then the first frame label, then the generic fallback.
@@ -385,19 +326,14 @@ def emit_substory_html(
         # across all frames with their annotations — the single-state
         # compute_viewbox never saw the annotation lanes at all.
         _apply_min_arrow_above(substory.frames, sub_primitives)
-    sub_viewbox = (
-        compute_stable_viewbox(substory.frames, sub_primitives)
-        if substory.primitives
-        else viewbox
-    )
-
-    # R-32.2/R-32.3: reserve envelope for substory primitives too so the
-    # substory stage does not snap when its own annotations spawn.
-    sub_reserved_offsets = (
-        _build_reserved_offsets(substory.frames, sub_primitives)
-        if substory.primitives
-        else None
-    )
+    # One shared replay for viewBox + reserved offsets (R-32.2/R-32.3) —
+    # same no-drift contract as the parent scene.
+    if substory.primitives:
+        sub_viewbox, sub_reserved_offsets = measure_scene_layout(
+            substory.frames, sub_primitives
+        )
+    else:
+        sub_viewbox, sub_reserved_offsets = viewbox, None
 
     _frame_id = _get_frame_id_fn()
 
@@ -498,15 +434,11 @@ def emit_interactive_html(
     # taller than any single un-floored frame.
     _apply_min_arrow_above(frames, primitives)
 
-    # Compute max viewbox across ALL frames so stage size stays stable.
-    # Replays push/pop on copies so size-changing primitives (Stack,
-    # Queue) are sized to their largest extent and never clipped; the
-    # deepcopy carries the floor with it.
-    viewbox = compute_stable_viewbox(frames, primitives)
-
-    # R-32.2/R-32.3: build stable per-primitive stacking offsets across all
-    # frames so downstream primitives never shift when annotations appear.
-    reserved_offsets = _build_reserved_offsets(frames, primitives)
+    # One shared replay yields BOTH the max viewBox and the stable stacking
+    # offsets (R-32.2/R-32.3) from the same per-frame checkpoints — they
+    # cannot drift. Covers structural push/pop AND mid-timeline captions;
+    # the deepcopy carries the floor with it.
+    viewbox, reserved_offsets = measure_scene_layout(frames, primitives)
 
     # ----------------------------------------------------------------
     # Single-pass frame rendering.
@@ -595,20 +527,14 @@ def emit_interactive_html(
                     # rendering of the same substory reserves a different
                     # annotation lane than the widget.
                     _apply_min_arrow_above(sub.frames, sub_prims)
-                # Measure across all frames WITH annotations (post-floor),
-                # matching the widget path — the single-state compute_viewbox
-                # never saw the annotation lanes.
-                sub_vb = (
-                    compute_stable_viewbox(sub.frames, sub_prims)
-                    if sub.primitives
-                    else viewbox
-                )
-                # R-32.2/R-32.3: reserve envelope for the print substory too.
-                sub_reserved = (
-                    _build_reserved_offsets(sub.frames, sub_prims)
-                    if sub.primitives
-                    else None
-                )
+                # One shared replay (post-floor) for viewBox + offsets —
+                # same no-drift contract as the widget path.
+                if sub.primitives:
+                    sub_vb, sub_reserved = measure_scene_layout(
+                        sub.frames, sub_prims
+                    )
+                else:
+                    sub_vb, sub_reserved = viewbox, None
                 for sub_frame in sub.frames:
                     sub_svg = _emit_frame_svg(
                         sub_frame, sub_prims, scene_id, sub_vb,

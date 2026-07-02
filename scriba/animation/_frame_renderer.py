@@ -163,24 +163,34 @@ def compute_viewbox(
     return f"0 0 {int(vb_width)} {int(vb_height)}"
 
 
-def compute_stable_viewbox(
+def measure_scene_layout(
     frames: list[Any],
     primitives: dict[str, Any],
-) -> str:
-    """Compute the max viewBox across all frames, replaying structural
-    push/pop operations on *copies* of the primitives.
+) -> tuple[str, dict[str, tuple[float, float]]]:
+    """Single shared replay of the frame timeline on ONE set of deep copies.
 
-    ``compute_viewbox`` only measures a primitive in its current state.
-    Size-changing primitives (Stack, Queue) grow when ``\\apply`` push/pop
-    commands run during the animation, so a viewBox sized from the initial
-    state clips the grown frames.  This helper simulates the frame timeline
-    on deep-copied primitives so the returned viewBox covers the largest
-    extent.  The real *primitives* are left untouched.
+    Applies every mutation the emit loop applies that changes
+    ``bounding_box()`` — structural ``apply_command`` (push/pop/enqueue/…),
+    the caption channel (bare-shape ``prim.label`` and per-part
+    ``set_label``; the scene stores captions OUTSIDE ``apply_params``), and
+    per-frame ``set_annotations`` — then records a checkpoint per frame.
+
+    Returns ``(viewbox, reserved_offsets)`` where the viewBox is the global
+    max over all checkpoints and the reserved y-stacking offsets come from
+    each primitive's max bbox across the SAME checkpoints.  Both consumers
+    derive from the same numbers, so they cannot drift: previously the
+    viewBox replayed structure but not captions, while the offsets replayed
+    neither — a growing Stack overlapped the primitive below it and a
+    mid-timeline caption painted past the viewBox.
+
+    Real primitives are never mutated (R-32.4 holds by construction).
+    Must run AFTER ``_apply_min_arrow_above`` — the deep copies inherit the
+    ``_min_arrow_above`` floor (369e80f floor-before-measure ordering).
     """
     import copy as _copy
 
     if not primitives:
-        return "0 0 0 0"
+        return "0 0 0 0", {}
 
     # Detach non-copyable render context before cloning; bbox probing
     # never needs it, and warnings collectors may not deep-copy cleanly.
@@ -195,42 +205,94 @@ def compute_stable_viewbox(
         for name, ctx in saved_ctx.items():
             primitives[name]._ctx = ctx
 
+    # The annotation-extent cache is keyed on the _NO_EXTENT identity
+    # sentinel; deepcopy mints a fresh object() so a populated cache would
+    # read back garbage on the clone. Reset — the replay repopulates it via
+    # set_annotations.
+    for prim in sim.values():
+        if hasattr(prim, "_extent_above_cache"):
+            prim._extent_above_cache = None
+
+    max_bbox: dict[str, tuple[float, float]] = {}
     max_w = 0
     max_h = 0
 
-    def _track(vb: str) -> None:
+    def _capture() -> None:
         nonlocal max_w, max_h
-        parts = vb.split()
-        max_w = max(max_w, int(parts[2]))
-        max_h = max(max_h, int(parts[3]))
+        total = 0.0
+        row_w = 0.0
+        first = True
+        for name, prim in sim.items():
+            _, _, w, h = _normalize_bbox(prim.bounding_box())
+            pw, ph = max_bbox.get(name, (0.0, 0.0))
+            max_bbox[name] = (max(pw, w), max(ph, h))
+            if not first:
+                total += _PRIMITIVE_GAP
+            first = False
+            total += h
+            row_w = max(row_w, w)
+        max_w = max(max_w, int(row_w + 2 * _PADDING))
+        max_h = max(max_h, int(total + 2 * _PADDING))
 
     # Initial (pre-frame) extent.
-    _track(compute_viewbox(sim))
+    _capture()
 
     for frame in frames:
-        # Replay structural commands cumulatively (mirrors the pre-pass in
-        # _emit_frame_svg) so item counts grow as the animation advances.
         for shape_name, prim in sim.items():
-            if not hasattr(prim, "apply_command"):
-                continue
-            shape_state = frame.shape_states.get(shape_name, {})
-            accepts_suffix = "target_suffix" in inspect.signature(
-                prim.apply_command
-            ).parameters
+            # Mirror the emit loop exactly: expanded selectors, cumulative
+            # structural apply_params, and the caption/label channel.
+            shape_state = _expand_selectors(
+                frame.shape_states.get(shape_name, {}), shape_name, prim
+            )
+            accepts_suffix = (
+                "target_suffix"
+                in inspect.signature(prim.apply_command).parameters
+                if hasattr(prim, "apply_command")
+                else False
+            )
             for target_key, target_data in shape_state.items():
                 if not isinstance(target_data, dict):
-                    continue
-                ap = target_data.get("apply_params")
-                if not ap:
                     continue
                 suffix = target_key
                 if suffix.startswith(shape_name + "."):
                     suffix = suffix[len(shape_name) + 1:]
-                params_list = ap if isinstance(ap, list) else [ap]
-                _apply_param_list(prim, params_list, suffix, accepts_suffix)
-        _track(compute_viewbox(sim, annotations=frame.annotations))
+                ap = target_data.get("apply_params")
+                if ap and hasattr(prim, "apply_command"):
+                    params_list = ap if isinstance(ap, list) else [ap]
+                    _apply_param_list(prim, params_list, suffix, accepts_suffix)
+                label_val = target_data.get("label")
+                if label_val is not None:
+                    if target_key == shape_name:
+                        if hasattr(prim, "label"):
+                            prim.label = str(label_val)
+                    elif hasattr(prim, "set_label"):
+                        prim.set_label(suffix, str(label_val))
+            prim_anns = [
+                a
+                for a in frame.annotations
+                if a.get("target", "").startswith(shape_name + ".")
+            ]
+            if hasattr(prim, "set_annotations"):
+                prim.set_annotations(prim_anns)
+        _capture()
 
-    return f"0 0 {max_w} {max_h}"
+    reserved: dict[str, tuple[float, float]] = {}
+    y_cursor: float = _PADDING
+    for name in primitives:
+        reserved[name] = (0.0, y_cursor)
+        y_cursor += max_bbox[name][1] + _PRIMITIVE_GAP
+
+    return f"0 0 {max_w} {max_h}", reserved
+
+
+def compute_stable_viewbox(
+    frames: list[Any],
+    primitives: dict[str, Any],
+) -> str:
+    """Max viewBox across all frames — thin wrapper over the single shared
+    replay (``measure_scene_layout``); kept for single-consumer callers
+    (diagram path, direct tests)."""
+    return measure_scene_layout(frames, primitives)[0]
 
 
 # ---------------------------------------------------------------------------

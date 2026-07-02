@@ -147,24 +147,36 @@ frames. Per-frame rendering only re-applies state classes and annotation overlay
 the frozen geometry. The viewBox dimensions and all element positions are identical across
 all frames of an animation. This guarantees visual stability and prevents layout jitter.
 
-**Annotation envelope reservation (R-32).** When a scene contains annotations
-that only appear in some frames, per-primitive y-cursor advancement MUST be
-based on the **per-scene max** `bounding_box()` probed across all frames, not
-on the current frame's bbox. `_html_stitcher._build_reserved_offsets` performs
-this pre-scan and produces:
+**Layout envelope reservation (R-32).** When a scene contains annotations
+that only appear in some frames, structural growth (push/pop/enqueue/…), or
+mid-timeline captions (`\apply{p}{label=…}` / per-part relabel),
+per-primitive y-cursor advancement MUST be based on the **per-scene max**
+`bounding_box()` probed across all frames, not on the current frame's bbox.
+`_frame_renderer.measure_scene_layout` performs ONE shared replay of the
+frame timeline on deep copies — applying the same mutations the emit loop
+applies (structural `apply_command`, the caption/label channel, per-frame
+`set_annotations`) — and derives BOTH values from the same per-frame
+checkpoints, so they cannot drift:
 
 ```python
-reserved_offsets: dict[str, tuple[float, float]]
-# keyed by shape_name → (x_offset, y_cursor)
+viewbox, reserved_offsets = measure_scene_layout(frames, primitives)
+# viewbox: "0 0 W H" — global max over all checkpoints
+# reserved_offsets: dict[shape_name, (x_offset, y_cursor)] — from each
+#                   primitive's max bbox across the SAME checkpoints
 ```
+
+The replay MUST run AFTER `_apply_min_arrow_above` (the copies inherit the
+cross-frame arrow floor — floor-before-measure ordering). Real primitives
+are never mutated, so the `bounding_box()` purity contract holds by
+construction (see `primitives.md`). `compute_stable_viewbox` and
+`_html_stitcher._build_reserved_offsets` remain as thin single-value
+wrappers for single-consumer callers (diagram path, direct tests).
 
 `_frame_renderer._emit_frame_svg` accepts `reserved_offsets` as an optional
 keyword argument; when supplied, it replaces the per-frame `y_cursor +=
 height + gap` accumulation with a direct lookup. When `None`, the legacy
-accumulation path is used (for single-frame diagrams and unit tests). The
-pre-scan MUST clear primitive annotation state after probing
-(`set_annotations([])`) to honor the `bounding_box()` purity contract
-(see `primitives.md` §`bounding_box()` purity). See `ruleset.md` §8.9.
+accumulation path is used (for single-frame diagrams and unit tests).
+See `ruleset.md` §8.9.
 
 ### 3.5 Determinism
 
