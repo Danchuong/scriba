@@ -196,11 +196,11 @@ def render_file(
     # of a hardcoded list that silently drifts from the renderer.
     html_parts: list[str] = []
     all_snapshots: list[object] = []
-    tex_css_assets: set[str] = set()
+    extra_css_assets: set[str] = set()
     cursor = 0
 
     def _wrap_tex(artifact) -> str:
-        tex_css_assets.update(artifact.css_assets)
+        extra_css_assets.update(artifact.css_assets)
         return f'<div class="scriba-tex-content">{artifact.html}</div>'
 
     for start, end, kind, block in special_blocks:
@@ -214,7 +214,9 @@ def render_file(
                 gap_artifact = tex_renderer.render_block(gap_block, ctx)
                 html_parts.append(_wrap_tex(gap_artifact))
 
-        # Render the special block.
+        # Render the special block. Widget artifacts declare primitive CSS
+        # (metricplot/plane2d) via css_assets — collect it like the TeX
+        # assets instead of discarding it.
         if kind == "animation":
             artifact = anim_renderer.render_block(block, ctx)
             html_parts.append(artifact.html)
@@ -222,6 +224,7 @@ def render_file(
         else:
             artifact = diag_renderer.render_block(block, ctx)
             html_parts.append(artifact.html)
+        extra_css_assets.update(artifact.css_assets)
 
         cursor = end
 
@@ -244,20 +247,22 @@ def render_file(
 
     body = "\n\n".join(html_parts)
 
-    # Build CSS bundle from source files
-    css_parts = [
-        load_css(
-            "scriba-scene-primitives.css",
-            "scriba-animation.css",
-            "scriba-embed.css",
-            "scriba-standalone.css",
-        ),
-    ]
-
-    # TeX assets exactly as the artifacts declared them (content typography
-    # + the active pygments theme). Empty when the document has no TeX gap.
-    if tex_css_assets:
-        css_parts.append(load_css(*sorted(tex_css_assets)))
+    # Build CSS bundle: page-chrome base (render.py-owned — embed/standalone
+    # are CLI-page concerns no renderer declares) + everything the artifacts
+    # declared beyond it (TeX typography + pygments pair + primitive sheets
+    # like metricplot/plane2d). Base-subtracted so the two sheets every
+    # widget artifact declares are not concatenated twice; sorted for
+    # deterministic bytes.
+    _BASE_CSS = (
+        "scriba-scene-primitives.css",
+        "scriba-animation.css",
+        "scriba-embed.css",
+        "scriba-standalone.css",
+    )
+    css_parts = [load_css(*_BASE_CSS)]
+    extras = extra_css_assets.difference(_BASE_CSS)
+    if extras:
+        css_parts.append(load_css(*sorted(extras)))
 
     # Opt-3: skip the ~380 KB KaTeX CSS+fonts blob when the document has no
     # math.  A document is math-free when it has no animation/diagram blocks

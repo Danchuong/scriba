@@ -1335,6 +1335,84 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] body { background: #151718; color: #ecedee; }
 [data-theme="dark"] .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
 
+.scriba-metricplot { font-family: inherit; }
+.scriba-metricplot-gridline-h,
+.scriba-metricplot-gridline-v {
+  stroke: var(--scriba-border, #d0d7de);
+  stroke-width: 0.5;
+  opacity: 0.6;
+}
+.scriba-metricplot-marker {
+  stroke: var(--scriba-fg, #11181c);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  opacity: 0.6;
+}
+@media print {
+  .scriba-metricplot-line {
+    stroke: #000 !important;
+    stroke-width: 1.5;
+  }
+  /* In dark-mode + print-color-adjust:exact, var(--scriba-fg) resolves to near-white
+     (#ecedee) producing invisible axes and labels on white paper. Force print-safe dark. */
+  .scriba-metricplot-gridline-h,
+  .scriba-metricplot-gridline-v {
+    stroke: #ccc !important;
+  }
+  .scriba-metricplot-legend-label,
+  .scriba-metricplot-right-axis-label {
+    fill: #000 !important;
+  }
+}
+
+/* Plane2D primitive — minimal CSS for state overrides.
+ *
+ * Inline SVG attributes from svg_style_attrs() handle the primary
+ * fill/stroke colours.  This stylesheet provides structural defaults
+ * and the state-driven overrides referenced in the spec §9–§10.
+ */
+
+/* --- Grid & axes -------------------------------------------------------- */
+
+.scriba-plane-grid line {
+  stroke: var(--scriba-border, #d0d7de);
+}
+
+.scriba-plane-axes line {
+  stroke: var(--scriba-fg, #212529);
+}
+
+/* --- Point -------------------------------------------------------------- */
+
+.scriba-plane-point circle {
+  transition: fill 150ms ease, stroke 150ms ease;
+}
+
+/* --- Line / Segment ----------------------------------------------------- */
+
+.scriba-plane-line line,
+.scriba-plane-segment line {
+  transition: stroke 150ms ease;
+}
+
+/* --- Polygon / Region --------------------------------------------------- */
+
+.scriba-plane-polygon polygon {
+  transition: fill 150ms ease, stroke 150ms ease;
+}
+
+.scriba-plane-region polygon {
+  transition: fill 150ms ease;
+}
+
+/* --- Labels ------------------------------------------------------------- */
+
+.scriba-plane-labels text {
+  font-family: var(--scriba-font-mono, ui-monospace, monospace);
+  user-select: none;
+  pointer-events: none;
+}
+
 /* Scriba TeX Content Styles
  * Scoped under .scriba-tex-content
  * Uses --scriba-* CSS variables — see :root block below for defaults.

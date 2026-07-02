@@ -77,6 +77,78 @@ class TestDeclaredCssShipped:
         assert '[data-theme="dark"] .scriba-tex-content .highlight' in page
 
 
+_WIDGET_DOC = r"""Đồ thị và mặt phẳng.
+
+\begin{animation}[id="mp"]
+\shape{plot}{MetricPlot}{series=["n"], xlabel="step", ylabel="value"}
+\step
+\end{animation}
+
+\begin{diagram}[id="pl"]
+\shape{p}{Plane2D}{xrange=[-2,2], yrange=[-2,2]}
+\apply{p}{add_point=(1.0, 1.0)}
+\end{diagram}
+"""
+
+
+def _count_in_sheet(name: str, needle: str) -> int:
+    from importlib.resources import files
+
+    return (files("scriba.animation") / "static" / name).read_text(
+        "utf-8"
+    ).count(needle)
+
+
+@pytest.fixture(scope="module")
+def widget_page(tmp_path_factory) -> str:
+    d = tmp_path_factory.mktemp("widgetcss")
+    src = d / "doc.tex"
+    src.write_text(_WIDGET_DOC, encoding="utf-8")
+    out = d / "doc.html"
+    render_file(src, out)
+    return out.read_text(encoding="utf-8")
+
+
+class TestArtifactDeclaredWidgetCss:
+    """render.py must ship the css_assets animation/diagram artifacts declare.
+
+    Browser-measured bug: MetricPlot gridlines rendered stroke:none because
+    scriba-metricplot.css was never bundled — render.py collected artifact
+    css_assets only for TeX gaps and shipped a hardcoded 4-sheet list for
+    everything else. Companion bug: DiagramRenderer never declared primitive
+    CSS at all, so diagram+Plane2D docs stayed broken even with render.py
+    fixed.
+    """
+
+    def test_metricplot_sheet_ships(self, widget_page: str) -> None:
+        assert ".scriba-metricplot-gridline-h" in widget_page
+
+    def test_plane2d_sheet_ships_for_diagram(self, widget_page: str) -> None:
+        assert ".scriba-plane" in widget_page
+
+    def test_base_sheets_not_duplicated(self, widget_page: str) -> None:
+        # animation artifacts also declare the two base sheets; the union
+        # must subtract the base or they concatenate twice. Source-relative
+        # counts: each shipped sheet appears exactly once.
+        assert widget_page.count(".scriba-metricplot-gridline-h") == 2  # as in source
+        # unique to scriba-animation.css (a base sheet every widget artifact
+        # also declares) — page count must equal the single-sheet count
+        assert widget_page.count("scriba-frame:target .scriba-hl") == \
+            _count_in_sheet("scriba-animation.css", "scriba-frame:target .scriba-hl")
+
+    def test_diagram_renderer_declares_primitive_css(self) -> None:
+        from scriba.animation.detector import detect_diagram_blocks
+        from scriba.animation.renderer import DiagramRenderer
+        from scriba.core.context import RenderContext
+
+        blocks = detect_diagram_blocks(_WIDGET_DOC)
+        assert blocks
+        art = DiagramRenderer().render_block(
+            blocks[0], RenderContext(resource_resolver=lambda n: n)
+        )
+        assert "scriba-plane2d.css" in art.css_assets
+
+
 class TestRendererDeclaresThemePair:
     def test_artifact_declares_light_and_dark(self) -> None:
         from scriba.core.artifact import Block

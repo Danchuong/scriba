@@ -24,6 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   caption painted past the viewBox and into the next primitive.
 
 ### Fixed
+- **MetricPlot gridlines render again (and Plane2D labels get their font).**
+  `render.py` collected artifact-declared CSS only for TeX gaps and shipped a
+  hardcoded sheet list for widgets, so `scriba-metricplot.css` /
+  `scriba-plane2d.css` never reached the page (gridlines computed
+  `stroke: none`). Widget artifacts' `css_assets` now join the same
+  base-subtracted, sorted bundle as the TeX assets — and `DiagramRenderer`
+  now declares primitive CSS exactly like `AnimationRenderer` (it hardcoded
+  the 2 base sheets, starving every `\begin{diagram}`+Plane2D document).
 - **Orphaned staggered transition no longer corrupts a superseded frame.**
   A `setTimeout(_runPhase2)` scheduled during the phase-1→phase-2 stagger
   survived a supersede/cancel and applied phase-2 recolors/value-changes onto

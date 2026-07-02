@@ -57,6 +57,15 @@ _FRAME_ERROR_THRESHOLD = 100
 # Primitive catalog — populated by @register_primitive decorators
 # ---------------------------------------------------------------------------
 
+# Primitive-specific stylesheets, declared on the artifact only when a shape
+# of that type is present. Shared by AnimationRenderer AND DiagramRenderer —
+# both must declare identically or one output mode silently drops styling.
+_PRIMITIVE_CSS: dict[str, str] = {
+    "Plane2D": "scriba-plane2d.css",
+    "MetricPlot": "scriba-metricplot.css",
+}
+
+
 def _get_catalog() -> dict[str, Any]:
     """Return the registry-based primitive catalog.
 
@@ -520,10 +529,6 @@ class AnimationRenderer:
         }
 
         # Add primitive-specific CSS when those primitives are present
-        _PRIMITIVE_CSS: dict[str, str] = {
-            "Plane2D": "scriba-plane2d.css",
-            "MetricPlot": "scriba-metricplot.css",
-        }
         for shape in ir.shapes:
             css_name = _PRIMITIVE_CSS.get(shape.type_name)
             if css_name is not None:
@@ -822,9 +827,21 @@ class DiagramRenderer:
             minify=minify,
         )
 
+        # Diagram artifacts declare primitive CSS exactly like animation
+        # artifacts — previously this was a hardcoded 2-sheet set, so a
+        # diagram with a Plane2D/MetricPlot never shipped its stylesheet.
+        css_assets: set[str] = {
+            "scriba-animation.css",
+            "scriba-scene-primitives.css",
+        }
+        for shape in ir.shapes:
+            css_name = _PRIMITIVE_CSS.get(shape.type_name)
+            if css_name is not None:
+                css_assets.add(css_name)
+
         return RenderArtifact(
             html=html,
-            css_assets=frozenset({"scriba-animation.css", "scriba-scene-primitives.css"}),
+            css_assets=frozenset(css_assets),
             js_assets=frozenset(),
             block_id=scene_id,
             data={},
