@@ -1026,7 +1026,6 @@ Complete list of CSS classes emitted by the animation/diagram pipeline, grouped 
 | `data-step` | `<li>` | 1-indexed step number (not styled directly) |
 | `data-target` | `<g>` | Selector string for addressable SVG parts |
 | `data-primitive` | `<g>` | Primitive type name for base styling |
-| `data-scriba-tex-fallback` | `<p>` | Present when `render_inline_tex` was unavailable |
 
 ---
 

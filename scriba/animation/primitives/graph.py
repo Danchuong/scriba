@@ -16,6 +16,7 @@ from typing import Any, Callable, ClassVar, NamedTuple
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    _label_has_math,
     _LabelPlacement,
     BoundingBox,
     PrimitiveBase,
@@ -1541,6 +1542,11 @@ class Graph(PrimitiveBase):
                     and _split_sep == "/"
                     and _split_head
                     and _split_tail
+                    # A math weight yields to the single-value KaTeX path:
+                    # the split styling emits escaped tspans, which would
+                    # show the raw $...$ (inconsistent with every other
+                    # edge-weight render).
+                    and not _label_has_math(display_weight)
                 ):
                     _text_svg = _render_split_label_svg(
                         _split_head, _split_sep, _split_tail, lx, ly,

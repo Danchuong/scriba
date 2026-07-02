@@ -559,17 +559,22 @@ Each `\narrate{...}` body is passed to `ctx.render_inline_tex(body)` at render t
 
 ### 8.4 Inline math in all user-authored text (v0.6.1+)
 
-As of v0.6.1, all user-visible text sites pass through `ctx.render_inline_tex` when a TeX renderer is available, so `$...$` inline math works everywhere — not just in `\narrate`. The complete list of KaTeX-enabled text sites:
+As of v0.6.1, all user-visible text sites pass through `ctx.render_inline_tex` when a TeX renderer is available, so `$...$` inline math works everywhere — not just in `\narrate`. The complete list of KaTeX-enabled text sites (v0.21.2: list corrected — cell values, watch columns, index/tick labels and more were always supported but undocumented):
 
-1. `\narrate{...}` body (original, §8.3)
-2. `\annotate{...}{label="$...$"}` — annotation labels
-3. Plane2D point labels
-4. Plane2D line labels
-5. MetricPlot `xlabel`
-6. MetricPlot `ylabel` and `ylabel_right`
-7. MetricPlot legend series names
-8. Graph edge weights
-9. CodePanel `caption` label
+1. `\narrate{...}` body (original, §8.3) and `\hl{...}{...}` bodies
+2. `\annotate{...}{label="$...$"}` — all three annotation kinds (arc, plain pointer, position pill), single- and multi-line
+3. **Cell values** — Array / Grid / DPTable / Queue / Stack items / LinkedList nodes / HashMap bucket entries, whether from `data=` or `\apply{...}{value="$...$"}`
+4. **VariableWatch** — both the `names=` column and `\apply{...var[x]}{value="$...$"}`
+5. Captions — every primitive's `label=` (bottom and top-band)
+6. Index labels `labels=` (Array / DPTable) and Matrix `row_labels=` / `col_labels=`
+7. NumberLine tick `labels=`
+8. Tree / Graph node labels
+9. Graph edge weights set via `\apply` (static `edges=` weights are numeric); a math weight bypasses the `split_labels` bold/dim styling and renders through the KaTeX path
+10. Plane2D point and line labels
+11. MetricPlot `xlabel` / `ylabel` / `ylabel_right` / legend series names
+12. CodePanel `label=` header
+
+Deliberately **not** math-enabled: CodePanel code lines (verbatim source), auto-generated numeric axis ticks (Plane2D / MetricPlot), system-generated indices (`[i]`, `node[i]`, bucket numbers, line numbers), and accessibility-only strings (aria labels/descriptions, frame ids) — the last group speaks raw TeX via `_latex_to_speech` instead.
 
 When `ctx.render_inline_tex is None`, all sites fall back to HTML-escaped plain text.
 
