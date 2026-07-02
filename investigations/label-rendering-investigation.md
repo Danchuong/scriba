@@ -185,6 +185,15 @@ Nguyên tắc: **một nguồn sự thật hình học** — extent tính từ C
 
 **DỌN (an toàn):** stack estimator cũ production-dead: `arrow_height_above` + `_arrow_label_pill_h` + `position_label_height_above` + fudges A-class (`_ARROW_STROKE_PAD=3.0` — double-count với `_extent.py:176` nếu tái dùng; `_LABEL_HEADROOM` 24/32 prod-side; nudge margin; uncapped stagger; sqrt floor) — chỉ tests còn gọi; dead import `_html_stitcher.py:30` + re-export base.py:78/`__all__:59`. DRY nhẹ: `_reserved_arrow_above()` base (~30 sites `max(extent,_min)`), `_annotations_for()` (8 sites filter), `_prepare_scene_layout()` (preamble 4-call byte-identical ×2), `emit_plain_arrow_svg` → delegate `_emit_label_and_pill` (copy ~byte-level `:1773-1936` vs `:2149-2382`).
 
+### Follow-up #6 — LANDED trọn combo sweep (Phases A–D)
+
+- **A (multi-line pill centered):** extract `_emit_pill_label_text` — 3 copies → 1, arc/plain hết bottom-heavy (test pin 3 path cùng first_dy).
+- **B (exact 4 phía):** `_annotation_extent` cache full bbox; `annotation_h_pads`/`annotation_below_overhang`; `_h_label_pad`/`_below_lane_height` exact; numberline/plane2d chuyển; **Array phá vòng resolver→row_dx→bbox** bằng đo hệ content (`_measure_emit` override, flag `_extent_content_frame`) + biên đối xứng `S = ceil(max(caption_half, −min_x, max_x−content))` — `_below_pill_width` (drift kép 11-vs-12px) xóa. Honesty 4 phía @0.01px + cases multi-pill/12px/wide-math (RED→GREEN). Clamp mép pill `_PILL_EDGE_CLEAR=1px` (stroke hết tràn viewBox — bug-B golden delta đúng 1 ký tự x=0→1).
+- **C (sole placement):** legacy first-fit loop XÓA — mọi position pill qua `_place_pill`; phát hiện gốc sâu hơn: clamp `cy ≥ pill_h/2` trong `_place_pill` nghiền mọi above-candidate về 1 hàng (lý do thật pills chồng + lý do NGẦM test MUST-segment cũ pass — segment y=−40 đoán mò chưa bao giờ chạm pill). Mở biên `viewbox_min_x/y`; test MUST-segment sửa thành đo-pill-thật-rồi-chắn; guard mới "same-cell pills không chồng" (RED dưới legacy).
+- **D (dọn):** `_reserved_arrow_above()` base thay 24 inline copies; queue/numberline delegate; dead import stitcher xóa; 7 estimator legacy mang deprecation banner (giữ cho contract tests).
+- Suite **4081 pass**; goldens regen (8 scene pills tách nhau qua argmin — plane2d collision đối chứng ảnh: chỉ 1 pill dịch nhẹ về gần trục, không đè).
+- **Còn lại (refactor thuần, không phải bug):** `emit_plain_arrow_svg` delegate `_emit_label_and_pill` (placement scaffold còn trùng), `_prepare_scene_layout` preamble ×2, `_annotations_for` 8 sites, `pill_dimensions()` cho 3 emit sites, `_est_pill_h` anchor aesthetics, caption-width font-metrics (không exact được thuần Python).
+
 ## Follow-up: 2026-07-02 — scope thu hẹp theo user
 
 User chốt scope: **chỉ fix render `$math$` trong label** (symptom 2+3). Symptom 1, 4, 5, 6, 7 → backlog (findings giữ nguyên làm tài liệu). Hai agent điều tra symptom 4/5 bị user stop — phần env-label/ARIA đã ghi ở Source Code Trace phía trên.
