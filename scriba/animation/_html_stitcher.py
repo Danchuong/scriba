@@ -20,7 +20,6 @@ from scriba.animation._frame_renderer import (
     _normalize_bbox,
     _prescan_value_widths,
     compute_stable_viewbox,
-    compute_viewbox,
 )
 from scriba.animation._minify import _minify_html  # noqa: F401
 from scriba.animation._script_builder import (  # noqa: F401
@@ -257,14 +256,21 @@ def emit_animation_html(
     # widest historical state before viewbox computation.
     _prescan_value_widths(frames, primitives)
 
+    # The cross-frame arrow floor MUST be applied before the viewBox is
+    # measured: the floor lifts every frame's above-lane to the max, so a
+    # frame whose pill sits in the below lane becomes base + floor_above +
+    # below_overhang — taller than any single un-floored frame. Measuring
+    # first and flooring after left the viewBox short and the last
+    # primitive's caption clipped past the bottom edge.
+    _apply_min_arrow_above(frames, primitives)
+
     # Compute the max viewbox across ALL frames so the stage size stays
     # stable.  Without this, frames with arrow annotations are taller
     # than frames without, causing the array to visually shrink/grow.
     # compute_stable_viewbox also replays push/pop on copies so primitives
-    # that grow over the timeline (Stack, Queue) are not clipped.
+    # that grow over the timeline (Stack, Queue) are not clipped; the
+    # deepcopy carries the floor with it.
     viewbox = compute_stable_viewbox(frames, primitives)
-
-    _apply_min_arrow_above(frames, primitives)
 
     # R-32.2/R-32.3: build stable per-primitive stacking offsets across all
     # frames so downstream primitives never shift when annotations appear.
@@ -373,14 +379,20 @@ def emit_substory_html(
     sub_primitives = substory.primitives if substory.primitives else primitives
     if substory.primitives:
         _prescan_value_widths(substory.frames, sub_primitives)
-    sub_viewbox = compute_viewbox(sub_primitives) if substory.primitives else viewbox
+        # Same uniform-lane contract as the parent scene: floor BEFORE the
+        # viewBox is measured (a below-lane frame plus the inherited above
+        # floor is taller than any single un-floored frame), and measure
+        # across all frames with their annotations — the single-state
+        # compute_viewbox never saw the annotation lanes at all.
+        _apply_min_arrow_above(substory.frames, sub_primitives)
+    sub_viewbox = (
+        compute_stable_viewbox(substory.frames, sub_primitives)
+        if substory.primitives
+        else viewbox
+    )
 
     # R-32.2/R-32.3: reserve envelope for substory primitives too so the
     # substory stage does not snap when its own annotations spawn.
-    if substory.primitives:
-        # Same uniform-lane contract as the parent scene — previously the
-        # substory never received the cross-frame reservation at all.
-        _apply_min_arrow_above(substory.frames, sub_primitives)
     sub_reserved_offsets = (
         _build_reserved_offsets(substory.frames, sub_primitives)
         if substory.primitives
@@ -481,12 +493,16 @@ def emit_interactive_html(
     # widest historical state before viewbox computation.
     _prescan_value_widths(frames, primitives)
 
+    # Floor before measuring — see the ordering note at the interactive
+    # call site: a below-lane frame plus the inherited above floor is
+    # taller than any single un-floored frame.
+    _apply_min_arrow_above(frames, primitives)
+
     # Compute max viewbox across ALL frames so stage size stays stable.
     # Replays push/pop on copies so size-changing primitives (Stack,
-    # Queue) are sized to their largest extent and never clipped.
+    # Queue) are sized to their largest extent and never clipped; the
+    # deepcopy carries the floor with it.
     viewbox = compute_stable_viewbox(frames, primitives)
-
-    _apply_min_arrow_above(frames, primitives)
 
     # R-32.2/R-32.3: build stable per-primitive stacking offsets across all
     # frames so downstream primitives never shift when annotations appear.
@@ -579,7 +595,14 @@ def emit_interactive_html(
                     # rendering of the same substory reserves a different
                     # annotation lane than the widget.
                     _apply_min_arrow_above(sub.frames, sub_prims)
-                sub_vb = compute_viewbox(sub_prims) if sub.primitives else viewbox
+                # Measure across all frames WITH annotations (post-floor),
+                # matching the widget path — the single-state compute_viewbox
+                # never saw the annotation lanes.
+                sub_vb = (
+                    compute_stable_viewbox(sub.frames, sub_prims)
+                    if sub.primitives
+                    else viewbox
+                )
                 # R-32.2/R-32.3: reserve envelope for the print substory too.
                 sub_reserved = (
                     _build_reserved_offsets(sub.frames, sub_prims)
