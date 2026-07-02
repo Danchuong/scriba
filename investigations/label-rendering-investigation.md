@@ -98,6 +98,23 @@ Sáu triệu chứng label sai/mất khi render doc tiếng Việt (Number Spira
 - Command params (\annotate ephemeral/position/color/arrow_from, \recolor, \step label): **tất cả live** (consumers cited).
 - Fix direction: (a) forward `ir.options.label` (1 dòng + plumb static/diagram); (b) wire hoặc reject width/height/layout; (c) bỏ `grid` khỏi VALID_OPTION_KEYS.
 
+### Agent A (math-never-wraps / flex / fixed-FO sweep) — kết quả
+
+- **🔴 REGRESSION từ fix caption (ĐÃ SỬA cùng ngày):** Array không dùng `base._emit_caption` — bespoke caption (array.py:316-355 + bbox :404-407). `_caption_lines` wrap math ⇒ nhánh multi-line bespoke `_escape_xml` ⇒ raw `$...$` hiện chữ. Fix: migrate sang `_emit_caption`/`_caption_block_height` (commit "fix(array): route caption through shared Layer-A helper"); plain byte-stable (bespoke vốn là copy nguyên văn của base); goldens regen 22 files; suite 4050 xanh.
+- **Pill "math never wraps" (3 render sites + 4 measurement mirrors):** `_svg_helpers.py:3201` (position pill), `:2155` (arc-arrow pill), `:1780` (plain-pointer pill) — math exempt khỏi cap wrap 132px, pill tự-size ⇒ pill math dài TRÀN NGANG qua cells/viewBox (leader-line + clamp giảm nhẹ, không triệt). Mirrors :2873/:2632/:2842+siblings/array.py:552 tự nhất quán (không clip, chỉ latent). Severity med. Liên đới trực tiếp triệu chứng "annotate label đè cells".
+- **Fixed-FO cell/nhãn boxes (23 sites):** cell values clip/ellipsis chủ đích (low, chấp nhận). Đáng chú ý: graph.py:1619 + tree.py:741 — node math bị CLIP trong hộp 2r×2r trong khi node plain được overflow tự do (inconsistent, med); hashmap.py:362 entries dài (med); numberline.py:301 tick 40px (med); metricplot :561/:569/:579/:750 + plane2d :1014/:1109 + codepanel :400 — không truyền fo_width/height ⇒ default 80×30 clip (med).
+- **Missing font_size ở FO path (14 sites):** subset HẠI THẬT (CSS `> text` set size cho plain nhưng không với FO div ⇒ math ~16px cạnh text 14/11/10px): array:282, dptable:397/:464, grid:278, graph:1611, tree:733, numberline:296. Còn lại thấp.
+- **Flex khác:** duy nhất `_svg_helpers.py:1397` (pill FO) — an toàn hiện tại (inner = 1 span katex atomic, không có inter-item whitespace), sẽ vỡ nếu đổi sang mixed-node.
+
+### Agent B (CSS direct-child / anchor / clip class) — kết quả
+
+- **Cơ chế bug "Grid label animation lệch+clip" GIẢI XONG (High confidence):** diagram và animation cùng `_emit_frame_svg`; khác biệt duy nhất: `set_min_arrow_above(max_ah)` chỉ được gọi ở animation/interactive (`_html_stitcher.py:216-236, :456-480`), không bao giờ ở `emit_diagram_html`. Reservation đó làm `arrow_above>0` mọi frame ⇒ grid mở inner `<g transform>` (grid.py:243-244) ⇒ caption tụt 2 cấp dưới `[data-primitive]` ⇒ CSS `[data-primitive] > .scriba-primitive-label` (css:467) trượt ⇒ `text-anchor` về `start` mặc định SVG ⇒ caption single-line vẽ từ center_x sang phải (bbox x≈640 vs center≈505) tràn/clip. Không rule text-anchor fallback nào khác tồn tại (verified toàn static/*.css).
+- **Nhánh single-line plain của `_emit_caption` (base.py:566) là nhánh DUY NHẤT không inline anchor** (math path + multi-line path đã inline). Cùng bệnh: array.py:328 (đã chết theo migration Array — giờ mọi caption qua base).
+- **9 primitives cùng triệu chứng** (grid, array, dptable, matrix, stack, queue, numberline, hashmap*, variablewatch*, linkedlist* — *chỉ frame có arrow sống). **Miễn nhiễm:** tree/graph (transform nằm TRÊN chính element `[data-primitive]`, caption vẫn direct child), codepanel (inline `text_anchor="start"` chủ đích).
+- **Selector fragile khác:** css:453 numberline `> [data-target]`, css:379 cell text (an toàn nhờ descendant hop), css:486 annotation.
+- **Fix direction (2 nhát, độc lập, nên làm cả 2):** (1) inline `text_anchor="middle"` + `dominant_baseline="central"` tại base.py:566; (2) CSS child → descendant `[data-primitive] .scriba-primitive-label` (template sẵn: index-label css:401).
+- Ghi chú: watch label "f = nền + d" + hàng `val` bị cắt đáy widget = cùng chuỗi hệ quả nesting/clip trong animation (xem H4).
+
 ## Follow-up: 2026-07-02 — scope thu hẹp theo user
 
 User chốt scope: **chỉ fix render `$math$` trong label** (symptom 2+3). Symptom 1, 4, 5, 6, 7 → backlog (findings giữ nguyên làm tài liệu). Hai agent điều tra symptom 4/5 bị user stop — phần env-label/ARIA đã ghi ở Source Code Trace phía trên.
