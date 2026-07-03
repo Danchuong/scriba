@@ -1,5 +1,7 @@
 # FP-3 — Duplicated Layout Constants (twin-drift) — Structural Fix Design
 
+> **STATUS: CLOSED 2026-07-03** — commits A–D landed (1d9e741, 24a37ee, 6192a06, 00a1ad0): twins consolidated, both live drifts reconciled, parity registry + module-level birth check guard regrowth. Lint ceiling: 0.
+
 > Status: research / design only. No source touched. Deliverable for the person who lands the fix.
 > Probes run with `.venv/bin/python` from repo root; every value below is machine-verified, not eyeballed.
 

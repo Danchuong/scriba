@@ -1,5 +1,7 @@
 # Sweep: dual-runtime drift (scriba.js vs _script_builder.py)
 
+> **STATUS: CLOSED 2026-07-03** — runtime unified (inline derived from scriba.js, commit 95083c4), gen-token race fix, theme-toggle also derived (e118062), CHANGELOG claim corrected. Guards: `tests/unit/test_runtime_unified.py` byte-equality pins.
+
 The interactive animation runtime exists **twice**:
 
 - **Asset** — `scriba/animation/static/scriba.js` (external `<script src>`, CSP mode).

@@ -1,5 +1,7 @@
 # All-Script Text-Metrics Architecture — the universal end-state and its staged landing
 
+> **STATUS: RUNG 0 LANDED 2026-07-03** (17ece67, SCRIBA_VERSION 13); rungs 1–2 remain the designed ladder.
+
 > Synthesis target. Design investigation; **no repo source modified**. Feasibility probes ran
 > in the scratchpad `ftenv` (fontTools 4.63.0 + uharfbuzz 0.55.0 / harfbuzz 14.2.1, py3.14)
 > against system complex-script fonts. Builds on the shipped v1

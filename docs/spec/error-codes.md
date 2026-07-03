@@ -248,3 +248,12 @@ build-time contract; these codes are not raised by the runtime emitter. See
 | R32-03 | R-32.4 | `bounding_box()` not pure under repeated annotation probes. | Conformance — `test_bounding_box_purity[*]` |
 | R32-04 | R-32.6 | Max-envelope computation non-deterministic across replays. | Conformance — `test_envelope_determinism` |
 | R32-05 | R-32.5 | Reduced-motion path produced layout differing from motion path. | Conformance — `test_reduced_motion_layout_parity` |
+
+## Warnings (W13xx)
+
+Structured warnings — surfaced via Python ``warnings`` (and the RFC-002
+collector when a RenderContext is present). Never fatal.
+
+| Code | Description | Emitted from |
+|------|-------------|--------------|
+| W1301 | Complex-script text (Arabic, Hebrew, Thai, Lao, Khmer, Myanmar, Indic, Hangul) is measured with a safe heuristic **over-estimate** — boxes may be wider than needed, nothing clips (shaping only ever narrows text). Once per script per process. Exact metrics require a pinned font for that script — see `investigations/allscript-architecture.md` (the `[intl]`/`[shaping]` ladder). | `scriba/animation/primitives/_text_metrics.py` |

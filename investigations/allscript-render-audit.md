@@ -1,5 +1,7 @@
 # All-Script / RTL Render Audit — what breaks visually today
 
+> **STATUS: CLOSED 2026-07-03** — all four fixes landed in 17ece67 (F1 combining-mark idents, F2 dir=auto ×4, F3 unicode-bidi:plaintext, F4 cluster-safe wrap). Guards: `test_selector_unicode_idents.py`, `test_wrap_cluster_safe.py`.
+
 **Scope.** How scriba *renders* complex-script and RTL text today (width metrics
 aside). Every finding below was produced by authoring `.tex` in the scratchpad,
 rendering with `render.py`, and reading headless-Chromium screenshots. No repo

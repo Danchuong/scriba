@@ -1,5 +1,7 @@
 # Case: fp56-dispatcher-bypass — 3× FP-6 + 2× FP-5 smart-label lint violations (annotation dispatcher bypass)
 
+> **STATUS: CLOSED 2026-07-03** — all three primitives route through the dispatcher (b93b164); FP-5 confirmed false positive; R-30 flipped Shipped. Guard: `tests/unit/test_dispatcher_route_through.py`.
+
 **Opened:** 2026-07-03 · lint-driven (scripts/lint_smart_label.py, ceiling 11) · structural-fix design, no source modified · Status: **DESIGN — ready to land**
 
 Scope of the 5 named violations:

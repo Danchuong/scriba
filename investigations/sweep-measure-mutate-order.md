@@ -1,5 +1,7 @@
 # Sweep: measure-mutate ordering (twin-drift)
 
+> **STATUS: CLOSED 2026-07-03** — both findings fixed by `measure_scene_layout` (one shared timeline replay for viewBox + offsets), commit cb388c6. Guards: `tests/unit/test_scene_layout_{caption,growth}_reserve.py`.
+
 - **Date:** 2026-07-02
 - **Scope:** `scriba/animation/_html_stitcher.py`, `_frame_renderer.py`, `renderer.py`, `scene.py`, `primitives/base.py`, `primitives/_extent.py`, and representative primitives (`grid.py`, `array.py`, `stack.py`, `queue.py`). Investigate-only; no source modified.
 - **Context / HEAD:** `369e80f` — *fix(stitcher): floor the arrow lane BEFORE measuring the scene viewBox*. That commit closed one instance of this family (viewBox measured before `_apply_min_arrow_above`). This sweep hunts the rest.

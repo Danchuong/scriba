@@ -1,5 +1,7 @@
 # Sweep: CSS ↔ DOM contract
 
+> **STATUS: CLOSED 2026-07-03** — widget css_assets shipped + DiagramRenderer declares primitive CSS (c89e132); dead selectors/tokens removed (7b919f2). Guard: `tests/unit/test_render_page_assembly.py::TestArtifactDeclaredWidgetCss`.
+
 Scope: every shippable CSS sheet vs every class/token the Python + JS emitters
 produce, both directions. Entry point audited is `render.py` (the sole HTML
 producer — see Bundle matrix). Read-only investigation; nothing in the repo was

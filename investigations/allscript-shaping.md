@@ -1,5 +1,7 @@
 # All-Script Shaping: exact metrics for Arabic / Thai / Devanagari / Korean and the identity wall
 
+> **STATUS: RESEARCH COMPLETE 2026-07-03** — rung 0 landed (17ece67); rungs [intl]/[shaping] designed-and-ready, not scheduled.
+
 > Structural design investigation. **No repo source modified.** All probes ran in a throwaway
 > scratchpad venv (`fontTools 4.63` + `uharfbuzz 0.55.0` + `brotli`, py3.14) against fonts
 > already on this Mac, with ground truth from the repo's pinned headless Chromium

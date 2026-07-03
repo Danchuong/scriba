@@ -1,5 +1,7 @@
 # Sweep: spec ↔ code drift
 
+> **STATUS: CLOSED 2026-07-03** — ruleset guard structural + in-suite, diagram options wired, grid=/side= phantoms removed, §8 matrix + refs reconciled (93863ec). Guards: `tests/doc_coverage/test_ruleset_sync.py`, `test_smart_label_lint.py`.
+
 **Date:** 2026-07-02 · **Code baseline:** 0.21.2 (`SCRIBA_VERSION` 11), HEAD `369e80f`
 **Audience lens:** ranked by how badly the drift misleads a human author or an AI agent *writing `.tex`*. Engine-internal drift (misleads maintainers/AI editing the renderer) is capped lower on that axis and labelled as such.
 

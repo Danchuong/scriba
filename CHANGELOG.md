@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-07-03 — Exact text metrics, one runtime, every script
+
 ### Added
 - **Every-script rung 0** (`SCRIBA_VERSION` →13): Thai/Devanagari/… names
   work in selectors, VariableWatch and `\step` labels (identifier charsets
@@ -19,6 +21,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   they are safe over-estimates. CJK stays exact at 1em by construction.
   The `[intl]`/`[shaping]` exactness ladder is designed in
   `investigations/allscript-{architecture,shaping,render-audit}.md`.
+
+- **The smart-label forbidden-pattern backlog is zero, and gated there.**
+  All annotation paths route through the shared dispatcher (FP-6 — also
+  repairing a latent measure≠paint asymmetry on NumberLine/Plane2D); each
+  primitive's content labels share ONE placement registry
+  (`register_decorations`) exposed to the scorer via
+  `resolve_self_content_rects` (FP-2 — fixes a confirmed point-label /
+  line-label overlap on Plane2D); duplicated layout constants are
+  consolidated with two live drifts reconciled (FP-3 — plane2d CJK
+  line-label width, graph weight-pill pads 5/2/3→6/3/4). Guards:
+  a constant-parity registry (`test_layout_constant_sync`), a
+  module-level FP-3 birth check, and the lint ceiling held at 0.
+- **Diagram env options are wired** (`label=` → `aria-label`,
+  `width=`/`height=` → max-size), the ruleset sync guard is structural and
+  lives in the suite, and the `grid=`/`side=` phantom options are gone
+  from the docs (probes proved `side=` inert; `position=` is the knob).
 
 ### Changed
 - **Cell/node text is now measured exactly against a shipped font**
@@ -55,6 +73,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   caption painted past the viewBox and into the next primitive.
 
 ### Fixed
+- **Late captions and growing primitives reserve their space.** The scene
+  viewBox and the stacking offsets now come from ONE shared replay
+  (`measure_scene_layout`) covering structural push/pop and mid-timeline
+  `\apply{p}{label=…}` captions — a Stack growing above an Array
+  overlapped it by up to 90px, and a late caption painted past the
+  viewBox into the next primitive.
+- **The standalone theme-toggle script is derived from `scriba.js`**
+  (sentinel slice) instead of a third hand-maintained copy; a stale
+  0.9-era CHANGELOG claim that inline-runtime stopped being the default
+  carries a dated correction (it never did).
 - **MetricPlot gridlines render again (and Plane2D labels get their font).**
   `render.py` collected artifact-declared CSS only for TeX gaps and shipped a
   hardcoded sheet list for widgets, so `scriba-metricplot.css` /

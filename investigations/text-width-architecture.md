@@ -1,5 +1,7 @@
 # Text-Width Architecture: exact per-font metrics vs the `estimate_text_width` heuristic
 
+> **STATUS: LANDED (v1 scope) 2026-07-03** — commit 0cd523b: Scriba Sans subset + `_text_metrics.TextMeasurer`, 14px sans surface exact (<1% vs browser). v2 (mono font, textLength flag) remains designed-not-scheduled.
+
 > Structural design investigation. No source was modified; all probes ran in a throwaway
 > scratchpad venv (`fonttools` + `uharfbuzz`, py3.14) against fonts already on this machine.
 > Related prior art in this folder: `label-rendering-investigation.md`.

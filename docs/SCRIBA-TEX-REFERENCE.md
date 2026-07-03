@@ -2,7 +2,7 @@
 
 > **Single-file reference for AI agents.** Read this one file to write valid Scriba `.tex` sources.
 > Scriba renders LaTeX → HTML for competitive programming editorials with animated algorithm visualizations.
-> **Target:** v0.21.2
+> **Target:** v0.22.0
 
 ## Contents
 
@@ -343,7 +343,7 @@ Binds the frame to the identifier `base-case`. The label:
 
 | Constraint | Detail |
 |---|---|
-| Characters | Unicode letters, digits, `_`, `-`, `.` — matches `[^\W\d][\w.-]*` (e.g. `base-case`, `đáp-án`) |
+| Characters | Unicode letters, digits, combining marks, `_`, `-`, `.` — a letter/`_` start followed by letters, digits, combining marks (Mn/Mc) or `._-` (e.g. `base-case`, `đáp-án`, `ค่า-1`). Since 0.22.0 combining-mark scripts (Thai, Devanagari, …) work; Python's `\w` alone excludes Mn/Mc. |
 | Leading char | Must be a letter (any script) or `_` (not a digit) |
 | Empty | Not allowed — raises `E1005` |
 | Unknown key | Any key other than `label` raises `E1004` |
@@ -646,7 +646,7 @@ Inline cross-reference inside a `\narrate` body. Wraps *tex* in a `<span>` that 
 \narrate{Second step — refer back to \hl{step1}{the first frame}.}
 ```
 
-See §5.3 for label syntax rules (`[A-Za-z_][A-Za-z0-9._-]*`).
+See §5.3 for label syntax rules (Unicode letter/`_` start; letters, digits, combining marks, `._-` continue).
 
 ---
 

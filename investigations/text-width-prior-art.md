@@ -1,5 +1,7 @@
 # Prior Art: Exact Text-Width Measurement in Browserless SVG Generation
 
+> **STATUS: LANDED (informed v1) 2026-07-03** — shipped-font + baked-advance-table strategy implemented in 0cd523b; textLength remains the designed safety-net follow-up.
+
 > Research brief for **scriba** (`scriba-tex`) — a pure-Python LaTeX→static-HTML/SVG renderer with
 > self-contained output and zero JS-runtime layout dependencies. **This is a survey/design document
 > only. No source code was modified.**

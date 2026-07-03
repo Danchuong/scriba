@@ -1,5 +1,7 @@
 # Text-Width Accuracy Bench — `estimate_text_width` vs Browser Ground Truth
 
+> **STATUS: LANDED (validated v1) 2026-07-03** — thesis confirmed in production: browser deltas 0.11–0.97% on the shipped font (bench predicted p95 0.12%).
+
 **Question.** How wrong is scriba's `estimate_text_width` *today*, and how exact
 would font-file metrics be — both measured against real browser rendering (the
 ground truth)? Corpus: 45 strings × sizes 10 / 11 / 14 px, split Latin / Viet /

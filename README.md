@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.21.2 · MIT · Python 3.10+
+**Status:** v0.22.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,6 +24,28 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.22.0
+
+- **Exact text metrics** — cell/node text is measured against a shipped,
+  pinned 34 KB Inter subset ("Scriba Sans", full Vietnamese coverage) using
+  the font's own advance table: browser deltas drop from 5–30% to <1%,
+  tabular-nums honoured, stdlib-only runtime.
+- **One runtime source** — the inline widget `<script>` (and the standalone
+  theme toggle) are derived from `scriba.js` by sentinel slicing; a
+  generation-token guard kills the orphaned-transition race; rapid
+  Next/Prev never swallows frames.
+- **Every-script rung 0** — Thai/Devanagari identifiers parse (combining
+  marks), spaceless scripts wrap cluster-safely, RTL text renders in
+  logical order (`unicode-bidi:plaintext`, `dir="auto"`), complex-script
+  widths warn once (`W1301`) that they are safe over-estimates. CJK is
+  exact at 1em by construction.
+- **Layout cannot drift** — viewBox + stacking offsets come from one shared
+  timeline replay; content labels join one registry per primitive; the
+  smart-label lint backlog is zero and gated there.
+
+<details>
+<summary>v0.21.0 changelog</summary>
+
 ## What's new in v0.21.0
 
 - **Annotation & caption legibility across all primitives** — long `label=`
@@ -41,6 +63,8 @@ asset basenames needed to display it.
 - **(v0.17.0)** Fail-loud validation, render fixes, reference overhaul.
 - **(v0.16.0)** Embedder font-scale knob + boundary validation.
 - See [`CHANGELOG.md`](CHANGELOG.md) for the full history.
+
+</details>
 
 <details>
 <summary>v0.8.2 changelog</summary>

@@ -1,5 +1,7 @@
 # Case: FP-2 — isolated placement registries (content labels vs annotation pills)
 
+> **STATUS: CLOSED 2026-07-03** — Plane2D unified `register_decorations` + content rects; Graph exposes nodes/weight pills (0d20670). Overlap repro: NONE. Guard: `tests/unit/test_content_label_registry.py`.
+
 > **STATUS: OPEN (design)** — 2026-07-03. Structural-fix research only; no source
 > touched. Confirmed user-facing bug (browser-measured): Plane2D point-label vs
 > line-label overlap **11.0 × 9.0 px**. Lint E1570-B (FP-2) flags 5 isolated
