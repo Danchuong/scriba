@@ -32,7 +32,7 @@ from scriba.animation.primitives.base import (
     svg_style_attrs,
 )
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
-from scriba.animation.primitives._svg_helpers import CellMetrics, _DEFAULT_LABEL_FONT_PX
+from scriba.animation.primitives._svg_helpers import CellMetrics, _DEFAULT_LABEL_FONT_PX, _LABEL_PILL_PAD_X, _LABEL_PILL_PAD_Y, _LABEL_PILL_RADIUS
 from scriba.animation.primitives._types import (
     _NODE_MIN_RADIUS,
 )
@@ -87,9 +87,13 @@ _ISOLATED_LANE_BAND = 3 * _NODE_RADIUS + _NODE_OVERLAP_GAP
 
 # Edge weight pill — see docs/spec/graph-edge-pill-ruleset.md (GEP-02/03/04).
 _WEIGHT_FONT: int = _DEFAULT_LABEL_FONT_PX  # annotation-font token (C4)
-_WEIGHT_PILL_PAD_X: int = 5
-_WEIGHT_PILL_PAD_Y: int = 2
-_WEIGHT_PILL_R: int = 3
+# B-2 reconciliation: the earlier FP-3 pass aliased plane2d's pill metrics
+# to the canonical _LABEL_PILL_* but skipped graph — the copies had drifted
+# to 5/2/3 vs 6/3/4. One pill token now (guarded by test_layout_constant_sync);
+# if design ever wants tighter weight pills, pin them apart explicitly there.
+_WEIGHT_PILL_PAD_X: int = _LABEL_PILL_PAD_X
+_WEIGHT_PILL_PAD_Y: int = _LABEL_PILL_PAD_Y
+_WEIGHT_PILL_R: int = _LABEL_PILL_RADIUS
 # Perpendicular offset from stroke centerline to pill centre (GEP-06 v1.1).
 # v1.1: pill sits ON the edge stroke (Graphviz/Mermaid convention) rather than
 # floating alongside — rotated pill already binds to edge direction visually,
