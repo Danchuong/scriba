@@ -455,7 +455,7 @@ Constraints:
 - `\step` is forbidden (`E1050`).
 - `\narrate` is forbidden (`E1054`). If the author wants explanatory text alongside the diagram, they use normal LaTeX paragraphs before/after the environment.
 - `\compute` is allowed (user-locked decision) for precomputing data like sorted arrays or tree layouts before rendering.
-- `width` / `height` / `id` / `label` options apply. `layout` and `grid` do not (conservative choice: `grid=on` is accepted but is authoring-only — it emits a faint grid over the stage).
+- `width` / `height` / `id` / `label` options apply. `layout` and `grid` do not — `grid` was removed in 0.21.2 and now raises `E1004` (unknown option key).
 
 ## 8. HTML output contract (CRITICAL)
 
@@ -876,7 +876,7 @@ Rendered HTML — identical shape to §12.1 but with 5 `<li class="scriba-frame"
 ### 12.3 Static diagram — binary tree
 
 ```latex
-\begin{diagram}[id=bst-demo, label="A small binary search tree"]
+\begin{diagram}[id="bst-demo", label="A small binary search tree"]
 \shape{T}{Tree}{root=8, nodes=[8,3,10,1,6,14,4,7,13]}
 \recolor{T.node[8]}{state=current}
 \annotate{T.node[8]}{label="root", position=above, color=info}

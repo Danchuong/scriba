@@ -228,4 +228,6 @@ User chốt scope: **chỉ fix render `$math$` trong label** (symptom 2+3). Symp
 
 ## Conclusion
 
-**Confidence: High** (root cause Confirmed từng dòng, repro deterministic, fix verified bằng test + đo browser). Scope đã fix: math-in-label. Backlog còn: symptom 1 (animation label lệch/clip — nghi cùng họ "CSS direct-child không áp trong animation context", có manh mối mới từ mục 4), symptom 4 (VariableWatch label drop), symptom 5 (env label → renderer.py:503-509, fix 1 dòng + plumbing), symptom 6 (tspan strip space khi copy), symptom 7 (dangling aria-labelledby — `_frame_renderer.py:512` thiếu guard).
+**Confidence: High** (root cause Confirmed từng dòng, repro deterministic, fix verified bằng test + đo browser). Scope đã fix: math-in-label.
+
+**Backlog closure (2026-07-03 sweep-spec-code-drift F12):** mọi symptom còn lại đã ship trong các đợt S1–S7/0.21.2 — symptom 1 (caption anchor CSS-independent), symptom 4 (VariableWatch — hóa ra là clipping, fix bởi caption spacing), symptom 5 (env label/width/height/layout wired, `renderer.py` forwards vào `emit_html`; diagram path wired nốt 2026-07-03), symptom 6 (tspan giữ trailing space), symptom 7 (diagram `narration_id_override=""` — hết dangling aria-labelledby). Guard: `tests/unit/test_env_options_wired.py`. Case CLOSED trọn.

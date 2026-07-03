@@ -404,17 +404,16 @@ Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
 | `ephemeral` | bool | `false` | When `true`, the annotation is cleared at the next `\step` boundary |
 | `arrow` | bool | `false` | When `true`, adds a pointer arrowhead on the annotation pill pointing at the target cell (no source cell required) |
 | `arrow_from` | selector | _(none)_ | Draws a Bezier arc **from** the specified source cell **to** the target, with an arrowhead at the destination |
-| `side` | enum | _(auto)_ | Force the pill's half-plane: `"left"`, `"right"`, `"above"`, `"below"`. When omitted, Scriba auto-picks a side from the arrow direction. |
 
 By default, a left-to-right arc places its pill above the arc midpoint. Override with
-`side="below"` when there is more clearance underneath.
+`position="below"` when there is more clearance underneath.
 
 ```latex
 % auto side — pill above arc (default for left-to-right arrow)
 \annotate{dp.cell[3]}{label="+5", arrow_from="dp.cell[1]", color=good}
 
 % explicit override — force pill below
-\annotate{dp.cell[3]}{label="+5", arrow_from="dp.cell[1]", color=good, side="below"}
+\annotate{dp.cell[3]}{label="+5", arrow_from="dp.cell[1]", color=good, position="below"}
 ```
 
 **`arrow=true` — bare arrowhead, no source:**
@@ -1467,7 +1466,7 @@ The option bracket `[...]` on `\begin{animation}` / `\begin{diagram}` is **optio
 | `width` | dimension | auto | both | ViewBox width hint (e.g. `width=800` for px, `width=8cm`) |
 | `height` | dimension | auto | both | ViewBox height hint |
 | `layout` | filmstrip\|stack | filmstrip | animation | Frame layout |
-| `grid` | bool | _(n/a)_ | diagram | Accepted but ignored — see [Appendix A](#appendix-a--internal--forward-compat) |
+| `grid` | bool | _(n/a)_ | diagram | Removed in 0.21.2 — now raises `E1004`
 
 ---
 
@@ -1644,7 +1643,7 @@ The layout engine reserves vertical space for annotations at the **per-scene max
 The stable SA layout optimizer is topology-blind — it has no edge-direction term, so directed graphs often render upside-down or sideways. When both `layout="stable"` and `directed=true` are set, a `UserWarning` is emitted at `\shape` parse time. Use `layout="hierarchical"` for DAGs.
 
 Forward-compat flags and dev-only env vars (`global_optimize`, the diagram
-`grid` option, `SCRIBA_DEBUG_LABELS`, `SCRIBA_LABEL_ENGINE`) are not needed for
+`SCRIBA_DEBUG_LABELS`, `SCRIBA_LABEL_ENGINE`) are not needed for
 authoring — see [Appendix A](#appendix-a--internal--forward-compat).
 
 ---
@@ -1720,7 +1719,7 @@ their presence in old sources or tooling is explained.
 | Item | Where | Status |
 |---|---|---|
 | `global_optimize` | Graph param | **No-op** forward-compat flag (SA post-refine, GEP-20). Emits a `UserWarning`; has no runtime effect. |
-| `grid` | `\begin{diagram}` option | Accepted but **ignored** — forward-compat placeholder. |
+| `grid` | `\begin{diagram}` option | Removed in 0.21.2 — now raises `E1004`. |
 | `SCRIBA_DEBUG_LABELS` | env var | `1` annotates each pill with its placement score (collision debugging). Never enable in production HTML. |
 | `SCRIBA_LABEL_ENGINE` | env var | `unified` (default) / `legacy` (deprecated) / `both` (cross-check, slow). Engine-development only. |
 

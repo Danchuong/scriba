@@ -87,8 +87,8 @@ Rules governing how color tokens are assigned, distinguished, and rendered.
 **Since:** planned v0.13.0+
 **Supersedes:** A-1, A-2, N-6 (partial) from v2.0.0-rc.1
 **Source:** cog P-OPAC-1, a11y A11Y-04
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
-           `_svg_helpers.py:emit_position_label_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`,
+           `scriba/animation/primitives/_svg_helpers.py:emit_position_label_svg`
 
 Group-level `opacity < 1` MUST NOT be applied to annotation `<g>` elements that contain
 text. De-emphasis MUST be expressed via lighter foreground color token values or via
@@ -113,7 +113,7 @@ v0.11.0-W3 interim fix)
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-2, A-4 (partial) from v2.0.0-rc.1; A11Y-04
 **Source:** a11y A11Y-04, cog P-OPAC-1
-**Scope:** `_svg_helpers.py:ARROW_STYLES`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:ARROW_STYLES`
 
 `muted` token group opacity MUST be ≥ 0.7 (shipped: 0.7, measured 3.24:1 effective
 non-text contrast, WCAG 2.2 SC 1.4.11). `info` token group opacity MUST be ≥ 0.7
@@ -139,7 +139,7 @@ at 0.7 (previously separate floors 0.56 / 0.49 in rc.1 spec; raised uniformly fo
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-5, A-5b from v2.0.0-rc.1; A11Y-05, A11Y-06, comp P4
 **Source:** a11y A11Y-05, A11Y-06, comp P2/P4
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`
 
 Every color token MUST have at least one non-color differentiator (dash pattern,
 stroke-weight, or shape) that survives deuteranopia/protanopia/tritanopia and grayscale
@@ -154,7 +154,7 @@ paths provide a reliable non-hue cue satisfying WCAG 2.2 SC 1.4.1 (Use of Colour
 rule supersedes the leader-conditional A-5b from rc.1, which only applied dashes when a
 leader was emitted.
 
-**Code ref:** `scriba/animation/primitives/_svg_helpers.py:659` (warn `stroke-dasharray="3,2"` on path); line 662 (muted `stroke-dasharray="1,3"` on path)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:_place_pill` (warn `stroke-dasharray="3,2"` on path); line 662 (muted `stroke-dasharray="1,3"` on path)
 **Test ref:** `tests/unit/test_w3_batch1.py` (R-13 covered indirectly; direct dash-pattern assertions in `test_phase_b_stack_edges.py`)
 **Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
 
@@ -166,8 +166,8 @@ leader was emitted.
 **Since:** planned v0.12.0
 **Supersedes:** none (new)
 **Source:** a11y A11Y-07
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
-           `_svg_helpers.py:emit_position_label_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`,
+           `scriba/animation/primitives/_svg_helpers.py:emit_position_label_svg`
 
 Pill border `stroke-opacity` MUST be ≥ 0.6 to meet WCAG 2.2 SC 1.4.11 3:1 non-text
 contrast for the pill boundary shape. The current value of 0.3 does not meet this
@@ -178,7 +178,7 @@ opacity, the border does not achieve 3:1 contrast against a white stage backgrou
 the non-text contrast criterion. The fix is a single constant change; it is deferred to
 v0.12.0 to bundle with the visual regression sweep.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~930); `pending v0.12.0`
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg` (line ~930); `pending v0.12.0`
 **Test ref:** pending
 **Golden ref:** none (visual change but no geometry shift)
 
@@ -245,7 +245,7 @@ natural positions, and clearance requirements.
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** AC-3, G-7 (partial) from v2.0.0-rc.1; cog P-DIR-1
 **Source:** cog P-DIR-1
-**Scope:** `_svg_helpers.py:emit_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`
 
 Labels annotating a Bézier arc MUST use "above arc midpoint" as first candidate. The
 natural position MUST be computed as `label_ref_y = mid_y_val − pill_h // 2 − 4` (integer
@@ -269,7 +269,7 @@ intentionally ≥ 4 px (see §3 naming convention).
 **Since:** planned v0.12.0
 **Supersedes:** C-7 (SHOULD → MUST), cog P-OCC-1, code W-2
 **Source:** cog P-OCC-1, code W-2
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`;
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`;
            `PrimitiveBase.resolve_obstacle_boxes`
 
 The target cell AABB MUST be registered as a no-placement FIXED blocker in `placed_labels`
@@ -295,7 +295,7 @@ cell itself is protected. Depends on the `resolve_obstacle_boxes` API (MW-2, v0.
 **Since:** planned v0.13.0+
 **Supersedes:** cog P-OCC-2; depends on R-18
 **Source:** cog P-OCC-2
-**Scope:** `_svg_helpers.py:_nudge_candidates`; axis-emitting primitives
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:_nudge_candidates`; axis-emitting primitives
 
 Axis-label bounding boxes MUST be registered as no-placement zones (`kind="axis_label"`)
 before any annotation candidate is evaluated. No pill MUST be placed overlapping an
@@ -319,7 +319,7 @@ R-03 is rated L; a ruleset v2.1.0-rc bump is required when this lands.
 **Since:** planned v0.12.0
 **Supersedes:** cog P-OCC-3; depends on R-02
 **Source:** cog P-OCC-3
-**Scope:** `_svg_helpers.py:emit_arrow_svg`; `PrimitiveBase.resolve_obstacle_boxes`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`; `PrimitiveBase.resolve_obstacle_boxes`
 
 The source cell AABB SHOULD be registered as a WARN-level blocker (`kind="source_cell"`)
 before candidate evaluation. Source-cell overlap is lower severity than target-cell overlap
@@ -343,7 +343,7 @@ candidates that avoid target cells (R-02) first.
 **Since:** planned v0.12.0
 **Supersedes:** cog P-DIR-2; builds on R-22
 **Source:** cog P-DIR-2
-**Scope:** `_svg_helpers.py:_nudge_candidates`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:_nudge_candidates`
 
 Candidate generation MUST weight upper-right (NE) before upper-left (NW) before lower-right
 (SE) before lower-left (SW) for left-to-right arcs; this order MUST rotate 90° for
@@ -355,7 +355,7 @@ preserves the natural reading flow and is consistent with the Hirsch (1982) cart
 ladder. This rule extends R-22 (auto side_hint) by providing finer NE-before-NW ordering
 within each half-plane. Must land after R-22 stabilises candidate ordering.
 
-**Code ref:** `_svg_helpers.py:_nudge_candidates` (line 128); pending v0.12.0
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:_nudge_candidates` (line 128); pending v0.12.0
 **Test ref:** pending
 **Golden ref:** pending (byte-breaking for all arc-annotated scenes)
 
@@ -367,7 +367,7 @@ within each half-plane. Must land after R-22 stabilises candidate ordering.
 **Since:** planned v0.12.0
 **Supersedes:** cog P-WHSP-1; depends on R-18
 **Source:** cog P-WHSP-1
-**Scope:** `_svg_helpers.py:_nudge_candidates`, `_svg_helpers.py:_place_pill`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:_nudge_candidates`, `scriba/animation/primitives/_svg_helpers.py:_place_pill`
 
 Label pills SHOULD maintain clearance of `max(4, pill_h × 0.15)` px from any non-excluded
 cell boundary. Near-boundary candidates SHOULD be penalised in candidate scoring (see
@@ -379,7 +379,7 @@ cluttered result where it is unclear whether the label belongs to one cell or an
 one. A clearance of `max(4, pill_h × 0.15)` scales with font size, providing proportionally
 larger gaps at larger type sizes.
 
-**Code ref:** `_svg_helpers.py:_nudge_candidates` (line 128); pending v0.12.0 (depends R-18)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:_nudge_candidates` (line 128); pending v0.12.0 (depends R-18)
 **Test ref:** pending
 **Golden ref:** pending
 
@@ -391,7 +391,7 @@ larger gaps at larger type sizes.
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** N-11 (partial) from v2.0.0-rc.1; code W-1
 **Source:** code W-1
-**Scope:** `_svg_helpers.py:emit_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`
 
 `side_hint` MUST be auto-computed from the arrow direction vector
 `(src_point → dst_point)` when no explicit `side` or `position` key is present in the
@@ -407,8 +407,8 @@ Closing this gap eliminates the need for authors to add redundant `side=` parame
 get predictable placement. Must land before R-01 (natural position fix) so the combined
 candidate ordering is tested as a unit.
 
-**Code ref:** `scriba/animation/primitives/_svg_helpers.py:1101` (auto-infer `side_hint` from arrow direction vector in `emit_arrow_svg`)
-**Test ref:** `tests/unit/test_smart_label_phase0.py::TestSideHintUpperFirst` (side_hint direction preference)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:_infer_side_hint` (auto-infer `side_hint` from arrow direction vector in `emit_arrow_svg`)
+**Test ref:** `tests/unit/test_smart_label_phase0.py::test_side_hint_above_upper_first` (side_hint direction preference)
 **Golden ref:** `tests/golden/smart_label/` — golden re-pin completed in commit 27104ed
 
 ---
@@ -470,7 +470,7 @@ Rules governing when, how, and where leader lines are drawn.
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** G-8, N-1 from v2.0.0-rc.1; code W-3, comp P1
 **Source:** cog P-LEAD-1, code W-3, comp P1
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`
 
 Leader threshold MUST be `max(pill_h, 20)` px, not the current hard-coded 30 px constant.
 The constant MUST be extracted to a named symbol `_LEADER_DISPLACEMENT_THRESHOLD`. The
@@ -482,7 +482,7 @@ threshold stays at 30 px, causing leader lines to appear even when the pill is o
 displaced. The `max(pill_h, 20)` formula maintains the absolute minimum floor while
 scaling with pill height.
 
-**Code ref:** `scriba/animation/primitives/_svg_helpers.py:83` (`_LEADER_DISPLACEMENT_THRESHOLD = 20.0`); line 1191 (`max(pill_h, _LEADER_DISPLACEMENT_THRESHOLD)` formula in `emit_arrow_svg`)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:_LEADER_DISPLACEMENT_THRESHOLD` (`_LEADER_DISPLACEMENT_THRESHOLD = 20.0`); line 1191 (`max(pill_h, _LEADER_DISPLACEMENT_THRESHOLD)` formula in `emit_arrow_svg`)
 **Test ref:** `tests/unit/test_w3_batch1.py::TestR07LeaderDisplacementThreshold::test_constant_exported`
 **Golden ref:** none (no golden change at default pill_h ≈ 20 px)
 
@@ -494,7 +494,7 @@ scaling with pill height.
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** G-7 from v2.0.0-rc.1; code W-4-leader, comp P2
 **Source:** cog P-LEAD-2, code W-4-leader, comp P2
-**Scope:** `_svg_helpers.py:emit_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`
 
 The leader line endpoint MUST terminate at the nearest point on the pill perimeter
 rectangle, not at the pill center `(fi_x, fi_y)`. The perimeter intersection MUST be
@@ -523,7 +523,7 @@ Implementation cost is approximately 8 lines of geometry.
 **Superseded:** v0.15.0 — replaced by R-27c
 **Supersedes:** A-5b (partial) from v2.0.0-rc.1; code W-4
 **Source:** code W-4
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`
 
 Leader lines (the `<circle>` origin dot and `<polyline>`) MUST be emitted only when
 `color in ("warn", "error")` for displaced low-prominence labels. Leaders on `good`,
@@ -554,7 +554,7 @@ is visually offset from its arrow.
 **Superseded:** v0.15.0 — replaced by R-27c
 **Supersedes:** (new in v0.11.0)
 **Source:** code W-4 (far-gate sub-rule)
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`
 
 Any color token MUST emit a leader when the algorithmic displacement (`‖final − natural‖`)
 is ≥ `pill_h × _ARROW_LEADER_FAR_FACTOR` (factor = 1.0). This bypassed the R-27
@@ -574,7 +574,7 @@ visual separation.
 **Since:** v0.15.0 (2026-04-23)
 **Supersedes:** R-27, R-27b
 **Source:** DP-optimization leader audit 2026-04-23 (`docs/archive/dp-optimization-leader-analysis-2026-04-23/README.md`)
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`
 
 Leader lines MUST be emitted when the **visual gap** between the rendered pill centre and
 the arc midpoint (`curve_mid`) meets or exceeds the threshold:
@@ -617,7 +617,7 @@ Rules governing the order in which annotations are processed and placed.
 **Since:** planned v0.12.0
 **Supersedes:** code W-5; cog P-PRIO-1
 **Source:** cog P-PRIO-1, code W-5
-**Scope:** `_svg_helpers.py:emit_arrow_svg` (caller: `base.emit_annotation_arrows`)
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg` (caller: `base.emit_annotation_arrows`)
 
 When multiple annotations share a placement pass, they MUST be sorted by semantic importance
 before displacement minimisation begins. Priority order (highest first): `error > warn >
@@ -629,7 +629,7 @@ receive the best candidates.
 annotation defined later has far higher semantic weight. Sorting by priority token rank
 ensures the visual hierarchy matches the semantic hierarchy intended by the author.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); pending v0.12.0
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg` (line ~634); pending v0.12.0
 **Test ref:** pending
 **Golden ref:** pending (byte-breaking for mixed-color annotation sets)
 
@@ -642,24 +642,24 @@ ensures the visual hierarchy matches the semantic hierarchy intended by the auth
 **Supersedes:** E-1 from v2.0.0-rc.1 (MUST emit at last-attempted position); comp P3,
 code W-fallback
 **Source:** comp P3, code W-fallback
-**Scope:** `_svg_helpers.py:_place_pill`, `_svg_helpers.py:emit_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:_place_pill`, `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`
 
-When all 32 candidates are exhausted without finding a zero-overlap position, the
+When all 48 candidates are exhausted without finding a zero-overlap position, the
 implementation MUST select the candidate with the **minimum overlap area** rather than
 "keep last regardless of overlap". The minimum-overlap candidate is the argmin over overlap
 area summed across all registry entries (see `docs/plans/smart-label-scoring-proposal-2026-04-22.md`
 §4.1 term P1 for the full weighted-overlap formula).
 
-**Rationale:** The current "keep last" fallback at `_svg_helpers.py:1324` selects the final
+**Rationale:** The current "keep last" fallback at `scriba/animation/primitives/_svg_helpers.py:1324` selects the final
 candidate in iteration order, which has no relationship to visual quality. The minimum-
 overlap candidate is consistently better than "keep last" and requires only an argmin pass
-over the already-computed 32 candidates. This rule is a prerequisite for the full scoring
+over the already-computed 48 candidates. This rule is a prerequisite for the full scoring
 function proposed in `docs/plans/smart-label-scoring-proposal-2026-04-22.md` (v0.12.0 W1).
 
-**Code ref:** `_svg_helpers.py:_place_pill` (line ~1213); line ~1324 current fallback;
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:_place_pill` (line ~1213); line ~1324 current fallback;
 `pending v0.12.0`
 **Test ref:** pending
-**Golden ref:** none (only fires when all 32 candidates are exhausted; changes already-
+**Golden ref:** none (only fires when all 48 candidates are exhausted; changes already-
 degraded placements only)
 
 ---
@@ -692,7 +692,7 @@ infrastructure prerequisite for R-02, R-03, R-04, and R-10. Cost is rated L; req
 `kind` field on `_LabelPlacement` and changes to all 12 primitive `emit_svg` entry points.
 Must be coordinated with MW-2 to avoid conflicting `_LabelPlacement` dataclass mutations.
 
-**Code ref:** `_svg_helpers.py:_place_pill` (line ~1213); pending v0.12.0 (MW-2)
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:_place_pill` (line ~1213); pending v0.12.0 (MW-2)
 **Test ref:** pending
 **Golden ref:** pending (byte-breaking for all primitives — full corpus re-pin required)
 
@@ -704,7 +704,7 @@ Must be coordinated with MW-2 to avoid conflicting `_LabelPlacement` dataclass m
 **Since:** planned v0.12.0
 **Supersedes:** G-3, G-4 (strengthened), code W-7/W-10
 **Source:** code W-7, W-10
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`;
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`;
            10 primitive callsites
 
 `emit_arrow_svg` and `emit_plain_arrow_svg` MUST apply per-candidate clamping to
@@ -719,7 +719,7 @@ inconsistent behaviour across primitives. Threading `viewbox_w`/`viewbox_h` to 1
 callsites is an API surface change (M cost) which is why this is deferred to v0.12.0 rather
 than the W3 batch.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `_svg_helpers.py:_place_pill`
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg` (line ~634); `scriba/animation/primitives/_svg_helpers.py:_place_pill`
 (line ~1213) already correct; pending v0.12.0
 **Test ref:** pending
 **Golden ref:** pending (byte-breaking for 10 primitives)
@@ -738,8 +738,8 @@ Rules directly required for WCAG 2.2 AA conformance or keyboard accessibility.
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-5 from v2.0.0-rc.1; a11y A11Y-01
 **Source:** a11y A11Y-01
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
-           `_svg_helpers.py:emit_position_label_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`,
+           `scriba/animation/primitives/_svg_helpers.py:emit_position_label_svg`
 
 `aria-label` on annotation `<g>` elements MUST NOT contain raw LaTeX. LaTeX delimiters
 and command tokens (`$`, `\command`, `^`, `_`) MUST be stripped or translated to natural-
@@ -764,8 +764,8 @@ changes required.
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** A-6 (partial) from v2.0.0-rc.1; a11y A11Y-02
 **Source:** a11y A11Y-02
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
-           `_svg_helpers.py:emit_position_label_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`,
+           `scriba/animation/primitives/_svg_helpers.py:emit_position_label_svg`
 
 Annotation `<g>` elements MUST carry `aria-roledescription="annotation"`. This attribute
 contextualises the group's role for assistive technology users who encounter it during
@@ -857,7 +857,7 @@ v0.12.0.
 **Since:** planned v0.13.0+
 **Supersedes:** a11y A11Y-13
 **Source:** a11y A11Y-13
-**Scope:** `_svg_helpers.py:_LABEL_PILL_PAD_Y` constant
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:_LABEL_PILL_PAD_Y` constant
 
 Pill height MUST be ≥ 24 px to comply with WCAG 2.2 SC 2.5.8 AA minimum touch target size.
 `_LABEL_PILL_PAD_Y` MUST be increased from 3 to ≥ 7 px to achieve this at current default
@@ -868,7 +868,7 @@ sized touch targets to interact with individual annotation pills. Increasing `_L
 from 3 to 7 px is a corpus-wide breaking change (all pill dimensions shift) requiring re-pin
 of every golden fixture. Deferred to v0.13.0+ pending corpus expansion to ~50 scenes.
 
-**Code ref:** `_svg_helpers.py:_LABEL_PILL_PAD_Y` (line 69, value `3`); pending v0.13.0+
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:_LABEL_PILL_PAD_Y` (line 69, value `3`); pending v0.13.0+
 **Test ref:** pending
 **Golden ref:** pending (byte-breaking for all pill-emitting scenes)
 
@@ -886,7 +886,7 @@ Rules governing output reproducibility, warning emission, and diagnostic signals
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** C-2 (strengthened) from v2.0.0-rc.1; comp P6, code W-8
 **Source:** comp P6, code W-8
-**Scope:** `_svg_helpers.py:_place_pill`, `_svg_helpers.py:emit_arrow_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:_place_pill`, `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`
 
 When collision is unresolved after all candidates are exhausted, a
 `scriba:label-placement-degraded` warning MUST be emitted to stderr unconditionally — not
@@ -899,7 +899,7 @@ detecting degraded output. Unconditional stderr emission (a one-line change) mak
 failure observable in any deployment context without requiring debug flag configuration.
 
 **Code ref:** `scriba/animation/primitives/_svg_helpers.py:775` (stderr write in `emit_plain_arrow_svg`); line 1170 (stderr write in `emit_arrow_svg`)
-**Test ref:** `tests/unit/test_w3_batch1.py::TestR19StderrDegradedWarning::test_emit_arrow_svg_warns_on_degraded`
+**Test ref:** `tests/unit/test_w3_batch1.py::TestR19DegradedWarning::test_emit_arrow_svg_warns_on_degraded`
 **Golden ref:** none
 
 ---
@@ -910,9 +910,9 @@ failure observable in any deployment context without requiring debug flag config
 **Since:** planned v0.12.0
 **Supersedes:** N-7 from v2.0.0-rc.1 (non-invariant); code W-6
 **Source:** code W-6
-**Scope:** `_svg_helpers.py:emit_position_label_svg`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_position_label_svg`
 
-`emit_position_label_svg` MUST be migrated to use the 32-candidate 8-direction
+`emit_position_label_svg` MUST be migrated to use the 48-candidate 8-direction
 `_nudge_candidates` algorithm via `_place_pill`. The legacy 4-direction × 16-candidate loop
 MUST be retired. Until this lands, position-only labels on all non-Plane2D primitives
 silently use inferior collision resolution; this is documented as a known limitation in
@@ -923,7 +923,7 @@ correct + viewport-clamped; legacy 4-dir/16-candidate without per-candidate clam
 silent, uneven placement behaviour across primitives. Unification via `_nudge_candidates` is
 required for consistent author experience. Depends on R-21 (viewbox parameter threading).
 
-**Code ref:** `_svg_helpers.py:emit_position_label_svg` (line 1337); pending v0.12.0
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:emit_position_label_svg` (line 1337); pending v0.12.0
 **Test ref:** pending
 **Golden ref:** pending (byte-breaking for position-only label scenes)
 
@@ -935,8 +935,8 @@ required for consistent author experience. Depends on R-21 (viewbox parameter th
 **Since:** planned v0.12.0
 **Supersedes:** code W-8 (partial); silent no-op
 **Source:** code W-8
-**Scope:** `_svg_helpers.py:emit_arrow_svg`, `_svg_helpers.py:emit_plain_arrow_svg`,
-           `_svg_helpers.py:emit_position_label_svg`, `_svg_helpers.py:_place_pill`
+**Scope:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg`, `scriba/animation/primitives/_svg_helpers.py:emit_plain_arrow_svg`,
+           `scriba/animation/primitives/_svg_helpers.py:emit_position_label_svg`, `scriba/animation/primitives/_svg_helpers.py:_place_pill`
 
 `placed_labels=None` passed to any emit function MUST produce a runtime warning
 (via `warnings.warn` with `stacklevel=2`). The parameter SHOULD be treated as required;
@@ -949,7 +949,7 @@ registry is absent. The current silent no-op behaviour delays diagnosis of this 
 bug. A loud warning is a developer-visible-only change (no SVG output change) and can land
 at any time.
 
-**Code ref:** `_svg_helpers.py:emit_arrow_svg` (line ~634); `_svg_helpers.py:_place_pill`
+**Code ref:** `scriba/animation/primitives/_svg_helpers.py:emit_arrow_svg` (line ~634); `scriba/animation/primitives/_svg_helpers.py:_place_pill`
 (line ~1213); pending v0.12.0
 **Test ref:** pending
 **Golden ref:** none
@@ -1001,7 +1001,7 @@ before candidate evaluation for that frame. Segments tagged `state="current"` (t
 line the current step is teaching) MUST NOT be occluded by any pill — they are assigned
 `severity="MUST"` and trigger hard-block semantics equivalent to R-02 target-cell
 blockers (infinite penalty, §2.3). Segments tagged `state="dim"` or `state="done"` are
-assigned `severity="SHOULD"` and contribute `_W_EDGE_OCCLUSION = 8.0` to the candidate
+assigned `severity="SHOULD"` and contribute `_W_EDGE_OCCLUSION = 40.0` to the candidate
 score via the P7 term.
 
 **R-31 ext — Prior-annotation arrow-stroke obstacles (v0.12.0):**
@@ -1049,26 +1049,26 @@ earlier arc stroke).
 | Rule | Title (short) | Normative | Status | v0.11.0-W3 | v0.12.0 | v0.13.0+ |
 |------|---------------|-----------|--------|:----------:|:-------:|:--------:|
 | R-01 | Arc natural position | MUST | Shipped | ✅ v0.11.0 | — | — |
-| R-02 | Target-cell blocker | MUST | Gap | — | ✅ | — |
+| R-02 | Target-cell blocker | MUST | Shipped | — | ✅ | — |
 | R-03 | Axis-label no-placement | MUST | Gap | — | — | ✅ |
-| R-04 | Source-cell WARN blocker | SHOULD | Gap | — | ✅ | — |
-| R-05 | Semantic ordering | MUST | Gap | — | ✅ | — |
-| R-06 | Arc-direction NE weighting | MUST | Gap | — | ✅ | — |
+| R-04 | Source-cell WARN blocker | SHOULD | Shipped | — | ✅ | — |
+| R-05 | Semantic ordering | MUST | Shipped | — | ✅ | — |
+| R-06 | Arc-direction NE weighting | MUST | Shipped | — | ✅ | — |
 | R-07 | Leader threshold formula | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-08 | Leader perimeter endpoint | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-09 | Group opacity restructure | MUST | Gap | — | — | ✅ |
-| R-10 | Cell-boundary clearance | SHOULD | Gap | — | ✅ | — |
+| R-10 | Cell-boundary clearance | SHOULD | Shipped | — | ✅ | — |
 | R-11 | Natural-language aria-label | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-12 | info/muted opacity floors | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-13 | Non-color differentiators | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-14 | aria-roledescription | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-15 | SVG `<title>` first child | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-16 | Pre-populate aria-live | MUST | Shipped | ✅ v0.11.0 | — | — |
-| R-17 | Min-overlap fallback | MUST | Gap | — | ✅ | — |
-| R-18 | Pre-register mark AABBs | MUST | Gap | — | ✅ | — |
+| R-17 | Min-overlap fallback | MUST | Shipped | — | ✅ | — |
+| R-18 | Pre-register mark AABBs | MUST | Shipped | — | ✅ | — |
 | R-19 | Unconditional degraded warn | MUST | Shipped | ✅ v0.11.0 | — | — |
-| R-20 | Migrate emit_position_label | MUST | Gap | — | ✅ | — |
-| R-21 | Per-candidate viewbox clamp | MUST | Gap | — | ✅ | — |
+| R-20 | Migrate emit_position_label | MUST | Shipped | — | ✅ | — |
+| R-21 | Per-candidate viewbox clamp | MUST | Shipped | — | ✅ | — |
 | R-22 | Auto-compute side_hint | MUST | Shipped | ✅ v0.11.0 | — | — |
 | R-23 | Pill border opacity ≥ 0.6 | MUST | Gap | — | ✅ | — |
 | R-24 | Keyboard/focus a11y | MUST | Gap | — | ✅ | — |
@@ -1081,8 +1081,14 @@ earlier arc stroke).
 | R-29 | Print @media dash styles | MUST | Gap | — | ✅ | — |
 | R-30 | NumberLine routing fix | MUST | Gap | — | — | ✅ |
 | R-31 | Segment obstacles (W3-α Plane2D) | MUST/SHOULD | Shipped | — | ✅ v0.12.0 | — |
+| R-33 | Content-cell occlusion obstacles | SHOULD | Shipped | — | — | ✅ v0.21.2 |
+| R-34 | Escape-lane candidates | SHOULD | Shipped | — | — | ✅ v0.21.2 |
 
 **Status key:** Gap = not implemented; Partial = partially implemented; Shipped = landed in production; ✅ = target/actual release.
+
+> R-32 is intentionally absent from this ruleset — the annotation stable-layout
+> invariant lives in `ruleset.md` §8.9. Status cells above are verified against
+> code by `scripts/check_ruleset_sync.py` (wired into `tests/doc_coverage/`).
 
 **Dependency note (v0.11.0-W3 batch ordering):**
 R-13 (dash to `<path>`) MUST land before R-27 (gate leaders) because R-27's removal of

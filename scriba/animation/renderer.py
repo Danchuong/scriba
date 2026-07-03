@@ -821,8 +821,16 @@ class DiagramRenderer:
 
         frame = _snapshot_to_frame_data(snap, 1, scene_id, ctx)
         minify = ctx.metadata.get("minify", True)
+        # Forward env options exactly like the animation path — the emitter
+        # half (aria-label, max-size) was wired and tested, but this call
+        # site never fed it, so documented diagram label/width/height were
+        # silently dropped.
+        _opts = getattr(ir, "options", None)
         html = emit_html(
             scene_id, [frame], primitives, mode="diagram",
+            label=(getattr(_opts, "label", None) or ""),
+            width=getattr(_opts, "width", None),
+            height=getattr(_opts, "height", None),
             render_inline_tex=ctx.render_inline_tex,
             minify=minify,
         )

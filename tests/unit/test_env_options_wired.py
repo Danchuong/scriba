@@ -76,3 +76,42 @@ class TestGridOptionRejected:
         src = '[id="x", grid=true]\n\\shape{a}{Array}{size=2}\n\\step\n\\narrate{x}'
         with pytest.raises(Exception):
             SceneParser().parse(src)
+
+
+class TestDiagramRendererForwardsOptions:
+    """The emitter half was wired and tested — but DiagramRenderer never fed
+    it, so a documented ``\\begin{diagram}[label=..., width=...]`` silently
+    dropped the aria-label and the max-size constraints (environments.md
+    §12.3 promises both)."""
+
+    @staticmethod
+    def _render(opts: str) -> str:
+        from scriba.animation.detector import detect_diagram_blocks
+        from scriba.animation.renderer import DiagramRenderer
+        from scriba.core.context import RenderContext
+
+        doc = (
+            "\\begin{diagram}" + opts + "\n"
+            "\\shape{a}{Array}{size=2}\n"
+            "\\end{diagram}\n"
+        )
+        blocks = detect_diagram_blocks(doc)
+        assert blocks
+        return DiagramRenderer().render_block(
+            blocks[0], RenderContext(resource_resolver=lambda n: n)
+        ).html
+
+    def test_diagram_label_reaches_figure(self) -> None:
+        html = self._render('[id="d", label="A small BST"]')
+        assert 'aria-label="A small BST"' in html
+
+    def test_diagram_width_becomes_max_width(self) -> None:
+        html = self._render('[id="d", width=480]')
+        assert "max-width:480px" in html
+
+    def test_diagram_without_size_stays_unstyled(self) -> None:
+        import re
+
+        html = self._render('[id="d"]')
+        fig = re.search(r"<figure[^>]*>", html).group(0)
+        assert "style=" not in fig  # the stage svg's intrinsic calc() is fine
