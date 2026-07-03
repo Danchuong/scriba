@@ -51,7 +51,6 @@
   --scriba-frame-radius:           var(--scriba-radius);
 
   /* Stage (SVG container) */
-  --scriba-stage-padding:          1.5rem 1rem;
   /* L3 fix: --scriba-stage-bg removed — defined but never applied anywhere.
      The stage background is inherited from .scriba-widget; see scriba-embed.css. */
 
@@ -65,15 +64,12 @@
   --scriba-step-label-color:       var(--scriba-fg-muted);
 
   /* Primitive geometry */
-  --scriba-cell-size:              46px;
   --scriba-cell-rx:                6px;
   --scriba-cell-stroke-width:      1;
   --scriba-cell-stroke-width-signal: 2;
-  --scriba-node-r:                 22px;
   --scriba-node-stroke-width:      2;
   --scriba-edge-stroke-width:      1.5;
   --scriba-tick-stroke-width:      1.5;
-  --scriba-tick-length:            8px;
 
   /* Primitive typography.
    * Weight is 500 (medium) — the previous 700 (bold) gave every cell
@@ -99,14 +95,9 @@
   --scriba-annotation-arrow-width: 2.0;
 
   /* Widget (interactive wrapper) */
-  --scriba-widget-shadow:          0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
-  --scriba-widget-radius:          12px;
   --scriba-widget-focus-ring:      2px solid var(--scriba-link);
 
   /* Progress bar */
-  --scriba-progress-height:        3px;
-  --scriba-progress-bg:            var(--scriba-border);
-  --scriba-progress-fill:          var(--scriba-link);
 }
 
 /* ============================================

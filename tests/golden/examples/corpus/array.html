@@ -58,7 +58,6 @@
   --scriba-frame-radius:           var(--scriba-radius);
 
   /* Stage (SVG container) */
-  --scriba-stage-padding:          1.5rem 1rem;
   /* L3 fix: --scriba-stage-bg removed — defined but never applied anywhere.
      The stage background is inherited from .scriba-widget; see scriba-embed.css. */
 
@@ -72,15 +71,12 @@
   --scriba-step-label-color:       var(--scriba-fg-muted);
 
   /* Primitive geometry */
-  --scriba-cell-size:              46px;
   --scriba-cell-rx:                6px;
   --scriba-cell-stroke-width:      1;
   --scriba-cell-stroke-width-signal: 2;
-  --scriba-node-r:                 22px;
   --scriba-node-stroke-width:      2;
   --scriba-edge-stroke-width:      1.5;
   --scriba-tick-stroke-width:      1.5;
-  --scriba-tick-length:            8px;
 
   /* Primitive typography.
    * Weight is 500 (medium) — the previous 700 (bold) gave every cell
@@ -106,14 +102,9 @@
   --scriba-annotation-arrow-width: 2.0;
 
   /* Widget (interactive wrapper) */
-  --scriba-widget-shadow:          0 1px 3px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
-  --scriba-widget-radius:          12px;
   --scriba-widget-focus-ring:      2px solid var(--scriba-link);
 
   /* Progress bar */
-  --scriba-progress-height:        3px;
-  --scriba-progress-bg:            var(--scriba-border);
-  --scriba-progress-fill:          var(--scriba-link);
 }
 
 /* ============================================
@@ -962,14 +953,6 @@
   border-radius: 2px;
 }
 
-/* ---------- Keyframe animation utility classes ---------- */
-
-.scriba-anim-rotate { animation: var(--scriba-anim-name) 2s linear infinite; }
-.scriba-anim-pulse { animation: var(--scriba-anim-name) 1s ease-in-out infinite; }
-.scriba-anim-orbit { animation: var(--scriba-anim-name) 3s linear infinite; }
-.scriba-anim-fade-loop { animation: var(--scriba-anim-name) 2s ease-in-out infinite; }
-.scriba-anim-trail { animation: var(--scriba-anim-name) 1.5s linear infinite; }
-
 /* ---------- Substory ---------- */
 
 .scriba-substory {
@@ -980,39 +963,10 @@
 }
 .scriba-substory[data-substory-depth="2"] { padding-inline-start: 3rem; }
 .scriba-substory[data-substory-depth="3"] { padding-inline-start: 4.5rem; }
-.scriba-substory-frames {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(14rem, 1fr);
-  gap: var(--scriba-frame-gap, 1rem);
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-}
-.scriba-substory-frame { scroll-snap-align: start; }
-
-@media print {
-  .scriba-substory-frames { display: block; }
-  .scriba-substory-frame { margin-block-end: 0.5rem; }
-}
-
-@media (max-width: 640px) {
-  .scriba-substory-frames { grid-auto-flow: row; }
-}
 
 /* ---------- Reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
-  .scriba-anim-rotate,
-  .scriba-anim-pulse,
-  .scriba-anim-orbit,
-  .scriba-anim-fade-loop,
-  .scriba-anim-trail {
-    animation: none !important;
-  }
-
   .scriba-frame:target .scriba-hl {
     /* Keep the highlight but skip any transition */
     transition: none !important;

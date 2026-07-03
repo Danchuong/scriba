@@ -40,10 +40,6 @@
   --scriba-copy-btn-fg-copied: #2a7e3b;
 
   /* Diagram */
-  --scriba-diagram-dim-opacity: 0.2;
-  --scriba-diagram-transition: 220ms cubic-bezier(0.16, 1, 0.3, 1);
-  --scriba-diagram-active-fill: #0b68cb;
-  --scriba-diagram-active-stroke: #0b68cb;
 
   /* Geometry and typography */
   --scriba-radius: 6px;
@@ -82,8 +78,6 @@
   --scriba-copy-btn-fg-hover: #70b8ff;
   --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
   --scriba-copy-btn-fg-copied: #65ba74;
-  --scriba-diagram-active-fill: #70b8ff;
-  --scriba-diagram-active-stroke: #70b8ff;
 }
 
 /* ============================================
@@ -192,11 +186,6 @@
   border-radius: 2px;
   font-family: var(--scriba-code-font);
   font-size: 0.9em;
-}
-
-.scriba-tex-content .katex-fallback {
-  color: var(--scriba-error);
-  font-family: var(--scriba-code-font);
 }
 
 /* ============================================
