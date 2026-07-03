@@ -2,7 +2,11 @@
 // Loaded via <script src="scriba.<hash>.js" defer> for CSP-strict deployments.
 // Zero per-render variability — fully cacheable and SRI-hashable.
 (function(){
-  // Theme toggle: delegated from data-scriba-action="theme-toggle"
+  // Theme toggle: delegated from data-scriba-action="theme-toggle".
+  // Sliced verbatim into standalone pages by _script_builder
+  // (_theme_toggle_script) — render.py used to hand-maintain a third
+  // copy of this listener; one source now, like the CORE slice.
+  // __SCRIBA_THEME_START__
   document.addEventListener('click',function(e){
     var btn=e.target.closest('[data-scriba-action="theme-toggle"]');
     if(btn){
@@ -10,6 +14,7 @@
       document.documentElement.dataset.theme=(t==='dark'?'light':'dark');
     }
   });
+  // __SCRIBA_THEME_END__
 
   // Everything between the CORE sentinels is the per-widget state machine.
   // _script_builder._build_inline_script slices this region verbatim into

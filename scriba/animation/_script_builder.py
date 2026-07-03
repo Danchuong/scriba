@@ -25,6 +25,7 @@ from scriba.animation.runtime_asset import RUNTIME_JS_BYTES
 
 __all__ = [
     "_build_external_script",
+    "_theme_toggle_script",
     "_build_inline_script",
 ]
 
@@ -81,6 +82,21 @@ _WRAPPER = (
     + "})();\n"
     "</script>"
 )
+
+
+_THEME = _RUNTIME_TEXT.split("// __SCRIBA_THEME_START__")[1].split(
+    "// __SCRIBA_THEME_END__"
+)[0]
+
+
+def _theme_toggle_script() -> str:
+    """Standalone-page theme-toggle <script>, DERIVED from scriba.js.
+
+    render.py used to hand-maintain a third copy of this listener; it is
+    now a sentinel slice of the asset, byte-identical by construction —
+    the same anti-drift treatment the CORE state machine got.
+    """
+    return "<script>\n" + _THEME.strip() + "\n</script>"
 
 
 def _build_inline_script(scene_id: str, js_frames_str: str) -> str:

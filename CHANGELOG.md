@@ -783,6 +783,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **BREAKING: `StarlarkHost.eval_raw` removed** — the deprecated `eval_raw` method has been deleted. Use `\compute{...}` blocks instead. Wire-level requests with `op="eval_raw"` now return a structured error `E1156` with a migration hint.
 - **BREAKING: inline-runtime is no longer the default** — as forecast in the v0.8.3 entry, inline mode no longer defaults to `True`. Pass `--inline-runtime` (CLI) or `render_inline_runtime=True` (API) to restore the previous behavior.
+  > **Correction (2026-07-03):** this flip never actually landed — `inline_runtime` defaults to `True` at every layer to this day (`render.py`, `renderer.py`, `_html_stitcher.py`). Inline, `file://`-safe output remains the default; use `--no-inline-runtime` for the CSP/external-asset mode.
 
 ### Refactored
 

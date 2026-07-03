@@ -2484,9 +2484,12 @@ viewBox stability across frames.</p></div>
   })();</script>
 <script>
 document.addEventListener('click',function(e){
-  var btn=e.target.closest('[data-scriba-action="theme-toggle"]');
-  if(btn){var t=document.documentElement.dataset.theme;document.documentElement.dataset.theme=(t==='dark'?'light':'dark');}
-});
+    var btn=e.target.closest('[data-scriba-action="theme-toggle"]');
+    if(btn){
+      var t=document.documentElement.dataset.theme;
+      document.documentElement.dataset.theme=(t==='dark'?'light':'dark');
+    }
+  });
 </script>
 </body>
 </html>

@@ -47,17 +47,12 @@ HTML_TEMPLATE = """\
 </html>
 """
 
-# Minimal inline bootstrap for the theme-toggle button when no external
-# scriba.js is loaded (inline-runtime mode).  In external-runtime mode,
-# scriba.js handles the delegated click via data-scriba-action.
-_INLINE_THEME_SCRIPT = """\
-<script>
-document.addEventListener('click',function(e){
-  var btn=e.target.closest('[data-scriba-action="theme-toggle"]');
-  if(btn){var t=document.documentElement.dataset.theme;document.documentElement.dataset.theme=(t==='dark'?'light':'dark');}
-});
-</script>
-"""
+# Theme-toggle bootstrap for inline-runtime pages (no external scriba.js
+# loaded). Derived from the asset via _theme_toggle_script — this used to
+# be a third hand-maintained copy of the listener.
+from scriba.animation._script_builder import _theme_toggle_script
+
+_INLINE_THEME_SCRIPT = _theme_toggle_script() + "\n"
 
 
 def _snapshot_to_dict(snap: object) -> dict:
