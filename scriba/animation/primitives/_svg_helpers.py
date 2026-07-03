@@ -44,6 +44,8 @@ if TYPE_CHECKING:  # pragma: no cover - type checking only
 __all__ = [
     # Label placement
     "_LABEL_MAX_WIDTH_CHARS",
+    "LABEL_FONT_PX",
+    "_MATH_PILL_LINE_EXTRA",
     "_LABEL_PILL_PAD_X",
     "_LABEL_PILL_PAD_Y",
     "_LABEL_PILL_RADIUS",
@@ -95,6 +97,8 @@ _LABEL_PILL_PAD_Y = 3
 _LABEL_PILL_RADIUS = 4
 _LABEL_BG_OPACITY = 0.92
 _LABEL_HEADROOM = 24
+# Extra headroom for math (KaTeX strut) on top of _LABEL_HEADROOM (C8).
+_MATH_HEADROOM_EXTRA = 8
 # Length of the straight stem for plain arrow=true annotations (no source arc).
 _PLAIN_ARROW_STEM = 18
 # R-07: Leader-line displacement threshold — scale-relative minimum.
@@ -109,6 +113,10 @@ _LEADER_DISPLACEMENT_THRESHOLD: float = 20.0
 # R-01: Default label font size in pixels.  Referenced by both the full render
 # path (l_font_px fallback) and the early pill-height estimator (_est_pill_h).
 _DEFAULT_LABEL_FONT_PX: int = 11
+# Primitive caption/label font (--scriba-label-font). Deliberately a
+# SEPARATE token from the annotation font above: the two CSS vars
+# coincide at 11px today but may diverge (fp3-duplicated-constants C3/C4).
+LABEL_FONT_PX: int = 11
 
 _log = logging.getLogger(__name__)
 
@@ -1448,6 +1456,12 @@ def _escape_lane_candidates(
     ]
 
 
+
+
+def _pill_cell_gap(cell_height: float) -> float:
+    """Vertical clearance between a position pill and its cell (C10 —
+    the max(4, 10%%-of-cell) formula lived in four hand-copied spots)."""
+    return max(4.0, cell_height * 0.1)
 
 
 def _arc_wrap_px(cell_metrics: "CellMetrics | None") -> "float | None":
@@ -2977,7 +2991,7 @@ def arrow_height_above(
         # at ``qy - pill_h/2 - 4`` above the arc peak (top ≈ pill_h + 4 px above
         # the peak — ~23 px for a one-line pill, hence the 24 px baseline).
         has_math = any(_label_has_math(a.get("label", "")) for a in arrow_anns)
-        headroom_extra = 32 if has_math else _LABEL_HEADROOM
+        headroom_extra = (_LABEL_HEADROOM + _MATH_HEADROOM_EXTRA) if has_math else _LABEL_HEADROOM
         # Bounded nudge margin: the pill placer (_nudge_candidates /
         # _pick_best_candidate) can push a pill UP to dodge collisions, in steps
         # that are multiples of pill_h up to 2.5*pill_h. Reserving the full
@@ -3049,7 +3063,7 @@ def position_label_height_above(
         return 0
 
     line_height = l_font_px + 2
-    gap = max(4.0, cell_height * 0.1)
+    gap = _pill_cell_gap(cell_height)
 
     # The label center sits at:
     #   final_y = ay - cell_height/2 - pill_h/2 - gap
@@ -3058,7 +3072,7 @@ def position_label_height_above(
     #   pill_ry = final_y - pill_h/2 - l_font_px*0.3
     # Headroom = max(0, -pill_ry) so the translate shifts content down enough.
     has_math = any(_label_has_math(a.get("label", "")) for a in pos_anns)
-    headroom_extra = 32 if has_math else _LABEL_HEADROOM
+    headroom_extra = (_LABEL_HEADROOM + _MATH_HEADROOM_EXTRA) if has_math else _LABEL_HEADROOM
 
     # Reserve for the TALLEST wrapped pill — must match the wrap the renderer
     # applies in ``emit_position_label_svg`` (same ``max_px`` policy), else a
@@ -3143,7 +3157,7 @@ def position_label_h_extents(
     ``emit_position_label_svg`` (``final_x = ax ∓ pill_w/2 ∓ gap``; the pill edge
     is ``ax ∓ (pill_w + gap)``).
     """
-    gap = max(4.0, cell_height * 0.1)
+    gap = _pill_cell_gap(cell_height)
     left_overhang = 0.0
     right_reach = 0.0
     for a in _position_only_anns(annotations):
@@ -3218,7 +3232,7 @@ def position_label_height_below(
         default=1,
     )
     pill_h = max_lines * line_height + _LABEL_PILL_PAD_Y * 2
-    gap = max(4.0, cell_height * 0.1)
+    gap = _pill_cell_gap(cell_height)
 
     # AC-6: mirror the math-headroom branch from position_label_height_above.
     # When any below-label contains $…$, add 8 px extra (32 − 24 delta).
@@ -3476,7 +3490,7 @@ def emit_position_label_svg(
     num_lines = len(label_lines)
 
     ax, ay = float(anchor_point[0]), float(anchor_point[1])
-    gap = max(4.0, cell_height * 0.1)
+    gap = _pill_cell_gap(cell_height)
 
     if position == "above":
         # DESIGN: an above pill sits directly above ITS element (anchor-relative),

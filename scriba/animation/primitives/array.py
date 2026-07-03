@@ -10,6 +10,7 @@ from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    LABEL_FONT_PX,
     _CAPTION_CLEAR_GAP,
     ALL_RE,
     CELL_1D_RE,
@@ -36,6 +37,7 @@ from scriba.animation.primitives.base import (
 )
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
 from scriba.animation.primitives._types import (
+    INDEX_FONT_PX,
     _CELL_HORIZONTAL_PADDING,
     SUFFIX_CELL_RE,
     SUFFIX_RANGE_RE,
@@ -51,8 +53,8 @@ from scriba.animation.primitives.layout import TextBox, stack_bottom, vstack
 #   --scriba-cell-index-font   500 10px ui-monospace, monospace
 #   --scriba-label-font        600 11px ui-monospace, monospace
 _FONT_SIZE_CELL: int = 14
-_FONT_SIZE_INDEX: int = 10
-_FONT_SIZE_CAPTION: int = 11
+_FONT_SIZE_INDEX: int = INDEX_FONT_PX
+_FONT_SIZE_CAPTION: int = LABEL_FONT_PX
 
 # Vertical whitespace between consecutive items in the bottom stack
 # (index-label row → caption row). Replaces the old ``_CAPTION_GAP``

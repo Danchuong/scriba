@@ -191,7 +191,7 @@ def get_primitive_registry() -> dict[str, type["PrimitiveBase"]]:
 # ---------------------------------------------------------------------------
 # Shared caption (Layer A) constants — see PrimitiveBase._caption_* helpers.
 # ---------------------------------------------------------------------------
-_CAPTION_FONT_PX: int = 11          # must match --scriba-label-font / array._FONT_SIZE_CAPTION
+_CAPTION_FONT_PX: int = LABEL_FONT_PX  # one token: --scriba-label-font (guarded by test_layout_constant_sync)
 _CAPTION_MIN_WRAP_W: int = 200      # caption never wraps narrower than this
 _CAPTION_SAFETY_PAD: int = 8        # estimate_text_width under-counts; pad
 # Vertical clearance between a primitive's content bottom and its caption.
@@ -202,7 +202,7 @@ _CAPTION_CLEAR_GAP: int = 8
 # Per-line box height for captions containing $...$ math. KaTeX inline
 # spans at 11px reach ~15px (superscript strut), so the plain 13px line
 # would clip them; 18px clears the strut with 1-2px of air.
-_MATH_CAPTION_LINE_H: int = 18
+_MATH_CAPTION_LINE_H: int = line_box_h(LABEL_FONT_PX) + _MATH_PILL_LINE_EXTRA  # 13 + 5 — derived, not restated
 
 # Top-band caption (tree, graph) — caption sits ABOVE the content.
 _TOP_CAPTION_BAND: int = 28         # historical single-line band height

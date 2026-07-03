@@ -28,6 +28,7 @@ __all__ = [
     "CELL_HEIGHT",
     "CELL_GAP",
     "INDEX_LABEL_OFFSET",
+    "INDEX_FONT_PX",
     "_CELL_STROKE_INSET",
     "_inset_rect_attrs",
     # Selector regexes
@@ -130,6 +131,7 @@ CELL_WIDTH = 60
 CELL_HEIGHT = 40
 CELL_GAP = 2
 INDEX_LABEL_OFFSET = 16  # vertical offset below the cell for index labels
+INDEX_FONT_PX = 10  # cell-index font (--scriba-cell-index-font)
 
 # β redesign — half-pixel stroke inset for crisp 1-2px strokes at DPR=1.
 # The worst-case (2px signal states) is applied uniformly so the cell

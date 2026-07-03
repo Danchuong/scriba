@@ -26,7 +26,7 @@ from scriba.animation.primitives.graph import (
 )
 
 # Import estimate_text_width from base (re-exported there).
-from scriba.animation.primitives.base import estimate_text_width
+from scriba.animation.primitives.base import estimate_text_width, line_box_h
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +130,7 @@ def _cascade_fallback_count(
         # Compute pill dimensions (mirrors emit_svg).
         display_weight = _format_weight(float(weight))
         tw = estimate_text_width(display_weight, _WEIGHT_FONT)
-        th = _WEIGHT_FONT + 2
+        th = line_box_h(_WEIGHT_FONT)
         pill_w = tw + _WEIGHT_PILL_PAD_X * 2
         pill_h = th + _WEIGHT_PILL_PAD_Y * 2
 
@@ -288,7 +288,7 @@ def _find_min_scale(
             continue
         display_weight = _format_weight(float(weight))
         tw = estimate_text_width(display_weight, _WEIGHT_FONT)
-        th = _WEIGHT_FONT + 2
+        th = line_box_h(_WEIGHT_FONT)
         pill_w = tw + _WEIGHT_PILL_PAD_X * 2
         pill_h = th + _WEIGHT_PILL_PAD_Y * 2
         if L < _WEIGHT_EDGE_MIN_LEN:

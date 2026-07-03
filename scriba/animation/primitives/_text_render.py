@@ -15,6 +15,7 @@ if TYPE_CHECKING:  # pragma: no cover - type checking only
 
 
 __all__ = [
+    "line_box_h",
     "_char_display_width",
     "estimate_text_width",
     "_escape_xml",
@@ -32,6 +33,12 @@ __all__ = [
 #   :root { --scriba-diagram-font-scale: 1.3; }
 # Default (var unset) resolves to 1, leaving rendered size unchanged.
 _FONT_SCALE_VAR = "--scriba-diagram-font-scale"
+
+
+def line_box_h(font_px: int) -> int:
+    """Single-line text box height for a given font size (the ubiquitous
+    ``font_px + 2`` — one formula, one home; hand-copied +2s drift)."""
+    return font_px + 2
 
 
 def _scaled_font_size(font_size: str) -> str:

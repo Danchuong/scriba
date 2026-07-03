@@ -19,6 +19,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.primitives.base import (
+    INDEX_LABEL_OFFSET,
     _CAPTION_CLEAR_GAP,
     THEME,
     BoundingBox,
@@ -45,7 +46,7 @@ _PTR_WIDTH = 30  # right half of the node (pointer indicator)
 _NODE_HEIGHT = 40
 _LINK_GAP = 30  # horizontal gap between nodes (arrow space)
 _PADDING = 12
-_INDEX_LABEL_OFFSET = 16  # vertical offset below the node for index labels
+_INDEX_LABEL_OFFSET = INDEX_LABEL_OFFSET  # single source: _types (C6)
 _CORNER_RADIUS = 4
 _NULL_INDICATOR_PAD = 4  # inset for the null diagonal line in the pointer area
 

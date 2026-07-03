@@ -16,6 +16,7 @@ from typing import Any, Callable, ClassVar, NamedTuple
 
 from scriba.animation.errors import _animation_error
 from scriba.animation.primitives.base import (
+    line_box_h,
     _label_has_math,
     _LabelPlacement,
     BoundingBox,
@@ -31,7 +32,7 @@ from scriba.animation.primitives.base import (
     svg_style_attrs,
 )
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
-from scriba.animation.primitives._svg_helpers import CellMetrics
+from scriba.animation.primitives._svg_helpers import CellMetrics, _DEFAULT_LABEL_FONT_PX
 from scriba.animation.primitives._types import (
     _NODE_MIN_RADIUS,
 )
@@ -85,7 +86,7 @@ _NODE_OVERLAP_GAP = 12
 _ISOLATED_LANE_BAND = 3 * _NODE_RADIUS + _NODE_OVERLAP_GAP
 
 # Edge weight pill — see docs/spec/graph-edge-pill-ruleset.md (GEP-02/03/04).
-_WEIGHT_FONT: int = 11
+_WEIGHT_FONT: int = _DEFAULT_LABEL_FONT_PX  # annotation-font token (C4)
 _WEIGHT_PILL_PAD_X: int = 5
 _WEIGHT_PILL_PAD_Y: int = 2
 _WEIGHT_PILL_R: int = 3
@@ -1262,7 +1263,7 @@ class Graph(PrimitiveBase):
             mid_y = (vy1 + y2) / 2
             tw = estimate_text_width(display, _WEIGHT_FONT)
             pw = float(tw + _WEIGHT_PILL_PAD_X * 2)
-            ph = float((_WEIGHT_FONT + 2) + _WEIGHT_PILL_PAD_Y * 2)
+            ph = float(line_box_h(_WEIGHT_FONT) + _WEIGHT_PILL_PAD_Y * 2)
             rects.append(
                 BoundingBox(
                     x=mid_x - pw / 2, y=mid_y - ph / 2, width=pw, height=ph
@@ -1469,7 +1470,7 @@ class Graph(PrimitiveBase):
                 # GEP-02: pill dimensions from module-level constants so the
                 # constants survive ruff/style churn and share one source.
                 tw = estimate_text_width(display_weight, _WEIGHT_FONT)
-                th = _WEIGHT_FONT + 2
+                th = line_box_h(_WEIGHT_FONT)
                 pill_w = tw + _WEIGHT_PILL_PAD_X * 2
                 pill_h = th + _WEIGHT_PILL_PAD_Y * 2
 
