@@ -70,8 +70,9 @@ def _parse_block(block: str) -> dict[str, list[float]]:
                 v = "-0" + v[1:]
             vals.append(float(v))
         if len(vals) >= 5:
-            # keep [width, italic] only
-            out[m.group(1)] = [vals[4], vals[2]]
+            # keep [width, italic, height, depth] (KaTeX order is
+            # [depth, height, italic, skew, width])
+            out[m.group(1)] = [vals[4], vals[2], vals[1], vals[0]]
     return out
 
 
@@ -95,7 +96,7 @@ def main() -> int:
         metrics[font] = parsed
         print(f"{font}: {len(parsed)} glyphs")
 
-    payload = {"katex_version": version, "values": "[width_em, italic_em]", "metrics": metrics}
+    payload = {"katex_version": version, "values": "[width_em, italic_em, height_em, depth_em]", "metrics": metrics}
     OUT.write_text(json.dumps(payload, separators=(",", ":")), "utf-8")
     print(f"wrote {OUT} ({OUT.stat().st_size:,} bytes, katex {version})")
     return 0

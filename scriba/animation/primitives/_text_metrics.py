@@ -80,7 +80,7 @@ def _warn_heuristic_script(cp: int) -> None:
                 )
             return
 
-__all__ = ["TextMeasurer", "get_measurer", "measure_label_line", "measure_text"]
+__all__ = ["TextMeasurer", "get_measurer", "label_line_extra", "measure_label_line", "measure_text"]
 
 
 class TextMeasurer(Protocol):
@@ -169,3 +169,18 @@ def measure_label_line(line: str, font_px: int) -> int:
     if tail:
         total += estimate_text_width(tail, font_px)
     return int(total + 0.5)
+
+
+def label_line_extra(line: str, font_px: int) -> int:
+    """Extra line-height px a mixed label/caption line needs for tall math
+    (``\\frac``, big operators with limits, stacked scripts). 0 for plain
+    text. Max over the line's ``$...$`` segments — heights don't add."""
+    if "$" not in line:
+        return 0
+    from scriba.animation.primitives._math_metrics import math_tall_extra
+    from scriba.animation.primitives._text_render import _INLINE_MATH_RE
+
+    extra = 0
+    for m in _INLINE_MATH_RE.finditer(line):
+        extra = max(extra, math_tall_extra(m.group(1), font_px))
+    return extra

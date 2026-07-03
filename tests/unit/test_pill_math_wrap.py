@@ -123,3 +123,33 @@ class TestMathPillEmission:
         svg = arr.emit_svg()  # no KaTeX available
         assert "scriba-annot-fobj" not in svg
         assert svg.count("<tspan") >= 2  # still wrapped, raw $ shown as text
+
+
+class TestNoCallbackPillSizing:
+    """folabel-sweep-measure-callers BUG B: without render_inline_tex the
+    emitter paints the RAW $...$ string in mono, so the pill must be sized
+    from the raw string too — browser-measured $dp_{i}$ painted 40.5px into
+    a 29px KaTeX-model pill (+11.5px overhang)."""
+
+    def test_pill_dimensions_raw_mode_measures_painted_string(self) -> None:
+        from scriba.animation.primitives._svg_helpers import pill_dimensions
+        from scriba.animation.primitives._text_render import estimate_text_width
+
+        label = "$dp_{i}$"
+        _, _, w_raw, _ = pill_dimensions(label, 11, math_rendered=False)
+        assert w_raw >= estimate_text_width(label, 11)  # covers painted glyphs
+
+    def test_no_callback_emit_pill_wraps_painted_text(self) -> None:
+        import re
+
+        from scriba.animation.primitives.array import ArrayPrimitive
+        from scriba.animation.primitives._text_render import estimate_text_width
+
+        arr = ArrayPrimitive("a", {"size": 8, "data": list(range(8))})
+        _annotate(arr, "a.cell[6]", label="$dp_{i}$", position="below")
+        svg = arr.emit_svg()  # no KaTeX
+        rects = re.findall(r'<rect [^>]*width="(\d+)"[^>]*rx="', svg)
+        assert rects
+        pill_w = max(int(w) for w in rects)
+        painted = estimate_text_width("$dp_{i}$", 11)
+        assert pill_w >= painted, (pill_w, painted)

@@ -381,6 +381,7 @@ class MatrixPrimitive(PrimitiveBase):
                         fo_width=self.cell_size,
                         fo_height=self.col_label_offset,
                         render_inline_tex=render_inline_tex,
+                        clip_overflow=False,
                     )
                 )
 
@@ -401,6 +402,7 @@ class MatrixPrimitive(PrimitiveBase):
                         fo_width=self.row_label_offset,
                         fo_height=self.cell_size,
                         render_inline_tex=render_inline_tex,
+                        clip_overflow=False,
                     )
                 )
 

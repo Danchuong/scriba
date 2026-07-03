@@ -24,7 +24,10 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, NamedTuple
 
-from scriba.animation.primitives._text_metrics import measure_label_line
+from scriba.animation.primitives._text_metrics import (
+    label_line_extra,
+    measure_label_line,
+)
 from scriba.animation.primitives._text_render import (
     _bidi_style,
     _escape_xml,
@@ -1389,6 +1392,7 @@ def pill_dimensions(
     l_font_px: int,
     *,
     wrap_px: "float | None" = None,
+    math_rendered: bool = True,
 ) -> "tuple[list[str], int, int, int]":
     """Wrap + measure a pill label — the single source of truth.
 
@@ -1402,14 +1406,33 @@ def pill_dimensions(
         label_lines = _wrap_label_lines(label_text)
     else:
         label_lines = _wrap_label_lines(
-            label_text, max_px=wrap_px, font_px=l_font_px
+            label_text, max_px=wrap_px, font_px=l_font_px,
+            math_rendered=math_rendered,
         )
     line_height = l_font_px + 2
     if len(label_lines) > 1 and any(_label_has_math(ln) for ln in label_lines):
         line_height += _MATH_PILL_LINE_EXTRA
-    max_line_w = max(
-        measure_label_line(ln, l_font_px) for ln in label_lines
-    )
+    # tall math (\frac, big-op limits, stacked scripts) needs a taller line
+    # box — same ladder the caption uses (browser-pinned in
+    # test_math_metrics.TestTallMathExtra). The pill keeps its vertical
+    # padding, which already absorbs the 1-2px descender/paren cases, so
+    # only genuinely tall overflow (>=3px: superscripts and up) grows the
+    # line; the caption box has no such padding and takes the full extra.
+    _tall = max((label_line_extra(ln, l_font_px) for ln in label_lines), default=0)
+    if _tall >= 3:
+        line_height += _tall
+    # size the string that will actually be painted: with a KaTeX callback
+    # the FO paints compact math (measure_label_line's model); without one
+    # the emitters fall back to the RAW $...$ text in mono, which is wider
+    # (folabel-sweep-measure-callers: $dp_{i}$ raw 40.5px vs model 29px)
+    if math_rendered:
+        max_line_w = max(
+            measure_label_line(ln, l_font_px) for ln in label_lines
+        )
+    else:
+        max_line_w = max(
+            estimate_text_width(ln, l_font_px) for ln in label_lines
+        )
     pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
     pill_h = len(label_lines) * line_height + _LABEL_PILL_PAD_Y * 2
     return label_lines, line_height, pill_w, pill_h
@@ -1678,6 +1701,7 @@ def _wrap_label_lines(
     *,
     max_px: "float | None" = None,
     font_px: int = _DEFAULT_LABEL_FONT_PX,
+    math_rendered: bool = True,
 ) -> list[str]:
     """Split label text into lines at natural break points.
 
@@ -1745,11 +1769,13 @@ def _wrap_label_lines(
     lines: list[str] = []
     line = ""
     if max_px is not None:
+        _measure = measure_label_line if math_rendered else estimate_text_width
+
         def _fits_px(s: str) -> bool:
-            return measure_label_line(s, font_px) <= max_px
+            return _measure(s, font_px) <= max_px
         for tok in _explode(_fits_px):
             cand = line + tok
-            if line and measure_label_line(cand.rstrip(), font_px) > max_px:
+            if line and _measure(cand.rstrip(), font_px) > max_px:
                 lines.append(line.rstrip())
                 line = tok
             else:
@@ -2059,7 +2085,8 @@ def emit_plain_arrow_svg(
 
         # Do not wrap when math is present — would split inside $...$.
         label_lines, line_height, _pd_w, _pd_h = pill_dimensions(
-            label_text, l_font_px
+            label_text, l_font_px,
+            math_rendered=render_inline_tex is not None,
         )
         num_lines = len(label_lines)
 
@@ -2423,7 +2450,8 @@ def _emit_label_and_pill(
     # _wrap_label_lines never splits inside $...$). With grid context the
     # budget follows the content span (W2 space-utilisation).
     label_lines, line_height, pill_w, pill_h = pill_dimensions(
-        label_text, l_font_px, wrap_px=_arc_wrap_px(cell_metrics)
+        label_text, l_font_px, wrap_px=_arc_wrap_px(cell_metrics),
+        math_rendered=render_inline_tex is not None,
     )
     num_lines = len(label_lines)
 
@@ -2730,7 +2758,8 @@ def emit_arrow_svg(
     _real_pill_h: "float | None" = None
     if label_text:
         _, _, _, _real_pill_h = pill_dimensions(
-            label_text, _l_font_early, wrap_px=_arc_wrap_px(cell_metrics)
+            label_text, _l_font_early, wrap_px=_arc_wrap_px(cell_metrics),
+            math_rendered=render_inline_tex is not None,
         )
 
     _geom = _compute_control_points(
@@ -3518,7 +3547,8 @@ def emit_position_label_svg(
     l_font_px = int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
 
     label_lines, line_height, pill_w, pill_h = pill_dimensions(
-        label_text, l_font_px, wrap_px=_LABEL_PILL_MAX_W_PX
+        label_text, l_font_px, wrap_px=_LABEL_PILL_MAX_W_PX,
+        math_rendered=render_inline_tex is not None,
     )
     num_lines = len(label_lines)
 

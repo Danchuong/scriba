@@ -109,3 +109,50 @@ class TestMixedLineComposer:
         from scriba.animation.primitives._text_metrics import measure_label_line
 
         assert abs(measure_label_line("$dp$", 11) - 13.62) <= 1.0
+
+
+class TestTallMathExtra:
+    """Vertical truth pins: scrollHeight of the real caption FO (18px box,
+    font 11) measured in Chromium per fragment — the sweep found 16/20
+    fragments clipped (folabel-sweep-fo-surface.md). extra must cover the
+    overflow (>= truth-18) without ballooning (<= truth-18+7)."""
+
+    # fragment -> browser scrollHeight in the 18px caption line box @ 11px
+    _TRUTH = {
+        "dp": 18, "x_i": 18, r"\to": 18, r"\alpha": 18,
+        r"\max(y,x)": 19, "A_{ij}": 19,
+        "m^2": 20, "2^{n-1}": 20,
+        "x_i^2": 21, "O(n^2)": 21, "(m-1)^2": 21, r"\sqrt{x+1}": 21,
+        r"\sum_{i=1}^{n}x_i^2": 22, r"\prod_{i}^{n} a_i": 22,
+        r"\binom{n}{k}": 23,
+        "g_{j}^{2}": 24, r"\frac{1}{2}": 24,
+        r"\sum_{k=0}^{4} dp[k]": 25,
+        r"\frac{a+b}{c-d}": 26,
+        r"\int_0^1 f": 27,
+    }
+
+    def test_extra_covers_browser_overflow_snugly(self) -> None:
+        from scriba.animation.primitives._math_metrics import math_tall_extra
+
+        for frag, scroll_h in self._TRUTH.items():
+            need = scroll_h - 18
+            got = math_tall_extra(frag, 11)
+            assert got >= need, f"${frag}$: extra {got} < needed {need}"
+            assert got <= need + 7, f"${frag}$: extra {got} balloons past {need}+7"
+
+    def test_scales_with_font_px(self) -> None:
+        from scriba.animation.primitives._math_metrics import math_tall_extra
+
+        e11 = math_tall_extra(r"\frac{1}{2}", 11)
+        e22 = math_tall_extra(r"\frac{1}{2}", 22)
+        assert e22 == pytest.approx(2 * e11, abs=2)
+
+    def test_line_composer_takes_max_over_segments(self) -> None:
+        from scriba.animation.primitives._text_metrics import label_line_extra
+
+        assert label_line_extra("plain text only", 11) == 0
+        assert label_line_extra("x $dp$ y", 11) <= 1
+        one = label_line_extra(r"nền $\frac{a+b}{c-d}$ của lớp", 11)
+        assert one >= 8
+        both = label_line_extra(r"$m^2$ và $\frac{a+b}{c-d}$", 11)
+        assert both == one  # max, not sum

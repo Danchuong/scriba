@@ -159,10 +159,20 @@ class TestCaptionLinesMathWrap:
 
 class TestCaptionBlockMetrics:
     def test_block_height_uses_math_line_height(self) -> None:
+        from scriba.animation.primitives._text_metrics import label_line_extra
+
         inst = _grid(_LONG_MATH_LABEL)
-        n = len(inst._caption_lines(320.0))
+        lines = inst._caption_lines(320.0)
+        n = len(lines)
         assert n >= 2
-        assert inst._caption_block_height(320.0) == n * _MATH_CAPTION_LINE_H
+        # per-line adaptive: base box + tall-math extra per line (the fixed
+        # 18px box clipped 16/20 bench fragments — TestTallMathExtra truth)
+        expected = sum(
+            _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX)
+            for ln in lines
+        )
+        assert inst._caption_block_height(320.0) == expected
+        assert inst._caption_block_height(320.0) >= n * _MATH_CAPTION_LINE_H
 
     def test_block_height_plain_unchanged(self) -> None:
         inst = _grid("nhãn ngắn")
@@ -220,10 +230,29 @@ class TestEmitCaptionMathMultiline:
     def test_caption_lines_stack_by_math_line_height(self) -> None:
         inst = _grid(_LONG_MATH_LABEL)
         svg = inst.emit_svg(render_inline_tex=_fake_tex)
-        ys = _caption_center_ys(svg)
-        assert len(ys) >= 2
-        deltas = {b - a for a, b in zip(ys, ys[1:])}
-        assert deltas == {_MATH_CAPTION_LINE_H}
+        # read the emitted caption FO boxes directly: adaptive heights must
+        # stack without overlap — each next top = previous top + previous
+        # height — and every box is at least the base math line box
+        boxes = [
+            (int(m.group(1)), int(m.group(2)))
+            for m in re.finditer(
+                r'<foreignObject x="[^"]*" y="(-?\d+)" width="\d+" '
+                r'height="(\d+)"[^>]*class="scriba-fo-line"',
+                svg,
+            )
+        ]
+        if not boxes:  # fall back: any caption FO emitted by _render_svg_text
+            boxes = [
+                (int(m.group(1)), int(m.group(2)))
+                for m in re.finditer(
+                    r'<foreignObject[^>]* y="(-?\d+)"[^>]* height="(\d+)"',
+                    svg,
+                )
+            ]
+        assert len(boxes) >= 2
+        assert all(h >= _MATH_CAPTION_LINE_H for _, h in boxes)
+        for (y0, h0), (y1, _h1) in zip(boxes, boxes[1:]):
+            assert y1 - y0 == h0  # cumulative, no overlap
 
     def test_plain_lines_in_math_block_are_middle_anchored(self) -> None:
         # Plain <text> lines rely on inline text-anchor — the CSS
@@ -260,7 +289,6 @@ class TestEmitCaptionMathMultiline:
         assert "fake-katex" in svg
         ys = _caption_center_ys(svg)
         assert len(ys) >= 2
-        assert {b - a for a, b in zip(ys, ys[1:])} == {_MATH_CAPTION_LINE_H}
 
     def test_array_math_caption_bbox_reserves_math_line_height(self) -> None:
         from scriba.animation.primitives.array import ArrayPrimitive
@@ -269,10 +297,17 @@ class TestEmitCaptionMathMultiline:
         mathy = ArrayPrimitive("a", {"size": 4, "data": [1, 2, 3, 4]})
         plain.label = "x"
         mathy.label = "$x$ " + "dài " * 40  # forces a wrapped math block
-        n = len(mathy._caption_lines(mathy._total_width()))
+        from scriba.animation.primitives._text_metrics import label_line_extra
+
+        lines = mathy._caption_lines(mathy._total_width())
+        n = len(lines)
         assert n >= 2
+        block = sum(
+            _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX)
+            for ln in lines
+        )
         delta = mathy.bounding_box().height - plain.bounding_box().height
-        assert delta == n * _MATH_CAPTION_LINE_H - (_CAPTION_FONT_PX + 2)
+        assert delta == block - (_CAPTION_FONT_PX + 2)
 
     def test_caption_does_not_overhang_grid_rows(self) -> None:
         # The old fixed 673×20 box started at the grid's last row; the new

@@ -40,7 +40,7 @@ from importlib.resources import files
 
 from scriba.animation.primitives._text_render import estimate_text_width
 
-__all__ = ["is_linear_math", "measure_inline_math"]
+__all__ = ["is_linear_math", "math_tall_extra", "measure_inline_math"]
 
 _KATEX_BASE_EM = 1.21  # .katex { font: normal 1.21em ... }
 _SCRIPT_SCALE = 0.7  # scriptstyle multiplier for ^ / _
@@ -394,6 +394,40 @@ def _heuristic_px(frag: str, font_px: int) -> float:
 
     est = estimate_text_width(_label_width_text(f"${frag}$"), font_px)
     return max(float(est), _KATEX_BASE_EM * font_px * 0.6)
+
+
+# Vertical overflow ladder, fitted against Chromium scrollHeight of the
+# real 18px caption line box at 11px font (tests/unit/test_math_metrics.py
+# TestTallMathExtra pins all 20 fragments). Values are px AT 11px font and
+# scale linearly. Feature detection, not glyph metrics: the CSS inline
+# line-box interaction swamps per-glyph h/d precision, and the ladder is
+# fitted >= truth for every measured fragment with <= +7px slack.
+_TALL_2D_RE = re.compile(
+    r"\\(?:frac|dfrac|tfrac|cfrac|binom|over(?![a-zA-Z])|atop|substack|"
+    r"stackrel|overbrace|underbrace|begin)"
+)
+_BIG_OP_RE = re.compile(r"\\(?:sum|prod|int|bigcup|bigcap|oint)")
+_SQRT_RE = re.compile(r"\\sqrt")
+
+
+@lru_cache(maxsize=4096)
+def math_tall_extra(frag: str, font_px: int) -> int:
+    """Extra px of line height an inline ``$frag$`` needs beyond the
+    standard label/caption line box (which fits plain runs and bare
+    sub/superscript-free math). 0 for short fragments."""
+    if _TALL_2D_RE.search(frag):
+        extra = 10.0
+    elif _BIG_OP_RE.search(frag) and ("^" in frag or "_" in frag):
+        extra = 9.0
+    elif "^" in frag and "_" in frag:
+        extra = 6.0
+    elif _SQRT_RE.search(frag):
+        extra = 4.0
+    elif "^" in frag:
+        extra = 3.0
+    else:
+        extra = 1.0
+    return int(extra * font_px / 11.0 + 0.5)
 
 
 @lru_cache(maxsize=4096)

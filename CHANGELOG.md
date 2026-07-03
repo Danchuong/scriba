@@ -36,6 +36,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   scene. Consumer caches keyed on rendered output MUST invalidate
   (`SCRIBA_VERSION` 13→14). Case files:
   `investigations/folabel-{fonts,measure,emit-honesty}.md`.
+- **Family sweep follow-up (3 BMAD case files:
+  `investigations/folabel-sweep-{fo-surface,measure-callers,katex-cells}.md`):**
+  - **Caption tall math no longer clips vertically.** The fixed 18px caption
+    line box amputated 16/20 bench fragments (`$\frac{a+b}{c-d}$` lost half
+    its denominator). Line heights are now adaptive via a browser-pinned
+    tall-math ladder (`math_tall_extra`: `\frac`-family +10px, big-operator
+    limits +9, stacked scripts +6, `\sqrt` +4, superscripts +3 at 11px,
+    scaling with font size), caption lines stack cumulatively, the reserve
+    (`_caption_block_height`) uses the same per-line formula, and the boxes
+    are `overflow:visible` as a final safety. Pill line boxes take the same
+    ladder for genuinely tall math (>=3px, beyond their padding).
+  - **No-KaTeX pill sizing sizes what it paints.** Without a tex renderer
+    the emitters fall back to painting the raw `$...$` string, but pills
+    were sized by the KaTeX model — `$dp_{i}$` painted 40.5px into a 29px
+    pill. `pill_dimensions`/`_wrap_label_lines` now take `math_rendered`
+    and measure the raw string when no callback exists.
+  - Matrix row/column labels and graph edge-weight KaTeX boxes stop
+    clipping: labels flip to `overflow:visible`; edge weights size their
+    foreignObject to the weight pill instead of the 80x30 default.
 
 ## [0.22.0] - 2026-07-03 — Exact text metrics, one runtime, every script
 

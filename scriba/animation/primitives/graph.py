@@ -1627,13 +1627,19 @@ class Graph(PrimitiveBase):
                         css_class="scriba-graph-weight",
                     )
                 else:
+                    # size the KaTeX FO to the weight pill instead of the
+                    # 80x30 default box (which silently clipped tall/wide
+                    # math weights — folabel-sweep-fo-surface GAP)
                     _text_svg = _render_svg_text(
                         display_weight, lx, ly,
                         fill=THEME["fg_muted"],
                         text_anchor="middle",
                         dominant_baseline="central",
                         css_class="scriba-graph-weight",
+                        fo_width=max(int(pill_w), 8),
+                        fo_height=max(int(pill_h), 8),
                         render_inline_tex=render_inline_tex,
+                        clip_overflow=False,
                     )
                 # class="scriba-graph-pill" scopes state CSS away from the
                 # pill rect (see scriba-scene-primitives.css :not() exclusion

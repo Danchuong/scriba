@@ -53,7 +53,10 @@ from scriba.animation.primitives._types import (  # noqa: F401 — explicit for 
     svg_style_attrs,
 )
 from scriba.animation.primitives._text_render import *  # noqa: F401, F403
-from scriba.animation.primitives._text_metrics import measure_label_line
+from scriba.animation.primitives._text_metrics import (
+    label_line_extra,
+    measure_label_line,
+)
 from scriba.animation.primitives._text_render import (  # noqa: F401 — explicit for IDEs
     _INLINE_MATH_RE,
     _bidi_style,
@@ -658,7 +661,14 @@ class PrimitiveBase(abc.ABC):
         if not lines:
             return 0
         if any(_label_has_math(ln) for ln in lines):
-            return len(lines) * _MATH_CAPTION_LINE_H
+            # per-line: tall math (\frac, big-op limits, stacked scripts)
+            # needs more than the standard KaTeX strut clearance — 16/20
+            # bench fragments overflowed the fixed box (test_math_metrics
+            # TestTallMathExtra pins the Chromium truth)
+            return sum(
+                _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX)
+                for ln in lines
+            )
         return len(lines) * (_CAPTION_FONT_PX + 2)
 
     def _emit_caption(
@@ -695,14 +705,22 @@ class PrimitiveBase(abc.ABC):
             # inside a single fixed-height foreignObject. Plain lines in
             # the block go through the same call and come out as centred
             # <text> (dominant-baseline keeps both variants on one axis).
-            math_h = _MATH_CAPTION_LINE_H
-            for i, ln in enumerate(lines):
+            # Per-line height mirrors _caption_block_height exactly; y is
+            # cumulative so a tall \frac line pushes later lines down
+            # instead of overlapping them. clip_overflow=False mirrors the
+            # pill fix: any residual over-height paints past the box
+            # instead of amputating the math.
+            y_cursor = top_y
+            for ln in lines:
+                math_h = _MATH_CAPTION_LINE_H + label_line_extra(
+                    ln, _CAPTION_FONT_PX
+                )
                 out.append(
                     "  "
                     + _render_svg_text(
                         ln,
                         center_x,
-                        top_y + math_h // 2 + i * math_h,
+                        y_cursor + math_h // 2,
                         fill=THEME["fg_muted"],
                         css_class="scriba-primitive-label",
                         font_size=str(_CAPTION_FONT_PX),
@@ -711,8 +729,10 @@ class PrimitiveBase(abc.ABC):
                         fo_width=footprint_width,
                         fo_height=math_h,
                         render_inline_tex=render_inline_tex,
+                        clip_overflow=False,
                     )
                 )
+                y_cursor += math_h
             return
         if len(lines) == 1:
             out.append(
