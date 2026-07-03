@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-07-03 — Exact label math, grow-don't-clip, content-based cells
+
 ### Fixed
 - **Mixed text+`$math$` annotation labels render intact** (`SCRIBA_VERSION`
   →14). Label/caption/tick widths containing math are now measured by a

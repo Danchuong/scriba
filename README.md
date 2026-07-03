@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.22.0 · MIT · Python 3.10+
+**Status:** v0.22.1 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,6 +24,24 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.22.1
+
+- **Exact label-math metrics** — annotation/caption/tick labels containing
+  `$math$` are measured by a KaTeX advance-sum over the vendored font
+  tables (p50 0.06% vs Chromium; the old heuristic sat at p50 43% and
+  measured `$\to$` as 0px). Label foreignObjects grow instead of clipping,
+  tall math (`\frac`, big-operator limits) gets adaptive line heights, and
+  every FO div is font-pinned so painted widths match measured ones.
+- **Content-based cells** — DPTable/Grid cells widen to their widest value
+  across the whole timeline (frame-stable, no breathing); Matrix floors
+  `cell_size` under `show_values`. No-KaTeX fallbacks paint a stripped
+  `max(y,x)` instead of raw `$\max(y,x)$`, and are measured as painted.
+- `SCRIBA_VERSION` 13→14 — rendered bytes change; caches keyed on output
+  must invalidate. See `CHANGELOG.md` for the full list.
+
+<details>
+<summary>v0.22.0 changelog</summary>
+
 ## What's new in v0.22.0
 
 - **Exact text metrics** — cell/node text is measured against a shipped,
@@ -42,6 +60,8 @@ asset basenames needed to display it.
 - **Layout cannot drift** — viewBox + stacking offsets come from one shared
   timeline replay; content labels join one registry per primitive; the
   smart-label lint backlog is zero and gated there.
+
+</details>
 
 <details>
 <summary>v0.21.0 changelog</summary>
