@@ -166,6 +166,20 @@
   --scriba-annotation-error:       #c6282d;
   --scriba-annotation-path:        #0b68cb;
   --scriba-annotation-muted:       var(--scriba-fg-muted);
+
+  /* R-37 — label<->state binding (color="state:X"). One identifying color
+     per recolor state, readable on the white pill (WCAG AA >=4.5:1):
+       current #0070d5 -> 4.59:1   done #5b6871 -> 5.42:1
+       dim #687076 -> 5.04:1       good #2a7e3b -> 5.07:1
+       error #c6282d -> 5.61:1     path #5e6669 -> 4.78:1
+     done/dim/path use darkened same-hue inks — their state fills/strokes
+     (#c1c8cd-family) sit under 1.5:1 on white and fail contrast. */
+  --scriba-annotation-state-current: #0070d5;
+  --scriba-annotation-state-done:    #5b6871;
+  --scriba-annotation-state-dim:     #687076;
+  --scriba-annotation-state-good:    #2a7e3b;
+  --scriba-annotation-state-error:   #c6282d;
+  --scriba-annotation-state-path:    #5e6669;
 }
 
 /* ============================================
@@ -534,6 +548,48 @@
 .scriba-annotation-muted > path,
 .scriba-annotation-muted > line { stroke: var(--scriba-annotation-muted); }
 
+/* R-37 — color="state:X" annotation family. Same shape as the base
+   color rules plus polygon (arrowhead) and rect (pill border): those two
+   carry inline info-fallback presentation attributes, and without class
+   coverage a state-bound label would show a mismatched arrowhead. */
+.scriba-annotation-state-current > text  { fill: var(--scriba-annotation-state-current); }
+.scriba-annotation-state-current > path,
+.scriba-annotation-state-current > line,
+.scriba-annotation-state-current > polyline { stroke: var(--scriba-annotation-state-current); }
+.scriba-annotation-state-current > polygon { fill: var(--scriba-annotation-state-current); }
+.scriba-annotation-state-current > rect { stroke: var(--scriba-annotation-state-current); }
+.scriba-annotation-state-done > text  { fill: var(--scriba-annotation-state-done); }
+.scriba-annotation-state-done > path,
+.scriba-annotation-state-done > line,
+.scriba-annotation-state-done > polyline { stroke: var(--scriba-annotation-state-done); }
+.scriba-annotation-state-done > polygon { fill: var(--scriba-annotation-state-done); }
+.scriba-annotation-state-done > rect { stroke: var(--scriba-annotation-state-done); }
+.scriba-annotation-state-dim > text  { fill: var(--scriba-annotation-state-dim); }
+.scriba-annotation-state-dim > path,
+.scriba-annotation-state-dim > line,
+.scriba-annotation-state-dim > polyline { stroke: var(--scriba-annotation-state-dim); }
+.scriba-annotation-state-dim > polygon { fill: var(--scriba-annotation-state-dim); }
+.scriba-annotation-state-dim > rect { stroke: var(--scriba-annotation-state-dim); }
+.scriba-annotation-state-good > text  { fill: var(--scriba-annotation-state-good); }
+.scriba-annotation-state-good > path,
+.scriba-annotation-state-good > line,
+.scriba-annotation-state-good > polyline { stroke: var(--scriba-annotation-state-good); }
+.scriba-annotation-state-good > polygon { fill: var(--scriba-annotation-state-good); }
+.scriba-annotation-state-good > rect { stroke: var(--scriba-annotation-state-good); }
+.scriba-annotation-state-error > text  { fill: var(--scriba-annotation-state-error); }
+.scriba-annotation-state-error > path,
+.scriba-annotation-state-error > line,
+.scriba-annotation-state-error > polyline { stroke: var(--scriba-annotation-state-error); }
+.scriba-annotation-state-error > polygon { fill: var(--scriba-annotation-state-error); }
+.scriba-annotation-state-error > rect { stroke: var(--scriba-annotation-state-error); }
+.scriba-annotation-state-path > text  { fill: var(--scriba-annotation-state-path); }
+.scriba-annotation-state-path > path,
+.scriba-annotation-state-path > line,
+.scriba-annotation-state-path > polyline { stroke: var(--scriba-annotation-state-path); }
+.scriba-annotation-state-path > polygon { fill: var(--scriba-annotation-state-path); }
+.scriba-annotation-state-path > rect { stroke: var(--scriba-annotation-state-path); }
+
+
 .scriba-annotation-path > text  { fill: var(--scriba-annotation-path); }
 .scriba-annotation-path > path,
 .scriba-annotation-path > line  { stroke: var(--scriba-annotation-path); }
@@ -682,6 +738,13 @@
   --scriba-annotation-error:   #ff6369;
   --scriba-annotation-path:    #a78bfa;
   --scriba-annotation-muted:   var(--scriba-fg-muted);
+  /* R-37 state-binding inks, dark: match the dark state hues */
+  --scriba-annotation-state-current: #70b8ff;
+  --scriba-annotation-state-done:    #9ba1a6;
+  --scriba-annotation-state-dim:     #7e868c;
+  --scriba-annotation-state-good:    #65ba74;
+  --scriba-annotation-state-error:   #ff6369;
+  --scriba-annotation-state-path:    #a78bfa;
 }
 
 /* -- H6 fix: OS-level dark mode preference -------------------------------- */

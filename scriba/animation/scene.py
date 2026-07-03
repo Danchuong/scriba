@@ -125,6 +125,7 @@ class AnnotationEntry:
     position: str = "above"
     arrow: bool = False
     bracket: bool = False
+    leader: bool = False
 
 
 @dataclass(frozen=True)
@@ -850,6 +851,7 @@ class SceneState:
                 position=cmd.position or "above",
                 arrow=cmd.arrow if hasattr(cmd, "arrow") else False,
                 bracket=getattr(cmd, "bracket", False),
+                leader=getattr(cmd, "leader", False),
             )
         )
 

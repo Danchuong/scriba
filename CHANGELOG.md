@@ -24,6 +24,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (extent/differ/runtime see it like any decoration). The label pill
   keeps the standard placement pipeline. Single-cell targets ignore the
   flag.
+- **`color="state:X"` label↔state binding + `leader=true`** (P2, R-36):
+  a label can now carry the exact identifying color of the recolor state
+  it describes (current/done/dim/good/error/path — previously only
+  good/info/warn-family, so a blue `current` region was unlabelable in
+  its own color). Quoted form required; inks are dedicated
+  `--scriba-annotation-state-*` tokens, WCAG-AA on the white pill and
+  dark-adapted; class rules cover text/lines/arrowhead/pill-border.
+  `leader=true` draws a dotted connector + anchor dot from any pill to
+  its cell; arc pills force the built-in leader instead of doubling.
 
 ## [0.22.1] - 2026-07-03 — Exact label math, grow-don't-clip, content-based cells
 

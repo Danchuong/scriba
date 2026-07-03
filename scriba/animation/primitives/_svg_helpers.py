@@ -1388,6 +1388,13 @@ def _label_width_text(text: str) -> str:
 _MATH_PILL_LINE_EXTRA: int = 5
 
 
+def annotation_color_class(color: str) -> str:
+    """CSS-class-safe form of an annotation color: ``state:current`` ->
+    ``state-current`` (R-37 — a colon would break the class attribute and
+    the selector)."""
+    return str(color).replace(":", "-")
+
+
 def pill_dimensions(
     label_text: str,
     l_font_px: int,
@@ -2067,7 +2074,7 @@ def emit_plain_arrow_svg(
 
     ann_key = f"{target}-plain-arrow"
     lines.append(
-        f'  <g class="scriba-annotation scriba-annotation-{color}"'
+        f'  <g class="scriba-annotation scriba-annotation-{annotation_color_class(color)}"'
         f' data-annotation="{_escape_xml(ann_key)}"'
         f' opacity="{s_opacity}"'
         f' role="graphics-symbol"'
@@ -2603,7 +2610,7 @@ def _emit_label_and_pill(
         float(geom.curve_mid_y) - _pill_cy,
     )
     _natural_gap = float(pill_h) / 2.0 + _LEADER_ARC_CLEARANCE_PX
-    if _visual_gap >= _natural_gap + float(pill_h) * _LEADER_GAP_FACTOR:
+    if ann.get("leader") or _visual_gap >= _natural_gap + float(pill_h) * _LEADER_GAP_FACTOR:
         # R-08: leader endpoint at pill perimeter, not pill centre.
         _leader_ep = _line_rect_intersection(
             float(geom.curve_mid_x), float(geom.curve_mid_y),
@@ -2846,7 +2853,7 @@ def emit_arrow_svg(
 
     ann_key = f"{target}-{arrow_from}" if arrow_from else f"{target}-solo"
     lines.append(
-        f'  <g class="scriba-annotation scriba-annotation-{color}"'
+        f'  <g class="scriba-annotation scriba-annotation-{annotation_color_class(color)}"'
         f' data-annotation="{_escape_xml(ann_key)}"'
         f' opacity="{s_opacity}"'
         f' role="graphics-symbol"'
@@ -3653,7 +3660,7 @@ def emit_position_label_svg(
 
     ann_key = f"{target}-position-{position}"
     lines.append(
-        f'  <g class="scriba-annotation scriba-annotation-{color}"'
+        f'  <g class="scriba-annotation scriba-annotation-{annotation_color_class(color)}"'
         f' data-annotation="{_escape_xml(ann_key)}"'
         f' opacity="{s_opacity}"'
         f' role="graphics-symbol"'
@@ -3727,6 +3734,29 @@ def emit_position_label_svg(
             f' stroke="{s_stroke}" stroke-width="0.75" stroke-opacity="0.45"/>'
         )
 
+    # R-37 ``leader=true`` — explicit dotted connector from the pill
+    # perimeter to the anchor plus an anchor dot. Opt-in only: the
+    # automatic span-bracket/leader gates above are untouched when absent,
+    # and when the author forces a leader we skip nothing else (one
+    # connector, no doubling).
+    if ann.get("leader"):
+        _pill_cx = pill_rx + pill_w / 2.0
+        _pill_cy = pill_ry + pill_h / 2.0
+        _lep = _line_rect_intersection(
+            float(ax), float(ay), _pill_cx, _pill_cy,
+            float(pill_w), float(pill_h),
+        )
+        if _lep is not None:
+            lines.append(
+                f'    <circle cx="{int(ax)}" cy="{int(ay)}" r="2"'
+                f' fill="{s_stroke}" opacity="0.7"/>'
+            )
+            lines.append(
+                f'    <line x1="{int(ax)}" y1="{int(ay)}"'
+                f' x2="{_lep[0]:.1f}" y2="{_lep[1]:.1f}"'
+                f' stroke="{s_stroke}" stroke-width="0.75"'
+                f' stroke-dasharray="2,3" opacity="0.7"/>'
+            )
     lines.append(
         f'    <rect x="{pill_rx}" y="{pill_ry}"'
         f' width="{pill_w}" height="{pill_h}"'

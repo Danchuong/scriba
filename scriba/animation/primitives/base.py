@@ -96,6 +96,7 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     emit_arrow_svg,
     emit_plain_arrow_svg,
     emit_position_label_svg,
+    annotation_color_class,
 )
 
 
@@ -969,7 +970,7 @@ class PrimitiveBase(abc.ABC):
                         _bkey = f"{ann.get('target', '')}-block-bracket"
                         parts.append(
                             f'  <g class="scriba-annotation scriba-annotation-'
-                            f'{ann.get("color", "info")}"'
+                            f'{annotation_color_class(ann.get("color", "info"))}"'
                             f' data-annotation="{_escape_xml(_bkey)}">'
                             f'<rect x="{_bbox.x - 3}" y="{_bbox.y - 3}"'
                             f' width="{_bbox.width + 6}" height="{_bbox.height + 6}"'

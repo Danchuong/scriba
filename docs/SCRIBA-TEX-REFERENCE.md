@@ -1145,6 +1145,14 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 > `color=`).
 > Example: `\recolor{g.block[0:1][0:1]}{state=done}` +
 > `\annotate{g.block[0:1][0:1]}{label="nền $(m-1)^2 = 4$", bracket=true, color=good}`.
+
+> **`color="state:X"` + `leader=true`** (since 0.22.2) — bind a label to the
+> exact color of the state it describes: X ∈ current, done, dim, good,
+> error, path (**quotes required** — `color=state:current` unquoted is a
+> parse error E1012). The ink dark-adapts automatically. `leader=true`
+> draws a dotted connector + anchor dot from the pill to its cell (on arc
+> pills it forces the built-in leader; never doubles).
+> Example: `\annotate{g.cell[2][0]}{label="lớp chẵn", color="state:current", leader=true, position=below}`.
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]` | — | — | — | — | `.all` |

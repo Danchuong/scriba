@@ -24,6 +24,7 @@ from .selectors import parse_selector
 from scriba.animation.constants import (
     VALID_ANNOTATION_COLORS,
     VALID_ANNOTATION_POSITIONS,
+    VALID_ANNOTATION_STATE_COLORS,
     VALID_STATES,
 )
 
@@ -231,7 +232,20 @@ class _CommandsMixin:
                 col=tok.col,
             )
         color = str(params.get("color", "info"))
-        if color not in VALID_ANNOTATION_COLORS:
+        if color.startswith("state:"):
+            state_name = color[len("state:"):]
+            if state_name not in VALID_ANNOTATION_STATE_COLORS:
+                self._raise_unknown_enum(
+                    "annotation state color",
+                    color,
+                    frozenset(
+                        f"state:{s}" for s in VALID_ANNOTATION_STATE_COLORS
+                    ),
+                    code="E1113",
+                    line=tok.line,
+                    col=tok.col,
+                )
+        elif color not in VALID_ANNOTATION_COLORS:
             self._raise_unknown_enum(
                 "annotation color",
                 color,
@@ -243,6 +257,7 @@ class _CommandsMixin:
         arrow = params.get("arrow", False) in (True, "true")
         ephemeral = params.get("ephemeral", False) in (True, "true")
         bracket = params.get("bracket", False) in (True, "true")
+        leader = params.get("leader", False) in (True, "true")
         af_raw = params.get("arrow_from")
         arrow_from = (
             parse_selector(
@@ -259,7 +274,7 @@ class _CommandsMixin:
             label=str(params["label"]) if "label" in params else None,
             position=position, color=color, arrow=arrow,
             ephemeral=ephemeral, arrow_from=arrow_from,
-            bracket=bracket,
+            bracket=bracket, leader=leader,
         )
 
     def _parse_cursor(self) -> CursorCommand:

@@ -500,6 +500,37 @@ readable. Block targets only — a single cell already reads as a unit.
 `test_grid_block_anchor_is_block_center`;
 `tests/unit/test_block_bracket.py` `test_bracket_outline_hugs_block_box`.
 
+### R-36 — Label↔state color binding (`color="state:X"`) and forced leader
+
+**Normative:** MUST
+**Since:** v0.22.2
+
+`\annotate`/`\reannotate` accept `color="state:X"` for
+X ∈ {current, done, dim, good, error, path} (quoted form mandatory — a
+bare colon does not survive the value lexer). The label then renders
+through class `scriba-annotation-state-X`, whose ink is a dedicated
+`--scriba-annotation-state-X` token: the state's identifying hue,
+darkened where the raw state fill/stroke fails WCAG AA on the white pill
+(done/dim/path greys sit under 1.5:1), and dark-theme adapted in the
+dark token block. The class rules cover `text`, `path`/`line`/`polyline`,
+`polygon` (arrowhead) and `rect` (pill border) so no part of the
+decoration falls back to the info-coloured presentation attributes.
+Unknown `state:` suffixes fail at parse with E1113. `leader=true` adds an
+explicit dotted connector (dash `2,3`, 0.7 opacity) from the pill
+perimeter (`_line_rect_intersection`) to the anchor plus an anchor dot;
+on arc pills it forces the existing visual-gap leader instead of adding
+a second connector (single-connector invariant).
+
+**Code ref:** `scriba/animation/parser/_grammar_commands.py`
+(`VALID_ANNOTATION_STATE_COLORS` branch);
+`scriba/animation/primitives/_svg_helpers.py` `annotation_color_class`,
+`emit_position_label_svg`;
+`scriba/animation/static/scriba-scene-primitives.css`
+(`--scriba-annotation-state-current`).
+**Test ref:** `tests/unit/test_state_color_leader.py`
+`test_css_tokens_and_rules_exist_both_themes`,
+`test_position_pill_emits_dotted_leader_and_dot`.
+
 ### R-07 — Leader threshold formula
 
 **Normative:** MUST

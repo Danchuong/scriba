@@ -36,6 +36,15 @@ VALID_ANNOTATION_COLORS = frozenset({
     "info", "warn", "good", "error", "muted", "path"
 })
 
+# States a label may bind to via color="state:X" (R-37). The quoted form
+# is mandatory: a bare colon does not survive the value lexer (E1012).
+# idle/hidden/highlight are excluded — idle is the absence of emphasis,
+# hidden doesn't render, highlight is an overlay flag, so none of them
+# names a region a label could match.
+VALID_ANNOTATION_STATE_COLORS = frozenset({
+    "current", "done", "dim", "good", "error", "path"
+})
+
 # Valid annotation positions
 VALID_ANNOTATION_POSITIONS = frozenset({
     "above", "below", "left", "right", "inside"
