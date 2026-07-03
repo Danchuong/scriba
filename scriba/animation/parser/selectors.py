@@ -18,6 +18,10 @@ BNF (from 04-environments-spec.md §4.1):
 
 from __future__ import annotations
 
+import re
+
+from scriba.animation.parser._idents import match_ident_end
+
 import unicodedata
 
 from scriba.core.errors import ValidationError
@@ -265,16 +269,16 @@ class SelectorParser:
 
     def _expect_ident(self) -> str:
         self._skip_ws()
-        start = self._pos
-        if self._pos < len(self._text) and (
-            self._text[self._pos].isalpha() or self._text[self._pos] == "_"
-        ):
-            self._pos += 1
-            while self._pos < len(self._text) and (
-                self._text[self._pos].isalnum() or self._text[self._pos] == "_"
-            ):
-                self._pos += 1
-            return self._text[start : self._pos]
+        # Shared XID-style identifier matcher (_idents) — the 0.21.1 pass
+        # standardised on [^\W\d]\w* for VariableWatch/\foreach, but the
+        # hand-rolled isalpha()/isalnum() loop AND Python's \w both reject
+        # combining marks (Mn/Mc), so Thai/Devanagari names like ค่า died
+        # mid-identifier with E1010.
+        end = match_ident_end(self._text, self._pos)
+        if end is not None:
+            start = self._pos
+            self._pos = end
+            return self._text[start:end]
         found = repr(self._text[self._pos]) if self._pos < len(self._text) else "EOF"
         raise self._error(f"expected identifier, got {found}", code="E1010")
 

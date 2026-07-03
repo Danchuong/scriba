@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Every-script rung 0** (`SCRIBA_VERSION` →13): Thai/Devanagari/… names
+  work in selectors, VariableWatch and `\step` labels (identifier charsets
+  now accept combining marks — Python's `\w` excludes Mn/Mc, which the
+  0.21.1 Unicode pass missed); spaceless-script labels (Thai/Lao/Khmer)
+  wrap cluster-safely instead of overflowing as one unbreakable token;
+  RTL-bearing SVG text gets `unicode-bidi:plaintext` (mixed "نتيجة
+  (result) = 42" no longer mis-mirrors) and every narration `<p>` carries
+  `dir="auto"`; complex-script widths warn once per script (`W1301`) that
+  they are safe over-estimates. CJK stays exact at 1em by construction.
+  The `[intl]`/`[shaping]` exactness ladder is designed in
+  `investigations/allscript-{architecture,shaping,render-audit}.md`.
+
 ### Changed
 - **Cell/node text is now measured exactly against a shipped font**
   (`SCRIBA_VERSION` 11→12 — rendered bytes change across every labelled

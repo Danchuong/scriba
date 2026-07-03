@@ -87,9 +87,11 @@ _KNOWN_COMMANDS = frozenset(
 
 _NUMBER_RE = re.compile(r"-?(?:\d+\.?\d*|\.\d+)")
 # Unicode-aware identifier: starts with a Unicode letter (non-digit, non-
-# punctuation word char), followed by any word chars.  Allows Vietnamese,
-# CJK, and other Unicode shape names (e.g. \shape{mảng}{Array}).
-_IDENT_RE = re.compile(r"[^\W\d]\w*", re.UNICODE)
+# punctuation word char), followed by word chars OR combining marks —
+# Python's \w excludes Mn/Mc, which silently rejected Thai/Devanagari
+# names like ``ค่า``. The lexer keeps a regex for speed; the trailing
+# combining-mark continuation matches parser/_idents.match_ident_end.
+_IDENT_RE = re.compile(r"[^\W\d](?:\w|[\u0300-\u036f\u0483-\u0489\u0591-\u05bd\u0610-\u061a\u064b-\u065f\u0670\u06d6-\u06dc\u06df-\u06e4\u0900-\u0903\u093a-\u094f\u0951-\u0957\u0962\u0963\u0981-\u0983\u0e31\u0e34-\u0e3a\u0e47-\u0e4e\u0eb1\u0eb4-\u0ebc\u0ec8-\u0ecd\u102b-\u103e\u1056-\u1059\u17b4-\u17d3\u1a55-\u1a7f\u1dc0-\u1dff\u20d0-\u20f0\ufe20-\ufe2f])*", re.UNICODE)
 _INTERP_RE = re.compile(r"\$\{")
 _STRING_START = '"'
 _COMMENT_CHAR = "%"

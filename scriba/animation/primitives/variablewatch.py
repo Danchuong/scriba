@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
+from scriba.animation.parser._idents import is_ident as _is_ident
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
     THEME,
@@ -46,7 +47,7 @@ _NAME_FONT_SIZE_INT = 12
 # (``_IDENT_RE = [^\W\d]\w*``, parser/lexer.py): a Unicode letter or
 # underscore, never a digit. An ASCII-only ``[A-Za-z_]`` here silently
 # dropped non-ASCII-leading names (e.g. ``đáp``) that the lexer accepts.
-_VAR_RE = re.compile(r"^var\[(?P<varname>[^\W\d]\w*)\]$")
+_VAR_RE = re.compile(r"^var\[(?P<varname>.+)\]$")  # name validated by _idents.is_ident
 _ALL_RE = re.compile(r"^all$")
 
 # ---------------------------------------------------------------------------
@@ -141,7 +142,7 @@ class VariableWatch(PrimitiveBase):
         """
         if target_suffix is not None:
             m = _VAR_RE.match(target_suffix)
-            if m:
+            if m and _is_ident(m.group("varname")):
                 varname = m.group("varname")
                 if varname in self._values and "value" in params:
                     self._values[varname] = str(params["value"])

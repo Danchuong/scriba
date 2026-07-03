@@ -3,7 +3,7 @@
 __version__: str = "0.21.2"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 12
+SCRIBA_VERSION: int = 13
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -110,4 +110,13 @@ heuristic (which measured -38%..+154% per string). Text widths, line
 wraps, cell widths and viewBox extents change across every labelled
 scene, and standalone pages embed the font @font-face. Consumer caches
 keyed on rendered output MUST invalidate.
+
+0.22.0 bumps 12→13 (same release, all-script rung 0): every narration
+<p> carries dir="auto" (was 1 of 5 emit sites); SVG text/foreignObject
+containing RTL codepoints gains unicode-bidi:plaintext; spaceless-script
+labels (Thai/Lao/Khmer) wrap cluster-safely instead of overflowing as one
+token; identifier charsets accept combining marks (Thai/Devanagari
+selector/var/label names — Python's \w excludes Mn/Mc, which the 0.21.1
+Unicode pass missed). LTR-only documents change only by the dir="auto"
+attribute. Consumer caches keyed on rendered output MUST invalidate.
 """

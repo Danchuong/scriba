@@ -35,6 +35,22 @@ __all__ = [
 _FONT_SCALE_VAR = "--scriba-diagram-font-scale"
 
 
+_RTL_RE = re.compile(r"[\u0590-\u08ff\ufb1d-\ufdff\ufe70-\ufeff]")
+
+
+def _bidi_style(text: str) -> str:
+    """``unicode-bidi:plaintext`` for strings containing RTL codepoints.
+
+    scriba emits bidi-naked <text>; a pure-RTL run reorders fine, but an
+    RTL-first string with embedded Latin/parens mis-mirrors and scrambles
+    ("نتيجة (result) = 42"). plaintext makes the UA resolve paragraph
+    direction from the first strong character per UAX#9 — verified fix in
+    investigations/allscript-render-audit.md. Only RTL-bearing strings get
+    the style so LTR output stays byte-identical.
+    """
+    return "unicode-bidi:plaintext" if _RTL_RE.search(str(text)) else ""
+
+
 def line_box_h(font_px: int) -> int:
     """Single-line text box height for a given font size (the ubiquitous
     ``font_px + 2`` — one formula, one home; hand-copied +2s drift)."""
@@ -231,6 +247,9 @@ def _render_svg_text(
         # the CSS defaults would silently win (e.g. text-anchor: middle
         # overriding a start-aligned name column).
         style_parts: list[str] = []
+        _bidi = _bidi_style(text_str)
+        if _bidi:
+            style_parts.append(_bidi)
         if text_anchor:
             style_parts.append(f"text-anchor:{text_anchor}")
         if dominant_baseline:
@@ -329,6 +348,9 @@ def _render_svg_text(
         # (font, halo) and tooling see the same hook on the math path.
         fo_attrs = f'class="{css_class}" {fo_attrs}'
 
+    _bidi = _bidi_style(text_str)
+    if _bidi:
+        style += ";" + _bidi
     return (
         f"<foreignObject {fo_attrs}>"
         f'<div xmlns="http://www.w3.org/1999/xhtml" style="{style}">'

@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import hashlib
 import re as _re
+
+from scriba.animation.parser._idents import is_ident as _is_ident
 from dataclasses import dataclass
 from typing import Any
 
@@ -63,7 +65,20 @@ __all__ = [
 # chars, so a non-ASCII label (e.g. Vietnamese ``đáp``) is a usable anchor
 # rather than being silently downgraded to ``frame-N`` (SCRIBA-TEX-REFERENCE
 # §5.3). Spaces / punctuation outside ``._-`` remain unsafe.
-_LABEL_ID_RE = _re.compile(r"^[^\W\d][\w.-]*$")
+class _LabelIdMatcher:
+    """Regex-shaped facade over the shared XID matcher (extra chars ``.-``).
+
+    Python's \\w excludes combining marks, so the previous
+    ``^[^\\W\\d][\\w.-]*$`` regex downgraded Thai/Devanagari \\step labels
+    to the frame-N fallback while accepting precomposed Vietnamese.
+    """
+
+    @staticmethod
+    def match(text: str):
+        return _is_ident(text, extra=".-") or None
+
+
+_LABEL_ID_RE = _LabelIdMatcher()
 
 # ---------------------------------------------------------------------------
 # Layout constants (kept here for direct backward-compat; also live in

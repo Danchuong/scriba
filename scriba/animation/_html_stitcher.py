@@ -265,7 +265,7 @@ def emit_animation_html(
             f'      <div class="scriba-stage">\n'
             f"        {svg_html}\n"
             f"      </div>\n"
-            f'      <p class="scriba-narration" id="{narration_id}">'
+            f'      <p class="scriba-narration" dir="auto" id="{narration_id}">'
             f"{_safe_narration_html(frame.narration_html)}</p>\n"
             f"{substory_html}"
             f"    </li>"
@@ -374,7 +374,7 @@ def emit_substory_html(
         f'            </div>\n'
         f'          </div>\n'
         f'          <div class="scriba-stage"></div>\n'
-        f'          <p class="scriba-narration" aria-live="polite" aria-atomic="true"></p>\n'
+        f'          <p class="scriba-narration" dir="auto" aria-live="polite" aria-atomic="true"></p>\n'
         f'        </div>\n'
         f'      </section>\n'
     )
@@ -547,7 +547,7 @@ def emit_interactive_html(
                         f'<div class="scriba-substory"'
                         f' data-substory-id="{_escape(sub.substory_id)}">\n'
                         f'  <div class="scriba-stage">{sub_svg}</div>\n'
-                        f'  <p class="scriba-narration">'
+                        f'  <p class="scriba-narration" dir="auto">'
                         f'{_safe_narration_html(sub_frame.narration_html)}</p>\n'
                         f'</div>\n'
                     )
@@ -556,7 +556,7 @@ def emit_interactive_html(
             f'  <span class="scriba-step-label">'
             f'{step} / {frame_count}</span>\n'
             f'  <div class="scriba-stage">{print_svg}</div>\n'
-            f'  <p class="scriba-narration"'
+            f'  <p class="scriba-narration" dir="auto"'
             f' id="{_escape(print_narration_id)}">'
             f'{_safe_narration_html(frame.narration_html)}</p>\n'
             f'{print_substory}'

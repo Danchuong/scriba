@@ -18,12 +18,14 @@ from __future__ import annotations
 import enum
 import logging
 import math
+import unicodedata
 import os
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, NamedTuple
 
 from scriba.animation.primitives._text_render import (
+    _bidi_style,
     _escape_xml,
     _render_mixed_html,
     estimate_text_width,
@@ -1584,6 +1586,9 @@ def _emit_pill_label_text(
         style_parts.append(f"font-size:{l_size}")
     style_parts.append("text-anchor:middle")
     style_parts.append("dominant-baseline:auto")
+    _bidi = _bidi_style(" ".join(label_lines))
+    if _bidi:
+        style_parts.append(_bidi)
     style_str = ";".join(style_parts)
     first_dy = f"{-line_height * (num_lines - 1) / 2.0:.1f}"
     tspans = ""
@@ -1709,10 +1714,41 @@ def _wrap_label_lines(
     if current:
         tokens.append(current)
 
+    # F4 (spaceless scripts): Thai/Khmer/Lao write without spaces, so the
+    # split above yields ONE oversized token that overflows the figure.
+    # Split any over-budget NON-MATH token at the budget, never starting a
+    # chunk on a combining mark (a torn cluster renders corrupt). Math
+    # tokens keep the never-split rule.
+    def _cluster_safe_chunks(tok: str, fits) -> list[str]:
+        chunks: list[str] = []
+        chunk = ""
+        for ch in tok:
+            if chunk and not fits(chunk + ch) and not (
+                unicodedata.category(ch) in ("Mn", "Mc")
+            ):
+                chunks.append(chunk)
+                chunk = ch
+            else:
+                chunk += ch
+        if chunk:
+            chunks.append(chunk)
+        return chunks or [tok]
+
+    def _explode(fits) -> list[str]:
+        out: list[str] = []
+        for tok in tokens:
+            if "$" not in tok and not fits(tok.rstrip()):
+                out.extend(_cluster_safe_chunks(tok, fits))
+            else:
+                out.append(tok)
+        return out
+
     lines: list[str] = []
     line = ""
     if max_px is not None:
-        for tok in tokens:
+        def _fits_px(s: str) -> bool:
+            return estimate_text_width(_label_width_text(s), font_px) <= max_px
+        for tok in _explode(_fits_px):
             cand = line + tok
             if line and estimate_text_width(
                 _label_width_text(cand.rstrip()), font_px
@@ -1724,7 +1760,10 @@ def _wrap_label_lines(
         if line:
             lines.append(line.rstrip())
         return lines if lines else [text]
-    for tok in tokens:
+
+    def _fits_chars(s: str) -> bool:
+        return len(s) <= max_chars
+    for tok in _explode(_fits_chars):
         if line and len(line) + len(tok) > max_chars:
             lines.append(line.rstrip())
             line = tok

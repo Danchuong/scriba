@@ -40,6 +40,46 @@ from scriba.animation.primitives._text_render import (
     estimate_text_width,
 )
 
+# Complex-script blocks whose widths are heuristic over-estimates (W1301).
+# CJK is deliberately absent: its 1em-per-glyph fallback measures real
+# rendering to ~0.0%, so there is nothing to warn about.
+_COMPLEX_BLOCKS: tuple[tuple[int, int, str], ...] = (
+    (0x0590, 0x05FF, "Hebrew"),
+    (0x0600, 0x08FF, "Arabic"),
+    (0x0900, 0x0DFF, "Indic (Devanagari…Sinhala)"),
+    (0x0E00, 0x0E7F, "Thai"),
+    (0x0E80, 0x0EFF, "Lao"),
+    (0x1000, 0x109F, "Myanmar"),
+    (0x1780, 0x17FF, "Khmer"),
+    (0xAC00, 0xD7AF, "Hangul"),
+    (0xFB1D, 0xFDFF, "Arabic/Hebrew presentation"),
+    (0xFE70, 0xFEFF, "Arabic presentation"),
+)
+_warned_scripts: set[str] = set()
+
+
+def _warn_heuristic_script(cp: int) -> None:
+    """W1301, once per script per process: this run is a SAFE over-estimate
+    (shaping only ever narrows text — investigations/allscript-shaping.md),
+    so nothing clips; boxes may just be wider than necessary. Exact metrics
+    for these scripts require a pinned font + shaping (the [intl] ladder in
+    investigations/allscript-architecture.md)."""
+    import warnings as _w
+
+    for lo, hi, name in _COMPLEX_BLOCKS:
+        if lo <= cp <= hi:
+            if name not in _warned_scripts:
+                _warned_scripts.add(name)
+                _w.warn(
+                    f"scriba W1301: {name} text is measured with a safe "
+                    "heuristic over-estimate (never clips; boxes may be "
+                    "wider than needed). Exact metrics for this script "
+                    "need a pinned font — see "
+                    "investigations/allscript-architecture.md.",
+                    stacklevel=4,
+                )
+            return
+
 __all__ = ["TextMeasurer", "get_measurer", "measure_text"]
 
 
@@ -75,6 +115,7 @@ class ShippedFontMeasurer:
             if adv is None:
                 # out-of-subset (CJK, symbols): heuristic em-units, scaled
                 # to font units so one sum stays exact for covered spans
+                _warn_heuristic_script(ord(ch))
                 total_units += _char_display_width(ch) * self._upm
             else:
                 total_units += adv

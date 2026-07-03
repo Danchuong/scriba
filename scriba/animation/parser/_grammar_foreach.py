@@ -4,6 +4,7 @@ Internal module — not part of public API. Methods access SceneParser instance
 state (self._tokens, self._pos, etc.) via the MRO.
 """
 from __future__ import annotations
+from scriba.animation.parser._idents import match_ident_end
 
 import re as _re
 from typing import TYPE_CHECKING
@@ -104,8 +105,13 @@ class _ForeachMixin:
         # Leading class is Unicode-aware (``[^\W\d]``) to match the loop-var
         # ``isidentifier()`` gate and _check_interpolation_binding; an ASCII-only
         # ``[A-Za-z_]`` silently skipped non-ASCII-leading refs (e.g. ``đáp``).
-        for m in _re.finditer(r"\$\{([^\W\d]\w*)", iterable_raw):
-            self._check_interpolation_binding(m.group(1), tok.line, tok.col)
+        for m in _re.finditer(r"\$\{", iterable_raw):
+            _start = m.end()
+            _end = match_ident_end(iterable_raw, _start)
+            if _end is not None:
+                self._check_interpolation_binding(
+                    iterable_raw[_start:_end], tok.line, tok.col
+                )
 
         # Make the loop variable visible to static interpolation checks
         # inside the body; restore afterwards so siblings don't see it.

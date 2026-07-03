@@ -55,6 +55,7 @@ from scriba.animation.primitives._types import (  # noqa: F401 — explicit for 
 from scriba.animation.primitives._text_render import *  # noqa: F401, F403
 from scriba.animation.primitives._text_render import (  # noqa: F401 — explicit for IDEs
     _INLINE_MATH_RE,
+    _bidi_style,
     _char_display_width,
     _escape_xml,
     _has_math,
@@ -747,8 +748,10 @@ class PrimitiveBase(abc.ABC):
                 f"{_escape_xml(ln)}{'' if i == len(lines) - 1 else ' '}</tspan>"
                 for i, ln in enumerate(lines)
             )
+            _bidi = _bidi_style(self.label or "")
+            _bidi_attr = f' style="{_bidi}"' if _bidi else ""
             out.append(
-                f'  <text class="scriba-primitive-label" x="{center_x}"'
+                f'  <text class="scriba-primitive-label"{_bidi_attr} x="{center_x}"'
                 f' y="{y0}" fill="{THEME["fg_muted"]}"'
                 f' style="text-anchor:middle;font-size:{_CAPTION_FONT_PX}px">'
                 f"{tspans}</text>"
