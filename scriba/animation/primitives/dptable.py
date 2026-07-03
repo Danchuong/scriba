@@ -296,12 +296,18 @@ class DPTablePrimitive(PrimitiveBase):
         if arrow_above > 0 or left_pad > 0:
             lines.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
 
+
         if self.is_2d:
             self._emit_2d_cells(lines, render_inline_tex=render_inline_tex)
         else:
             self._emit_1d_cells(lines, render_inline_tex=render_inline_tex)
 
         # Arrow annotations
+        # R-37 traces: above the cell bodies (a filled cell would
+        # swallow an under-stroke) but below pills/arrows; digits
+        # stay legible via the global paint-order halo
+        self.emit_traces_under(lines)
+
         if effective_anns:
             self.emit_annotation_arrows(
                 lines,

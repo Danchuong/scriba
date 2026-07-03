@@ -112,6 +112,7 @@ class FrameData:
     narration_html: str  # already rendered (KaTeX or escaped)
     shape_states: dict[str, dict[str, dict]]  # shape_name -> target -> state
     annotations: list[dict]  # annotation data
+    traces: list[dict] | None = None  # \trace decorations (R-37)
     label: str | None = None
     substories: list[SubstoryData] | None = None
 

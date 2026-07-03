@@ -531,6 +531,35 @@ a second connector (single-connector invariant).
 `test_css_tokens_and_rules_exist_both_themes`,
 `test_position_pill_emits_dotted_leader_and_dot`.
 
+### R-37 — `\trace`: a path decoration through cell centers
+
+**Normative:** MUST
+**Since:** v0.22.2
+
+`\trace{shape}{cells=[[r,c],...]}` (or `cells=[i,...]` on 1-D primitives)
+emits one rounded-join `<path>` through the resolved cell CENTERS plus a
+`<polygon>` arrowhead, inside
+`<g data-annotation="{shape}.trace[{id}]-solo">`. Vertices resolve through
+`resolve_trace_point` (default `resolve_label_anchor`; NumberLine
+overrides to the tick center) so the dynamic content-based pitch is
+honoured; an unresolvable vertex soft-drops the whole trace. The group
+paints ABOVE the cell bodies (a filled cell would swallow an
+under-stroke) and BELOW pills/arrows; digits stay legible through the
+global paint-order halo. Because the group carries the annotation
+structure contract, the shipped runtime's `annotation_add` handler
+draw-ons it via stroke-dashoffset with zero JS changes, inheriting the
+generation-token race guard and reduced-motion/print static fallbacks.
+`<2` points → E1491 at parse; traces are persistent by default and
+`ephemeral=true` clears at the next step, exactly like annotations.
+
+**Code ref:** `scriba/animation/primitives/base.py` `emit_traces_under`,
+`resolve_trace_point`; `scriba/animation/differ.py` `_diff_traces`;
+`scriba/animation/parser/_grammar_commands.py` `_parse_trace`.
+**Test ref:** `tests/unit/test_trace_primitive.py`
+`test_structure_group_path_polygon`,
+`test_painted_above_cells_below_annotations`,
+`test_new_trace_emits_annotation_add`.
+
 ### R-07 — Leader threshold formula
 
 **Normative:** MUST

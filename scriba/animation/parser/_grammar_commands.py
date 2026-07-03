@@ -211,6 +211,64 @@ class _CommandsMixin:
             col=tok.col,
         )
 
+    def _parse_trace(self) -> "TraceCommand":
+        """Parse ``\\trace{shape}{cells=[[r,c],...], ...}`` (R-37)."""
+        from .ast import TraceCommand
+
+        tok = self._advance()
+        shape = self._read_brace_arg(tok).strip()
+        params = self._read_param_brace()
+
+        raw_cells = params.get("cells")
+        cells: list = []
+        if isinstance(raw_cells, (list, tuple)):
+            for item in raw_cells:
+                if isinstance(item, (list, tuple)) and len(item) == 2:
+                    cells.append((int(item[0]), int(item[1])))
+                elif isinstance(item, (int, float, str)) and str(item).lstrip("-").isdigit():
+                    cells.append(int(item))
+        if len(cells) < 2:
+            raise ValidationError(
+                "\\trace requires cells= with at least 2 points",
+                position=tok.col,
+                code="E1491",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        color = str(params.get("color", "info"))
+        if color.startswith("state:"):
+            if color[len("state:"):] not in VALID_ANNOTATION_STATE_COLORS:
+                self._raise_unknown_enum(
+                    "annotation state color", color,
+                    frozenset(f"state:{s}" for s in VALID_ANNOTATION_STATE_COLORS),
+                    code="E1113", line=tok.line, col=tok.col,
+                )
+        elif color not in VALID_ANNOTATION_COLORS:
+            self._raise_unknown_enum(
+                "annotation color", color, VALID_ANNOTATION_COLORS,
+                code="E1113", line=tok.line, col=tok.col,
+            )
+        arrowhead = str(params.get("arrowhead", "end"))
+        if arrowhead not in ("end", "both", "none"):
+            raise ValidationError(
+                f"unknown trace arrowhead '{arrowhead}'; valid: end, both, none",
+                position=tok.col, code="E1492",
+                line=tok.line, col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        dot = str(params.get("dot", "none"))
+        return TraceCommand(
+            tok.line, tok.col, shape,
+            cells=tuple(cells),
+            color=color,
+            label=str(params["label"]) if "label" in params else None,
+            arrowhead=arrowhead,
+            dot=dot,
+            trace_id=str(params["id"]) if "id" in params else None,
+            ephemeral=params.get("ephemeral", False) in (True, "true"),
+        )
+
     def _parse_annotate(self) -> AnnotateCommand:
         tok = self._advance()
         target_str = self._read_brace_arg(tok)

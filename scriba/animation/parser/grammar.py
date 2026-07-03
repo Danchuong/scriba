@@ -299,6 +299,9 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
         if cmd_name == "annotate":
             return self._parse_annotate()
 
+        if cmd_name == "trace":
+            return self._parse_trace()
+
         if cmd_name == "cursor":
             return self._parse_cursor()
 
@@ -352,12 +355,12 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
 
     _VALID_COMMANDS_LIST = (
         "\\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, "
-        "\\recolor, \\reannotate, \\annotate, \\cursor, "
+        "\\recolor, \\reannotate, \\annotate, \\trace, \\cursor, "
         "\\foreach, \\endforeach, \\substory, \\endsubstory"
     )
     _VALID_COMMAND_NAMES = (
         "shape", "compute", "step", "narrate", "apply", "highlight",
-        "recolor", "reannotate", "annotate", "cursor",
+        "recolor", "reannotate", "annotate", "trace", "cursor",
         "foreach", "endforeach", "substory", "endsubstory",
     )
 

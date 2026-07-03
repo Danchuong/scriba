@@ -219,6 +219,16 @@ class NumberLinePrimitive(PrimitiveBase):
         """Compute arrow height above, locked to cross-frame max to prevent jitter."""
         return self._reserved_arrow_above()
 
+    def resolve_trace_point(self, selector: str) -> "tuple[float, float] | None":
+        # trace threads tick CENTERS; the annotation anchor is the tick TOP
+        pt = self.resolve_annotation_point(selector)
+        if pt is None:
+            return None
+        return (pt[0], pt[1] + _TICK_HALF_H if "_TICK_HALF_H" in globals() else pt[1])
+
+    def _trace_cell_suffix(self, cell) -> str:
+        return f"tick[{int(cell)}]"
+
     def emit_svg(
         self,
         *,
@@ -240,6 +250,7 @@ class NumberLinePrimitive(PrimitiveBase):
         # Shift content down (arrows) and right (left pills) into valid space.
         if arrow_above > 0 or left_pad > 0:
             lines.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
+
 
         # Axis line — honours \recolor{nl.axis}{state=...}
         axis_state = self.resolve_effective_state("axis")
@@ -318,6 +329,11 @@ class NumberLinePrimitive(PrimitiveBase):
         # what _measure_emit replays — so measured == painted by construction
         # (the bespoke arrow loop measured with prior-stroke avoidance the
         # paint path didn't have).
+        # R-37 traces: above the cell bodies (a filled cell would
+        # swallow an under-stroke) but below pills/arrows; digits
+        # stay legible via the global paint-order halo
+        self.emit_traces_under(lines)
+
         if effective_anns:
             self.emit_annotation_arrows(
                 lines,

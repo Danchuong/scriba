@@ -223,6 +223,25 @@ _TOP_CAPTION_TOP_Y: int = _PRIMITIVE_LABEL_Y - _CAPTION_FONT_PX // 2
 # ---------------------------------------------------------------------------
 
 
+
+def _trace_arrowhead(prev_pt, tip_pt, size: float = 7.0) -> str:
+    """Polygon points for an arrowhead at *tip_pt* oriented along
+    prev_pt->tip_pt (same construction as the runtime's dynamic head)."""
+    import math as _m
+
+    dx, dy = tip_pt[0] - prev_pt[0], tip_pt[1] - prev_pt[1]
+    dist = _m.hypot(dx, dy) or 1.0
+    ux, uy = dx / dist, dy / dist
+    px, py = -uy, ux
+    hw = size * 0.5
+    bx, by = tip_pt[0] - ux * size, tip_pt[1] - uy * size
+    return (
+        f"{tip_pt[0]:.1f},{tip_pt[1]:.1f} "
+        f"{bx + px * hw:.1f},{by + py * hw:.1f} "
+        f"{bx - px * hw:.1f},{by - py * hw:.1f}"
+    )
+
+
 class PrimitiveBase(abc.ABC):
     """Base class for all animation primitives.
 
@@ -475,6 +494,105 @@ class PrimitiveBase(abc.ABC):
         return max(
             self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
+
+    def set_traces(self, traces: "list[dict]") -> None:
+        """Attach this frame's ``\\trace`` decorations (R-37)."""
+        self._traces = list(traces)
+
+    def resolve_trace_point(self, selector: str) -> "tuple[float, float] | None":
+        """Anchor a trace polyline vertex: the element CENTER. Defaults to
+        ``resolve_label_anchor`` (center on every cell primitive);
+        NumberLine overrides to the tick center — its annotation anchor is
+        the tick TOP so arrows curve above, which would run the polyline
+        along the tops (feat-trace-primitive.md geometry gotcha)."""
+        return self.resolve_label_anchor(selector)
+
+    def _trace_cell_suffix(self, cell) -> str:
+        """Map one ``cells=`` entry to this primitive's selector suffix."""
+        if isinstance(cell, (list, tuple)) and len(cell) == 2:
+            return f"cell[{int(cell[0])}][{int(cell[1])}]"
+        return f"cell[{int(cell)}]"
+
+    def emit_traces_under(self, parts: "list[str]") -> None:
+        """Paint every trace polyline UNDER the cells (call before the cell
+        loop). Geometry runs through ``resolve_trace_point`` so the dynamic
+        content-based pitch is honoured; an unresolvable vertex soft-drops
+        the whole trace (mirrors selector semantics). The group carries the
+        annotation structure contract — ``data-annotation`` + ``<path>`` +
+        ``<polygon>`` — so the shipped runtime's ``annotation_add`` handler
+        draw-ons it with zero JS changes. Reservation note: the polyline
+        threads cell CENTERS, so its extent is inside the content box and
+        never moves the viewBox; the painted⊆bbox honesty pins still see it
+        via the FO/polyline-aware extent parsers.
+        """
+        for tr in getattr(self, "_traces", []):
+            pts: "list[tuple[float, float]]" = []
+            ok = True
+            for cell in tr.get("cells", []):
+                sel = f"{self.name}.{self._trace_cell_suffix(cell)}"
+                pt = self.resolve_trace_point(sel)
+                if pt is None:
+                    ok = False
+                    break
+                pts.append(pt)
+            if not ok or len(pts) < 2:
+                continue
+            color = tr.get("color", "info")
+            style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+            stroke = style["stroke"]
+            tid = tr.get("id", "t")
+            key = f"{self.name}.trace[{tid}]-solo"
+            d = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+            inner = (
+                f'<path d="{d}" fill="none" stroke="{stroke}"'
+                f' stroke-width="2.5" stroke-linecap="round"'
+                f' stroke-linejoin="round" opacity="0.85"/>'
+            )
+            heads = []
+            if tr.get("arrowhead", "end") in ("end", "both"):
+                heads.append(_trace_arrowhead(pts[-2], pts[-1]))
+            if tr.get("arrowhead") == "both":
+                heads.append(_trace_arrowhead(pts[1], pts[0]))
+            for hp in heads:
+                inner += f'<polygon points="{hp}" fill="{stroke}"/>'
+            if tr.get("dot") == "start":
+                inner += (
+                    f'<circle cx="{pts[0][0]:.1f}" cy="{pts[0][1]:.1f}"'
+                    f' r="2.5" fill="{stroke}"/>'
+                )
+            label = tr.get("label")
+            if label:
+                midx, midy = pts[len(pts) // 2]
+                lw = measure_label_line(str(label), LABEL_FONT_PX)
+                ph = LABEL_FONT_PX + 8
+                pw = lw + 12
+                prx, pry = midx - pw / 2.0, midy - ph - 8
+                # keep the pill inside the primitive's content span — a
+                # midpoint on the last column would otherwise overflow the
+                # viewBox (grid_cols/cell_width from the shared metrics)
+                _cm = self._annotation_cell_metrics()
+                if _cm is not None and getattr(_cm, "grid_cols", None):
+                    _cw = float(_cm.cell_width)
+                    _right = _cm.grid_cols * (_cw + 4.0) - 4.0
+                    prx = max(2.0, min(prx, _right - pw - 2.0))
+                _tx = prx + pw / 2.0
+                inner += (
+                    f'<rect x="{prx:.1f}" y="{pry:.1f}" width="{pw}"'
+                    f' height="{ph}" rx="4" fill="white" fill-opacity="0.92"'
+                    f' stroke="{stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
+                    f'<text x="{_tx:.1f}" y="{pry + ph / 2.0:.1f}"'
+                    f' fill="{style["label_fill"]}"'
+                    f' style="text-anchor:middle;dominant-baseline:central">'
+                    f"{_escape_xml(strip_math_markup(str(label)))}</text>"
+                )
+            parts.append(
+                f'  <g class="scriba-annotation scriba-annotation-'
+                f'{annotation_color_class(color)}"'
+                f' data-annotation="{_escape_xml(key)}"'
+                f' role="graphics-symbol" aria-roledescription="annotation"'
+                f' aria-label="{_escape_xml(strip_math_markup(str(label or "trace")))}">'
+                f"{inner}</g>"
+            )
 
     def set_min_arrow_above(self, value: int) -> None:
         """Set minimum vertical space to reserve above cells for arrows.

@@ -33,6 +33,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   dark-adapted; class rules cover text/lines/arrowhead/pill-border.
   `leader=true` draws a dotted connector + anchor dot from any pill to
   its cell; arc pills force the built-in leader instead of doubling.
+- **`\trace` — an arrow that follows a sequence of cells** (P3, R-37):
+  `\trace{g}{cells=[[2,0],[2,1],[2,2]], color=good, label="lớp lẻ"}` draws
+  a rounded polyline through the cell centers with an arrowhead — the
+  fill-direction/traversal is SHOWN, not inferred from cell numbering.
+  Works on Grid, DPTable (1-D/2-D), Array, NumberLine; vertices track the
+  dynamic content-based pitch; the interactive widget draw-ons the arrow
+  along its path on the step it appears (stroke-dashoffset via the
+  existing `annotation_add` machinery — zero new JS — inheriting the
+  rapid-nav generation guard and reduced-motion/print static fallbacks).
+  Traces persist like annotations (`ephemeral=true` to clear); `<2`
+  points → E1491; out-of-range cells soft-drop. Paints above cell bodies
+  (an under-stroke would vanish behind filled cells), below pills; digits
+  keep their global halo.
 
 ## [0.22.1] - 2026-07-03 — Exact label math, grow-don't-clip, content-based cells
 

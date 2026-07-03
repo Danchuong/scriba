@@ -73,6 +73,7 @@ _KNOWN_COMMANDS = frozenset(
         "recolor",
         "reannotate",
         "annotate",
+        "trace",
         "substory",
         "endsubstory",
         "foreach",

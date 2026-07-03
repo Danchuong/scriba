@@ -1153,6 +1153,28 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 > draws a dotted connector + anchor dot from the pill to its cell (on arc
 > pills it forces the built-in leader; never doubles).
 > Example: `\annotate{g.cell[2][0]}{label="lớp chẵn", color="state:current", leader=true, position=below}`.
+
+### `\trace` — arrow that follows a sequence of cells (since 0.22.2)
+
+```latex
+\trace{g}{cells=[[2,0],[2,1],[2,2],[1,2],[0,2]], color=good, label="lớp lẻ"}
+\trace{a}{cells=[0,1,2,3], color="state:current", dot=start}
+```
+
+| arg | values | default | notes |
+|-----|--------|---------|-------|
+| `cells` | `[[r,c],...]` (2-D) or `[i,...]` (1-D) | required | ≥2 points (E1491); out-of-range points soft-drop the trace |
+| `color` | annotation colors or `"state:X"` | `info` | quotes required for `state:` |
+| `label` | string (math OK) | — | mini pill at the path midpoint, clamped to the content span |
+| `arrowhead` | `end` / `both` / `none` | `end` | |
+| `dot` | `start` / `none` | `none` | start marker |
+| `id` | string | auto `t1`, `t2`… | names the trace for the runtime |
+| `ephemeral` | bool | `false` | clears at the next `\step` like annotations |
+
+Works on Grid, DPTable (1-D + 2-D), Array, NumberLine. In the interactive
+widget the arrow **draws itself along the path** on the step it appears
+(reduced-motion and print get the full static path). The line passes over
+cell bodies but under pills; digits keep their halo.
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]` | — | — | — | — | `.all` |

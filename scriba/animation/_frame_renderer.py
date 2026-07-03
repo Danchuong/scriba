@@ -274,6 +274,13 @@ def measure_scene_layout(
             ]
             if hasattr(prim, "set_annotations"):
                 prim.set_annotations(prim_anns)
+            prim_traces = [
+                tr
+                for tr in (getattr(frame, "traces", None) or [])
+                if tr.get("target") == shape_name
+            ]
+            if hasattr(prim, "set_traces"):
+                prim.set_traces(prim_traces)
         _capture()
 
     reserved: dict[str, tuple[float, float]] = {}
@@ -649,6 +656,13 @@ def _emit_frame_svg(
         ]
         if hasattr(prim, "set_annotations"):
             prim.set_annotations(prim_anns)
+        prim_traces = [
+            tr
+            for tr in (getattr(frame, "traces", None) or [])
+            if tr.get("target") == shape_name
+        ]
+        if hasattr(prim, "set_traces"):
+            prim.set_traces(prim_traces)
 
         bbox = prim.bounding_box()
         _, _, bw, bh = _normalize_bbox(bbox)

@@ -171,6 +171,9 @@ class _ForeachMixin:
                     elif inner_cmd == "annotate":
                         body.append(self._parse_annotate())
 
+                    elif inner_cmd == "trace":
+                        body.append(self._parse_trace())
+
                     elif inner_cmd == "cursor":
                         body.append(self._parse_cursor())
 

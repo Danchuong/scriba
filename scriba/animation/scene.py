@@ -19,6 +19,7 @@ from typing import Any
 
 from scriba.animation.parser.ast import (
     AnnotateCommand,
+    TraceCommand,
     ApplyCommand,
     ComputeCommand,
     CursorCommand,
@@ -129,6 +130,20 @@ class AnnotationEntry:
 
 
 @dataclass(frozen=True)
+class TraceEntry:
+    """A ``\\trace`` decoration on one shape (R-37)."""
+
+    target: str  # shape name
+    trace_id: str
+    cells: tuple
+    color: str = "info"
+    label: str | None = None
+    arrowhead: str = "end"
+    dot: str = "none"
+    ephemeral: bool = False
+
+
+@dataclass(frozen=True)
 class FrameSnapshot:
     """Immutable snapshot of the scene at one frame.
 
@@ -141,6 +156,7 @@ class FrameSnapshot:
     highlights: frozenset[str]
     annotations: tuple[AnnotationEntry, ...]
     bindings: dict[str, Any]
+    traces: tuple["TraceEntry", ...] = ()
     narration: str | None = None
 
 
@@ -163,6 +179,8 @@ class SceneState:
     )
     highlights: set[str] = field(default_factory=set)
     annotations: list[AnnotationEntry] = field(default_factory=list)
+    traces: list["TraceEntry"] = field(default_factory=list)
+    _trace_counter: int = 0
     bindings: dict[str, Any] = field(default_factory=dict)
     _frame_counter: int = 0
 
@@ -214,6 +232,7 @@ class SceneState:
         # Clear ephemerals
         self.highlights.clear()
         self.annotations = [a for a in self.annotations if not a.ephemeral]
+        self.traces = [tr for tr in self.traces if not tr.ephemeral]
 
         # Frame-local compute — deep-copy to prevent mutable state leakage
         saved_bindings = copy.deepcopy(self.bindings)
@@ -263,6 +282,7 @@ class SceneState:
             shape_states=shape_copy,
             highlights=frozenset(self.highlights),
             annotations=tuple(self.annotations),
+            traces=tuple(self.traces),
             bindings=dict(self.bindings),
             narration=narration,
         )
@@ -580,6 +600,8 @@ class SceneState:
             self._apply_highlight(cmd)
         elif isinstance(cmd, AnnotateCommand):
             self._apply_annotate(cmd)
+        elif isinstance(cmd, TraceCommand):
+            self._apply_trace(cmd)
         elif isinstance(cmd, CursorCommand):
             self._apply_cursor(cmd)
 
@@ -852,6 +874,31 @@ class SceneState:
                 arrow=cmd.arrow if hasattr(cmd, "arrow") else False,
                 bracket=getattr(cmd, "bracket", False),
                 leader=getattr(cmd, "leader", False),
+            )
+        )
+
+    def _apply_trace(self, cmd: TraceCommand) -> None:
+        """``\\trace`` — persistent by default, ephemeral if flagged.
+        Shape must exist (mirrors \\annotate E1116); out-of-range cells
+        degrade softly at emit like every selector."""
+        if cmd.shape not in self.shape_states:
+            raise _animation_error(
+                "E1116",
+                f"\\trace references undeclared shape '{cmd.shape}'",
+                hint=f"declare '{cmd.shape}' with \\shape before using \\trace",
+            )
+        self._trace_counter += 1
+        tid = cmd.trace_id or f"t{self._trace_counter}"
+        self.traces.append(
+            TraceEntry(
+                target=cmd.shape,
+                trace_id=tid,
+                cells=cmd.cells,
+                color=cmd.color,
+                label=cmd.label,
+                arrowhead=cmd.arrowhead,
+                dot=cmd.dot,
+                ephemeral=cmd.ephemeral,
             )
         )
 

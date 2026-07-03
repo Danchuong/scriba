@@ -321,6 +321,19 @@ def _snapshot_to_frame_data(
         for a in snap.annotations
     ]
 
+    traces = [
+        {
+            "target": tr.target,
+            "id": tr.trace_id,
+            "cells": [list(c) if isinstance(c, tuple) else c for c in tr.cells],
+            "color": tr.color,
+            **({"label": tr.label} if tr.label else {}),
+            "arrowhead": tr.arrowhead,
+            "dot": tr.dot,
+        }
+        for tr in snap.traces
+    ]
+
     narration_html = _render_narration(snap.narration, scene_id, ctx, valid_hl_ids)
 
     return FrameData(
@@ -329,6 +342,7 @@ def _snapshot_to_frame_data(
         narration_html=narration_html,
         shape_states=shape_states,
         annotations=annotations,
+        traces=traces,
         substories=substories,
         label=label,
     )

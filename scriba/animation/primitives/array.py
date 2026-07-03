@@ -233,6 +233,7 @@ class ArrayPrimitive(PrimitiveBase):
         if arrow_above > 0:
             lines.append(f'  <g transform="translate(0, {arrow_above})">')
 
+
         # Bottom area, visual top-to-bottom: index row → callout lane
         # (position=below pills) → caption. Only the index row is in this
         # vstack; the lane and caption are placed below it (see the caption
@@ -335,6 +336,11 @@ class ArrayPrimitive(PrimitiveBase):
             )
 
         # Arrow annotations
+        # R-37 traces: above the cell bodies (a filled cell would
+        # swallow an under-stroke) but below pills/arrows; digits
+        # stay legible via the global paint-order halo
+        self.emit_traces_under(lines)
+
         if effective_anns:
             self.emit_annotation_arrows(
                 lines,

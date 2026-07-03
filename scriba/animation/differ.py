@@ -243,6 +243,33 @@ def _annotation_key(ann: dict) -> tuple[str, str]:
     return (ann.get("target", ""), ann.get("arrow_from") or "solo")
 
 
+def _diff_traces(
+    prev_traces: "list[dict]",
+    curr_traces: "list[dict]",
+) -> "list[Transition]":
+    """R-37: a new trace enters via the same ``annotation_add`` machinery
+    the runtime already draw-ons (structure-driven stroke-dashoffset)."""
+    def _key(tr: dict) -> str:
+        return f"{tr.get('target', '')}.trace[{tr.get('id', '')}]-solo"
+
+    prev_map = {_key(tr): tr for tr in prev_traces}
+    curr_map = {_key(tr): tr for tr in curr_traces}
+    out: list[Transition] = []
+    for key in sorted(prev_map.keys() | curr_map.keys()):
+        p, c = prev_map.get(key), curr_map.get(key)
+        if c is not None and p is None:
+            out.append(Transition(
+                target=key, prop="add", from_val=None,
+                to_val=c.get("color"), kind="annotation_add",
+            ))
+        elif p is not None and c is None:
+            out.append(Transition(
+                target=key, prop="remove", from_val=p.get("color"),
+                to_val=None, kind="annotation_remove",
+            ))
+    return out
+
+
 def _diff_annotations(
     prev_anns: list[dict],
     curr_anns: list[dict],
@@ -330,6 +357,12 @@ def compute_transitions(prev: FrameData, curr: FrameData) -> TransitionManifest:
     )
     transitions.extend(
         _diff_annotations(prev.annotations, curr.annotations),
+    )
+    transitions.extend(
+        _diff_traces(
+            getattr(prev, "traces", None) or [],
+            getattr(curr, "traces", None) or [],
+        ),
     )
 
     skip = len(transitions) > _MAX_TRANSITIONS

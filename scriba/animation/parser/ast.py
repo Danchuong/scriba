@@ -225,6 +225,24 @@ class ReannotateCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class TraceCommand:
+    """``\\trace{shape}{cells=[...], ...}`` — an arrow following a cell
+    sequence (R-37). ``cells`` is a tuple of ints (1-D primitives) or of
+    (row, col) tuples (2-D)."""
+
+    line: int
+    col: int
+    shape: str
+    cells: tuple
+    color: str = "info"
+    label: str | None = None
+    arrowhead: str = "end"
+    dot: str = "none"
+    trace_id: str | None = None
+    ephemeral: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class AnnotateCommand:
     """``\\annotate{target}{params...}``."""
 
@@ -279,6 +297,7 @@ MutationCommand = (
     | RecolorCommand
     | ReannotateCommand
     | AnnotateCommand
+    | TraceCommand
     | ForeachCommand
     | CursorCommand
 )
@@ -294,6 +313,7 @@ Command = Union[
     RecolorCommand,
     ReannotateCommand,
     AnnotateCommand,
+    TraceCommand,
     ForeachCommand,
     CursorCommand,
     "SubstoryBlock",
