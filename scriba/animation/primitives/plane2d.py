@@ -19,6 +19,7 @@ from typing import Any, Callable, ClassVar
 from scriba.animation.errors import _emit_warning, _animation_error
 from scriba.animation.primitives.base import (
     _label_width_text,
+    allow_forbidden_pattern,
     estimate_text_width,
     _LabelPlacement,
     BoundingBox,
@@ -960,14 +961,48 @@ class Plane2D(PrimitiveBase):
 
     # ----- Label layer (SVG coordinates, outside transform) ----------------
 
-    def _emit_labels(self, *, render_inline_tex: "Callable[[str], str] | None" = None) -> str:
-        parts: list[str] = ['<g class="scriba-plane-labels">']
+    def register_decorations(self) -> "list[dict[str, Any]]":
+        """One placement registry for ALL content labels (FP-2).
 
-        # Tick labels on axes
-        if self.axes:
-            parts.append(self._emit_tick_labels())
+        Point labels and line labels used two isolated registries — point
+        labels had none at all (bare ``<text>``, no nudge, no clamp) and
+        printed straight through line labels sharing the corner. Every
+        content label now joins one list in deterministic order (points by
+        index, then lines by index) with the same downward nudge and
+        viewBox clamp.
 
-        # Point labels (with opt-in coordinate display)
+        Pure function of primitive state: reused by ``_emit_labels`` for
+        painting and by ``resolve_self_content_rects`` for the annotation
+        scorer, so the emit and measure paths see identical boxes.
+        """
+        _LINE_LABEL_CHAR_W = 7  # approx px per char at _TICK_FONT_SIZE (line-label font)
+        _LINE_LABEL_H = 14
+        _LINE_LABEL_PAD = 10
+        _LINE_PILL_PAD_X = _SVG_LABEL_PILL_PAD_X
+        _LINE_PILL_PAD_Y = _SVG_LABEL_PILL_PAD_Y
+        _LINE_NUDGE_STEP = 16
+        _LINE_MAX_NUDGE = 4
+
+        placed: list[_LabelPlacement] = []
+        records: list[dict[str, Any]] = []
+        vb_w = self.width
+        vb_h = self.height
+
+        def _settle(cx: float, cy: float, w: float, h: float) -> _LabelPlacement:
+            """Shared nudge-down + viewBox clamp for every content label."""
+            cand = _LabelPlacement(x=cx, y=cy, width=w, height=h)
+            for _attempt in range(_LINE_MAX_NUDGE):
+                if not any(cand.overlaps(p) for p in placed):
+                    break
+                cy += _LINE_NUDGE_STEP
+                cand = _LabelPlacement(x=cx, y=cy, width=w, height=h)
+            half_w = w / 2
+            cx = max(_PAD + half_w, min(cx, vb_w - _PAD - half_w))
+            cy = max(12.0, min(cy, vb_h - 4.0))
+            cand = _LabelPlacement(x=cx, y=cy, width=w, height=h)
+            placed.append(cand)
+            return cand
+
         for i, pt in enumerate(self.points):
             if pt is _TOMBSTONE:
                 continue
@@ -976,122 +1011,131 @@ class Plane2D(PrimitiveBase):
             label_text = pt.get("label")
             if not label_text and self.show_coords:
                 label_text = f"({pt['x']:.6g}, {pt['y']:.6g})"
-            if label_text:
-                sx, sy = self.math_to_svg(pt["x"], pt["y"])
-                parts.append(
-                    _render_svg_text(
-                        str(label_text),
-                        round(sx + _LABEL_OFFSET),
-                        round(sy - _LABEL_OFFSET),
-                        fill=THEME["fg"],
-                        font_size=str(_TICK_FONT_SIZE),
-                        fo_width=estimate_text_width(
-                            _label_width_text(str(label_text)), _TICK_FONT_SIZE
-                        ) + 12,
-                        fo_height=16,
-                        render_inline_tex=render_inline_tex,
-                        clip_overflow=False,
-                    )
-                )
-
-        # Line labels — with collision avoidance and viewBox clamping.
-        # FP-3 fix: use canonical constants from _svg_helpers instead of
-        # hardcoded local values for PAD_X, PAD_Y, and PILL_R.
-        _LINE_LABEL_CHAR_W = 7  # approx px per char at _TICK_FONT_SIZE (line-label font)
-        _LINE_LABEL_H = 14
-        _LINE_LABEL_PAD = 10
-        _LINE_PILL_PAD_X = _SVG_LABEL_PILL_PAD_X   # was: 5 (FP-3 fix)
-        _LINE_PILL_PAD_Y = _SVG_LABEL_PILL_PAD_Y   # was: 2 (FP-3 fix)
-        _LINE_PILL_R = _SVG_LABEL_PILL_RADIUS       # was: 3 (FP-3 fix)
-        _LINE_NUDGE_STEP = 16
-        _LINE_MAX_NUDGE = 4
-
-        placed_labels: list[_LabelPlacement] = []
-        vb_w = self.width
-        vb_h = self.height
+            if not label_text:
+                continue
+            sx, sy = self.math_to_svg(pt["x"], pt["y"])
+            w = float(estimate_text_width(
+                _label_width_text(str(label_text)), _TICK_FONT_SIZE
+            ) + 12)
+            records.append({
+                "kind": "point",
+                "text": str(label_text),
+                "placement": _settle(
+                    sx + _LABEL_OFFSET + w / 2, sy - _LABEL_OFFSET, w, 16.0
+                ),
+                "pill_w": None,
+                "pill_h": None,
+            })
 
         for i, ln in enumerate(self.lines):
             if ln is _TOMBSTONE:
                 continue
             if self.get_state(f"line[{i}]") == "hidden":
                 continue
-            if ln.get("label"):
-                label_text = str(ln["label"])
-                slope = ln["slope"]
-                intercept_val = ln["intercept"]
-                if math.isinf(slope):
-                    label_x, label_y = self.math_to_svg(
-                        intercept_val, self.yrange[1],
-                    )
-                else:
-                    result = clip_line_to_viewport(
-                        slope, intercept_val, self.xrange, self.yrange,
-                    )
-                    if result is None:
-                        continue
-                    (_, _), (x2, y2) = result
-                    label_x, label_y = self.math_to_svg(x2, y2)
-
-                label_x += _LABEL_OFFSET
-                label_y -= _LABEL_OFFSET
-
-                est_w = len(label_text) * _LINE_LABEL_CHAR_W + _LINE_LABEL_PAD
-                pill_w = est_w + _LINE_PILL_PAD_X * 2
-                pill_h = _LINE_LABEL_H + _LINE_PILL_PAD_Y * 2
-
-                # Collision avoidance: nudge downward if overlapping
-                candidate = _LabelPlacement(
-                    x=label_x, y=label_y,
-                    width=est_w, height=_LINE_LABEL_H,
+            if not ln.get("label"):
+                continue
+            label_text = str(ln["label"])
+            slope = ln["slope"]
+            intercept_val = ln["intercept"]
+            if math.isinf(slope):
+                label_x, label_y = self.math_to_svg(
+                    intercept_val, self.yrange[1],
                 )
-                for _attempt in range(_LINE_MAX_NUDGE):
-                    if not any(
-                        candidate.overlaps(p) for p in placed_labels
-                    ):
-                        break
-                    label_y += _LINE_NUDGE_STEP
-                    candidate = _LabelPlacement(
-                        x=label_x, y=label_y,
-                        width=est_w, height=_LINE_LABEL_H,
-                    )
-
-                # Clamp within viewBox
-                half_w = est_w / 2
-                label_x = max(
-                    _PAD + half_w,
-                    min(label_x, vb_w - _PAD - half_w),
+            else:
+                result = clip_line_to_viewport(
+                    slope, intercept_val, self.xrange, self.yrange,
                 )
-                label_y = max(12.0, min(label_y, vb_h - 4.0))
+                if result is None:
+                    continue
+                (_, _), (x2, y2) = result
+                label_x, label_y = self.math_to_svg(x2, y2)
 
-                candidate = _LabelPlacement(
-                    x=label_x, y=label_y,
-                    width=est_w, height=_LINE_LABEL_H,
-                )
-                placed_labels.append(candidate)
+            est_w = len(label_text) * _LINE_LABEL_CHAR_W + _LINE_LABEL_PAD
+            records.append({
+                "kind": "line",
+                "text": label_text,
+                "placement": _settle(
+                    label_x + _LABEL_OFFSET, label_y - _LABEL_OFFSET,
+                    float(est_w), float(_LINE_LABEL_H),
+                ),
+                "pill_w": float(est_w + _LINE_PILL_PAD_X * 2),
+                "pill_h": float(_LINE_LABEL_H + _LINE_PILL_PAD_Y * 2),
+            })
 
-                # Background pill for readability
-                pill_rx = label_x - pill_w / 2
-                pill_ry = label_y - pill_h / 2
-                parts.append(
-                    f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
-                    f'width="{pill_w}" height="{pill_h}" '
-                    f'rx="{_LINE_PILL_R}" fill="white" '
-                    f'fill-opacity="0.85"/>'
-                )
+        return records
+
+    def resolve_self_content_rects(self) -> "list[BoundingBox]":
+        """Content-label boxes as scorer obstacles (corner-based, same frame
+        as ``resolve_annotation_point``) — annotation pills avoid point and
+        line labels on both the emit and measure paths."""
+        return [
+            BoundingBox(
+                x=r["placement"].x - r["placement"].width / 2,
+                y=r["placement"].y - r["placement"].height / 2,
+                width=r["placement"].width,
+                height=r["placement"].height,
+            )
+            for r in self.register_decorations()
+        ]
+
+    @allow_forbidden_pattern(
+        "FP-4",
+        reason=(
+            "paints already-settled placements; the viewBox clamp lives in "
+            "register_decorations._settle, shared by every content label"
+        ),
+        issue="investigations/fp2-isolated-registries.md",
+    )
+    def _emit_labels(self, *, render_inline_tex: "Callable[[str], str] | None" = None) -> str:
+        parts: list[str] = ['<g class="scriba-plane-labels">']
+
+        # Tick labels on axes
+        if self.axes:
+            parts.append(self._emit_tick_labels())
+
+        _LINE_PILL_R = _SVG_LABEL_PILL_RADIUS
+
+        for rec in self.register_decorations():
+            placement = rec["placement"]
+            if rec["kind"] == "point":
                 parts.append(
                     _render_svg_text(
-                        label_text,
-                        round(label_x),
-                        round(label_y),
+                        rec["text"],
+                        round(placement.x),
+                        round(placement.y),
                         fill=THEME["fg"],
                         font_size=str(_TICK_FONT_SIZE),
                         text_anchor="middle",
-                        fo_width=int(pill_w),
-                        fo_height=int(pill_h),
+                        fo_width=int(placement.width),
+                        fo_height=16,
                         render_inline_tex=render_inline_tex,
                         clip_overflow=False,
                     )
                 )
+                continue
+            pill_w, pill_h = rec["pill_w"], rec["pill_h"]
+            pill_rx = placement.x - pill_w / 2
+            pill_ry = placement.y - pill_h / 2
+            parts.append(
+                f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
+                f'width="{pill_w:g}" height="{pill_h:g}" '
+                f'rx="{_LINE_PILL_R}" fill="white" '
+                f'fill-opacity="0.85"/>'
+            )
+            parts.append(
+                _render_svg_text(
+                    rec["text"],
+                    round(placement.x),
+                    round(placement.y),
+                    fill=THEME["fg"],
+                    font_size=str(_TICK_FONT_SIZE),
+                    text_anchor="middle",
+                    fo_width=int(pill_w),
+                    fo_height=int(pill_h),
+                    render_inline_tex=render_inline_tex,
+                    clip_overflow=False,
+                )
+            )
 
         parts.append("</g>")
         return "".join(parts)

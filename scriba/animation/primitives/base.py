@@ -100,6 +100,18 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
 _PRIMITIVE_REGISTRY: dict[str, type["PrimitiveBase"]] = {}
 
 
+def allow_forbidden_pattern(fp: str, *, reason: str, issue: str = ""):
+    """Marker decorator read by ``scripts/lint_smart_label.py``.
+
+    Suppresses ONE forbidden-pattern code (e.g. ``"FP-2"``) on the decorated
+    method, leaving an in-source audit trail (*reason*, *issue*). No runtime
+    effect — the linter collects the suppression from the AST.
+    """
+    def _wrap(fn):
+        return fn
+    return _wrap
+
+
 def register_primitive(*type_names: str):
     """Decorator to register a primitive class under one or more type names.
 

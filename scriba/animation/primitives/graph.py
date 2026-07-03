@@ -24,6 +24,7 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _render_split_label_svg,
     _render_svg_text,
+    allow_forbidden_pattern,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -1214,6 +1215,71 @@ class Graph(PrimitiveBase):
             height=self.height + 2 * r + arrow_above + self._below_lane_height() + label_h,
         )
 
+    def resolve_self_content_rects(self) -> "list[BoundingBox]":
+        """Node circles + edge-weight pill boxes as scorer obstacles (FP-2).
+
+        Weight pills are approximated at their GEP-06 natural anchor (the
+        visible-segment midpoint) — the collision cascade may slide the
+        painted pill, but a SHOULD obstacle only needs the neighbourhood.
+        Pure function of primitive state, consulted identically on the emit
+        and measure paths; auto_expand scaling is intentionally not replayed
+        (the approximation stays on the unscaled frame the anchors use).
+        """
+        hidden = {
+            n for n in self.nodes
+            if self.get_state(self._node_key(n)) == "hidden"
+        }
+        pos = {
+            k: (float(v[0]), float(v[1])) for k, v in self.positions.items()
+        }
+        r = float(self._node_radius)
+        rects: list[BoundingBox] = []
+        for n in self.nodes:
+            if n in hidden or n not in pos:
+                continue
+            x, y = pos[n]
+            rects.append(
+                BoundingBox(x=x - r, y=y - r, width=2 * r, height=2 * r)
+            )
+        for u, v, w in self.edges:
+            if u in hidden or v in hidden or u not in pos or v not in pos:
+                continue
+            if self.get_state(self._edge_key(u, v)) == "hidden":
+                continue
+            dyn = self.get_value(self._edge_key(u, v))
+            if dyn is not None:
+                display = str(dyn)
+            elif self.show_weights and w is not None:
+                display = _format_weight(w)
+            else:
+                continue
+            x1, y1 = pos[u]
+            x2, y2 = pos[v]
+            if self.directed:
+                x2, y2 = _shorten_line_to_circle(x1, y1, x2, y2, r)
+            vx1, vy1 = _shorten_line_to_circle(x2, y2, x1, y1, r)
+            mid_x = (vx1 + x2) / 2
+            mid_y = (vy1 + y2) / 2
+            tw = estimate_text_width(display, _WEIGHT_FONT)
+            pw = float(tw + _WEIGHT_PILL_PAD_X * 2)
+            ph = float((_WEIGHT_FONT + 2) + _WEIGHT_PILL_PAD_Y * 2)
+            rects.append(
+                BoundingBox(
+                    x=mid_x - pw / 2, y=mid_y - ph / 2, width=pw, height=ph
+                )
+            )
+        return rects
+
+    @allow_forbidden_pattern(
+        "FP-2",
+        reason=(
+            "placed_edge_labels is the content layer's internal weight-vs-"
+            "weight avoidance; content→annotation sharing goes through "
+            "resolve_self_content_rects (the measure-parity channel), which "
+            "is what FP-2 actually demands"
+        ),
+        issue="investigations/fp2-isolated-registries.md",
+    )
     def emit_svg(
         self,
         *,
