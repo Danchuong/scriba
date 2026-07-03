@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 
 _REPO = Path(__file__).resolve().parents[2]
-_CEILING = 11  # frozen baseline 2026-07-02 — lower as violations clear
+_CEILING = 3  # FP-6 route-through cleared 8 (2026-07-03); remaining: graph FP-2, plane2d FP-2/FP-3
 
 
 def test_lint_error_count_does_not_grow() -> None:

@@ -959,26 +959,27 @@ at any time.
 ### R-30 — NumberLine routed through `emit_annotation_arrows`
 
 **Normative:** MUST
-**Since:** planned v0.13.0+
+**Since:** shipped in two stages — silent-drop fix 30ef54d (2026-06-30), full arrow
+route-through 2026-07-03 (FP-6 collapse)
 **Supersedes:** code T-11; §5.3 FP-5/FP-6 from v2.0.0-rc.1
 **Source:** code T-11
-**Scope:** `scriba/animation/primitives/numberline.py` (lines 300–316)
+**Scope:** `scriba/animation/primitives/numberline.py:emit_svg`
 
 NumberLine MUST route through `emit_annotation_arrows` (the shared base dispatcher) like
-all other primitives. The current bypass at `numberline.py:297–316` silently drops
-`arrow=true` and position-only annotations. This is silent data loss, not a graceful
-degradation.
+all other primitives — every annotation kind (`arrow_from`, `arrow=true`, position-only,
+range) flows through one dispatcher call.
 
-**Rationale:** The NumberLine primitive uses an orphan loop (FP-5/FP-6 forbidden pattern)
-that filters only `arrow_from`-style annotations, silently discarding position-only and
-`arrow=true` annotations. Authors relying on NumberLine annotations for these types receive
-no error and no output — a hard-to-debug silent failure. The fix requires refactoring
-`numberline.py:300–316` (M cost). Deferred to v0.13.0+ with a deprecation notice in the
-v0.11.0 release notes for the `arrow=true`/position-only silent-drop behaviour.
+**Rationale:** The original bypass filtered only `arrow_from`-style annotations,
+silently discarding position-only and `arrow=true` ones (silent data loss). Stage one
+(30ef54d) routed the non-arrow complement through the dispatcher, ending the drop.
+Stage two deleted the bespoke arrow loop entirely: arrows now gain the dispatcher's
+prior-arrow-stroke avoidance, content obstacles and shared placement registry, and —
+because `_measure_emit` replays the dispatcher — measured geometry equals painted
+geometry by construction (the bespoke path measured with avoidance the paint lacked).
 
-**Code ref:** `scriba/animation/primitives/numberline.py` (lines ~300–316); pending v0.13.0+
-**Test ref:** pending
-**Golden ref:** pending (byte-breaking for NumberLine scenes with position-only annotations)
+**Code ref:** `scriba/animation/primitives/numberline.py:emit_annotation_arrows`
+**Test ref:** `tests/unit/test_dispatcher_route_through.py`
+**Golden ref:** arrow-bearing NumberLine corpus goldens re-pinned 2026-07-03
 
 ---
 
@@ -1079,7 +1080,7 @@ earlier arc stroke).
 | R-27c | Visual-gap gate (any color) | MUST | Shipped | — | — | ✅ v0.15.0 |
 | R-28 | Loud placed_labels=None warn | MUST | Gap | — | ✅ | — |
 | R-29 | Print @media dash styles | MUST | Gap | — | ✅ | — |
-| R-30 | NumberLine routing fix | MUST | Gap | — | — | ✅ |
+| R-30 | NumberLine routing fix | MUST | Shipped | — | — | ✅ v0.21.2 |
 | R-31 | Segment obstacles (W3-α Plane2D) | MUST/SHOULD | Shipped | — | ✅ v0.12.0 | — |
 | R-33 | Content-cell occlusion obstacles | SHOULD | Shipped | — | — | ✅ v0.21.2 |
 | R-34 | Escape-lane candidates | SHOULD | Shipped | — | — | ✅ v0.21.2 |

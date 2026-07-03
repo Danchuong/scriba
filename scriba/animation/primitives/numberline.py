@@ -11,14 +11,11 @@ from typing import Any, Callable, ClassVar
 from scriba.animation.errors import E1103, _animation_error
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
-    _LabelPlacement,
     THEME,
     BoundingBox,
     PrimitiveBase,
     _render_svg_text,
     position_below_lane_height,
-    emit_arrow_marker_defs,
-    emit_arrow_svg,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -243,9 +240,6 @@ class NumberLinePrimitive(PrimitiveBase):
         if arrow_above > 0 or left_pad > 0:
             lines.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
 
-        # Emit arrowhead marker defs
-        emit_arrow_marker_defs(lines, effective_anns)
-
         # Axis line — honours \recolor{nl.axis}{state=...}
         axis_state = self.resolve_effective_state("axis")
         axis_css = state_class(axis_state)
@@ -317,35 +311,16 @@ class NumberLinePrimitive(PrimitiveBase):
                 render_inline_tex=render_inline_tex,
             )
 
-        # Arrow annotations (bespoke tick-geometry path, unchanged).
-        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
-        tick_height = NL_TICK_BOTTOM - NL_TICK_TOP
-        placed: list[_LabelPlacement] = []
-        for idx, ann in enumerate(arrow_anns):
-            src = self.resolve_annotation_point(ann.get("arrow_from", ""))
-            dst = self.resolve_annotation_point(ann.get("target", ""))
-            if src and dst:
-                target = ann.get("target", "")
-                arrow_index = sum(
-                    1 for j, a in enumerate(arrow_anns)
-                    if a.get("target") == target and j < idx
-                )
-                emit_arrow_svg(
-                    lines, ann, src, dst, arrow_index,
-                    tick_height, render_inline_tex,
-                    placed_labels=placed,
-                )
-
-        # Position pills + range targets (non-arrow annotations): route through
-        # the shared annotation engine so position=above/below pills and range
-        # spans render. Previously numberline only emitted arrow_from
-        # annotations, so these were silently dropped despite bounding_box()
-        # reserving space for them.
-        pill_anns = [a for a in effective_anns if not a.get("arrow_from")]
-        if pill_anns:
+        # All annotation kinds route through the shared dispatcher (FP-6):
+        # it splits arrow_from / arrow=true / position-only internally, emits
+        # marker defs itself, shares one placement registry, and is exactly
+        # what _measure_emit replays — so measured == painted by construction
+        # (the bespoke arrow loop measured with prior-stroke avoidance the
+        # paint path didn't have).
+        if effective_anns:
             self.emit_annotation_arrows(
                 lines,
-                pill_anns,
+                effective_anns,
                 render_inline_tex=render_inline_tex,
                 scene_segments=scene_segments,
                 self_offset=self_offset,

@@ -26,9 +26,6 @@ from scriba.animation.primitives.base import (
     _escape_xml,
     _inset_rect_attrs,
     _render_svg_text,
-    _LabelPlacement,
-    emit_arrow_marker_defs,
-    emit_arrow_svg,
     estimate_text_width,
     register_primitive,
     state_class,
@@ -272,40 +269,19 @@ class Queue(PrimitiveBase):
         scene_segments=None,
         self_offset=None,
     ) -> None:
-        """Queue's custom annotation path: direct arrows + shared pills.
+        """Queue's shared measure/paint annotation entry.
 
         Called by BOTH ``emit_svg`` and ``_measure_emit`` so the reserved
-        lane is measured from exactly what gets painted.
+        lane is measured from exactly what gets painted. One dispatcher
+        call covers every annotation kind (FP-6): it splits arrow_from /
+        arrow=true / position-only internally, emits marker defs itself,
+        and shares one placement registry.
         """
-        arrow_anns = [a for a in effective_anns if a.get("arrow_from")]
-        if arrow_anns:
-            arrow_lines: list[str] = []
-            placed: list[_LabelPlacement] = []
-            _cell_metrics = self._annotation_cell_metrics()
-            for idx, ann in enumerate(arrow_anns):
-                src = self.resolve_annotation_point(ann.get("arrow_from", ""))
-                dst = self.resolve_annotation_point(ann.get("target", ""))
-                if src and dst:
-                    arrow_index = sum(
-                        1
-                        for prev in arrow_anns[:idx]
-                        if prev.get("target") == ann.get("target")
-                    )
-                    emit_arrow_svg(
-                        arrow_lines, ann, src, dst, arrow_index,
-                        CELL_HEIGHT, render_inline_tex,
-                        placed_labels=placed,
-                        cell_metrics=_cell_metrics,
-                    )
-            parts.extend(arrow_lines)
-
-        # Position pills + range targets (non-arrow annotations): route through
-        # the shared annotation engine so position=above/below pills render.
-        pill_anns = [a for a in effective_anns if not a.get("arrow_from")]
-        if pill_anns:
+        if effective_anns:
             self.emit_annotation_arrows(
                 parts,
-                pill_anns,
+                effective_anns,
+                cell_metrics=self._annotation_cell_metrics(),
                 render_inline_tex=render_inline_tex,
                 scene_segments=scene_segments,
                 self_offset=self_offset,
@@ -362,12 +338,6 @@ class Queue(PrimitiveBase):
         # Shift content down (arrows) and right (left pills) into valid space.
         if arrow_above > 0 or left_pad > 0:
             parts.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
-
-        # Emit arrowhead marker defs for annotation arrows
-        ann_arrow_lines: list[str] = []
-        emit_arrow_marker_defs(ann_arrow_lines, effective_anns)
-        if ann_arrow_lines:
-            parts.append("\n".join(ann_arrow_lines))
 
         # Y offset: leave room for pointer arrows above cells
         cell_y = _POINTER_HEIGHT + _POINTER_LABEL_GAP

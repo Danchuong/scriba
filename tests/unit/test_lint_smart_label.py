@@ -491,15 +491,17 @@ class TestMainExitCodes:
 
 
 class TestLiveScan:
-    def test_live_scan_detects_10_primitive_fp_pairs(self):
+    def test_live_scan_detects_3_primitive_fp_pairs(self):
         """Validate that the linter finds the expected unique (primitive, FP) pairs.
 
-        Post-Plane2D migration (PR-3): FP-1 eliminated from Plane2D
-        (_emit_text_annotation removed). Post-GEP Phase 0 (2026-04-23): Graph
-        FP-3 (hardcoded pill metrics) and FP-4 (no clamp) eliminated —
-        constants promoted to module-level, viewbox clamp added. Graph now
-        shows only FP-2 (placed_edge_labels per-call list, still a real
-        violation pending full registry integration in Phase 1).
+        Post FP-6 route-through (2026-07-03): NumberLine, Queue and Plane2D
+        annotations collapse to one emit_annotation_arrows call, deleting
+        their bespoke arrow loops — FP-5 x2, FP-6 x3 and the collateral FP-2
+        registries (numberline.placed, queue.placed, plane2d.text_placed) all
+        clear. Remaining: Graph FP-2 (edge-label registry), Plane2D FP-2
+        (_emit_labels registry) and Plane2D FP-3 (_LINE_LABEL_CHAR_W) —
+        tracked by investigations/fp2-isolated-registries.md and
+        fp3-duplicated-constants.md.
         """
         primitives_path = _REPO_ROOT / "scriba" / "animation" / "primitives"
         violations = _lint.lint_primitives(primitives_path)
@@ -507,8 +509,8 @@ class TestLiveScan:
             (v.file.split("/")[-1].replace(".py", "").lower(), v.fp)
             for v in violations
         }
-        assert len(pairs) == 10, (
-            f"Expected 10 unique (primitive, FP) pairs post-GEP-Phase-0, "
+        assert len(pairs) == 3, (
+            f"Expected 3 unique (primitive, FP) pairs post FP-6 route-through, "
             f"got {len(pairs)}: {sorted(pairs)}"
         )
 
@@ -535,14 +537,14 @@ class TestLiveScan:
             fname = v.file.split("/")[-1].replace(".py", "").lower()
             pairs_by_fp[v.fp].add(fname)
 
-        # Post-Plane2D-migration + GEP-Phase-0 expected primitive counts per FP
+        # Post FP-6 route-through expected primitive counts per FP
         expected = {
             "FP-1": 0,  # Plane2D fixed (_emit_text_annotation removed)
-            "FP-2": 4,  # Graph, Plane2D (FP via _emit_labels+text_placed), Queue, NumberLine
-            "FP-3": 1,  # Plane2D only (Graph pill constants promoted to module level)
+            "FP-2": 2,  # Graph edge-label registry, Plane2D _emit_labels registry
+            "FP-3": 1,  # Plane2D _LINE_LABEL_CHAR_W
             "FP-4": 0,  # Graph clamp added in GEP-Phase-0
-            "FP-5": 2,  # Queue, NumberLine — unchanged
-            "FP-6": 3,  # Queue, NumberLine, Plane2D (emit_position_label_svg flagged)
+            "FP-5": 0,  # cleared by the dispatcher route-through
+            "FP-6": 0,  # cleared by the dispatcher route-through
         }
         for fp_code, expected_count in expected.items():
             actual_count = len(pairs_by_fp.get(fp_code, set()))

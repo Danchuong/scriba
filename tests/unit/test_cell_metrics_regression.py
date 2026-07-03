@@ -22,7 +22,6 @@ from typing import Any
 import pytest
 
 from scriba.animation.primitives import base as _base
-from scriba.animation.primitives import queue as _queue_module
 from scriba.animation.primitives._svg_helpers import CellMetrics
 from scriba.animation.primitives._types import CELL_HEIGHT, CELL_WIDTH
 from scriba.animation.primitives.array import ArrayPrimitive
@@ -57,21 +56,10 @@ def capture_cell_metrics(monkeypatch: pytest.MonkeyPatch):
 
 
 @pytest.fixture
-def capture_queue_cell_metrics(monkeypatch: pytest.MonkeyPatch):
-    """Patch queue module's emit_arrow_svg to record cell_metrics directly.
-
-    Queue bypasses ``emit_annotation_arrows`` and calls ``emit_arrow_svg``
-    directly, so it needs a separate capture hook.
-    """
-    captured: list[CellMetrics | None] = []
-    original = _queue_module.emit_arrow_svg
-
-    def _spy(*args: Any, **kwargs: Any) -> None:
-        captured.append(kwargs.get("cell_metrics"))
-        return original(*args, **kwargs)
-
-    monkeypatch.setattr(_queue_module, "emit_arrow_svg", _spy)
-    return captured
+def capture_queue_cell_metrics(capture_cell_metrics):
+    """Queue routes through the shared dispatcher since the FP-6 collapse,
+    so the generic emit_annotation_arrows spy covers it."""
+    return capture_cell_metrics
 
 
 def _sole_metrics(captured):

@@ -34,7 +34,6 @@ from scriba.animation.primitives._svg_helpers import (
     _LABEL_PILL_PAD_X as _SVG_LABEL_PILL_PAD_X,
     _LABEL_PILL_PAD_Y as _SVG_LABEL_PILL_PAD_Y,
     _LABEL_PILL_RADIUS as _SVG_LABEL_PILL_RADIUS,
-    emit_position_label_svg,
 )
 from scriba.animation.primitives._obstacle_types import ObstacleSegment
 from scriba.animation.primitives.plane2d_compute import clip_line_to_viewport
@@ -677,38 +676,19 @@ class Plane2D(PrimitiveBase):
         # Layer 3: text labels (SVG coordinates, outside transform)
         parts.append(self._emit_labels(render_inline_tex=render_inline_tex))
 
-        # Layer 4: annotations (SVG coordinates, outside transform)
+        # Layer 4: annotations (SVG coordinates, outside transform).
+        # One dispatcher call covers every annotation kind (FP-6): it splits
+        # arrow_from / arrow=true / position-only internally, shares one
+        # placement registry, and threads the obstacle sets — and it is the
+        # same path _measure_emit replays, so measured == painted.
         if effective_anns:
-            arrow_anns = [a for a in effective_anns if a.get("arrow_from") or a.get("arrow")]
-            text_anns = [a for a in effective_anns if not a.get("arrow_from") and not a.get("arrow")]
-            if arrow_anns:
-                self.emit_annotation_arrows(
-                    parts,
-                    arrow_anns,
-                    render_inline_tex=render_inline_tex,
-                    scene_segments=scene_segments,
-                    self_offset=self_offset,
-                )
-            # FP-1/FP-2/FP-4 fix: route position-only annotations through
-            # emit_position_label_svg (uses _svg_helpers collision registry,
-            # viewBox clamp, and canonical pill metrics) instead of the legacy
-            # _emit_text_annotation that emitted <text> directly with hardcoded
-            # metrics and no clamp.
-            if text_anns:
-                text_placed: list[_LabelPlacement] = []
-                for ann in text_anns:
-                    target = ann.get("target", "")
-                    anchor = self.resolve_annotation_point(target)
-                    if anchor is None:
-                        continue
-                    emit_position_label_svg(
-                        parts,
-                        ann,
-                        anchor_point=anchor,
-                        cell_height=float(_ARROW_CELL_HEIGHT),
-                        render_inline_tex=render_inline_tex,
-                        placed_labels=text_placed,
-                    )
+            self.emit_annotation_arrows(
+                parts,
+                effective_anns,
+                render_inline_tex=render_inline_tex,
+                scene_segments=scene_segments,
+                self_offset=self_offset,
+            )
 
         # Close the translate group if we opened one for arrow space
         if arrow_above > 0:
