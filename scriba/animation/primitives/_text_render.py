@@ -360,8 +360,17 @@ def _render_svg_text(
         "white-space:nowrap",
         # same face as the <text> twins — without this the div falls back
         # to the embedding page's body font and paints widths the
-        # measurers never modelled
-        "font-family:var(--scriba-fo-font-family, 'Scriba Sans', sans-serif)",
+        # measurers never modelled. Label/caption/index surfaces render
+        # mono like their <text> siblings; everything else, "Scriba Sans".
+        (
+            "font-family:var(--scriba-label-font-family, ui-monospace, monospace)"
+            if css_class
+            and (
+                "scriba-primitive-label" in css_class
+                or "scriba-index-label" in css_class
+            )
+            else "font-family:var(--scriba-fo-font-family, 'Scriba Sans', sans-serif)"
+        ),
     ]
     if clip_overflow:
         style_parts.append("overflow:hidden")

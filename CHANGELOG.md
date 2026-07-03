@@ -79,6 +79,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     Matrix floors `cell_size` to its widest formatted value when
     `show_values` is on (init-time; matrix data is static). Narrow content
     keeps the old floors — existing documents are byte-identical.
+  - **Caption/diagram superscripts no longer jump a full line up**: the
+    `<text>`-styling rules for `.scriba-primitive-label` /
+    `.scriba-index-label` carried `dominant-baseline: central|hanging`,
+    which — when the same class rides a KaTeX foreignObject — rebases
+    every HTML inline box inside and threw vlist superscripts ~18px above
+    their line (the static-diagram caption `$(m-1)^2$` painted its ² on
+    the row above, over the words). Both rules are now `text.`-scoped,
+    and label-class FO divs inline the mono label family so the wrapped
+    caption's plain and math lines match.
   - **No more raw `$...$` flash during value transitions**: the runtime's
     `value_change` tween wrote the raw string into the cell `<text>`
     mid-animation before the frame swap restored the KaTeX render; math

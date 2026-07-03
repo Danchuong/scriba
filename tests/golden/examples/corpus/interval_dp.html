@@ -402,7 +402,7 @@
  * horizontal center as the ``x`` coordinate, so the label must be middle
  * anchored and hanging (baseline below the glyphs) to sit visually
  * centered under each cell. */
-[data-primitive] .scriba-index-label {
+[data-primitive] text.scriba-index-label {
   font:              var(--scriba-cell-index-font);
   font-size:         10px;
   fill:              var(--scriba-cell-index-color);
@@ -468,13 +468,24 @@
  * horizontal center as the ``x`` coordinate and the total width as
  * ``fo_width``, i.e. the caller expects middle-anchored rendering. Under
  * ``start`` the caption drifted right by half its width. */
-[data-primitive] .scriba-primitive-label {
+[data-primitive] text.scriba-primitive-label {
   font:              var(--scriba-label-font);
   font-size:         11px;
   fill:              var(--scriba-label-color);
   text-anchor:       middle;
   dominant-baseline: central;
 }
+
+/* The two rules above are <text>-scoped on purpose: the same classes ride
+ * on KaTeX-capable <foreignObject>s, and an inherited SVG
+ * ``dominant-baseline: central|hanging`` REPOSITIONS the baseline of every
+ * HTML inline box inside — KaTeX's vlist superscripts jumped a full line
+ * up (the caption ² landed on the row above). The FO divs pick their
+ * font family inline in ``_render_svg_text`` (label classes -> the mono
+ * label family, everything else -> --scriba-fo-font-family); KaTeX spans
+ * keep their own font stack. */
+  /* family-only token for label-class foreignObject divs */
+:root { --scriba-label-font-family: ui-monospace, monospace; }
 
 /* ============================================
    Annotation styles

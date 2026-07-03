@@ -146,3 +146,43 @@ class TestFolabelEmitContract:
         m = re.search(r"\.scriba-annot-label\s*\{[^}]*\}", css)
         assert m, ".scriba-annot-label rule missing"
         assert "var(--scriba-annotation-font)" in m.group(0)
+
+
+class TestFoBaselineIsolation:
+    """dominant-baseline from <text> styling rules must never reach a
+    foreignObject: inherited central/hanging rebases every HTML inline box
+    inside and KaTeX superscripts jump a full line up (number_spiral
+    caption ² painted on the row above)."""
+
+    def test_label_rules_are_text_scoped(self) -> None:
+        from pathlib import Path
+        import re
+
+        css = Path("scriba/animation/static/scriba-scene-primitives.css").read_text()
+        css = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+        for cls in ("scriba-primitive-label", "scriba-index-label"):
+            for m in re.finditer(r"([^{}]+)\{([^}]*)\}", css):
+                sel, body = m.group(1), m.group(2)
+                if f".{cls}" in sel and "dominant-baseline" in body:
+                    for part in sel.split(","):
+                        if f".{cls}" in part:
+                            assert re.search(rf"text\.{cls}", part), (
+                                f"dominant-baseline rule for .{cls} must be "
+                                f"<text>-scoped, got: {part.strip()}"
+                            )
+
+    def test_fo_divs_keep_mono_family(self) -> None:
+        # label-class FO divs inline the mono family (matches <text> twins);
+        # plain FO divs inline "Scriba Sans"
+        from scriba.animation.primitives._text_render import _render_svg_text
+
+        cb = lambda f: f'<span class="k">{f}</span>'  # noqa: E731
+        lab = _render_svg_text(
+            "x $m^2$", 50, 10, css_class="scriba-primitive-label",
+            fo_width=100, fo_height=20, render_inline_tex=cb,
+        )
+        assert "--scriba-label-font-family" in lab
+        plain = _render_svg_text(
+            "x $m^2$", 50, 10, fo_width=100, fo_height=20, render_inline_tex=cb,
+        )
+        assert "--scriba-fo-font-family" in plain
