@@ -3,7 +3,7 @@
 __version__: str = "0.21.2"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 11
+SCRIBA_VERSION: int = 12
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -101,4 +101,13 @@ inline runtime commits the frame index before the transition (rapid
 Next/Prev no longer swallowed). Page-level output additionally changed:
 TeX regions are wrapped in ``.scriba-tex-content`` and the CSS bundle now
 ships the artifact-declared content + pygments light/dark sheets.
+
+0.22.0 bumps 11→12: cell/node text (the 14px surface that sizes every
+viewBox) is measured against a shipped, pinned sans — a 34KB Inter subset
+embedded as "Scriba Sans" with full Vietnamese coverage — using exact
+per-glyph advances with tabular-nums honoured, instead of the 0.62em/char
+heuristic (which measured -38%..+154% per string). Text widths, line
+wraps, cell widths and viewBox extents change across every labelled
+scene, and standalone pages embed the font @font-face. Consumer caches
+keyed on rendered output MUST invalidate.
 """

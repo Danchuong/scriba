@@ -9,6 +9,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._text_metrics import measure_text
 from scriba.animation.primitives.base import (
     LABEL_FONT_PX,
     _CAPTION_CLEAR_GAP,
@@ -161,7 +162,7 @@ class ArrayPrimitive(PrimitiveBase):
 
         # Compute dynamic cell width from data and labels
         max_content_w = max(
-            (estimate_text_width(str(v), 14) for v in self.data), default=0
+            (measure_text(str(v), 14) for v in self.data), default=0
         )
         if self.labels:
             parsed = _parse_index_labels(self.labels, self.size)

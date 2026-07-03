@@ -39,6 +39,28 @@ def load_css(*names: str) -> str:
 
 
 @functools.lru_cache(maxsize=None)
+def inline_text_font_css() -> str:
+    """Return an @font-face for the shipped "Scriba Sans" (Inter subset).
+
+    The 14px cell/node surface is measured EXACTLY against this font
+    (scriba/animation/primitives/_text_metrics.py), so the page must pin
+    it first in the font stack — otherwise the measurement is of a font
+    the viewer never renders. Same base64 self-containment pattern as the
+    KaTeX blob, at ~1/8 the size (~34 KB woff2).
+    """
+
+    font = (
+        files("scriba.animation") / "vendor" / "inter" / "Inter-subset.woff2"
+    ).read_bytes()
+    encoded = base64.b64encode(font).decode("ascii")
+    return (
+        '@font-face{font-family:"Scriba Sans";'
+        "src:url(data:font/woff2;base64," + encoded + ') format("woff2");'
+        "font-weight:400 500 600;font-style:normal;font-display:swap}"
+    )
+
+
+@functools.lru_cache(maxsize=None)
 def inline_katex_css() -> str:
     """Return vendored KaTeX CSS with all font urls replaced by data URIs.
 

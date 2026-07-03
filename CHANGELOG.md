@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Cell/node text is now measured exactly against a shipped font**
+  (`SCRIBA_VERSION` 11→12 — rendered bytes change across every labelled
+  scene). scriba embeds a 34 KB Inter subset (full Vietnamese coverage,
+  OFL) as `"Scriba Sans"`, pins it first in `--scriba-cell-font` /
+  `--scriba-node-font`, and computes the 14px surface's width from the
+  font's own advance table (baked at vendor time by
+  `scripts/build_text_font.py`; runtime stays stdlib-only). The old
+  0.62em/char heuristic measured −38%..+154% per string; advance-sum
+  measures the browser to ~0.1–0.5% (see
+  `investigations/text-width-bench.md`). Digits honour the `tabular-nums`
+  the cell CSS forces (a raw hmtx sum is 13% narrow); input is
+  NFC-normalized so decomposed Vietnamese measures identically. The
+  heuristic remains as the fallback for CJK/out-of-subset codepoints, ZWJ
+  clusters, the monospace label surfaces, and any build without the
+  vendored table.
+
+
+### Changed
 - **One runtime source.** The inline widget `<script>` is now DERIVED from
   `static/scriba.js` (sentinel-sliced at import, token substitution — no
   `str.format`); `_script_builder.py` authors no runtime JS anymore. The two

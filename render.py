@@ -24,7 +24,7 @@ from scriba.animation.starlark_host import StarlarkHost
 from scriba.core.context import RenderContext
 from scriba.core.errors import ScribaError
 from scriba.core.workers import SubprocessWorkerPool
-from scriba.core.css_bundler import inline_katex_css, load_css
+from scriba.core.css_bundler import inline_katex_css, inline_text_font_css, load_css
 from scriba.tex.renderer import TexRenderer
 
 
@@ -259,7 +259,7 @@ def render_file(
         "scriba-embed.css",
         "scriba-standalone.css",
     )
-    css_parts = [load_css(*_BASE_CSS)]
+    css_parts = [inline_text_font_css(), load_css(*_BASE_CSS)]
     extras = extra_css_assets.difference(_BASE_CSS)
     if extras:
         css_parts.append(load_css(*sorted(extras)))
