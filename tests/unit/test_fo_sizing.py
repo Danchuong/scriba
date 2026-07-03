@@ -94,3 +94,55 @@ class TestCopyPasteSpaces:
         assert len(spans) >= 2
         assert all(sp.endswith(" ") for sp in spans[:-1]), spans
         assert not spans[-1].endswith(" ")
+
+
+class TestFolabelEmitContract:
+    """Emit-side pins for the 0.22.1 folabel fix: grow-don't-clip,
+    no flex space-swallow, font parity with the <text> twin."""
+
+    def _mixed_svg(self) -> str:
+        from scriba.animation.primitives.array import ArrayPrimitive
+
+        arr = ArrayPrimitive("a", {"size": 8, "data": list(range(8))})
+        arr.set_annotations(
+            arr._annotations
+            + [{"target": "a.cell[6]", "label": "gộp $dp[i]$ và $dp[j]$ lại thành tổng mới", "arrow_from": "a.cell[1]"}]
+        )
+        return arr.emit_svg(
+            render_inline_tex=lambda f: f'<span class="k">{f.strip("$")}</span>'
+        )
+
+    def test_label_fo_overflow_visible_not_hidden(self) -> None:
+        svg = self._mixed_svg()
+        assert "scriba-annot-fobj" in svg
+        assert 'overflow="visible"' in svg
+        assert "overflow:hidden" not in svg
+
+    def test_single_line_math_label_has_no_flex_gap(self) -> None:
+        # flex swallowed inter-segment spaces and added a gap the measurer
+        # can't see; both paths now share the inline nowrap model
+        from scriba.animation.primitives._svg_helpers import _emit_label_single_line
+
+        out = _emit_label_single_line(
+            label_text="x $dp$ y",
+            fi_x=50, fi_y=20, pill_rx=10, pill_ry=10,
+            pill_w=80, pill_h=18,
+            l_fill="#000", l_weight="", l_size="",
+            render_inline_tex=lambda f: f'<span class="k">{f.strip("$")}</span>',
+        )
+        assert "display:flex" not in out
+        assert "gap:" not in out
+        assert "white-space:nowrap" in out
+        assert 'overflow="visible"' in out
+        # text segments survive with their spaces (flex dropped them)
+        assert "x " in out and " y" in out
+
+    def test_annot_label_css_font_pinned(self) -> None:
+        from pathlib import Path
+
+        css = Path("scriba/animation/static/scriba-scene-primitives.css").read_text()
+        import re
+
+        m = re.search(r"\.scriba-annot-label\s*\{[^}]*\}", css)
+        assert m, ".scriba-annot-label rule missing"
+        assert "var(--scriba-annotation-font)" in m.group(0)

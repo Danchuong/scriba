@@ -53,6 +53,7 @@ from scriba.animation.primitives._types import (  # noqa: F401 — explicit for 
     svg_style_attrs,
 )
 from scriba.animation.primitives._text_render import *  # noqa: F401, F403
+from scriba.animation.primitives._text_metrics import measure_label_line
 from scriba.animation.primitives._text_render import (  # noqa: F401 — explicit for IDEs
     _INLINE_MATH_RE,
     _bidi_style,
@@ -645,10 +646,7 @@ class PrimitiveBase(abc.ABC):
         if not lines:
             return 0
         widest = max(
-            estimate_text_width(
-                _label_width_text(ln) if _label_has_math(ln) else ln,
-                _CAPTION_FONT_PX,
-            )
+            measure_label_line(ln, _CAPTION_FONT_PX)
             for ln in lines
         )
         return int(widest + 2 * _CELL_HORIZONTAL_PADDING + _CAPTION_SAFETY_PAD)

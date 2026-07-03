@@ -80,7 +80,7 @@ def _warn_heuristic_script(cp: int) -> None:
                 )
             return
 
-__all__ = ["TextMeasurer", "get_measurer", "measure_text"]
+__all__ = ["TextMeasurer", "get_measurer", "measure_label_line", "measure_text"]
 
 
 class TextMeasurer(Protocol):
@@ -139,3 +139,33 @@ def get_measurer() -> TextMeasurer:
 def measure_text(text: str, font_px: int) -> int:
     """Width of *text* on the pinned-sans surface (cells/nodes)."""
     return get_measurer().measure(text, font_px)
+
+
+def measure_label_line(line: str, font_px: int) -> int:
+    """Width of a mixed text+``$math$`` label line, in px.
+
+    Mirrors the exact split `_render_mixed_html` renders with
+    (``_INLINE_MATH_RE``): text segments flow in the label mono font
+    (``estimate_text_width`` ≈0.62 em/char, a +3% safe over of the
+    measured 0.60 mono advance), math segments take the KaTeX advance-sum
+    (``measure_inline_math``). Inline flow adds no inter-segment gap, so
+    the composition is additive — proven exact to <0.05% against Chromium
+    (investigations/folabel-measure.md §5).
+    """
+    from scriba.animation.primitives._math_metrics import measure_inline_math
+    from scriba.animation.primitives._text_render import _INLINE_MATH_RE
+
+    if "$" not in line:
+        return estimate_text_width(line, font_px)
+    total = 0.0
+    pos = 0
+    for m in _INLINE_MATH_RE.finditer(line):
+        text_seg = line[pos : m.start()]
+        if text_seg:
+            total += estimate_text_width(text_seg, font_px)
+        total += measure_inline_math(m.group(1), font_px)
+        pos = m.end()
+    tail = line[pos:]
+    if tail:
+        total += estimate_text_width(tail, font_px)
+    return int(total + 0.5)

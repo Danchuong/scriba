@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Mixed text+`$math$` annotation labels render intact** (`SCRIBA_VERSION`
+  →14). Label/caption/tick widths containing math are now measured by a
+  KaTeX advance-sum over the vendored font metric tables
+  (`scripts/build_katex_metrics.py` → `katex_advances.json`, ~18 KB,
+  stdlib-only at runtime): p50 |err| 0.06% / p95 0.66% vs Chromium, where
+  the old strip-`$`-×1.15 heuristic sat at p50 43% and measured
+  pure-command fragments (`$\to$`, `$\alpha$`) as **0 px**. Fragments the
+  linear model can't see (`\frac`, `\sqrt`, unknown commands — 0.6% of a
+  620-file corpus) fall back to the over-estimating heuristic, which only
+  pads. Downstream fixes shipping together:
+  - per-line label `foreignObject`s flip `overflow:hidden` →
+    `overflow="visible"` — a rare under-measure now paints past its box
+    instead of amputating glyphs;
+  - the single-line math label drops its `display:flex` wrapper (flex
+    swallowed the spaces around inline math and added a `gap` the measurer
+    can't see) and shares the multi-line inline `nowrap` model;
+  - `.scriba-annot-label` divs pin to `--scriba-annotation-font` — they
+    inherited the embedding page's body font while their `<text>` siblings
+    rendered mono, so the same label measured and painted differently;
+  - the painted-extent parsers (production + test twin) now ingest
+    `foreignObject` boxes — they previously matched only
+    `g|rect|circle|polygon|polyline|line|path`, so every math label was
+    invisible to the painted⊆bbox honesty pins.
+  Labels get narrower (the heuristic over-reserved +40% on average), so
+  pills, wrap points and reserved lanes tighten across every labelled
+  scene. Consumer caches keyed on rendered output MUST invalidate
+  (`SCRIBA_VERSION` 13→14). Case files:
+  `investigations/folabel-{fonts,measure,emit-honesty}.md`.
+
 ## [0.22.0] - 2026-07-03 — Exact text metrics, one runtime, every script
 
 ### Added

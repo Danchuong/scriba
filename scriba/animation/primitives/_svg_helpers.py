@@ -24,6 +24,7 @@ import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, NamedTuple
 
+from scriba.animation.primitives._text_metrics import measure_label_line
 from scriba.animation.primitives._text_render import (
     _bidi_style,
     _escape_xml,
@@ -1407,8 +1408,7 @@ def pill_dimensions(
     if len(label_lines) > 1 and any(_label_has_math(ln) for ln in label_lines):
         line_height += _MATH_PILL_LINE_EXTRA
     max_line_w = max(
-        estimate_text_width(_label_width_text(ln), l_font_px)
-        for ln in label_lines
+        measure_label_line(ln, l_font_px) for ln in label_lines
     )
     pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
     pill_h = len(label_lines) * line_height + _LABEL_PILL_PAD_Y * 2
@@ -1551,7 +1551,7 @@ def _emit_pill_label_text(
         _label_has_math(ln) for ln in label_lines
     ):
         box_w = int(pill_w) if pill_w else max(
-            estimate_text_width(_label_width_text(ln), _DEFAULT_LABEL_FONT_PX)
+            measure_label_line(ln, _DEFAULT_LABEL_FONT_PX)
             for ln in label_lines
         ) + _LABEL_PILL_PAD_X * 2
         weight_css = f"font-weight:{l_weight};" if l_weight else ""
@@ -1563,12 +1563,12 @@ def _emit_pill_label_text(
             lines.append(
                 f'    <foreignObject x="{int(fi_x - box_w / 2)}" y="{y_top}"'
                 f' width="{box_w}" height="{line_height}"'
-                f' class="scriba-annot-fobj">'
+                f' overflow="visible" class="scriba-annot-fobj">'
                 f'<div xmlns="http://www.w3.org/1999/xhtml"'
                 f' class="scriba-annot-label"'
                 f' style="width:{box_w}px;height:{line_height}px;'
                 f'line-height:{line_height}px;text-align:center;'
-                f'white-space:nowrap;overflow:hidden;'
+                f'white-space:nowrap;overflow:visible;'
                 f'color:{l_fill};{weight_css}{size_css}'
                 f'text-shadow:0 0 2px #fff,0 0 2px #fff;">'
                 f"{inner}</div></foreignObject>"
@@ -1628,7 +1628,7 @@ def _emit_label_single_line(
     """
     if render_inline_tex is not None and _label_has_math(label_text):
         try:
-            html = render_inline_tex(label_text)
+            html = _render_mixed_html(label_text, render_inline_tex)
         except Exception:
             html = None
         if html:
@@ -1641,13 +1641,12 @@ def _emit_label_single_line(
             return (
                 f'    <foreignObject x="{pill_rx}" y="{pill_ry}"'
                 f' width="{pill_w}" height="{pill_h}"'
-                f' class="scriba-annot-fobj">'
+                f' overflow="visible" class="scriba-annot-fobj">'
                 f'<div xmlns="http://www.w3.org/1999/xhtml"'
                 f' class="scriba-annot-label"'
-                f' style="width:100%;height:100%;display:flex;'
-                f'align-items:center;justify-content:center;'
-                f'text-align:center;line-height:1;'
-                f'white-space:pre-wrap;gap:0.25em;'
+                f' style="width:100%;height:100%;'
+                f'line-height:{pill_h}px;text-align:center;'
+                f'white-space:nowrap;overflow:visible;'
                 f'color:{l_fill};{weight_css}{size_css}'
                 f'text-shadow:0 0 2px #fff,0 0 2px #fff;">'
                 f'{html}</div></foreignObject>'
@@ -1747,12 +1746,10 @@ def _wrap_label_lines(
     line = ""
     if max_px is not None:
         def _fits_px(s: str) -> bool:
-            return estimate_text_width(_label_width_text(s), font_px) <= max_px
+            return measure_label_line(s, font_px) <= max_px
         for tok in _explode(_fits_px):
             cand = line + tok
-            if line and estimate_text_width(
-                _label_width_text(cand.rstrip()), font_px
-            ) > max_px:
+            if line and measure_label_line(cand.rstrip(), font_px) > max_px:
                 lines.append(line.rstrip())
                 line = tok
             else:
@@ -2067,8 +2064,7 @@ def emit_plain_arrow_svg(
         num_lines = len(label_lines)
 
         max_line_w = max(
-            estimate_text_width(_label_width_text(ln), l_font_px)
-            for ln in label_lines
+            measure_label_line(ln, l_font_px) for ln in label_lines
         )
         pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
         pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
@@ -3162,9 +3158,7 @@ def _position_pill_width(label: str, color: str = "info") -> float:
         lines = [label]
     else:
         lines = _wrap_label_lines(label, max_px=_LABEL_PILL_MAX_W_PX, font_px=l_font_px)
-    widest = max(
-        estimate_text_width(_label_width_text(ln), l_font_px) for ln in lines
-    )
+    widest = max(measure_label_line(ln, l_font_px) for ln in lines)
     return widest + _LABEL_PILL_PAD_X * 2
 
 

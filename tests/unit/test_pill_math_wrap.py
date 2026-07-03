@@ -30,8 +30,11 @@ def _fake_tex(fragment: str) -> str:
     return f'<span class="fake-katex">{fragment.strip("$")}</span>'
 
 
+# long enough to exceed the 8-cell arc wrap budget (~468px) under EXACT
+# metrics too — the old heuristic over-measured +40% and wrapped earlier
 _MIXED_MATH_LABEL = (
     "chuyển trạng thái $dp[i][j]$ bằng cách lấy $\\min$ của ô trên và ô trái"
+    " rồi cộng thêm chi phí $c[i][j]$ của chính ô hiện tại"
 )
 
 

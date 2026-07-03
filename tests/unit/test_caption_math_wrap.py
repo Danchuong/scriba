@@ -168,16 +168,18 @@ class TestCaptionBlockMetrics:
         inst = _grid("nhãn ngắn")
         assert inst._caption_block_height(320.0) == _CAPTION_FONT_PX + 2
 
-    def test_block_width_measures_via_label_width_text(self) -> None:
-        # Math lines measure through _label_width_text ($ stripped, LaTeX
-        # commands dropped, 1.15x KaTeX scale) — NOT the raw line.
+    def test_block_width_measures_via_measure_label_line(self) -> None:
+        # Math lines measure through the exact composer (KaTeX advance-sum
+        # for $...$ segments) — NOT the raw line, NOT the old x1.15 strip.
+        from scriba.animation.primitives._text_metrics import measure_label_line
+
         line = "x $aa$ y"
-        stripped_w = estimate_text_width(_label_width_text(line), _CAPTION_FONT_PX)
+        exact_w = measure_label_line(line, _CAPTION_FONT_PX)
         raw_w = estimate_text_width(line, _CAPTION_FONT_PX)
-        assert stripped_w != raw_w  # guard: the two measurements differ
+        assert exact_w != raw_w  # guard: the two measurements differ
         w = _grid(line)._caption_block_width(320.0)
         assert w == int(
-            stripped_w + 2 * _CELL_HORIZONTAL_PADDING + _CAPTION_SAFETY_PAD
+            exact_w + 2 * _CELL_HORIZONTAL_PADDING + _CAPTION_SAFETY_PAD
         )
 
 

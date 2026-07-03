@@ -3,7 +3,7 @@
 __version__: str = "0.22.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 13
+SCRIBA_VERSION: int = 14
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -119,4 +119,14 @@ token; identifier charsets accept combining marks (Thai/Devanagari
 selector/var/label names — Python's \w excludes Mn/Mc, which the 0.21.1
 Unicode pass missed). LTR-only documents change only by the dir="auto"
 attribute. Consumer caches keyed on rendered output MUST invalidate.
+
+0.22.1 bumps 13→14 (exact label-math metrics): annotation/caption/tick
+label widths containing $math$ are measured by a KaTeX advance-sum over
+the vendored font tables (p50 0.06%/p95 0.66% vs Chromium) instead of the
+strip-and-x1.15 heuristic (p50 43%, and 0px for pure-command fragments
+like $\to$). Pills get narrower, wrap points shift, per-line label
+foreignObjects flip overflow:hidden->visible, the single-line math label
+drops its flex wrapper (space-swallowing) for the same inline model as
+multi-line, and .scriba-annot-label divs pin to the annotation mono font.
+Consumer caches keyed on rendered output MUST invalidate.
 """

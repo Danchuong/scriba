@@ -480,6 +480,15 @@
   text-anchor: middle;
 }
 
+/* foreignObject label divs must match their <text> siblings — without
+   this pin they inherit the embedding page's body font and measure
+   differently than pill_dimensions predicted. KaTeX spans inside keep
+   their own font stack (KaTeX_Main), which the math measurer models. */
+.scriba-annot-label {
+  font:      var(--scriba-annotation-font);
+  font-size: 11px;
+}
+
 .scriba-annotation > path,
 .scriba-annotation > line {
   fill:         none;

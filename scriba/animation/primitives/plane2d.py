@@ -31,6 +31,7 @@ from scriba.animation.primitives.base import (
     register_primitive,
     svg_style_attrs,
 )
+from scriba.animation.primitives._text_metrics import measure_label_line
 from scriba.animation.primitives._svg_helpers import (
     _LABEL_PILL_PAD_X as _SVG_LABEL_PILL_PAD_X,
     _LABEL_PILL_PAD_Y as _SVG_LABEL_PILL_PAD_Y,
@@ -1013,9 +1014,7 @@ class Plane2D(PrimitiveBase):
             if not label_text:
                 continue
             sx, sy = self.math_to_svg(pt["x"], pt["y"])
-            w = float(estimate_text_width(
-                _label_width_text(str(label_text)), _TICK_FONT_SIZE
-            ) + 12)
+            w = float(measure_label_line(str(label_text), _TICK_FONT_SIZE) + 12)
             records.append({
                 "kind": "point",
                 "text": str(label_text),
@@ -1051,9 +1050,7 @@ class Plane2D(PrimitiveBase):
 
             # canonical width estimator (B-1): the hand-rolled len*7
             # under-sized CJK labels (each CJK glyph advances ~2x a Latin one)
-            est_w = estimate_text_width(
-                _label_width_text(label_text), _TICK_FONT_SIZE
-            ) + _LINE_LABEL_PAD
+            est_w = measure_label_line(label_text, _TICK_FONT_SIZE) + _LINE_LABEL_PAD
             records.append({
                 "kind": "line",
                 "text": label_text,

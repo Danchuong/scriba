@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-_TAG_RE = re.compile(r"<(/?)(g|rect|circle|polygon|polyline|line|path)\b([^>]*)>")
+_TAG_RE = re.compile(r"<(/?)(g|rect|circle|polygon|polyline|line|path|foreignObject)\b([^>]*)>")
 _TRANSLATE_RE = re.compile(r'transform="translate\(([-\d.]+)[,\s]\s*([-\d.]+)\)"')
 _ATTR_RE = re.compile(r'([\w-]+)="([^"]*)"')
 _NUM_RE = re.compile(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?")
@@ -111,7 +111,16 @@ def painted_extent(svg: str) -> Extent | None:
         sw = attrs.get("stroke-width")
         pad = (float(sw) if sw else 0.0) / 2.0
 
-        if tag == "rect":
+        if tag == "foreignObject":
+            # math-label boxes paint HTML inside this exact rectangle; the
+            # parsers were blind to it (folabel-emit-honesty), which made
+            # every painted⊆bbox pin skip FO text entirely
+            x, y = float(attrs.get("x", 0)), float(attrs.get("y", 0))
+            w, h = float(attrs.get("width", 0)), float(attrs.get("height", 0))
+            ext.include(ox + x, oy + y, 0.0)
+            ext.include(ox + x + w, oy + y + h, 0.0)
+            found = True
+        elif tag == "rect":
             x, y = float(attrs.get("x", 0)), float(attrs.get("y", 0))
             w, h = float(attrs.get("width", 0)), float(attrs.get("height", 0))
             ext.include(ox + x, oy + y, pad)
