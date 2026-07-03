@@ -9,6 +9,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import E1103, _animation_error
+from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
     THEME,
@@ -144,7 +145,7 @@ class NumberLinePrimitive(PrimitiveBase):
         min_tick_spacing = 40  # minimum pixels between ticks for readability
         # Ensure tick spacing can accommodate the widest label
         if tick_labels:
-            max_label_w = max(estimate_text_width(str(tl), 10) for tl in tick_labels)
+            max_label_w = max(measure_value_text(str(tl), 10, mono=True) for tl in tick_labels)
             min_tick_spacing = max(min_tick_spacing, max_label_w + 8)
         width = max(NL_WIDTH, ticks * min_tick_spacing + 2 * NL_PADDING)
 

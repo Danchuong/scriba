@@ -184,6 +184,32 @@ def _render_mixed_html(
     return "".join(parts)
 
 
+_STRIP_CMD_RE = re.compile(r"\\([a-zA-Z]+)")
+
+
+def strip_math_markup(text: str) -> str:
+    """The no-KaTeX paint form of a mixed label/value: ``$`` delimiters
+    dropped, ``\cmd`` -> ``cmd``, braces dropped inside math segments.
+    ``\$`` escapes survive untouched. This is exactly what the plain-text
+    fallbacks paint, so it is also exactly what they must be measured as
+    ("size what you paint")."""
+    if "$" not in text:
+        return text
+    _SENT = "\x00D\x00"
+    src = str(text).replace("\\$", _SENT)
+    parts: list[str] = []
+    last = 0
+    for m in _INLINE_MATH_RE.finditer(src):
+        parts.append(src[last : m.start()])
+        frag = m.group(1)
+        frag = _STRIP_CMD_RE.sub(r"\1", frag)
+        frag = frag.replace("{", "").replace("}", "")
+        parts.append(frag)
+        last = m.end()
+    parts.append(src[last:])
+    return "".join(parts).replace(_SENT, "\\$")
+
+
 def _render_svg_text(
     text: str | Any,
     x: int,
@@ -200,6 +226,7 @@ def _render_svg_text(
     render_inline_tex: "Callable[[str], str] | None" = None,
     text_outline: str | None = None,
     clip_overflow: bool = True,
+    line_height_px: "int | None" = None,
 ) -> str:
     """Render a text value as either a plain ``<text>`` or a ``<foreignObject>``.
 
@@ -238,6 +265,10 @@ def _render_svg_text(
 
     # Fast path — no math or no callback: emit a plain <text>
     if render_inline_tex is None or not _has_math(text_str):
+        if render_inline_tex is None and _has_math(text_str):
+            # no KaTeX available: paint the stripped form, not raw $..$
+            # noise — and measure_value_text sizes this exact string
+            text_str = strip_math_markup(text_str)
         attrs = f'x="{x}" y="{y}" fill="{fill}"'
         if css_class:
             attrs = f'class="{css_class}" {attrs}'
@@ -315,13 +346,22 @@ def _render_svg_text(
     # them ("a $x$ b" rendered as "ax b"). Single-line semantics are pinned
     # with white-space:nowrap; line-height:{h}px vertically centres the line
     # inside the box (callers wrap long captions into one box per line).
+    # line_height_px decouples the line box from the FO box: a box one px
+    # taller than its line box absorbs KaTeX's fractional ink rounding, so
+    # scrollHeight can never exceed clientHeight (the "+1 box-chasing"
+    # residue in the caption bench).
+    _lh = line_height_px if line_height_px is not None else h
     style_parts: list[str] = [
         f"width:{w}px",
         f"height:{h}px",
-        f"line-height:{h}px",
+        f"line-height:{_lh}px",
         f"color:{fill}",
         f"text-align:{t_align}",
         "white-space:nowrap",
+        # same face as the <text> twins — without this the div falls back
+        # to the embedding page's body font and paints widths the
+        # measurers never modelled
+        "font-family:var(--scriba-fo-font-family, 'Scriba Sans', sans-serif)",
     ]
     if clip_overflow:
         style_parts.append("overflow:hidden")

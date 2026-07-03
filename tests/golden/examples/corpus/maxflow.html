@@ -85,6 +85,11 @@
    * the β audit. Current/error states re-bold themselves via an explicit
    * override below, carrying contrast where it's actually needed. */
   --scriba-cell-font:              500 14px "Scriba Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  /* Family-only token for foreignObject divs (cell values, axis/legend
+   * labels, tick labels): they inherited the embedding page's body font
+   * while their <text> siblings rendered "Scriba Sans" — same face for
+   * both keeps painted widths inside the measured reservations. */
+  --scriba-fo-font-family:         "Scriba Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --scriba-cell-index-font:        500 10px ui-monospace, monospace;
   --scriba-cell-index-color:       var(--scriba-fg-muted);
   --scriba-node-font:              500 14px "Scriba Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;

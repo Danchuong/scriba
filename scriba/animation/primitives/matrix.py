@@ -12,6 +12,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
     ALL_RE,
@@ -226,12 +227,12 @@ class MatrixPrimitive(PrimitiveBase):
         # Dynamic label offset based on actual label content
         row_label_offset = 0
         if row_labels:
-            max_label_w = max(estimate_text_width(str(lbl), 10) for lbl in row_labels)
+            max_label_w = max(measure_value_text(str(lbl), 10, mono=True) for lbl in row_labels)
             row_label_offset = max(_LABEL_OFFSET, max_label_w + 4)
 
         col_label_offset = 0
         if col_labels:
-            max_col_h = max(estimate_text_width(str(c), 10) for c in col_labels)
+            max_col_h = max(measure_value_text(str(c), 10, mono=True) for c in col_labels)
             col_label_offset = max(_LABEL_OFFSET, max_col_h + 4)
 
         self.rows: int = rows

@@ -133,11 +133,16 @@ class TestNoCallbackPillSizing:
 
     def test_pill_dimensions_raw_mode_measures_painted_string(self) -> None:
         from scriba.animation.primitives._svg_helpers import pill_dimensions
-        from scriba.animation.primitives._text_render import estimate_text_width
+        from scriba.animation.primitives._text_render import (
+            estimate_text_width,
+            strip_math_markup,
+        )
 
         label = "$dp_{i}$"
         _, _, w_raw, _ = pill_dimensions(label, 11, math_rendered=False)
-        assert w_raw >= estimate_text_width(label, 11)  # covers painted glyphs
+        # the fallback paints the STRIPPED form ("dp_i"), so the pill
+        # covers exactly that
+        assert w_raw >= estimate_text_width(strip_math_markup(label), 11)
 
     def test_no_callback_emit_pill_wraps_painted_text(self) -> None:
         import re
@@ -151,5 +156,9 @@ class TestNoCallbackPillSizing:
         rects = re.findall(r'<rect [^>]*width="(\d+)"[^>]*rx="', svg)
         assert rects
         pill_w = max(int(w) for w in rects)
-        painted = estimate_text_width("$dp_{i}$", 11)
+        # fallback paints stripped "dp_i" (no $ noise) — pill covers it
+        from scriba.animation.primitives._text_render import strip_math_markup
+
+        painted = estimate_text_width(strip_math_markup("$dp_{i}$"), 11)
         assert pill_w >= painted, (pill_w, painted)
+        assert "$" not in re.sub(r"aria-[a-z]+=\"[^\"]*\"", "", svg)

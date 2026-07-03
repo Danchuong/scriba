@@ -168,7 +168,7 @@ class TestCaptionBlockMetrics:
         # per-line adaptive: base box + tall-math extra per line (the fixed
         # 18px box clipped 16/20 bench fragments — TestTallMathExtra truth)
         expected = sum(
-            _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX)
+            _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX) + 1
             for ln in lines
         )
         assert inst._caption_block_height(320.0) == expected
@@ -303,7 +303,7 @@ class TestEmitCaptionMathMultiline:
         n = len(lines)
         assert n >= 2
         block = sum(
-            _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX)
+            _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX) + 1
             for ln in lines
         )
         delta = mathy.bounding_box().height - plain.bounding_box().height

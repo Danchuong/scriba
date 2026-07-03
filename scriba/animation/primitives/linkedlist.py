@@ -18,7 +18,7 @@ from __future__ import annotations
 import re
 from typing import Any, Callable, ClassVar
 
-from scriba.animation.primitives._text_metrics import measure_text
+from scriba.animation.primitives._text_metrics import measure_value_text, measure_text
 from scriba.animation.primitives.base import (
     INDEX_LABEL_OFFSET,
     _CAPTION_CLEAR_GAP,
@@ -127,7 +127,7 @@ class LinkedList(PrimitiveBase):
         if self.values:
             current = max(
                 _VALUE_WIDTH_MIN,
-                max(measure_text(str(v), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING for v in self.values),
+                max(measure_value_text(str(v), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING for v in self.values),
             )
         else:
             current = _VALUE_WIDTH_MIN

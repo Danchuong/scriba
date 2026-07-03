@@ -55,6 +55,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Matrix row/column labels and graph edge-weight KaTeX boxes stop
     clipping: labels flip to `overflow:visible`; edge weights size their
     foreignObject to the weight pill instead of the 80x30 default.
+  - **Every foreignObject div now paints "Scriba Sans"** (new
+    `--scriba-fo-font-family` token, inlined per div): cell values, axis,
+    legend and tick labels previously inherited the embedding page's body
+    font while their `<text>` siblings rendered the shipped face.
+  - **No-KaTeX fallbacks paint the stripped form** (`$\max(y,x)$` →
+    `max(y,x)`, no `$`/backslash noise) at every surface — pills, caption
+    tspans, cell values — and `measure_value_text` sizes cells as
+    `max(KaTeX model, stripped fallback)`: deterministic across both
+    paint modes, and drops the raw-`$` over-reserve (a 129px cell for a
+    16px glyph tightens to its real content).
+  - **Caption math boxes are one px taller than their line box**
+    (`line_height_px` decoupled from `fo_height`), absorbing KaTeX's
+    fractional ink rounding so `scrollHeight <= clientHeight` holds
+    everywhere — the caption bench is 20/20 clean.
 
 ## [0.22.0] - 2026-07-03 — Exact text metrics, one runtime, every script
 

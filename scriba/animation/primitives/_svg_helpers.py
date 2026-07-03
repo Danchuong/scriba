@@ -33,6 +33,7 @@ from scriba.animation.primitives._text_render import (
     _escape_xml,
     _render_mixed_html,
     estimate_text_width,
+    strip_math_markup,
 )
 from scriba.animation.primitives._types import CELL_HEIGHT
 
@@ -1431,7 +1432,8 @@ def pill_dimensions(
         )
     else:
         max_line_w = max(
-            estimate_text_width(ln, l_font_px) for ln in label_lines
+            estimate_text_width(strip_math_markup(ln), l_font_px)
+            for ln in label_lines
         )
     pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
     pill_h = len(label_lines) * line_height + _LABEL_PILL_PAD_Y * 2
@@ -1621,7 +1623,7 @@ def _emit_pill_label_text(
         trail = "" if li == num_lines - 1 else " "
         tspans += (
             f'<tspan x="{fi_x}" dy="{dy_val}">'
-            f"{_escape_xml(ln_text)}{trail}</tspan>"
+            f"{_escape_xml(strip_math_markup(ln_text))}{trail}</tspan>"
         )
     lines.append(
         f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
@@ -1691,7 +1693,7 @@ def _emit_label_single_line(
     )
     return (
         f'    <text {text_attrs} style="{style_str}">'
-        f'{_escape_xml(label_text)}</text>'
+        f'{_escape_xml(strip_math_markup(label_text))}</text>'
     )
 
 
@@ -1769,7 +1771,11 @@ def _wrap_label_lines(
     lines: list[str] = []
     line = ""
     if max_px is not None:
-        _measure = measure_label_line if math_rendered else estimate_text_width
+        if math_rendered:
+            _measure = measure_label_line
+        else:
+            def _measure(s: str, fp: int) -> int:
+                return estimate_text_width(strip_math_markup(s), fp)
 
         def _fits_px(s: str) -> bool:
             return _measure(s, font_px) <= max_px

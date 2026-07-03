@@ -67,6 +67,7 @@ from scriba.animation.primitives._text_render import (  # noqa: F401 — explici
     _render_split_label_svg,
     _render_svg_text,
     estimate_text_width,
+    strip_math_markup,
 )
 from scriba.animation.primitives._svg_helpers import *  # noqa: F401, F403
 from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explicit for IDEs
@@ -666,7 +667,7 @@ class PrimitiveBase(abc.ABC):
             # bench fragments overflowed the fixed box (test_math_metrics
             # TestTallMathExtra pins the Chromium truth)
             return sum(
-                _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX)
+                _MATH_CAPTION_LINE_H + label_line_extra(ln, _CAPTION_FONT_PX) + 1
                 for ln in lines
             )
         return len(lines) * (_CAPTION_FONT_PX + 2)
@@ -715,24 +716,28 @@ class PrimitiveBase(abc.ABC):
                 math_h = _MATH_CAPTION_LINE_H + label_line_extra(
                     ln, _CAPTION_FONT_PX
                 )
+                # box = line box + 1: absorbs KaTeX fractional ink rounding
+                # so the audit invariant scrollHeight <= clientHeight holds
+                box_h = math_h + 1
                 out.append(
                     "  "
                     + _render_svg_text(
                         ln,
                         center_x,
-                        y_cursor + math_h // 2,
+                        y_cursor + box_h // 2,
                         fill=THEME["fg_muted"],
                         css_class="scriba-primitive-label",
                         font_size=str(_CAPTION_FONT_PX),
                         text_anchor="middle",
                         dominant_baseline="central",
                         fo_width=footprint_width,
-                        fo_height=math_h,
+                        fo_height=box_h,
                         render_inline_tex=render_inline_tex,
                         clip_overflow=False,
+                        line_height_px=math_h,
                     )
                 )
-                y_cursor += math_h
+                y_cursor += box_h
             return
         if len(lines) == 1:
             out.append(
@@ -763,7 +768,8 @@ class PrimitiveBase(abc.ABC):
             # wrapped words together ("sang" + "phải" -> "sangphải").
             tspans = "".join(
                 f'<tspan x="{center_x}" dy="{0 if i == 0 else line_h}">'
-                f"{_escape_xml(ln)}{'' if i == len(lines) - 1 else ' '}</tspan>"
+                f"{_escape_xml(strip_math_markup(ln) if _label_has_math(ln) else ln)}"
+                f"{'' if i == len(lines) - 1 else ' '}</tspan>"
                 for i, ln in enumerate(lines)
             )
             _bidi = _bidi_style(self.label or "")

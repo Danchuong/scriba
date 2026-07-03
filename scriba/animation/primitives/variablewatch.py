@@ -12,6 +12,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.parser._idents import is_ident as _is_ident
+from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
     THEME,
@@ -122,7 +123,7 @@ class VariableWatch(PrimitiveBase):
         """
         if self._values:
             max_val_w = max(
-                (estimate_text_width(str(v), 13) + 16 for v in self._values.values()),
+                (measure_value_text(str(v), 13, mono=True) + 16 for v in self._values.values()),
                 default=0,
             )
             candidate = max(_MIN_VALUE_COL_WIDTH, max_val_w)

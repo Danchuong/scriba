@@ -12,7 +12,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
-from scriba.animation.primitives._text_metrics import measure_text
+from scriba.animation.primitives._text_metrics import measure_value_text, measure_text
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
     CELL_1D_RE,
@@ -144,7 +144,7 @@ class Queue(PrimitiveBase):
         self._cell_width: int = max(
             CELL_WIDTH,
             max(
-                (measure_text(str(v), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING for v in raw_data),
+                (measure_value_text(str(v), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING for v in raw_data),
                 default=CELL_WIDTH,
             ),
         )
@@ -175,7 +175,7 @@ class Queue(PrimitiveBase):
                 self.cells[self.rear_idx] = enqueue_val
                 self.rear_idx += 1
                 # Widen cells if the new value is wider than current cell width
-                new_w = measure_text(str(enqueue_val), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING
+                new_w = measure_value_text(str(enqueue_val), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING
                 if new_w > self._cell_width:
                     self._cell_width = new_w
 
@@ -200,7 +200,7 @@ class Queue(PrimitiveBase):
             if 0 <= idx < self.capacity:
                 self.cells[idx] = value
                 # Recalc cell width if new value is wider
-                needed = measure_text(str(value), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING
+                needed = measure_value_text(str(value), _DEFAULT_FONT_SIZE_PX) + _CELL_HORIZONTAL_PADDING
                 if needed > self._cell_width:
                     self._cell_width = needed
 

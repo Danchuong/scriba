@@ -15,6 +15,7 @@ import re
 from typing import Any, Callable, ClassVar, NamedTuple
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     line_box_h,
     _label_has_math,
@@ -1265,7 +1266,7 @@ class Graph(PrimitiveBase):
             vx1, vy1 = _shorten_line_to_circle(x2, y2, x1, y1, r)
             mid_x = (vx1 + x2) / 2
             mid_y = (vy1 + y2) / 2
-            tw = estimate_text_width(display, _WEIGHT_FONT)
+            tw = measure_value_text(display, _WEIGHT_FONT, mono=True)
             pw = float(tw + _WEIGHT_PILL_PAD_X * 2)
             ph = float(line_box_h(_WEIGHT_FONT) + _WEIGHT_PILL_PAD_Y * 2)
             rects.append(
@@ -1473,7 +1474,7 @@ class Graph(PrimitiveBase):
             if display_weight is not None:
                 # GEP-02: pill dimensions from module-level constants so the
                 # constants survive ruff/style churn and share one source.
-                tw = estimate_text_width(display_weight, _WEIGHT_FONT)
+                tw = measure_value_text(display_weight, _WEIGHT_FONT, mono=True)
                 th = line_box_h(_WEIGHT_FONT)
                 pill_w = tw + _WEIGHT_PILL_PAD_X * 2
                 pill_h = th + _WEIGHT_PILL_PAD_Y * 2

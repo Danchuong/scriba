@@ -12,7 +12,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
-from scriba.animation.primitives._text_metrics import measure_text
+from scriba.animation.primitives._text_metrics import measure_value_text, measure_text
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -138,7 +138,7 @@ class Stack(PrimitiveBase):
     def _compute_cell_width(self) -> int:
         """Compute cell width from current item labels."""
         max_w = max(
-            (measure_text(str(item.label), 14) for item in self.items),
+            (measure_value_text(str(item.label), 14) for item in self.items),
             default=0,
         )
         return max(_CELL_WIDTH, max_w + 16)

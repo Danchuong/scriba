@@ -80,7 +80,14 @@ def _warn_heuristic_script(cp: int) -> None:
                 )
             return
 
-__all__ = ["TextMeasurer", "get_measurer", "label_line_extra", "measure_label_line", "measure_text"]
+__all__ = [
+    "TextMeasurer",
+    "get_measurer",
+    "label_line_extra",
+    "measure_label_line",
+    "measure_text",
+    "measure_value_text",
+]
 
 
 class TextMeasurer(Protocol):
@@ -184,3 +191,23 @@ def label_line_extra(line: str, font_px: int) -> int:
     for m in _INLINE_MATH_RE.finditer(line):
         extra = max(extra, math_tall_extra(m.group(1), font_px))
     return extra
+
+
+def measure_value_text(text: str, font_px: int, *, mono: bool = False) -> int:
+    """Reservation width for a cell/value string that may contain $math$.
+
+    Deterministic across both paint modes (no callback available at
+    sizing time): plain strings keep their surface's base measurer; math
+    strings take max(KaTeX model, painted no-KaTeX fallback) — covers the
+    FO render AND the stripped-text fallback while dropping the raw
+    ``$``/``\\`` overhead the old raw measure charged.
+    """
+    from scriba.animation.primitives._text_render import strip_math_markup
+
+    base = estimate_text_width if mono else measure_text
+    if "$" not in text:
+        return base(text, font_px)
+    return max(
+        measure_label_line(text, font_px),
+        base(strip_math_markup(text), font_px),
+    )

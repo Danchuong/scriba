@@ -15,6 +15,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
     THEME,
@@ -125,7 +126,7 @@ class HashMap(PrimitiveBase):
         max_text_w = 0
         for value in self._bucket_values.values():
             if value:
-                w = estimate_text_width(value, font_size=_ENTRIES_FONT_SIZE_INT)
+                w = measure_value_text(value, _ENTRIES_FONT_SIZE_INT, mono=True)
                 max_text_w = max(max_text_w, w)
         # Add horizontal padding (8px left + 8px right)
         needed = max_text_w + 16
