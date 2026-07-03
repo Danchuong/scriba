@@ -1140,8 +1140,11 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 > cell in the rectangle; `\annotate` anchors its pill at the block's center.
 > Out-of-bounds or reversed bounds behave like any bad selector (soft W-level
 > drop, E1115 path). `${...}` interpolation works in all four indices.
+> Add `bracket=true` to the annotate to draw a dashed rounded outline
+> hugging the block (no fill — cell values stay readable; stroke follows
+> `color=`).
 > Example: `\recolor{g.block[0:1][0:1]}{state=done}` +
-> `\annotate{g.block[0:1][0:1]}{label="nền $(m-1)^2 = 4$"}`.
+> `\annotate{g.block[0:1][0:1]}{label="nền $(m-1)^2 = 4$", bracket=true, color=good}`.
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]` | — | — | — | — | `.all` |

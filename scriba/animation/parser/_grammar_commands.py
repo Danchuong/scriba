@@ -242,6 +242,7 @@ class _CommandsMixin:
             )
         arrow = params.get("arrow", False) in (True, "true")
         ephemeral = params.get("ephemeral", False) in (True, "true")
+        bracket = params.get("bracket", False) in (True, "true")
         af_raw = params.get("arrow_from")
         arrow_from = (
             parse_selector(
@@ -258,6 +259,7 @@ class _CommandsMixin:
             label=str(params["label"]) if "label" in params else None,
             position=position, color=color, arrow=arrow,
             ephemeral=ephemeral, arrow_from=arrow_from,
+            bracket=bracket,
         )
 
     def _parse_cursor(self) -> CursorCommand:

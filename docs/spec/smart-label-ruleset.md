@@ -484,7 +484,12 @@ reversed bounds degrade exactly like every other selector: soft drop via
 target. Rationale: an area whose meaning is its size (an `$(m-1)^2$` base
 block) has no name in the cell/`range` vocabulary, and the two commands
 consume regions differently — recolor as a cell set, annotate as one
-geometric unit.
+geometric unit. With `bracket=true`, `\annotate` additionally paints a
+no-fill dashed rounded outline hugging the block 3px outward (`rx=6`,
+`stroke-dasharray 4,3`, stroke = the annotation color at 0.55 opacity),
+emitted in its own `data-annotation="…-block-bracket"` group AFTER the
+cells so it never masks values; `fill="none"` guarantees the digits stay
+readable. Block targets only — a single cell already reads as a unit.
 
 **Code ref:** `scriba/animation/parser/selectors.py` `_parse_block`;
 `scriba/animation/_frame_renderer.py` `_expand_selectors`;
@@ -492,7 +497,8 @@ geometric unit.
 `scriba/animation/primitives/dptable.py` `_block_center`.
 **Test ref:** `tests/unit/test_block_selector.py`
 `test_recolor_block_expands_to_cell_product`,
-`test_grid_block_anchor_is_block_center`.
+`test_grid_block_anchor_is_block_center`;
+`tests/unit/test_block_bracket.py` `test_bracket_outline_hugs_block_box`.
 
 ### R-07 — Leader threshold formula
 

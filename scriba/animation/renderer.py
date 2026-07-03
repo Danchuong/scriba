@@ -315,6 +315,7 @@ def _snapshot_to_frame_data(
             "color": a.color,
             "position": a.position,
             **({"arrow": True} if a.arrow else {}),
+            **({"bracket": True} if a.bracket else {}),
         }
         for a in snap.annotations
     ]

@@ -955,6 +955,29 @@ class PrimitiveBase(abc.ABC):
                 # default delegates to resolve_annotation_point so non-Array
                 # primitives are unaffected.
                 label_text = ann.get("label", "")
+                # R-35 bracket glyph: a no-fill dashed rounded outline
+                # hugging the block (3px outward), emitted in its own
+                # annotation group so the extent parser, differ and runtime
+                # treat it like any other decoration. Block targets only —
+                # a single cell already reads as a unit.
+                if ann.get("bracket") and ".block[" in ann.get("target", ""):
+                    _bbox = self.resolve_annotation_box(ann.get("target", ""))
+                    if _bbox is not None:
+                        _bstyle = ARROW_STYLES.get(
+                            ann.get("color", "info"), ARROW_STYLES["info"]
+                        )
+                        _bkey = f"{ann.get('target', '')}-block-bracket"
+                        parts.append(
+                            f'  <g class="scriba-annotation scriba-annotation-'
+                            f'{ann.get("color", "info")}"'
+                            f' data-annotation="{_escape_xml(_bkey)}">'
+                            f'<rect x="{_bbox.x - 3}" y="{_bbox.y - 3}"'
+                            f' width="{_bbox.width + 6}" height="{_bbox.height + 6}"'
+                            f' rx="6" ry="6" fill="none"'
+                            f' stroke="{_bstyle["stroke"]}" stroke-width="1.5"'
+                            f' stroke-opacity="0.55" stroke-dasharray="4,3"/>'
+                            f"</g>"
+                        )
                 if label_text:
                     dst_point = self.resolve_label_anchor(ann.get("target", ""))
                     if dst_point is not None:

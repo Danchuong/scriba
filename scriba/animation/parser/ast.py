@@ -237,6 +237,7 @@ class AnnotateCommand:
     arrow: bool = False
     ephemeral: bool = False
     arrow_from: Selector | None = None
+    bracket: bool = False
 
 
 @dataclass(frozen=True, slots=True)

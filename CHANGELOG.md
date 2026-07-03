@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   selector (E1115 path, no new E-code). Case files:
   `investigations/feat-grid-block-selector.md`,
   `unified-{decoration-model,conflict-audit,spec}.md`.
+- **`bracket=true` annotate glyph for blocks** (P1): a no-fill dashed
+  rounded outline hugging the block 3px outward, stroke colour-matched to
+  `color=`, emitted in its own `data-annotation="…-block-bracket"` group
+  (extent/differ/runtime see it like any decoration). The label pill
+  keeps the standard placement pipeline. Single-cell targets ignore the
+  flag.
 
 ## [0.22.1] - 2026-07-03 — Exact label math, grow-don't-clip, content-based cells
 
