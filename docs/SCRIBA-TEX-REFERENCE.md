@@ -1121,11 +1121,11 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 > - **Graph** normalizes node-id type when **addressing**: an id declared as `int` (`nodes=[1,2,3]`) can be selected as either `G.node[1]` or `G.node["1"]` — both resolve to the same node. For **edge mutations** (`add_edge={from=1,...}`), use the same type as declared.
 > - **Tree** normalizes every node id to **string** at construction and on all mutations, so `T.node[8]` and `T.node["8"]` are the same node, and `add_node={parent=3}` and `add_node={parent="3"}` are interchangeable. Mixing `int` declarations with string refs is safe for Tree only.
 
-| Primitive | Cell/Item | Node | Edge | Tick | Range | All |
+| Primitive | Cell/Item | Node | Edge | Tick | Range/Block | All |
 |-----------|-----------|------|------|------|-------|-----|
 | Array | `.cell[i]` | — | — | — | `.range[i:j]` | `.all` |
-| Grid | `.cell[r][c]` | — | — | — | — | `.all` |
-| DPTable | `.cell[i]` or `.cell[i][j]` | — | — | — | `.range[i:j]` (1D) | `.all` |
+| Grid | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]` | `.all` |
+| DPTable | `.cell[i]` or `.cell[i][j]` | — | — | — | `.range[i:j]` (1D), `.block[r0:r1][c0:c1]` (2D) | `.all` |
 | Graph | — | `.node[id]` | `.edge[(u,v)]` | — | — | `.all` |
 | Tree | — | `.node[id]` | `.edge[(p,c)]` | — | — | `.all` |
 | NumberLine | — | — | — | `.tick[i]` | `.range[lo:hi]` | `.all` |
@@ -1134,6 +1134,14 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | HashMap | `.bucket[i]` | — | — | — | — | `.all` |
 | LinkedList | — | `.node[i]` | `.link[i]` | — | — | `.all` |
 | Queue | `.cell[i]` | — | — | — | — | `.front`, `.rear`, `.all` |
+
+> **`block[r0:r1][c0:c1]`** (since 0.22.2) — the 2-D twin of `range`, inclusive
+> on both axes, Grid + 2-D DPTable. `\recolor`/`\highlight` expand it to every
+> cell in the rectangle; `\annotate` anchors its pill at the block's center.
+> Out-of-bounds or reversed bounds behave like any bad selector (soft W-level
+> drop, E1115 path). `${...}` interpolation works in all four indices.
+> Example: `\recolor{g.block[0:1][0:1]}{state=done}` +
+> `\annotate{g.block[0:1][0:1]}{label="nền $(m-1)^2 = 4$"}`.
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]` | — | — | — | — | `.all` |

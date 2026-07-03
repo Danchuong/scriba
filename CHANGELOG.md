@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **`block[r0:r1][c0:c1]` selector** (P0 of the unified decoration plan,
+  R-35): the inclusive 2-D twin of `range[lo:hi]` for Grid and 2-D
+  DPTable. `\recolor`/`\highlight` expand it to the full cell product;
+  `\annotate` anchors its pill at the block's center (union AABB feeds
+  the placer), computed from the dynamic content-based cell pitch.
+  `${...}` interpolation works in all four indices for free (flat
+  dataclass fields). Out-of-bounds/reversed degrade softly like every
+  selector (E1115 path, no new E-code). Case files:
+  `investigations/feat-grid-block-selector.md`,
+  `unified-{decoration-model,conflict-audit,spec}.md`.
+
 ## [0.22.1] - 2026-07-03 — Exact label math, grow-don't-clip, content-based cells
 
 ### Fixed

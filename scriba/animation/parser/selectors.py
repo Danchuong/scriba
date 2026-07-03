@@ -28,6 +28,7 @@ from scriba.core.errors import ValidationError
 
 from .ast import (
     AllAccessor,
+    BlockAccessor,
     CellAccessor,
     EdgeAccessor,
     IndexExpr,
@@ -108,6 +109,8 @@ class SelectorParser:
             return self._parse_edge()
         if name == "range":
             return self._parse_range()
+        if name == "block":
+            return self._parse_block()
         if name == "all":
             return AllAccessor()
         # Plane2D and other primitive-defined accessors with [index]
@@ -168,6 +171,19 @@ class SelectorParser:
         hi = self._parse_index_expr()
         self._expect("]")
         return RangeAccessor(lo=lo, hi=hi)
+
+    def _parse_block(self) -> BlockAccessor:
+        self._expect("[")
+        r_lo = self._parse_index_expr()
+        self._expect(":")
+        r_hi = self._parse_index_expr()
+        self._expect("]")
+        self._expect("[")
+        c_lo = self._parse_index_expr()
+        self._expect(":")
+        c_hi = self._parse_index_expr()
+        self._expect("]")
+        return BlockAccessor(row_lo=r_lo, row_hi=r_hi, col_lo=c_lo, col_hi=c_hi)
 
     # ------------------------------------------------------------------
     # Index / node-id parsing

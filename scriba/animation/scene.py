@@ -58,6 +58,7 @@ def _selector_to_str(sel: Selector | str) -> str:
 
     from scriba.animation.parser.ast import (
         AllAccessor,
+        BlockAccessor,
         CellAccessor,
         EdgeAccessor,
         ItemAccessor,
@@ -85,6 +86,11 @@ def _selector_to_str(sel: Selector | str) -> str:
         return f"{name}.edge[({acc.source},{acc.target})]"
     if isinstance(acc, RangeAccessor):
         return f"{name}.range[{acc.lo}:{acc.hi}]"
+    if isinstance(acc, BlockAccessor):
+        return (
+            f"{name}.block[{acc.row_lo}:{acc.row_hi}]"
+            f"[{acc.col_lo}:{acc.col_hi}]"
+        )
     if isinstance(acc, AllAccessor):
         return f"{name}.all"
     if isinstance(acc, NamedAccessor):

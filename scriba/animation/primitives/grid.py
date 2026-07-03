@@ -86,6 +86,15 @@ _ALL_RE = ALL_RE
 # Suffix-only regex (no shape name prefix) — local, no base.py equivalent.
 _SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
 
+_SUFFIX_BLOCK_RE = re.compile(
+    r"^block\[(?P<r0>\d+):(?P<r1>\d+)\]\[(?P<c0>\d+):(?P<c1>\d+)\]$"
+)
+_BLOCK_RE = re.compile(
+    r"^(?P<name>[^.]+)\.block\[(?P<r0>\d+):(?P<r1>\d+)\]"
+    r"\[(?P<c0>\d+):(?P<c1>\d+)\]$"
+)
+
+
 
 # ---------------------------------------------------------------------------
 # GridPrimitive
@@ -191,6 +200,14 @@ class GridPrimitive(PrimitiveBase):
         if m:
             r, c = int(m.group("row")), int(m.group("col"))
             return 0 <= r < self.rows and 0 <= c < self.cols
+        b = _SUFFIX_BLOCK_RE.match(suffix)
+        if b:
+            r0, r1 = int(b.group("r0")), int(b.group("r1"))
+            c0, c1 = int(b.group("c0")), int(b.group("c1"))
+            # inclusive, non-reversed, in-bounds — mirrors range[lo:hi]
+            return (
+                r0 <= r1 < self.rows and c0 <= c1 < self.cols
+            )
 
         return suffix == "all"
 
@@ -208,7 +225,27 @@ class GridPrimitive(PrimitiveBase):
                 x = c * (self._cell_width + CELL_GAP) + self._cell_width // 2
                 y = r * (CELL_HEIGHT + CELL_GAP) + CELL_HEIGHT // 2  # cell center
                 return (float(x), float(y))
+        b = _BLOCK_RE.match(selector)
+        if b and b.group("name") == self.name:
+            box = self._block_box(b)
+            if box is not None:
+                return (box.x + box.width / 2.0, box.y + box.height / 2.0)
         return None
+
+    def _block_box(self, m: "re.Match[str]") -> "BoundingBox | None":
+        """Union AABB of an inclusive ``block[r0:r1][c0:c1]`` (corner-based,
+        same convention as resolve_self_content_rects). Bounds re-checked so
+        an un-validated annotate target degrades to None (soft-drop),
+        mirroring range."""
+        r0, r1 = int(m.group("r0")), int(m.group("r1"))
+        c0, c1 = int(m.group("c0")), int(m.group("c1"))
+        if not (r0 <= r1 < self.rows and c0 <= c1 < self.cols):
+            return None
+        x = c0 * (self._cell_width + CELL_GAP)
+        y = r0 * (CELL_HEIGHT + CELL_GAP)
+        w = (c1 - c0 + 1) * self._cell_width + (c1 - c0) * CELL_GAP
+        h = (r1 - r0 + 1) * CELL_HEIGHT + (r1 - r0) * CELL_GAP
+        return BoundingBox(x=float(x), y=float(y), width=float(w), height=float(h))
 
     def resolve_self_content_rects(self) -> "list[BoundingBox]":
         """Every cell box — pills should not sit on top of the grid body."""
@@ -244,6 +281,11 @@ class GridPrimitive(PrimitiveBase):
         treats the labelled cell as a blocker. Scoped to below-pill targets so a
         wide above/left/right pill on a cell never spuriously trips the spanning
         leader."""
+        b = _BLOCK_RE.match(selector)
+        if b and b.group("name") == self.name:
+            # block boxes feed the placer/bracket regardless of position,
+            # exactly like 1-D range boxes (see _target_has_below_pill note)
+            return self._block_box(b)
         if not self._target_has_below_pill(selector):
             return None
         m = _CELL_2D_RE.match(selector)

@@ -67,6 +67,15 @@ _ALL_RE = ALL_RE
 # Suffix-only regexes (no shape name prefix) — canonical from ._types.
 _SUFFIX_CELL_1D_RE = SUFFIX_CELL_RE
 _SUFFIX_CELL_2D_RE = SUFFIX_CELL_2D_RE
+
+_SUFFIX_BLOCK_RE = re.compile(
+    r"^block\[(?P<r0>\d+):(?P<r1>\d+)\]\[(?P<c0>\d+):(?P<c1>\d+)\]$"
+)
+_BLOCK_RE = re.compile(
+    r"^(?P<name>[^.]+)\.block\[(?P<r0>\d+):(?P<r1>\d+)\]"
+    r"\[(?P<c0>\d+):(?P<c1>\d+)\]$"
+)
+
 _SUFFIX_RANGE_RE = SUFFIX_RANGE_RE
 
 
@@ -233,6 +242,12 @@ class DPTablePrimitive(PrimitiveBase):
             if m:
                 r, c = int(m.group("row")), int(m.group("col"))
                 return 0 <= r < self.rows and 0 <= c < self.cols
+            b = _SUFFIX_BLOCK_RE.match(suffix)
+            if b:
+                r0, r1 = int(b.group("r0")), int(b.group("r1"))
+                c0, c1 = int(b.group("c0")), int(b.group("c1"))
+                # inclusive, non-reversed, in-bounds — 2-D twin of range
+                return r0 <= r1 < self.rows and c0 <= c1 < self.cols
         else:
             m = _SUFFIX_CELL_1D_RE.match(suffix)
             if m:
@@ -529,8 +544,28 @@ class DPTablePrimitive(PrimitiveBase):
         if result is None:
             result = self._range_center(selector)
         if result is None:
+            result = self._block_center(selector)
+        if result is None:
             return None
         return (float(result[0]), float(result[1]))
+
+    def _block_center(self, selector_str: str) -> "tuple[float, float] | None":
+        """Center of an inclusive 2-D ``block[r0:r1][c0:c1]`` (2-D twin of
+        ``_range_center``; 2-D tables only)."""
+        if not self.is_2d:
+            return None
+        m = _BLOCK_RE.match(selector_str)
+        if not (m and m.group("name") == self.name):
+            return None
+        r0, r1 = int(m.group("r0")), int(m.group("r1"))
+        c0, c1 = int(m.group("c0")), int(m.group("c1"))
+        if not (r0 <= r1 < self.rows and c0 <= c1 < self.cols):
+            return None
+        x0 = c0 * (self._cell_width + CELL_GAP)
+        x1 = c1 * (self._cell_width + CELL_GAP) + self._cell_width
+        y0 = r0 * (CELL_HEIGHT + CELL_GAP)
+        y1 = r1 * (CELL_HEIGHT + CELL_GAP) + CELL_HEIGHT
+        return ((x0 + x1) / 2.0, (y0 + y1) / 2.0)
 
     def _range_center(self, selector_str: str) -> tuple[int, int] | None:
         """Center anchor for a 1D ``range[lo:hi]`` selector (inclusive span)."""

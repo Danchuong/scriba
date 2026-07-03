@@ -464,6 +464,36 @@ Rules governing when, how, and where leader lines are drawn.
 
 ---
 
+
+### R-35 — `block[r0:r1][c0:c1]` region selector
+
+**Normative:** MUST
+**Since:** v0.22.2
+
+`block[r0:r1][c0:c1]` is the inclusive 2-D twin of `range[lo:hi]`, valid on
+2-D cell primitives (Grid, DPTable-2D). `\recolor`/`\highlight` MUST expand
+it to the full cell product `cell[r][c]`, `r∈r0..r1`, `c∈c0..c1`
+(`_expand_selectors` block branch, `scriba/animation/_frame_renderer.py`);
+`\annotate` MUST resolve it to the block's center point and union AABB,
+computed from the primitive's own dynamic cell pitch (`self._cell_width`)
+so content-sized cells keep the anchor true
+(`scriba/animation/primitives/grid.py` `_block_box`,
+`scriba/animation/primitives/dptable.py` `_block_center`). Out-of-bounds or
+reversed bounds degrade exactly like every other selector: soft drop via
+`validate_selector` → E1115, never a hard parse error and never a phantom
+target. Rationale: an area whose meaning is its size (an `$(m-1)^2$` base
+block) has no name in the cell/`range` vocabulary, and the two commands
+consume regions differently — recolor as a cell set, annotate as one
+geometric unit.
+
+**Code ref:** `scriba/animation/parser/selectors.py` `_parse_block`;
+`scriba/animation/_frame_renderer.py` `_expand_selectors`;
+`scriba/animation/primitives/grid.py` `_block_box`;
+`scriba/animation/primitives/dptable.py` `_block_center`.
+**Test ref:** `tests/unit/test_block_selector.py`
+`test_recolor_block_expands_to_cell_product`,
+`test_grid_block_anchor_is_block_center`.
+
 ### R-07 — Leader threshold formula
 
 **Normative:** MUST

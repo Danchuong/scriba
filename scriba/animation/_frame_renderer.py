@@ -352,6 +352,9 @@ def _expand_selectors(
     range_re = re.compile(
         rf"^{re.escape(shape_name)}\.range\[(\d+):(\d+)\]$"
     )
+    block_re = re.compile(
+        rf"^{re.escape(shape_name)}\.block\[(\d+):(\d+)\]\[(\d+):(\d+)\]$"
+    )
     all_re = re.compile(rf"^{re.escape(shape_name)}\.all$")
 
     def _merge(target: str, data: dict) -> None:
@@ -372,10 +375,18 @@ def _expand_selectors(
 
     for key, data in shape_state.items():
         m_range = range_re.match(key)
+        m_block = block_re.match(key)
         m_all = all_re.match(key)
         m_top = top_re.match(key)
 
-        if m_range:
+        if m_block:
+            # 2-D twin of range: inclusive product of cells
+            r0, r1 = int(m_block.group(1)), int(m_block.group(2))
+            c0, c1 = int(m_block.group(3)), int(m_block.group(4))
+            for r in range(r0, r1 + 1):
+                for c in range(c0, c1 + 1):
+                    _merge(f"{shape_name}.cell[{r}][{c}]", data)
+        elif m_range:
             lo, hi = int(m_range.group(1)), int(m_range.group(2))
             ptype = getattr(prim, "primitive_type", "")
             for i in range(lo, hi + 1):

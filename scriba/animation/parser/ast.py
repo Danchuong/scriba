@@ -73,6 +73,19 @@ class RangeAccessor:
 
 
 @dataclass(frozen=True, slots=True)
+class BlockAccessor:
+    """``shape.block[r0:r1][c0:c1]`` — inclusive 2-D area (the 2-D twin of
+    ``range``). Four flat IndexExpr fields so ``${...}`` interpolation
+    resolves through the generic ``fields(acc)`` walk in
+    ``scene._resolve_selector`` with no extra branch."""
+
+    row_lo: IndexExpr
+    row_hi: IndexExpr
+    col_lo: IndexExpr
+    col_hi: IndexExpr
+
+
+@dataclass(frozen=True, slots=True)
 class AllAccessor:
     """``shape.*`` — selects every addressable part."""
 
@@ -103,6 +116,7 @@ SelectorAccessor = (
     | NodeAccessor
     | EdgeAccessor
     | RangeAccessor
+    | BlockAccessor
     | AllAccessor
     | TickAccessor
     | ItemAccessor
