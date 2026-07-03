@@ -24,6 +24,7 @@ Modes:
 from __future__ import annotations
 
 import ast
+import re
 import json
 import pathlib
 import sys
@@ -359,6 +360,61 @@ def _check_fp3(ctx: FileContext) -> None:
             ))
 
 
+# Canonical-value registry for the module-level birth check (FP-3 ext).
+# A row fires when a MODULE-LEVEL constant matches the name pattern AND
+# restates the canonical value as a bare number instead of aliasing the
+# canonical symbol. Canonical homes (base/_svg_helpers/_text_render/_types)
+# are excluded from linting entirely, so they may define the numbers.
+_FP3_MODULE_ROLES: "list[tuple[re.Pattern[str], object, str]]" = [
+    (re.compile(r"FONT"), 11, "_svg_helpers.LABEL_FONT_PX / _DEFAULT_LABEL_FONT_PX"),
+    (re.compile(r"PILL_PAD_X$"), 6, "_svg_helpers._LABEL_PILL_PAD_X"),
+    (re.compile(r"PILL_PAD_Y$"), 3, "_svg_helpers._LABEL_PILL_PAD_Y"),
+    (re.compile(r"PILL_R(ADIUS)?$"), 4, "_svg_helpers._LABEL_PILL_RADIUS"),
+    (re.compile(r"INDEX_LABEL_OFFSET$"), 16, "_types.INDEX_LABEL_OFFSET"),
+    (re.compile(r"INDEX.*FONT|FONT.*INDEX"), 10, "_types.INDEX_FONT_PX"),
+]
+
+
+def _check_fp3_module_level(ctx: FileContext) -> None:
+    """FP-3 ext: module-level rebirth of a canonical constant (E1570-C).
+
+    The method-body check above misses module-level constants entirely —
+    which is exactly where graph's _WEIGHT_PILL_* = 5/2/3 drifted from the
+    canonical 6/3/4 unnoticed. An alias (`X = _CANONICAL`) is the sanctioned
+    form and never fires; only a restated bare number does.
+    """
+    for stmt in ctx.tree.body:
+        target_name = None
+        value_node = None
+        if isinstance(stmt, ast.Assign) and len(stmt.targets) == 1:
+            target_name = _node_name(stmt.targets[0])
+            value_node = stmt.value
+        elif isinstance(stmt, ast.AnnAssign) and stmt.value is not None:
+            target_name = _node_name(stmt.target)
+            value_node = stmt.value
+        if not target_name or value_node is None:
+            continue
+        if not isinstance(value_node, ast.Constant):
+            continue  # aliases (Name/Attribute) are the sanctioned form
+        for pat, canon_value, canon_home in _FP3_MODULE_ROLES:
+            if pat.search(target_name) and value_node.value == canon_value:
+                ctx.violations.append(Violation(
+                    file=str(ctx.path),
+                    line=stmt.lineno,
+                    col=stmt.col_offset,
+                    code="E1570-C",
+                    severity="ERROR",
+                    message=(
+                        f"[E1570-C] module constant '{target_name} = "
+                        f"{value_node.value}' restates the canonical "
+                        f"{canon_home} (FP-3). Import/alias the canonical "
+                        "symbol instead of copying the number."
+                    ),
+                    fp="FP-3",
+                ))
+                break
+
+
 # ---------------------------------------------------------------------------
 # FP-4: No viewBox clamp after pill placement (WARNING)
 # ---------------------------------------------------------------------------
@@ -532,7 +588,7 @@ def _check_fp6(ctx: FileContext) -> None:
 # Orchestrator
 # ---------------------------------------------------------------------------
 
-_CHECKS = [_check_fp1, _check_fp2, _check_fp3, _check_fp4, _check_fp5, _check_fp6]
+_CHECKS = [_check_fp1, _check_fp2, _check_fp3, _check_fp3_module_level, _check_fp4, _check_fp5, _check_fp6]
 
 
 def _lint_file(path: pathlib.Path) -> list[Violation]:

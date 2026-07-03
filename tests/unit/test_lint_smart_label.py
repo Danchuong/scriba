@@ -553,3 +553,49 @@ class TestLiveScan:
                 f"{fp_code}: expected {expected_count} primitives, "
                 f"got {actual_count} ({sorted(pairs_by_fp.get(fp_code, set()))})"
             )
+
+
+class TestFP3ModuleLevelBirthCheck:
+    """FP-3 ext: a module-level rebirth of a canonical constant fires; the
+    sanctioned alias form never does (this is the exact hole graph's
+    _WEIGHT_PILL_* = 5/2/3 drifted through — module scope was unscanned)."""
+
+    def test_bare_number_rebirth_fires(self):
+        violations = _lint_source(
+            """
+            _MY_WEIGHT_FONT: int = 11
+
+            class Thing(PrimitiveBase):
+                def emit_svg(self):
+                    return ""
+            """
+        )
+        assert any(
+            v.fp == "FP-3" and "_MY_WEIGHT_FONT" in v.message for v in violations
+        )
+
+    def test_alias_form_is_clean(self):
+        violations = _lint_source(
+            """
+            from scriba.animation.primitives._svg_helpers import _LABEL_PILL_PAD_X
+
+            _MY_PILL_PAD_X: int = _LABEL_PILL_PAD_X
+
+            class Thing(PrimitiveBase):
+                def emit_svg(self):
+                    return ""
+            """
+        )
+        assert not [v for v in violations if v.fp == "FP-3"]
+
+    def test_unrelated_module_number_is_clean(self):
+        violations = _lint_source(
+            """
+            _PADDING = 12  # per-surface margin, not a registered role
+
+            class Thing(PrimitiveBase):
+                def emit_svg(self):
+                    return ""
+            """
+        )
+        assert not [v for v in violations if v.fp == "FP-3"]
