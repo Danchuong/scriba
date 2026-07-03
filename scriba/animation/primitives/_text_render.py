@@ -189,7 +189,7 @@ _STRIP_CMD_RE = re.compile(r"\\([a-zA-Z]+)")
 
 def strip_math_markup(text: str) -> str:
     """The no-KaTeX paint form of a mixed label/value: ``$`` delimiters
-    dropped, ``\cmd`` -> ``cmd``, braces dropped inside math segments.
+    dropped, ``\\cmd`` -> ``cmd``, braces dropped inside math segments.
     ``\$`` escapes survive untouched. This is exactly what the plain-text
     fallbacks paint, so it is also exactly what they must be measured as
     ("size what you paint")."""

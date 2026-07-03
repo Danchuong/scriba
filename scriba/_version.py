@@ -116,7 +116,7 @@ keyed on rendered output MUST invalidate.
 containing RTL codepoints gains unicode-bidi:plaintext; spaceless-script
 labels (Thai/Lao/Khmer) wrap cluster-safely instead of overflowing as one
 token; identifier charsets accept combining marks (Thai/Devanagari
-selector/var/label names — Python's \w excludes Mn/Mc, which the 0.21.1
+selector/var/label names — Python's ``\\w`` excludes Mn/Mc, which the 0.21.1
 Unicode pass missed). LTR-only documents change only by the dir="auto"
 attribute. Consumer caches keyed on rendered output MUST invalidate.
 
