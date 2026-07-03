@@ -9,6 +9,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     LABEL_FONT_PX,
     _CAPTION_CLEAR_GAP,
@@ -36,6 +37,7 @@ from scriba.animation.primitives._types import (
     SUFFIX_CELL_RE,
     SUFFIX_CELL_2D_RE,
     SUFFIX_RANGE_RE,
+    _CELL_HORIZONTAL_PADDING,
 )
 from scriba.animation.primitives.layout import TextBox, stack_bottom
 
@@ -179,7 +181,37 @@ class DPTablePrimitive(PrimitiveBase):
         self.labels: str | None = self.params.get("labels")
         self.label: str | None = self.params.get("label")
 
+        # Content-based cell width (Queue/Array monotonic pattern): seed
+        # from init data + index labels, grow in set_value; the prescan
+        # pushes the max across the whole timeline before measure/emit, so
+        # frame 0 is already as wide as the widest future value and cells
+        # never breathe between frames. Floor stays self._cell_width.
+        max_content_w = max(
+            (measure_value_text(str(v), 14) for v in self.data), default=0
+        )
+        if self.labels:
+            parsed = _parse_index_labels(self.labels, self.cols)
+            max_label_w = max(
+                (measure_value_text(str(lb), 11, mono=True) for lb in parsed),
+                default=0,
+            )
+        else:
+            max_label_w = 0
+        self._cell_width: int = max(
+            CELL_WIDTH,
+            max_content_w + _CELL_HORIZONTAL_PADDING,
+            max_label_w + 8,
+        )
+
     # -- PrimitiveBase interface --------------------------------------------
+
+    def set_value(self, suffix: str, value: str) -> None:
+        super().set_value(suffix, value)
+        # monotonic grow — snapshot/restore in _prescan_value_widths leaves
+        # this field at the timeline max on purpose
+        needed = measure_value_text(str(value), 14) + _CELL_HORIZONTAL_PADDING
+        if needed > self._cell_width:
+            self._cell_width = needed
 
     def addressable_parts(self) -> list[str]:
         """Return all valid selector suffixes."""
@@ -216,7 +248,7 @@ class DPTablePrimitive(PrimitiveBase):
     def _annotation_cell_metrics(self) -> "CellMetrics":
         """Grid-aware flow context — single source for render AND measurement."""
         return CellMetrics(
-            cell_width=float(CELL_WIDTH),
+            cell_width=float(self._cell_width),
             cell_height=float(CELL_HEIGHT),
             grid_cols=int(self.cols),
             grid_rows=int(self.rows) if self.is_2d else 1,
@@ -311,9 +343,9 @@ class DPTablePrimitive(PrimitiveBase):
         rows = int(self.rows) if self.is_2d else 1
         return [
             BoundingBox(
-                x=float(c * (CELL_WIDTH + CELL_GAP)),
+                x=float(c * (self._cell_width + CELL_GAP)),
                 y=float(r * (CELL_HEIGHT + CELL_GAP)),
-                width=float(CELL_WIDTH),
+                width=float(self._cell_width),
                 height=float(CELL_HEIGHT),
             )
             for r in range(rows)
@@ -390,17 +422,17 @@ class DPTablePrimitive(PrimitiveBase):
             css = state_class(effective_state)
             colors = svg_style_attrs(effective_state)
 
-            x = int(i * (CELL_WIDTH + CELL_GAP))
+            x = int(i * (self._cell_width + CELL_GAP))
             y = 0
 
             lines.append(f'  <g data-target="{target}" class="{css}">')
-            rect_attrs = _inset_rect_attrs(x, y, CELL_WIDTH, CELL_HEIGHT)
+            rect_attrs = _inset_rect_attrs(x, y, self._cell_width, CELL_HEIGHT)
             lines.append(
                 f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
                 f'width="{rect_attrs["width"]}" '
                 f'height="{rect_attrs["height"]}"/>'
             )
-            text_x = int(x + CELL_WIDTH // 2)
+            text_x = int(x + self._cell_width // 2)
             text_y = int(y + CELL_HEIGHT // 2)
             lines.append(
                 "    "
@@ -410,7 +442,7 @@ class DPTablePrimitive(PrimitiveBase):
                     text_y,
                     fill=colors["text"],
                     font_size="14",
-                    fo_width=CELL_WIDTH,
+                    fo_width=self._cell_width,
                     fo_height=CELL_HEIGHT,
                     render_inline_tex=render_inline_tex,
                 )
@@ -428,7 +460,7 @@ class DPTablePrimitive(PrimitiveBase):
                         fill=THEME["fg_muted"],
                         css_class="scriba-index-label idx",
                         font_size="10",
-                        fo_width=CELL_WIDTH,
+                        fo_width=self._cell_width,
                         fo_height=20,
                         render_inline_tex=render_inline_tex,
                     )
@@ -455,21 +487,21 @@ class DPTablePrimitive(PrimitiveBase):
                 css = state_class(effective_state)
                 colors = svg_style_attrs(effective_state)
 
-                x = int(c * (CELL_WIDTH + CELL_GAP))
+                x = int(c * (self._cell_width + CELL_GAP))
                 y = int(r * (CELL_HEIGHT + CELL_GAP))
 
                 lines.append(
                     f'  <g data-target="{target}" class="{css}">'
                 )
                 rect_attrs = _inset_rect_attrs(
-                    x, y, CELL_WIDTH, CELL_HEIGHT
+                    x, y, self._cell_width, CELL_HEIGHT
                 )
                 lines.append(
                     f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
                     f'width="{rect_attrs["width"]}" '
                     f'height="{rect_attrs["height"]}"/>'
                 )
-                text_x = int(x + CELL_WIDTH // 2)
+                text_x = int(x + self._cell_width // 2)
                 text_y = int(y + CELL_HEIGHT // 2)
                 lines.append(
                     "    "
@@ -479,7 +511,7 @@ class DPTablePrimitive(PrimitiveBase):
                         text_y,
                         fill=colors["text"],
                         font_size="14",
-                        fo_width=CELL_WIDTH,
+                        fo_width=self._cell_width,
                         fo_height=CELL_HEIGHT,
                         render_inline_tex=render_inline_tex,
                     )
@@ -508,8 +540,8 @@ class DPTablePrimitive(PrimitiveBase):
         if m and m.group("name") == self.name:
             lo, hi = int(m.group("lo")), int(m.group("hi"))
             if 0 <= lo <= hi < self.cols:
-                left = lo * (CELL_WIDTH + CELL_GAP)
-                right = hi * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH
+                left = lo * (self._cell_width + CELL_GAP)
+                right = hi * (self._cell_width + CELL_GAP) + self._cell_width
                 return (int((left + right) // 2), int(CELL_HEIGHT // 2))
         return None
 
@@ -526,8 +558,8 @@ class DPTablePrimitive(PrimitiveBase):
             if m and m.group("name") == self.name:
                 lo, hi = int(m.group("lo")), int(m.group("hi"))
                 if 0 <= lo <= hi < self.cols:
-                    left = lo * (CELL_WIDTH + CELL_GAP)
-                    right = hi * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH
+                    left = lo * (self._cell_width + CELL_GAP)
+                    right = hi * (self._cell_width + CELL_GAP) + self._cell_width
                     return BoundingBox(
                         x=int(left), y=0, width=int(right - left), height=int(CELL_HEIGHT)
                     )
@@ -538,9 +570,9 @@ class DPTablePrimitive(PrimitiveBase):
                 if m and m.group("name") == self.name:
                     i = int(m.group("idx"))
                     if 0 <= i < self.cols:
-                        x = i * (CELL_WIDTH + CELL_GAP)
+                        x = i * (self._cell_width + CELL_GAP)
                         return BoundingBox(
-                            x=int(x), y=0, width=int(CELL_WIDTH), height=int(CELL_HEIGHT)
+                            x=int(x), y=0, width=int(self._cell_width), height=int(CELL_HEIGHT)
                         )
             return None
         if not self._target_has_below_pill(selector):
@@ -549,10 +581,10 @@ class DPTablePrimitive(PrimitiveBase):
         if m and m.group("name") == self.name:
             r, c = int(m.group("row")), int(m.group("col"))
             if 0 <= r < self.rows and 0 <= c < self.cols:
-                x = c * (CELL_WIDTH + CELL_GAP)
+                x = c * (self._cell_width + CELL_GAP)
                 y = r * (CELL_HEIGHT + CELL_GAP)
                 return BoundingBox(
-                    x=int(x), y=int(y), width=int(CELL_WIDTH), height=int(CELL_HEIGHT)
+                    x=int(x), y=int(y), width=int(self._cell_width), height=int(CELL_HEIGHT)
                 )
         return None
 
@@ -561,14 +593,14 @@ class DPTablePrimitive(PrimitiveBase):
         m = _CELL_1D_RE.match(selector_str)
         if m and m.group("name") == self.name:
             i = int(m.group("idx"))
-            x = int(i * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2)
+            x = int(i * (self._cell_width + CELL_GAP) + self._cell_width // 2)
             y = int(CELL_HEIGHT // 2)
             return (x, y)
 
         m = _CELL_2D_RE.match(selector_str)
         if m and m.group("name") == self.name:
             r, c = int(m.group("row")), int(m.group("col"))
-            x = int(c * (CELL_WIDTH + CELL_GAP) + CELL_WIDTH // 2)
+            x = int(c * (self._cell_width + CELL_GAP) + self._cell_width // 2)
             y = int(r * (CELL_HEIGHT + CELL_GAP) + CELL_HEIGHT // 2)
             return (x, y)
 
@@ -590,7 +622,7 @@ class DPTablePrimitive(PrimitiveBase):
         """Return ``(total_width, total_height)`` of the cell grid."""
         if self.cols == 0:
             return (0, 0)
-        w = self.cols * CELL_WIDTH + (self.cols - 1) * CELL_GAP
+        w = self.cols * self._cell_width + (self.cols - 1) * CELL_GAP
         h = self.rows * CELL_HEIGHT + (self.rows - 1) * CELL_GAP
         return (w, h)
 

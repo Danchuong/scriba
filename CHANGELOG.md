@@ -69,6 +69,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     (`line_height_px` decoupled from `fo_height`), absorbing KaTeX's
     fractional ink rounding so `scrollHeight <= clientHeight` holds
     everywhere — the caption bench is 20/20 clean.
+  - **DPTable/Grid cells size to their content** (frame-stable): the fixed
+    60px box clipped anything wider (`1000000` and `$\max(0,i)$` alike).
+    Both primitives now port the Queue/Array monotonic `_cell_width`
+    pattern (seed from init data, grow in `set_value`); the existing
+    prescan pushes the max across the whole timeline before measure/emit,
+    so frame 0 is already as wide as the widest future value — cells never
+    breathe between steps, and annotation anchors track the wider pitch.
+    Matrix floors `cell_size` to its widest formatted value when
+    `show_values` is on (init-time; matrix data is static). Narrow content
+    keeps the old floors — existing documents are byte-identical.
+  - **No more raw `$...$` flash during value transitions**: the runtime's
+    `value_change` tween wrote the raw string into the cell `<text>`
+    mid-animation before the frame swap restored the KaTeX render; math
+    values now pulse without rewriting text.
+    (`investigations/fixedbox-content-sizing.md`)
 
 ## [0.22.0] - 2026-07-03 — Exact text metrics, one runtime, every script
 

@@ -3681,11 +3681,12 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
         }
       }else if(kind==='value_change'){
         var el2=stage.querySelector(sel);
-        if(el2){var txt=el2.querySelector('text');if(txt){
-          txt.textContent=toVal;
-          if(_canAnim){txt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
+        if(el2){var txt=el2.querySelector('text');
+          if(txt&&String(toVal).indexOf('$')===-1){txt.textContent=toVal;}
+          var vt=txt||el2.querySelector('foreignObject > div');
+          if(vt&&_canAnim){vt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
             {duration:_dur(DUR_VALUE),easing:'ease-out'});}
-        }}
+        }
       }else if(kind==='highlight_on'){
         var el3=stage.querySelector(sel);
         if(el3){
@@ -5554,11 +5555,12 @@ def bfs_grid(grid: list[list[str]]) -&gt; int:
         }
       }else if(kind==='value_change'){
         var el2=stage.querySelector(sel);
-        if(el2){var txt=el2.querySelector('text');if(txt){
-          txt.textContent=toVal;
-          if(_canAnim){txt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
+        if(el2){var txt=el2.querySelector('text');
+          if(txt&&String(toVal).indexOf('$')===-1){txt.textContent=toVal;}
+          var vt=txt||el2.querySelector('foreignObject > div');
+          if(vt&&_canAnim){vt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
             {duration:_dur(DUR_VALUE),easing:'ease-out'});}
-        }}
+        }
       }else if(kind==='highlight_on'){
         var el3=stage.querySelector(sel);
         if(el3){

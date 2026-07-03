@@ -241,6 +241,21 @@ class MatrixPrimitive(PrimitiveBase):
         self.colorscale: str = colorscale
         self.show_values: bool = show_values
         self.cell_size: int = cell_size
+
+        # show_values: floor the cell to the widest formatted value at the
+        # pre-growth font — a value you asked to SHOW must be readable
+        # (init-time only; matrix data is static, no set_value path)
+        if self.show_values and self.data:
+            _fpx = max(8, int(self.cell_size) // 3)
+            _content_w = max(
+                (
+                    measure_value_text(self._format_value(v), _fpx)
+                    for row in self.data
+                    for v in row
+                ),
+                default=0,
+            )
+            self.cell_size = max(self.cell_size, _content_w + 4)
         self.vmin: float | None = float(vmin) if vmin is not None else None
         self.vmax: float | None = float(vmax) if vmax is not None else None
         self.row_labels: list[str] | None = row_labels
