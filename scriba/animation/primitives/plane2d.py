@@ -975,7 +975,6 @@ class Plane2D(PrimitiveBase):
         painting and by ``resolve_self_content_rects`` for the annotation
         scorer, so the emit and measure paths see identical boxes.
         """
-        _LINE_LABEL_CHAR_W = 7  # approx px per char at _TICK_FONT_SIZE (line-label font)
         _LINE_LABEL_H = 14
         _LINE_LABEL_PAD = 10
         _LINE_PILL_PAD_X = _SVG_LABEL_PILL_PAD_X
@@ -1050,7 +1049,11 @@ class Plane2D(PrimitiveBase):
                 (_, _), (x2, y2) = result
                 label_x, label_y = self.math_to_svg(x2, y2)
 
-            est_w = len(label_text) * _LINE_LABEL_CHAR_W + _LINE_LABEL_PAD
+            # canonical width estimator (B-1): the hand-rolled len*7
+            # under-sized CJK labels (each CJK glyph advances ~2x a Latin one)
+            est_w = estimate_text_width(
+                _label_width_text(label_text), _TICK_FONT_SIZE
+            ) + _LINE_LABEL_PAD
             records.append({
                 "kind": "line",
                 "text": label_text,

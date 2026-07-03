@@ -491,7 +491,7 @@ class TestMainExitCodes:
 
 
 class TestLiveScan:
-    def test_live_scan_detects_1_primitive_fp_pair(self):
+    def test_live_scan_detects_no_primitive_fp_pairs(self):
         """Validate that the linter finds the expected unique (primitive, FP) pairs.
 
         Post FP-6 route-through (2026-07-03): NumberLine, Queue and Plane2D
@@ -509,9 +509,9 @@ class TestLiveScan:
             (v.file.split("/")[-1].replace(".py", "").lower(), v.fp)
             for v in violations
         }
-        assert len(pairs) == 1, (
-            f"Expected 1 unique (primitive, FP) pair post FP-2 unification, "
-            f"got {len(pairs)}: {sorted(pairs)}"
+        assert len(pairs) == 0, (
+            f"Expected 0 (primitive, FP) pairs — the FP backlog is cleared "
+            f"(fp2/fp3/fp56 case files); got {len(pairs)}: {sorted(pairs)}"
         )
 
     def test_live_scan_fp_counts_match_r3_audit(self):
@@ -542,7 +542,7 @@ class TestLiveScan:
             "FP-1": 0,  # Plane2D fixed (_emit_text_annotation removed)
             "FP-2": 0,  # Plane2D unified in register_decorations; Graph suppressed
             #             with rationale (content channel = resolve_self_content_rects)
-            "FP-3": 1,  # Plane2D _LINE_LABEL_CHAR_W
+            "FP-3": 0,  # plane2d now uses the canonical estimate_text_width
             "FP-4": 0,  # Graph clamp added in GEP-Phase-0
             "FP-5": 0,  # cleared by the dispatcher route-through
             "FP-6": 0,  # cleared by the dispatcher route-through
