@@ -580,7 +580,7 @@ Adding an `id=` key draws a small triangular caret in a band just under the cell
 \cursor{arr}{id=j, at="w.var[j]", color="state:done"}
 ...
 \step
-\apply{w.var[i]}{value=2}   % targeted set — THIS is the value the caret reads
+\apply{w.var[i]}{value=2}   % or bulk \apply{w}{i=2} — both feed the caret (see below)
 ```
 
 > **Both watch-write forms feed the caret** (since 0.23.2). `at="w.var[i]"` re-reads `w.var[i]` each frame; a targeted `\apply{w.var[i]}{value=N}` and a bulk `\apply{w}{i=N}` now update that slot identically, so use whichever reads better — bulk is handy when a step sets several variables at once.
@@ -604,7 +604,7 @@ Loop expansion. Iterables: a range `0..4`, a literal list `[1,3,5]`, or a bare c
 
 #### Computed-indexing rules (read before looping)
 
-Interpolation is **asymmetric**: the same `${...}` form resolves in some positions and silently fails in others. This is the single most common source of silent wrong-output — a dropped command renders without error but never touches its cells.
+Interpolation is **asymmetric**: the same `${...}` form resolves in some positions but not others. Most mismatches now **fail loud** — a mis-scoped `${...}` in a selector index raises **E1159** with a hint. The one still-silent trap is a **bare** `i` (no `${}`) in a selector index: a literal key that renders without error but never touches its cells.
 
 | Form | Selector index `cell[…]` | Value `value=…` | `\foreach` iterable |
 |---|---|---|---|
@@ -1657,7 +1657,7 @@ A **scalar** `${var}` (a loop variable or a `\compute` binding) resolves in all 
 
 **Resolution is unambiguous — only known bindings substitute.** A `${name}` is
 replaced only when `name` is a `\compute` binding **in scope**. Scope follows the
-compute rules (§13 above): prelude `\compute` bindings reach every step; a binding
+compute rules (§5.2): prelude `\compute` bindings reach every step; a binding
 made *inside* a `\step` is frame-local. In `\narrate`, a `${name}` with no matching
 binding is left **verbatim** (e.g. `${not_a_binding}` renders literally) — narration
 never errors on an unknown name. In a *selector index*, by contrast, an unbound
