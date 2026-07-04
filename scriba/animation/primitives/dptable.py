@@ -620,6 +620,20 @@ class DPTablePrimitive(PrimitiveBase):
                             x=int(x), y=0, width=int(self._cell_width), height=int(CELL_HEIGHT)
                         )
             return None
+        b = _BLOCK_RE.match(selector)
+        if b and b.group("name") == self.name:
+            # block boxes feed the placer/bracket regardless of position,
+            # exactly like Grid/Matrix (bracket=true needs a box or it
+            # silently degrades to a plain position pill)
+            r0, r1 = int(b.group("r0")), int(b.group("r1"))
+            c0, c1 = int(b.group("c0")), int(b.group("c1"))
+            if not (r0 <= r1 < self.rows and c0 <= c1 < self.cols):
+                return None
+            x = c0 * (self._cell_width + CELL_GAP)
+            y = r0 * (CELL_HEIGHT + CELL_GAP)
+            w = (c1 - c0 + 1) * self._cell_width + (c1 - c0) * CELL_GAP
+            h = (r1 - r0 + 1) * CELL_HEIGHT + (r1 - r0) * CELL_GAP
+            return BoundingBox(x=float(x), y=float(y), width=float(w), height=float(h))
         if not self._target_has_below_pill(selector):
             return None
         m = _CELL_2D_RE.match(selector)

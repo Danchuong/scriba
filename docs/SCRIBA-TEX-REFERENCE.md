@@ -1279,7 +1279,7 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
 
-**`block[r0:r1][c0:c1]`** (since 0.22.2) — the 2-D twin of `range`, inclusive on both axes, on Grid + 2-D DPTable (+ Matrix since 0.23.2). `\recolor`/`\highlight` expand it to every cell in the rectangle; `\annotate` anchors its pill at the block's center; `${...}` works in all four indices; out-of-bounds/reversed bounds soft-drop (E1115). Add `bracket=true` on the annotate for a dashed outline hugging the block (stroke follows `color=`). Example: `\recolor{g.block[0:1][0:1]}{state=done}`.
+**`block[r0:r1][c0:c1]`** (since 0.22.2) — the 2-D twin of `range`, inclusive on both axes, on Grid + 2-D DPTable (+ Matrix since 0.23.2). `\recolor`/`\highlight` expand it to every cell in the rectangle; `\annotate` anchors its pill at the block's center; `${...}` works in all four indices; out-of-bounds/reversed bounds soft-drop (E1115). Add `bracket=true` on the annotate for a dashed outline hugging the block (stroke follows `color=`) — works on all three block-capable primitives (Grid; DPTable-2D + Matrix since 0.23.2). Example: `\recolor{g.block[0:1][0:1]}{state=done}`.
 
 **`color="state:X"` + `leader=true`** (since 0.22.2) — bind a label to the exact colour of the state it describes, X ∈ current/done/dim/good/error/path (**quotes required**; unquoted `color=state:current` is a parse error E1012). `leader=true` draws a dotted connector + dot from the pill to its cell. Example: `\annotate{g.cell[2][0]}{label="lớp chẵn", color="state:current", leader=true, position=below}`.
 

@@ -23,7 +23,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (previously Graph/Tree/Plane2D only).
 - **Matrix `block[r0:r1][c0:c1]`**: the 2-D area selector (recolor /
   annotate / `bracket=true`) now covers Matrix, closing the last 2-D
-  primitive gap (R-35).
+  primitive gap (R-35). DPTable-2D gains the same position-independent
+  block box, so `bracket=true` draws a real outline there too instead of
+  silently degrading to a plain pill.
 
 ### Changed
 - `docs/SCRIBA-TEX-REFERENCE.md` overhauled per the three docs audits

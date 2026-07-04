@@ -115,3 +115,18 @@ class TestMatrixBlock:
         assert box.x + box.width / 2 == pytest.approx((c00[0] + c11[0]) / 2, abs=1)
         assert box.y + box.height / 2 == pytest.approx((c00[1] + c11[1]) / 2, abs=1)
         assert m.resolve_annotation_box("m.block[0:3][0:1]") is None  # OOB
+
+    def test_dptable_2d_block_box(self) -> None:
+        # sibling of the Matrix gap: DPTable-2D bracket needs the same
+        # position-independent block box
+        from scriba.animation.primitives.dptable import DPTablePrimitive
+
+        dp = DPTablePrimitive(
+            "dp", {"rows": 2, "cols": 3, "data": ["1", "2", "3", "4", "5", "6"]}
+        )
+        box = dp.resolve_annotation_box("dp.block[0:1][1:2]")
+        assert box is not None
+        cx, cy = dp._block_center("dp.block[0:1][1:2]")
+        assert box.x + box.width / 2 == pytest.approx(cx)
+        assert box.y + box.height / 2 == pytest.approx(cy)
+        assert dp.resolve_annotation_box("dp.block[0:2][0:0]") is None  # OOB
