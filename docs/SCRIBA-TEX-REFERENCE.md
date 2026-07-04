@@ -616,6 +616,10 @@ its resolved seat. v1 works on 1-D cell/tick primitives (Array,
 DPTable-1D, Stack, Queue, NumberLine). See the smart-label ruleset R-38
 and motion-ruleset A-4 for the full contract.
 
+> Since 0.23.1-dev a binding caret can park on Array sentinel slots:
+> `\cursor{a}{id=i, at="before"}` / `at="after"` (requires
+> `sentinels=true` on the shape).
+
 ### 5.12 `\foreach{var}{iterable}...\endforeach`
 Loop expansion. Iterables: `0..4`, `[1,3,5]`, `${computed_list}`.
 ```latex

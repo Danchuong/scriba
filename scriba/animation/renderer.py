@@ -159,7 +159,8 @@ def _render_narration(
     valid_hl_ids: frozenset[str] | None = None,
     state_of: "Callable[[str], str | None] | None" = None,
     warn: "Callable[[str, str], None] | None" = None,
-) -> str:
+) -> tuple:
+    _collected_refs: list[str] = []
     """Render narration text through hl/ref macros and optional TeX.
 
     When ``ctx.render_inline_tex`` is available (normal path), the text
@@ -186,7 +187,7 @@ def _render_narration(
     where ``\\narrate`` is forbidden) the ``\\ref`` pass is skipped.
     """
     if text is None:
-        return ""
+        return "", _collected_refs
     has_tex = ctx.render_inline_tex is not None
 
     # When TeX rendering follows, stash each macro span behind a placeholder
@@ -213,7 +214,7 @@ def _render_narration(
     # without TeX process_hl_macros already escaped it. It stashes into the
     # same list when TeX follows, else emits its span directly.
     if state_of is not None:
-        processed, _ref_targets = process_ref_macros(
+        processed, _new_refs = process_ref_macros(
             processed,
             state_of=state_of,
             render_inline_tex=ctx.render_inline_tex,
@@ -221,6 +222,7 @@ def _render_narration(
             span_wrapper=_stash_span if has_tex else None,
             warn=warn,
         )
+        _collected_refs.extend(_new_refs)
     if has_tex:
         processed = ctx.render_inline_tex(processed)
         # Restore in reverse so a span stashed later (a \ref whose text
@@ -230,7 +232,7 @@ def _render_narration(
             processed = processed.replace(f"\x00HL{i}\x00", stashed[i])
     # Expand \textbf{...}, \texttt{...}, etc. AFTER TeX rendering so the
     # produced HTML tags are not HTML-escaped by the TeX renderer.
-    return apply_text_commands(processed)
+    return apply_text_commands(processed), _collected_refs
 
 
 def _render_invariant(text: str, ctx: RenderContext) -> str:
@@ -323,6 +325,8 @@ def _resolve_cursor_index(
     like an out-of-range selector — the caret simply vanishes this frame.
     """
     at = cur.at
+    if at in ("before", "after"):
+        return at  # sentinel park (R-42) — suffix used verbatim downstream
     try:
         return int(at)
     except (TypeError, ValueError):
@@ -454,7 +458,7 @@ def _snapshot_to_frame_data(
     def _ref_warn(code: str, message: str) -> None:
         _emit_warning(ctx, code, message, severity="info")
 
-    narration_html = _render_narration(
+    narration_html, ref_marks = _render_narration(
         snap.narration, scene_id, ctx, valid_hl_ids,
         state_of=_ref_state_of, warn=_ref_warn,
     )
@@ -477,6 +481,7 @@ def _snapshot_to_frame_data(
         step_number=snap.index,
         total_frames=total_frames,
         narration_html=narration_html,
+        ref_marks=ref_marks,
         shape_states=shape_states,
         annotations=annotations,
         traces=traces,

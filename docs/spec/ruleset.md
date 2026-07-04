@@ -913,7 +913,8 @@ about the layout algorithm's seeded coordinate placement.
 > which annotations are active.
 
 **Applies to** all primitives that accept `\annotate` targets: `Array`,
-`DPTable`, `Queue`, `Plane2D`, `Tree`, `Graph`, and any future primitive that
+`DPTable`, `Queue`, `LinkedList` (via its `_envelope_n` max-count envelope —
+insert/remove never shift the structure), `Plane2D`, `Tree`, `Graph`, and any future primitive that
 implements `set_annotations`.
 
 **Normative sub-invariants.**

@@ -921,6 +921,13 @@
   transition: opacity 180ms ease-out;
 }
 
+/* R-39 v1.1 — the element a narration \ref points at: ring its existing
+   border (dash + weight only; the state colour stays authoritative). */
+.scriba-ref-mark > rect {
+  stroke-width:     2.25;
+  stroke-dasharray: 3 2;
+}
+
 /* A-7 — \ref narration ink: colours a referenced word in the narration <p>
    to match its target's current state, so naming a cell also points at it.
    These are HTML <span>s sitting on the page background, so they take `color`

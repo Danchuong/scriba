@@ -241,6 +241,9 @@ ERROR_CATALOG: dict[str, str] = {
         "\\playeach requires at least one per-element action (state= or "
         "cursor=); cursor= is 1-D only and cannot ride a 2-D block sweep."
     ),
+    "E1496": (
+        "Unknown \\playeach action key; valid: state, cursor, narrate."
+    ),
     "E1180": (
         "Animation has >30 frames (warning) or \\cursor requires at "
         "least one target."

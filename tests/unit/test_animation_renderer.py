@@ -78,7 +78,7 @@ class TestNarrationHlSurvivesTex:
             render_inline_tex=escaping_tex,
         )
 
-        out = _render_narration(
+        out, _refs = _render_narration(
             r"See \hl{step1}{the base} here.", "sc", ctx
         )
 

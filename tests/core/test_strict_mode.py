@@ -749,6 +749,7 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1493",
         "E1494",
         "E1495",
+    "E1496",
         # Substory
         "E1360",
         "E1361",

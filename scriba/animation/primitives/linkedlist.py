@@ -81,6 +81,11 @@ class LinkedList(PrimitiveBase):
         Recognised keys: ``data`` (list of values), ``label``.
     """
 
+    # opt-in: _prescan_value_widths replays structural apply_params
+    # (insert/remove) so _envelope_n reaches its timeline max before the
+    # first frame is measured or emitted
+    _structural_prescan: bool = True
+
     primitive_type = "linkedlist"
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
@@ -115,6 +120,13 @@ class LinkedList(PrimitiveBase):
                 raw_data = [raw_data]
 
         self.values: list[Any] = list(raw_data)
+        # R-32 envelope: bbox width follows the MAX node count ever reached,
+        # never the live count — a mid-timeline insert/remove must not shift
+        # the whole structure horizontally (the 110px jump in
+        # investigations/anim-reflow-sentinel.md). Grown in apply_command and
+        # by the structural prescan; survives the prescan restore on purpose
+        # (same contract as _cell_width).
+        self._envelope_n: int = max(len(self.values), 1)
         self.label: str | None = params.get("label")
 
         # Dynamic sizing based on actual content
@@ -159,6 +171,7 @@ class LinkedList(PrimitiveBase):
                 idx = len(self.values)
                 val = insert_val
             self.values.insert(idx, val)
+            self._envelope_n = max(self._envelope_n, len(self.values))
 
         if remove_val is not None:
             idx = int(remove_val)
@@ -227,7 +240,7 @@ class LinkedList(PrimitiveBase):
         return float(2 * _PADDING + _NODE_HEIGHT + _INDEX_LABEL_OFFSET)
 
     def bounding_box(self) -> BoundingBox:
-        n = max(len(self.values), 1)
+        n = max(getattr(self, "_envelope_n", 0), len(self.values), 1)
         content_w = n * self._node_width + (n - 1) * _LINK_GAP
         # Layer A: fold the (wrapped) caption width into the footprint.
         core_w = max(2 * _PADDING + content_w, self._caption_block_width(content_w))

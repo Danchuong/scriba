@@ -611,6 +611,8 @@ class PrimitiveBase(abc.ABC):
     def _cursor_cell_suffix(self, index: "int") -> str:
         """Map a caret's resolved index to this primitive's cell selector
         suffix. NumberLine overrides to ``tick[i]``."""
+        if isinstance(index, str) and index in ("before", "after"):
+            return index  # sentinel slots (R-42)
         return f"cell[{int(index)}]"
 
     def get_cursor_positions(self) -> "dict[str, tuple[float, float]]":

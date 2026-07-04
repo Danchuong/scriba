@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **LinkedList no longer shifts horizontally on insert/remove** (the
+  110px live-bbox jump excavated in
+  `investigations/anim-reflow-sentinel.md`): its bounding box now follows
+  a monotonic `_envelope_n` max-node-count envelope, grown by
+  `apply_command` AND by a new opt-in structural prescan pass that
+  replays insert/remove `apply_params` before the first frame is
+  measured — R-32 now explicitly covers LinkedList.
+
+### Added — v1.1 polish batch
+- Binding carets can **park on Array sentinels**:
+  `\cursor{a}{id=i, at="before"}` / `at="after"`.
+- **`\playeach` supports NumberLine** (per-element `tick[i]` targets).
+- **`\focus` with a nonexistent part warns (E1115) and skips it**
+  instead of dimming the whole shape.
+- **`\ref` baked ring** (R-39 v1.1): the referenced element's border
+  gains a dash+weight ring (`scriba-ref-mark`) so the tinted word and
+  the element read as one unit; state colour stays authoritative.
+- **`\playeach` unknown action keys now fail fast** (`E1496`) instead
+  of being silently ignored.
+
 ## [0.23.0] - 2026-07-04 — Animation clarity: reverse tween, carets, narration binding, playeach, reflow
 
 ### Added — animation-clarity Phase A (`SCRIBA_VERSION` →16)

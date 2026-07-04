@@ -49,6 +49,7 @@ from .ast import (
     RangeAccessor,
     RecolorCommand,
     Selector,
+    TickAccessor,
 )
 from .lexer import Token, TokenKind
 from .selectors import parse_selector
@@ -94,6 +95,18 @@ class _PlayeachMixin:
             source_line=self._source_line_at(tok.line),
         )
         params = self._read_param_brace()
+
+        _extra = set(params) - {"state", "cursor", "narrate"}
+        if _extra:
+            raise ValidationError(
+                f"unknown \\playeach action key(s) {sorted(_extra)}; "
+                "valid: state, cursor, narrate",
+                position=tok.col,
+                code="E1496",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
 
         state, cursor_id, narrate_tmpl = self._playeach_actions(tok, params)
         acc = sel.accessor
@@ -165,15 +178,25 @@ class _PlayeachMixin:
         count = hi - lo + 1
         self._check_frame_cap(tok, count)
         shape = sel.shape_name
+        # NumberLine addresses per-element parts as tick[i]; every other
+        # cell primitive uses cell[i] (v1.1 — closes the playeach case
+        # file's deferred NumberLine gap)
+        _stype = getattr(self, "_shape_types", {}).get(shape)
+        _is_tick = _stype == "NumberLine"
         frames: list[FrameIR] = []
         for i in range(lo, hi + 1):
             commands: list = []
             if state is not None:
+                _acc = (
+                    TickAccessor(index=i)
+                    if _is_tick
+                    else CellAccessor(indices=(i,))
+                )
                 commands.append(
                     RecolorCommand(
                         tok.line,
                         tok.col,
-                        Selector(shape_name=shape, accessor=CellAccessor(indices=(i,))),
+                        Selector(shape_name=shape, accessor=_acc),
                         state=state,
                     )
                 )

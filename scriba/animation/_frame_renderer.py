@@ -95,6 +95,28 @@ def _prescan_value_widths(
                 except Exception:  # noqa: BLE001 - best effort
                     pass
 
+    # Structural prescan (opt-in via _structural_prescan): replay
+    # insert/remove apply_params so envelope fields (_envelope_n) reach
+    # their timeline maximum — R-32 for primitives whose node count grows.
+    # Values are restored below; envelopes deliberately keep their maxima.
+    for frame in frames:
+        for shape_name, prim in primitives.items():
+            if not getattr(prim, "_structural_prescan", False):
+                continue
+            shape_state = frame.shape_states.get(shape_name)
+            if not shape_state:
+                continue
+            for target_data in shape_state.values():
+                if not isinstance(target_data, dict):
+                    continue
+                for ap in target_data.get("apply_params") or []:
+                    if not isinstance(ap, dict):
+                        continue
+                    try:
+                        prim.apply_command(ap)
+                    except Exception:  # noqa: BLE001 - best effort
+                        pass
+
     # Restore display state; width fields stay at grown maxima.
     for shape_name, snap in snapshots.items():
         prim = primitives[shape_name]
@@ -521,6 +543,24 @@ def _apply_param_list(
 _DEFOCUS_G_RE = _re.compile(r'<g data-target="([^"]+)" class="([^"]*)"')
 
 
+def _apply_ref_marks(svg: str, frame: "Any") -> str:
+    """R-39 v1.1 baked ring: every target the frame's narration \\ref's gets
+    ``scriba-ref-mark`` so its border reads as the ring the tinted word
+    points at (dash+weight only — the state colour stays)."""
+    marks = set(getattr(frame, "ref_marks", None) or [])
+    if not marks:
+        return svg
+
+    def _repl(m: "_re.Match[str]") -> str:
+        target = m.group(1)
+        css = m.group(2)
+        if target in marks and "scriba-ref-mark" not in css:
+            return f'<g data-target="{target}" class="{css} scriba-ref-mark"'
+        return m.group(0)
+
+    return _DEFOCUS_G_RE.sub(_repl, svg)
+
+
 def _apply_defocus(
     svg: str, frame: Any, primitives: dict[str, Any]
 ) -> str:
@@ -549,7 +589,23 @@ def _apply_defocus(
         if prim is None:
             continue
         expanded = _expand_selectors({s: {} for s in sels}, shape_name, prim)
-        keep[shape_name] = set(expanded.keys())
+        valid: set[str] = set()
+        for key in expanded:
+            suffix = key[len(shape_name) + 1:] if key.startswith(shape_name + ".") else key
+            if hasattr(prim, "validate_selector") and not prim.validate_selector(suffix):
+                # E1115-family soft degrade: a typo'd part must not dim the
+                # whole shape (the v1 footgun flagged in anim-narrate-focus)
+                import warnings as _w
+
+                _w.warn(
+                    f"scriba E1115: \\focus target '{key}' does not exist; "
+                    "ignored",
+                    stacklevel=2,
+                )
+                continue
+            valid.add(key)
+        if valid:
+            keep[shape_name] = valid
     if not keep:
         return svg
 
@@ -834,4 +890,5 @@ def _emit_frame_svg(
     # final string so it covers every primitive uniformly; when a focus set
     # changes between frames the SVG string differs -> fs=1 -> the runtime
     # resyncs the dim after the WAAPI settle (no differ change needed).
-    return _apply_defocus("\n".join(svg_parts), frame, primitives)
+    _svg = _apply_defocus("\n".join(svg_parts), frame, primitives)
+    return _apply_ref_marks(_svg, frame)

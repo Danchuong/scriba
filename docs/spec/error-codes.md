@@ -98,6 +98,7 @@
 | E1493 | `\playeach` expands to more than the per-macro frame cap (64). | Split the sweep across multiple `\playeach` blocks or narrow the range. |
 | E1494 | `\playeach` selector must be a `range` or `block` with literal integer bounds (the frame count is fixed at build time). | Use `\playeach{a.range[1:5]}{...}` or `\playeach{g.block[0:1][0:1]}{...}`; do not use computed/`${...}` bounds. |
 | E1495 | `\playeach` requires at least one per-element action (`state=` or `cursor=`); `cursor=` is 1-D only and cannot ride a 2-D block. | Add `state=<state>` and/or `cursor=<id>`; drop `cursor=` for block sweeps. |
+| E1496 | Unknown `\playeach` action key. | Use: state, cursor, narrate. |
 
 ## Narration Macro Errors (E1320--E1329)
 

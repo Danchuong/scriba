@@ -643,6 +643,11 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
         # primitive constructor later in the pipeline.
         self._validate_primitive_type(type_name, tok)
 
+        # record the declared type so parser-level macros (\playeach) can
+        # pick the right per-element suffix (tick[i] on NumberLine)
+        if not hasattr(self, "_shape_types"):
+            self._shape_types = {}
+        self._shape_types[name] = type_name
         return ShapeCommand(tok.line, tok.col, name, type_name, self._read_param_brace())
 
     def _validate_primitive_type(self, type_name: str, tok: Token) -> None:

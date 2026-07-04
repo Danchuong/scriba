@@ -535,6 +535,9 @@ class _CommandsMixin:
                 source_line=self._source_line_at(tok.line),
             )
         at = _unquote(raw)
+        if at in ("before", "after"):
+            # park on an Array sentinel slot (R-42) — resolved verbatim
+            return at
         try:
             int(at)
             return at
