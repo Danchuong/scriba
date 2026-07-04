@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-07-04 — LinkedList frame stability + v1.1 polish
+
 ### Fixed
 - **LinkedList no longer shifts horizontally on insert/remove** (the
   110px live-bbox jump excavated in

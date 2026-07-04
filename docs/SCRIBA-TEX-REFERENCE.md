@@ -2,7 +2,7 @@
 
 > **Single-file reference for AI agents.** Read this one file to write valid Scriba `.tex` sources.
 > Scriba renders LaTeX → HTML for competitive programming editorials with animated algorithm visualizations.
-> **Target:** v0.23.0
+> **Target:** v0.23.1
 
 ## Contents
 
@@ -616,7 +616,7 @@ its resolved seat. v1 works on 1-D cell/tick primitives (Array,
 DPTable-1D, Stack, Queue, NumberLine). See the smart-label ruleset R-38
 and motion-ruleset A-4 for the full contract.
 
-> Since 0.23.1-dev a binding caret can park on Array sentinel slots:
+> Since 0.23.1 a binding caret can park on Array sentinel slots:
 > `\cursor{a}{id=i, at="before"}` / `at="after"` (requires
 > `sentinels=true` on the shape).
 
