@@ -64,6 +64,9 @@ _LINE_RE = re.compile(r"^line\[(?P<idx>\d+)\]$")
 _SEGMENT_RE = re.compile(r"^segment\[(?P<idx>\d+)\]$")
 _POLYGON_RE = re.compile(r"^polygon\[(?P<idx>\d+)\]$")
 _REGION_RE = re.compile(r"^region\[(?P<idx>\d+)\]$")
+_CIRCLE_RE = re.compile(r"^circle\[(?P<idx>\d+)\]$")
+_ARC_RE = re.compile(r"^arc\[(?P<idx>\d+)\]$")
+_WEDGE_RE = re.compile(r"^wedge\[(?P<idx>\d+)\]$")
 
 # ---------------------------------------------------------------------------
 # Tombstone sentinel (RFC-001 §4.3 — dynamic remove ops)
@@ -85,6 +88,9 @@ selectors (e.g. ``point[5]``) remain valid when ``point[2]`` is removed."""
 # Segments: {"x1": float, "y1": float, "x2": float, "y2": float, "label": str|None}
 # Polygons: {"points": list[(float,float)]}
 # Regions:  {"polygon": list[(float,float)], "fill": str}
+# Circles:  {"cx": float, "cy": float, "r": float}
+# Arcs:     {"cx": float, "cy": float, "r": float, "a0": float, "a1": float}  (degrees, CCW)
+# Wedges:   {"cx": float, "cy": float, "r": float, "a0": float, "a1": float}  (degrees, CCW)
 
 
 # ---------------------------------------------------------------------------
@@ -112,6 +118,9 @@ class Plane2D(PrimitiveBase):
         "segment[{i}]": "segment by index",
         "polygon[{i}]": "polygon by index",
         "region[{i}]": "shaded region by index",
+        "circle[{i}]": "circle by index",
+        "arc[{i}]": "arc by index",
+        "wedge[{i}]": "wedge (sector) by index",
         "all": "all elements",
     }
 
@@ -132,6 +141,9 @@ class Plane2D(PrimitiveBase):
             "segments",
             "polygons",
             "regions",
+            "circles",
+            "arcs",
+            "wedges",
             "show_coords",
         }
     )
@@ -177,6 +189,9 @@ class Plane2D(PrimitiveBase):
         self.segments: list[dict[str, Any]] = []
         self.polygons: list[dict[str, Any]] = []
         self.regions: list[dict[str, Any]] = []
+        self.circles: list[dict[str, Any]] = []
+        self.arcs: list[dict[str, Any]] = []
+        self.wedges: list[dict[str, Any]] = []
 
         # Populate from initial params
         for pt in params.get("points", []):
@@ -189,6 +204,12 @@ class Plane2D(PrimitiveBase):
             self._add_polygon_internal(poly)
         for reg in params.get("regions", []):
             self._add_region_internal(reg)
+        for circ in params.get("circles", []):
+            self._add_circle_internal(circ)
+        for arc in params.get("arcs", []):
+            self._add_arc_internal(arc)
+        for wed in params.get("wedges", []):
+            self._add_wedge_internal(wed)
 
         self.show_coords: bool = bool(params.get("show_coords", False))
 
@@ -222,6 +243,9 @@ class Plane2D(PrimitiveBase):
             + len(self.segments)
             + len(self.polygons)
             + len(self.regions)
+            + len(self.circles)
+            + len(self.arcs)
+            + len(self.wedges)
         )
 
     def _check_cap(self) -> None:
@@ -384,6 +408,101 @@ class Plane2D(PrimitiveBase):
                 hint="expected {polygon: [(x, y), ...], fill?: <color>}",
             )
 
+    # ----- circle / arc / wedge add-spec parsing ---------------------------
+
+    @staticmethod
+    def _parse_circle_fields(spec: Any, kind: str) -> tuple[float, float, float]:
+        """Parse ``{cx, cy, r}`` or ``(cx, cy, r)`` into floats. E1467 on any
+        malformed shape or a negative radius."""
+        try:
+            if isinstance(spec, dict):
+                cx, cy, r = float(spec["cx"]), float(spec["cy"]), float(spec["r"])
+            elif isinstance(spec, (list, tuple)) and len(spec) >= 3:
+                cx, cy, r = float(spec[0]), float(spec[1]), float(spec[2])
+            else:
+                raise ValueError("wrong spec shape")
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} add-spec: {spec!r}",
+                hint="expected {cx, cy, r} or (cx, cy, r)",
+            ) from exc
+        if r < 0:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} add-spec: negative radius {r!r}",
+                hint="radius must be >= 0",
+            )
+        return cx, cy, r
+
+    @staticmethod
+    def _parse_arc_fields(
+        spec: Any, kind: str
+    ) -> tuple[float, float, float, float, float]:
+        """Parse ``{cx, cy, r, a0, a1}`` or ``(cx, cy, r, a0, a1)`` into floats
+        (angles in degrees, CCW). E1467 on any malformed shape / negative radius."""
+        try:
+            if isinstance(spec, dict):
+                cx, cy, r = float(spec["cx"]), float(spec["cy"]), float(spec["r"])
+                a0, a1 = float(spec["a0"]), float(spec["a1"])
+            elif isinstance(spec, (list, tuple)) and len(spec) >= 5:
+                cx, cy, r = float(spec[0]), float(spec[1]), float(spec[2])
+                a0, a1 = float(spec[3]), float(spec[4])
+            else:
+                raise ValueError("wrong spec shape")
+        except (KeyError, IndexError, TypeError, ValueError) as exc:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} add-spec: {spec!r}",
+                hint="expected {cx, cy, r, a0, a1} or (cx, cy, r, a0, a1); "
+                "angles in degrees, CCW",
+            ) from exc
+        if r < 0:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} add-spec: negative radius {r!r}",
+                hint="radius must be >= 0",
+            )
+        return cx, cy, r, a0, a1
+
+    def _warn_center_offscreen(self, cx: float, cy: float, kind: str) -> None:
+        """Emit hidden E1463 when a circle/arc/wedge center is outside the
+        viewport — mirrors the point off-viewport warning (SF-2, RFC-002)."""
+        if not (
+            self.xrange[0] <= cx <= self.xrange[1]
+            and self.yrange[0] <= cy <= self.yrange[1]
+        ):
+            logger.warning(
+                "[E1463] %s center (%.2f, %.2f) is outside viewport", kind, cx, cy
+            )
+            _emit_warning(
+                self._ctx,
+                "E1463",
+                f"{kind} center ({cx:.2f}, {cy:.2f}) is outside viewport "
+                f"[{self.xrange[0]}, {self.xrange[1]}] x "
+                f"[{self.yrange[0]}, {self.yrange[1]}]",
+                primitive=self.name,
+                severity="hidden",
+            )
+
+    def _add_circle_internal(self, spec: Any) -> None:
+        self._check_cap()
+        cx, cy, r = self._parse_circle_fields(spec, "circle")
+        self._warn_center_offscreen(cx, cy, "circle")
+        self.circles.append({"cx": cx, "cy": cy, "r": r})
+
+    def _add_arc_internal(self, spec: Any) -> None:
+        self._check_cap()
+        cx, cy, r, a0, a1 = self._parse_arc_fields(spec, "arc")
+        self._warn_center_offscreen(cx, cy, "arc")
+        self.arcs.append({"cx": cx, "cy": cy, "r": r, "a0": a0, "a1": a1})
+
+    def _add_wedge_internal(self, spec: Any) -> None:
+        self._check_cap()
+        cx, cy, r, a0, a1 = self._parse_arc_fields(spec, "wedge")
+        self._warn_center_offscreen(cx, cy, "wedge")
+        self.wedges.append({"cx": cx, "cy": cy, "r": r, "a0": a0, "a1": a1})
+
     # ----- apply commands --------------------------------------------------
 
     def apply_command(self, params: dict[str, Any]) -> None:
@@ -404,6 +523,15 @@ class Plane2D(PrimitiveBase):
         if "add_region" in params:
             self._add_region_internal(params["add_region"])
             return
+        if "add_circle" in params:
+            self._add_circle_internal(params["add_circle"])
+            return
+        if "add_arc" in params:
+            self._add_arc_internal(params["add_arc"])
+            return
+        if "add_wedge" in params:
+            self._add_wedge_internal(params["add_wedge"])
+            return
         # Dynamic removals (RFC-001 §4.3 — tombstone semantics)
         if "remove_point" in params:
             self._remove_point_internal(int(params["remove_point"]))
@@ -419,6 +547,15 @@ class Plane2D(PrimitiveBase):
             return
         if "remove_region" in params:
             self._remove_region_internal(int(params["remove_region"]))
+            return
+        if "remove_circle" in params:
+            self._remove_circle_internal(int(params["remove_circle"]))
+            return
+        if "remove_arc" in params:
+            self._remove_arc_internal(int(params["remove_arc"]))
+            return
+        if "remove_wedge" in params:
+            self._remove_wedge_internal(int(params["remove_wedge"]))
             return
 
     # ----- internal remove helpers (RFC-001 §4.3) --------------------------
@@ -493,6 +630,48 @@ class Plane2D(PrimitiveBase):
             )
         self.regions[idx] = _TOMBSTONE
 
+    def _remove_circle_internal(self, idx: int) -> None:
+        if not (0 <= idx < len(self.circles)):
+            raise _animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no circle[{idx}] "
+                f"(valid: 0..{len(self.circles) - 1 if self.circles else -1})",
+            )
+        if self.circles[idx] is _TOMBSTONE:
+            raise _animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' circle[{idx}] already removed",
+            )
+        self.circles[idx] = _TOMBSTONE
+
+    def _remove_arc_internal(self, idx: int) -> None:
+        if not (0 <= idx < len(self.arcs)):
+            raise _animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no arc[{idx}] "
+                f"(valid: 0..{len(self.arcs) - 1 if self.arcs else -1})",
+            )
+        if self.arcs[idx] is _TOMBSTONE:
+            raise _animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' arc[{idx}] already removed",
+            )
+        self.arcs[idx] = _TOMBSTONE
+
+    def _remove_wedge_internal(self, idx: int) -> None:
+        if not (0 <= idx < len(self.wedges)):
+            raise _animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no wedge[{idx}] "
+                f"(valid: 0..{len(self.wedges) - 1 if self.wedges else -1})",
+            )
+        if self.wedges[idx] is _TOMBSTONE:
+            raise _animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' wedge[{idx}] already removed",
+            )
+        self.wedges[idx] = _TOMBSTONE
+
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:
@@ -512,6 +691,15 @@ class Plane2D(PrimitiveBase):
         for i, reg in enumerate(self.regions):
             if reg is not _TOMBSTONE:
                 parts.append(f"region[{i}]")
+        for i, c in enumerate(self.circles):
+            if c is not _TOMBSTONE:
+                parts.append(f"circle[{i}]")
+        for i, a in enumerate(self.arcs):
+            if a is not _TOMBSTONE:
+                parts.append(f"arc[{i}]")
+        for i, w in enumerate(self.wedges):
+            if w is not _TOMBSTONE:
+                parts.append(f"wedge[{i}]")
         parts.append("all")
         return parts
 
@@ -544,6 +732,21 @@ class Plane2D(PrimitiveBase):
             idx = int(m.group("idx"))
             return idx < len(self.regions) and self.regions[idx] is not _TOMBSTONE
 
+        m = _CIRCLE_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            return idx < len(self.circles) and self.circles[idx] is not _TOMBSTONE
+
+        m = _ARC_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            return idx < len(self.arcs) and self.arcs[idx] is not _TOMBSTONE
+
+        m = _WEDGE_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            return idx < len(self.wedges) and self.wedges[idx] is not _TOMBSTONE
+
         return False
 
     # ----- annotation point resolution -------------------------------------
@@ -555,6 +758,10 @@ class Plane2D(PrimitiveBase):
         - ``P.point[i]``   — center of point *i*
         - ``P.line[i]``    — midpoint of the visible line segment
         - ``P.segment[i]`` — midpoint of the segment
+        - ``P.polygon[i]`` — centroid of the polygon
+        - ``P.circle[i]``  — center of the circle
+        - ``P.arc[i]``     — midpoint of the arc (mid-angle on the rim)
+        - ``P.wedge[i]``   — sector interior along the mid-angle (r*0.5)
 
         Returns ``None`` when the selector does not match this primitive
         or the referenced element does not exist / is tombstoned.
@@ -621,6 +828,42 @@ class Plane2D(PrimitiveBase):
                     return self.math_to_svg(cx, cy)
             return None
 
+        # --- circle (center) ---
+        m = _CIRCLE_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if idx < len(self.circles) and self.circles[idx] is not _TOMBSTONE:
+                c = self.circles[idx]
+                return self.math_to_svg(c["cx"], c["cy"])
+            return None
+
+        # --- arc (midpoint of the arc, on the rim) ---
+        m = _ARC_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if idx < len(self.arcs) and self.arcs[idx] is not _TOMBSTONE:
+                a = self.arcs[idx]
+                mid = math.radians(a["a0"] + self._arc_sweep(a["a0"], a["a1"]) / 2.0)
+                return self.math_to_svg(
+                    a["cx"] + a["r"] * math.cos(mid),
+                    a["cy"] + a["r"] * math.sin(mid),
+                )
+            return None
+
+        # --- wedge (sector interior along the mid-angle) ---
+        m = _WEDGE_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if idx < len(self.wedges) and self.wedges[idx] is not _TOMBSTONE:
+                w = self.wedges[idx]
+                mid = math.radians(w["a0"] + self._arc_sweep(w["a0"], w["a1"]) / 2.0)
+                rr = w["r"] * 0.5
+                return self.math_to_svg(
+                    w["cx"] + rr * math.cos(mid),
+                    w["cy"] + rr * math.sin(mid),
+                )
+            return None
+
         return None
 
     # ----- bounding box ----------------------------------------------------
@@ -669,7 +912,10 @@ class Plane2D(PrimitiveBase):
             f'scale({self._sx:.4f}, {self._sy:.4f})">'
         )
         parts.append(self._emit_regions())
+        parts.append(self._emit_wedges())
         parts.append(self._emit_polygons())
+        parts.append(self._emit_circles())
+        parts.append(self._emit_arcs())
         parts.append(self._emit_lines())
         parts.append(self._emit_segments())
         parts.append(self._emit_points())
@@ -956,6 +1202,137 @@ class Plane2D(PrimitiveBase):
                 f'class="scriba-plane-region scriba-state-{state}">'
                 f'<polygon points="{points_str}" '
                 f'fill="{_escape_xml(fill)}" stroke="none"/>'
+                f'</g>'
+            )
+        return "".join(parts)
+
+    # ----- Circle / arc / wedge rendering (inside transform group) ---------
+    #
+    # Aspect decision (case file §4.3): the circle is emitted as a ``<circle>``
+    # *inside* the math->SVG transform group, so ``scale(sx, sy)`` maps a
+    # math-unit radius to the geometrically-honest ellipse rx=r*|sx|, ry=r*|sy|.
+    # When ``aspect="equal"`` (the default) |sx|==|sy| so it is a true circle;
+    # when ``aspect="auto"`` it is the honest ellipse (the locus of math points
+    # at distance r really is an ellipse in pixel space).  ``non-scaling-stroke``
+    # keeps the outline width uniform under the non-uniform scale.  Arc and
+    # wedge paths follow the same convention; their sweep-flag is 1 because the
+    # CCW math arc is authored in the pre-flip local frame and the Y-flip in the
+    # transform maps it to CCW on screen.
+
+    @staticmethod
+    def _arc_sweep(a0: float, a1: float) -> float:
+        """CCW angular sweep from *a0* to *a1* in degrees, normalized to
+        ``(0, 360]``.  ``a1 == a0`` is read as a full turn (360)."""
+        delta = a1 - a0
+        while delta <= 0:
+            delta += 360.0
+        while delta > 360.0:
+            delta -= 360.0
+        return delta
+
+    @classmethod
+    def _arc_path_d(
+        cls,
+        cx: float,
+        cy: float,
+        r: float,
+        a0: float,
+        a1: float,
+        *,
+        wedge: bool,
+    ) -> str:
+        """Build the SVG path ``d`` for an arc (``wedge=False``) or a filled
+        sector (``wedge=True``) in math coordinates.  Angles in degrees, CCW."""
+        a0r = math.radians(a0)
+        a1r = math.radians(a1)
+        x0 = cx + r * math.cos(a0r)
+        y0 = cy + r * math.sin(a0r)
+        x1 = cx + r * math.cos(a1r)
+        y1 = cy + r * math.sin(a1r)
+        large = 1 if cls._arc_sweep(a0, a1) > 180.0 else 0
+        sweep = 1  # CCW in the local (pre-Y-flip) frame; see class-level note
+        if wedge:
+            return (
+                f"M {cx:.4f} {cy:.4f} L {x0:.4f} {y0:.4f} "
+                f"A {r:.4f} {r:.4f} 0 {large} {sweep} {x1:.4f} {y1:.4f} Z"
+            )
+        return (
+            f"M {x0:.4f} {y0:.4f} "
+            f"A {r:.4f} {r:.4f} 0 {large} {sweep} {x1:.4f} {y1:.4f}"
+        )
+
+    def _emit_circles(self) -> str:
+        parts: list[str] = []
+        hl_suffixes = getattr(self, "_highlighted", set())
+        for i, c in enumerate(self.circles):
+            if c is _TOMBSTONE:
+                continue
+            suffix = f"circle[{i}]"
+            target = f"{self.name}.{suffix}"
+            state = self.get_state(suffix)
+            if state == "hidden":
+                continue
+            colors = svg_style_attrs(state)
+            is_hl = suffix in hl_suffixes
+            effective_state = "highlight" if (is_hl and state == "idle") else state
+            sw = "1.5" if state == "idle" else "2"
+            parts.append(
+                f'<g data-target="{_escape_xml(target)}" '
+                f'class="scriba-plane-circle scriba-state-{effective_state}">'
+                f'<circle cx="{c["cx"]}" cy="{c["cy"]}" r="{c["r"]}" '
+                f'fill="none" stroke="{colors["stroke"]}" stroke-width="{sw}" '
+                f'vector-effect="non-scaling-stroke"/>'
+                f'</g>'
+            )
+        return "".join(parts)
+
+    def _emit_arcs(self) -> str:
+        parts: list[str] = []
+        hl_suffixes = getattr(self, "_highlighted", set())
+        for i, a in enumerate(self.arcs):
+            if a is _TOMBSTONE:
+                continue
+            suffix = f"arc[{i}]"
+            target = f"{self.name}.{suffix}"
+            state = self.get_state(suffix)
+            if state == "hidden":
+                continue
+            colors = svg_style_attrs(state)
+            is_hl = suffix in hl_suffixes
+            effective_state = "highlight" if (is_hl and state == "idle") else state
+            sw = "1.5" if state == "idle" else "2"
+            d = self._arc_path_d(a["cx"], a["cy"], a["r"], a["a0"], a["a1"], wedge=False)
+            parts.append(
+                f'<g data-target="{_escape_xml(target)}" '
+                f'class="scriba-plane-arc scriba-state-{effective_state}">'
+                f'<path d="{d}" fill="none" stroke="{colors["stroke"]}" '
+                f'stroke-width="{sw}" vector-effect="non-scaling-stroke"/>'
+                f'</g>'
+            )
+        return "".join(parts)
+
+    def _emit_wedges(self) -> str:
+        parts: list[str] = []
+        hl_suffixes = getattr(self, "_highlighted", set())
+        for i, w in enumerate(self.wedges):
+            if w is _TOMBSTONE:
+                continue
+            suffix = f"wedge[{i}]"
+            target = f"{self.name}.{suffix}"
+            state = self.get_state(suffix)
+            if state == "hidden":
+                continue
+            colors = svg_style_attrs(state)
+            is_hl = suffix in hl_suffixes
+            effective_state = "highlight" if (is_hl and state == "idle") else state
+            sw = "1.5" if state == "idle" else "2"
+            d = self._arc_path_d(w["cx"], w["cy"], w["r"], w["a0"], w["a1"], wedge=True)
+            parts.append(
+                f'<g data-target="{_escape_xml(target)}" '
+                f'class="scriba-plane-wedge scriba-state-{effective_state}">'
+                f'<path d="{d}" fill="rgba(0,114,178,0.15)" '
+                f'stroke="{colors["stroke"]}" stroke-width="{sw}" '
+                f'vector-effect="non-scaling-stroke"/>'
                 f'</g>'
             )
         return "".join(parts)

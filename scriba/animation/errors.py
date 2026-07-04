@@ -422,7 +422,7 @@ ERROR_CATALOG: dict[str, str] = {
     "E1465": "Invalid aspect value (must be 'equal' or 'auto').",
     # reserved: E1466 logged when the element cap is reached; not raised.
     "E1466": "Plane2D element cap reached.",
-    "E1467": "Malformed Plane2D add-element spec (point/line/segment/polygon/region).",
+    "E1467": "Malformed Plane2D add-element spec (point/line/segment/polygon/region/circle/arc/wedge).",
     # --- Graph primitive errors (E1470 -- E1479) ---
     "E1470": (
         "Graph requires a non-empty 'nodes' list. "
