@@ -782,7 +782,8 @@ Introduced with the full rationale in §5.4.
 - *text* supports inline math (`$...$`) and text-formatting commands.
 - An undeclared / typo'd target degrades to plain text with a soft warning
   (**E1322**) — non-fatal. Renders in print / no-JS.
-- v1 is tint-only (no baked ring); the tint tracks the target's state each
+- since 0.23.1 the target also gains a dashed ring (`scriba-ref-mark` —
+  border dash+weight only, its state colour stays); the tint tracks the target's state each
   frame, so a cell that goes `current` → `done` recolours its `\ref` word too.
 
 ### 5.16 `\focus{target}`
