@@ -31,7 +31,7 @@
 | Render a `.tex` file | §0 |
 | Pick a primitive + its params | §7 |
 | Color a cell / node by state | §6, `\recolor` §5.7 |
-| Move a cursor through an array | `\cursor` §5.10, §12 |
+| Move a cursor through an array | `\cursor` §5.11, §12 |
 | Draw a DP transition arrow | `\annotate` …`arrow_from=` §5.8, §12 |
 | Loop over indices / a computed list | `\foreach` §5.11 |
 | Compute values in Starlark | `\compute` §5.2 |
@@ -244,6 +244,14 @@ Step-through editorial walkthrough with frames, narration, and visual primitives
 
 **Delta-based semantics — operational definition:**
 Before the first `\step`, prelude commands (`\apply`, `\recolor`) set the **frame-0 state** — the initial snapshot every viewer sees before pressing Play. Each subsequent `\step` snapshots the scene; commands after that `\step` mutate the state for the *next* snapshot. Persistent commands (`\apply`, `\recolor`, `\annotate`) carry forward into all later frames until explicitly overridden. Ephemeral commands (`\highlight`, and `\annotate` with `ephemeral=true`) reset automatically at the following `\step` boundary.
+
+### 3.3 Playback behavior (reverse & emphasis)
+
+This is runtime behavior of the interactive widget, not something you author — no command turns it on.
+
+- **Stepping backward tweens.** Going to the previous frame animates the *reverse* of the motion that produced the current frame (colors ease back, added things fade out, moved things slide home), instead of snapping. The resting frame is always the exact server-rendered SVG, so the tween only smooths the trip.
+- **Jumping emphasizes.** Moving more than one step at once (where the UI allows it) snaps to the target frame and briefly **pulses the cells that changed** across the skipped steps, so the eye lands on what moved rather than trying to follow a long motion.
+- **Reduced-motion / print / no-JS.** Both degrade to an instant, correct frame with no tween and no pulse; the static SVG already shows the destination. See [motion-ruleset](spec/motion-ruleset.md) A-2 (reverse) and A-3/A-8 (emphasis, progressive enhancement).
 
 ---
 
@@ -536,6 +544,36 @@ Moves cursor through cell-indexed primitives (Array, DPTable, CodePanel, etc.). 
 \cursor{dist.cell, code.line}{2}
 ```
 Multi-target cursor applies the same index to every listed family. This keeps related views (e.g., input array and DP array; dist array and pseudo-code line) in sync without writing separate `\recolor` commands for each.
+
+**Binding caret — named `▲` pointers that slide (since 0.23.0).**
+The form above recolors cells. Adding an `id=` key instead draws a small
+`▲` caret glyph in a band just under the cell it points at, gives it a
+name, and **slides** it to its new cell when the bound index changes —
+ideal for two-pointer / sliding-window walks where `i` and `j` move
+independently. It is a separate, opt-in form: any `\cursor` without `id=`
+is the legacy recolor-hop above, unchanged.
+
+```latex
+% A caret 'i' bound to watch variable i; re-reads i every step and slides.
+\cursor{arr}{id=i, at="w.var[i]", color="state:current"}
+% A second, independent caret 'j'.
+\cursor{arr}{id=j, at="w.var[j]", color="state:done"}
+```
+
+| arg | values | default | notes |
+|-----|--------|---------|-------|
+| `id` | identifier | required (selects this form) | names the caret; a later `\cursor` with the same `id` moves it |
+| `at` | `INT` or quoted `"shape.var[name]"` | required | the cell index; the quoted binding re-reads the `VariableWatch` value each frame |
+| `color` | annotation colors or `"state:X"` | `info` | quotes required for `state:` (R-36 palette) |
+| `ephemeral` | bool | `false` | clears at the next `\step` like an annotation |
+
+An unresolvable or out-of-range binding (`at="w.var[i]"` where the value
+is blank or off the end) **soft-drops** the caret for that frame with an
+info warning — it never errors. When the caret's cell changes between
+steps it slides old→new; reduced-motion and print show it statically at
+its resolved seat. v1 works on 1-D cell/tick primitives (Array,
+DPTable-1D, Stack, Queue, NumberLine). See the smart-label ruleset R-38
+and motion-ruleset A-4 for the full contract.
 
 ### 5.12 `\foreach{var}{iterable}...\endforeach`
 Loop expansion. Iterables: `0..4`, `[1,3,5]`, `${computed_list}`.

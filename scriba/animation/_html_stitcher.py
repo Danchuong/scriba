@@ -9,6 +9,7 @@ frame id and the substory's own id (no module-level counter).
 from __future__ import annotations
 
 import html as _html
+import os
 import re
 import json as _json
 from typing import Any, Callable
@@ -609,6 +610,15 @@ def emit_interactive_html(
 
     _aria_label = _escape(label) if label else "Animation"
 
+    # Delta-emphasis opt-out. Gated on SCRIBA_NO_EMPHASIS so the default render
+    # emits no attribute and stays byte-identical to the golden corpus; only an
+    # explicit env opt-out adds it. The runtime reads it off the widget root.
+    _no_emph = (
+        ' data-scriba-no-emphasis="1"'
+        if os.environ.get("SCRIBA_NO_EMPHASIS") == "1"
+        else ""
+    )
+
     # Build the script block: inline or external.
     if inline_runtime:
         _script_block = _build_inline_script(scene_id, js_frames_str)
@@ -616,7 +626,7 @@ def emit_interactive_html(
         _script_block = _build_external_script(scene_id, _json_frames_raw, asset_base_url)
 
     widget_html = f"""\
-<div class="scriba-widget"{size_style} id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1" role="region" aria-label="{_aria_label}">
+<div class="scriba-widget"{size_style} id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1"{_no_emph} role="region" aria-label="{_aria_label}">
   <div class="scriba-stage-wrap">
     <div class="scriba-stage"></div>
     <div class="scriba-controls">

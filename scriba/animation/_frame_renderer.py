@@ -281,6 +281,15 @@ def measure_scene_layout(
             ]
             if hasattr(prim, "set_traces"):
                 prim.set_traces(prim_traces)
+            # R-38: the caret band widens bounding_box, so it must be present
+            # at measure time too (cross-frame max) or the viewBox clips it.
+            prim_cursors = [
+                c
+                for c in (getattr(frame, "cursors", None) or [])
+                if c.get("target") == shape_name
+            ]
+            if hasattr(prim, "set_cursors"):
+                prim.set_cursors(prim_cursors)
         _capture()
 
     reserved: dict[str, tuple[float, float]] = {}
@@ -663,6 +672,16 @@ def _emit_frame_svg(
         ]
         if hasattr(prim, "set_traces"):
             prim.set_traces(prim_traces)
+        # R-38 binding carets: set before emit so emit_cursors_under can draw
+        # them; the pixel (x, y) each is drawn at is read back after emit_svg
+        # (below) into the shared frame.cursors dicts for the differ.
+        prim_cursors = [
+            c
+            for c in (getattr(frame, "cursors", None) or [])
+            if c.get("target") == shape_name
+        ]
+        if hasattr(prim, "set_cursors"):
+            prim.set_cursors(prim_cursors)
 
         bbox = prim.bounding_box()
         _, _, bw, bh = _normalize_bbox(bbox)
@@ -743,6 +762,17 @@ def _emit_frame_svg(
             ))
         else:
             svg_parts.append(prim.emit_svg(render_inline_tex=render_inline_tex))
+
+        # R-38: copy each caret's drawn pixel (x, y) back into the shared
+        # frame.cursors dicts so the differ can emit cursor_move. This mirrors
+        # _inject_tree_positions but runs in-emit because the caret publishes
+        # via get_cursor_positions rather than through shape_states.
+        if prim_cursors and hasattr(prim, "get_cursor_positions"):
+            drawn = prim.get_cursor_positions()
+            for c in prim_cursors:
+                xy = drawn.get(f"{shape_name}.cursor[{c.get('id')}]-solo")
+                if xy is not None:
+                    c["x"], c["y"] = xy
 
         svg_parts.append("</g>")
         if reserved_offsets is None:

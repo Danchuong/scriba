@@ -307,6 +307,8 @@ class DPTablePrimitive(PrimitiveBase):
         # swallow an under-stroke) but below pills/arrows; digits
         # stay legible via the global paint-order halo
         self.emit_traces_under(lines)
+        # R-38 binding carets ride the same decoration band as traces.
+        self.emit_cursors_under(lines)
 
         if effective_anns:
             self.emit_annotation_arrows(
@@ -407,6 +409,8 @@ class DPTablePrimitive(PrimitiveBase):
             ) + lane
         else:
             h = float(th) + lane
+        # R-38: keep a below-cell binding caret inside the box (0 when none).
+        h = max(h, self._cursor_extent_below())
         # Reserve space above for arrow annotations and position=above labels.
         arrow_above = self._reserved_arrow_above()
         h += arrow_above

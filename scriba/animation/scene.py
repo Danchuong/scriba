@@ -144,6 +144,23 @@ class TraceEntry:
 
 
 @dataclass(frozen=True)
+class CursorEntry:
+    """A named binding-caret on one shape (R-38).
+
+    Persistent by default; re-issuing the same ``(target, cursor_id)`` replaces
+    the entry (a *move*, realised as a new resolved index next frame). ``at`` is
+    the unresolved binding spec — a literal ``"3"`` or a ``"shape.var[name]"``
+    selector re-read every frame at emit build time.
+    """
+
+    target: str  # shape name
+    cursor_id: str
+    at: str
+    color: str = "info"
+    ephemeral: bool = False
+
+
+@dataclass(frozen=True)
 class FrameSnapshot:
     """Immutable snapshot of the scene at one frame.
 
@@ -157,6 +174,7 @@ class FrameSnapshot:
     annotations: tuple[AnnotationEntry, ...]
     bindings: dict[str, Any]
     traces: tuple["TraceEntry", ...] = ()
+    cursors: tuple["CursorEntry", ...] = ()
     narration: str | None = None
 
 
@@ -180,6 +198,7 @@ class SceneState:
     highlights: set[str] = field(default_factory=set)
     annotations: list[AnnotationEntry] = field(default_factory=list)
     traces: list["TraceEntry"] = field(default_factory=list)
+    cursors: list["CursorEntry"] = field(default_factory=list)
     _trace_counter: int = 0
     bindings: dict[str, Any] = field(default_factory=dict)
     _frame_counter: int = 0
@@ -233,6 +252,7 @@ class SceneState:
         self.highlights.clear()
         self.annotations = [a for a in self.annotations if not a.ephemeral]
         self.traces = [tr for tr in self.traces if not tr.ephemeral]
+        self.cursors = [c for c in self.cursors if not c.ephemeral]
 
         # Frame-local compute — deep-copy to prevent mutable state leakage
         saved_bindings = copy.deepcopy(self.bindings)
@@ -283,6 +303,7 @@ class SceneState:
             highlights=frozenset(self.highlights),
             annotations=tuple(self.annotations),
             traces=tuple(self.traces),
+            cursors=tuple(self.cursors),
             bindings=dict(self.bindings),
             narration=narration,
         )
@@ -909,7 +930,14 @@ class SceneState:
         1. Find the element currently in ``curr_state`` and set it to ``prev_state``.
         2. Set ``target_prefix[index]`` to ``curr_state``.
         If no element is currently in ``curr_state`` (first call), skip step 1.
+
+        The R-38 binding-caret form (``cursor_id`` set) is a *different animal*
+        — a named glyph decoration, not a state-hop — and branches away here.
         """
+        if cmd.cursor_id is not None:
+            self._apply_cursor_binding(cmd)
+            return
+
         for target_prefix in cmd.targets:
             # Find the shape name (part before the first dot)
             shape_name = target_prefix.split(".")[0]
@@ -926,6 +954,32 @@ class SceneState:
             target_state = self._ensure_target(new_key)
             target_state = replace(target_state, state=cmd.curr_state)
             self.shape_states[shape_name][new_key] = target_state
+
+    def _apply_cursor_binding(self, cmd: CursorCommand) -> None:
+        """R-38 named binding-caret — a persistent decoration keyed by
+        ``(target, cursor_id)``, update-in-place on re-issue (that IS a move,
+        realised as a new resolved index next frame). Adds **no**
+        ``shape_states`` churn, so it never contaminates cell diffs — the exact
+        opposite of the legacy hop. Shape must exist (mirrors \\trace E1116)."""
+        shape = cmd.targets[0]
+        if shape not in self.shape_states:
+            raise _animation_error(
+                "E1116",
+                f"\\cursor references undeclared shape '{shape}'",
+                hint=f"declare '{shape}' with \\shape before using \\cursor",
+            )
+        entry = CursorEntry(
+            target=shape,
+            cursor_id=cmd.cursor_id,
+            at=cmd.at or "0",
+            color=cmd.color or "info",
+            ephemeral=cmd.ephemeral,
+        )
+        for i, existing in enumerate(self.cursors):
+            if existing.target == shape and existing.cursor_id == cmd.cursor_id:
+                self.cursors[i] = entry
+                return
+        self.cursors.append(entry)
 
     def _ensure_target(self, target: str) -> ShapeTargetState:
         """Find or create a target state entry.

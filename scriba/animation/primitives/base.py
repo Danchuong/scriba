@@ -242,6 +242,15 @@ def _trace_arrowhead(prev_pt, tip_pt, size: float = 7.0) -> str:
     )
 
 
+# R-38 binding-caret geometry: a ``▲`` pointing up at the bound cell from a
+# band just below the row, with the cursor id as a small label beneath it.
+_CURSOR_GAP: float = 6.0       # cell bottom -> caret apex
+_CURSOR_H: float = 8.0         # apex -> base height of the ▲
+_CURSOR_HALF_W: float = 5.0    # half the ▲ base width
+_CURSOR_ID_FONT_PX: int = 11   # id label font
+_CURSOR_ID_DY: float = 11.0    # ▲ base -> id label baseline
+
+
 class PrimitiveBase(abc.ABC):
     """Base class for all animation primitives.
 
@@ -593,6 +602,104 @@ class PrimitiveBase(abc.ABC):
                 f' aria-label="{_escape_xml(strip_math_markup(str(label or "trace")))}">'
                 f"{inner}</g>"
             )
+
+    def set_cursors(self, cursors: "list[dict]") -> None:
+        """Attach this frame's R-38 binding carets (cell index already
+        resolved by the renderer build phase)."""
+        self._cursors = list(cursors)
+
+    def _cursor_cell_suffix(self, index: "int") -> str:
+        """Map a caret's resolved index to this primitive's cell selector
+        suffix. NumberLine overrides to ``tick[i]``."""
+        return f"cell[{int(index)}]"
+
+    def get_cursor_positions(self) -> "dict[str, tuple[float, float]]":
+        """Return ``{annotation_key: (x, y)}`` for the carets drawn by the last
+        ``emit_cursors_under``. Read back into the wire after ``emit_svg`` so
+        the differ can emit ``cursor_move`` (mirror of ``get_node_positions``)."""
+        return dict(getattr(self, "_cursor_positions", {}))
+
+    def emit_cursors_under(self, parts: "list[str]") -> None:
+        """Paint every R-38 binding caret — a ``▲`` pointing up at its bound
+        cell from a band just below the row, the cursor id a small label
+        beneath. The group carries the annotation structure contract
+        (``data-annotation="{shape}.cursor[{id}]-solo"``, a fresh ``cursor``
+        infix that can never collide with a trace/annotation key), so the
+        shipped runtime's ``annotation_add``/``annotation_remove`` fade it
+        in/out for free; a resolved cell change rides the new ``cursor_move``
+        kind. Geometry runs through the live cell resolvers so the dynamic
+        content-based pitch is honoured; an out-of-range index soft-drops that
+        caret. Records the drawn apex ``(x, y)`` for ``get_cursor_positions``.
+        """
+        self._cursor_positions: "dict[str, tuple[float, float]]" = {}
+        for cur in getattr(self, "_cursors", []):
+            index = cur.get("index")
+            if index is None:
+                continue
+            sel = f"{self.name}.{self._cursor_cell_suffix(index)}"
+            top = self.resolve_annotation_point(sel)
+            center = self.resolve_label_anchor(sel)
+            if top is None or center is None:
+                continue  # out-of-range -> soft-drop (mirrors selectors)
+            cx = center[0]
+            # cell bottom = center + (center - top); place the apex a small gap
+            # below it. cx/center come from the live cell geometry, so the
+            # caret tracks the 0.22.1 content-based pitch automatically.
+            apex_y = center[1] + (center[1] - top[1]) + _CURSOR_GAP
+            base_y = apex_y + _CURSOR_H
+            cid = str(cur.get("id", "c"))
+            color = cur.get("color", "info")
+            key = f"{self.name}.cursor[{cid}]-solo"
+            style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+            stroke = style["stroke"]
+            pts = (
+                f"{cx:.1f},{apex_y:.1f} "
+                f"{cx - _CURSOR_HALF_W:.1f},{base_y:.1f} "
+                f"{cx + _CURSOR_HALF_W:.1f},{base_y:.1f}"
+            )
+            inner = (
+                f'<polygon points="{pts}" fill="{stroke}"/>'
+                f'<text x="{cx:.1f}" y="{base_y + _CURSOR_ID_DY:.1f}"'
+                f' fill="{stroke}" font-size="{_CURSOR_ID_FONT_PX}"'
+                f' style="text-anchor:middle;dominant-baseline:central">'
+                f"{_escape_xml(strip_math_markup(cid))}</text>"
+            )
+            parts.append(
+                f'  <g class="scriba-annotation scriba-annotation-'
+                f'{annotation_color_class(color)}"'
+                f' data-annotation="{_escape_xml(key)}"'
+                f' role="graphics-symbol" aria-roledescription="cursor"'
+                f' aria-label="{_escape_xml(cid)}">'
+                f"{inner}</g>"
+            )
+            self._cursor_positions[key] = (cx, apex_y)
+
+    def _cursor_extent_below(self) -> float:
+        """R-38: the deepest local-y any binding caret reaches this frame, so
+        ``bounding_box`` can grow to keep the ``▲`` + id inside the viewBox.
+
+        Returns ``0.0`` when there is no caret, so every non-cursor primitive
+        and frame is byte-identical. Self-contained — it resolves each caret's
+        cell exactly as ``emit_cursors_under`` does, so measured and painted
+        extents can never disagree.
+        """
+        extent = 0.0
+        for cur in getattr(self, "_cursors", []):
+            index = cur.get("index")
+            if index is None:
+                continue
+            sel = f"{self.name}.{self._cursor_cell_suffix(index)}"
+            top = self.resolve_annotation_point(sel)
+            center = self.resolve_label_anchor(sel)
+            if top is None or center is None:
+                continue
+            cell_bottom = center[1] + (center[1] - top[1])
+            caret_bottom = (
+                cell_bottom
+                + _CURSOR_GAP + _CURSOR_H + _CURSOR_ID_DY + _CURSOR_ID_FONT_PX / 2.0
+            )
+            extent = max(extent, caret_bottom)
+        return extent
 
     def set_min_arrow_above(self, value: int) -> None:
         """Set minimum vertical space to reserve above cells for arrows.

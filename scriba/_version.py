@@ -3,7 +3,7 @@
 __version__: str = "0.22.2"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 15
+SCRIBA_VERSION: int = 16
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -137,4 +137,13 @@ the new surface. The new surface itself — ``block[r0:r1][c0:c1]``,
 ``bracket=true``, ``color="state:X"``, ``leader=true``, ``\\trace`` — is
 opt-in and leaves existing documents' geometry untouched. Consumer caches
 keyed on rendered output MUST invalidate.
+
+0.23.0-dev bumps 15→16 (motion phase A): the runtime core gains reverse
+tweening (Prev/ArrowLeft now animate via manifest inversion), delta
+emphasis on arrival, the cursor_move handler, an annotation_recolor
+handler (previously a silent no-op off the full-sync path) and a
+position-pill key fallback — the inline script and external runtime hash
+change in every widget. New author surface (\\cursor id=/at= binding
+carets) is opt-in and leaves non-cursor documents' geometry untouched.
+Consumer caches keyed on rendered output MUST invalidate.
 """

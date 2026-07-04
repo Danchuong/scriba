@@ -388,6 +388,8 @@ class GridPrimitive(PrimitiveBase):
         # swallow an under-stroke) but below pills/arrows; digits
         # stay legible via the global paint-order halo
         self.emit_traces_under(lines)
+        # R-38 binding carets ride the same decoration band as traces.
+        self.emit_cursors_under(lines)
 
         if effective_anns:
             self.emit_annotation_arrows(
@@ -415,6 +417,8 @@ class GridPrimitive(PrimitiveBase):
         h = th + self._below_lane_height() + self._caption_block_height(tw)
         if self.label is not None:
             h += _CAPTION_CLEAR_GAP
+        # R-38: keep a below-cell binding caret inside the box (0 when none).
+        h = max(h, self._cursor_extent_below())
         arrow_above = self._reserved_arrow_above()
         h += arrow_above
         # #1: reserve horizontal room for position=left/right pills. Both pads

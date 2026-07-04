@@ -274,14 +274,24 @@ class ForeachCommand:
 class CursorCommand:
     """``\\cursor{targets}{index}`` — advance a cursor across one or more shape accessors.
 
-    Finds the element currently in *curr_state*, sets it to *prev_state*,
-    then sets ``target_prefix[index]`` to *curr_state*.
+    Two forms share this node (R-38). The **legacy** form
+    (``\\cursor{targets}{index}``) finds the element currently in *curr_state*,
+    sets it to *prev_state*, then sets ``target_prefix[index]`` to *curr_state*
+    — a stateless recolor-hop. The **binding-caret** form
+    (``\\cursor{shape}{id=i, at="w.var[i]", color=...}``, discriminated by the
+    ``id=`` key) populates *cursor_id* / *at* / *color* and emits a ``▲`` caret
+    glyph that slides between cells; the legacy fields are then inert. The new
+    fields default to ``None`` so every existing construction is unchanged.
     """
 
     targets: tuple[str, ...]
     index: int | str
     prev_state: str = "dim"
     curr_state: str = "current"
+    cursor_id: str | None = None
+    at: str | None = None
+    color: str | None = None
+    ephemeral: bool = False
     line: int = 0
     col: int = 0
 

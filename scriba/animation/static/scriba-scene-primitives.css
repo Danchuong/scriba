@@ -860,6 +860,75 @@
 }
 
 /* ============================================
+   Motion & narration binding (motion-ruleset A-3 / A-7)
+   ============================================
+
+   Emphasis, defocus and \ref narration ink — landed together so the CSS
+   churns once for both the motion-runtime phase (emphasis/defocus) and the
+   narration-binding phase (\ref). Emphasis and defocus are a transient
+   salience CHANNEL disjoint from persistent state (A-3): they ride
+   compositor-only props (transform / opacity) so the resting SVG stays
+   byte-identical to the un-emphasised frame, bounding_box() is untouched,
+   and the full-sync flag stays 0. All motion here degrades to a no-op under
+   reduced motion (see the reduced-motion block below) — the static SVG at
+   rest already shows the destination, so the tween is pure enhancement (A-8). */
+
+/* A-3 — emphasis: a short compositor-only pulse. Applied either as an
+   additive baked class on a <g data-target> (\ref) or driven by the runtime
+   WAAPI pulse on a jump arrival; either way it never writes scene state and
+   its resting keyframe is scale(1), so a frame shown statically (print /
+   no-JS) is identical to one with no emphasis. transform-box:fill-box pivots
+   the scale about the element's OWN box rather than the SVG user-space
+   origin, so the pulse does not also translate the glyph. */
+@keyframes scriba-emphasis-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+.scriba-emphasis {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: scriba-emphasis-pulse 700ms ease-out;
+}
+
+/* A-3 — \focus defocus: dims every addressable cell OUTSIDE the focus set for
+   one frame; ephemeral, cleared at the next \step. Opacity only, so it is
+   compositor-friendly and theme-neutral (dark mode needs no separate token —
+   0.35 reads as "muted" on either surface). A defocused cell keeps its own
+   scriba-state-* class; the dim is an orthogonal overlay. */
+.scriba-defocused {
+  opacity: 0.35;
+  transition: opacity 180ms ease-out;
+}
+
+/* A-7 — \ref narration ink: colours a referenced word in the narration <p>
+   to match its target's current state, so naming a cell also points at it.
+   These are HTML <span>s sitting on the page background, so they take `color`
+   and the WCAG-AA --scriba-annotation-state-* inks (R-36), NOT the pill fills
+   (which are unreadable as text ink on white). A bare \ref — target has no
+   signal state — takes the info ink. */
+.scriba-ref               { color: var(--scriba-annotation-info); }
+.scriba-ref-state-current { color: var(--scriba-annotation-state-current); }
+.scriba-ref-state-done    { color: var(--scriba-annotation-state-done); }
+.scriba-ref-state-dim     { color: var(--scriba-annotation-state-dim); }
+.scriba-ref-state-good    { color: var(--scriba-annotation-state-good); }
+.scriba-ref-state-error   { color: var(--scriba-annotation-state-error); }
+.scriba-ref-state-path    { color: var(--scriba-annotation-state-path); }
+
+/* KNOWN-DEAD: .scriba-highlighted intentionally has no rule. The runtime
+   toggles this class during a highlight transition, but no primitive bakes it
+   and no rule paints it — \highlight's only visible effect is the idle ->
+   scriba-state-highlight class swap. .scriba-emphasis above is the real,
+   disjoint salience channel; retrofitting a paint onto .scriba-highlighted
+   would change \highlight semantics on already-coloured cells and re-bless the
+   golden corpus, so it is deliberately left inert. See motion-ruleset A-3. */
+
+/* Caret cursors (motion-ruleset A-4) need NO rule here: the ▲ glyph rides the
+   annotation structure contract (<g class="scriba-annotation scriba-annotation-
+   state-X">), so its <polygon>/<text> are already painted by the R-36 state
+   classes above; base-colour carets fall back to inline fill exactly like
+   \trace arrowheads. */
+
+/* ============================================
    Accessibility — reduced motion
    ============================================ */
 
@@ -890,6 +959,16 @@
   [data-target] > line,
   [data-target] > text {
     transition-duration: 0ms !important;
+  }
+
+  /* A-3/A-8: emphasis is pure enhancement — kill the pulse outright so the
+     element rests at scale(1). Defocus keeps its 0.35 opacity (the dim is a
+     static signal, not motion) but drops the fade transition. */
+  .scriba-emphasis {
+    animation: none !important;
+  }
+  .scriba-defocused {
+    transition: none !important;
   }
 }
 

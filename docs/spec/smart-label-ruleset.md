@@ -560,6 +560,43 @@ generation-token race guard and reduced-motion/print static fallbacks.
 `test_painted_above_cells_below_annotations`,
 `test_new_trace_emits_annotation_add`.
 
+### R-38 — `\cursor{…}{id=,at=,color=}`: a named binding caret that slides
+
+**Normative:** SHOULD
+**Since:** v0.23.0-dev
+
+The new-form `\cursor` — discriminated by the `id=` key, so the legacy
+`{targets}{index}` recolor-hop and its ~232-token golden surface stay
+byte-identical — emits a `▲` caret inside
+`<g data-annotation="{shape}.cursor[{id}]-solo">`, carrying the annotation
+structure contract so the shipped `annotation_add`/`annotation_remove`
+handlers fade it in/out with no new appear/disappear code. `at=`
+re-resolves the cell index every frame (`at=INT` or the quoted
+`at="shape.var[name]"`, which reads the bound `VariableWatch` value); an
+unparseable or out-of-range binding soft-drops the caret for that frame
+(E1184, info) rather than erroring. A named caret whose resolved cell
+changes between steps emits a **`cursor_move`** transition — the one new
+runtime handler — sliding old→new; `position_move` is deliberately NOT
+reused because it ends the tween at the element's old seat (a visible
+lurch for a focus glyph). The caret's `<polygon>`/`<text>` are painted by
+the R-36 annotation-state classes (`color="state:X"`) or fall back to
+inline fill for base colors, so R-38 needs no new CSS. Persistent by
+default; `ephemeral=true` clears at the next `\step`. v1 scope: 1-D
+cell/tick primitives (Array, DPTable-1D, Stack, Queue, NumberLine). The
+caret's *motion law* is [motion-ruleset](./motion-ruleset.md) A-4 (a marker
+is a decoration with identity); this card governs its emit + grammar.
+
+**Code ref:** `scriba/animation/scene.py:_apply_cursor`
+(legacy branch preserved; new-form branches on the `id=` key);
+new caret plumbing `scriba/animation/differ.py` `_diff_cursors`,
+`scriba/animation/primitives/base.py` `emit_cursors_under`,
+`scriba/animation/static/scriba.js` `cursor_move`
+(pending v0.23.0-dev, multi-cursor phase).
+**Test ref:** `tests/unit/test_cursor_command.py`
+(legacy `\cursor` byte-stability);
+new-form pins `tests/unit/test_multicursor.py`
+(pending v0.23.0-dev, multi-cursor phase).
+
 ### R-07 — Leader threshold formula
 
 **Normative:** MUST

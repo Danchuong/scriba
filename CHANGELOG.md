@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — animation-clarity Phase A (`SCRIBA_VERSION` →16)
+- **Reverse & jump navigation now animate** (A-2): Prev/ArrowLeft tween by
+  inverting the step's delta manifest (all 10 transition kinds are closed
+  under inversion — probe-proven); multi-step jumps snap and then
+  delta-emphasize what changed. Previously half of all navigation hard-
+  snapped.
+- **Delta-emphasis on arrival** (A-3): the exact targets that changed
+  pulse briefly (compositor-only transform, ≤8 targets, honours
+  `prefers-reduced-motion`, opt-out via `SCRIBA_NO_EMPHASIS=1`).
+- **Named binding carets** (R-38): `\cursor{a}{id=i, at="w.var[i]",
+  color="state:current"}` — multiple ▲ carets coexist, re-resolve a
+  VariableWatch value each frame, and SLIDE between cells via the new
+  `cursor_move` transition; legacy `\cursor{targets}{index}` unchanged.
+- **Two dormant runtime gaps fixed**: `annotation_recolor` finally has a
+  JS handler (a `\reannotate` color change no longer depends on the
+  full-sync path), and position-pill add/remove/recolor tweens find their
+  element through a key fallback (differ keys `-solo` vs emitter
+  `-position-*` had silently no-opped them since 0.11).
+- **`docs/spec/motion-ruleset.md`** — the A-0..A-8 motion invariants
+  (identity-diff motion, mandatory inverses, emphasis-vs-state
+  separation, marker identity, macro-frame indistinguishability, layout
+  mutation via prescan, narration binding, reduced-motion ground truth);
+  `check_ruleset_sync` now verifies BOTH rulesets (39 R + 8 A cards).
+  Case files: `investigations/anim-{runtime-reverse,multicursor,
+  narrate-focus,unified-motion-model}.md`.
+
 ## [0.22.2] - 2026-07-04 — Diagram-clarity decorations: trace, block, state colors
 
 ### Added

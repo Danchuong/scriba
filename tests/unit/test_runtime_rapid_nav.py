@@ -39,7 +39,7 @@ _SOURCES = {
 
 def _animate_transition_body(src: str) -> str:
     m = re.search(
-        r"function animateTransition\(toIdx\)\{.*?(?=function show\()",
+        r"function animateTransition\(toIdx[^)]*\)\{.*?(?=function show\()",
         src,
         re.S,
     )

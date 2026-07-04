@@ -270,6 +270,52 @@ def _diff_traces(
     return out
 
 
+def _diff_cursors(
+    prev_cursors: "list[dict]",
+    curr_cursors: "list[dict]",
+) -> "list[Transition]":
+    """R-38: named binding-carets keyed by ``{shape}.cursor[{id}]-solo``.
+
+    A caret whose resolved cell changed between steps slides via the dedicated
+    ``cursor_move`` kind — ``position_move`` cannot, because it ends the tween
+    at the element's OLD seat (anim-multicursor.md §2.3). Appear/disappear reuse
+    the annotation fade verbatim. The caret adds no ``shape_states`` churn, so
+    it never contaminates cell diffs.
+    """
+    def _key(c: dict) -> str:
+        return f"{c.get('target', '')}.cursor[{c.get('id', '')}]-solo"
+
+    prev_map = {_key(c): c for c in prev_cursors}
+    curr_map = {_key(c): c for c in curr_cursors}
+    out: list[Transition] = []
+    for key in sorted(prev_map.keys() | curr_map.keys()):
+        p, c = prev_map.get(key), curr_map.get(key)
+        if c is not None and p is None:
+            out.append(Transition(
+                target=key, prop="add", from_val=None,
+                to_val=c.get("color"), kind="annotation_add",
+            ))
+        elif p is not None and c is None:
+            out.append(Transition(
+                target=key, prop="remove", from_val=p.get("color"),
+                to_val=None, kind="annotation_remove",
+            ))
+        else:
+            px, py = p.get("x"), p.get("y")
+            cx, cy = c.get("x"), c.get("y")
+            if (
+                px is not None
+                and cx is not None
+                and (px != cx or py != cy)
+            ):
+                out.append(Transition(
+                    target=key, prop="position",
+                    from_val=f"{px},{py}", to_val=f"{cx},{cy}",
+                    kind="cursor_move",
+                ))
+    return out
+
+
 def _diff_annotations(
     prev_anns: list[dict],
     curr_anns: list[dict],
@@ -362,6 +408,12 @@ def compute_transitions(prev: FrameData, curr: FrameData) -> TransitionManifest:
         _diff_traces(
             getattr(prev, "traces", None) or [],
             getattr(curr, "traces", None) or [],
+        ),
+    )
+    transitions.extend(
+        _diff_cursors(
+            getattr(prev, "cursors", None) or [],
+            getattr(curr, "cursors", None) or [],
         ),
     )
 

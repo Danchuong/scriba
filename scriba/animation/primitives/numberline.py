@@ -229,6 +229,10 @@ class NumberLinePrimitive(PrimitiveBase):
     def _trace_cell_suffix(self, cell) -> str:
         return f"tick[{int(cell)}]"
 
+    def _cursor_cell_suffix(self, index) -> str:
+        # R-38: NumberLine cells are ticks; the caret binds a tick center.
+        return f"tick[{int(index)}]"
+
     def emit_svg(
         self,
         *,
@@ -333,6 +337,8 @@ class NumberLinePrimitive(PrimitiveBase):
         # swallow an under-stroke) but below pills/arrows; digits
         # stay legible via the global paint-order halo
         self.emit_traces_under(lines)
+        # R-38 binding carets ride the same decoration band as traces.
+        self.emit_cursors_under(lines)
 
         if effective_anns:
             self.emit_annotation_arrows(
@@ -369,6 +375,9 @@ class NumberLinePrimitive(PrimitiveBase):
         h += below_lane + self._caption_block_height(self.width)
         if self.label is not None:
             h += _CAPTION_CLEAR_GAP
+
+        # R-38: keep a below-tick binding caret inside the box (0 when none).
+        h = max(h, self._cursor_extent_below())
 
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above

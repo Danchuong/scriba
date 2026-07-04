@@ -868,6 +868,75 @@
 }
 
 /* ============================================
+   Motion & narration binding (motion-ruleset A-3 / A-7)
+   ============================================
+
+   Emphasis, defocus and \ref narration ink — landed together so the CSS
+   churns once for both the motion-runtime phase (emphasis/defocus) and the
+   narration-binding phase (\ref). Emphasis and defocus are a transient
+   salience CHANNEL disjoint from persistent state (A-3): they ride
+   compositor-only props (transform / opacity) so the resting SVG stays
+   byte-identical to the un-emphasised frame, bounding_box() is untouched,
+   and the full-sync flag stays 0. All motion here degrades to a no-op under
+   reduced motion (see the reduced-motion block below) — the static SVG at
+   rest already shows the destination, so the tween is pure enhancement (A-8). */
+
+/* A-3 — emphasis: a short compositor-only pulse. Applied either as an
+   additive baked class on a <g data-target> (\ref) or driven by the runtime
+   WAAPI pulse on a jump arrival; either way it never writes scene state and
+   its resting keyframe is scale(1), so a frame shown statically (print /
+   no-JS) is identical to one with no emphasis. transform-box:fill-box pivots
+   the scale about the element's OWN box rather than the SVG user-space
+   origin, so the pulse does not also translate the glyph. */
+@keyframes scriba-emphasis-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+.scriba-emphasis {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: scriba-emphasis-pulse 700ms ease-out;
+}
+
+/* A-3 — \focus defocus: dims every addressable cell OUTSIDE the focus set for
+   one frame; ephemeral, cleared at the next \step. Opacity only, so it is
+   compositor-friendly and theme-neutral (dark mode needs no separate token —
+   0.35 reads as "muted" on either surface). A defocused cell keeps its own
+   scriba-state-* class; the dim is an orthogonal overlay. */
+.scriba-defocused {
+  opacity: 0.35;
+  transition: opacity 180ms ease-out;
+}
+
+/* A-7 — \ref narration ink: colours a referenced word in the narration <p>
+   to match its target's current state, so naming a cell also points at it.
+   These are HTML <span>s sitting on the page background, so they take `color`
+   and the WCAG-AA --scriba-annotation-state-* inks (R-36), NOT the pill fills
+   (which are unreadable as text ink on white). A bare \ref — target has no
+   signal state — takes the info ink. */
+.scriba-ref               { color: var(--scriba-annotation-info); }
+.scriba-ref-state-current { color: var(--scriba-annotation-state-current); }
+.scriba-ref-state-done    { color: var(--scriba-annotation-state-done); }
+.scriba-ref-state-dim     { color: var(--scriba-annotation-state-dim); }
+.scriba-ref-state-good    { color: var(--scriba-annotation-state-good); }
+.scriba-ref-state-error   { color: var(--scriba-annotation-state-error); }
+.scriba-ref-state-path    { color: var(--scriba-annotation-state-path); }
+
+/* KNOWN-DEAD: .scriba-highlighted intentionally has no rule. The runtime
+   toggles this class during a highlight transition, but no primitive bakes it
+   and no rule paints it — \highlight's only visible effect is the idle ->
+   scriba-state-highlight class swap. .scriba-emphasis above is the real,
+   disjoint salience channel; retrofitting a paint onto .scriba-highlighted
+   would change \highlight semantics on already-coloured cells and re-bless the
+   golden corpus, so it is deliberately left inert. See motion-ruleset A-3. */
+
+/* Caret cursors (motion-ruleset A-4) need NO rule here: the ▲ glyph rides the
+   annotation structure contract (<g class="scriba-annotation scriba-annotation-
+   state-X">), so its <polygon>/<text> are already painted by the R-36 state
+   classes above; base-colour carets fall back to inline fill exactly like
+   \trace arrowheads. */
+
+/* ============================================
    Accessibility — reduced motion
    ============================================ */
 
@@ -898,6 +967,16 @@
   [data-target] > line,
   [data-target] > text {
     transition-duration: 0ms !important;
+  }
+
+  /* A-3/A-8: emphasis is pure enhancement — kill the pulse outright so the
+     element rests at scale(1). Defocus keeps its 0.35 opacity (the dim is a
+     static signal, not motion) but drops the fade transition. */
+  .scriba-emphasis {
+    animation: none !important;
+  }
+  .scriba-defocused {
+    transition: none !important;
   }
 }
 
@@ -5329,6 +5408,8 @@ khi chi xet <span class="scriba-tex-math-inline"><span class="katex"><span class
     var DUR_ARROWHEAD=36;
     var DUR_STAGGER=50;
     var DUR_SYNC_FUDGE=20;
+    var DUR_EMPH=700;
+    var EMPH_CAP=8;
     var _speed=parseFloat(W.getAttribute('data-scriba-speed'))||1;
     function _dur(ms){return Math.round(ms/_speed);}
     function _cancelAnims(){
@@ -5395,6 +5476,19 @@ khi chi xet <span class="scriba-tex-math-inline"><span class="katex"><span class
       var hw=size*0.5;
       return tip.x+','+tip.y+' '+(tip.x-ux*size+px*hw)+','+(tip.y-uy*size+py*hw)+' '+(tip.x-ux*size-px*hw)+','+(tip.y-uy*size-py*hw);
     }
+    function _annEl(root,target){
+      var el=root.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
+      if(el)return el;
+      var base=target.replace(/-solo$/,'');
+      if(base!==target){
+        var sides=['above','below','left','right'];
+        for(var i=0;i<sides.length;i++){
+          el=root.querySelector('[data-annotation="'+_cssEscape(base+'-position-'+sides[i])+'"]');
+          if(el)return el;
+        }
+      }
+      return null;
+    }
     function _applyTransition(rec,parsed,pending){
       var target=rec[0],prop=rec[1],fromVal=rec[2],toVal=rec[3],kind=rec[4];
       var sel='[data-target="'+_cssEscape(target)+'"]';
@@ -5409,7 +5503,7 @@ khi chi xet <span class="scriba-tex-math-inline"><span class="katex"><span class
       }else if(kind==='value_change'){
         var el2=stage.querySelector(sel);
         if(el2){var txt=el2.querySelector('text');
-          if(txt&&String(toVal).indexOf('$')===-1){txt.textContent=toVal;}
+          if(txt&&toVal!=null&&String(toVal).indexOf('$')===-1){txt.textContent=toVal;}
           var vt=txt||el2.querySelector('foreignObject > div');
           if(vt&&_canAnim){vt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
             {duration:_dur(DUR_VALUE),easing:'ease-out'});}
@@ -5472,14 +5566,14 @@ khi chi xet <span class="scriba-tex-math-inline"><span class="katex"><span class
           _anims.push(a9);pending.push(a9.finished);
         }
       }else if(kind==='annotation_remove'){
-        var el7=stage.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
+        var el7=_annEl(stage,target);
         if(el7){
           var a7=el7.animate([{opacity:1},{opacity:0}],
             {duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
           _anims.push(a7);pending.push(a7.finished);
         }
       }else if(kind==='annotation_add'){
-        var src8=parsed.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
+        var src8=_annEl(parsed,target);
         if(src8){
           var clone8=document.adoptNode(src8.cloneNode(true));
           var srcParent=src8.parentNode;
@@ -5549,11 +5643,58 @@ khi chi xet <span class="scriba-tex-math-inline"><span class="katex"><span class
             }
           }
         }
+      }else if(kind==='annotation_recolor'){
+        var elar=_annEl(stage,target);
+        if(elar){
+          var car=elar.className.baseVal||elar.className||'';
+          car=car.replace('scriba-annotation-'+String(fromVal).replace(/:/g,'-'),'scriba-annotation-'+String(toVal).replace(/:/g,'-'));
+          if(elar.className.baseVal!==undefined)elar.className.baseVal=car;
+          else elar.className=car;
+        }
+      }else if(kind==='cursor_move'){
+        var elc=stage.querySelector('[data-annotation="'+_cssEscape(target)+'"]');
+        if(elc){
+          var cf=fromVal.split(','),ct=toVal.split(',');
+          var cdx=parseFloat(ct[0])-parseFloat(cf[0]);
+          var cdy=parseFloat(ct[1])-parseFloat(cf[1]);
+          var ac=elc.animate([
+            {transform:'translate(0,0)'},
+            {transform:'translate('+cdx+'px,'+cdy+'px)'}
+          ],{duration:_dur(DUR),easing:'cubic-bezier(0.16,1,0.3,1)',fill:'forwards'});
+          _anims.push(ac);pending.push(ac.finished);
+        }
       }
     }
-    function animateTransition(toIdx){
+    var _INV_KIND={annotation_add:'annotation_remove',annotation_remove:'annotation_add',element_add:'element_remove',element_remove:'element_add',highlight_on:'highlight_off',highlight_off:'highlight_on'};
+    function _invertRec(r){
+      return [r[0],r[1],r[3],r[2],_INV_KIND[r[4]]||r[4]];
+    }
+    function _invertManifest(tr){var o=[];for(var i=0;i<tr.length;i++)o.push(_invertRec(tr[i]));return o;}
+    function _manifestTargets(tr){var set={},out=[];for(var t=0;t<tr.length;t++){if(!set[tr[t][0]]){set[tr[t][0]]=1;out.push(tr[t][0]);}}return out;}
+    function _changedTargets(a,b){
+      var lo=Math.min(a,b)+1,hi=Math.max(a,b),set={},out=[];
+      for(var k=lo;k<=hi;k++){var tr=frames[k]&&frames[k].tr;if(!tr)continue;
+        for(var t=0;t<tr.length;t++){if(!set[tr[t][0]]){set[tr[t][0]]=1;out.push(tr[t][0]);}}}
+      return out;
+    }
+    function _emphasize(targets){
+      if(!_canAnim)return;
+      if(W.getAttribute('data-scriba-no-emphasis')!=null)return;
+      if(!targets||!targets.length||targets.length>EMPH_CAP)return;
+      var myGen=_gen,els=[];
+      for(var i=0;i<targets.length;i++){
+        var el=stage.querySelector('[data-target="'+_cssEscape(targets[i])+'"]')||stage.querySelector('[data-annotation="'+_cssEscape(targets[i])+'"]');
+        if(el){el.classList.add('scriba-emphasis');els.push(el);}
+      }
+      if(!els.length)return;
+      setTimeout(function(){
+        if(myGen!==_gen)return;
+        for(var j=0;j<els.length;j++)els[j].classList.remove('scriba-emphasis');
+      },DUR_EMPH);
+    }
+    function animateTransition(toIdx,manifest,fsFlag){
       if(_animState==='animating'){_cancelAnims();snapToFrame(toIdx);return;}
-      var tr=frames[toIdx]&&frames[toIdx].tr;
+      var tr=manifest;
       if(!tr||!tr.length||!_canAnim){snapToFrame(toIdx);return;}
       _animState='animating';
       var myGen=_gen;
@@ -5568,7 +5709,7 @@ khi chi xet <span class="scriba-tex-math-inline"><span class="katex"><span class
         else phase2.push(tr[t]);
       }
       for(var i=0;i<phase1.length;i++)_applyTransition(phase1[i],parsed,pending);
-      var needsSync=!!(frames[toIdx]&&frames[toIdx].fs);
+      var needsSync=!!fsFlag;
       function _finish(fullSync){
         if(_animState!=='animating'||myGen!==_gen)return;
         if(fullSync){
@@ -5578,6 +5719,7 @@ khi chi xet <span class="scriba-tex-math-inline"><span class="katex"><span class
         subC.innerHTML=frames[toIdx].substory||'';
         subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
         _anims=[];_animState='idle';
+        _emphasize(_manifestTargets(tr));
       }
       function _runPhase2(){
         if(myGen!==_gen)return;
@@ -5599,18 +5741,21 @@ khi chi xet <span class="scriba-tex-math-inline"><span class="katex"><span class
       }
     }
     function show(i,animate){
-      if(animate&&i===cur+1&&frames[i]&&frames[i].tr&&_canAnim){
-        animateTransition(i);
-      }else{
-        snapToFrame(i);
+      var d=i-cur;
+      if(animate&&_canAnim&&frames[i]){
+        if(d===1&&frames[i].tr){animateTransition(i,frames[i].tr,frames[i].fs);return;}
+        if(d===-1&&frames[cur].tr){animateTransition(i,_invertManifest(frames[cur].tr),frames[cur].fs);return;}
       }
+      var from=cur;
+      snapToFrame(i);
+      if(animate&&Math.abs(d)>1)_emphasize(_changedTargets(from,i));
     }
-    prev.addEventListener('click',function(){if(cur>0)show(cur-1,false);});
+    prev.addEventListener('click',function(){if(cur>0)show(cur-1,true);});
     next.addEventListener('click',function(){if(cur<frames.length-1)show(cur+1,true);});
     W.addEventListener('keydown',function(e){
       if(e.target.closest('.scriba-substory-widget'))return;
       if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();if(cur<frames.length-1)show(cur+1,true);}
-      if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1,false);}
+      if(e.key==='ArrowLeft'){e.preventDefault();if(cur>0)show(cur-1,true);}
     });
     if(typeof MutationObserver!=='undefined'){
       new MutationObserver(function(){_cancelAnims();if(cur>=0)snapToFrame(cur);})

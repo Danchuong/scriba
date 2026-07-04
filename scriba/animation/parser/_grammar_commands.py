@@ -5,6 +5,7 @@ state (self._tokens, self._pos, etc.) via the MRO.
 """
 from __future__ import annotations
 
+import re
 import warnings as _warnings_mod
 from typing import TYPE_CHECKING
 
@@ -30,6 +31,24 @@ from scriba.animation.constants import (
 
 if TYPE_CHECKING:
     pass
+
+
+# R-38 binding-caret ``at=`` accepts only an int literal or a quoted
+# ``shape.var[name]`` selector in v1 (arithmetic / cell selectors are E1183).
+_CURSOR_AT_VAR_RE = re.compile(r"^[^.\s]+\.var\[[^\]]+\]$")
+
+
+def _unquote(value: str) -> str:
+    """Strip one layer of matching surrounding quotes.
+
+    The quoted form is mandatory for ``at="shape.var[name]"`` /
+    ``color="state:X"`` because a bare ``:``/``[`` does not survive the value
+    lexer (R-36/R-38); the quotes are cosmetic once the token is reconstructed.
+    """
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in ("'", '"'):
+        return value[1:-1]
+    return value
 
 
 class _CommandsMixin:
@@ -372,6 +391,19 @@ class _CommandsMixin:
 
         # Parse the params content: first value is the index, rest are key=value
         parts = [p.strip() for p in params_raw.split(",")]
+
+        # R-38 discriminator: the binding-caret form carries an ``id=`` key,
+        # which the legacy form (leading bare index, only prev/curr_state keys)
+        # never does. Collecting the key=value parts first keeps this
+        # unambiguous and leaves every existing \cursor byte-identical.
+        kv: dict[str, str] = {}
+        for part in parts:
+            if "=" in part:
+                key, val = part.split("=", 1)
+                kv[key.strip()] = val.strip()
+        if "id" in kv:
+            return self._parse_cursor_binding(tok, targets, kv)
+
         index_str = parts[0].strip()
 
         # Determine index: int or interpolation string
@@ -418,4 +450,85 @@ class _CommandsMixin:
             curr_state=curr_state,
             line=tok.line,
             col=tok.col,
+        )
+
+    def _parse_cursor_binding(
+        self, tok: "Token", targets: tuple[str, ...], kv: dict[str, str]
+    ) -> CursorCommand:
+        """Parse the R-38 binding-caret ``\\cursor{shape}{id=.., at=.., color=..}``.
+
+        Discriminated by ``id=`` at the call site. ``at=`` is an int literal or
+        a quoted ``shape.var[name]`` selector (anything else → E1183); ``color``
+        reuses the annotation / ``state:X`` validation (E1113) exactly like
+        ``\\trace``. The single decorated shape is ``targets[0]``.
+        """
+        cursor_id = _unquote(kv["id"])
+        at = self._parse_cursor_at(tok, kv.get("at"))
+
+        color = _unquote(kv.get("color", "info"))
+        if color.startswith("state:"):
+            if color[len("state:"):] not in VALID_ANNOTATION_STATE_COLORS:
+                self._raise_unknown_enum(
+                    "annotation state color",
+                    color,
+                    frozenset(
+                        f"state:{s}" for s in VALID_ANNOTATION_STATE_COLORS
+                    ),
+                    code="E1113",
+                    line=tok.line,
+                    col=tok.col,
+                )
+        elif color not in VALID_ANNOTATION_COLORS:
+            self._raise_unknown_enum(
+                "annotation color",
+                color,
+                VALID_ANNOTATION_COLORS,
+                code="E1113",
+                line=tok.line,
+                col=tok.col,
+            )
+
+        ephemeral = _unquote(kv.get("ephemeral", "false")) in ("true", "True")
+        return CursorCommand(
+            targets=targets,
+            index=0,  # inert on the binding path; `at` drives the cell
+            cursor_id=cursor_id,
+            at=at,
+            color=color,
+            ephemeral=ephemeral,
+            line=tok.line,
+            col=tok.col,
+        )
+
+    def _parse_cursor_at(self, tok: "Token", raw: str | None) -> str:
+        """Validate + normalise a binding-caret ``at=`` value (R-38 v1).
+
+        Returns the unquoted spec (``"3"`` or ``"w.var[i]"``); the renderer
+        re-resolves it to a concrete cell index every frame.
+        """
+        if raw is None:
+            raise ValidationError(
+                '\\cursor id= form requires at= (an int or "shape.var[name]")',
+                position=tok.col,
+                code="E1183",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        at = _unquote(raw)
+        try:
+            int(at)
+            return at
+        except ValueError:
+            pass
+        if _CURSOR_AT_VAR_RE.match(at):
+            return at
+        raise ValidationError(
+            f"unsupported \\cursor at={raw!r}; v1 accepts an integer or "
+            '"shape.var[name]"',
+            position=tok.col,
+            code="E1183",
+            line=tok.line,
+            col=tok.col,
+            source_line=self._source_line_at(tok.line),
         )

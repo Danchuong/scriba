@@ -340,6 +340,8 @@ class ArrayPrimitive(PrimitiveBase):
         # swallow an under-stroke) but below pills/arrows; digits
         # stay legible via the global paint-order halo
         self.emit_traces_under(lines)
+        # R-38 binding carets ride the same decoration band as traces.
+        self.emit_cursors_under(lines)
 
         if effective_anns:
             self.emit_annotation_arrows(
@@ -382,6 +384,10 @@ class ArrayPrimitive(PrimitiveBase):
         caption_h = self._caption_block_height(self._total_width())
         if caption_h:
             bottom = below_baseline + lane_h + _STACK_GAP + caption_h
+
+        # R-38: a binding caret sits below the cells; grow the content box so
+        # the ▲ + id are not clipped (0 when no caret → byte-stable).
+        bottom = max(bottom, self._cursor_extent_below())
 
         arrow_above = self._reserved_arrow_above()
         return BoundingBox(x=0, y=0, width=float(w), height=float(arrow_above + bottom))

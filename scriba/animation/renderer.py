@@ -45,6 +45,7 @@ from scriba.animation.scene import FrameSnapshot, SceneState
 from scriba.core.artifact import Block, RenderArtifact, RendererAssets
 from scriba.core.context import RenderContext
 from scriba.core.errors import ValidationError
+from scriba.core.warnings import _emit_warning
 
 __all__ = ["AnimationRenderer", "DiagramRenderer"]
 
@@ -263,6 +264,40 @@ def _instantiate_primitive(
     return primitive_cls(shape.name, resolved_params)
 
 
+def _resolve_cursor_index(
+    cur: Any,
+    snap: FrameSnapshot,
+    ctx: RenderContext,
+) -> int | None:
+    """R-38 build-phase resolve: turn a ``CursorEntry.at`` spec into a concrete
+    cell index for this frame, or ``None`` (soft-drop) when it cannot be read.
+
+    ``at`` is either a literal int (``"3"``) or a ``shape.var[name]`` selector
+    whose settled value is read from the post-command snapshot. An unparseable
+    or missing binding degrades quietly (E1184, ``severity="info"``) exactly
+    like an out-of-range selector — the caret simply vanishes this frame.
+    """
+    at = cur.at
+    try:
+        return int(at)
+    except (TypeError, ValueError):
+        pass
+    wshape = at.split(".", 1)[0]
+    ts = snap.shape_states.get(wshape, {}).get(at)
+    raw = ts.value if ts is not None else None
+    try:
+        return int(str(raw))
+    except (TypeError, ValueError):
+        _emit_warning(
+            ctx,
+            "E1184",
+            f"\\cursor '{cur.cursor_id}' binding at={at!r} is unresolvable "
+            f"(value {raw!r}); the caret is soft-dropped this frame",
+            severity="info",
+        )
+        return None
+
+
 def _snapshot_to_frame_data(
     snap: FrameSnapshot,
     total_frames: int,
@@ -334,6 +369,24 @@ def _snapshot_to_frame_data(
         for tr in snap.traces
     ]
 
+    # R-38 binding carets — resolve each caret's cell index from its `at`
+    # binding at build time; pixel (x, y) is injected later, after the target
+    # primitive realises its dynamic pitch (mirrors _inject_tree_positions).
+    cursors: list[dict] = []
+    for cur in getattr(snap, "cursors", ()):
+        index = _resolve_cursor_index(cur, snap, ctx)
+        if index is None:
+            continue  # soft-drop (E1184 already emitted)
+        cursors.append(
+            {
+                "target": cur.target,
+                "id": cur.cursor_id,
+                "index": index,
+                "color": cur.color,
+                "label": cur.cursor_id,
+            }
+        )
+
     narration_html = _render_narration(snap.narration, scene_id, ctx, valid_hl_ids)
 
     return FrameData(
@@ -343,6 +396,7 @@ def _snapshot_to_frame_data(
         shape_states=shape_states,
         annotations=annotations,
         traces=traces,
+        cursors=cursors,
         substories=substories,
         label=label,
     )

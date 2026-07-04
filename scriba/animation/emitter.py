@@ -113,6 +113,7 @@ class FrameData:
     shape_states: dict[str, dict[str, dict]]  # shape_name -> target -> state
     annotations: list[dict]  # annotation data
     traces: list[dict] | None = None  # \trace decorations (R-37)
+    cursors: list[dict] | None = None  # \cursor binding carets (R-38)
     label: str | None = None
     substories: list[SubstoryData] | None = None
 
