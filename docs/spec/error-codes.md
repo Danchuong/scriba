@@ -88,6 +88,8 @@
 | Code | Description | Common Fix |
 |------|-------------|------------|
 | E1180 | Animation has >30 frames (warning) or `\cursor` requires at least one target. | Reduce frame count or add cursor targets. |
+| E1183 | `\cursor` binding form requires `at=`. | Give an int, "shape.var[name]", or "before"/"after". |
+| E1184 | Cursor binding unresolvable this frame (info). | The caret soft-drops; check the watch variable holds an integer. |
 | E1181 | Animation has >100 frames (hard limit) or `\cursor` requires index. | Split into multiple animations or add the index parameter. |
 | E1182 | Invalid `\cursor` prev_state or curr_state value. | Use a valid state name. |
 

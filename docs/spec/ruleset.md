@@ -87,6 +87,10 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\reannotate` | `{target}{color=..., arrow_from=...}` | both | persistent |
 | `\annotate` | `{target}{params}` | both | persistent (default), ephemeral if `ephemeral=true` |
 | `\trace` | `{shape}{cells=[...], params}` | both | persistent (default), ephemeral if `ephemeral=true` (since 0.22.2, R-37) |
+| `\cursor` (binding form) | `{shape}{id=..., at=..., color=...}` | both | persistent, update-in-place by id (since 0.23.0, R-38); legacy `{targets}{index}` unchanged |
+| `\focus` | `{selector}` | step only | ephemeral — complement of the set dims, auto-restores next step (since 0.23.0, R-40) |
+| `\playeach` | `{range-or-block}{state=, cursor=, narrate=}` | step-level | expands to one auto-frame per element (since 0.23.0, A-5) |
+| `\invariant` | `{text}` | prelude only | pinned predicate panel, once per widget (since 0.23.0; E1058 after `\step`) |
 | `\cursor` | `{targets}{index}` | prelude or step | persistent |
 | `\foreach` | `{variable}{iterable}...body...\endforeach` | prelude or step | expands to body commands |
 | `\endforeach` | (no args) | closes `\foreach` | — |
@@ -206,6 +210,11 @@ command         ::= compute_cmd | narrate_cmd | apply_cmd | highlight_cmd
                   | trace_cmd | cursor_cmd | foreach_block | substory_block
 ```
 
+Inside `\narrate` bodies two inline macros are rewritten at render time:
+`\hl{step-id}{text}` (step link) and `\ref{selector}{text}` (state-tinted
+reference + baked ring, R-39; unknown selector degrades to plain text with
+E1322).
+
 #### Shape Declaration
 
 ```
@@ -221,7 +230,8 @@ in animation mode raises `E1051`.
 
 ```
 step_cmd        ::= "\step" step_options? NEWLINE
-step_options    ::= "[" "label" "=" (IDENT | STRING) "]"
+step_options    ::= "[" ("label" "=" (IDENT|STRING))? (","? "title" "=" STRING)? "]"
+                  (* title renders a heading above the narration, 0.23.0 *)
 ```
 
 `\step` MUST appear on its own line with no trailing content other than the
@@ -240,6 +250,15 @@ recolor_cmd     ::= "\recolor" "{" selector "}" param_brace
                   (* param_brace must contain state= and/or color= *)
 reannotate_cmd  ::= "\reannotate" "{" selector "}" param_brace
 trace_cmd       ::= "\trace" "{" IDENT "}" param_brace
+cursor_bind_cmd ::= "\cursor" "{" IDENT "}" "{" "id" "=" IDENT ","
+                    "at" "=" (INT | STRING) ("," param)* "}"
+                  (* at = INT | "shape.var[name]" | "before" | "after";
+                     E1183 missing at=, E1184 soft unresolvable binding *)
+focus_cmd       ::= "\focus" "{" selector "}"
+playeach_cmd    ::= "\playeach" "{" selector "}" param_brace
+                  (* range/block only (E1494); <=64 frames (E1493);
+                     keys state/cursor/narrate (E1495, E1496) *)
+invariant_cmd   ::= "\invariant" brace_arg   (* prelude only, E1058 *)
                   (* cells=[[r,c],...] | [i,...]; >=2 points (E1491);
                      arrowhead=end|both|none (E1492); R-37 *)
                   (* param_brace must contain color= *)

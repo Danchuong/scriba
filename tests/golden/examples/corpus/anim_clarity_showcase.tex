@@ -1,0 +1,33 @@
+\section{Animation clarity — acceptance}
+
+\begin{animation}[id="ac", label="Two-pointer với đủ đồ nghề"]
+\shape{a}{Array}{size=6, data=[1,3,5,8,13,21], sentinels=true}
+\shape{w}{VariableWatch}{names=["i","j"], label="con trỏ"}
+\invariant{Bất biến: $a[i] + a[j]$ tiến dần về đích.}
+\apply{w.var[i]}{value="0"}
+\apply{w.var[j]}{value="5"}
+\cursor{a}{id=i, at="w.var[i]", color="state:current"}
+\cursor{a}{id=j, at="w.var[j]", color="state:good"}
+
+\step[title="Xuất phát"]
+\narrate{Con trỏ \ref{a.cell[0]}{trái} và \ref{a.cell[5]}{phải} ở hai đầu.}
+\recolor{a.cell[0]}{state=current}
+\recolor{a.cell[5]}{state=good}
+
+\step[title="Thu hẹp"]
+\narrate{Chỉ xét vùng giữa.}
+\apply{w.var[i]}{value="2"}
+\recolor{a.cell[2]}{state=current}
+\focus{a.range[2:5]}
+
+\step[title="Ra biên"]
+\narrate{Trỏ trái nhảy hết cỡ — đậu sentinel phải.}
+\apply{a}{remove=0}
+\end{animation}
+
+\begin{animation}[id="sw", label="Quét playeach"]
+\shape{f}{Array}{size=5, data=[1,1,2,6,24]}
+\shape{k}{VariableWatch}{names=["k"], label="ghi"}
+
+\playeach{f.range[1:4]}{state=done, cursor=k, narrate="Ghi $f[${i}]$."}
+\end{animation}
