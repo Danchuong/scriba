@@ -905,7 +905,7 @@ Nodes + edges with layout engine.
 
 **Layout options:** `"force"` (default), `"stable"` (≤20 nodes), `"hierarchical"`, `"auto"` (picks hierarchical for DAGs, else force). Any other value silently falls back to force.
 **Weighted edges:** `edges=[("A","B",4),("B","C",2)]` with `show_weights=true`.
-**Dynamic edge labels:** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other.
+**Dynamic edge labels (flow `f/c`):** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other. Combine with `tint_by_edge=true` so a saturated edge's pill picks up its `\recolor{...}{state=error}` color. See the two-step flow-network walkthrough in §12.
 **Selectors:** `G`, `G.node[id]`, `G.edge[("A","B")]`, `G.all` (node-id quoting rules in §8)
 
 **Additional construction params:**
@@ -1030,6 +1030,34 @@ Node IDs are the range strings: `st.node["[0,5]"]`, `st.node["[0,2]"]`, `st.node
 ```
 
 Error codes: E1433 (cycle would be created), E1434 (root removal without cascade), E1435 (reparent spec), E1436 (add_node spec / unknown parent).
+
+**Per-node relabel** — change a node's *displayed value* (independent of structure)
+with `\apply{T.node[id]}{value="..."}`. The value string **replaces** that node's
+label from this frame onward, so pack whatever the story needs into it (`"dp=7"`,
+`"5 · dp=7"`, or a segtree `"sum | tag"`). This is a separate channel from the
+mutation ops above: it rides the generic reversible `value_change` motion and
+survives `reparent`/`add_node`, which is what makes tree-DP overlays and rerooting
+expressible. An out-of-range node id is ignored with a warning, never an error.
+For segtree lazy tags built on this same channel, see §12.
+
+```latex
+% Subtree-size DP: dp[node] = 1 + sum(children), filled bottom-up
+\shape{T}{Tree}{root=1, nodes=[1,2,3,4,5], edges=[(1,2),(1,3),(2,4),(2,5)]}
+
+\step
+\apply{T.node[3]}{value="dp=1"}
+\apply{T.node[4]}{value="dp=1"}
+\apply{T.node[5]}{value="dp=1"}
+\narrate{Leaves: subtree size dp = 1.}
+
+\step
+\apply{T.node[2]}{value="dp=3"}
+\narrate{dp[2] = 1 + dp[4] + dp[5] = 3.}
+
+\step
+\apply{T.node[1]}{value="dp=5"}
+\narrate{Root: dp[1] = 1 + dp[2] + dp[3] = 5.}
+```
 
 ### 7.6 NumberLine
 Horizontal axis with tick marks.
@@ -1601,6 +1629,27 @@ Recolor the recovered path, then re-point the arcs along it:
 \apply{G.edge[(A,T)]}{value="5/5"}
 \recolor{G.edge[(A,T)]}{state=error}   % saturated edge
 \narrate{Push 5 units. Edge $A \to T$ saturated.}
+```
+
+### Segtree lazy propagation
+A pending "lazy" update is just a node's value string (`sum | pending-op`), and a
+pushdown is three `\apply` value-changes in one `\step` — no dedicated verb. The
+parent's tag is cleared while each child absorbs the update and refreshes its own
+sum, exactly as an iterative segtree `push_down` would.
+```latex
+\shape{st}{Tree}{data=[2,5,1,3,7,4], kind="segtree", show_sum=true}
+
+\step
+\apply{st.node["[0,2]"]}{value="sum=17 | lazy +3"}
+\recolor{st.node["[0,2]"]}{state=current}
+\narrate{Range +3 over [0,2]: sum 8 to 17, deferred as a lazy tag.}
+
+\step
+% pushdown = three \apply value-changes in one step
+\apply{st.node["[0,2]"]}{value="sum=17"}
+\apply{st.node["[0,1]"]}{value="sum=13 | +3"}
+\apply{st.node["[2,2]"]}{value="sum=4 | +3"}
+\narrate{Pushdown: clear the parent tag, deposit +3 into both children.}
 ```
 
 ---
