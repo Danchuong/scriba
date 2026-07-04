@@ -484,7 +484,10 @@ reversed bounds degrade exactly like every other selector: soft drop via
 target. Rationale: an area whose meaning is its size (an `$(m-1)^2$` base
 block) has no name in the cell/`range` vocabulary, and the two commands
 consume regions differently — recolor as a cell set, annotate as one
-geometric unit. With `bracket=true`, `\annotate` additionally paints a
+geometric unit. `row[i]`/`col[j]`/`diag` (since 0.24.0) are sugar in the
+same family — `row[i]` ≡ `block[i:i][0:C-1]`, `col[j]` ≡ `block[0:R-1][j:j]`,
+`diag` = `cell[i][i]` for `i < min(R,C)` — expanded at the same
+`_expand_selectors` site and inheriting the same soft-drop semantics. With `bracket=true`, `\annotate` additionally paints a
 no-fill dashed rounded outline hugging the block 3px outward (`rx=6`,
 `stroke-dasharray 4,3`, stroke = the annotation color at 0.55 opacity),
 emitted in its own `data-annotation="…-block-bracket"` group AFTER the

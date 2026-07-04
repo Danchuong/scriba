@@ -95,7 +95,7 @@ Everything below is expanded later; this is the lookup layer.
 
 **15 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · VariableWatch (named values).
 
-**Selector grammar** (§8): `shape.family[index]` — `a.cell[i]`, `g.cell[r][c]`, `a.range[i:j]`, `g.block[r0:r1][c0:c1]`, `G.node[id]`, `G.edge[(u,v)]`, `nl.tick[i]`, `code.line[i]`, `vars.var[name]`, `.all`. Interpolate with `${i}` in any index.
+**Selector grammar** (§8): `shape.family[index]` — `a.cell[i]`, `g.cell[r][c]`, `a.range[i:j]`, `g.block[r0:r1][c0:c1]`, `g.row[i]`, `g.col[j]`, `g.diag`, `G.node[id]`, `G.edge[(u,v)]`, `nl.tick[i]`, `code.line[i]`, `vars.var[name]`, `.all`. Interpolate with `${i}` in any index.
 
 **Top 6 footguns:**
 1. A selector index needs `${i}`; bare `i` is a literal key → command silently dropped. §5.12
@@ -967,6 +967,9 @@ Rooted tree with Reingold-Tilford layout.
 
 % Sparse segment tree
 \shape{st}{Tree}{kind="sparse_segtree", range_lo=0, range_hi=7}
+
+% Binary heap (complete binary tree auto-built from an array; since 0.24.0)
+\shape{h}{Tree}{kind="heap", data=[9,7,8,3,5,6,4]}
 ```
 
 | Param | Type | Default | Required | Description |
@@ -974,8 +977,8 @@ Rooted tree with Reingold-Tilford layout.
 | `root` | str/int | — | yes (standard kind) | root id (**str-normalized** — see §8) |
 | `nodes` | list | `[]` | no | node ids (str-normalized) |
 | `edges` | list | `[]` | no | `(parent, child)` tuples (str-normalized) |
-| `kind` | enum | none | no | `segtree`, `sparse_segtree`, or omit for a standard tree |
-| `data` | list | — | yes if `kind=segtree` | leaf values |
+| `kind` | enum | none | no | `segtree`, `sparse_segtree`, `heap`, or omit for a standard tree |
+| `data` | list | — | yes if `kind=segtree` or `kind=heap` | leaf values (segtree) / array in heap order (heap; empty raises E1438) |
 | `range_lo` / `range_hi` | int | — | yes if `kind=sparse_segtree` | range bounds |
 | `show_sum` | bool | `false` | no | append `=sum` to segtree node labels |
 | `label` | string | none | no | caption |
@@ -995,6 +998,14 @@ right child = `[mid+1, hi]`. For `data=[2,5,1,3,7,4]` (6 elements, range `[0,5]`
 [0,0] [1,1]   [3,3] [4,4]
 ```
 Node IDs are the range strings: `st.node["[0,5]"]`, `st.node["[0,2]"]`, `st.node["[2,2]"]`, etc.
+
+**Heap (`kind="heap"`):** node `i` is array slot `i` (0-based, root `0`), children `2i+1`/`2i+2`, label = value. `data` is the single source of truth — `nodes`/`edges` you pass alongside are ignored, exactly like segtree derives its shape from `data`. A sift swap is two value writes on fixed seats:
+```latex
+\recolor{h.node[0]}{state=current}
+\recolor{h.node[1]}{state=current}
+\apply{h.node[0]}{value=7}
+\apply{h.node[1]}{value=9}
+```
 
 **Sparse segtree:** Starts with only root node `[range_lo, range_hi]`. Add nodes dynamically:
 ```latex
@@ -1079,7 +1090,7 @@ Horizontal axis with tick marks.
 ```latex
 \shape{m}{Matrix}{rows=4, cols=4, data=[0.1, 0.3, 0.5, 0.9, ...], show_values=true}
 ```
-The `data` is either a **flat** list of length `rows*cols` (row-major) or a nested `rows×cols` list. **Operations:** none. **Selectors:** `m`, `m.cell[r][c]`, `m.all`
+The `data` is either a **flat** list of length `rows*cols` (row-major) or a nested `rows×cols` list. **Operations:** `\apply{m.cell[r][c]}{value=X}` (since 0.24.0) — updates the cell and re-drives the heatmap fill through the frozen `vmin`/`vmax` range, so the colour always reflects the value (a non-numeric value shows as text but keeps the declared datum's colour). **Selectors:** `m`, `m.cell[r][c]`, `m.row[i]`, `m.col[j]`, `m.diag`, `m.block[r0:r1][c0:c1]`, `m.all`
 
 | Param | Type | Default | Description |
 |---|---|---|---|
@@ -1121,6 +1132,9 @@ LIFO stack.
 | `segments` | list | `[]` | Inline batch of segments — each uses the `add_segment` shape `((x1,y1),(x2,y2))` |
 | `polygons` | list | `[]` | Inline batch of polygons — each uses the `add_polygon` shape `[(x,y),…]` |
 | `regions` | list | `[]` | Inline batch of regions — each uses the `add_region` dict `{polygon,fill?}` |
+| `circles` | list | `[]` | Inline batch of circles — each uses the `add_circle` dict `{cx,cy,r}` (since 0.24.0) |
+| `arcs` | list | `[]` | Inline batch of arcs — each uses the `add_arc` dict `{cx,cy,r,a0,a1}` (degrees, CCW; since 0.24.0) |
+| `wedges` | list | `[]` | Inline batch of angle wedges — same dict shape as `add_arc`, filled and closed to the centre (since 0.24.0) |
 | `width` | int | `320` | SVG width in px |
 
 (Element shapes are identical to the dynamic `add_*` operations below.)
@@ -1140,6 +1154,10 @@ LIFO stack.
 \apply{p}{add_polygon=[(0,0), (1,2), (2,0)]}
 % region: a DICT only — {polygon=[...], fill?="rgba(...)"}
 \apply{p}{add_region={polygon=[(0,0),(1,2),(2,0)], fill="rgba(0,114,178,0.2)"}}
+% circle {cx,cy,r} · arc/wedge {cx,cy,r,a0,a1} (degrees, CCW) — since 0.24.0
+\apply{p}{add_circle={cx=0, cy=0, r=2.24}}
+\apply{p}{add_arc={cx=0, cy=0, r=1.5, a0=0, a1=90}}
+\apply{p}{add_wedge={cx=1, cy=1, r=1, a0=30, a1=75}}
 
 % Remove by zero-based index (tombstone semantics — later indices remain stable)
 \apply{p}{remove_point=1}
@@ -1147,9 +1165,14 @@ LIFO stack.
 \apply{p}{remove_segment=2}
 \apply{p}{remove_polygon=0}
 \apply{p}{remove_region=0}
+\apply{p}{remove_circle=0}
+\apply{p}{remove_arc=0}
+\apply{p}{remove_wedge=0}
 ```
 
 A malformed add-spec raises **E1467**; an out-of-range or tombstoned remove index raises **E1437**.
+
+Circles/arcs/wedges select and annotate like the other five families (`p.circle[i]`, `p.arc[i]`, `p.wedge[i]`; anchors: circle centre, arc midpoint, wedge interior). `r` is in math units — a closest-pair radius `δ` can be passed straight in. Under `aspect="equal"` (the default) a circle renders round; under `aspect="auto"` the axes scale independently, so it honestly renders as the true pixel-space locus (an ellipse).
 
 ### 7.10 MetricPlot
 Time-series metric chart.
@@ -1290,8 +1313,8 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | Primitive | Cell/Item | Node | Edge | Tick | Range/Block | All |
 |-----------|-----------|------|------|------|-------|-----|
 | Array | `.cell[i]` | — | — | — | `.range[i:j]` | `.all` |
-| Grid | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]` | `.all` |
-| DPTable | `.cell[i]` or `.cell[i][j]` | — | — | — | `.range[i:j]` (1D), `.block[r0:r1][c0:c1]` (2D) | `.all` |
+| Grid | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]`, `.row[i]`, `.col[j]`, `.diag` | `.all` |
+| DPTable | `.cell[i]` or `.cell[i][j]` | — | — | — | `.range[i:j]` (1D), `.block[r0:r1][c0:c1]` + `.row/.col/.diag` (2D) | `.all` |
 | Graph | — | `.node[id]` | `.edge[(u,v)]` | — | — | `.all` |
 | Tree | — | `.node[id]` | `.edge[(p,c)]` | — | — | `.all` |
 | NumberLine | — | — | — | `.tick[i]` | `.range[lo:hi]` | `.all` |
@@ -1301,17 +1324,19 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | LinkedList | — | `.node[i]` | `.link[i]` | — | — | `.all` |
 | Queue | `.cell[i]` | — | — | — | — | `.front`, `.rear`, `.all` |
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
-| Matrix | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]` | `.all` |
-| Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]` | — | — | — | — | `.all` |
+| Matrix | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]`, `.row[i]`, `.col[j]`, `.diag` | `.all` |
+| Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]`, `.circle[i]`, `.arc[i]`, `.wedge[i]` | — | — | — | — | `.all` |
 | MetricPlot | — | — | — | — | — | `.all` |
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
 
 **`block[r0:r1][c0:c1]`** (since 0.22.2) — the 2-D twin of `range`, inclusive on both axes, on Grid + 2-D DPTable (+ Matrix since 0.23.2). `\recolor`/`\highlight` expand it to every cell in the rectangle; `\annotate` anchors its pill at the block's center; `${...}` works in all four indices; out-of-bounds/reversed bounds soft-drop (E1115). Add `bracket=true` on the annotate for a dashed outline hugging the block (stroke follows `color=`) — works on all three block-capable primitives (Grid; DPTable-2D + Matrix since 0.23.2). Example: `\recolor{g.block[0:1][0:1]}{state=done}`.
 
+**`row[i]` / `col[j]` / `diag`** (since 0.24.0) — sugar over `block` on the same three primitives: `row[i]` ≡ `block[i:i][0:C-1]`, `col[j]` ≡ `block[0:R-1][j:j]`, `diag` = the main diagonal `cell[i][i]` for `i < min(R,C)`. One command per Gaussian-elimination row op or matrix-multiply pass: `\recolor{m.row[2]}{state=current}`. Annotation pills anchor at the row/col centre (diag at its corner midpoint); an out-of-bounds index soft-drops per-cell like `block`.
+
 **`color="state:X"` + `leader=true`** (since 0.22.2) — bind a label to the exact colour of the state it describes, X ∈ current/done/dim/good/error/path (**quotes required**; unquoted `color=state:current` is a parse error E1012). `leader=true` draws a dotted connector + dot from the pill to its cell. Example: `\annotate{g.cell[2][0]}{label="lớp chẵn", color="state:current", leader=true, position=below}`.
 
-**Plane2D full selector set** — Plane2D has five element-type families, all addressed by zero-based index. The "Cell/Item" column above shows the most common form; the complete set is:
+**Plane2D full selector set** — Plane2D has eight element-type families, all addressed by zero-based index. The "Cell/Item" column above shows the most common form; the complete set is:
 
 | Selector | Addresses | Annotation anchor |
 |----------|-----------|-------------------|
@@ -1320,9 +1345,12 @@ Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
 | `.segment[i]` | Finite segment *i* | Midpoint of the segment |
 | `.polygon[i]` | Closed polygon *i* | Centroid of the vertex list |
 | `.region[i]` | Shaded region *i* | Not resolvable for annotation anchors |
+| `.circle[i]` | Circle *i* (since 0.24.0) | Centre of the circle |
+| `.arc[i]` | Arc *i* (since 0.24.0) | Midpoint of the arc |
+| `.wedge[i]` | Angle wedge *i* (since 0.24.0) | Interior along the mid-angle |
 | `.all` | All live elements | — |
 
-All five families (plus `.all`) work with `\recolor`, `\highlight`, and `\annotate`. Indices are stable across frames: removing an element tombstones its slot so later indices remain valid (e.g. after `remove_point=1`, `point[2]` still refers to the original third point). Out-of-range or tombstoned selectors raise **E1437**.
+All eight families (plus `.all`) work with `\recolor`, `\highlight`, and `\annotate`. Indices are stable across frames: removing an element tombstones its slot so later indices remain valid (e.g. after `remove_point=1`, `point[2]` still refers to the original third point). Out-of-range or tombstoned selectors raise **E1437**.
 
 ### Indexing conventions
 

@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — capability Wave 1 (JudgeZone pass-3 Tier A/B4/heap)
+- **`row[i]` / `col[j]` / `diag` selectors** on Grid, DPTable-2D and
+  Matrix — sugar over `block` expanded at the generic selector site, so
+  a Gaussian row op or matrix-multiply pass is one command. Annotation
+  pills anchor at the row/col centre.
+- **Matrix value mutation**: `\apply{m.cell[r][c]}{value=X}` updates the
+  cell and re-drives the heatmap fill through the frozen `vmin`/`vmax`
+  range (fill stays a colorscale lookup, never a state-fill). Closes the
+  `docs/primitives/matrix.md` drift that promised this.
+- **Plane2D `circle` / `arc` / `wedge` element kinds** — full family
+  parity with the existing five (add/remove, tombstones, selectors,
+  annotation anchors, E1466/E1467). Radii are math-units; under
+  `aspect="auto"` a circle honestly renders the pixel-space locus.
+- **Tree `kind=heap`** — complete binary tree derived from
+  `data=[...]` (node `i` → children `2i+1`/`2i+2`, label = value);
+  sift swaps are two `\apply` value writes. New E1438 for empty data.
+- **Docs for shipped-but-undocumented capabilities** (the census's A1 +
+  C2a): Tree per-node relabel `\apply{T.node[i]}{value=}` (tree-DP
+  overlays, ~26 problems) and flow-edge `f/c` labels, plus a segtree
+  lazy-propagation recipe — no new verbs, everything render-proofed.
+
+### Fixed
+- **Value-only `\apply` no longer clobbers expanded-selector states**
+  (the Gauss trap: `\recolor{m.row[0]}` + `\apply{m.cell[0][1]}{value=}`
+  silently dropped the row colour on that cell). `ShapeTargetState.state`
+  now defaults to `None` ("never recolored") so value-only entries carry
+  no state to the merge. Manifest `from_val` for previously
+  highlight-only entries becomes `"idle"` instead of `null`, which also
+  fixes the runtime class-replace miss (smooth recolor, no snap lurch).
+  `SCRIBA_VERSION` 17→18.
+
 ### Added — docs-audit generality batch
 - **Computed selector subscripts**: `${list[k]}` in a selector index now
   resolves when `k` is a `\compute` binding or literal
