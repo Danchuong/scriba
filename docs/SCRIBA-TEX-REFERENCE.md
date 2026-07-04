@@ -4,7 +4,19 @@
 > Scriba renders LaTeX → HTML for competitive programming editorials with animated algorithm visualizations.
 > **Target:** v0.23.1
 
+<!-- Maintenance contract (for editors, not authors):
+     1. One home per fact. Each command/primitive/selector is documented once (§5/§7/§8);
+        every other mention is a §-link, never a re-explanation.
+     2. Author-facing only. Internal mechanism (differ/emitter/prescan/scratch-buffer, R-/A-/GEP
+        card numbers, byte-golden detail) lives in docs/spec/*, not here — name it in one sentence
+        + one spec link at most.
+     3. No inline version history. The masthead states one Target version; "(since X)" notes are
+        kept only for the two most recent minors. Older history lives in the changelog.
+     4. "Not needed for authoring" is a delete signal. -->
+
 ## Contents
+
+- [Cheat-sheet (1 screen)](#cheat-sheet-1-screen)
 
 0. [How to Render](#0-how-to-render)
 1. [File Structure](#1-file-structure)
@@ -28,17 +40,70 @@
 
 | I want to… | Go to |
 |---|---|
+| Get the 80% path on one screen | [Cheat-sheet](#cheat-sheet-1-screen) |
 | Render a `.tex` file | §0 |
 | Pick a primitive + its params | §7 |
 | Color a cell / node by state | §6, `\recolor` §5.7 |
 | Move a cursor through an array | `\cursor` §5.11, §12 |
 | Draw a DP transition arrow | `\annotate` …`arrow_from=` §5.8, §12 |
-| Loop over indices / a computed list | `\foreach` §5.11 |
+| Loop over indices / a computed list | `\foreach` §5.12 |
+| Know where `${i}` vs `${list[i]}` works | [Computed-indexing rules](#computed-indexing-rules-read-before-looping) §5.12 |
 | Compute values in Starlark | `\compute` §5.2 |
-| Cross-reference a step from narration | `\hl` §5.13 |
-| Use `${var}` in a selector / value | §5.11, §13.2 |
+| Cross-reference a step from narration | `\hl` §5.14 |
+| Use `${var}` in a selector / value | §5.12, §13.2 |
 | Address a sub-element (selector syntax) | §8 |
 | Look up an error code | §15 |
+
+---
+
+## Cheat-sheet (1 screen)
+
+Everything below is expanded later; this is the lookup layer.
+
+**Skeleton:**
+```latex
+\begin{animation}[id="demo", label="…"]   % \begin{diagram} for a single static frame
+\shape{a}{Array}{size=5, data=[3,1,4,1,5]}  % declare ALL primitives before the first \step
+\step                                        % new frame (animation only)
+\recolor{a.cell[0]}{state=current}
+\narrate{One sentence per step.}
+\end{animation}
+```
+
+**18 inner commands** (§5):
+
+| Command | One line |
+|---|---|
+| `\shape{name}{Type}{params}` | declare a primitive (prelude only) |
+| `\compute{starlark}` | bind `${vars}`; prelude = global, in-`\step` = frame-local |
+| `\step[label=…, title="…"]` | start a frame |
+| `\narrate{tex}` | frame narration (one per `\step`) |
+| `\apply{sel}{value=…, …}` | set values / run primitive ops (persistent) |
+| `\highlight{sel}` | ephemeral focus ring (clears next `\step`) |
+| `\focus{sel}` | dim the shape except `sel` (ephemeral) |
+| `\recolor{sel}{state=…}` | set visual state (persistent) |
+| `\annotate{sel}{label=…, arrow_from=…}` | pill / arrow (persistent) |
+| `\trace{shape}{cells=[…]}` | arrow following a cell sequence |
+| `\reannotate{sel}{color=…}` | recolor an existing annotation |
+| `\cursor{sel}{i}` / `\cursor{sel}{id=…, at=…}` | cursor **hop** (recolor) / **pin** (caret) |
+| `\foreach{i}{0..n}…\endforeach` | loop — use `${i}`, never bare `i` |
+| `\playeach{sel.range[a:b]}{state=…}` | one auto-frame per swept cell |
+| `\substory[title=…]…\endsubstory` | nested frame sequence |
+| `\hl{step-id}{tex}` | narration → cross-ref a labeled `\step` |
+| `\ref{sel}{tex}` | narration word tinted to a cell's state |
+| `\invariant{tex}` | predicate panel across all frames (prelude only) |
+
+**15 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · VariableWatch (named values).
+
+**Selector grammar** (§8): `shape.family[index]` — `a.cell[i]`, `g.cell[r][c]`, `a.range[i:j]`, `g.block[r0:r1][c0:c1]`, `G.node[id]`, `G.edge[(u,v)]`, `nl.tick[i]`, `code.line[i]`, `vars.var[name]`, `.all`. Interpolate with `${i}` in any index.
+
+**Top 6 footguns:**
+1. A selector index needs `${i}`; bare `i` is a literal key → command silently dropped. §5.12
+2. In a selector index, `${list[k]}` needs `k` to be a `\compute` binding or literal — a `\foreach` var there raises E1159. §5.12
+3. Booleans are lowercase `true`/`false`; Python `True`/`False` parse as the strings `"True"`/`"False"`. §5.1
+4. CodePanel lines are **1-based**; every other primitive is 0-based. §8
+5. Math is `$…$` / `$$…$$` only — `\[…\]` and `\(…\)` render as literal text. §2.3
+6. A binding caret (`at="w.var[i]"`) soft-drops the frame silently when its watch value is blank or off the end — seed the variable before (or in) the step that declares the caret. §5.11
 
 ---
 
@@ -111,15 +176,7 @@ Two forms are supported:
 The brace form is preferred in inline contexts to avoid accidentally sizing subsequent content.
 
 #### 2.2.2 Legacy Polygon Aliases
-For compatibility with Polygon-authored sources, the old one-letter commands are accepted as exact aliases:
-
-| Legacy | Equivalent |
-|--------|-----------|
-| `\bf{...}` | `\textbf{...}` |
-| `\it{...}` | `\textit{...}` |
-| `\tt{...}` | `\texttt{...}` |
-
-These only work in brace form. New sources should use the canonical `\text*` commands.
+Brace-form only, for Polygon-authored sources: `\bf{…}`=`\textbf`, `\it{…}`=`\textit`, `\tt{…}`=`\texttt`. New sources should use the canonical `\text*` commands.
 
 ### 2.3 Math
 | Delimiter | Mode |
@@ -161,7 +218,7 @@ def solve(n):
 | `github-dark` | GitHub dark |
 | `none` | no syntax highlighting (plain monospace block) |
 
-**Copy button** — a copy-to-clipboard button is injected into every highlighted block. It is enabled when the renderer is constructed with `enable_copy_button=True` (the default in the CLI) and absent in library mode unless explicitly opted in.
+**Copy button** — a copy-to-clipboard button is injected into every highlighted block (on by default in the CLI).
 
 ### 2.6 Tables
 ```latex
@@ -242,16 +299,11 @@ Step-through editorial walkthrough with frames, narration, and visual primitives
 - `\highlight` is **ephemeral** (auto-cleared at next `\step`)
 - `\apply`, `\recolor`, `\annotate` are **persistent** across frames
 
-**Delta-based semantics — operational definition:**
-Before the first `\step`, prelude commands (`\apply`, `\recolor`) set the **frame-0 state** — the initial snapshot every viewer sees before pressing Play. Each subsequent `\step` snapshots the scene; commands after that `\step` mutate the state for the *next* snapshot. Persistent commands (`\apply`, `\recolor`, `\annotate`) carry forward into all later frames until explicitly overridden. Ephemeral commands (`\highlight`, and `\annotate` with `ephemeral=true`) reset automatically at the following `\step` boundary.
+**Frame-0 state:** prelude commands (before the first `\step`) set the initial snapshot every viewer sees before pressing Play. Each `\step` snapshots the scene; commands *after* a `\step` mutate the state for the *next* snapshot.
 
 ### 3.3 Playback behavior (reverse & emphasis)
 
-This is runtime behavior of the interactive widget, not something you author — no command turns it on.
-
-- **Stepping backward tweens.** Going to the previous frame animates the *reverse* of the motion that produced the current frame (colors ease back, added things fade out, moved things slide home), instead of snapping. The resting frame is always the exact server-rendered SVG, so the tween only smooths the trip.
-- **Jumping emphasizes.** Moving more than one step at once (where the UI allows it) snaps to the target frame and briefly **pulses the cells that changed** across the skipped steps, so the eye lands on what moved rather than trying to follow a long motion.
-- **Reduced-motion / print / no-JS.** Both degrade to an instant, correct frame with no tween and no pulse; the static SVG already shows the destination. See [motion-ruleset](spec/motion-ruleset.md) A-2 (reverse) and A-3/A-8 (emphasis, progressive enhancement).
+Runtime behavior of the widget — nothing to author. Stepping backward tweens the reverse of the last motion; jumping several steps pulses the cells that changed; reduced-motion / print / no-JS degrade to the instant correct frame. Mechanism: [motion-ruleset](spec/motion-ruleset.md).
 
 ---
 
@@ -280,9 +332,6 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 ---
 
 ## 5. Inner Commands (18 total)
-
-> Emphasis opt-out: render with `SCRIBA_NO_EMPHASIS=1` to suppress the
-> arrival pulse (the widget also honours `prefers-reduced-motion`).
 
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
@@ -325,109 +374,46 @@ Runs Starlark code. Bindings available via `${name}` interpolation.
               if cost < dp_vals[i][j]:
                   dp_vals[i][j] = cost
 }
-% dp_vals[i][j] now holds the minimum multiplication cost; use ${dp_vals[i][j]} in \apply.
 ```
 
-See `examples/integration/test_reference_dptable.tex` for the full 2D DP animation using this pattern.
+Fill a 2-D DPTable from that table with nested `\foreach` — loop variable in the
+selector index (`${i}`/`${j}`), double subscript in the value (`${dp_vals[i][j]}`):
+```latex
+\foreach{i}{0..4}
+  \foreach{j}{0..4}
+    \apply{dp.cell[${i}][${j}]}{value=${dp_vals[i][j]}}
+  \endforeach
+\endforeach
+```
 
 ### 5.3 `\step`
-Starts a new frame (animation only). See §5.13 for `\hl` — the companion macro that cross-references labeled steps from `\narrate` text.
+Starts a new frame (animation only). See §5.14 for `\hl`, the macro that cross-references labeled steps from `\narrate`.
 
-**Optional `[label=ident]` bracket:**
+**Optional `[label=ident]` bracket** — binds the frame to `ident` so `\hl{ident}{…}` can target it (§5.14); the CSS `:target` pseudo-class then highlights that narration when the frame is active (no JavaScript). Labels must be unique per animation (duplicate → `E1005`). Unlabeled frames get the automatic id `frame-{N}` and cannot be `\hl`-targeted.
 
 ```latex
 \step[label=base-case]
 ```
 
-Binds the frame to the identifier `base-case`. The label:
-
-- Becomes part of the frame's HTML `id` — the emitter renders it as
-  `id="{scene-id}-base-case"` and adds `data-label="base-case"` on the
-  `<li>` element, instead of the default `id="{scene-id}-frame-{N}"`.
-- Enables `\hl{base-case}{…}` cross-references inside any `\narrate`
-  block in the same animation (see §5.13). The CSS `:target`
-  pseudo-class highlights the narration text when the frame is active —
-  no JavaScript required.
-- Must be unique within the animation. A duplicate label raises `E1005`.
-
-**Label syntax rules:**
+**Label syntax:**
 
 | Constraint | Detail |
 |---|---|
-| Characters | Unicode letters, digits, combining marks, `_`, `-`, `.` — a letter/`_` start followed by letters, digits, combining marks (Mn/Mc) or `._-` (e.g. `base-case`, `đáp-án`, `ค่า-1`). Since 0.22.0 combining-mark scripts (Thai, Devanagari, …) work; Python's `\w` alone excludes Mn/Mc. |
-| Leading char | Must be a letter (any script) or `_` (not a digit) |
-| Empty | Not allowed — raises `E1005` |
-| Unknown key | Any key other than `label` or `title` raises `E1004` |
+| Characters | a letter (any script) or `_` start, then letters, digits, combining marks (Mn/Mc), `_`, `-`, `.` — e.g. `base-case`, `đáp-án`, `ค่า-1` (combining-mark scripts, e.g. Thai/Devanagari, work since 0.22.0) |
+| Leading char | letter or `_`, never a digit |
+| Empty | not allowed — raises `E1005` |
+| Unknown key | any key other than `label` or `title` raises `E1004` |
 
-**Optional `title="..."` caption (§5.3):**
+**Optional `title="..."` caption** — a short quoted caption (≈3–5 words):
 
 ```latex
-\step[title="Fill the base row"]
 \step[label=fill, title="Fill the base row"]
 ```
 
-`title` adds a short human-readable caption (a quoted string; spaces
-allowed — keep it to roughly 3–5 words). It:
-
-- Renders as a `<span class="scriba-step-title">` heading above the
-  narration (folded into the narration so it updates as you step and
-  prints).
-- **Supersedes** the frame's narration-derived `<title>`/`aria-label` on
-  the stage SVG, so the caption is what assistive tech announces.
-- Is fully opt-in: a step with no `title` is byte-identical to before.
-
-`label` and `title` are independent — use either or both.
-
-The bracket must appear on the same line as `\step` and before any
-trailing content. Trailing non-whitespace after the closing `]` raises
-`E1052`.
-
-**Example — labeled steps with `\hl` cross-references:**
-
-```latex
-\begin{animation}[id="lcs-demo", label="LCS Walk-through"]
-\shape{dp}{DPTable}{rows=3, cols=3}
-
-\step[label=init]
-\narrate{Initialize the \hl{init}{base row} to zeros.}
-
-\step[label=fill]
-\recolor{dp.cell[1][1]}{state=current}
-\narrate{Fill cell (1,1). See \hl{fill}{this step} for the recurrence.}
-
-\step[label=done]
-\recolor{dp.cell[1][1]}{state=done}
-\narrate{Cell filled. Return to \hl{init}{initialization} or continue.}
-\end{animation}
-```
-
-Frames without a `[label=…]` bracket receive the automatic id
-`{scene-id}-frame-{N}` and cannot be targeted by `\hl`.
+It renders as a `<span class="scriba-step-title">` above the narration and **supersedes** the narration-derived `<title>`/`aria-label` on the stage SVG (so it is what assistive tech announces). Fully opt-in; `label` and `title` are independent. The bracket must be on the same line as `\step`; trailing non-whitespace after `]` raises `E1052`.
 
 ### 5.4 `\narrate{LaTeX text}`
-Attaches narration to current frame. Supports inline math (`$…$`), text
-formatting (`\textbf`, `\texttt`, `\emph`, …), and two narration macros:
-`\hl{step-id}{tex}` (§5.14, cross-references a labeled `\step`) and
-`\ref{target}{text}` (§5.15, tints a word to match a cell's state).
-
-**`\ref{target}{text}` — state-linked narration word (R-39).** Inside a
-`\narrate` body, `\ref{a.cell[2]}{pivot}` colours the word *pivot* to match
-`a.cell[2]`'s **current-frame** state, so naming a cell also points at it:
-
-```latex
-\step
-\apply{a.cell[2]}{state=current}
-\narrate{Choose the \ref{a.cell[2]}{pivot} and partition around it.}
-```
-
-- Ink follows the R-36 annotation-state palette when the target's state is a
-  signalling colour (`current`, `done`, `dim`, `good`, `error`, `path`).
-- A target with no signal state (idle / highlight / hidden, or an unstated or
-  range target) renders as a bare emphasised word that inherits the body
-  colour — an element with no state is not falsely coloured.
-- The `text` may contain `$math$` (rendered via KaTeX). A typo'd / undeclared
-  target degrades to plain text with a soft warning (`E1322`) — a narration
-  typo never blanks a render. Renders in print / no-JS.
+Attaches narration to the current frame. Supports inline math (`$…$`), text formatting (`\textbf`, `\texttt`, `\emph`, …), and two narration macros: `\hl{step-id}{tex}` (§5.14 — cross-references a labeled `\step`) and `\ref{target}{text}` (§5.15 — tints a word to a cell's state).
 
 ### 5.5 `\apply{target}{params...}`
 Sets values and runs primitive operations. Persistent. Common: `value=`, `label=`. Primitive-specific operation keys (e.g. `push=`, `enqueue=`, `add_edge=`, `insert=`) are listed per primitive in §7.
@@ -439,12 +425,7 @@ Ephemeral focus marker. Cleared at next `\step`.
 Changes visual state. Persistent. The 9 valid states are: `idle`, `current`, `done`, `dim`, `error`, `good`, `highlight`, `path`, `hidden` (full table in §6).
 
 ### 5.8 `\annotate{target}{params...}`
-Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
-
-> **Maintainer note:** the pill-placement engine internals (collision
-> avoidance, viewBox headroom, math-aware sizing, debug env flags) are
-> specified in [spec/smart-label-ruleset.md](spec/smart-label-ruleset.md).
-> Authors do not need it — everything below is sufficient to place annotations.
+Attaches a text label or a Bezier arrow to a shape cell. Persistent by default. The parameters below are sufficient to place annotations; pill-placement internals live in [spec/smart-label-ruleset.md](spec/smart-label-ruleset.md).
 
 **Parameters:**
 
@@ -569,144 +550,91 @@ Recolors an existing annotation on *target*. Persistent.
 \reannotate{dp.cell[3]}{color=path, arrow_from="dp.cell[1]"}
 ```
 
-### 5.11 `\cursor{targets}{index, prev_state=..., curr_state=...}`
-Moves cursor through cell-indexed primitives (Array, DPTable, CodePanel, etc.). Default: prev→`dim`, curr→`current`.
+### 5.11 `\cursor` — hop (legacy) and pin (binding caret)
 
-**Single target:**
+One keyword hosts two independent mechanisms, selected by whether an `id=` key is present: **cursor hop** (no `id=`) recolors cells; **cursor pin** (with `id=`) draws a named caret that slides. They do not interact.
+
+#### Cursor hop (legacy) — `\cursor{targets}{index, prev_state=…, curr_state=…}`
+
+Recolor shorthand for cell-indexed primitives (Array, DPTable, CodePanel, …): moves a "current" marker from the previous index to `index`. Default: prev→`dim`, curr→`current`. It is exact sugar for two `\recolor`.
+
 ```latex
-\cursor{a.cell}{3}                          % a.cell[2]→dim, a.cell[3]→current
-\cursor{a.cell}{4, prev_state=done}         % a.cell[3]→done, a.cell[4]→current
+\cursor{a.cell}{3}                    % a.cell[2]→dim, a.cell[3]→current
+\cursor{a.cell}{4, prev_state=done}   % a.cell[3]→done, a.cell[4]→current
 ```
 
-**Multi-target — synchronise two primitives at once:**
+**Multi-target** applies one index to every listed family, keeping related views in sync without separate `\recolor`s:
 ```latex
-% Advance both the h array and dp array to column i in one command.
-% Both families step from their previous index to i simultaneously.
-\cursor{h.cell, dp.cell}{i}
-
-% Advance dist array and CodePanel line highlight together:
-\cursor{dist.cell, code.line}{2}
+\cursor{h.cell, dp.cell}{i}           % advance both arrays to column i
+\cursor{dist.cell, code.line}{2}      % advance a dist array and a CodePanel line together
 ```
-Multi-target cursor applies the same index to every listed family. This keeps related views (e.g., input array and DP array; dist array and pseudo-code line) in sync without writing separate `\recolor` commands for each.
 
-**Binding caret — named `▲` pointers that slide (since 0.23.0).**
-The form above recolors cells. Adding an `id=` key instead draws a small
-`▲` caret glyph in a band just under the cell it points at, gives it a
-name, and **slides** it to its new cell when the bound index changes —
-ideal for two-pointer / sliding-window walks where `i` and `j` move
-independently. It is a separate, opt-in form: any `\cursor` without `id=`
-is the legacy recolor-hop above, unchanged.
+#### Cursor pin (binding caret) — `\cursor{shape}{id=…, at=…, color=…}` (since 0.23.0)
+
+Adding an `id=` key draws a small triangular caret in a band just under the cell it points at, names it, and **slides** it when its bound index changes — ideal for two-pointer / sliding-window walks where `i` and `j` move independently.
 
 ```latex
-% A caret 'i' bound to watch variable i; re-reads i every step and slides.
+\shape{w}{VariableWatch}{names=["i","j"]}
+% Declare each caret ONCE; it re-reads its binding and slides on its own every step.
 \cursor{arr}{id=i, at="w.var[i]", color="state:current"}
-% A second, independent caret 'j'.
 \cursor{arr}{id=j, at="w.var[j]", color="state:done"}
+...
+\step
+\apply{w.var[i]}{value=2}   % targeted set — THIS is the value the caret reads
 ```
+
+> **Both watch-write forms feed the caret** (since 0.23.2). `at="w.var[i]"` re-reads `w.var[i]` each frame; a targeted `\apply{w.var[i]}{value=N}` and a bulk `\apply{w}{i=N}` now update that slot identically, so use whichever reads better — bulk is handy when a step sets several variables at once.
 
 | arg | values | default | notes |
 |-----|--------|---------|-------|
-| `id` | identifier | required (selects this form) | names the caret; a later `\cursor` with the same `id` moves it |
-| `at` | `INT` or quoted `"shape.var[name]"` | required | the cell index; the quoted binding re-reads the `VariableWatch` value each frame |
-| `color` | annotation colors or `"state:X"` | `info` | quotes required for `state:` (R-36 palette) |
+| `id` | identifier | required (selects this form) | names the caret; re-issue with the same `id` only to force a move — otherwise it slides on its own |
+| `at` | `INT` or quoted `"shape.var[name]"` | required | cell index; the quoted binding re-reads the `VariableWatch` value each frame |
+| `color` | annotation colors or `"state:X"` | `info` | quotes required for `state:` |
 | `ephemeral` | bool | `false` | clears at the next `\step` like an annotation |
 
-An unresolvable or out-of-range binding (`at="w.var[i]"` where the value
-is blank or off the end) **soft-drops** the caret for that frame with an
-info warning — it never errors. When the caret's cell changes between
-steps it slides old→new; reduced-motion and print show it statically at
-its resolved seat. v1 works on 1-D cell/tick primitives (Array,
-DPTable-1D, Stack, Queue, NumberLine). See the smart-label ruleset R-38
-and motion-ruleset A-4 for the full contract.
-
-> Since 0.23.1 a binding caret can park on Array sentinel slots:
-> `\cursor{a}{id=i, at="before"}` / `at="after"` (requires
-> `sentinels=true` on the shape).
+Declare a caret **once**: it re-reads its binding and slides each step automatically — do not re-issue it per step. An unresolvable or out-of-range binding (blank value, or off the end) **soft-drops** the caret for that frame; it never errors. Reduced-motion and print show it statically at its resolved seat. Works on 1-D cell/tick primitives (Array, DPTable-1D, Stack, Queue, NumberLine); full contract in [spec/smart-label-ruleset.md](spec/smart-label-ruleset.md). Since 0.23.1 it can also park on Array sentinel slots — `\cursor{a}{id=i, at="before"}` / `at="after"` (needs `sentinels=true`).
 
 ### 5.12 `\foreach{var}{iterable}...\endforeach`
-Loop expansion. Iterables: `0..4`, `[1,3,5]`, `${computed_list}`.
+Loop expansion. Iterables: a range `0..4`, a literal list `[1,3,5]`, or a bare compute binding `${computed_list}`. A **subscript** iterable (`${list[i]}`) is not valid and raises **E1173** — bind it to a scalar in `\compute` first.
 ```latex
 \foreach{i}{0..4}
   \recolor{a.cell[${i}]}{state=done}
 \endforeach
 ```
 
-#### Variable interpolation — why `${i}` is mandatory
+#### Computed-indexing rules (read before looping)
 
-**`${i}` and bare `i` are not equivalent.** Inside a selector or value position,
-a bare identifier like `i` is parsed as a literal string key, not as a variable
-lookup. Only the `${...}` form triggers interpolation.
+Interpolation is **asymmetric**: the same `${...}` form resolves in some positions and silently fails in others. This is the single most common source of silent wrong-output — a dropped command renders without error but never touches its cells.
 
-| Form | What the parser sees | Result |
-|------|----------------------|--------|
-| `a.cell[${i}]` | `InterpolationRef(name="i")` — resolved at expansion time | `a.cell[0]`, `a.cell[1]`, … |
-| `a.cell[i]` | Literal string `"i"` — unchanged by substitution | Targets literal cell `"i"` (out of range) |
-| `value=${i}` | `InterpolationRef` in value position — resolved to iteration value | `value=0`, `value=1`, … |
-| `value=i` | Literal string `"i"` — not substituted | Cell displays the string `"i"` |
+| Form | Selector index `cell[…]` | Value `value=…` | `\foreach` iterable |
+|---|---|---|---|
+| `${i}` (loop / compute var) | ✓ resolves | ✓ resolves | n/a |
+| `${list[k]}`, `k` a `\compute` binding or literal | ✓ resolves to the element (since 0.23.2) | ✓ resolves to the element | ✗ **E1173** |
+| `${list[i]}`, `i` a `\foreach` var | ✗ **E1159** — loop vars don't substitute *inside* a subscript | ✓ resolves to the element | ✗ **E1173** |
+| `${list}` (bare binding) | ✗ whole container as an index → **E1159** | ✓ whole list as the value | ✓ iterates |
+| bare `i` (no `${}`) | ✗ literal key `"i"` → out of range, dropped | ✗ literal string `"i"` | n/a |
 
-**Silent failure mode.** When bare `i` is used inside a selector and the loop
-runs, the parser does NOT emit a warning even if `i` matches the foreach
-variable name. The command is accepted with the literal key `"i"`, which is
-typically out of range for any numeric-indexed primitive. The runtime drops
-the command with a `UserWarning` — the animation renders without error but
-the cells are never updated. This is the most common source of silent
-wrong-output bugs in foreach bodies.
+Every ✗ in the selector-index column is **fail-loud** (E1159 aborts the render with a hint) except bare `i`, which is an ordinary out-of-range selector (soft-drop, E1115 in strict mode).
 
-**Wrong vs correct — worked example:**
+- Loop `${i}` directly in the selector index: `\recolor{a.cell[${i}]}{…}`.
+- Read a computed list **by value**: `\apply{a.cell[${i}]}{value=${dp_vals[i]}}` — loop var in the index, subscript in the value.
+- Drive a selector index from a computed list with a **`\compute` binding** as the subscript: `\recolor{a.cell[${idx[k]}]}{…}` recolors `a.cell[idx[k]]` (since 0.23.2). Inside a `\foreach`, the loop var can't be the subscript (`${idx[i]}` → E1159) — loop `${i}` directly over the 1-D list of positions instead (`\foreach{i}{${idx}}` + `a.cell[${i}]`). For a full 2-D fill, nest two `\foreach` with `${i}`/`${j}` (see §5.2).
+
 ```latex
-% WRONG: bare i in selector — targets literal cell "i", always out of range.
-% Runtime drops the command with a UserWarning; cells are never recolored.
+% WRONG: bare i in the selector — literal cell "i", always out of range (dropped).
 \foreach{i}{0..3}
-  \apply{a.cell[i]}{value=${i}}     % 'i' is the string "i", not 0/1/2/3
+  \apply{a.cell[i]}{value=${i}}
 \endforeach
 
-% CORRECT: ${i} in both selector and value position.
+% CORRECT: ${i} in both the selector and the value.
 \foreach{i}{0..3}
-  \apply{a.cell[${i}]}{value=${i}}  % expands to cell[0], cell[1], cell[2], cell[3]
+  \apply{a.cell[${i}]}{value=${i}}
 \endforeach
 ```
 
-#### Subscript form — `${arr[i]}` for indexing a compute-bound list
+#### Scope & allowed body
 
-To index into a compute-bound list by the loop variable, use the subscript
-form `${list_name[i]}`:
-```latex
-\compute{
-  dp_vals = [0, 1, 3, 6, 10]
-}
-\foreach{i}{0..4}
-  \apply{dp.cell[${i}]}{value=${dp_vals[i]}}
-\endforeach
-```
-Here `${dp_vals[i]}` looks up index `i` in the list `dp_vals` at expansion
-time. The `i` inside the brackets is the foreach loop variable, not a
-binding name.
-
-#### Scope — loop variable is visible only inside the body
-
-The loop variable is added to the known bindings when parsing the body and
-removed immediately after `\endforeach`. It is **not visible** before
-`\foreach` or after `\endforeach`:
-
-```latex
-\recolor{a.cell[${i}]}{state=done}   % ERROR: ${i} unknown here
-
-\foreach{i}{0..3}
-  \recolor{a.cell[${i}]}{state=done} % OK: ${i} is the loop variable
-\endforeach
-
-\recolor{a.cell[${i}]}{state=done}   % ERROR: ${i} is gone again
-```
-
-Unknown `${name}` outside a foreach body emits a `UserWarning` (not a hard
-error) and the reference is left unresolved. See also `spec/ruleset.md §6.5`
-for the broader `\compute` scope rules.
-
-#### Allowed commands inside the body
-
-`\apply`, `\highlight`, `\recolor`, `\reannotate`, `\annotate`, `\cursor`,
-and nested `\foreach` (max depth 3). `\step`, `\shape`, `\substory`,
-`\playeach`, and `\narrate` are not allowed inside a foreach body.
+The loop variable is visible only between `\foreach` and `\endforeach`; using `${i}` before or after emits a `UserWarning` and stays unresolved (broader `\compute` scope rules: [spec/ruleset.md](spec/ruleset.md)). Allowed inside the body: `\apply`, `\highlight`, `\recolor`, `\reannotate`, `\annotate`, `\cursor`, and nested `\foreach` (max depth 3). Not allowed: `\step`, `\shape`, `\substory`, `\playeach`, `\narrate`.
 
 ### 5.13 `\substory[title="...", id="..."]...\endsubstory`
 Nested frame sequence inside a parent frame (animation only, max depth 3).
@@ -762,32 +690,21 @@ Inline cross-reference inside a `\narrate` body. Wraps *tex* in a `<span>` that 
 See §5.3 for label syntax rules (Unicode letter/`_` start; letters, digits, combining marks, `._-` continue).
 
 ### 5.15 `\ref{target}{text}`
-Inline cross-reference inside a `\narrate` body that tints *text* to match
-*target*'s current-frame visual state — naming a cell also points at it (R-39).
-Introduced with the full rationale in §5.4.
+Inline narration macro (inside `\narrate`, like `\hl`) that tints *text* to match *target*'s current-frame visual state — naming a cell also points at it.
 
-**Syntax:**
 ```latex
 \narrate{Choose the \ref{a.cell[2]}{pivot} and partition around it.}
 ```
 
 **Rules:**
-- Valid only inside `\narrate{...}` (like `\hl`).
-- Ink follows the R-36 annotation-state palette when *target*'s state is a
-  signalling colour (`current`, `done`, `dim`, `good`, `error`, `path`) →
-  `<span class="scriba-ref scriba-ref-state-{state}">`.
-- A valid target with no signal state (idle / highlight / hidden, or an
-  unstated or range target) → bare `<span class="scriba-ref">` inheriting the
-  body colour (an element with no state is not falsely coloured).
-- *text* supports inline math (`$...$`) and text-formatting commands.
-- An undeclared / typo'd target degrades to plain text with a soft warning
-  (**E1322**) — non-fatal. Renders in print / no-JS.
-- since 0.23.1 the target also gains a dashed ring (`scriba-ref-mark` —
-  border dash+weight only, its state colour stays); the tint tracks the target's state each
-  frame, so a cell that goes `current` → `done` recolours its `\ref` word too.
+- Valid only inside `\narrate{...}`.
+- When *target*'s state is a signalling colour (`current`, `done`, `dim`, `good`, `error`, `path`), the word takes that ink, and the tint tracks the state each frame — a cell that goes `current` → `done` recolours its `\ref` word too. Since 0.23.1 the target also gains a dashed ring.
+- A target with no signal state (idle / highlight / hidden, an unstated cell, or a range) renders as a plain emphasised word inheriting the body colour — an element with no state is not falsely coloured.
+- *text* supports inline math (`$...$`) and text formatting.
+- An undeclared / typo'd target degrades to plain text with a soft warning (**E1322**) — non-fatal, renders in print / no-JS.
 
 ### 5.16 `\focus{target}`
-Ephemeral spotlight (animation only, R-40): dims every addressable part of
+Ephemeral spotlight (animation only): dims every addressable part of
 *target*'s shape **except** *target* for this frame, then auto-clears at the
 next `\step`.
 
@@ -845,21 +762,14 @@ lighting up at once.
 \playeach{fac.range[1:5]}{state=done, cursor=w, narrate="write $fac[${i}]$"}
 ```
 
-**Desugaring (A-5 — indistinguishable hand-frames).** The block above is exact
-sugar for five hand-authored steps; the macro expands at *parse time* into real
-`\step` frames, so the scene machine, differ, emitter, and runtime are unaware a
-macro was involved (byte-for-byte identical output):
+The macro expands at parse time into ordinary `\step` frames — the block above equals five hand-authored steps:
 
 ```latex
 \step
 \recolor{fac.cell[1]}{state=done}
 \cursor{fac}{id=w, at=1}
 \narrate{write $fac[1]$}
-\step
-\recolor{fac.cell[2]}{state=done}
-\cursor{fac}{id=w, at=2}
-\narrate{write $fac[2]$}
-% … cells 3, 4, 5 …
+% … cells 2, 3, 4, 5 …
 ```
 
 **Selector** (first brace) — MUST be a `range` (1-D) or `block` (2-D) with
@@ -873,28 +783,19 @@ is required:
 | Key | Applies to | Effect per frame |
 |-----|-----------|------------------|
 | `state=<state>` | range, block | `\recolor{shape.cell[i]}{state=...}` on the current element (persistent — the sweep accumulates) |
-| `cursor=<id>` | range only | an R-38 binding-caret `\cursor{shape}{id=<id>, at=<i>}` that follows the sweep |
-| `narrate="<tmpl>"` | range, block | per-frame narration; the loop index `${i}` (range) or `${r}`/`${c}` (block) is substituted at build time. Every other `${...}` is left for the normal `\compute` interpolation. Must be quoted. |
-
-**Note on syntax vs. the `{write, cursor}` sketch.** An earlier sketch wrote
-bare action words (`\playeach{fac.range[1:5]}{write, cursor}`). v1 uses explicit
-`key=value` actions instead, because "write" has no value source in v1 (there is
-no per-element value to write) — the honest, general primitive is *recolor the
-swept element to a state* (`state=`) plus an optional following `cursor=`. This
-maps `write → state=<state>` (e.g. `done`) and `cursor → cursor=<id>`.
+| `cursor=<id>` | range only | a binding-caret `\cursor{shape}{id=<id>, at=<i>}` that follows the sweep |
+| `narrate="<tmpl>"` | range, block | per-frame narration; the index `${i}` (range) or `${r}`/`${c}` (block) is substituted at build time; every other `${...}` is left for normal `\compute` interpolation. Must be quoted. |
 
 **Cell addressing (v1).** The per-element target is always `cell[i]` / `cell[r][c]`,
 so `\playeach` targets cell-addressable primitives (Array, Grid, Matrix, DPTable).
-A `range` on a NumberLine targets its ticks (`tick[i]`) — supported since 0.23.1.
+A `range` on a NumberLine targets its ticks (`tick[i]`) — since 0.23.1.
 
 **Rules & errors:**
 - Selector not a `range`/`block`, or non-literal (`${...}`) bounds → **E1494**.
-- More than 64 generated frames → **E1493** (a per-element *frame* is heavier
-  than a per-element command, so the cap is tighter than `\foreach`).
+- More than 64 generated frames → **E1493** (a per-element frame is heavier than
+  a per-element command, so the cap is tighter than `\foreach`).
 - No `state`/`cursor` action, or `cursor=` with a 2-D `block` → **E1495**.
-- An undeclared shape surfaces the normal **E1116** at render time (the generated
-  commands travel the ordinary scene path — that is what makes them
-  indistinguishable from hand frames).
+- Undeclared shape → the normal **E1116** at render time.
 - Not allowed inside a `\foreach` body (**E1172**) or across a `\substory`
   boundary (**E1006**).
 
@@ -911,10 +812,8 @@ A `range` on a NumberLine targets its ticks (`tick[i]`) — supported since 0.23
 | `error` | red | error/invalid |
 | `good` | green-tinted | correct/optimal |
 | `path` | gray-blue | part of solution path |
-| `hidden` | _(omitted from SVG)_ | element exists but is not rendered |
+| `hidden` | _(invisible)_ | element exists but is not shown; works on all 15 primitives (since 0.23.2 — previously Graph/Tree/Plane2D only) |
 | `highlight` | blue outline | ephemeral focus via `\highlight` (auto-clears next frame); also accepted by `\recolor{X}{state=highlight}` as a persistent variant — use sparingly, prefer `\highlight` for transient focus |
-
-For exact CSS fill/stroke/text token values see `scriba/animation/static/scriba-scene-primitives.css`.
 
 **Semantic convention — `current` vs `path`:** Both render in blue but carry distinct meaning. Use `current` for the node or cell being **actively processed in this frame** (e.g. the node being relaxed in Dijkstra). Use `path` for nodes that are part of the **final solution path** once the algorithm concludes (e.g. the shortest-path nodes highlighted at the end of the trace). Mixing them in the same frame is valid — the hues differ enough to be distinguishable.
 
@@ -938,7 +837,7 @@ For exact CSS fill/stroke/text token values see `scriba/animation/static/scriba-
 | `label` | string | none | no | caption below the array |
 | `sentinels` | bool | `false` | no | reserve two dashed `before`/`after` slots (begin()−1 / end()) an out-of-range annotation can park on; excluded from `all`/`range` |
 
-**Operations** (fixed max-N grid — cell positions never move, so reflow is a `value_change` cascade that holds R-32 by construction):
+**Operations** (fixed max-N grid — cell positions never move, so a reflow is just a cascade of value changes):
 - `\apply{a}{insert={at=k, value=v}}` — shift slots `k..live−1` right, write `v` at `k` (`index` is an alias for `at`). Inserting into a full array errors (E1403); declare a larger `size` instead of growing past it.
 - `\apply{a}{remove=k}` — shift slots `k+1..live−1` left; the freed tail becomes an **empty cell** (never an interior hole).
 - `\apply{a.cell[i]}{value=...}` — set one cell's text directly.
@@ -1000,7 +899,7 @@ Nodes + edges with layout engine.
 | `edges` | list | `[]` | no | `(u,v)` or weighted `(u,v,w)` tuples; don't mix the two (E1474) |
 | `directed` | bool | `false` | no | draw arrowheads |
 | `layout` | enum | `"force"` | no | see layout options below |
-| `layout_seed` | int | `42` | no | **optional, advanced** — RNG seed for the `force` layout's random start. Controls *reproducibility*, not quality. Most authors can omit it (see best-practices callout below). Alias `seed`; `layout_seed` wins. |
+| `layout_seed` | int | `42` | no | RNG seed for the `force` layout — controls reproducibility, not quality; most authors omit it. Alias `seed` (`layout_seed` wins). |
 | `show_weights` | bool | `false` | no | render edge-weight pills |
 | `label` | string | none | no | caption |
 
@@ -1051,29 +950,11 @@ after a later `add_edge` connects it.
 | Layout | Use when | Notes |
 |---|---|---|
 | `"force"` (default) | Undirected graphs of any size | Non-deterministic across seeds — set `layout_seed=` for reproducibility |
-| `"stable"` | Small undirected graphs (≤20 nodes) | Deterministic; emits a `UserWarning` if `directed=true` (see callout below) |
+| `"stable"` | Small undirected graphs (≤20 nodes) | Deterministic; emits a `UserWarning` if `directed=true` (§13.10) |
 | `"hierarchical"` | DAGs, tree-like directed flows | Respects `orientation="TB"` (top→bottom) or `"LR"` (left→right) |
 | `"auto"` | Let Scriba choose | Picks `hierarchical` when the graph is a DAG, otherwise `force` |
 
-> **⚠️ Gotcha — `layout="stable"` + `directed=true`**
-> This combination emits a `UserWarning` on every render: the stable layout was designed for undirected graphs and makes no routing guarantees for directed edges. For deterministic directed-graph layouts, use `layout="force"` with `layout_seed=<int>` (reproducible across runs). If you need a ranked DAG look, use `layout="hierarchical"` instead.
-
-> **✅ Graph layout — best practices (read this first)**
-> Most authors should **not** need to think about `layout_seed`. To get a clean,
-> stable layout without seed-guessing:
-> 1. **Declare all nodes _and_ all edges up front**, then tell the story with
->    `\recolor` / state (dim, highlight, mark done) and `\hl` instead of
->    `add_edge`/`remove_edge`. Full topology at construction means no isolated
->    node gets flung to a corner, and (because positions are pinned) the graph
->    stays put across every step.
-> 2. For small graphs (**≤20 nodes**) prefer **`layout="stable"`** — it spreads
->    nodes evenly, is deterministic, and you never touch a seed.
-> 3. Reach for **`layout_seed`** only as a last-resort cosmetic tweak when the
->    auto-layout looks lopsided; pin a value you like and move on.
->
-> If you *must* grow the graph with `add_edge`, remember the node it connects is
-> placed from the **construction-time** topology — so still declare that node's
-> first edge up front when you can.
+> **Best practices (read first).** Most authors never need `layout_seed`. Declare all nodes **and** edges up front and tell the story with `\recolor`/state and `\hl` rather than `add_edge`/`remove_edge` — full topology at construction keeps positions pinned, so no isolated node is flung to a corner and the graph stays put across steps. For ≤20 nodes prefer `layout="stable"` (even, deterministic, no seed). Reach for `layout_seed` only as a last-resort cosmetic tweak. If you must grow the graph with `add_edge`, still declare that node's first edge up front so it is placed from the construction-time topology.
 
 ### 7.5 Tree
 Rooted tree with Reingold-Tilford layout.
@@ -1391,33 +1272,16 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | HashMap | `.bucket[i]` | — | — | — | — | `.all` |
 | LinkedList | — | `.node[i]` | `.link[i]` | — | — | `.all` |
 | Queue | `.cell[i]` | — | — | — | — | `.front`, `.rear`, `.all` |
-
-> **`block[r0:r1][c0:c1]`** (since 0.22.2) — the 2-D twin of `range`, inclusive
-> on both axes, Grid + 2-D DPTable. `\recolor`/`\highlight` expand it to every
-> cell in the rectangle; `\annotate` anchors its pill at the block's center.
-> Out-of-bounds or reversed bounds behave like any bad selector (soft W-level
-> drop, E1115 path). `${...}` interpolation works in all four indices.
-> Add `bracket=true` to the annotate to draw a dashed rounded outline
-> hugging the block (no fill — cell values stay readable; stroke follows
-> `color=`).
-> Example: `\recolor{g.block[0:1][0:1]}{state=done}` +
-> `\annotate{g.block[0:1][0:1]}{label="nền $(m-1)^2 = 4$", bracket=true, color=good}`.
-
-> **`color="state:X"` + `leader=true`** (since 0.22.2) — bind a label to the
-> exact color of the state it describes: X ∈ current, done, dim, good,
-> error, path (**quotes required** — `color=state:current` unquoted is a
-> parse error E1012). The ink dark-adapts automatically. `leader=true`
-> draws a dotted connector + anchor dot from the pill to its cell (on arc
-> pills it forces the built-in leader; never doubles).
-> Example: `\annotate{g.cell[2][0]}{label="lớp chẵn", color="state:current", leader=true, position=below}`.
-
-
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
-| Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
+| Matrix | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]` | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]` | — | — | — | — | `.all` |
 | MetricPlot | — | — | — | — | — | `.all` |
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
+
+**`block[r0:r1][c0:c1]`** (since 0.22.2) — the 2-D twin of `range`, inclusive on both axes, on Grid + 2-D DPTable (+ Matrix since 0.23.2). `\recolor`/`\highlight` expand it to every cell in the rectangle; `\annotate` anchors its pill at the block's center; `${...}` works in all four indices; out-of-bounds/reversed bounds soft-drop (E1115). Add `bracket=true` on the annotate for a dashed outline hugging the block (stroke follows `color=`). Example: `\recolor{g.block[0:1][0:1]}{state=done}`.
+
+**`color="state:X"` + `leader=true`** (since 0.22.2) — bind a label to the exact colour of the state it describes, X ∈ current/done/dim/good/error/path (**quotes required**; unquoted `color=state:current` is a parse error E1012). `leader=true` draws a dotted connector + dot from the pill to its cell. Example: `\annotate{g.cell[2][0]}{label="lớp chẵn", color="state:current", leader=true, position=below}`.
 
 **Plane2D full selector set** — Plane2D has five element-type families, all addressed by zero-based index. The "Cell/Item" column above shows the most common form; the complete set is:
 
@@ -1486,44 +1350,7 @@ Indices are **0-based everywhere except CodePanel**:
 \end{diagram}
 ```
 
-### 9.3 DP Editorial (Frog Problem)
-```latex
-\section{Frog 1 -- Dynamic Programming}
-
-Given $N$ stones with heights $h[0..N-1]$, a frog starts at stone 0 and wants
-to reach stone $N-1$. Each jump covers 1 or 2 stones, costing $|h_i - h_j|$.
-Find minimum total cost.
-
-$$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
-
-\begin{animation}[id="frog1-dp", label="Frog 1 -- DP walkthrough"]
-\shape{h}{Array}{size=6, data=[2,9,4,5,1,6], labels="0..5", label="$h$"}
-\shape{dp}{Array}{size=6, data=["","","","","",""], labels="0..5", label="$dp$"}
-
-\step
-\narrate{Problem: 6 stones with heights $h = [2,9,4,5,1,6]$.}
-
-\step
-\recolor{h.cell[0]}{state=current}
-\recolor{dp.cell[0]}{state=done}
-\apply{dp.cell[0]}{value=0}
-\narrate{Base case: $dp[0] = 0$.}
-
-\step
-\recolor{h.cell[0]}{state=dim}
-\recolor{h.cell[1]}{state=current}
-\recolor{dp.cell[1]}{state=current}
-\annotate{dp.cell[1]}{label="+7", arrow_from="dp.cell[0]", color=good}
-\narrate{$dp[1] = dp[0] + |9-2| = 7$.}
-
-\step
-\apply{dp.cell[1]}{value=7}
-\recolor{dp.cell[1]}{state=done}
-\narrate{Fill $dp[1] = 7$. Continue to next stone...}
-\end{animation}
-```
-
-### 9.4 BFS with Multiple Primitives
+### 9.3 BFS with Multiple Primitives
 ```latex
 \begin{animation}[id="bfs-demo", label="BFS with Queue"]
 \shape{G}{Graph}{nodes=["A","B","C","D"], edges=[("A","B"),("A","C"),("B","D"),("C","D")], directed=false, layout="stable"}
@@ -1548,27 +1375,7 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 \end{animation}
 ```
 
-### 9.5 Using foreach and compute
-```latex
-\begin{animation}[id="foreach-demo", label="Foreach and Compute"]
-\shape{a}{Array}{size=5, data=[10,20,30,40,50], labels="0..4"}
-
-\step
-\compute{ evens = [0, 2, 4] }
-\foreach{i}{${evens}}
-  \recolor{a.cell[${i}]}{state=good}
-\endforeach
-\narrate{Mark even-indexed cells as good.}
-
-\step
-\foreach{i}{0..4}
-  \recolor{a.cell[${i}]}{state=done}
-\endforeach
-\narrate{Mark all cells as done.}
-\end{animation}
-```
-
-### 9.6 Hidden State Pattern (BFS Tree)
+### 9.4 Hidden State Pattern (BFS Tree)
 ```latex
 \begin{animation}[id="bfs-tree", label="BFS Tree Construction"]
 \shape{T}{Tree}{root="A", nodes=["A","B","C"], edges=[("A","B"),("A","C")]}
@@ -1592,7 +1399,7 @@ $$dp[i] = \min(dp[i-1] + |h_i - h_{i-1}|,\; dp[i-2] + |h_i - h_{i-2}|)$$
 \end{animation}
 ```
 
-### 9.7 Dijkstra's Algorithm (Full Worked Example)
+### 9.5 Dijkstra's Algorithm (Full Worked Example)
 
 Three primitives: `Graph` (weighted, directed, hierarchical layout), `Array` (distance table), `CodePanel` (pseudo-code). Demonstrates `\cursor` multi-target, `\annotate` with `arrow_from=`, and `\reannotate` for final path highlight.
 
@@ -1744,7 +1551,7 @@ The option bracket `[...]` on `\begin{animation}` / `\begin{diagram}` is **optio
 | `width` | dimension | auto | both | ViewBox width hint (e.g. `width=800` for px, `width=8cm`) |
 | `height` | dimension | auto | both | ViewBox height hint |
 | `layout` | filmstrip\|stack | filmstrip | animation | Frame layout |
-| `grid` | bool | _(n/a)_ | diagram | Removed in 0.21.2 — now raises `E1004`
+| `grid` | bool | _(n/a)_ | diagram | Removed — now raises `E1004`. |
 
 ---
 
@@ -1763,21 +1570,17 @@ The option bracket `[...]` on `\begin{animation}` / `\begin{diagram}` is **optio
 
 ## 12. Common Patterns
 
-### Cursor movement through array
-```latex
-\cursor{a.cell}{0}                          % initial position
-% next step:
-\cursor{a.cell}{1}                          % auto: cell[0]→dim, cell[1]→current
-\cursor{a.cell}{2, prev_state=done}         % cell[1]→done, cell[2]→current
-```
+Single-command recipes live with their command; this section keeps only the multi-step compositions.
 
-### DP transition arrows
-```latex
-\annotate{dp.cell[3]}{label="+5", arrow_from="dp.cell[1]", color=good}
-\annotate{dp.cell[3]}{label="+2", arrow_from="dp.cell[2]", color=info}
-```
+| Recipe | See |
+|---|---|
+| Move a cursor through an array | `\cursor` hop, §5.11 |
+| DP transition arrow | `\annotate{…}{arrow_from=…}`, §5.8 |
+| Mark tree vs non-tree edges | `\recolor{G.edge[…]}{state=good\|dim}`, §5.7 |
+| Fill a 2-D DP table | nested `\foreach`, §5.2 |
 
 ### Traceback with reannotate
+Recolor the recovered path, then re-point the arcs along it:
 ```latex
 \compute{ path = [0, 2, 3, 5] }
 \foreach{i}{${path}}
@@ -1787,21 +1590,13 @@ The option bracket `[...]` on `\begin{animation}` / `\begin{diagram}` is **optio
 \reannotate{dp.cell[3]}{color=path, arrow_from="dp.cell[2]"}
 ```
 
-### Graph edge marking
-```latex
-\recolor{G.edge[(A,B)]}{state=good}    % tree edge
-\recolor{G.edge[(C,D)]}{state=dim}     % non-tree edge (cross edge)
-```
-
 ### Flow network (dynamic edge labels)
 ```latex
 \shape{G}{Graph}{nodes=["S","A","T"], edges=[("S","A"),("A","T")], directed=true}
-% Initialize with 0/cap
 \apply{G.edge[(S,A)]}{value="0/10"}
 \apply{G.edge[(A,T)]}{value="0/5"}
 
 \step
-% Push flow — update labels
 \apply{G.edge[(S,A)]}{value="5/10"}
 \apply{G.edge[(A,T)]}{value="5/5"}
 \recolor{G.edge[(A,T)]}{state=error}   % saturated edge
@@ -1837,7 +1632,7 @@ beats, split them across two steps:
 Same applies to Queue `enqueue`.
 
 ### 13.2 `${interpolation}` resolves in `\foreach` bodies, `\apply` values, selector indices, and `\narrate` text
-`${var}` interpolation from `\compute` bindings resolves in all of these positions:
+A **scalar** `${var}` (a loop variable or a `\compute` binding) resolves in all of these positions. A **subscript** `${list[i]}` does not resolve in a selector index — see the computed-indexing rules in §5.12 for that asymmetry. This section covers where a scalar `${var}` resolves:
 ```latex
 % Inside foreach — loop variable substituted textually
 \compute{ indices = [0, 2, 4] }
@@ -1868,7 +1663,7 @@ binding is left **verbatim** (e.g. `${not_a_binding}` renders literally) — nar
 never errors on an unknown name. In a *selector index*, by contrast, an unbound
 `${name}` is fail-loud and raises **E1159** (it no longer silently no-ops).
 Bare identifiers without `${...}` are still treated as literal string keys — always
-use the `${...}` form for interpolation (see §5.11).
+use the `${...}` form for interpolation (see §5.12).
 
 ### 13.3 No `\documentclass` or `\begin{document}`
 Files are body content directly. Adding `\documentclass{article}` or
@@ -1902,11 +1697,9 @@ Commands not in the supported set (§2) pass through as literal text, not as err
 Common traps: `\LaTeX`, `\footnote`, `\caption`, `\cite`, `\ref`.
 
 ### 13.8 Annotation headroom is reserved at the per-scene maximum
-The layout engine reserves vertical space for annotations at the **per-scene maximum across all frames** (R-32), so every frame keeps a stable layout even when annotations appear only later. Since v0.21.2 the amount reserved per frame is the **exact painted extent** of that frame's annotations — the engine renders them into a scratch buffer and measures the output — not a heuristic estimate. An arrow or pill that stays inside the primitive's own body therefore reserves nothing.
+The scene reserves vertical space for annotations at the **maximum across all frames**, so the layout stays stable even when a pill appears only later. An annotation that stays inside the primitive's own body reserves nothing; one that paints *above* the primitive (an arc arriving at the top row, or a `position=above` pill) raises the bounding-box height in every frame. If you see top padding in early frames, look for a later frame whose annotation extends above the primitive.
 
-**Consequence:** Annotations that actually paint above the primitive (e.g. an arc arriving at the top row, or a `position=above` pill) increase the scene's bounding box height in every frame, at exactly the painted amount. If you notice top padding in early frames, check for a later frame whose annotation genuinely extends above the primitive.
-
-**Workaround:** Use `ephemeral=true` on annotations that are only relevant for a single frame and do not need to persist. This can reduce the headroom reservation if ephemeral annotations are not the maximum across any given frame.
+**Workaround:** mark single-frame annotations `ephemeral=true` — if they are not the per-scene maximum, that trims the reserved headroom.
 
 ### 13.9 `CodePanel` line indices are 1-based
 `code.line[i]` uses **1-based** indexing — `code.line[1]` is the first line, not `code.line[0]`. This differs from `Array` and `Grid` (0-based). Using `code.line[0]` silently emits a warning (E1115) and the command is dropped.
@@ -1918,11 +1711,7 @@ The layout engine reserves vertical space for annotations at the **per-scene max
 ```
 
 ### 13.10 `Graph(layout="stable", directed=true)` emits a UserWarning
-The stable SA layout optimizer is topology-blind — it has no edge-direction term, so directed graphs often render upside-down or sideways. When both `layout="stable"` and `directed=true` are set, a `UserWarning` is emitted at `\shape` parse time. Use `layout="hierarchical"` for DAGs.
-
-Forward-compat flags and dev-only env vars (`global_optimize`, the diagram
-`SCRIBA_DEBUG_LABELS`, `SCRIBA_LABEL_ENGINE`) are not needed for
-authoring — see [Appendix A](#appendix-a--internal--forward-compat).
+The stable layout is direction-blind, so directed graphs often render upside-down or sideways. Setting both `layout="stable"` and `directed=true` emits a `UserWarning` at `\shape` parse time — use `layout="hierarchical"` for DAGs.
 
 ---
 
@@ -1975,7 +1764,7 @@ Top author-facing codes. Full catalog with explanations: [spec/error-codes.md](s
 | E1470 | Validation | `Graph` has an empty `nodes=` list |
 | E1474 | Validation | `Graph` edge has a bad shape, or weighted and unweighted edges are mixed |
 | E1501 | Validation | `Graph` exceeds the 100-node hard limit (force layout) |
-| E1159 | Validation | `${name}` selector index references an unknown `\compute` binding outside `\foreach` |
+| E1159 | Validation | Selector index `${…}` is unresolvable: unknown `\compute` binding, `\foreach` var used as a subscript, or resolves to a whole container instead of one value |
 | E1321 | Validation | `\hl` references an unknown step-id (no matching `\step` label or `step{N}`) |
 | E1467 | Validation | Malformed Plane2D `add_*` element spec |
 | E1005 | Parse error | Duplicate or empty `\step[label=...]` |
@@ -1984,22 +1773,30 @@ Top author-facing codes. Full catalog with explanations: [spec/error-codes.md](s
 | E1433–E1436 | Validation | Tree mutation errors (cycle / root-without-cascade / bad reparent spec / unknown `add_node` parent) |
 | E1437 | Validation | Plane2D `remove_*` index out of range or already tombstoned |
 | E1471 / E1472 | Validation | Graph `add_edge` unknown endpoint / `remove_edge` on a missing edge |
+| E1004 | Parse error | Unknown option key in a `\step[...]` or environment bracket |
+| E1012 | Parse error | Unquoted `color=state:X` — the `"state:X"` value must be quoted |
+| E1052 | Parse error | Trailing content after the `\step[...]` closing `]` |
+| E1053 | Validation | `\focus` used in the prelude (it is frame-only) |
+| E1058 | Validation | `\invariant` after the first `\step` (prelude-only) |
+| E1114 | Validation | Unknown `\shape` parameter key (with a "did you mean" hint) |
+| E1172 | Parse error | Command not allowed inside a `\foreach` body (or `\playeach` nested in one) |
+| E1322 | UserWarning | `\ref` target undeclared / typo'd — degrades to plain text |
+| E1402 / E1403 | Validation | `Array` `data=` longer than `size=` / `insert` into a full array |
+| E1462 | UserWarning | Plane2D polygon auto-closed (first point appended) |
+| E1493 | Hard limit | `\playeach` generated more than 64 frames |
+| E1494 / E1495 | Validation | `\playeach` selector not a literal `range`/`block` / missing `state`+`cursor` action or `cursor=` on a 2-D block |
 
-Codes cited elsewhere in this doc but not listed here are in [spec/error-codes.md](spec/error-codes.md).
+Any code cited in this doc is covered above; the complete catalog with long-form explanations is in [spec/error-codes.md](spec/error-codes.md).
 
 ---
 
 ## Appendix A — Internal / Forward-Compat
 
-These are accepted but **not needed for authoring**. Listed for completeness so
-their presence in old sources or tooling is explained.
+Accepted but **not needed for authoring** — listed only so their presence in old sources or tooling is explained.
 
 | Item | Where | Status |
 |---|---|---|
-| `global_optimize` | Graph param | **No-op** forward-compat flag (SA post-refine, GEP-20). Emits a `UserWarning`; has no runtime effect. |
-| `grid` | `\begin{diagram}` option | Removed in 0.21.2 — now raises `E1004`. |
-| `SCRIBA_DEBUG_LABELS` | env var | `1` annotates each pill with its placement score (collision debugging). Never enable in production HTML. |
-| `SCRIBA_LABEL_ENGINE` | env var | `unified` (default) / `legacy` (deprecated) / `both` (cross-check, slow). Engine-development only. |
-
-Pill-placement engine internals (collision avoidance, headroom, sizing) live in
-[spec/smart-label-ruleset.md](spec/smart-label-ruleset.md) — maintainer reference, not authoring.
+| `global_optimize` | Graph param | No-op forward-compat flag; emits a `UserWarning`, no runtime effect |
+| `SCRIBA_NO_EMPHASIS` | env var | `1` suppresses the arrival pulse (the widget also honours `prefers-reduced-motion`) |
+| `SCRIBA_DEBUG_LABELS` | env var | `1` annotates each pill with its placement score (collision debugging) — never in production HTML |
+| `SCRIBA_LABEL_ENGINE` | env var | `unified` (default) / `legacy` / `both` — engine development only |
