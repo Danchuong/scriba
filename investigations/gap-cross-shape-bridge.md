@@ -9,8 +9,10 @@
 > Thang bằng chứng: **[Confirmed]** = đọc thẳng trong source phiên này (có path:line) ·
 > **[Deduced]** = hệ quả logic của fact đã confirm · **[Hypothesized]** = đề xuất thiết kế, chưa dựng.
 >
-> Phụ thuộc chính: **A4** (marker = decoration có identity, slide `cursor_move`) nằm ở
-> `investigations/gap-motion-identity.md` (case file anh em, đang viết song song). Xem §9.
+> Phụ thuộc chính: **A4** (`investigations/gap-motion-identity.md`) — **ĐÃ CHỐT**: element-identity thắng,
+> **KHÔNG phá R-32** (R-32 ràng buộc *envelope primitive bất biến*, không cấm phần tử trượt **trong** envelope).
+> Cơ chế: tái dùng `position_move` (**0 kind mới**); Plane2D sweep = `\apply{p.line[i]}{to_x=4.0}` (**0 verb mới**);
+> sửa hình học `position_move` ends-at-old → glide-to-new (**1 handler**). Với C1 (§6): coi sweep glide **đã chạy**. Xem §9.
 
 ---
 
@@ -39,8 +41,8 @@ runtime, 0 version bump* (soi tiền lệ `\trace`: `differ.py:246-270` **[Confi
 mới cần một kind `link_move` (một handler, một bump) — **hoãn** đến khi có bài thật cần (YAGNI; giống
 `cursor_move` chỉ thêm khi caret thật sự cần: `differ.py:311-315` **[Confirmed]**).
 
-Phased (§8): **A4** (dep) → **P1 C3 `\link` tĩnh** (tổng quát nhất/chi phí) → **P2 A2c `\combine` ephemeral**
-(tái dùng entry+emit của P1) → **P3 C1 = doc recipe** (không máy mới).
+Phased (§8): **A4** (dep — **đã chốt**) → **P1 C3 `\link` tĩnh** (tổng quát nhất/chi phí) → **P2 A2c `\combine`
+ephemeral** (tái dùng entry+emit của P1) → **P3 C1 = doc recipe** (không máy mới; sweep glide do A4 cấp, 0 verb).
 
 ---
 
@@ -50,7 +52,7 @@ Phased (§8): **A4** (dep) → **P1 C3 `\link` tĩnh** (tổng quát nhất/chi 
 |---|---|---|---|---|
 | **A2c** `\combine{m.row[i],m.col[j]}{into=c.cell[i][j]}` | 2 nguồn (1–2 shape) → 1 đích (shape khác), vẽ liên kết **đổi mỗi frame** | **Có** | **Có** (động/ephemeral) | LinkEntry ephemeral + emit cấp-scene + rides `annotation_add/_remove` |
 | **C3** dual-primitive synced (tree↔array Euler, grid↔graph) | mapping **cố định suốt animation**; recolor vế trái → sáng vế phải | **Có** | **Có** (tĩnh/persistent) | LinkEntry persistent + (tuỳ chọn) mirror-recolor ở scene-apply |
-| **C1** sweep-line (Geometry + Mo's) | 1 line chạy + event-queue + status-set, **3 shape đồng nhịp** | **Không** (đường nối là *tuỳ chọn*) | **Không** | `\step` (đồng bộ toàn cục sẵn) + **A4** (sweep line slide) + kỷ luật authoring |
+| **C1** sweep-line (Geometry + Mo's) | 1 line chạy + event-queue + status-set, **3 shape đồng nhịp** | **Không** (đường nối là *tuỳ chọn*) | **Không** | `\step` (đồng bộ toàn cục sẵn) + **A4** (`\apply{p.line[i]}{to_x=}` = `position_move` glide, 0 verb/kind mới) + kỷ luật authoring |
 
 **Kết luận [Deduced].** "Cầu" là một họ **hai thành viên** (A2c động + C3 tĩnh) chia nhau đúng *một* máy mới:
 **resolver hai-đầu-mút cấp-scene + emit overlay cấp-stage**. C1 là thứ thứ ba, **rẻ hơn và khác loại** — một
@@ -197,22 +199,24 @@ spine khoá-một-shape ở 3 chỗ (§3.3). Kết: **đáng làm một lần, d
 \shape{Q}{Array}{data=[...]}              # event-queue: hoành độ đã sort
 \shape{S}{Array}{data=[]}                 # status-set (theo tung độ), ordered
 # mỗi sự kiện = MỘT \step:
-\step: \apply{P}{add_line=<x=e.x, dọc>}   # dời cây kim tới e.x  → fs=1 resync (A-6); MƯỢT = A4 slide
+\step: \apply{P.line[i]}{to_x=e.x}        # dời cây kim tới e.x = position_move GLIDE (A4, 0 verb/kind mới)
        \highlight{Q.cell[k]}              # sự kiện hiện tại trên queue
        \apply{S}{...insert e...}          # cập nhật status-set
        \highlight{S.cell[j-1]}, \highlight{S.cell[j+1]}   # 2 hàng xóm để so k/c cặp
 ```
 
-**Đúng chỗ thiếu (trung thực):**
-- **(a) Cây kim mượt.** Dời bằng re-emit + `fs=1` là *snap*, không trượt. Muốn **trượt** cần A4 tổng quát
-  hoá slide cho *line của plane2d* (tương tự `cursor_move`) — thuộc **gap-motion-identity**, **không** thuộc cầu. **[Deduced]**
+**Đúng chỗ thiếu (trung thực), cập nhật theo A4 đã chốt:**
+- **(a) Cây kim mượt — ĐÃ ĐÓNG bởi A4.** Verdict A4: `\apply{p.line[i]}{to_x=…}` cưỡi `position_move` (0 verb/kind
+  mới), sửa hình học ends-at-old → glide-to-new (1 handler, **trong scope A4**). Sweep intra-viewport **không đổi
+  bbox** nên R-32 không bị đe doạ. ⇒ C1 **không** cần thêm gì cho cây kim ngoài A4. **[Confirmed via A4 verdict]**
 - **(b) Đường nối điểm-sweep ↔ ô-queue ↔ ô-status.** Đây mới là chỗ cầu (A2c/C3) *có thể* giúp — nhưng **tuỳ
   chọn**, không bắt buộc để C1 chạy. **[Deduced]**
 - **(c) Kỷ luật authoring.** "1 `\step` = 1 event", status-set = một Array/Tree thường, event-queue sort trước.
   Đây là **pattern trong docs**, không phải feature. **[Hypothesized]**
 
-⇒ **C1 xuất xưởng dưới dạng RECIPE doc + phụ thuộc A4.** Nó **không** nằm trong feature cầu; cầu là *nâng cấp
-tuỳ chọn* cho C1. (Backbone Geometry + Mo's vẫn thành lập được ngay khi có A4, chưa cần cầu.)
+⇒ **C1 xuất xưởng dưới dạng RECIPE doc, cưỡi A4 (đã chốt).** Với A4 đã cấp sweep glide (0 verb mới), **cả ba
+"chỗ thiếu" đều không phải máy mới**: (a) do A4, (b) tuỳ chọn = cầu, (c) là docs. C1 **không** nằm trong feature
+cầu; cầu là *nâng cấp tuỳ chọn*. Backbone Geometry + Mo's thành lập được **ngay khi A4 xong, chưa cần cầu**. **[Deduced]**
 
 ---
 
