@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.22.2] - 2026-07-04 — Diagram-clarity decorations: trace, block, state colors
+
 ### Added
 - **`block[r0:r1][c0:c1]` selector** (P0 of the unified decoration plan,
   R-35): the inclusive 2-D twin of `range[lo:hi]` for Grid and 2-D

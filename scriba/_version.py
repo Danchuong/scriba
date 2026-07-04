@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.22.1"
+__version__: str = "0.22.2"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 14
+SCRIBA_VERSION: int = 15
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -129,4 +129,12 @@ foreignObjects flip overflow:hidden->visible, the single-line math label
 drops its flex wrapper (space-swallowing) for the same inline model as
 multi-line, and .scriba-annot-label divs pin to the annotation mono font.
 Consumer caches keyed on rendered output MUST invalidate.
+
+0.22.2 bumps 14→15 (decoration features): the inline stylesheet gains the
+``--scriba-annotation-state-*`` tokens and their rule family (R-36), so
+every rendered page's bytes differ even for documents that use none of
+the new surface. The new surface itself — ``block[r0:r1][c0:c1]``,
+``bracket=true``, ``color="state:X"``, ``leader=true``, ``\\trace`` — is
+opt-in and leaves existing documents' geometry untouched. Consumer caches
+keyed on rendered output MUST invalidate.
 """

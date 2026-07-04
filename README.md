@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.22.1 · MIT · Python 3.10+
+**Status:** v0.22.2 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -24,6 +24,24 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.22.2
+
+- **`\trace`** — an arrow that follows a sequence of cells
+  (`cells=[[2,0],[2,1],...]`): traversal/fill direction is SHOWN, not
+  inferred from cell numbering; the interactive widget draws the arrow
+  along its path on the step it appears.
+- **`block[r0:r1][c0:c1]`** — the 2-D twin of `range` for Grid/DPTable-2D,
+  with `bracket=true` for a dashed outline hugging the area.
+- **`color="state:X"` + `leader=true`** — labels can carry the exact color
+  of the state they describe (current/done/dim/good/error/path,
+  dark-adapted, WCAG-AA inks) and connect to their cell with a dotted
+  leader.
+- `SCRIBA_VERSION` 14→15 (new CSS tokens change rendered bytes; the new
+  commands are opt-in). See `CHANGELOG.md`.
+
+<details>
+<summary>v0.22.1 changelog</summary>
+
 ## What's new in v0.22.1
 
 - **Exact label-math metrics** — annotation/caption/tick labels containing
@@ -38,6 +56,8 @@ asset basenames needed to display it.
   `max(y,x)` instead of raw `$\max(y,x)$`, and are measured as painted.
 - `SCRIBA_VERSION` 13→14 — rendered bytes change; caches keyed on output
   must invalidate. See `CHANGELOG.md` for the full list.
+
+</details>
 
 <details>
 <summary>v0.22.0 changelog</summary>
