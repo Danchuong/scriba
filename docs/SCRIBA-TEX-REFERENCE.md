@@ -281,6 +281,9 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 
 ## 5. Inner Commands (18 total)
 
+> Emphasis opt-out: render with `SCRIBA_NO_EMPHASIS=1` to suppress the
+> arrival pulse (the widget also honours `prefers-reduced-motion`).
+
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
 
@@ -881,7 +884,7 @@ maps `write → state=<state>` (e.g. `done`) and `cursor → cursor=<id>`.
 
 **Cell addressing (v1).** The per-element target is always `cell[i]` / `cell[r][c]`,
 so `\playeach` targets cell-addressable primitives (Array, Grid, Matrix, DPTable).
-A `range` on a NumberLine (tick-indexed) is a documented v2 extension.
+A `range` on a NumberLine targets its ticks (`tick[i]`) — supported since 0.23.1.
 
 **Rules & errors:**
 - Selector not a `range`/`block`, or non-literal (`${...}`) bounds → **E1494**.
