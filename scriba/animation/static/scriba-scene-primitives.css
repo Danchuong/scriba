@@ -417,6 +417,19 @@
   pointer-events:    none;
 }
 
+/* -- Sentinel slot (Array ``sentinels=true``) -------------- */
+/* begin()-1 / end() chrome: a dashed, faint reserved slot an out-of-range
+ * annotation can park on. Deliberately NOT a scriba-state-* class — muted
+ * stroke, no fill, dashed — so it reads as capacity/boundary and never
+ * competes with the signal states painted on real cells. */
+.scriba-sentinel > rect {
+  fill:             none;
+  stroke:           var(--scriba-fg-muted);
+  stroke-width:     var(--scriba-cell-stroke-width);
+  stroke-dasharray: 4 3;
+  opacity:          0.5;
+}
+
 /* -- Node (Graph, Tree) ------------------------------------ */
 :where([data-primitive="graph"] .scriba-graph-nodes > [data-target]) > circle,
 :where([data-primitive="tree"]  .scriba-tree-nodes > [data-target]) > circle {

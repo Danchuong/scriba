@@ -1,0 +1,2 @@
+error E1495
+feature: \playeach requires a state= or cursor= action

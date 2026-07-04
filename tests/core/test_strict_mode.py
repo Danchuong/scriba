@@ -745,6 +745,10 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1180",
         "E1181",
         "E1182",
+        # Playeach frame macro
+        "E1493",
+        "E1494",
+        "E1495",
         # Substory
         "E1360",
         "E1361",

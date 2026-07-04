@@ -11,7 +11,7 @@
 2. [Supported LaTeX Commands](#2-supported-latex-commands)
 3. [Animation Environment](#3-animation-environment)
 4. [Diagram Environment](#4-diagram-environment)
-5. [Inner Commands](#5-inner-commands-17-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\substory` `\hl` `\ref` `\invariant`
+5. [Inner Commands](#5-inner-commands-18-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant`
 6. [Visual States](#6-visual-states)
 7. [All 15 Primitives](#7-all-15-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
@@ -279,7 +279,7 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 
 ---
 
-## 5. Inner Commands (17 total)
+## 5. Inner Commands (18 total)
 
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
@@ -698,8 +698,8 @@ for the broader `\compute` scope rules.
 #### Allowed commands inside the body
 
 `\apply`, `\highlight`, `\recolor`, `\reannotate`, `\annotate`, `\cursor`,
-and nested `\foreach` (max depth 3). `\step`, `\shape`, `\substory`, and
-`\narrate` are not allowed inside a foreach body.
+and nested `\foreach` (max depth 3). `\step`, `\shape`, `\substory`,
+`\playeach`, and `\narrate` are not allowed inside a foreach body.
 
 ### 5.13 `\substory[title="...", id="..."]...\endsubstory`
 Nested frame sequence inside a parent frame (animation only, max depth 3).
@@ -824,6 +824,72 @@ declare it before the first `\step`.
 - Static v1: it does not change between frames. Multiple `\invariant` lines
   stack.
 
+### 5.18 `\playeach{selector}{actions}`
+A **step-level frame macro**: it sweeps a `range`/`block` selector and emits
+**one auto-frame per element**. Where `\foreach` expands *inside one step* into
+many commands, `\playeach` expands into many **steps** — each frame recolors
+(and optionally caret-marks) the next element, so a narration that says
+"scan O(N)" gets one animation beat per element instead of the whole collection
+lighting up at once.
+
+```latex
+\shape{fac}{Array}{size=6}
+\playeach{fac.range[1:5]}{state=done, cursor=w, narrate="write $fac[${i}]$"}
+```
+
+**Desugaring (A-5 — indistinguishable hand-frames).** The block above is exact
+sugar for five hand-authored steps; the macro expands at *parse time* into real
+`\step` frames, so the scene machine, differ, emitter, and runtime are unaware a
+macro was involved (byte-for-byte identical output):
+
+```latex
+\step
+\recolor{fac.cell[1]}{state=done}
+\cursor{fac}{id=w, at=1}
+\narrate{write $fac[1]$}
+\step
+\recolor{fac.cell[2]}{state=done}
+\cursor{fac}{id=w, at=2}
+\narrate{write $fac[2]$}
+% … cells 3, 4, 5 …
+```
+
+**Selector** (first brace) — MUST be a `range` (1-D) or `block` (2-D) with
+**literal integer** bounds (the frame count is fixed at build):
+- `shape.range[lo:hi]` → one frame per `cell[i]` for `i` in `lo..hi` inclusive.
+- `shape.block[r0:r1][c0:c1]` → one frame per `cell[r][c]`, row-major.
+
+**Actions** (second brace) — a `key=value` list; at least one of `state`/`cursor`
+is required:
+
+| Key | Applies to | Effect per frame |
+|-----|-----------|------------------|
+| `state=<state>` | range, block | `\recolor{shape.cell[i]}{state=...}` on the current element (persistent — the sweep accumulates) |
+| `cursor=<id>` | range only | an R-38 binding-caret `\cursor{shape}{id=<id>, at=<i>}` that follows the sweep |
+| `narrate="<tmpl>"` | range, block | per-frame narration; the loop index `${i}` (range) or `${r}`/`${c}` (block) is substituted at build time. Every other `${...}` is left for the normal `\compute` interpolation. Must be quoted. |
+
+**Note on syntax vs. the `{write, cursor}` sketch.** An earlier sketch wrote
+bare action words (`\playeach{fac.range[1:5]}{write, cursor}`). v1 uses explicit
+`key=value` actions instead, because "write" has no value source in v1 (there is
+no per-element value to write) — the honest, general primitive is *recolor the
+swept element to a state* (`state=`) plus an optional following `cursor=`. This
+maps `write → state=<state>` (e.g. `done`) and `cursor → cursor=<id>`.
+
+**Cell addressing (v1).** The per-element target is always `cell[i]` / `cell[r][c]`,
+so `\playeach` targets cell-addressable primitives (Array, Grid, Matrix, DPTable).
+A `range` on a NumberLine (tick-indexed) is a documented v2 extension.
+
+**Rules & errors:**
+- Selector not a `range`/`block`, or non-literal (`${...}`) bounds → **E1494**.
+- More than 64 generated frames → **E1493** (a per-element *frame* is heavier
+  than a per-element command, so the cap is tighter than `\foreach`).
+- No `state`/`cursor` action, or `cursor=` with a 2-D `block` → **E1495**.
+- An undeclared shape surfaces the normal **E1116** at render time (the generated
+  commands travel the ordinary scene path — that is what makes them
+  indistinguishable from hand frames).
+- Not allowed inside a `\foreach` body (**E1172**) or across a `\substory`
+  boundary (**E1006**).
+
 ---
 
 ## 6. Visual States
@@ -859,12 +925,19 @@ For exact CSS fill/stroke/text token values see `scriba/animation/static/scriba-
 | `size` | int | — | one of size/n/values | cell count, 1..10000 |
 | `n` | int | — | alias of `size` | same as `size` |
 | `values` | list | — | alias | supplies both size (=len) and data |
-| `data` | list | `[""]×size` | no | initial cell contents; len must equal size (E1402) |
+| `data` | list | `[""]×size` | no | initial cell contents; `len ≤ size` — a partial fill leaves the tail empty (E1402 only if `len > size`) |
 | `labels` | string | none | no | **index-label format string** `"0..7"` or `"dp[0]..dp[7]"` — NOT a list |
 | `label` | string | none | no | caption below the array |
+| `sentinels` | bool | `false` | no | reserve two dashed `before`/`after` slots (begin()−1 / end()) an out-of-range annotation can park on; excluded from `all`/`range` |
 
-**Operations:** none (Array is immutable; set cell text via `\apply{a.cell[i]}{value=...}`).
-**Selectors:** `a`, `a.cell[i]`, `a.cell[${i}]`, `a.range[i:j]`, `a.all`
+**Operations** (fixed max-N grid — cell positions never move, so reflow is a `value_change` cascade that holds R-32 by construction):
+- `\apply{a}{insert={at=k, value=v}}` — shift slots `k..live−1` right, write `v` at `k` (`index` is an alias for `at`). Inserting into a full array errors (E1403); declare a larger `size` instead of growing past it.
+- `\apply{a}{remove=k}` — shift slots `k+1..live−1` left; the freed tail becomes an **empty cell** (never an interior hole).
+- `\apply{a.cell[i]}{value=...}` — set one cell's text directly.
+
+`cell[i]` addresses the **position** `i`, not the value once there — an annotation on `a.cell[2]` tracks the slot across a reflow.
+
+**Selectors:** `a`, `a.cell[i]`, `a.cell[${i}]`, `a.range[i:j]`, `a.all`; with `sentinels=true` also `a.before`, `a.after`
 
 ### 7.2 Grid
 2D rows×cols matrix.

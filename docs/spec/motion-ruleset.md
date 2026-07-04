@@ -143,9 +143,11 @@ substory boundary.
 
 **Code ref:** `scriba/animation/scene.py:apply_frame`
 (the frame builder the macro desugars into);
-`\playeach` expander (pending v0.23.0-dev, frame-macro phase).
+`scriba/animation/parser/_grammar_playeach.py:_parse_playeach`
+(the parser-level expander that emits one `FrameIR` per swept element).
 **Test ref:** `tests/unit/test_animation_scene.py`;
-`\playeach` expansion pins (pending v0.23.0-dev, frame-macro phase).
+`tests/unit/test_playeach.py`
+(N-frame expansion + byte-for-byte indistinguishability from hand `\step`s).
 
 ### A-6 — Layout mutation goes through prescan; the resting frame is server truth
 

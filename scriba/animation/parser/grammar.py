@@ -29,6 +29,7 @@ from .lexer import Lexer, Token, TokenKind
 from ._grammar_commands import _CommandsMixin
 from ._grammar_compute import _ComputeMixin
 from ._grammar_foreach import _ForeachMixin
+from ._grammar_playeach import _PlayeachMixin, PlayeachExpansion
 from ._grammar_substory import _SubstoryMixin
 from ._grammar_tokens import _TokensMixin
 from ._grammar_values import _ValuesMixin
@@ -46,7 +47,7 @@ def _lazy_primitive_registry() -> dict:
 
 
 
-class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _ComputeMixin, _TokensMixin):
+class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin, _ValuesMixin, _ComputeMixin, _TokensMixin):
     """Parse the body of a ``\\begin{animation}`` environment."""
 
     def parse(
@@ -107,6 +108,12 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
         invariants: list[str] = []
         frames: list[FrameIR] = []
         in_prelude = True
+        # Whether an accumulating frame is currently open and should be flushed
+        # at the next boundary. For any \step-only source this is exactly
+        # ``not in_prelude``; it diverges only after a \playeach, which closes
+        # its own frames and leaves no open accumulator (so a trailing \step or
+        # EOF does not emit a spurious empty frame). See A-5 (motion-ruleset).
+        frame_open = False
         frame_line = 0
         frame_label: str | None = None
         frame_title: str | None = None
@@ -164,8 +171,9 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
                         prelude_compute.append(result)
                     else:
                         frame_compute.append(result)
+                        frame_open = True
                 elif isinstance(result, StepCommand):
-                    if not in_prelude:
+                    if frame_open:
                         frames.append(
                             FrameIR(
                                 line=frame_line,
@@ -178,6 +186,7 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
                             ),
                         )
                     in_prelude = False
+                    frame_open = True
                     frame_line = result.line
                     frame_label = result.label
                     frame_title = result.title
@@ -186,24 +195,52 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
                     frame_narrate = None
                     frame_narrate_seen = False
                     frame_substories = []
+                elif isinstance(result, PlayeachExpansion):
+                    # A step-level frame macro (A-5): flush the pending frame,
+                    # then splice the generated hand-frames in verbatim. It
+                    # leaves no open accumulator, so a following \step/EOF does
+                    # not append an empty frame.
+                    if frame_open:
+                        frames.append(
+                            FrameIR(
+                                line=frame_line,
+                                commands=tuple(frame_commands),
+                                compute=tuple(frame_compute),
+                                narrate_body=frame_narrate,
+                                substories=tuple(frame_substories),
+                                label=frame_label,
+                                title=frame_title,
+                            ),
+                        )
+                    frames.extend(result.frames)
+                    in_prelude = False
+                    frame_open = False
+                    frame_commands = []
+                    frame_compute = []
+                    frame_narrate = None
+                    frame_narrate_seen = False
+                    frame_substories = []
                 elif isinstance(result, NarrateCommand):
                     frame_narrate = result.body
                     frame_narrate_seen = True
+                    frame_open = True
                 elif isinstance(result, InvariantCommand):
                     # Prelude-only (dispatch guards with E1058); collect the
                     # raw body for one static panel render.
                     invariants.append(result.body)
                 elif isinstance(result, SubstoryBlock):
                     frame_substories.append(result)
+                    frame_open = True
                 elif isinstance(result, Command):
                     if in_prelude:
                         prelude_commands.append(result)
                     else:
                         frame_commands.append(result)
+                        frame_open = True
             else:
                 self._advance()
 
-        if not in_prelude:
+        if frame_open:
             frames.append(
                 FrameIR(
                     line=frame_line,
@@ -239,7 +276,7 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
         *,
         in_prelude: bool,
         frame_narrate_seen: bool,
-    ) -> Command | ShapeCommand | ComputeCommand | NarrateCommand | StepCommand | SubstoryBlock | InvariantCommand | None:
+    ) -> Command | ShapeCommand | ComputeCommand | NarrateCommand | StepCommand | SubstoryBlock | InvariantCommand | PlayeachExpansion | None:
         """Dispatch a single backslash command, returning the parsed node.
 
         Raises ``ValidationError`` on any parse or validation failure.
@@ -347,6 +384,12 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
         if cmd_name == "foreach":
             return self._parse_foreach()
 
+        if cmd_name == "playeach":
+            # A frame generator: valid as the first frame construct (like the
+            # first \step) or between steps. In a diagram it produces frames,
+            # which DiagramRenderer already rejects with E1050.
+            return self._parse_playeach()
+
         if cmd_name == "endforeach":
             raise ValidationError(
                 "\\endforeach without matching \\foreach",
@@ -395,12 +438,14 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
     _VALID_COMMANDS_LIST = (
         "\\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, "
         "\\focus, \\recolor, \\reannotate, \\annotate, \\trace, \\cursor, "
-        "\\invariant, \\foreach, \\endforeach, \\substory, \\endsubstory"
+        "\\invariant, \\foreach, \\endforeach, \\playeach, \\substory, "
+        "\\endsubstory"
     )
     _VALID_COMMAND_NAMES = (
         "shape", "compute", "step", "narrate", "apply", "highlight",
         "focus", "recolor", "reannotate", "annotate", "trace", "cursor",
-        "invariant", "foreach", "endforeach", "substory", "endsubstory",
+        "invariant", "foreach", "endforeach", "playeach", "substory",
+        "endsubstory",
     )
 
     def _raise_unknown_command(self, tok: Token) -> None:

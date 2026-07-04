@@ -380,6 +380,20 @@ class _SubstoryMixin:
                         col=inner_tok.col,
                     )
 
+                elif inner_cmd == "playeach":
+                    # A-5: a \playeach frame macro MUST NOT cross a substory
+                    # boundary — it is a top-level frame generator, not a
+                    # substory-scoped construct.
+                    raise ValidationError(
+                        "\\playeach is a top-level frame macro and is not "
+                        "allowed inside a \\substory",
+                        position=inner_tok.col,
+                        code="E1006",
+                        line=inner_tok.line,
+                        col=inner_tok.col,
+                        source_line=self._source_line_at(inner_tok.line),
+                    )
+
                 else:
                     raise ValidationError(
                         f"unknown command \\{inner_cmd}",

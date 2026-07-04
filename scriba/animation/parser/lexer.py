@@ -81,6 +81,7 @@ _KNOWN_COMMANDS = frozenset(
         "endforeach",
         "cursor",
         "invariant",
+        "playeach",
     }
 )
 

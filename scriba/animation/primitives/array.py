@@ -80,6 +80,19 @@ _ALL_RE = ALL_RE
 _SUFFIX_CELL_RE = SUFFIX_CELL_RE
 _SUFFIX_RANGE_RE = SUFFIX_RANGE_RE
 
+# Sentinel slots (opt-in ``sentinels=true``): bare named parts ``before``/
+# ``after`` mirroring Queue's ``front``/``rear`` — zero regex change to the
+# numeric ``cell[i]`` grammar, and structurally excluded from ``all``/``range``
+# because they are named parts, not ``cell[i]``.
+_SENTINEL_RE = re.compile(r"^(?P<name>.+)\.(?P<part>before|after)$")
+
+
+def _is_truthy_flag(value: Any) -> bool:
+    """True only for an explicit truthy flag (``True`` or the string ``"true"``)."""
+    if value is True:
+        return True
+    return isinstance(value, str) and value.strip().lower() == "true"
+
 
 # ---------------------------------------------------------------------------
 # ArrayPrimitive
@@ -112,6 +125,9 @@ class ArrayPrimitive(PrimitiveBase):
         # len) and ``data`` in a single parameter, so authors can write
         # ``\shape{a}{Array}{values=[1,2,3]}`` without repeating themselves.
         "values",
+        # ``sentinels=true`` reserves two dashed ``before``/``after`` slots
+        # (begin()-1 / end()) an out-of-range annotation can park on.
+        "sentinels",
     })
 
     def __init__(self, name: str, params: dict[str, Any] | None = None) -> None:
@@ -144,21 +160,27 @@ class ArrayPrimitive(PrimitiveBase):
         if raw_data is None and isinstance(values_alias, list):
             raw_data = values_alias
         data: list[Any] = list(raw_data or [])
-        if data and len(data) != size:
+        if len(data) > size:
             raise _animation_error(
                 "E1402",
                 detail=(
-                    f"Array 'data' length ({len(data)}) does not match "
-                    f"size ({size}); valid: len(data) == size or omit data"
+                    f"Array 'data' length ({len(data)}) exceeds "
+                    f"size ({size}); valid: len(data) <= size or omit data"
                 ),
             )
-        if not data:
-            data = [""] * size
+        # ``live`` = number of populated slots (Queue-model slot identity). A
+        # partial ``data`` (len < size) leaves the tail empty and addressable;
+        # insert/remove move ``live`` within [0, size] on the fixed grid so cell
+        # positions never change and R-32 centering holds by construction.
+        self.live: int = len(data)
+        if len(data) < size:
+            data = data + [""] * (size - len(data))
 
         self.size: int = size
         self.data: list[Any] = data
         self.labels: str | None = self.params.get("labels")
         self.label: str | None = self.params.get("label")
+        self._sentinels: bool = _is_truthy_flag(self.params.get("sentinels"))
 
         # Compute dynamic cell width from data and labels
         max_content_w = max(
@@ -173,6 +195,96 @@ class ArrayPrimitive(PrimitiveBase):
             max_label_w = 0
         self._cell_width: int = max(CELL_WIDTH, max_content_w + _CELL_HORIZONTAL_PADDING, max_label_w + 8)
 
+    # -- structural apply commands ------------------------------------------
+
+    def apply_command(
+        self,
+        params: dict[str, Any],
+        *,
+        target_suffix: str | None = None,
+    ) -> None:
+        """Insert/remove on the fixed max-N grid (slot-identity reflow).
+
+        ``\\apply{a}{insert={at=k, value=v}}`` shifts slots ``k..live-1`` one
+        position right and writes ``v`` at ``k`` (``index`` is an accepted alias
+        for ``at``); ``\\apply{a}{remove=k}`` shifts ``k+1..live-1`` one position
+        left and vacates the freed tail to an **empty cell** (OQ2). Every cell
+        *position* is fixed, so consecutive frames differ only in cell values →
+        the differ emits a ``value_change`` cascade and R-32 centering holds by
+        construction (no new motion kind, no JS). The grid never grows past the
+        declared ``size``: inserting into a full array is an error (E1403), not
+        a silent grow (v1; OQ3).
+        """
+        if "insert" in params:
+            self._apply_insert(params["insert"])
+        if "remove" in params:
+            self._apply_remove(params["remove"])
+
+    def _apply_insert(self, spec: Any) -> None:
+        if isinstance(spec, dict):
+            at = spec.get("at", spec.get("index", self.live))
+            value = spec.get("value", "")
+        else:  # bare ``insert=k`` inserts an empty cell at k
+            at, value = spec, ""
+        try:
+            at = int(at)
+        except (TypeError, ValueError):
+            at = self.live
+        if self.live >= self.size:
+            raise _animation_error(
+                "E1403",
+                detail=(
+                    f"Array insert overflow: array is full "
+                    f"(live={self.live} == size={self.size})"
+                ),
+                hint="declare a larger size= (v1 uses a fixed max-N grid)",
+            )
+        if not 0 <= at <= self.live:
+            raise _animation_error(
+                "E1403",
+                detail=(
+                    f"Array insert position {at} out of range; "
+                    f"valid: 0..{self.live}"
+                ),
+            )
+        for i in range(self.live, at, -1):
+            self.data[i] = self.data[i - 1]
+        self.data[at] = value
+        self.live += 1
+        self._grow_cell_width(value)
+
+    def _apply_remove(self, spec: Any) -> None:
+        if isinstance(spec, dict):
+            spec = spec.get("at", spec.get("index"))
+        try:
+            at = int(spec)
+        except (TypeError, ValueError):
+            raise _animation_error(
+                "E1403",
+                detail=f"Array remove index {spec!r} is not an integer",
+            )
+        if not 0 <= at < self.live:
+            raise _animation_error(
+                "E1403",
+                detail=(
+                    f"Array remove index {at} out of range; valid: "
+                    + (f"0..{self.live - 1}" if self.live else "array is empty")
+                ),
+            )
+        for i in range(at, self.live - 1):
+            self.data[i] = self.data[i + 1]
+        self.data[self.live - 1] = ""  # OQ2: freed tail is an empty cell
+        self.live -= 1
+
+    def _grow_cell_width(self, value: Any) -> None:
+        """Monotonically widen the cell for a newly inserted value (mirrors
+        ``Queue.enqueue``). Never shrinks, so the reserved envelope only grows
+        and R-32 holds across the timeline (the renderer's max-width prescan
+        folds this into one stable frame envelope)."""
+        needed = measure_value_text(str(value), 14) + _CELL_HORIZONTAL_PADDING
+        if needed > self._cell_width:
+            self._cell_width = needed
+
     # -- PrimitiveBase interface --------------------------------------------
 
     def addressable_parts(self) -> list[str]:
@@ -181,10 +293,16 @@ class ArrayPrimitive(PrimitiveBase):
         for i in range(self.size):
             parts.append(f"cell[{i}]")
         parts.append("all")
+        if self._sentinels:
+            parts.append("before")
+            parts.append("after")
         return parts
 
     def validate_selector(self, suffix: str) -> bool:
         """Check whether *suffix* is a valid addressable part."""
+        if self._sentinels and suffix in ("before", "after"):
+            return True
+
         m = _SUFFIX_CELL_RE.match(suffix)
         if m:
             return 0 <= int(m.group("idx")) < self.size
@@ -319,6 +437,13 @@ class ArrayPrimitive(PrimitiveBase):
                     )
                 )
 
+        # Sentinel slots — dashed chrome one pitch beyond each end, drawn on
+        # top of the cells so ``after`` stays visible over the empty tail slot
+        # it tracks. Opt-in (``sentinels=true``); the width they need is
+        # reserved every frame by ``_bbox_width`` (R-32).
+        if self._sentinels:
+            self._emit_sentinels(lines)
+
         # Caption — the figure's description — placed BELOW the callout lane so
         # it is the bottom-most element (not buried between the index row and
         # the position=below pills). Wrapped to multiple lines so a long caption
@@ -428,11 +553,30 @@ class ArrayPrimitive(PrimitiveBase):
                 return (x, 0)
         return None
 
+    def _sentinel_center(self, selector_str: str) -> tuple[int, int] | None:
+        """Anchor for the ``before``/``after`` sentinel slots (cell-top edge, so
+        arrows curve above like cells). ``before`` is one pitch left of cell[0];
+        ``after`` tracks ``live`` (one pitch right of cell[live-1]). Only when
+        ``sentinels=true`` — otherwise the parts do not exist."""
+        if not self._sentinels:
+            return None
+        m = _SENTINEL_RE.match(selector_str)
+        if not (m and m.group("name") == self.name):
+            return None
+        cw = self._cell_width
+        pitch = cw + CELL_GAP
+        base_center = int(cw // 2) + self._row_dx()  # cell[0] center x
+        if m.group("part") == "before":
+            return (base_center - pitch, 0)
+        return (base_center + self.live * pitch, 0)  # after — tracks live
+
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
-        """Resolve a cell or range selector to its arrow anchor (cell top)."""
+        """Resolve a cell, range, or sentinel selector to its arrow anchor."""
         result = self._cell_center(selector)
         if result is None:
             result = self._range_center(selector)
+        if result is None:
+            result = self._sentinel_center(selector)
         if result is None:
             return None
         return (float(result[0]), float(result[1]))
@@ -577,18 +721,53 @@ class ArrayPrimitive(PrimitiveBase):
         return int(math.ceil(need))
 
     def _bbox_width(self) -> int:
-        """Footprint width: cell row + symmetric margin for the caption and
-        the exact painted annotation extent. Single source of truth shared by
-        ``emit_svg`` and ``bounding_box``."""
-        return self._total_width() + 2 * self._h_shift()
+        """Footprint width: cell row + the two-sided sentinel reserve (0 when
+        off) + symmetric margin for the caption and the exact painted annotation
+        extent. Single source of truth shared by ``emit_svg`` and
+        ``bounding_box``. The sentinel reserve is constant per frame, so a
+        sentinel array's width is frame-invariant (R-32)."""
+        return self._total_width() + self._sentinel_reserve() + 2 * self._h_shift()
 
     def _row_dx(self) -> int:
         """Horizontal shift that keeps the cell row centered inside the
-        footprint. Zero in the content measurement frame (see
-        ``_measure_emit``)."""
+        footprint. Includes the left sentinel reserve so the row makes room for
+        ``before`` (0 when sentinels are off → non-sentinel arrays byte-stable).
+        Zero in the content measurement frame (see ``_measure_emit``)."""
         if getattr(self, "_extent_content_frame", False):
             return 0
-        return self._h_shift()
+        return self._h_shift() + self._sentinel_left_dx()
+
+    def _sentinel_left_dx(self) -> int:
+        """One cell pitch reserved left of cell[0] for the ``before`` sentinel;
+        shifts the cell row right so ``before`` sits at x >= 0. 0 when off."""
+        return (self._cell_width + CELL_GAP) if self._sentinels else 0
+
+    def _sentinel_reserve(self) -> int:
+        """Total fixed width for both sentinels (2 pitches), reserved in EVERY
+        frame regardless of ``live`` so the bbox is frame-invariant (R-32). 0
+        when sentinels are off."""
+        return 2 * (self._cell_width + CELL_GAP) if self._sentinels else 0
+
+    def _emit_sentinels(self, lines: list[str]) -> None:
+        """Draw the two dashed ``scriba-sentinel`` chrome slots. ``before`` is
+        fixed one pitch left of cell[0]; ``after`` tracks ``live`` (one pitch
+        right of cell[live-1]). Their coordinates share ``_row_dx`` with the
+        cells so they stay aligned under a caption shift."""
+        cw = self._cell_width
+        pitch = cw + CELL_GAP
+        cell0_left = self._row_dx()  # cell[0] left edge = 0*pitch + row_dx
+        for part, x in (
+            ("before", cell0_left - pitch),
+            ("after", cell0_left + self.live * pitch),
+        ):
+            rect_attrs = _inset_rect_attrs(x, 0, cw, CELL_HEIGHT)
+            lines.append(f'  <g data-target="{self.name}.{part}" class="scriba-sentinel">')
+            lines.append(
+                f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
+                f'width="{rect_attrs["width"]}" '
+                f'height="{rect_attrs["height"]}"/>'
+            )
+            lines.append("  </g>")
 
 
 # ---------------------------------------------------------------------------

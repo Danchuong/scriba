@@ -91,6 +91,14 @@
 | E1181 | Animation has >100 frames (hard limit) or `\cursor` requires index. | Split into multiple animations or add the index parameter. |
 | E1182 | Invalid `\cursor` prev_state or curr_state value. | Use a valid state name. |
 
+## Playeach Frame-Macro Errors (E1493--E1495)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1493 | `\playeach` expands to more than the per-macro frame cap (64). | Split the sweep across multiple `\playeach` blocks or narrow the range. |
+| E1494 | `\playeach` selector must be a `range` or `block` with literal integer bounds (the frame count is fixed at build time). | Use `\playeach{a.range[1:5]}{...}` or `\playeach{g.block[0:1][0:1]}{...}`; do not use computed/`${...}` bounds. |
+| E1495 | `\playeach` requires at least one per-element action (`state=` or `cursor=`); `cursor=` is 1-D only and cannot ride a 2-D block. | Add `state=<state>` and/or `cursor=<id>`; drop `cursor=` for block sweeps. |
+
 ## Narration Macro Errors (E1320--E1329)
 
 | Code | Description | Common Fix |
@@ -117,13 +125,14 @@ code per `(primitive, validation)` pair. Existing code that caught
 `E1103` continues to work because catalog entry `E1103` is retained as a
 documented deprecated alias.
 
-### Array (E1400--E1402)
+### Array (E1400--E1403)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
 | E1400 | Array requires `size` or `n` parameter. | Add `size=N` where `1 <= N <= 10000`. |
 | E1401 | Array `size` out of range; valid: 1..10000. | Pick an integer between 1 and 10000. |
-| E1402 | Array `data` length does not match `size`. | Either drop `data` or ensure `len(data) == size`. |
+| E1402 | Array `data` length exceeds `size`. | Drop `data`, or make `len(data) <= size` (a partial fill leaves the tail empty). |
+| E1403 | Array `\apply` insert/remove position out of range, or insert into a full array. | Address `0..live` for insert / `0..live-1` for remove; declare a larger `size` rather than growing past the fixed max-N grid. |
 
 ### Grid (E1410--E1412)
 

@@ -138,12 +138,13 @@ the new surface. The new surface itself — ``block[r0:r1][c0:c1]``,
 opt-in and leaves existing documents' geometry untouched. Consumer caches
 keyed on rendered output MUST invalidate.
 
-0.23.0-dev bumps 15→16 (motion phases A+B): the runtime core gains reverse
+0.23.0 bumps 15→16 (animation-clarity phases A–D): the runtime core gains reverse
 tweening (Prev/ArrowLeft now animate via manifest inversion), delta
 emphasis on arrival, the cursor_move handler, an annotation_recolor
 handler (previously a silent no-op off the full-sync path) and a
 position-pill key fallback — the inline script and external runtime hash
-change in every widget. New author surface (\\cursor id=/at= binding
+change in every widget. Phase D adds the `.scriba-sentinel` CSS rule
+(one more inline-stylesheet byte change). New author surface (\\cursor id=/at= binding
 carets, plus the phase-B \\ref/\\focus/step-title/\\invariant surfaces) is opt-in and leaves plain documents' geometry untouched.
 Consumer caches keyed on rendered output MUST invalidate.
 """

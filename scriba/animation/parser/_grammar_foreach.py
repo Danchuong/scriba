@@ -186,6 +186,7 @@ class _ForeachMixin:
 
                     elif inner_cmd in (
                         "endsubstory", "step", "shape", "substory", "invariant",
+                        "playeach",
                     ):
                         raise ValidationError(
                             f"\\{inner_cmd} is not allowed inside \\foreach body",

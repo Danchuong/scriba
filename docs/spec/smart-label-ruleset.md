@@ -658,6 +658,40 @@ state); this card governs its emit + grammar.
 `tests/unit/test_focus.py:TestFocusEmit` (defocus on the complement only,
 range expand, other-shape-untouched).
 
+### R-42 — Array `sentinels=true`: `before`/`after` reserved slots
+
+**Normative:** SHOULD
+**Since:** v0.23.0-dev
+
+`\shape{a}{Array}{sentinels=true}` reserves two dashed chrome slots — `a.before`
+(begin()−1, one pitch left of `cell[0]`) and `a.after` (end(), one pitch right of
+`cell[live−1]`) — that an out-of-range iterator or annotation can park on. They are
+**bare named parts** mirroring Queue's `front`/`rear` (zero change to the numeric
+`cell[i]` grammar), so they are **structurally excluded from `all`/`range`** (which
+expand to `cell[i]` only) and are never swept up by `\recolor{a.all}`. Both are
+addressable **from t0** — a real `data-target` reserved at declaration, never
+runtime-injected (A-6) — so `\annotate`/`\ref`/smart-label resolve them at frame 0.
+`a.before` is fixed; `a.after` **tracks `live`** (redrawn each frame as the array
+grows/shrinks — it is chrome, not a cell, so no element identity is needed). The two
+slots widen `bounding_box` by exactly `2·(cw+gap)` in **every** frame regardless of
+`live`, so the envelope is frame-invariant and **R-32** centering holds by
+construction even as `a.after` moves. They carry the `scriba-sentinel` class (dashed,
+muted, `opacity:0.5`) — deliberately not a `scriba-state-*` class, so they read as
+capacity/boundary and never collide with the signal states. Opt-in and byte-stable
+when absent. Companion to the fixed-max-N insert/remove reflow (same investigation):
+`cell[i]` addresses the **position**, so an annotation tracks the slot across a
+reflow, and the freed tail after `remove` is an empty cell, never an interior hole.
+
+**Code ref:** `scriba/animation/primitives/array.py:apply_command`
+(fixed-grid reflow that `a.after` tracks);
+`scriba/animation/primitives/array.py:_sentinel_center` (before/after anchors);
+`scriba/animation/primitives/array.py:_sentinel_reserve` (constant bbox reserve);
+`scriba/animation/static/scriba-scene-primitives.css` (`.scriba-sentinel`).
+**Test ref:** `tests/unit/test_array_reflow.py:test_array_sentinel_addressable_from_t0`
+(before/after resolve + excluded from all/range);
+`tests/unit/test_array_reflow.py:test_array_sentinel_reserved_envelope`
+(2·(cw+gap) reserved every frame — R-32).
+
 ### R-07 — Leader threshold formula
 
 **Normative:** MUST

@@ -228,6 +228,19 @@ ERROR_CATALOG: dict[str, str] = {
         "binding not found, length exceeded, etc.)."
     ),
     # --- Frame / cursor errors (E1180 -- E1199) ---
+    # --- Playeach frame-macro errors (E1493 -- E1495) ---
+    "E1493": (
+        "\\playeach expands to more than the per-macro frame cap (64). "
+        "Split the sweep across multiple \\playeach blocks or narrow the range."
+    ),
+    "E1494": (
+        "\\playeach selector must be a range or block with literal integer "
+        "bounds (the frame count is fixed at build time)."
+    ),
+    "E1495": (
+        "\\playeach requires at least one per-element action (state= or "
+        "cursor=); cursor= is 1-D only and cannot ride a 2-D block sweep."
+    ),
     "E1180": (
         "Animation has >30 frames (warning) or \\cursor requires at "
         "least one target."
@@ -272,9 +285,15 @@ ERROR_CATALOG: dict[str, str] = {
         "between 1 and 10000 inclusive."
     ),
     "E1402": (
-        "Array 'data' length does not match 'size'. "
+        "Array 'data' length exceeds 'size'. "
         "hint: either drop 'data' (cells default to empty) or make "
-        "len(data) == size."
+        "len(data) <= size (a partial fill leaves the tail empty)."
+    ),
+    "E1403": (
+        "Array insert/remove position out of range, or insert into a full "
+        "array. hint: v1 uses a fixed max-N grid — declare a larger 'size' "
+        "instead of growing past it, and address 0..live for insert / "
+        "0..live-1 for remove."
     ),
     # E1410-E1419: Grid (rows, cols, data length)
     "E1410": (

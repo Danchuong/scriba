@@ -50,6 +50,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   predicate panel rendered once per widget, KaTeX-capable, visible in
   print.
 
+### Added — animation-clarity Phases C & D
+- **`\playeach`** (A-5): expand a collection-write into per-element auto
+  frames — `\playeach{fac.range[1:5]}{state=done, cursor=w,
+  narrate="Ghi $fac[${i}]$"}` generates one stepped frame per element
+  (recolor sweep + optional caret + templated narration; `${i}` 1-D,
+  `${r}`/`${c}` 2-D blocks). Expansion happens at the parser, so the
+  generated frames are **byte-for-byte identical** to hand-written
+  `\step`s (pinned by test). Frame cap 64 (`E1493`); `E1494`/`E1495`
+  for bad selectors/actions.
+- **Array insert/remove + sentinel slots** (R-42, slot-identity model):
+  `\apply{a}{insert={at=2, value=7}}` / `{remove=2}` shift values within
+  the fixed grid — cell positions never move (R-32 holds by
+  construction), the freed tail renders as an empty cell, and the differ
+  emits a plain value-change cascade (zero new runtime kinds). Insert
+  into a full array → `E1403` (no silent data loss); partial-fill
+  `data=` shorter than `size=` is now legal (`E1402` only fires on
+  overflow). `sentinels=true` adds addressable `a.before`/`a.after`
+  dashed slots so out-of-range iterators have somewhere to land.
+
 ## [0.22.2] - 2026-07-04 — Diagram-clarity decorations: trace, block, state colors
 
 ### Added
