@@ -374,15 +374,37 @@ def emit_shared_defs(primitives: dict[str, Any]) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _twod_dims(prim: Any) -> tuple[int, int] | None:
+    """Return ``(rows, cols)`` for a 2-D grid-like primitive, else ``None``.
+
+    Used by the ``row``/``col``/``diag`` selector sugar to read the cell
+    extents.  Grid and Matrix are always 2-D; DPTable exposes ``rows``/``cols``
+    even in 1-D mode, so ``is_2d`` (default ``True`` for primitives lacking it)
+    gates out the 1-D table where ``cell[r][c]`` is not addressable.
+    """
+    if not getattr(prim, "is_2d", True):
+        return None
+    rows = getattr(prim, "rows", None)
+    cols = getattr(prim, "cols", None)
+    if rows is None or cols is None:
+        return None
+    return int(rows), int(cols)
+
+
 def _expand_selectors(
     shape_state: dict[str, dict],
     shape_name: str,
     prim: Any,
 ) -> dict[str, dict]:
-    """Expand range/all selectors into individual targets.
+    """Expand range/all/block/row/col/diag selectors into individual targets.
 
     E.g., ``nl.range[3:7]`` → ``nl.tick[3]``, ..., ``nl.tick[7]``
     and ``a.all`` → ``a.cell[0]``, ..., ``a.cell[N-1]``.
+
+    The 2-D sugar (``row[i] ≡ block[i:i][0:C-1]``, ``col[j] ≡
+    block[0:R-1][j:j]``, ``diag`` = ``cell[i][i]`` for ``i`` in
+    ``range(min(R, C))``) reads the primitive's ``rows``/``cols`` so Grid,
+    DPTable-2D and Matrix all gain it here at once (R-35 family).
     """
     import re
 
@@ -393,6 +415,9 @@ def _expand_selectors(
     block_re = re.compile(
         rf"^{re.escape(shape_name)}\.block\[(\d+):(\d+)\]\[(\d+):(\d+)\]$"
     )
+    row_re = re.compile(rf"^{re.escape(shape_name)}\.row\[(\d+)\]$")
+    col_re = re.compile(rf"^{re.escape(shape_name)}\.col\[(\d+)\]$")
+    diag_re = re.compile(rf"^{re.escape(shape_name)}\.diag$")
     all_re = re.compile(rf"^{re.escape(shape_name)}\.all$")
 
     def _merge(target: str, data: dict) -> None:
@@ -414,6 +439,9 @@ def _expand_selectors(
     for key, data in shape_state.items():
         m_range = range_re.match(key)
         m_block = block_re.match(key)
+        m_row = row_re.match(key)
+        m_col = col_re.match(key)
+        m_diag = diag_re.match(key)
         m_all = all_re.match(key)
         m_top = top_re.match(key)
 
@@ -424,6 +452,37 @@ def _expand_selectors(
             for r in range(r0, r1 + 1):
                 for c in range(c0, c1 + 1):
                     _merge(f"{shape_name}.cell[{r}][{c}]", data)
+        elif m_row:
+            # row[i] ≡ block[i:i][0:C-1] — the whole row, bounds-agnostic on i
+            # so an OOB row soft-drops per-cell at validation just like block.
+            dims = _twod_dims(prim)
+            if dims is None:
+                _merge(key, data)
+            else:
+                i = int(m_row.group(1))
+                _, cols = dims
+                for c in range(cols):
+                    _merge(f"{shape_name}.cell[{i}][{c}]", data)
+        elif m_col:
+            # col[j] ≡ block[0:R-1][j:j] — the whole column.
+            dims = _twod_dims(prim)
+            if dims is None:
+                _merge(key, data)
+            else:
+                j = int(m_col.group(1))
+                rows, _ = dims
+                for r in range(rows):
+                    _merge(f"{shape_name}.cell[{r}][{j}]", data)
+        elif m_diag:
+            # main diagonal cell[i][i]; non-square uses min(R, C) so it stays
+            # in-bounds (block cannot express a diagonal — it is a full product)
+            dims = _twod_dims(prim)
+            if dims is None:
+                _merge(key, data)
+            else:
+                rows, cols = dims
+                for i in range(min(rows, cols)):
+                    _merge(f"{shape_name}.cell[{i}][{i}]", data)
         elif m_range:
             lo, hi = int(m_range.group(1)), int(m_range.group(2))
             ptype = getattr(prim, "primitive_type", "")

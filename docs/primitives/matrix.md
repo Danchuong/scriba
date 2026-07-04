@@ -241,15 +241,24 @@ first token of every selector.
 |------------------------------------|--------|---------------------------------------------------------|
 | `m`                                | ✅ wired | The entire matrix (whole-shape target)                  |
 | `m.cell[i][j]`                     | ✅ wired | Single cell at row i, column j (0-indexed)              |
-| `m.row[i]`                         | 🚧 planned | All cells in row i                                      |
-| `m.col[j]`                         | 🚧 planned | All cells in column j                                   |
+| `m.row[i]`                         | ✅ wired | All cells in row i (≡ `block[i:i][0:C-1]`)              |
+| `m.col[j]`                         | ✅ wired | All cells in column j (≡ `block[0:R-1][j:j]`)           |
+| `m.diag`                           | ✅ wired | Main-diagonal cells `cell[i][i]`, i in `0..min(R,C)-1`  |
 | `m.range[(i1,j1):(i2,j2)]`         | 🚧 planned | Rectangular subrange, rows i1..i2, cols j1..j2 inclusive|
 | `m.all`                            | ✅ wired | Every cell                                              |
 
 Index bounds: row index must be in `[0, rows-1]`, column index in `[0, cols-1]`.
 Out-of-range indices are **E1106** (unknown target selector, from base spec §11.3).
 
-Interpolation `${...}` works in all index positions per base spec §4.3.
+`row`/`col`/`diag` are expansion sugar: the operation is broadcast uniformly to
+every cell of the strip (recolor, highlight and cell value all apply to each).
+An out-of-range `row[i]`/`col[j]` soft-drops per cell with a selector warning;
+`diag` on a non-square matrix uses `min(rows, cols)` and so stays in bounds.
+
+Interpolation `${...}` works in `cell`/`block`/`range` index positions per base
+spec §4.3. It is **not yet** supported inside a `row[i]`/`col[j]` index — those
+are honored as generic named selectors, which do not carry a structured index
+for `\foreach`/`\compute` substitution to bind.
 
 ---
 
@@ -266,6 +275,11 @@ colorscale. If `vmin`/`vmax` were `"auto"` at shape-declaration time, they are f
 the initial data range and do NOT recompute after each `\apply` (to keep colors stable
 across frames). To use a different range after mutation, authors must set explicit `vmin`
 and `vmax` in the `\shape` declaration.
+
+The fill stays a colorscale lookup — it is never a state-fill override (see §7). A value
+outside the frozen `[vmin, vmax]` range clamps to the nearest colorscale endpoint. The
+value must be numeric; a non-numeric override cannot map to a color and soft-drops to the
+declared datum.
 
 Additional optional parameters on a cell apply:
 

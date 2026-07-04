@@ -123,6 +123,11 @@ _BLOCK_RE = re.compile(
     r"^(?P<name>[^.]+)\.block\[(?P<r0>\d+):(?P<r1>\d+)\]"
     r"\[(?P<c0>\d+):(?P<c1>\d+)\]$"
 )
+# row/col/diag anchor sugar (A2a): row[i] ≡ block[i:i][0:C-1],
+# col[j] ≡ block[0:R-1][j:j]; diag anchors on its corner-cell midpoint.
+_ROW_RE = re.compile(r"^(?P<name>[^.]+)\.row\[(?P<i>\d+)\]$")
+_COL_RE = re.compile(r"^(?P<name>[^.]+)\.col\[(?P<j>\d+)\]$")
+_DIAG_RE = re.compile(r"^(?P<name>[^.]+)\.diag$")
 
 # ---------------------------------------------------------------------------
 # MatrixPrimitive
@@ -324,6 +329,34 @@ class MatrixPrimitive(PrimitiveBase):
                 if p0 and p1:
                     return ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)
             return None
+        rr = _ROW_RE.match(selector)
+        if rr and rr.group("name") == self.name:
+            i = int(rr.group("i"))
+            if 0 <= i < self.rows and self.cols > 0:
+                # anchor at the middle of the row (== block[i:i][0:C-1] centre)
+                return self.resolve_annotation_point(
+                    f"{self.name}.block[{i}:{i}][0:{self.cols - 1}]"
+                )
+            return None
+        cc = _COL_RE.match(selector)
+        if cc and cc.group("name") == self.name:
+            j = int(cc.group("j"))
+            if 0 <= j < self.cols and self.rows > 0:
+                return self.resolve_annotation_point(
+                    f"{self.name}.block[0:{self.rows - 1}][{j}:{j}]"
+                )
+            return None
+        dd = _DIAG_RE.match(selector)
+        if dd and dd.group("name") == self.name:
+            n = min(self.rows, self.cols)
+            if n > 0:
+                p0 = self.resolve_annotation_point(f"{self.name}.cell[0][0]")
+                p1 = self.resolve_annotation_point(
+                    f"{self.name}.cell[{n - 1}][{n - 1}]"
+                )
+                if p0 and p1:
+                    return ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)
+            return None
         m = _CELL_2D_RE.match(selector)
         if m and m.group("name") == self.name:
             r, c = int(m.group("row")), int(m.group("col"))
@@ -476,6 +509,17 @@ class MatrixPrimitive(PrimitiveBase):
                 css = state_class(effective_state)
 
                 val = self.data[r][c]
+                # Value mutation (\apply{m.cell[r][c]}{value=X}): the override
+                # re-drives the colorscale through the SAME frozen vmin/vmax
+                # range, so fill stays a colorscale lookup (never a state-fill;
+                # matrix.md §7). A non-numeric override cannot map to a colour,
+                # so it soft-drops to the declared datum.
+                override = self.get_value(suffix)
+                if override is not None:
+                    try:
+                        val = float(override)
+                    except (TypeError, ValueError):
+                        val = self.data[r][c]
                 # Normalize value to [0, 1] for colorscale
                 if effective_vmax == effective_vmin:
                     t = 0.5
