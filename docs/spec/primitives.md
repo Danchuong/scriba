@@ -218,10 +218,11 @@ Both are required (E1103 if missing).
 | `g`                    | Whole grid                           |
 | `g.cell[r][c]`         | Cell at row `r`, column `c` (0-based)|
 | `g.cell[${r}][${c}]`   | Cell via Starlark interpolation      |
+| `g.block[r0:r1][c0:c1]` | Inclusive 2-D area (since 0.22.2) — expands to the cell product in `\recolor`/`\highlight`; one anchored unit in `\annotate` (R-35) |
 | `g.all`                | All cells simultaneously             |
 
-**Note:** Grid does **not** support `.range[...]`. For range-addressed 2D structures,
-use `DPTable` or `Matrix` (extended primitive).
+**Note:** Grid does **not** support the 1-D `.range[...]`; its 2-D twin is
+`.block[r0:r1][c0:c1]` (since 0.22.2). 2-D DPTable supports `.block` too.
 
 ### 4.3 SVG output
 

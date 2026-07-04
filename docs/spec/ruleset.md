@@ -86,6 +86,7 @@ The `%` character starts a line comment. Everything from `%` to the end of the l
 | `\recolor` | `{target}{state=...}` | both | persistent |
 | `\reannotate` | `{target}{color=..., arrow_from=...}` | both | persistent |
 | `\annotate` | `{target}{params}` | both | persistent (default), ephemeral if `ephemeral=true` |
+| `\trace` | `{shape}{cells=[...], params}` | both | persistent (default), ephemeral if `ephemeral=true` (since 0.22.2, R-37) |
 | `\cursor` | `{targets}{index}` | prelude or step | persistent |
 | `\foreach` | `{variable}{iterable}...body...\endforeach` | prelude or step | expands to body commands |
 | `\endforeach` | (no args) | closes `\foreach` | — |
@@ -197,12 +198,12 @@ option          ::= IDENT "=" option_value
 option_value    ::= STRING | IDENT | NUMBER
 
 prelude         ::= (shape_cmd | compute_cmd | apply_cmd | recolor_cmd
-                     | reannotate_cmd | annotate_cmd | cursor_cmd
-                     | foreach_block)*
+                     | reannotate_cmd | annotate_cmd | trace_cmd
+                     | cursor_cmd | foreach_block)*
 step_block      ::= step_cmd command*
 command         ::= compute_cmd | narrate_cmd | apply_cmd | highlight_cmd
                   | recolor_cmd | reannotate_cmd | annotate_cmd
-                  | cursor_cmd | foreach_block | substory_block
+                  | trace_cmd | cursor_cmd | foreach_block | substory_block
 ```
 
 #### Shape Declaration
@@ -238,6 +239,9 @@ highlight_cmd   ::= "\highlight" "{" selector "}"
 recolor_cmd     ::= "\recolor" "{" selector "}" param_brace
                   (* param_brace must contain state= and/or color= *)
 reannotate_cmd  ::= "\reannotate" "{" selector "}" param_brace
+trace_cmd       ::= "\trace" "{" IDENT "}" param_brace
+                  (* cells=[[r,c],...] | [i,...]; >=2 points (E1491);
+                     arrowhead=end|both|none (E1492); R-37 *)
                   (* param_brace must contain color= *)
 annotate_cmd    ::= "\annotate" "{" selector "}" param_brace
 cursor_cmd      ::= "\cursor" "{" target_list "}" "{" cursor_params "}"

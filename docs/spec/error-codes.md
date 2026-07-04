@@ -48,7 +48,7 @@
 | E1103 | **DEPRECATED** — legacy primitive validation mega-bucket. New code raises one of the specific `E14xx` codes below. Retained for backward compat (`scene.annotate` cap and some legacy call sites still use it). | See `E14xx` below. |
 | E1109 | Invalid `\recolor` state or missing required state/color parameter. | Use a valid state: idle, current, done, dim, error, good, highlight, path. |
 | E1112 | Unknown annotation position. | Use: above, below, left, right, inside. See [`smart-label-ruleset.md`](smart-label-ruleset.md) for the placement contract. |
-| E1113 | Invalid or missing annotation color. | Use: info, warn, good, error, muted, path. |
+| E1113 | Invalid or missing annotation color. | Use: info, warn, good, error, muted, path — or quoted `"state:current/done/dim/good/error/path"` (since 0.22.2). |
 | E1114 | Unknown keyword parameter passed to a `\shape` primitive. A "did you mean X?" suggestion is included when a close match exists. | Check the parameter name against the primitive's accepted options. |
 | E1115 | Selector does not match any addressable part of the target primitive (warning — command silently dropped). | Check selector syntax against the primitive's addressable parts. |
 | E1116 | Mutation command (`\apply`, `\highlight`, `\recolor`, `\annotate`) references a shape that was never declared with `\shape`. | Add a `\shape` declaration in the animation prelude before the first `\step`, e.g. `\shape{a}{Array}{size=5}`. |
@@ -204,6 +204,8 @@ documented deprecated alias.
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
+| E1491 | `\trace` needs `cells=` with at least 2 points. | Give the full cell sequence, e.g. `cells=[[2,0],[2,1],[2,2]]`. |
+| E1492 | Unknown `\trace` arrowhead value. | Use: end, both, none. |
 | E1500 | Graph layout convergence warning (objective too high). | Simplify the graph or adjust layout parameters. |
 | E1501 | Too many nodes for stable layout. | Reduce node count or accept force-layout fallback. |
 | E1502 | Too many frames for stable layout. | Reduce frame count or accept force-layout fallback. |

@@ -320,6 +320,7 @@ accessor    ::= "cell" "[" index "]" ( "[" index "]" )?
               | "node" "[" node_id "]"
               | "edge" "[" "(" node_id "," node_id ")" "]"
               | "range" "[" index ":" index "]"
+              | "block" "[" index ":" index "]" "[" index ":" index "]"
               | "all"
               | IDENT             (* primitive-defined sub-part, e.g. "axis", "label" *)
 index       ::= NUMBER | INTERP
