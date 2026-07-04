@@ -42,7 +42,7 @@ Each is a MUST for any motion, existing or future. Rationale ties to the confirm
 ### A-1 — Motion is a pure function of an identity diff
 
 **Normative:** MUST
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 The only way to produce animation is `compute_transitions(prev, curr)` → an ordered list of
 `Transition[target, prop, from, to, kind]`, applied by a stateless kind→handler dispatch. A
@@ -59,7 +59,7 @@ how", so one runtime serves all. Satisfied today for forward-adjacent steps; rev
 ### A-2 — Closed kind registry; every kind declares an inverse
 
 **Normative:** MUST
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 The transition `kind` is drawn from a **closed** registry
 (`recolor`, `value_change`, `highlight_on/off`, `element_add/remove`,
@@ -82,7 +82,7 @@ reverse-manifest pins `tests/unit/test_runtime_reverse.py` (pending v0.23.0-dev)
 ### A-3 — Emphasis is a channel disjoint from state
 
 **Normative:** MUST
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 Emphasis (pulse, tint, defocus) is transient salience that (a) never writes persistent
 `shape_states` / `annotations`, (b) self-expires within the step, (c) leaves the resting SVG
@@ -106,7 +106,7 @@ emphasis pins `tests/unit/test_runtime_reverse.py` (pending v0.23.0-dev).
 ### A-4 — A marker is a decoration with identity; its motion is a slide
 
 **Normative:** MUST
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 A cursor/pointer that persists and MOVES is an addressable **decoration** (stable
 `data-annotation` key `{shape}.cursor[{id}]-solo`), not a state that hops between cells.
@@ -131,7 +131,7 @@ new-form caret pins `tests/unit/test_multicursor.py` (pending v0.23.0-dev, multi
 ### A-5 — A frame macro expands to indistinguishable hand-frames
 
 **Normative:** MUST
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 A frame generator (`\playeach`) MUST expand at **scene-build time** to the same frame sequence a
 hand-authored `\step` list would produce — identical snapshots, identical `tr`/`fs`, identical
@@ -152,7 +152,7 @@ substory boundary.
 ### A-6 — Layout mutation goes through prescan; the resting frame is server truth
 
 **Normative:** MUST
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 Any insert / reflow / grow MUST widen the reserved envelope via the build-time prescan
 (monotonic value-width prescan + cross-frame `measure_scene_layout`) so R-32.1–.4 hold for
@@ -172,7 +172,7 @@ sentinel/insert pins (pending v0.23.0-dev, layout-mutation phase).
 ### A-7 — Narration binds identity through the same selector algebra
 
 **Normative:** MUST
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 A narration reference (`\ref{sel}{text}`) MUST resolve through the **same** selector→identity
 algebra decorations use — no parallel "narration target" grammar — producing (a) an emphasis
@@ -197,7 +197,7 @@ warning — a narration typo must never blank a render.
 ### A-8 — Reduced-motion / print / no-JS is ground truth; motion is progressive enhancement
 
 **Normative:** MUST
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 Every kind (existing + new) MUST render correctly with animation disabled: the server SVG at
 rest already shows the destination, so disabling the tween loses only the interpolation.

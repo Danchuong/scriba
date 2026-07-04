@@ -563,7 +563,7 @@ generation-token race guard and reduced-motion/print static fallbacks.
 ### R-38 — `\cursor{…}{id=,at=,color=}`: a named binding caret that slides
 
 **Normative:** SHOULD
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 The new-form `\cursor` — discriminated by the `id=` key, so the legacy
 `{targets}{index}` recolor-hop and its ~232-token golden surface stay
@@ -600,7 +600,7 @@ new-form pins `tests/unit/test_multicursor.py`
 ### R-39 — `\ref{sel}{text}`: narration state-link
 
 **Normative:** SHOULD
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 Inside a `\narrate{…}` body, `\ref{sel}{text}` tints `text` with `sel`'s
 **current-frame** state ink so naming a cell also points at it. It is a
@@ -632,7 +632,7 @@ A-3/A-7).
 ### R-40 — `\focus{sel}`: ephemeral spotlight
 
 **Normative:** SHOULD
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 `\focus{sel}` (frame-only, ephemeral) spotlights the addressed set this frame;
 every other addressable part **of a focused shape** gains `scriba-defocused`
@@ -661,7 +661,7 @@ range expand, other-shape-untouched).
 ### R-42 — Array `sentinels=true`: `before`/`after` reserved slots
 
 **Normative:** SHOULD
-**Since:** v0.23.0-dev
+**Since:** v0.23.0
 
 `\shape{a}{Array}{sentinels=true}` reserves two dashed chrome slots — `a.before`
 (begin()−1, one pitch left of `cell[0]`) and `a.after` (end(), one pitch right of

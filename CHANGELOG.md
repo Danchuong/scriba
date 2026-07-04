@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.23.0] - 2026-07-04 — Animation clarity: reverse tween, carets, narration binding, playeach, reflow
+
 ### Added — animation-clarity Phase A (`SCRIBA_VERSION` →16)
 - **Reverse & jump navigation now animate** (A-2): Prev/ArrowLeft tween by
   inverting the step's delta manifest (all 10 transition kinds are closed
