@@ -782,6 +782,8 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1434",
         "E1435",
         "E1436",
+        # Tree kind=heap missing/empty data (W1)
+        "E1438",
         # Plane2D remove (W6.5)
         "E1437",
         # Queue / Stack

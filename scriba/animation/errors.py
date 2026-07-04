@@ -379,6 +379,10 @@ ERROR_CATALOG: dict[str, str] = {
     "E1437": (
         "Plane2D remove: index out of range or element already removed."
     ),
+    "E1438": (
+        "Tree (kind=heap) requires a non-empty 'data' parameter. "
+        "hint: supply data=[v0, v1, v2, ...] of heap values."
+    ),
     # E1440-E1449: Queue and Stack
     "E1440": (
         "Queue 'capacity' parameter out of range; must be a positive "

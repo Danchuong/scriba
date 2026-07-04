@@ -101,6 +101,8 @@ class Tree(PrimitiveBase):
             self._init_segtree(params)
         elif self.kind == "sparse_segtree":
             self._init_sparse_segtree(params)
+        elif self.kind == "heap":
+            self._init_heap(params)
         else:
             self._init_standard(params)
 
@@ -226,6 +228,45 @@ class Tree(PrimitiveBase):
         self.nodes = [self.root]
         self.edges = []
         self.node_labels = {self.root: str(self.root)}
+
+    def _init_heap(self, params: dict[str, Any]) -> None:
+        """Initialize a binary heap laid out as a complete binary tree.
+
+        The heap is defined entirely by its backing array ``data``: index
+        ``i`` (0-based) is the parent of ``2i+1`` and ``2i+2``, with the root
+        at index ``0``. Node *ids* are the array indices — so selectors read
+        ``h.node[i]`` — while each node's *label* shows the stored value. A
+        sift/swap step therefore relabels two nodes via
+        ``\\apply{h.node[i]}{value=...}`` (the value-layer override read in
+        :meth:`emit_svg`) without moving them; Reingold-Tilford positions
+        stay put.
+
+        Like ``kind=segtree``, the structure is derived from ``data`` alone;
+        any author-supplied ``nodes``/``edges`` are ignored because the
+        complete-binary-tree shape is fully implied by the array.
+        """
+        data = params.get("data")
+        if not data:
+            raise _animation_error(
+                "E1438",
+                detail="Tree (kind=heap) requires a non-empty 'data' parameter",
+                hint="example: Tree{h}{kind=\"heap\", data=[9, 7, 8, 3, 5, 6, 4]}",
+            )
+
+        data = list(data)
+        n = len(data)
+        # Node ids are the array indices (str-normalized to match the other
+        # kinds), so ``h.node[i]`` addresses the value at array slot i.
+        self.root = "0"
+        self.nodes = [str(i) for i in range(n)]
+        self.edges = []
+        for i in range(n):
+            for child in (2 * i + 1, 2 * i + 2):
+                if child < n:
+                    self.edges.append((str(i), str(child)))
+        self.node_labels: dict[str | int, str] = {
+            str(i): str(data[i]) for i in range(n)
+        }
 
     # ----- apply commands --------------------------------------------------
 

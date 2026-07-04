@@ -159,7 +159,7 @@ documented deprecated alias.
 | E1428 | DPTable `rows`/`cols` must be a positive integer. | Use positive integers for both. |
 | E1429 | DPTable `data` length does not match expected size. | `len(data)` must equal `n` (1D) or `rows*cols` (2D). |
 
-### Tree (E1430--E1437)
+### Tree (E1430--E1438)
 
 | Code | Description | Common Cause | Common Fix |
 |------|-------------|--------------|------------|
@@ -170,6 +170,7 @@ documented deprecated alias.
 | E1434 | `remove_node` targets the tree root without `cascade=true`. | Attempting to delete the root node, which would clear the entire tree, without an explicit opt-in. | Pass `cascade=true` to delete the entire tree, or remove leaf nodes first. |
 | E1435 | `reparent` would create a cycle — the proposed new parent is a descendant of the target node, or the node is being reparented to itself. | Moving a node to one of its own descendants. | Choose a new parent that is not in the subtree rooted at the target node. |
 | E1436 | Tree mutation references a node id that does not exist in the current tree, or an `add_node` / `remove_node` argument has a malformed shape. | Using an id that was never added, or a stale id from a previous step. | Verify the node id exists before calling `add_node`, `remove_node`, or `reparent`. |
+| E1438 | Tree (kind=heap) requires a non-empty `data` parameter. | A heap was declared with no backing array (`data=` omitted or empty). | Supply `data=[v0, v1, ...]` — node `i` becomes the parent of `2i+1` and `2i+2`. |
 
 ### Queue / Stack (E1440--E1441)
 
