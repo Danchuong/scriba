@@ -11,7 +11,7 @@
 2. [Supported LaTeX Commands](#2-supported-latex-commands)
 3. [Animation Environment](#3-animation-environment)
 4. [Diagram Environment](#4-diagram-environment)
-5. [Inner Commands](#5-inner-commands-13-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\recolor` `\annotate` `\reannotate` `\cursor` `\foreach` `\substory` `\hl`
+5. [Inner Commands](#5-inner-commands-14-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\substory` `\hl`
 6. [Visual States](#6-visual-states)
 7. [All 15 Primitives](#7-all-15-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
@@ -271,7 +271,7 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 
 ---
 
-## 5. Inner Commands (13 total)
+## 5. Inner Commands (14 total)
 
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
@@ -400,8 +400,10 @@ Attaches a text label or a Bezier arrow to a shape cell. Persistent by default.
 |---|---|---|---|
 | `label` | string | `""` | Text shown in the annotation pill (supports `$...$` math) |
 | `position` | enum | `above` | Pill placement relative to the cell: `above`, `below`, `left`, `right`, `inside` |
-| `color` | enum | `info` | Color token: `info`, `warn`, `good`, `error`, `muted`, `path` |
+| `color` | enum | `info` | Color token: `info`, `warn`, `good`, `error`, `muted`, `path` — or `"state:X"` (quoted!) to bind the label to a recolor state's exact color, X ∈ `current/done/dim/good/error/path` (since 0.22.2) |
 | `ephemeral` | bool | `false` | When `true`, the annotation is cleared at the next `\step` boundary |
+| `bracket` | bool | `false` | Block targets only: dashed rounded outline hugging the block, stroke follows `color=` (since 0.22.2) |
+| `leader` | bool | `false` | Dotted connector + dot from the pill to its anchor cell; on arc pills forces the built-in leader (since 0.22.2) |
 | `arrow` | bool | `false` | When `true`, adds a pointer arrowhead on the annotation pill pointing at the target cell (no source cell required) |
 | `arrow_from` | selector | _(none)_ | Draws a Bezier arc **from** the specified source cell **to** the target, with an arrowhead at the destination |
 
@@ -473,7 +475,32 @@ it is cleared automatically at the next `\step` boundary.
 | Multiple arcs | N/A | Staggered automatically for same target |
 | Use when | Calling out a single cell without a "from" | Showing data flow or recurrence paths between cells |
 
-### 5.9 `\reannotate{target}{color=..., arrow_from=...}`
+### 5.9 `\trace{shape}{cells=[...], params...}`
+
+An arrow that follows a **sequence of cells** — shows a traversal or
+fill direction instead of asking the reader to infer it (since 0.22.2).
+
+```latex
+\trace{g}{cells=[[2,0],[2,1],[2,2],[1,2],[0,2]], color=good, label="lớp lẻ"}
+\trace{a}{cells=[0,1,2,3], color="state:current", dot=start}
+```
+
+| arg | values | default | notes |
+|-----|--------|---------|-------|
+| `cells` | `[[r,c],...]` (2-D) or `[i,...]` (1-D) | required | ≥2 points (E1491); out-of-range points soft-drop the trace |
+| `color` | annotation colors or `"state:X"` | `info` | quotes required for `state:` |
+| `label` | string (math OK) | — | mini pill at the path midpoint, clamped to the content span |
+| `arrowhead` | `end` / `both` / `none` | `end` | |
+| `dot` | `start` / `none` | `none` | start marker |
+| `id` | string | auto `t1`, `t2`… | names the trace for the runtime |
+| `ephemeral` | bool | `false` | clears at the next `\step` like annotations |
+
+Works on Grid, DPTable (1-D + 2-D), Array, NumberLine. In the interactive
+widget the arrow **draws itself along the path** on the step it appears
+(reduced-motion and print get the full static path). The line passes over
+cell bodies but under pills; digits keep their halo.
+
+### 5.10 `\reannotate{target}{color=..., arrow_from=...}`
 Recolors an existing annotation on *target*. Persistent.
 
 **`color=` is required** (raises E1113 if absent). All other params are optional.
@@ -490,7 +517,7 @@ Recolors an existing annotation on *target*. Persistent.
 \reannotate{dp.cell[3]}{color=path, arrow_from="dp.cell[1]"}
 ```
 
-### 5.10 `\cursor{targets}{index, prev_state=..., curr_state=...}`
+### 5.11 `\cursor{targets}{index, prev_state=..., curr_state=...}`
 Moves cursor through cell-indexed primitives (Array, DPTable, CodePanel, etc.). Default: prev→`dim`, curr→`current`.
 
 **Single target:**
@@ -510,7 +537,7 @@ Moves cursor through cell-indexed primitives (Array, DPTable, CodePanel, etc.). 
 ```
 Multi-target cursor applies the same index to every listed family. This keeps related views (e.g., input array and DP array; dist array and pseudo-code line) in sync without writing separate `\recolor` commands for each.
 
-### 5.11 `\foreach{var}{iterable}...\endforeach`
+### 5.12 `\foreach{var}{iterable}...\endforeach`
 Loop expansion. Iterables: `0..4`, `[1,3,5]`, `${computed_list}`.
 ```latex
 \foreach{i}{0..4}
@@ -595,7 +622,7 @@ for the broader `\compute` scope rules.
 and nested `\foreach` (max depth 3). `\step`, `\shape`, `\substory`, and
 `\narrate` are not allowed inside a foreach body.
 
-### 5.12 `\substory[title="...", id="..."]...\endsubstory`
+### 5.13 `\substory[title="...", id="..."]...\endsubstory`
 Nested frame sequence inside a parent frame (animation only, max depth 3).
 ```latex
 \substory[title="Sub-problem", id="subprob-1"]
@@ -614,7 +641,7 @@ Nested frame sequence inside a parent frame (animation only, max depth 3).
 
 **State persistence** — commands inside a `\substory` block (shapes, `\apply`, `\recolor`, `\annotate`) mutate the **parent** animation's scene state and persist after `\endsubstory`. The substory does not create an isolated scope: a `\recolor` on a parent shape inside the substory carries forward into subsequent parent frames exactly as if it had been issued at the parent level.
 
-### 5.13 `\hl{step-id}{tex}`
+### 5.14 `\hl{step-id}{tex}`
 Inline cross-reference inside a `\narrate` body. Wraps *tex* in a `<span>` that highlights when the browser navigates to the referenced frame — zero JavaScript, pure CSS `:target`.
 
 **Syntax:**
@@ -1154,27 +1181,7 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 > pills it forces the built-in leader; never doubles).
 > Example: `\annotate{g.cell[2][0]}{label="lớp chẵn", color="state:current", leader=true, position=below}`.
 
-### `\trace` — arrow that follows a sequence of cells (since 0.22.2)
 
-```latex
-\trace{g}{cells=[[2,0],[2,1],[2,2],[1,2],[0,2]], color=good, label="lớp lẻ"}
-\trace{a}{cells=[0,1,2,3], color="state:current", dot=start}
-```
-
-| arg | values | default | notes |
-|-----|--------|---------|-------|
-| `cells` | `[[r,c],...]` (2-D) or `[i,...]` (1-D) | required | ≥2 points (E1491); out-of-range points soft-drop the trace |
-| `color` | annotation colors or `"state:X"` | `info` | quotes required for `state:` |
-| `label` | string (math OK) | — | mini pill at the path midpoint, clamped to the content span |
-| `arrowhead` | `end` / `both` / `none` | `end` | |
-| `dot` | `start` / `none` | `none` | start marker |
-| `id` | string | auto `t1`, `t2`… | names the trace for the runtime |
-| `ephemeral` | bool | `false` | clears at the next `\step` like annotations |
-
-Works on Grid, DPTable (1-D + 2-D), Array, NumberLine. In the interactive
-widget the arrow **draws itself along the path** on the step it appears
-(reduced-motion and print get the full static path). The line passes over
-cell bodies but under pills; digits keep their halo.
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | — | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]` | — | — | — | — | `.all` |
