@@ -168,7 +168,7 @@ re-solve layout ⇒ mọi node nhảy) và phá R-32 (bbox reflow).
 | H6 | Forest reflow cần envelope đơn điệu + prescan (bài học R-42) | **[Deduced]** §3.4 |
 | H7 | B3 = Tree mở rộng (edge-label + link-class), không cần Automaton primitive | **[Confirmed→Hypothesized]** §3.2 (Tree đã có growth; chỉ thiếu 2 thứ additive) |
 | H8 | Overlay-group emit **chỉ kind cũ** (annotation_*) ⇒ không bump SCRIBA_VERSION | **[Deduced]** §3.5 (A-2 closed registry) |
-| H9 | Forest **union animation** cần element-identity motion — chờ gap-motion-identity | **[Hypothesized]** §7 dependency |
+| H9 | Forest **union animation** = N `position_move` giữ identity, KHÔNG block-kind, MIỄN LÀ key thuần id | **[Confirmed]** §8 — gap-motion-identity đã phân xử (`gap-motion-identity-reorder.md:§9`) |
 
 ---
 
@@ -249,8 +249,17 @@ vốn để lại apex-ma (§3.2).
 
 **Spec-diff:** primitive mới `Forest(PrimitiveBase)`, `_structural_prescan=True`, `roots: list`,
 `_relayout()` = pack N `_reingold_tilford` + envelope-max width; `apply_command` nhận `union`
-(sugar) + `reparent`/`add_node` (mượn thẳng logic Tree). **Emit chỉ kind cũ** (`position_move`
-cho subtree glide + `fs=1`, `element_add` cho node mới) ⇒ **không** bump version.
+(sugar) + `reparent`/`add_node` (mượn thẳng logic Tree). **Emit chỉ kind cũ** (N `position_move`
+cho subtree glide + `fs=1`, `element_add` cho node mới) ⇒ **Forest KHÔNG thêm vocabulary**
+(registry giữ 11 kind, xác nhận bởi gap-motion-identity §9).
+
+**Cọc thiết kế BẮT BUỘC [Confirmed] (gap-motion-identity §9):** node key phải **thuần id nội
+tại** — scope `F.node[<id>]` theo **tên forest ổn định**, **TUYỆT ĐỐI không** nhét
+parent/root/DSU-set vào key. Tree hiện đúng vậy: `_node_key = f"node[{id}]"` (`tree.py:497-499`),
+và `_reparent_internal` chỉ sửa `children_map`/`edges`, `node_id` bất biến (`tree.py:411-476`) ⇒
+`data-target` giữ nguyên qua reparent ⇒ node **glide, không pop**. Nếu key theo root, một `union`
+sẽ đổi key của **toàn subtree** ⇒ differ thấy chúng biến mất+xuất hiện ⇒ phá identity. Đây là
+**điểm thiết kế sống-còn duy nhất** của Ph2; sai chỗ này thì mọi thứ khác vô nghĩa.
 
 ### Phase 3 — Contraction như shape-thứ-hai (cost **M–L**, ưu tiên thấp nhất)
 
@@ -296,12 +305,25 @@ chặn char-edge trên Graph; Tree không có rào đó).
 
 - **Ph1 `\group`: KHÔNG phụ thuộc.** Emit `annotation_add/recolor/remove` — kind đã đóng-nghịch-đảo
   (A-2, `motion-ruleset.md:59-80`). Ship độc lập.
-- **Ph2 `Forest` union-glide: PHỤ THUỘC.** Khi `union` reparent một subtree, subtree cần **giữ
-  identity** (A-0.ii, cùng `data-target` qua các frame) và **glide** dưới envelope đã đặt trước
-  (A-6). **Yêu cầu gửi teammate:** (i) một subtree (nhiều node đổi cha, di chuyển đội hình) là
-  **một** motion hay **N** `position_move`? (ii) element-identity có bảo toàn khi node đổi parent
-  không? (iii) xác nhận `position_move` + `fs=1` snap đủ cho subtree-move, không cần kind mới.
-  **Render tĩnh của Forest chạy được không cần câu trả lời**; chỉ *animation của phép hợp* mới chờ.
+- **Ph2 `Forest` union-glide: ĐÃ GIẢI TỎA** (gap-motion-identity phân xử tại
+  `gap-motion-identity-reorder.md:§9`). Ba câu hỏi, ba câu trả lời:
+  - **(i) N `position_move` rời — KHÔNG block-kind.** Substrate per-target: `get_node_positions()`
+    (`tree.py:507-517`) một entry/node → differ (`differ.py:218-236`) một `position_move`/node.
+    `_reparent_internal` → `_relayout()` → `_reingold_tilford` **toàn cục** (`tree.py:275-285`)
+    cấp lại toạ độ **mọi** node ⇒ subtree **không** phải offset cứng, mỗi node về ghế mới riêng
+    (khối-cứng sẽ SAI vì giãn cách nội bộ đổi dưới parent mới). Chung frame ⇒ chung timing ⇒ mắt
+    vẫn đọc thành **khối bay** ("block-perception" miễn phí, không cần block-kind).
+  - **(ii) Identity BẢO TOÀN** — với điều kiện key thuần id, đã nâng thành **cọc thiết kế bắt buộc**
+    ở §6 Ph2 (`tree.py:497-499` + `:411-476`).
+  - **(iii) `position_move` + `fs=1` ĐỦ, không kind mới.** Đường dữ liệu trọn (Forest cưỡi đúng
+    substrate Tree). **Caveat [Confirmed]:** hình học *hiện* lurch (`scriba.js:213-216`,
+    ends-at-old + fs-snap); union-glide **sạch** cần fix §5.5 của teammate (glide-to-new = công
+    thức `cursor_move` `scriba.js:318-321`) — fix này **CHUNG với A4/A5**, mang bump `17→18` do
+    **motion workstream gánh** (không phải Forest; registry vẫn 11 kind). Prescan A-6 là đúng lớp
+    chống bbox-jump, độc lập motion kind.
+  - **Hệ quả:** Ph2 **clear để chốt**. Không còn câu hỏi mở; chỉ còn **phụ thuộc mềm về lịch** —
+    union-glide đẹp nhất khi fix §5.5 đã đáp (đằng nào motion cũng làm cho A4/A5). Không có fix
+    đó, `union` vẫn chạy đúng (ends-at-old + fs-snap) nhưng giật thay vì lướt.
 - **Ph3:** chỉ metadata/annotation cross-ref ⇒ không phụ thuộc.
 
 ---
@@ -316,7 +338,8 @@ chặn char-edge trên Graph; Tree không có rào đó).
 | **B3** | Tree `edge_labels` + `links` | **M** | ~12 (trie/AC/SAM) | Không | Không (additive) |
 
 **Khuyến nghị lịch:** Ph1 trước (rẻ nhất, phủ rộng nhất, độc lập motion) → B3 (song song, cùng
-chạm tree.py edge path) → Ph2 (khi gap-motion-identity chốt union-glide) → Ph3 (khi cần DAG
+chạm tree.py edge path) → Ph2 (**motion ĐÃ tháo** §8 — union-glide cưỡi `position_move` sẵn có;
+lướt đẹp nhất sau fix hình học §5.5 mà motion workstream dùng chung A4/A5) → Ph3 (khi cần DAG
 condensation đầy đủ). Có thể **dừng sau Ph1+B3** vẫn giải quyết phần lớn JudgeZone pass 3.
 
 ---
@@ -327,8 +350,11 @@ condensation đầy đủ). Có thể **dừng sau Ph1+B3** vẫn giải quyết
   đọc trực tiếp source + 3 example đang ship chứng minh cả cái chạy lẫn cái thiếu (§3.3).
 - **CAO** rằng overlay-group giữ A1/R-32 và không cần kind mới (§3.1, §3.5, §3.6 — cỗ máy R-35
   đã tồn tại nguyên).
-- **TRUNG BÌNH** trên cost Ph2 (Forest): packing đa-cây + envelope là [Deduced] từ R-42/LinkedList,
-  chưa prototype; risk chính là animation union-glide (đang chờ teammate).
+- **TRUNG BÌNH→CAO** trên Ph2 (Forest): motion-risk **đã tháo** — gap-motion-identity xác nhận
+  union = **N `position_move` giữ identity** trên đúng substrate Tree, **không kind mới**, MIỄN LÀ
+  node key thuần id (§8 + `gap-motion-identity-reorder.md:§9`). Risk còn lại thuần **cost
+  engineering**: packing đa-cây + envelope-max là [Deduced] từ R-42/LinkedList, chưa prototype;
+  và union-glide *lướt mượt* dựa vào fix hình học §5.5 mà motion workstream đằng nào cũng làm cho A4/A5.
 - **TRUNG BÌNH** trên B3: [Confirmed] Tree có growth + single-root; [Hypothesized] rằng
   edge-label + link-layer là đủ cho suffix-automaton (chưa dựng thử một bài SAM đầy đủ).
 - **Rủi ro đã loại:** phương án B (Graph node-ops) bị 3 lớp code + RFC bác — không phải phán đoán,
