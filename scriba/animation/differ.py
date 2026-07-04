@@ -80,8 +80,12 @@ def _diff_shape_states(
                         Transition(
                             target=target,
                             prop="add",
+                            # state may be absent for value-only entries
+                            # (ShapeTargetState.state=None means untouched);
+                            # an added element starts idle — keep the
+                            # manifest byte-identical to pre-None goldens.
                             from_val=None,
-                            to_val=curr_cell.get("state"),
+                            to_val=curr_cell.get("state") or "idle",
                             kind="element_add",
                         )
                     )
@@ -134,7 +138,7 @@ def _diff_shape_states(
                         Transition(
                             target=target,
                             prop="remove",
-                            from_val=prev_cell.get("state"),
+                            from_val=prev_cell.get("state") or "idle",
                             to_val=None,
                             kind="element_remove",
                         )
@@ -165,8 +169,12 @@ def _diff_shape_states(
 
             # Both exist -- check individual properties
 
-            prev_state = prev_cell.get("state")
-            curr_state = curr_cell.get("state")
+            # An absent state means "never recolored" (ShapeTargetState.state
+            # is None for value-only entries) — semantically idle. Normalize
+            # both sides so value-only frames neither emit spurious recolors
+            # nor shift manifest bytes (from_val stays "idle", not null).
+            prev_state = prev_cell.get("state") or "idle"
+            curr_state = curr_cell.get("state") or "idle"
             if prev_state != curr_state:
                 transitions.append(
                     Transition(

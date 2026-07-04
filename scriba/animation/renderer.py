@@ -375,7 +375,9 @@ def _snapshot_to_frame_data(
     for shape_name, targets in snap.shape_states.items():
         shape_states[shape_name] = {}
         for target_key, ts in targets.items():
-            entry: dict[str, Any] = {"state": ts.state}
+            entry: dict[str, Any] = {}
+            if ts.state is not None:
+                entry["state"] = ts.state
             if ts.value is not None:
                 entry["value"] = ts.value
             if ts.label is not None:

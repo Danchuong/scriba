@@ -3,7 +3,7 @@
 __version__: str = "0.23.1"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 17
+SCRIBA_VERSION: int = 18
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -154,4 +154,15 @@ every page — while still carrying marker 16, so two byte-different
 releases briefly shared a marker. 17 corrects the signal; treat 0.23.0
 and 0.23.1 outputs as distinct cache keys regardless. Consumer caches
 keyed on rendered output MUST invalidate.
+
+0.24.0 bumps 17→18 (capability Wave 1): ShapeTargetState.state now
+defaults to None ("never recolored") instead of "idle", so value-only
+writes can't clobber a state applied through an expanded selector
+(row/col/diag/block). Manifest bytes shift where a highlight-only entry
+used to emit recolor from_val null — it now says "idle", which also
+makes the runtime class replace match (smooth recolor instead of a
+fullscreen-snap lurch). New surface (row/col/diag sugar, Matrix value
+mutation, Plane2D circle/arc/wedge, Tree kind=heap) is opt-in and leaves
+existing documents' geometry untouched. Consumer caches keyed on
+rendered output MUST invalidate.
 """

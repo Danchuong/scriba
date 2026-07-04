@@ -267,7 +267,9 @@ class TestMultipleShapes:
         assert snap.shape_states["arr"]["arr.0"].value == "A"
         assert snap.shape_states["arr"]["arr.0"].state == "visited"
         assert snap.shape_states["stack"]["stack.0"].value == "B"
-        assert snap.shape_states["stack"]["stack.0"].state == "idle"
+        # value-only writes leave state untouched (None, rendered as idle) so
+        # they can't clobber a state applied via an expanded selector
+        assert snap.shape_states["stack"]["stack.0"].state is None
 
 
 class _FakeStarlarkHost:

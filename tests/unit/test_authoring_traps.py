@@ -87,6 +87,69 @@ class TestHiddenStateCss:
         assert "scriba-state-hidden" in a.emit_svg()
 
 
+class TestValueWriteKeepsExpandedState:
+    """A value-only \\apply must not clobber a state applied to the same
+    cell through a different key (row/col/diag/block/range expansion).
+
+    Root cause of the Gauss-pattern trap: ShapeTargetState defaulted
+    state="idle", so renderer emitted state:"idle" for value-only
+    entries and the _expand_selectors merge let it beat the expanded
+    "done"/"current" (docs pass-3 W1 browser catch)."""
+
+    @staticmethod
+    def _expanded(src: str, shape: str, prim) -> dict:
+        from scriba.animation._frame_renderer import _expand_selectors
+        from scriba.animation.renderer import _snapshot_to_frame_data
+        from scriba.core.context import RenderContext
+
+        ir = SceneParser().parse(src)
+        sc = SceneState()
+        sc.apply_prelude(ir.shapes, ir.prelude_commands, ir.prelude_compute)
+        snaps = [sc.apply_frame(f) for f in ir.frames]
+        ctx = RenderContext(
+            resource_resolver=lambda name: f"/resources/{name}",
+            theme="light",
+            dark_mode=False,
+            metadata={},
+            render_inline_tex=None,
+        )
+        fd = _snapshot_to_frame_data(snaps[0], total_frames=1, scene_id="s", ctx=ctx)
+        return _expand_selectors(fd.shape_states.get(shape, {}), shape, prim)
+
+    def test_diag_state_survives_value_write(self) -> None:
+        from scriba.animation.primitives.matrix import MatrixPrimitive
+
+        src = (
+            "\\shape{m}{Matrix}{rows=3, cols=3,"
+            " data=[[1,2,3],[4,5,6],[7,8,9]], show_values=true}\n"
+            "\\step\n"
+            "\\recolor{m.diag}{state=done}\n"
+            "\\apply{m.cell[0][0]}{value=9}\n"
+        )
+        prim = MatrixPrimitive("m", {"rows": 3, "cols": 3,
+                                     "data": [[1, 2, 3], [4, 5, 6], [7, 8, 9]]})
+        out = self._expanded(src, "m", prim)
+        cell = out["m.cell[0][0]"]
+        assert cell.get("state") == "done", out
+        assert cell.get("value") == "9", out
+
+    def test_row_state_survives_value_write(self) -> None:
+        from scriba.animation.primitives.grid import GridPrimitive
+
+        src = (
+            "\\shape{g}{Grid}{rows=2, cols=2, data=[[1,2],[3,4]]}\n"
+            "\\step\n"
+            "\\recolor{g.row[0]}{state=current}\n"
+            "\\apply{g.cell[0][1]}{value=7}\n"
+        )
+        prim = GridPrimitive("g", {"rows": 2, "cols": 2,
+                                   "data": [[1, 2], [3, 4]]})
+        out = self._expanded(src, "g", prim)
+        cell = out["g.cell[0][1]"]
+        assert cell.get("state") == "current", out
+        assert cell.get("value") == "7", out
+
+
 class TestMatrixBlock:
     def test_validate_and_anchor(self) -> None:
         from scriba.animation.primitives.matrix import MatrixPrimitive

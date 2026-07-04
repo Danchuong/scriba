@@ -107,9 +107,14 @@ def _selector_to_str(sel: Selector | str) -> str:
 
 @dataclass(frozen=True)
 class ShapeTargetState:
-    """Accumulated state for one target within one shape."""
+    """Accumulated state for one target within one shape.
 
-    state: str = "idle"
+    ``state=None`` means "never explicitly recolored" — renderers treat it
+    as idle, but it must NOT be serialized as a literal ``"idle"``: a
+    value-only entry would then clobber a state applied to the same cell
+    through an expanded selector (row/col/diag/block) in the merge."""
+
+    state: str | None = None
     value: str | None = None
     label: str | None = None
     apply_params: list[dict[str, Any]] | None = None
