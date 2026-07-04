@@ -24,6 +24,20 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.23.1
+
+- **LinkedList no longer shifts on insert/remove** — its bounding box
+  follows a max-node-count envelope (grown by a structural prescan), so
+  mid-timeline structure changes keep every node in place (R-32).
+- v1.1 polish: carets can park on Array sentinels
+  (`\cursor{a}{id=i, at="before"}`), `\playeach` works on NumberLine
+  ticks, `\focus` typos warn instead of dimming the whole shape, `\ref`
+  adds a dashed ring on the referenced element, and unknown `\playeach`
+  keys fail fast (`E1496`).
+
+<details>
+<summary>v0.23.0 changelog</summary>
+
 ## What's new in v0.23.0
 
 - **Every navigation direction now animates** — Prev/ArrowLeft tween by
@@ -43,6 +57,8 @@ asset basenames needed to display it.
   grid (positions never move), `sentinels=true` adds `a.before`/`a.after`
   slots for out-of-range iterators.
 - `SCRIBA_VERSION` 15→16; new spec: `docs/spec/motion-ruleset.md` (A-0..A-8).
+
+</details>
 
 <details>
 <summary>v0.22.2 changelog</summary>

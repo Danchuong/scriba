@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- `SCRIBA_VERSION` errata → 17: 0.23.1 changed rendered bytes (new
+  `.scriba-sentinel`/`.scriba-ref-mark` CSS) while still carrying marker
+  16. The marker now moves; treat 0.23.0 and 0.23.1 outputs as distinct
+  cache keys regardless.
+
 ## [0.23.1] - 2026-07-04 — LinkedList frame stability + v1.1 polish
 
 ### Fixed

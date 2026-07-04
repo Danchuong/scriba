@@ -3,7 +3,7 @@
 __version__: str = "0.23.1"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 16
+SCRIBA_VERSION: int = 17
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -147,4 +147,11 @@ change in every widget. Phase D adds the `.scriba-sentinel` CSS rule
 (one more inline-stylesheet byte change). New author surface (\\cursor id=/at= binding
 carets, plus the phase-B \\ref/\\focus/step-title/\\invariant surfaces) is opt-in and leaves plain documents' geometry untouched.
 Consumer caches keyed on rendered output MUST invalidate.
+
+0.23.1 errata → 17: 0.23.1 shipped the `.scriba-ref-mark` CSS rule (and
+the phase-D `.scriba-sentinel` rule) — inline-stylesheet bytes changed in
+every page — while still carrying marker 16, so two byte-different
+releases briefly shared a marker. 17 corrects the signal; treat 0.23.0
+and 0.23.1 outputs as distinct cache keys regardless. Consumer caches
+keyed on rendered output MUST invalidate.
 """
