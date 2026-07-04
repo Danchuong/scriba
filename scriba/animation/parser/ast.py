@@ -165,16 +165,35 @@ class StepCommand:
     parsed from ``\\step[label=...]``.  See ``ruleset.md`` §7.1 (``\\hl``
     extension) for the use case: external references can point at an
     explicitly-named step instead of the implicit ``step{N}`` index.
+
+    The optional ``title`` attribute holds a short human-readable caption
+    parsed from ``\\step[title="..."]`` (§5.3).  It renders as a heading
+    above the narration and supersedes the narration-derived frame title.
     """
 
     line: int
     col: int
     label: str | None = None
+    title: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class NarrateCommand:
     """``\\narrate{LaTeX text}``."""
+
+    line: int
+    col: int
+    body: str
+
+
+@dataclass(frozen=True, slots=True)
+class InvariantCommand:
+    """``\\invariant{text}`` — a prelude-only pinned predicate panel (⑩b).
+
+    Static v1: rendered once across all frames, carries no per-frame state.
+    ``body`` is the raw text (may contain ``$math$``), rendered like narration
+    minus the ``\\hl``/``\\ref`` macros.
+    """
 
     line: int
     col: int
@@ -194,6 +213,20 @@ class ApplyCommand:
 @dataclass(frozen=True, slots=True)
 class HighlightCommand:
     """``\\highlight{target}``."""
+
+    line: int
+    col: int
+    target: Selector
+
+
+@dataclass(frozen=True, slots=True)
+class FocusCommand:
+    """``\\focus{target}`` — ephemeral spotlight (R-40).
+
+    Marks ``target`` as focused this frame; every other addressable part of a
+    focused shape is dimmed (``scriba-defocused``).  Cleared at the next
+    ``\\step`` so it auto-reverts.  Structurally a twin of ``HighlightCommand``.
+    """
 
     line: int
     col: int
@@ -304,6 +337,7 @@ class CursorCommand:
 MutationCommand = (
     ApplyCommand
     | HighlightCommand
+    | FocusCommand
     | RecolorCommand
     | ReannotateCommand
     | AnnotateCommand
@@ -312,7 +346,7 @@ MutationCommand = (
     | CursorCommand
 )
 
-# All inner commands (8 base + substory + foreach).
+# All inner commands (base + substory + foreach).
 Command = Union[
     ShapeCommand,
     ComputeCommand,
@@ -320,6 +354,7 @@ Command = Union[
     NarrateCommand,
     ApplyCommand,
     HighlightCommand,
+    FocusCommand,
     RecolorCommand,
     ReannotateCommand,
     AnnotateCommand,
@@ -380,6 +415,7 @@ class FrameIR:
     narrate_body: str | None = None
     substories: tuple[SubstoryBlock, ...] = ()
     label: str | None = None
+    title: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -392,5 +428,6 @@ class AnimationIR:
     prelude_commands: tuple[MutationCommand, ...]
     frames: tuple[FrameIR, ...]
     source_hash: str
+    invariants: tuple[str, ...] = ()
 
 

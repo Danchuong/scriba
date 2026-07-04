@@ -342,28 +342,34 @@ class _TokensMixin:
     # Step helpers
     # ------------------------------------------------------------------
 
-    def _try_parse_step_options(self, step_tok: Token) -> str | None:
-        """Parse the optional ``[label=ident]`` bracket immediately after
+    def _try_parse_step_options(
+        self, step_tok: Token
+    ) -> tuple[str | None, str | None]:
+        """Parse the optional ``[label=ident, title="..."]`` bracket after
         ``\\step``.
 
         Per ``ruleset.md`` §7.1, a ``\\step[label=foo]`` opts into an
         explicit frame identifier that external references
-        (``\\hl{foo}{...}``) can target.  The only accepted option key is
-        ``label``; anything else raises ``E1004`` (unknown option) to stay
+        (``\\hl{foo}{...}``) can target.  ``\\step[title="..."]`` (§5.3)
+        adds a short human-readable caption rendered as a heading above the
+        narration; the value is taken verbatim (quoted strings preserve
+        spaces).  Any other key raises ``E1004`` (unknown option) to stay
         consistent with environment-option validation.
 
-        Returns the label string, or ``None`` if no bracket follows.
+        Returns a ``(label, title)`` pair; either element is ``None`` when
+        the corresponding key is absent (or when no bracket follows at all).
         """
         # ``[`` must appear on the same line as ``\step`` — it is a
         # trailing token, not a fresh statement.
         if self._at_end():
-            return None
+            return (None, None)
         nxt = self._peek()
         if nxt.kind != TokenKind.LBRACKET or nxt.line != step_tok.line:
-            return None
+            return (None, None)
         self._advance()  # consume [
 
         label: str | None = None
+        title: str | None = None
         while not self._at_end() and self._peek().kind != TokenKind.RBRACKET:
             self._skip_newlines()
             if self._at_end() or self._peek().kind == TokenKind.RBRACKET:
@@ -379,43 +385,62 @@ class _TokensMixin:
                     line=val_tok.line,
                     col=val_tok.col,
                 )
-            # A bare (unquoted) label may use the full documented charset
+            # A bare (unquoted) value may use the full documented charset
             # ``[^\W\d][\w.-]*`` (SCRIBA-TEX-REFERENCE §5.3, e.g.
             # ``base-case``).  The lexer splits ``-``/``.`` out as separate
             # CHAR/NUMBER/IDENT tokens, so reassemble the contiguous run into
-            # a single value.  Quoted (STRING) values are taken verbatim.
+            # a single value.  Quoted (STRING) values are taken verbatim
+            # (a ``title`` with spaces must be quoted).
             if val_tok.kind == TokenKind.IDENT:
                 val_value = self._read_bare_label_tail(val_tok)
             else:
                 val_value = val_tok.value
-            if key_tok.value != "label":
+            key = key_tok.value
+            if key == "label":
+                if label is not None:
+                    raise ValidationError(
+                        "duplicate 'label' option in \\step",
+                        position=key_tok.col,
+                        code="E1004",
+                        line=key_tok.line,
+                        col=key_tok.col,
+                    )
+                label = val_value
+                # Validate label shape: identifier-friendly so it can appear
+                # in HTML ids and \hl{step-id}{...} references.
+                if (
+                    not label
+                    or not label.replace("-", "_").replace(".", "_").isidentifier()
+                ):
+                    raise ValidationError(
+                        f"invalid \\step label {label!r}; "
+                        "must be a non-empty identifier (letters, digits, _, -, .)",
+                        position=val_tok.col,
+                        code="E1005",
+                        line=val_tok.line,
+                        col=val_tok.col,
+                    )
+            elif key == "title":
+                if title is not None:
+                    raise ValidationError(
+                        "duplicate 'title' option in \\step",
+                        position=key_tok.col,
+                        code="E1004",
+                        line=key_tok.line,
+                        col=key_tok.col,
+                    )
+                # Free-form caption; no charset gate (it is a display string,
+                # not an id). The 3-5 word guidance in the docs is advisory,
+                # not enforced.
+                title = val_value
+            else:
                 self._raise_unknown_enum(
                     "\\step option key",
-                    key_tok.value,
-                    ("label",),
+                    key,
+                    ("label", "title"),
                     code="E1004",
                     line=key_tok.line,
                     col=key_tok.col,
-                )
-            if label is not None:
-                raise ValidationError(
-                    "duplicate 'label' option in \\step",
-                    position=key_tok.col,
-                    code="E1004",
-                    line=key_tok.line,
-                    col=key_tok.col,
-                )
-            label = val_value
-            # Validate label shape: identifier-friendly so it can appear
-            # in HTML ids and \hl{step-id}{...} references.
-            if not label or not label.replace("-", "_").replace(".", "_").isidentifier():
-                raise ValidationError(
-                    f"invalid \\step label {label!r}; "
-                    "must be a non-empty identifier (letters, digits, _, -, .)",
-                    position=val_tok.col,
-                    code="E1005",
-                    line=val_tok.line,
-                    col=val_tok.col,
                 )
             self._skip_newlines()
             if not self._at_end() and self._peek().kind == TokenKind.COMMA:
@@ -430,7 +455,7 @@ class _TokensMixin:
                 col=step_tok.col,
             )
         self._advance()  # consume ]
-        return label
+        return (label, title)
 
     def _read_bare_label_tail(self, first_tok: Token) -> str:
         """Reassemble a bare step-label value starting at *first_tok*.

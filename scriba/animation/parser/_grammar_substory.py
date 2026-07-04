@@ -62,6 +62,7 @@ class _SubstoryMixin:
         def _parse_shape(self) -> ShapeCommand: ...
         def _parse_compute(self) -> ComputeCommand: ...
         def _parse_highlight(self) -> Command: ...
+        def _parse_focus(self) -> Command: ...
         def _parse_apply(self) -> Command: ...
         def _parse_recolor(self) -> Command: ...
         def _parse_reannotate(self) -> Command: ...
@@ -69,7 +70,9 @@ class _SubstoryMixin:
         def _parse_cursor(self) -> Command: ...
         def _parse_narrate(self) -> Command: ...
         def _parse_foreach(self) -> Command: ...
-        def _try_parse_step_options(self, tok: Token) -> str | None: ...
+        def _try_parse_step_options(
+            self, tok: Token
+        ) -> tuple[str | None, str | None]: ...
         def _check_step_trailing(self, line: int) -> None: ...
 
     def _parse_substory(self) -> SubstoryBlock:
@@ -138,6 +141,7 @@ class _SubstoryMixin:
         sub_in_prelude = True
         sub_frame_line = 0
         sub_frame_label: str | None = None
+        sub_frame_title: str | None = None
         sub_frame_commands: list[Command] = []
         sub_frame_compute: list[ComputeCommand] = []
         sub_frame_narrate: str | None = None
@@ -172,6 +176,7 @@ class _SubstoryMixin:
                                 narrate_body=sub_frame_narrate,
                                 substories=tuple(sub_frame_substories),
                                 label=sub_frame_label,
+                                title=sub_frame_title,
                             ),
                         )
 
@@ -225,12 +230,15 @@ class _SubstoryMixin:
                                 narrate_body=sub_frame_narrate,
                                 substories=tuple(sub_frame_substories),
                                 label=sub_frame_label,
+                                title=sub_frame_title,
                             ),
                         )
                     sub_in_prelude = False
                     step_tok = self._advance()
                     sub_frame_line = step_tok.line
-                    sub_frame_label = self._try_parse_step_options(step_tok)
+                    sub_frame_label, sub_frame_title = self._try_parse_step_options(
+                        step_tok
+                    )
                     sub_frame_commands = []
                     sub_frame_compute = []
                     sub_frame_narrate = None
@@ -273,6 +281,18 @@ class _SubstoryMixin:
                             col=inner_tok.col,
                         )
                     cmd = self._parse_highlight()
+                    sub_frame_commands.append(cmd)
+
+                elif inner_cmd == "focus":
+                    if sub_in_prelude:
+                        raise ValidationError(
+                            "\\focus is not allowed in a substory "
+                            "prelude before the first \\step",
+                            code="E1057",
+                            line=inner_tok.line,
+                            col=inner_tok.col,
+                        )
+                    cmd = self._parse_focus()
                     sub_frame_commands.append(cmd)
 
                 elif inner_cmd == "apply":
@@ -347,6 +367,18 @@ class _SubstoryMixin:
                         )
                     nested_block = self._parse_substory()
                     sub_frame_substories.append(nested_block)
+
+                elif inner_cmd == "invariant":
+                    # \invariant is animation-prelude-only (static v1); it has
+                    # no substory-scoped form.
+                    raise ValidationError(
+                        "\\invariant must appear in the animation prelude, "
+                        "before the first \\step (not inside a substory)",
+                        position=inner_tok.col,
+                        code="E1058",
+                        line=inner_tok.line,
+                        col=inner_tok.col,
+                    )
 
                 else:
                     raise ValidationError(

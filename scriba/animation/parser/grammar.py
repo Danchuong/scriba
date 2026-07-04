@@ -17,6 +17,7 @@ from .ast import (
     ComputeCommand,
     FrameIR,
     HighlightCommand as HighlightCommand,
+    InvariantCommand,
     MutationCommand as Command,
     NarrateCommand,
     RecolorCommand as RecolorCommand,
@@ -103,10 +104,12 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
         shapes: list[ShapeCommand] = []
         prelude_compute: list[ComputeCommand] = []
         prelude_commands: list[Command] = []
+        invariants: list[str] = []
         frames: list[FrameIR] = []
         in_prelude = True
         frame_line = 0
         frame_label: str | None = None
+        frame_title: str | None = None
         frame_commands: list[Command] = []
         frame_compute: list[ComputeCommand] = []
         frame_narrate: str | None = None
@@ -171,11 +174,13 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
                                 narrate_body=frame_narrate,
                                 substories=tuple(frame_substories),
                                 label=frame_label,
+                                title=frame_title,
                             ),
                         )
                     in_prelude = False
                     frame_line = result.line
                     frame_label = result.label
+                    frame_title = result.title
                     frame_commands = []
                     frame_compute = []
                     frame_narrate = None
@@ -184,6 +189,10 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
                 elif isinstance(result, NarrateCommand):
                     frame_narrate = result.body
                     frame_narrate_seen = True
+                elif isinstance(result, InvariantCommand):
+                    # Prelude-only (dispatch guards with E1058); collect the
+                    # raw body for one static panel render.
+                    invariants.append(result.body)
                 elif isinstance(result, SubstoryBlock):
                     frame_substories.append(result)
                 elif isinstance(result, Command):
@@ -203,6 +212,7 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
                     narrate_body=frame_narrate,
                     substories=tuple(frame_substories),
                     label=frame_label,
+                    title=frame_title,
                 ),
             )
 
@@ -219,6 +229,7 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
             prelude_commands=tuple(prelude_commands),
             frames=tuple(frames),
             source_hash=source_hash,
+            invariants=tuple(invariants),
         )
 
     def _dispatch_command(
@@ -228,7 +239,7 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
         *,
         in_prelude: bool,
         frame_narrate_seen: bool,
-    ) -> Command | ShapeCommand | ComputeCommand | NarrateCommand | StepCommand | SubstoryBlock | None:
+    ) -> Command | ShapeCommand | ComputeCommand | NarrateCommand | StepCommand | SubstoryBlock | InvariantCommand | None:
         """Dispatch a single backslash command, returning the parsed node.
 
         Raises ``ValidationError`` on any parse or validation failure.
@@ -250,9 +261,24 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
 
         if cmd_name == "step":
             step_tok = self._advance()
-            label = self._try_parse_step_options(step_tok)
+            label, title = self._try_parse_step_options(step_tok)
             self._check_step_trailing(step_tok.line)
-            return StepCommand(step_tok.line, step_tok.col, label=label)
+            return StepCommand(
+                step_tok.line, step_tok.col, label=label, title=title
+            )
+
+        if cmd_name == "invariant":
+            if not in_prelude:
+                raise ValidationError(
+                    "\\invariant must appear in the prelude, "
+                    "before the first \\step",
+                    position=tok.col,
+                    code="E1058",
+                    line=tok.line,
+                    col=tok.col,
+                    source_line=self._source_line_at(tok.line),
+                )
+            return self._parse_invariant()
 
         if cmd_name == "narrate":
             if in_prelude:
@@ -286,6 +312,19 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
                     source_line=self._source_line_at(tok.line),
                 )
             return self._parse_highlight()
+
+        if cmd_name == "focus":
+            if in_prelude:
+                raise ValidationError(
+                    "\\focus is not allowed in the prelude "
+                    "(it is a frame-only, ephemeral spotlight)",
+                    position=tok.col,
+                    code="E1053",
+                    line=tok.line,
+                    col=tok.col,
+                    source_line=self._source_line_at(tok.line),
+                )
+            return self._parse_focus()
 
         if cmd_name == "apply":
             return self._parse_apply()
@@ -355,13 +394,13 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _ValuesMixin, _
 
     _VALID_COMMANDS_LIST = (
         "\\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, "
-        "\\recolor, \\reannotate, \\annotate, \\trace, \\cursor, "
-        "\\foreach, \\endforeach, \\substory, \\endsubstory"
+        "\\focus, \\recolor, \\reannotate, \\annotate, \\trace, \\cursor, "
+        "\\invariant, \\foreach, \\endforeach, \\substory, \\endsubstory"
     )
     _VALID_COMMAND_NAMES = (
         "shape", "compute", "step", "narrate", "apply", "highlight",
-        "recolor", "reannotate", "annotate", "trace", "cursor",
-        "foreach", "endforeach", "substory", "endsubstory",
+        "focus", "recolor", "reannotate", "annotate", "trace", "cursor",
+        "invariant", "foreach", "endforeach", "substory", "endsubstory",
     )
 
     def _raise_unknown_command(self, tok: Token) -> None:

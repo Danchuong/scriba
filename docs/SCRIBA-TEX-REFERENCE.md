@@ -11,7 +11,7 @@
 2. [Supported LaTeX Commands](#2-supported-latex-commands)
 3. [Animation Environment](#3-animation-environment)
 4. [Diagram Environment](#4-diagram-environment)
-5. [Inner Commands](#5-inner-commands-14-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\substory` `\hl`
+5. [Inner Commands](#5-inner-commands-17-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\substory` `\hl` `\ref` `\invariant`
 6. [Visual States](#6-visual-states)
 7. [All 15 Primitives](#7-all-15-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
@@ -279,7 +279,7 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 
 ---
 
-## 5. Inner Commands (14 total)
+## 5. Inner Commands (17 total)
 
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
@@ -354,7 +354,26 @@ Binds the frame to the identifier `base-case`. The label:
 | Characters | Unicode letters, digits, combining marks, `_`, `-`, `.` — a letter/`_` start followed by letters, digits, combining marks (Mn/Mc) or `._-` (e.g. `base-case`, `đáp-án`, `ค่า-1`). Since 0.22.0 combining-mark scripts (Thai, Devanagari, …) work; Python's `\w` alone excludes Mn/Mc. |
 | Leading char | Must be a letter (any script) or `_` (not a digit) |
 | Empty | Not allowed — raises `E1005` |
-| Unknown key | Any key other than `label` raises `E1004` |
+| Unknown key | Any key other than `label` or `title` raises `E1004` |
+
+**Optional `title="..."` caption (§5.3):**
+
+```latex
+\step[title="Fill the base row"]
+\step[label=fill, title="Fill the base row"]
+```
+
+`title` adds a short human-readable caption (a quoted string; spaces
+allowed — keep it to roughly 3–5 words). It:
+
+- Renders as a `<span class="scriba-step-title">` heading above the
+  narration (folded into the narration so it updates as you step and
+  prints).
+- **Supersedes** the frame's narration-derived `<title>`/`aria-label` on
+  the stage SVG, so the caption is what assistive tech announces.
+- Is fully opt-in: a step with no `title` is byte-identical to before.
+
+`label` and `title` are independent — use either or both.
 
 The bracket must appear on the same line as `\step` and before any
 trailing content. Trailing non-whitespace after the closing `]` raises
@@ -383,7 +402,29 @@ Frames without a `[label=…]` bracket receive the automatic id
 `{scene-id}-frame-{N}` and cannot be targeted by `\hl`.
 
 ### 5.4 `\narrate{LaTeX text}`
-Attaches narration to current frame. Supports inline math and text formatting.
+Attaches narration to current frame. Supports inline math (`$…$`), text
+formatting (`\textbf`, `\texttt`, `\emph`, …), and two narration macros:
+`\hl{step-id}{tex}` (§5.14, cross-references a labeled `\step`) and
+`\ref{target}{text}` (§5.15, tints a word to match a cell's state).
+
+**`\ref{target}{text}` — state-linked narration word (R-39).** Inside a
+`\narrate` body, `\ref{a.cell[2]}{pivot}` colours the word *pivot* to match
+`a.cell[2]`'s **current-frame** state, so naming a cell also points at it:
+
+```latex
+\step
+\apply{a.cell[2]}{state=current}
+\narrate{Choose the \ref{a.cell[2]}{pivot} and partition around it.}
+```
+
+- Ink follows the R-36 annotation-state palette when the target's state is a
+  signalling colour (`current`, `done`, `dim`, `good`, `error`, `path`).
+- A target with no signal state (idle / highlight / hidden, or an unstated or
+  range target) renders as a bare emphasised word that inherits the body
+  colour — an element with no state is not falsely coloured.
+- The `text` may contain `$math$` (rendered via KaTeX). A typo'd / undeclared
+  target degrades to plain text with a soft warning (`E1322`) — a narration
+  typo never blanks a render. Renders in print / no-JS.
 
 ### 5.5 `\apply{target}{params...}`
 Sets values and runs primitive operations. Persistent. Common: `value=`, `label=`. Primitive-specific operation keys (e.g. `push=`, `enqueue=`, `add_edge=`, `insert=`) are listed per primitive in §7.
@@ -712,6 +753,76 @@ Inline cross-reference inside a `\narrate` body. Wraps *tex* in a `<span>` that 
 ```
 
 See §5.3 for label syntax rules (Unicode letter/`_` start; letters, digits, combining marks, `._-` continue).
+
+### 5.15 `\ref{target}{text}`
+Inline cross-reference inside a `\narrate` body that tints *text* to match
+*target*'s current-frame visual state — naming a cell also points at it (R-39).
+Introduced with the full rationale in §5.4.
+
+**Syntax:**
+```latex
+\narrate{Choose the \ref{a.cell[2]}{pivot} and partition around it.}
+```
+
+**Rules:**
+- Valid only inside `\narrate{...}` (like `\hl`).
+- Ink follows the R-36 annotation-state palette when *target*'s state is a
+  signalling colour (`current`, `done`, `dim`, `good`, `error`, `path`) →
+  `<span class="scriba-ref scriba-ref-state-{state}">`.
+- A valid target with no signal state (idle / highlight / hidden, or an
+  unstated or range target) → bare `<span class="scriba-ref">` inheriting the
+  body colour (an element with no state is not falsely coloured).
+- *text* supports inline math (`$...$`) and text-formatting commands.
+- An undeclared / typo'd target degrades to plain text with a soft warning
+  (**E1322**) — non-fatal. Renders in print / no-JS.
+- v1 is tint-only (no baked ring); the tint tracks the target's state each
+  frame, so a cell that goes `current` → `done` recolours its `\ref` word too.
+
+### 5.16 `\focus{target}`
+Ephemeral spotlight (animation only, R-40): dims every addressable part of
+*target*'s shape **except** *target* for this frame, then auto-clears at the
+next `\step`.
+
+**Syntax:**
+```latex
+\step
+\focus{a.cell[1]}
+\narrate{Only the middle cell matters right now.}
+```
+
+**Rules:**
+- Frame-only; using it in the prelude raises **E1053**.
+- Dims only the shape(s) that carry a `\focus` this frame — other shapes are
+  untouched. The complement gains `scriba-defocused` (opacity dim); a defocused
+  cell keeps its own `scriba-state-*` class (the dim is an orthogonal overlay).
+- Accepts the full selector algebra (`a.cell[i]`, `a.range[lo:hi]`,
+  `a.block[…]`, `a.all`); multiple `\focus` in one step **union**.
+- Undeclared shape → **E1116**; a valid-shape-but-non-matching part degrades
+  soft (**E1115**).
+- Ephemeral: no persistent state, so it auto-reverts at the next `\step`.
+
+### 5.17 `\invariant{text}`
+Pins a predicate panel shown across **all** frames (static v1). Prelude-only —
+declare it before the first `\step`.
+
+**Syntax:**
+```latex
+\begin{animation}[id="binsearch"]
+\shape{a}{Array}{size=8, data=[1,3,4,7,9,11,15,20]}
+\invariant{Loop invariant: $a[lo] \le key \le a[hi]$}
+\step
+\narrate{Inspect the midpoint.}
+...
+\end{animation}
+```
+
+**Rules:**
+- Prelude-only; after the first `\step` it raises **E1058**.
+- *text* supports inline math (`$...$`) and text formatting; it renders once as
+  a `<p class="scriba-invariant">` pinned below the narration (visible on screen
+  and in print), not per frame.
+- Static v1: it does not change between frames. Multiple `\invariant` lines
+  stack.
 
 ---
 

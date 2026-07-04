@@ -70,6 +70,7 @@ _KNOWN_COMMANDS = frozenset(
         "narrate",
         "apply",
         "highlight",
+        "focus",
         "recolor",
         "reannotate",
         "annotate",
@@ -79,6 +80,7 @@ _KNOWN_COMMANDS = frozenset(
         "foreach",
         "endforeach",
         "cursor",
+        "invariant",
     }
 )
 

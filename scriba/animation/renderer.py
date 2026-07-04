@@ -21,18 +21,20 @@ import logging
 import re
 from importlib.resources import files
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from scriba.core.artifact import traversable_to_path
 from scriba.animation.detector import detect_animation_blocks
 from scriba.animation.emitter import FrameData, SubstoryData, emit_html, scene_id_from_source
 from scriba.animation.errors import FrameCountError, _animation_error
 from scriba.animation.extensions.hl_macro import process_hl_macros
+from scriba.animation.extensions.ref_macro import process_ref_macros
 from scriba.core.text_utils import apply_text_commands
 from scriba.animation.parser.ast import (
     AnimationIR,
     AnnotateCommand,
     ApplyCommand,
+    FocusCommand,
     ForeachCommand,
     HighlightCommand,
     RecolorCommand,
@@ -155,16 +157,20 @@ def _render_narration(
     scene_id: str,
     ctx: RenderContext,
     valid_hl_ids: frozenset[str] | None = None,
+    state_of: "Callable[[str], str | None] | None" = None,
+    warn: "Callable[[str, str], None] | None" = None,
 ) -> str:
-    """Render narration text through hl macros and optional TeX.
+    """Render narration text through hl/ref macros and optional TeX.
 
     When ``ctx.render_inline_tex`` is available (normal path), the text
-    makes two passes:
+    makes these passes:
       1. ``process_hl_macros`` expands ``\\hl{step}{tex}`` macros and
-         wraps their TeX bodies in ``<span class="scriba-hl">``.
+         ``process_ref_macros`` expands ``\\ref{sel}{text}`` macros, each
+         stashing its ``<span>`` behind a placeholder token.
       2. ``ctx.render_inline_tex`` extracts and renders every bare
          ``$...$`` math block in the remaining plain text, then
          HTML-escapes the non-math remainder.
+      3. the stashed spans are restored, then ``\\textbf`` etc. expand.
 
     Plain-text escape is deferred to the TeX renderer so ``<`` inside
     math delimiters (e.g. ``$\\min_{j<1}$``) survives intact — escaping
@@ -173,20 +179,26 @@ def _render_narration(
 
     When ``ctx.render_inline_tex`` is ``None``, we must escape plain text
     ourselves because no downstream renderer will.
+
+    ``state_of``/``warn`` drive ``\\ref`` (R-39): ``state_of`` resolves a
+    selector to its current-frame state and ``warn`` surfaces the soft
+    E1322 degrade.  When ``state_of`` is ``None`` (e.g. the diagram path
+    where ``\\narrate`` is forbidden) the ``\\ref`` pass is skipped.
     """
     if text is None:
         return ""
     has_tex = ctx.render_inline_tex is not None
 
-    # When TeX rendering follows, stash each \hl span behind a placeholder
+    # When TeX rendering follows, stash each macro span behind a placeholder
     # token so the renderer's plain-text escape doesn't turn the span HTML
     # into &lt;span&gt;…; the spans are restored after rendering.  The token
     # uses control chars that never appear in narration or survive escaping.
-    hl_spans: list[str] = []
+    # \hl and \ref share ONE stash so both survive the single render pass.
+    stashed: list[str] = []
 
     def _stash_span(span_html: str) -> str:
-        hl_spans.append(span_html)
-        return f"\x00HL{len(hl_spans) - 1}\x00"
+        stashed.append(span_html)
+        return f"\x00HL{len(stashed) - 1}\x00"
 
     processed = process_hl_macros(
         text,
@@ -196,13 +208,46 @@ def _render_narration(
         span_wrapper=_stash_span if has_tex else None,
         valid_step_ids=valid_hl_ids,
     )
+    # \ref runs on the hl-processed string. It never re-escapes the free text
+    # (escape_plain_text=False): with TeX the final render pass escapes once;
+    # without TeX process_hl_macros already escaped it. It stashes into the
+    # same list when TeX follows, else emits its span directly.
+    if state_of is not None:
+        processed, _ref_targets = process_ref_macros(
+            processed,
+            state_of=state_of,
+            render_inline_tex=ctx.render_inline_tex,
+            escape_plain_text=False,
+            span_wrapper=_stash_span if has_tex else None,
+            warn=warn,
+        )
     if has_tex:
         processed = ctx.render_inline_tex(processed)
-        for i, span_html in enumerate(hl_spans):
-            processed = processed.replace(f"\x00HL{i}\x00", span_html)
+        # Restore in reverse so a span stashed later (a \ref whose text
+        # embedded an earlier \hl placeholder) is revealed before its inner
+        # token is substituted.
+        for i in range(len(stashed) - 1, -1, -1):
+            processed = processed.replace(f"\x00HL{i}\x00", stashed[i])
     # Expand \textbf{...}, \texttt{...}, etc. AFTER TeX rendering so the
     # produced HTML tags are not HTML-escaped by the TeX renderer.
     return apply_text_commands(processed)
+
+
+def _render_invariant(text: str, ctx: RenderContext) -> str:
+    """Render an ``\\invariant`` body (⑩b) to HTML.
+
+    Like narration it runs inline ``$math$`` through KaTeX and expands
+    ``\\textbf`` etc., but it carries NO ``\\hl``/``\\ref`` macros — it is
+    pinned chrome, not per-frame narration.  Falls back to a plain-text
+    escape when no TeX renderer is available.
+    """
+    if ctx.render_inline_tex is not None:
+        rendered = ctx.render_inline_tex(text)
+    else:
+        import html as _html_mod
+
+        rendered = _html_mod.escape(text, quote=False)
+    return apply_text_commands(rendered)
 
 
 def _resolve_params(
@@ -306,6 +351,7 @@ def _snapshot_to_frame_data(
     substories: list[SubstoryData] | None = None,
     label: str | None = None,
     valid_hl_ids: frozenset[str] | None = None,
+    title: str | None = None,
 ) -> FrameData:
     """Convert a FrameSnapshot into a FrameData for the emitter.
 
@@ -315,6 +361,11 @@ def _snapshot_to_frame_data(
         Optional user-supplied frame identifier from ``\\step[label=...]``.
         Propagated into :class:`FrameData.label` so the emitter can use
         it as the frame HTML ``id`` and ``data-label`` attribute.
+    title:
+        Optional ``\\step[title="..."]`` caption (§5.3).  Rendered as a
+        leading ``<span class="scriba-step-title">`` folded into the
+        narration HTML so it travels with the interactive narration swap
+        AND prints; also supersedes the narration-derived SVG ``<title>``.
     """
     shape_states: dict[str, dict[str, dict]] = {}
     for shape_name, targets in snap.shape_states.items():
@@ -387,7 +438,40 @@ def _snapshot_to_frame_data(
             }
         )
 
-    narration_html = _render_narration(snap.narration, scene_id, ctx, valid_hl_ids)
+    # R-39 \ref: resolve a selector to its current-frame state off the local
+    # shape_states map. A missing shape → None (soft E1322 degrade); a valid
+    # shape with no stated entry → "idle" (bare ref, no false ink).
+    def _ref_state_of(sel: str) -> str | None:
+        shape = sel.split(".", 1)[0]
+        shape_map = shape_states.get(shape)
+        if shape_map is None:
+            return None
+        entry = shape_map.get(sel)
+        if entry is None:
+            return "idle"
+        return entry.get("state", "idle")
+
+    def _ref_warn(code: str, message: str) -> None:
+        _emit_warning(ctx, code, message, severity="info")
+
+    narration_html = _render_narration(
+        snap.narration, scene_id, ctx, valid_hl_ids,
+        state_of=_ref_state_of, warn=_ref_warn,
+    )
+
+    # ⑩a — a \step[title="..."] caption renders as a leading heading folded
+    # into the narration HTML.  Folding (rather than a sibling element) is
+    # what lets the interactive JS narration swap carry the title per frame
+    # without a runtime change; it also prints for free.  A <span> (styled
+    # display:block via CSS) is used because the narration container is a
+    # <p> and cannot legally nest a block <p>/<h3>.
+    if title:
+        import html as _html_mod
+
+        narration_html = (
+            f'<span class="scriba-step-title">{_html_mod.escape(title)}</span>'
+            + narration_html
+        )
 
     return FrameData(
         step_number=snap.index,
@@ -399,6 +483,8 @@ def _snapshot_to_frame_data(
         cursors=cursors,
         substories=substories,
         label=label,
+        title=title,
+        focus=tuple(snap.focus),
     )
 
 
@@ -411,6 +497,7 @@ def _snapshot_to_frame_data(
 _SHAPE_DEPENDENT_TYPES = (
     ApplyCommand,
     HighlightCommand,
+    FocusCommand,
     RecolorCommand,
     AnnotateCommand,
 )
@@ -580,6 +667,10 @@ class AnimationRenderer:
         inline_runtime = ctx.metadata.get("inline_runtime", True)
         asset_base_url = ctx.metadata.get("asset_base_url", "")
         _opts = getattr(ir, "options", None)
+        # ⑩b — render prelude \invariant bodies once (static panels).
+        invariants_html = [
+            _render_invariant(t, ctx) for t in getattr(ir, "invariants", ())
+        ]
         html = emit_html(
             scene_id, frames, primitives, mode=output_mode,
             label=(getattr(_opts, "label", None) or ""),
@@ -590,6 +681,7 @@ class AnimationRenderer:
             minify=minify,
             inline_runtime=inline_runtime,
             asset_base_url=asset_base_url,
+            invariants=invariants_html,
         )
 
         # Collect CSS assets
@@ -720,6 +812,7 @@ class AnimationRenderer:
                 substories=substory_data,
                 label=frame_ir.label,
                 valid_hl_ids=valid_hl_ids,
+                title=frame_ir.title,
             )
             frame_data_list.append(fd)
 
@@ -787,11 +880,17 @@ class AnimationRenderer:
                 if i < len(substory.frames)
                 else None
             )
+            sub_title = (
+                substory.frames[i].title
+                if i < len(substory.frames)
+                else None
+            )
             fd = _snapshot_to_frame_data(
                 sub_snap, sub_total, scene_id, ctx,
                 substories=nested_data,
                 label=sub_label,
                 valid_hl_ids=valid_hl_ids,
+                title=sub_title,
             )
             sub_frames.append(fd)
 

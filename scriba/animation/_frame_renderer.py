@@ -518,6 +518,52 @@ def _apply_param_list(
             prim.apply_command(params)
 
 
+_DEFOCUS_G_RE = _re.compile(r'<g data-target="([^"]+)" class="([^"]*)"')
+
+
+def _apply_defocus(
+    svg: str, frame: Any, primitives: dict[str, Any]
+) -> str:
+    """R-40 ``\\focus``: dim every addressable part of a *focused* shape that is
+    NOT in its focus set.
+
+    A shape carries a defocus overlay only when it is the subject of a
+    ``\\focus`` this frame; shapes with no ``\\focus`` are left byte-identical.
+    ``frame.focus`` holds selector strings (``a.cell[1]``, ``a.range[1:2]``,
+    ``a.all``); each is expanded to concrete part keys via the same
+    ``_expand_selectors`` decorations use, then every ``<g data-target="…">``
+    of a focused shape outside that set gains ``scriba-defocused``.
+    """
+    focus = getattr(frame, "focus", None)
+    if not focus:
+        return svg
+
+    # Concrete "keep" (focused) target keys, grouped by focused shape.
+    keep: dict[str, set[str]] = {}
+    focus_sels_by_shape: dict[str, set[str]] = {}
+    for sel in focus:
+        shape_name = sel.split(".", 1)[0]
+        focus_sels_by_shape.setdefault(shape_name, set()).add(sel)
+    for shape_name, sels in focus_sels_by_shape.items():
+        prim = primitives.get(shape_name)
+        if prim is None:
+            continue
+        expanded = _expand_selectors({s: {} for s in sels}, shape_name, prim)
+        keep[shape_name] = set(expanded.keys())
+    if not keep:
+        return svg
+
+    def _repl(m: "_re.Match[str]") -> str:
+        target = m.group(1)
+        css = m.group(2)
+        shape_name = target.split(".", 1)[0]
+        if shape_name in keep and target not in keep[shape_name]:
+            return f'<g data-target="{target}" class="{css} scriba-defocused"'
+        return m.group(0)
+
+    return _DEFOCUS_G_RE.sub(_repl, svg)
+
+
 def _emit_frame_svg(
     frame: Any,
     primitives: dict[str, Any],
@@ -580,13 +626,18 @@ def _emit_frame_svg(
     # NOTE: viewbox is NOT recomputed here — the caller passes a stable
     # max-across-all-frames viewbox so the stage size stays constant.
 
-    # R-15: <title> as first child of <svg>.  Use scene_id as title; fall back
-    # to stripped narration text when available.  The title must not contain
+    # R-15: <title> as first child of <svg>.  An explicit \step[title="..."]
+    # (§5.3) supersedes the narration-derived title; otherwise fall back to
+    # stripped narration text, then scene_id.  The title must not contain
     # HTML tags, so strip markup with a simple regex before embedding.
-    _raw_narration = getattr(frame, "narration_html", "") or ""
-    _title_text = _re.sub(r"<[^>]+>", " ", _raw_narration).strip()
-    if not _title_text:
-        _title_text = scene_id
+    _explicit_title = getattr(frame, "title", None)
+    if _explicit_title:
+        _title_text = _explicit_title
+    else:
+        _raw_narration = getattr(frame, "narration_html", "") or ""
+        _title_text = _re.sub(r"<[^>]+>", " ", _raw_narration).strip()
+        if not _title_text:
+            _title_text = scene_id
     # Re-encode for safe embedding inside <title>…</title>.
     _title_escaped = _html_mod.escape(_html_mod.unescape(_title_text))
     # Give the SVG an intrinsic max width equal to its natural viewBox width.
@@ -779,4 +830,8 @@ def _emit_frame_svg(
             y_cursor += bh + _PRIMITIVE_GAP
 
     svg_parts.append("</svg>")
-    return "\n".join(svg_parts)
+    # R-40 \focus: bake the defocus overlay onto the assembled SVG. Runs on the
+    # final string so it covers every primitive uniformly; when a focus set
+    # changes between frames the SVG string differs -> fs=1 -> the runtime
+    # resyncs the dim after the WAAPI settle (no differ change needed).
+    return _apply_defocus("\n".join(svg_parts), frame, primitives)

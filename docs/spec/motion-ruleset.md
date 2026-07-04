@@ -181,14 +181,16 @@ aria-live channel (narration) carries the announcement, fired **after** the visu
 there is no double-announce. Bad/undeclared selectors degrade softly to plain text with a
 warning — a narration typo must never blank a render.
 
-**Code ref:** `scriba/animation/_frame_renderer.py:_expand_selectors`
+**Code ref:** `scriba/animation/extensions/ref_macro.py:process_ref_macros`
+(the shipped narration macro); `scriba/animation/renderer.py:_render_narration`
+(pass-1 stash wiring + `state_of` closure);
+`scriba/animation/_frame_renderer.py:_expand_selectors`
 (the shared selector algebra `\ref` reuses);
-`scriba/animation/static/scriba-scene-primitives.css` (`.scriba-ref`, `.scriba-ref-state-*` —
-this phase); narration macro `extensions/ref_macro.py` `process_ref_macros`
-(pending v0.23.0-dev, narration-binding phase).
-**Test ref:** `tests/unit/test_state_color_leader.py`
-(the annotation-state ink tokens `\ref` reuses, both themes);
-`\ref` macro pins `tests/unit/test_ref_macro.py` (pending v0.23.0-dev, narration-binding phase).
+`scriba/animation/static/scriba-scene-primitives.css` (`.scriba-ref`, `.scriba-ref-state-*`).
+**Test ref:** `tests/unit/test_ref_macro.py:TestRefMacroUnit`
+(state→class mapping, idle/unknown degrade, `$math$`);
+`tests/unit/test_state_color_leader.py`
+(the annotation-state ink tokens `\ref` reuses, both themes).
 
 ### A-8 — Reduced-motion / print / no-JS is ground truth; motion is progressive enhancement
 

@@ -959,7 +959,9 @@ class TestStepLabel:
     def test_step_unknown_option_key_raises_e1004(
         self, parser: SceneParser,
     ) -> None:
-        src = "\\step[title=foo]\n"
+        # ``title`` is now a valid \step option (§5.3); use a genuinely
+        # unknown key to exercise the E1004 path.
+        src = "\\step[bogus=foo]\n"
         with pytest.raises(ValidationError, match="E1004"):
             parser.parse(src)
 

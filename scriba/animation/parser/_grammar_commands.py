@@ -15,7 +15,9 @@ from .ast import (
     AnnotateCommand,
     ApplyCommand,
     CursorCommand,
+    FocusCommand,
     HighlightCommand,
+    InvariantCommand,
     NarrateCommand,
     ReannotateCommand,
     RecolorCommand,
@@ -83,6 +85,11 @@ class _CommandsMixin:
         tok = self._advance()
         return NarrateCommand(tok.line, tok.col, self._read_raw_brace_arg(tok))
 
+    def _parse_invariant(self) -> InvariantCommand:
+        """Parse ``\\invariant{text}`` (⑩b) — raw brace body, like narrate."""
+        tok = self._advance()
+        return InvariantCommand(tok.line, tok.col, self._read_raw_brace_arg(tok))
+
     def _parse_apply(self) -> ApplyCommand:
         tok = self._advance()
         sel = parse_selector(
@@ -102,6 +109,18 @@ class _CommandsMixin:
             source_line=self._source_line_at(tok.line),
         )
         return HighlightCommand(tok.line, tok.col, sel)
+
+    def _parse_focus(self) -> FocusCommand:
+        """Parse ``\\focus{target}`` (R-40) — a structural twin of
+        ``\\highlight``."""
+        tok = self._advance()
+        sel = parse_selector(
+            self._read_brace_arg(tok),
+            line=tok.line,
+            col=tok.col,
+            source_line=self._source_line_at(tok.line),
+        )
+        return FocusCommand(tok.line, tok.col, sel)
 
     def _parse_recolor(self) -> RecolorCommand:
         tok = self._advance()

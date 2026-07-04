@@ -26,18 +26,19 @@
 | E1018 | Duplicate shape id within the animation scope — two `\shape` declarations use the same name. | Copy-paste of a shape block without renaming the id argument. | Give each shape a unique id within its `\begin{animation}` block. |
 | E1019 | Duplicate animation id across the document — two `\begin{animation}[id=...]` blocks share the same explicit id. | Two animations in the same `.tex` file were given identical `id=` options. | Use a distinct `id=` for every `\begin{animation}` block in the document. |
 
-## Diagram-Specific Errors (E1050--E1057)
+## Diagram / Structural Errors (E1050--E1058)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
 | E1050 | `\step` is not allowed inside a diagram environment. | Use `\begin{animation}` if you need steps. |
 | E1051 | `\shape` must appear before the first `\step`. | Move shape declarations to the prelude. |
 | E1052 | Trailing text after `\step` on the same line. | Put `\step` on its own line. |
-| E1053 | `\highlight` is not allowed in the prelude. | Move `\highlight` into a `\step` block. |
+| E1053 | `\highlight` or `\focus` is not allowed in the prelude. | Move it into a `\step` block. |
 | E1054 | `\narrate` is not allowed inside a diagram environment. | Remove `\narrate`; diagrams have no narration. |
 | E1055 | Duplicate `\narrate` in the same step. | Keep only one `\narrate` per step. |
 | E1056 | `\narrate` must be inside a `\step` block. | Move `\narrate` after a `\step`. |
-| E1057 | Mutation command (`\highlight`, `\apply`, or `\recolor`) appears in a substory prelude (before the substory's first `\step`). | Move the command after the first `\step` inside the substory. |
+| E1057 | Mutation command (`\highlight`, `\focus`, `\apply`, or `\recolor`) appears in a substory prelude (before the substory's first `\step`). | Move the command after the first `\step` inside the substory. |
+| E1058 | `\invariant` must appear in the animation prelude, before the first `\step` (static v1 pins one panel across all frames). | Move `\invariant` above the first `\step`. |
 
 ## Parse / Validation Errors (E11xx)
 
@@ -89,6 +90,14 @@
 | E1180 | Animation has >30 frames (warning) or `\cursor` requires at least one target. | Reduce frame count or add cursor targets. |
 | E1181 | Animation has >100 frames (hard limit) or `\cursor` requires index. | Split into multiple animations or add the index parameter. |
 | E1182 | Invalid `\cursor` prev_state or curr_state value. | Use a valid state name. |
+
+## Narration Macro Errors (E1320--E1329)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1320 | `\hl` used outside a `\narrate{...}` body. | Move the `\hl{step}{tex}` macro into a `\narrate` body. |
+| E1321 | `\hl` references an unknown step-id (no matching `\step[label=...]` or implicit `step{N}`). | Reference a declared step label or the correct `step{N}`. |
+| E1322 | `\ref` references an unknown or undeclared target — the reference degrades to plain text (soft warning, non-fatal). | Fix the selector to name a declared shape/part, e.g. `\ref{a.cell[2]}{pivot}`. |
 
 ## Substory Errors (E1360--E1368)
 

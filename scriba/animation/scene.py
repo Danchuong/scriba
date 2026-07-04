@@ -23,6 +23,7 @@ from scriba.animation.parser.ast import (
     ApplyCommand,
     ComputeCommand,
     CursorCommand,
+    FocusCommand,
     ForeachCommand,
     FrameIR,
     HighlightCommand,
@@ -176,6 +177,7 @@ class FrameSnapshot:
     traces: tuple["TraceEntry", ...] = ()
     cursors: tuple["CursorEntry", ...] = ()
     narration: str | None = None
+    focus: frozenset[str] = frozenset()
 
 
 # ---------------------------------------------------------------------------
@@ -196,6 +198,7 @@ class SceneState:
         default_factory=dict,
     )
     highlights: set[str] = field(default_factory=set)
+    focus: set[str] = field(default_factory=set)
     annotations: list[AnnotationEntry] = field(default_factory=list)
     traces: list["TraceEntry"] = field(default_factory=list)
     cursors: list["CursorEntry"] = field(default_factory=list)
@@ -250,6 +253,7 @@ class SceneState:
 
         # Clear ephemerals
         self.highlights.clear()
+        self.focus.clear()
         self.annotations = [a for a in self.annotations if not a.ephemeral]
         self.traces = [tr for tr in self.traces if not tr.ephemeral]
         self.cursors = [c for c in self.cursors if not c.ephemeral]
@@ -306,6 +310,7 @@ class SceneState:
             cursors=tuple(self.cursors),
             bindings=dict(self.bindings),
             narration=narration,
+            focus=frozenset(self.focus),
         )
 
     # ---- substory ----
@@ -332,6 +337,7 @@ class SceneState:
                 for t, s in targets.items()
             }
         saved_highlights = set(self.highlights)
+        saved_focus = set(self.focus)
         saved_annotations = list(self.annotations)
         saved_bindings = copy.deepcopy(self.bindings)
         saved_frame_counter = self._frame_counter
@@ -366,6 +372,7 @@ class SceneState:
         # Restore parent state (substory mutations are ephemeral)
         self.shape_states = saved_shape_states
         self.highlights = saved_highlights
+        self.focus = saved_focus
         self.annotations = saved_annotations
         self.bindings = saved_bindings
         self._frame_counter = saved_frame_counter
@@ -619,6 +626,8 @@ class SceneState:
             self._apply_reannotate(cmd)
         elif isinstance(cmd, HighlightCommand):
             self._apply_highlight(cmd)
+        elif isinstance(cmd, FocusCommand):
+            self._apply_focus(cmd)
         elif isinstance(cmd, AnnotateCommand):
             self._apply_annotate(cmd)
         elif isinstance(cmd, TraceCommand):
@@ -853,6 +862,25 @@ class SceneState:
                 hint=f"declare '{shape_name}' with \\shape before using \\highlight",
             )
         self.highlights.add(target_str)
+
+    def _apply_focus(self, cmd: FocusCommand) -> None:
+        """\\focus — ephemeral spotlight (R-40), cleared at the next step.
+
+        Mirrors ``_apply_highlight``: the undeclared-shape guard is a hard
+        E1116; a valid-shape-but-non-matching part degrades soft (the
+        renderer's ``_validate_expanded_selectors`` warns E1115). Multiple
+        ``\\focus`` in one frame union into ``self.focus``.
+        """
+        target_str = _selector_to_str(self._resolve_selector(cmd.target))
+        shape_name = target_str.split(".", 1)[0]
+        if shape_name not in self.shape_states:
+            raise _animation_error(
+                "E1116",
+                f"\\focus references undeclared shape '{shape_name}'"
+                f" (target: '{target_str}')",
+                hint=f"declare '{shape_name}' with \\shape before using \\focus",
+            )
+        self.focus.add(target_str)
 
     def _apply_annotate(self, cmd: AnnotateCommand) -> None:
         """\\annotate — persistent by default, ephemeral if flagged."""

@@ -395,6 +395,7 @@ def emit_interactive_html(
     render_inline_tex: Callable[[str], str] | None = None,
     inline_runtime: bool = True,
     asset_base_url: str = "",
+    invariants: "list[str] | None" = None,
 ) -> str:
     """Produce interactive widget HTML with step controller.
 
@@ -619,6 +620,18 @@ def emit_interactive_html(
         else ""
     )
 
+    # ⑩b — \invariant panels. Static across all frames, so emitted ONCE as a
+    # direct child of .scriba-widget (below narration). The print @media rule
+    # hides the interactive stage/narration/substory-container but NOT this
+    # panel, so a single element serves both screen and print.
+    _invariant_html = ""
+    if invariants:
+        _invariant_html = "\n  " + "\n  ".join(
+            f'<p class="scriba-invariant" role="note">'
+            f'{_safe_narration_html(h)}</p>'
+            for h in invariants
+        )
+
     # Build the script block: inline or external.
     if inline_runtime:
         _script_block = _build_inline_script(scene_id, js_frames_str)
@@ -635,7 +648,7 @@ def emit_interactive_html(
       <button class="scriba-btn-next" aria-label="Next step"{"" if frame_count > 1 else " disabled"}>&#10095;</button>
     </div>
   </div>
-  <p class="scriba-narration" dir="auto" id="{_escape(scene_id)}-narration" aria-live="polite">{_safe_narration_html(frames[0].narration_html)}</p>
+  <p class="scriba-narration" dir="auto" id="{_escape(scene_id)}-narration" aria-live="polite">{_safe_narration_html(frames[0].narration_html)}</p>{_invariant_html}
   <div class="scriba-substory-container"></div>
   <div class="scriba-print-frames" style="display:none">
 {print_frames_html}
@@ -664,6 +677,7 @@ def emit_html(
     minify: bool = True,
     inline_runtime: bool = True,
     asset_base_url: str = "",
+    invariants: "list[str] | None" = None,
 ) -> str:
     """Produce HTML for an animation scene.
 
@@ -711,6 +725,7 @@ def emit_html(
             inline_runtime=inline_runtime,
             asset_base_url=asset_base_url,
             size_style=_size_attr,
+            invariants=invariants,
         )
     if minify:
         result = _minify_html(result)

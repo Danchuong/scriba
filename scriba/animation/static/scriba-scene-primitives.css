@@ -905,14 +905,42 @@
    These are HTML <span>s sitting on the page background, so they take `color`
    and the WCAG-AA --scriba-annotation-state-* inks (R-36), NOT the pill fills
    (which are unreadable as text ink on white). A bare \ref — target has no
-   signal state — takes the info ink. */
-.scriba-ref               { color: var(--scriba-annotation-info); }
+   signal state (idle/highlight/hidden/range) — INHERITS the body colour: an
+   element with no signal state is not falsely coloured (anim-narrate-focus
+   §2b). The class stays as a styling / future-emphasis hook. */
+.scriba-ref               { color: inherit; }
 .scriba-ref-state-current { color: var(--scriba-annotation-state-current); }
 .scriba-ref-state-done    { color: var(--scriba-annotation-state-done); }
 .scriba-ref-state-dim     { color: var(--scriba-annotation-state-dim); }
 .scriba-ref-state-good    { color: var(--scriba-annotation-state-good); }
 .scriba-ref-state-error   { color: var(--scriba-annotation-state-error); }
 .scriba-ref-state-path    { color: var(--scriba-annotation-state-path); }
+
+/* ⑩a — \step[title="..."] caption. A leading heading folded into the
+   narration <p> (an inline <span> displayed as a block so it can sit inside
+   the narration paragraph and travel with the interactive JS narration swap).
+   Absent title => no span => byte-identical narration. */
+.scriba-step-title {
+  display: block;
+  font-weight: 600;
+  font-size: 0.95em;
+  line-height: 1.3;
+  margin-bottom: 0.25em;
+  opacity: 0.85;
+}
+
+/* ⑩b — \invariant pinned panel. A static predicate shown across all frames
+   (rendered once at the widget level). A quiet, boxed caption distinct from
+   the live narration; the left rule reads as "holds throughout". */
+.scriba-invariant {
+  margin: 0.5em 0 0;
+  padding: 0.35em 0.6em;
+  border-inline-start: 3px solid var(--scriba-annotation-info, #0070d5);
+  background: color-mix(in srgb, var(--scriba-annotation-info, #0070d5) 7%, transparent);
+  border-radius: 0 var(--scriba-frame-radius, 4px) var(--scriba-frame-radius, 4px) 0;
+  font-size: 0.9em;
+  line-height: 1.4;
+}
 
 /* KNOWN-DEAD: .scriba-highlighted intentionally has no rule. The runtime
    toggles this class during a highlight transition, but no primitive bakes it

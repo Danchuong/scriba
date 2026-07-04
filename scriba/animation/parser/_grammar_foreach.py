@@ -46,6 +46,7 @@ class _ForeachMixin:
         def _parse_reannotate(self) -> Command: ...
         def _parse_apply(self) -> Command: ...
         def _parse_highlight(self) -> Command: ...
+        def _parse_focus(self) -> Command: ...
         def _parse_annotate(self) -> Command: ...
         def _parse_cursor(self) -> Command: ...
 
@@ -168,6 +169,9 @@ class _ForeachMixin:
                     elif inner_cmd == "highlight":
                         body.append(self._parse_highlight())
 
+                    elif inner_cmd == "focus":
+                        body.append(self._parse_focus())
+
                     elif inner_cmd == "annotate":
                         body.append(self._parse_annotate())
 
@@ -180,7 +184,9 @@ class _ForeachMixin:
                     elif inner_cmd == "foreach":
                         body.append(self._parse_foreach())
 
-                    elif inner_cmd in ("endsubstory", "step", "shape", "substory"):
+                    elif inner_cmd in (
+                        "endsubstory", "step", "shape", "substory", "invariant",
+                    ):
                         raise ValidationError(
                             f"\\{inner_cmd} is not allowed inside \\foreach body",
                             position=inner_tok.col,

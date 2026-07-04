@@ -116,6 +116,8 @@ class FrameData:
     cursors: list[dict] | None = None  # \cursor binding carets (R-38)
     label: str | None = None
     substories: list[SubstoryData] | None = None
+    title: str | None = None  # \step[title="..."] caption (§5.3)
+    focus: tuple[str, ...] = ()  # \focus{sel} spotlight targets (R-40)
 
 
 # ---------------------------------------------------------------------------

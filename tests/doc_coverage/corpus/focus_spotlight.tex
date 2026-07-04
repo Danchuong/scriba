@@ -1,0 +1,9 @@
+\begin{animation}[id="focus-demo", label="Focus spotlight"]
+\shape{a}{Array}{size=4, data=[3,1,4,1]}
+\step
+\focus{a.cell[2]}
+\narrate{Only the third cell matters this step.}
+\step
+\apply{a.cell[2]}{state=done}
+\narrate{Now everything is back in view.}
+\end{animation}

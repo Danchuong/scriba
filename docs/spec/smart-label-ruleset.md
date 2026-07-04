@@ -597,6 +597,67 @@ new caret plumbing `scriba/animation/differ.py` `_diff_cursors`,
 new-form pins `tests/unit/test_multicursor.py`
 (pending v0.23.0-dev, multi-cursor phase).
 
+### R-39 — `\ref{sel}{text}`: narration state-link
+
+**Normative:** SHOULD
+**Since:** v0.23.0-dev
+
+Inside a `\narrate{…}` body, `\ref{sel}{text}` tints `text` with `sel`'s
+**current-frame** state ink so naming a cell also points at it. It is a
+renderer-level macro pass co-located with `\hl` (the narrate body is a raw
+string with no grammar token stream), sharing the same `\x00`-placeholder
+stash so its `<span>` — and any `$math$` in `text`, rendered through the same
+KaTeX callback — survives the downstream escape. Ink follows the R-36
+annotation-state palette (`--scriba-annotation-state-*`, the WCAG-AA text inks,
+NOT the pill fills): `state ∈ {current, done, dim, good, error, path}` →
+`<span class="scriba-ref scriba-ref-state-{state}">`; a valid target with no
+signalling state (idle / highlight / hidden, or an unstated / range target) →
+bare `<span class="scriba-ref">` inheriting the body colour (an element with no
+state is not falsely coloured). An **undeclared shape** degrades soft to plain
+text with a warning (**E1322**) — a narration typo must never blank a render.
+Opt-in and byte-stable when absent; renders in print / no-JS for free. v1 is
+tint-only: a baked emphasis ring is deferred (`scriba-highlighted` is latent
+no-op paint on already-coloured cells — see [motion-ruleset](./motion-ruleset.md)
+A-3/A-7).
+
+**Code ref:** `scriba/animation/extensions/ref_macro.py:process_ref_macros`
+(macro pass); `scriba/animation/renderer.py:_render_narration`
+(pass-1 stash wiring + `state_of` closure);
+`scriba/animation/static/scriba-scene-primitives.css` (`.scriba-ref`,
+`.scriba-ref-state-*`).
+**Test ref:** `tests/unit/test_ref_macro.py:TestRefMacroUnit`
+(state→class mapping, idle/unknown degrade, `$math$`, XSS escape);
+`tests/unit/test_ref_macro.py:TestRefMacroRender` (per-frame tint, print).
+
+### R-40 — `\focus{sel}`: ephemeral spotlight
+
+**Normative:** SHOULD
+**Since:** v0.23.0-dev
+
+`\focus{sel}` (frame-only, ephemeral) spotlights the addressed set this frame;
+every other addressable part **of a focused shape** gains `scriba-defocused`
+(opacity dim). It is a structural twin of `\highlight` — lexer keyword →
+`FocusCommand` → `_apply_focus` (E1116 hard on an undeclared shape, mirroring
+`\highlight`) → `FrameSnapshot.focus` → `FrameData.focus` → a defocus overlay
+baked onto the assembled frame SVG. Shapes carrying no `\focus` this frame are
+byte-untouched; a valid-shape-but-non-matching part degrades soft (the
+renderer's `_validate_expanded_selectors` E1115). Multiple `\focus` union.
+Cleared at the next `\step`, so it **auto-reverts**; a defocused cell keeps its
+own `scriba-state-*` class (the dim is an orthogonal overlay). No differ change
+is needed: a focus-set change alters the frame SVG → `fs=1` → the runtime
+resyncs the dim after the WAAPI settle. Its *motion law* is
+[motion-ruleset](./motion-ruleset.md) A-3 (emphasis is a channel disjoint from
+state); this card governs its emit + grammar.
+
+**Code ref:** `scriba/animation/scene.py:_apply_focus`
+(ephemeral set + E1116 guard);
+`scriba/animation/_frame_renderer.py:_apply_defocus` (baked overlay);
+`scriba/animation/static/scriba-scene-primitives.css` (`.scriba-defocused`).
+**Test ref:** `tests/unit/test_focus.py:TestFocusScene`
+(record / ephemeral auto-revert / union / E1116);
+`tests/unit/test_focus.py:TestFocusEmit` (defocus on the complement only,
+range expand, other-shape-untouched).
+
 ### R-07 — Leader threshold formula
 
 **Normative:** MUST

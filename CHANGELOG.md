@@ -33,6 +33,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Case files: `investigations/anim-{runtime-reverse,multicursor,
   narrate-focus,unified-motion-model}.md`.
 
+### Added — animation-clarity Phase B (narration binding)
+- **`\ref{sel}{text}` inside `\narrate`** (R-39): the word renders in the
+  exact color of the referenced element's CURRENT state, re-resolved each
+  frame — the "names it but doesn't point at it" class of confusion (35%
+  of audited steps) is now structurally impossible. Unknown targets
+  degrade to plain text + `E1322` warning; math inside the text arg
+  survives; print/no-JS keeps the tinted span.
+- **`\focus{sel}`** (R-40): spotlight the active set — everything else
+  in that shape dims to 0.35 opacity; ephemeral, so the next step
+  auto-restores. Range/block selectors expand as usual; undeclared shape
+  → `E1116`.
+- **`\step[title="..."]`**: a 3-5-word heading above the narration
+  (doubles as the SVG title); byte-identical when absent.
+- **`\invariant{...}`** (prelude-only, `E1058` after `\step`): a pinned
+  predicate panel rendered once per widget, KaTeX-capable, visible in
+  print.
+
 ## [0.22.2] - 2026-07-04 — Diagram-clarity decorations: trace, block, state colors
 
 ### Added

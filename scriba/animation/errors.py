@@ -158,6 +158,10 @@ ERROR_CATALOG: dict[str, str] = {
         "\\recolor are not allowed in a substory prelude before the first "
         "\\step."
     ),
+    "E1058": (
+        "\\invariant must appear in the animation prelude, before the first "
+        "\\step (static v1 pins one panel across all frames)."
+    ),
     # --- Parse errors (E1100 -- E1149) ---
     # reserved: E1100 is the generic parse-failure bucket surfaced by
     # `AnimationParseError`. Kept in catalog so that `except AnimationError`
@@ -233,9 +237,13 @@ ERROR_CATALOG: dict[str, str] = {
         "an index parameter."
     ),
     "E1182": "Invalid \\cursor prev_state or curr_state value.",
-    # --- \hl cross-reference macro errors (E1320 -- E1329) ---
+    # --- \hl / \ref cross-reference macro errors (E1320 -- E1329) ---
     "E1320": "\\hl used outside a \\narrate body.",
     "E1321": "\\hl references an unknown step-id (no matching \\step label or step{N}).",
+    "E1322": (
+        "\\ref references an unknown or undeclared target — the reference "
+        "degrades to plain text (soft warning, non-fatal)."
+    ),
     # --- Substory errors (E1360 -- E1369) ---
     "E1360": "Substory nesting depth exceeds maximum.",
     "E1361": "Unclosed \\substory (missing \\endsubstory).",
