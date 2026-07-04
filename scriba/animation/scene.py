@@ -200,6 +200,7 @@ class SceneState:
     highlights: set[str] = field(default_factory=set)
     focus: set[str] = field(default_factory=set)
     annotations: list[AnnotationEntry] = field(default_factory=list)
+    shape_types: dict[str, str] = field(default_factory=dict)
     traces: list["TraceEntry"] = field(default_factory=list)
     cursors: list["CursorEntry"] = field(default_factory=list)
     _trace_counter: int = 0
@@ -232,6 +233,7 @@ class SceneState:
 
         for shape in shapes:
             self.shape_states[shape.name] = {}
+            self.shape_types[shape.name] = shape.type_name
 
         # Global compute bindings persist across all frames.
         for cb in prelude_compute:
@@ -681,10 +683,25 @@ class SceneState:
         if isinstance(value, InterpolationRef):
             result: Any = self.bindings.get(value.name, value.name)
             for sub in value.subscripts:
+                # a str subscript may itself be a binding name ("layers[k]")
+                # or a numeric literal — resolve it before indexing; the old
+                # code fell through silently and returned the WHOLE list
+                # (docs-author-audit: the computed-selector-index trap)
+                if isinstance(sub, str):
+                    if sub in self.bindings:
+                        sub = self.bindings[sub]
+                    else:
+                        try:
+                            sub = int(sub)
+                        except (TypeError, ValueError):
+                            pass
                 try:
-                    if isinstance(sub, int) and isinstance(result, (list, tuple)):
+                    if isinstance(sub, bool):
+                        pass  # bools are ints — never a useful index
+                    elif isinstance(sub, int) and isinstance(result, (list, tuple)):
                         result = result[sub]
-                    elif isinstance(sub, str) and isinstance(result, dict):
+                        continue
+                    if isinstance(sub, str) and isinstance(result, dict):
                         result = result[sub]
                 except (IndexError, KeyError):
                     break
@@ -743,6 +760,17 @@ class SceneState:
                 return resolved
             if isinstance(resolved, int):
                 return resolved
+            if isinstance(resolved, (list, tuple, dict)):
+                raise _animation_error(
+                    "E1159",
+                    f"selector index '${{{expr.name}}}' resolved to a whole "
+                    f"container ({type(resolved).__name__}); an index must be "
+                    "a single value",
+                    hint=(
+                        "subscript it, e.g. ${" + expr.name + "[k]} with k a "
+                        "\compute binding or literal"
+                    ),
+                )
             text = str(resolved)
             try:
                 return int(text)
@@ -771,6 +799,19 @@ class SceneState:
         if extra:
             new_apply_params = list(target_state.apply_params) if target_state.apply_params else []
             new_apply_params.append(extra)
+            # bulk form on a VariableWatch ("\\apply{w}{i=0}") also mirrors
+            # each k=v into the targeted var entry, so anything reading the
+            # SNAPSHOT (binding carets, \\ref state resolution) sees exactly
+            # what the widget displays — docs promise bulk == targeted
+            # (docs-author-audit trap #2)
+            shape_only = "." not in target_str
+            if shape_only and self.shape_types.get(target_str) == "VariableWatch":
+                for k, v in extra.items():
+                    var_key = f"{target_str}.var[{k}]"
+                    var_state = self._ensure_target(var_key)
+                    self.shape_states[target_str][var_key] = replace(
+                        var_state, value=str(v)
+                    )
         else:
             new_apply_params = target_state.apply_params
         target_state = replace(

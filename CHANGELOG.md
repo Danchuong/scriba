@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — docs-audit generality batch
+- **Computed selector subscripts**: `${list[k]}` in a selector index now
+  resolves when `k` is a `\compute` binding or literal
+  (`\recolor{a.cell[${idx[k]}]}`), instead of silently collapsing to the
+  whole list and dropping the command. Any still-unresolvable index —
+  unknown binding, `\foreach` var used as a subscript, or a
+  whole-container result — raises loud **E1159** with a hint.
+- **Bulk watch writes feed binding carets**: `\apply{w}{i=N}` now mirrors
+  each parameter into the targeted `w.var[i]` slot, so bulk and targeted
+  forms are interchangeable for `\cursor at="w.var[i]"` / `\ref`.
+- **`state=hidden` works on all 15 primitives**: a universal
+  `.scriba-state-hidden{display:none}` rule hides slot-keeping groups on
+  the primitives that don't omit hidden elements at emit
+  (previously Graph/Tree/Plane2D only).
+- **Matrix `block[r0:r1][c0:c1]`**: the 2-D area selector (recolor /
+  annotate / `bracket=true`) now covers Matrix, closing the last 2-D
+  primitive gap (R-35).
+
+### Changed
+- `docs/SCRIBA-TEX-REFERENCE.md` overhauled per the three docs audits
+  (author / brevity / generality): one-screen cheat-sheet + top-6
+  footguns up front, computed-indexing rules table, cursor hop-vs-pin
+  split, self-contained E-code table (+14 rows), spec-internals and
+  duplicate examples removed — 2005 → ~1800 lines with no
+  author-relevant knowledge dropped.
+
 ### Fixed
 - `SCRIBA_VERSION` errata → 17: 0.23.1 changed rendered bytes (new
   `.scriba-sentinel`/`.scriba-ref-mark` CSS) while still carrying marker

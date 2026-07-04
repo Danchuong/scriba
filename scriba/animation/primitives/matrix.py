@@ -116,6 +116,13 @@ _ALL_RE = ALL_RE
 
 # Suffix-only regex (no shape name prefix) — local, no base.py equivalent.
 _SUFFIX_CELL_2D_RE = re.compile(r"^cell\[(?P<row>\d+)\]\[(?P<col>\d+)\]$")
+_SUFFIX_BLOCK_RE = re.compile(
+    r"^block\[(?P<r0>\d+):(?P<r1>\d+)\]\[(?P<c0>\d+):(?P<c1>\d+)\]$"
+)
+_BLOCK_RE = re.compile(
+    r"^(?P<name>[^.]+)\.block\[(?P<r0>\d+):(?P<r1>\d+)\]"
+    r"\[(?P<c0>\d+):(?P<c1>\d+)\]$"
+)
 
 # ---------------------------------------------------------------------------
 # MatrixPrimitive
@@ -286,6 +293,13 @@ class MatrixPrimitive(PrimitiveBase):
             row = int(m.group("row"))
             col = int(m.group("col"))
             return 0 <= row < self.rows and 0 <= col < self.cols
+        b = _SUFFIX_BLOCK_RE.match(suffix)
+        if b:
+            # inclusive 2-D twin of range (R-35) — Matrix was the one 2-D
+            # primitive missing it (docs-generality-audit gap #2)
+            r0, r1 = int(b.group("r0")), int(b.group("r1"))
+            c0, c1 = int(b.group("c0")), int(b.group("c1"))
+            return r0 <= r1 < self.rows and c0 <= c1 < self.cols
 
         return suffix == "all"
 
@@ -296,6 +310,20 @@ class MatrixPrimitive(PrimitiveBase):
         cell was silently dropped. Coordinates include the row/col header
         offsets so anchors track the rendered cell grid.
         """
+        b = _BLOCK_RE.match(selector)
+        if b and b.group("name") == self.name:
+            r0, r1 = int(b.group("r0")), int(b.group("r1"))
+            c0, c1 = int(b.group("c0")), int(b.group("c1"))
+            if r0 <= r1 < self.rows and c0 <= c1 < self.cols:
+                p0 = self.resolve_annotation_point(
+                    f"{self.name}.cell[{r0}][{c0}]"
+                )
+                p1 = self.resolve_annotation_point(
+                    f"{self.name}.cell[{r1}][{c1}]"
+                )
+                if p0 and p1:
+                    return ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)
+            return None
         m = _CELL_2D_RE.match(selector)
         if m and m.group("name") == self.name:
             r, c = int(m.group("row")), int(m.group("col"))
@@ -334,6 +362,22 @@ class MatrixPrimitive(PrimitiveBase):
         :meth:`resolve_annotation_point`. Scoped to below-pill targets so a wide
         above/left/right pill over a narrow cell never trips the spanning
         leader."""
+        b = _BLOCK_RE.match(selector)
+        if b and b.group("name") == self.name:
+            # block boxes feed the placer/bracket regardless of position,
+            # exactly like Grid's block branch (bracket=true needs a box or
+            # it silently degrades to a plain position pill)
+            r0, r1 = int(b.group("r0")), int(b.group("r1"))
+            c0, c1 = int(b.group("c0")), int(b.group("c1"))
+            if not (r0 <= r1 < self.rows and c0 <= c1 < self.cols):
+                return None
+            x_offset = self.row_label_offset if self.row_labels else 0
+            y_offset = self.col_label_offset if self.col_labels else 0
+            x = x_offset + c0 * (self.cell_size + _CELL_GAP)
+            y = y_offset + r0 * (self.cell_size + _CELL_GAP)
+            w = (c1 - c0 + 1) * self.cell_size + (c1 - c0) * _CELL_GAP
+            h = (r1 - r0 + 1) * self.cell_size + (r1 - r0) * _CELL_GAP
+            return BoundingBox(x=float(x), y=float(y), width=float(w), height=float(h))
         if not self._target_has_below_pill(selector):
             return None
         m = _CELL_2D_RE.match(selector)

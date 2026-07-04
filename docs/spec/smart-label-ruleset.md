@@ -471,7 +471,7 @@ Rules governing when, how, and where leader lines are drawn.
 **Since:** v0.22.2
 
 `block[r0:r1][c0:c1]` is the inclusive 2-D twin of `range[lo:hi]`, valid on
-2-D cell primitives (Grid, DPTable-2D). `\recolor`/`\highlight` MUST expand
+2-D cell primitives (Grid, DPTable-2D, Matrix — Matrix since 0.23.2). `\recolor`/`\highlight` MUST expand
 it to the full cell product `cell[r][c]`, `r∈r0..r1`, `c∈c0..c1`
 (`_expand_selectors` block branch, `scriba/animation/_frame_renderer.py`);
 `\annotate` MUST resolve it to the block's center point and union AABB,

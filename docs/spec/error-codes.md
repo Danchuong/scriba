@@ -73,6 +73,7 @@
 | E1154 | Starlark forbidden construct (import, while, class, lambda, etc.). | Use only `for` loops and allowed builtins. |
 | E1155 | Starlark memory limit exceeded (64 MB). | Reduce data size or avoid large intermediate structures. |
 | E1156 | `eval_raw` has been removed. Use `\compute{...}` blocks instead. | Replace any `eval_raw` calls with a `\compute{...}` block. |
+| E1159 | Selector index `${...}` unknown binding, or resolved to a whole container. | Bind it in `\compute` first; subscript containers, e.g. `${rows[k]}`. |
 
 ## Foreach Errors (E1170--E1173)
 

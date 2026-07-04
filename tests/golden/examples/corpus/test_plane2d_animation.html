@@ -921,6 +921,14 @@
   transition: opacity 180ms ease-out;
 }
 
+/* RFC-001 §4.4 — state=hidden. Graph/Tree/Plane2D skip these elements at
+   emit; every other primitive keeps the group in the DOM (slot identity)
+   and hides it here, so hidden works uniformly on all 16 primitives
+   (docs-generality-audit gap #1). */
+.scriba-state-hidden {
+  display: none;
+}
+
 /* R-39 v1.1 — the element a narration \ref points at: ring its existing
    border (dash + weight only; the state colour stays authoritative). */
 .scriba-ref-mark > rect {
