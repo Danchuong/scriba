@@ -8,6 +8,7 @@ See ``docs/spec/primitives.md`` section 7 for the authoritative specification.
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any, Callable, ClassVar
 
@@ -17,6 +18,7 @@ from scriba.animation.primitives.base import (
     PrimitiveBase,
     _escape_xml,
     _render_svg_text,
+    _trace_arrowhead,
     register_primitive,
     state_class,
     svg_style_attrs,
@@ -50,6 +52,44 @@ _PADDING = 30
 # Regex to parse annotation selectors like "T.node[5]" or "T.node[[0,3]]"
 _TREE_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
 
+# Regex for the second-class link selector "T.link[(u,v)]". Authors reach it on
+# the existing selector grammar via the quoted-string form ``T.link["(u,v)"]``,
+# which canonicalizes back to this exact key (see scene._selector_to_str), so
+# no ``_parse_link`` handler is needed.
+_TREE_LINK_SEL_RE = re.compile(
+    r"^(?P<name>\w+)\.link\[\((?P<u>[^,]+),(?P<v>[^)]+)\)\]$"
+)
+
+
+def _link_geometry(
+    x1: float, y1: float, x2: float, y2: float, radius: float
+) -> tuple[str, str]:
+    """Curved-arc path + arrowhead polygon points for a second-class link.
+
+    Fail/suffix links are drawn as a dashed quadratic arc bowed off the
+    straight ``u->v`` line so they read as a distinct overlay from the tree
+    edges beneath them. Returns ``(path_d, arrowhead_points)`` where the tip
+    sits on ``v``'s circle boundary, oriented along the arc's end tangent.
+    """
+    mx, my = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+    dx, dy = x2 - x1, y2 - y1
+    dist = math.hypot(dx, dy) or 1.0
+    # Left-hand perpendicular unit; bow scales with span but has a floor so
+    # short links still arc visibly.
+    perp_x, perp_y = -dy / dist, dx / dist
+    bow = max(20.0, dist * 0.22)
+    cx, cy = mx + perp_x * bow, my + perp_y * bow
+    # Pull both ends back to the node-circle boundary along the control tangent.
+    sdx, sdy = cx - x1, cy - y1
+    sd = math.hypot(sdx, sdy) or 1.0
+    sx, sy = x1 + radius * sdx / sd, y1 + radius * sdy / sd
+    edx, edy = cx - x2, cy - y2
+    ed = math.hypot(edx, edy) or 1.0
+    ex, ey = x2 + radius * edx / ed, y2 + radius * edy / ed
+    path_d = f"M{sx:.1f},{sy:.1f} Q{cx:.1f},{cy:.1f} {ex:.1f},{ey:.1f}"
+    head = _trace_arrowhead((cx, cy), (ex, ey))
+    return path_d, head
+
 
 # ---------------------------------------------------------------------------
 # Tree primitive
@@ -74,6 +114,7 @@ class Tree(PrimitiveBase):
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",
         "edge[({u},{v})]": "edge by endpoints",
+        "link[({u},{v})]": "second-class (fail/suffix) link by endpoints",
         "all": "all nodes and edges",
     }
 
@@ -81,6 +122,7 @@ class Tree(PrimitiveBase):
         "root",
         "nodes",
         "edges",
+        "links",
         "kind",
         "data",
         "range_lo",
@@ -95,6 +137,11 @@ class Tree(PrimitiveBase):
         self.kind: str | None = params.get("kind")
         self.label: str | None = params.get("label")
         self.show_sum: bool = bool(params.get("show_sum", False))
+
+        # Char-edge labels: a string glyph shown on the parent->child edge
+        # (trie / automaton transitions). Populated from 3-tuple ``edges`` by
+        # ``_init_standard``; the derived kinds (segtree/heap/…) leave it empty.
+        self.edge_labels: dict[tuple[str | int, str | int], str] = {}
 
         # Build tree structure depending on kind
         if self.kind == "segtree":
@@ -113,6 +160,25 @@ class Tree(PrimitiveBase):
         for parent, child in self.edges:
             if parent in self.children_map:
                 self.children_map[parent].append(child)
+
+        # Second-class links (fail/suffix links). These are a presentation
+        # overlay only: they are deliberately kept OUT of ``children_map`` so
+        # Reingold-Tilford never sees them and node layout is identical whether
+        # or not links are present (gap-new-substrates §6.1).
+        self.links: list[tuple[str | int, str | int]] = []
+        for lk in params.get("links", []):
+            u, v = str(lk[0]), str(lk[1])
+            if u not in self.children_map or v not in self.children_map:
+                raise _animation_error(
+                    "E1436",
+                    detail=(
+                        f"link ({u!r}, {v!r}) references a node that is not "
+                        "in the tree"
+                    ),
+                    hint="both link endpoints must be existing node ids",
+                )
+            if (u, v) not in self.links:
+                self.links.append((u, v))
 
         # Compute viewport dimensions based on tree size
         node_count = len(self.nodes)
@@ -161,10 +227,17 @@ class Tree(PrimitiveBase):
         # original text via ``str``.
         self.root: str | int = str(root)
         self.nodes: list[str | int] = [str(n) for n in params.get("nodes", [])]
+        # Edges stay 2-tuples ``(parent, child)`` so every existing code path
+        # (children_map, layout, emit) is untouched. A 3-tuple ``(p, c, "a")``
+        # peels its third element off into ``edge_labels`` as a *string* — no
+        # ``float()`` coercion, unlike Graph's weighted edges.
         raw_edges = params.get("edges", [])
-        self.edges: list[tuple[str | int, str | int]] = [
-            (str(e[0]), str(e[1])) for e in raw_edges
-        ]
+        self.edges: list[tuple[str | int, str | int]] = []
+        for e in raw_edges:
+            parent, child = str(e[0]), str(e[1])
+            self.edges.append((parent, child))
+            if len(e) >= 3 and e[2] is not None:
+                self.edge_labels[(parent, child)] = str(e[2])
         self.node_labels: dict[str | int, str] = {
             n: str(n) for n in self.nodes
         }
@@ -274,7 +347,9 @@ class Tree(PrimitiveBase):
         """Process mutation commands from ``\\apply``.
 
         Supported keys (checked in order): ``add_node``, ``remove_node``,
-        ``reparent``. See RFC-001 §4.1 for spec details.
+        ``reparent``, ``add_link``, ``remove_link``. See RFC-001 §4.1 for spec
+        details; ``add_link``/``remove_link`` manage the second-class
+        (fail/suffix) link overlay.
         """
         if "add_node" in params:
             spec = params["add_node"]
@@ -283,7 +358,7 @@ class Tree(PrimitiveBase):
                     "E1436",
                     detail="add_node requires {id, parent}",
                 )
-            self._add_node_internal(spec["id"], spec["parent"])
+            self._add_node_internal(spec["id"], spec["parent"], spec.get("char"))
             return
 
         if "remove_node" in params:
@@ -311,6 +386,26 @@ class Tree(PrimitiveBase):
             self._reparent_internal(spec["node"], spec["parent"])
             return
 
+        if "add_link" in params:
+            spec = params["add_link"]
+            if not isinstance(spec, dict) or "from" not in spec or "to" not in spec:
+                raise _animation_error(
+                    "E1436",
+                    detail="add_link requires {from, to}",
+                )
+            self._add_link_internal(spec["from"], spec["to"])
+            return
+
+        if "remove_link" in params:
+            spec = params["remove_link"]
+            if not isinstance(spec, dict) or "from" not in spec or "to" not in spec:
+                raise _animation_error(
+                    "E1436",
+                    detail="remove_link requires {from, to}",
+                )
+            self._remove_link_internal(spec["from"], spec["to"])
+            return
+
     # ----- internal mutation helpers --------------------------------------
 
     def _relayout(self) -> None:
@@ -333,7 +428,8 @@ class Tree(PrimitiveBase):
         return None
 
     def _add_node_internal(
-        self, node_id: str | int, parent_id: str | int
+        self, node_id: str | int, parent_id: str | int,
+        char: str | int | None = None,
     ) -> None:
         # Match the str-normalized node ids set up at construction.
         node_id = str(node_id)
@@ -358,7 +454,40 @@ class Tree(PrimitiveBase):
         self.children_map[parent_id] = self.children_map[parent_id] + [node_id]
         self.children_map[node_id] = []
         self.node_labels[node_id] = str(node_id)
+        # ``char`` labels the new parent->child edge (trie / automaton growth).
+        if char is not None:
+            self.edge_labels[(parent_id, node_id)] = str(char)
         self._relayout()
+
+    def _add_link_internal(
+        self, u: str | int, v: str | int
+    ) -> None:
+        u, v = str(u), str(v)
+        if u not in self.children_map or v not in self.children_map:
+            raise _animation_error(
+                "E1436",
+                detail=(
+                    f"add_link ({u!r}, {v!r}) references a node that is not "
+                    "in the tree"
+                ),
+                hint="both link endpoints must be existing node ids",
+            )
+        # Idempotent: a link is an unordered-of-meaning but directed-of-draw
+        # overlay keyed by (from, to); re-adding the same pair is a no-op.
+        if (u, v) not in self.links:
+            self.links.append((u, v))
+        # No relayout — links never enter children_map or affect geometry.
+
+    def _remove_link_internal(
+        self, u: str | int, v: str | int
+    ) -> None:
+        u, v = str(u), str(v)
+        if (u, v) not in self.links:
+            raise _animation_error(
+                "E1436",
+                detail=f"remove_link: no link between {u!r} and {v!r}",
+            )
+        self.links = [lk for lk in self.links if lk != (u, v)]
 
     def _collect_descendants(self, node_id: str | int) -> list[str | int]:
         """Iterative DFS returning *node_id* and all descendants.
@@ -420,6 +549,17 @@ class Tree(PrimitiveBase):
         # Remove any edge touching a doomed node.
         self.edges = [
             (p, c) for (p, c) in self.edges if p not in doomed and c not in doomed
+        ]
+
+        # Drop char-labels for edges that no longer exist, and any link that
+        # touches a removed node (no dangling overlay to a vanished node).
+        self.edge_labels = {
+            (p, c): lbl
+            for (p, c), lbl in self.edge_labels.items()
+            if p not in doomed and c not in doomed
+        }
+        self.links = [
+            (p, c) for (p, c) in self.links if p not in doomed and c not in doomed
         ]
 
         # Detach node_id from its parent's children list (if any remains).
@@ -508,6 +648,8 @@ class Tree(PrimitiveBase):
             for (p, c) in self.edges
             if not (p == old_parent and c == node_id)
         ]
+        # The old parent->child edge label no longer applies.
+        self.edge_labels.pop((old_parent, node_id), None)
         # Attach to new parent.
         self.children_map[new_parent_id] = (
             self.children_map[new_parent_id] + [node_id]
@@ -543,6 +685,10 @@ class Tree(PrimitiveBase):
     def _edge_key(u: str | int, v: str | int) -> str:
         return f"edge[({u},{v})]"
 
+    @staticmethod
+    def _link_key(u: str | int, v: str | int) -> str:
+        return f"link[({u},{v})]"
+
     # ----- Position tracking ------------------------------------------------
 
     def get_node_positions(self) -> dict[str, tuple[int, int]]:
@@ -565,6 +711,8 @@ class Tree(PrimitiveBase):
             parts.append(self._node_key(node_id))
         for u, v in self.edges:
             parts.append(self._edge_key(u, v))
+        for u, v in self.links:
+            parts.append(self._link_key(u, v))
         return parts
 
     def validate_selector(self, suffix: str) -> bool:
@@ -593,6 +741,29 @@ class Tree(PrimitiveBase):
                 # Coordinates are in the local space of the translated
                 # group emitted by emit_svg; no extra offset needed.
                 return (float(cx), float(cy))
+
+        # A ``T.link[(u,v)]`` anchor sits at the midpoint of the two node
+        # centres (annotation pills/arrows attach there, not on the bowed arc).
+        lm = _TREE_LINK_SEL_RE.match(selector)
+        if lm and lm.group("name") == self.name:
+            pu = self._node_center(lm.group("u"))
+            pv = self._node_center(lm.group("v"))
+            if pu is not None and pv is not None:
+                return ((pu[0] + pv[0]) / 2.0, (pu[1] + pv[1]) / 2.0)
+        return None
+
+    def _node_center(self, raw_id: str) -> tuple[float, float] | None:
+        """Resolve a raw node-id string to its ``(x, y)`` centre, trying the
+        str key first then an int fallback (mirrors the node-selector path)."""
+        node_id: str | int = raw_id
+        if node_id not in self.positions:
+            try:
+                node_id = int(raw_id)
+            except ValueError:
+                return None
+        if node_id in self.positions:
+            cx, cy = self.positions[node_id]
+            return (float(cx), float(cy))
         return None
 
     def resolve_below_baseline(self) -> "float | None":
@@ -742,6 +913,22 @@ class Tree(PrimitiveBase):
                     f'stroke-width="{edge_sw}"/>'
                     f"</g>"
                 )
+                # Char-edge label (trie / automaton transition glyph), nudged
+                # off the stroke so the line does not strike through it.
+                label = self.edge_labels.get((parent, child))
+                if label is not None:
+                    dxl, dyl = (x2 - x1), (y2 - y1)
+                    dl = math.hypot(dxl, dyl) or 1.0
+                    nx, ny = -dyl / dl, dxl / dl
+                    lmx = (x1 + x2) / 2.0 + nx * 7.0
+                    lmy = (y1 + y2) / 2.0 + ny * 7.0
+                    parts.append(
+                        f'<text class="scriba-tree-edge-label" '
+                        f'x="{lmx:.1f}" y="{lmy:.1f}" text-anchor="middle" '
+                        f'dominant-baseline="central" font-size="11" '
+                        f'fill="{edge_colors["text"]}">'
+                        f"{_escape_xml(str(label))}</text>"
+                    )
         parts.append("</g>")
 
         # --- Node layer (rendered on top) ---
@@ -799,6 +986,39 @@ class Tree(PrimitiveBase):
                 f"</g>"
             )
         parts.append("</g>")
+
+        # --- Second-class link overlay (fail/suffix links) ---
+        # Rendered above nodes but below annotation arrows. Gated on non-empty
+        # ``links`` so link-free trees (and every derived kind) stay
+        # byte-identical to the pre-feature output.
+        if self.links:
+            parts.append('<g class="scriba-tree-links">')
+            for u, v in self.links:
+                link_state = self.get_state(self._link_key(u, v))
+                if link_state == "hidden":
+                    continue
+                if (
+                    self.get_state(self._node_key(u)) == "hidden"
+                    or self.get_state(self._node_key(v)) == "hidden"
+                ):
+                    continue
+                if u not in self.positions or v not in self.positions:
+                    continue
+                link_target = f"{self.name}.{self._link_key(u, v)}"
+                link_colors = svg_style_attrs(link_state)
+                link_stroke = link_colors["stroke"]
+                ux, uy = self.positions[u]
+                vx, vy = self.positions[v]
+                path_d, head = _link_geometry(ux, uy, vx, vy, self._node_radius)
+                parts.append(
+                    f'<g data-target="{_escape_xml(link_target)}" '
+                    f'class="scriba-tree-link {state_class(link_state)}">'
+                    f'<path d="{path_d}" fill="none" stroke="{link_stroke}" '
+                    f'stroke-width="1.5" stroke-dasharray="5,4"/>'
+                    f'<polygon points="{head}" fill="{link_stroke}"/>'
+                    f"</g>"
+                )
+            parts.append("</g>")
 
         # --- Annotation arrows (rendered on top of everything) ---
         if effective_anns:
