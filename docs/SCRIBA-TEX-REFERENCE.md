@@ -79,7 +79,7 @@ Everything below is expanded later; this is the lookup layer.
 \end{animation}
 ```
 
-**21 inner commands** (§5):
+**23 inner commands** (§5):
 
 | Command | One line |
 |---|---|
