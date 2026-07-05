@@ -115,9 +115,13 @@ two-recolor hop — it rewrites cell *states*, so two cursors sharing `curr_stat
 second demotes the first); binding named carets therefore **requires identity**. The named form
 is strictly additive and opt-in (discriminated by the `id=` key) so the legacy state-hop and its
 ~232-token golden surface stay byte-identical (see R-38). A moving caret rides a dedicated
-`cursor_move` slide, **not** `position_move` (which ends at the element's old seat and relies on
-the full-SVG snap — visible lurch for a caret); the caret's `<polygon>`/`<text>` are painted by
-the R-36 annotation-state classes, so no new color code and no new CSS are needed.
+`cursor_move` slide, distinct from `position_move` only in the identity space it resolves:
+`cursor_move` glides a `[data-annotation]` decoration, `position_move` a `[data-target]`
+cell/node. Both now share one canonical geometry — `translate(0,0)→translate(to-from)`, so the
+tween **ends at the new seat** and the full-SVG snap only reaffirms it (v0.24.0 gave
+`position_move` this glide too, curing its old ends-at-old-seat lurch). The caret's
+`<polygon>`/`<text>` are painted by the R-36 annotation-state classes, so no new color code and
+no new CSS are needed.
 
 **Code ref:** `scriba/animation/scene.py:_apply_cursor`
 (legacy recolor-hop, the additive boundary);

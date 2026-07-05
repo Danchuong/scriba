@@ -285,8 +285,9 @@ def _diff_cursors(
     """R-38: named binding-carets keyed by ``{shape}.cursor[{id}]-solo``.
 
     A caret whose resolved cell changed between steps slides via the dedicated
-    ``cursor_move`` kind — ``position_move`` cannot, because it ends the tween
-    at the element's OLD seat (anim-multicursor.md §2.3). Appear/disappear reuse
+    ``cursor_move`` kind — carets live in ``[data-annotation]`` groups that
+    ``position_move`` (which drives ``[data-target]`` elements; both glide to
+    the NEW seat since 0.24.0) does not address. Appear/disappear reuse
     the annotation fade verbatim. The caret adds no ``shape_states`` churn, so
     it never contaminates cell diffs.
     """

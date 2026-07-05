@@ -161,8 +161,13 @@ writes can't clobber a state applied through an expanded selector
 (row/col/diag/block). Manifest bytes shift where a highlight-only entry
 used to emit recolor from_val null — it now says "idle", which also
 makes the runtime class replace match (smooth recolor instead of a
-fullscreen-snap lurch). New surface (row/col/diag sugar, Matrix value
-mutation, Plane2D circle/arc/wedge, Tree kind=heap) is opt-in and leaves
-existing documents' geometry untouched. Consumer caches keyed on
-rendered output MUST invalidate.
+fullscreen-snap lurch). The ``position_move`` runtime handler now glides
+the element to its NEW seat (``translate(0,0)→translate(to-from)``, the
+``cursor_move`` geometry) instead of settling at the old seat and
+teleporting on fs-snap, curing the A-4 lurch for Tree reparent/BST
+rotation and readying the substrate for reorder/union glides; the
+inline+external runtime bytes change in every widget. New surface
+(row/col/diag sugar, Matrix value mutation, Plane2D circle/arc/wedge,
+Tree kind=heap) is opt-in and leaves existing documents' geometry
+untouched. Consumer caches keyed on rendered output MUST invalidate.
 """

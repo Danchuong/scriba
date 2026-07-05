@@ -184,6 +184,25 @@ class TestApplyTransitionBranches:
         # the caret ends at the NEW seat: translate(0,0) -> translate(delta)
         assert "translate(0,0)" in body
 
+    def test_position_move_glides_to_new_seat(self, src: str) -> None:
+        # v0.24.0: position_move now shares cursor_move's geometry — the tween
+        # ENDS at the new seat so the fs-snap only reaffirms (no A-4 lurch).
+        body = _fn(src, "_applyTransition")
+        start = body.find("kind==='position_move'")
+        assert start != -1, "position_move branch not found"
+        branch = body[start:body.find("kind===", start + 1)]
+        # delta is to-from (pt - pf), mirroring cursor_move's ct - cf
+        assert "parseFloat(pt[0])-parseFloat(pf[0])" in branch
+        assert "parseFloat(pt[1])-parseFloat(pf[1])" in branch
+        # keyframes START at translate(0,0) (old seat) and END at
+        # translate(delta) (new seat) — not the reverse (ends-at-old lurch)
+        i0 = branch.find("translate(0,0)")
+        idelta = branch.find("translate('+dx+'px,'+dy+'px)")
+        assert 0 <= i0 < idelta, (
+            "position_move must glide to the NEW seat: translate(0,0) first, "
+            "translate(to-from) last (cures the A-4 ends-at-old lurch)"
+        )
+
     def test_value_change_null_guard(self, src: str) -> None:
         body = _fn(src, "_applyTransition")
         assert "toVal!=null" in body, (

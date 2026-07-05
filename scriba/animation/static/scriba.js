@@ -204,15 +204,20 @@
           }
         }
       }else if(kind==='position_move'){
+        // An identity-keyed cell/node slides to its NEW seat and holds:
+        // translate(0,0) is the old seat shown now, translate(to-from) is the
+        // new one; _finish's fs-snap then reaffirms the server frame where the
+        // element already sits (no old-seat lurch). Self-inverse under from/to
+        // swap → a reverse step glides it back. Same geometry as cursor_move.
         var el9=stage.querySelector(sel);
         if(el9){
           var pf=fromVal.split(',');
           var pt=toVal.split(',');
-          var dx=parseFloat(pf[0])-parseFloat(pt[0]);
-          var dy=parseFloat(pf[1])-parseFloat(pt[1]);
+          var dx=parseFloat(pt[0])-parseFloat(pf[0]);
+          var dy=parseFloat(pt[1])-parseFloat(pf[1]);
           var a9=el9.animate([
-            {transform:'translate('+dx+'px,'+dy+'px)'},
-            {transform:'translate(0,0)'}
+            {transform:'translate(0,0)'},
+            {transform:'translate('+dx+'px,'+dy+'px)'}
           ],{duration:_dur(DUR),easing:'ease-out',fill:'forwards'});
           _anims.push(a9);pending.push(a9.finished);
         }
