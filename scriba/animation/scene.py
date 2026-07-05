@@ -770,6 +770,21 @@ class SceneState:
                             sub = int(sub)
                         except (TypeError, ValueError):
                             pass
+                # A subscript that stays a str after resolution is neither a
+                # binding nor an integer literal — e.g. arithmetic ``i+1``. On a
+                # list that used to fall through and silently return the WHOLE
+                # list; make it loud (matching the selector-index E1159) so the
+                # author precomputes the shifted list instead (td-combi).
+                if isinstance(sub, str) and isinstance(result, (list, tuple)):
+                    raise _animation_error(
+                        "E1159",
+                        f"subscript '{sub}' is not a \\compute binding or an "
+                        "integer literal; a list index must be a single value",
+                        hint=(
+                            "arithmetic like ${list[i+1]} is not evaluated — "
+                            "precompute the shifted list in a \\compute block"
+                        ),
+                    )
                 try:
                     if isinstance(sub, bool):
                         pass  # bools are ints — never a useful index

@@ -631,6 +631,7 @@ Every ✗ in the selector-index column is **fail-loud** (E1159 aborts the render
 - Loop `${i}` directly in the selector index: `\recolor{a.cell[${i}]}{…}`.
 - Read a computed list **by value**: `\apply{a.cell[${i}]}{value=${dp_vals[i]}}` — loop var in the index, subscript in the value.
 - Drive a selector index from a computed list with a **`\compute` binding** as the subscript: `\recolor{a.cell[${idx[k]}]}{…}` recolors `a.cell[idx[k]]` (since 0.23.2). Inside a `\foreach`, the loop var can't be the subscript (`${idx[i]}` → E1159) — loop `${i}` directly over the 1-D list of positions instead (`\foreach{i}{${idx}}` + `a.cell[${i}]`). For a full 2-D fill, nest two `\foreach` with `${i}`/`${j}` (see §5.2).
+- A subscript is **not arithmetic**: `${vals[i+1]}` does not evaluate `i+1` — it raises **E1159** (since 0.25.0; it used to silently paste the whole list). Precompute the shifted list in a `\compute` block (`shifted = vals[1:]`) and subscript that.
 
 ```latex
 % WRONG: bare i in the selector — literal cell "i", always out of range (dropped).

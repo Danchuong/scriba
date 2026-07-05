@@ -193,3 +193,39 @@ class TestMatrixBlock:
         assert box.x + box.width / 2 == pytest.approx(cx)
         assert box.y + box.height / 2 == pytest.approx(cy)
         assert dp.resolve_annotation_box("dp.block[0:2][0:0]") is None  # OOB
+
+
+class TestArithmeticSubscriptLoud:
+    """An unresolvable subscript (arithmetic like i+1, or a stray name) in a
+    VALUE position must be LOUD, not silently return the whole list — the
+    selector-index path already raises E1159; the value path fell through and
+    rendered '[10, 20, 30, 40]' into the cell (td-combi)."""
+
+    def test_arithmetic_subscript_is_loud(self) -> None:
+        from scriba.core.errors import ScribaError
+
+        sc = SceneState()
+        sc.bindings.update({"vals": [10, 20, 30, 40]})
+        from scriba.animation.parser.ast import InterpolationRef
+
+        ref = InterpolationRef(name="vals", subscripts=("i+1",))
+        with pytest.raises(ScribaError) as ei:
+            sc._resolve_interp(ref)
+        assert "E1159" in str(ei.value)
+
+    def test_valid_binding_subscript_still_resolves(self) -> None:
+        from scriba.animation.parser.ast import InterpolationRef
+
+        sc = SceneState()
+        sc.bindings.update({"vals": [10, 20, 30, 40], "k": 2})
+        ref = InterpolationRef(name="vals", subscripts=("k",))
+        assert sc._resolve_interp(ref) == 30
+
+    def test_bare_list_value_unchanged(self) -> None:
+        # ${list} with no subscript is a valid whole-list value — must NOT raise
+        from scriba.animation.parser.ast import InterpolationRef
+
+        sc = SceneState()
+        sc.bindings.update({"vals": [10, 20, 30]})
+        ref = InterpolationRef(name="vals", subscripts=())
+        assert sc._resolve_interp(ref) == [10, 20, 30]
