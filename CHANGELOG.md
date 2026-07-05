@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-07-05 — grammar-completeness vocabulary + Tier-D fixes
+
 ### Added — grammar-completeness vocabulary (post-0.24 census)
 - **Bar primitive** — variable-height columns (`\shape{h}{Bar}{data=[...]}`,
   `h.bar[i]`, height ∝ value) for largest-rectangle, skyline,

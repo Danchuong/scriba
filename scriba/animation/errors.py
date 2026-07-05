@@ -16,7 +16,8 @@ The catalog is grouped by subsystem:
 * ``E1400``--``E1459`` — primitive parameter validation (new Wave 2 split;
   was historically mega-bucket ``E1103``)
 * ``E1460``--``E1469`` — Plane2D
-* ``E1480``--``E1489`` — MetricPlot
+* ``E1480``--``E1487`` — MetricPlot
+* ``E1488``--``E1490`` — Bar (histogram)
 * ``E1500``--``E1509`` — graph layout
 * ``E1510``--``E1519`` — Hypercube (subset lattice)
 

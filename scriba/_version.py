@@ -1,6 +1,6 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.24.0"
+__version__: str = "0.25.0"
 """PyPI SemVer. Bumped on every release."""
 
 SCRIBA_VERSION: int = 18
@@ -204,4 +204,26 @@ non-text contrast 1.45:1 → 3.22:1) in both dark blocks, and Hypercube
 lattice edges became theme-aware (a ``.scriba-hypercube-edge`` class in
 place of a hard-coded light hex). Inline-stylesheet bytes change on every
 page; light mode and all SVG geometry are untouched.
+
+0.25.0 keeps SCRIBA_VERSION = 18 (NO byte-shape change). This release is
+grammar-completeness vocabulary + Tier-D fixes, and every existing valid
+document renders byte-identically to 0.24.0:
+  * The three new primitives — Bar (``\\shape{h}{Bar}``, E1488–E1490),
+    Graph ``positions=`` (E1475), Plane2D ``rotate_point/segment/line``
+    (E1437/E1467) — are opt-in and emit NO new SVG bytes for documents
+    that don't use them (verified: zero marker leak). They add NO CSS
+    rule and NO scriba.js change: Bar rides the shipped ``value_change``
+    motion, rotate rides ``position_move``, positions is static layout.
+    So even the SHARED inline assets are unchanged this release, unlike
+    the 17→18 bump.
+  * The five Tier-D fixes touch only error/warning/broken paths, never
+    the HTML of a valid render: BST ``reparent`` gains an opt-in
+    ``index`` (default append = byte-identical); ``plane2d.*`` in
+    ``\\compute`` previously RAISED E1151 (no valid render existed);
+    ``${vals[i+1]}`` now raises E1159 instead of pasting garbage (no
+    valid doc used it); out-of-range ``\\trace`` warns to stderr E1115
+    (HTML bytes unchanged); ``\\recolor{state=${s}}`` swaps a leaked
+    repr for a clean E1109 (both error, no render).
+The contract ``identical source + identical SCRIBA_VERSION → identical
+HTML`` therefore holds across 0.24.0→0.25.0 for every renderable input.
 """

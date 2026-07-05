@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.24.0 · MIT · Python 3.10+
+**Status:** v0.25.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -16,14 +16,35 @@ asset basenames needed to display it.
   plus a namespaced set of required CSS and JS basenames and a block-data
   map — consumers decide how to serve the static assets.
 - **`\begin{animation}` environment** (shipping since 0.2.0) for step-through
-  editorial walkthroughs with 18 built-in primitives (arrays, grids, graphs,
+  editorial walkthroughs with 19 built-in primitives (arrays, grids, graphs,
   trees, DP tables, number lines, matrices/heatmaps, stacks, plane-2D,
   metric plots, the data-structure primitives code panel / hash map /
-  linked list / queue / deque / variable watch, and the subset-lattice
-  Hypercube and multi-root Forest). `\begin{diagram}` for inline
+  linked list / queue / deque / variable watch, the subset-lattice
+  Hypercube, multi-root Forest, and the variable-height Bar). `\begin{diagram}` for inline
   static graph/tree figures is reserved under extension E5. See
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
+
+## What's new in v0.25.0
+
+- **Grammar-completeness vocabulary** (post-0.24 census closed the last
+  three coverage gaps): the **Bar** primitive for variable-height columns
+  (largest-rectangle, skyline, monotonic-stack-on-heights, sorting-as-bars);
+  **Graph `positions=[(node,x,y),…]`** to pin nodes at author coordinates
+  (FFT butterfly, planar and geometric graphs); and Plane2D
+  **`rotate_point` / `rotate_segment` / `rotate_line`** for angular motion
+  (rotating calipers, angular sweeps, Burnside rings).
+- **Byte-identical for existing documents** — all three ride shipped motion
+  (`value_change` / `position_move`), add no CSS or scriba.js, and emit no
+  bytes unless used, so `SCRIBA_VERSION` stays 18.
+- **Five Tier-D fixes** — BST `reparent` picks the right child side
+  (opt-in `index`), the `plane2d.*` geometry helpers work in `\compute`,
+  `${vals[i+1]}` raises a clean E1159 instead of pasting garbage, an
+  out-of-range `\trace` vertex warns (E1115) instead of vanishing, and
+  `\recolor{state=${s}}` gives a clean E1109.
+
+<details>
+<summary>v0.24.0 changelog</summary>
 
 ## What's new in v0.24.0
 
@@ -43,6 +64,8 @@ asset basenames needed to display it.
   every generic selector, `\trace` on an unsupported primitive is loud
   (E1118), dark-mode edge contrast meets WCAG 3:1, and keyboard nav
   survives the first/last frame.
+
+</details>
 
 <details>
 <summary>v0.23.1 changelog</summary>
