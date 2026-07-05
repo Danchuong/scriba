@@ -278,6 +278,44 @@ def _diff_traces(
     return out
 
 
+def _diff_links(
+    prev_links: "list[dict]",
+    curr_links: "list[dict]",
+) -> "list[Transition]":
+    """\\link / \\combine bridges (§7): a stage-level annotation keyed
+    ``link[{from}|{to}]-solo`` (no shape prefix — it spans two shapes). Appear /
+    disappear ride the shipped ``annotation_add`` / ``annotation_remove`` fade;
+    a colour change rides ``annotation_recolor``. Zero new runtime kinds — the
+    key is just another ``[data-annotation]`` group to the structure-driven
+    runtime (mirrors ``_diff_traces`` / ``_diff_annotations``)."""
+    def _key(lk: dict) -> str:
+        return f"link[{lk.get('from', '')}|{lk.get('to', '')}]-solo"
+
+    prev_map = {_key(lk): lk for lk in prev_links}
+    curr_map = {_key(lk): lk for lk in curr_links}
+    out: list[Transition] = []
+    for key in sorted(prev_map.keys() | curr_map.keys()):
+        p, c = prev_map.get(key), curr_map.get(key)
+        if c is not None and p is None:
+            out.append(Transition(
+                target=key, prop="add", from_val=None,
+                to_val=c.get("color"), kind="annotation_add",
+            ))
+        elif p is not None and c is None:
+            out.append(Transition(
+                target=key, prop="remove", from_val=p.get("color"),
+                to_val=None, kind="annotation_remove",
+            ))
+        else:
+            pc, cc = p.get("color"), c.get("color")
+            if pc != cc:
+                out.append(Transition(
+                    target=key, prop="state", from_val=pc,
+                    to_val=cc, kind="annotation_recolor",
+                ))
+    return out
+
+
 def _diff_cursors(
     prev_cursors: "list[dict]",
     curr_cursors: "list[dict]",
@@ -417,6 +455,12 @@ def compute_transitions(prev: FrameData, curr: FrameData) -> TransitionManifest:
         _diff_traces(
             getattr(prev, "traces", None) or [],
             getattr(curr, "traces", None) or [],
+        ),
+    )
+    transitions.extend(
+        _diff_links(
+            getattr(prev, "links", None) or [],
+            getattr(curr, "links", None) or [],
         ),
     )
     transitions.extend(

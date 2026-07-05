@@ -19,6 +19,7 @@ from typing import Any
 
 from scriba.animation.parser.ast import (
     AnnotateCommand,
+    CombineCommand,
     TraceCommand,
     ApplyCommand,
     ComputeCommand,
@@ -28,6 +29,7 @@ from scriba.animation.parser.ast import (
     FrameIR,
     HighlightCommand,
     InterpolationRef,
+    LinkCommand,
     ReannotateCommand,
     RecolorCommand,
     Selector,
@@ -136,6 +138,24 @@ class AnnotationEntry:
 
 
 @dataclass(frozen=True)
+class LinkEntry:
+    """A single ``\\link`` cross-shape bridge (gap-cross-shape-bridge.md §4).
+
+    ``from_selector`` / ``to_selector`` are raw selector strings that may name
+    two *different* shapes; the emitter resolves each against its owning
+    primitive and draws one stage-level ``<path>``. Mirrors
+    :class:`AnnotationEntry`: persistent by default, ephemeral cleared at each
+    ``\\step``. Identity at diff time is ``(from_selector, to_selector)``.
+    """
+
+    from_selector: str
+    to_selector: str
+    color: str = "info"
+    label: str | None = None
+    ephemeral: bool = False
+
+
+@dataclass(frozen=True)
 class TraceEntry:
     """A ``\\trace`` decoration on one shape (R-37)."""
 
@@ -183,6 +203,9 @@ class FrameSnapshot:
     cursors: tuple["CursorEntry", ...] = ()
     narration: str | None = None
     focus: frozenset[str] = frozenset()
+    # New fields go AFTER existing ones with a default so every positional
+    # FrameSnapshot(...) construction in the corpus stays valid.
+    links: tuple["LinkEntry", ...] = ()
 
 
 # ---------------------------------------------------------------------------
@@ -208,6 +231,7 @@ class SceneState:
     shape_types: dict[str, str] = field(default_factory=dict)
     traces: list["TraceEntry"] = field(default_factory=list)
     cursors: list["CursorEntry"] = field(default_factory=list)
+    links: list["LinkEntry"] = field(default_factory=list)
     _trace_counter: int = 0
     bindings: dict[str, Any] = field(default_factory=dict)
     _frame_counter: int = 0
@@ -264,6 +288,7 @@ class SceneState:
         self.annotations = [a for a in self.annotations if not a.ephemeral]
         self.traces = [tr for tr in self.traces if not tr.ephemeral]
         self.cursors = [c for c in self.cursors if not c.ephemeral]
+        self.links = [lk for lk in self.links if not lk.ephemeral]
 
         # Frame-local compute — deep-copy to prevent mutable state leakage
         saved_bindings = copy.deepcopy(self.bindings)
@@ -318,6 +343,7 @@ class SceneState:
             bindings=dict(self.bindings),
             narration=narration,
             focus=frozenset(self.focus),
+            links=tuple(self.links),
         )
 
     # ---- substory ----
@@ -639,6 +665,10 @@ class SceneState:
             self._apply_annotate(cmd)
         elif isinstance(cmd, TraceCommand):
             self._apply_trace(cmd)
+        elif isinstance(cmd, LinkCommand):
+            self._apply_link(cmd)
+        elif isinstance(cmd, CombineCommand):
+            self._apply_combine(cmd)
         elif isinstance(cmd, CursorCommand):
             self._apply_cursor(cmd)
 
@@ -996,6 +1026,59 @@ class SceneState:
                 ephemeral=cmd.ephemeral,
             )
         )
+
+    def _link_shape_of(self, selector: str) -> str:
+        """Shape-name prefix of a link endpoint selector (part before the dot)."""
+        return selector.split(".", 1)[0]
+
+    def _require_link_shape(self, selector: str, verb: str) -> None:
+        """Hard-fail (E1498) when a link endpoint names an undeclared shape.
+
+        An out-of-range *part* of a declared shape still soft-drops at emit
+        (mirrors the annotation resolver); only a never-declared shape is loud,
+        matching the E1116 contract every other shape-referencing command uses.
+        """
+        shape_name = self._link_shape_of(selector)
+        if shape_name not in self.shape_states:
+            raise _animation_error(
+                "E1498",
+                f"{verb} endpoint references undeclared shape '{shape_name}'"
+                f" (selector: '{selector}')",
+                hint=(
+                    f"declare '{shape_name}' with \\shape before using it in"
+                    f" {verb}"
+                ),
+            )
+
+    def _apply_link(self, cmd: LinkCommand) -> None:
+        """``\\link`` — a persistent (default) or ephemeral cross-shape bridge."""
+        self._require_link_shape(cmd.from_selector, "\\link")
+        self._require_link_shape(cmd.to_selector, "\\link")
+        self.links.append(
+            LinkEntry(
+                from_selector=cmd.from_selector,
+                to_selector=cmd.to_selector,
+                color=cmd.color,
+                label=cmd.label,
+                ephemeral=cmd.ephemeral,
+            )
+        )
+
+    def _apply_combine(self, cmd: CombineCommand) -> None:
+        """``\\combine`` — sugar desugared to one ephemeral ``LinkEntry`` per
+        source, all converging on ``into`` (§4.3)."""
+        self._require_link_shape(cmd.into, "\\combine")
+        for src in cmd.sources:
+            self._require_link_shape(src, "\\combine")
+            self.links.append(
+                LinkEntry(
+                    from_selector=src,
+                    to_selector=cmd.into,
+                    color=cmd.color,
+                    label=cmd.label,
+                    ephemeral=cmd.ephemeral,
+                )
+            )
 
     def _apply_cursor(self, cmd: CursorCommand) -> None:
         """``\\cursor`` — advance cursor on one or more shape accessors.

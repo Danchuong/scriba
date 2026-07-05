@@ -75,6 +75,8 @@ _KNOWN_COMMANDS = frozenset(
         "reannotate",
         "annotate",
         "trace",
+        "link",
+        "combine",
         "substory",
         "endsubstory",
         "foreach",

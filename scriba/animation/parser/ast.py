@@ -293,6 +293,43 @@ class AnnotateCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class LinkCommand:
+    """``\\link{A <-> B}{color=..., label=..., ephemeral=...}`` — a cross-shape
+    bridge (investigations/gap-cross-shape-bridge.md §4).
+
+    ``from_selector`` / ``to_selector`` are raw selector strings resolved at
+    emit time against each endpoint's *owning* primitive (they may point at
+    two different shapes). Persistent by default; ephemeral if flagged (cleared
+    at the next ``\\step`` like ``\\highlight``). The endpoints are kept as
+    strings — not ``Selector`` objects — so ``\\foreach`` textual substitution
+    reaches them and the emit-time resolver can dispatch by shape prefix."""
+
+    line: int
+    col: int
+    from_selector: str
+    to_selector: str
+    color: str = "info"
+    label: str | None = None
+    ephemeral: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class CombineCommand:
+    """``\\combine{s1, s2, ...}{into="D", color=...}`` — sugar for N ephemeral
+    ``\\link`` bridges that all converge on ``into`` (§4.3). Desugared in
+    :meth:`SceneState._apply_combine` into one :class:`LinkEntry` per source
+    (``s_i -> into``), so no new emit/diff machinery is needed."""
+
+    line: int
+    col: int
+    sources: tuple[str, ...]
+    into: str
+    color: str = "info"
+    label: str | None = None
+    ephemeral: bool = True
+
+
+@dataclass(frozen=True, slots=True)
 class ForeachCommand:
     """``\\foreach{variable}{iterable}...\\endforeach`` — loop that expands body commands."""
 
@@ -342,6 +379,8 @@ MutationCommand = (
     | ReannotateCommand
     | AnnotateCommand
     | TraceCommand
+    | LinkCommand
+    | CombineCommand
     | ForeachCommand
     | CursorCommand
 )
@@ -359,6 +398,8 @@ Command = Union[
     ReannotateCommand,
     AnnotateCommand,
     TraceCommand,
+    LinkCommand,
+    CombineCommand,
     ForeachCommand,
     CursorCommand,
     "SubstoryBlock",

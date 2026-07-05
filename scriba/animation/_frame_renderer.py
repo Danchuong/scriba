@@ -13,6 +13,14 @@ import warnings
 from typing import Any, Callable
 
 from scriba.animation.primitives.base import BoundingBox
+from scriba.animation.primitives._svg_helpers import (
+    ARROW_STYLES,
+    annotation_color_class,
+)
+from scriba.animation.primitives._text_render import (
+    _escape_xml,
+    strip_math_markup,
+)
 
 __all__ = [
     "compute_viewbox",
@@ -679,6 +687,108 @@ def _apply_defocus(
     return _DEFOCUS_G_RE.sub(_repl, svg)
 
 
+# ---------------------------------------------------------------------------
+# Cross-shape \link / \combine overlay  (gap-cross-shape-bridge.md §5–§7)
+# ---------------------------------------------------------------------------
+
+# Perpendicular bow of the bridge curve, clamped so short links still curve
+# and long links do not balloon (§6: "sag ~12–20px").
+_LINK_SAG_MIN = 12.0
+_LINK_SAG_MAX = 20.0
+_LINK_SAG_RATIO = 0.12
+
+
+def _resolve_link_point(
+    selector: str,
+    primitives: dict[str, Any],
+    stage_offsets: dict[str, tuple[float, float]],
+) -> tuple[float, float] | None:
+    """Resolve one link endpoint to a stage-global ``(x, y)``.
+
+    Dispatches by shape prefix to the *owning* primitive's
+    ``resolve_annotation_point`` (reused verbatim — no new coordinate system),
+    then adds that primitive's real stage translate. Returns ``None`` — a
+    soft-drop — when the shape is absent, unrenderable, or the part is
+    out-of-range (mirrors the annotation resolver at base.py:1255)."""
+    shape_name = selector.split(".", 1)[0]
+    prim = primitives.get(shape_name)
+    off = stage_offsets.get(shape_name)
+    if prim is None or off is None:
+        return None
+    resolve = getattr(prim, "resolve_annotation_point", None)
+    if resolve is None:
+        return None
+    local = resolve(selector)
+    if local is None:
+        return None
+    return (float(local[0]) + off[0], float(local[1]) + off[1])
+
+
+def _emit_scene_links(
+    frame: Any,
+    primitives: dict[str, Any],
+    stage_offsets: dict[str, tuple[float, float]],
+    parts: list[str],
+    render_inline_tex: Callable[[str], str] | None = None,
+) -> None:
+    """Append one ``<g><path/></g>`` bridge per ``\\link`` / ``\\combine``.
+
+    Each group carries ``data-annotation="link[{from}|{to}]-solo"`` — a
+    stage-level key with **no** shape prefix (the only contract extension, §7)
+    so the shipped runtime's ``annotation_add`` / ``_remove`` / ``_recolor``
+    handlers animate it for free. The stroke colour is inline (per-link, like
+    ``\\trace``); ``.scriba-link`` CSS layers the dashed, translucent look."""
+    links = getattr(frame, "links", None) or []
+    for lk in links:
+        frm = lk.get("from", "")
+        to = lk.get("to", "")
+        p0 = _resolve_link_point(frm, primitives, stage_offsets)
+        p1 = _resolve_link_point(to, primitives, stage_offsets)
+        if p0 is None or p1 is None:
+            continue  # soft-drop, exactly like an unresolved annotation
+        x0, y0 = p0
+        x1, y1 = p1
+        dx, dy = x1 - x0, y1 - y0
+        length = (dx * dx + dy * dy) ** 0.5
+        mx, my = (x0 + x1) / 2.0, (y0 + y1) / 2.0
+        if length > 0:
+            sag = min(max(length * _LINK_SAG_RATIO, _LINK_SAG_MIN), _LINK_SAG_MAX)
+            # Unit perpendicular to the chord — bows every bridge to one side.
+            px, py = -dy / length, dx / length
+            cx, cy = mx + px * sag, my + py * sag
+        else:
+            cx, cy = mx, my
+        color = lk.get("color", "info")
+        style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+        stroke = style["stroke"]
+        key = f"link[{frm}|{to}]-solo"
+        label = lk.get("label")
+        d = f"M{x0:.1f},{y0:.1f} Q{cx:.1f},{cy:.1f} {x1:.1f},{y1:.1f}"
+        inner = (
+            f'<path d="{d}" fill="none" stroke="{stroke}"'
+            f' stroke-width="1.6" stroke-linecap="round"/>'
+        )
+        if label:
+            # Mid-curve label at the quadratic's t=0.5 point.
+            lx = 0.25 * x0 + 0.5 * cx + 0.25 * x1
+            ly = 0.25 * y0 + 0.5 * cy + 0.25 * y1
+            inner += (
+                f'<text x="{lx:.1f}" y="{ly:.1f}" fill="{style["label_fill"]}"'
+                f' font-size="{style["label_size"]}"'
+                f' style="text-anchor:middle;dominant-baseline:central">'
+                f"{_escape_xml(strip_math_markup(str(label)))}</text>"
+            )
+        aria = _escape_xml(strip_math_markup(str(label))) if label else "link"
+        parts.append(
+            f'  <g class="scriba-annotation scriba-link scriba-annotation-'
+            f'{annotation_color_class(color)}"'
+            f' data-annotation="{_escape_xml(key)}"'
+            f' role="graphics-symbol" aria-roledescription="link"'
+            f' aria-label="{aria}">'
+            f"{inner}</g>"
+        )
+
+
 def _emit_frame_svg(
     frame: Any,
     primitives: dict[str, Any],
@@ -821,6 +931,12 @@ def _emit_frame_svg(
                 _scene_seg_list.append((_seg, _x_off_p, _y_off_p, _prim_id))
     scene_segments: tuple[Any, ...] = tuple(_scene_seg_list)
 
+    # Real stage-global translate of each primitive, recorded as the emit loop
+    # resolves it. The X is (vb_width-bw)//2, recomputed per shape — it is NOT
+    # stored in reserved_offsets (that x-component is 0.0), so cross-shape link
+    # endpoints must read from here rather than _prim_offsets (§3.2 gotcha).
+    _link_stage_offsets: dict[str, tuple[float, float]] = {}
+
     y_cursor = _PADDING
     for shape_name, prim in primitives.items():
         # Set annotations before bounding box computation
@@ -862,6 +978,7 @@ def _emit_frame_svg(
         else:
             x_offset = (vb_width - bw) // 2
 
+        _link_stage_offsets[shape_name] = (float(x_offset), float(y_cursor))
         svg_parts.append(f'<g transform="translate({x_offset},{y_cursor})">')
 
         shape_state = _expand_selectors(
@@ -943,6 +1060,14 @@ def _emit_frame_svg(
         svg_parts.append("</g>")
         if reserved_offsets is None:
             y_cursor += bh + _PRIMITIVE_GAP
+
+    # §5/§6: cross-shape \link / \combine bridges are a scene-level overlay,
+    # appended AFTER every primitive <g> so they paint on top of all shapes
+    # (top-of-z). They do NOT go through the per-shape annotation bucketing —
+    # a link spans two shapes, so its key carries no shape prefix.
+    _emit_scene_links(
+        frame, primitives, _link_stage_offsets, svg_parts, render_inline_tex,
+    )
 
     svg_parts.append("</svg>")
     # R-40 \focus: bake the defocus overlay onto the assembled SVG. Runs on the

@@ -607,6 +607,20 @@
 .scriba-annotation-path > path,
 .scriba-annotation-path > line  { stroke: var(--scriba-annotation-path); }
 
+/* -- \link / \combine cross-shape bridge ------------------- */
+/* A stage-level annotation (class also carries scriba-annotation +
+   scriba-annotation-{color}, so stroke colour and the fade/hover contract come
+   from those). This adds only the bridge look: a light dashed, translucent
+   curve. Placed after the base rules so it wins the equal-specificity
+   stroke-width tie over `.scriba-annotation > path`. */
+.scriba-link > path {
+  fill:            none;
+  stroke-width:    1.6;
+  stroke-linecap:  round;
+  stroke-dasharray: 5 3;
+  opacity:         0.75;
+}
+
 /* ============================================
    Text halo — keep labels legible when they overflow their container
    ============================================

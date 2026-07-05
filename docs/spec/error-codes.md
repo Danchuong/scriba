@@ -103,6 +103,13 @@
 | E1495 | `\playeach` requires at least one per-element action (`state=` or `cursor=`); `cursor=` is 1-D only and cannot ride a 2-D block. | Add `state=<state>` and/or `cursor=<id>`; drop `cursor=` for block sweeps. |
 | E1496 | Unknown `\playeach` action key. | Use: state, cursor, narrate. |
 
+## Link / Combine Errors (E1497--E1498)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1497 | `\link` needs exactly two endpoints separated by `<->` / `->`, or `\combine` needs at least one source plus a quoted `into="..."`. | Write `\link{a.cell[0] <-> b.node[1]}` or `\combine{m.row[0], m.col[1]}{into="c.cell[0][1]"}`. |
+| E1498 | A `\link` / `\combine` endpoint names a shape that was never declared. | Add the missing `\shape` declaration in the prelude before the bridge. |
+
 ## Narration Macro Errors (E1320--E1329)
 
 | Code | Description | Common Fix |

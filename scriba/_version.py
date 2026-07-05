@@ -169,5 +169,8 @@ rotation and readying the substrate for reorder/union glides; the
 inline+external runtime bytes change in every widget. New surface
 (row/col/diag sugar, Matrix value mutation, Plane2D circle/arc/wedge,
 Tree kind=heap) is opt-in and leaves existing documents' geometry
-untouched. Consumer caches keyed on rendered output MUST invalidate.
+untouched. The same 17→18 CSS bump also carries the `.scriba-link` rule for
+the new `\\link` / `\\combine` cross-shape bridges (one more inline-stylesheet
+byte change; the bridge overlay itself is opt-in). Consumer caches keyed on
+rendered output MUST invalidate.
 """

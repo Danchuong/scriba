@@ -378,6 +378,12 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
         if cmd_name == "trace":
             return self._parse_trace()
 
+        if cmd_name == "link":
+            return self._parse_link()
+
+        if cmd_name == "combine":
+            return self._parse_combine()
+
         if cmd_name == "cursor":
             return self._parse_cursor()
 
@@ -437,15 +443,15 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
 
     _VALID_COMMANDS_LIST = (
         "\\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, "
-        "\\focus, \\recolor, \\reannotate, \\annotate, \\trace, \\cursor, "
-        "\\invariant, \\foreach, \\endforeach, \\playeach, \\substory, "
-        "\\endsubstory"
+        "\\focus, \\recolor, \\reannotate, \\annotate, \\trace, \\link, "
+        "\\combine, \\cursor, \\invariant, \\foreach, \\endforeach, "
+        "\\playeach, \\substory, \\endsubstory"
     )
     _VALID_COMMAND_NAMES = (
         "shape", "compute", "step", "narrate", "apply", "highlight",
-        "focus", "recolor", "reannotate", "annotate", "trace", "cursor",
-        "invariant", "foreach", "endforeach", "playeach", "substory",
-        "endsubstory",
+        "focus", "recolor", "reannotate", "annotate", "trace", "link",
+        "combine", "cursor", "invariant", "foreach", "endforeach",
+        "playeach", "substory", "endsubstory",
     )
 
     def _raise_unknown_command(self, tok: Token) -> None:

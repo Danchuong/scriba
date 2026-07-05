@@ -426,6 +426,20 @@ def _snapshot_to_frame_data(
         for tr in snap.traces
     ]
 
+    # \link / \combine cross-shape bridges (§4). Endpoints are raw selector
+    # strings resolved at emit time against each owning primitive; kept as a
+    # flat list of dicts so the differ diffs them shape-blind like traces.
+    links = [
+        {
+            "from": lk.from_selector,
+            "to": lk.to_selector,
+            "color": lk.color,
+            **({"label": lk.label} if lk.label else {}),
+            "ephemeral": lk.ephemeral,
+        }
+        for lk in getattr(snap, "links", ())
+    ]
+
     # R-38 binding carets — resolve each caret's cell index from its `at`
     # binding at build time; pixel (x, y) is injected later, after the target
     # primitive realises its dynamic pitch (mirrors _inject_tree_positions).
@@ -488,6 +502,7 @@ def _snapshot_to_frame_data(
         annotations=annotations,
         traces=traces,
         cursors=cursors,
+        links=links,
         substories=substories,
         label=label,
         title=title,

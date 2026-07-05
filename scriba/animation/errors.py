@@ -244,6 +244,15 @@ ERROR_CATALOG: dict[str, str] = {
     "E1496": (
         "Unknown \\playeach action key; valid: state, cursor, narrate."
     ),
+    # --- \link / \combine cross-shape bridge (E1497 -- E1498) ---
+    "E1497": (
+        "\\link needs exactly two endpoints separated by '<->' or '->', or "
+        "\\combine needs at least one source and a quoted into=\"...\"."
+    ),
+    "E1498": (
+        "\\link / \\combine endpoint references a shape that was never "
+        "declared with \\shape."
+    ),
     "E1180": (
         "Animation has >30 frames (warning) or \\cursor requires at "
         "least one target."

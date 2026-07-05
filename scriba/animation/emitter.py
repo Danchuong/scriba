@@ -119,6 +119,7 @@ class FrameData:
     substories: list[SubstoryData] | None = None
     title: str | None = None  # \step[title="..."] caption (§5.3)
     focus: tuple[str, ...] = ()  # \focus{sel} spotlight targets (R-40)
+    links: list[dict] | None = None  # \link / \combine cross-shape bridges (§4)
 
 
 # ---------------------------------------------------------------------------

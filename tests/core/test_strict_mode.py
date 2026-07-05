@@ -750,6 +750,9 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1494",
         "E1495",
     "E1496",
+        # Link / combine cross-shape bridge
+        "E1497",
+        "E1498",
         # Substory
         "E1360",
         "E1361",

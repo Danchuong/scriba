@@ -14,10 +14,12 @@ from scriba.core.errors import ValidationError
 from .ast import (
     AnnotateCommand,
     ApplyCommand,
+    CombineCommand,
     CursorCommand,
     FocusCommand,
     HighlightCommand,
     InvariantCommand,
+    LinkCommand,
     NarrateCommand,
     ReannotateCommand,
     RecolorCommand,
@@ -38,6 +40,12 @@ if TYPE_CHECKING:
 # R-38 binding-caret ``at=`` accepts only an int literal or a quoted
 # ``shape.var[name]`` selector in v1 (arithmetic / cell selectors are E1183).
 _CURSOR_AT_VAR_RE = re.compile(r"^[^.\s]+\.var\[[^\]]+\]$")
+
+# ``\link{A <-> B}`` endpoint separator. ``<->`` is canonical (case §4.1); a
+# plain directed ``->`` is accepted as an alias. The ``<->`` alternative is
+# listed first so it wins at the ``<`` position and a bare ``->`` never splits
+# the middle of a ``<->`` token.
+_LINK_ARROW_RE = re.compile(r"\s*<->\s*|\s*->\s*")
 
 
 def _unquote(value: str) -> str:
@@ -305,6 +313,101 @@ class _CommandsMixin:
             dot=dot,
             trace_id=str(params["id"]) if "id" in params else None,
             ephemeral=params.get("ephemeral", False) in (True, "true"),
+        )
+
+    def _check_annotation_color(self, color: str, tok: "Token") -> None:
+        """Validate a link/combine ``color=`` value (annotation or ``state:X``).
+
+        Mirrors the trace/annotate colour gate so ``\\link`` shares the E1113
+        diagnostic surface rather than inventing a fourth message.
+        """
+        if color.startswith("state:"):
+            if color[len("state:"):] not in VALID_ANNOTATION_STATE_COLORS:
+                self._raise_unknown_enum(
+                    "annotation state color", color,
+                    frozenset(f"state:{s}" for s in VALID_ANNOTATION_STATE_COLORS),
+                    code="E1113", line=tok.line, col=tok.col,
+                )
+        elif color not in VALID_ANNOTATION_COLORS:
+            self._raise_unknown_enum(
+                "annotation color", color, VALID_ANNOTATION_COLORS,
+                code="E1113", line=tok.line, col=tok.col,
+            )
+
+    def _parse_link(self) -> LinkCommand:
+        """Parse ``\\link{A <-> B}{color=..., label=..., ephemeral=...}`` (§4).
+
+        The first brace holds exactly two endpoint selectors separated by
+        ``<->`` (canonical) or ``->``. Endpoints are kept as raw strings; the
+        emit-time resolver dispatches each to its owning primitive.
+        """
+        tok = self._advance()
+        endpoints_raw = self._read_brace_arg(tok)
+        parts = [p.strip() for p in _LINK_ARROW_RE.split(endpoints_raw)]
+        parts = [p for p in parts if p]
+        if len(parts) != 2:
+            raise ValidationError(
+                "\\link requires exactly two endpoints separated by '<->' or "
+                f"'->', e.g. \\link{{a.cell[0] <-> b.node[1]}}; got {endpoints_raw!r}",
+                position=tok.col,
+                code="E1497",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        params = self._read_param_brace()
+        color = str(params.get("color", "info"))
+        self._check_annotation_color(color, tok)
+        return LinkCommand(
+            tok.line, tok.col,
+            from_selector=parts[0],
+            to_selector=parts[1],
+            color=color,
+            label=str(params["label"]) if "label" in params else None,
+            ephemeral=params.get("ephemeral", False) in (True, "true"),
+        )
+
+    def _parse_combine(self) -> CombineCommand:
+        """Parse ``\\combine{s1, s2, ...}{into="D", color=...}`` (§4.3).
+
+        Sugar: the comma-separated sources each bridge to ``into`` as an
+        ephemeral link. ``into=`` must be quoted so a selector with ``[`` / ``]``
+        survives the value lexer (like ``\\cursor at=``).
+        """
+        tok = self._advance()
+        sources_raw = self._read_brace_arg(tok)
+        sources = tuple(s.strip() for s in sources_raw.split(",") if s.strip())
+        if not sources:
+            raise ValidationError(
+                "\\combine requires at least one source selector, e.g. "
+                '\\combine{m.row[0], m.col[1]}{into="c.cell[0][1]"}',
+                position=tok.col,
+                code="E1497",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        params = self._read_param_brace()
+        into_raw = params.get("into")
+        if not isinstance(into_raw, str) or not into_raw.strip():
+            raise ValidationError(
+                '\\combine requires into="<target selector>", e.g. '
+                '\\combine{m.row[0], m.col[1]}{into="c.cell[0][1]"}',
+                position=tok.col,
+                code="E1497",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        color = str(params.get("color", "info"))
+        self._check_annotation_color(color, tok)
+        return CombineCommand(
+            tok.line, tok.col,
+            sources=sources,
+            into=into_raw.strip(),
+            color=color,
+            label=str(params["label"]) if "label" in params else None,
+            ephemeral=params.get("ephemeral", True) not in (False, "false"),
         )
 
     def _parse_annotate(self) -> AnnotateCommand:
