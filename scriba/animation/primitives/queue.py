@@ -49,6 +49,21 @@ _POINTER_TRIANGLE_SIZE = 8  # half-width of the pointer triangle
 _DEFAULT_CAPACITY = 8
 _LABEL_PADDING = 20  # horizontal padding for pointer labels extending beyond cells
 
+# Empty-slot styling for Deque: dashed outline distinguishes reserved capacity
+# from occupied cells (occupied cells stay solid, exactly as Queue draws them).
+_DEQUE_EMPTY_DASH = "4 3"
+
+# Deque-only operations. A plain Queue rejects these loudly (E1444); only a
+# ``Deque`` shape supports double-ended push/pop. enqueue/dequeue are NOT in
+# this set — they remain the shared FIFO verbs (Deque aliases them onto
+# push_back/pop_front so a Deque is a strict superset of a Queue).
+_DEQUE_ONLY_VERBS: tuple[str, ...] = (
+    "push_front",
+    "push_back",
+    "pop_front",
+    "pop_back",
+)
+
 # ---------------------------------------------------------------------------
 # Selector regexes (suffix-only, without shape name prefix)
 # ---------------------------------------------------------------------------
@@ -165,7 +180,25 @@ class Queue(PrimitiveBase):
 
         Supported params on ``cell[i]``:
         - ``value=<X>`` — set cell value directly
+
+        A plain Queue is single-ended: the double-ended verbs
+        (``push_front``/``push_back``/``pop_front``/``pop_back``) are rejected
+        loudly with :data:`E1444` so the mistake is visible rather than a
+        silent no-op. Authors who need both ends declare a ``Deque`` shape.
         """
+        deque_verb = next(
+            (v for v in _DEQUE_ONLY_VERBS if v in params), None
+        )
+        if deque_verb is not None:
+            raise _animation_error(
+                "E1444",
+                detail=(
+                    f"Queue {self.name!r} received deque-only operation "
+                    f"{deque_verb!r}; a plain Queue supports only "
+                    f"enqueue/dequeue; valid: declare the shape as Deque"
+                ),
+            )
+
         # Whole-queue operations (target is the queue name itself)
         enqueue_val = params.get("enqueue")
         dequeue_val = params.get("dequeue")
@@ -567,3 +600,352 @@ class Queue(PrimitiveBase):
     def resolve_obstacle_segments(self) -> list:
         """Return segment obstacles for the current frame. Stub — returns []."""
         return []
+
+
+# ---------------------------------------------------------------------------
+# Deque primitive — Queue generalised to both ends
+# ---------------------------------------------------------------------------
+
+
+@register_primitive("Deque")
+@_protocol_register
+class Deque(Queue):
+    r"""Double-ended queue: a generalisation of :class:`Queue`.
+
+    Why a subclass instead of a Queue flag?  The primitive class is
+    instantiated as ``cls(shape.name, params)`` — the registered type name is
+    *not* threaded to ``__init__`` — so a single class cannot tell whether it
+    was built from ``Queue{...}`` or ``Deque{...}``.  A subclass registered
+    under its own name is therefore the only way to give the two shapes
+    distinct behaviour, and it keeps the ``Queue`` code path **byte-identical**
+    (nothing on ``Queue`` changes except a loud guard that never fires for
+    existing enqueue/dequeue corpus).
+
+    Model — logical order, not physical slots
+    -----------------------------------------
+    Queue stores fixed physical slots with monotonic ``front_idx``/``rear_idx``
+    pointers, which is why it cannot ``push_front`` (there is no room to the
+    left of slot 0).  Deque instead stores the live elements in a single
+    **logical-order list** ``self.items`` (``items[0]`` = current front,
+    ``items[-1]`` = current back).  Rendering left-aligns the occupied cells
+    and dashes the remaining capacity on the right.  This is the textbook
+    depiction and sidesteps the circular/offset bookkeeping the substrate
+    investigation flagged.
+
+    Index semantics (differs from Array — cf. R-42)
+    -----------------------------------------------
+    ``cell[i]`` addresses the **i-th position from the current front**, not a
+    fixed slot.  ``pop_front`` shifts every element left by one, so after a
+    ``pop_front`` the *same* ``cell[i]`` selector points at a *different*
+    element.  This positional (non-slot-identity) meaning is intrinsic to a
+    deque; do not rely on ``cell[i]`` tracking one element across pops the way
+    an Array cell does.
+
+    Operations
+    ----------
+    - ``push_front=V`` / ``push_back=V`` — insert value ``V`` at that end.
+    - ``pop_front=N`` / ``pop_back=N`` — remove ``N`` elements from that end
+      (``N`` is a count: ``true`` / bare ``{pop_front}`` → 1, mirroring Stack's
+      ``pop``; ``0`` / ``false`` → no-op).
+    - ``enqueue=V`` / ``dequeue=N`` — FIFO aliases for ``push_back`` /
+      ``pop_front``, so any Queue animation is valid on a Deque.
+
+    Overflow (push onto a full deque) raises :data:`E1442`; underflow (pop more
+    than present) raises :data:`E1443` — both *loud*, unlike Queue's silent
+    at-capacity / empty no-ops.
+    """
+
+    primitive_type = "deque"
+
+    SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
+        "cell[{i}]": "cell by position (0 = current front)",
+        "front": "front pointer",
+        "back": "back pointer",
+        "all": "all cells and pointers",
+    }
+
+    def __init__(self, name: str, params: dict[str, Any]) -> None:
+        # Reuse Queue's construction for capacity/label validation and the
+        # dynamic cell-width measurement, then replace the physical-slot model
+        # with a logical-order list. Queue's cells/front_idx/rear_idx remain
+        # set but are never read by Deque's own methods (all overridden below).
+        super().__init__(name, params)
+        raw_data: list[Any] = list(params.get("data", []))
+        # Match Queue's initial-fill policy: silently keep at most `capacity`
+        # elements (excess initial data is truncated, not a loud overflow).
+        self.items: list[Any] = raw_data[: self.capacity]
+
+    # ----- apply commands --------------------------------------------------
+
+    def apply_command(self, params: dict[str, Any]) -> None:
+        """Process double-ended push/pop (and FIFO aliases) from ``\\apply``.
+
+        Pushes run before pops within a single command. Unknown keys are
+        ignored, matching Queue.
+        """
+        # Pushes (value inserted at the named end).
+        if "push_front" in params:
+            self._deque_push("front", params["push_front"])
+        if "push_back" in params:
+            self._deque_push("back", params["push_back"])
+        if "enqueue" in params and params.get("enqueue") is not None:
+            self._deque_push("back", params["enqueue"])
+
+        # Pops (count-based; 0/false → no-op, mirroring Queue's dequeue guard).
+        if "pop_front" in params:
+            self._deque_pop("front", params["pop_front"])
+        if "pop_back" in params:
+            self._deque_pop("back", params["pop_back"])
+        if "dequeue" in params:
+            self._deque_pop("front", params["dequeue"])
+
+    def _deque_push(self, end: str, value: Any) -> None:
+        """Insert *value* at ``front`` or ``back``; loud overflow at capacity."""
+        if len(self.items) >= self.capacity:
+            raise _animation_error(
+                "E1442",
+                detail=(
+                    f"Deque {self.name!r} is at capacity {self.capacity}; "
+                    f"cannot push {value!r}; valid: pop before pushing or "
+                    f"raise capacity"
+                ),
+            )
+        if end == "front":
+            self.items.insert(0, value)
+        else:
+            self.items.append(value)
+        # Widen cells if the new value is wider than the current cell width.
+        new_w = (
+            measure_value_text(str(value), _DEFAULT_FONT_SIZE_PX)
+            + _CELL_HORIZONTAL_PADDING
+        )
+        if new_w > self._cell_width:
+            self._cell_width = new_w
+
+    def _deque_pop(self, end: str, raw_count: Any) -> None:
+        """Remove *raw_count* elements from ``front`` or ``back``.
+
+        ``raw_count`` is coerced to a non-negative integer count
+        (:meth:`_as_count`). Popping more than are present raises
+        :data:`E1443` (loud underflow); a count of 0 is a no-op.
+        """
+        count = self._as_count(raw_count)
+        if count <= 0:
+            return
+        if count > len(self.items):
+            raise _animation_error(
+                "E1443",
+                detail=(
+                    f"Deque {self.name!r} underflow: pop_{end}={count} but only "
+                    f"{len(self.items)} element(s) present; valid: pop no more "
+                    f"than are present"
+                ),
+            )
+        for _ in range(count):
+            if end == "front":
+                self.items.pop(0)
+            else:
+                self.items.pop()
+
+    @staticmethod
+    def _as_count(raw: Any) -> int:
+        """Coerce an ``\\apply`` pop value to a non-negative element count.
+
+        ``True`` / ``"true"`` / bare ``{pop_front}`` → 1 (``int(True) == 1``,
+        the Stack ``pop`` idiom). ``False`` / ``None`` / ``""`` / ``"false"``
+        → 0. Integers pass through; unparseable strings → 0. ``bool`` is
+        checked before ``int`` because ``isinstance(True, int)`` is ``True``.
+        """
+        if raw is True:
+            return 1
+        if raw is False or raw is None:
+            return 0
+        if isinstance(raw, int):
+            return raw
+        if isinstance(raw, str):
+            s = raw.strip().lower()
+            if s == "true":
+                return 1
+            if s in ("", "false"):
+                return 0
+            try:
+                return int(s)
+            except ValueError:
+                return 0
+        return 0
+
+    def set_value(self, suffix: str, value: str) -> None:
+        """Set an occupied cell's display value (positional, front-relative)."""
+        m = _CELL_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            if 0 <= idx < len(self.items):
+                self.items[idx] = value
+                needed = (
+                    measure_value_text(str(value), _DEFAULT_FONT_SIZE_PX)
+                    + _CELL_HORIZONTAL_PADDING
+                )
+                if needed > self._cell_width:
+                    self._cell_width = needed
+
+    # ----- Primitive interface ---------------------------------------------
+
+    def addressable_parts(self) -> list[str]:
+        parts: list[str] = [f"cell[{i}]" for i in range(self.capacity)]
+        parts.append("front")
+        parts.append("back")
+        parts.append("all")
+        return parts
+
+    def validate_selector(self, suffix: str) -> bool:
+        if suffix in ("all", "front", "back"):
+            return True
+        m = _CELL_RE.match(suffix)
+        if m:
+            idx = int(m.group("idx"))
+            return 0 <= idx < self.capacity
+        return False
+
+    def emit_svg(
+        self,
+        *,
+        render_inline_tex: Callable[[str], str] | None = None,
+        scene_segments: "tuple | None" = None,
+        self_offset: "tuple[float, float] | None" = None,
+    ) -> str:
+        effective_anns = self._annotations
+
+        arrow_above = self._arrow_height_above(effective_anns)
+        left_pad, _ = self._h_label_pad()
+
+        parts: list[str] = []
+        parts.append(
+            f'<g data-primitive="deque" data-shape="{_escape_xml(self.name)}">'
+        )
+
+        if arrow_above > 0 or left_pad > 0:
+            parts.append(f'  <g transform="translate({left_pad}, {arrow_above})">')
+
+        cell_y = _POINTER_HEIGHT + _POINTER_LABEL_GAP
+        n = len(self.items)
+
+        # --- Render cells (occupied left-aligned; reserved capacity dashed) ---
+        for i in range(self.capacity):
+            suffix = f"cell[{i}]"
+            target = f"{self.name}.{suffix}"
+
+            state_name = self.get_state(suffix)
+            all_state = self.get_state("all")
+            if all_state != "idle" and state_name == "idle":
+                state_name = all_state
+
+            if state_name == "idle" and self._is_highlighted(suffix):
+                effective_state = "highlight"
+            else:
+                effective_state = state_name
+
+            colors = svg_style_attrs(effective_state)
+
+            x = _LABEL_PADDING + i * (self._cell_width + CELL_GAP)
+            occupied = i < n
+            value = self.items[i] if occupied else ""
+
+            parts.append(
+                f'  <g data-target="{_escape_xml(target)}" '
+                f'class="{state_class(effective_state)}">'
+            )
+            rect_attrs = _inset_rect_attrs(
+                x, cell_y, self._cell_width, CELL_HEIGHT
+            )
+            dash = "" if occupied else f' stroke-dasharray="{_DEQUE_EMPTY_DASH}"'
+            parts.append(
+                f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
+                f'width="{rect_attrs["width"]}" '
+                f'height="{rect_attrs["height"]}"{dash}/>'
+            )
+            text_x = x + self._cell_width // 2
+            text_y = cell_y + CELL_HEIGHT // 2
+            parts.append(
+                "    "
+                + _render_svg_text(
+                    value,
+                    text_x,
+                    text_y,
+                    fill=colors["text"],
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                    fo_width=self._cell_width,
+                    fo_height=CELL_HEIGHT,
+                    render_inline_tex=render_inline_tex,
+                )
+            )
+            parts.append("  </g>")
+
+            idx_label_y = cell_y + CELL_HEIGHT + INDEX_LABEL_OFFSET
+            parts.append(
+                "  "
+                + _render_svg_text(
+                    f"[{i}]",
+                    text_x,
+                    idx_label_y,
+                    fill=THEME["fg_muted"],
+                    css_class="scriba-index-label idx",
+                    text_anchor="middle",
+                    dominant_baseline="central",
+                    font_size="11",
+                )
+            )
+
+        # Front points at position 0, back at the last occupied position. When
+        # empty, both clamp to cell 0 (overlapping), matching Queue's handling.
+        front_index = 0
+        back_index = max(n - 1, 0)
+        pointers_overlap = front_index == back_index
+
+        self._emit_pointer(
+            parts,
+            index=front_index,
+            label="front",
+            cell_y=cell_y,
+            offset_label=pointers_overlap,
+            render_inline_tex=render_inline_tex,
+        )
+        self._emit_pointer(
+            parts,
+            index=back_index,
+            label="back",
+            cell_y=cell_y,
+            offset_label=pointers_overlap,
+            render_inline_tex=render_inline_tex,
+        )
+
+        # --- Caption label (identical treatment to Queue) ---
+        if self.label is not None:
+            content_w = self._total_width()
+            bbox = self.bounding_box()
+            caption_top = int(
+                bbox.height
+                - self._caption_block_height(content_w)
+                - self._arrow_height_above(self._annotations)
+            )
+            self._emit_caption(
+                parts,
+                content_width=content_w,
+                footprint_width=int(bbox.width),
+                top_y=caption_top,
+                render_inline_tex=render_inline_tex,
+            )
+
+        self._emit_queue_annotations(
+            parts,
+            effective_anns,
+            render_inline_tex=render_inline_tex,
+            scene_segments=scene_segments,
+            self_offset=self_offset,
+        )
+
+        if arrow_above > 0 or left_pad > 0:
+            parts.append("  </g>")
+
+        parts.append("</g>")
+        return "\n".join(parts)
