@@ -7,6 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-07-05 — the teacher's board (CP teaching-gesture census)
+
+A 6-slice BMAD census (`investigations/teaching-*.md`) mapped what a CP
+teacher does on a whiteboard / in a YouTube lecture against scriba's grammar.
+scriba already nailed the "animate the current structural state" axis (the
+killer code-line-sync move works); this release closes the three axes it was
+thin on — the accumulating/arranged **board-as-record**, **math as an evolving
+object**, and **camera/attention** — with 2 new primitives, layout/zoom/decorate
+verbs, and **0 new motion kinds** (the closed 11-kind registry held across
+every gap). Every design: `investigations/design-*.md`.
+
+### Added — decoration / marking verbs (no SCRIBA_VERSION bump)
+- **`\annotate{x}{strike=true}`** — strike-but-keep: a diagonal cross-out
+  that leaves the element's state colour intact (the census's one hard-MISSING
+  marker verb — pruning was a lossy recolor-or-remove binary). E1119.
+- **`\note{id}{text=…, at=<compass>}`** — a free margin callout not tied to any
+  shape (8-way anchor), keyed `note[id]-solo`. E1120/E1121.
+- **`\focus{x}{scope=board}`** — board-wide spotlight, dims every *other* shape
+  (default `scope=shape` unchanged). E1122.
+- **`\trace{Graph|Tree}{cells=[nodes]}`** — the BFS/DFS "follow the edges" sweep
+  (E1118 lifted for node sequences).
+
+### Added — viewport: deliberate layout + camera (no SCRIBA_VERSION bump)
+- **`at=[row,col]` on `\shape`** — an opt-in grid board (array top / tree below /
+  recurrence right); no `at=` = today's centered stack, byte-identical.
+  E1540/E1541/E1542.
+- **`\zoom{target}`** — a per-frame viewBox crop, the camera twin of `\focus`
+  (ephemeral, auto-restore, magnify-not-shrink). Discrete cut, scriba.js
+  untouched. E1543.
+
+### Added — accumulation surfaces
+- **TraceTable primitive (#20)** — the dry-run trace table (variables = pinned
+  columns × steps = downward-growing rows). `\apply{t}{row=[…]}` appends a row
+  (auto-current). Structural-prescan envelope → viewBox byte-invariant across
+  row growth (R-32). No bump (Bar precedent). E1520–E1522.
+- **Live `\invariant`** — an `\invariant{sum = ${s}}` body now interpolates
+  `${bindings}` per frame (was a static literal). Static invariants stay
+  byte-identical.
+
+### Added — math as an evolving object (SCRIBA_VERSION 18→19)
+- **Equation primitive (#21)** — makes math sub-terms and aligned lines natively
+  addressable, so a teacher can tint a term and reveal a derivation line-by-line.
+  `\shape{E}{Equation}{tex="…\term{id}{body}…"}` / `lines=[…]`; selectors
+  `E.term[id]` / `E.line[i]`; `\term` compiles to a KaTeX `\htmlClass` under a
+  narrow selective trust (`\href` stays gated). Rides recolor/value_change — 0
+  new motion kinds. Adds only the `.scriba-term.scriba-state-*` colour CSS
+  (opt-in-inert), which — together with the live-invariant runtime swap — is
+  the sole reason for the 18→19 bump. E1530–E1532.
+
+### Changed
+- `SCRIBA_VERSION` 18→19 (Equation's `.scriba-term` CSS + the live-invariant
+  `scriba.js` swap — both shared inlined assets; documents using neither are
+  otherwise byte-identical at the markup layer). Primitive count 19→21.
+
+### Fixed / hardening
+- `\substory` parent-mutation persistence is now locked by a content-asserting
+  regression test (it is the documented, golden-relied-upon contract — see
+  `investigations/verify-substory-leak.md`, suspected leak REFUTED) and the
+  misleading "ephemeral" comment corrected.
+
 ## [0.25.0] - 2026-07-05 — grammar-completeness vocabulary + Tier-D fixes
 
 ### Added — grammar-completeness vocabulary (post-0.24 census)

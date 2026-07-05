@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.25.0 · MIT · Python 3.10+
+**Status:** v0.26.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,32 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.26.0 — the teacher's board
+
+A 6-slice census of how CP teachers explain on a whiteboard / in a YouTube
+lecture (`investigations/teaching-*.md`) closed the three axes scriba was thin
+on, with **0 new motion kinds**:
+
+- **Board-as-record** — **`\annotate{x}{strike=true}`** (cross out a rejected
+  candidate but keep it visible), **`\note{id}{at=<compass>}`** (a free margin
+  callout), the **TraceTable** primitive (the dry-run trace table: variables ×
+  steps, rows accumulate), and a live **`\invariant{sum = ${s}}`** (interpolates
+  per frame).
+- **Deliberate layout + camera** — **`at=[row,col]`** on `\shape` arranges
+  several shapes in a grid (array top / tree below / recurrence right);
+  **`\zoom{target}`** magnifies one region for a step (camera twin of `\focus`).
+- **Math as an evolving object** — the **Equation** primitive makes sub-terms
+  (`E.term[id]`) and aligned lines (`E.line[i]`) addressable, so a teacher can
+  tint a term and reveal a derivation line-by-line.
+- **Board-wide spotlight** (`\focus{x}{scope=board}`) and **graph/tree
+  `\trace`** (BFS/DFS follow-the-edges) round out the marker verbs.
+- `SCRIBA_VERSION` 18→19 (the Equation `.scriba-term` CSS + the live-invariant
+  runtime swap); everything else is byte-identical for documents that don't use
+  it. Primitive count 19→21.
+
+<details>
+<summary>v0.25.0 changelog</summary>
+
 ## What's new in v0.25.0
 
 - **Grammar-completeness vocabulary** (post-0.24 census closed the last
@@ -43,6 +69,8 @@ asset basenames needed to display it.
   `${vals[i+1]}` raises a clean E1159 instead of pasting garbage, an
   out-of-range `\trace` vertex warns (E1115) instead of vanishing, and
   `\recolor{state=${s}}` gives a clean E1109.
+
+</details>
 
 <details>
 <summary>v0.24.0 changelog</summary>
