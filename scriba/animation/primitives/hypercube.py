@@ -356,7 +356,8 @@ class Hypercube(PrimitiveBase):
             x0, y0 = self._positions[lo]
             x1, y1 = self._positions[hi]
             parts.append(
-                f'<line x1="{x0:.1f}" y1="{y0:.1f}" '
+                f'<line class="scriba-hypercube-edge" '
+                f'x1="{x0:.1f}" y1="{y0:.1f}" '
                 f'x2="{x1:.1f}" y2="{y1:.1f}" '
                 f'stroke="{stroke}" stroke-width="1"/>'
             )

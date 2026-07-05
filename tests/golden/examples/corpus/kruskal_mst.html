@@ -470,6 +470,13 @@
   fill:         none;
 }
 
+/* -- Lattice edge (Hypercube) — theme the stroke through the token so the
+ *    dark override applies; the inline stroke on the <line> is a no-CSS
+ *    fallback only (before this rule the edge was stuck at the light hex). */
+:where([data-primitive="hypercube"]) .scriba-hypercube-edge {
+  stroke:       var(--scriba-state-idle-stroke);
+}
+
 /* -- Tick mark (NumberLine) -------------------------------- */
 :where([data-primitive="numberline"] > [data-target="nl.axis"]) > line {
   stroke:       var(--scriba-fg);
@@ -729,7 +736,7 @@
    * dark mode mirrors the "Tonal Architecture" of the light theme instead
    * of only flipping the idle/dim neutrals. */
   --scriba-state-idle-fill:        #1a1d1e;
-  --scriba-state-idle-stroke:      #313538;
+  --scriba-state-idle-stroke:      #62696d;
   --scriba-state-idle-text:        #ecedee;
 
   /* C3 dark: keep #0070d5 fill so white text stays ≥ 4.91:1 in dark mode too */
@@ -795,7 +802,7 @@
     --scriba-link:               #70b8ff;
 
     --scriba-state-idle-fill:        #1a1d1e;
-    --scriba-state-idle-stroke:      #313538;
+    --scriba-state-idle-stroke:      #62696d;
     --scriba-state-idle-text:        #ecedee;
 
     --scriba-state-current-fill:     #0070d5;

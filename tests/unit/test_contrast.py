@@ -187,3 +187,37 @@ class TestArrowStylesLabelContrast:
             "reverted to #cbd5e1 which gives only 1.48:1 on white (fails AA). "
             "Use #526070 (6.43:1) or darker."
         )
+
+
+class TestDarkModeNonTextContrast:
+    """WCAG 1.4.11 non-text contrast (3:1) for the dark idle stroke — the
+    edge/border color that every cell/node/lattice line uses. The suite
+    previously only guarded LIGHT text-AA, so the dark idle stroke sat at
+    1.45:1 (invisible) undetected (bmad-darkmode)."""
+
+    WCAG_NONTEXT = 3.0
+
+    @staticmethod
+    def _dark_token(name: str) -> str:
+        import re
+        from pathlib import Path
+
+        css = Path(
+            "scriba/animation/static/scriba-scene-primitives.css"
+        ).read_text()
+        # the [data-theme="dark"] block, up to its closing brace
+        i = css.index('[data-theme="dark"]')
+        block = css[i:css.index("\n}", i)]
+        m = re.search(rf"{re.escape(name)}:\s*(#[0-9a-fA-F]{{6}})", block)
+        assert m, f"{name} not found in dark block"
+        return m.group(1)
+
+    @pytest.mark.unit
+    def test_dark_idle_stroke_meets_nontext_3to1(self) -> None:
+        stroke = self._dark_token("--scriba-state-idle-stroke")
+        bg = self._dark_token("--scriba-bg")
+        ratio = contrast_ratio(stroke, bg)
+        assert ratio >= self.WCAG_NONTEXT, (
+            f"dark idle stroke {stroke} on bg {bg} is {ratio:.2f}:1, "
+            f"below WCAG 1.4.11 non-text {self.WCAG_NONTEXT}:1"
+        )
