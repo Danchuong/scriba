@@ -761,6 +761,7 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1400",
         "E1401",
         "E1402",
+        "E1404",
         # Grid
         "E1410",
         "E1411",

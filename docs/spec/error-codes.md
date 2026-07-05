@@ -129,7 +129,7 @@ code per `(primitive, validation)` pair. Existing code that caught
 `E1103` continues to work because catalog entry `E1103` is retained as a
 documented deprecated alias.
 
-### Array (E1400--E1403)
+### Array (E1400--E1404)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
@@ -137,6 +137,7 @@ documented deprecated alias.
 | E1401 | Array `size` out of range; valid: 1..10000. | Pick an integer between 1 and 10000. |
 | E1402 | Array `data` length exceeds `size`. | Drop `data`, or make `len(data) <= size` (a partial fill leaves the tail empty). |
 | E1403 | Array `\apply` insert/remove position out of range, or insert into a full array. | Address `0..live` for insert / `0..live-1` for remove; declare a larger `size` rather than growing past the fixed max-N grid. |
+| E1404 | Array `\apply` `reorder` is invalid: `order` is not a permutation of the live slots (wrong length, non-integer, or a repeated/missing index), or `reorder` is mixed with insert/remove in one animation. | Make `order` a permutation of `0..live-1` (each source slot exactly once); do not combine `reorder` with insert/remove. |
 
 ### Grid (E1410--E1412)
 

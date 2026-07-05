@@ -278,7 +278,7 @@ ERROR_CATALOG: dict[str, str] = {
     # contiguous sub-range per primitive so future fixes can extend in-place
     # without colliding.
     #
-    # E1400-E1409: Array (size, data length)
+    # E1400-E1409: Array (size, data length, insert/remove, reorder)
     "E1400": (
         "Array requires 'size' or 'n' parameter. "
         "hint: add size=N where 1 <= N <= 10000."
@@ -297,6 +297,13 @@ ERROR_CATALOG: dict[str, str] = {
         "array. hint: v1 uses a fixed max-N grid — declare a larger 'size' "
         "instead of growing past it, and address 0..live for insert / "
         "0..live-1 for remove."
+    ),
+    "E1404": (
+        "Array 'reorder' is invalid: 'order' is not a permutation of the live "
+        "slots (wrong length, a non-integer, or a repeated/missing index), or "
+        "reorder was mixed with insert/remove in one animation. hint: 'order' "
+        "must list each source slot 0..live-1 exactly once, and reorder cannot "
+        "be combined with insert/remove."
     ),
     # E1410-E1419: Grid (rows, cols, data length)
     "E1410": (

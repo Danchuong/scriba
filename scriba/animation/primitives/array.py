@@ -182,6 +182,20 @@ class ArrayPrimitive(PrimitiveBase):
         self.label: str | None = self.params.get("label")
         self._sentinels: bool = _is_truthy_flag(self.params.get("sentinels"))
 
+        # Element-identity layer (A5 reorder). ``_item_of_slot[i]`` is the id
+        # of the item currently occupying slot ``i``; every slot is born with
+        # item ``i`` (the id is fixed for the item's lifetime). ``reorder``
+        # permutes this map alongside ``data`` so ``item[k]`` travels with its
+        # value to a new slot (differ ``position_move``) while slot identity
+        # ``cell[i]`` stays fixed (R-42: annotations/recolors keyed on the
+        # slot never move). ``_reordered`` gates the ``data-item`` attribute
+        # and ``get_node_positions`` so a non-reordering array stays
+        # byte-identical; ``_reflowed`` records insert/remove so the two
+        # structural models are never mixed in one animation (E1404).
+        self._item_of_slot: list[int] = list(range(size))
+        self._reordered: bool = False
+        self._reflowed: bool = False
+
         # Compute dynamic cell width from data and labels
         max_content_w = max(
             (measure_value_text(str(v), 14) for v in self.data), default=0
@@ -203,22 +217,59 @@ class ArrayPrimitive(PrimitiveBase):
         *,
         target_suffix: str | None = None,
     ) -> None:
-        """Insert/remove on the fixed max-N grid (slot-identity reflow).
+        """Structural mutation on the fixed max-N grid.
 
-        ``\\apply{a}{insert={at=k, value=v}}`` shifts slots ``k..live-1`` one
-        position right and writes ``v`` at ``k`` (``index`` is an accepted alias
-        for ``at``); ``\\apply{a}{remove=k}`` shifts ``k+1..live-1`` one position
-        left and vacates the freed tail to an **empty cell** (OQ2). Every cell
-        *position* is fixed, so consecutive frames differ only in cell values →
-        the differ emits a ``value_change`` cascade and R-32 centering holds by
-        construction (no new motion kind, no JS). The grid never grows past the
-        declared ``size``: inserting into a full array is an error (E1403), not
-        a silent grow (v1; OQ3).
+        Two structural models ride this one bulk ``apply_params`` path (no new
+        verb — ``target_suffix`` is accepted but ignored, the op addresses the
+        whole shape):
+
+        * **Slot-identity reflow** — ``\\apply{a}{insert={at=k, value=v}}``
+          shifts slots ``k..live-1`` one position right and writes ``v`` at
+          ``k`` (``index`` is an accepted alias for ``at``);
+          ``\\apply{a}{remove=k}`` shifts ``k+1..live-1`` one position left and
+          vacates the freed tail to an **empty cell** (OQ2). Every cell
+          *position* is fixed, so consecutive frames differ only in cell values
+          → the differ emits a ``value_change`` cascade and R-32 centering holds
+          by construction. The grid never grows past the declared ``size``:
+          inserting into a full array is an error (E1403), not a silent grow.
+
+        * **Element-identity reorder** — ``\\apply{a}{reorder=[3,0,1,4,2]}``
+          permutes the live prefix by SOURCE-SLOT indices (gather semantics:
+          slot ``j`` shows the pre-op value of slot ``order[j]``,
+          ``new[j] = old[order[j]]``). Values travel with a fixed-id ``item[k]``
+          element that glides to its new slot (``position_move``); see
+          :meth:`_apply_reorder`.
+
+        The two models are mutually exclusive within one animation: mixing
+        ``reorder`` with ``insert``/``remove`` raises E1404 (v1 keeps the two
+        identity substrates from interleaving; generalized later).
         """
+        has_reorder = "reorder" in params
+        has_reflow = "insert" in params or "remove" in params
+        mixes = (has_reorder and (self._reflowed or has_reflow)) or (
+            has_reflow and self._reordered
+        )
+        if mixes:
+            raise _animation_error(
+                "E1404",
+                detail=(
+                    "Array 'reorder' cannot be combined with insert/remove "
+                    "in the same animation"
+                ),
+                hint=(
+                    "reorder cannot mix with insert/remove in one animation "
+                    "— file an issue if you need this"
+                ),
+            )
+        if has_reorder:
+            self._apply_reorder(params["reorder"])
+            self._reordered = True
         if "insert" in params:
             self._apply_insert(params["insert"])
+            self._reflowed = True
         if "remove" in params:
             self._apply_remove(params["remove"])
+            self._reflowed = True
 
     def _apply_insert(self, spec: Any) -> None:
         if isinstance(spec, dict):
@@ -284,6 +335,99 @@ class ArrayPrimitive(PrimitiveBase):
         needed = measure_value_text(str(value), 14) + _CELL_HORIZONTAL_PADDING
         if needed > self._cell_width:
             self._cell_width = needed
+
+    def _apply_reorder(self, spec: Any) -> None:
+        """Permute the live prefix by SOURCE-SLOT indices (gather semantics).
+
+        ``order`` is a permutation of ``range(live)``. After the op, slot ``j``
+        displays the pre-op value of slot ``order[j]`` — i.e.
+        ``new[j] = old[order[j]]``. Example: ``reorder=[3,0,1,4,2]`` on
+        ``[A,B,C,D,E]`` yields ``[D,A,B,E,C]`` (slot 0 takes source slot 3).
+
+        Both the cell values and the element-identity map ``_item_of_slot`` are
+        permuted the same way, so the item that sat at source slot ``order[j]``
+        (id fixed since t0) now occupies slot ``j`` and carries its value there;
+        :meth:`get_node_positions` then reports its new slot center and the
+        differ emits a ``position_move`` gliding ``item[k]``. Slot identity
+        ``cell[i]`` never moves (R-42): annotations and recolors keyed on the
+        slot still address the fixed position.
+
+        Validation is total before any mutation, so a rejected ``order`` leaves
+        the array untouched. Invalid ``order`` (not a list, wrong length, or not
+        a permutation of ``0..live-1``) raises E1404.
+        """
+        n = self.live
+        if not isinstance(spec, (list, tuple)):
+            raise _animation_error(
+                "E1404",
+                detail=(
+                    f"Array reorder 'order' must be a list; got "
+                    f"{type(spec).__name__}"
+                ),
+                hint="example: \\apply{a}{reorder=[3,0,1,4,2]}",
+            )
+        order = list(spec)
+        if len(order) != n:
+            raise _animation_error(
+                "E1404",
+                detail=(
+                    f"Array reorder length {len(order)} does not match the "
+                    f"live slot count {n}"
+                ),
+                hint="order must be a permutation of 0..live-1",
+            )
+        try:
+            order_int = [int(x) for x in order]
+        except (TypeError, ValueError):
+            raise _animation_error(
+                "E1404",
+                detail=(
+                    f"Array reorder 'order' has a non-integer index: {order!r}"
+                ),
+                hint="order must be a permutation of 0..live-1",
+            )
+        if sorted(order_int) != list(range(n)):
+            raise _animation_error(
+                "E1404",
+                detail=(
+                    f"Array reorder {order_int} is not a permutation of "
+                    f"0..{n - 1}"
+                ),
+                hint="each source slot 0..live-1 must appear exactly once",
+            )
+        new_data = list(self.data)
+        new_item = list(self._item_of_slot)
+        for j in range(n):
+            src = order_int[j]
+            new_data[j] = self.data[src]
+            new_item[j] = self._item_of_slot[src]
+        self.data = new_data
+        self._item_of_slot = new_item
+
+    def get_node_positions(self) -> dict[str, tuple[int, int]]:
+        """Return ``{item-target: (x, y)}`` for the element-identity layer.
+
+        Empty until the array has received a ``reorder`` (``_reordered``), so a
+        non-reordering array emits no ``item[k]`` entries and its interactive
+        manifest stays byte-identical (mirrors the ``data-item`` gate in
+        :meth:`emit_svg`; also keeps ``_inject_tree_positions`` a no-op for it).
+        Once reordered, each live item ``k`` (``k = _item_of_slot[i]``) reports
+        the center of the slot ``i`` it now occupies, so the differ emits a
+        ``position_move`` that glides the item to its new slot. Coordinate
+        semantics mirror ``Tree.get_node_positions`` (pre-``emit_svg``-translate
+        frame) and the slot center from :meth:`_cell_center`.
+        """
+        if not self._reordered:
+            return {}
+        cw = self._cell_width
+        dx = self._row_dx()
+        cy = CELL_HEIGHT // 2
+        result: dict[str, tuple[int, int]] = {}
+        for i in range(self.live):
+            k = self._item_of_slot[i]
+            cx = int(i * (cw + CELL_GAP) + cw // 2) + dx
+            result[f"{self.name}.item[{k}]"] = (cx, cy)
+        return result
 
     # -- PrimitiveBase interface --------------------------------------------
 
@@ -393,9 +537,20 @@ class ArrayPrimitive(PrimitiveBase):
             x = int(i * (cw + CELL_GAP)) + row_dx
             y = 0
 
-            lines.append(
-                f'  <g data-target="{target}" class="{css}">'
-            )
+            # ``data-item`` names the element-identity layer for the differ /
+            # runtime (``item[k]`` = the item currently in this slot). Emitted
+            # ONLY after a reorder so a non-reordering array is byte-identical
+            # to pre-A5 goldens; values/states remain SLOT-addressed (R-42).
+            if self._reordered:
+                item_k = self._item_of_slot[i]
+                lines.append(
+                    f'  <g data-target="{target}" '
+                    f'data-item="{self.name}.item[{item_k}]" class="{css}">'
+                )
+            else:
+                lines.append(
+                    f'  <g data-target="{target}" class="{css}">'
+                )
             rect_attrs = _inset_rect_attrs(x, y, cw, CELL_HEIGHT)
             lines.append(
                 f'    <rect x="{rect_attrs["x"]}" y="{rect_attrs["y"]}" '
