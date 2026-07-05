@@ -89,11 +89,11 @@ Good narration rules:
 
 ## 4. Primitive choice: pick the one the problem is actually about
 
-Scriba ships 16 primitives across three groups:
+Scriba ships 21 primitives across three groups:
 
 - **Base (6):** `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`.
-- **Extended (5):** `Matrix` / `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `Graph` with `layout=stable`.
-- **Data-structure (5):** `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `VariableWatch`.
+- **Extended (7):** `Matrix` / `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `Hypercube`, `Bar`, `Equation`.
+- **Data-structure (8):** `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `Deque`, `VariableWatch`, `Forest`, `TraceTable`.
 
 Choose the one that matches *the problem's mental model*, not the one
 that is easiest to draw.
@@ -118,7 +118,7 @@ that is easiest to draw.
 
 If you find yourself faking one primitive with another (drawing a tree
 inside a `Grid`, faking a `NumberLine` with a 1×N `Grid`), stop and
-switch primitives. The spec gives you 16; use the right one.
+switch primitives. The spec gives you 21; use the right one.
 
 ## 5. Semantic state discipline
 

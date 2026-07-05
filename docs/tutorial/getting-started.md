@@ -380,7 +380,7 @@ Not every visualization needs step-by-step animation. Use `\begin{diagram}...\en
 
 ### What works in diagrams
 
-- `\shape` — declare any of the 16 primitive types
+- `\shape` — declare any of the 21 primitive types
 - `\recolor` — set visual states (current, done, dim, etc.)
 - `\apply` — set cell/node values
 - `\highlight` — persistent highlight (not ephemeral like in animation)
@@ -510,13 +510,13 @@ See `examples/primitives/substory.tex` for a minimal runnable example and `docs/
   - `algorithms/graph/dijkstra.tex` -- weighted shortest path
   - `primitives/diagram.tex` -- static tree diagram
 - **Diagrams guide** -- see [how-to-use-diagrams.md](../guides/how-to-use-diagrams.md) for static diagram patterns and examples.
-- **More primitives** -- Scriba supports 16 primitive types. See the complete list below.
+- **More primitives** -- Scriba supports 21 primitive types. See the complete list below.
 
 ---
 
 ## 13. All Primitive Types
 
-Scriba ships 16 primitive types organized in three groups.
+Scriba ships 21 primitive types organized in three groups.
 
 ### Base Primitives (6)
 
@@ -529,7 +529,7 @@ Scriba ships 16 primitive types organized in three groups.
 | `Tree` | Rooted tree with nodes and edges; supports segtree and general trees. |
 | `NumberLine` | Horizontal number line with ticks and optional labels. |
 
-### Extended Primitives (5)
+### Extended Primitives (7)
 
 | Type | Description |
 |------|-------------|
@@ -537,9 +537,11 @@ Scriba ships 16 primitive types organized in three groups.
 | `Stack` | Push/pop stack with horizontal or vertical orientation. |
 | `Plane2D` | Cartesian coordinate plane with lines, points, segments, polygons, and regions. |
 | `MetricPlot` | Time-series or metric chart with up to 8 series, auto axes, and optional log scale. |
-| `Graph layout=stable` | Graph variant with simulated-annealing joint-optimization for fixed positions across frames. |
+| `Hypercube` | Subset lattice (Hasse diagram) for bitmask DP, SOS, and inclusion-exclusion, with `.subset[i]` selectors. |
+| `Bar` | Variable-height columns (histogram) over an index axis — the height-as-value channel, with `.bar[i]` selectors. |
+| `Equation` | Math as an evolving object with independently addressable `\term{id}{body}` sub-terms and aligned derivation lines. |
 
-### Data-Structure Primitives (5)
+### Data-Structure Primitives (8)
 
 | Type | Description |
 |------|-------------|
@@ -547,7 +549,10 @@ Scriba ships 16 primitive types organized in three groups.
 | `HashMap` | Bucket-based hash table visualization with `.bucket[i]` selectors. |
 | `LinkedList` | Linked list with `.node[i]` and `.link[i]` selectors for nodes and pointers. |
 | `Queue` | FIFO queue with `.cell[i]`, `.front`, and `.rear` selectors. |
+| `Deque` | Two-ended queue (a superset of `Queue`) with `push_front`/`push_back`/`pop_front`/`pop_back` and `.cell[i]`, `.front`, `.back` selectors. |
 | `VariableWatch` | Variable watch panel for displaying named variables via `.var[name]` selectors. |
+| `Forest` | Multi-root forest for disjoint-set (DSU) editorials; `union` reparents roots, with `.node[id]` and `.edge[(p,c)]` selectors. |
+| `TraceTable` | Accumulating dry-run trace table — pinned columns and downward-growing rows appended via `row=[...]`, with `.row[k]` and `.cell[k][j]` selectors. |
 
 Each primitive has its own selectors and apply operations documented in the [ruleset](../spec/ruleset.md).
 

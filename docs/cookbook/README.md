@@ -54,4 +54,4 @@ HTML outputs are gitignored -- treat as build artifacts.
 |---|---|
 | `docs/spec/environments.md` | Grammar, commands, selectors, errors |
 | `docs/spec/scene-ir.md` | Internal IR datatypes |
-| `docs/spec/primitives.md` | All 16 primitive types |
+| `docs/spec/primitives.md` | All 21 primitive types |

@@ -523,7 +523,7 @@ procedure.
 
 ---
 
-## 5. Primitives Catalog (16 types)
+## 5. Primitives Catalog (21 types)
 
 ### 5.1 Base Primitives (6)
 
@@ -536,7 +536,7 @@ procedure.
 | `Tree` | `root` (or auto for segtree) | `nodes`, `edges`, `data`, `kind`, `label` |
 | `NumberLine` | `domain=[min,max]` | `ticks`, `labels`, `label` |
 
-### 5.2 Extended Primitives (5)
+### 5.2 Extended Primitives (7)
 
 | Type | Required Params | Key Features |
 |------|----------------|-------------|
@@ -544,9 +544,11 @@ procedure.
 | `Stack` | (none; all optional) | `orientation`, `max_visible`, `items`, `label`; push/pop delta semantics |
 | `Plane2D` | `xrange`, `yrange` | lines/points/segments/polygons/regions, geometry helpers |
 | `MetricPlot` | `series` (via `\shape`) | up to 8 series, Wong palette, auto axes, log scale, two-axis mode |
-| `Graph layout=stable` | (same as Graph) | SA joint-optimization, fixed positions across frames |
+| `Hypercube` | `bits` (1..5) | subset lattice (Hasse diagram) for bitmask DP, SOS, inclusion-exclusion; decimal `.subset[i]` addressing |
+| `Bar` | `data` | variable-height columns (histogram); `max`, `show_values`, `bar_width`; `.bar[i]` selectors |
+| `Equation` | `tex` or `lines` | math as an evolving object; addressable `\term{id}{body}` sub-terms and aligned `.line[i]` derivations |
 
-### 5.3 Data-Structure Primitives (5)
+### 5.3 Data-Structure Primitives (8)
 
 | Type | Required Params | Key Features |
 |------|----------------|-------------|
@@ -555,6 +557,9 @@ procedure.
 | `LinkedList` | `data` | Singly-linked node chain, `.node[i]`/`.link[i]` selectors, insert/remove ops |
 | `Queue` | (none; `capacity` optional, default 8) | Fixed-capacity FIFO, `.cell[i]`/`.front`/`.rear` selectors, enqueue/dequeue ops |
 | `VariableWatch` | `names` | Two-column name-value table, `.var[name]` selectors, per-variable state coloring |
+| `Deque` | `capacity` | Two-ended queue (superset of `Queue`); `push_front`/`push_back`/`pop_front`/`pop_back`; `.cell[i]`/`.front`/`.back` selectors |
+| `Forest` | `nodes` | Multi-root DSU forest; `union` reparents roots; `.node[id]`/`.edge[(p,c)]` selectors |
+| `TraceTable` | `columns` | Accumulating dry-run trace table; `row=[...]` appends a data row; `.row[k]`/`.cell[k][j]`/`.col[j]` selectors |
 
 ### 5.4 Graph Layout Modes
 

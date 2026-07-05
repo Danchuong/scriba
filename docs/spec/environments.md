@@ -144,7 +144,7 @@ Declares a primitive instance bound to an identifier inside the current environm
 - **Contexts:** animation, diagram.
 - **Signature:** `\shape{<ident>}{<TypeName>}{<param_list>}`
 - **Required:** `name` (first brace), `Type` (second brace). `name` must match `[a-z][a-zA-Z0-9_]*` and must be unique within the environment (`E1101` on duplicate).
-- **Type** is one of the primitive type names: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`, `Matrix`, `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `Deque`, `VariableWatch`, `Hypercube`, `Forest`, `Bar`, `TraceTable`. (`Heatmap` is an alias for `Matrix` — both resolve to the same underlying class, registered via `@register_primitive("Matrix", "Heatmap")`; `Deque` is a `Queue` subclass.) Unknown type is `E1102`.
+- **Type** is one of the primitive type names: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`, `Matrix`, `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `Deque`, `VariableWatch`, `Hypercube`, `Forest`, `Bar`, `TraceTable`, `Equation`. (`Heatmap` is an alias for `Matrix` — both resolve to the same underlying class, registered via `@register_primitive("Matrix", "Heatmap")`; `Deque` is a `Queue` subclass.) Unknown type is `E1102`.
 - **Parameters** are primitive-specific (see `primitives.md`). Common ones: `size=`, `rows=`, `cols=`, `data=`, `indices=`, `directed=`, `domain=`.
 - **Position constraint:** in `animation`, all `\shape` declarations MUST appear before the first `\step` (`E1051`). In `diagram`, order is free.
 - **Error codes:** `E1101` duplicate name; `E1102` unknown type; `E1103` missing required param for that type; `E1104` param type mismatch.
@@ -916,7 +916,7 @@ The following are explicitly **not** part of this spec. Attempting to implement 
 
 - **Lit widgets, Motion One, hover-to-advance, scroll-to-step synchronization.** The interactive widget now includes an inline JS runtime with a step controller (prev/next buttons) and frame-to-frame WAAPI transitions driven by the differ's transition manifests. However, Lit, Motion One, hover-to-advance, and scroll-to-step synchronization remain out of scope.
 - **Nested environments.** Animations inside animations, diagrams inside animations, environments inside `\begin{tabular}`: all forbidden.
-- **Custom primitive plug-ins.** Only the 16 registered primitives are usable via `\shape`. Third-party primitive packages are a v0.4+ concern.
+- **Custom primitive plug-ins.** Only the 21 registered primitives are usable via `\shape`. Third-party primitive packages are a v0.4+ concern.
 - **Live re-compute.** `\compute` runs once at build time. There is no way to reactively recompute when a consumer toggles a prop. If the consumer wants that, they render the same source twice with different `RenderContext.metadata` keys and swap the results at the HTML level.
 - **Bidirectional click-to-scroll.** Clicking on narration does not scroll the SVG; clicking on an SVG cell does not jump to a narration line. The only navigation is the `:target` CSS selector driven by the URL fragment, which lets `#scene-id-frame-7` scroll to and highlight frame 7.
 - **i18n of `\narrate`.** One language per environment. Authors needing two languages write two `\begin{animation}` blocks and gate each on `RenderContext.metadata["locale"]` at the consumer layer.

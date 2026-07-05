@@ -152,7 +152,7 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 | File | Purpose |
 |---|---|
 | [`architecture.md`](spec/architecture.md) | The Pipeline, Renderer, RenderContext, and Document contracts. Read this first if you are implementing a renderer or integrating Scriba into a service. |
-| [`environments.md`](spec/environments.md) | **Locked** spec for the `animation` and `diagram` environments: grammar, the 8 inner commands, the 6 primitives, the 6 semantic states, the Starlark host, the HTML/CSS contract, and the error catalog. Single source of truth for implementation. |
+| [`environments.md`](spec/environments.md) | **Locked** spec for the `animation` and `diagram` environments: grammar, the 8 inner commands, the 21 primitives, the 6 semantic states, the Starlark host, the HTML/CSS contract, and the error catalog. Single source of truth for implementation. |
 | [`scene-ir.md`](spec/scene-ir.md) | Scene IR datatype definitions. |
 | [`primitives.md`](spec/primitives.md) | Primitive catalog — all 21 primitive types (6 base, 7 extended, 8 data-structure). |
 | [`svg-emitter.md`](spec/svg-emitter.md) | SVG emitter specification. |

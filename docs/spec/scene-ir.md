@@ -108,7 +108,7 @@ class ShapeCommand(BaseModel):
 | Field       | Type                      | Constraints                                                |
 |-------------|---------------------------|------------------------------------------------------------|
 | `name`      | `str`                     | Matches `[a-z][a-zA-Z0-9_]*`. Unique per environment (`E1101`). |
-| `type_name` | `str`                     | One of the 6 built-in primitives (`E1102` on unknown).     |
+| `type_name` | `str`                     | One of the 21 built-in primitives (`E1102` on unknown).    |
 | `params`    | `dict[str, ParamValue]`   | Primitive-specific. See [`primitives.md`](primitives.md). Missing required param is `E1103`; type mismatch is `E1104`. |
 
 `ParamValue` is a union type:

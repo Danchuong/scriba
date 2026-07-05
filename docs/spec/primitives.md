@@ -2,7 +2,7 @@
 
 > Status: **locked foundation spec** for Scriba v0.3. This file documents the 6 base
 > primitive types usable via `\shape{name}{Type}{params}` in `\begin{animation}` and
-> `\begin{diagram}` environments. For the full set of 16 production primitives, see the
+> `\begin{diagram}` environments. For the full set of 21 production primitives, see the
 > table below and the individual specs in [`primitives/`](../primitives/).
 >
 > Cross-references: [`environments.md`](environments.md) §3.1 for the
@@ -13,13 +13,13 @@
 > primitives locked in their respective versions. Individual specs live in
 > [`primitives/`](../primitives/).
 
-### All 16 production primitives
+### All 21 production primitives
 
 | Category | Version | Primitives |
 |----------|---------|------------|
 | **Base** (6) | v0.3 | Array, Grid, DPTable, Graph, Tree, NumberLine |
-| **Extended** (5) | v0.4 | Matrix/Heatmap, Stack, Plane2D, MetricPlot, Graph `layout=stable` |
-| **Data-Structure** (5) | v0.5 | CodePanel, HashMap, LinkedList, Queue, VariableWatch |
+| **Extended** (7) | v0.4–0.26 | Matrix/Heatmap, Stack, Plane2D, MetricPlot, Hypercube, Bar, Equation |
+| **Data-Structure** (8) | v0.5–0.26 | CodePanel, HashMap, LinkedList, Queue, VariableWatch, Deque, Forest, TraceTable |
 
 This file covers the 6 base primitives only. See [`primitives/`](../primitives/) for
 the extended and data-structure primitive specs.
@@ -37,7 +37,7 @@ the extended and data-structure primitive specs.
 | 5  | `Tree`       | Rooted tree with Reingold-Tilford layout | BSTs, segment trees, recursive DP, tree traversals  |
 | 6  | `NumberLine` | Horizontal axis with tick marks          | Ranges, domains, number scales, coordinate helpers  |
 
-Unknown type name in `\shape` raises `E1102` (checked against all 16 production types).
+Unknown type name in `\shape` raises `E1102` (checked against all 21 production types).
 
 ---
 
@@ -637,7 +637,7 @@ pertain to primitive declaration and usage:
 | Code   | Condition                                    | Resolution                            |
 |--------|----------------------------------------------|---------------------------------------|
 | E1101  | Duplicate `\shape` name                      | Names must be unique per environment. |
-| E1102  | Unknown primitive type                       | Must be one of the 16 production types (6 base + 5 extended + 5 data-structure). |
+| E1102  | Unknown primitive type                       | Must be one of the 21 production types (6 base + 7 extended + 8 data-structure). |
 | E1103  | Missing required primitive parameter         | Error message names the parameter.    |
 | E1104  | Primitive parameter type mismatch            | Check value type against spec.        |
 | E1105  | Unknown parameter on `\apply`                | Primitive does not accept that param. |
