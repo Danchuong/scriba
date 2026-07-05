@@ -253,6 +253,15 @@ ERROR_CATALOG: dict[str, str] = {
         "\\link / \\combine endpoint references a shape that was never "
         "declared with \\shape."
     ),
+    # --- \group / \ungroup overlay hull (E1506 -- E1507) ---
+    "E1506": (
+        "\\group needs id=<name> and nodes=[...] with at least one node; "
+        "\\ungroup needs id=<name>."
+    ),
+    "E1507": (
+        "\\group / \\ungroup targets a shape that is not a declared Graph, or "
+        "\\group names a node that is not in the graph (v1 supports Graph only)."
+    ),
     "E1180": (
         "Animation has >30 frames (warning) or \\cursor requires at "
         "least one target."

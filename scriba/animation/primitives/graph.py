@@ -33,7 +33,19 @@ from scriba.animation.primitives.base import (
     svg_style_attrs,
 )
 from scriba.animation.primitives._protocol import register_primitive as _protocol_register
-from scriba.animation.primitives._svg_helpers import CellMetrics, _DEFAULT_LABEL_FONT_PX, _LABEL_PILL_PAD_X, _LABEL_PILL_PAD_Y, _LABEL_PILL_RADIUS
+from scriba.animation.primitives._svg_helpers import (
+    CellMetrics,
+    _DEFAULT_LABEL_FONT_PX,
+    _LABEL_PILL_PAD_X,
+    _LABEL_PILL_PAD_Y,
+    _LABEL_PILL_RADIUS,
+    ARROW_STYLES,
+    annotation_color_class,
+    LABEL_FONT_PX,
+    measure_label_line,
+    strip_math_markup,
+)
+from scriba.animation.primitives.plane2d_compute import hull as _convex_hull
 from scriba.animation.primitives._types import (
     _NODE_MIN_RADIUS,
 )
@@ -49,6 +61,59 @@ _EDGE_STROKE_WIDTH = 2
 _PADDING = 20
 _DEFAULT_SEED = 42
 _DEFAULT_ITERATIONS = 50
+
+# \group overlay hull (investigations/gap-dsu-forest-design.md §6 Phase 1) — a
+# presentation-only decoration wrapping a named node cluster. The hull clears
+# each node centre by node_radius + _GROUP_PAD so circles sit inside; corners
+# round by _GROUP_CORNER_R. Fill/stroke opacities + dash mirror the R-35 block
+# bracket (base.py) so the whole decoration family reads alike. These never
+# touch bounding_box — the node-set (and viewBox) is untouched.
+_GROUP_PAD = 14
+_GROUP_CORNER_R = 12
+_GROUP_FILL_OPACITY = "0.12"
+_GROUP_STROKE_OPACITY = "0.55"
+_GROUP_STROKE_DASH = "4,3"
+
+
+def _rounded_polygon_path(pts: "list[tuple[float, float]]", r: float) -> str:
+    """Closed SVG path through *pts* (a simple polygon, len>=3) with every corner
+    rounded by radius ~*r* via a quadratic-Bézier corner-cut. The straight edge
+    portions are preserved, so the path never bulges past the vertices' bbox."""
+    n = len(pts)
+
+    def _cut(i: int, toward: int) -> "tuple[float, float]":
+        x0, y0 = pts[i]
+        x1, y1 = pts[toward]
+        dx, dy = x1 - x0, y1 - y0
+        d = math.hypot(dx, dy) or 1.0
+        t = min(r, d / 2.0)
+        return (x0 + dx / d * t, y0 + dy / d * t)
+
+    segs: "list[str]" = []
+    for i in range(n):
+        prev_pt = _cut(i, (i - 1) % n)
+        next_pt = _cut(i, (i + 1) % n)
+        vx, vy = pts[i]
+        segs.append(
+            f"{'M' if i == 0 else 'L'}{prev_pt[0]:.1f},{prev_pt[1]:.1f}"
+        )
+        segs.append(f"Q{vx:.1f},{vy:.1f} {next_pt[0]:.1f},{next_pt[1]:.1f}")
+    segs.append("Z")
+    return " ".join(segs)
+
+
+def _rounded_rect_path(x: float, y: float, w: float, h: float, r: float) -> str:
+    """Closed SVG path for an axis-aligned rounded rectangle — the <=2-node
+    fallback for a degenerate hull (case §6: `style=bbox`)."""
+    r = max(0.0, min(r, w / 2.0, h / 2.0))
+    return (
+        f"M{x + r:.1f},{y:.1f} "
+        f"L{x + w - r:.1f},{y:.1f} Q{x + w:.1f},{y:.1f} {x + w:.1f},{y + r:.1f} "
+        f"L{x + w:.1f},{y + h - r:.1f} Q{x + w:.1f},{y + h:.1f} "
+        f"{x + w - r:.1f},{y + h:.1f} "
+        f"L{x + r:.1f},{y + h:.1f} Q{x:.1f},{y + h:.1f} {x:.1f},{y + h - r:.1f} "
+        f"L{x:.1f},{y + r:.1f} Q{x:.1f},{y:.1f} {x + r:.1f},{y:.1f} Z"
+    )
 
 # Auto-seed sweep (Phase 3): when the author does NOT pin a seed, a force
 # layout tries this many candidate seeds, scores each with score_layout, and
@@ -1276,6 +1341,124 @@ class Graph(PrimitiveBase):
             )
         return rects
 
+    def set_groups(self, groups: "list[dict]") -> None:
+        """Attach this frame's ``\\group`` overlay hulls (case §6 Phase 1)."""
+        self._groups = list(groups)
+
+    @staticmethod
+    def _group_hull_path(
+        centers: "list[tuple[float, float]]",
+        inflate: float,
+        corner_r: float,
+    ) -> "tuple[str, tuple[float, float, float, float]]":
+        """Closed rounded path enclosing *centers* with ~*inflate* clearance.
+
+        >=3 centres with a non-degenerate hull → convex hull
+        (``plane2d_compute.hull``) expanded radially from its centroid by
+        *inflate*, corners rounded. <=2 centres (or a collinear/degenerate
+        hull) → an inflated rounded rectangle around the centres' bbox. Returns
+        ``(path_d, (minx, miny, maxx, maxy))`` — the path's extent, used for
+        label placement and the painted⊆bbox honesty test. Every input centre
+        lies inside the returned bbox by construction (the hull is only ever
+        pushed outward)."""
+        verts = _convex_hull(centers)
+        if len(verts) >= 3:
+            cx = sum(p[0] for p in verts) / len(verts)
+            cy = sum(p[1] for p in verts) / len(verts)
+            expanded: "list[tuple[float, float]]" = []
+            for x, y in verts:
+                dx, dy = x - cx, y - cy
+                d = math.hypot(dx, dy) or 1.0
+                expanded.append((x + dx / d * inflate, y + dy / d * inflate))
+            xs = [p[0] for p in expanded]
+            ys = [p[1] for p in expanded]
+            return (
+                _rounded_polygon_path(expanded, corner_r),
+                (min(xs), min(ys), max(xs), max(ys)),
+            )
+        xs = [p[0] for p in centers]
+        ys = [p[1] for p in centers]
+        minx, maxx = min(xs) - inflate, max(xs) + inflate
+        miny, maxy = min(ys) - inflate, max(ys) + inflate
+        return (
+            _rounded_rect_path(minx, miny, maxx - minx, maxy - miny, corner_r),
+            (minx, miny, maxx, maxy),
+        )
+
+    def _emit_group_hulls(
+        self,
+        parts: "list[str]",
+        working_positions: "dict[Any, tuple[float, float]]",
+    ) -> None:
+        """Paint each ``\\group`` hull UNDER the edges/nodes (call before the
+        edge layer). The hull wraps the cluster's node CENTRES with
+        ``_GROUP_PAD`` clearance; the Graph node-set is never touched, so the
+        viewBox is unchanged and this stays a pure decoration keyed
+        ``{shape}.group[{id}]-solo``. Appear/disappear/recolour ride the shipped
+        ``annotation_add / annotation_remove / annotation_recolor`` handlers —
+        zero new motion kinds, no JS. A node not present in this frame's
+        positions (hidden/unknown) is skipped; an empty cluster soft-drops the
+        whole hull (mirrors trace selector semantics)."""
+        groups = getattr(self, "_groups", None)
+        if not groups:
+            return
+        pos_by_str = {
+            str(k): (float(v[0]), float(v[1]))
+            for k, v in working_positions.items()
+        }
+        inflate = float(self._node_radius) + _GROUP_PAD
+        for g in groups:
+            centers = [
+                pos_by_str[str(n)]
+                for n in g.get("nodes", [])
+                if str(n) in pos_by_str
+            ]
+            if not centers:
+                continue
+            color = g.get("color", "info")
+            style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+            stroke = style["stroke"]
+            gid = g.get("id", "g")
+            key = f"{self.name}.group[{gid}]-solo"
+            d_str, (minx, miny, _maxx, _maxy) = self._group_hull_path(
+                centers, inflate, _GROUP_CORNER_R
+            )
+            cls = annotation_color_class(color)
+            label = g.get("label")
+            inner = (
+                f'<path d="{d_str}" fill="{stroke}"'
+                f' fill-opacity="{_GROUP_FILL_OPACITY}" stroke="{stroke}"'
+                f' stroke-width="1.5" stroke-opacity="{_GROUP_STROKE_OPACITY}"'
+                f' stroke-dasharray="{_GROUP_STROKE_DASH}"'
+                f' stroke-linejoin="round"/>'
+            )
+            if label:
+                pw = measure_label_line(str(label), LABEL_FONT_PX) + 12
+                ph = LABEL_FONT_PX + 8
+                prx = minx
+                pry = miny - ph - 4
+                if pry < 0:
+                    pry = miny + 4
+                tx = prx + pw / 2.0
+                inner += (
+                    f'<rect x="{prx:.1f}" y="{pry:.1f}" width="{pw}"'
+                    f' height="{ph}" rx="4" fill="white" fill-opacity="0.92"'
+                    f' stroke="{stroke}" stroke-width="0.5"'
+                    f' stroke-opacity="0.4"/>'
+                    f'<text x="{tx:.1f}" y="{pry + ph / 2.0:.1f}"'
+                    f' fill="{style["label_fill"]}"'
+                    f' style="text-anchor:middle;dominant-baseline:central">'
+                    f"{_escape_xml(strip_math_markup(str(label)))}</text>"
+                )
+            parts.append(
+                f'  <g class="scriba-annotation scriba-annotation-{cls}'
+                f' scriba-group" data-annotation="{_escape_xml(key)}"'
+                f' role="graphics-symbol" aria-roledescription="group"'
+                f' aria-label='
+                f'"{_escape_xml(strip_math_markup(str(label or gid)))}">'
+                f"{inner}</g>"
+            )
+
     @allow_forbidden_pattern(
         "FP-2",
         reason=(
@@ -1425,6 +1608,10 @@ class Graph(PrimitiveBase):
         ) -> str:
             u_, v_, _w = edge
             return self._edge_key(u_, v_)
+        # \group overlay hulls sit UNDER edges/nodes (above the background) so
+        # they tint the cluster interior without occluding node labels. Uses the
+        # same working_positions space as edges/nodes; never widens the viewBox.
+        self._emit_group_hulls(parts, working_positions)
         parts.append('<g class="scriba-graph-edges">')
         for u, v, weight in sorted(self.edges, key=_edge_sort_key):
             edge_target = f"{self.name}.{self._edge_key(u, v)}"

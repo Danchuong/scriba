@@ -440,6 +440,22 @@ def _snapshot_to_frame_data(
         for lk in getattr(snap, "links", ())
     ]
 
+    # \group overlay hulls (§6 Phase 1). Kept as a flat list of dicts carrying
+    # the shape name in "target" so the differ diffs them by
+    # {target}.group[{id}]-solo and _frame_renderer filters them per-shape like
+    # traces. node_ids are the cluster members; the Graph resolves them to
+    # centres at emit time (the node-set itself is never touched).
+    groups = [
+        {
+            "target": g.target,
+            "id": g.group_id,
+            "nodes": list(g.node_ids),
+            "color": g.color,
+            **({"label": g.label} if g.label else {}),
+        }
+        for g in getattr(snap, "groups", ())
+    ]
+
     # R-38 binding carets — resolve each caret's cell index from its `at`
     # binding at build time; pixel (x, y) is injected later, after the target
     # primitive realises its dynamic pitch (mirrors _inject_tree_positions).
@@ -503,6 +519,7 @@ def _snapshot_to_frame_data(
         traces=traces,
         cursors=cursors,
         links=links,
+        groups=groups,
         substories=substories,
         label=label,
         title=title,

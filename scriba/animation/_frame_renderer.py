@@ -311,6 +311,16 @@ def measure_scene_layout(
             ]
             if hasattr(prim, "set_traces"):
                 prim.set_traces(prim_traces)
+            # \group hulls are pure annotations (never widen bounding_box), but
+            # set them at measure time too so the primitive is in an identical
+            # state across both passes (parity with traces/cursors).
+            prim_groups = [
+                g
+                for g in (getattr(frame, "groups", None) or [])
+                if g.get("target") == shape_name
+            ]
+            if hasattr(prim, "set_groups"):
+                prim.set_groups(prim_groups)
             # R-38: the caret band widens bounding_box, so it must be present
             # at measure time too (cross-frame max) or the viewBox clips it.
             prim_cursors = [
@@ -954,6 +964,13 @@ def _emit_frame_svg(
         ]
         if hasattr(prim, "set_traces"):
             prim.set_traces(prim_traces)
+        prim_groups = [
+            g
+            for g in (getattr(frame, "groups", None) or [])
+            if g.get("target") == shape_name
+        ]
+        if hasattr(prim, "set_groups"):
+            prim.set_groups(prim_groups)
         # R-38 binding carets: set before emit so emit_cursors_under can draw
         # them; the pixel (x, y) each is drawn at is read back after emit_svg
         # (below) into the shared frame.cursors dicts for the differ.

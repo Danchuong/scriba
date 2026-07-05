@@ -330,6 +330,39 @@ class CombineCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class GroupCommand:
+    """``\\group{G}{nodes=[...], id=..., label=..., color=...}`` — an overlay
+    hull around a named node cluster on one Graph (investigations/
+    gap-dsu-forest-design.md §6 Phase 1).
+
+    Presentation-only: the Graph's node-set is untouched (A1 pinning holds), so
+    this is a pure decoration that rides the ``annotation_*`` motion kinds.
+    Persistent until ``\\ungroup`` clears the id; re-issuing the same
+    ``(shape, group_id)`` replaces the entry — which is how a Kruskal component
+    grows across steps. ``node_ids`` are kept as strings so ``\\foreach``
+    textual substitution reaches them. v1 targets Graph only."""
+
+    line: int
+    col: int
+    shape: str
+    group_id: str
+    node_ids: tuple[str, ...]
+    color: str = "info"
+    label: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class UngroupCommand:
+    """``\\ungroup{G}{id=...}`` — remove the overlay hull previously created by
+    ``\\group`` on shape ``G`` with the given id (§6 Phase 1)."""
+
+    line: int
+    col: int
+    shape: str
+    group_id: str
+
+
+@dataclass(frozen=True, slots=True)
 class ForeachCommand:
     """``\\foreach{variable}{iterable}...\\endforeach`` — loop that expands body commands."""
 
@@ -381,6 +414,8 @@ MutationCommand = (
     | TraceCommand
     | LinkCommand
     | CombineCommand
+    | GroupCommand
+    | UngroupCommand
     | ForeachCommand
     | CursorCommand
 )
@@ -400,6 +435,8 @@ Command = Union[
     TraceCommand,
     LinkCommand,
     CombineCommand,
+    GroupCommand,
+    UngroupCommand,
     ForeachCommand,
     CursorCommand,
     "SubstoryBlock",

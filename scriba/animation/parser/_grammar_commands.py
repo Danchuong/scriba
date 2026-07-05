@@ -17,12 +17,14 @@ from .ast import (
     CombineCommand,
     CursorCommand,
     FocusCommand,
+    GroupCommand,
     HighlightCommand,
     InvariantCommand,
     LinkCommand,
     NarrateCommand,
     ReannotateCommand,
     RecolorCommand,
+    UngroupCommand,
 )
 from .lexer import Token, TokenKind
 from .selectors import parse_selector
@@ -408,6 +410,125 @@ class _CommandsMixin:
             color=color,
             label=str(params["label"]) if "label" in params else None,
             ephemeral=params.get("ephemeral", True) not in (False, "false"),
+        )
+
+    def _require_group_graph(self, shape: str, tok: "Token", verb: str) -> None:
+        """Hard-fail (E1507) when ``\\group`` / ``\\ungroup`` targets a shape
+        that is not a declared Graph. v1 supports Graph only — the overlay hull
+        is defined on Graph node positions (case §6 Phase 1). Reuses the
+        parser's ``_shape_types`` registry (populated by ``_parse_shape``)."""
+        kind = getattr(self, "_shape_types", {}).get(shape)
+        if kind is None:
+            raise ValidationError(
+                f"{verb} references undeclared shape '{shape}'",
+                position=tok.col,
+                code="E1507",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+                hint=f"declare '{shape}' with \\shape before grouping it",
+            )
+        if kind.strip() != "Graph":
+            raise ValidationError(
+                f"{verb} v1 supports Graph shapes only; '{shape}' is a {kind}",
+                position=tok.col,
+                code="E1507",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+                hint="overlay hulls are defined on Graph node positions in v1",
+            )
+
+    def _require_group_nodes(
+        self, shape: str, node_ids: "tuple[str, ...]", tok: "Token", verb: str
+    ) -> None:
+        """Hard-fail (E1507) when a ``\\group`` node is not in the target
+        Graph's declared node-set. Only validated when the node-set is known
+        (concrete scalar list at declaration); a range/computed shape is
+        soft-skipped so the check never false-positives."""
+        known = getattr(self, "_graph_nodes", {}).get(shape)
+        if known is None:
+            return
+        for n in node_ids:
+            if str(n) not in known:
+                raise ValidationError(
+                    f"{verb} node '{n}' is not in graph '{shape}'",
+                    position=tok.col,
+                    code="E1507",
+                    line=tok.line,
+                    col=tok.col,
+                    source_line=self._source_line_at(tok.line),
+                    hint=f"declared nodes: {', '.join(sorted(known))}",
+                )
+
+    def _parse_group(self) -> GroupCommand:
+        """Parse ``\\group{G}{nodes=[...], id=..., label=..., color=...}`` (case
+        §6 Phase 1). The overlay hull wraps a named node cluster on Graph ``G``;
+        the Graph node-set is untouched, so it is a pure decoration. Persistent
+        until ``\\ungroup``; re-issuing the same id grows/replaces the cluster
+        (a Kruskal component enlarging across steps)."""
+        tok = self._advance()
+        shape = self._read_brace_arg(tok).strip()
+        params = self._read_param_brace()
+
+        group_id = params.get("id")
+        if group_id is None or not str(group_id).strip():
+            raise ValidationError(
+                "\\group requires id=<name>, e.g. "
+                '\\group{G}{nodes=["a","b"], id=c1}',
+                position=tok.col,
+                code="E1506",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        raw_nodes = params.get("nodes")
+        if not isinstance(raw_nodes, (list, tuple)) or not raw_nodes:
+            raise ValidationError(
+                "\\group requires nodes=[...] with at least one node, e.g. "
+                '\\group{G}{nodes=["a","b"], id=c1}',
+                position=tok.col,
+                code="E1506",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        node_ids = tuple(str(n) for n in raw_nodes)
+
+        self._require_group_graph(shape, tok, "\\group")
+        self._require_group_nodes(shape, node_ids, tok, "\\group")
+
+        color = str(params.get("color", "info"))
+        self._check_annotation_color(color, tok)
+        return GroupCommand(
+            tok.line,
+            tok.col,
+            shape=shape,
+            group_id=str(group_id).strip(),
+            node_ids=node_ids,
+            color=color,
+            label=str(params["label"]) if "label" in params else None,
+        )
+
+    def _parse_ungroup(self) -> UngroupCommand:
+        """Parse ``\\ungroup{G}{id=...}`` — remove a ``\\group`` overlay by id
+        (case §6 Phase 1). Idempotent: an unknown id clears nothing."""
+        tok = self._advance()
+        shape = self._read_brace_arg(tok).strip()
+        params = self._read_param_brace()
+        group_id = params.get("id")
+        if group_id is None or not str(group_id).strip():
+            raise ValidationError(
+                "\\ungroup requires id=<name>, e.g. \\ungroup{G}{id=c1}",
+                position=tok.col,
+                code="E1506",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        self._require_group_graph(shape, tok, "\\ungroup")
+        return UngroupCommand(
+            tok.line, tok.col, shape=shape, group_id=str(group_id).strip(),
         )
 
     def _parse_annotate(self) -> AnnotateCommand:

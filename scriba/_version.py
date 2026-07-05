@@ -173,4 +173,15 @@ untouched. The same 17→18 CSS bump also carries the `.scriba-link` rule for
 the new `\\link` / `\\combine` cross-shape bridges (one more inline-stylesheet
 byte change; the bridge overlay itself is opt-in). Consumer caches keyed on
 rendered output MUST invalidate.
+
+Also opt-in under the same marker (no byte change for documents that use none
+of it, and no new CSS): the ``\\group`` / ``\\ungroup`` overlay-hull surface
+(investigations/gap-dsu-forest-design.md §6 Phase 1). ``\\group{G}{nodes=[...],
+id=...}`` paints a rounded convex-hull decoration around a named node cluster
+on a Graph — the Graph node-set (and viewBox) is untouched, so A1 pinning and
+R-32 hold — and it rides the shipped ``annotation_add`` / ``annotation_remove``
+/ ``annotation_recolor`` kinds (zero new motion vocabulary, scriba.js
+unchanged). The hull is styled by inline presentation attributes (like
+``\\trace`` and the R-35 block bracket), so the shared stylesheet is unchanged
+and group-free scenes render byte-identically.
 """

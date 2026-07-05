@@ -120,6 +120,7 @@ class FrameData:
     title: str | None = None  # \step[title="..."] caption (§5.3)
     focus: tuple[str, ...] = ()  # \focus{sel} spotlight targets (R-40)
     links: list[dict] | None = None  # \link / \combine cross-shape bridges (§4)
+    groups: list[dict] | None = None  # \group overlay hulls on a Graph (§6 Ph1)
 
 
 # ---------------------------------------------------------------------------

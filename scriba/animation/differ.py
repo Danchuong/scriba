@@ -316,6 +316,59 @@ def _diff_links(
     return out
 
 
+def _diff_groups(
+    prev_groups: "list[dict]",
+    curr_groups: "list[dict]",
+) -> "list[Transition]":
+    """\\group overlay hulls (§6 Phase 1): a per-shape annotation keyed
+    ``{target}.group[{id}]-solo``. Appear rides ``annotation_add``, disappear
+    ``annotation_remove``, a colour change ``annotation_recolor`` — and a
+    changed *node-set* under the same id redraws the hull as
+    ``annotation_remove`` + ``annotation_add`` (v1: a crossfade is enough, since
+    the SVG ``<path>`` geometry differs frame-to-frame). Zero new runtime kinds,
+    scriba.js untouched — the key is just another ``[data-annotation]`` group to
+    the structure-driven runtime (mirrors ``_diff_links`` / ``_diff_traces``)."""
+    def _key(g: dict) -> str:
+        return f"{g.get('target', '')}.group[{g.get('id', '')}]-solo"
+
+    def _nodes(g: dict) -> tuple:
+        return tuple(str(n) for n in g.get("nodes", []))
+
+    prev_map = {_key(g): g for g in prev_groups}
+    curr_map = {_key(g): g for g in curr_groups}
+    out: list[Transition] = []
+    for key in sorted(prev_map.keys() | curr_map.keys()):
+        p, c = prev_map.get(key), curr_map.get(key)
+        if c is not None and p is None:
+            out.append(Transition(
+                target=key, prop="add", from_val=None,
+                to_val=c.get("color"), kind="annotation_add",
+            ))
+        elif p is not None and c is None:
+            out.append(Transition(
+                target=key, prop="remove", from_val=p.get("color"),
+                to_val=None, kind="annotation_remove",
+            ))
+        elif _nodes(p) != _nodes(c):
+            # Same id, different cluster: the hull is redrawn. Remove the old
+            # geometry then add the new — a crossfade (node-set change dominates
+            # a colour change, so it is not also emitted as a recolor).
+            out.append(Transition(
+                target=key, prop="remove", from_val=p.get("color"),
+                to_val=None, kind="annotation_remove",
+            ))
+            out.append(Transition(
+                target=key, prop="add", from_val=None,
+                to_val=c.get("color"), kind="annotation_add",
+            ))
+        elif p.get("color") != c.get("color"):
+            out.append(Transition(
+                target=key, prop="state", from_val=p.get("color"),
+                to_val=c.get("color"), kind="annotation_recolor",
+            ))
+    return out
+
+
 def _diff_cursors(
     prev_cursors: "list[dict]",
     curr_cursors: "list[dict]",
@@ -461,6 +514,12 @@ def compute_transitions(prev: FrameData, curr: FrameData) -> TransitionManifest:
         _diff_links(
             getattr(prev, "links", None) or [],
             getattr(curr, "links", None) or [],
+        ),
+    )
+    transitions.extend(
+        _diff_groups(
+            getattr(prev, "groups", None) or [],
+            getattr(curr, "groups", None) or [],
         ),
     )
     transitions.extend(

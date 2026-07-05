@@ -753,6 +753,9 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         # Link / combine cross-shape bridge
         "E1497",
         "E1498",
+        # Group / ungroup overlay hull
+        "E1506",
+        "E1507",
         # Substory
         "E1360",
         "E1361",

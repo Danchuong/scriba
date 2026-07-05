@@ -110,6 +110,13 @@
 | E1497 | `\link` needs exactly two endpoints separated by `<->` / `->`, or `\combine` needs at least one source plus a quoted `into="..."`. | Write `\link{a.cell[0] <-> b.node[1]}` or `\combine{m.row[0], m.col[1]}{into="c.cell[0][1]"}`. |
 | E1498 | A `\link` / `\combine` endpoint names a shape that was never declared. | Add the missing `\shape` declaration in the prelude before the bridge. |
 
+## Group / Ungroup Errors (E1506--E1507)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1506 | `\group` needs `id=<name>` and `nodes=[...]` with at least one node; `\ungroup` needs `id=<name>`. | Write `\group{G}{nodes=["a","b"], id=c1}` or `\ungroup{G}{id=c1}`. |
+| E1507 | `\group` / `\ungroup` targets a shape that is not a declared Graph, or `\group` names a node absent from the graph. v1 supports Graph only. | Point the group at a `\shape{G}{Graph}{...}` and list only nodes it declares. |
+
 ## Narration Macro Errors (E1320--E1329)
 
 | Code | Description | Common Fix |

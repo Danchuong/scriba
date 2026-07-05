@@ -384,6 +384,12 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
         if cmd_name == "combine":
             return self._parse_combine()
 
+        if cmd_name == "group":
+            return self._parse_group()
+
+        if cmd_name == "ungroup":
+            return self._parse_ungroup()
+
         if cmd_name == "cursor":
             return self._parse_cursor()
 
@@ -444,14 +450,14 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
     _VALID_COMMANDS_LIST = (
         "\\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, "
         "\\focus, \\recolor, \\reannotate, \\annotate, \\trace, \\link, "
-        "\\combine, \\cursor, \\invariant, \\foreach, \\endforeach, "
-        "\\playeach, \\substory, \\endsubstory"
+        "\\combine, \\group, \\ungroup, \\cursor, \\invariant, \\foreach, "
+        "\\endforeach, \\playeach, \\substory, \\endsubstory"
     )
     _VALID_COMMAND_NAMES = (
         "shape", "compute", "step", "narrate", "apply", "highlight",
         "focus", "recolor", "reannotate", "annotate", "trace", "link",
-        "combine", "cursor", "invariant", "foreach", "endforeach",
-        "playeach", "substory", "endsubstory",
+        "combine", "group", "ungroup", "cursor", "invariant", "foreach",
+        "endforeach", "playeach", "substory", "endsubstory",
     )
 
     def _raise_unknown_command(self, tok: Token) -> None:
@@ -654,7 +660,21 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
         if not hasattr(self, "_shape_types"):
             self._shape_types = {}
         self._shape_types[name] = type_name
-        return ShapeCommand(tok.line, tok.col, name, type_name, self._read_param_brace())
+        params = self._read_param_brace()
+        # Record a declared Graph's node-set so \group can validate node
+        # membership at parse time with a line/col diagnostic. Only concrete
+        # scalar lists are tracked; a range/computed/unknown shape leaves the
+        # entry absent, and \group's node check soft-skips rather than
+        # false-positive (mirrors the conservative _validate_primitive_type gate).
+        if type_name.strip() == "Graph":
+            raw_nodes = params.get("nodes")
+            if isinstance(raw_nodes, (list, tuple)) and all(
+                isinstance(n, (str, int, float)) for n in raw_nodes
+            ):
+                if not hasattr(self, "_graph_nodes"):
+                    self._graph_nodes = {}
+                self._graph_nodes[name] = frozenset(str(n) for n in raw_nodes)
+        return ShapeCommand(tok.line, tok.col, name, type_name, params)
 
     def _validate_primitive_type(self, type_name: str, tok: Token) -> None:
         """Raise ``E1102`` if *type_name* is not a registered primitive.

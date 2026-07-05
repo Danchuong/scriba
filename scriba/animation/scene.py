@@ -27,6 +27,7 @@ from scriba.animation.parser.ast import (
     FocusCommand,
     ForeachCommand,
     FrameIR,
+    GroupCommand,
     HighlightCommand,
     InterpolationRef,
     LinkCommand,
@@ -35,6 +36,7 @@ from scriba.animation.parser.ast import (
     Selector,
     ShapeCommand,
     SubstoryBlock,
+    UngroupCommand,
 )
 from scriba.animation.uniqueness import (
     check_duplicate_shape_ids,
@@ -156,6 +158,29 @@ class LinkEntry:
 
 
 @dataclass(frozen=True)
+class GroupEntry:
+    """A single ``\\group`` overlay hull around a named node cluster on one
+    Graph (investigations/gap-dsu-forest-design.md §6 Phase 1).
+
+    Presentation-only: the Graph's node-set is untouched (A1 pinning holds),
+    so the hull rides the ``annotation_*`` motion kinds with zero relayout.
+    ``target`` is the shape name (v1: a Graph), matching the per-shape
+    decoration convention of :class:`TraceEntry` / :class:`CursorEntry` so the
+    renderer filters it the same way. Persistent until ``\\ungroup``;
+    re-issuing the same ``(target, group_id)`` replaces the entry, which is how
+    a Kruskal component grows across steps. Identity at diff time is
+    ``(target, group_id)``; a changed ``node_ids`` under the same id redraws
+    the hull (differ emits remove+add).
+    """
+
+    target: str  # shape name (v1: must be a Graph)
+    group_id: str
+    node_ids: tuple[str, ...]
+    color: str = "info"
+    label: str | None = None
+
+
+@dataclass(frozen=True)
 class TraceEntry:
     """A ``\\trace`` decoration on one shape (R-37)."""
 
@@ -206,6 +231,7 @@ class FrameSnapshot:
     # New fields go AFTER existing ones with a default so every positional
     # FrameSnapshot(...) construction in the corpus stays valid.
     links: tuple["LinkEntry", ...] = ()
+    groups: tuple["GroupEntry", ...] = ()
 
 
 # ---------------------------------------------------------------------------
@@ -232,6 +258,9 @@ class SceneState:
     traces: list["TraceEntry"] = field(default_factory=list)
     cursors: list["CursorEntry"] = field(default_factory=list)
     links: list["LinkEntry"] = field(default_factory=list)
+    # \group overlay hulls — persistent (no ephemeral concept), cleared only
+    # by \ungroup; re-issuing the same (target, id) replaces the entry.
+    groups: list["GroupEntry"] = field(default_factory=list)
     _trace_counter: int = 0
     bindings: dict[str, Any] = field(default_factory=dict)
     _frame_counter: int = 0
@@ -344,6 +373,7 @@ class SceneState:
             narration=narration,
             focus=frozenset(self.focus),
             links=tuple(self.links),
+            groups=tuple(self.groups),
         )
 
     # ---- substory ----
@@ -669,6 +699,10 @@ class SceneState:
             self._apply_link(cmd)
         elif isinstance(cmd, CombineCommand):
             self._apply_combine(cmd)
+        elif isinstance(cmd, GroupCommand):
+            self._apply_group(cmd)
+        elif isinstance(cmd, UngroupCommand):
+            self._apply_ungroup(cmd)
         elif isinstance(cmd, CursorCommand):
             self._apply_cursor(cmd)
 
@@ -1079,6 +1113,36 @@ class SceneState:
                     ephemeral=cmd.ephemeral,
                 )
             )
+
+    def _apply_group(self, cmd: GroupCommand) -> None:
+        """``\\group`` — add or replace the overlay hull for ``(shape, id)``.
+
+        Re-issuing the same id updates the node-set / colour / label (a Kruskal
+        component enlarging across steps). Persistent until ``\\ungroup``. Shape
+        kind and node membership were validated loudly at parse time (E1507)."""
+        self.groups = [
+            g
+            for g in self.groups
+            if not (g.target == cmd.shape and g.group_id == cmd.group_id)
+        ]
+        self.groups.append(
+            GroupEntry(
+                target=cmd.shape,
+                group_id=cmd.group_id,
+                node_ids=cmd.node_ids,
+                color=cmd.color,
+                label=cmd.label,
+            )
+        )
+
+    def _apply_ungroup(self, cmd: UngroupCommand) -> None:
+        """``\\ungroup`` — remove the overlay hull for ``(shape, id)``. Idempotent:
+        an unknown id clears nothing."""
+        self.groups = [
+            g
+            for g in self.groups
+            if not (g.target == cmd.shape and g.group_id == cmd.group_id)
+        ]
 
     def _apply_cursor(self, cmd: CursorCommand) -> None:
         """``\\cursor`` — advance cursor on one or more shape accessors.
