@@ -273,6 +273,17 @@ class TestEmit:
         i_node = svg.index('data-target="G.node[a]"')
         assert i_group < i_edges < i_node  # hull is the bottom-most layer
 
+    def test_label_drawn_after_nodes(self) -> None:
+        # hunt-visual BUG 1: the hull fill stays under nodes, but the label
+        # pill must be painted OVER nodes or a node overdraws it (illegible).
+        svg = _emit(
+            [{"target": "G", "id": "c1", "nodes": ["a", "b", "c"],
+              "color": "good", "label": "SCC 1"}]
+        )
+        i_node = svg.index('data-target="G.node[a]"')
+        i_label = svg.index(">SCC 1<")
+        assert i_label > i_node, "group label must paint after (over) nodes"
+
     def test_empty_cluster_soft_drops(self) -> None:
         # all-unknown nodes -> no centres -> whole hull dropped, no crash
         svg = _emit([{"target": "G", "id": "c1", "nodes": ["zzz"], "color": "good"}])

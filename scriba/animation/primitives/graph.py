@@ -1477,6 +1477,7 @@ class Graph(PrimitiveBase):
         zero new motion kinds, no JS. A node not present in this frame's
         positions (hidden/unknown) is skipped; an empty cluster soft-drops the
         whole hull (mirrors trace selector semantics)."""
+        self._pending_group_labels: list[str] = []
         groups = getattr(self, "_groups", None)
         if not groups:
             return
@@ -1510,24 +1511,6 @@ class Graph(PrimitiveBase):
                 f' stroke-dasharray="{_GROUP_STROKE_DASH}"'
                 f' stroke-linejoin="round"/>'
             )
-            if label:
-                pw = measure_label_line(str(label), LABEL_FONT_PX) + 12
-                ph = LABEL_FONT_PX + 8
-                prx = minx
-                pry = miny - ph - 4
-                if pry < 0:
-                    pry = miny + 4
-                tx = prx + pw / 2.0
-                inner += (
-                    f'<rect x="{prx:.1f}" y="{pry:.1f}" width="{pw}"'
-                    f' height="{ph}" rx="4" fill="white" fill-opacity="0.92"'
-                    f' stroke="{stroke}" stroke-width="0.5"'
-                    f' stroke-opacity="0.4"/>'
-                    f'<text x="{tx:.1f}" y="{pry + ph / 2.0:.1f}"'
-                    f' fill="{style["label_fill"]}"'
-                    f' style="text-anchor:middle;dominant-baseline:central">'
-                    f"{_escape_xml(strip_math_markup(str(label)))}</text>"
-                )
             parts.append(
                 f'  <g class="scriba-annotation scriba-annotation-{cls}'
                 f' scriba-group" data-annotation="{_escape_xml(key)}"'
@@ -1536,6 +1519,30 @@ class Graph(PrimitiveBase):
                 f'"{_escape_xml(strip_math_markup(str(label or gid)))}">'
                 f"{inner}</g>"
             )
+            if label:
+                # The hull FILL stays under the nodes (tints the cluster), but
+                # the label pill must paint OVER nodes or a node standing at the
+                # hull corner overdraws it into ":1" (hunt-visual BUG 1). Stash
+                # it for the top layer, emitted after the node group.
+                pw = measure_label_line(str(label), LABEL_FONT_PX) + 12
+                ph = LABEL_FONT_PX + 8
+                prx = minx
+                pry = miny - ph - 4
+                if pry < 0:
+                    pry = miny + 4
+                tx = prx + pw / 2.0
+                self._pending_group_labels.append(
+                    f'<g class="scriba-group-label" data-annotation='
+                    f'"{_escape_xml(key)}-label">'
+                    f'<rect x="{prx:.1f}" y="{pry:.1f}" width="{pw}"'
+                    f' height="{ph}" rx="4" fill="white" fill-opacity="0.92"'
+                    f' stroke="{stroke}" stroke-width="0.5"'
+                    f' stroke-opacity="0.4"/>'
+                    f'<text x="{tx:.1f}" y="{pry + ph / 2.0:.1f}"'
+                    f' fill="{style["label_fill"]}"'
+                    f' style="text-anchor:middle;dominant-baseline:central">'
+                    f"{_escape_xml(strip_math_markup(str(label)))}</text></g>"
+                )
 
     @allow_forbidden_pattern(
         "FP-2",
@@ -2015,6 +2022,14 @@ class Graph(PrimitiveBase):
                 f'</g>'
             )
         parts.append('</g>')
+
+        # \group labels paint OVER the nodes (the hull fill stayed under) so a
+        # node at the hull corner can't overdraw the pill (hunt-visual BUG 1).
+        pending_labels = getattr(self, "_pending_group_labels", None)
+        if pending_labels:
+            parts.append('<g class="scriba-group-labels">')
+            parts.extend(pending_labels)
+            parts.append('</g>')
 
         # --- Annotation arrows (rendered on top of everything) ---
         if effective_anns:
