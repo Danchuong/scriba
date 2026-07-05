@@ -197,4 +197,11 @@ version bump signals; the contract is ``identical source + identical
 SCRIBA_VERSION → identical HTML`` (svg-emitter.md, environments.md §34), never
 identity across a bump. (Correction to earlier notes: ``\\group`` adds no CSS —
 only ``\\link`` touched the stylesheet.)
+
+Dark-mode a11y (investigations/darkmode-edge-contrast.md): the dark idle
+stroke ``--scriba-state-idle-stroke`` rose #313538→#62696d (WCAG 1.4.11
+non-text contrast 1.45:1 → 3.22:1) in both dark blocks, and Hypercube
+lattice edges became theme-aware (a ``.scriba-hypercube-edge`` class in
+place of a hard-coded light hex). Inline-stylesheet bytes change on every
+page; light mode and all SVG geometry are untouched.
 """
