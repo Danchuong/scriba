@@ -9,7 +9,7 @@
 Concrete goals:
 
 1. Claim every top-level `\begin{animation}[opts]\n ... \n\end{animation}` region at priority `10`, before `TexRenderer.detect()` sees it.
-2. Parse the body with the shared `SceneParser` over the 8 inner commands from `environments.md` §3.
+2. Parse the body with the shared `SceneParser` over the 23 inner commands from `environments.md` §3.
 3. Evaluate every `\compute{...}` block in the shared Starlark subprocess worker, tracking global vs frame-local scope.
 4. Maintain a delta-based `SceneState` across frames: each frame inherits the previous frame's state, drops ephemeral overlays (`\highlight`, `\annotate{ephemeral=true}`), and applies its own commands on top.
 5. Render each frame's final `SceneState` as one inline `<svg>` via the shared SVG emitter.
@@ -91,7 +91,7 @@ The detector is separate from and does not interact with `DiagramRenderer.detect
 
 ## 4. Parse contract
 
-After `detect()`, `render_block` hands `block.raw` to the shared `SceneParser` with animation mode enabled (allowing `\step` and `\narrate`). The parser walks the 8 commands from `environments.md` §3 and emits an ordered `AnimationIR` carrying:
+After `detect()`, `render_block` hands `block.raw` to the shared `SceneParser` with animation mode enabled (allowing `\step` and `\narrate`). The parser walks the 23 commands from `environments.md` §3 and emits an ordered `AnimationIR` carrying:
 
 - `options: AnimationOptions` — validated `[key=value,...]` header.
 - `prelude: tuple[Command, ...]` — everything before the first `\step`: `\shape`, global `\compute`, and optionally `\apply` / `\recolor` / `\annotate` for initial state. `\highlight` in the prelude is `E1053`.

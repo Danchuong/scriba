@@ -22,7 +22,7 @@
 Concrete goals:
 
 1. Claim every top-level `\begin{diagram}[opts]\n ... \n\end{diagram}` region at priority `10`, before `TexRenderer` sees it.
-2. Parse the body with the recursive-descent `SceneParser` over the 8 inner commands from `environments.md` §3.
+2. Parse the body with the recursive-descent `SceneParser` over the 23 inner commands from `environments.md` §3 (the diagram context rejects the animation-only ones — each §3 entry marks its valid contexts).
 3. Evaluate every `\compute{...}` block in the shared Starlark subprocess worker.
 4. Instantiate each `\shape{name}{Type}{params}` against the primitive catalog, and apply `\apply` / `\highlight` / `\recolor` / `\annotate` commands against the resulting `SceneState`.
 5. Emit exactly one SVG stage via the shared SVG emitter, wrapped in the frozen `<figure class="scriba-diagram">` shell from `environments.md` §8.2.
@@ -104,12 +104,12 @@ Returned blocks are guaranteed non-overlapping by construction (`DIAGRAM_RE` is 
 
 ## 4. Parse contract
 
-After `detect()`, `render_block` hands `block.raw` (minus the already-matched `\begin`/`\end` lines) to an internal `SceneParser`. The parser is a small recursive-descent walker over exactly the 8 inner commands from `environments.md` §3: `\shape`, `\compute`, `\apply`, `\highlight`, `\recolor`, `\annotate`, `\step`, `\narrate`. In the diagram context, `\step` (`E1050`) and `\narrate` (`E1054`) are parse-time errors.
+After `detect()`, `render_block` hands `block.raw` (minus the already-matched `\begin`/`\end` lines) to an internal `SceneParser` — the same shared recursive-descent walker over the 23 inner commands from `environments.md` §3 that the animation path uses. What differs is the *context*: a diagram is a single static figure, so the frame, narration, and animation-only commands are parse-time errors here — notably `\step` (`E1050`) and `\narrate` (`E1054`). Each command's §3 entry marks whether it is valid in `diagram`; the static-figure core is `\shape`, `\compute`, `\apply`, `\highlight`, `\recolor`, `\annotate` plus the decoration verbs.
 
 The parse pipeline:
 
 1. **Option lexer.** Parse the optional `[key=value,...]` header into a `DiagramOptions` frozen dataclass. Unknown keys raise `RendererError` with code `E1004`.
-2. **Command lexer.** Walk the body line by line. A command starts with `\` followed by one of the 8 command names; everything else on that line (up to its closing brace) is the command. Comments (`% ...` to end of line) are stripped. Blank lines are ignored.
+2. **Command lexer.** Walk the body line by line. A command starts with `\` followed by one of the 23 command names; everything else on that line (up to its closing brace) is the command. Comments (`% ...` to end of line) are stripped. Blank lines are ignored.
 3. **Brace reader.** Each brace argument is read via a balanced-brace scanner (standard LaTeX rules). Unbalanced braces raise `E1001`. The scanner is TikZ-flavored: it understands nested `{...}` but never interprets `$`, `&`, or `\` specially inside the brace body.
 4. **Parameter list parser.** The final brace of `\shape` / `\apply` / `\recolor` / `\annotate` is parsed as a `param_list`: `key=value` pairs separated by commas, values being idents, numbers, double-quoted strings, `${interp}` references, or `[list, ...]`. Grammar in `environments.md` §2.1.
 5. **Command AST.** The result is an ordered `tuple[Command, ...]` of frozen dataclasses, one per recognized command, each carrying its source line/column for error reporting.
