@@ -25,7 +25,7 @@
 4. [Diagram Environment](#4-diagram-environment)
 5. [Inner Commands](#5-inner-commands-18-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant`
 6. [Visual States](#6-visual-states)
-7. [All 15 Primitives](#7-all-15-primitives)
+7. [All 18 Primitives](#7-all-18-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
 9. [Complete Examples](#9-complete-examples)
 10. [Environment Options](#10-environment-options)
@@ -96,7 +96,7 @@ Everything below is expanded later; this is the lookup layer.
 | `\combine{s1, s2}{into="D"}` | N ephemeral links converging on one target |
 | `\group{G}{nodes=[…], id=…}` / `\ungroup` | hull overlay around a node cluster (Graph) |
 
-**15 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · VariableWatch (named values).
+**18 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree / heap / automata) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines/circles) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · Deque (two-ended) · VariableWatch (named values) · Hypercube (subset lattice) · Forest (multi-root DSU).
 
 **Selector grammar** (§8): `shape.family[index]` — `a.cell[i]`, `g.cell[r][c]`, `a.range[i:j]`, `g.block[r0:r1][c0:c1]`, `g.row[i]`, `g.col[j]`, `g.diag`, `G.node[id]`, `G.edge[(u,v)]`, `nl.tick[i]`, `code.line[i]`, `vars.var[name]`, `.all`. Interpolate with `${i}` in any index.
 
@@ -865,14 +865,14 @@ with an unknown id is a no-op.
 | `error` | red | error/invalid |
 | `good` | green-tinted | correct/optimal |
 | `path` | gray-blue | part of solution path |
-| `hidden` | _(invisible)_ | element exists but is not shown; works on all 15 primitives (since 0.23.2 — previously Graph/Tree/Plane2D only) |
+| `hidden` | _(invisible)_ | element exists but is not shown; works on all primitives (since 0.23.2 — previously Graph/Tree/Plane2D only) |
 | `highlight` | blue outline | ephemeral focus via `\highlight` (auto-clears next frame); also accepted by `\recolor{X}{state=highlight}` as a persistent variant — use sparingly, prefer `\highlight` for transient focus |
 
 **Semantic convention — `current` vs `path`:** Both render in blue but carry distinct meaning. Use `current` for the node or cell being **actively processed in this frame** (e.g. the node being relaxed in Dijkstra). Use `path` for nodes that are part of the **final solution path** once the algorithm concludes (e.g. the shortest-path nodes highlighted at the end of the trace). Mixing them in the same frame is valid — the hues differ enough to be distinguishable.
 
 ---
 
-## 7. All 15 Primitives
+## 7. All 18 Primitives
 
 ### 7.1 Array
 1D horizontal row of indexed cells.
@@ -960,6 +960,8 @@ Nodes + edges with layout engine.
 **Layout options:** `"force"` (default), `"stable"` (≤20 nodes), `"hierarchical"`, `"auto"` (picks hierarchical for DAGs, else force). Any other value silently falls back to force.
 **Weighted edges:** `edges=[("A","B",4),("B","C",2)]` with `show_weights=true`.
 **Dynamic edge labels (flow `f/c`):** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other. Combine with `tint_by_edge=true` so a saturated edge's pill picks up its `\recolor{...}{state=error}` color. See the two-step flow-network walkthrough in §12.
+
+**Antiparallel pairs (residual edges):** since 0.24.0, when a directed graph contains both `(u,v)` and `(v,u)`, the two edges automatically render as symmetric curves (~24px apart) with their `f/c` pills on opposite sides — a forward edge and its residual stay readable instead of overlapping on one line. Nothing to declare; single edges keep their straight line.
 **Selectors:** `G`, `G.node[id]`, `G.edge[("A","B")]`, `G.all` (node-id quoting rules in §8)
 
 **Additional construction params:**
@@ -1361,6 +1363,54 @@ Variable panel showing named values.
 **Operations:** targeted `\apply{vars.var[name]}{value=X}`, or bulk `\apply{vars}{i=3, j=5}` (each param key matching a tracked name sets it).
 **Selectors:** `vars`, `vars.var[name]` (e.g., `vars.var[i]`, `vars.var[min_val]`), `vars.all`
 
+### 7.16 Hypercube
+Subset lattice for bitmask DP, SOS and inclusion-exclusion (since 0.24.0). All `2^bits` subsets laid out as a Hasse diagram by popcount — empty set at the bottom, full mask on top, one-bit-apart edges drawn underneath.
+```latex
+\shape{L}{Hypercube}{bits=4}
+\recolor{L.subset[10]}{state=good}      % 10 = 0b1010 — decimal addressing
+\apply{L.subset[5]}{value="dp=7"}
+```
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `bits` | int | — | yes | dimension, **1..5** (E1510 outside; 2^5 = 32 nodes is the readable cap) |
+| `show_bits` | bool | `true` | no | node labels as zero-padded binary (`1010`); `false` → decimal |
+| `label` | string | none | no | caption |
+
+**Operations:** `\apply{L.subset[i]}{value=X}` overrides a node's text (DP value on a subset).
+**Selectors:** `L`, `L.subset[i]` (decimal mask index, `0..2^bits-1`), `L.all`. Binary literals (`0b1010`) and a `\sweep` dimension-fold are deliberately deferred.
+
+### 7.17 Forest
+Multi-root forest for disjoint-set (DSU) editorials (since 0.24.0): N Reingold-Tilford trees packed side by side; a union reparents one root under another and the merged tree **glides** into place.
+```latex
+\shape{f}{Forest}{nodes=[0,1,2,3,4,5,6]}
+\apply{f}{union={a=3, b=5}}     % root(5) is reparented under root(3)
+\recolor{f.node[3]}{state=current}
+```
+
+| Param | Type | Default | Required | Description |
+|---|---|---|---|---|
+| `nodes` | list | — | yes, ≥1 | node ids; each starts as its own single-node tree (E1508 empty/dup) |
+| `edges` | list | `[]` | no | initial `(parent, child)` structure — must stay a forest (≤1 parent, acyclic) |
+| `label` | string | none | no | caption |
+
+**Operations:** `\apply{f}{union={a=A, b=B}}` — finds both roots and reparents `root(b)` under `root(a)`; same root is a no-op. The **order controls the direction** (there is no automatic union-by-rank — showing rank/size heuristics is the author's narration). Unknown endpoint → E1509.
+**Selectors:** `f`, `f.node[id]`, `f.edge[(p,c)]`, `f.all`. The bounding box is a monotonic envelope replayed before frame 1, so the viewBox never jumps mid-animation.
+
+### 7.18 Deque
+Two-ended queue for monotonic-deque sliding windows (since 0.24.0). A strict superset of Queue: any FIFO animation is valid on a Deque.
+```latex
+\shape{d}{Deque}{capacity=6, data=[3,1]}
+\apply{d}{push_back=4}
+\apply{d}{push_front=9}
+\apply{d}{pop_back=1}       % count-based, like Stack's pop
+\apply{d}{pop_front=1}
+```
+
+**Params:** `capacity` (int, required), `data` (initial items, front-first), `label`.
+**Operations:** `push_front` / `push_back` / `pop_front` / `pop_back` (pops take a count); `enqueue`/`dequeue` still work as aliases for `push_back`/`pop_front`. Push onto a full deque raises **E1442**, popping past empty raises **E1443**. The same four deque verbs on a plain `Queue` raise **E1444** ("declare as Deque").
+**Selectors:** `d`, `d.cell[i]`, `d.front`, `d.back`, `d.all`. `cell[i]` is the *i*-th position **from the current front** — a `pop_front` shifts what every index points at (position-relative, unlike Array's fixed slots).
+
 ---
 
 ## 8. Selector Quick Reference
@@ -1389,6 +1439,9 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | HashMap | `.bucket[i]` | — | — | — | — | `.all` |
 | LinkedList | — | `.node[i]` | `.link[i]` | — | — | `.all` |
 | Queue | `.cell[i]` | — | — | — | — | `.front`, `.rear`, `.all` |
+| Deque | `.cell[i]` (front-relative) | — | — | — | — | `.front`, `.back`, `.all` |
+| Hypercube | `.subset[i]` (decimal mask) | — | — | — | — | `.all` |
+| Forest | — | `.node[id]` | `.edge[(p,c)]` | — | — | `.all` |
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]`, `.row[i]`, `.col[j]`, `.diag` | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]`, `.circle[i]`, `.arc[i]`, `.wedge[i]` | — | — | — | — | `.all` |

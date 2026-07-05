@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — capability Wave 4 (new substrates + flow readability)
+- **Hypercube primitive** — the subset lattice for bitmask DP / SOS /
+  inclusion-exclusion: `\shape{L}{Hypercube}{bits=4}` renders all
+  2^bits subsets as a Hasse diagram by popcount with one-bit edges;
+  `subset[i]` decimal addressing, value overrides, bits capped 1..5
+  (E1510). `\sweep` and `0b` literals stay deferred by design.
+- **Forest primitive** — multi-root DSU: `\apply{f}{union={a,b}}`
+  reparents root(b) under root(a) and the merged tree glides into
+  place (node keys are pure ids, so identity survives every union; the
+  viewBox is a prescanned monotonic envelope that never jumps).
+  E1508/E1509.
+- **Deque primitive** — two-ended queue as a strict superset of Queue
+  (enqueue/dequeue still work): push/pop at both ends with count-based
+  pops, loud overflow/underflow (E1442/E1443), deque verbs on a plain
+  Queue rejected with a hint (E1444). Queue output stays
+  byte-identical (subclass, untouched code path). Unlocks
+  monotonic-deque sliding-window editorials.
+- **Antiparallel edge pairs curve apart** on directed graphs — a
+  forward edge and its residual render as symmetric arcs (~24px apart)
+  with labels on opposite sides, making Dinic/max-flow walkthroughs
+  readable. Single edges keep their exact straight-line bytes.
+
 ### Added — capability Wave 3 (bridges, clusters, automata)
 - **`\link{A <-> B}` + `\combine{s1, s2}{into="D"}`** — the first
   cross-shape construct: a stage-level bridge between anchors on two
