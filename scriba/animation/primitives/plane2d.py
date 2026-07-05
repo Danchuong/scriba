@@ -557,6 +557,21 @@ class Plane2D(PrimitiveBase):
         if "remove_wedge" in params:
             self._remove_wedge_internal(int(params["remove_wedge"]))
             return
+        # In-place moves (A4 — element glides, identity preserved).
+        # These mutate an element's coordinates while keeping its index (and
+        # therefore its ``data-target``) stable, so the differ sees the same
+        # identity with new (x, y) and emits ``position_move`` — a glide — in
+        # place of the add+remove pair a re-add would produce. See
+        # investigations/gap-motion-identity-reorder.md §5.1–5.3.
+        if "move_point" in params:
+            self._move_point_internal(params["move_point"])
+            return
+        if "move_line" in params:
+            self._move_line_internal(params["move_line"])
+            return
+        if "move_segment" in params:
+            self._move_segment_internal(params["move_segment"])
+            return
 
     # ----- internal remove helpers (RFC-001 §4.3) --------------------------
 
@@ -671,6 +686,105 @@ class Plane2D(PrimitiveBase):
                 f"Plane2D '{self.name}' wedge[{idx}] already removed",
             )
         self.wedges[idx] = _TOMBSTONE
+
+    # ----- internal move helpers (A4 — mutate-in-place, identity stable) ----
+
+    def _require_living(
+        self, elements: list[Any], idx: int, kind: str
+    ) -> None:
+        """Guard shared by every move op: E1437 on an out-of-range or already
+        tombstoned index — identical semantics to the remove helpers so a move
+        onto a dead slot fails the same way a re-remove does."""
+        if not (0 <= idx < len(elements)):
+            raise _animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' has no {kind}[{idx}] "
+                f"(valid: 0..{len(elements) - 1 if elements else -1})",
+            )
+        if elements[idx] is _TOMBSTONE:
+            raise _animation_error(
+                "E1437",
+                f"Plane2D '{self.name}' {kind}[{idx}] already removed",
+            )
+
+    @staticmethod
+    def _move_index(spec: Any, kind: str) -> int:
+        """Extract the integer index ``i`` from a move-spec dict. E1467 when the
+        spec is not a dict, omits ``i``, or ``i`` is not an integer."""
+        if not isinstance(spec, dict) or "i" not in spec:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} move-spec: {spec!r}",
+                hint=f"expected {{i, ...}} with an integer index i",
+            )
+        try:
+            return int(spec["i"])
+        except (TypeError, ValueError) as exc:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} move-spec: index {spec.get('i')!r} "
+                f"is not an integer",
+                hint="i must be an integer",
+            ) from exc
+
+    def _move_point_internal(self, spec: Any) -> None:
+        idx = self._move_index(spec, "point")
+        self._require_living(self.points, idx, "point")
+        fields = [k for k in ("x", "y") if k in spec]
+        if not fields:
+            raise _animation_error(
+                "E1467",
+                f"malformed point move-spec: {spec!r}",
+                hint="expected {i, x?, y?} with at least one of x, y",
+            )
+        # Replace the slot with a fresh dict (immutable-update): the index —
+        # and thus data-target ``{name}.point[{idx}]`` — stays the same.
+        new_pt = dict(self.points[idx])
+        for k in fields:
+            new_pt[k] = float(spec[k])
+        self.points[idx] = new_pt
+
+    def _move_line_internal(self, spec: Any) -> None:
+        idx = self._move_index(spec, "line")
+        self._require_living(self.lines, idx, "line")
+        if "to_x" not in spec:
+            raise _animation_error(
+                "E1467",
+                f"malformed line move-spec: {spec!r}",
+                hint="expected {i, to_x} to slide a vertical sweep line to x=to_x",
+            )
+        ln = self.lines[idx]
+        # A vertical line is stored as slope=inf, intercept=x (x = c, i.e. b=0);
+        # to_x repositions that x. A sloped line (b!=0) has no single x to set.
+        if not math.isinf(ln["slope"]):
+            raise _animation_error(
+                "E1467",
+                f"cannot move line[{idx}] by to_x: line is not vertical "
+                f"(slope={ln['slope']!r})",
+                hint="to_x only repositions a vertical sweep line (x=c); author "
+                "it vertical via (label, {a:1, b:0, c:x}), or use add/remove to "
+                "reshape a sloped line",
+            )
+        new_ln = dict(ln)
+        new_ln["intercept"] = float(spec["to_x"])
+        self.lines[idx] = new_ln
+
+    def _move_segment_internal(self, spec: Any) -> None:
+        idx = self._move_index(spec, "segment")
+        self._require_living(self.segments, idx, "segment")
+        fields = [k for k in ("x1", "y1", "x2", "y2") if k in spec]
+        if not fields:
+            raise _animation_error(
+                "E1467",
+                f"malformed segment move-spec: {spec!r}",
+                hint="expected {i, x1?, y1?, x2?, y2?} with at least one "
+                "endpoint coordinate",
+            )
+        # Partial move: only the provided endpoint fields change.
+        new_seg = dict(self.segments[idx])
+        for k in fields:
+            new_seg[k] = float(spec[k])
+        self.segments[idx] = new_seg
 
     # ----- Primitive interface ---------------------------------------------
 
@@ -865,6 +979,71 @@ class Plane2D(PrimitiveBase):
             return None
 
         return None
+
+    # ----- position injection (A4 — position_move substrate) ---------------
+
+    def _line_anchor_math(self, ln: dict[str, Any]) -> tuple[float, float] | None:
+        """Math-space anchor for a line: the midpoint of its visible span.
+
+        Mirrors the ``line[i]`` branch of :meth:`resolve_annotation_point`
+        but stays in math coordinates (no ``math_to_svg``). Returns ``None``
+        when the line does not intersect the viewport (nothing to anchor)."""
+        slope = ln["slope"]
+        intercept_val = ln["intercept"]
+        if math.isinf(slope):
+            x_val = intercept_val
+            if self.xrange[0] <= x_val <= self.xrange[1]:
+                return (x_val, (self.yrange[0] + self.yrange[1]) / 2)
+            return None
+        result = clip_line_to_viewport(
+            slope, intercept_val, self.xrange, self.yrange,
+        )
+        if result is None:
+            return None
+        (x1, y1), (x2, y2) = result
+        return ((x1 + x2) / 2, (y1 + y2) / 2)
+
+    def get_node_positions(self) -> dict[str, tuple[float, float]]:
+        """Return ``{data_target: (x, y)}`` in MATH coordinates for every living
+        movable element (points, lines, segments, circles).
+
+        Duck-typed by ``_inject_tree_positions`` (``hasattr`` gate) which copies
+        these into ``frame.shape_states``; the differ then emits ``position_move``
+        whenever an element's anchor moved between frames, so an in-place
+        ``move_*`` mutation glides instead of add+remove. Tombstoned and
+        off-viewport elements are omitted (no live anchor to move).
+
+        Coordinates are MATH, not ``math_to_svg`` output: each ``<g data-target>``
+        lives INSIDE the ``scale(sx, sy)`` content group (see :meth:`emit_svg`),
+        so the runtime's ``translate(Δ)`` on that element is interpreted in the
+        scaled local frame — a math-unit Δ yields Δ·sx px on screen and the
+        negative ``sy`` supplies the Y-flip. (§5.3; verified by browser probe.)
+        The invariant ``math_to_svg(anchor) == resolve_annotation_point(target)``
+        holds for every family below.
+        """
+        result: dict[str, tuple[float, float]] = {}
+        for i, pt in enumerate(self.points):
+            if pt is _TOMBSTONE:
+                continue
+            result[f"{self.name}.point[{i}]"] = (pt["x"], pt["y"])
+        for i, ln in enumerate(self.lines):
+            if ln is _TOMBSTONE:
+                continue
+            anchor = self._line_anchor_math(ln)
+            if anchor is not None:
+                result[f"{self.name}.line[{i}]"] = anchor
+        for i, seg in enumerate(self.segments):
+            if seg is _TOMBSTONE:
+                continue
+            result[f"{self.name}.segment[{i}]"] = (
+                (seg["x1"] + seg["x2"]) / 2,
+                (seg["y1"] + seg["y2"]) / 2,
+            )
+        for i, c in enumerate(self.circles):
+            if c is _TOMBSTONE:
+                continue
+            result[f"{self.name}.circle[{i}]"] = (c["cx"], c["cy"])
+        return result
 
     # ----- bounding box ----------------------------------------------------
 
