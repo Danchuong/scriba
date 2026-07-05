@@ -107,6 +107,8 @@ class SelectorParser:
             return self._parse_node()
         if name == "edge":
             return self._parse_edge()
+        if name == "link":
+            return self._parse_link()
         if name == "range":
             return self._parse_range()
         if name == "block":
@@ -163,6 +165,32 @@ class SelectorParser:
         self._expect(")")
         self._expect("]")
         return EdgeAccessor(source=src, target=tgt)
+
+    def _parse_link(self) -> "NamedAccessor":
+        """Tree's second-class ``link[(u,v)]`` selector — same bare tuple
+        grammar as ``edge`` (fail/suffix links). There is no dedicated
+        LinkAccessor: the canonical key ``link[(u,v)]`` (matching the tree
+        emit and ``_TREE_LINK_SEL_RE``) is carried in a NamedAccessor, exactly
+        what the older quoted-string form ``link["(u,v)"]`` already produced.
+        """
+        self._expect("[")
+        self._skip_ws()
+        # Backward-compat: the older quoted-string form ``link["(u,v)"]`` (and
+        # any ``${...}`` interpolation) has no leading '(' — route it through
+        # the generic index-expr path, which yields the same canonical key.
+        if self._pos >= len(self._text) or self._text[self._pos] != "(":
+            idx = self._parse_index_expr()
+            self._expect("]")
+            return NamedAccessor(name=f"link[{idx}]")
+        self._expect("(")
+        src = self._parse_node_id()
+        self._skip_ws()
+        self._expect(",")
+        tgt = self._parse_node_id()
+        self._skip_ws()
+        self._expect(")")
+        self._expect("]")
+        return NamedAccessor(name=f"link[({src},{tgt})]")
 
     def _parse_range(self) -> RangeAccessor:
         self._expect("[")

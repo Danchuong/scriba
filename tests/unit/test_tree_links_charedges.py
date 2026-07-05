@@ -331,3 +331,42 @@ class TestRegressionByteStable:
         t.apply_command({"remove_node": {"id": "0", "cascade": True}})
         svg = t.emit_svg()
         assert "scriba-tree-link" not in svg
+
+
+class TestLinkSelectorParsesBareLikeEdge:
+    """A ``T.link[(u,v)]`` bare tuple selector must parse on the command
+    grammar exactly like ``T.edge[(u,v)]`` does — an author who learned edge
+    will write link the same way. Both the bare and the quoted-string forms
+    must canonicalize to the identical ``link[(u,v)]`` key (torture-doc catch:
+    the bare form previously raised E1010 while edge accepted it)."""
+
+    def test_bare_and_quoted_link_canonicalize_identically(self) -> None:
+        from scriba.animation.parser.selectors import parse_selector
+        from scriba.animation.scene import _selector_to_str
+
+        bare = _selector_to_str(parse_selector("T.link[(1,2)]"))
+        quoted = _selector_to_str(parse_selector('T.link["(1,2)"]'))
+        assert bare == "T.link[(1,2)]"
+        assert bare == quoted
+
+    def test_bare_string_id_link(self) -> None:
+        from scriba.animation.parser.selectors import parse_selector
+        from scriba.animation.scene import _selector_to_str
+
+        assert _selector_to_str(parse_selector("a.link[(s1,s2)]")) == "a.link[(s1,s2)]"
+
+    def test_recolor_bare_link_end_to_end(self) -> None:
+        from scriba.animation.parser.grammar import SceneParser
+        from scriba.animation.scene import SceneState
+
+        src = (
+            '\\shape{T}{Tree}{root=0, nodes=[0,1,2], '
+            'edges=[(0,1,"a"),(0,2,"b")], links=[(1,2)]}\n'
+            "\\step\n"
+            "\\recolor{T.link[(1,2)]}{state=error}\n"
+        )
+        ir = SceneParser().parse(src)
+        sc = SceneState()
+        sc.apply_prelude(ir.shapes, ir.prelude_commands, ir.prelude_compute)
+        snaps = [sc.apply_frame(f) for f in ir.frames]
+        assert "T.link[(1,2)]" in snaps[0].shape_states["T"]
