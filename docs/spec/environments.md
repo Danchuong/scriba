@@ -8,7 +8,7 @@
 
 Scriba v0.3 ships two new LaTeX environments that let problem authors embed algorithmic visualizations directly in problem statements without leaving LaTeX:
 
-- `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 12 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8 for mode selection.
+- `\begin{animation} ... \end{animation}` — a **sequence of N frames**. Each frame is a self-contained SVG stage plus a narration paragraph. Authors use 23 TikZ-style inner commands to declare primitive shapes, mutate state across frames, and attach narration. In **interactive mode** (default), the renderer emits a widget with step controller, keyboard navigation, and a small inline script. In **static mode**, it expands into a pure filmstrip `<ol>` with zero runtime JS that works in email, print, PDF, RSS, and Codeforces embed. See §8 for mode selection.
 - `\begin{diagram} ... \end{diagram}` — a **single static figure**. Same primitive vocabulary minus `\step` and `\narrate`. Intended for standalone illustrations (trees, grids, graphs, DP tables shown at a single moment in time).
 
 Both environments plug into the existing `scriba.core.pipeline.Pipeline` from [`01-architecture.md`](architecture.md) as two additional `Renderer` implementations registered alongside `TexRenderer`:
@@ -124,18 +124,24 @@ Unknown keys are `E1004` (error, not warning — keep options forward-compatible
 
 ## 3. Inner commands
 
-There are **12 inner command entries** in this section (including paired
-block constructs `\foreach`/`\endforeach` and `\substory`/`\endsubstory`,
-which are counted as one each since they form a single block in the AST).
-The base 8 commands from v0.3 (`\shape`, `\compute`, `\step`, `\narrate`,
-`\apply`, `\highlight`, `\recolor`, `\annotate`) are supplemented by 4
-new commands in v0.5: `\reannotate`, `\cursor`, `\foreach` (+ `\endforeach`),
-and `\substory` (+ `\endsubstory`). Each entry is listed with its full
-signature, allowed context, parameter grammar, error codes, and a one-line
-example. Parameter lists use `key=value` pairs inside the final brace
-group. Parameter values may be bare idents, numbers, double-quoted
-strings, Starlark-computed values via `${name}` / `${name[i]}`
-interpolation, or bracketed lists `[a,b,c]`.
+There are **23 inner command entries** in this section (including the paired
+block/overlay constructs `\foreach`/`\endforeach`, `\substory`/`\endsubstory`,
+and `\group`/`\ungroup`, which are counted as one each since they form a single
+block or overlay pair). The base 8 commands from v0.3 (`\shape`, `\compute`,
+`\step`, `\narrate`, `\apply`, `\highlight`, `\recolor`, `\annotate`) were
+supplemented by 4 in v0.5 (`\reannotate`, `\cursor`, `\foreach` (+ `\endforeach`),
+and `\substory` (+ `\endsubstory`)), then by 11 more across v0.22–v0.26: the
+attention/camera verbs `\focus` and `\zoom`, the path decoration `\trace`, the
+frame macro `\playeach`, the cross-frame panel `\invariant`, the narration
+macros `\hl` and `\ref`, the cross-shape bridges `\link` and `\combine`, the
+Graph overlay `\group` (+ `\ungroup`), and the free callout `\note`. Each entry
+is listed with its full signature, allowed context, parameter grammar, error
+codes, and a one-line example. Parameter lists use `key=value` pairs inside the
+final brace group. Parameter values may be bare idents, numbers, double-quoted
+strings, Starlark-computed values via `${name}` / `${name[i]}` interpolation,
+or bracketed lists `[a,b,c]`. The authoritative per-command authoring reference
+is [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5; entries below
+defer deep detail there rather than duplicating it.
 
 ### 3.1 `\shape{name}{Type}{params...}`
 
@@ -307,6 +313,138 @@ Embeds a nested linear frame sequence inside a single parent filmstrip frame, en
     \narrate{Trace the sub-computation.}
   \endsubstory
   ```
+
+### 3.13 `\focus{target}{scope=shape|board}`
+
+Ephemeral spotlight: dims every addressable part of *target*'s shape (or, with `scope=board`, every other shape too) except *target* for this frame, then auto-clears at the next `\step`. The camera twin is `\zoom` (§3.14).
+
+- **Contexts:** animation only, inside a `\step`. In the prelude it is `E1053`; because a diagram is all-prelude, `\focus` is not usable there.
+- **Signature:** `\focus{<target_selector>}{scope=<shape|board>}` (second brace optional).
+- **Parameters:** `scope` — optional, default `shape` (dims only the focused shape's complement; byte-identical to omitting the brace). `board` additionally dims every *other* shape. Multiple `\focus` in one step union.
+- **Persistence:** ephemeral — no state retained; reverts at the next `\step`.
+- **Error codes:** `E1053` in prelude; `E1122` unknown scope; `E1116` undeclared shape; `E1115` valid shape but non-matching part (soft-drop).
+- **Example:** `\focus{a.cell[1]}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.16.
+
+### 3.14 `\zoom{target}`
+
+Camera twin of `\focus`: an ephemeral per-step crop that magnifies the frame's viewBox to *target* (plus a little padding), then auto-restores to the full board at the next `\step`. Where `\focus` dims the complement, `\zoom` reframes.
+
+- **Contexts:** animation only, inside a `\step`. In the prelude it is `E1053` (not usable in a diagram).
+- **Signature:** `\zoom{<target_selector>}` (single brace, no options).
+- **Parameters:** none. Accepts the same selector algebra as `\focus` (`\zoom{a}`, `\zoom{a.cell[2]}`, `\zoom{a.range[1:3]}`). The camera cuts (discrete) at the step boundary; repeat `\zoom` to hold it across steps.
+- **Error codes:** `E1053` in prelude; `E1116` undeclared shape; `E1543` part has no resolvable box (soft warning + full-board fallback).
+- **Example:** `\zoom{arr.cell[2]}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.22.
+
+### 3.15 `\trace{shape}{cells=..., params...}`
+
+Draws an arrow that follows a **sequence of cells or nodes** — a traversal or fill direction — instead of asking the reader to infer it.
+
+- **Contexts:** animation, diagram.
+- **Signature:** `\trace{<shape>}{cells=[...], color=, label=, arrowhead=, dot=, id=, ephemeral=}`
+- **Required:** `cells` — a list of `[r,c]` (2-D grid), `[i]` (1-D grid/tick), or `"id"`/`i` (Graph/Tree node) points; **≥2** points, else `E1491`.
+- **Parameters:** `color` (annotation color or `"state:X"`, default `info`), `label` (mini pill, math OK), `arrowhead` (`end`\|`both`\|`none`, default `end`; else `E1492`), `dot` (`start`\|`none`), `id`, `ephemeral` (default `false`).
+- **Supported primitives:** Array, Grid, DPTable, NumberLine, Graph, Tree. Any other primitive is `E1118`.
+- **Error codes:** `E1491` fewer than 2 points; `E1492` unknown arrowhead; `E1113` unknown color; `E1118` unsupported primitive; `E1115` out-of-range point / unknown node (soft-drop).
+- **Example:** `\trace{a}{cells=[0,1,2,3], color=good, dot=start}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.9.
+
+### 3.16 `\playeach{selector}{actions}`
+
+A **step-level frame macro**: sweeps a `range`/`block` selector and emits **one auto-frame per element**, expanding at parse time into ordinary `\step` frames. (Where `\foreach` expands into many commands inside one step, `\playeach` expands into many steps.)
+
+- **Contexts:** animation only. It generates frames, so a diagram rejects it with `E1050`; it is also disallowed inside a `\foreach` body (`E1172`) and across a `\substory` boundary (`E1006`).
+- **Signature:** `\playeach{<shape.range[lo:hi]> | <shape.block[r0:r1][c0:c1]>}{state=, cursor=, narrate=}`
+- **Required:** the selector MUST be a `range` (1-D) or `block` (2-D) with **literal integer** bounds (the frame count is fixed at build); at least one of `state`/`cursor`.
+- **Parameters:** `state=<state>` (recolor the swept element; accumulates), `cursor=<id>` (binding-caret following the sweep, 1-D range only), `narrate="<tmpl>"` (per-frame narration; `${i}` (range) or `${r}`/`${c}` (block) substituted at build).
+- **Error codes:** `E1494` selector not a range/block or non-literal bounds; `E1493` >64 generated frames; `E1495` no `state`/`cursor` action, or `cursor=` on a 2-D block; `E1496` unknown action key; `E1116` undeclared shape.
+- **Example:** `\playeach{fac.range[1:5]}{state=done, cursor=w, narrate="write $fac[${i}]$"}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.18.
+
+### 3.17 `\invariant{text}`
+
+Pins a predicate panel shown across **all** frames (a loop invariant, a running sum). Renders as a `<p class="scriba-invariant">` below the narration, visible on screen and in print.
+
+- **Contexts:** animation, **prelude only** — after the first `\step` it is `E1058`.
+- **Signature:** `\invariant{<balanced_latex>}` (raw brace body, like `\narrate`).
+- **Parameters:** none. A `${binding}` in the body resolves **per frame** against the same scope `\narrate` sees, so a running invariant tracks its `\compute` value as the animation steps; a body with no `${}` is static (identical every frame). Multiple `\invariant` lines stack.
+- **Error codes:** `E1058` not in the prelude.
+- **Example:** `\invariant{Loop invariant: $a[lo] \le key \le a[hi]$}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.17.
+
+### 3.18 `\hl{step-id}{tex}`
+
+Inline narration macro that cross-references a labeled `\step`: wraps *tex* in a `<span>` that highlights when the browser navigates to the referenced frame (pure CSS `:target`, zero JS).
+
+- **Contexts:** inside a `\narrate{...}` body only (animation). Used anywhere else it is `E1320`.
+- **Signature:** `\hl{<step-id>}{<tex>}`
+- **Required:** *step-id* must match a `\step[label=step-id]` in the same animation, or the implicit label `step{N}` (e.g. `step3`); an unknown id is `E1321`. *tex* supports inline math and text formatting; multiple `\hl` per narration are allowed.
+- **Error codes:** `E1320` used outside `\narrate`; `E1321` unknown step-id.
+- **Example:** `\narrate{See \hl{fill}{this step} for the recurrence.}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.14 (label syntax: §5.3).
+
+### 3.19 `\ref{target}{tex}`
+
+Inline narration macro that tints *tex* to match *target*'s current-frame visual state — naming a cell also points at it (adds a dashed ring).
+
+- **Contexts:** inside a `\narrate{...}` body only (animation).
+- **Signature:** `\ref{<target_selector>}{<tex>}`
+- **Behavior:** when *target*'s state is a signalling colour (`current`, `done`, `dim`, `good`, `error`, `path`) the word takes that ink and tracks the state each frame; a target with no signal state renders as a plain emphasised word. *tex* supports inline math and text formatting.
+- **Error codes:** `E1322` unknown/undeclared target — degrades to plain text (soft warning, non-fatal).
+- **Example:** `\narrate{Choose the \ref{a.cell[2]}{pivot} and partition around it.}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.15.
+
+### 3.20 `\link{A <-> B}{params...}`
+
+A **bridge** between anchors on two different shapes — the one construct that crosses shape boundaries (a subtree lighting its Euler-tour range; a row and a column feeding one cell).
+
+- **Contexts:** animation, diagram.
+- **Signature:** `\link{<A> <-> <B>}{color=, label=, ephemeral=}` (`<->` canonical; `->` accepted).
+- **Required:** exactly two endpoint selectors separated by `<->` or `->`, else `E1497`.
+- **Parameters:** `color` (annotation color or `"state:X"`, default `info`), `label` (pill at the bridge midpoint), `ephemeral` (default `false`).
+- **Persistence:** persistent until the scene ends (there is no `\unlink`); pass `ephemeral=true` for a per-frame bridge.
+- **Error codes:** `E1497` not exactly two endpoints; `E1498` endpoint on an undeclared shape; `E1113` unknown color.
+- **Example:** `\link{T.node[2] <-> a.range[1:3]}{color=info, label="subtree = range"}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.19.
+
+### 3.21 `\combine{s1, s2, ...}{into="D", params...}`
+
+Sugar over `\link`: each comma-separated source draws one **ephemeral** link converging on `into=` — a dot-product highlight from a row and a column into one cell, re-issued each step of a matrix multiply.
+
+- **Contexts:** animation, diagram.
+- **Signature:** `\combine{<source_list>}{into="<target_selector>", color=, label=, ephemeral=}`
+- **Required:** at least one source selector, and a **quoted** `into=` (the quotes let a `[`/`]` selector survive the value lexer); either missing is `E1497`.
+- **Parameters:** `into` (required, quoted target), `color` (annotation color or `"state:X"`, default `info`), `label`, `ephemeral` (default **`true`** — `\combine` is always ephemeral).
+- **Error codes:** `E1497` no source or missing `into`; `E1498` endpoint on an undeclared shape; `E1113` unknown color.
+- **Example:** `\combine{m.row[i], m.col[j]}{into="c.cell[i][j]", color=good}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.19.
+
+### 3.22 `\group{G}{nodes=..., id=...}` / `\ungroup{G}{id=...}`
+
+A rounded hull overlay around a set of Graph nodes (Kruskal components, SCCs, biconnected blocks), drawn *under* the edges and nodes. Re-issuing `\group` with the same `id` and a larger `nodes=` list is how a component grows.
+
+- **Contexts:** animation, diagram. **Graph shapes only** — any other shape, or a node not in the graph, is `E1507`.
+- **Signature:** `\group{<graph>}{nodes=[...], id=<name>, label=, color=}` … `\ungroup{<graph>}{id=<name>}`
+- **Required:** `\group` needs `id` and a non-empty `nodes` list; `\ungroup` needs `id`. Either missing is `E1506`.
+- **Parameters:** `nodes` (node ids; must exist on the graph), `id` (stable handle; re-issue = replace the set), `label` (pill at the hull corner), `color` (annotation color, default `info`).
+- **Persistence:** persistent until `\ungroup`; `\ungroup` with an unknown id is a no-op.
+- **Error codes:** `E1506` missing `id`/`nodes`; `E1507` non-Graph shape or unknown node.
+- **Example:** `\group{G}{nodes=["a","b"], id=c1, label="C1", color=good}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.20.
+
+### 3.23 `\note{id}{text=..., at=<anchor>}`
+
+A **free callout pill** dropped at a board-relative margin — the one annotation *not* tied to any shape selector (a teacher's margin note, a complexity bound). Painted inside the existing viewBox, so it never grows the envelope.
+
+- **Contexts:** animation, diagram. Stage-level, no shape prefix.
+- **Signature:** `\note{<id>}{text="...", at=<anchor>, color=, ephemeral=}`
+- **Required:** `id` (first brace) and `text`; either missing/blank is `E1120`.
+- **Parameters:** `text` (pill contents, math OK), `at` (compass anchor: `top-left`, `top`, `top-right` (default), `right`, `bottom-right`, `bottom`, `bottom-left`, `left`; unknown is `E1121`), `color` (annotation color or `"state:X"`, default `info`), `ephemeral` (default `false`).
+- **Persistence:** persistent until the scene ends (re-issue the id to retext/recolour; there is no `\unnote`); pass `ephemeral=true` for a one-frame note.
+- **Error codes:** `E1120` missing id or text; `E1121` unknown anchor; `E1113` unknown color.
+- **Example:** `\note{n1}{text="careful: 0-indexed", at=top-right, color=warn}`
+- See [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §5.21.
 
 ## 4. Target selector syntax
 
@@ -680,9 +818,9 @@ Priority is the order passed to `Pipeline(renderers=[...])`. Per `01-architectur
 
 ### 10.3 Body parsing
 
-After `detect()` returns a `Block`, `render_block(block, ctx)` hands `block.raw` to an internal `SceneParser` that walks the 12 commands and emits an internal `SceneIR` (defined in `05-scene-ir.md`). The `SceneIR` is then fed to the Starlark host (for `\compute` evaluation), then to the primitive catalog (for `\shape` instantiation and SVG layout), then to the SVG emitter (for per-frame rendering), then to the HTML stitcher (for the `<figure>` / `<ol>` / `<li>` wrapping).
+After `detect()` returns a `Block`, `render_block(block, ctx)` hands `block.raw` to an internal `SceneParser` that walks the 23 commands and emits an internal `SceneIR` (defined in `05-scene-ir.md`). The `SceneIR` is then fed to the Starlark host (for `\compute` evaluation), then to the primitive catalog (for `\shape` instantiation and SVG layout), then to the SVG emitter (for per-frame rendering), then to the HTML stitcher (for the `<figure>` / `<ol>` / `<li>` wrapping).
 
-The `SceneParser` is a small recursive-descent parser over the 12 commands. It does not use the LaTeX parser from `scriba.tex.parser` because the inner grammar is simpler and more rigid; sharing would leak TeX-specific quirks (optional args, catcodes) into a context that does not need them. Narration bodies are the one exception: they are passed verbatim to `ctx.render_inline_tex`.
+The `SceneParser` is a small recursive-descent parser over the 23 commands. It does not use the LaTeX parser from `scriba.tex.parser` because the inner grammar is simpler and more rigid; sharing would leak TeX-specific quirks (optional args, catcodes) into a context that does not need them. Narration bodies are the one exception: they are passed verbatim to `ctx.render_inline_tex`.
 
 ### 10.4 No overlap with math / code
 
@@ -701,7 +839,7 @@ All animation/diagram errors use codes in `E1001..E1299`. The ranges are reserve
 | E1003 | Nested environment                                                | Animation and diagram do not nest.                           |
 | E1004 | Unknown environment option                                        | Supported keys: §2.4.                                        |
 | E1005 | Malformed option value                                            | Use `key=value` with ident / number / string.                |
-| E1006 | Unknown inner command                                             | Must be one of the 12 from §3.                                |
+| E1006 | Unknown inner command                                             | Must be one of the 23 from §3.                                |
 | E1007 | Missing required brace argument                                   | See §3 signature.                                            |
 | E1008 | Stray text at top level of body (outside any command)             | Wrap inside a command or remove.                             |
 

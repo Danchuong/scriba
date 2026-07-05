@@ -5,7 +5,7 @@
 > the Starlark host, primitive catalog, SVG emitter, and HTML stitcher.
 >
 > Cross-references: [`environments.md`](environments.md) §10.3 for the
-> parser-to-IR contract, §3 for the 8 inner commands, §4 for target selector syntax,
+> parser-to-IR contract, §3 for the inner commands (23 total), §4 for target selector syntax,
 > §6 for frame semantics. [`03-diagram-plugin.md`](../guides/diagram-plugin.md) §4 step 6 for
 > `DiagramIR`. [`09-animation-plugin.md`](../guides/animation-plugin.md) §4 for `AnimationIR`
 > and `FrameIR`. [`primitives.md`](primitives.md) for the primitive catalog that
@@ -54,7 +54,7 @@ Design invariants:
 1. **Immutable after construction.** All IR types are frozen (Pydantic `model_config = ConfigDict(frozen=True)`). Downstream stages never mutate the IR; they build new data structures (`SceneState`) from it.
 2. **Source positions preserved.** Every command node carries `line: int` and `col: int` fields so error messages can point at the offending source location.
 3. **Serializable.** IR values round-trip through `model_dump()` / `model_validate()` for snapshot testing and debugging.
-4. **Mode-agnostic commands.** The 8 command IR types are shared between `AnimationIR` and `DiagramIR`. The container types (`AnimationIR` vs `DiagramIR`) enforce mode-specific constraints (e.g., animation allows `\step` and `\narrate`; diagram forbids both).
+4. **Mode-agnostic commands.** The command IR types are shared between `AnimationIR` and `DiagramIR`. The container types (`AnimationIR` vs `DiagramIR`) enforce mode-specific constraints (e.g., animation allows `\step` and `\narrate`; diagram forbids both).
 
 ---
 
@@ -75,8 +75,10 @@ All IR types are defined in `scriba/animation/parser/ast.py` and re-exported fro
 
 ## 3. Command IR types
 
-Each of the 8 inner commands from [`environments.md`](environments.md) §3
-is represented by a frozen dataclass. All command types share a common base.
+Each inner command from [`environments.md`](environments.md) §3 (23 in total)
+is represented by a frozen dataclass; the base-8 command IR types are catalogued
+below and the later commands follow the same pattern. All command types share a
+common base.
 
 ### 3.1 Base fields
 
