@@ -841,8 +841,9 @@ A `range` on a NumberLine targets its ticks (`tick[i]`) — since 0.23.1.
 - `\apply{a}{insert={at=k, value=v}}` — shift slots `k..live−1` right, write `v` at `k` (`index` is an alias for `at`). Inserting into a full array errors (E1403); declare a larger `size` instead of growing past it.
 - `\apply{a}{remove=k}` — shift slots `k+1..live−1` left; the freed tail becomes an **empty cell** (never an interior hole).
 - `\apply{a.cell[i]}{value=...}` — set one cell's text directly.
+- `\apply{a}{reorder=[3,0,1,4,2]}` (since 0.24.0) — permute: after the op, slot `j` shows the value that sat in slot `order[j]` before it. Each element carries a stable identity from its starting slot, so it **glides** to its new seat (one command per sorting pass — bubble, selection, suffix-array rank-doubling). `order` must be a full permutation of `0..n−1`; mixing `reorder` with `insert`/`remove` in one animation raises E1404.
 
-`cell[i]` addresses the **position** `i`, not the value once there — an annotation on `a.cell[2]` tracks the slot across a reflow.
+`cell[i]` addresses the **position** `i`, not the value once there — an annotation on `a.cell[2]` tracks the slot across a reflow or a reorder.
 
 **Selectors:** `a`, `a.cell[i]`, `a.cell[${i}]`, `a.range[i:j]`, `a.all`; with `sentinels=true` also `a.before`, `a.after`
 
@@ -1168,6 +1169,12 @@ LIFO stack.
 \apply{p}{remove_circle=0}
 \apply{p}{remove_arc=0}
 \apply{p}{remove_wedge=0}
+
+% Move IN PLACE (since 0.24.0) — the element keeps its index/identity, so it
+% GLIDES to the new position instead of teleporting (add+remove would jump).
+\apply{p}{move_point={i=0, x=2.5}}          % partial: only the fields you pass change
+\apply{p}{move_line={i=0, to_x=1.0}}        % vertical lines only (a sweep line); slanted → E1467
+\apply{p}{move_segment={i=0, x2=3, y2=4}}
 ```
 
 A malformed add-spec raises **E1467**; an out-of-range or tombstoned remove index raises **E1437**.
@@ -1679,6 +1686,29 @@ sum, exactly as an iterative segtree `push_down` would.
 \apply{st.node["[2,2]"]}{value="sum=4 | +3"}
 \narrate{Pushdown: clear the parent tag, deposit +3 into both children.}
 ```
+
+### Sweep line (three shapes, one clock)
+A sweep-line animation is a *pattern*, not a feature: `\step` already advances
+every shape in lockstep, so the whole choreography is one event per step —
+glide the line (`move_line`, it slides because the element keeps its identity),
+pop the event queue, update the status set. Add a `circle` for the live search
+radius when the algorithm has one (closest pair's $\delta$).
+```latex
+\shape{p}{Plane2D}{xrange=[-4,4], yrange=[-3,3],
+  points=[(-3,1,"A"),(-1,-2,"B"),(0,2,"C")],
+  lines=[("sweep",{a=1, b=0, c=-4})]}          % vertical line x = -4
+\shape{ev}{Queue}{data=["A","B","C"], label="Event queue"}
+\shape{st}{VariableWatch}{names=["active"], label="Status"}
+
+\step
+\narrate{Line reaches $A$: pop the event, admit $A$ to the active set.}
+\apply{p}{move_line={i=0, to_x=-3}}
+\recolor{p.point[0]}{state=current}
+\apply{ev}{dequeue=1}
+\apply{st}{active="{A}"}
+```
+One `\step` per event keeps the three shapes in sync by construction; there is
+nothing to wire up.
 
 ---
 

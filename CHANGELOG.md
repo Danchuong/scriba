@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — capability Wave 2 (motion: elements glide)
+- **`position_move` now glides to the NEW seat** (the cursor_move
+  geometry) instead of ending at the old one and relying on the
+  fullscreen snap — curing the "visible lurch" the A-4 card documented.
+  Reverse (Prev) glides back; the kind stays self-inverse; registry
+  stays at 11 kinds. All interactive goldens re-blessed (runtime bytes).
+- **Plane2D `move_point` / `move_line` / `move_segment`** —
+  mutate-in-place ops that keep the element's identity, so a sweep line
+  *slides* across the plane instead of teleporting
+  (`\apply{p}{move_line={i=0, to_x=1.0}}`; slanted lines → E1467,
+  tombstoned targets → E1437). Positions feed the differ in math-local
+  coordinates (browser-verified against the scaled transform group).
+- **Array `reorder`** — `\apply{a}{reorder=[3,0,1,4,2]}` permutes values
+  across fixed slots while elements keep a stable identity from their
+  starting slot and glide to their new seats (one command per sorting
+  pass). Slots remain the annotation/recolor anchors (R-42); mixing with
+  insert/remove raises new E1404; arrays that never reorder emit
+  byte-identical output.
+- **Sweep-line recipe** (§12): three shapes, one clock — `\step` already
+  synchronizes every shape, so a sweep is one event per step with no new
+  machinery.
+
 ### Added — capability Wave 1 (JudgeZone pass-3 Tier A/B4/heap)
 - **`row[i]` / `col[j]` / `diag` selectors** on Grid, DPTable-2D and
   Matrix — sugar over `block` expanded at the generic selector site, so
