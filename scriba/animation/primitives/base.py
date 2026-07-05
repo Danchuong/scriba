@@ -543,14 +543,25 @@ class PrimitiveBase(abc.ABC):
         for tr in getattr(self, "_traces", []):
             pts: "list[tuple[float, float]]" = []
             ok = True
+            bad_cell = None
             for cell in tr.get("cells", []):
                 sel = f"{self.name}.{self._trace_cell_suffix(cell)}"
                 pt = self.resolve_trace_point(sel)
                 if pt is None:
                     ok = False
+                    bad_cell = cell
                     break
                 pts.append(pt)
             if not ok or len(pts) < 2:
+                # A trace with an unresolvable vertex drops entirely — say so
+                # (E1115), or the author sees the whole trace vanish silently.
+                if not ok:
+                    warnings.warn(
+                        f"[E1115] {self.__class__.__name__} '{self.name}': "
+                        f"\\trace cell {bad_cell!r} is out of range; "
+                        f"dropping trace {tr.get('id', 't')!r}",
+                        stacklevel=2,
+                    )
                 continue
             color = tr.get("color", "info")
             style = ARROW_STYLES.get(color, ARROW_STYLES["info"])

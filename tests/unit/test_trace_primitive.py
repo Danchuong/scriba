@@ -140,3 +140,31 @@ class TestDiffer:
         adds = [t for t in trs if t.kind == "annotation_add"
                 and "trace[t0]" in t.target]
         assert len(adds) == 1
+
+
+class TestTraceOutOfRangeWarns:
+    """A \\trace vertex that can't resolve drops the whole trace — it must
+    do so LOUDLY (E1115 warning) so the author knows why nothing appeared,
+    instead of the silent vanish td-dp hit on broken-profile."""
+
+    def test_out_of_range_vertex_warns(self) -> None:
+        g = GridPrimitive("g", {"rows": 2, "cols": 3,
+                                "data": [[1, 2, 3], [4, 5, 6]]})
+        g.set_traces([{"target": "g", "id": "t1",
+                       "cells": [[0, 0], [0, 1], [9, 9]], "color": "good"}])
+        with pytest.warns(UserWarning, match="E1115"):
+            svg = g.emit_svg()
+        # the trace still drops (no path), but now audibly
+        assert "trace[t1]" not in svg
+
+    def test_in_range_trace_no_warning(self) -> None:
+        import warnings as _w
+
+        g = GridPrimitive("g", {"rows": 2, "cols": 3,
+                                "data": [[1, 2, 3], [4, 5, 6]]})
+        g.set_traces([{"target": "g", "id": "t2",
+                       "cells": [[0, 0], [0, 1]], "color": "good"}])
+        with _w.catch_warnings():
+            _w.simplefilter("error")  # any warning fails the test
+            svg = g.emit_svg()
+        assert "trace[t2]" in svg
