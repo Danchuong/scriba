@@ -36,6 +36,9 @@ __all__ = [
 
 _PADDING = 12
 _PRIMITIVE_GAP = 20
+# Viewport ZOOM: breathing room (user units) added around a \zoom crop so the
+# target is not flush against the magnified frame edge.
+_ZOOM_PAD = 8
 
 
 # ---------------------------------------------------------------------------
@@ -334,6 +337,19 @@ def measure_scene_layout(
                 prim.set_cursors(prim_cursors)
         _capture()
 
+    # Viewport (LAYOUT): if ANY shape declares at=[row, col], pack a grid board.
+    # The gate is a hard byte-identity guarantee — a document with no at=
+    # anywhere has every _board_pos None, re-enters the existing centered
+    # vertical stack VERBATIM below, and emits an identical viewBox + offsets.
+    # Non-users literally cannot reach the packer (proof: §3.3, SCRIBA_VERSION
+    # stays 18).
+    placements = {
+        name: getattr(prim, "_board_pos", None)
+        for name, prim in primitives.items()
+    }
+    if any(pos is not None for pos in placements.values()):
+        return _pack_board(placements, max_bbox)
+
     reserved: dict[str, tuple[float, float]] = {}
     y_cursor: float = _PADDING
     for name in primitives:
@@ -341,6 +357,75 @@ def measure_scene_layout(
         y_cursor += max_bbox[name][1] + _PRIMITIVE_GAP
 
     return f"0 0 {max_w} {max_h}", reserved
+
+
+def _pack_board(
+    placements: dict[str, tuple[int, int] | None],
+    max_bbox: dict[str, tuple[float, float]],
+) -> tuple[str, dict[str, tuple[float, float]]]:
+    """Grid-pack shapes declared with ``at=[row, col]`` (Viewport LAYOUT).
+
+    All-or-nothing in v1: every shape must carry ``at=`` (E1541 on a mix) and no
+    two may share a cell (E1542).  Column width is the max bbox width over the
+    column, row height the max bbox height over the row; each shape is centered
+    in its column (matching the current centered feel) and top-aligned in its
+    row.  Returns ``(viewbox, reserved_offsets)`` carrying REAL x offsets — the
+    emit loop honors them verbatim when ``placed=True`` instead of re-centering.
+    """
+    from scriba.animation.errors import _animation_error
+
+    # E1541: all-or-nothing — no shape may be unplaced when any is placed.
+    unplaced = [name for name, pos in placements.items() if pos is None]
+    if unplaced:
+        names = ", ".join(repr(n) for n in unplaced)
+        raise _animation_error(
+            "E1541",
+            f"mixed placement: shape(s) {names} have no at=[row,col] while "
+            f"others do; a v1 board is all-or-nothing — place every shape or none",
+        )
+    # E1542: no two shapes may occupy the same cell.
+    seen: dict[tuple[int, int], str] = {}
+    for name, pos in placements.items():
+        assert pos is not None  # narrowed by the E1541 guard above
+        if pos in seen:
+            raise _animation_error(
+                "E1542",
+                f"duplicate placement: shapes {seen[pos]!r} and {name!r} both "
+                f"declare at=[{pos[0]},{pos[1]}]; each cell holds one shape",
+            )
+        seen[pos] = name
+
+    n_rows = max(pos[0] for pos in placements.values()) + 1
+    n_cols = max(pos[1] for pos in placements.values()) + 1
+    col_width = [0.0] * n_cols
+    row_height = [0.0] * n_rows
+    for name, pos in placements.items():
+        bw, bh = max_bbox[name]
+        col_width[pos[1]] = max(col_width[pos[1]], bw)
+        row_height[pos[0]] = max(row_height[pos[0]], bh)
+
+    # Cell origins: padding + cumulative extent of earlier tracks + inter-cell
+    # gaps (an empty track contributes 0 width/height but still costs a gap).
+    col_x = [0.0] * n_cols
+    acc = float(_PADDING)
+    for c in range(n_cols):
+        col_x[c] = acc
+        acc += col_width[c] + _PRIMITIVE_GAP
+    row_y = [0.0] * n_rows
+    acc = float(_PADDING)
+    for r in range(n_rows):
+        row_y[r] = acc
+        acc += row_height[r] + _PRIMITIVE_GAP
+
+    reserved: dict[str, tuple[float, float]] = {}
+    for name, pos in placements.items():
+        bw, _bh = max_bbox[name]
+        x = col_x[pos[1]] + (col_width[pos[1]] - bw) / 2.0  # centered in column
+        reserved[name] = (float(x), float(row_y[pos[0]]))  # top-aligned in row
+
+    board_w = int(2 * _PADDING + sum(col_width) + (n_cols - 1) * _PRIMITIVE_GAP)
+    board_h = int(2 * _PADDING + sum(row_height) + (n_rows - 1) * _PRIMITIVE_GAP)
+    return f"0 0 {board_w} {board_h}", reserved
 
 
 def compute_stable_viewbox(
@@ -908,6 +993,75 @@ def _emit_scene_notes(
         )
 
 
+def _zoom_viewbox(
+    zoom_target: str,
+    primitives: dict[str, Any],
+    stage_offsets: dict[str, tuple[float, float]],
+    viewbox: str,
+) -> str:
+    """Return the cropped viewBox for a ``\\zoom{target}`` frame (Viewport ZOOM).
+
+    Resolves the target's LOCAL box (``resolve_annotation_box`` for a part,
+    ``bounding_box`` for a bare shape), lifts it into stage coordinates via the
+    shape's recorded stage offset (the exact translate the emit loop used),
+    pads, and clamps to the full board.  A declared shape whose part has no
+    resolvable box degrades soft: **E1543** warn + return the full board (§3.2).
+    The caller keeps ``max-width`` pinned to the board width, so the crop
+    **magnifies** rather than shrinks (§3.7).
+    """
+    vb_parts = viewbox.split()
+    if len(vb_parts) < 4:
+        return viewbox
+    board_w = float(vb_parts[2])
+    board_h = float(vb_parts[3])
+
+    shape_name = zoom_target.split(".", 1)[0]
+    prim = primitives.get(shape_name)
+    stage = stage_offsets.get(shape_name)
+    if prim is None or stage is None:
+        return viewbox  # undeclared shape is a hard E1116 upstream; be safe
+
+    if zoom_target == shape_name:
+        box: Any = prim.bounding_box()  # bare shape -> whole-shape crop
+    else:
+        resolver = getattr(prim, "resolve_annotation_box", None)
+        box = resolver(zoom_target) if resolver is not None else None
+        if box is None:
+            # Soft-drop: a declared shape whose part cannot resolve a box must
+            # neither silently no-op (a teacher's "lean in" that quietly does
+            # nothing) nor crash — warn and render the full board.
+            warnings.warn(
+                f"[E1543] \\zoom target '{zoom_target}' has no resolvable box; "
+                f"falling back to the full-board view"
+            )
+            try:
+                from scriba.animation.errors import _emit_warning
+
+                ctx = getattr(prim, "_ctx", None)
+                if ctx is not None and ctx.warnings_collector is not None:
+                    _emit_warning(
+                        ctx,
+                        "E1543",
+                        f"\\zoom target {zoom_target!r} has no resolvable box; "
+                        f"falling back to the full-board view",
+                        primitive=shape_name,
+                        severity="info",
+                    )
+            except Exception:  # noqa: BLE001 - best-effort collector
+                pass
+            return viewbox
+
+    lx, ly, lw, lh = _normalize_bbox(box)
+    stage_x, stage_y = stage
+    # Pad the stage rect, then clamp its corners to the board (a crop can never
+    # peek outside the drawing it is cropping).
+    x0 = max(0.0, stage_x + lx - _ZOOM_PAD)
+    y0 = max(0.0, stage_y + ly - _ZOOM_PAD)
+    x1 = min(board_w, stage_x + lx + lw + _ZOOM_PAD)
+    y1 = min(board_h, stage_y + ly + lh + _ZOOM_PAD)
+    return f"{int(x0)} {int(y0)} {int(x1 - x0)} {int(y1 - y0)}"
+
+
 def _emit_frame_svg(
     frame: Any,
     primitives: dict[str, Any],
@@ -919,6 +1073,7 @@ def _emit_frame_svg(
     _frame_id_fn: Callable[[str, Any], str],
     _escape_fn: Callable[[str], str],
     reserved_offsets: dict[str, tuple[float, float]] | None = None,
+    placed: bool = False,
 ) -> str:
     """Produce the ``<svg>`` element for one frame.
 
@@ -1100,7 +1255,11 @@ def _emit_frame_svg(
         # (direct-call tests that bypass the stitcher).
         if reserved_offsets is not None:
             x_offset, y_cursor = reserved_offsets[shape_name]
-            x_offset = (vb_width - bw) // 2  # x is always centred on actual bbox width
+            # Viewport (LAYOUT): a placed board honors the packer's real x
+            # (centered in the shape's column); the default stack re-centers x
+            # on the actual per-frame bbox width, exactly as before.
+            if not placed:
+                x_offset = (vb_width - bw) // 2
         else:
             x_offset = (vb_width - bw) // 2
 
@@ -1186,6 +1345,24 @@ def _emit_frame_svg(
         svg_parts.append("</g>")
         if reserved_offsets is None:
             y_cursor += bh + _PRIMITIVE_GAP
+
+    # Viewport (ZOOM): crop THIS frame's viewBox to the \zoom target's stage
+    # rect, magnified. This is a pure base-SVG attribute swap on the ALREADY
+    # built open tag — max-width keeps the full-board width (vb_width above), so
+    # the crop magnifies instead of shrinking (§3.7). The runtime re-reads the
+    # viewBox for free on the frame swap (stage.innerHTML = frames[i].svg): zero
+    # scriba.js change, no new motion kind, the camera CUTS at the step edge.
+    # _link_stage_offsets now holds each shape's exact emitted translate, so the
+    # crop lines up with what was drawn.
+    zoom_target = getattr(frame, "zoom_target", None)
+    if zoom_target:
+        frame_viewbox = _zoom_viewbox(
+            zoom_target, primitives, _link_stage_offsets, viewbox
+        )
+        if frame_viewbox != viewbox:
+            svg_parts[0] = svg_parts[0].replace(
+                f'viewBox="{viewbox}"', f'viewBox="{frame_viewbox}"', 1
+            )
 
     # §5/§6: cross-shape \link / \combine bridges are a scene-level overlay,
     # appended AFTER every primitive <g> so they paint on top of all shapes

@@ -850,6 +850,12 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1505",
         # Hypercube (subset lattice)
         "E1510",
+        # Viewport & spatial layout — at=[row,col] placement (LAYOUT).
+        # E1540/E1541/E1542 are hard build errors; E1543 is a soft \zoom warning
+        # (severity="info", like E1184) and so is intentionally NOT listed here.
+        "E1540",
+        "E1541",
+        "E1542",
     }
 )
 

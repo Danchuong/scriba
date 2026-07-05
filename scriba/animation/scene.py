@@ -38,6 +38,7 @@ from scriba.animation.parser.ast import (
     ShapeCommand,
     SubstoryBlock,
     UngroupCommand,
+    ZoomCommand,
 )
 from scriba.animation.uniqueness import (
     check_duplicate_shape_ids,
@@ -261,6 +262,9 @@ class FrameSnapshot:
     # DECORATE v3 — "board" when any \focus this frame requested scope=board,
     # else "shape" (byte-identical to today's intra-shape dim).
     focus_scope: str = "shape"
+    # Viewport ZOOM — the ephemeral \zoom{target} selector for this frame, or
+    # None (full board). Cleared at each \step exactly like the focus set.
+    zoom_target: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -296,6 +300,9 @@ class SceneState:
     # DECORATE v3 — reset to "shape" each frame; set "board" by a board-scoped
     # \focus. Frame-ephemeral, exactly like the focus set itself.
     focus_scope: str = "shape"
+    # Viewport ZOOM — reset to None each frame; set by \zoom. Frame-ephemeral,
+    # exactly like the focus set (the camera auto-restores next step).
+    zoom_target: str | None = None
     _trace_counter: int = 0
     bindings: dict[str, Any] = field(default_factory=dict)
     _frame_counter: int = 0
@@ -350,6 +357,7 @@ class SceneState:
         self.highlights.clear()
         self.focus.clear()
         self.focus_scope = "shape"
+        self.zoom_target = None
         self.annotations = [a for a in self.annotations if not a.ephemeral]
         self.traces = [tr for tr in self.traces if not tr.ephemeral]
         self.cursors = [c for c in self.cursors if not c.ephemeral]
@@ -413,6 +421,7 @@ class SceneState:
             groups=tuple(self.groups),
             notes=tuple(self.notes),
             focus_scope=self.focus_scope,
+            zoom_target=self.zoom_target,
         )
 
     # ---- substory ----
@@ -730,6 +739,8 @@ class SceneState:
             self._apply_highlight(cmd)
         elif isinstance(cmd, FocusCommand):
             self._apply_focus(cmd)
+        elif isinstance(cmd, ZoomCommand):
+            self._apply_zoom(cmd)
         elif isinstance(cmd, AnnotateCommand):
             self._apply_annotate(cmd)
         elif isinstance(cmd, TraceCommand):
@@ -1052,6 +1063,26 @@ class SceneState:
         # scope=board in one frame promotes to board.
         if getattr(cmd, "scope", "shape") == "board":
             self.focus_scope = "board"
+
+    def _apply_zoom(self, cmd: ZoomCommand) -> None:
+        """\\zoom — ephemeral per-step camera crop (Viewport ZOOM).
+
+        The camera twin of ``_apply_focus``: the undeclared-shape guard is the
+        same hard E1116 as ``\\focus``/``\\annotate``; a valid-shape-but-
+        unresolvable part degrades soft at emit time (E1543 warn + full-view
+        fallback), so it is NOT checked here. A later ``\\zoom`` in the same
+        frame simply replaces the target (the camera frames one window).
+        """
+        target_str = _selector_to_str(self._resolve_selector(cmd.target))
+        shape_name = target_str.split(".", 1)[0]
+        if shape_name not in self.shape_states:
+            raise _animation_error(
+                "E1116",
+                f"\\zoom references undeclared shape '{shape_name}'"
+                f" (target: '{target_str}')",
+                hint=f"declare '{shape_name}' with \\shape before using \\zoom",
+            )
+        self.zoom_target = target_str
 
     def _apply_annotate(self, cmd: AnnotateCommand) -> None:
         """\\annotate — persistent by default, ephemeral if flagged."""

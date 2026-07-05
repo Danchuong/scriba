@@ -71,6 +71,7 @@ _KNOWN_COMMANDS = frozenset(
         "apply",
         "highlight",
         "focus",
+        "zoom",
         "recolor",
         "reannotate",
         "annotate",

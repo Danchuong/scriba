@@ -1,4 +1,4 @@
-"""Animation-specific error codes (E1001 -- E1519).
+"""Animation-specific error codes (E1001 -- E1543).
 
 These extend :mod:`scriba.core.errors` with animation domain codes.
 
@@ -20,6 +20,7 @@ The catalog is grouped by subsystem:
 * ``E1488``--``E1490`` — Bar (histogram)
 * ``E1500``--``E1509`` — graph layout
 * ``E1510``--``E1519`` — Hypercube (subset lattice)
+* ``E1540``--``E1543`` — Viewport & spatial layout (``at=`` placement, ``\\zoom``)
 
 The 1400-block was introduced in v0.5.1 to replace the ``E1103`` catch-all
 with one code per (primitive, validation). ``E1103`` itself is retained as
@@ -556,6 +557,26 @@ ERROR_CATALOG: dict[str, str] = {
     "E1510": (
         "Hypercube 'bits' parameter out of range; must be an integer "
         "between 1 and 5 inclusive."
+    ),
+    # --- Viewport & spatial layout (E1540 -- E1543) ---
+    # ``at=[row,col]`` placement on \shape (LAYOUT) + the ``\zoom`` camera crop
+    # (ZOOM). E1540-E1542 are hard build errors; E1543 is a soft warning.
+    "E1540": (
+        "\\shape at=[row,col] is malformed; it must be a 2-element list of "
+        "non-negative integers, e.g. at=[0,1]."
+    ),
+    "E1541": (
+        "Mixed shape placement: some shapes declare at=[row,col] and some do "
+        "not. A v1 board is all-or-nothing — place every shape or none."
+    ),
+    "E1542": (
+        "Two shapes declare the same at=[row,col] cell; each grid cell holds "
+        "exactly one shape."
+    ),
+    "E1543": (
+        "\\zoom targets a declared shape but the part has no resolvable box; "
+        "the camera warns and falls back to the full board (warning — the "
+        "render continues)."
     ),
 }
 

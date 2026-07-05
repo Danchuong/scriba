@@ -218,6 +218,12 @@ def emit_animation_html(
     # captions; the deepcopy carries the floor with it.
     viewbox, reserved_offsets = measure_scene_layout(frames, primitives)
 
+    # Viewport (LAYOUT): a placed board (any shape with at=[row,col]) carries
+    # real x offsets in reserved_offsets that the emit loop must honor verbatim.
+    placed = any(
+        getattr(p, "_board_pos", None) is not None for p in primitives.values()
+    )
+
     # aria-label: env label first (the documented scene description),
     # then the first frame label, then the generic fallback.
     aria_label = label or "Animation"
@@ -245,6 +251,7 @@ def emit_animation_html(
             _frame_id_fn=_frame_id,
             _escape_fn=_escape,
             reserved_offsets=reserved_offsets,
+            placed=placed,
         )
 
         substory_html = ""
@@ -442,6 +449,12 @@ def emit_interactive_html(
     # the deepcopy carries the floor with it.
     viewbox, reserved_offsets = measure_scene_layout(frames, primitives)
 
+    # Viewport (LAYOUT): honor packer x offsets on a placed board (see the
+    # interactive path for the rationale).
+    placed = any(
+        getattr(p, "_board_pos", None) is not None for p in primitives.values()
+    )
+
     # ----------------------------------------------------------------
     # Single-pass frame rendering.
     #
@@ -476,6 +489,7 @@ def emit_interactive_html(
             _frame_id_fn=_frame_id,
             _escape_fn=_escape,
             reserved_offsets=reserved_offsets,
+            placed=placed,
         )
 
         # Inject node positions from Tree primitives into shape_states

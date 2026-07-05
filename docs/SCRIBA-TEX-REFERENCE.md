@@ -23,7 +23,7 @@
 2. [Supported LaTeX Commands](#2-supported-latex-commands)
 3. [Animation Environment](#3-animation-environment)
 4. [Diagram Environment](#4-diagram-environment)
-5. [Inner Commands](#5-inner-commands-21-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant` `\link` `\combine` `\group`
+5. [Inner Commands](#5-inner-commands-23-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\zoom` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant` `\link` `\combine` `\group` `\note`
 6. [Visual States](#6-visual-states)
 7. [All 19 Primitives](#7-all-19-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
@@ -82,12 +82,14 @@ Everything below is expanded later; this is the lookup layer.
 | Command | One line |
 |---|---|
 | `\shape{name}{Type}{params}` | declare a primitive (prelude only) |
+| `\shape{…}{…}{…, at=[row,col]}` | place on a grid board (opt-in; no `at=` = centered stack) |
 | `\compute{starlark}` | bind `${vars}`; prelude = global, in-`\step` = frame-local |
 | `\step[label=…, title="…"]` | start a frame |
 | `\narrate{tex}` | frame narration (one per `\step`) |
 | `\apply{sel}{value=…, …}` | set values / run primitive ops (persistent) |
 | `\highlight{sel}` | ephemeral focus ring (clears next `\step`) |
 | `\focus{sel}` | dim the shape except `sel` (ephemeral) |
+| `\zoom{sel}` | crop + magnify the camera to `sel` (ephemeral) |
 | `\recolor{sel}{state=…}` | set visual state (persistent) |
 | `\annotate{sel}{label=…, arrow_from=…}` | pill / arrow (persistent) |
 | `\trace{shape}{cells=[…]}` | arrow following a cell sequence |
@@ -341,12 +343,27 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 
 ---
 
-## 5. Inner Commands (22 total)
+## 5. Inner Commands (23 total)
 
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
 
 **Booleans are lowercase `true` / `false` only.** Python-case `True` / `False` is parsed as the literal string `"True"`/`"False"`, not a boolean — e.g. `dequeue=False` becomes a truthy string. Always write `directed=true`, `show_weights=false`, etc. An unknown parameter key raises **E1114** (with a "did you mean" hint).
+
+**Placement — `at=[row, col]` (opt-in grid board).** By default, shapes stack in
+a single centered vertical column in declaration order (fixed 20px gap). Add
+`at=[row, col]` (row-first, 0-based — the same axis order as the `cell[r][c]`
+selector) to *any* shape to switch the whole scene to an explicit grid board:
+`at=[0,0]` top-left, `at=[1,0]` below it, `at=[0,1]` to its right. Each shape is
+centered in its column and top-aligned in its row; empty cells are allowed.
+`at=` is a placement *property* (the twin of `label=`) intercepted before the
+primitive constructor, so it is never a primitive parameter (no `E1114`).
+**A document with no `at=` anywhere renders byte-identically to the default
+stack** — the grid packer is reached only when at least one shape is placed.
+A board is all-or-nothing in v1: placing some shapes but not others raises
+**E1541**; two shapes in the same cell raise **E1542**; a malformed spec (not a
+2-element list of non-negative ints) raises **E1540**. (This shape-placement
+`at=` is distinct from `\note`'s compass `at=` anchor in §5.21.)
 
 ### 5.2 `\compute{...Starlark...}`
 Runs Starlark code. Bindings available via `${name}` interpolation.
@@ -922,6 +939,41 @@ is byte-identical every frame, a persistent note lands in the same spot each
 frame. Appear/disappear/recolor animate as annotation fades — no special motion.
 The pill paints in existing whitespace and can overlap dense content; pick an
 empty corner (a reserved margin lane is a future extension).
+
+### 5.22 `\zoom{target}`
+The **camera twin of `\focus`** (§5.16): an ephemeral per-step crop that
+magnifies the frame's viewBox to *target* (plus a little padding), then
+auto-restores to the full board at the next `\step`. Where `\focus` *dims* the
+complement, `\zoom` *reframes* — the eye leans in on one region while the rest
+sits off-frame.
+
+**Syntax:**
+```latex
+\step
+\narrate{Lean in on the running max.}
+\zoom{arr.cell[2]}                        % crop + magnify to one cell
+
+\step
+\narrate{Pull back to the whole board.}   % no \zoom -> auto-restore
+```
+
+**Rules:**
+- Frame-only; using it in the prelude raises **E1053**.
+- Takes the same selector target as `\focus`: `\zoom{arr}` (the whole shape, via
+  its bounding box), `\zoom{arr.cell[2]}` / `\zoom{arr.range[1:3]}` (a part or
+  span, via the shape's box resolver).
+- Ephemeral: applies to its step only; the next step is the full board unless it
+  too zooms. Repeat `\zoom` to hold the camera across steps.
+- The camera **cuts** (discrete) at the step boundary — it does not glide. A
+  smooth/animated zoom would need a new motion kind and is deliberately out of
+  v1.
+- Undeclared shape → **E1116** (identical to `\focus`). A declared shape whose
+  part has no resolvable box degrades soft: an **E1543** warning plus a
+  full-board fallback (so a primitive without a box resolver still supports
+  whole-shape `\zoom{shape}`).
+- Magnifies, never shrinks: only the viewBox crops; the stage keeps its
+  full-board intrinsic width, so a small crop fills the column. `\zoom` is a
+  pure per-frame SVG attribute — zero runtime change, no new motion vocabulary.
 
 ---
 
@@ -2102,7 +2154,7 @@ Top author-facing codes. Full catalog with explanations: [spec/error-codes.md](s
 | E1004 | Parse error | Unknown option key in a `\step[...]` or environment bracket |
 | E1012 | Parse error | Unquoted `color=state:X` — the `"state:X"` value must be quoted |
 | E1052 | Parse error | Trailing content after the `\step[...]` closing `]` |
-| E1053 | Validation | `\focus` used in the prelude (it is frame-only) |
+| E1053 | Validation | `\focus` or `\zoom` used in the prelude (they are frame-only) |
 | E1058 | Validation | `\invariant` after the first `\step` (prelude-only) |
 | E1114 | Validation | Unknown `\shape` parameter key (with a "did you mean" hint) |
 | E1172 | Parse error | Command not allowed inside a `\foreach` body (or `\playeach` nested in one) |
@@ -2119,6 +2171,10 @@ Top author-facing codes. Full catalog with explanations: [spec/error-codes.md](s
 | E1506 / E1507 | Parse / Validation | `\group` missing `id`/`nodes` / non-Graph shape or unknown node |
 | E1508 / E1509 | Validation | `Forest` empty or duplicate `nodes=` / `union`-`edges` referencing an unknown node, double parent, or cycle |
 | E1510 | Validation | `Hypercube` `bits` outside 1..5 |
+| E1540 | Validation | `\shape` `at=[row,col]` malformed (not a 2-element list of non-negative ints) |
+| E1541 | Validation | Mixed placement — some shapes have `at=`, some don't (a v1 board is all-or-nothing) |
+| E1542 | Validation | Two shapes declare the same `at=[row,col]` cell |
+| E1543 | UserWarning | `\zoom` target part has no resolvable box — falls back to the full board |
 
 Any code cited in this doc is covered above; the complete catalog with long-form explanations is in [spec/error-codes.md](spec/error-codes.md).
 

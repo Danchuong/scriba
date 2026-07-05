@@ -363,6 +363,19 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
                 )
             return self._parse_focus()
 
+        if cmd_name == "zoom":
+            if in_prelude:
+                raise ValidationError(
+                    "\\zoom is not allowed in the prelude "
+                    "(it is a frame-only, ephemeral camera crop)",
+                    position=tok.col,
+                    code="E1053",
+                    line=tok.line,
+                    col=tok.col,
+                    source_line=self._source_line_at(tok.line),
+                )
+            return self._parse_zoom()
+
         if cmd_name == "apply":
             return self._parse_apply()
 
@@ -452,13 +465,13 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
 
     _VALID_COMMANDS_LIST = (
         "\\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, "
-        "\\focus, \\recolor, \\reannotate, \\annotate, \\trace, \\link, "
+        "\\focus, \\zoom, \\recolor, \\reannotate, \\annotate, \\trace, \\link, "
         "\\combine, \\note, \\group, \\ungroup, \\cursor, \\invariant, "
         "\\foreach, \\endforeach, \\playeach, \\substory, \\endsubstory"
     )
     _VALID_COMMAND_NAMES = (
         "shape", "compute", "step", "narrate", "apply", "highlight",
-        "focus", "recolor", "reannotate", "annotate", "trace", "link",
+        "focus", "zoom", "recolor", "reannotate", "annotate", "trace", "link",
         "combine", "note", "group", "ungroup", "cursor", "invariant",
         "foreach", "endforeach", "playeach", "substory", "endsubstory",
     )

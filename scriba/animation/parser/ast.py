@@ -263,6 +263,22 @@ class FocusCommand:
 
 
 @dataclass(frozen=True, slots=True)
+class ZoomCommand:
+    """``\\zoom{target}`` — ephemeral per-step camera crop (Viewport ZOOM).
+
+    The camera twin of ``FocusCommand``: same single-brace selector target, same
+    per-step lifetime (cleared at the next ``\\step`` so it auto-restores to the
+    full board).  Where ``\\focus`` dims the target's complement, ``\\zoom``
+    crops the frame's viewBox to the target's stage rect + padding, magnifying
+    it.  Structurally a twin of ``HighlightCommand`` (target-only).
+    """
+
+    line: int
+    col: int
+    target: Selector
+
+
+@dataclass(frozen=True, slots=True)
 class RecolorCommand:
     """``\\recolor{target}{state=..., color=..., arrow_from=...}``."""
 
@@ -460,6 +476,7 @@ MutationCommand = (
     ApplyCommand
     | HighlightCommand
     | FocusCommand
+    | ZoomCommand
     | RecolorCommand
     | ReannotateCommand
     | AnnotateCommand
@@ -482,6 +499,7 @@ Command = Union[
     ApplyCommand,
     HighlightCommand,
     FocusCommand,
+    ZoomCommand,
     RecolorCommand,
     ReannotateCommand,
     AnnotateCommand,

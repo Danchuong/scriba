@@ -27,6 +27,7 @@ from .ast import (
     ReannotateCommand,
     RecolorCommand,
     UngroupCommand,
+    ZoomCommand,
 )
 from .lexer import Token, TokenKind
 from .selectors import parse_selector
@@ -150,6 +151,18 @@ class _CommandsMixin:
                 source_line=self._source_line_at(tok.line),
             )
         return FocusCommand(tok.line, tok.col, sel, scope=scope)
+
+    def _parse_zoom(self) -> ZoomCommand:
+        """Parse ``\\zoom{target}`` (Viewport ZOOM) — a structural twin of
+        ``\\highlight``: a single-brace selector, no options."""
+        tok = self._advance()
+        sel = parse_selector(
+            self._read_brace_arg(tok),
+            line=tok.line,
+            col=tok.col,
+            source_line=self._source_line_at(tok.line),
+        )
+        return ZoomCommand(tok.line, tok.col, sel)
 
     def _parse_recolor(self) -> RecolorCommand:
         tok = self._advance()

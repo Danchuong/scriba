@@ -281,6 +281,19 @@ documented deprecated alias.
 |------|-------------|------------|
 | E1510 | Hypercube `bits` parameter out of range (must be an integer 1–5). | Use `Hypercube{L}{bits=N}` with `1 <= N <= 5` (5 = 32 nodes, the legibility cap). |
 
+## Viewport & Spatial Layout Errors (E1540--E1543)
+
+The Viewport verbs: `at=[row,col]` placement on `\shape` (LAYOUT) and the
+`\zoom{target}` per-step camera crop (ZOOM). E1540–E1542 are hard build errors;
+E1543 is a soft warning (the camera falls back to the full board).
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1540 | `\shape` `at=[row,col]` is malformed — not a 2-element list of non-negative integers. | Use `at=[0,1]` (row-first, 0-based); both entries must be non-negative ints. |
+| E1541 | Mixed placement — some shapes declare `at=` and some do not. A v1 board is all-or-nothing. | Give every shape an `at=[row,col]`, or remove `at=` from all of them (the default centered stack). |
+| E1542 | Two shapes declare the same `at=[row,col]` cell. | Move one shape to a free cell; each grid cell holds exactly one shape. |
+| E1543 | `\zoom` targets a declared shape but the part has no resolvable box (warning — the camera falls back to the full board). | Zoom a target whose box resolves (a cell, node, range, or the bare shape); primitives without a box resolver support only whole-shape `\zoom{shape}`. |
+
 ## Smart-Label Placement Errors (E1560--E1579)
 
 Reserved block for smart-label placement invariants defined in

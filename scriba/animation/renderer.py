@@ -293,6 +293,40 @@ def _resolve_single(value: Any, bindings: dict[str, Any]) -> Any:
     return value
 
 
+def _parse_board_pos(raw: Any, shape_name: str, line: int | None) -> tuple[int, int]:
+    """Validate an ``at=[row, col]`` placement spec into a ``(row, col)`` tuple.
+
+    ``at=`` is the Viewport-design placement *property* on ``\\shape`` (the twin
+    of ``label=``).  It must be a 2-element list of non-negative ints; anything
+    else is E1540.  ``bool`` is rejected explicitly because ``isinstance(True,
+    int)`` is ``True`` in Python and a boolean row/col is a mistake, not a cell.
+    """
+    if not isinstance(raw, (list, tuple)) or len(raw) != 2:
+        raise _animation_error(
+            "E1540",
+            f"\\shape '{shape_name}' has a malformed at={raw!r}; "
+            f"at= must be a 2-element list [row, col] of non-negative ints, "
+            f"e.g. at=[0,1]",
+            line=line,
+        )
+    row, col = raw
+    if (
+        isinstance(row, bool)
+        or isinstance(col, bool)
+        or not isinstance(row, int)
+        or not isinstance(col, int)
+        or row < 0
+        or col < 0
+    ):
+        raise _animation_error(
+            "E1540",
+            f"\\shape '{shape_name}' has a malformed at=[{row!r}, {col!r}]; "
+            f"row and col must be non-negative integers, e.g. at=[0,1]",
+            line=line,
+        )
+    return (row, col)
+
+
 def _instantiate_primitive(
     shape: ShapeCommand,
     bindings: dict[str, Any],
@@ -308,7 +342,17 @@ def _instantiate_primitive(
             code="E1102",
         )
     resolved_params = _resolve_params(shape.params, bindings)
-    return primitive_cls(shape.name, resolved_params)
+    # Viewport (LAYOUT): intercept the ``at=[row, col]`` placement property
+    # BEFORE construction so it never reaches the primitive ctor — keeps every
+    # primitive's ACCEPTED_PARAMS untouched (no E1114) and stores placement as a
+    # render-only shape attribute (like the caption channel).
+    board = resolved_params.pop("at", None)
+    prim = primitive_cls(shape.name, resolved_params)
+    if board is not None:
+        prim._board_pos = _parse_board_pos(
+            board, shape.name, getattr(shape, "line", None)
+        )
+    return prim
 
 
 def _resolve_cursor_index(
@@ -542,6 +586,7 @@ def _snapshot_to_frame_data(
         title=title,
         focus=tuple(snap.focus),
         focus_scope=getattr(snap, "focus_scope", "shape"),
+        zoom_target=getattr(snap, "zoom_target", None),
     )
 
 
