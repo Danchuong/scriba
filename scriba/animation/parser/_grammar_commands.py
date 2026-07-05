@@ -19,6 +19,7 @@ from .ast import (
     FocusCommand,
     GroupCommand,
     HighlightCommand,
+    InterpolationRef,
     InvariantCommand,
     LinkCommand,
     NarrateCommand,
@@ -140,7 +141,22 @@ class _CommandsMixin:
         # state is now optional
         state: str | None = None
         if "state" in params:
-            state = str(params["state"])
+            raw_state = params["state"]
+            if isinstance(raw_state, InterpolationRef):
+                # state=${s} — visual state is a fixed enum validated at parse
+                # time, so it can't be data-driven; say that instead of leaking
+                # the InterpolationRef repr into the message.
+                raise ValidationError(
+                    f"\\recolor state cannot be data-driven "
+                    f"(${{{raw_state.name}}}); it must be a literal one of "
+                    f"{', '.join(sorted(VALID_STATES))}. Loop a state list "
+                    f"with \\foreach if the state varies.",
+                    position=tok.col,
+                    code="E1109",
+                    line=tok.line,
+                    col=tok.col,
+                )
+            state = str(raw_state)
             if state not in VALID_STATES:
                 self._raise_unknown_enum(
                     "recolor state",

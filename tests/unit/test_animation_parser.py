@@ -430,6 +430,17 @@ class TestParserErrors:
         with pytest.raises(ValidationError, match="E1109"):
             parser.parse(src)
 
+    def test_e1109_interp_state_no_repr_leak(self, parser: SceneParser) -> None:
+        # state=${s} is not data-driven — the error must explain that, not
+        # leak the Python InterpolationRef repr into the message
+        src = "\\step\n\\recolor{a}{state=${s}}"
+        with pytest.raises(ValidationError) as ei:
+            parser.parse(src)
+        msg = str(ei.value)
+        assert "E1109" in msg
+        assert "InterpolationRef" not in msg  # no repr leak
+        assert "${s}" in msg or "data-driven" in msg
+
     def test_e1112_unknown_annotate_position(self, parser: SceneParser) -> None:
         src = '\\step\n\\annotate{a}{label="x", position=center}'
         with pytest.raises(ValidationError, match="E1112"):
