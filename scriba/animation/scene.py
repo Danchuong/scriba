@@ -433,7 +433,14 @@ class SceneState:
     ) -> list[FrameSnapshot]:
         """Apply a substory block, returning its frame snapshots.
 
-        Saves and restores parent state so substory mutations are ephemeral.
+        Restores the parent's scene-level snapshot (highlights/focus/
+        annotations/bindings) and resets the substory frame counter, and
+        scopes substory-local shape ids. NOTE: parent-shape STRUCTURAL
+        mutations (``\\apply``/``\\recolor`` on a shared primitive) DO persist
+        into subsequent parent frames via the emitter primitive
+        (docs/SCRIBA-TEX-REFERENCE.md:670; interval_dp.tex relies on it) —
+        the ``shape_states`` restore below does not make those ephemeral.
+        See investigations/verify-substory-leak.md.
         """
         # Save parent state (deep copy)
         saved_shape_states: dict[str, dict[str, ShapeTargetState]] = {}
@@ -480,7 +487,12 @@ class SceneState:
             snap = self.apply_frame(frame, starlark_host)
             snapshots.append(snap)
 
-        # Restore parent state (substory mutations are ephemeral)
+        # Restore the parent's scene-level snapshot + frame counter. This
+        # scopes substory-LOCAL shape ids and resets the substory frame
+        # counter; it does NOT make parent-shape structural mutations
+        # ephemeral — those persist via the shared emitter primitive per
+        # docs:670 (documented + relied on by interval_dp.tex; the layer
+        # divergence is benign for static output, see verify-substory-leak.md).
         self.shape_states = saved_shape_states
         self.highlights = saved_highlights
         self.focus = saved_focus
