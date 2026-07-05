@@ -234,7 +234,7 @@ you need once Node is present.
 To have an AI write `.tex` for Scriba, give it one file:
 **[`docs/SCRIBA-TEX-REFERENCE.md`](docs/SCRIBA-TEX-REFERENCE.md)**.
 
-It's self-contained — all commands, all 15 primitives, all selectors,
+It's self-contained — all commands, all 18 primitives, all selectors,
 all gotchas. No other spec files needed.
 
 Prompt template:

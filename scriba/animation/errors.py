@@ -172,7 +172,8 @@ ERROR_CATALOG: dict[str, str] = {
         "Unknown primitive type in \\shape declaration. Fix: Check "
         "primitive type spelling. Valid types: Array, Grid, DPTable, "
         "Graph, Tree, NumberLine, Matrix, Heatmap, Stack, Plane2D, "
-        "MetricPlot, CodePanel, HashMap, LinkedList, Queue, VariableWatch."
+        "MetricPlot, CodePanel, HashMap, LinkedList, Queue, Deque, "
+        "VariableWatch, Hypercube, Forest."
     ),
     "E1103": (
         "Primitive parameter validation error (DEPRECATED mega-bucket; "

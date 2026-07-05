@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — 0.24.0 hardening (adversarial test pass)
+- **Wrong-type construction params raise a clean E-code, not a Python
+  traceback** — `bits="three"`, `nodes=5`, `capacity="x"`,
+  `kind=heap data=5`, `remove_circle="xyz"`, plus pre-existing
+  Array/Matrix/Graph and ragged 2-D Matrix data, all now surface
+  E1510/E1508-9/E1440/E1438/E1401/E1421/E1470/E1422/E1437 via
+  type-checking coercion helpers.
+- **`${...}` resolves in `row`/`col`/`subset`/`link` and every generic
+  `name[index]` selector** — these went through a NamedAccessor that
+  froze the interpolation ref, so `\foreach{i}{...}\recolor{m.row[${i}]}`
+  silently painted nothing. New IndexedAccessor/LinkAccessor keep the
+  index live; an unbound `${x}` there now raises the same loud E1159 as
+  `cell`.
+- **`\trace` on a primitive that can't draw traces raises E1118** (was a
+  silent no-op on Deque/Forest/Matrix/Stack/… — only Array/Grid/DPTable/
+  NumberLine support it).
+- **`\group` label paints over the nodes** so a node at the hull corner
+  can't overdraw it into an unreadable pill.
+- **Unquoted dotted param value gets a hinted E1005** naming the key
+  (`\combine{...}{into=c.cell[0][1]}` was a cryptic "expected IDENT").
+- **A circle/arc/wedge whose radius reaches past the viewport warns
+  (E1463)** — the check previously only looked at the center.
+- **Dark-mode edge contrast raised to WCAG 3:1** (idle stroke
+  #313538 → #62696d) and Hypercube lattice edges made theme-aware.
+- **Consistent `highlighted` manifest casing** (`"true"` everywhere,
+  was `"True"` on one path) and `render.py --dump-frames` no longer
+  crashes on a `None` state.
+- **Keyboard nav stays alive at the first/last frame** — a disabled
+  prev/next button no longer drops focus outside the widget.
+
 ### Added — capability Wave 4 (new substrates + flow readability)
 - **Hypercube primitive** — the subset lattice for bitmask DP / SOS /
   inclusion-exclusion: `\shape{L}{Hypercube}{bits=4}` renders all

@@ -233,7 +233,7 @@ documented deprecated alias.
 | E1460 | Degenerate viewport (`xrange` or `yrange` has equal endpoints). | `xrange=[5, 5]` or `yrange=[0, 0]` gives a zero-width or zero-height viewport. | Use distinct min/max values for the viewport range. |
 | E1461 | Degenerate or out-of-viewport line geometry (warning — line is not added). | A line equation `ax + by + c = 0` has `a=0` and `b=0`, or both endpoints are outside the viewport. | Ensure line endpoints are within or intersect the viewport. |
 | E1462 | Polygon not closed (auto-closing applied, warning). | A polygon was submitted whose last point does not match its first. | Close the polygon explicitly by repeating the first point at the end, or accept auto-closing. |
-| E1463 | Point is outside viewport bounds (warning — point is still added but invisible). | Coordinates fall outside `xrange`/`yrange`. | Move the point inside the viewport or expand the range. |
+| E1463 | An element falls outside viewport bounds (warning — still added but clipped): a point's coordinates, or a circle/arc/wedge whose `center ± r` reaches past the range. | Coordinates or radius fall outside `xrange`/`yrange`. | Move the element inside the viewport, shrink `r`, or expand the range. |
 | E1465 | Invalid `aspect` value. | `aspect=` was set to a string other than `equal` or `auto`. | Use `equal` or `auto`. |
 | E1466 | Plane2D element cap reached. | Too many geometric elements added to a single Plane2D primitive. | Reduce the number of geometric elements. |
 

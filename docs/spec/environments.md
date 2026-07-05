@@ -144,7 +144,7 @@ Declares a primitive instance bound to an identifier inside the current environm
 - **Contexts:** animation, diagram.
 - **Signature:** `\shape{<ident>}{<TypeName>}{<param_list>}`
 - **Required:** `name` (first brace), `Type` (second brace). `name` must match `[a-z][a-zA-Z0-9_]*` and must be unique within the environment (`E1101` on duplicate).
-- **Type** is one of the 16 primitive type names: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`, `Matrix`, `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `VariableWatch`. (`Heatmap` is an alias for `Matrix` — both resolve to the same underlying class, registered via `@register_primitive("Matrix", "Heatmap")`.) Unknown type is `E1102`.
+- **Type** is one of the primitive type names: `Array`, `Grid`, `DPTable`, `Graph`, `Tree`, `NumberLine`, `Matrix`, `Heatmap`, `Stack`, `Plane2D`, `MetricPlot`, `CodePanel`, `HashMap`, `LinkedList`, `Queue`, `Deque`, `VariableWatch`, `Hypercube`, `Forest`. (`Heatmap` is an alias for `Matrix` — both resolve to the same underlying class, registered via `@register_primitive("Matrix", "Heatmap")`; `Deque` is a `Queue` subclass.) Unknown type is `E1102`.
 - **Parameters** are primitive-specific (see `primitives.md`). Common ones: `size=`, `rows=`, `cols=`, `data=`, `indices=`, `directed=`, `domain=`.
 - **Position constraint:** in `animation`, all `\shape` declarations MUST appear before the first `\step` (`E1051`). In `diagram`, order is free.
 - **Error codes:** `E1101` duplicate name; `E1102` unknown type; `E1103` missing required param for that type; `E1104` param type mismatch.

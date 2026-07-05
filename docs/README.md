@@ -1,4 +1,4 @@
-> **Scriba v0.23.1** — 3 renderers (TexRenderer, AnimationRenderer, DiagramRenderer), 16 primitive types, zero-JS output.
+> **Scriba v0.23.1** — 3 renderers (TexRenderer, AnimationRenderer, DiagramRenderer), 18 primitive types, zero-JS output.
 
 ---
 
@@ -154,7 +154,7 @@ First-time users: start with [`tutorial/getting-started.md`](tutorial/getting-st
 | [`architecture.md`](spec/architecture.md) | The Pipeline, Renderer, RenderContext, and Document contracts. Read this first if you are implementing a renderer or integrating Scriba into a service. |
 | [`environments.md`](spec/environments.md) | **Locked** spec for the `animation` and `diagram` environments: grammar, the 8 inner commands, the 6 primitives, the 6 semantic states, the Starlark host, the HTML/CSS contract, and the error catalog. Single source of truth for implementation. |
 | [`scene-ir.md`](spec/scene-ir.md) | Scene IR datatype definitions. |
-| [`primitives.md`](spec/primitives.md) | Primitive catalog — all 16 primitive types (6 base, 5 extended, 5 data-structure). |
+| [`primitives.md`](spec/primitives.md) | Primitive catalog — all 18 primitive types (6 base, 5 extended, 7 data-structure). |
 | [`svg-emitter.md`](spec/svg-emitter.md) | SVG emitter specification. |
 | [`smart-label-ruleset.md`](spec/smart-label-ruleset.md) | **v2 (normative, RFC 2119).** Annotation pill placement: 42 invariants across 7 axes (Geometry, Collision, Typography, Accessibility, Determinism, Error-handling, Author contract), 4 conformance classes, E1560–E1579 error block, Primitive Participation Contract with 15-primitive conformance matrix, Let/Assert/Return placement algorithm, 18 non-goals, semver versioning (8 px MAJOR-break threshold). Supersedes v1. Read before touching `_svg_helpers.py` or any primitive's annotation surface. |
 | [`animation-css.md`](spec/animation-css.md) | CSS stylesheet specification. |
