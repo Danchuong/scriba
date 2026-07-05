@@ -308,6 +308,14 @@ ERROR_CATALOG: dict[str, str] = {
         "an index parameter."
     ),
     "E1182": "Invalid \\cursor prev_state or curr_state value.",
+    "E1183": (
+        "\\cursor binding form requires 'at='; give an int, a quoted "
+        "\"shape.var[name]\" selector, or \"before\"/\"after\"."
+    ),
+    "E1184": (
+        "\\cursor binding is unresolvable this frame (info); the caret "
+        "soft-drops. Check the watched variable holds an integer."
+    ),
     # --- \hl / \ref cross-reference macro errors (E1320 -- E1329) ---
     "E1320": "\\hl used outside a \\narrate body.",
     "E1321": "\\hl references an unknown step-id (no matching \\step label or step{N}).",

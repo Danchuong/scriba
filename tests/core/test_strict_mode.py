@@ -752,6 +752,9 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1180",
         "E1181",
         "E1182",
+        "E1183",  # \cursor binding requires at= (hard)
+        # E1184 (\cursor unresolvable) is a soft info warning, not raised —
+        # excluded like E1543, but catalogued + documented.
         # Playeach frame macro
         "E1493",
         "E1494",
