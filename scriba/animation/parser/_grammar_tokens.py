@@ -264,6 +264,29 @@ class _TokensMixin:
             value = self._parse_param_value()
             params[key_tok.value] = value
             self._skip_newlines()
+            # After a value the only valid continuations are ',' (next param)
+            # and '}' (end). Anything else means the value ran on — almost
+            # always an unquoted selector/dotted path (into=c.cell[0][1]) or a
+            # bare list. Name the key and hint to quote, instead of letting the
+            # loop's _expect(IDENT) blow up with the cryptic "expected IDENT,
+            # got DOT" (E1012) — the key's validator (e.g. combine's E1497)
+            # would never be reached (bmad-errmsg).
+            if (
+                not self._at_end()
+                and self._peek().kind
+                not in (TokenKind.COMMA, TokenKind.RBRACE)
+            ):
+                bad = self._peek()
+                raise ValidationError(
+                    f"parameter '{key_tok.value}' has an unquoted value that "
+                    f"runs into '{bad.value}'. Wrap a selector, dotted path or "
+                    f'list value in quotes, e.g. {key_tok.value}="c.cell[0][1]".',
+                    position=bad.col,
+                    code="E1005",
+                    line=bad.line,
+                    col=bad.col,
+                    source_line=self._source_line_at(bad.line),
+                )
             if not self._at_end() and self._peek().kind == TokenKind.COMMA:
                 self._advance()
             self._skip_newlines()
