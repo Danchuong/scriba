@@ -1,0 +1,2 @@
+error E1404
+feature: reorder cannot mix with insert/remove

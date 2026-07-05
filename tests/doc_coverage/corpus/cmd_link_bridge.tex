@@ -1,0 +1,8 @@
+\begin{animation}[id="lkf"]
+\shape{T}{Tree}{root=1, nodes=[1,2,3], edges=[(1,2),(1,3)]}
+\shape{a}{Array}{size=3, data=[1,2,3]}
+\step
+\link{T.node[2] <-> a.range[0:1]}{color=info, label="subtree = range"}
+\combine{a.cell[0], a.cell[2]}{into="T.node[1]", color=good}
+\narrate{Bridges across shapes.}
+\end{animation}

@@ -1,0 +1,2 @@
+error E1444
+feature: deque-only verbs on Queue are rejected with a hint

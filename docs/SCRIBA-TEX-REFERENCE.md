@@ -2004,6 +2004,14 @@ Top author-facing codes. Full catalog with explanations: [spec/error-codes.md](s
 | E1462 | UserWarning | Plane2D polygon auto-closed (first point appended) |
 | E1493 | Hard limit | `\playeach` generated more than 64 frames |
 | E1494 / E1495 | Validation | `\playeach` selector not a literal `range`/`block` / missing `state`+`cursor` action or `cursor=` on a 2-D block |
+| E1404 | Validation | Array `reorder` mixed with `insert`/`remove` in one animation |
+| E1438 | Validation | Tree `kind=heap` declared without a non-empty `data=` array |
+| E1442 / E1443 | Validation | Deque overflow (push onto full) / underflow (pop past empty) |
+| E1444 | Validation | Deque-only verb (`push_front` etc.) on a plain `Queue` — declare as `Deque` |
+| E1497 / E1498 | Parse / Validation | `\link`/`\combine` malformed endpoints / endpoint on an undeclared shape |
+| E1506 / E1507 | Parse / Validation | `\group` missing `id`/`nodes` / non-Graph shape or unknown node |
+| E1508 / E1509 | Validation | `Forest` empty or duplicate `nodes=` / `union`-`edges` referencing an unknown node, double parent, or cycle |
+| E1510 | Validation | `Hypercube` `bits` outside 1..5 |
 
 Any code cited in this doc is covered above; the complete catalog with long-form explanations is in [spec/error-codes.md](spec/error-codes.md).
 
