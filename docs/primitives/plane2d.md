@@ -660,7 +660,7 @@ overrides, grid/axes stroke variables, and the `orbit`/`rotate` keyframe animati
 `scriba-keyframes.css` which is also listed as a required_css dependency of the
 keyframe-animation extension).
 
-**Supported §9.2 state classes**: `focus`, `update`, `path`, `reject`, `accept`, `hint`
+**Supported §9.2 state classes**: `idle`, `current`, `done`, `dim`, `error`, `good`, `highlight`, `path`, `hidden`
 (applied to `<g>` wrappers; state changes stroke color for lines/segments, fill+stroke for
 polygons/regions, stroke for points).
 

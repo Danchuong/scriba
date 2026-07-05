@@ -423,7 +423,7 @@ Consumer must include this stylesheet via `<link rel="stylesheet">` before rende
 Scriba animation frames. The stylesheet provides `.scriba-matrix-cell`, `.scriba-state-*`
 border-stroke rules, `.scriba-matrix-label`, and `.scriba-matrix-value` styles.
 
-**Supported §9.2 state classes**: `focus`, `update`, `path`, `reject`, `accept`, `hint`
+**Supported §9.2 state classes**: `idle`, `current`, `done`, `dim`, `error`, `good`, `highlight`, `path`, `hidden`
 (mapped to border-stroke only — colorscale fill is never overridden by state classes).
 
 ```html
@@ -664,5 +664,5 @@ The roadmap (being updated by the parallel agent) will include a parser task for
 base-spec delta. Until the parser is updated, this selector is correctly specified here
 and flagged as requiring base-spec extension before it can be parsed.
 
-**In §9.2** (state classes): Matrix supports the standard state class set: `focus`,
-`update`, `path`, `reject`, `accept`, `hint`. Applied as border-stroke overlays only.
+**In §9.2** (state classes): Matrix supports the standard state class set: `idle`,
+`current`, `done`, `dim`, `error`, `good`, `highlight`, `path`, `hidden`. Applied as border-stroke overlays only.

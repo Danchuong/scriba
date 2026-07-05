@@ -128,6 +128,13 @@ All primitive-emitted CSS classes that must survive sanitizer stripping:
 
 ### Shared semantic state classes (all primitives)
 
+> **Superseded — state names (2026-04-09 scan).** These rows were derived by scanning the
+> primitive specs before their §9.2 state lists were corrected. The authoritative set is the
+> nine `scriba-state-*` classes in [environments.md](../spec/environments.md) §9.2: `idle`,
+> `current`, `done`, `dim`, `error`, `good`, `highlight`, `path`, `hidden`. The `focus`,
+> `update`, `reject`, `accept`, and `hint` rows below never shipped, and `scriba-state-hidden`
+> is missing from the table — configure the sanitizer from §9.2, not this point-in-time delta.
+
 | Class                     | Purpose                                     |
 |---------------------------|---------------------------------------------|
 | `scriba-state-idle`       | Default state                               |

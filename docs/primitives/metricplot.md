@@ -296,7 +296,7 @@ that sets `stroke: #000` on all series lines. Consumer includes it via
 `<link rel="stylesheet">` before rendering animation frames.
 
 **Supported §9.2 state classes**: MetricPlot addresses only the whole plot (`plot`). State
-classes `focus`, `update`, `path`, `reject`, `accept`, `hint` can be applied to the SVG
+classes `idle`, `current`, `done`, `dim`, `error`, `good`, `highlight`, `path`, `hidden` can be applied to the SVG
 root via `\recolor{plot}{state=...}`, affecting the plot border/background via CSS.
 
 ```html

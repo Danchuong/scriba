@@ -305,8 +305,8 @@ The stylesheet provides `.scriba-stack-cell`, `.scriba-stack-enter` animation ru
 overrides, and `.scriba-state-*` fill rules. Consumer includes it via
 `<link rel="stylesheet">` before rendering animation frames.
 
-**Supported §9.2 state classes**: `focus`, `update`, `path`, `reject`, `accept`, `hint`,
-`current`, `done`, `dim`, `error`, `good`, `highlight` (applied as fill override — Stack
+**Supported §9.2 state classes**: `idle`, `current`, `done`, `dim`, `error`, `good`,
+`highlight`, `path`, `hidden` (applied as fill override — Stack
 cells use semantic fill as primary state signal, no colorscale to preserve).
 
 > **Determinism.** Given identical `\shape` parameters and identical `\apply` command
