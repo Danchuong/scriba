@@ -172,6 +172,14 @@ _WEIGHT_PILL_STROKE_PAD: float = 1.0
 # Coincident-edge early-exit threshold (GEP-11).
 _WEIGHT_EDGE_MIN_LEN: float = 4.0
 
+# C2 antiparallel curved edges. When a *directed* graph holds both (u,v) and
+# (v,u) (forward + residual in flow editorials), each edge bows onto its own
+# side by this many px at the curve midpoint (apex), so the two arrows and
+# their f/c pills separate into readable arcs instead of overlapping on one
+# straight line. The quadratic control point sits at TWICE this distance,
+# because a quadratic Bézier's apex deviation is half its control offset.
+_ANTIPARALLEL_CURVE_OFFSET: float = 12.0
+
 # Minimum leader-line length gate (GEP-17).  When the computed perpendicular
 # offset is smaller than this value the leader is suppressed and the function
 # falls back to the silent origin (leader=False, stage="origin").
@@ -1163,6 +1171,59 @@ class Graph(PrimitiveBase):
     def _edge_key(u: str | int, v: str | int) -> str:
         return f"edge[({u},{v})]"
 
+    def _antiparallel_edges(
+        self, hidden_nodes: "set[str | int]"
+    ) -> "set[tuple[Any, Any]]":
+        """Directed (u,v) whose reverse (v,u) is also drawn this frame.
+
+        C2: forward + residual edges overlap on one straight ``<line>``; a
+        directed edge curves iff its reverse partner exists AND both are
+        actually drawable (endpoints visible, edge state not ``hidden``) — a
+        lone visible edge never bows on its own, and a mid-animation
+        ``add_edge`` that births the reverse activates the curve from that
+        frame. Undirected graphs return the empty set: antiparallel is
+        meaningless without direction, so those edges stay byte-identical.
+        """
+        if not self.directed:
+            return set()
+        drawable = {
+            (u, v)
+            for u, v, _w in self.edges
+            if u not in hidden_nodes
+            and v not in hidden_nodes
+            and self.get_state(self._edge_key(u, v)) != "hidden"
+        }
+        return {
+            (u, v) for (u, v) in drawable if u != v and (v, u) in drawable
+        }
+
+    @staticmethod
+    def _antiparallel_curve(
+        cx1: float, cy1: float, cx2: float, cy2: float, radius: int
+    ) -> "tuple[float, float, int, int, int, int, float, float]":
+        """Quadratic geometry for one bowed antiparallel edge.
+
+        Returns ``(qx, qy, sx1, sy1, sx2, sy2, apex_x, apex_y)`` where ``q`` is
+        the control point offset onto the edge's left-hand normal (the reverse
+        edge's normal is the negation, so a pair bows to opposite sides),
+        ``s`` are the endpoints pulled back to each node-circle boundary along
+        the curve tangent, and ``apex`` is the on-curve midpoint B(0.5) — the
+        pill anchor, already shifted onto the bow side.
+        """
+        dxc = cx2 - cx1
+        dyc = cy2 - cy1
+        clen = math.hypot(dxc, dyc) or 1.0
+        nperp_x = -dyc / clen
+        nperp_y = dxc / clen
+        ctrl_off = 2.0 * _ANTIPARALLEL_CURVE_OFFSET
+        qx = (cx1 + cx2) / 2 + nperp_x * ctrl_off
+        qy = (cy1 + cy2) / 2 + nperp_y * ctrl_off
+        sx1, sy1 = _shorten_line_to_circle(qx, qy, cx1, cy1, radius)
+        sx2, sy2 = _shorten_line_to_circle(qx, qy, cx2, cy2, radius)
+        apex_x = 0.25 * sx1 + 0.5 * qx + 0.25 * sx2
+        apex_y = 0.25 * sy1 + 0.5 * qy + 0.25 * sy2
+        return qx, qy, sx1, sy1, sx2, sy2, apex_x, apex_y
+
     # ----- Primitive interface ---------------------------------------------
 
     def addressable_parts(self) -> list[str]:
@@ -1304,6 +1365,7 @@ class Graph(PrimitiveBase):
             k: (float(v[0]), float(v[1])) for k, v in self.positions.items()
         }
         r = float(self._node_radius)
+        antiparallel = self._antiparallel_edges(hidden)
         rects: list[BoundingBox] = []
         for n in self.nodes:
             if n in hidden or n not in pos:
@@ -1331,6 +1393,13 @@ class Graph(PrimitiveBase):
             vx1, vy1 = _shorten_line_to_circle(x2, y2, x1, y1, r)
             mid_x = (vx1 + x2) / 2
             mid_y = (vy1 + y2) / 2
+            if (u, v) in antiparallel:
+                # Mirror emit_svg: the pill obstacle rides the bowed apex, not
+                # the straight midpoint (FP-2 measure/emit parity).
+                *_c, mid_x, mid_y = self._antiparallel_curve(
+                    pos[u][0], pos[u][1], pos[v][0], pos[v][1],
+                    self._node_radius,
+                )
             tw = measure_value_text(display, _WEIGHT_FONT, mono=True)
             pw = float(tw + _WEIGHT_PILL_PAD_X * 2)
             ph = float(line_box_h(_WEIGHT_FONT) + _WEIGHT_PILL_PAD_Y * 2)
@@ -1612,6 +1681,9 @@ class Graph(PrimitiveBase):
         # they tint the cluster interior without occluding node labels. Uses the
         # same working_positions space as edges/nodes; never widens the viewBox.
         self._emit_group_hulls(parts, working_positions)
+        # C2: directed (u,v) whose reverse (v,u) is also drawn bows onto a
+        # quadratic <path>; every other edge keeps its byte-identical <line>.
+        antiparallel = self._antiparallel_edges(hidden_nodes)
         parts.append('<g class="scriba-graph-edges">')
         for u, v, weight in sorted(self.edges, key=_edge_sort_key):
             edge_target = f"{self.name}.{self._edge_key(u, v)}"
@@ -1640,6 +1712,22 @@ class Graph(PrimitiveBase):
             vx1, vy1 = _shorten_line_to_circle(x2, y2, x1, y1, self._node_radius)
             mid_x = (vx1 + x2) / 2
             mid_y = (vy1 + y2) / 2
+
+            # C2 antiparallel: bow this edge onto its own side. The forward and
+            # residual edges of a pair take opposite left-hand normals, so they
+            # separate into two arcs. curve_ctrl feeds the <path> emit below;
+            # x1/y1/x2/y2 become the on-curve endpoints (so the pill's edge
+            # direction = the curve's midpoint tangent) and mid_x/mid_y ride the
+            # apex, dragging the weight pill off the shared centre line.
+            curve_ctrl: "tuple[float, float] | None" = None
+            if (u, v) in antiparallel:
+                cx1, cy1 = working_positions[u]
+                cx2, cy2 = working_positions[v]
+                qx, qy, x1, y1, x2, y2, mid_x, mid_y = self._antiparallel_curve(
+                    float(cx1), float(cy1), float(cx2), float(cy2),
+                    self._node_radius,
+                )
+                curve_ctrl = (qx, qy)
 
             marker = ' marker-end="url(#scriba-arrow-fwd)"' if self.directed else ""
             edge_colors = svg_style_attrs(state)
@@ -1853,15 +1941,29 @@ class Graph(PrimitiveBase):
                         f'{_pill_svg}'
                         f'</g>'
                     )
+            if curve_ctrl is None:
+                edge_geom = (
+                    f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
+                    f'stroke="{edge_stroke}" stroke-width="{edge_sw}"'
+                    f'{marker}>'
+                    f'<title>{edge_label}</title>'
+                    f'</line>'
+                )
+            else:
+                qx, qy = curve_ctrl
+                edge_geom = (
+                    f'<path d="M {x1} {y1} Q {qx:.1f} {qy:.1f} {x2} {y2}" '
+                    f'fill="none" '
+                    f'stroke="{edge_stroke}" stroke-width="{edge_sw}"'
+                    f'{marker}>'
+                    f'<title>{edge_label}</title>'
+                    f'</path>'
+                )
             parts.append(
                 f'<g data-target="{_escape_xml(edge_target)}" '
                 f'class="{state_class(state)}" '
                 f'role="graphics-symbol" aria-label="{edge_label}">'
-                f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
-                f'stroke="{edge_stroke}" stroke-width="{edge_sw}"'
-                f'{marker}>'
-                f'<title>{edge_label}</title>'
-                f'</line>'
+                f'{edge_geom}'
                 f'{weight_text}'
                 f'</g>'
             )
