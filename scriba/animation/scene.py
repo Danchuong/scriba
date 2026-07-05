@@ -1052,6 +1052,18 @@ class SceneState:
                 f"\\trace references undeclared shape '{cmd.shape}'",
                 hint=f"declare '{cmd.shape}' with \\shape before using \\trace",
             )
+        # \trace is a silent no-op on primitives that don't call
+        # emit_traces_under; make it loud (E1117) rather than render nothing.
+        from scriba.animation.primitives import get_primitive_registry
+
+        prim_cls = get_primitive_registry().get(self.shape_types.get(cmd.shape, ""))
+        if prim_cls is not None and not getattr(prim_cls, "supports_trace", False):
+            raise _animation_error(
+                "E1118",
+                f"\\trace targets '{cmd.shape}' "
+                f"({self.shape_types.get(cmd.shape)}), which does not draw traces",
+                hint="\\trace works on Array, Grid, DPTable, NumberLine",
+            )
         self._trace_counter += 1
         tid = cmd.trace_id or f"t{self._trace_counter}"
         self.traces.append(

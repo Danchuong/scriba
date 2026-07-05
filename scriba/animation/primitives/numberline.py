@@ -74,6 +74,7 @@ class NumberLinePrimitive(PrimitiveBase):
     """
 
     primitive_type = "numberline"
+    supports_trace = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "tick[{i}]": "tick mark by index",

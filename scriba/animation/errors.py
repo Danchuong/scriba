@@ -199,6 +199,11 @@ ERROR_CATALOG: dict[str, str] = {
         "with \\shape. Declare the shape before using \\apply, "
         "\\highlight, \\recolor, or \\annotate."
     ),
+    "E1118": (
+        "\\trace targets a primitive that does not draw traces. Supported: "
+        "Array, Grid, DPTable, NumberLine. Other primitives would silently "
+        "ignore the trace."
+    ),
     # --- Render errors (E1200 -- E1249) ---
     "E1200": (
         "KaTeX inline error embedded in rendered output (ParseError from "

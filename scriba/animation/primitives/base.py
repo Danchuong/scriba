@@ -264,6 +264,12 @@ class PrimitiveBase(abc.ABC):
     # annotation needed on the override).
     primitive_type: ClassVar[str] = ""
 
+    # Whether ``\trace`` draws on this primitive. Only the primitives that
+    # call :meth:`emit_traces_under` in their ``emit_svg`` set this True
+    # (Array, Grid, DPTable, NumberLine); on every other primitive a trace
+    # would be a silent no-op, so ``\trace`` raises E1117 instead.
+    supports_trace: ClassVar[bool] = False
+
     # Subclasses override to declare their selector patterns as metadata.
     # Format: {"suffix_pattern": description}
     # Special patterns:

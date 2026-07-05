@@ -521,6 +521,9 @@ it is cleared automatically at the next `\step` boundary.
 
 An arrow that follows a **sequence of cells** — shows a traversal or
 fill direction instead of asking the reader to infer it (since 0.22.2).
+Supported on the **cell/tick grid primitives only**: Array, Grid,
+DPTable, NumberLine. On any other primitive `\trace` raises **E1118**
+(rather than silently drawing nothing).
 
 ```latex
 \trace{g}{cells=[[2,0],[2,1],[2,2],[1,2],[0,2]], color=good, label="lớp lẻ"}

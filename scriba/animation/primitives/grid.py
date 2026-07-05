@@ -110,6 +110,7 @@ class GridPrimitive(PrimitiveBase):
     """
 
     primitive_type = "grid"
+    supports_trace = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{r}][{c}]": "cell by row,col",

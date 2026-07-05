@@ -93,6 +93,7 @@ class DPTablePrimitive(PrimitiveBase):
     """
 
     primitive_type = "dptable"
+    supports_trace = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index (1D mode)",

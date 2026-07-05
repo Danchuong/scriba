@@ -109,6 +109,7 @@ class ArrayPrimitive(PrimitiveBase):
     """
 
     primitive_type = "array"
+    supports_trace = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index",
