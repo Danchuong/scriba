@@ -15,6 +15,7 @@ import re
 from typing import Any, Callable, ClassVar, NamedTuple
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._params import coerce_list
 from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     line_box_h,
@@ -737,7 +738,15 @@ class Graph(PrimitiveBase):
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 
-        self.nodes: list[str | int] = list(params.get("nodes", []))
+        self.nodes: list[str | int] = coerce_list(
+            params.get("nodes", []),
+            "E1470",
+            detail=(
+                f"Graph '{name}' 'nodes' must be a list, got "
+                f"{params.get('nodes')!r}"
+            ),
+            hint="example: Graph{g}{nodes=[\"a\", \"b\"], edges=[(\"a\", \"b\")]}",
+        )
         if not self.nodes:
             raise _animation_error(
                 "E1470",

@@ -50,6 +50,33 @@ class TestConstructorTypeGuards:
         assert "E1508" in str(ei.value)
 
 
+class TestPreExistingConstructorTypeGuards:
+    """Same defect class on primitives that predate the 0.24.0 waves — the
+    hunt found them adjacent, and leaving them crashing while the new
+    primitives give clean E-codes would be its own inconsistency."""
+
+    CASES = [
+        ("Array", {"size": "abc"}, "E1401"),
+        ("Array", {"size": [5]}, "E1401"),
+        ("Matrix", {"rows": "a", "cols": 2}, "E1421"),
+        ("Matrix", {"rows": 2, "cols": [2]}, "E1421"),
+        ("Graph", {"nodes": 5}, "E1470"),
+    ]
+
+    @pytest.mark.parametrize("cls_name,params,code", CASES)
+    def test_wrong_type_raises_clean_ecode(self, cls_name, params, code) -> None:
+        with pytest.raises(ScribaError) as ei:
+            _build(cls_name, params)
+        assert code in str(ei.value), f"{cls_name}{params} → {ei.value}"
+
+    def test_matrix_ragged_2d_data_is_loud(self) -> None:
+        # a short row must be caught at construction (E1422), not crash at
+        # emit with IndexError
+        with pytest.raises(ScribaError) as ei:
+            _build("Matrix", {"rows": 2, "cols": 2, "data": [[1, 2], [3]]})
+        assert "E1422" in str(ei.value)
+
+
 class TestPlane2DRemoveTypeGuard:
     def test_remove_circle_non_int_is_clean(self) -> None:
         from scriba.animation.primitives.plane2d import Plane2D

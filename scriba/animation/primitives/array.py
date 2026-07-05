@@ -9,6 +9,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._params import coerce_int
 from scriba.animation.primitives._text_metrics import measure_value_text, measure_text
 from scriba.animation.primitives.base import (
     LABEL_FONT_PX,
@@ -142,7 +143,10 @@ class ArrayPrimitive(PrimitiveBase):
                 detail="Array requires 'size', 'n', or 'values' parameter",
                 hint="example: \\shape{a}{Array}{size=10}",
             )
-        size = int(size)
+        size = coerce_int(
+            size, "E1401",
+            detail=f"Array size {size!r} is not an integer; valid: 1..10000",
+        )
         if size < 1:
             raise _animation_error(
                 "E1401",

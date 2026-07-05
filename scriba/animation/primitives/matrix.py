@@ -12,6 +12,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._params import coerce_int
 from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
@@ -173,8 +174,14 @@ class MatrixPrimitive(PrimitiveBase):
                 detail="Matrix requires 'rows' and 'cols' parameters",
                 hint="example: \\shape{m}{Matrix}{rows=3, cols=3}",
             )
-        rows = int(rows)
-        cols = int(cols)
+        rows = coerce_int(
+            rows, "E1421",
+            detail=f"Matrix rows {rows!r} is not an integer; valid: positive integer",
+        )
+        cols = coerce_int(
+            cols, "E1421",
+            detail=f"Matrix cols {cols!r} is not an integer; valid: positive integer",
+        )
         if rows < 1:
             raise _animation_error(
                 "E1421",
@@ -200,7 +207,20 @@ class MatrixPrimitive(PrimitiveBase):
                 [0.0] * cols for _ in range(rows)
             ]
         elif isinstance(raw_data, list) and raw_data and isinstance(raw_data[0], list):
-            # Already 2D
+            # Already 2D — every row must be exactly ``cols`` wide, or a later
+            # emit ``self.data[r][c]`` would IndexError. Catch it here as E1422.
+            if len(raw_data) != rows or any(
+                not isinstance(row, list) or len(row) != cols for row in raw_data
+            ):
+                raise _animation_error(
+                    "E1422",
+                    detail=(
+                        f"Matrix 2-D 'data' must be exactly {rows}×{cols}; "
+                        f"got rows of lengths "
+                        f"{[len(r) if isinstance(r, list) else '?' for r in raw_data]}"
+                    ),
+                    hint="every row needs the same number of columns",
+                )
             data_2d = [[float(v) for v in row] for row in raw_data]
         else:
             # Flat list -> 2D
