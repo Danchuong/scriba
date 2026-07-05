@@ -124,6 +124,10 @@ class FrameData:
     groups: list[dict] | None = None  # \group overlay hulls on a Graph (§6 Ph1)
     notes: list[dict] | None = None  # \note free stage-level callouts (DECORATE)
     zoom_target: str | None = None  # \zoom{sel} per-frame camera crop (Viewport)
+    # Live \invariant: per-frame KaTeX-rendered invariant panels (declaration
+    # order), or None when no invariant body interpolates ``${}`` — the static
+    # path stays byte-identical and the runtime never swaps the panel (⑩b).
+    invariants_html: list[str] | None = None
 
 
 # ---------------------------------------------------------------------------

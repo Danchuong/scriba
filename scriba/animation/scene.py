@@ -265,6 +265,11 @@ class FrameSnapshot:
     # Viewport ZOOM — the ephemeral \zoom{target} selector for this frame, or
     # None (full board). Cleared at each \step exactly like the focus set.
     zoom_target: str | None = None
+    # Live invariant — each \invariant body with ``${}`` resolved against THIS
+    # frame's bindings (declaration order), exactly like narration. Empty tuple
+    # when no \invariant was declared; a static body resolves to itself, so a
+    # non-live document is byte-identical here.
+    invariants: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------
@@ -288,6 +293,9 @@ class SceneState:
     focus: set[str] = field(default_factory=set)
     annotations: list[AnnotationEntry] = field(default_factory=list)
     shape_types: dict[str, str] = field(default_factory=dict)
+    # Animation-level \invariant bodies (raw, prelude-collected). Re-resolved
+    # per frame in apply_frame against the live bindings, exactly like narration.
+    invariants: tuple[str, ...] = ()
     traces: list["TraceEntry"] = field(default_factory=list)
     cursors: list["CursorEntry"] = field(default_factory=list)
     links: list["LinkEntry"] = field(default_factory=list)
@@ -315,8 +323,12 @@ class SceneState:
         prelude_commands: tuple[Any, ...] = (),
         prelude_compute: tuple[ComputeCommand, ...] = (),
         starlark_host: Any | None = None,
+        invariants: tuple[str, ...] = (),
     ) -> None:
         """Apply prelude: register shapes, run global compute, apply commands."""
+        # Retain the raw \invariant bodies so apply_frame can re-resolve their
+        # ``${}`` placeholders per frame (live invariant), mirroring narration.
+        self.invariants = invariants
         # Uniqueness + charset validation (W6.4): enforce the stricter
         # shape-id charset before any mutation command can reference
         # one of these names, and fail fast on duplicate ids within the
@@ -377,6 +389,12 @@ class SceneState:
         snapshot = self.snapshot(
             self._frame_counter,
             self._interpolate_narration(frame_ir.narrate_body),
+            # Resolve each \invariant body against the SAME live bindings
+            # narration just used (before the frame-local compute is restored
+            # below), so a running invariant value stays in lock-step.
+            tuple(
+                self._interpolate_narration(body) or "" for body in self.invariants
+            ),
         )
 
         # Clear apply_params after snapshot (they are ephemeral per-frame)
@@ -393,7 +411,12 @@ class SceneState:
 
     # ---- snapshot ----
 
-    def snapshot(self, index: int, narration: str | None = None) -> FrameSnapshot:
+    def snapshot(
+        self,
+        index: int,
+        narration: str | None = None,
+        invariants: tuple[str, ...] = (),
+    ) -> FrameSnapshot:
         """Return an immutable snapshot of the current state."""
         shape_copy: dict[str, dict[str, ShapeTargetState]] = {}
         for shape_name, targets in self.shape_states.items():
@@ -422,6 +445,7 @@ class SceneState:
             notes=tuple(self.notes),
             focus_scope=self.focus_scope,
             zoom_target=self.zoom_target,
+            invariants=invariants,
         )
 
     # ---- substory ----

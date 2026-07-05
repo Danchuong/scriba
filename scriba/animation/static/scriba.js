@@ -28,6 +28,8 @@
     var stage=W.querySelector('.scriba-stage');
     var narr=W.querySelector('.scriba-narration');
     var subC=W.querySelector('.scriba-substory-container');
+    var invp=W.querySelectorAll('.scriba-invariant'); // ⑩b live-invariant panels
+    function _setInv(i){var v=frames[i].inv;if(v)for(var q=0;q<invp.length;q++)invp[q].innerHTML=v[q];}
     var ctr=W.querySelector('.scriba-step-counter');
     var prev=W.querySelector('.scriba-btn-prev');
     var next=W.querySelector('.scriba-btn-next');
@@ -114,6 +116,7 @@
       cur=i;
       stage.innerHTML=frames[i].svg;
       narr.innerHTML=frames[i].narration;
+      _setInv(i);
       subC.innerHTML=frames[i].substory||'';
       subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
       _updateControls(i);
@@ -405,8 +408,10 @@
         }
         // A03: update narration AFTER the SVG animation settles so that the
         // aria-live announcement fires once the visual is stable, not at the
-        // start of the WAAPI transition (~220 ms early).
+        // start of the WAAPI transition (~220 ms early). The invariant panel
+        // rides the same after-settle beat (⑩b).
         narr.innerHTML=frames[toIdx].narration;
+        _setInv(toIdx);
         subC.innerHTML=frames[toIdx].substory||'';
         subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
         _anims=[];_animState='idle';

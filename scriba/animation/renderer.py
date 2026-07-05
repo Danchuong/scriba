@@ -400,6 +400,7 @@ def _snapshot_to_frame_data(
     label: str | None = None,
     valid_hl_ids: frozenset[str] | None = None,
     title: str | None = None,
+    render_invariants: bool = False,
 ) -> FrameData:
     """Convert a FrameSnapshot into a FrameData for the emitter.
 
@@ -569,6 +570,16 @@ def _snapshot_to_frame_data(
             + narration_html
         )
 
+    # ⑩b — live invariant: KaTeX-render each per-frame ``${}``-resolved body,
+    # reusing the exact static-panel renderer so a live and a static panel are
+    # visually identical. Only when render_invariants (some invariant contains
+    # ``${``); otherwise None keeps the static path and runtime untouched.
+    invariants_html: list[str] | None = None
+    if render_invariants:
+        invariants_html = [
+            _render_invariant(t, ctx) for t in getattr(snap, "invariants", ())
+        ]
+
     return FrameData(
         step_number=snap.index,
         total_frames=total_frames,
@@ -587,6 +598,7 @@ def _snapshot_to_frame_data(
         focus=tuple(snap.focus),
         focus_scope=getattr(snap, "focus_scope", "shape"),
         zoom_target=getattr(snap, "zoom_target", None),
+        invariants_html=invariants_html,
     )
 
 
@@ -885,6 +897,14 @@ class AnimationRenderer:
             prelude_commands=ir.prelude_commands,
             prelude_compute=ir.prelude_compute,
             starlark_host=self._starlark_host,
+            invariants=getattr(ir, "invariants", ()),
+        )
+
+        # ⑩b — the live-invariant path (per-frame ${} resolve + runtime swap) is
+        # taken only when some \invariant body interpolates. A document with no
+        # such body renders byte-identically to the static-v1 panel.
+        invariants_live = any(
+            "${" in t for t in getattr(ir, "invariants", ())
         )
 
         # Valid \hl cross-reference ids (labels + implicit step{N}) for E1321.
@@ -915,6 +935,7 @@ class AnimationRenderer:
                 label=frame_ir.label,
                 valid_hl_ids=valid_hl_ids,
                 title=frame_ir.title,
+                render_invariants=invariants_live,
             )
             frame_data_list.append(fd)
 

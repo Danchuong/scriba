@@ -4899,6 +4899,8 @@ via <code class="scriba-tex-code-inline">foreach</code> + <code class="scriba-te
     var stage=W.querySelector('.scriba-stage');
     var narr=W.querySelector('.scriba-narration');
     var subC=W.querySelector('.scriba-substory-container');
+    var invp=W.querySelectorAll('.scriba-invariant');
+    function _setInv(i){var v=frames[i].inv;if(v)for(var q=0;q<invp.length;q++)invp[q].innerHTML=v[q];}
     var ctr=W.querySelector('.scriba-step-counter');
     var prev=W.querySelector('.scriba-btn-prev');
     var next=W.querySelector('.scriba-btn-next');
@@ -4974,6 +4976,7 @@ via <code class="scriba-tex-code-inline">foreach</code> + <code class="scriba-te
       cur=i;
       stage.innerHTML=frames[i].svg;
       narr.innerHTML=frames[i].narration;
+      _setInv(i);
       subC.innerHTML=frames[i].substory||'';
       subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
       _updateControls(i);
@@ -5229,6 +5232,7 @@ via <code class="scriba-tex-code-inline">foreach</code> + <code class="scriba-te
           stage.innerHTML=frames[toIdx].svg;
         }
         narr.innerHTML=frames[toIdx].narration;
+        _setInv(toIdx);
         subC.innerHTML=frames[toIdx].substory||'';
         subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
         _anims=[];_animState='idle';
@@ -8856,6 +8860,8 @@ via <code class="scriba-tex-code-inline">foreach</code> + <code class="scriba-te
     var stage=W.querySelector('.scriba-stage');
     var narr=W.querySelector('.scriba-narration');
     var subC=W.querySelector('.scriba-substory-container');
+    var invp=W.querySelectorAll('.scriba-invariant');
+    function _setInv(i){var v=frames[i].inv;if(v)for(var q=0;q<invp.length;q++)invp[q].innerHTML=v[q];}
     var ctr=W.querySelector('.scriba-step-counter');
     var prev=W.querySelector('.scriba-btn-prev');
     var next=W.querySelector('.scriba-btn-next');
@@ -8931,6 +8937,7 @@ via <code class="scriba-tex-code-inline">foreach</code> + <code class="scriba-te
       cur=i;
       stage.innerHTML=frames[i].svg;
       narr.innerHTML=frames[i].narration;
+      _setInv(i);
       subC.innerHTML=frames[i].substory||'';
       subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
       _updateControls(i);
@@ -9186,6 +9193,7 @@ via <code class="scriba-tex-code-inline">foreach</code> + <code class="scriba-te
           stage.innerHTML=frames[toIdx].svg;
         }
         narr.innerHTML=frames[toIdx].narration;
+        _setInv(toIdx);
         subC.innerHTML=frames[toIdx].substory||'';
         subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
         _anims=[];_animState='idle';

@@ -792,15 +792,18 @@ next `\step`. An optional second brace carries `scope=` to widen the dim.
 - Ephemeral: no persistent state, so it auto-reverts at the next `\step`.
 
 ### 5.17 `\invariant{text}`
-Pins a predicate panel shown across **all** frames (static v1). Prelude-only —
-declare it before the first `\step`.
+Pins a predicate panel shown across **all** frames. Prelude-only — declare it
+before the first `\step`.
 
 **Syntax:**
 ```latex
 \begin{animation}[id="binsearch"]
 \shape{a}{Array}{size=8, data=[1,3,4,7,9,11,15,20]}
 \invariant{Loop invariant: $a[lo] \le key \le a[hi]$}
+\invariant{Running sum = ${sum}}          % ${sum} resolves per frame
+\compute{ sum = 0 }
 \step
+\compute{ sum = 3 }
 \narrate{Inspect the midpoint.}
 ...
 \end{animation}
@@ -808,11 +811,17 @@ declare it before the first `\step`.
 
 **Rules:**
 - Prelude-only; after the first `\step` it raises **E1058**.
-- *text* supports inline math (`$...$`) and text formatting; it renders once as
-  a `<p class="scriba-invariant">` pinned below the narration (visible on screen
-  and in print), not per frame.
-- Static v1: it does not change between frames. Multiple `\invariant` lines
-  stack.
+- *text* supports inline math (`$...$`) and text formatting; it renders as a
+  `<p class="scriba-invariant">` pinned below the narration (visible on screen
+  and in print).
+- **Live values:** a `${binding}` in the body resolves **per frame** against the
+  same bindings `\narrate` uses (§13.2), so a running invariant
+  (`Running sum = ${sum}`) tracks its `\compute` value as the animation steps.
+  The pinned panel shows the current step's value and the interactive runtime
+  swaps it after each transition settles.
+- A body with **no** `${}` is **static** — rendered once, identical on every
+  frame (byte-for-byte the pre-interpolation output). Multiple `\invariant`
+  lines stack.
 
 ### 5.18 `\playeach{selector}{actions}`
 A **step-level frame macro**: it sweeps a `range`/`block` selector and emits
@@ -2068,7 +2077,7 @@ beats, split them across two steps:
 ```
 Same applies to Queue `enqueue`.
 
-### 13.2 `${interpolation}` resolves in `\foreach` bodies, `\apply` values, selector indices, and `\narrate` text
+### 13.2 `${interpolation}` resolves in `\foreach` bodies, `\apply` values, selector indices, `\narrate` text, and `\invariant` panels
 A **scalar** `${var}` (a loop variable or a `\compute` binding) resolves in all of these positions. A **subscript** `${list[i]}` does not resolve in a selector index — see the computed-indexing rules in §5.12 for that asymmetry. This section covers where a scalar `${var}` resolves:
 ```latex
 % Inside foreach — loop variable substituted textually
@@ -2090,15 +2099,19 @@ A **scalar** `${var}` (a loop variable or a `\compute` binding) resolves in all 
 % Compute var in narration text — resolves to the value's string form
 \compute{ result = fib(6) }
 \narrate{fib(6)=${result}.}               % works → "fib(6)=8."
+
+% Compute var in an \invariant panel — resolves PER FRAME, like narration
+\invariant{Running sum = ${sum}}          % on the frame where sum=3 → "Running sum = 3"
 ```
 
 **Resolution is unambiguous — only known bindings substitute.** A `${name}` is
 replaced only when `name` is a `\compute` binding **in scope**. Scope follows the
 compute rules (§5.2): prelude `\compute` bindings reach every step; a binding
-made *inside* a `\step` is frame-local. In `\narrate`, a `${name}` with no matching
-binding is left **verbatim** (e.g. `${not_a_binding}` renders literally) — narration
-never errors on an unknown name. In a *selector index*, by contrast, an unbound
-`${name}` is fail-loud and raises **E1159** (it no longer silently no-ops).
+made *inside* a `\step` is frame-local. In `\narrate` **and `\invariant`**, a
+`${name}` with no matching binding is left **verbatim** (e.g. `${not_a_binding}`
+renders literally) — neither errors on an unknown name. In a *selector index*, by
+contrast, an unbound `${name}` is fail-loud and raises **E1159** (it no longer
+silently no-ops).
 Bare identifiers without `${...}` are still treated as literal string keys — always
 use the `${...}` form for interpolation (see §5.12).
 

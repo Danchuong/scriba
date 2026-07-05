@@ -475,7 +475,11 @@ def emit_interactive_html(
     # ----------------------------------------------------------------
 
     narration_id = f"{scene_id}-narration"
-    _frame_parts: list[tuple[str, str, str, str]] = []
+    # ⑩b — live invariant: a per-frame invariant payload is emitted only when
+    # the renderer populated ``invariants_html`` (some \invariant interpolates
+    # ``${}``). Otherwise the static panel + no runtime key stay byte-identical.
+    _inv_live = getattr(frames[0], "invariants_html", None) is not None
+    _frame_parts: list[tuple[str, str, str, str, list[str] | None]] = []
     _json_frames_raw: list[dict] = []  # for external-runtime JSON island
     print_frame_items: list[str] = []
 
@@ -511,15 +515,24 @@ def emit_interactive_html(
                     render_inline_tex=render_inline_tex,
                 )
         substory_escaped = _escape_js(substory_html)
-        _frame_parts.append((svg_escaped, narration_escaped, substory_escaped, label_escaped))
+        # ⑩b — per-frame invariant panels, backtick-escaped like narration.
+        inv_escaped: list[str] | None = None
+        if _inv_live:
+            inv_escaped = [_escape_js(h) for h in (frame.invariants_html or [])]
+        _frame_parts.append(
+            (svg_escaped, narration_escaped, substory_escaped, label_escaped, inv_escaped)
+        )
 
         # --- Raw JSON frame data (for external-runtime mode) ---
-        _json_frames_raw.append({
+        _raw_frame: dict = {
             "svg": svg_html,
             "narration": frame.narration_html,
             "substory": substory_html,
             "label": label_token,
-        })
+        }
+        if _inv_live:
+            _raw_frame["inv"] = frame.invariants_html or []
+        _json_frames_raw.append(_raw_frame)
 
         # --- Print frame (reuse the same SVG, swap aria-labelledby) ---
         print_narration_id = f"{scene_id}-print-{step}-narration"
@@ -604,13 +617,19 @@ def emit_interactive_html(
 
     # Build JS frames array with transition manifests
     js_frames: list[str] = []
-    for idx, (sve, ne, se, le) in enumerate(_frame_parts):
+    for idx, (sve, ne, se, le, ive) in enumerate(_frame_parts):
         tr = _manifests[idx]
         fs = "1" if _needs_sync[idx] else "0"
+        # ⑩b — append the ``inv:[...]`` key ONLY in live mode; a static
+        # invariant emits no key, so the frame object is byte-identical.
+        inv_part = ""
+        if ive is not None:
+            inv_cells = ",".join(f"`{cell}`" for cell in ive)
+            inv_part = f",inv:[{inv_cells}]"
         js_frames.append(
             f'{{svg:`{sve}`,narration:`{ne}`,'
             f'substory:`{se}`,label:`{le}`,'
-            f'tr:{tr},fs:{fs}}}'
+            f'tr:{tr},fs:{fs}{inv_part}}}'
         )
 
     js_frames_str = ",\n    ".join(js_frames)
@@ -638,12 +657,18 @@ def emit_interactive_html(
     # direct child of .scriba-widget (below narration). The print @media rule
     # hides the interactive stage/narration/substory-container but NOT this
     # panel, so a single element serves both screen and print.
+    # In live mode the pinned panel shows frame 0's resolved value (the runtime
+    # swaps it per step); in static mode it is the once-rendered body — the
+    # exact static-v1 bytes, so a non-live document is byte-identical here.
+    _invariant_panels = (
+        frames[0].invariants_html if _inv_live else invariants
+    )
     _invariant_html = ""
-    if invariants:
+    if _invariant_panels:
         _invariant_html = "\n  " + "\n  ".join(
             f'<p class="scriba-invariant" role="note">'
             f'{_safe_narration_html(h)}</p>'
-            for h in invariants
+            for h in _invariant_panels
         )
 
     # Build the script block: inline or external.

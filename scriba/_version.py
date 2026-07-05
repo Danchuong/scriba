@@ -241,8 +241,19 @@ stylesheet hash changes (per DNA-3 that alone forces the bump). The
 ``(ctx)=>ctx.command==="\\htmlClass"``) is build-time only and inert for
 any input that never uses ``\\htmlClass``/``\\term`` (output byte-identical
 to ``trust:false``; verified no cookbook/golden uses it), so it forces no
-bump on its own. ``scriba.js`` and ``differ.py`` are untouched — terms and
+bump on its own. ``differ.py`` is untouched — terms and
 lines ride the existing ``[data-target]`` ``recolor`` / ``value_change`` /
 ``annotation_*`` machinery (zero new motion kinds). Consumer caches keyed on
 rendered output MUST invalidate (the shared stylesheet bytes changed).
-"""
+
+Also folded into the 18→19 marker (same release): the live ``\\invariant``
+(investigations/design-accumulate.md §3.6) — an ``\\invariant`` body now
+resolves ``${}`` per frame through the same interpolator ``\\narrate`` uses.
+This adds a ~2-line swap to ``scriba.js`` (``_setInv`` mirrors the narration
+innerHTML swap), so — CORRECTING the "scriba.js untouched" phrasing that the
+Equation note above carried — the shared runtime hash DOES move for every
+widget under this marker (as any runtime-touching release does). It is gated:
+a static ``\\invariant`` (no ``${}``) emits no per-frame ``inv`` key and the JS
+path is untaken, so its panel markup stays byte-identical; only the runtime
+asset bytes change. ``differ.py`` stays untouched (the panel is pinned chrome,
+not a ``[data-target]`` motion). Consumer caches MUST invalidate."""
