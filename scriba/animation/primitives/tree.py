@@ -13,6 +13,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._params import coerce_list
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -326,7 +327,12 @@ class Tree(PrimitiveBase):
                 hint="example: Tree{h}{kind=\"heap\", data=[9, 7, 8, 3, 5, 6, 4]}",
             )
 
-        data = list(data)
+        data = coerce_list(
+            data,
+            "E1438",
+            detail=f"Tree (kind=heap) 'data' must be a list, got {data!r}",
+            hint="example: Tree{h}{kind=\"heap\", data=[9, 7, 8, 3, 5, 6, 4]}",
+        )
         n = len(data)
         # Node ids are the array indices (str-normalized to match the other
         # kinds), so ``h.node[i]`` addresses the value at array slot i.

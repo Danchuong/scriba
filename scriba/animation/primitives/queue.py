@@ -12,6 +12,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._params import coerce_int, coerce_list
 from scriba.animation.primitives._text_metrics import measure_value_text, measure_text
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
@@ -131,7 +132,14 @@ class Queue(PrimitiveBase):
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 
-        self.capacity: int = int(params.get("capacity", _DEFAULT_CAPACITY))
+        self.capacity: int = coerce_int(
+            params.get("capacity", _DEFAULT_CAPACITY),
+            "E1440",
+            detail=(
+                f"Queue capacity {params.get('capacity')!r} is not an integer; "
+                "valid: positive integer"
+            ),
+        )
         if self.capacity < 1:
             raise _animation_error(
                 "E1440",
@@ -146,7 +154,11 @@ class Queue(PrimitiveBase):
         self.cells: list[Any] = [""] * self.capacity
 
         # Populate initial data
-        raw_data: list[Any] = list(params.get("data", []))
+        raw_data: list[Any] = coerce_list(
+            params.get("data", []),
+            "E1440",
+            detail=f"Queue 'data' must be a list, got {params.get('data')!r}",
+        )
         for i, val in enumerate(raw_data):
             if i < self.capacity:
                 self.cells[i] = val

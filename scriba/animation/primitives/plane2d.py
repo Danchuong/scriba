@@ -17,6 +17,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _emit_warning, _animation_error
+from scriba.animation.primitives._params import coerce_int
 from scriba.animation.primitives.base import (
     _label_width_text,
     allow_forbidden_pattern,
@@ -534,28 +535,28 @@ class Plane2D(PrimitiveBase):
             return
         # Dynamic removals (RFC-001 §4.3 — tombstone semantics)
         if "remove_point" in params:
-            self._remove_point_internal(int(params["remove_point"]))
+            self._remove_point_internal(coerce_int(params["remove_point"], "E1437", detail=f"Plane2D remove_point index {params['remove_point']!r} is not an integer"))
             return
         if "remove_line" in params:
-            self._remove_line_internal(int(params["remove_line"]))
+            self._remove_line_internal(coerce_int(params["remove_line"], "E1437", detail=f"Plane2D remove_line index {params['remove_line']!r} is not an integer"))
             return
         if "remove_segment" in params:
-            self._remove_segment_internal(int(params["remove_segment"]))
+            self._remove_segment_internal(coerce_int(params["remove_segment"], "E1437", detail=f"Plane2D remove_segment index {params['remove_segment']!r} is not an integer"))
             return
         if "remove_polygon" in params:
-            self._remove_polygon_internal(int(params["remove_polygon"]))
+            self._remove_polygon_internal(coerce_int(params["remove_polygon"], "E1437", detail=f"Plane2D remove_polygon index {params['remove_polygon']!r} is not an integer"))
             return
         if "remove_region" in params:
-            self._remove_region_internal(int(params["remove_region"]))
+            self._remove_region_internal(coerce_int(params["remove_region"], "E1437", detail=f"Plane2D remove_region index {params['remove_region']!r} is not an integer"))
             return
         if "remove_circle" in params:
-            self._remove_circle_internal(int(params["remove_circle"]))
+            self._remove_circle_internal(coerce_int(params["remove_circle"], "E1437", detail=f"Plane2D remove_circle index {params['remove_circle']!r} is not an integer"))
             return
         if "remove_arc" in params:
-            self._remove_arc_internal(int(params["remove_arc"]))
+            self._remove_arc_internal(coerce_int(params["remove_arc"], "E1437", detail=f"Plane2D remove_arc index {params['remove_arc']!r} is not an integer"))
             return
         if "remove_wedge" in params:
-            self._remove_wedge_internal(int(params["remove_wedge"]))
+            self._remove_wedge_internal(coerce_int(params["remove_wedge"], "E1437", detail=f"Plane2D remove_wedge index {params['remove_wedge']!r} is not an integer"))
             return
         # In-place moves (A4 — element glides, identity preserved).
         # These mutate an element's coordinates while keeping its index (and

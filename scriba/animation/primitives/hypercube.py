@@ -29,6 +29,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._params import coerce_int
 from scriba.animation.primitives._obstacle_types import ObstacleSegment
 from scriba.animation.primitives.base import (
     THEME,
@@ -113,7 +114,14 @@ class Hypercube(PrimitiveBase):
     def __init__(self, name: str, params: dict[str, Any]) -> None:
         super().__init__(name, params)
 
-        self.bits: int = int(params.get("bits", 0))
+        self.bits: int = coerce_int(
+            params.get("bits", 0),
+            "E1510",
+            detail=(
+                f"Hypercube bits {params.get('bits')!r} is not an integer; "
+                f"valid: integer between {_MIN_BITS} and {_MAX_BITS} inclusive"
+            ),
+        )
         if not (_MIN_BITS <= self.bits <= _MAX_BITS):
             raise _animation_error(
                 "E1510",

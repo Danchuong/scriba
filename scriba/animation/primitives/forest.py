@@ -38,6 +38,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._params import coerce_list
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -124,6 +125,12 @@ class Forest(PrimitiveBase):
                 detail="Forest requires a non-empty 'nodes' list",
                 hint="example: Forest{f}{nodes=[0, 1, 2, 3]}",
             )
+        raw_nodes = coerce_list(
+            raw_nodes,
+            "E1508",
+            detail=f"Forest 'nodes' must be a list, got {raw_nodes!r}",
+            hint="example: Forest{f}{nodes=[0, 1, 2, 3]}",
+        )
 
         # Node ids are normalized to str so numeric literals (nodes=[0,1,2])
         # and string refs (union={a="1"}) address the same node. Order is the
@@ -182,7 +189,19 @@ class Forest(PrimitiveBase):
         endpoints, a node handed two parents, and any cycle (all E1509).
         """
         assigned: set[str] = set()
-        for e in raw_edges or []:
+        edge_list = coerce_list(
+            raw_edges if raw_edges is not None else [],
+            "E1509",
+            detail=f"Forest 'edges' must be a list of (parent, child), got {raw_edges!r}",
+            hint="example: edges=[(0, 1), (0, 2)]",
+        )
+        for e in edge_list:
+            if isinstance(e, (str, bytes)) or not hasattr(e, "__getitem__") or len(e) < 2:
+                raise _animation_error(
+                    "E1509",
+                    detail=f"Forest edge {e!r} must be a (parent, child) pair",
+                    hint="example: edges=[(0, 1), (0, 2)]",
+                )
             parent, child = str(e[0]), str(e[1])
             if parent not in self._index:
                 raise _animation_error(
