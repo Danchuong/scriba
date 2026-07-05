@@ -281,6 +281,18 @@ documented deprecated alias.
 |------|-------------|------------|
 | E1510 | Hypercube `bits` parameter out of range (must be an integer 1–5). | Use `Hypercube{L}{bits=N}` with `1 <= N <= 5` (5 = 32 nodes, the legibility cap). |
 
+## TraceTable Errors (E1520--E1522)
+
+The accumulating dry-run trace table: `columns=[...]` is the pinned header (its
+count is the fixed column count) and each `\apply{t}{row=[...]}` appends one data
+row. All three are hard build errors.
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1520 | TraceTable requires a non-empty `columns` list (the pinned header). | Declare the header, e.g. `\shape{t}{TraceTable}{columns=[i, "a[i]", sum]}`. |
+| E1521 | Appended `row` length does not match the column count. | Supply exactly N values, one per column, e.g. `\apply{t}{row=[0, 3, 3]}` for 3 columns. |
+| E1522 | `columns` count is out of range. | Use between 1 and 64 columns. |
+
 ## Viewport & Spatial Layout Errors (E1540--E1543)
 
 The Viewport verbs: `at=[row,col]` placement on `\shape` (LAYOUT) and the

@@ -49,6 +49,7 @@ from scriba.animation.primitives.numberline import NumberLinePrimitive
 from scriba.animation.primitives.plane2d import Plane2D
 from scriba.animation.primitives.queue import Queue
 from scriba.animation.primitives.stack import Stack
+from scriba.animation.primitives.tracetable import TraceTable
 from scriba.animation.primitives.tree import Tree
 from scriba.animation.primitives.variablewatch import VariableWatch
 
@@ -71,6 +72,7 @@ __all__ = [
     "PrimitiveBase",
     "Queue",
     "Stack",
+    "TraceTable",
     "Tree",
     "VariableWatch",
     "get_primitive_registry",

@@ -20,6 +20,7 @@ The catalog is grouped by subsystem:
 * ``E1488``--``E1490`` — Bar (histogram)
 * ``E1500``--``E1509`` — graph layout
 * ``E1510``--``E1519`` — Hypercube (subset lattice)
+* ``E1520``--``E1529`` — TraceTable (accumulating dry-run trace table)
 * ``E1540``--``E1543`` — Viewport & spatial layout (``at=`` placement, ``\\zoom``)
 
 The 1400-block was introduced in v0.5.1 to replace the ``E1103`` catch-all
@@ -175,7 +176,7 @@ ERROR_CATALOG: dict[str, str] = {
         "primitive type spelling. Valid types: Array, Grid, DPTable, "
         "Graph, Tree, NumberLine, Matrix, Heatmap, Stack, Plane2D, "
         "MetricPlot, CodePanel, HashMap, LinkedList, Queue, Deque, "
-        "VariableWatch, Hypercube, Forest, Bar."
+        "VariableWatch, Hypercube, Forest, Bar, TraceTable."
     ),
     "E1103": (
         "Primitive parameter validation error (DEPRECATED mega-bucket; "
@@ -557,6 +558,19 @@ ERROR_CATALOG: dict[str, str] = {
     "E1510": (
         "Hypercube 'bits' parameter out of range; must be an integer "
         "between 1 and 5 inclusive."
+    ),
+    # --- TraceTable (accumulating dry-run trace table) (E1520 -- E1522) ---
+    "E1520": (
+        "TraceTable requires a non-empty 'columns' list (the pinned header). "
+        'hint: \\shape{t}{TraceTable}{columns=[i, "a[i]", sum]}.'
+    ),
+    "E1521": (
+        "TraceTable appended 'row' length does not match the column count. "
+        "hint: supply exactly N values, one per column."
+    ),
+    "E1522": (
+        "TraceTable 'columns' count is out of range; must be between 1 and "
+        "64 inclusive."
     ),
     # --- Viewport & spatial layout (E1540 -- E1543) ---
     # ``at=[row,col]`` placement on \shape (LAYOUT) + the ``\zoom`` camera crop

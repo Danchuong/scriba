@@ -25,7 +25,7 @@
 4. [Diagram Environment](#4-diagram-environment)
 5. [Inner Commands](#5-inner-commands-23-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\zoom` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant` `\link` `\combine` `\group` `\note`
 6. [Visual States](#6-visual-states)
-7. [All 19 Primitives](#7-all-19-primitives)
+7. [All 20 Primitives](#7-all-20-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
 9. [Complete Examples](#9-complete-examples)
 10. [Environment Options](#10-environment-options)
@@ -59,6 +59,7 @@
 | Show bitmask / subset-DP structure | Hypercube §7.16 |
 | Animate DSU unions | Forest §7.17 |
 | Show value magnitudes as column heights (histogram) | Bar §7.19 |
+| Record a running dry-run (variables × steps, filled line-by-line) | TraceTable §7.20 |
 | Look up an error code | §15 |
 
 ---
@@ -105,7 +106,7 @@ Everything below is expanded later; this is the lookup layer.
 | `\combine{s1, s2}{into="D"}` | N ephemeral links converging on one target |
 | `\group{G}{nodes=[…], id=…}` / `\ungroup` | hull overlay around a node cluster (Graph) |
 
-**19 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree / heap / automata) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines/circles) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · Deque (two-ended) · VariableWatch (named values) · Hypercube (subset lattice) · Forest (multi-root DSU) · Bar (histogram / column heights).
+**20 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree / heap / automata) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines/circles) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · Deque (two-ended) · VariableWatch (named values) · Hypercube (subset lattice) · Forest (multi-root DSU) · Bar (histogram / column heights) · TraceTable (accumulating dry-run trace table).
 
 **Selector grammar** (§8): `shape.family[index]` — `a.cell[i]`, `g.cell[r][c]`, `a.range[i:j]`, `g.block[r0:r1][c0:c1]`, `g.row[i]`, `g.col[j]`, `g.diag`, `G.node[id]`, `G.edge[(u,v)]`, `nl.tick[i]`, `code.line[i]`, `vars.var[name]`, `h.bar[i]`, `.all`. Interpolate with `${i}` in any index.
 
@@ -995,7 +996,7 @@ sits off-frame.
 
 ---
 
-## 7. All 19 Primitives
+## 7. All 20 Primitives
 
 ### 7.1 Array
 1D horizontal row of indexed cells.
@@ -1569,6 +1570,21 @@ Variable-height columns over an index axis — the "height = value" channel (his
 **Operations:** `\apply{h.bar[i]}{value=X}` sets column *i*'s height. Height is a pure function of the stored value, so the change rides the existing `value_change` transition — the column **snaps** to its new height on the frame swap and its value label pulses (Array's value-change semantics; no bespoke motion). The scaling ceiling only grows, so a value pushed above `max` is honoured (the timeline maximum), never clipped, and the **viewBox stays fixed across frames** (R-32).
 **Selectors:** `h`, `h.bar[i]`, `h.all`. Recolor / highlight / annotate a column by index; an out-of-range `bar[i]` soft-drops (E1115). Empty / non-list / non-numeric `data` raises **E1488** / **E1489** / **E1490**.
 
+### 7.20 TraceTable
+The accumulating **dry-run trace table** — the #1 competitive-programming teaching artifact: variables are *pinned columns*, execution steps are *downward-growing rows*, filled line-by-line. `columns=[...]` is the header (pinned chrome, never a data row); each `\apply{t}{row=[...]}` appends one data row, which auto-becomes the **current** row while the prior row demotes to idle — no manual cursor or row-index bookkeeping. The table grows into pre-reserved space, so the **viewBox stays fixed across frames** (R-32), exactly like LinkedList / Bar.
+```latex
+\shape{t}{TraceTable}{columns=[i, "a[i]", sum], label="Dry run: prefix sum"}
+\step
+\apply{t}{row=[0, 3, 3]}                 % append a data row; it becomes current
+\step
+\apply{t}{row=[1, 1, 4]}                 % appended below; row[0] auto-demotes to idle
+\recolor{t.cell[1][2]}{state=good}       % optional: emphasise the value that changed
+```
+
+**Params:** `columns` (list of header strings, required — its length is the fixed column count, `1..64`), `label`. There is no `rows=` param — the row envelope is auto-discovered by the structural prescan.
+**Operations:** `\apply{t}{row=[...]}` appends one data row (its length must equal the column count). The append rides the shipped `element_add` transition (the new row fades in) and the current→idle advance rides `recolor` — no bespoke motion. Cells accept strings or numbers (stringified like Grid). The per-column widths and the row envelope only grow, so the **viewBox stays fixed across frames** (R-32).
+**Selectors:** `t`, `t.row[k]`, `t.cell[k][j]`, `t.col[j]` (column emphasis down all data rows), `t.all` (all data cells). Header cells are chrome and **not addressable** — `t.row[0]` is the first *data* row. An out-of-range selector soft-drops (E1115). Missing/empty `columns` raises **E1520**, a `row` whose length ≠ the column count raises **E1521**, and > 64 columns raises **E1522**.
+
 ---
 
 ## 8. Selector Quick Reference
@@ -1604,6 +1620,7 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | Matrix | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]`, `.row[i]`, `.col[j]`, `.diag` | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]`, `.circle[i]`, `.arc[i]`, `.wedge[i]` | — | — | — | — | `.all` |
 | Bar | `.bar[i]` | — | — | — | — | `.all` |
+| TraceTable | `.cell[k][j]`, `.row[k]` | — | — | — | `.col[j]` | `.all` |
 | MetricPlot | — | — | — | — | — | `.all` |
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
