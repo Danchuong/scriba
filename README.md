@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.26.0 · MIT · Python 3.10+
+**Status:** v0.26.1 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,19 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.26.1
+
+A polish patch on the 0.26.0 "teacher's board" release — **no rendered-output
+change** (`SCRIBA_VERSION` stays 19; documents render byte-identically to
+0.26.0). Completes the animation error catalog (E1491/E1492/E1183/E1184 added —
+an internal registry, no user-facing message change) and sweeps every doc to
+0.26.0 reality: 21 primitives, 23 inner commands (`environments.md` §3 now
+documents all 23), 9 semantic states, 11 motion kinds, and the phantom `§9.2`
+state names purged from the primitive pages.
+
+<details>
+<summary>v0.26.0 changelog</summary>
+
 ## What's new in v0.26.0 — the teacher's board
 
 A 6-slice census of how CP teachers explain on a whiteboard / in a YouTube
@@ -48,6 +61,8 @@ on, with **0 new motion kinds**:
 - `SCRIBA_VERSION` 18→19 (the Equation `.scriba-term` CSS + the live-invariant
   runtime swap); everything else is byte-identical for documents that don't use
   it. Primitive count 19→21.
+
+</details>
 
 <details>
 <summary>v0.25.0 changelog</summary>

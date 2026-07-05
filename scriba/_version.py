@@ -1,6 +1,6 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.26.0"
+__version__: str = "0.26.1"
 """PyPI SemVer. Bumped on every release."""
 
 SCRIBA_VERSION: int = 19
@@ -256,4 +256,21 @@ widget under this marker (as any runtime-touching release does). It is gated:
 a static ``\\invariant`` (no ``${}``) emits no per-frame ``inv`` key and the JS
 path is untaken, so its panel markup stays byte-identical; only the runtime
 asset bytes change. ``differ.py`` stays untouched (the panel is pinned chrome,
-not a ``[data-target]`` motion). Consumer caches MUST invalidate."""
+not a ``[data-target]`` motion). Consumer caches MUST invalidate.
+
+0.26.1 keeps SCRIBA_VERSION = 19 (NO rendered-output change). This is a
+docs-consistency + error-catalog-completeness patch:
+  * ``ERROR_CATALOG`` gained the four codes it was missing — E1491/E1492
+    (``\\trace`` cells<2 / bad arrowhead) and E1183/E1184 (``\\cursor``
+    binding). These are raised/emitted in the parser but were absent from
+    the catalog; they are a REGISTRY read only by the parity test and doc
+    tooling — no code reads ``ERROR_CATALOG`` at raise time (messages are
+    inline at the raise site), so no rendered HTML/SVG and no user-facing
+    error message changes. Every animation-raised/warned code is now
+    catalogued (verified: 0 missing of 57).
+  * Docs were swept to 0.26.0 reality: primitive count 21, inner-command
+    count 23 (environments.md §3 refreshed to document all 23), semantic
+    states 9, motion kinds 11, and the phantom §9.2 state names
+    (focus/update/reject/accept/hint) purged from the primitive pages.
+The rendered-output contract is unchanged from 0.26.0; a document renders
+byte-identically under 0.26.0 and 0.26.1."""

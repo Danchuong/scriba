@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.1] - 2026-07-05 — docs consistency + error-catalog completeness (no runtime change)
+
+A polish patch. **No rendered-output change** — a document renders
+byte-identically under 0.26.0 and 0.26.1 (`SCRIBA_VERSION` stays 19).
+
+### Fixed
+- **Error catalog completeness** — `ERROR_CATALOG` gained the four codes it was
+  missing: E1491/E1492 (`\trace` needs ≥2 cells / bad arrowhead) and E1183/E1184
+  (`\cursor` binding). These are raised/emitted by the parser but were absent
+  from the catalog. `ERROR_CATALOG` is an internal registry read only by the
+  parity test and doc tooling — no code reads it at raise time (messages are
+  inline), so user-facing error messages and rendered output are unchanged.
+  Every animation-raised/warned code is now catalogued (0 missing of 57).
+- **A-2 motion-kind registry** — `docs/spec/motion-ruleset.md` listed only 10
+  closed kinds; corrected to 11 (`cursor_move` was missing from the enumeration
+  though the code has always emitted it).
+
+### Docs
+- Swept every doc to 0.26.0 reality: primitive count → **21** (Bar/TraceTable/
+  Equation), inner-command count → **23** (`environments.md` §3 refreshed to
+  document all 23 with accurate contexts/E-codes), semantic states → **9**.
+- Purged the phantom `§9.2` state names (`focus`/`update`/`reject`/`accept`/
+  `hint` — which exist nowhere in code) from the matrix/plane2d/stack/metricplot
+  pages, replacing them with the real nine `scriba-state-*` classes.
+
 ## [0.26.0] - 2026-07-05 — the teacher's board (CP teaching-gesture census)
 
 A 6-slice BMAD census (`investigations/teaching-*.md`) mapped what a CP
