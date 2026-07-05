@@ -63,7 +63,7 @@ how", so one runtime serves all. Satisfied today for forward-adjacent steps; rev
 
 The transition `kind` is drawn from a **closed** registry
 (`recolor`, `value_change`, `highlight_on/off`, `element_add/remove`,
-`annotation_add/remove/recolor`, `position_move`); the registry MUST stay closed **under
+`annotation_add/remove/recolor`, `position_move`, `cursor_move`); the registry MUST stay closed **under
 inversion** — every kind has an inverse in the set (`add↔remove`, `on↔off`, and the rest
 self-inverse under a from/to swap). **Reverse and jump playback MUST be the inverse manifest
 applied**, never a new emit path: stepping `cur → cur-1` inverts `frames[cur].tr`
