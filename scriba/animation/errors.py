@@ -545,6 +545,15 @@ ERROR_CATALOG: dict[str, str] = {
         "Bar 'data' contains a non-numeric entry; every value must be an "
         "int or float."
     ),
+    # --- \trace decoration errors (E1491 -- E1492) ---
+    "E1491": (
+        "\\trace requires 'cells=' with at least 2 points. "
+        "hint: cells=[[2,0],[2,1],[2,2]] (grid) or cells=[\"A\",\"B\",\"C\"] "
+        "(graph/tree node ids)."
+    ),
+    "E1492": (
+        "Unknown \\trace 'arrowhead' value; valid: end, both, none."
+    ),
     # --- Graph layout errors (E1500 -- E1505) ---
     # reserved: E1500-E1504 surface only as logger warnings from the stable
     # graph layout; E1505 is raised from graph_layout_stable.py. Catalog keeps

@@ -841,6 +841,9 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1488",
         "E1489",
         "E1490",
+        # \trace decoration (cells<2, bad arrowhead)
+        "E1491",
+        "E1492",
         # Graph layout
         "E1500",
         "E1501",
