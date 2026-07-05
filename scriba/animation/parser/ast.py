@@ -106,9 +106,31 @@ class ItemAccessor:
 
 @dataclass(frozen=True, slots=True)
 class NamedAccessor:
-    """``shape.axis`` or similar named sub-part."""
+    """``shape.axis`` or similar named sub-part with no index (``all``,
+    ``front``, ``diag``, …)."""
 
     name: str
+
+
+@dataclass(frozen=True, slots=True)
+class IndexedAccessor:
+    """A primitive-defined ``shape.name[index]`` (``row``/``col``/``subset``,
+    Plane2D ``point``/``line``/…). The index is kept as a live
+    :data:`IndexExpr` field — NOT baked into a string — so the ``\\foreach``
+    and ``\\compute`` resolvers (which walk dataclass fields) substitute
+    ``${...}`` the same way they do for ``cell``/``node``/``edge``."""
+
+    name: str
+    index: IndexExpr
+
+
+@dataclass(frozen=True, slots=True)
+class LinkAccessor:
+    """Tree's second-class ``shape.link[(u,v)]`` — endpoints as live index
+    fields (twin of :class:`EdgeAccessor`) so ``${u}``/``${v}`` resolve."""
+
+    source: IndexExpr
+    target: IndexExpr
 
 
 SelectorAccessor = (
@@ -121,6 +143,8 @@ SelectorAccessor = (
     | TickAccessor
     | ItemAccessor
     | NamedAccessor
+    | IndexedAccessor
+    | LinkAccessor
 )
 
 

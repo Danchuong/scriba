@@ -32,8 +32,10 @@ from .ast import (
     CellAccessor,
     EdgeAccessor,
     IndexExpr,
+    IndexedAccessor,
     InterpolationRef,
     ItemAccessor,
+    LinkAccessor,
     NamedAccessor,
     NodeAccessor,
     RangeAccessor,
@@ -120,9 +122,10 @@ class SelectorParser:
             self._expect("[")
             idx = self._parse_index_expr()
             self._expect("]")
-            # Reuse CellAccessor with a prefixed name for generic indexed parts
-            # Store as "point", "line", etc. in a NamedAccessor-like form
-            return NamedAccessor(name=f"{name}[{idx}]")
+            # Keep the index as a live field so ${...} resolves (row/col/
+            # subset, Plane2D point/line/…); NamedAccessor would freeze the
+            # InterpolationRef repr into a string the resolvers can't reach.
+            return IndexedAccessor(name=name, index=idx)
         return NamedAccessor(name=name)
 
     def _parse_cell(self) -> CellAccessor:
@@ -181,7 +184,7 @@ class SelectorParser:
         if self._pos >= len(self._text) or self._text[self._pos] != "(":
             idx = self._parse_index_expr()
             self._expect("]")
-            return NamedAccessor(name=f"link[{idx}]")
+            return IndexedAccessor(name="link", index=idx)
         self._expect("(")
         src = self._parse_node_id()
         self._skip_ws()
@@ -190,7 +193,7 @@ class SelectorParser:
         self._skip_ws()
         self._expect(")")
         self._expect("]")
-        return NamedAccessor(name=f"link[({src},{tgt})]")
+        return LinkAccessor(source=src, target=tgt)
 
     def _parse_range(self) -> RangeAccessor:
         self._expect("[")

@@ -216,17 +216,11 @@ class TestMatrixAnnotationAnchor:
 
 
 class TestInterpolation:
-    @pytest.mark.xfail(
-        reason=(
-            "row[${i}] needs a first-class RowAccessor in the parser: the "
-            "generic NamedAccessor fallback (selectors.py) stringifies the "
-            "InterpolationRef into the name at parse time, so \\foreach can no "
-            "longer substitute it. Fix spans ast.py + selectors.py + scene.py, "
-            "which are outside the A2a file scope — reported to the team lead."
-        ),
-        strict=False,
-    )
     def test_foreach_row_index_interpolates(self) -> None:
+        # Fixed by the IndexedAccessor pass: row[${i}] now keeps the index as
+        # a live field, so \foreach substitutes it (was silently dropped). The
+        # foreach unrolls to the concrete row selectors row[0]/row[1]; the
+        # per-cell expansion is a separate render-time step.
         from scriba.animation.parser.grammar import SceneParser
         from scriba.animation.scene import SceneState
 
@@ -242,6 +236,4 @@ class TestInterpolation:
         state.apply_prelude(shapes=ir.shapes, prelude_compute=ir.prelude_compute)
         snap = state.apply_frame(ir.frames[0])
         keys = set(snap.shape_states.get("m", {}))
-        # Once row[${i}] parses structurally, the foreach unrolls to row[0]
-        # and row[1] and _expand_selectors turns those into the six cells.
-        assert "m.cell[0][0]" in keys and "m.cell[1][2]" in keys
+        assert keys == {"m.row[0]", "m.row[1]"}, keys

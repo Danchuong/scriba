@@ -67,7 +67,9 @@ def _selector_to_str(sel: Selector | str) -> str:
         BlockAccessor,
         CellAccessor,
         EdgeAccessor,
+        IndexedAccessor,
         ItemAccessor,
+        LinkAccessor,
         NamedAccessor,
         NodeAccessor,
         RangeAccessor,
@@ -99,6 +101,10 @@ def _selector_to_str(sel: Selector | str) -> str:
         )
     if isinstance(acc, AllAccessor):
         return f"{name}.all"
+    if isinstance(acc, LinkAccessor):
+        return f"{name}.link[({acc.source},{acc.target})]"
+    if isinstance(acc, IndexedAccessor):
+        return f"{name}.{acc.name}[{acc.index}]"
     if isinstance(acc, NamedAccessor):
         return f"{name}.{acc.name}"
     return name
