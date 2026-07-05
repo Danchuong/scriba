@@ -184,4 +184,17 @@ R-32 hold — and it rides the shipped ``annotation_add`` / ``annotation_remove`
 unchanged). The hull is styled by inline presentation attributes (like
 ``\\trace`` and the R-35 block bracket), so the shared stylesheet is unchanged
 and group-free scenes render byte-identically.
+
+Scope of the "byte-identical for non-users" claim (investigations/
+byte-identity-asset-inlining.md): it holds at the PRIMITIVE-MARKUP layer
+WITHIN this marker — a document that uses none of the new features emits no
+new SVG/markup bytes (verified: zero marker leak). It is NOT a cross-version
+guarantee: the SHARED inline assets deliberately changed under this single
+17→18 bump — the ``position_move`` glide rewrite and the boundary
+keyboard-focus fix in ``scriba.js`` (every animated widget), and the
+``.scriba-link`` rule in the stylesheet (every page). That is exactly what the
+version bump signals; the contract is ``identical source + identical
+SCRIBA_VERSION → identical HTML`` (svg-emitter.md, environments.md §34), never
+identity across a bump. (Correction to earlier notes: ``\\group`` adds no CSS —
+only ``\\link`` touched the stylesheet.)
 """
