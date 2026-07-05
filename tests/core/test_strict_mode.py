@@ -822,6 +822,7 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1472",
         "E1473",
         "E1474",
+        "E1475",
         # MetricPlot
         "E1480",
         "E1481",
@@ -830,6 +831,10 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1485",
         "E1486",
         "E1487",
+        # Bar (histogram)
+        "E1488",
+        "E1489",
+        "E1490",
         # Graph layout
         "E1500",
         "E1501",

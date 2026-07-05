@@ -25,7 +25,7 @@
 4. [Diagram Environment](#4-diagram-environment)
 5. [Inner Commands](#5-inner-commands-21-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant` `\link` `\combine` `\group`
 6. [Visual States](#6-visual-states)
-7. [All 18 Primitives](#7-all-18-primitives)
+7. [All 19 Primitives](#7-all-19-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
 9. [Complete Examples](#9-complete-examples)
 10. [Environment Options](#10-environment-options)
@@ -58,6 +58,7 @@
 | Slide a sweep line / move geometry | Plane2D `move_*` §7.9, recipe §12 |
 | Show bitmask / subset-DP structure | Hypercube §7.16 |
 | Animate DSU unions | Forest §7.17 |
+| Show value magnitudes as column heights (histogram) | Bar §7.19 |
 | Look up an error code | §15 |
 
 ---
@@ -102,9 +103,9 @@ Everything below is expanded later; this is the lookup layer.
 | `\combine{s1, s2}{into="D"}` | N ephemeral links converging on one target |
 | `\group{G}{nodes=[…], id=…}` / `\ungroup` | hull overlay around a node cluster (Graph) |
 
-**18 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree / heap / automata) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines/circles) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · Deque (two-ended) · VariableWatch (named values) · Hypercube (subset lattice) · Forest (multi-root DSU).
+**19 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree / heap / automata) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines/circles) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · Deque (two-ended) · VariableWatch (named values) · Hypercube (subset lattice) · Forest (multi-root DSU) · Bar (histogram / column heights).
 
-**Selector grammar** (§8): `shape.family[index]` — `a.cell[i]`, `g.cell[r][c]`, `a.range[i:j]`, `g.block[r0:r1][c0:c1]`, `g.row[i]`, `g.col[j]`, `g.diag`, `G.node[id]`, `G.edge[(u,v)]`, `nl.tick[i]`, `code.line[i]`, `vars.var[name]`, `.all`. Interpolate with `${i}` in any index.
+**Selector grammar** (§8): `shape.family[index]` — `a.cell[i]`, `g.cell[r][c]`, `a.range[i:j]`, `g.block[r0:r1][c0:c1]`, `g.row[i]`, `g.col[j]`, `g.diag`, `G.node[id]`, `G.edge[(u,v)]`, `nl.tick[i]`, `code.line[i]`, `vars.var[name]`, `h.bar[i]`, `.all`. Interpolate with `${i}` in any index.
 
 **Top 6 footguns:**
 1. A selector index needs `${i}`; bare `i` is a literal key → command silently dropped. §5.12
@@ -882,7 +883,7 @@ with an unknown id is a no-op.
 
 ---
 
-## 7. All 18 Primitives
+## 7. All 19 Primitives
 
 ### 7.1 Array
 1D horizontal row of indexed cells.
@@ -963,11 +964,25 @@ Nodes + edges with layout engine.
 | `edges` | list | `[]` | no | `(u,v)` or weighted `(u,v,w)` tuples; don't mix the two (E1474) |
 | `directed` | bool | `false` | no | draw arrowheads |
 | `layout` | enum | `"force"` | no | see layout options below |
+| `positions` | list | none | no | pin every node to an author coordinate — `[(node, x, y), ...]`; bypasses the layout engine (E1475). See **Manual placement** below. |
 | `layout_seed` | int | `42` | no | RNG seed for the `force` layout — controls reproducibility, not quality; most authors omit it. Alias `seed` (`layout_seed` wins). |
 | `show_weights` | bool | `false` | no | render edge-weight pills |
 | `label` | string | none | no | caption |
 
 **Layout options:** `"force"` (default), `"stable"` (≤20 nodes), `"hierarchical"`, `"auto"` (picks hierarchical for DAGs, else force). Any other value silently falls back to force.
+
+**Manual placement (`positions`):** pin every node to an author coordinate when no layout engine gives the shape you need — FFT butterflies, planar graphs, geometric graphs at true coordinates, custom layered networks. Supply one `(node, x, y)` per declared node; coordinates are in **any** author units (a `(column, row)` lattice, real geometry, …) and are scaled **uniformly** (aspect ratio preserved) and centred to fit the canvas. Screen convention: x grows right, y grows **down**, so the smallest `y` renders at the top. Positions win over `layout=` and stay pinned across edge mutations. Every node must appear exactly once — an unknown, duplicated, missing, or non-numeric entry raises **E1475** (no silent fallback).
+
+```latex
+% FFT butterfly — two tiers, four rows: authored, not force-solved
+\shape{G}{Graph}{
+  nodes=["x0","x1","x2","x3","y0","y1","y2","y3"],
+  edges=[("x0","y0"),("x1","y0"),("x2","y2"),("x3","y2")],
+  positions=[("x0",0,0),("x1",0,1),("x2",0,2),("x3",0,3),
+             ("y0",1,0),("y1",1,1),("y2",1,2),("y3",1,3)],
+  directed=true
+}
+```
 **Weighted edges:** `edges=[("A","B",4),("B","C",2)]` with `show_weights=true`.
 **Dynamic edge labels (flow `f/c`):** `\apply{G.edge[(A,B)]}{value="3/10"}` — updates the label shown on an edge at runtime. Useful for flow networks showing `flow/capacity`. Works for both directed and undirected graphs. Labels have background pills and auto-nudge to avoid overlapping each other. Combine with `tint_by_edge=true` so a saturated edge's pill picks up its `\recolor{...}{state=error}` color. See the two-step flow-network walkthrough in §12.
 
@@ -1019,6 +1034,7 @@ after a later `add_edge` connects it.
 | `"stable"` | Small undirected graphs (≤20 nodes) | Deterministic; emits a `UserWarning` if `directed=true` (§13.10) |
 | `"hierarchical"` | DAGs, tree-like directed flows | Respects `orientation="TB"` (top→bottom) or `"LR"` (left→right) |
 | `"auto"` | Let Scriba choose | Picks `hierarchical` when the graph is a DAG, otherwise `force` |
+| `positions=[...]` | You know exactly where each node goes | Butterfly / planar / geometric layouts; overrides `layout=`; every node must be listed (E1475) |
 
 > **Best practices (read first).** Most authors never need `layout_seed`. Declare all nodes **and** edges up front and tell the story with `\recolor`/state and `\hl` rather than `add_edge`/`remove_edge` — full topology at construction keeps positions pinned, so no isolated node is flung to a corner and the graph stays put across steps. For ≤20 nodes prefer `layout="stable"` (even, deterministic, no seed). Reach for `layout_seed` only as a last-resort cosmetic tweak. If you must grow the graph with `add_edge`, still declare that node's first edge up front so it is placed from the construction-time topology.
 
@@ -1246,9 +1262,17 @@ LIFO stack.
 \apply{p}{move_point={i=0, x=2.5}}          % partial: only the fields you pass change
 \apply{p}{move_line={i=0, to_x=1.0}}        % vertical lines only (a sweep line); slanted → E1467
 \apply{p}{move_segment={i=0, x2=3, y2=4}}
+
+% Rotate IN PLACE (since 0.24.0) — by degrees CCW about a pivot `about` (default
+% origin). Computes the rotated coordinates, then keeps the index so it rides the
+% SAME position_move glide as move_* (the glide is the chord of the rotation arc;
+% small per-step angles read as rotation). No new motion kind.
+\apply{p}{rotate_point={i=0, by=60, about=(0,0)}}    % Burnside ring / angular sweep
+\apply{p}{rotate_segment={i=0, by=30, about=(1,1)}}  % rotating calipers about a pivot vertex
+\apply{p}{rotate_line={i=0, by=45}}                  % reorient a line (refits slope/intercept)
 ```
 
-A malformed add-spec raises **E1467**; an out-of-range or tombstoned remove index raises **E1437**.
+A malformed add-spec raises **E1467**; an out-of-range or tombstoned remove index raises **E1437**. A `move_*`/`rotate_*` spec whose `i` is out-of-range or tombstoned raises **E1437**; a missing or non-numeric `by`, or a malformed `about`, raises **E1467**.
 
 Circles/arcs/wedges select and annotate like the other five families (`p.circle[i]`, `p.arc[i]`, `p.wedge[i]`; anchors: circle centre, arc midpoint, wedge interior). `r` is in math units — a closest-pair radius `δ` can be passed straight in. Under `aspect="equal"` (the default) a circle renders round; under `aspect="auto"` the axes scale independently, so it honestly renders as the true pixel-space locus (an ellipse). The viewport is fixed to `xrange`/`yrange` (like a Matplotlib axis) — a shape larger than the range is **clipped at the plot edge**, not auto-scaled to fit; a circle whose radius reaches past the range emits a hidden **E1463** so you can widen the range or shrink `r`.
 
@@ -1421,6 +1445,18 @@ Two-ended queue for monotonic-deque sliding windows (since 0.24.0). A strict sup
 **Operations:** `push_front` / `push_back` / `pop_front` / `pop_back` (pops take a count); `enqueue`/`dequeue` still work as aliases for `push_back`/`pop_front`. Push onto a full deque raises **E1442**, popping past empty raises **E1443**. The same four deque verbs on a plain `Queue` raise **E1444** ("declare as Deque").
 **Selectors:** `d`, `d.cell[i]`, `d.front`, `d.back`, `d.all`. `cell[i]` is the *i*-th position **from the current front** — a `pop_front` shifts what every index points at (position-relative, unlike Array's fixed slots).
 
+### 7.19 Bar
+Variable-height columns over an index axis — the "height = value" channel (histogram). Each datum is a column whose pixel height is proportional to its value, sharing a common baseline; the x-axis is the element index. Use it for largest-rectangle-in-histogram, monotonic-stack-on-heights, trapping-rain-water, skyline, and sorting-as-bars — the shapes where MetricPlot (a cumulative polyline) and the cell primitives (text / brick towers) do not read as magnitudes.
+```latex
+\shape{h}{Bar}{data=[3,1,4,1,5,9,2], show_values=true, label="heights"}
+\recolor{h.bar[5]}{state=current}      % tallest column
+\apply{h.bar[0]}{value=9}              % change a column's height dynamically
+```
+
+**Params:** `data` (list of numbers, required), `max` (full-scale ceiling — a column of this value fills the plot; defaults to `max(data)`), `label`, `bar_width` (or the `width` alias), `show_values` (print each value above its column).
+**Operations:** `\apply{h.bar[i]}{value=X}` sets column *i*'s height. Height is a pure function of the stored value, so the change rides the existing `value_change` transition — the column **snaps** to its new height on the frame swap and its value label pulses (Array's value-change semantics; no bespoke motion). The scaling ceiling only grows, so a value pushed above `max` is honoured (the timeline maximum), never clipped, and the **viewBox stays fixed across frames** (R-32).
+**Selectors:** `h`, `h.bar[i]`, `h.all`. Recolor / highlight / annotate a column by index; an out-of-range `bar[i]` soft-drops (E1115). Empty / non-list / non-numeric `data` raises **E1488** / **E1489** / **E1490**.
+
 ---
 
 ## 8. Selector Quick Reference
@@ -1455,6 +1491,7 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | VariableWatch | `.var[name]` | — | — | — | — | `.all` |
 | Matrix | `.cell[r][c]` | — | — | — | `.block[r0:r1][c0:c1]`, `.row[i]`, `.col[j]`, `.diag` | `.all` |
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]`, `.circle[i]`, `.arc[i]`, `.wedge[i]` | — | — | — | — | `.all` |
+| Bar | `.bar[i]` | — | — | — | — | `.all` |
 | MetricPlot | — | — | — | — | — | `.all` |
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.

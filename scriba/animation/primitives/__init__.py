@@ -33,6 +33,7 @@ warnings.filterwarnings(
 )
 
 from scriba.animation.primitives.array import ArrayPrimitive
+from scriba.animation.primitives.bar import Bar
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, get_primitive_registry, register_primitive
 from scriba.animation.primitives.codepanel import CodePanel
 from scriba.animation.primitives.dptable import DPTablePrimitive
@@ -53,6 +54,7 @@ from scriba.animation.primitives.variablewatch import VariableWatch
 
 __all__ = [
     "ArrayPrimitive",
+    "Bar",
     "BoundingBox",
     "CodePanel",
     "DPTablePrimitive",

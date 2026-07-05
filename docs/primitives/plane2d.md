@@ -236,6 +236,32 @@ would teleport). The targeted form in §5.1 achieves the same for points and
 segments; `move_line={to_x=}` is the sweep-line idiom. Out-of-range or
 tombstoned `i` → E1437.
 
+### 5.1c Rotate in place (since 0.24.0)
+
+```latex
+\apply{p}{rotate_point={i=0, by=60, about=(0,0)}}      % Burnside ring, angular sweep
+\apply{p}{rotate_segment={i=0, by=30, about=(1,1)}}    % rotating calipers about a pivot
+\apply{p}{rotate_line={i=0, by=45}}                    % reorient a line (refits slope/intercept)
+```
+
+`rotate_*` rotates the element `by` degrees **counter-clockwise** (math
+convention, the same sense as arc/wedge sweep) about the pivot `about`, which
+defaults to the origin `(0, 0)`. It computes the rotated coordinates via the
+standard rotation matrix and then mutates the element in place keeping its
+index — so it rides the **same `position_move` glide** as `move_*` and adds
+**no new motion kind**. `rotate_line` samples two points on the line, rotates
+them, and refits `slope`/`intercept` (a line that becomes vertical is stored
+as `slope=inf`, `intercept=x`).
+
+Because `position_move` translates the element's anchor along the straight
+**chord** of its rotation arc and then snaps to the server SVG at settle
+(§4.3 of [`motion-ruleset.md`](../spec/motion-ruleset.md), A-4), a large
+single rotation glides across the chord rather than along the arc. Author
+rotations in **small per-step angles** (e.g. 60° for a hexagon, 30° for a
+caliper sweep) so chord ≈ arc and the motion reads as rotation. Out-of-range
+or tombstoned `i` → E1437; a missing/non-numeric `by` or malformed `about`
+→ E1467.
+
 ### 5.2 Adding new elements dynamically
 
 ```latex

@@ -648,6 +648,59 @@ def fruchterman_reingold(
     return _place_isolated_lane(pos, isolated, width, height)
 
 
+def map_manual_positions(
+    coords: dict[str | int, tuple[float, float]],
+    *,
+    width: int = _DEFAULT_WIDTH,
+    height: int = _DEFAULT_HEIGHT,
+) -> dict[str | int, tuple[int, int]]:
+    """Map author-supplied abstract coordinates into canvas pixel space.
+
+    *coords* maps every node id to an ``(x, y)`` pair in an arbitrary author
+    coordinate system (e.g. an FFT butterfly's ``(column, row)`` lattice). The
+    author frame is scaled **uniformly** — aspect ratio preserved, so geometric
+    and planar graphs keep their true proportions — and centred inside the
+    drawable region ``[_PADDING, width - _PADDING] x [_PADDING, height -
+    _PADDING]`` (the same bounds ``fruchterman_reingold`` clamps to).
+
+    Screen convention: x grows right, y grows **down** — identical to the force
+    and hierarchical solves, so the node with the smallest author y sits at the
+    top. Returns integer pixel coordinates like every other layout, so the emit
+    path is byte-for-byte the same shape regardless of how positions were
+    decided.
+    """
+    if not coords:
+        return {}
+    xs = [c[0] for c in coords.values()]
+    ys = [c[1] for c in coords.values()]
+    min_x, max_x = min(xs), max(xs)
+    min_y, max_y = min(ys), max(ys)
+    span_x = max_x - min_x
+    span_y = max_y - min_y
+    avail_w = width - 2 * _PADDING
+    avail_h = height - 2 * _PADDING
+    # Uniform scale: the tighter axis governs so nothing spills the canvas. A
+    # zero span on an axis means every node shares that coordinate — it is then
+    # centred by the offset below (scale on that axis is irrelevant).
+    if span_x > 0 and span_y > 0:
+        scale = min(avail_w / span_x, avail_h / span_y)
+    elif span_x > 0:
+        scale = avail_w / span_x
+    elif span_y > 0:
+        scale = avail_h / span_y
+    else:
+        scale = 1.0  # single node or all-coincident: centre everything
+    off_x = _PADDING + (avail_w - span_x * scale) / 2.0
+    off_y = _PADDING + (avail_h - span_y * scale) / 2.0
+    return {
+        node: (
+            round(off_x + (ax - min_x) * scale),
+            round(off_y + (ay - min_y) * scale),
+        )
+        for node, (ax, ay) in coords.items()
+    }
+
+
 # ---------------------------------------------------------------------------
 # SVG helpers
 # ---------------------------------------------------------------------------
@@ -723,6 +776,7 @@ class Graph(PrimitiveBase):
         "edges",
         "directed",
         "layout",
+        "positions",
         "layout_seed",
         "seed",
         "show_weights",
@@ -795,7 +849,11 @@ class Graph(PrimitiveBase):
         # That is usually an oversight, so surface a soft, one-time note
         # pointing to the fix. Only warn when the graph DOES have edges (a
         # pure node-set with no edges is an intentional display, not a slip).
-        if self.edges:
+        # Suppressed under manual `positions`: a pinned node is placed exactly
+        # where the author put it (isolated vertices are then intentional, e.g.
+        # a lone point in a geometric graph), so the "flung to a lane" remedy
+        # would be false.
+        if self.edges and params.get("positions") is None:
             _incident: set[str | int] = set()
             for _u, _v, _w in self.edges:
                 _incident.add(_u)
@@ -897,6 +955,19 @@ class Graph(PrimitiveBase):
 
         self.label: str | None = params.get("label")
 
+        # Manual node placement (census gap #3). When the author supplies
+        # ``positions``, every node is PINNED to the mapped author coordinate
+        # and the force / hierarchical / stable solvers are bypassed — this is
+        # what lets FFT-butterfly, planar, and geometric graphs draw at true
+        # coordinates. Parsed to author-space coords here (needs the node set);
+        # the pixel mapping happens once in the layout block below. Absent
+        # ``positions`` leaves this None so the existing code path is untouched.
+        self._manual_positions: dict[str | int, tuple[float, float]] | None = (
+            self._parse_manual_positions(params["positions"])
+            if params.get("positions") is not None
+            else None
+        )
+
         self.width: int = _DEFAULT_WIDTH
         self.height: int = _DEFAULT_HEIGHT
 
@@ -911,6 +982,16 @@ class Graph(PrimitiveBase):
         self._arrow_cell_height = float(self._node_radius * 2)
         self._arrow_layout = "2d"
         self._arrow_shorten = float(self._node_radius)
+
+        # Manual placement wins over every solver: pin each node to its mapped
+        # author coordinate and stop. Positions are computed once and never
+        # move between frames (the node set is fixed, so edge mutations keep
+        # these coordinates — R-32 pin-stability by construction).
+        if self._manual_positions is not None:
+            self.positions = map_manual_positions(
+                self._manual_positions, width=self.width, height=self.height
+            )
+            return
 
         # Compute positions. layout="stable" routes to the stable-layout
         # primitive so the documented flag actually takes effect on the
@@ -1032,6 +1113,94 @@ class Graph(PrimitiveBase):
             # resolved default for backward compatibility — see
             # test_default_seed_when_omitted).
             self._auto_seed: int = best_key[1]
+
+    def _parse_manual_positions(
+        self, raw: Any
+    ) -> dict[str | int, tuple[float, float]]:
+        """Validate the ``positions`` param into ``{node: (x, y)}`` author coords.
+
+        v1 requires one ``(node_id, x, y)`` entry for **every** declared node —
+        there is no partial-pin mode. Anything malformed (not a list, wrong
+        arity, unknown / duplicated / missing node, non-numeric coordinate) is a
+        loud ``E1475`` rather than a silent fall-back to force layout, so a
+        hand-placed diagram never half-pins without the author noticing.
+        """
+        hint = (
+            'positions=[("A", 0, 0), ("B", 2, 1)] — one (node, x, y) per '
+            "declared node; x/y are numbers in any author units (scaled and "
+            "centred to fit the canvas)."
+        )
+        entries = coerce_list(
+            raw,
+            "E1475",
+            detail=(
+                f"Graph '{self.name}' 'positions' must be a list of "
+                f"(node, x, y) entries, got {raw!r}"
+            ),
+            hint=hint,
+        )
+        coords: dict[str | int, tuple[float, float]] = {}
+        for entry in entries:
+            if isinstance(entry, (str, bytes)) or not hasattr(entry, "__iter__"):
+                raise _animation_error(
+                    "E1475",
+                    detail=(
+                        f"Graph '{self.name}' positions entry must be "
+                        f"(node, x, y), got {entry!r}"
+                    ),
+                    hint=hint,
+                )
+            parts = list(entry)
+            if len(parts) != 3:
+                raise _animation_error(
+                    "E1475",
+                    detail=(
+                        f"Graph '{self.name}' positions entry must have exactly "
+                        f"3 items (node, x, y), got {entry!r}"
+                    ),
+                    hint=hint,
+                )
+            node, ax, ay = parts
+            if node not in self.nodes:
+                raise _animation_error(
+                    "E1475",
+                    detail=(
+                        f"Graph '{self.name}' positions references unknown node "
+                        f"{node!r}; declared nodes: "
+                        f"{', '.join(repr(n) for n in self.nodes)}"
+                    ),
+                    hint=hint,
+                )
+            if node in coords:
+                raise _animation_error(
+                    "E1475",
+                    detail=(
+                        f"Graph '{self.name}' pins node {node!r} more than once"
+                    ),
+                    hint=hint,
+                )
+            for axis, val in (("x", ax), ("y", ay)):
+                if isinstance(val, bool) or not isinstance(val, (int, float)):
+                    raise _animation_error(
+                        "E1475",
+                        detail=(
+                            f"Graph '{self.name}' position {axis} for node "
+                            f"{node!r} must be a number, got {val!r}"
+                        ),
+                        hint=hint,
+                    )
+            coords[node] = (float(ax), float(ay))
+        missing = [n for n in self.nodes if n not in coords]
+        if missing:
+            raise _animation_error(
+                "E1475",
+                detail=(
+                    f"Graph '{self.name}' positions must cover every node; "
+                    f"missing: {', '.join(repr(n) for n in missing)}"
+                ),
+                hint=hint,
+            )
+        return coords
 
     # ----- mutation API ----------------------------------------------------
 

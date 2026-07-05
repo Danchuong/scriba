@@ -35,6 +35,16 @@ It unlocks:
 `layout="stable"` replaces the runtime ELK.js proposal from research A3 with a pure
 Python, compile-time simulated annealing optimizer.
 
+> **Manual placement (sibling mechanism).** `layout="stable"` keeps *solver-chosen*
+> positions fixed across frames. When you instead want to choose the coordinates
+> yourself — FFT butterflies, planar embeddings, geometric graphs at true
+> coordinates — pass `positions=[(node, x, y), ...]` (one entry per declared node).
+> That pins every node to its mapped author coordinate, bypasses every solver
+> (including stable), and is likewise frame-stable by construction. Author units are
+> scaled uniformly and centred to the canvas (x right, y down); a malformed or
+> incomplete list raises **E1475**. Canonical reference:
+> [`SCRIBA-TEX-REFERENCE.md`](../SCRIBA-TEX-REFERENCE.md) §7.4 (Manual placement).
+
 ---
 
 ## 2. Extended shape declaration

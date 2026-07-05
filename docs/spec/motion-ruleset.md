@@ -231,6 +231,7 @@ overrides — this phase).
 | `\focus` | A-3 | no (baked `.scriba-defocused`) | Dim the complement set; ephemeral; resting SVG unchanged. |
 | `\playeach` | A-5 | no | Expands to hand-frames at build. |
 | Insert / reflow + sentinel | A-6 | no (`position_move` ships) | Sentinel addressable at t0; prescan reserves max width. |
+| Plane2D `rotate_*` | A-4 (`position_move`) | no | Rotate computes new coords → mutate-in-place keeps identity → rides `position_move`; the glide is the chord of the rotation arc (small per-step angles read as rotation). **No** new kind. |
 | `\string` / `\heap` | A-1/A-2 only | no | Ride existing kinds; carry **no** new motion rule. |
 
 The test the A-rules are meant to pass: a new data structure should need **zero** new motion

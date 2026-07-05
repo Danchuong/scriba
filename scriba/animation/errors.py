@@ -173,7 +173,7 @@ ERROR_CATALOG: dict[str, str] = {
         "primitive type spelling. Valid types: Array, Grid, DPTable, "
         "Graph, Tree, NumberLine, Matrix, Heatmap, Stack, Plane2D, "
         "MetricPlot, CodePanel, HashMap, LinkedList, Queue, Deque, "
-        "VariableWatch, Hypercube, Forest."
+        "VariableWatch, Hypercube, Forest, Bar."
     ),
     "E1103": (
         "Primitive parameter validation error (DEPRECATED mega-bucket; "
@@ -500,6 +500,11 @@ ERROR_CATALOG: dict[str, str] = {
         "Graph edges list mixes weighted and unweighted entries, or "
         "contains a bad shape. Each edge must be (u, v) or (u, v, w)."
     ),
+    "E1475": (
+        "Graph positions is malformed. Supply one (node, x, y) entry for "
+        "every declared node; x/y must be numbers and every node id must "
+        "exist and appear exactly once."
+    ),
     # --- MetricPlot errors (E1480 -- E1489) ---
     "E1480": "MetricPlot requires at least one series.",
     "E1481": "MetricPlot series validation failure.",
@@ -508,6 +513,19 @@ ERROR_CATALOG: dict[str, str] = {
     "E1485": "MetricPlot series data validation error.",
     "E1486": "Degenerate xrange in MetricPlot.",
     "E1487": "Same-axis series must share the same scale.",
+    # --- Bar (histogram) primitive errors (E1488 -- E1490) ---
+    "E1488": (
+        "Bar requires a non-empty numeric 'data' list. "
+        "hint: Bar{name}{data=[3, 1, 4, 1, 5]}."
+    ),
+    "E1489": (
+        "Bar 'data' must be a list of numbers (not a string or scalar). "
+        "hint: data=[3, 1, 4, 1, 5]."
+    ),
+    "E1490": (
+        "Bar 'data' contains a non-numeric entry; every value must be an "
+        "int or float."
+    ),
     # --- Graph layout errors (E1500 -- E1505) ---
     # reserved: E1500-E1504 surface only as logger warnings from the stable
     # graph layout; E1505 is raised from graph_layout_stable.py. Catalog keeps

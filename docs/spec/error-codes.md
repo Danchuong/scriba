@@ -215,7 +215,7 @@ documented deprecated alias.
 | E1453 | NumberLine `domain` must be a two-element [min, max] list. | Supply exactly two numbers. |
 | E1454 | NumberLine `ticks` exceeds maximum (1000). | Reduce the tick count. |
 
-### Graph (E1470--E1474)
+### Graph (E1470--E1475)
 
 | Code | Description | Common Cause | Common Fix |
 |------|-------------|--------------|------------|
@@ -224,6 +224,7 @@ documented deprecated alias.
 | E1472 | `remove_edge` targets an edge that does not exist, or the argument is not a `{from, to}` dict. | The edge was already removed, the direction is wrong for a directed graph, or a non-dict argument was passed. | Check that the edge is present and that `from`/`to` match the direction it was added with. |
 | E1473 | `set_weight` targets an edge that does not exist, or is missing the `value` key. | Trying to set a weight on an edge that was never added or was already removed. | Ensure the edge exists before calling `set_weight`, and supply a numeric `value`. |
 | E1474 | The `edges` list mixes weighted `(u, v, w)` and unweighted `(u, v)` tuples, or contains an entry that is neither a 2-tuple nor a 3-tuple. | A graph declared with some weighted and some unweighted edges in the same list. | Use all 2-tuples (unweighted) or all 3-tuples (weighted); do not mix. |
+| E1475 | The `positions` list is malformed: not a list, an entry that is not `(node, x, y)`, a non-numeric coordinate, or a node id that is unknown, duplicated, or missing. | Manual placement (`positions=`) with a typo'd/omitted node or a non-numeric coordinate. | Supply one `(node, x, y)` per declared node; x/y must be numbers and every node id must exist exactly once. |
 
 ## Plane2D Errors (E1437, E1460--E1466)
 
@@ -248,6 +249,14 @@ documented deprecated alias.
 | E1485 | MetricPlot series data validation error. | Check that data values are numeric and well-formed. |
 | E1486 | Degenerate xrange in MetricPlot. | Ensure x-axis min and max differ. |
 | E1487 | Same-axis series must share the same scale. | Use consistent scale (linear/log) for series on the same axis. |
+
+## Bar Errors (E1488--E1490)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1488 | Bar requires a non-empty numeric `data` list. | `Bar{name}{data=[3, 1, 4, 1, 5]}`. |
+| E1489 | Bar `data` must be a list of numbers (not a string or scalar). | Wrap values in a list: `data=[3, 1, 4]`. |
+| E1490 | Bar `data` contains a non-numeric entry. | Every value must be an int or float. |
 
 ## Graph Layout Errors (E1500--E1505)
 

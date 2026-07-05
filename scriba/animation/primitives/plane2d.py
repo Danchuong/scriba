@@ -586,6 +586,22 @@ class Plane2D(PrimitiveBase):
         if "move_segment" in params:
             self._move_segment_internal(params["move_segment"])
             return
+        # In-place rotations (census gap #2 — angular motion). Each computes a
+        # rotated destination via the CCW rotation matrix about a pivot, then
+        # mutates the element in place keeping its index — so it rides the same
+        # ``position_move`` glide as ``move_*`` (no new motion kind). The glide
+        # is the straight chord of the anchor's rotation arc; small per-step
+        # angles keep chord ≈ arc and read as rotation. See
+        # investigations/completeness-census-post-0.24.md gap #2.
+        if "rotate_point" in params:
+            self._rotate_point_internal(params["rotate_point"])
+            return
+        if "rotate_segment" in params:
+            self._rotate_segment_internal(params["rotate_segment"])
+            return
+        if "rotate_line" in params:
+            self._rotate_line_internal(params["rotate_line"])
+            return
 
     # ----- internal remove helpers (RFC-001 §4.3) --------------------------
 
@@ -722,13 +738,14 @@ class Plane2D(PrimitiveBase):
             )
 
     @staticmethod
-    def _move_index(spec: Any, kind: str) -> int:
-        """Extract the integer index ``i`` from a move-spec dict. E1467 when the
-        spec is not a dict, omits ``i``, or ``i`` is not an integer."""
+    def _move_index(spec: Any, kind: str, verb: str = "move") -> int:
+        """Extract the integer index ``i`` from a move/rotate-spec dict. E1467
+        when the spec is not a dict, omits ``i``, or ``i`` is not an integer.
+        ``verb`` names the op in the message (``"move"`` default, ``"rotate"``)."""
         if not isinstance(spec, dict) or "i" not in spec:
             raise _animation_error(
                 "E1467",
-                f"malformed {kind} move-spec: {spec!r}",
+                f"malformed {kind} {verb}-spec: {spec!r}",
                 hint=f"expected {{i, ...}} with an integer index i",
             )
         try:
@@ -736,7 +753,7 @@ class Plane2D(PrimitiveBase):
         except (TypeError, ValueError) as exc:
             raise _animation_error(
                 "E1467",
-                f"malformed {kind} move-spec: index {spec.get('i')!r} "
+                f"malformed {kind} {verb}-spec: index {spec.get('i')!r} "
                 f"is not an integer",
                 hint="i must be an integer",
             ) from exc
@@ -799,6 +816,104 @@ class Plane2D(PrimitiveBase):
         for k in fields:
             new_seg[k] = float(spec[k])
         self.segments[idx] = new_seg
+
+    # ----- internal rotate helpers (angular motion, census gap #2) ----------
+
+    @staticmethod
+    def _rotate_spec(spec: dict[str, Any], kind: str) -> tuple[float, float, float]:
+        """Extract ``(by_degrees, cx, cy)`` from a rotate-spec dict. The caller
+        pulls ``i`` first via :meth:`_move_index`. E1467 when ``by`` is missing
+        or non-numeric, or ``about`` is not a numeric ``(cx, cy)`` pair
+        (``about`` defaults to the origin)."""
+        if "by" not in spec:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} rotate-spec: {spec!r}",
+                hint="expected {i, by, about?} with by in degrees (CCW)",
+            )
+        try:
+            by = float(spec["by"])
+        except (TypeError, ValueError) as exc:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} rotate-spec: by {spec.get('by')!r} "
+                f"is not a number",
+                hint="by must be a number (degrees, CCW)",
+            ) from exc
+        about = spec.get("about", (0.0, 0.0))
+        try:
+            if not isinstance(about, (list, tuple)) or len(about) != 2:
+                raise ValueError("about must be a (cx, cy) pair")
+            cx, cy = float(about[0]), float(about[1])
+        except (TypeError, ValueError, IndexError) as exc:
+            raise _animation_error(
+                "E1467",
+                f"malformed {kind} rotate-spec: about {spec.get('about')!r} "
+                f"is not a (cx, cy) pair",
+                hint="about must be a numeric (cx, cy) pivot; omit for the origin",
+            ) from exc
+        return by, cx, cy
+
+    @staticmethod
+    def _rotate_xy(
+        x: float, y: float, cx: float, cy: float, by_deg: float
+    ) -> tuple[float, float]:
+        """Rotate ``(x, y)`` by ``by_deg`` degrees CCW about ``(cx, cy)``.
+
+        Math convention (Y up), so a positive angle is counter-clockwise — the
+        same sense as the arc/wedge sweep. Standard rotation matrix."""
+        r = math.radians(by_deg)
+        cos_r, sin_r = math.cos(r), math.sin(r)
+        dx, dy = x - cx, y - cy
+        return (cx + dx * cos_r - dy * sin_r, cy + dx * sin_r + dy * cos_r)
+
+    def _rotate_point_internal(self, spec: Any) -> None:
+        idx = self._move_index(spec, "point", verb="rotate")
+        self._require_living(self.points, idx, "point")
+        by, cx, cy = self._rotate_spec(spec, "point")
+        pt = self.points[idx]
+        nx, ny = self._rotate_xy(pt["x"], pt["y"], cx, cy, by)
+        new_pt = dict(pt)
+        new_pt["x"], new_pt["y"] = nx, ny
+        self.points[idx] = new_pt
+
+    def _rotate_segment_internal(self, spec: Any) -> None:
+        idx = self._move_index(spec, "segment", verb="rotate")
+        self._require_living(self.segments, idx, "segment")
+        by, cx, cy = self._rotate_spec(spec, "segment")
+        seg = self.segments[idx]
+        x1, y1 = self._rotate_xy(seg["x1"], seg["y1"], cx, cy, by)
+        x2, y2 = self._rotate_xy(seg["x2"], seg["y2"], cx, cy, by)
+        new_seg = dict(seg)
+        new_seg["x1"], new_seg["y1"] = x1, y1
+        new_seg["x2"], new_seg["y2"] = x2, y2
+        self.segments[idx] = new_seg
+
+    def _rotate_line_internal(self, spec: Any) -> None:
+        idx = self._move_index(spec, "line", verb="rotate")
+        self._require_living(self.lines, idx, "line")
+        by, cx, cy = self._rotate_spec(spec, "line")
+        ln = self.lines[idx]
+        # Sample two points on the current line, rotate both about the pivot,
+        # then refit slope/intercept — vertical (b=0) is stored as slope=inf,
+        # intercept=x, matching the add/emit convention.
+        slope = ln["slope"]
+        intercept_val = ln["intercept"]
+        if math.isinf(slope):
+            p1, p2 = (intercept_val, 0.0), (intercept_val, 1.0)
+        else:
+            p1, p2 = (0.0, intercept_val), (1.0, slope + intercept_val)
+        q1x, q1y = self._rotate_xy(p1[0], p1[1], cx, cy, by)
+        q2x, q2y = self._rotate_xy(p2[0], p2[1], cx, cy, by)
+        new_ln = dict(ln)
+        if abs(q2x - q1x) < 1e-9:
+            new_ln["slope"] = float("inf")
+            new_ln["intercept"] = q1x
+        else:
+            m = (q2y - q1y) / (q2x - q1x)
+            new_ln["slope"] = m
+            new_ln["intercept"] = q1y - m * q1x
+        self.lines[idx] = new_ln
 
     # ----- Primitive interface ---------------------------------------------
 
