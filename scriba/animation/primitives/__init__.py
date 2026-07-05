@@ -36,9 +36,11 @@ from scriba.animation.primitives.array import ArrayPrimitive
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, get_primitive_registry, register_primitive
 from scriba.animation.primitives.codepanel import CodePanel
 from scriba.animation.primitives.dptable import DPTablePrimitive
+from scriba.animation.primitives.forest import Forest
 from scriba.animation.primitives.graph import Graph
 from scriba.animation.primitives.grid import GridPrimitive
 from scriba.animation.primitives.hashmap import HashMap
+from scriba.animation.primitives.hypercube import Hypercube
 from scriba.animation.primitives.linkedlist import LinkedList
 from scriba.animation.primitives.matrix import MatrixPrimitive
 from scriba.animation.primitives.metricplot import MetricPlot
@@ -54,9 +56,11 @@ __all__ = [
     "BoundingBox",
     "CodePanel",
     "DPTablePrimitive",
+    "Forest",
     "Graph",
     "GridPrimitive",
     "HashMap",
+    "Hypercube",
     "LinkedList",
     "MatrixPrimitive",
     "MetricPlot",

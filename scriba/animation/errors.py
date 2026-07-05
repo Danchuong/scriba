@@ -1,4 +1,4 @@
-"""Animation-specific error codes (E1001 -- E1505).
+"""Animation-specific error codes (E1001 -- E1519).
 
 These extend :mod:`scriba.core.errors` with animation domain codes.
 
@@ -18,6 +18,7 @@ The catalog is grouped by subsystem:
 * ``E1460``--``E1469`` — Plane2D
 * ``E1480``--``E1489`` — MetricPlot
 * ``E1500``--``E1509`` — graph layout
+* ``E1510``--``E1519`` — Hypercube (subset lattice)
 
 The 1400-block was introduced in v0.5.1 to replace the ``E1103`` catch-all
 with one code per (primitive, validation). ``E1103`` itself is retained as
@@ -262,6 +263,17 @@ ERROR_CATALOG: dict[str, str] = {
         "\\group / \\ungroup targets a shape that is not a declared Graph, or "
         "\\group names a node that is not in the graph (v1 supports Graph only)."
     ),
+    # --- Forest (multi-root DSU) primitive (E1508 -- E1509) ---
+    "E1508": (
+        "Forest requires a non-empty 'nodes' list, and node ids must be "
+        "unique. hint: Forest{name}{nodes=[0, 1, 2, 3]}."
+    ),
+    "E1509": (
+        "Forest 'union'/'edges' references a node that is not declared, gives "
+        "a node more than one parent, or forms a cycle. hint: both union "
+        "endpoints must be declared nodes and the initial forest must be "
+        "acyclic with at most one parent per node."
+    ),
     "E1180": (
         "Animation has >30 frames (warning) or \\cursor requires at "
         "least one target."
@@ -417,6 +429,20 @@ ERROR_CATALOG: dict[str, str] = {
         "Stack 'max_visible' parameter out of range; must be a "
         "positive integer."
     ),
+    "E1442": (
+        "Deque is at capacity; cannot push another element. "
+        "hint: raise 'capacity' or pop from an end before pushing."
+    ),
+    "E1443": (
+        "Deque underflow: popping more elements than the deque holds "
+        "(empty, or fewer present than requested). "
+        "hint: push before popping, or pop no more than are present."
+    ),
+    "E1444": (
+        "Queue received a deque-only operation "
+        "(push_front/push_back/pop_front/pop_back); a plain Queue supports "
+        "only enqueue/dequeue. hint: declare the shape as Deque."
+    ),
     # E1450-E1459: HashMap and NumberLine
     "E1450": (
         "HashMap requires a 'capacity' parameter. "
@@ -486,6 +512,11 @@ ERROR_CATALOG: dict[str, str] = {
     "E1503": "Stable layout fallback triggered.",
     "E1504": "layout_lambda out of valid range (clamped).",
     "E1505": "Invalid seed (must be non-negative integer).",
+    # --- Hypercube primitive errors (E1510 -- E1519) ---
+    "E1510": (
+        "Hypercube 'bits' parameter out of range; must be an integer "
+        "between 1 and 5 inclusive."
+    ),
 }
 
 

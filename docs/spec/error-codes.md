@@ -117,6 +117,13 @@
 | E1506 | `\group` needs `id=<name>` and `nodes=[...]` with at least one node; `\ungroup` needs `id=<name>`. | Write `\group{G}{nodes=["a","b"], id=c1}` or `\ungroup{G}{id=c1}`. |
 | E1507 | `\group` / `\ungroup` targets a shape that is not a declared Graph, or `\group` names a node absent from the graph. v1 supports Graph only. | Point the group at a `\shape{G}{Graph}{...}` and list only nodes it declares. |
 
+## Forest Errors (E1508--E1509)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1508 | `Forest` requires a non-empty `nodes` list, and every node id must be unique. | Write `\shape{f}{Forest}{nodes=[0, 1, 2, 3]}`. |
+| E1509 | A `union` / `edges` entry references a node that is not declared, gives a node more than one parent, or forms a cycle. | Use only declared node ids as union endpoints; keep the initial `edges` acyclic with at most one parent per node. |
+
 ## Narration Macro Errors (E1320--E1329)
 
 | Code | Description | Common Fix |
@@ -187,12 +194,15 @@ documented deprecated alias.
 | E1436 | Tree mutation references a node id that does not exist in the current tree, or an `add_node` / `remove_node` argument has a malformed shape. | Using an id that was never added, or a stale id from a previous step. | Verify the node id exists before calling `add_node`, `remove_node`, or `reparent`. |
 | E1438 | Tree (kind=heap) requires a non-empty `data` parameter. | A heap was declared with no backing array (`data=` omitted or empty). | Supply `data=[v0, v1, ...]` — node `i` becomes the parent of `2i+1` and `2i+2`. |
 
-### Queue / Stack (E1440--E1441)
+### Queue / Stack / Deque (E1440--E1444)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
 | E1440 | Queue `capacity` must be a positive integer. | Use a positive integer for `capacity`. |
 | E1441 | Stack `max_visible` must be a positive integer. | Use a positive integer for `max_visible`. |
+| E1442 | Deque is at capacity; cannot push another element. | Raise `capacity`, or pop from an end before pushing. |
+| E1443 | Deque underflow: popping more elements than the deque holds (empty or fewer than requested). | Push before popping, or pop no more elements than are present. |
+| E1444 | A plain Queue received a deque-only operation (`push_front`/`push_back`/`pop_front`/`pop_back`); Queue supports only `enqueue`/`dequeue`. | Declare the shape as `Deque` to use double-ended operations. |
 
 ### HashMap / NumberLine (E1450--E1454)
 
@@ -250,6 +260,12 @@ documented deprecated alias.
 | E1503 | Stable layout fallback triggered. | Informational; the layout engine chose a simpler algorithm. |
 | E1504 | layout_lambda out of valid range (clamped). | Use a value within the documented range. |
 | E1505 | Invalid seed (must be non-negative integer). | Use a non-negative integer for the seed parameter. |
+
+## Hypercube Errors (E1510--E1519)
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1510 | Hypercube `bits` parameter out of range (must be an integer 1–5). | Use `Hypercube{L}{bits=N}` with `1 <= N <= 5` (5 = 32 nodes, the legibility cap). |
 
 ## Smart-Label Placement Errors (E1560--E1579)
 

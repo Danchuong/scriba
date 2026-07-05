@@ -756,6 +756,9 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         # Group / ungroup overlay hull
         "E1506",
         "E1507",
+        # Forest (multi-root DSU) primitive
+        "E1508",
+        "E1509",
         # Substory
         "E1360",
         "E1361",
@@ -793,9 +796,12 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1438",
         # Plane2D remove (W6.5)
         "E1437",
-        # Queue / Stack
+        # Queue / Stack / Deque
         "E1440",
         "E1441",
+        "E1442",
+        "E1443",
+        "E1444",
         # HashMap / NumberLine
         "E1450",
         "E1451",
@@ -830,6 +836,8 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1503",
         "E1504",
         "E1505",
+        # Hypercube (subset lattice)
+        "E1510",
     }
 )
 
