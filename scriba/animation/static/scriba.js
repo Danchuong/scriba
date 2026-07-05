@@ -75,8 +75,19 @@
     }
     function _updateControls(i){
       ctr.textContent=(i+1)+' / '+frames.length;
+      var ae=document.activeElement;
       prev.disabled=i===0;
       next.disabled=i===frames.length-1;
+      // A disabled button drops keyboard focus to <body>, which is OUTSIDE
+      // this widget, so the keydown listener on W stops seeing arrow keys —
+      // nav dies at the first/last frame until the user re-focuses. Hand
+      // focus to the still-enabled sibling (or W itself if both disabled) so
+      // the boundary stays keyboard-navigable.
+      if(!W.hasAttribute('tabindex'))W.setAttribute('tabindex','-1');
+      try{
+        if(ae===next&&next.disabled){(prev.disabled?W:prev).focus({preventScroll:true});}
+        else if(ae===prev&&prev.disabled){(next.disabled?W:next).focus({preventScroll:true});}
+      }catch(_e){}
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
     function _annKeysIn(svgStr){

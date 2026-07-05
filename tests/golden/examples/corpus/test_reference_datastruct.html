@@ -2387,8 +2387,14 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     }
     function _updateControls(i){
       ctr.textContent=(i+1)+' / '+frames.length;
+      var ae=document.activeElement;
       prev.disabled=i===0;
       next.disabled=i===frames.length-1;
+      if(!W.hasAttribute('tabindex'))W.setAttribute('tabindex','-1');
+      try{
+        if(ae===next&&next.disabled){(prev.disabled?W:prev).focus({preventScroll:true});}
+        else if(ae===prev&&prev.disabled){(next.disabled?W:next).focus({preventScroll:true});}
+      }catch(_e){}
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
     function _annKeysIn(svgStr){
@@ -2827,8 +2833,14 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     }
     function _updateControls(i){
       ctr.textContent=(i+1)+' / '+frames.length;
+      var ae=document.activeElement;
       prev.disabled=i===0;
       next.disabled=i===frames.length-1;
+      if(!W.hasAttribute('tabindex'))W.setAttribute('tabindex','-1');
+      try{
+        if(ae===next&&next.disabled){(prev.disabled?W:prev).focus({preventScroll:true});}
+        else if(ae===prev&&prev.disabled){(next.disabled?W:next).focus({preventScroll:true});}
+      }catch(_e){}
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
     function _annKeysIn(svgStr){
@@ -3259,8 +3271,14 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     }
     function _updateControls(i){
       ctr.textContent=(i+1)+' / '+frames.length;
+      var ae=document.activeElement;
       prev.disabled=i===0;
       next.disabled=i===frames.length-1;
+      if(!W.hasAttribute('tabindex'))W.setAttribute('tabindex','-1');
+      try{
+        if(ae===next&&next.disabled){(prev.disabled?W:prev).focus({preventScroll:true});}
+        else if(ae===prev&&prev.disabled){(next.disabled?W:next).focus({preventScroll:true});}
+      }catch(_e){}
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
     function _annKeysIn(svgStr){
@@ -4027,8 +4045,14 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     }
     function _updateControls(i){
       ctr.textContent=(i+1)+' / '+frames.length;
+      var ae=document.activeElement;
       prev.disabled=i===0;
       next.disabled=i===frames.length-1;
+      if(!W.hasAttribute('tabindex'))W.setAttribute('tabindex','-1');
+      try{
+        if(ae===next&&next.disabled){(prev.disabled?W:prev).focus({preventScroll:true});}
+        else if(ae===prev&&prev.disabled){(next.disabled?W:next).focus({preventScroll:true});}
+      }catch(_e){}
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
     function _annKeysIn(svgStr){
@@ -4446,8 +4470,14 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     }
     function _updateControls(i){
       ctr.textContent=(i+1)+' / '+frames.length;
+      var ae=document.activeElement;
       prev.disabled=i===0;
       next.disabled=i===frames.length-1;
+      if(!W.hasAttribute('tabindex'))W.setAttribute('tabindex','-1');
+      try{
+        if(ae===next&&next.disabled){(prev.disabled?W:prev).focus({preventScroll:true});}
+        else if(ae===prev&&prev.disabled){(next.disabled?W:next).focus({preventScroll:true});}
+      }catch(_e){}
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
     function _annKeysIn(svgStr){
@@ -4886,8 +4916,14 @@ CodePanel, HashMap, LinkedList, Queue, VariableWatch, and Stack.</p><h3 id="code
     }
     function _updateControls(i){
       ctr.textContent=(i+1)+' / '+frames.length;
+      var ae=document.activeElement;
       prev.disabled=i===0;
       next.disabled=i===frames.length-1;
+      if(!W.hasAttribute('tabindex'))W.setAttribute('tabindex','-1');
+      try{
+        if(ae===next&&next.disabled){(prev.disabled?W:prev).focus({preventScroll:true});}
+        else if(ae===prev&&prev.disabled){(next.disabled?W:next).focus({preventScroll:true});}
+      }catch(_e){}
       dots.forEach(function(d,j){d.className='scriba-dot'+(j===i?' active':j<i?' done':'');});
     }
     function _annKeysIn(svgStr){
