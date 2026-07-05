@@ -399,3 +399,27 @@ class TestAspect:
         svg = p.emit_svg()
         assert "<circle" in svg
         assert abs(p._sx) != pytest.approx(abs(p._sy))
+
+
+class TestOversizedRadiusWarning:
+    """A circle/arc/wedge whose CENTER is in range but whose RADIUS pushes it
+    past the viewport gets the same E1463 diagnostic a point does — the
+    warning previously only checked the center (bmad-aspect)."""
+
+    def test_oversized_circle_warns(self, caplog) -> None:
+        import logging
+        from scriba.animation.primitives.plane2d import Plane2D
+
+        p = Plane2D("p", {"xrange": [-2, 2], "yrange": [-2, 2], "aspect": "auto"})
+        with caplog.at_level(logging.WARNING):
+            p.apply_command({"add_circle": {"cx": 0, "cy": 0, "r": 4}})
+        assert any("E1463" in r.message for r in caplog.records)
+
+    def test_wellsized_circle_silent(self, caplog) -> None:
+        import logging
+        from scriba.animation.primitives.plane2d import Plane2D
+
+        p = Plane2D("p", {"xrange": [-2, 2], "yrange": [-2, 2]})
+        with caplog.at_level(logging.WARNING):
+            p.apply_command({"add_circle": {"cx": 0, "cy": 0, "r": 1}})
+        assert not any("E1463" in r.message for r in caplog.records)

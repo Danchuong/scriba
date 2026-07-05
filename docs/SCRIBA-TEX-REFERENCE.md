@@ -1249,7 +1249,7 @@ LIFO stack.
 
 A malformed add-spec raises **E1467**; an out-of-range or tombstoned remove index raises **E1437**.
 
-Circles/arcs/wedges select and annotate like the other five families (`p.circle[i]`, `p.arc[i]`, `p.wedge[i]`; anchors: circle centre, arc midpoint, wedge interior). `r` is in math units — a closest-pair radius `δ` can be passed straight in. Under `aspect="equal"` (the default) a circle renders round; under `aspect="auto"` the axes scale independently, so it honestly renders as the true pixel-space locus (an ellipse).
+Circles/arcs/wedges select and annotate like the other five families (`p.circle[i]`, `p.arc[i]`, `p.wedge[i]`; anchors: circle centre, arc midpoint, wedge interior). `r` is in math units — a closest-pair radius `δ` can be passed straight in. Under `aspect="equal"` (the default) a circle renders round; under `aspect="auto"` the axes scale independently, so it honestly renders as the true pixel-space locus (an ellipse). The viewport is fixed to `xrange`/`yrange` (like a Matplotlib axis) — a shape larger than the range is **clipped at the plot edge**, not auto-scaled to fit; a circle whose radius reaches past the range emits a hidden **E1463** so you can widen the range or shrink `r`.
 
 ### 7.10 MetricPlot
 Time-series metric chart.

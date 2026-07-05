@@ -466,20 +466,33 @@ class Plane2D(PrimitiveBase):
             )
         return cx, cy, r, a0, a1
 
-    def _warn_center_offscreen(self, cx: float, cy: float, kind: str) -> None:
-        """Emit hidden E1463 when a circle/arc/wedge center is outside the
-        viewport — mirrors the point off-viewport warning (SF-2, RFC-002)."""
-        if not (
+    def _warn_center_offscreen(
+        self, cx: float, cy: float, kind: str, r: float | None = None
+    ) -> None:
+        """Emit hidden E1463 when a circle/arc/wedge center — or, for a shape
+        with a radius, its extent ``center±r`` — falls outside the viewport
+        (mirrors the point off-viewport warning, SF-2/RFC-002). Checking the
+        radius too catches an oversized circle that clips at the SVG edge even
+        though its centre is in range (bmad-aspect)."""
+        center_out = not (
             self.xrange[0] <= cx <= self.xrange[1]
             and self.yrange[0] <= cy <= self.yrange[1]
-        ):
+        )
+        extent_out = r is not None and not (
+            self.xrange[0] <= cx - r and cx + r <= self.xrange[1]
+            and self.yrange[0] <= cy - r and cy + r <= self.yrange[1]
+        )
+        if center_out or extent_out:
+            what = "center" if center_out else "radius"
             logger.warning(
-                "[E1463] %s center (%.2f, %.2f) is outside viewport", kind, cx, cy
+                "[E1463] %s %s (%.2f, %.2f) is outside viewport", kind, what, cx, cy
             )
             _emit_warning(
                 self._ctx,
                 "E1463",
-                f"{kind} center ({cx:.2f}, {cy:.2f}) is outside viewport "
+                f"{kind} {what} ({cx:.2f}, {cy:.2f}) "
+                + (f"r={r:.2f} " if extent_out and not center_out else "")
+                + f"extends outside viewport "
                 f"[{self.xrange[0]}, {self.xrange[1]}] x "
                 f"[{self.yrange[0]}, {self.yrange[1]}]",
                 primitive=self.name,
@@ -489,19 +502,19 @@ class Plane2D(PrimitiveBase):
     def _add_circle_internal(self, spec: Any) -> None:
         self._check_cap()
         cx, cy, r = self._parse_circle_fields(spec, "circle")
-        self._warn_center_offscreen(cx, cy, "circle")
+        self._warn_center_offscreen(cx, cy, "circle", r)
         self.circles.append({"cx": cx, "cy": cy, "r": r})
 
     def _add_arc_internal(self, spec: Any) -> None:
         self._check_cap()
         cx, cy, r, a0, a1 = self._parse_arc_fields(spec, "arc")
-        self._warn_center_offscreen(cx, cy, "arc")
+        self._warn_center_offscreen(cx, cy, "arc", r)
         self.arcs.append({"cx": cx, "cy": cy, "r": r, "a0": a0, "a1": a1})
 
     def _add_wedge_internal(self, spec: Any) -> None:
         self._check_cap()
         cx, cy, r, a0, a1 = self._parse_arc_fields(spec, "wedge")
-        self._warn_center_offscreen(cx, cy, "wedge")
+        self._warn_center_offscreen(cx, cy, "wedge", r)
         self.wedges.append({"cx": cx, "cy": cy, "r": r, "a0": a0, "a1": a1})
 
     # ----- apply commands --------------------------------------------------
