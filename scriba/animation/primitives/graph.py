@@ -765,6 +765,11 @@ class Graph(PrimitiveBase):
 
     primitive_type = "graph"
 
+    # DECORATE v4: a \trace threads a polyline through node centres ("follow the
+    # edges"). resolve_annotation_point already returns the node centre, so the
+    # shipped emit_traces_under decoration draws the sweep with no new machinery.
+    supports_trace: ClassVar[bool] = True
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",
         "edge[({u},{v})]": "edge by endpoints",
@@ -1431,6 +1436,14 @@ class Graph(PrimitiveBase):
             cached_set = frozenset(self.addressable_parts())
             self.__dict__["_cached_addressable_set"] = cached_set
         return suffix in cached_set
+
+    def _trace_cell_suffix(self, cell) -> str:
+        """Map a ``\\trace`` ``cells=`` entry to a node selector suffix.
+
+        Graph traces address nodes by id (string) or index, not grid cells, so
+        the entry becomes ``node[{id}]`` verbatim — ``resolve_annotation_point``
+        then handles the str-then-int id lookup."""
+        return f"node[{cell}]"
 
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
         """Map ``"G.node[A]"`` to the SVG ``(x, y)`` center of that node.
@@ -2153,6 +2166,12 @@ class Graph(PrimitiveBase):
                 f'</g>'
             )
         parts.append('</g>')
+
+        # DECORATE v4: \trace polylines thread node centres, painted between the
+        # edges and the nodes ("follow the edges", nodes sitting on top). Same
+        # coordinate frame as the annotation arrows below, which already resolve
+        # through resolve_annotation_point.
+        self.emit_traces_under(parts)
 
         # --- Node layer (rendered on top) ---
         parts.append('<g class="scriba-graph-nodes">')

@@ -330,7 +330,13 @@ class _TokensMixin:
                 return True
             if tok.value == "false":
                 return False
-            return tok.value
+            # Reassemble a contiguous hyphenated bare identifier so compass
+            # anchors like ``at=top-right`` survive the value lexer (which
+            # splits ``top-right`` into IDENT ``-`` IDENT). Purely additive:
+            # such input previously raised E1005 ("unquoted value runs into
+            # '-'"), so no already-valid value changes. Dotted/bracketed
+            # values are untouched — they still hit the E1005 guard.
+            return self._read_hyphenated_ident_tail(tok)
 
         if tok.kind == TokenKind.INTERP:
             self._advance()
@@ -479,6 +485,45 @@ class _TokensMixin:
             )
         self._advance()  # consume ]
         return (label, title)
+
+    def _read_hyphenated_ident_tail(self, first_tok: Token) -> str:
+        """Reassemble a bare ``ident(-ident)*`` value starting at *first_tok*.
+
+        The lexer emits ``-`` as a standalone CHAR, splitting ``top-right`` into
+        ``IDENT('top') CHAR('-') IDENT('right')``. Consume every *contiguous*
+        ``-``-then-``IDENT`` pair — one that begins exactly where the previous
+        token ended, with no intervening whitespace — and concatenate. A gap or
+        any non ``-``/``IDENT`` token ends the run, leaving the cursor for the
+        caller's ``,``/``}`` handling. Deliberately narrow: it consumes ONLY the
+        hyphen form, so dotted/bracketed unquoted values still trip the E1005
+        guard (bmad-errmsg). ``first_tok`` is already consumed by the caller."""
+        parts = [first_tok.value]
+        prev = first_tok
+        while not self._at_end():
+            dash = self._peek()
+            if (
+                dash.kind != TokenKind.CHAR
+                or dash.value != "-"
+                or dash.line != prev.line
+                or dash.col != prev.col + len(prev.value)
+            ):
+                break
+            # A '-' must be immediately followed by a contiguous IDENT, else it
+            # is not part of a compass-style value; leave the '-' for the caller.
+            if (
+                self._pos + 1 >= len(self._tokens)
+                or self._tokens[self._pos + 1].kind != TokenKind.IDENT
+            ):
+                break
+            ident = self._tokens[self._pos + 1]
+            if ident.line != dash.line or ident.col != dash.col + 1:
+                break
+            self._advance()  # consume '-'
+            self._advance()  # consume the IDENT tail
+            parts.append("-")
+            parts.append(ident.value)
+            prev = ident
+        return "".join(parts)
 
     def _read_bare_label_tail(self, first_tok: Token) -> str:
         """Reassemble a bare step-label value starting at *first_tok*.

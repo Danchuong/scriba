@@ -23,6 +23,7 @@ from .ast import (
     InvariantCommand,
     LinkCommand,
     NarrateCommand,
+    NoteCommand,
     ReannotateCommand,
     RecolorCommand,
     UngroupCommand,
@@ -33,6 +34,7 @@ from scriba.animation.constants import (
     VALID_ANNOTATION_COLORS,
     VALID_ANNOTATION_POSITIONS,
     VALID_ANNOTATION_STATE_COLORS,
+    VALID_NOTE_ANCHORS,
     VALID_STATES,
 )
 
@@ -122,8 +124,12 @@ class _CommandsMixin:
         return HighlightCommand(tok.line, tok.col, sel)
 
     def _parse_focus(self) -> FocusCommand:
-        """Parse ``\\focus{target}`` (R-40) — a structural twin of
-        ``\\highlight``."""
+        """Parse ``\\focus{target}{scope=shape|board}`` (R-40 + DECORATE v3).
+
+        A structural twin of ``\\highlight``, plus an OPTIONAL second brace
+        carrying ``scope=``. ``_read_param_brace`` yields ``{}`` when the brace
+        is absent (so bare ``\\focus{x}`` stays valid and byte-identical), and
+        ``scope`` defaults to ``shape`` — an unknown value raises E1122."""
         tok = self._advance()
         sel = parse_selector(
             self._read_brace_arg(tok),
@@ -131,7 +137,19 @@ class _CommandsMixin:
             col=tok.col,
             source_line=self._source_line_at(tok.line),
         )
-        return FocusCommand(tok.line, tok.col, sel)
+        params = self._read_param_brace()
+        scope = str(params.get("scope", "shape"))
+        if scope not in ("shape", "board"):
+            self._raise_unknown_enum(
+                "focus scope",
+                scope,
+                ("shape", "board"),
+                code="E1122",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        return FocusCommand(tok.line, tok.col, sel, scope=scope)
 
     def _parse_recolor(self) -> RecolorCommand:
         tok = self._advance()
@@ -291,6 +309,11 @@ class _CommandsMixin:
                     cells.append((int(item[0]), int(item[1])))
                 elif isinstance(item, (int, float, str)) and str(item).lstrip("-").isdigit():
                     cells.append(int(item))
+                elif isinstance(item, str) and item.strip():
+                    # DECORATE v4: a string node-id (Graph/Tree trace). The int
+                    # branch above still owns digit strings, so grid traces are
+                    # untouched; a genuine node id like "A" lands here verbatim.
+                    cells.append(item.strip())
         if len(cells) < 2:
             raise ValidationError(
                 "\\trace requires cells= with at least 2 points",
@@ -426,6 +449,49 @@ class _CommandsMixin:
             color=color,
             label=str(params["label"]) if "label" in params else None,
             ephemeral=params.get("ephemeral", True) not in (False, "false"),
+        )
+
+    def _parse_note(self) -> NoteCommand:
+        """Parse ``\\note{id}{text=..., at=<anchor>, color=..., ephemeral=...}``
+        (DECORATE v2). Stage-level, no shape prefix — the first brace holds the
+        author id, the second the params. Missing id or text → E1120; an unknown
+        ``at`` anchor → E1121 (enum gate, mirrors annotation-position E1112)."""
+        tok = self._advance()
+        note_id = self._read_brace_arg(tok).strip()
+        params = self._read_param_brace()
+        text_raw = params.get("text")
+        text = str(text_raw) if text_raw is not None else ""
+        if not note_id or not text.strip():
+            raise ValidationError(
+                '\\note requires an id and text="...", e.g. '
+                '\\note{n1}{text="careful: 0-indexed", at=top-right}',
+                position=tok.col,
+                code="E1120",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        at = str(params.get("at", "top-right"))
+        if at not in VALID_NOTE_ANCHORS:
+            self._raise_unknown_enum(
+                "note anchor",
+                at,
+                VALID_NOTE_ANCHORS,
+                code="E1121",
+                line=tok.line,
+                col=tok.col,
+                source_line=self._source_line_at(tok.line),
+            )
+        color = str(params.get("color", "info"))
+        self._check_annotation_color(color, tok)
+        return NoteCommand(
+            tok.line,
+            tok.col,
+            note_id=note_id,
+            text=text,
+            at=at,
+            color=color,
+            ephemeral=params.get("ephemeral", False) in (True, "true"),
         )
 
     def _require_group_graph(self, shape: str, tok: "Token", verb: str) -> None:
@@ -594,6 +660,7 @@ class _CommandsMixin:
         ephemeral = params.get("ephemeral", False) in (True, "true")
         bracket = params.get("bracket", False) in (True, "true")
         leader = params.get("leader", False) in (True, "true")
+        strike = params.get("strike", False) in (True, "true")
         af_raw = params.get("arrow_from")
         arrow_from = (
             parse_selector(
@@ -610,7 +677,7 @@ class _CommandsMixin:
             label=str(params["label"]) if "label" in params else None,
             position=position, color=color, arrow=arrow,
             ephemeral=ephemeral, arrow_from=arrow_from,
-            bracket=bracket, leader=leader,
+            bracket=bracket, leader=leader, strike=strike,
         )
 
     def _parse_cursor(self) -> CursorCommand:

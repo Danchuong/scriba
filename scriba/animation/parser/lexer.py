@@ -77,6 +77,7 @@ _KNOWN_COMMANDS = frozenset(
         "trace",
         "link",
         "combine",
+        "note",
         "group",
         "ungroup",
         "substory",

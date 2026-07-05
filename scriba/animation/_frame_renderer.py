@@ -15,8 +15,10 @@ from typing import Any, Callable
 from scriba.animation.primitives.base import BoundingBox
 from scriba.animation.primitives._svg_helpers import (
     ARROW_STYLES,
+    LABEL_FONT_PX,
     annotation_color_class,
 )
+from scriba.animation.primitives._text_metrics import measure_label_line
 from scriba.animation.primitives._text_render import (
     _escape_xml,
     strip_math_markup,
@@ -655,6 +657,11 @@ def _apply_defocus(
     if not focus:
         return svg
 
+    # DECORATE v3: scope=board additionally dims every OTHER shape on the board
+    # (not just the focused shape's own complement). scope=shape (default) keeps
+    # the byte-identical intra-shape behaviour.
+    scope = getattr(frame, "focus_scope", "shape")
+
     # Concrete "keep" (focused) target keys, grouped by focused shape.
     keep: dict[str, set[str]] = {}
     focus_sels_by_shape: dict[str, set[str]] = {}
@@ -686,11 +693,17 @@ def _apply_defocus(
     if not keep:
         return svg
 
+    # Board scope: shapes carrying a valid \focus this frame stay lit (subject to
+    # the intra-shape complement dim); every OTHER shape dims entirely.
+    focused_shapes = set(keep.keys())
+
     def _repl(m: "_re.Match[str]") -> str:
         target = m.group(1)
         css = m.group(2)
         shape_name = target.split(".", 1)[0]
         if shape_name in keep and target not in keep[shape_name]:
+            return f'<g data-target="{target}" class="{css} scriba-defocused"'
+        if scope == "board" and shape_name not in focused_shapes:
             return f'<g data-target="{target}" class="{css} scriba-defocused"'
         return m.group(0)
 
@@ -796,6 +809,102 @@ def _emit_scene_links(
             f' role="graphics-symbol" aria-roledescription="link"'
             f' aria-label="{aria}">'
             f"{inner}</g>"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Untethered \note callout  (DECORATE verb 2)
+# ---------------------------------------------------------------------------
+
+# Inset (px) of a note pill from the viewBox edge, and the vertical gap when
+# several notes stack at one anchor.
+_NOTE_MARGIN = 8.0
+_NOTE_STACK_GAP = 4.0
+
+
+def _note_anchor_xy(
+    at: str,
+    stack_index: int,
+    vx: float,
+    vy: float,
+    vw: float,
+    vh: float,
+    pw: float,
+    ph: float,
+) -> tuple[float, float]:
+    """Resolve a compass ``at`` anchor to a viewBox-relative pill top-left.
+
+    Deterministic: the viewBox is byte-identical every frame, so a persistent
+    note lands in the same spot each frame. Notes sharing an anchor stack down
+    (top/side) or up (bottom) by ``stack_index`` so they never overlap."""
+    step = ph + _NOTE_STACK_GAP
+    # Horizontal band from the anchor's compass column.
+    if at in ("top-left", "left", "bottom-left"):
+        x = vx + _NOTE_MARGIN
+    elif at in ("top-right", "right", "bottom-right"):
+        x = vx + vw - _NOTE_MARGIN - pw
+    else:  # top, bottom → centred column
+        x = vx + (vw - pw) / 2.0
+    # Vertical band from the anchor's compass row.
+    if at in ("top-left", "top", "top-right"):
+        y = vy + _NOTE_MARGIN + stack_index * step
+    elif at in ("bottom-left", "bottom", "bottom-right"):
+        y = vy + vh - _NOTE_MARGIN - ph - stack_index * step
+    else:  # left, right → vertically centred
+        y = vy + (vh - ph) / 2.0 + stack_index * step
+    return (x, y)
+
+
+def _emit_scene_notes(
+    frame: Any,
+    viewbox: str,
+    parts: list[str],
+) -> None:
+    """Append one ``<g><rect/><text/></g>`` callout per ``\\note``.
+
+    Each group carries ``data-annotation="note[{id}]-solo"`` — a stage-level key
+    with **no** shape prefix — so the shipped runtime's ``annotation_add`` /
+    ``_remove`` / ``_recolor`` handlers animate it for free (a twin of
+    ``_emit_scene_links``). The pill is painted inside the existing viewBox at a
+    board-relative margin anchor, reusing the shipped ``scriba-annotation-*``
+    colour classes (zero dedicated note CSS)."""
+    notes = getattr(frame, "notes", None) or []
+    if not notes:
+        return
+    vb = viewbox.split()
+    if len(vb) < 4:
+        return
+    vx, vy, vw, vh = (float(v) for v in vb[:4])
+    stack: dict[str, int] = {}
+    for note in notes:
+        nid = note.get("id", "")
+        at = note.get("at", "top-right")
+        text = str(note.get("text", ""))
+        color = note.get("color", "info")
+        style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+        stroke = style["stroke"]
+        display = strip_math_markup(text)
+        ph = float(LABEL_FONT_PX + 8)
+        pw = float(measure_label_line(display, LABEL_FONT_PX) + 12)
+        idx = stack.get(at, 0)
+        stack[at] = idx + 1
+        px, py = _note_anchor_xy(at, idx, vx, vy, vw, vh, pw, ph)
+        key = f"note[{nid}]-solo"
+        aria = _escape_xml(display) or "note"
+        parts.append(
+            f'  <g class="scriba-annotation scriba-note scriba-annotation-'
+            f'{annotation_color_class(color)}"'
+            f' data-annotation="{_escape_xml(key)}"'
+            f' role="graphics-symbol" aria-roledescription="note"'
+            f' aria-label="{aria}">'
+            f'<rect x="{px:.1f}" y="{py:.1f}" width="{pw:.1f}"'
+            f' height="{ph:.1f}" rx="4" fill="white" fill-opacity="0.92"'
+            f' stroke="{stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
+            f'<text x="{px + pw / 2.0:.1f}" y="{py + ph / 2.0:.1f}"'
+            f' fill="{style["label_fill"]}"'
+            f' style="text-anchor:middle;dominant-baseline:central">'
+            f"{_escape_xml(display)}</text>"
+            f"</g>"
         )
 
 
@@ -1085,6 +1194,11 @@ def _emit_frame_svg(
     _emit_scene_links(
         frame, primitives, _link_stage_offsets, svg_parts, render_inline_tex,
     )
+
+    # DECORATE v2: free \note callouts are a scene-level overlay too, anchored
+    # to the (stable) viewBox rather than to any shape, so they paint on top of
+    # every primitive at a deterministic board-relative margin.
+    _emit_scene_notes(frame, viewbox, svg_parts)
 
     svg_parts.append("</svg>")
     # R-40 \focus: bake the defocus overlay onto the assembled SVG. Runs on the

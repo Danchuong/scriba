@@ -409,6 +409,7 @@ def _snapshot_to_frame_data(
             **({"arrow": True} if a.arrow else {}),
             **({"bracket": True} if a.bracket else {}),
             **({"leader": True} if a.leader else {}),
+            **({"strike": True} if a.strike else {}),
         }
         for a in snap.annotations
     ]
@@ -454,6 +455,21 @@ def _snapshot_to_frame_data(
             **({"label": g.label} if g.label else {}),
         }
         for g in getattr(snap, "groups", ())
+    ]
+
+    # \note free callouts (DECORATE v2). Stage-level (no shape prefix), keyed
+    # note[{id}]-solo; the frame renderer resolves the anchor to a viewBox-
+    # relative pixel at emit time. Kept as a flat list of dicts so the differ
+    # diffs them shape-blind like links.
+    notes = [
+        {
+            "id": n.note_id,
+            "text": n.text,
+            "at": n.at,
+            "color": n.color,
+            "ephemeral": n.ephemeral,
+        }
+        for n in getattr(snap, "notes", ())
     ]
 
     # R-38 binding carets — resolve each caret's cell index from its `at`
@@ -520,10 +536,12 @@ def _snapshot_to_frame_data(
         cursors=cursors,
         links=links,
         groups=groups,
+        notes=notes,
         substories=substories,
         label=label,
         title=title,
         focus=tuple(snap.focus),
+        focus_scope=getattr(snap, "focus_scope", "shape"),
     )
 
 

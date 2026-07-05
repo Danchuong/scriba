@@ -112,6 +112,12 @@ class Tree(PrimitiveBase):
 
     primitive_type = "tree"
 
+    # DECORATE v4: a \trace threads a polyline through node centres — in a
+    # hierarchical layout the straight segment between adjacent node centres IS
+    # the edge, so this is the "follow the path down the tree" gesture.
+    # resolve_annotation_point already returns the node centre.
+    supports_trace: ClassVar[bool] = True
+
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{id}]": "node by id",
         "edge[({u},{v})]": "edge by endpoints",
@@ -736,6 +742,14 @@ class Tree(PrimitiveBase):
             return True
         return suffix in set(self.addressable_parts())
 
+    def _trace_cell_suffix(self, cell) -> str:
+        """Map a ``\\trace`` ``cells=`` entry to a node selector suffix.
+
+        Tree traces address nodes by id (string) or index, so the entry becomes
+        ``node[{id}]`` verbatim — ``resolve_annotation_point`` then handles the
+        str-then-int id lookup."""
+        return f"node[{cell}]"
+
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
         """Map ``"T.node[5]"`` to the SVG ``(x, y)`` center of that node.
 
@@ -946,6 +960,11 @@ class Tree(PrimitiveBase):
                         f"{_escape_xml(str(label))}</text>"
                     )
         parts.append("</g>")
+
+        # DECORATE v4: \trace polylines thread node centres, painted between the
+        # edges and the nodes so the circles sit on top of the swept path. Same
+        # coordinate frame as the annotation arrows below.
+        self.emit_traces_under(parts)
 
         # --- Node layer (rendered on top) ---
         parts.append('<g class="scriba-tree-nodes">')

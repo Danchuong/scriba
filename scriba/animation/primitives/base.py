@@ -1174,6 +1174,40 @@ class PrimitiveBase(abc.ABC):
             else:
                 _combined_obs = _prim_seg_obs
 
+            # Strike decoration (DECORATE design, verb 1): a diagonal
+            # cross-out over the target's box, drawn inline like the R-35
+            # bracket (zero shared CSS, reuses scriba-annotation-*). Emitted
+            # before branch dispatch so it composes with an optional
+            # label/arrow on the same annotation, and is orthogonal to the
+            # element's scriba-state-* color (strike-but-keep). Soft-drops
+            # (E1119) when the target has no drawable extent, so the render
+            # never blanks (mirrors the trace out-of-range soft-drop).
+            if ann.get("strike"):
+                _sbox = self.resolve_annotation_box(ann.get("target", ""))
+                if _sbox is None:
+                    warnings.warn(
+                        f"[E1119] {self.__class__.__name__} '{self.name}': "
+                        f"strike target {ann.get('target', '')!r} has no "
+                        f"drawable extent; skipped",
+                        stacklevel=2,
+                    )
+                else:
+                    _sstyle = ARROW_STYLES.get(
+                        ann.get("color", "info"), ARROW_STYLES["info"]
+                    )
+                    _skey = f"{ann.get('target', '')}-strike"
+                    parts.append(
+                        f'  <g class="scriba-annotation scriba-annotation-'
+                        f'{annotation_color_class(ann.get("color", "info"))}"'
+                        f' data-annotation="{_escape_xml(_skey)}">'
+                        f'<line x1="{_sbox.x:.1f}" y1="{_sbox.y:.1f}"'
+                        f' x2="{_sbox.x + _sbox.width:.1f}"'
+                        f' y2="{_sbox.y + _sbox.height:.1f}"'
+                        f' stroke="{_sstyle["stroke"]}" stroke-width="2.5"'
+                        f' stroke-linecap="round"/>'
+                        f"</g>"
+                    )
+
             if not arrow_from and ann.get("arrow"):
                 dst_point = self.resolve_annotation_point(ann.get("target", ""))
                 if dst_point is not None:

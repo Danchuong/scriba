@@ -245,16 +245,21 @@ class HighlightCommand:
 
 @dataclass(frozen=True, slots=True)
 class FocusCommand:
-    """``\\focus{target}`` — ephemeral spotlight (R-40).
+    """``\\focus{target}{scope=shape|board}`` — ephemeral spotlight (R-40).
 
     Marks ``target`` as focused this frame; every other addressable part of a
     focused shape is dimmed (``scriba-defocused``).  Cleared at the next
     ``\\step`` so it auto-reverts.  Structurally a twin of ``HighlightCommand``.
+
+    ``scope`` (DECORATE verb 3) selects the dim radius: ``shape`` (default,
+    byte-identical to today) dims only the focused shape's own complement;
+    ``board`` also dims every OTHER shape on the board.
     """
 
     line: int
     col: int
     target: Selector
+    scope: str = "shape"
 
 
 @dataclass(frozen=True, slots=True)
@@ -314,6 +319,7 @@ class AnnotateCommand:
     arrow_from: Selector | None = None
     bracket: bool = False
     leader: bool = False
+    strike: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -351,6 +357,28 @@ class CombineCommand:
     color: str = "info"
     label: str | None = None
     ephemeral: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class NoteCommand:
+    """``\\note{id}{text=..., at=<anchor>, color=..., ephemeral=...}`` — a free
+    stage-level callout pill (DECORATE verb 2).
+
+    Painted inside the existing viewBox at a **board-relative margin anchor**,
+    not tied to any shape (a sibling of ``\\link``/``\\combine``; also stage-
+    level, no shape prefix). Keyed ``note[{id}]-solo`` by the explicit author id
+    so it rides ``annotation_add`` / ``annotation_remove`` / ``annotation_recolor``
+    like every other decoration. Persistent by default; ephemeral if flagged
+    (cleared at the next ``\\step`` like an annotation). Re-issuing the same
+    ``id`` replaces the entry (retext / recolour)."""
+
+    line: int
+    col: int
+    note_id: str
+    text: str
+    at: str = "top-right"
+    color: str = "info"
+    ephemeral: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -438,6 +466,7 @@ MutationCommand = (
     | TraceCommand
     | LinkCommand
     | CombineCommand
+    | NoteCommand
     | GroupCommand
     | UngroupCommand
     | ForeachCommand
@@ -459,6 +488,7 @@ Command = Union[
     TraceCommand,
     LinkCommand,
     CombineCommand,
+    NoteCommand,
     GroupCommand,
     UngroupCommand,
     ForeachCommand,

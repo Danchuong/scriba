@@ -16,6 +16,7 @@ __all__ = [
     "VALID_STATES",
     "VALID_ANNOTATION_COLORS",
     "VALID_ANNOTATION_POSITIONS",
+    "VALID_NOTE_ANCHORS",
     "VALID_OPTION_KEYS",
     "VALID_SUBSTORY_OPTION_KEYS",
     "DEFAULT_STATE",
@@ -48,6 +49,15 @@ VALID_ANNOTATION_STATE_COLORS = frozenset({
 # Valid annotation positions
 VALID_ANNOTATION_POSITIONS = frozenset({
     "above", "below", "left", "right", "inside"
+})
+
+# Valid board-relative margin anchors for the free \note callout (DECORATE
+# verb 2). Eight compass margins; multiple notes sharing an anchor stack
+# downward deterministically. The enum gate mirrors annotation-position
+# (E1112) — an unknown anchor raises E1121.
+VALID_NOTE_ANCHORS = frozenset({
+    "top-left", "top", "top-right", "right",
+    "bottom-right", "bottom", "bottom-left", "left",
 })
 
 # Valid animation option keys

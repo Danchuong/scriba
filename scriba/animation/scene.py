@@ -31,6 +31,7 @@ from scriba.animation.parser.ast import (
     HighlightCommand,
     InterpolationRef,
     LinkCommand,
+    NoteCommand,
     ReannotateCommand,
     RecolorCommand,
     Selector,
@@ -143,6 +144,7 @@ class AnnotationEntry:
     arrow: bool = False
     bracket: bool = False
     leader: bool = False
+    strike: bool = False
 
 
 @dataclass(frozen=True)
@@ -160,6 +162,23 @@ class LinkEntry:
     to_selector: str
     color: str = "info"
     label: str | None = None
+    ephemeral: bool = False
+
+
+@dataclass(frozen=True)
+class NoteEntry:
+    """A single ``\\note`` free callout (DECORATE verb 2).
+
+    Stage-level, not tied to any shape (a sibling of :class:`LinkEntry`).
+    Painted at a board-relative margin ``at`` anchor inside the existing
+    viewBox; keyed ``note[{note_id}]-solo`` at diff time. Persistent by
+    default, ephemeral cleared at each ``\\step``; re-issuing the same
+    ``note_id`` replaces the entry (a retext / recolour)."""
+
+    note_id: str
+    text: str
+    at: str = "top-right"
+    color: str = "info"
     ephemeral: bool = False
 
 
@@ -238,6 +257,10 @@ class FrameSnapshot:
     # FrameSnapshot(...) construction in the corpus stays valid.
     links: tuple["LinkEntry", ...] = ()
     groups: tuple["GroupEntry", ...] = ()
+    notes: tuple["NoteEntry", ...] = ()
+    # DECORATE v3 — "board" when any \focus this frame requested scope=board,
+    # else "shape" (byte-identical to today's intra-shape dim).
+    focus_scope: str = "shape"
 
 
 # ---------------------------------------------------------------------------
@@ -264,9 +287,15 @@ class SceneState:
     traces: list["TraceEntry"] = field(default_factory=list)
     cursors: list["CursorEntry"] = field(default_factory=list)
     links: list["LinkEntry"] = field(default_factory=list)
+    # \note free callouts — persistent by default, ephemeral cleared at each
+    # \step (like annotations); re-issuing the same id replaces the entry.
+    notes: list["NoteEntry"] = field(default_factory=list)
     # \group overlay hulls — persistent (no ephemeral concept), cleared only
     # by \ungroup; re-issuing the same (target, id) replaces the entry.
     groups: list["GroupEntry"] = field(default_factory=list)
+    # DECORATE v3 — reset to "shape" each frame; set "board" by a board-scoped
+    # \focus. Frame-ephemeral, exactly like the focus set itself.
+    focus_scope: str = "shape"
     _trace_counter: int = 0
     bindings: dict[str, Any] = field(default_factory=dict)
     _frame_counter: int = 0
@@ -320,10 +349,12 @@ class SceneState:
         # Clear ephemerals
         self.highlights.clear()
         self.focus.clear()
+        self.focus_scope = "shape"
         self.annotations = [a for a in self.annotations if not a.ephemeral]
         self.traces = [tr for tr in self.traces if not tr.ephemeral]
         self.cursors = [c for c in self.cursors if not c.ephemeral]
         self.links = [lk for lk in self.links if not lk.ephemeral]
+        self.notes = [n for n in self.notes if not n.ephemeral]
 
         # Frame-local compute — deep-copy to prevent mutable state leakage
         saved_bindings = copy.deepcopy(self.bindings)
@@ -380,6 +411,8 @@ class SceneState:
             focus=frozenset(self.focus),
             links=tuple(self.links),
             groups=tuple(self.groups),
+            notes=tuple(self.notes),
+            focus_scope=self.focus_scope,
         )
 
     # ---- substory ----
@@ -705,6 +738,8 @@ class SceneState:
             self._apply_link(cmd)
         elif isinstance(cmd, CombineCommand):
             self._apply_combine(cmd)
+        elif isinstance(cmd, NoteCommand):
+            self._apply_note(cmd)
         elif isinstance(cmd, GroupCommand):
             self._apply_group(cmd)
         elif isinstance(cmd, UngroupCommand):
@@ -1012,6 +1047,11 @@ class SceneState:
                 hint=f"declare '{shape_name}' with \\shape before using \\focus",
             )
         self.focus.add(target_str)
+        # DECORATE v3: a single board-scoped \focus dims the whole board this
+        # frame. Frame-global (reset in apply_frame); mixing scope=shape and
+        # scope=board in one frame promotes to board.
+        if getattr(cmd, "scope", "shape") == "board":
+            self.focus_scope = "board"
 
     def _apply_annotate(self, cmd: AnnotateCommand) -> None:
         """\\annotate — persistent by default, ephemeral if flagged."""
@@ -1053,6 +1093,7 @@ class SceneState:
                 position=cmd.position or "above",
                 arrow=cmd.arrow if hasattr(cmd, "arrow") else False,
                 bracket=getattr(cmd, "bracket", False),
+                strike=getattr(cmd, "strike", False),
                 leader=getattr(cmd, "leader", False),
             )
         )
@@ -1077,7 +1118,8 @@ class SceneState:
                 "E1118",
                 f"\\trace targets '{cmd.shape}' "
                 f"({self.shape_types.get(cmd.shape)}), which does not draw traces",
-                hint="\\trace works on Array, Grid, DPTable, NumberLine",
+                hint="\\trace works on Array, Grid, DPTable, NumberLine, "
+                "Graph, Tree",
             )
         self._trace_counter += 1
         tid = cmd.trace_id or f"t{self._trace_counter}"
@@ -1146,6 +1188,23 @@ class SceneState:
                     ephemeral=cmd.ephemeral,
                 )
             )
+
+    def _apply_note(self, cmd: NoteCommand) -> None:
+        """``\\note`` — add or replace a free stage-level callout by id.
+
+        Not tied to any shape (no E1116 shape guard). Persistent by default,
+        ephemeral cleared at each ``\\step``; re-issuing the same id replaces
+        the entry so a recolour/retext rides ``annotation_recolor``."""
+        self.notes = [n for n in self.notes if n.note_id != cmd.note_id]
+        self.notes.append(
+            NoteEntry(
+                note_id=cmd.note_id,
+                text=cmd.text,
+                at=cmd.at,
+                color=cmd.color,
+                ephemeral=cmd.ephemeral,
+            )
+        )
 
     def _apply_group(self, cmd: GroupCommand) -> None:
         """``\\group`` — add or replace the overlay hull for ``(shape, id)``.

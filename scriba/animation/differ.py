@@ -319,6 +319,44 @@ def _diff_links(
     return out
 
 
+def _diff_notes(
+    prev_notes: "list[dict]",
+    curr_notes: "list[dict]",
+) -> "list[Transition]":
+    """\\note free callouts (DECORATE v2): a stage-level annotation keyed
+    ``note[{id}]-solo`` (no shape prefix — it is untethered from every shape).
+    Appear / disappear ride the shipped ``annotation_add`` / ``annotation_remove``
+    fade; a colour change rides ``annotation_recolor``. Zero new runtime kinds —
+    the key is just another ``[data-annotation]`` group to the structure-driven
+    runtime (a verbatim twin of ``_diff_links``)."""
+    def _key(n: dict) -> str:
+        return f"note[{n.get('id', '')}]-solo"
+
+    prev_map = {_key(n): n for n in prev_notes}
+    curr_map = {_key(n): n for n in curr_notes}
+    out: list[Transition] = []
+    for key in sorted(prev_map.keys() | curr_map.keys()):
+        p, c = prev_map.get(key), curr_map.get(key)
+        if c is not None and p is None:
+            out.append(Transition(
+                target=key, prop="add", from_val=None,
+                to_val=c.get("color"), kind="annotation_add",
+            ))
+        elif p is not None and c is None:
+            out.append(Transition(
+                target=key, prop="remove", from_val=p.get("color"),
+                to_val=None, kind="annotation_remove",
+            ))
+        else:
+            pc, cc = p.get("color"), c.get("color")
+            if pc != cc:
+                out.append(Transition(
+                    target=key, prop="state", from_val=pc,
+                    to_val=cc, kind="annotation_recolor",
+                ))
+    return out
+
+
 def _diff_groups(
     prev_groups: "list[dict]",
     curr_groups: "list[dict]",
@@ -517,6 +555,12 @@ def compute_transitions(prev: FrameData, curr: FrameData) -> TransitionManifest:
         _diff_links(
             getattr(prev, "links", None) or [],
             getattr(curr, "links", None) or [],
+        ),
+    )
+    transitions.extend(
+        _diff_notes(
+            getattr(prev, "notes", None) or [],
+            getattr(curr, "notes", None) or [],
         ),
     )
     transitions.extend(

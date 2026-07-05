@@ -728,6 +728,12 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1114",
         "E1115",
         "E1116",
+        # DECORATE overlay verbs — strike no-extent (E1119, warning, base.py),
+        # \note id/text (E1120) + anchor (E1121), \focus scope (E1122)
+        "E1119",
+        "E1120",
+        "E1121",
+        "E1122",
         # Render (KaTeX) — tex/renderer.py
         "E1200",
         # Starlark sandbox

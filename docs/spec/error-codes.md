@@ -54,7 +54,11 @@
 | E1115 | Selector does not match any addressable part of the target primitive (warning — command silently dropped). | Check selector syntax against the primitive's addressable parts. |
 | E1116 | Mutation command (`\apply`, `\highlight`, `\recolor`, `\annotate`) references a shape that was never declared with `\shape`. | Add a `\shape` declaration in the animation prelude before the first `\step`, e.g. `\shape{a}{Array}{size=5}`. |
 | E1117 | Too many inline math expressions in a single document (cap: 500). Enforced at the TeX math-extraction boundary (`scriba.tex.parser.math`) to bound KaTeX worker load. | A document contains more than 500 `$...$` / `$$...$$` expressions. | Split the document into smaller files or reduce the number of math expressions. |
-| E1118 | `\trace` targets a primitive that does not draw traces (only Array, Grid, DPTable, NumberLine do). | `\trace{shape}{...}` on any other primitive would silently render nothing. | Use a trace-capable primitive, or express the path another way (e.g. `\recolor` a `state=path`). |
+| E1118 | `\trace` targets a primitive that does not draw traces (only Array, Grid, DPTable, NumberLine, Graph, Tree do). | `\trace{shape}{...}` on any other primitive (Stack, Queue, ...) would silently render nothing. | Use a trace-capable primitive, or express the path another way (e.g. `\recolor` a `state=path`). |
+| E1119 | `\annotate{...}{strike=true}` target has no drawable extent; the strike is skipped (warning — the render continues). | Strike a target whose box resolves (a cell, node, range, block, ...). |
+| E1120 | `\note` requires an id and `text="..."`. | Write `\note{n1}{text="careful: 0-indexed", at=top-right}`. |
+| E1121 | Unknown `\note` anchor. | Use one of: top-left, top, top-right, right, bottom-right, bottom, bottom-left, left. |
+| E1122 | Unknown `\focus` scope. | Use `scope=shape` (default, intra-shape dim) or `scope=board` (dim every other shape). |
 
 ## Render Errors (E1200--E1249)
 

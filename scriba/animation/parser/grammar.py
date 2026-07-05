@@ -384,6 +384,9 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
         if cmd_name == "combine":
             return self._parse_combine()
 
+        if cmd_name == "note":
+            return self._parse_note()
+
         if cmd_name == "group":
             return self._parse_group()
 
@@ -450,14 +453,14 @@ class SceneParser(_CommandsMixin, _SubstoryMixin, _ForeachMixin, _PlayeachMixin,
     _VALID_COMMANDS_LIST = (
         "\\shape, \\compute, \\step, \\narrate, \\apply, \\highlight, "
         "\\focus, \\recolor, \\reannotate, \\annotate, \\trace, \\link, "
-        "\\combine, \\group, \\ungroup, \\cursor, \\invariant, \\foreach, "
-        "\\endforeach, \\playeach, \\substory, \\endsubstory"
+        "\\combine, \\note, \\group, \\ungroup, \\cursor, \\invariant, "
+        "\\foreach, \\endforeach, \\playeach, \\substory, \\endsubstory"
     )
     _VALID_COMMAND_NAMES = (
         "shape", "compute", "step", "narrate", "apply", "highlight",
         "focus", "recolor", "reannotate", "annotate", "trace", "link",
-        "combine", "group", "ungroup", "cursor", "invariant", "foreach",
-        "endforeach", "playeach", "substory", "endsubstory",
+        "combine", "note", "group", "ungroup", "cursor", "invariant",
+        "foreach", "endforeach", "playeach", "substory", "endsubstory",
     )
 
     def _raise_unknown_command(self, tok: Token) -> None:

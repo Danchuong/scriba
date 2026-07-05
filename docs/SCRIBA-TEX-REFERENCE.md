@@ -341,7 +341,7 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 
 ---
 
-## 5. Inner Commands (21 total)
+## 5. Inner Commands (22 total)
 
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
@@ -447,6 +447,7 @@ Attaches a text label or a Bezier arrow to a shape cell. Persistent by default. 
 | `ephemeral` | bool | `false` | When `true`, the annotation is cleared at the next `\step` boundary |
 | `bracket` | bool | `false` | Block targets only: dashed rounded outline hugging the block, stroke follows `color=` (since 0.22.2) |
 | `leader` | bool | `false` | Dotted connector + dot from the pill to its anchor cell; on arc pills forces the built-in leader (since 0.22.2) |
+| `strike` | bool | `false` | Draws a diagonal cross-out over the target's box (corner to corner), stroke follows `color=`. Orthogonal to `\recolor` state — the element keeps its state color (**strike-but-keep**). A target with no drawable extent soft-drops with **E1119**. Combinable with `label`/`color` |
 | `arrow` | bool | `false` | When `true`, adds a pointer arrowhead on the annotation pill pointing at the target cell (no source cell required) |
 | `arrow_from` | selector | _(none)_ | Draws a Bezier arc **from** the specified source cell **to** the target, with an arrowhead at the destination |
 
@@ -503,6 +504,20 @@ it is cleared automatically at the next `\step` boundary.
 % a.cell[0] no longer has the annotation.
 ```
 
+**`strike=true` — cross out a rejected candidate but keep it visible:**
+
+`strike` draws a diagonal line across the target while leaving its `\recolor`
+state color intact — the *strike-but-keep* gesture for pruning a candidate that
+stays legible next to the survivors (before this the only moves were `\recolor`
+→ `error`/`dim`, which overwrite the role color, or → `hidden`, which vanishes).
+
+```latex
+\step
+\recolor{cand.cell[2]}{state=current}
+\annotate{cand.cell[2]}{strike=true, label="dominated", color=error}
+% cand.cell[2] stays current-colored AND carries the cross-out + a reason pill.
+```
+
 **Combining params:**
 
 ```latex
@@ -520,20 +535,24 @@ it is cleared automatically at the next `\step` boundary.
 
 ### 5.9 `\trace{shape}{cells=[...], params...}`
 
-An arrow that follows a **sequence of cells** — shows a traversal or
+An arrow that follows a **sequence of cells or nodes** — shows a traversal or
 fill direction instead of asking the reader to infer it (since 0.22.2).
-Supported on the **cell/tick grid primitives only**: Array, Grid,
-DPTable, NumberLine. On any other primitive `\trace` raises **E1118**
-(rather than silently drawing nothing).
+Supported on the cell/tick grid primitives (Array, Grid, DPTable, NumberLine)
+**and on Graph/Tree**, where the polyline threads node centers to sweep along
+the edges (since 0.25). On any other primitive (Stack, Queue, …) `\trace`
+raises **E1118** (rather than silently drawing nothing).
 
 ```latex
 \trace{g}{cells=[[2,0],[2,1],[2,2],[1,2],[0,2]], color=good, label="lớp lẻ"}
 \trace{a}{cells=[0,1,2,3], color="state:current", dot=start}
+% Graph/Tree: address nodes by id (string) or index — "follow the edges"
+\trace{G}{cells=["A","B","C","F"], color=good, label="BFS"}
+\trace{T}{cells=[0, 2, 5], color=path}
 ```
 
 | arg | values | default | notes |
 |-----|--------|---------|-------|
-| `cells` | `[[r,c],...]` (2-D) or `[i,...]` (1-D) | required | ≥2 points (E1491); out-of-range points soft-drop the trace |
+| `cells` | `[[r,c],...]` (2-D grid), `[i,...]` (1-D grid), or `["id",...]`/`[i,...]` (Graph/Tree nodes) | required | ≥2 points (E1491); an out-of-range point or unknown node soft-drops the trace (E1115) |
 | `color` | annotation colors or `"state:X"` | `info` | quotes required for `state:` |
 | `label` | string (math OK) | — | mini pill at the path midpoint, clamped to the content span |
 | `arrowhead` | `end` / `both` / `none` | `end` | |
@@ -541,10 +560,11 @@ DPTable, NumberLine. On any other primitive `\trace` raises **E1118**
 | `id` | string | auto `t1`, `t2`… | names the trace for the runtime |
 | `ephemeral` | bool | `false` | clears at the next `\step` like annotations |
 
-Works on Grid, DPTable (1-D + 2-D), Array, NumberLine. In the interactive
-widget the arrow **draws itself along the path** on the step it appears
-(reduced-motion and print get the full static path). The line passes over
-cell bodies but under pills; digits keep their halo.
+Works on Grid, DPTable (1-D + 2-D), Array, NumberLine, Graph, and Tree. In the
+interactive widget the arrow **draws itself along the path** on the step it
+appears (reduced-motion and print get the full static path). The line passes
+over cell bodies but under pills (and under nodes on Graph/Tree); digits keep
+their halo.
 
 ### 5.10 `\reannotate{target}{color=..., arrow_from=...}`
 Recolors an existing annotation on *target*. Persistent.
@@ -717,25 +737,35 @@ Inline narration macro (inside `\narrate`, like `\hl`) that tints *text* to matc
 - *text* supports inline math (`$...$`) and text formatting.
 - An undeclared / typo'd target degrades to plain text with a soft warning (**E1322**) — non-fatal, renders in print / no-JS.
 
-### 5.16 `\focus{target}`
+### 5.16 `\focus{target}{scope=shape|board}`
 Ephemeral spotlight (animation only): dims every addressable part of
 *target*'s shape **except** *target* for this frame, then auto-clears at the
-next `\step`.
+next `\step`. An optional second brace carries `scope=` to widen the dim.
 
 **Syntax:**
 ```latex
 \step
-\focus{a.cell[1]}
+\focus{a.cell[1]}                       % dims only a's other cells
 \narrate{Only the middle cell matters right now.}
+
+\step
+\focus{tree.node[root]}{scope=board}    % dims EVERY other shape too
+\narrate{Spotlight the whole tree against a dark board.}
 ```
 
 **Rules:**
 - Frame-only; using it in the prelude raises **E1053**.
-- Dims only the shape(s) that carry a `\focus` this frame — other shapes are
-  untouched. The complement gains `scriba-defocused` (opacity dim); a defocused
-  cell keeps its own `scriba-state-*` class (the dim is an orthogonal overlay).
+- `scope` (optional): `shape` (default) dims only the focused shape's own
+  complement — **byte-identical** to `\focus{target}` with no second brace;
+  `board` additionally dims every *other* shape on the board. An unknown scope
+  raises **E1122**. Stage-level overlays (`\link`, `\note`) stay lit.
+- Dims only the shape(s) that carry a `\focus` this frame (plus, under
+  `scope=board`, the rest of the board). The dimmed parts gain `scriba-defocused`
+  (opacity dim); a defocused cell keeps its own `scriba-state-*` class (the dim
+  is an orthogonal overlay).
 - Accepts the full selector algebra (`a.cell[i]`, `a.range[lo:hi]`,
-  `a.block[…]`, `a.all`); multiple `\focus` in one step **union**.
+  `a.block[…]`, `a.all`); multiple `\focus` in one step **union**. A single
+  `scope=board` this frame promotes the whole board.
 - Undeclared shape → **E1116**; a valid-shape-but-non-matching part degrades
   soft (**E1115**).
 - Ephemeral: no persistent state, so it auto-reverts at the next `\step`.
@@ -862,6 +892,36 @@ same `id` and a bigger `nodes=` list is how a component grows.
 Missing `id`/`nodes` → **E1506**; a non-Graph shape or unknown node →
 **E1507** (both at parse time). Groups persist until `\ungroup`; `\ungroup`
 with an unknown id is a no-op.
+
+### 5.21 `\note{id}{text=..., at=<anchor>}`
+Since 0.25. A **free callout pill** dropped at a board-relative margin — the
+one annotation that is *not* tied to any shape selector (a teacher's margin
+note: "careful, 0-indexed", a complexity bound, a reminder). Painted inside the
+existing viewBox, so it never grows the envelope. Keyed `note[{id}]-solo`; a
+sibling of `\link` (stage-level, no shape prefix).
+
+```latex
+\note{n1}{text="careful: 0-indexed", at=top-right, color=warn}
+\note{n2}{text="$O(n\log n)$", at=bottom-left}
+% re-issue the same id to update the note (text / colour) in place:
+\note{n1}{text="fixed", at=top-right, color=good}
+```
+
+| arg | values | default | notes |
+|-----|--------|---------|-------|
+| `id` (1st brace) | identifier | required | stable handle; re-issue = replace the note |
+| `text` | string (math OK) | required | pill contents; missing id **or** text → **E1120** |
+| `at` | compass anchor | `top-right` | `top-left`, `top`, `top-right`, `right`, `bottom-right`, `bottom`, `bottom-left`, `left`; unknown → **E1121** |
+| `color` | annotation colors or `"state:X"` | `info` | E1113 on unknown names |
+| `ephemeral` | bool | `false` | clear at the next `\step` (like an annotation) |
+
+A note is **persistent** until the scene ends (re-issue the id to retext or
+recolour; there is no `\unnote` — use `ephemeral=true` for a one-frame note).
+Multiple notes sharing an anchor stack deterministically. Because the viewBox
+is byte-identical every frame, a persistent note lands in the same spot each
+frame. Appear/disappear/recolor animate as annotation fades — no special motion.
+The pill paints in existing whitespace and can overlap dense content; pick an
+empty corner (a reserved margin lane is a future extension).
 
 ---
 

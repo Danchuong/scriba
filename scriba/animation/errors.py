@@ -203,9 +203,24 @@ ERROR_CATALOG: dict[str, str] = {
     ),
     "E1118": (
         "\\trace targets a primitive that does not draw traces. Supported: "
-        "Array, Grid, DPTable, NumberLine. Other primitives would silently "
-        "ignore the trace."
+        "Array, Grid, DPTable, NumberLine, Graph, Tree. Other primitives would "
+        "silently ignore the trace."
     ),
+    # --- DECORATE overlay verbs (E1119 -- E1122) ---
+    "E1119": (
+        "\\annotate{...}{strike=true} target has no drawable extent; the "
+        "strike is skipped (warning — the rest of the render continues). "
+        "hint: strike a target whose box resolves (a cell, node, range, ...)."
+    ),
+    "E1120": (
+        "\\note requires an id and text=\"...\", e.g. "
+        "\\note{n1}{text=\"careful: 0-indexed\", at=top-right}."
+    ),
+    "E1121": (
+        "Unknown \\note anchor. Valid: top-left, top, top-right, right, "
+        "bottom-right, bottom, bottom-left, left."
+    ),
+    "E1122": "Unknown \\focus scope. Valid: shape, board.",
     # --- Render errors (E1200 -- E1249) ---
     "E1200": (
         "KaTeX inline error embedded in rendered output (ParseError from "

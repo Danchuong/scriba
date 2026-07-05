@@ -119,8 +119,10 @@ class FrameData:
     substories: list[SubstoryData] | None = None
     title: str | None = None  # \step[title="..."] caption (§5.3)
     focus: tuple[str, ...] = ()  # \focus{sel} spotlight targets (R-40)
+    focus_scope: str = "shape"  # \focus scope: "shape" (default) | "board"
     links: list[dict] | None = None  # \link / \combine cross-shape bridges (§4)
     groups: list[dict] | None = None  # \group overlay hulls on a Graph (§6 Ph1)
+    notes: list[dict] | None = None  # \note free stage-level callouts (DECORATE)
 
 
 # ---------------------------------------------------------------------------
