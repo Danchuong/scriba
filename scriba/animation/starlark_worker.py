@@ -50,8 +50,24 @@ warnings.filterwarnings(
 
 from scriba.animation.constants import BLOCKED_ATTRIBUTES, FORBIDDEN_BUILTINS  # noqa: E402
 from scriba.animation.errors import _animation_error, _format_compute_traceback  # noqa: E402
+from scriba.animation.primitives import plane2d_compute as _p2d  # noqa: E402
 from scriba.core.errors import ScribaError  # noqa: E402
 from scriba.core.types import JsonValue  # noqa: E402
+
+import types as _types_module  # noqa: E402
+
+# Geometry namespace exposed to \compute as ``plane2d`` (docs/primitives/
+# plane2d.md §6). Pure functions from plane2d_compute; the step tracer bounds
+# their internal loops. Injected into the exec namespace, filtered from the
+# returned bindings (it is neither JSON-serializable nor an author binding).
+_PLANE2D_NAMESPACE = _types_module.SimpleNamespace(
+    intersect=_p2d.intersect,
+    cross=_p2d.cross,
+    hull=_p2d.hull,
+    half_plane=_p2d.half_plane,
+    lower_envelope=_p2d.lower_envelope,
+)
+_INJECTED_NAMESPACE_KEYS = frozenset({"plane2d"})
 
 # ---------------------------------------------------------------------------
 # AST literal limits (defence-in-depth against C-level bombs)
@@ -673,6 +689,10 @@ def _evaluate(
         namespace[key] = value
         initial_keys.add(key)
 
+    # Inject the read-only ``plane2d`` geometry namespace (not an author
+    # binding — excluded from the returned bindings below).
+    namespace["plane2d"] = _PLANE2D_NAMESPACE
+
     # --- execute ---
     has_alarm = hasattr(signal, "SIGALRM")
     old_handler = None
@@ -802,7 +822,7 @@ def _evaluate(
     # --- extract bindings ---
     bindings: dict[str, Any] = {}
     for key, value in namespace.items():
-        if key == "__builtins__":
+        if key == "__builtins__" or key in _INJECTED_NAMESPACE_KEYS:
             continue
         if not _is_serializable_binding(key, value):
             continue

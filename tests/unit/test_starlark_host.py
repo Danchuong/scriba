@@ -200,3 +200,41 @@ class TestWindowsWarning:
                 )
         finally:
             pool.close()
+
+
+class TestPlane2DNamespace:
+    """docs/primitives/plane2d.md §6 promises a ``plane2d`` geometry namespace
+    callable inside \\compute — it was documented + acceptance-tested but never
+    injected into the worker, so every call raised E1151 (bmad-dp / td-dp)."""
+
+    def test_intersect_available(self):
+        pool = SubprocessWorkerPool()
+        host = StarlarkHost(pool)
+        try:
+            # y=x (slope 1, int 0) and y=-x+2 (slope -1, int 2) meet at (1,1)
+            result = host.eval({}, "pt = plane2d.intersect((1, 0), (-1, 2))")
+            assert result["pt"] == [1.0, 1.0] or tuple(result["pt"]) == (1.0, 1.0)
+        finally:
+            pool.close()
+
+    def test_hull_available(self):
+        pool = SubprocessWorkerPool()
+        host = StarlarkHost(pool)
+        try:
+            result = host.eval(
+                {}, "h = plane2d.hull([(0,0),(2,0),(2,2),(0,2),(1,1)])"
+            )
+            # inner point (1,1) dropped; 4 corners remain
+            assert len(result["h"]) == 4
+        finally:
+            pool.close()
+
+    def test_namespace_not_returned_as_binding(self):
+        pool = SubprocessWorkerPool()
+        host = StarlarkHost(pool)
+        try:
+            result = host.eval({}, "n = plane2d.cross((0,0),(1,0),(1,1))")
+            assert "plane2d" not in result
+            assert result["n"] == 1.0
+        finally:
+            pool.close()
