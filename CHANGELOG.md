@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — grammar-completeness vocabulary (post-0.24 census)
+- **Bar primitive** — variable-height columns (`\shape{h}{Bar}{data=[...]}`,
+  `h.bar[i]`, height ∝ value) for largest-rectangle, skyline,
+  monotonic-stack-on-heights and sorting-as-bars. `\apply value` rides
+  the existing `value_change` motion (no new kinds); the bounding box is
+  a prescanned envelope so it stays R-32-invariant. E1488–E1490.
+- **Graph manual positions** — `positions=[(node,x,y),...]` pins nodes to
+  author coordinates (FFT-butterfly, planar, geometric graphs); force /
+  hierarchical graphs stay byte-identical. E1475.
+- **Plane2D `rotate_point` / `rotate_segment` / `rotate_line`** — angular
+  motion for rotating calipers, angular sweeps and Burnside rings; rides
+  `position_move` as a chord-glide (no new motion kinds). E1437/E1467.
+
+### Fixed — Tier-D investigation follow-ups
+- **BST rotations pick the right side** — `reparent={node,parent,index}`
+  places the moved node (0 = leftmost); two shipped editorials
+  (bst_operations, splay) rendered the wrong child side.
+- **`plane2d` geometry namespace works in `\compute`** —
+  intersect/cross/hull/half_plane/lower_envelope were documented and
+  acceptance-tested but never injected into the Starlark worker (E1151).
+- **Arithmetic list subscript is loud** — `${vals[i+1]}` raised a clean
+  E1159 instead of silently pasting the whole list.
+- **Out-of-range `\trace` vertex warns (E1115)** instead of the whole
+  trace vanishing silently.
+- **`\recolor{state=${s}}` gives a clean E1109** instead of leaking the
+  `InterpolationRef` repr.
+
 ## [0.24.0] - 2026-07-05 — JudgeZone pass-3 capabilities + hardening
 
 ### Fixed — 0.24.0 hardening (adversarial test pass)
