@@ -112,7 +112,7 @@ class TestHighlightOn:
         t = manifest.transitions[0]
         assert t.kind == "highlight_on"
         assert t.prop == "highlighted"
-        assert t.to_val == "True"
+        assert t.to_val == "true"  # lowercase, consistent across all paths
 
 
 class TestHighlightOff:
@@ -124,7 +124,7 @@ class TestHighlightOff:
         t = manifest.transitions[0]
         assert t.kind == "highlight_off"
         assert t.prop == "highlighted"
-        assert t.from_val == "True"
+        assert t.from_val == "true"  # lowercase, consistent across all paths
 
 
 # ---------------------------------------------------------------------------
@@ -318,3 +318,24 @@ class TestAnnotationCompositeKeyCollision:
         # post-fix behavior, hence the xfail(strict=True).
         assert len(adds) == 2
         assert len(targets) == 2
+
+
+class TestHighlightCasingConsistent:
+    """The 'highlighted' transition value must serialize the same way on
+    every code path — hunt-regression found the both-exist toggle emitting
+    str(True)='True' while the new/removed paths emit 'true'. A consumer
+    reading the manifest should never see mixed casing."""
+
+    def test_both_exist_toggle_emits_lowercase_true(self) -> None:
+        prev = _frame({"a": {"a.cell[0]": {"state": "current"}}})
+        curr = _frame({"a": {"a.cell[0]": {"state": "current", "highlighted": True}}})
+        manifest = compute_transitions(prev, curr)
+        hl = [t for t in manifest.transitions if t.prop == "highlighted"]
+        assert hl and all(t.to_val == "true" for t in hl), [t.to_val for t in hl]
+
+    def test_both_exist_toggle_off_emits_lowercase_true(self) -> None:
+        prev = _frame({"a": {"a.cell[0]": {"state": "current", "highlighted": True}}})
+        curr = _frame({"a": {"a.cell[0]": {"state": "current"}}})
+        manifest = compute_transitions(prev, curr)
+        hl = [t for t in manifest.transitions if t.prop == "highlighted"]
+        assert hl and all(t.from_val == "true" for t in hl), [t.from_val for t in hl]

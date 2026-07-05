@@ -203,12 +203,15 @@ def _diff_shape_states(
             curr_hl = curr_cell.get("highlighted")
             if prev_hl != curr_hl:
                 if curr_hl:
+                    # lowercase "true" — matches the new-element/removed paths
+                    # above; the both-exist toggle used to emit str(True)
+                    # ("True"), the one place the casing diverged.
                     transitions.append(
                         Transition(
                             target=target,
                             prop="highlighted",
-                            from_val=str(prev_hl) if prev_hl is not None else None,
-                            to_val="True",
+                            from_val=None,
+                            to_val="true",
                             kind="highlight_on",
                         )
                     )
@@ -217,8 +220,8 @@ def _diff_shape_states(
                         Transition(
                             target=target,
                             prop="highlighted",
-                            from_val="True",
-                            to_val=str(curr_hl) if curr_hl is not None else None,
+                            from_val="true",
+                            to_val=None,
                             kind="highlight_off",
                         )
                     )

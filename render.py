@@ -60,7 +60,10 @@ def _snapshot_to_dict(snap: object) -> dict:
     states: dict[str, str] = {}
     for _shape_name, targets in snap.shape_states.items():
         for target_key, ts in targets.items():
-            parts = [ts.state]
+            # ts.state is None for value-only / structural entries (a Tree
+            # node, a directed edge) — render it as "idle" so the join below
+            # never hits a NoneType (--dump-frames crashed here otherwise).
+            parts = [ts.state or "idle"]
             if ts.value is not None:
                 parts.append(f"v={ts.value}")
             if ts.label is not None:
