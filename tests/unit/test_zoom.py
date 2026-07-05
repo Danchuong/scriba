@@ -223,7 +223,10 @@ def test_zoom_unresolvable_part_warns_E1543_full_view() -> None:
 def test_scriba_version_unchanged() -> None:
     from scriba._version import SCRIBA_VERSION
 
-    assert SCRIBA_VERSION == 18
+    # Zoom itself added no bump; the marker later advanced 18 -> 19 for the
+    # Equation primitive's additive ``.scriba-term`` CSS (the sole shared-asset
+    # change of that feature). Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 19
 
 
 def test_zoom_no_new_motion_kind() -> None:

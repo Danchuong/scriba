@@ -42,14 +42,19 @@ const KATEX_OPTIONS_BASE = {
   throwOnError: false,
   output: "htmlAndMathml",
   strict: false,
-  // W6.4 red-team hardening (Agent 14 finding 3b).
+  // W6.4 red-team hardening (Agent 14 finding 3b), narrowed for the
+  // Equation primitive (investigations/design-math.md §3.0).
   //
-  // ``trust: false`` blocks KaTeX commands that could inject arbitrary
-  // URLs or raw HTML (``\href``, ``\url``, ``\htmlId``, ``\class``,
-  // ``\data``, ``\includegraphics``). None of the cookbook examples
-  // rely on these, so disabling them closes a sandbox escape vector
-  // at zero feature cost.
-  trust: false,
+  // Selective trust whitelists EXACTLY ``\htmlClass`` — and nothing else.
+  // ``\htmlClass`` only re-opens a CSS *class* attribute (the scriba
+  // ``\term`` macro rewrites to ``\htmlClass{scriba-term-<id>}{...}`` so a
+  // sub-expression becomes an addressable element); it cannot inject URLs
+  // or raw HTML. Every URL/HTML-bearing command (``\href``, ``\url``,
+  // ``\htmlId``, ``\htmlData``, ``\includegraphics``) stays gated because
+  // the predicate returns false for anything but ``\htmlClass``. For any
+  // input that never uses ``\htmlClass`` the output is byte-identical to
+  // the old ``trust: false`` (verified: no cookbook/golden uses it).
+  trust: (context) => context.command === "\\htmlClass",
   // Cap macro expansion depth. Default is 1000 which is enough to
   // chain macro bombs together; lowering to 100 keeps the legitimate
   // ``\def\name{...}`` use cases working while cutting the DoS

@@ -854,6 +854,13 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1520",
         "E1521",
         "E1522",
+        # Equation (math as an evolving object) — hard declaration errors.
+        # An undeclared/out-of-range term/line selector is NOT listed: it
+        # soft-drops via the shared base E1115 path (like every primitive's
+        # out-of-range accessor), not an Equation-specific raise.
+        "E1530",
+        "E1531",
+        "E1532",
         # Viewport & spatial layout — at=[row,col] placement (LAYOUT).
         # E1540/E1541/E1542 are hard build errors; E1543 is a soft \zoom warning
         # (severity="info", like E1184) and so is intentionally NOT listed here.

@@ -37,6 +37,7 @@ from scriba.animation.primitives.bar import Bar
 from scriba.animation.primitives.base import BoundingBox, PrimitiveBase, get_primitive_registry, register_primitive
 from scriba.animation.primitives.codepanel import CodePanel
 from scriba.animation.primitives.dptable import DPTablePrimitive
+from scriba.animation.primitives.equation import Equation
 from scriba.animation.primitives.forest import Forest
 from scriba.animation.primitives.graph import Graph
 from scriba.animation.primitives.grid import GridPrimitive
@@ -59,6 +60,7 @@ __all__ = [
     "BoundingBox",
     "CodePanel",
     "DPTablePrimitive",
+    "Equation",
     "Forest",
     "Graph",
     "GridPrimitive",

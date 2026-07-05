@@ -293,6 +293,21 @@ row. All three are hard build errors.
 | E1521 | Appended `row` length does not match the column count. | Supply exactly N values, one per column, e.g. `\apply{t}{row=[0, 3, 3]}` for 3 columns. |
 | E1522 | `columns` count is out of range. | Use between 1 and 64 columns. |
 
+## Equation Errors (E1530--E1532)
+
+The `Equation` primitive (math as an evolving object). `\term{id}{body}` declares
+an addressable sub-expression; `tex=` is a single equation and `lines=[...]` is a
+multi-line derivation aligned on the first `&`. All three are hard build errors at
+the shape declaration. An undeclared `E.term[id]` or out-of-range `E.line[i]`
+selector is NOT a hard error — it soft-drops (warns E1115 and is ignored), exactly
+like any other primitive's out-of-range accessor.
+
+| Code | Description | Common Fix |
+|------|-------------|------------|
+| E1530 | Equation requires a `tex` or `lines` parameter. | Give one, e.g. `\shape{E}{Equation}{tex="T(n)=2T(n/2)+cn"}` or `lines=["a &= b", "&= c"]`. |
+| E1531 | The same `\term` id is declared twice within one line. | Use a unique id per `\term` in a line (an id MAY repeat across lines to track the same term down a derivation). |
+| E1532 | Malformed `\term` — a non-identifier id, or a missing/unterminated `{body}`. | Write `\term{id}{body}` where id is `[A-Za-z_][A-Za-z0-9_]*` and body is a braced group. |
+
 ## Viewport & Spatial Layout Errors (E1540--E1543)
 
 The Viewport verbs: `at=[row,col]` placement on `\shape` (LAYOUT) and the

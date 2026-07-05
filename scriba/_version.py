@@ -3,7 +3,7 @@
 __version__: str = "0.25.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 18
+SCRIBA_VERSION: int = 19
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -226,4 +226,23 @@ document renders byte-identically to 0.24.0:
     repr for a clean E1109 (both error, no render).
 The contract ``identical source + identical SCRIBA_VERSION → identical
 HTML`` therefore holds across 0.24.0→0.25.0 for every renderable input.
+
+Bumps 18→19: the ``Equation`` primitive (math as an evolving object;
+primitive #21, investigations/design-math.md). The bump is forced by a
+single additive shared-asset change: ``scriba-scene-primitives.css`` gains
+the ``.scriba-term.scriba-state-*`` colour family so a KaTeX ``\\term``
+sub-expression (an HTML ``<span>`` inside a ``<foreignObject>``, coloured
+via CSS ``color`` not the SVG ``fill`` the ``.scriba-state-* > text`` rules
+use) tints on ``\\recolor``. The rule family is opt-in-inert: only an
+``Equation``'s terms carry ``.scriba-term``, so a document that uses no
+Equation emits byte-identical SVG/markup — ONLY the shared inlined
+stylesheet hash changes (per DNA-3 that alone forces the bump). The
+``katex_worker.js`` trust flip (``trust:false`` →
+``(ctx)=>ctx.command==="\\htmlClass"``) is build-time only and inert for
+any input that never uses ``\\htmlClass``/``\\term`` (output byte-identical
+to ``trust:false``; verified no cookbook/golden uses it), so it forces no
+bump on its own. ``scriba.js`` and ``differ.py`` are untouched — terms and
+lines ride the existing ``[data-target]`` ``recolor`` / ``value_change`` /
+``annotation_*`` machinery (zero new motion kinds). Consumer caches keyed on
+rendered output MUST invalidate (the shared stylesheet bytes changed).
 """

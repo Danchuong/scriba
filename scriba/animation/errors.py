@@ -21,6 +21,7 @@ The catalog is grouped by subsystem:
 * ``E1500``--``E1509`` — graph layout
 * ``E1510``--``E1519`` — Hypercube (subset lattice)
 * ``E1520``--``E1529`` — TraceTable (accumulating dry-run trace table)
+* ``E1530``--``E1539`` — Equation (math as an evolving object)
 * ``E1540``--``E1543`` — Viewport & spatial layout (``at=`` placement, ``\\zoom``)
 
 The 1400-block was introduced in v0.5.1 to replace the ``E1103`` catch-all
@@ -176,7 +177,7 @@ ERROR_CATALOG: dict[str, str] = {
         "primitive type spelling. Valid types: Array, Grid, DPTable, "
         "Graph, Tree, NumberLine, Matrix, Heatmap, Stack, Plane2D, "
         "MetricPlot, CodePanel, HashMap, LinkedList, Queue, Deque, "
-        "VariableWatch, Hypercube, Forest, Bar, TraceTable."
+        "VariableWatch, Hypercube, Forest, Bar, TraceTable, Equation."
     ),
     "E1103": (
         "Primitive parameter validation error (DEPRECATED mega-bucket; "
@@ -571,6 +572,22 @@ ERROR_CATALOG: dict[str, str] = {
     "E1522": (
         "TraceTable 'columns' count is out of range; must be between 1 and "
         "64 inclusive."
+    ),
+    # --- Equation (math as an evolving object) (E1530 -- E1532) ---
+    "E1530": (
+        "Equation requires a 'tex' or 'lines' parameter. "
+        'hint: \\shape{E}{Equation}{tex="T(n)=2T(n/2)+cn"}, or '
+        'lines=["a &= b", "&= c"].'
+    ),
+    "E1531": (
+        "Equation declares the same \\term id twice within one line. "
+        "hint: give each \\term a unique id (an id MAY repeat across lines to "
+        "track the same term down a derivation)."
+    ),
+    "E1532": (
+        "Equation has a malformed \\term. "
+        "hint: write \\term{id}{body} where id is an identifier "
+        "([A-Za-z_][A-Za-z0-9_]*) and body is a braced group."
     ),
     # --- Viewport & spatial layout (E1540 -- E1543) ---
     # ``at=[row,col]`` placement on \shape (LAYOUT) + the ``\zoom`` camera crop

@@ -16,7 +16,7 @@ asset basenames needed to display it.
   plus a namespaced set of required CSS and JS basenames and a block-data
   map — consumers decide how to serve the static assets.
 - **`\begin{animation}` environment** (shipping since 0.2.0) for step-through
-  editorial walkthroughs with 20 built-in primitives (arrays, grids, graphs,
+  editorial walkthroughs with 21 built-in primitives (arrays, grids, graphs,
   trees, DP tables, number lines, matrices/heatmaps, stacks, plane-2D,
   metric plots, the data-structure primitives code panel / hash map /
   linked list / queue / deque / variable watch, the subset-lattice
@@ -283,7 +283,7 @@ you need once Node is present.
 To have an AI write `.tex` for Scriba, give it one file:
 **[`docs/SCRIBA-TEX-REFERENCE.md`](docs/SCRIBA-TEX-REFERENCE.md)**.
 
-It's self-contained — all commands, all 20 primitives, all selectors,
+It's self-contained — all commands, all 21 primitives, all selectors,
 all gotchas. No other spec files needed.
 
 Prompt template:

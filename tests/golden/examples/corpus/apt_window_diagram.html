@@ -972,6 +972,14 @@
 .scriba-ref-state-good    { color: var(--scriba-annotation-state-good); }
 .scriba-ref-state-error   { color: var(--scriba-annotation-state-error); }
 .scriba-ref-state-path    { color: var(--scriba-annotation-state-path); }
+/* .scriba-term — Equation \term sub-expression tint. A \term is an HTML <span> inside a <foreignObject>, so the shipped .scriba-state-* SVG rules (:214-227, which target SVG <rect>/<text> children) never reach it, and KaTeX colours via CSS ``color`` not SVG ``fill``. Colour the .scriba-term text by its recolor state using the same WCAG-AA state inks as .scriba-ref-state-* (R-37) — the state *fills* are box backgrounds and read as near-invisible ink on white. Additive + opt-in: only an Equation's terms carry .scriba-term, so a document without an Equation references no rule here and stays byte-identical. */
+.scriba-term.scriba-state-current   { color: var(--scriba-annotation-state-current); }
+.scriba-term.scriba-state-done      { color: var(--scriba-annotation-state-done); }
+.scriba-term.scriba-state-dim       { color: var(--scriba-annotation-state-dim); }
+.scriba-term.scriba-state-good      { color: var(--scriba-annotation-state-good); }
+.scriba-term.scriba-state-error     { color: var(--scriba-annotation-state-error); }
+.scriba-term.scriba-state-path      { color: var(--scriba-annotation-state-path); }
+.scriba-term.scriba-state-highlight { color: var(--scriba-annotation-state-current); }
 
 /* ⑩a — \step[title="..."] caption. A leading heading folded into the
    narration <p> (an inline <span> displayed as a block so it can sit inside

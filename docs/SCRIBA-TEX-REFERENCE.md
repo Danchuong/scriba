@@ -25,7 +25,7 @@
 4. [Diagram Environment](#4-diagram-environment)
 5. [Inner Commands](#5-inner-commands-23-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\zoom` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant` `\link` `\combine` `\group` `\note`
 6. [Visual States](#6-visual-states)
-7. [All 20 Primitives](#7-all-20-primitives)
+7. [All 21 Primitives](#7-all-21-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
 9. [Complete Examples](#9-complete-examples)
 10. [Environment Options](#10-environment-options)
@@ -60,6 +60,7 @@
 | Animate DSU unions | Forest §7.17 |
 | Show value magnitudes as column heights (histogram) | Bar §7.19 |
 | Record a running dry-run (variables × steps, filled line-by-line) | TraceTable §7.20 |
+| Show math as an evolving object (tint a term, reveal an aligned derivation) | Equation §7.21 |
 | Look up an error code | §15 |
 
 ---
@@ -106,7 +107,7 @@ Everything below is expanded later; this is the lookup layer.
 | `\combine{s1, s2}{into="D"}` | N ephemeral links converging on one target |
 | `\group{G}{nodes=[…], id=…}` / `\ungroup` | hull overlay around a node cluster (Graph) |
 
-**20 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree / heap / automata) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines/circles) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · Deque (two-ended) · VariableWatch (named values) · Hypercube (subset lattice) · Forest (multi-root DSU) · Bar (histogram / column heights) · TraceTable (accumulating dry-run trace table).
+**21 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree / heap / automata) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines/circles) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · Deque (two-ended) · VariableWatch (named values) · Hypercube (subset lattice) · Forest (multi-root DSU) · Bar (histogram / column heights) · TraceTable (accumulating dry-run trace table) · Equation (math as an evolving object: addressable terms + aligned lines).
 
 **Selector grammar** (§8): `shape.family[index]` — `a.cell[i]`, `g.cell[r][c]`, `a.range[i:j]`, `g.block[r0:r1][c0:c1]`, `g.row[i]`, `g.col[j]`, `g.diag`, `G.node[id]`, `G.edge[(u,v)]`, `nl.tick[i]`, `code.line[i]`, `vars.var[name]`, `h.bar[i]`, `.all`. Interpolate with `${i}` in any index.
 
@@ -345,6 +346,8 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 ---
 
 ## 5. Inner Commands (23 total)
+
+> **Math macro `\term{id}{body}`** (not one of the 23 inner commands): a scriba-owned macro written *inside* an `Equation`'s `tex=`/`lines=` math, not a top-level command. scriba rewrites it to KaTeX `\htmlClass{scriba-term-<id>}{body}` so the sub-expression becomes an addressable element `E.term[id]`. See §7.21.
 
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
@@ -996,7 +999,7 @@ sits off-frame.
 
 ---
 
-## 7. All 20 Primitives
+## 7. All 21 Primitives
 
 ### 7.1 Array
 1D horizontal row of indexed cells.
@@ -1587,6 +1590,44 @@ The accumulating **dry-run trace table** — the #1 competitive-programming teac
 
 ---
 
+### 7.21 Equation
+**Math as an evolving object** — the flagship for CS-theory teaching (recurrence unfolding, the master theorem, induction). Unlike a `$...$` atom on someone else's cell (one opaque KaTeX blob), an `Equation`'s **sub-terms** and **aligned derivation lines** are independently addressable, so you can tint one term, reveal a derivation line-by-line, or swap a line — all riding the existing motion kinds (zero new runtime vocabulary, server-rendered, no browser math engine).
+
+`\term{id}{body}` is a scriba-owned **math macro** written *inside* the math (see §5): scriba rewrites it to KaTeX `\htmlClass{scriba-term-<id>}{body}` so the sub-expression becomes the addressable element `E.term[id]`. `id` is an identifier `[A-Za-z_][A-Za-z0-9_]*`; the same id MAY repeat across lines (that is how "the same term" is tracked down a derivation), but must be unique **within one line**.
+```latex
+% (a) tint one term
+\shape{E}{Equation}{tex="T(n) = 2\term{rec}{T(n/2)} + \term{work}{cn}"}
+\step
+\recolor{E.term[rec]}{state=current}          % the recursive term lights up
+
+% (c) reveal an aligned derivation line-by-line (rows aligned on the first &)
+\shape{D}{Equation}{lines=[
+  "T(n) &= 2\term{rec}{T(n/2)} + \term{work}{cn}",
+  "     &= 4\term{rec}{T(n/4)} + 2\term{work}{cn}",
+  "     &= cn\log_2 n"
+]}
+\recolor{D.line[1]}{state=hidden}              % prelude: hide the not-yet-derived rows
+\recolor{D.line[2]}{state=hidden}
+\step
+\recolor{D.line[1]}{state=idle}                % reveal line 1 (+ highlight the persisting term)
+\recolor{D.term[rec]}{state=current}
+\step
+\recolor{D.line[2]}{state=idle}                % reveal line 2
+```
+
+**Params:** `tex` (a single equation) **or** `lines` (a non-empty list of aligned rows — each split on its first unescaped `&`, exactly like `\begin{aligned}`), plus optional `label` (caption). Exactly one of `tex`/`lines` is required (**E1530**).
+**Selectors:** `E` (the whole equation), `E.line[i]` (the i-th aligned row, 0-based), `E.term[id]` (a tagged sub-expression), `E.all`. An undeclared `E.term[typo]` or out-of-range `E.line[9]` soft-drops (**E1115**), like any other primitive's out-of-range accessor.
+**Operations & motion (0 new kinds):**
+- **(a) tint a term** — `\recolor{E.term[id]}{state=current}` rides `recolor`; the term's glyphs take the state ink, siblings untouched.
+- **(c) reveal a line** — hide in the prelude (`state=hidden`), reveal at a later `\step` (`state=idle`); rides `recolor`. Hidden rows keep their reserved space, so the viewBox is fixed across the reveal (**R-32**).
+- **(b) "morph" across steps** — reveal the next aligned line while `\recolor{E.term[id]}{state=current}` highlights the persisting term. Served as reveal + persistent-id highlight (the way a derivation is taught on a board), **not** physical glyph tweening — true FLIP-tweening would need a browser math engine and a new motion kind, an explicit non-goal.
+- **swap a line** — `\apply{E.line[i]}{value="new tex"}` re-typesets line `i` and rides `value_change` (mirrors `Bar`'s `\apply{h.bar[i]}{value=X}`). `\apply{E}{tex=...}` / `\apply{E}{lines=[...]}` re-typesets the whole equation.
+- **term callouts** — `\annotate{E.term[id]}{text="cost", color=info}` rides `annotation_add` (anchored on the term's row).
+
+A duplicate `\term` id within one line raises **E1531**; a malformed `\term` raises **E1532**. **Security:** `\htmlClass` is enabled under KaTeX *selective trust* for the `\term` rewrite ONLY — URL/HTML commands (`\href`, `\url`, `\htmlData`, `\includegraphics`) stay gated, so a `\term` body cannot inject a link.
+
+---
+
 ## 8. Selector Quick Reference
 
 A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cell[3]`, `G.node[A]`, `dp.cell[2][3]`) that addresses a sub-element of a named shape for use in commands like `\recolor`, `\apply`, `\annotate`, and `\cursor`.
@@ -1621,6 +1662,7 @@ A **selector** is a string of the form `<shape>.<family>[<index>]` (e.g., `a.cel
 | Plane2D | `.point[i]`, `.line[i]`, `.segment[i]`, `.polygon[i]`, `.region[i]`, `.circle[i]`, `.arc[i]`, `.wedge[i]` | — | — | — | — | `.all` |
 | Bar | `.bar[i]` | — | — | — | — | `.all` |
 | TraceTable | `.cell[k][j]`, `.row[k]` | — | — | — | `.col[j]` | `.all` |
+| Equation | `.term[id]`, `.line[i]` | — | — | — | — | `.all` |
 | MetricPlot | — | — | — | — | — | `.all` |
 
 Interpolation: `${var}` inside any index, e.g., `a.cell[${i}]`, `G.node[${u}]`.
