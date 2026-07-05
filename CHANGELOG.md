@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-07-05 — JudgeZone pass-3 capabilities + hardening
+
 ### Fixed — 0.24.0 hardening (adversarial test pass)
 - **Wrong-type construction params raise a clean E-code, not a Python
   traceback** — `bits="three"`, `nodes=5`, `capacity="x"`,

@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.23.1 · MIT · Python 3.10+
+**Status:** v0.24.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -16,13 +16,36 @@ asset basenames needed to display it.
   plus a namespaced set of required CSS and JS basenames and a block-data
   map — consumers decide how to serve the static assets.
 - **`\begin{animation}` environment** (shipping since 0.2.0) for step-through
-  editorial walkthroughs with 15 built-in primitives (arrays, grids, graphs,
+  editorial walkthroughs with 18 built-in primitives (arrays, grids, graphs,
   trees, DP tables, number lines, matrices/heatmaps, stacks, plane-2D,
-  metric plots, and the 5 data-structure primitives: code panel, hash map,
-  linked list, queue, variable watch). `\begin{diagram}` for inline
+  metric plots, the data-structure primitives code panel / hash map /
+  linked list / queue / deque / variable watch, and the subset-lattice
+  Hypercube and multi-root Forest). `\begin{diagram}` for inline
   static graph/tree figures is reserved under extension E5. See
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
+
+## What's new in v0.24.0
+
+- **New capabilities from the JudgeZone pass-3 census** (~230 problems
+  unlocked with 3 new primitives, 3 new verbs, 0 new motion kinds):
+  Hypercube (subset lattice), Forest (multi-root DSU with gliding
+  unions), and Deque; `\link` / `\combine` cross-shape bridges and
+  `\group` / `\ungroup` component hulls; `row[i]` / `col[j]` / `diag`
+  selectors, Array `reorder`, Plane2D `move_*` + `circle`/`arc`/`wedge`,
+  Tree `kind=heap` and char-edge/fail-link automata, Matrix value
+  mutation, and antiparallel residual-edge curves.
+- **Elements now glide** — `position_move` lands on the new seat instead
+  of teleporting, so Tree reparents, Forest unions, sweep lines and
+  sorting reorders animate smoothly (and reverse cleanly).
+- **Hardening from a three-round adversarial test pass** — wrong-type
+  params raise clean E-codes instead of tracebacks, `${...}` resolves in
+  every generic selector, `\trace` on an unsupported primitive is loud
+  (E1118), dark-mode edge contrast meets WCAG 3:1, and keyboard nav
+  survives the first/last frame.
+
+<details>
+<summary>v0.23.1 changelog</summary>
 
 ## What's new in v0.23.1
 
@@ -34,6 +57,8 @@ asset basenames needed to display it.
   ticks, `\focus` typos warn instead of dimming the whole shape, `\ref`
   adds a dashed ring on the referenced element, and unknown `\playeach`
   keys fail fast (`E1496`).
+
+</details>
 
 <details>
 <summary>v0.23.0 changelog</summary>

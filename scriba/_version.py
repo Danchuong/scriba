@@ -1,6 +1,6 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.23.1"
+__version__: str = "0.24.0"
 """PyPI SemVer. Bumped on every release."""
 
 SCRIBA_VERSION: int = 18
