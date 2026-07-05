@@ -70,7 +70,7 @@ Everything below is expanded later; this is the lookup layer.
 \end{animation}
 ```
 
-**18 inner commands** (§5):
+**21 inner commands** (§5):
 
 | Command | One line |
 |---|---|
@@ -92,6 +92,9 @@ Everything below is expanded later; this is the lookup layer.
 | `\hl{step-id}{tex}` | narration → cross-ref a labeled `\step` |
 | `\ref{sel}{tex}` | narration word tinted to a cell's state |
 | `\invariant{tex}` | predicate panel across all frames (prelude only) |
+| `\link{A <-> B}{color=…}` | bridge between two shapes (`ephemeral=true` to auto-clear) |
+| `\combine{s1, s2}{into="D"}` | N ephemeral links converging on one target |
+| `\group{G}{nodes=[…], id=…}` / `\ungroup` | hull overlay around a node cluster (Graph) |
 
 **15 primitives** (§7): Array (1-D cells) · Grid (r×c) · DPTable (1-D/2-D + arrows) · Graph (nodes+edges) · Tree (rooted / segtree) · NumberLine (ticks) · Matrix/Heatmap · Stack (LIFO) · Plane2D (points/lines) · MetricPlot (series) · CodePanel (1-based lines) · HashMap (buckets) · LinkedList (nodes+links) · Queue (FIFO) · VariableWatch (named values).
 
@@ -331,7 +334,7 @@ Single-frame static figure. Same primitives, no `\step` or `\narrate`.
 
 ---
 
-## 5. Inner Commands (18 total)
+## 5. Inner Commands (21 total)
 
 ### 5.1 `\shape{name}{Type}{params...}`
 Declares a primitive. Name must be unique, match `[a-zA-Z_][a-zA-Z0-9_]*` (max 63 chars).
@@ -799,6 +802,56 @@ A `range` on a NumberLine targets its ticks (`tick[i]`) — since 0.23.1.
 - Not allowed inside a `\foreach` body (**E1172**) or across a `\substory`
   boundary (**E1006**).
 
+### 5.19 `\link{A <-> B}{...}` and `\combine{s1, s2}{into="D"}`
+Since 0.24.0. A **bridge** between anchors on two different shapes — the one
+construct that crosses shape boundaries (a subtree lighting its Euler-tour
+range, a dot-product highlight from a row and a column into one cell).
+
+```latex
+\link{T.node[2] <-> a.range[1:3]}{color=info, label="subtree = range"}
+\link{m.row[0] -> c.cell[0][1]}{color=good, ephemeral=true}
+\combine{m.row[i], m.col[j]}{into="c.cell[i][j]", color=good}
+```
+
+| arg | values | default | notes |
+|-----|--------|---------|-------|
+| endpoints | `A <-> B` (or `A -> B`) | required | any two annotatable selectors, usually on different shapes |
+| `color` | annotation colors or `"state:X"` | `info` | E1113 on unknown names |
+| `label` | string | none | pill at the midpoint of the bridge |
+| `ephemeral` | bool | `false` | clear at the next `\step` (like `\highlight`) |
+
+A link is **persistent** until the scene ends (there is no `\unlink`); use
+`ephemeral=true` for per-frame bridges. `\combine` is sugar: each source draws
+one ephemeral link converging on `into=` — always ephemeral, so re-issue it
+each step of a matrix multiply. Appear/disappear/recolor animate as annotation
+fades — no special motion to reason about. Malformed endpoints raise
+**E1497**; an endpoint on an undeclared shape raises **E1498**; a part that
+does not exist on a valid shape soft-drops like any annotation.
+
+### 5.20 `\group{G}{nodes=[...], id=...}` / `\ungroup{G}{id=...}`
+Since 0.24.0, Graph only. A rounded hull overlay around a set of nodes —
+Kruskal components, SCCs, biconnected blocks — drawn *under* the edges and
+nodes. The node set and layout never change: re-issuing `\group` with the
+same `id` and a bigger `nodes=` list is how a component grows.
+
+```latex
+\group{G}{nodes=["a","b"], id=c1, label="C1", color=good}
+% ... later, after union(b, c):
+\group{G}{nodes=["a","b","c"], id=c1, label="C1", color=good}
+\ungroup{G}{id=c2}
+```
+
+| arg | values | default | notes |
+|-----|--------|---------|-------|
+| `nodes` | list of node ids | required, ≥1 | must exist on the graph (E1507) |
+| `id` | identifier | required | stable handle; re-issue = replace the set |
+| `label` | string | none | pill at the hull's top corner |
+| `color` | annotation colors | `info` | fill at 12% + dashed stroke |
+
+Missing `id`/`nodes` → **E1506**; a non-Graph shape or unknown node →
+**E1507** (both at parse time). Groups persist until `\ungroup`; `\ungroup`
+with an unknown id is a no-op.
+
 ---
 
 ## 6. Visual States
@@ -984,8 +1037,14 @@ Rooted tree with Reingold-Tilford layout.
 | `show_sum` | bool | `false` | no | append `=sum` to segtree node labels |
 | `label` | string | none | no | caption |
 
-**Operations:** `add_node={id,parent}`, `remove_node=id` or `{id,cascade?}`, `reparent={node,parent}` (E1433–E1436).
-**Selectors:** `T`, `T.node[id]`, `T.node["[0,5]"]` (segtree), `T.edge[(p,c)]`, `T.all`
+**Operations:** `add_node={id,parent,char?}`, `remove_node=id` or `{id,cascade?}`, `reparent={node,parent}` (E1433–E1436), `add_link={from,to}` / `remove_link={from,to}` (since 0.24.0).
+**Selectors:** `T`, `T.node[id]`, `T.node["[0,5]"]` (segtree), `T.edge[(p,c)]`, `T.link[(u,v)]` (since 0.24.0), `T.all`
+
+**Automata (trie / Aho-Corasick / suffix automaton)** — since 0.24.0, two additive pieces make Tree the substrate:
+- **Char-labeled edges**: declare edges as 3-tuples `edges=[(0,1,"a"), (0,2,"b")]` (third element is a string label, rendered mid-edge) or grow with `add_node={id=3, parent=1, char="b"}`.
+- **A second link class**: `links=[(u,v), ...]` (or `add_link`/`remove_link`) draws dashed arrows *outside* the layout — fail links, suffix links. They never affect node placement (they don't enter the tree structure), and `T.link[(u,v)]` recolors/annotates like an edge.
+
+For a suffix automaton, use the suffix-link tree as the Tree structure (it *is* a tree) and draw the DAG transitions as `links`.
 
 **Segtree node topology:** Nodes are split by `mid = (lo+hi)//2`. Left child = `[lo, mid]`,
 right child = `[mid+1, hi]`. For `data=[2,5,1,3,7,4]` (6 elements, range `[0,5]`):

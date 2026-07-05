@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — capability Wave 3 (bridges, clusters, automata)
+- **`\link{A <-> B}` + `\combine{s1, s2}{into="D"}`** — the first
+  cross-shape construct: a stage-level bridge between anchors on two
+  different shapes (Euler-tour subtree ↔ array range; matrix-multiply
+  row+column → cell). Persistent or `ephemeral=true`; `\combine` is
+  N ephemeral links converging on one target. Motion rides the existing
+  annotation fades (zero new kinds, runtime untouched). E1497/E1498.
+- **`\group{G}{nodes=[...], id=...}` / `\ungroup`** — rounded hull
+  overlays for node clusters on Graph (Kruskal components, SCCs,
+  blocks). The layout stays pinned (browser-measured <0.6px) and the
+  node-set never changes — a growing component is the same id re-issued
+  with more nodes. E1506/E1507; group-free documents byte-identical.
+- **Tree grows automata support**: char-labeled edges
+  (`edges=[(0,1,"a")]`, `add_node char=`) and a second dashed link
+  class (`links=`, `add_link`/`remove_link`, selector `T.link[(u,v)]`)
+  that never affects layout — trie, Aho-Corasick fail links, and
+  suffix-automaton transitions (suffix-link tree as the spine) with no
+  new primitive.
+
 ### Added — capability Wave 2 (motion: elements glide)
 - **`position_move` now glides to the NEW seat** (the cursor_move
   geometry) instead of ending at the old one and relying on the
