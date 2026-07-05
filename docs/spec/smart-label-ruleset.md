@@ -685,6 +685,14 @@ when absent. Companion to the fixed-max-N insert/remove reflow (same investigati
 `cell[i]` addresses the **position**, so an annotation tracks the slot across a
 reflow, and the freed tail after `remove` is an empty cell, never an interior hole.
 
+> **Companion note (0.24.0, gap-motion-identity):** SLOT-identity (`cell[i]`,
+> fixed, the annotation/recolor anchor) is distinct from ELEMENT-identity
+> (`item[k]`, assigned at t0, carries a moving position). `reorder` permutes
+> which item sits in which slot and the items glide (`position_move` on
+> `data-item` keys); the slots themselves never move, so this rule's anchor
+> semantics are unchanged. The two structural models stay separate (mixing
+> `reorder` with `insert`/`remove` raises E1404).
+
 **Code ref:** `scriba/animation/primitives/array.py:apply_command`
 (fixed-grid reflow that `a.after` tracks);
 `scriba/animation/primitives/array.py:_sentinel_center` (before/after anchors);

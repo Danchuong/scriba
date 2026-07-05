@@ -180,3 +180,27 @@ pointer arrows above:
 \narrate{Process B, enqueue neighbor D.}
 \end{animation}
 ```
+
+## 8. Deque (since 0.24.0)
+
+`Deque` is a separate registered type — a strict superset of Queue for
+monotonic-deque sliding windows:
+
+```latex
+\shape{d}{Deque}{capacity=6, data=[3,1]}
+\apply{d}{push_back=4}
+\apply{d}{push_front=9}
+\apply{d}{pop_back=1}      % count-based, like Stack's pop
+\apply{d}{pop_front=1}
+```
+
+`enqueue`/`dequeue` keep working as aliases (`push_back`/`pop_front`), so any
+FIFO animation is valid on a Deque. Internally it drops the monotonic
+front/rear slot model for a logical order list — `cell[i]` is the *i*-th
+position **from the current front** (a `pop_front` shifts what every index
+points at). Selectors: `d.cell[i]`, `d.front`, `d.back`, `d.all`.
+
+Loud errors: push onto full → **E1442**, pop past empty → **E1443**, and any
+deque-only verb on a plain `Queue` → **E1444** ("declare as Deque"). Queue's
+own rendering and behaviour are unchanged (`data-primitive="queue"` output is
+byte-identical).

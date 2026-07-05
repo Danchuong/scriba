@@ -23,7 +23,7 @@
 2. [Supported LaTeX Commands](#2-supported-latex-commands)
 3. [Animation Environment](#3-animation-environment)
 4. [Diagram Environment](#4-diagram-environment)
-5. [Inner Commands](#5-inner-commands-18-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant`
+5. [Inner Commands](#5-inner-commands-21-total) — `\shape` `\compute` `\step` `\narrate` `\apply` `\highlight` `\focus` `\recolor` `\annotate` `\trace` `\reannotate` `\cursor` `\foreach` `\playeach` `\substory` `\hl` `\ref` `\invariant` `\link` `\combine` `\group`
 6. [Visual States](#6-visual-states)
 7. [All 18 Primitives](#7-all-18-primitives)
 8. [Selector Quick Reference](#8-selector-quick-reference)
@@ -52,6 +52,12 @@
 | Cross-reference a step from narration | `\hl` §5.14 |
 | Use `${var}` in a selector / value | §5.12, §13.2 |
 | Address a sub-element (selector syntax) | §8 |
+| Connect two shapes (subtree ↔ range, row+col → cell) | `\link`/`\combine` §5.19 |
+| Circle a component / SCC on a graph | `\group` §5.20 |
+| Animate a sorting pass (elements glide) | Array `reorder` §7.1 |
+| Slide a sweep line / move geometry | Plane2D `move_*` §7.9, recipe §12 |
+| Show bitmask / subset-DP structure | Hypercube §7.16 |
+| Animate DSU unions | Forest §7.17 |
 | Look up an error code | §15 |
 
 ---

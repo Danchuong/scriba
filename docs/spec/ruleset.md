@@ -967,6 +967,13 @@ implements `set_annotations`.
 - **R-32.6 — Determinism.** The reserved-envelope computation MUST be
   deterministic: same scene input → same envelope → byte-identical SVG emit.
 
+> **Clarifying note (0.24.0, gap-motion-identity):** R-32 constrains the
+> primitive's *envelope*, not its children. An element with a stable
+> `data-target` MAY move *within* the reserved envelope between frames —
+> `cursor_move` (markers), `position_move` (Tree reparent, Forest union,
+> Plane2D `move_*`, Array `reorder`) are the shipped instances. "Slots never
+> move" is Array's local design choice (R-42), not a global invariant.
+
 **Enforcement.** Build-time. `_frame_renderer.measure_scene_layout` replays
 the frame timeline once on deep copies and yields the viewBox and the
 per-scene max-bbox envelope from the same checkpoints (no-drift by

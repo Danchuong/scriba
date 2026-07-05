@@ -222,6 +222,20 @@ Accepted parameters by element type:
 | region   | `polygon` (full replacement), `fill`                                    |
 | label    | `text`, `x`, `y` (anchor in math coords)                               |
 
+### 5.1b Move in place (since 0.24.0)
+
+```latex
+\apply{p}{move_point={i=0, x=2.5}}          % partial: only passed fields change
+\apply{p}{move_line={i=0, to_x=1.0}}        % vertical lines only; slanted → E1467
+\apply{p}{move_segment={i=0, x2=3, y2=4}}
+```
+
+The element keeps its index and `data-target`, so the differ emits
+`position_move` and it **glides** to the new position (an add+remove pair
+would teleport). The targeted form in §5.1 achieves the same for points and
+segments; `move_line={to_x=}` is the sweep-line idiom. Out-of-range or
+tombstoned `i` → E1437.
+
 ### 5.2 Adding new elements dynamically
 
 ```latex
@@ -230,7 +244,17 @@ Accepted parameters by element type:
 \apply{p}{add_segment=((0,0),(3,4))}
 \apply{p}{add_polygon=[(0,0),(3,0),(3,3),(0,3)]}
 \apply{p}{add_region={polygon=[(0,0),(5,0),(5,5)], fill="rgba(0,114,178,0.2)"}}
+% since 0.24.0 — circle {cx,cy,r} · arc/wedge {cx,cy,r,a0,a1} (degrees, CCW)
+\apply{p}{add_circle={cx=0, cy=0, r=2.24}}
+\apply{p}{add_arc={cx=0, cy=0, r=1.5, a0=0, a1=90}}
+\apply{p}{add_wedge={cx=1, cy=1, r=1, a0=30, a1=75}}
 ```
+
+Circles, arcs and wedges select and annotate like the other five families
+(`p.circle[i]` / `p.arc[i]` / `p.wedge[i]`; anchors: centre / arc midpoint /
+wedge interior). `r` is in math units. Under `aspect="equal"` a circle is
+round; under `aspect="auto"` it honestly renders the pixel-space locus (an
+ellipse), because it lives inside the §4.3 transform group.
 
 Each `add_*` operation appends the new element and assigns it the next available index.
 For example, if the plane has 2 lines (indices 0 and 1), `add_line` creates line index 2,
