@@ -565,3 +565,28 @@ class TestDispatcher:
         # add_node ran; remove_node did not (early return).
         assert "E" in t.nodes
         assert "D" in t.nodes
+
+
+class TestReparentChildOrder:
+    """reparent must let the author place the node on a specific side —
+    a BST rotation needs a node to become the LEFT child, but reparent
+    always appended it rightmost, rendering the wrong side (td-struct:
+    bst_operations.tex narrated 8(11,9) while it rendered [9,11])."""
+
+    def test_reparent_index_inserts_at_position(self) -> None:
+        t = _make_simple_tree()  # A->B,C ; B->D
+        # move D under A at position 0 → A's children become [D, B, C]
+        t.apply_command({"reparent": {"node": "D", "parent": "A", "index": 0}})
+        assert t.children_map["A"] == ["D", "B", "C"]
+
+    def test_reparent_index_1_is_left_of_two(self) -> None:
+        t = _make_simple_tree()
+        # C already A's child; move D under A at index 1 → [B, D, C]
+        t.apply_command({"reparent": {"node": "D", "parent": "A", "index": 1}})
+        assert t.children_map["A"] == ["B", "D", "C"]
+
+    def test_reparent_default_appends(self) -> None:
+        # backward compat: no index → append (unchanged behavior)
+        t = _make_simple_tree()
+        t.apply_command({"reparent": {"node": "D", "parent": "A"}})
+        assert t.children_map["A"] == ["B", "C", "D"]

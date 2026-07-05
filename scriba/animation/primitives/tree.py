@@ -389,7 +389,9 @@ class Tree(PrimitiveBase):
                     "E1435",
                     detail="reparent requires {node, parent}",
                 )
-            self._reparent_internal(spec["node"], spec["parent"])
+            self._reparent_internal(
+                spec["node"], spec["parent"], index=spec.get("index")
+            )
             return
 
         if "add_link" in params:
@@ -596,7 +598,10 @@ class Tree(PrimitiveBase):
         return False
 
     def _reparent_internal(
-        self, node_id: str | int, new_parent_id: str | int
+        self,
+        node_id: str | int,
+        new_parent_id: str | int,
+        index: int | None = None,
     ) -> None:
         node_id = str(node_id)
         new_parent_id = str(new_parent_id)
@@ -656,10 +661,15 @@ class Tree(PrimitiveBase):
         ]
         # The old parent->child edge label no longer applies.
         self.edge_labels.pop((old_parent, node_id), None)
-        # Attach to new parent.
-        self.children_map[new_parent_id] = (
-            self.children_map[new_parent_id] + [node_id]
-        )
+        # Attach to new parent. ``index`` places the node among the new
+        # parent's children so a BST rotation can put it on the LEFT
+        # (index=0) instead of always rightmost; omit for append.
+        siblings = list(self.children_map[new_parent_id])
+        if index is None:
+            siblings.append(node_id)
+        else:
+            siblings.insert(max(0, min(int(index), len(siblings))), node_id)
+        self.children_map[new_parent_id] = siblings
         self.edges.append((new_parent_id, node_id))
 
         self._relayout()

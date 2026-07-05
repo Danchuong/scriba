@@ -1048,7 +1048,7 @@ Rooted tree with Reingold-Tilford layout.
 | `show_sum` | bool | `false` | no | append `=sum` to segtree node labels |
 | `label` | string | none | no | caption |
 
-**Operations:** `add_node={id,parent,char?}`, `remove_node=id` or `{id,cascade?}`, `reparent={node,parent}` (E1433–E1436), `add_link={from,to}` / `remove_link={from,to}` (since 0.24.0).
+**Operations:** `add_node={id,parent,char?}`, `remove_node=id` or `{id,cascade?}`, `reparent={node,parent,index?}` (E1433–E1436), `add_link={from,to}` / `remove_link={from,to}` (since 0.24.0). `index` (since 0.25.0) places the node among the new parent's children (0 = leftmost) — needed for a BST rotation to put a node on the **left**; omit to append rightmost.
 **Selectors:** `T`, `T.node[id]`, `T.node["[0,5]"]` (segtree), `T.edge[(p,c)]`, `T.link[(u,v)]` (since 0.24.0), `T.all`
 
 **Automata (trie / Aho-Corasick / suffix automaton)** — since 0.24.0, two additive pieces make Tree the substrate:
