@@ -650,6 +650,28 @@ class PrimitiveBase(abc.ABC):
         the differ can emit ``cursor_move`` (mirror of ``get_node_positions``)."""
         return dict(getattr(self, "_cursor_positions", {}))
 
+    def _cursor_apex_origin(
+        self, top: "tuple[float, float]", center: "tuple[float, float]"
+    ) -> float:
+        """Y from which a binding caret's ``▲`` apex drops (before ``_CURSOR_GAP``).
+
+        The cell bottom (``center + (center - top)``), unless the target reserves
+        a below-label lane — an Array ``labels=`` index row or a NumberLine's
+        tick-label band — in which case the caret clears that lane so its id never
+        lands on the index/tick digits (JudgeZone #7 / decoration-obstacle audit).
+        ``resolve_below_baseline()`` is the exact anchor ``position=below`` pills
+        already use, so the caret joins the same callout lane. A target with no
+        lane (``None``) or a lane at the cell bottom (no-label Array →
+        ``CELL_HEIGHT``) leaves the origin unchanged, so no-lane frames stay
+        byte-identical. Shared by ``emit_cursors_under`` (paint) and
+        ``_cursor_extent_below`` (reserve) so measured and painted extents agree.
+        """
+        cell_bottom = center[1] + (center[1] - top[1])
+        lane = self.resolve_below_baseline()
+        if lane is None:
+            return cell_bottom
+        return max(cell_bottom, float(lane))
+
     def emit_cursors_under(self, parts: "list[str]") -> None:
         """Paint every R-38 binding caret — a ``▲`` pointing up at its bound
         cell from a band just below the row, the cursor id a small label
@@ -673,10 +695,11 @@ class PrimitiveBase(abc.ABC):
             if top is None or center is None:
                 continue  # out-of-range -> soft-drop (mirrors selectors)
             cx = center[0]
-            # cell bottom = center + (center - top); place the apex a small gap
-            # below it. cx/center come from the live cell geometry, so the
-            # caret tracks the 0.22.1 content-based pitch automatically.
-            apex_y = center[1] + (center[1] - top[1]) + _CURSOR_GAP
+            # Drop the apex a small gap below the cell bottom, or below the
+            # index/tick label lane when the target reserves one (report #7) —
+            # see _cursor_apex_origin. cx/center come from the live cell
+            # geometry, so the caret tracks the 0.22.1 content-based pitch.
+            apex_y = self._cursor_apex_origin(top, center) + _CURSOR_GAP
             base_y = apex_y + _CURSOR_H
             cid = str(cur.get("id", "c"))
             color = cur.get("color", "info")
@@ -724,9 +747,8 @@ class PrimitiveBase(abc.ABC):
             center = self.resolve_label_anchor(sel)
             if top is None or center is None:
                 continue
-            cell_bottom = center[1] + (center[1] - top[1])
             caret_bottom = (
-                cell_bottom
+                self._cursor_apex_origin(top, center)
                 + _CURSOR_GAP + _CURSOR_H + _CURSOR_ID_DY + _CURSOR_ID_FONT_PX / 2.0
             )
             extent = max(extent, caret_bottom)
