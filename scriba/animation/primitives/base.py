@@ -1111,12 +1111,16 @@ class PrimitiveBase(abc.ABC):
 
         Backs a bare-shape ``\\annotate{shape}{strike=true}`` — the corner-to-
         corner cross-out spans the content extent (cells/rows/nodes), excluding
-        caption/index/arrow lanes. Falls back to ``bounding_box()`` for
-        primitives that expose no content rects (default ``[]``).
+        caption/index/arrow lanes. Returns ``None`` for primitives that expose
+        no content rects (default ``[]``) so the caller's E1119 soft-drop
+        fires. It must NOT fall back to ``bounding_box()``: that method
+        measures the exact annotation extent by re-running the annotation
+        emitters, which re-enters this strike block — RecursionError on the
+        13 primitive types with empty content rects (hunt2-traceback-fuzz).
         """
         rects = self.resolve_self_content_rects()
         if not rects:
-            return self.bounding_box()
+            return None
         min_x = min(r.x for r in rects)
         min_y = min(r.y for r in rects)
         max_x = max(r.x + r.width for r in rects)
