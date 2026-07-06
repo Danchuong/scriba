@@ -447,7 +447,7 @@ It renders as a `<span class="scriba-step-title">` above the narration and **sup
 Attaches narration to the current frame. Supports inline math (`$…$`), text formatting (`\textbf`, `\texttt`, `\emph`, …), and two narration macros: `\hl{step-id}{tex}` (§5.14 — cross-references a labeled `\step`) and `\ref{target}{text}` (§5.15 — tints a word to a cell's state).
 
 ### 5.5 `\apply{target}{params...}`
-Sets values and runs primitive operations. Persistent. Common: `value=`, `label=`. Primitive-specific operation keys (e.g. `push=`, `enqueue=`, `add_edge=`, `insert=`) are listed per primitive in §7.
+Sets values and runs primitive operations. Persistent. Common: `value=`, `label=`. Primitive-specific operation keys (e.g. `push=`, `enqueue=`, `add_edge=`, `insert=`) are **per-primitive** — each primitive's §7 section lists the structural ops it accepts. An unknown key for that primitive raises **E1105** (naming the primitive, the bad key, and its valid keys) instead of being silently dropped, so a typo like `vlaue=` or an op the primitive does not support fails loudly at build rather than vanishing from the render.
 
 ### 5.6 `\highlight{target}`
 Ephemeral focus marker. Cleared at next `\step`.
@@ -2023,8 +2023,16 @@ sum, exactly as an iterative segtree `push_down` would.
 \apply{st.node["[0,2]"]}{value="sum=17"}
 \apply{st.node["[0,1]"]}{value="sum=13 | +3"}
 \apply{st.node["[2,2]"]}{value="sum=4 | +3"}
+% optional: draw the tag flowing parent -> each child (escape the inner quotes)
+\annotate{st.node["[0,1]"]}{label="+3", arrow_from="st.node[\"[0,2]\"]", color=good}
+\annotate{st.node["[2,2]"]}{label="+3", arrow_from="st.node[\"[0,2]\"]", color=good}
 \narrate{Pushdown: clear the parent tag, deposit +3 into both children.}
 ```
+
+The tag lives entirely on the value-layer channel (§7.5), so an unknown
+structural key here — e.g. a made-up `\apply{st.node["[0,2]"]}{lazy="+3"}` —
+raises **E1105**; the pending op belongs in the node's `value=` string, not a
+new param.
 
 ### Sweep line (three shapes, one clock)
 A sweep-line animation is a *pattern*, not a feature: `\step` already advances

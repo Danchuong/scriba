@@ -99,6 +99,9 @@ class Bar(PrimitiveBase):
     """
 
     primitive_type = "bar"
+    # apply_command only reads the generic value= (routed via set_value); no
+    # structural \apply keys of its own.
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset()
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "bar[{i}]": "column by index",

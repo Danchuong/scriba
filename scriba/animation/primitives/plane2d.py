@@ -112,6 +112,16 @@ class Plane2D(PrimitiveBase):
     """
 
     primitive_type = "plane2d"
+    # \apply geometry verbs: add_/remove_ every element kind, plus in-place
+    # move_/rotate_ glides. Mirrors the apply_command dispatch below.
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset({
+        "add_point", "add_line", "add_segment", "add_polygon", "add_region",
+        "add_circle", "add_arc", "add_wedge",
+        "remove_point", "remove_line", "remove_segment", "remove_polygon",
+        "remove_region", "remove_circle", "remove_arc", "remove_wedge",
+        "move_point", "move_line", "move_segment",
+        "rotate_point", "rotate_line", "rotate_segment",
+    })
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "point[{i}]": "point by index",

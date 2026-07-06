@@ -38,7 +38,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
-from scriba.animation.primitives._params import coerce_list
+from scriba.animation.primitives._params import coerce_list, scalar_node_ids
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -96,6 +96,8 @@ class Forest(PrimitiveBase):
     """
 
     primitive_type = "forest"
+    # \apply DSU verb (union={a, b}).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset({"union"})
 
     # opt-in: _prescan_value_widths replays union apply_params so the envelope
     # (_envelope_height) reaches its timeline max before frame 0 is measured.
@@ -135,8 +137,16 @@ class Forest(PrimitiveBase):
         # Node ids are normalized to str so numeric literals (nodes=[0,1,2])
         # and string refs (union={a="1"}) address the same node. Order is the
         # declared order and never changes — Forest grows edges via union, not
-        # nodes.
-        self.node_ids: list[str] = [str(n) for n in raw_nodes]
+        # nodes. A pairs/list entry would str()-mangle into a bogus id, so it
+        # is rejected (E1104) rather than silently swallowed.
+        self.node_ids: list[str] = scalar_node_ids(
+            raw_nodes,
+            "E1104",
+            detail=(
+                "Forest 'nodes' entries must be scalar ids, got a list/tuple"
+            ),
+            hint="nodes= takes scalar ids, one per node (nodes=[0, 1, 2, 3])",
+        )
         seen: set[str] = set()
         for nid in self.node_ids:
             if nid in seen:

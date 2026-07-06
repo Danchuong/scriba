@@ -186,6 +186,20 @@ ERROR_CATALOG: dict[str, str] = {
         "cap and by some legacy call sites. The detail message identifies "
         "the specific primitive and constraint."
     ),
+    "E1104": (
+        "Primitive parameter type mismatch — a param was given a value of the "
+        "wrong shape (e.g. a list/tuple where a scalar id was expected, as in "
+        "the unsupported pairs form 'nodes=[[id, value], ...]'). The detail "
+        "names the primitive and the offending param; a hint points at the "
+        "scalar form and the per-node value= recipe."
+    ),
+    "E1105": (
+        "Unknown parameter on \\apply for that primitive. The key is neither a "
+        "generic 'value='/'label=' (owned by the scene layer) nor one of the "
+        "primitive's structural \\apply keys, so 'apply_command' would silently "
+        "drop it. The message names the primitive, the bad key, and the valid "
+        "keys (with a 'did you mean' suggestion when a close match exists)."
+    ),
     "E1109": "Invalid \\recolor state or missing required state/color parameter.",
     "E1112": "Unknown annotation position.",
     "E1113": "Invalid or missing annotation color.",

@@ -71,6 +71,9 @@ class HashMap(PrimitiveBase):
     """
 
     primitive_type = "hashmap"
+    # apply_command only reads the generic value= on bucket[i]; no structural
+    # \apply keys of its own.
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset()
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "bucket[{i}]": "bucket by index",

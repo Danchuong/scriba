@@ -125,6 +125,10 @@ def _prescan_value_widths(
                 for ap in target_data.get("apply_params") or []:
                     if not isinstance(ap, dict):
                         continue
+                    # Unknown-key guard raises loudly (E1105) even here, where
+                    # apply_command's own effect is best-effort — a silent
+                    # structural-prescan swallow is exactly the bug being closed.
+                    _validate_apply_spec(prim, ap)
                     try:
                         prim.apply_command(ap)
                     except Exception:  # noqa: BLE001 - best effort
@@ -684,6 +688,54 @@ def _validate_expanded_selectors(
                 pass
 
 
+# Generic cross-primitive ``\\apply`` keys: the three ``ShapeTargetState``
+# display channels (renderer.py ``_snapshot_to_frame_data``). They flow to the
+# primitive through ``set_state``/``set_value``/``set_label`` (the frame
+# renderer's value-layer), never through ``apply_command``, so they are valid
+# on every primitive regardless of its structural ``APPLY_KEYS``.
+_GENERIC_APPLY_KEYS: frozenset[str] = frozenset({"state", "value", "label"})
+
+
+def _validate_apply_spec(prim: Any, spec: Any) -> None:
+    """Raise ``E1105`` when *spec* carries a key *prim* cannot consume.
+
+    Each primitive declares the keys its ``apply_command`` reads via
+    ``APPLY_KEYS`` (a class frozenset, or an instance property for primitives
+    whose keys are per-instance — VariableWatch var names, MetricPlot series
+    names). A key that is neither generic (``state``/``value``/``label``) nor
+    in ``APPLY_KEYS`` would otherwise be silently dropped by ``apply_command``
+    (environments.md §3.5: "Unknown param for that primitive is E1105").
+
+    Called at every ``apply_command`` dispatch site; the first raise aborts the
+    render, and a repeated call on the same spec is harmless (pure check).
+    """
+    if not isinstance(spec, dict):
+        return
+    allowed = _GENERIC_APPLY_KEYS | getattr(prim, "APPLY_KEYS", frozenset())
+    unknown = sorted(k for k in spec if k not in allowed)
+    if not unknown:
+        return
+    # Local import to sidestep the errors.py <-> renderer/primitives cycle.
+    from scriba.animation.errors import _animation_error, _suggest_closest
+
+    bad = unknown[0]
+    supported = ", ".join(sorted(allowed))
+    suggestion = _suggest_closest(bad, allowed)
+    hint = (
+        f"did you mean `{suggestion}`?"
+        if suggestion
+        else f"valid \\apply keys: {supported}"
+    )
+    raise _animation_error(
+        "E1105",
+        (
+            f"unknown {type(prim).__name__} \\apply parameter {bad!r}; "
+            f"valid: {supported}"
+        ),
+        hint=hint,
+    )
+
+
 def _apply_param_list(
     prim: Any,
     params_list: list[Any],
@@ -696,8 +748,12 @@ def _apply_param_list(
     frame.  Commands are executed in order.  When *accepts_suffix* is true the
     target suffix (e.g. ``"bucket[0]"``) is forwarded so the primitive can
     narrow the operation to a specific addressable part.
+
+    Every entry is validated against the primitive's ``APPLY_KEYS`` first, so an
+    unknown key raises ``E1105`` instead of being silently dropped.
     """
     for params in params_list:
+        _validate_apply_spec(prim, params)
         if accepts_suffix:
             prim.apply_command(params, target_suffix=suffix)
         else:

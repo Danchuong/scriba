@@ -252,6 +252,13 @@ class MetricPlot(PrimitiveBase):
     # Data accumulation via apply_command
     # -----------------------------------------------------------------
 
+    @property
+    def APPLY_KEYS(self) -> frozenset[str]:  # type: ignore[override]
+        """Valid ``\\apply`` keys are this plot's series names (per instance):
+        ``\\apply{plot}{phi=3.2}`` feeds the ``phi`` series. An unknown series
+        name is rejected (E1105) instead of being silently ignored."""
+        return frozenset(self._series_names)
+
     def apply_command(self, params: dict[str, Any]) -> None:
         """Process data feeding from ``\\apply{plot}{phi=3.2, cost=5.1}``.
 

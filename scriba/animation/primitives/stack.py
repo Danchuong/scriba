@@ -84,6 +84,8 @@ class Stack(PrimitiveBase):
     """
 
     primitive_type = "stack"
+    # \apply structural verbs (push={label,value}, pop=N).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset({"push", "pop"})
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "item[{i}]": "item by index",

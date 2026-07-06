@@ -98,6 +98,8 @@ class TraceTable(PrimitiveBase):
     _structural_prescan: bool = True
 
     primitive_type = "tracetable"
+    # \apply appends one data row (row=[...]).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset({"row"})
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "row[{k}]": "data row by index",

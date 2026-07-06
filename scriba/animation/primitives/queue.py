@@ -115,6 +115,13 @@ class Queue(PrimitiveBase):
     """
 
     primitive_type = "queue"
+    # \apply FIFO verbs. The deque-only verbs are ACCEPTED here so
+    # apply_command can raise the specific E1444 ("declare a Deque") rather
+    # than the generic E1105 masking it; Deque inherits this set (per-cell
+    # value= is handled generically).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset(
+        {"enqueue", "dequeue", "push_front", "push_back", "pop_front", "pop_back"}
+    )
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "cell[{i}]": "cell by index",

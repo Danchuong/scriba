@@ -51,3 +51,26 @@ def coerce_list(
     if isinstance(value, (str, bytes)) or not hasattr(value, "__iter__"):
         raise _animation_error(code, detail=detail, hint=hint)
     return list(value)
+
+
+def scalar_node_ids(
+    entries: Any,
+    code: str,
+    *,
+    detail: str,
+    hint: str | None = None,
+) -> list[str]:
+    """Return ``[str(e) for e in entries]``, rejecting non-scalar entries.
+
+    A list/tuple/dict/set entry (e.g. the pairs form ``nodes=[["r","5"]]``)
+    would otherwise be ``str()``-mangled into a bogus id like ``"['r', '5']"``
+    — a silent data swallow: the intended node id ``"r"`` is never created and
+    no error fires. Raise *code* (E1104, "param type mismatch") instead so the
+    author sees the mistake at build time.
+    """
+    out: list[str] = []
+    for e in entries:
+        if isinstance(e, (list, tuple, dict, set)):
+            raise _animation_error(code, detail=detail, hint=hint)
+        out.append(str(e))
+    return out

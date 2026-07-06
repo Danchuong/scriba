@@ -47,6 +47,8 @@
 | E1100 | General parse failure inside animation body. | Check syntax around the reported position. |
 | E1102 | Unknown primitive type in `\shape` declaration. | Use a valid type: Array, Grid, DPTable, Graph, Tree, NumberLine, Matrix, Stack, etc. |
 | E1103 | **DEPRECATED** — legacy primitive validation mega-bucket. New code raises one of the specific `E14xx` codes below. Retained for backward compat (`scene.annotate` cap and some legacy call sites still use it). | See `E14xx` below. |
+| E1104 | Primitive parameter type mismatch — a param got a value of the wrong shape (e.g. a list/tuple where a scalar id was expected). Currently the Tree/Forest pairs form `nodes=[[id, value], ...]`, which would otherwise `str()`-mangle into a bogus id. | Use scalar node ids (`nodes=["r","c"]`); set a per-node display value with `\apply{T.node["c"]}{value="..."}`. |
+| E1105 | Unknown parameter on `\apply` for that primitive — the key is neither the generic `value=`/`label=` nor one of the primitive's structural `\apply` ops, so it would be silently dropped. Message names the primitive, the bad key, and the valid keys. | Check the key against the primitive's `\apply` ops (§7 of the TeX reference lists them per primitive); a per-node/-cell value uses `value=`. |
 | E1109 | Invalid `\recolor` state or missing required state/color parameter. | Use a valid state: idle, current, done, dim, error, good, highlight, path. |
 | E1112 | Unknown annotation position. | Use: above, below, left, right, inside. See [`smart-label-ruleset.md`](smart-label-ruleset.md) for the placement contract. |
 | E1113 | Invalid or missing annotation color. | Use: info, warn, good, error, muted, path — or quoted `"state:current/done/dim/good/error/path"` (since 0.22.2). |

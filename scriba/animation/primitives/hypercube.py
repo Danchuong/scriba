@@ -99,6 +99,9 @@ class Hypercube(PrimitiveBase):
     """
 
     primitive_type = "hypercube"
+    # apply_command only reads the generic value= on subset[i]; no structural
+    # \apply keys of its own.
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset()
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "subset[{i}]": "subset by decimal index (0 .. 2**bits - 1)",

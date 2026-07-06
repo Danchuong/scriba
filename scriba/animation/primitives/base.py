@@ -290,6 +290,18 @@ class PrimitiveBase(abc.ABC):
     # that have not yet migrated to the strict-params regime.
     ACCEPTED_PARAMS: ClassVar[frozenset[str]] = frozenset()
 
+    # Subclasses override to declare the set of keys their ``apply_command``
+    # consumes from an ``\\apply`` spec. The pipeline validates every
+    # ``apply_params`` entry against this set (plus the generic ``state``/
+    # ``value``/``label`` display channels the scene layer owns) and raises
+    # ``E1105`` for an unknown key rather than letting ``apply_command`` drop
+    # it silently.
+    # An empty frozenset means "no structural \\apply keys" (the base no-op
+    # ``apply_command`` below). Primitives whose accepted keys are per-instance
+    # (VariableWatch var names, MetricPlot series names) override this as a
+    # property returning the live set.
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset()
+
     # RFC-002 strict-mode hook. Set per-instance by the Pipeline (via the
     # animation renderer) so primitives can route silent-fix warnings
     # through :func:`scriba.animation.errors._emit_warning`. Defaults to
@@ -373,7 +385,7 @@ class PrimitiveBase(abc.ABC):
         """Set display value for an addressable part."""
         if not self.validate_selector(suffix):
             warnings.warn(
-                f"{self.__class__.__name__} '{self.name}': "
+                f"[E1115] {self.__class__.__name__} '{self.name}': "
                 f"invalid selector '{suffix}', ignoring set_value()",
                 stacklevel=2,
             )
@@ -388,7 +400,7 @@ class PrimitiveBase(abc.ABC):
         """Set display label for an addressable part."""
         if not self.validate_selector(suffix):
             warnings.warn(
-                f"{self.__class__.__name__} '{self.name}': "
+                f"[E1115] {self.__class__.__name__} '{self.name}': "
                 f"invalid selector '{suffix}', ignoring set_label()",
                 stacklevel=2,
             )

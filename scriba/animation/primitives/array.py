@@ -109,6 +109,8 @@ class ArrayPrimitive(PrimitiveBase):
     """
 
     primitive_type = "array"
+    # \apply structural verbs (base value=/label= handled generically).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset({"insert", "remove", "reorder"})
     supports_trace = True
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {

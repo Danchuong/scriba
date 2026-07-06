@@ -180,6 +180,8 @@ class Equation(PrimitiveBase):
     """
 
     primitive_type = "equation"
+    # \apply re-typeset verbs (per-line value= handled generically).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset({"lines", "tex"})
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "line[{i}]": "aligned row by index",

@@ -13,7 +13,7 @@ import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
-from scriba.animation.primitives._params import coerce_list
+from scriba.animation.primitives._params import coerce_list, scalar_node_ids
 from scriba.animation.primitives.base import (
     BoundingBox,
     PrimitiveBase,
@@ -111,6 +111,11 @@ class Tree(PrimitiveBase):
     """
 
     primitive_type = "tree"
+    # \apply structural verbs (per-node value= — incl. segtree lazy tags —
+    # is handled generically via set_value, not here).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset(
+        {"add_node", "remove_node", "reparent", "add_link", "remove_link"}
+    )
 
     # DECORATE v4: a \trace threads a polyline through node centres — in a
     # hierarchical layout the straight segment between adjacent node centres IS
@@ -233,7 +238,21 @@ class Tree(PrimitiveBase):
         # id ``3`` and ``"3"`` are the same node.  Labels still display the
         # original text via ``str``.
         self.root: str | int = str(root)
-        self.nodes: list[str | int] = [str(n) for n in params.get("nodes", [])]
+        # nodes= takes scalar ids. A pairs/list entry (nodes=[["r","5"]]) would
+        # be str()-mangled into a bogus single id, silently dropping the real
+        # node — reject it (E1104) and point at the per-node value recipe.
+        self.nodes: list[str | int] = scalar_node_ids(
+            params.get("nodes", []),
+            "E1104",
+            detail=(
+                "Tree 'nodes' entries must be scalar ids, got a list/tuple "
+                "(the pairs form 'nodes=[[id, value], ...]' is not supported)"
+            ),
+            hint=(
+                'nodes= takes scalar ids (nodes=["r", "c"]); set a per-node '
+                'display value with \\apply{T.node["c"]}{value="..."}'
+            ),
+        )
         # Edges stay 2-tuples ``(parent, child)`` so every existing code path
         # (children_map, layout, emit) is untouched. A 3-tuple ``(p, c, "a")``
         # peels its third element off into ``edge_labels`` as a *string* — no

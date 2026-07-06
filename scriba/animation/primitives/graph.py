@@ -764,6 +764,10 @@ class Graph(PrimitiveBase):
     """
 
     primitive_type = "graph"
+    # \apply edge-mutation verbs (node value= handled generically).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset(
+        {"add_edge", "remove_edge", "set_weight"}
+    )
 
     # DECORATE v4: a \trace threads a polyline through node centres ("follow the
     # edges"). resolve_annotation_point already returns the node centre, so the

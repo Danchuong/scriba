@@ -134,6 +134,13 @@ class VariableWatch(PrimitiveBase):
 
     # ----- apply commands --------------------------------------------------
 
+    @property
+    def APPLY_KEYS(self) -> frozenset[str]:  # type: ignore[override]
+        """Valid bulk-``\\apply`` keys are this widget's variable names:
+        ``\\apply{w}{i=0, j=1}`` sets vars ``i``/``j``. A name that is not a
+        declared var (a typo like ``vlaue=``) is rejected (E1105)."""
+        return frozenset(self.var_names)
+
     def apply_command(self, params: dict[str, Any], *, target_suffix: str | None = None) -> None:
         """Process value-set commands from ``\\apply``.
 

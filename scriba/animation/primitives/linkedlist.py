@@ -87,6 +87,8 @@ class LinkedList(PrimitiveBase):
     _structural_prescan: bool = True
 
     primitive_type = "linkedlist"
+    # \apply structural verbs (per-node value= handled generically).
+    APPLY_KEYS: ClassVar[frozenset[str]] = frozenset({"insert", "remove"})
 
     SELECTOR_PATTERNS: ClassVar[dict[str, str]] = {
         "node[{i}]": "node by index",
