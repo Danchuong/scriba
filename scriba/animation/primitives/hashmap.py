@@ -338,6 +338,7 @@ class HashMap(PrimitiveBase):
                     fo_width=index_col_w - 4,
                     fo_height=_ROW_HEIGHT,
                     render_inline_tex=render_inline_tex,
+                    data_role="name",
                 )
             )
 
@@ -359,6 +360,7 @@ class HashMap(PrimitiveBase):
                         fo_width=fo_w,
                         fo_height=_ROW_HEIGHT,
                         render_inline_tex=render_inline_tex,
+                        data_role="value",
                     )
                 )
 

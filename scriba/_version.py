@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.26.3"
+__version__: str = "0.26.4"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 20
+SCRIBA_VERSION: int = 21
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -323,4 +323,26 @@ every scene's SVG geometry, ``tr``/``fs`` manifest, narration and stylesheet byt
 are byte-identical to 0.26.2. ``differ.py`` is untouched (zero new motion kinds)
 and no CSS changed; the ~93 interactive corpus goldens re-bless by the identical
 inline-``<script>`` delta, and the static/diagram HTMLs + static-mode animation
-goldens + ``differ_*.json`` manifests are byte-identical."""
+goldens + ``differ_*.json`` manifests are byte-identical.
+
+0.26.4 bumps 20→21 (value_change now targets the VALUE text node): the runtime
+``value_change`` handler used ``querySelector('text')`` = the FIRST ``<text>``
+in the target ``<g data-target>``. On a name+value row (``VariableWatch`` var,
+``HashMap`` bucket) the first ``<text>`` is the NAME/index label, so the incoming
+value was stamped and scale-throbbed onto the LABEL, then the fs-snap restored it
+(JudgeZone report #6: a ``var[j]`` value flashed onto "j" and reverted). Two
+layers change bytes: (a) the renderer tags the value ``<text>`` with
+``data-role="value"`` (and the label with ``data-role="name"``) on the three
+affected primitives — ``VariableWatch`` (name+value), ``HashMap`` (index+value)
+and ``LinkedList`` (value FIRST, index caption LAST, so a naive last-text
+fallback would grab the caption); (b) ``scriba.js`` prefers
+``text[data-role="value"]`` and falls back to the LAST ``<text>`` (value is last
+in every affected row layout). The renderer delta touches ONLY the three affected
+primitives' SVG (single-text cells — Array/Grid/Queue/Stack/DPTable/Tree/Matrix/
+Bar/Graph — emit no ``data-role`` and stay byte-identical; ``Equation`` lines are
+KaTeX ``<foreignObject>``, never a ``<text>`` value, and are untouched). The
+runtime delta touches every interactive widget's inline slice + external hash.
+``differ.py`` is UNTOUCHED (zero new motion kinds, the ``tr``/``fs`` manifest is
+unchanged), no CSS changed, and no SVG geometry/viewBox moved — so static/diagram
+HTMLs, static-mode animation goldens and ``differ_*.json`` manifests are
+byte-identical. Consumer caches keyed on rendered output MUST invalidate."""

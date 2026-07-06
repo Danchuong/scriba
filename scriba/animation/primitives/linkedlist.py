@@ -431,6 +431,9 @@ class LinkedList(PrimitiveBase):
                     fo_width=self._value_width,
                     fo_height=_NODE_HEIGHT,
                     render_inline_tex=render_inline_tex,
+                    # value FIRST, "node[i]" index caption LAST — tag the value
+                    # so the runtime's last-text fallback never grabs the caption.
+                    data_role="value",
                 )
             )
 

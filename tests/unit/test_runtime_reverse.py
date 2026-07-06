@@ -214,6 +214,49 @@ class TestApplyTransitionBranches:
             "write so it pulses only and never stamps the literal 'null'"
         )
 
+    def test_value_change_prefers_tagged_value_node(self, src: str) -> None:
+        # report #6: querySelector('text') grabbed the FIRST <text>, which is
+        # the NAME on name+value rows (VariableWatch var, HashMap bucket), so
+        # the value was stamped onto (and throbbed) the label. The value node is
+        # now the renderer-tagged one (element-agnostic — see
+        # test_value_change_throbs_resolved_node), and the string-stamp targets
+        # it only when it is a <text> (tagName check), so the NAME <text> is
+        # never the stamp target and a math foreignObject is never string-written.
+        body = _fn(src, "_applyTransition")
+        assert "querySelector('[data-role=\"value\"]')" in body, (
+            "value_change must resolve the renderer-tagged value node, never "
+            "the first <text> (the NAME on name+value rows)"
+        )
+        assert "tagName" in body, (
+            "the string-stamp must target the tagged value only when it is a "
+            "<text> (tagName check)"
+        )
+
+    def test_value_change_last_text_fallback(self, src: str) -> None:
+        # single-text primitives carry no data-role; the value is the LAST
+        # <text> in every affected row layout, so the fallback is last-text
+        # (never first-text again).
+        body = _fn(src, "_applyTransition")
+        assert "querySelectorAll('text')" in body
+        assert "ts[ts.length-1]" in body, (
+            "fallback must resolve the LAST <text> (value is last), not the first"
+        )
+
+    def test_value_change_throbs_resolved_node(self, src: str) -> None:
+        # the scale-throb must ride the value node ELEMENT-AGNOSTICALLY: for a
+        # math value the value node is a <foreignObject data-role="value">
+        # (KaTeX HTML), not a <text>, so the throb resolves [data-role="value"]
+        # (any element) FIRST, then the stamped text, then the untagged
+        # single-cell math div. Riding `txt` first (text-only) mis-throbbed the
+        # NAME <text> on a math name+value row (the only <text> present).
+        body = _fn(src, "_applyTransition")
+        assert "el2.querySelector('[data-role=\"value\"]')" in body, (
+            "throb node must be selected element-agnostically so a math "
+            "value's foreignObject (not the NAME <text>) is the throb target"
+        )
+        assert "var vt=vnode||txt||" in body
+        assert "foreignObject > div" in body
+
     def test_key_schism_fallback(self, src: str) -> None:
         # differ composites a position-only pill as {base}-solo, but the SVG
         # keys it {base}-position-{above|below|left|right}. _annEl bridges it.

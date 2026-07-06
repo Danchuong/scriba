@@ -226,8 +226,10 @@ def test_scriba_version_unchanged() -> None:
     # Zoom itself added no bump; the marker later advanced 18 -> 19 for the
     # Equation primitive's additive ``.scriba-term`` CSS, then 19 -> 20 for the
     # A-9 delta-emphasis self-announce exclusion (a runtime-only scriba.js
-    # change). Zoom remains byte-shape-neutral across all of them.
-    assert SCRIBA_VERSION == 20
+    # change), then 20 -> 21 for the value_change value-node targeting fix
+    # (data-role="value" tags + the scriba.js selector). Zoom remains
+    # byte-shape-neutral across all of them.
+    assert SCRIBA_VERSION == 21
 
 
 def test_zoom_no_new_motion_kind() -> None:

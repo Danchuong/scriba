@@ -227,6 +227,7 @@ def _render_svg_text(
     text_outline: str | None = None,
     clip_overflow: bool = True,
     line_height_px: "int | None" = None,
+    data_role: str | None = None,
 ) -> str:
     """Render a text value as either a plain ``<text>`` or a ``<foreignObject>``.
 
@@ -260,6 +261,14 @@ def _render_svg_text(
         migrate, but the inline value has lower CSS specificity than the
         new rules and will be silently overridden at render time in all
         Scriba-controlled contexts. Scheduled for removal in v0.7.0.
+    data_role:
+        When set, emits a ``data-role="{data_role}"`` hook on the ``<text>``
+        (or ``<foreignObject>``) so the runtime can address it directly. Used
+        by the ``value_change`` handler: on name+value rows the value node is
+        tagged ``"value"`` (and the label ``"name"``) so the handler stamps the
+        VALUE, not the first ``<text>`` (which is the label). ``None`` (the
+        default) emits nothing — byte-identical to the pre-tag output, so
+        single-text primitives stay unchanged.
     """
     text_str = str(text)
 
@@ -272,6 +281,8 @@ def _render_svg_text(
         attrs = f'x="{x}" y="{y}" fill="{fill}"'
         if css_class:
             attrs = f'class="{css_class}" {attrs}'
+        if data_role:
+            attrs = f'data-role="{data_role}" {attrs}'
         # Build inline style for properties that must override the global
         # ``svg text { … }`` CSS rule.  SVG presentation attributes have
         # lower specificity than stylesheet rules, so without ``style``
@@ -396,6 +407,11 @@ def _render_svg_text(
         # The <text> fast path carries css_class; mirror it here so CSS
         # (font, halo) and tooling see the same hook on the math path.
         fo_attrs = f'class="{css_class}" {fo_attrs}'
+    if data_role:
+        # Mirror the <text> fast-path role hook so a math value/label is
+        # self-describing too (the runtime queries <text>, but the tag keeps
+        # the DOM uniform for tooling and future selectors).
+        fo_attrs = f'data-role="{data_role}" {fo_attrs}'
 
     _bidi = _bidi_style(text_str)
     if _bidi:

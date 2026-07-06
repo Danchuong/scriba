@@ -345,6 +345,7 @@ class VariableWatch(PrimitiveBase):
                     fo_width=name_fo_width,
                     fo_height=_ROW_HEIGHT,
                     render_inline_tex=render_inline_tex,
+                    data_role="name",
                 )
             )
 
@@ -365,6 +366,7 @@ class VariableWatch(PrimitiveBase):
                     fo_width=value_fo_width,
                     fo_height=_ROW_HEIGHT,
                     render_inline_tex=render_inline_tex,
+                    data_role="value",
                 )
             )
 

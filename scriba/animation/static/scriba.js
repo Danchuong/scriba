@@ -162,14 +162,28 @@
         }
       }else if(kind==='value_change'){
         var el2=stage.querySelector(sel);
-        if(el2){var txt=el2.querySelector('text');
+        if(el2){var vnode=el2.querySelector('[data-role="value"]');
+          // report #6: the first <text> is the NAME/index on name+value rows
+          // (VariableWatch var, HashMap bucket, LinkedList value-FIRST+caption),
+          // so querySelector('text') stamped/throbbed the wrong glyph. Prefer
+          // the renderer-tagged value node (element-agnostic: a math value is a
+          // <foreignObject>, not a <text>); fall back to the LAST <text> for
+          // untagged single-text primitives. CONTRACT: any NEW primitive whose
+          // value target holds >1 text/element MUST emit data-role="value" — the
+          // last-text fallback is sound only because the 3 multi-node primitives
+          // are tagged (LinkedList is value-first, so a naive last-text would
+          // hit its caption).
+          var txt=(vnode&&vnode.tagName&&vnode.tagName.toLowerCase()==='text')?vnode:null;
+          if(!txt){var ts=el2.querySelectorAll('text');txt=ts.length?ts[ts.length-1]:null;}
           // math values ($...$) render as KaTeX foreignObject in the next
           // frame's server SVG — writing the raw string into <text> here
-          // would flash "$\max(0,i)$" mid-transition; pulse only instead
+          // would flash "$\max(0,i)$" mid-transition; pulse only instead.
           // toVal!=null: inverting a value_change whose from was null yields a
           // null target — pulse only, never stamp the literal "null" into <text>.
           if(txt&&toVal!=null&&String(toVal).indexOf('$')===-1){txt.textContent=toVal;}
-          var vt=txt||el2.querySelector('foreignObject > div');
+          // Throb the tagged value node itself (residual #3): a math value is a
+          // foreignObject, so a text-only throb node would bounce the NAME.
+          var vt=vnode||txt||el2.querySelector('foreignObject > div');
           if(vt&&_canAnim){vt.animate([{transform:'scale(1)'},{transform:'scale(1.15)'},{transform:'scale(1)'}],
             {duration:_dur(DUR_VALUE),easing:'ease-out'});}
         }
