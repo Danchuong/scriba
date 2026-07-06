@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.26.1 · MIT · Python 3.10+
+**Status:** v0.26.2 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,25 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.26.2
+
+A hardening patch — **no rendered-output change for a valid document**
+(`SCRIBA_VERSION` stays 19; the whole 104-example corpus renders byte-identically
+to 0.26.1 in interactive and static mode). Closes the **silent-swallow** hazard
+class (typo'd or unsupported params that were accepted, dropped, and rendered
+clean — an author shipped a frame claiming an update that never happened):
+unknown `\apply` params now raise **E1105**, unknown keys on the 9
+decoration/stage commands raise **E1123** (with did-you-mean), Tree pairs-form
+`nodes=` raises **E1104**, `tex=`+`lines=` raises **E1530**, double `\zoom`
+raises **E1124**. Plus adversarial-sweep fixes: strike no longer floats over
+hidden cells or recurses on a bare shape, `\note` wraps to the board, `at=`
+compacts empty tracks (no more 2,000,000px viewBox), and `\invariant` now prints
+in the zero-JS filmstrip. Driven by two full BMAD sweeps (8 hunters). Flagged by
+the JudgeZone pipeline: "protect authors at author time, not reader time".
+
+<details>
+<summary>v0.26.1 changelog</summary>
+
 ## What's new in v0.26.1
 
 A polish patch on the 0.26.0 "teacher's board" release — **no rendered-output
@@ -35,6 +54,8 @@ an internal registry, no user-facing message change) and sweeps every doc to
 0.26.0 reality: 21 primitives, 23 inner commands (`environments.md` §3 now
 documents all 23), 9 semantic states, 11 motion kinds, and the phantom `§9.2`
 state names purged from the primitive pages.
+
+</details>
 
 <details>
 <summary>v0.26.0 changelog</summary>

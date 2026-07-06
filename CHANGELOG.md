@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.2] - 2026-07-06 — silent-swallow hardening + adversarial-sweep fixes (no runtime change)
+
+Closes the **"accepted, dropped, no signal"** failure class across the command
+surface — the same hazard 0.25.0 hardened elsewhere (E1159, E1115), flagged
+again by the JudgeZone editorial pipeline ("protect authors at author time,
+not reader time"). Driven by two full adversarial sweeps (8 BMAD hunters,
+`investigations/hunt-*.md` + `hunt2-*.md`). **No rendered-output change for a
+valid document** — the entire 104-example corpus renders byte-identically to
+0.26.1 in both interactive and static mode; `SCRIBA_VERSION` stays 19.
+
+### Fixed — silent param swallows now raise (author-time, was reader-time)
+- Unknown `\apply` parameter → **E1105** (was: `lazy=`, typos accepted and
+  dropped); `\apply{...}{state=...}` → E1105 with a "use `\recolor`" hint.
+- Unknown key on the 9 decoration/stage commands (`\annotate` `\note` `\trace`
+  `\link` `\combine` `\group` `\reannotate` `\focus` `\cursor`) → **E1123**
+  with a did-you-mean hint (was: `colour=`/`strke=`/`scpe=` silently dropped).
+- Tree `nodes=[[id,value],…]` pairs form → **E1104** with the correct-syntax
+  hint (was: silently str-mangled, the node vanished).
+- Equation `tex=`+`lines=` together → **E1530**; two `\zoom` in one step →
+  **E1124**; invalid-selector `set_value`/`set_state` warnings gained the
+  `[E1115]` prefix so E-code render gates can see them.
+
+### Fixed — geometry / honesty (opt-in or error paths)
+- **Strike** skips `state=hidden` targets (was: a diagonal floating over a
+  blank slot) and no longer **recurses** on a bare-shape target (was a
+  `RecursionError` traceback on 13 primitive types — found by the round-2
+  fuzz).
+- **`\note`** wraps and clamps to the board width (**E1125** warn) instead of
+  clipping off-canvas, and re-anchors inside the cropped viewBox on a `\zoom`
+  frame.
+- **`at=[row,col]`** compacts empty tracks — `at=[100000,100000]` now lays out
+  like a dense board (was a silent 2,000,000px viewBox).
+- **`\invariant`** renders per-frame in the static zero-JS filmstrip and in the
+  interactive print fallback (was interactive-JS-only; spec promises "visible
+  in print").
+- A bogus no-op `element_add` on pure removals (`remove=0`) is suppressed (one
+  golden re-blessed to drop exactly that record).
+
+### Added — parsed-but-inert keys wired through
+- `\annotate{...}{side=...}` threads to the smart-label side-hint; `\reannotate`
+  `ephemeral=true` reverts the recolor at the next `\step`.
+
 ## [0.26.1] - 2026-07-05 — docs consistency + error-catalog completeness (no runtime change)
 
 A polish patch. **No rendered-output change** — a document renders

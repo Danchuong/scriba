@@ -2,7 +2,7 @@
 
 > **Single-file reference for AI agents.** Read this one file to write valid Scriba `.tex` sources.
 > Scriba renders LaTeX → HTML for competitive programming editorials with animated algorithm visualizations.
-> **Target:** v0.26.1
+> **Target:** v0.26.2
 
 <!-- Maintenance contract (for editors, not authors):
      1. One home per fact. Each command/primitive/selector is documented once (§5/§7/§8);
@@ -2250,6 +2250,9 @@ Top author-facing codes. Full catalog with explanations: [spec/error-codes.md](s
 | E1053 | Validation | `\focus` or `\zoom` used in the prelude (they are frame-only) |
 | E1058 | Validation | `\invariant` after the first `\step` (prelude-only) |
 | E1114 | Validation | Unknown `\shape` parameter key (with a "did you mean" hint) |
+| E1123 | Validation | Unknown parameter key on a decoration/stage command (`\annotate` `\note` `\trace` `\link` `\combine` `\group` `\reannotate` `\focus` `\cursor`) — with a "did you mean" hint |
+| E1124 | Validation | Two `\zoom` in one step (a single frame has one viewport; the later would override the earlier) |
+| E1125 | UserWarning | `\note` text wider than the board — wrapped, or clamped into the viewBox |
 | E1172 | Parse error | Command not allowed inside a `\foreach` body (or `\playeach` nested in one) |
 | E1322 | UserWarning | `\ref` target undeclared / typo'd — degrades to plain text |
 | E1402 / E1403 | Validation | `Array` `data=` longer than `size=` / `insert` into a full array |

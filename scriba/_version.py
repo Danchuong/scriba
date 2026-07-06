@@ -1,6 +1,6 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.26.1"
+__version__: str = "0.26.2"
 """PyPI SemVer. Bumped on every release."""
 
 SCRIBA_VERSION: int = 19
@@ -273,4 +273,30 @@ docs-consistency + error-catalog-completeness patch:
     states 9, motion kinds 11, and the phantom §9.2 state names
     (focus/update/reject/accept/hint) purged from the primitive pages.
 The rendered-output contract is unchanged from 0.26.0; a document renders
-byte-identically under 0.26.0 and 0.26.1."""
+byte-identically under 0.26.0 and 0.26.1.
+
+0.26.2 keeps SCRIBA_VERSION = 19 (NO rendered-output change for VALID docs).
+A hardening patch: the "accepted, dropped, no signal" silent-swallow class
+(the failure mode 0.25.0 hardened elsewhere via E1159/E1115) is closed across
+the command surface, plus adversarial-sweep fixes. Verified byte-identical:
+the full 104-example corpus renders IDENTICALLY to 0.26.1 in both interactive
+and static mode (hunt2-corpus-drift), and every change is an error-path or
+opt-in surface — so a VALID document is unaffected. What changed:
+  * Silent \\apply/\\shape/decoration param swallows now RAISE: unknown
+    \\apply param → E1105 (+ \\recolor hint for state=), unknown key on the 9
+    decoration/stage commands → E1123 (did-you-mean), Tree pairs-form nodes=
+    → E1104, Equation tex=+lines= together → E1530, two \\zoom per step →
+    E1124, invalid-selector set_value/set_state warnings gained the [E1115]
+    prefix. These only fire on input that was ALREADY broken (silently) —
+    JudgeZone's ask #3 "protect authors at author time, not reader time".
+  * Geometry/honesty fixes (all opt-in or error paths): strike skips hidden
+    targets and no longer recurses on bare-shape targets (was a RecursionError
+    on 13 primitive types), \\note wraps/clamps to the board (E1125 warn) and
+    re-anchors inside a \\zoom crop, at= compacts empty tracks (killed a
+    2,000,000px viewBox detonation), \\invariant now renders in the static
+    zero-JS filmstrip + interactive print, and a bogus no-op element_add on
+    pure removals is suppressed (one golden re-blessed to drop that record).
+  * side= and \\reannotate ephemeral= are wired through (were parsed-but-inert).
+Two full adversarial sweeps (8 hunters) drove this; the only bug the second
+sweep found was in a first-sweep fix, now fixed with its whole class swept.
+Documents render byte-identically under 0.26.1 and 0.26.2."""
