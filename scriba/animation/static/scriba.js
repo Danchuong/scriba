@@ -343,6 +343,13 @@
       }
     }
     var _INV_KIND={annotation_add:'annotation_remove',annotation_remove:'annotation_add',element_add:'element_remove',element_remove:'element_add',highlight_on:'highlight_off',highlight_off:'highlight_on'};
+    // The motion kinds whose handler already plays a per-element transform /
+    // draw-on / opacity during a single step (A-9): the element self-announces,
+    // so a delta-emphasis pulse on top is redundant double-signaling. Silent
+    // kinds (recolor / highlight_on / highlight_off / annotation_recolor) are
+    // instant class swaps the eye can miss and KEEP the pulse. Closed set —
+    // mirrors _INV_KIND's single-source-of-truth discipline (A-2).
+    var _SELF_ANNOUNCING={value_change:1,element_add:1,element_remove:1,position_move:1,annotation_add:1,annotation_remove:1,cursor_move:1};
     function _invertRec(r){
       // r = [target, prop, from, to, kind] -> swap from/to, map the kind (or
       // keep it: recolor/value_change/position_move/annotation_recolor/
@@ -350,14 +357,40 @@
       return [r[0],r[1],r[3],r[2],_INV_KIND[r[4]]||r[4]];
     }
     function _invertManifest(tr){var o=[];for(var i=0;i<tr.length;i++)o.push(_invertRec(tr[i]));return o;}
-    function _manifestTargets(tr){var set={},out=[];for(var t=0;t<tr.length;t++){if(!set[tr[t][0]]){set[tr[t][0]]=1;out.push(tr[t][0]);}}return out;}
+    function _pulseTargets(tr){
+      // A-9 single-step delta-emphasis target set. Pass 1 collects every
+      // identity that appears under ANY self-announcing kind — the eye tracked
+      // it through that handler motion, so exclude the WHOLE identity even if it
+      // also recolored this step (exclusion is keyed on identity, gathered
+      // across all records). Pass 2 emits the changed identities not excluded
+      // (deduped). Replaces the old unfiltered _manifestTargets on _finish.
+      var glided={},i;
+      for(i=0;i<tr.length;i++){if(_SELF_ANNOUNCING[tr[i][4]])glided[tr[i][0]]=1;}
+      var set={},out=[];
+      for(i=0;i<tr.length;i++){var id=tr[i][0];
+        if(glided[id]||set[id])continue;
+        set[id]=1;out.push(id);}
+      return out;
+    }
     function _changedTargets(a,b){
       // Union of the targets over the manifests skipped by a jump (exclusive of
       // the start frame, inclusive of the destination) — the cheap set the
-      // delta-pulse needs without composing the manifests themselves.
-      var lo=Math.min(a,b)+1,hi=Math.max(a,b),set={},out=[];
-      for(var k=lo;k<=hi;k++){var tr=frames[k]&&frames[k].tr;if(!tr)continue;
-        for(var t=0;t<tr.length;t++){if(!set[tr[t][0]]){set[tr[t][0]]=1;out.push(tr[t][0]);}}}
+      // delta-pulse needs without composing the manifests themselves. A jump
+      // snaps with NO per-kind WAAPI motion for cells / nodes / carets, so the
+      // pulse is their sole arrival signal and is kept. Annotations are the lone
+      // exception (A-9 jump clause): snapToFrame still fades genuinely-new ones
+      // in via _fadeInNewAnnotations, so an added/removed annotation
+      // self-announces through that fade — exclude it (two-pass by identity,
+      // mirroring _pulseTargets) so it does not also pulse.
+      var lo=Math.min(a,b)+1,hi=Math.max(a,b),faded={},k,tr,t;
+      for(k=lo;k<=hi;k++){tr=frames[k]&&frames[k].tr;if(!tr)continue;
+        for(t=0;t<tr.length;t++){var fk=tr[t][4];
+          if(fk==='annotation_add'||fk==='annotation_remove')faded[tr[t][0]]=1;}}
+      var set={},out=[];
+      for(k=lo;k<=hi;k++){tr=frames[k]&&frames[k].tr;if(!tr)continue;
+        for(t=0;t<tr.length;t++){var id=tr[t][0];
+          if(faded[id]||set[id])continue;
+          set[id]=1;out.push(id);}}
       return out;
     }
     function _emphasize(targets){
@@ -415,7 +448,7 @@
         subC.innerHTML=frames[toIdx].substory||'';
         subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
         _anims=[];_animState='idle';
-        _emphasize(_manifestTargets(tr)); // ② pulse what changed, once the stage is settled
+        _emphasize(_pulseTargets(tr)); // ② pulse what changed (minus self-announcers), once the stage is settled
       }
       function _runPhase2(){
         if(myGen!==_gen)return; // orphaned staggered callback after a supersede — never touch the snapped stage

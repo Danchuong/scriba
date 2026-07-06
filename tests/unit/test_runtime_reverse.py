@@ -158,8 +158,12 @@ class TestAnimateTransitionSignature:
 
     def test_finish_pulses_arrival(self, src: str) -> None:
         body = _fn(src, "animateTransition")
-        assert "_emphasize(_manifestTargets(tr))" in body, (
-            "after a tween settles, the changed identities get a delta-pulse"
+        # A-9: the single-step arrival pulse now excludes self-announcing kinds,
+        # so it feeds _pulseTargets (identity-filtered), not the old unfiltered
+        # _manifestTargets. See TestSelfAnnounceExclusion for the semantics.
+        assert "_emphasize(_pulseTargets(tr))" in body, (
+            "after a tween settles, the changed identities that did NOT already "
+            "self-announce get a delta-pulse"
         )
 
 
@@ -271,7 +275,7 @@ class TestByteIdentical:
             "_applyTransition",
             "_invertRec",
             "_invertManifest",
-            "_manifestTargets",
+            "_pulseTargets",
             "_changedTargets",
             "_emphasize",
             "_annEl",
@@ -286,3 +290,246 @@ class TestByteIdentical:
     def test_inv_kind_table_is_byte_identical(self) -> None:
         pat = re.compile(r"var _INV_KIND=\{[^}]*\}")
         assert pat.search(_ASSET).group(0) == pat.search(_INLINE).group(0)
+
+    def test_self_announcing_table_is_byte_identical(self) -> None:
+        pat = re.compile(r"var _SELF_ANNOUNCING=\{[^}]*\}")
+        assert pat.search(_ASSET).group(0) == pat.search(_INLINE).group(0)
+
+
+# ---------------------------------------------------------------------------
+# A-9 — delta-emphasis excludes self-announcing motion kinds
+# ---------------------------------------------------------------------------
+#
+# On the animated SINGLE-STEP path the pulse must fire only on identities that
+# did NOT already self-announce via their own handler motion (a glided caret
+# that then scale-throbs reads as a jolt). Exclusion is by IDENTITY, collected
+# across ALL records of the step, so a target that glided AND recolored is
+# excluded whole. The multi-step JUMP path is exempt (a snap plays no per-kind
+# motion, so the pulse is the sole arrival signal) and is left unchanged.
+
+# The 7 kinds whose single-step handler already plays a per-element transform /
+# draw-on / opacity — the element self-announces.
+_SELF_ANNOUNCING_KINDS = (
+    "value_change", "element_add", "element_remove", "position_move",
+    "annotation_add", "annotation_remove", "cursor_move",
+)
+# The 4 silent kinds — instant class swaps the eye can miss; the pulse is the
+# real "this changed" signal, so they KEEP it.
+_SILENT_KINDS = ("recolor", "highlight_on", "highlight_off", "annotation_recolor")
+
+
+@pytest.mark.parametrize("src", _SOURCES.values(), ids=list(_SOURCES))
+class TestSelfAnnounceExclusion:
+    def test_self_announcing_set_named(self, src: str) -> None:
+        assert "var _SELF_ANNOUNCING={" in src, (
+            "a named closed set is the single source of truth (mirrors _INV_KIND)"
+        )
+
+    def test_self_announcing_membership(self, src: str) -> None:
+        # regex-extract the {…} literal (like test_inv_kind_omits_self_inverse_kinds)
+        m = re.search(r"_SELF_ANNOUNCING=\{([^}]*)\}", src)
+        assert m, "_SELF_ANNOUNCING object literal not found"
+        table = m.group(1)
+        for k in _SELF_ANNOUNCING_KINDS:
+            assert f"{k}:" in table, (
+                f"{k} self-announces via its handler — it must be excluded"
+            )
+        for k in _SILENT_KINDS:
+            assert f"{k}:" not in table, (
+                f"{k} is a silent instant swap — its pulse is the real signal, "
+                "so it must NOT be in _SELF_ANNOUNCING (keeps the pulse)"
+            )
+
+    def test_pulse_targets_two_pass_by_identity(self, src: str) -> None:
+        body = _fn(src, "_pulseTargets")
+        # pass 1: any identity under ANY self-announcing kind (test the record's
+        # KIND tr[i][4], mark the record's IDENTITY tr[i][0]).
+        assert "_SELF_ANNOUNCING[tr[i][4]]" in body, (
+            "pass 1 must test each record's KIND against the self-announcing set"
+        )
+        assert "glided[tr[i][0]]" in body, (
+            "pass 1 must mark the record's IDENTITY as glided"
+        )
+        # pass 2: emit the changed identities NOT glided — exclusion is keyed on
+        # identity, so a target that glided AND recolored is excluded whole (the
+        # report's per-record `continue` would wrongly re-emit it via recolor).
+        assert "glided[id]" in body, (
+            "pass 2 must skip any identity collected in pass 1"
+        )
+        assert "out.push(id)" in body
+
+    def test_finish_uses_pulse_targets(self, src: str) -> None:
+        body = _fn(src, "animateTransition")
+        assert "_emphasize(_pulseTargets(tr))" in body, (
+            "the single-step arrival pulse must feed the identity-filtered set"
+        )
+        assert "_emphasize(_manifestTargets(tr))" not in body, (
+            "the old unfiltered all-targets pulse must be gone"
+        )
+
+    def test_manifest_targets_removed(self, src: str) -> None:
+        assert "function _manifestTargets(" not in src, (
+            "_manifestTargets is orphaned by _pulseTargets — remove it, don't "
+            "leave dead code the byte-lock would still green-light"
+        )
+
+    def test_jump_path_still_pulses_all_changed(self, src: str) -> None:
+        # A >1-step jump snaps with NO per-kind motion, so the pulse is the sole
+        # arrival signal — it stays the unfiltered _changedTargets union.
+        body = _fn(src, "show")
+        assert "_emphasize(_changedTargets(from,i))" in body, (
+            "the jump path must remain unchanged (union, no kind filter)"
+        )
+
+    def test_reduced_motion_optout_still_gate(self, src: str) -> None:
+        # A-8: the emphasis gates are untouched; only its argument narrowed.
+        body = _fn(src, "_emphasize")
+        assert "_canAnim" in body, "reduced-motion must still suppress emphasis"
+        assert "data-scriba-no-emphasis" in body, "opt-out attr must still gate"
+
+    def test_jump_path_excludes_faded_annotations(self, src: str) -> None:
+        # A-9 jump clause: a jump snaps with no per-kind motion for cells /
+        # nodes / carets, so their pulse is the sole arrival signal and is kept.
+        # But snapToFrame still fades genuinely-new annotations in via
+        # _fadeInNewAnnotations, so an added/removed annotation self-announces
+        # through that fade — exclude it from the jump pulse (two-pass by
+        # identity, mirroring _pulseTargets).
+        body = _fn(src, "_changedTargets")
+        assert "annotation_add" in body and "annotation_remove" in body, (
+            "the jump union must skip the annotation kinds that fade on a snap"
+        )
+        assert "faded[" in body, (
+            "jump exclusion must be keyed on identity across the span (two-pass)"
+        )
+        # element_add / cursor_move / value_change / position_move do NOT fade on
+        # a jump (only [data-annotation] elements fade) — they must NOT be
+        # excluded there, or a jumped-to new cell/moved caret shows nothing.
+        for keep in ("element_add", "cursor_move", "value_change", "position_move"):
+            assert keep not in body, (
+                f"{keep} does not self-announce on a jump — it must stay in the "
+                "jump union (the pulse is its only arrival cue)"
+            )
+
+
+# ---------------------------------------------------------------------------
+# A-9 — behavioral oracle: the two-pass set computation
+# ---------------------------------------------------------------------------
+#
+# A faithful Python port of scriba.js ``_pulseTargets`` / ``_changedTargets``,
+# exercised on the real showcase manifest + synthetic cases. The
+# source-inspection tests above pin the JS shape (so this port cannot silently
+# drift from the runtime); this proves the SEMANTICS that shape produces.
+
+_SELF_ANNOUNCING_SET = frozenset(_SELF_ANNOUNCING_KINDS)
+
+
+def _pulse_targets(tr: list[list[str]]) -> list[str]:
+    """Mirror of scriba.js ``_pulseTargets``: two-pass exclusion by identity."""
+    glided = {rec[0] for rec in tr if rec[4] in _SELF_ANNOUNCING_SET}
+    seen: set[str] = set()
+    out: list[str] = []
+    for rec in tr:
+        ident = rec[0]
+        if ident in glided or ident in seen:
+            continue
+        seen.add(ident)
+        out.append(ident)
+    return out
+
+
+def _changed_targets(frames_tr: list[list[list[str]]]) -> list[str]:
+    """Mirror of scriba.js ``_changedTargets``: union over the skipped frames,
+    two-pass excluding ``annotation_add`` / ``annotation_remove`` (which
+    self-announce via ``_fadeInNewAnnotations`` on the snap). Snap-silent kinds
+    (cells / nodes / carets — recolor / value_change / position_move /
+    cursor_move / element_*) are KEPT: a jump plays no motion for them, so the
+    pulse is their sole arrival signal."""
+    faded = {rec[0] for tr in frames_tr for rec in tr
+             if rec[4] in ("annotation_add", "annotation_remove")}
+    seen: set[str] = set()
+    out: list[str] = []
+    for tr in frames_tr:
+        for rec in tr:
+            if rec[0] in faded or rec[0] in seen:
+                continue
+            seen.add(rec[0])
+            out.append(rec[0])
+    return out
+
+
+# The flagship showcase step, extracted verbatim from
+# tests/golden/examples/corpus/anim_clarity_showcase.html.
+_SHOWCASE_TR = [
+    ["a.cell[2]", "state", "idle", "current", "recolor"],
+    ["w.var[i]", "value", "0", "2", "value_change"],
+    ["a.cursor[i]-solo", "position", "92.0,46.0", "216.0,46.0", "cursor_move"],
+]
+
+
+class TestPulseTargetsBehavior:
+    def test_showcase_pulses_only_the_silent_recolor(self) -> None:
+        # cursor_move (already glided) and value_change (already scale-bounced)
+        # are dropped; the silent recolor cell keeps its pulse — the real signal.
+        assert _pulse_targets(_SHOWCASE_TR) == ["a.cell[2]"]
+
+    def test_cursor_move_absent_sibling_recolor_present(self) -> None:
+        tr = [
+            ["p", "state", "a", "b", "recolor"],
+            ["q", "position", "0,0", "1,1", "cursor_move"],
+        ]
+        out = _pulse_targets(tr)
+        assert "p" in out, "a silent recolor sibling must still pulse"
+        assert "q" not in out, "a self-announcing caret glide must not pulse"
+
+    def test_glided_and_recolored_identity_excluded_whole(self) -> None:
+        # One identity carrying BOTH a self-announcing and a silent kind in the
+        # same step is excluded (the eye tracked it through the glide). A
+        # per-record skip would wrongly re-emit it via its recolor record; the
+        # two-pass keyed on identity does not.
+        tr = [
+            ["x", "state", "a", "b", "recolor"],
+            ["x", "position", "0,0", "1,1", "position_move"],
+        ]
+        assert _pulse_targets(tr) == []
+
+    def test_all_silent_kinds_still_pulse(self) -> None:
+        tr = [
+            ["c1", "state", "a", "b", "recolor"],
+            ["c2", "hl", "0", "1", "highlight_on"],
+            ["c3", "hl", "1", "0", "highlight_off"],
+            ["c4", "astate", "x", "y", "annotation_recolor"],
+        ]
+        assert _pulse_targets(tr) == ["c1", "c2", "c3", "c4"]
+
+    def test_jump_keeps_snap_kinds_drops_faded_annotations(self) -> None:
+        # A-9 jump clause: a snap plays no per-kind motion for cells / nodes /
+        # carets, so a cursor_move / element_add identity spanned by a >=2-step
+        # jump MUST still pulse (contrast _pulse_targets, which drops cursor_move
+        # on the single-step path where it glides). But a newly-added annotation
+        # fades in via _fadeInNewAnnotations, so it is DROPPED to avoid the
+        # fade+pulse double.
+        frames_tr = [
+            [["q", "position", "0,0", "1,1", "cursor_move"],
+             ["e", "el", None, "v", "element_add"]],
+            [["note[n1]-solo", "annot", None, "note", "annotation_add"]],
+            [["p", "state", "a", "b", "recolor"]],
+        ]
+        out = _changed_targets(frames_tr)
+        assert out == ["q", "e", "p"], (
+            "cursor_move / element_add / recolor snap with no motion on a jump — "
+            "the pulse is kept; the faded-in annotation is dropped"
+        )
+        # single-step contrast: on ONE step cursor_move glides AND element_add
+        # fades (both self-announce in _applyTransition), so _pulse_targets drops
+        # both — whereas the jump keeps them (a snap plays neither motion).
+        assert _pulse_targets(frames_tr[0]) == []
+
+    def test_jump_annotation_excluded_even_if_recolored_in_span(self) -> None:
+        # Same two-pass lesson on the jump path: a trace added in one skipped
+        # frame and recolored in another is excluded WHOLE (the fade already
+        # self-announced it) — a per-record skip would re-emit it via recolor.
+        frames_tr = [
+            [["t.trace[0]", "annot", None, "x", "annotation_add"]],
+            [["t.trace[0]", "astate", "a", "b", "annotation_recolor"]],
+        ]
+        assert _changed_targets(frames_tr) == []

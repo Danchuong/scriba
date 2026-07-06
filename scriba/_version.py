@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.26.2"
+__version__: str = "0.26.3"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 19
+SCRIBA_VERSION: int = 20
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -299,4 +299,28 @@ opt-in surface — so a VALID document is unaffected. What changed:
   * side= and \\reannotate ephemeral= are wired through (were parsed-but-inert).
 Two full adversarial sweeps (8 hunters) drove this; the only bug the second
 sweep found was in a first-sweep fix, now fixed with its whole class swept.
-Documents render byte-identically under 0.26.1 and 0.26.2."""
+Documents render byte-identically under 0.26.1 and 0.26.2.
+
+0.26.3 bumps 19→20 (runtime-only, no rendered-geometry change): delta-emphasis
+now excludes self-announcing motion kinds on the single-step path (motion-ruleset
+A-9). The arrival pulse (the transient ``.scriba-emphasis`` throb) previously
+fired on EVERY changed identity, including ones that already announced their own
+change through handler motion — a caret that glided then scale-throbbed read as a
+jolt. The runtime now pulses only identities that did NOT self-announce: the 7
+self-announcing kinds (``value_change``, ``element_add/remove``, ``position_move``,
+``annotation_add/remove``, ``cursor_move``) are excluded by identity via a two-pass
+over the step manifest (``_pulseTargets`` replaces ``_manifestTargets``); the 4
+silent kinds (``recolor``, ``highlight_on/off``, ``annotation_recolor``) keep the
+pulse, where it is the real "this changed" signal. On the multi-step JUMP path a
+snap plays no per-kind motion for cells/nodes/carets, so their pulse is kept —
+but ``snapToFrame`` still fades genuinely-new annotations in
+(``_fadeInNewAnnotations``), so ``annotation_add``/``annotation_remove`` are
+excluded from the jump pulse too (the same two-pass in ``_changedTargets``),
+leaving the fade as the annotation's sole cue. Only ``scriba.js`` changed — its inline slice + external hash
+move in every interactive widget, so consumer caches keyed on rendered output MUST
+invalidate — but emphasis is a runtime-only class never baked into static SVG, so
+every scene's SVG geometry, ``tr``/``fs`` manifest, narration and stylesheet bytes
+are byte-identical to 0.26.2. ``differ.py`` is untouched (zero new motion kinds)
+and no CSS changed; the ~93 interactive corpus goldens re-bless by the identical
+inline-``<script>`` delta, and the static/diagram HTMLs + static-mode animation
+goldens + ``differ_*.json`` manifests are byte-identical."""

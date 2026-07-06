@@ -1864,15 +1864,30 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
       }
     }
     var _INV_KIND={annotation_add:'annotation_remove',annotation_remove:'annotation_add',element_add:'element_remove',element_remove:'element_add',highlight_on:'highlight_off',highlight_off:'highlight_on'};
+    var _SELF_ANNOUNCING={value_change:1,element_add:1,element_remove:1,position_move:1,annotation_add:1,annotation_remove:1,cursor_move:1};
     function _invertRec(r){
       return [r[0],r[1],r[3],r[2],_INV_KIND[r[4]]||r[4]];
     }
     function _invertManifest(tr){var o=[];for(var i=0;i<tr.length;i++)o.push(_invertRec(tr[i]));return o;}
-    function _manifestTargets(tr){var set={},out=[];for(var t=0;t<tr.length;t++){if(!set[tr[t][0]]){set[tr[t][0]]=1;out.push(tr[t][0]);}}return out;}
+    function _pulseTargets(tr){
+      var glided={},i;
+      for(i=0;i<tr.length;i++){if(_SELF_ANNOUNCING[tr[i][4]])glided[tr[i][0]]=1;}
+      var set={},out=[];
+      for(i=0;i<tr.length;i++){var id=tr[i][0];
+        if(glided[id]||set[id])continue;
+        set[id]=1;out.push(id);}
+      return out;
+    }
     function _changedTargets(a,b){
-      var lo=Math.min(a,b)+1,hi=Math.max(a,b),set={},out=[];
-      for(var k=lo;k<=hi;k++){var tr=frames[k]&&frames[k].tr;if(!tr)continue;
-        for(var t=0;t<tr.length;t++){if(!set[tr[t][0]]){set[tr[t][0]]=1;out.push(tr[t][0]);}}}
+      var lo=Math.min(a,b)+1,hi=Math.max(a,b),faded={},k,tr,t;
+      for(k=lo;k<=hi;k++){tr=frames[k]&&frames[k].tr;if(!tr)continue;
+        for(t=0;t<tr.length;t++){var fk=tr[t][4];
+          if(fk==='annotation_add'||fk==='annotation_remove')faded[tr[t][0]]=1;}}
+      var set={},out=[];
+      for(k=lo;k<=hi;k++){tr=frames[k]&&frames[k].tr;if(!tr)continue;
+        for(t=0;t<tr.length;t++){var id=tr[t][0];
+          if(faded[id]||set[id])continue;
+          set[id]=1;out.push(id);}}
       return out;
     }
     function _emphasize(targets){
@@ -1918,7 +1933,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
         subC.innerHTML=frames[toIdx].substory||'';
         subC.querySelectorAll('.scriba-substory-widget[data-scriba-frames]').forEach(initSub);
         _anims=[];_animState='idle';
-        _emphasize(_manifestTargets(tr));
+        _emphasize(_pulseTargets(tr));
       }
       function _runPhase2(){
         if(myGen!==_gen)return;

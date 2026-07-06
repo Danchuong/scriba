@@ -1,4 +1,4 @@
-# Motion Ruleset (A-1 … A-8)
+# Motion Ruleset (A-1 … A-9)
 
 > Companion to [smart-label-ruleset.md](./smart-label-ruleset.md) (pill placement) and
 > the R-32 stability rule. Where the R-rules govern *what a decoration is and where its
@@ -35,7 +35,7 @@ premises, not normative cards; each carries its own `path:line` anchor.
 
 ---
 
-## The A-rules (A-1 … A-8)
+## The A-rules (A-1 … A-9)
 
 Each is a MUST for any motion, existing or future. Rationale ties to the confirmed substrate.
 
@@ -217,6 +217,37 @@ stateless and reversible. New kinds prove this before merge.
 overrides — this phase).
 **Test ref:** `tests/unit/test_runtime_unified.py`;
 `tests/unit/test_runtime_rapid_nav.py`.
+
+### A-9 — Delta-emphasis excludes self-announcing kinds
+
+**Normative:** MUST
+**Since:** v0.26.3
+
+On the animated **single-step** path, delta-emphasis (A-3) MUST pulse only the changed
+identities that did NOT already self-announce. A kind is *self-announcing* when its handler
+plays a per-element transform / draw-on / opacity during the step
+(`value_change`, `element_add/remove`, `position_move`, `annotation_add/remove`, `cursor_move`);
+a pulse on top is redundant double-signaling — a caret that glided then scale-throbs reads as a
+jolt. *Silent* kinds (`recolor`, `highlight_on/off`, `annotation_recolor`) are instant class
+swaps the eye can miss and KEEP the pulse — there the pulse IS the "this changed" signal.
+Exclusion is by **identity**, collected across **all** records of the step (an identity that
+glided AND recolored is excluded whole), via a two-pass over the manifest — not a per-record
+skip. On the **multi-step jump path** a snap plays no per-kind motion for cells / nodes / carets,
+so their pulse is the sole arrival signal and is kept — but genuinely-new annotations still fade
+in at snap time (`_fadeInNewAnnotations`), so `annotation_add` / `annotation_remove` are excluded
+there too (the same two-pass, keyed on identity), leaving the fade as the annotation's sole cue.
+This narrows *which targets* receive the existing `.scriba-emphasis` class; it adds no motion kind
+(A-2 registry untouched) and no CSS, and the resting SVG stays byte-identical (A-3), so it is a
+runtime-only `SCRIBA_VERSION` bump.
+
+**Code ref:** `scriba/animation/static/scriba.js:_pulseTargets`
+(the two-pass single-step set); self-announcing registry
+`scriba/animation/static/scriba.js:_SELF_ANNOUNCING`; the jump union
+(annotation-faded exclusion) `scriba/animation/static/scriba.js:_changedTargets`.
+**Test ref:** `tests/unit/test_runtime_reverse.py:TestSelfAnnounceExclusion`
+(source-inspection shape + membership, asset==inline byte-lock);
+`tests/unit/test_runtime_reverse.py:TestPulseTargetsBehavior`
+(two-pass semantics on the flagship showcase manifest + jump-path contrast).
 
 ---
 
