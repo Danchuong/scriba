@@ -196,6 +196,18 @@ class Equation(PrimitiveBase):
 
         tex = self.params.get("tex")
         lines = self.params.get("lines")
+        if tex is not None and lines is not None:
+            # Contradictory declaration — ``lines`` used to silently win and
+            # ``tex`` vanished (hunt-authoring-traps-026.md F5). The docs
+            # (§7.21) promise "exactly one of tex/lines"; enforce it.
+            raise _animation_error(
+                "E1530",
+                detail="Equation accepts exactly one of 'tex' or 'lines', not both",
+                hint=(
+                    'give just one, e.g. tex="T(n)=2T(n/2)+cn" OR '
+                    'lines=["a &= b", "&= c"]'
+                ),
+            )
         if lines is not None:
             if not isinstance(lines, (list, tuple)) or not lines:
                 raise _animation_error(

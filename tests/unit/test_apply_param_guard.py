@@ -94,14 +94,23 @@ class TestApplyParamGuardE1105:
         assert ei.value.code == "E1105"
         assert "vlaue" in str(ei.value)
 
-    def test_generic_state_value_label_never_flagged(self) -> None:
-        # state=/value=/label= are the generic ShapeTargetState display
-        # channels; they must pass the guard on any primitive (here a Tree
-        # and an Array that have no such structural op of their own).
+    def test_generic_value_label_never_flagged(self) -> None:
+        # value=/label= are the generic ShapeTargetState display channels; they
+        # must pass the guard on any primitive (here a Tree that has no such
+        # structural op of its own).
         _validate_apply_spec(_standard_tree(), {"value": "dp=7"})
         _validate_apply_spec(_standard_tree(), {"label": "root"})
+
+    def test_apply_state_raises_e1105_steering_to_recolor(self) -> None:
+        # state= is NOT a generic \apply channel: it was silently swallowed
+        # (nobody reads apply_params["state"] — the cell stayed idle), so the
+        # guard now rejects it and steers to \recolor, the documented
+        # state-setter (§5.7). hunt-param-guard.md A3.
         arr = ArrayPrimitive("a", {"values": [1, 2, 3]})
-        _validate_apply_spec(arr, {"state": "current"})  # \apply{a.cell[0]}{state=current}
+        with pytest.raises(AnimationError) as ei:
+            _validate_apply_spec(arr, {"state": "current"})
+        assert ei.value.code == "E1105"
+        assert "recolor" in str(ei.value).lower()
 
     def test_unknown_series_on_metricplot_raises_e1105(self) -> None:
         # MetricPlot's valid keys are its series names (dynamic per instance).

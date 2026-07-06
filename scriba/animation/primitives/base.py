@@ -1089,6 +1089,42 @@ class PrimitiveBase(abc.ABC):
             return "highlight"
         return state
 
+    def _target_state_is_hidden(self, target: str) -> bool:
+        """True if *target*'s current effective state is ``hidden``.
+
+        ``target`` is an annotation selector (``a.cell[1]``); the state map is
+        keyed by the shape-relative suffix (``cell[1]``, exactly what
+        ``set_state`` stores), so the ``{name}.`` prefix is stripped first.
+        Used to skip a strike over a ``display:none`` cell (the strike ``<g>``
+        is a sibling, not a child, so it would float over the blank slot —
+        design-decorate.md:279-280).
+        """
+        suffix = (
+            target[len(self.name) + 1:]
+            if target.startswith(self.name + ".")
+            else target
+        )
+        return self.resolve_effective_state(suffix) == "hidden"
+
+    def _whole_shape_content_box(self) -> "BoundingBox | None":
+        """Union AABB of this primitive's content rects (the whole-shape box).
+
+        Backs a bare-shape ``\\annotate{shape}{strike=true}`` — the corner-to-
+        corner cross-out spans the content extent (cells/rows/nodes), excluding
+        caption/index/arrow lanes. Falls back to ``bounding_box()`` for
+        primitives that expose no content rects (default ``[]``).
+        """
+        rects = self.resolve_self_content_rects()
+        if not rects:
+            return self.bounding_box()
+        min_x = min(r.x for r in rects)
+        min_y = min(r.y for r in rects)
+        max_x = max(r.x + r.width for r in rects)
+        max_y = max(r.y + r.height for r in rects)
+        return BoundingBox(
+            x=min_x, y=min_y, width=max_x - min_x, height=max_y - min_y
+        )
+
     def emit_annotation_arrows(
         self,
         parts: "list[str]",
@@ -1194,8 +1230,20 @@ class PrimitiveBase(abc.ABC):
             # element's scriba-state-* color (strike-but-keep). Soft-drops
             # (E1119) when the target has no drawable extent, so the render
             # never blanks (mirrors the trace out-of-range soft-drop).
-            if ann.get("strike"):
-                _sbox = self.resolve_annotation_box(ann.get("target", ""))
+            _strike_target = ann.get("target", "")
+            if ann.get("strike") and self._target_state_is_hidden(_strike_target):
+                # FIX 1: the target cell is state=hidden (display:none); a
+                # sibling strike <g> would float a diagonal over the blank slot.
+                # design-decorate.md:279-280 mandates skip-when-hidden (soft —
+                # no warn, hiding is intentional).
+                pass
+            elif ann.get("strike"):
+                _sbox = self.resolve_annotation_box(_strike_target)
+                if _sbox is None and _strike_target == self.name:
+                    # FIX 4: a bare whole-shape strike resolves to the content
+                    # box (parity with \zoom{shape}/\focus{shape}) instead of a
+                    # silent no-op.
+                    _sbox = self._whole_shape_content_box()
                 if _sbox is None:
                     warnings.warn(
                         f"[E1119] {self.__class__.__name__} '{self.name}': "
@@ -1271,6 +1319,16 @@ class PrimitiveBase(abc.ABC):
                         )
                 if label_text:
                     dst_point = self.resolve_label_anchor(ann.get("target", ""))
+                    if dst_point is None and ann.get("target", "") == self.name:
+                        # FIX 4: a bare whole-shape label has no anchor point;
+                        # warn (parity with the .all / out-of-range E1119 soft-
+                        # drop) rather than silently dropping the author's pill.
+                        warnings.warn(
+                            f"[E1119] {self.__class__.__name__} '{self.name}': "
+                            f"whole-shape label target "
+                            f"{ann.get('target', '')!r} has no anchor; skipped",
+                            stacklevel=2,
+                        )
                     if dst_point is not None:
                         # Defect 1b — register the annotated cell as a MUST
                         # blocker so the placement nudger never pushes the pill

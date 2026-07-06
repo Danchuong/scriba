@@ -16,6 +16,37 @@ __all__ = [
 
 _MAX_TRANSITIONS = 150  # Report 06 S1.1: mobile perf threshold
 
+# Structural apply verbs that SHRINK a primitive (Array/LinkedList ``remove``,
+# Stack ``pop``, Queue/Deque ``dequeue``/``pop_front``/``pop_back``). A frame
+# whose first touch of a bare shape is one of these makes the target *appear* in
+# shape_states, but a removal can never be an ``element_add`` (F4): the bogus add
+# targeted a bare shape that is not even an addressable element, so both it and
+# its reverse were no-ops the fs-snap already salvaged. Additions (push /
+# enqueue / insert / row-append) are unaffected and still ride ``element_add``.
+_REMOVAL_APPLY_KEYS: frozenset[str] = frozenset(
+    {"remove", "pop", "dequeue", "pop_front", "pop_back"}
+)
+
+
+def _is_pure_removal(apply_params: "list | None") -> bool:
+    """True when every structural apply on a newly-seen target is a removal.
+
+    A frame that ALSO adds (a mixed insert+remove, say) keeps its ``element_add``
+    — only a purely-shrinking apply is demoted so an honest add is never lost.
+    """
+    if not apply_params:
+        return False
+    saw_removal = False
+    for ap in apply_params:
+        if not isinstance(ap, dict):
+            return False
+        keys = set(ap.keys())
+        if keys - _REMOVAL_APPLY_KEYS:
+            return False  # a non-removal structural verb → treat as an add
+        if keys & _REMOVAL_APPLY_KEYS:
+            saw_removal = True
+    return saw_removal
+
 
 @dataclass(frozen=True, slots=True)
 class Transition:
@@ -74,7 +105,10 @@ def _diff_shape_states(
                 # genuine element addition.  Otherwise the element already
                 # exists in the DOM in idle state — treat as a recolor.
                 ap = curr_cell.get("apply_params")
-                is_structural = bool(ap)
+                # A pure removal (remove/pop/dequeue) is a shrink, never an add
+                # (F4) — fall through to the recolor path (a no-op for the bare
+                # shape), leaving the fs-snap to deliver the shifted structure.
+                is_structural = bool(ap) and not _is_pure_removal(ap)
                 if is_structural:
                     transitions.append(
                         Transition(

@@ -146,6 +146,11 @@ class AnnotationEntry:
     bracket: bool = False
     leader: bool = False
     strike: bool = False
+    side: str | None = None  # smart-label half-plane override (§5.8)
+    # When set, an ephemeral \reannotate recolored this (persistent) annotation:
+    # the prior colour is restored at the next \step (§5.9). Internal only — not
+    # emitted, so it never reaches the diff/golden output.
+    revert_color: str | None = None
 
 
 @dataclass(frozen=True)
@@ -311,6 +316,10 @@ class SceneState:
     # Viewport ZOOM — reset to None each frame; set by \zoom. Frame-ephemeral,
     # exactly like the focus set (the camera auto-restores next step).
     zoom_target: str | None = None
+    # At most one \zoom per step: a single viewBox cannot union two crops the
+    # way \focus unions targets, so a second \zoom in one frame is a hard
+    # E1124 (hunt-authoring-traps-026.md F3). Reset in apply_frame.
+    _zoom_seen: bool = False
     _trace_counter: int = 0
     bindings: dict[str, Any] = field(default_factory=dict)
     _frame_counter: int = 0
@@ -370,7 +379,17 @@ class SceneState:
         self.focus.clear()
         self.focus_scope = "shape"
         self.zoom_target = None
+        self._zoom_seen = False
         self.annotations = [a for a in self.annotations if not a.ephemeral]
+        # Revert one-frame ephemeral recolors (\reannotate ephemeral=true) to
+        # their prior colour; the annotation itself persists (§5.9), unlike a
+        # fully-ephemeral annotation which the filter above removes.
+        self.annotations = [
+            replace(a, color=a.revert_color, revert_color=None)
+            if a.revert_color is not None
+            else a
+            for a in self.annotations
+        ]
         self.traces = [tr for tr in self.traces if not tr.ephemeral]
         self.cursors = [c for c in self.cursors if not c.ephemeral]
         self.links = [lk for lk in self.links if not lk.ephemeral]
@@ -1038,6 +1057,8 @@ class SceneState:
                             color=new_color,
                             position=ann.position,
                             arrow=ann.arrow,
+                            side=ann.side,
+                            revert_color=ann.revert_color,
                         )
 
     def _apply_reannotate(self, cmd: ReannotateCommand) -> None:
@@ -1053,6 +1074,16 @@ class SceneState:
         new_label = cmd.label
         for i, ann in enumerate(self.annotations):
             if ann.target == target_str:
+                # ephemeral=true: remember the colour to restore at the next
+                # \step (a second ephemeral recolor in the same frame keeps the
+                # earliest prior colour). A persistent recolor clears any pending
+                # revert — the new colour becomes the baseline.
+                if cmd.ephemeral:
+                    revert_color = (
+                        ann.revert_color if ann.revert_color is not None else ann.color
+                    )
+                else:
+                    revert_color = None
                 self.annotations[i] = AnnotationEntry(
                     target=ann.target,
                     text=new_label if new_label is not None else ann.text,
@@ -1061,6 +1092,8 @@ class SceneState:
                     color=new_color,
                     position=ann.position,
                     arrow=ann.arrow,
+                    side=ann.side,
+                    revert_color=revert_color,
                 )
 
     def _apply_highlight(self, cmd: HighlightCommand) -> None:
@@ -1106,9 +1139,21 @@ class SceneState:
         The camera twin of ``_apply_focus``: the undeclared-shape guard is the
         same hard E1116 as ``\\focus``/``\\annotate``; a valid-shape-but-
         unresolvable part degrades soft at emit time (E1543 warn + full-view
-        fallback), so it is NOT checked here. A later ``\\zoom`` in the same
-        frame simply replaces the target (the camera frames one window).
+        fallback), so it is NOT checked here. A *second* ``\\zoom`` in one step
+        is a hard E1124: unlike ``\\focus`` (which unions targets), one viewBox
+        cannot frame two crops, so the earlier target would be silently
+        overridden (hunt-authoring-traps-026.md F3).
         """
+        if self._zoom_seen:
+            raise _animation_error(
+                "E1124",
+                "only one \\zoom per step; the last \\zoom would override the "
+                "earlier one (\\zoom crops one viewBox — unlike \\focus, which "
+                "unions multiple targets in a step)",
+                hint="keep a single \\zoom per \\step, or crop a selector that "
+                "already covers both regions",
+            )
+        self._zoom_seen = True
         target_str = _selector_to_str(self._resolve_selector(cmd.target))
         shape_name = target_str.split(".", 1)[0]
         if shape_name not in self.shape_states:
@@ -1162,6 +1207,7 @@ class SceneState:
                 bracket=getattr(cmd, "bracket", False),
                 strike=getattr(cmd, "strike", False),
                 leader=getattr(cmd, "leader", False),
+                side=getattr(cmd, "side", None),
             )
         )
 

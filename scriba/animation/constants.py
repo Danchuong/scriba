@@ -51,6 +51,13 @@ VALID_ANNOTATION_POSITIONS = frozenset({
     "above", "below", "left", "right", "inside"
 })
 
+# Valid \annotate side= half-plane overrides (§5.8). A strict subset of the
+# positions: exactly the four half-planes the smart-label scorer honors as a
+# ``side_hint`` (``_svg_helpers.py`` gates ``anchor_side in {left,right,above,
+# below}``). ``inside`` is a valid *position* but a no-op *side*, so it is
+# rejected here rather than silently ignored.
+VALID_ANNOTATION_SIDES = frozenset({"above", "below", "left", "right"})
+
 # Valid board-relative margin anchors for the free \note callout (DECORATE
 # verb 2). Eight compass margins; multiple notes sharing an anchor stack
 # downward deterministically. The enum gate mirrors annotation-position

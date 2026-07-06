@@ -451,6 +451,7 @@ def _snapshot_to_frame_data(
             "arrow_from": a.arrow_from,
             "color": a.color,
             "position": a.position,
+            **({"side": a.side} if a.side else {}),
             **({"arrow": True} if a.arrow else {}),
             **({"bracket": True} if a.bracket else {}),
             **({"leader": True} if a.leader else {}),

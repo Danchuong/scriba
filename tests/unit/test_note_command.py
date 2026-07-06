@@ -194,7 +194,7 @@ class TestDeterminism:
             "\\step\n"
             '\\note{n1}{text="pin", at=bottom-left}\n'
             "\\step\n"
-            "\\apply{a.cell[0]}{state=current}\n"
+            "\\recolor{a.cell[0]}{state=current}\n"
             "\\end{animation}\n"
         )
         html_out = _render(source, tmp_path)

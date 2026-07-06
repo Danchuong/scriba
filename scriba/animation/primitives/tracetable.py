@@ -21,10 +21,16 @@ box tracks a monotonic row *envelope* (``_envelope_rows``) grown in
 per-column widths, so the stage viewBox is byte-invariant across frames as
 rows accumulate (spec R-32), exactly as ``bar.py`` / ``linkedlist.py``.
 
-Append rides the shipped ``element_add`` motion (a new ``<g data-target=
-"t.row[k]">`` appears); the current->idle advance rides ``recolor`` — zero
-new motion vocabulary (A-2). No CSS rule, no scriba.js change: rows reuse
-the ``scriba-state-*`` classes (Grid model) and the header is inline chrome.
+An append is a *structural* change: ``\\apply{t}{row=[...]}`` lands
+``apply_params`` on the BARE shape target ``t`` (exactly like ``\\apply{s}{push
+=v}`` on a Stack), so — like every accumulating surface — the new row and the
+current->idle demote are delivered by a full frame snap, NOT a per-row tween,
+and add no manifest transition of their own (verified in
+``tests/unit/test_fixc_tracetable_manifest_reality.py``). Zero new motion
+vocabulary (A-2): the shipped ``element_add`` / ``recolor`` kinds still animate
+explicit ``\\recolor`` on ``t.row[k]`` / ``t.cell[k][j]``. No CSS rule, no
+scriba.js change: rows reuse the ``scriba-state-*`` classes (Grid model) and the
+header is inline chrome.
 
 See ``investigations/design-accumulate.md`` §3 for the authoritative design.
 """

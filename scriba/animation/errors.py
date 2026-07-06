@@ -201,7 +201,7 @@ ERROR_CATALOG: dict[str, str] = {
         "keys (with a 'did you mean' suggestion when a close match exists)."
     ),
     "E1109": "Invalid \\recolor state or missing required state/color parameter.",
-    "E1112": "Unknown annotation position.",
+    "E1112": "Unknown annotation position or side.",
     "E1113": "Invalid or missing annotation color.",
     "E1114": (
         "Unknown keyword parameter for shape primitive. "
@@ -238,6 +238,27 @@ ERROR_CATALOG: dict[str, str] = {
         "bottom-right, bottom, bottom-left, left."
     ),
     "E1122": "Unknown \\focus scope. Valid: shape, board.",
+    # --- Command param guard + zoom-per-step (E1123 -- E1124) ---
+    "E1123": (
+        "Unknown keyword parameter on a decoration/stage command "
+        "(\\annotate, \\note, \\trace, \\link, \\combine, \\group, "
+        "\\reannotate, \\focus, \\cursor). The key is not one the command "
+        "reads, so it would be silently dropped and the author's intent lost; "
+        "the message names the bad key and the valid set, with a 'did you "
+        "mean' suggestion when a close match exists (mirrors \\shape E1114 / "
+        "\\apply E1105)."
+    ),
+    "E1124": (
+        "A second \\zoom in one \\step. \\zoom crops a single viewBox and "
+        "cannot union two targets the way \\focus does, so a later \\zoom "
+        "would silently override the earlier one. Keep one \\zoom per step."
+    ),
+    "E1125": (
+        "\\note text is wider than the board; it was wrapped to fit and, when a "
+        "line still could not fit (a tiny board or an unbreakable token), "
+        "clamped into the viewBox (warning — the render continues). "
+        "hint: shorten the note, or give it a wider board."
+    ),
     # --- Render errors (E1200 -- E1249) ---
     "E1200": (
         "KaTeX inline error embedded in rendered output (ParseError from "
@@ -606,7 +627,8 @@ ERROR_CATALOG: dict[str, str] = {
     ),
     # --- Equation (math as an evolving object) (E1530 -- E1532) ---
     "E1530": (
-        "Equation requires a 'tex' or 'lines' parameter. "
+        "Equation requires exactly one of 'tex' or 'lines' — supplying "
+        "neither, or both, is an error. "
         'hint: \\shape{E}{Equation}{tex="T(n)=2T(n/2)+cn"}, or '
         'lines=["a &= b", "&= c"].'
     ),

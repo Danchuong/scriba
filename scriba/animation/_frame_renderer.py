@@ -16,6 +16,8 @@ from scriba.animation.primitives.base import BoundingBox
 from scriba.animation.primitives._svg_helpers import (
     ARROW_STYLES,
     LABEL_FONT_PX,
+    _LABEL_PILL_MAX_W_PX,
+    _wrap_label_lines,
     annotation_color_class,
 )
 from scriba.animation.primitives._text_metrics import measure_label_line
@@ -39,6 +41,19 @@ _PRIMITIVE_GAP = 20
 # Viewport ZOOM: breathing room (user units) added around a \zoom crop so the
 # target is not flush against the magnified frame edge.
 _ZOOM_PAD = 8
+
+
+def _ann_addresses_shape(target: str, shape_name: str) -> bool:
+    """True if an annotation *target* addresses *shape_name*.
+
+    Matches both the bare whole-shape reference (``shape``) and any part
+    (``shape.cell[0]``). The bare form previously fell through the
+    ``.``-prefix-only filter, so ``\\annotate{shape}{strike=true|label=..}``
+    was silently dropped before it reached the primitive (hunt F4). Routing it
+    lets the primitive resolve the whole-shape content box (strike) or warn
+    (label) instead of a silent no-op.
+    """
+    return target == shape_name or target.startswith(shape_name + ".")
 
 
 # ---------------------------------------------------------------------------
@@ -175,7 +190,7 @@ def compute_viewbox(
             prim_anns = [
                 a
                 for a in annotations
-                if a.get("target", "").startswith(shape_name + ".")
+                if _ann_addresses_shape(a.get("target", ""), shape_name)
             ]
             if hasattr(prim, "set_annotations"):
                 prim.set_annotations(prim_anns)
@@ -309,7 +324,7 @@ def measure_scene_layout(
             prim_anns = [
                 a
                 for a in frame.annotations
-                if a.get("target", "").startswith(shape_name + ".")
+                if _ann_addresses_shape(a.get("target", ""), shape_name)
             ]
             if hasattr(prim, "set_annotations"):
                 prim.set_annotations(prim_anns)
@@ -399,14 +414,26 @@ def _pack_board(
             )
         seen[pos] = name
 
-    n_rows = max(pos[0] for pos in placements.values()) + 1
-    n_cols = max(pos[1] for pos in placements.values()) + 1
+    # Compact empty tracks: map the sorted DISTINCT occupied rows/cols onto
+    # 0..N-1 so an unused index contributes 0px (occupied tracks keep their
+    # order; gaps collapse). This kills the detonation class — at=[100000,
+    # 100000] now lays out identically to at=[1,1] — with no arbitrary cap.
+    # An already-dense board (occupied tracks 0..N-1 contiguous) maps identity,
+    # so its viewBox + offsets stay byte-identical.
+    row_order = {
+        r: i for i, r in enumerate(sorted({pos[0] for pos in placements.values()}))
+    }
+    col_order = {
+        c: i for i, c in enumerate(sorted({pos[1] for pos in placements.values()}))
+    }
+    n_rows = len(row_order)
+    n_cols = len(col_order)
     col_width = [0.0] * n_cols
     row_height = [0.0] * n_rows
     for name, pos in placements.items():
         bw, bh = max_bbox[name]
-        col_width[pos[1]] = max(col_width[pos[1]], bw)
-        row_height[pos[0]] = max(row_height[pos[0]], bh)
+        col_width[col_order[pos[1]]] = max(col_width[col_order[pos[1]]], bw)
+        row_height[row_order[pos[0]]] = max(row_height[row_order[pos[0]]], bh)
 
     # Cell origins: padding + cumulative extent of earlier tracks + inter-cell
     # gaps (an empty track contributes 0 width/height but still costs a gap).
@@ -424,8 +451,9 @@ def _pack_board(
     reserved: dict[str, tuple[float, float]] = {}
     for name, pos in placements.items():
         bw, _bh = max_bbox[name]
-        x = col_x[pos[1]] + (col_width[pos[1]] - bw) / 2.0  # centered in column
-        reserved[name] = (float(x), float(row_y[pos[0]]))  # top-aligned in row
+        ci, ri = col_order[pos[1]], row_order[pos[0]]
+        x = col_x[ci] + (col_width[ci] - bw) / 2.0  # centered in column
+        reserved[name] = (float(x), float(row_y[ri]))  # top-aligned in row
 
     board_w = int(2 * _PADDING + sum(col_width) + (n_cols - 1) * _PRIMITIVE_GAP)
     board_h = int(2 * _PADDING + sum(row_height) + (n_rows - 1) * _PRIMITIVE_GAP)
@@ -688,12 +716,15 @@ def _validate_expanded_selectors(
                 pass
 
 
-# Generic cross-primitive ``\\apply`` keys: the three ``ShapeTargetState``
-# display channels (renderer.py ``_snapshot_to_frame_data``). They flow to the
-# primitive through ``set_state``/``set_value``/``set_label`` (the frame
-# renderer's value-layer), never through ``apply_command``, so they are valid
-# on every primitive regardless of its structural ``APPLY_KEYS``.
-_GENERIC_APPLY_KEYS: frozenset[str] = frozenset({"state", "value", "label"})
+# Generic cross-primitive ``\\apply`` keys: the ``ShapeTargetState`` display
+# channels the scene layer strips out of the spec before it reaches
+# ``apply_command`` (scene.py ``_apply_apply`` splits out value/label).
+# ``state`` is deliberately NOT here: ``\apply{X}{state=...}`` is read by
+# nobody — the visual-state channel is driven by ``\recolor`` (§5.7), so
+# leaving ``state`` generic re-opened the very silent-swallow the E1105 guard
+# exists to close (``investigations/hunt-param-guard.md`` A3). Excluding it
+# makes that typo raise E1105 with a hint steering to ``\recolor``.
+_GENERIC_APPLY_KEYS: frozenset[str] = frozenset({"value", "label"})
 
 
 def _validate_apply_spec(prim: Any, spec: Any) -> None:
@@ -720,12 +751,18 @@ def _validate_apply_spec(prim: Any, spec: Any) -> None:
 
     bad = unknown[0]
     supported = ", ".join(sorted(allowed))
-    suggestion = _suggest_closest(bad, allowed)
-    hint = (
-        f"did you mean `{suggestion}`?"
-        if suggestion
-        else f"valid \\apply keys: {supported}"
-    )
+    if bad == "state":
+        # ``state`` on ``\apply`` never drove the visual-state channel (it
+        # lands in apply_params, read by nobody); ``\recolor`` is the
+        # documented state-setter (§5.7), so steer there explicitly.
+        hint = "use \\recolor{target}{state=...} to change visual state"
+    else:
+        suggestion = _suggest_closest(bad, allowed)
+        hint = (
+            f"did you mean `{suggestion}`?"
+            if suggestion
+            else f"valid \\apply keys: {supported}"
+        )
     raise _animation_error(
         "E1105",
         (
@@ -1016,6 +1053,11 @@ def _emit_scene_notes(
     if len(vb) < 4:
         return
     vx, vy, vw, vh = (float(v) for v in vb[:4])
+    # A note pill must fit inside the (possibly cropped) viewBox. Space between
+    # the margins, and a sane wrap width (the annotation-pill cap, but never
+    # wider than the board) — matches min(board - 2*margin, pill_max).
+    board_avail = max(1.0, vw - 2.0 * _NOTE_MARGIN)
+    wrap_px = min(board_avail, float(_LABEL_PILL_MAX_W_PX))
     stack: dict[str, int] = {}
     for note in notes:
         nid = note.get("id", "")
@@ -1025,13 +1067,66 @@ def _emit_scene_notes(
         style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
         stroke = style["stroke"]
         display = strip_math_markup(text)
-        ph = float(LABEL_FONT_PX + 8)
-        pw = float(measure_label_line(display, LABEL_FONT_PX) + 12)
+
+        # F1 (note overflow): a note that fits the board stays a byte-identical
+        # single line; one wider than the board wraps like an annotation pill
+        # instead of painting off-canvas.
+        single_pw = float(measure_label_line(display, LABEL_FONT_PX) + 12)
+        if single_pw <= board_avail:
+            lines = [display]
+            pw = single_pw
+        else:
+            lines = _wrap_label_lines(
+                display,
+                max_px=wrap_px,
+                font_px=LABEL_FONT_PX,
+                math_rendered=False,
+            ) or [display]
+            pw = float(
+                max(measure_label_line(ln, LABEL_FONT_PX) for ln in lines) + 12
+            )
+        ph = float(LABEL_FONT_PX * len(lines) + 8)
+
         idx = stack.get(at, 0)
         stack[at] = idx + 1
         px, py = _note_anchor_xy(at, idx, vx, vy, vw, vh, pw, ph)
+
+        # A note still wider than the board after wrapping (tiny board or an
+        # unbreakable token) is pinned to the left margin and soft-warns E1125:
+        # the teaching text stays visible/clamped rather than silently clipped.
+        if pw > board_avail:
+            warnings.warn(
+                f"[E1125] \\note {nid!r} text is wider than the board; "
+                f"wrapped/clamped into the viewBox",
+                stacklevel=2,
+            )
+            pw = board_avail
+            px = vx + _NOTE_MARGIN
+
         key = f"note[{nid}]-solo"
         aria = _escape_xml(display) or "note"
+        cx = px + pw / 2.0
+        if len(lines) == 1:
+            # Single line: byte-identical to the pre-wrap output.
+            text_el = (
+                f'<text x="{cx:.1f}" y="{py + ph / 2.0:.1f}"'
+                f' fill="{style["label_fill"]}"'
+                f' style="text-anchor:middle;dominant-baseline:central">'
+                f"{_escape_xml(lines[0])}</text>"
+            )
+        else:
+            line_h = float(LABEL_FONT_PX)
+            first_y = py + ph / 2.0 - (len(lines) - 1) * line_h / 2.0
+            tspans = "".join(
+                f'<tspan x="{cx:.1f}" y="{first_y + i * line_h:.1f}">'
+                f"{_escape_xml(ln)}</tspan>"
+                for i, ln in enumerate(lines)
+            )
+            text_el = (
+                f'<text fill="{style["label_fill"]}"'
+                f' style="text-anchor:middle;dominant-baseline:central">'
+                f"{tspans}</text>"
+            )
         parts.append(
             f'  <g class="scriba-annotation scriba-note scriba-annotation-'
             f'{annotation_color_class(color)}"'
@@ -1041,10 +1136,7 @@ def _emit_scene_notes(
             f'<rect x="{px:.1f}" y="{py:.1f}" width="{pw:.1f}"'
             f' height="{ph:.1f}" rx="4" fill="white" fill-opacity="0.92"'
             f' stroke="{stroke}" stroke-width="0.5" stroke-opacity="0.3"/>'
-            f'<text x="{px + pw / 2.0:.1f}" y="{py + ph / 2.0:.1f}"'
-            f' fill="{style["label_fill"]}"'
-            f' style="text-anchor:middle;dominant-baseline:central">'
-            f"{_escape_xml(display)}</text>"
+            f"{text_el}"
             f"</g>"
         )
 
@@ -1273,7 +1365,7 @@ def _emit_frame_svg(
         prim_anns = [
             a
             for a in frame.annotations
-            if a.get("target", "").startswith(shape_name + ".")
+            if _ann_addresses_shape(a.get("target", ""), shape_name)
         ]
         if hasattr(prim, "set_annotations"):
             prim.set_annotations(prim_anns)
@@ -1411,6 +1503,10 @@ def _emit_frame_svg(
     # _link_stage_offsets now holds each shape's exact emitted translate, so the
     # crop lines up with what was drawn.
     zoom_target = getattr(frame, "zoom_target", None)
+    # The effective viewBox for scene overlays: the zoom crop when active, else
+    # the full board. Notes anchor to THIS so a compass note stays corner-pinned
+    # inside the crop rather than to a full-board coordinate the crop hides.
+    effective_viewbox = viewbox
     if zoom_target:
         frame_viewbox = _zoom_viewbox(
             zoom_target, primitives, _link_stage_offsets, viewbox
@@ -1419,6 +1515,7 @@ def _emit_frame_svg(
             svg_parts[0] = svg_parts[0].replace(
                 f'viewBox="{viewbox}"', f'viewBox="{frame_viewbox}"', 1
             )
+            effective_viewbox = frame_viewbox
 
     # §5/§6: cross-shape \link / \combine bridges are a scene-level overlay,
     # appended AFTER every primitive <g> so they paint on top of all shapes
@@ -1430,8 +1527,9 @@ def _emit_frame_svg(
 
     # DECORATE v2: free \note callouts are a scene-level overlay too, anchored
     # to the (stable) viewBox rather than to any shape, so they paint on top of
-    # every primitive at a deterministic board-relative margin.
-    _emit_scene_notes(frame, viewbox, svg_parts)
+    # every primitive at a deterministic board-relative margin. Under \zoom the
+    # crop rect is used so the note stays pinned inside the visible frame (F3).
+    _emit_scene_notes(frame, effective_viewbox, svg_parts)
 
     svg_parts.append("</svg>")
     # R-40 \focus: bake the defocus overlay onto the assembled SVG. Runs on the

@@ -34,6 +34,7 @@ from .selectors import parse_selector
 from scriba.animation.constants import (
     VALID_ANNOTATION_COLORS,
     VALID_ANNOTATION_POSITIONS,
+    VALID_ANNOTATION_SIDES,
     VALID_ANNOTATION_STATE_COLORS,
     VALID_NOTE_ANCHORS,
     VALID_STATES,
@@ -52,6 +53,51 @@ _CURSOR_AT_VAR_RE = re.compile(r"^[^.\s]+\.var\[[^\]]+\]$")
 # listed first so it wins at the ``<`` position and a bare ``->`` never splits
 # the middle of a ``<->`` token.
 _LINK_ARROW_RE = re.compile(r"\s*<->\s*|\s*->\s*")
+
+
+# ---------------------------------------------------------------------------
+# Known second-brace param keys per decoration/stage command (E1123 guard).
+# Each set enumerates exactly the keys the matching ``_parse_*`` handler reads;
+# an unrecognised key used to be silently dropped, discarding author intent
+# (``investigations/hunt-param-guard.md`` B-class). Keep each set in lock-step
+# with its handler's ``params.get(...)`` / ``params[...]`` reads.
+# ---------------------------------------------------------------------------
+_FOCUS_PARAM_KEYS = frozenset({"scope"})
+# ``side`` is the smart-label placement hint consumed at emit time
+# (``_svg_helpers.py`` ``ann.get("side")``) and used by the doc corpus
+# (``annot_annotate_side_below``); it is a valid \annotate key even though the
+# parser does not yet thread it onto ``AnnotateCommand``.
+_ANNOTATE_PARAM_KEYS = frozenset(
+    {
+        "label",
+        "position",
+        "color",
+        "arrow",
+        "ephemeral",
+        "bracket",
+        "leader",
+        "strike",
+        "arrow_from",
+        "side",
+    }
+)
+_NOTE_PARAM_KEYS = frozenset({"text", "at", "color", "ephemeral"})
+_TRACE_PARAM_KEYS = frozenset(
+    {"cells", "color", "arrowhead", "dot", "label", "id", "ephemeral"}
+)
+_LINK_PARAM_KEYS = frozenset({"color", "label", "ephemeral"})
+_COMBINE_PARAM_KEYS = frozenset({"into", "color", "label", "ephemeral"})
+_GROUP_PARAM_KEYS = frozenset({"id", "nodes", "color", "label"})
+# ``ephemeral`` mirrors its \annotate/\link/\combine sibling and is used by the
+# doc corpus (``annot_reannotate_ephemeral``); accepted like the other
+# overlay verbs even though \reannotate does not yet thread it through.
+_REANNOTATE_PARAM_KEYS = frozenset({"color", "arrow_from", "label", "ephemeral"})
+# ``\cursor`` has two forms discriminated by ``id=`` (legacy leading index vs
+# R-38 binding caret); the guard validates against the union its two parsers
+# read (the positional index is not a key= pair, so it never reaches here).
+_CURSOR_PARAM_KEYS = frozenset(
+    {"id", "at", "color", "ephemeral", "prev_state", "curr_state"}
+)
 
 
 def _unquote(value: str) -> str:
@@ -94,6 +140,44 @@ class _CommandsMixin:
         def _read_brace_arg(self, cmd_tok: Token) -> str: ...
         def _read_raw_brace_arg(self, cmd_tok: Token) -> str: ...
         def _read_param_brace(self) -> dict: ...
+
+    def _validate_command_params(
+        self,
+        command_name: str,
+        params: dict,
+        known: frozenset,
+        *,
+        line: int,
+        col: int,
+    ) -> None:
+        """Reject an unknown key in a decoration/stage command's ``{...}`` dict.
+
+        Mirrors the ``\\shape`` ctor guard (E1114) and the ``\\apply`` guard
+        (E1105) for the second-brace param surface: every ``_parse_*`` handler
+        reads its keys with ``params.get(...)`` and enum-validates only the
+        *values* of known keys, so a typo'd key (``colour=``, ``scpe=``, ...)
+        used to be silently dropped, discarding the author's intent. Raises
+        **E1123** on the first unknown key, with a fuzzy did-you-mean hint when
+        a close valid key exists (identical shape to E1114/E1105)."""
+        unknown = sorted(k for k in params if k not in known)
+        if not unknown:
+            return
+        # Local import mirrors base.py's E1114 site (errors.py <-> parser cycle).
+        from scriba.animation.errors import _suggest_closest
+
+        bad = unknown[0]
+        valid = ", ".join(sorted(known))
+        suggestion = _suggest_closest(bad, known)
+        hint = f"did you mean `{suggestion}`?" if suggestion else f"valid: {valid}"
+        raise ValidationError(
+            f"unknown \\{command_name} parameter {bad!r}; valid: {valid}",
+            position=col,
+            code="E1123",
+            line=line,
+            col=col,
+            source_line=self._source_line_at(line),
+            hint=hint,
+        )
 
     def _parse_narrate(self) -> NarrateCommand:
         tok = self._advance()
@@ -139,6 +223,9 @@ class _CommandsMixin:
             source_line=self._source_line_at(tok.line),
         )
         params = self._read_param_brace()
+        self._validate_command_params(
+            "focus", params, _FOCUS_PARAM_KEYS, line=tok.line, col=tok.col
+        )
         scope = str(params.get("scope", "shape"))
         if scope not in ("shape", "board"):
             self._raise_unknown_enum(
@@ -258,6 +345,9 @@ class _CommandsMixin:
         tok = self._advance()
         target_str = self._read_brace_arg(tok)
         params = self._read_param_brace()
+        self._validate_command_params(
+            "reannotate", params, _REANNOTATE_PARAM_KEYS, line=tok.line, col=tok.col
+        )
 
         # color is required
         if "color" not in params:
@@ -291,6 +381,10 @@ class _CommandsMixin:
         if label_raw is not None:
             label = str(label_raw)
 
+        # ephemeral=true makes the recolor a one-frame override that reverts to
+        # the prior colour at the next \step (§5.9); absent, the recolor sticks.
+        ephemeral = params.get("ephemeral", False) in (True, "true")
+
         sel = parse_selector(
             target_str,
             line=tok.line,
@@ -302,6 +396,7 @@ class _CommandsMixin:
             color=color,
             arrow_from=arrow_from,
             label=label,
+            ephemeral=ephemeral,
             line=tok.line,
             col=tok.col,
         )
@@ -313,6 +408,9 @@ class _CommandsMixin:
         tok = self._advance()
         shape = self._read_brace_arg(tok).strip()
         params = self._read_param_brace()
+        self._validate_command_params(
+            "trace", params, _TRACE_PARAM_KEYS, line=tok.line, col=tok.col
+        )
 
         raw_cells = params.get("cells")
         cells: list = []
@@ -410,6 +508,9 @@ class _CommandsMixin:
                 source_line=self._source_line_at(tok.line),
             )
         params = self._read_param_brace()
+        self._validate_command_params(
+            "link", params, _LINK_PARAM_KEYS, line=tok.line, col=tok.col
+        )
         color = str(params.get("color", "info"))
         self._check_annotation_color(color, tok)
         return LinkCommand(
@@ -442,6 +543,9 @@ class _CommandsMixin:
                 source_line=self._source_line_at(tok.line),
             )
         params = self._read_param_brace()
+        self._validate_command_params(
+            "combine", params, _COMBINE_PARAM_KEYS, line=tok.line, col=tok.col
+        )
         into_raw = params.get("into")
         if not isinstance(into_raw, str) or not into_raw.strip():
             raise ValidationError(
@@ -472,6 +576,9 @@ class _CommandsMixin:
         tok = self._advance()
         note_id = self._read_brace_arg(tok).strip()
         params = self._read_param_brace()
+        self._validate_command_params(
+            "note", params, _NOTE_PARAM_KEYS, line=tok.line, col=tok.col
+        )
         text_raw = params.get("text")
         text = str(text_raw) if text_raw is not None else ""
         if not note_id or not text.strip():
@@ -565,6 +672,9 @@ class _CommandsMixin:
         tok = self._advance()
         shape = self._read_brace_arg(tok).strip()
         params = self._read_param_brace()
+        self._validate_command_params(
+            "group", params, _GROUP_PARAM_KEYS, line=tok.line, col=tok.col
+        )
 
         group_id = params.get("id")
         if group_id is None or not str(group_id).strip():
@@ -630,6 +740,9 @@ class _CommandsMixin:
         tok = self._advance()
         target_str = self._read_brace_arg(tok)
         params = self._read_param_brace()
+        self._validate_command_params(
+            "annotate", params, _ANNOTATE_PARAM_KEYS, line=tok.line, col=tok.col
+        )
         sel = parse_selector(
             target_str,
             line=tok.line,
@@ -674,6 +787,21 @@ class _CommandsMixin:
         bracket = params.get("bracket", False) in (True, "true")
         leader = params.get("leader", False) in (True, "true")
         strike = params.get("strike", False) in (True, "true")
+        # side= is the smart-label half-plane override (§5.8); the honored set is
+        # a strict subset of positions (no ``inside``). Unknown value -> the
+        # annotation-placement enum error, shared with ``position`` (E1112).
+        side: str | None = None
+        if "side" in params:
+            side = str(params["side"])
+            if side not in VALID_ANNOTATION_SIDES:
+                self._raise_unknown_enum(
+                    "annotation side",
+                    side,
+                    VALID_ANNOTATION_SIDES,
+                    code="E1112",
+                    line=tok.line,
+                    col=tok.col,
+                )
         af_raw = params.get("arrow_from")
         arrow_from = (
             parse_selector(
@@ -690,7 +818,7 @@ class _CommandsMixin:
             label=str(params["label"]) if "label" in params else None,
             position=position, color=color, arrow=arrow,
             ephemeral=ephemeral, arrow_from=arrow_from,
-            bracket=bracket, leader=leader, strike=strike,
+            bracket=bracket, leader=leader, strike=strike, side=side,
         )
 
     def _parse_cursor(self) -> CursorCommand:
@@ -740,6 +868,9 @@ class _CommandsMixin:
             if "=" in part:
                 key, val = part.split("=", 1)
                 kv[key.strip()] = val.strip()
+        self._validate_command_params(
+            "cursor", kv, _CURSOR_PARAM_KEYS, line=tok.line, col=tok.col
+        )
         if "id" in kv:
             return self._parse_cursor_binding(tok, targets, kv)
 

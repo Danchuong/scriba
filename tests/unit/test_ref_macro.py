@@ -105,10 +105,10 @@ class TestRefMacroRender:
             '\\begin{animation}[id="d", label="ref"]\n'
             "\\shape{a}{Array}{size=3, data=[1,2,3]}\n"
             "\\step\n"
-            "\\apply{a.cell[1]}{state=current}\n"
+            "\\recolor{a.cell[1]}{state=current}\n"
             "\\narrate{The \\ref{a.cell[1]}{pivot} is chosen.}\n"
             "\\step\n"
-            "\\apply{a.cell[1]}{state=done}\n"
+            "\\recolor{a.cell[1]}{state=done}\n"
             "\\narrate{The \\ref{a.cell[1]}{pivot} is placed.}\n"
             "\\end{animation}\n"
         )
@@ -123,7 +123,7 @@ class TestRefMacroRender:
             '\\begin{animation}[id="d", label="ref print"]\n'
             "\\shape{a}{Array}{size=2, data=[1,2]}\n"
             "\\step\n"
-            "\\apply{a.cell[0]}{state=good}\n"
+            "\\recolor{a.cell[0]}{state=good}\n"
             "\\narrate{Look at \\ref{a.cell[0]}{the base}.}\n"
             "\\end{animation}\n"
         )

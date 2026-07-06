@@ -147,7 +147,7 @@ class TestFocusEmit:
             '\\begin{animation}[id="d", label="no focus"]\n'
             "\\shape{a}{Array}{size=2, data=[1,2]}\n"
             "\\step\n"
-            "\\apply{a.cell[0]}{state=current}\n"
+            "\\recolor{a.cell[0]}{state=current}\n"
             "\\end{animation}\n"
         )
         html_out = self._render(source, tmp_path)

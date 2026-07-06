@@ -343,7 +343,7 @@ class TestNoShapeDeclaredGuard:
             self._render(
                 renderer,
                 ctx,
-                r"\step" + "\n" + r"\annotate{x.cell[0]}{text}",
+                r"\step" + "\n" + r'\annotate{x.cell[0]}{label="text"}',
             )
         assert "E1116" in str(exc_info.value)
 

@@ -736,6 +736,13 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1120",
         "E1121",
         "E1122",
+        # Decoration/stage command param guard (E1123, _grammar_commands.py)
+        # + second-\zoom-per-step (E1124, scene.py)
+        "E1123",
+        "E1124",
+        # E1125 (\note wider than the board — wrapped/clamped) is a soft
+        # warning emitted from _frame_renderer._emit_scene_notes, not raised —
+        # excluded like E1543/E1184, but catalogued + documented.
         # Render (KaTeX) — tex/renderer.py
         "E1200",
         # Starlark sandbox

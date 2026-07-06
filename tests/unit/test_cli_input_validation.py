@@ -286,7 +286,7 @@ class TestF06E1116Promoted:
             r"\begin{animation}[id=anne1116]" + "\n"
             r"\shape{a}{Array}{size=3}" + "\n"
             r"\step" + "\n"
-            r"\annotate{ghost.cell[0]}{oops}" + "\n"  # 'ghost' never declared
+            r'\annotate{ghost.cell[0]}{label="oops"}' + "\n"  # 'ghost' never declared
             r"\step" + "\n"
             r"\end{animation}"
         )

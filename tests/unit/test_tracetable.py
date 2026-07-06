@@ -285,8 +285,17 @@ def test_all_selector_in_addressable_parts() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Differ: append rides element_add, no kind outside the closed 11 (A-2)
+# Differ: no kind outside the closed 11 (A-2)
 # ---------------------------------------------------------------------------
+#
+# NOTE (Fix C / F3): the real pipeline does NOT emit per-append records. A
+# ``\apply{t}{row=[...]}`` lands apply_params on the BARE shape ``t`` (like a
+# Stack push), which persists across frames, so the differ's element_add fires
+# at most once (empty → first touch) and never for later appends; the row is
+# delivered by a full frame snap (tr:null). The test below feeds the differ a
+# SYNTHETIC first-touch shape_states — it pins the closed-kind invariant (A-2)
+# for that single case, and is explicitly not evidence that appends animate.
+# The end-to-end reality is pinned in test_fixc_tracetable_manifest_reality.py.
 
 
 def _frame_data(shape_states: dict) -> FrameData:
@@ -299,18 +308,22 @@ def _frame_data(shape_states: dict) -> FrameData:
     )
 
 
-def test_append_rides_element_add_no_new_motion_kind() -> None:
-    # The first row-append is a bare-shape structural apply_params landing where
-    # the shape was previously untouched → element_add (identical to a Stack
-    # push; see tests/golden/animation/html_element_add.html).
+def test_differ_bare_shape_first_touch_add_stays_in_closed_kind_registry() -> None:
+    # SYNTHETIC differ input: a bare-shape structural apply landing where the
+    # shape was previously untouched. In the pipeline this shape only occurs on
+    # the empty → first-touch transition (rare), and the element_add targets the
+    # bare shape ``t`` — not an addressable element — so it is a no-op the
+    # fs-snap salvages. Later appends emit nothing (see the reality test).
     prev = _frame_data({"t": {}})
     curr = _frame_data(
         {"t": {"t": {"state": "idle", "apply_params": [{"row": [0, 3]}]}}}
     )
     manifest = compute_transitions(prev, curr)
     kinds = {tr.kind for tr in manifest.transitions}
+    # A row-append is an ADD (not a removal), so the differ still classes this
+    # first-touch as element_add …
     assert "element_add" in kinds
-    # A-2: zero new motion vocabulary — every kind is one of the shipped 11.
+    # … and A-2 holds: every kind is one of the shipped 11.
     assert kinds <= _CLOSED_11_KINDS
 
 

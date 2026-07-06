@@ -50,7 +50,7 @@
 | E1104 | Primitive parameter type mismatch — a param got a value of the wrong shape (e.g. a list/tuple where a scalar id was expected). Currently the Tree/Forest pairs form `nodes=[[id, value], ...]`, which would otherwise `str()`-mangle into a bogus id. | Use scalar node ids (`nodes=["r","c"]`); set a per-node display value with `\apply{T.node["c"]}{value="..."}`. |
 | E1105 | Unknown parameter on `\apply` for that primitive — the key is neither the generic `value=`/`label=` nor one of the primitive's structural `\apply` ops, so it would be silently dropped. Message names the primitive, the bad key, and the valid keys. | Check the key against the primitive's `\apply` ops (§7 of the TeX reference lists them per primitive); a per-node/-cell value uses `value=`. |
 | E1109 | Invalid `\recolor` state or missing required state/color parameter. | Use a valid state: idle, current, done, dim, error, good, highlight, path. |
-| E1112 | Unknown annotation position. | Use: above, below, left, right, inside. See [`smart-label-ruleset.md`](smart-label-ruleset.md) for the placement contract. |
+| E1112 | Unknown annotation position or side. | `position=`: above, below, left, right, inside. `side=` (smart-label half-plane hint): above, below, left, right — **not** `inside`. See [`smart-label-ruleset.md`](smart-label-ruleset.md) for the placement contract. |
 | E1113 | Invalid or missing annotation color. | Use: info, warn, good, error, muted, path — or quoted `"state:current/done/dim/good/error/path"` (since 0.22.2). |
 | E1114 | Unknown keyword parameter passed to a `\shape` primitive. A "did you mean X?" suggestion is included when a close match exists. | Check the parameter name against the primitive's accepted options. |
 | E1115 | Selector does not match any addressable part of the target primitive (warning — command silently dropped). | Check selector syntax against the primitive's addressable parts. |
@@ -61,6 +61,9 @@
 | E1120 | `\note` requires an id and `text="..."`. | Write `\note{n1}{text="careful: 0-indexed", at=top-right}`. |
 | E1121 | Unknown `\note` anchor. | Use one of: top-left, top, top-right, right, bottom-right, bottom, bottom-left, left. |
 | E1122 | Unknown `\focus` scope. | Use `scope=shape` (default, intra-shape dim) or `scope=board` (dim every other shape). |
+| E1123 | Unknown keyword parameter on a decoration/stage command (`\annotate`, `\note`, `\trace`, `\link`, `\combine`, `\group`, `\reannotate`, `\focus`, `\cursor`) — the key is not one the command reads, so it would be silently dropped and the author's intent lost. A "did you mean X?" suggestion is included when a close match exists (mirrors `\shape` E1114 / `\apply` E1105). | Check the key against the command's documented params in §5 of the TeX reference. |
+| E1124 | A second `\zoom` in one `\step`. `\zoom` crops a single viewBox and cannot union two targets the way `\focus` does, so a later `\zoom` would silently override the earlier one. | Keep a single `\zoom` per `\step`, or crop a selector that already covers both regions. |
+| E1125 | `\note` text is wider than the board; it was wrapped to fit and, when a line still could not fit (a tiny board or an unbreakable token), clamped into the viewBox (warning — the render continues). | Shorten the note, or give it a wider board (more cells / a bigger shape). |
 
 ## Render Errors (E1200--E1249)
 
@@ -306,7 +309,7 @@ like any other primitive's out-of-range accessor.
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
-| E1530 | Equation requires a `tex` or `lines` parameter. | Give one, e.g. `\shape{E}{Equation}{tex="T(n)=2T(n/2)+cn"}` or `lines=["a &= b", "&= c"]`. |
+| E1530 | Equation requires exactly one of `tex` or `lines` — supplying neither, or both, is an error. | Give exactly one, e.g. `\shape{E}{Equation}{tex="T(n)=2T(n/2)+cn"}` or `lines=["a &= b", "&= c"]`. |
 | E1531 | The same `\term` id is declared twice within one line. | Use a unique id per `\term` in a line (an id MAY repeat across lines to track the same term down a derivation). |
 | E1532 | Malformed `\term` — a non-identifier id, or a missing/unterminated `{body}`. | Write `\term{id}{body}` where id is `[A-Za-z_][A-Za-z0-9_]*` and body is a braced group. |
 

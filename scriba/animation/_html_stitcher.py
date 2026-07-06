@@ -104,6 +104,24 @@ def _safe_narration_html(value: object) -> str:
     return value
 
 
+def _invariant_panel_elements(texts: "list[str] | None") -> list[str]:
+    """Render ``\\invariant`` bodies to ``<p class="scriba-invariant">`` panels.
+
+    Single source for the panel markup so the pinned widget panel, the static
+    filmstrip's per-frame panels (F1) and the interactive per-print-frame panels
+    (F2) are byte-identical and the same CSS rule applies. Each *text* is already
+    scriba-rendered invariant HTML (KaTeX-applied). Returns ``[]`` when empty, so
+    a document without ``\\invariant`` stays byte-identical.
+    """
+    if not texts:
+        return []
+    return [
+        f'<p class="scriba-invariant" role="note">'
+        f"{_safe_narration_html(h)}</p>"
+        for h in texts
+    ]
+
+
 def _escape_js(text: str) -> str:
     """Escape text for embedding in a JS template literal (backtick string)."""
     return (
@@ -178,10 +196,16 @@ def emit_animation_html(
     label: str = "",
     layout: str = "filmstrip",
     size_style: str = "",
+    invariants: "list[str] | None" = None,
 ) -> str:
     """Produce the complete ``<figure>`` HTML for an animation.
 
     Follows the locked HTML shape from ``04-environments-spec.md`` s8.1.
+
+    ``invariants`` carries the once-rendered static ``\\invariant`` panels. In
+    this zero-JS filmstrip every frame is re-rendered, so the panel is baked into
+    EACH frame (F1): a live ``${}`` invariant uses that frame's resolved
+    ``invariants_html``; a static one repeats the shared ``invariants`` bodies.
     """
     _frame_id = _get_frame_id_fn()
     _is_id_safe_label = _get_is_id_safe_label_fn()
@@ -233,11 +257,22 @@ def emit_animation_html(
                 aria_label = f.label
                 break
 
+    # F1 — \invariant is "shown across all frames ... in print" (s5.17), but the
+    # zero-JS filmstrip baked it into no frame. Live bodies resolve per frame;
+    # a static body repeats. When absent, no panel is emitted (byte-stable).
+    _inv_live = getattr(frames[0], "invariants_html", None) is not None
+
     frame_items: list[str] = []
     for frame in frames:
         step = frame.step_number
         frame_id = _frame_id(scene_id, frame)
         narration_id = f"{frame_id}-narration"
+
+        _inv_texts = frame.invariants_html if _inv_live else invariants
+        _inv_html = "".join(
+            f"      {panel}\n"
+            for panel in _invariant_panel_elements(_inv_texts)
+        )
         # Emit data-label="{label}" only when the label is id-safe (so
         # JS can route by label token as well as by step index).
         data_label_attr = (
@@ -275,6 +310,7 @@ def emit_animation_html(
             f"      </div>\n"
             f'      <p class="scriba-narration" dir="auto" id="{narration_id}">'
             f"{_safe_narration_html(frame.narration_html)}</p>\n"
+            f"{_inv_html}"
             f"{substory_html}"
             f"    </li>"
         )
@@ -580,6 +616,18 @@ def emit_interactive_html(
                         f'{_safe_narration_html(sub_frame.narration_html)}</p>\n'
                         f'</div>\n'
                     )
+        # F2 — a LIVE ``${}`` invariant must print its own per-frame value. The
+        # pinned widget panel is JS-swapped on screen but frozen at frame 0 in
+        # print, so each print frame carries its own resolved panel (hidden on
+        # screen inside .scriba-print-frames, shown in print — like narration).
+        # A static invariant is unchanged: the once-rendered pinned panel is the
+        # same on every frame, so no per-frame print copy is added (byte-stable).
+        _print_inv_html = ""
+        if _inv_live:
+            _print_inv_html = "".join(
+                f"  {panel}\n"
+                for panel in _invariant_panel_elements(frame.invariants_html)
+            )
         print_frame_items.append(
             f'<div class="scriba-print-frame" data-step="{step}"{data_label_attr}>\n'
             f'  <span class="scriba-step-label">'
@@ -588,6 +636,7 @@ def emit_interactive_html(
             f'  <p class="scriba-narration" dir="auto"'
             f' id="{_escape(print_narration_id)}">'
             f'{_safe_narration_html(frame.narration_html)}</p>\n'
+            f'{_print_inv_html}'
             f'{print_substory}'
             f'</div>'
         )
@@ -751,6 +800,7 @@ def emit_html(
         result = emit_animation_html(
             scene_id, frames, primitives, render_inline_tex=render_inline_tex,
             label=label, layout=layout, size_style=_size_attr,
+            invariants=invariants,
         )
     elif mode == "diagram":
         result = emit_diagram_html(

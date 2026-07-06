@@ -298,6 +298,7 @@ class ReannotateCommand:
     color: str  # info/warn/good/error/muted/path
     arrow_from: str | None = None
     label: str | None = None  # replace annotation text (§5.9)
+    ephemeral: bool = False  # one-frame recolor, reverts at next \step (§5.9)
     line: int = 0
     col: int = 0
 
@@ -336,6 +337,7 @@ class AnnotateCommand:
     bracket: bool = False
     leader: bool = False
     strike: bool = False
+    side: str | None = None  # smart-label half-plane override (§5.8)
 
 
 @dataclass(frozen=True, slots=True)
