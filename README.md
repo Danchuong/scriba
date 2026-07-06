@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.26.2 · MIT · Python 3.10+
+**Status:** v0.26.3 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,21 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.26.3
+
+The flagship `\cursor` glide no longer **twitches**. Delta-emphasis (the
+transient pulse that flags "this changed" on a step) was double-firing on
+elements that already announced their own change through motion — a bound caret
+would glide smoothly, then scale-throb, reading as a jolt. The pulse now
+**skips the 7 self-announcing motion kinds** (glides/fades/value-bounces) and
+keeps firing only on the 4 silent ones (instant colour/state swaps) where it is
+the real arrival cue. Runtime-only (`scriba.js`); no SVG/geometry change, the
+static zero-JS filmstrip is byte-identical. New motion-ruleset invariant A-9.
+`SCRIBA_VERSION` 19→20.
+
+<details>
+<summary>v0.26.2 changelog</summary>
+
 ## What's new in v0.26.2
 
 A hardening patch — **no rendered-output change for a valid document**
@@ -41,6 +56,8 @@ hidden cells or recurses on a bare shape, `\note` wraps to the board, `at=`
 compacts empty tracks (no more 2,000,000px viewBox), and `\invariant` now prints
 in the zero-JS filmstrip. Driven by two full BMAD sweeps (8 hunters). Flagged by
 the JudgeZone pipeline: "protect authors at author time, not reader time".
+
+</details>
 
 <details>
 <summary>v0.26.1 changelog</summary>

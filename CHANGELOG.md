@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.3] - 2026-07-06 — delta-emphasis no longer double-signals self-announcing motion
+
+### Fixed
+- **Caret / glide "jolt"** (JudgeZone report #5) — a bound `\cursor` that glides
+  (or any element that moved via `position_move`) then got a 700ms scale-1.08
+  delta-emphasis pulse on top, reading as a twitch. Delta-emphasis exists to
+  flag changes the eye could miss (an instant `\recolor`); an element that
+  **animated its own change** already announced itself, so pulsing it again is
+  redundant. The pulse now **excludes the 7 self-announcing motion kinds**
+  (`value_change`, `element_add`, `element_remove`, `position_move`,
+  `annotation_add`, `annotation_remove`, `cursor_move`) via a two-pass
+  identity filter, and keeps it for the 4 silent kinds (`recolor`,
+  `highlight_on`/`off`, `annotation_recolor`) where it is the only arrival cue.
+  Jump/reverse arrivals keep the pulse (there no per-kind motion plays) —
+  except annotations, which fade in even on a jump and are excluded there too.
+  New motion-ruleset invariant **A-9**.
+
+### Changed
+- `SCRIBA_VERSION` 19→20 — **runtime-only**. Delta-emphasis is applied by
+  `scriba.js` at runtime and never baked into the static SVG, so the change is
+  confined to the inlined runtime script (every interactive widget's bytes
+  shift by the same delta); **no SVG geometry, `tr` manifest, narration, or
+  CSS byte changes**, and the static zero-JS filmstrip is byte-identical.
+  `differ.py` untouched; no new motion kind, no new CSS.
+
 ## [0.26.2] - 2026-07-06 — silent-swallow hardening + adversarial-sweep fixes (no runtime change)
 
 Closes the **"accepted, dropped, no signal"** failure class across the command

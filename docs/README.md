@@ -1,4 +1,4 @@
-> **Scriba v0.26.2** — 3 renderers (TexRenderer, AnimationRenderer, DiagramRenderer), 21 primitive types, zero-JS output.
+> **Scriba v0.26.3** — 3 renderers (TexRenderer, AnimationRenderer, DiagramRenderer), 21 primitive types, zero-JS output.
 
 ---
 
