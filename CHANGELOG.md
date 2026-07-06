@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.4] - 2026-07-07 — value-node targeting + caret label-lane collision (reports #6/#7)
+
+Two JudgeZone reports, each fixed structurally with its sibling class swept
+(investigations/audit-node-targeting-class.md, audit-decoration-obstacle-class.md).
+
+### Fixed
+- **`value_change` stamped the NAME cell** (report #6) — on a name+value row
+  (VariableWatch `<text>NAME</text><text>VALUE</text>`) the runtime did
+  `querySelector('text')` = the FIRST text, so the incoming value was written +
+  throbbed onto the label ("j" flashing to "0"), then the fs-snap reverted it.
+  The renderer now tags the value node `data-role="value"` (both `<text>` and the
+  math `<foreignObject>`) and the runtime resolves it element-agnostically, stamps
+  only a `<text>` (guarded), and falls back to the last text. Sibling audit: same
+  bug in **HashMap** (index-first, fixed); **LinkedList** is value-first + caption
+  and is saved only by the tag. `SCRIBA_VERSION` 20→21 (the `data-role` attrs are
+  the sole SVG change; strip them + the runtime slice → 0 remaining golden delta).
+- **Bound `\cursor` caret collided with the index-label lane** (report #7) — with
+  `labels="0..k"` the caret (▲ + id) was emitted directly (bypassing the pill
+  placer) and overlapped the index digit / NumberLine tick label. The caret now
+  anchors to `max(cell_bottom, resolve_below_baseline())` — the same below-lane
+  `position=below` pills reserve — so it drops clear of the labels. No-label
+  frames are byte-identical; 0 goldens re-blessed.
+
+### Known (sibling audits, deferred)
+- Other direct-emit decorations (`\group` title pill, corner `\note`, `\trace`
+  stroke) can still overlap content — the structural end-state is a shared
+  obstacle list (every decoration a placer client); tracked for a follow-up.
+- `value_change` is emitted for Stack/Graph/NumberLine whose `emit_svg` ignores
+  `set_value` (a flip-back on the runtime write) — a distinct class, tracked.
+
 ## [0.26.3] - 2026-07-06 — delta-emphasis no longer double-signals self-announcing motion
 
 ### Fixed

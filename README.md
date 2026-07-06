@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.26.3 · MIT · Python 3.10+
+**Status:** v0.26.4 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,27 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.26.4
+
+Two more legibility fixes from the JudgeZone reports, each fixed structurally
+(the sibling class swept, not just the reported case):
+- **A watch-row label no longer flashes into a number.** `value_change` wrote the
+  incoming value onto the FIRST text of the row — the NAME ("j" → "0") — then
+  snapped back. The value node is now renderer-tagged (`data-role="value"`) and
+  the runtime targets it explicitly; the same bug in HashMap is fixed and
+  LinkedList (value-first) is covered by the tag.
+- **A bound `\cursor` caret no longer overlaps the index digits.** With
+  `labels="0..k"` the caret (▲ + id) drew on top of the index row; it now drops
+  below the label lane (reusing the reservation `position=below` pills already
+  use). No-label frames are byte-identical.
+
+`SCRIBA_VERSION` 20→21 (the value node's `data-role` attribute is the only SVG
+change). Sibling audits flag remaining direct-emit decoration overlaps (`\group`/
+`\note`/`\trace`) for a follow-up shared-obstacle pass.
+
+<details>
+<summary>v0.26.3 changelog</summary>
+
 ## What's new in v0.26.3
 
 The flagship `\cursor` glide no longer **twitches**. Delta-emphasis (the
@@ -37,6 +58,8 @@ keeps firing only on the 4 silent ones (instant colour/state swaps) where it is
 the real arrival cue. Runtime-only (`scriba.js`); no SVG/geometry change, the
 static zero-JS filmstrip is byte-identical. New motion-ruleset invariant A-9.
 `SCRIBA_VERSION` 19→20.
+
+</details>
 
 <details>
 <summary>v0.26.2 changelog</summary>
