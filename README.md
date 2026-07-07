@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.27.0 · MIT · Python 3.10+
+**Status:** v0.28.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,27 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.28.0 — render-quality sweep
+
+**Four families of render defects, found by a numeric sweep and fixed structurally.**
+A fleet of hunters rendered realistic + stress documents and measured the emitted
+SVG geometry (no browser) to catch places where a primitive painted more than it
+reserved. **Coincident markers:** two `\cursor` carets — or a queue's front/rear
+pointers — meeting on one cell rendered byte-identical and stacked into a blob;
+they now fan apart, and a caret pushes a same-cell `below` pill out of its way.
+**Value-width reservation:** a wide `\apply{a.cell[i]}{value=…}` on an `Array` (or a
+`Matrix` `show_values` value) clipped the cell because the box never grew to the
+painted width — it does now. **The measurement oracle:** `∞ → ≤ √` and friends were
+charged a flat 0.62em and under-measured up to 56%, clipping arrow chains; they now
+take their true KaTeX advance. **Viewport extent:** a lopsided `Plane2D` domain
+collapsed the plot (or blew the viewBox to ~32000px), and a too-tall `\note` spilled
+silently off the bottom — both are bounded now, the note warning the new **E1126**.
+Six goldens re-bless; every other document is byte-identical (`SCRIBA_VERSION` 23).
+The Graph/Tree node-label overflow family is deferred to a focused next cycle.
+
+<details>
+<summary>v0.27.0 changelog</summary>
+
 ## What's new in v0.27.0
 
 **Graph nodes can hold a value now.** Shortest-path and traversal editorials label
@@ -39,6 +60,8 @@ Plus value-channel hardening from the same research: a non-numeric `value=` on
 `Bar`/`Matrix` fails loudly (**E1107**) instead of a silent flip-back, and a couple
 of dishonest-manifest edge cases (`Plane2D` point value, invalid-selector
 `value=`) are closed.
+
+</details>
 
 <details>
 <summary>v0.26.5 changelog</summary>

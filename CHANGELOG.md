@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-07-07 — Render-quality sweep (four structural families)
+
+A numeric render-defect sweep (four parallel hunters, geometry parsed from the
+emitted SVG — no browser) plus BMAD root-cause analysis found four families of
+"render không tốt" defects where a primitive painted more than it reserved.
+Each fix makes the reserved extent match the painted extent; all are
+opt-in-inert, so exactly **six** corpus goldens re-bless and every other
+document is byte-identical. `SCRIBA_VERSION` 22 → 23
+(investigations/hunt-rq-*.md, bmad-rq-*.md).
+
+### Fixed
+
+- **Coincident / colliding markers (family A).** N `\cursor` carets meeting on
+  one cell (the `lo==hi` / `i==j` two-pointers moment) painted byte-identical
+  triangles and id labels stacked into an illegible blob; they now spread via a
+  symmetric coincidence fan (a lone caret keeps offset 0 → byte-identical).
+  Queue/Deque front+rear pointer **triangles** coincided when both landed on one
+  cell (the labels were already fanned); the triangle now takes the same nudge.
+  A caret also registers as a `MUST` obstacle so a same-cell `position=below`
+  pill yields below it instead of burying the id. Re-blesses the five small-queue
+  goldens in their coincident-pointer frames only.
+- **Value-channel width reservation (family B).** `Array` painted an applied
+  `\apply{a.cell[i]}{value=…}` without growing the cell (`_grow_cell_width` was
+  reachable only via `insert=`), so a wide value clipped the cell / overran its
+  neighbours; Array now grows like the nine sibling cell-box primitives. `Matrix`
+  `show_values` measured its reserve at the pre-growth font but painted at the
+  post-growth font; the value font is pinned so measure ≡ paint. Re-blesses
+  `two_sum_editorial` (its wide status values now fit a grown cell).
+- **Text-measurement oracle (family D).** `measure_text` (the 14px cell/node
+  surface) charged out-of-Inter math symbols (`∞ → ← ≤ ≥ − √`) a flat 0.62em
+  (9px), under-measuring 22–56% and clipping arrow-chain / `∞` cells; it now
+  consults the vendored KaTeX per-glyph em-advances on the Inter-miss branch
+  (`∞→←`→14, `≤≥−`→11, `√`→12). `± × ÷` are in the subset and stay 9px exactly;
+  CJK/complex scripts still take the heuristic + W1301. `Bar` `show_values`
+  labels overprinted for near-equal large values — the column pitch now reserves
+  the timeline-max label width. 0 goldens re-bless.
+- **Content-extent vs viewport (family E).** `Plane2D` `aspect="equal"` sized the
+  plot height purely from the domain ratio, collapsing/inverting the Y transform
+  on a wide domain and running the viewBox to ~32000px on a tall one (and capping
+  an explicit height); the auto height is clamped to a legible, non-runaway band
+  and an explicit height is honoured verbatim. A multi-line `\note` was bounded
+  by board width but never height, spilling silently out the viewBox bottom; it
+  is now height-bounded (truncate + ellipsis) and soft-warns the new **E1126**.
+  0 goldens re-bless.
+
+### Deferred
+
+- The Graph/Tree/Hypercube node-label overflow family (bmad-rq-nodefit.md) is a
+  larger layout-engine change (node pitch + viewBox must grow to the cross-frame
+  label width) with a wide golden blast; it is scoped to a focused next cycle.
+
 ## [0.27.0] - 2026-07-07 — Graph per-node values + value-channel completeness
 
 The 4 research follow-ups to reports #6/#7 (investigations/research-graph-node-value.md,
