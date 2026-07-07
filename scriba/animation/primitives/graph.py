@@ -1441,6 +1441,18 @@ class Graph(PrimitiveBase):
             self.__dict__["_cached_addressable_set"] = cached_set
         return suffix in cached_set
 
+    def renders_value(self, suffix: str) -> bool:
+        """``value=`` is edge-scoped on Graph (docs:1125).
+
+        An edge renders its ``value=`` as a dynamic weight label
+        (:meth:`emit_svg` reads it back via ``get_value``), so edges honor the
+        key. Nodes are name-keyed identities with no value slot — a ``value=``
+        there would vanish from the render (flip-back), so reject it. Per-node
+        computed-value display (e.g. Dijkstra distances) is a separate future
+        feature, not this key.
+        """
+        return suffix.startswith("edge[")
+
     def _trace_cell_suffix(self, cell) -> str:
         """Map a ``\\trace`` ``cells=`` entry to a node selector suffix.
 

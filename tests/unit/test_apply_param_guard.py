@@ -94,12 +94,27 @@ class TestApplyParamGuardE1105:
         assert ei.value.code == "E1105"
         assert "vlaue" in str(ei.value)
 
-    def test_generic_value_label_never_flagged(self) -> None:
-        # value=/label= are the generic ShapeTargetState display channels; they
-        # must pass the guard on any primitive (here a Tree that has no such
-        # structural op of its own).
+    def test_value_is_conditionally_generic(self) -> None:
+        # value=/label= are the generic ShapeTargetState display channels: they
+        # are never an *unknown key*, so the APPLY_KEYS spec guard accepts them
+        # on any primitive (here a Tree with no structural op of its own).
         _validate_apply_spec(_standard_tree(), {"value": "dp=7"})
         _validate_apply_spec(_standard_tree(), {"label": "root"})
+        # The spec guard stays key-level: it accepts value= even on a primitive
+        # that cannot render it (Stack). The value-flipback rejection is a
+        # SEPARATE render-time gate (renders_value), not this key guard.
+        _validate_apply_spec(Stack("s", {"items": ["A"]}), {"value": "X"})
+        # At render, value= on a value-less part (Stack item) raises E1105 with
+        # a steering hint — was a silent no-op then flip-back. Mirrors the
+        # unknown-key E1105 in test_typo_key_on_array_raises_e1105.
+        with pytest.raises(AnimationError) as ei:
+            _render(
+                '\\shape{s}{Stack}{items=["A","B"]}\n'
+                "\\step\n"
+                '\\apply{s.item[0]}{value="X"}\n'
+            )
+        assert ei.value.code == "E1105"
+        assert "Stack" in str(ei.value)
 
     def test_apply_state_raises_e1105_steering_to_recolor(self) -> None:
         # state= is NOT a generic \apply channel: it was silently swallowed

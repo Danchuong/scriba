@@ -200,6 +200,16 @@ class Stack(PrimitiveBase):
 
         return False
 
+    def renders_value(self, suffix: str) -> bool:
+        """Stack has no per-item value display slot.
+
+        ``emit_svg`` renders each item's ``label`` only; even the documented
+        ``push={label, value}`` shows just the label. A ``value=`` on any Stack
+        part would vanish from the render (flip-back), so reject it — the author
+        wants a value display Stack does not provide.
+        """
+        return False
+
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
         """Center anchor for an ``item[i]`` (or ``top``) selector.
 

@@ -194,11 +194,15 @@ ERROR_CATALOG: dict[str, str] = {
         "scalar form and the per-node value= recipe."
     ),
     "E1105": (
-        "Unknown parameter on \\apply for that primitive. The key is neither a "
-        "generic 'value='/'label=' (owned by the scene layer) nor one of the "
-        "primitive's structural \\apply keys, so 'apply_command' would silently "
-        "drop it. The message names the primitive, the bad key, and the valid "
-        "keys (with a 'did you mean' suggestion when a close match exists)."
+        "Unusable parameter on \\apply for that primitive. Either the key is "
+        "unknown — neither a generic 'value='/'label=' (owned by the scene "
+        "layer) nor one of the primitive's structural \\apply keys, so "
+        "'apply_command' would silently drop it — or it is 'value=' applied to "
+        "a part with no value display slot (Stack item, Graph node, NumberLine "
+        "tick, CodePanel line), where the value would vanish from the render "
+        "and flip-back at runtime. The message names the primitive and the "
+        "offending key/part; a hint steers to the valid keys (with a 'did you "
+        "mean' suggestion) or to the verb that renders the intended content."
     ),
     "E1109": "Invalid \\recolor state or missing required state/color parameter.",
     "E1112": "Unknown annotation position or side.",

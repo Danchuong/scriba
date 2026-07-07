@@ -70,6 +70,86 @@ def _normalize_bbox(
     return (int(bbox[0]), int(bbox[1]), int(bbox[2]), int(bbox[3]))
 
 
+# Per-``primitive_type`` steering for the value-flipback E1105 below. The
+# generic message names the primitive and the part; the hint routes the author
+# to the verb that actually shows the intended content on that primitive.
+_VALUE_LESS_HINTS: dict[str, str] = {
+    "stack": (
+        "Stack items have no per-item value; set it at construction "
+        "(push={label, value}) or mark the item with \\recolor"
+    ),
+    "numberline": (
+        "NumberLine ticks are axis coordinates set by domain=/ticks=/labels=, "
+        "not a per-tick value="
+    ),
+    "codepanel": (
+        "CodePanel lines are static source with no per-line ops; use "
+        "\\recolor/\\annotate to mark a line"
+    ),
+    "graph": (
+        "value= is edge-scoped on Graph; node values are not rendered — apply "
+        "value= to an edge[(u,v)] instead"
+    ),
+}
+
+
+def _validate_value_channels(
+    frames: list[Any],
+    primitives: dict[str, Any],
+) -> None:
+    """Reject ``value=`` on a part whose primitive does not render it (E1105).
+
+    ``value=`` is a universally-accepted ``\\apply`` key, but four primitives
+    have parts with no value display slot — Stack ``item[i]``, Graph
+    ``node[name]``, NumberLine ``tick[i]``, CodePanel ``line[i]`` (each declares
+    this via ``renders_value``). ``scene._apply_apply`` records the value
+    unconditionally, so without this gate the differ emits a real
+    ``value_change`` the server SVG never honored → the runtime stamps it then
+    the fs-snap frame reverts it (a flip-back flash) and the author's intent
+    silently vanishes.
+
+    Runs at the top of :func:`_prescan_value_widths` — before the value is ever
+    applied and before the differ — so the render aborts loudly instead of
+    baking a dishonest manifest. It deliberately does NOT live inside
+    ``set_value``: that call is wrapped in a best-effort ``try/except: pass``
+    below, which would swallow the raise.
+    """
+    for frame in frames:
+        for shape_name, prim in primitives.items():
+            if not hasattr(prim, "renders_value"):
+                continue
+            shape_state = frame.shape_states.get(shape_name)
+            if not shape_state:
+                continue
+            for target_key, target_data in shape_state.items():
+                if not isinstance(target_data, dict):
+                    continue
+                if target_data.get("value") is None:
+                    continue
+                suffix = target_key
+                if suffix.startswith(shape_name + "."):
+                    suffix = suffix[len(shape_name) + 1:]
+                if prim.renders_value(suffix):
+                    continue
+                # Local import sidesteps the errors.py <-> renderer cycle.
+                from scriba.animation.errors import _animation_error
+
+                hint = _VALUE_LESS_HINTS.get(
+                    getattr(prim, "primitive_type", ""),
+                    "this part has no value display; a per-part value= needs a "
+                    "value-bearing primitive (Array/Tree/LinkedList/Graph edge)",
+                )
+                raise _animation_error(
+                    "E1105",
+                    (
+                        f"{type(prim).__name__} \\apply parameter 'value=' is "
+                        f"not rendered on {suffix!r}; it would be silently "
+                        f"dropped from the render"
+                    ),
+                    hint=hint,
+                )
+
+
 def _prescan_value_widths(
     frames: list[Any],
     primitives: dict[str, Any],
@@ -82,6 +162,11 @@ def _prescan_value_widths(
     ``value`` field is consumed.  This is idempotent and does not
     mutate structural state (no push/pop/add_node side effects).
     """
+    # Loud-fail a value= on a part the primitive cannot render, BEFORE the
+    # best-effort set_value pass below swallows it and the differ bakes a
+    # flip-back value_change (design-value-flipback.md).
+    _validate_value_channels(frames, primitives)
+
     # Snapshot per-primitive display state so pre-scan does not pollute
     # initial render (e.g. DPTable cells appearing pre-filled).  Width
     # tracking lives in separate fields (e.g. VariableWatch

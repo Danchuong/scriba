@@ -216,6 +216,15 @@ class NumberLinePrimitive(PrimitiveBase):
 
         return suffix in ("axis", "all")
 
+    def renders_value(self, suffix: str) -> bool:
+        """NumberLine ticks are axis coordinates, not a per-tick value slot.
+
+        A tick's label is its coordinate, set by ``domain=``/``ticks=``/
+        ``labels=`` (§7.6); there is no per-tick ``value=`` op. A ``value=``
+        would vanish from the render (flip-back), so reject it.
+        """
+        return False
+
     def _arrow_height_above(self, annotations: "list[dict]") -> int:
         """Compute arrow height above, locked to cross-frame max to prevent jitter."""
         return self._reserved_arrow_above()

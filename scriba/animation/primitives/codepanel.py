@@ -174,6 +174,14 @@ class CodePanel(PrimitiveBase):
 
         return False
 
+    def renders_value(self, suffix: str) -> bool:
+        """CodePanel lines are static source with no per-line ops (§7.11).
+
+        ``emit_svg`` renders ``self.lines[i]``; a ``value=`` has no display slot
+        and would vanish from the render (flip-back), so reject it.
+        """
+        return False
+
     def _line_anchor_y(self, line_num: int) -> float:
         """Vertical center of 1-based ``line_num`` in the content frame."""
         header_h = _HEADER_HEIGHT if self.label is not None else 0

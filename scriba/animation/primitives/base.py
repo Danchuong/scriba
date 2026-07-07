@@ -396,6 +396,26 @@ class PrimitiveBase(abc.ABC):
         """Return display value for *suffix*, or ``None`` if unset."""
         return self._values.get(suffix)
 
+    def renders_value(self, suffix: str) -> bool:
+        """Return ``True`` if a ``value=`` applied to *suffix* is rendered.
+
+        ``value=`` is a universally-accepted ``\\apply`` key (``_GENERIC_APPLY_
+        KEYS``), but only primitives with a per-part value display slot actually
+        paint it — Array cells, Tree/LinkedList nodes, Graph *edges*, and the
+        rest of the honoring majority. On a part with no slot the value vanishes
+        from ``emit_svg`` while the differ still emits a ``value_change`` the
+        runtime stamps and the fs-snap frame then reverts: a flip-back flash and
+        a silent no-op on the author's intent.
+
+        Primitives whose parts do not render a value override this to return
+        ``False`` for those suffixes, so the pre-differ value pass rejects the
+        apply with ``E1105`` (loud) instead of swallowing it (silent). Default
+        ``True`` — the value-honoring majority need no override. Suffix-aware so
+        a primitive can render value on some parts but not others (Graph: edges
+        yes, nodes no).
+        """
+        return True
+
     def set_label(self, suffix: str, label: str) -> None:
         """Set display label for an addressable part."""
         if not self.validate_selector(suffix):
