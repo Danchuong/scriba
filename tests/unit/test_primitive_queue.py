@@ -302,3 +302,20 @@ class TestAnnotationReservation:
         # No caption/annotations: height collapses to the content bottom.
         assert bbox.height == inst.resolve_below_baseline()
         assert (bbox.width, bbox.height) == (286, 90)
+
+
+class TestPointerAnnotationAnchor:
+    """sweep3-decor LOW-MED: ``front``/``rear`` are valid selectors
+    (\\recolor works) but an \\annotate on them silently dropped because no
+    anchor resolved. They now anchor at the pointed-at cell's top-center,
+    using the same display clamps the pointer emit paints with."""
+
+    def test_front_rear_anchors_resolve(self) -> None:
+        q = Queue("q", {"capacity": 4, "data": [10, 20, 30]})
+        front = q.resolve_annotation_point("q.front")
+        rear = q.resolve_annotation_point("q.rear")
+        assert front is not None and rear is not None
+        fi = max(0, min(q.front_idx, q.capacity - 1))
+        ri = max(q.rear_idx - 1, 0)
+        assert front == q.resolve_annotation_point(f"q.cell[{fi}]")
+        assert rear == q.resolve_annotation_point(f"q.cell[{ri}]")

@@ -714,6 +714,22 @@
   }
 }
 
+/* FO ink theming (sweep3-runtime): KaTeX math values render inside
+   foreignObject divs whose inline style bakes the LIGHT state ink — the
+   per-state rules above touch only SVG fill, so a dark-mode math value sat
+   at 1.06:1 on the idle cell (invisible). Route the div ink through the
+   same state text tokens; the inline style needs !important to beat.
+   Light mode resolves to the identical hex the inline style already
+   carries (visually byte-identical); dark flips with the tokens for free. */
+.scriba-state-idle foreignObject div      { color: var(--scriba-state-idle-text) !important; }
+.scriba-state-current foreignObject div   { color: var(--scriba-state-current-text) !important; }
+.scriba-state-done foreignObject div      { color: var(--scriba-state-done-text) !important; }
+.scriba-state-dim foreignObject div       { color: var(--scriba-state-dim-text) !important; }
+.scriba-state-error foreignObject div     { color: var(--scriba-state-error-text) !important; }
+.scriba-state-good foreignObject div      { color: var(--scriba-state-good-text) !important; }
+.scriba-state-highlight foreignObject div { color: var(--scriba-state-highlight-text) !important; }
+.scriba-state-path foreignObject div      { color: var(--scriba-state-path-text) !important; }
+
 /* ============================================
    Dark mode — β "Tonal Architecture" dark variant
 
@@ -841,6 +857,15 @@
     /* R-25: path #a78bfa — distinct from info (#70b8ff) */
     --scriba-annotation-path:    #a78bfa;
     --scriba-annotation-muted:   var(--scriba-fg-muted);
+    /* R-37 state-binding inks, dark: match the dark state hues (twin of
+       the [data-theme="dark"] block above — sweep3-runtime found these six
+       missing here, leaving sub-AA light inks on the OS-dark embed path) */
+    --scriba-annotation-state-current: #70b8ff;
+    --scriba-annotation-state-done:    #9ba1a6;
+    --scriba-annotation-state-dim:     #7e868c;
+    --scriba-annotation-state-good:    #65ba74;
+    --scriba-annotation-state-error:   #ff6369;
+    --scriba-annotation-state-path:    #a78bfa;
   }
 }
 
@@ -888,12 +913,20 @@
 [data-theme="dark"] .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight {
   fill: var(--scriba-state-idle-text);
 }
+/* A MATH edge weight is an FO div (inline color) — the fill flip above
+   cannot reach it; flip the div ink too (sweep3-runtime). */
+[data-theme="dark"] .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight div {
+  color: var(--scriba-state-idle-text) !important;
+}
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] {
     fill: var(--scriba-state-idle-fill);
   }
   :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight {
     fill: var(--scriba-state-idle-text);
+  }
+  :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight div {
+    color: var(--scriba-state-idle-text) !important;
   }
 }
 

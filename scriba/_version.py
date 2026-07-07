@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.30.0"
+__version__: str = "0.31.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 25
+SCRIBA_VERSION: int = 26
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -508,4 +508,38 @@ node-label fit family, one combined bump):
     overlaps + 2 coincident at N=100).
 All four are byte-inert on the shipped corpus — the 107 golden re-blesses carry
 ONLY the shared-stylesheet delta; no SVG geometry changed in any golden.
-Consumer caches keyed on rendered output MUST invalidate."""
+Consumer caches keyed on rendered output MUST invalidate.
+
+0.31.0 bumps 25→26 (sweep-3 fix wave — 4 hunters over the 0.30.0 surface,
+decoration stacks, value content, and the runtime contract; 12 defects fixed):
+  * Math-value foreignObject ink now themes: KaTeX FO divs baked the LIGHT
+    state ink inline (1.06:1 — invisible — on the dark idle cell); base-sheet
+    rules route the div color through the state text tokens (light resolves to
+    the identical hex; !important beats the inline style). The default-pill
+    MATH edge weight gets the same div-ink flip in both dark scopes.
+  * Six --scriba-annotation-state-* inks were missing from the @media dark
+    twin (sub-AA on the OS-dark embed path); a mechanical scope-parity test
+    now pins both dark scopes to the same token set.
+  * Tree add_node + wide value= on the not-yet-added node: the prescan
+    re-checks soft-dropped values against the timeline-max clone and reserves
+    the final leaf pitch + left-pad floor up front — the born-wide node no
+    longer clips the viewBox and the tree translate never jumps mid-scene.
+  * Graph isolated-node lane packs by label halves (via the settle), with the
+    canvas reserving the packed run — adjacent wide lane labels no longer
+    overlap (-61 px on the probe).
+  * Overlay⟷annotate obstacle unification: trace-label and \\group title
+    pills persist their placed boxes as MUST obstacles for the annotation
+    placer (663/810 px² overlaps on the probes → 0).
+  * \\cursor now paints (and reserves) on Stack and Queue as documented;
+    Stack carets address item[i] and drop to the whole-stack baseline.
+  * \\annotate on q.front / q.rear anchors at the pointed-at cell instead of
+    silently dropping.
+  * \\note renders $math$ through the shared KaTeX pill channel (docs §5.21
+    promise), sizes by the math-aware oracle, never splits inside $...$, and
+    single-line RTL notes carry unicode-bidi:plaintext (0.29 pill parity).
+  * Matrix data= and NumberLine domain=/ticks= constructor coercions fail
+    loud (E1423/E1453/E1455) instead of leaking raw ValueError/TypeError —
+    Bar's E1490 contract, applied to its siblings.
+Every fix is opt-in-inert: the 107 golden re-blesses carry ONLY the identical
+shared-stylesheet delta (FO ink rules + twin tokens + weight-div rules); no
+SVG geometry changed in any golden. Consumer caches MUST invalidate."""

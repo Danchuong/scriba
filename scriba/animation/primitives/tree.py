@@ -202,6 +202,9 @@ class Tree(PrimitiveBase):
             self.note_node_label(
                 self._node_key(_n), self.node_labels.get(_n, str(_n))
             )
+        # H1: monotonic left-pad floor for values on nodes that only exist
+        # after a mid-scene add_node (pinned by _prescan_future_value).
+        self._nodefit_lpad_floor: int = 0
 
         # Compute viewport dimensions based on tree size
         node_count = len(self.nodes)
@@ -767,7 +770,7 @@ class Tree(PrimitiveBase):
         need = max(1, leaves) * self._node_pitch() + 2 * _PADDING
         return max(_DEFAULT_WIDTH, base, need)
 
-    def _nodefit_regrow(self) -> None:
+    def _nodefit_regrow(self, leaf_floor: int = 0) -> None:
         """Widen the canvas to the grown label map and re-run RT.
 
         Called from ``set_value`` only when a node's cross-frame max grew;
@@ -776,12 +779,50 @@ class Tree(PrimitiveBase):
         Only the LABEL-driven need may exceed the current width — the
         node-count base stays frozen at its __init__ value (add_node has
         never re-derived the canvas; re-deriving it here would move the
-        tree mid-scene). Radius frozen too — glyph stability."""
+        tree mid-scene). Radius frozen too — glyph stability.
+
+        *leaf_floor* (H1): the timeline-max leaf count, supplied by
+        ``_prescan_future_value`` when a wide value lands on a node that is
+        only added mid-scene — the live leaf count would under-reserve the
+        final pitch by the not-yet-added leaves."""
         leaves = sum(1 for n in self.nodes if not self.children_map.get(n))
+        leaves = max(leaves, leaf_floor)
         need = max(1, leaves) * self._node_pitch() + 2 * _PADDING
         if need > self.width:
             self.width = need
             self._relayout()
+
+    def _prescan_future_value(self, suffix: str, value: str, clone) -> None:
+        """H1 (sweep3-nodefit): reserve width for a ``value=`` whose node
+        only exists after a mid-scene ``add_node``.
+
+        The live prescan replay soft-drops it (the node isn't addressable
+        yet), so without this the born-wide node clipped the fixed viewBox
+        and the late live regrow moved the tree mid-scene. The width lands
+        in the monotonic map keyed by the suffix; the canvas grows against
+        the TIMELINE-MAX clone's leaf count so the final pitch is reserved
+        up front — the frame-time re-apply then finds the map already at
+        its max and never relayouts again (R-32 frame-stable)."""
+        if not suffix.startswith("node["):
+            return
+        before = self.cross_frame_max_label_width(suffix)
+        self.note_node_label(suffix, value)
+        if self.cross_frame_max_label_width(suffix) > before:
+            leaves = sum(
+                1 for n in clone.nodes if not clone.children_map.get(n)
+            )
+            self._nodefit_regrow(leaf_floor=leaves)
+            # Translate stability: the A-fold left pad reads LIVE positions,
+            # which only include the added node mid-scene — pin the floor
+            # from the timeline-max clone so frame 0 already carries it and
+            # the tree translate never jumps when the node is born.
+            try:
+                clone.set_value(suffix, value)
+                lpad = int(clone._h_label_pad()[0])
+            except Exception:  # noqa: BLE001 - probe only
+                lpad = 0
+            if lpad > self._nodefit_lpad_floor:
+                self._nodefit_lpad_floor = lpad
 
     def set_value(self, suffix: str, value: str) -> None:
         super().set_value(suffix, value)
@@ -943,6 +984,11 @@ class Tree(PrimitiveBase):
             half = tw / 2.0
             lbl_l = max(lbl_l, int(math.ceil(half - (r + cx))))
             lbl_r = max(lbl_r, int(math.ceil(r + cx + half - content_w)))
+        # H1: floor pinned by _prescan_future_value from the timeline-max
+        # clone, so a node born mid-scene never widens the pad — and the
+        # translate — between frames. 0 for every scene without future
+        # values (byte-stable).
+        lbl_l = max(lbl_l, self._nodefit_lpad_floor)
         if lbl_l > 0:
             left_pad = max(left_pad, lbl_l)
         if lbl_r > 0:

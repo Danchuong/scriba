@@ -224,6 +224,112 @@ class TestDarkModeNonTextContrast:
         )
 
 
+class TestDarkScopeTokenParity:
+    """Every custom property set by the explicit ``[data-theme="dark"]``
+    token block must also be set by its ``@media (prefers-color-scheme:
+    dark) :root:not([data-theme="light"])`` twin (the H6 pattern) — a
+    token present in one scope but not the other silently mis-themes the
+    OS-preference path (sweep3-runtime: 6 ``--scriba-annotation-state-*``
+    inks were missing from the twin, leaving sub-AA light inks on dark
+    pills for embed consumers)."""
+
+    @staticmethod
+    def _token_names(block: str) -> set[str]:
+        import re
+
+        return set(re.findall(r"(--scriba-[\w-]+)\s*:", block))
+
+    @pytest.mark.unit
+    def test_media_twin_carries_every_data_theme_token(self) -> None:
+        from pathlib import Path
+
+        css = Path(
+            "scriba/animation/static/scriba-scene-primitives.css"
+        ).read_text()
+        i = css.index('[data-theme="dark"] {')
+        explicit = self._token_names(css[i : css.index("\n}", i)])
+        j = css.index(':root:not([data-theme="light"]) {')
+        twin = self._token_names(css[j : css.index("\n  }", j)])
+        missing = explicit - twin
+        extra = twin - explicit
+        assert not missing, f"tokens missing from the @media twin: {sorted(missing)}"
+        assert not extra, f"tokens only in the @media twin: {sorted(extra)}"
+
+
+class TestForeignObjectInkTheming:
+    """sweep3-runtime HIGH: KaTeX math values render inside foreignObject
+    divs whose inline style bakes the LIGHT state ink — the per-state CSS
+    rules touch only SVG ``fill``, so a dark-mode math value sat at 1.06:1
+    on the idle cell (invisible). Base-sheet rules now route the FO div ink
+    through the same state text tokens (``!important`` beats the inline
+    style); light resolves to the identical hex the inline style already
+    carried, dark flips with the theme for free."""
+
+    @staticmethod
+    def _css() -> str:
+        from pathlib import Path
+
+        return Path(
+            "scriba/animation/static/scriba-scene-primitives.css"
+        ).read_text()
+
+    @pytest.mark.unit
+    def test_every_state_text_token_has_fo_ink_rule(self) -> None:
+        import re
+
+        css = self._css()
+        states = sorted(set(re.findall(r"--scriba-state-([a-z]+)-text:", css)))
+        assert states, "no state text tokens found"
+        for s in states:
+            sel = f".scriba-state-{s} foreignObject div"
+            assert sel in css, f"missing FO ink rule for state {s!r}"
+            i = css.index(sel)
+            block = css[i : css.index("}", i)]
+            assert f"var(--scriba-state-{s}-text)" in block, (
+                f"FO ink rule for {s!r} must route through its text token"
+            )
+            assert "!important" in block, (
+                f"FO ink rule for {s!r} must beat the inline style"
+            )
+
+    @pytest.mark.unit
+    def test_dark_math_weight_ink_rule_present(self) -> None:
+        """A math edge weight on the DEFAULT pill is an FO div too — the
+        0.30.0 fill flip cannot reach it; both dark scopes need the div
+        ink twin."""
+        css = self._css()
+        assert (
+            '[data-theme="dark"] .scriba-graph-pill[fill="white"]'
+            " ~ .scriba-graph-weight div" in css
+        )
+        assert (
+            ':root:not([data-theme="light"]) '
+            '.scriba-graph-pill[fill="white"]'
+            " ~ .scriba-graph-weight div" in css
+        )
+
+    @pytest.mark.unit
+    def test_light_tokens_match_historic_inline_inks(self) -> None:
+        """The light-mode token values must equal the hexes the inline FO
+        styles bake, so routing through tokens is visually byte-identical
+        in light mode."""
+        from scriba.animation.primitives._types import THEME
+        from scriba.animation.primitives.base import STATE_COLORS
+
+        import re
+
+        css = self._css()
+        root = css[css.index(":root") : css.index("\n}", css.index(":root"))]
+        for state, colors in STATE_COLORS.items():
+            m = re.search(
+                rf"--scriba-state-{state}-text:\s*(#[0-9a-fA-F]+)", root
+            )
+            if m:
+                assert m.group(1).lower() == colors["text"].lower(), (
+                    f"{state}: token {m.group(1)} != inline {colors['text']}"
+                )
+
+
 class TestGraphPillDarkMode:
     """Graph edge-weight pill dark theming (research-graph-pill-dark.md).
 

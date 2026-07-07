@@ -130,6 +130,31 @@ _ROW_RE = re.compile(r"^(?P<name>[^.]+)\.row\[(?P<i>\d+)\]$")
 _COL_RE = re.compile(r"^(?P<name>[^.]+)\.col\[(?P<j>\d+)\]$")
 _DIAG_RE = re.compile(r"^(?P<name>[^.]+)\.diag$")
 
+def _cell_float(v: object) -> float:
+    """Coerce one ``data=`` cell to float, failing LOUD on non-numeric input.
+
+    The constructor previously ran a bare ``float(v)`` and leaked a raw
+    ``ValueError`` traceback on ``""``/``"abc"`` (sweep3-content F1) while
+    the sibling Bar validated the same input with a clean E1490 and Matrix's
+    own apply-path guarded with E1107. try-float (not an isinstance check)
+    keeps previously-working numeric strings ("3") coercing.
+    """
+    try:
+        return float(v)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        raise _animation_error(
+            "E1423",
+            detail=(
+                f"Matrix 'data' contains a non-numeric entry {v!r}; "
+                "every value must be an int or float"
+            ),
+            hint=(
+                "scientific notation like 1e9 is not supported by the "
+                "lexer; write the digits out (1000000000)"
+            ),
+        ) from None
+
+
 # ---------------------------------------------------------------------------
 # MatrixPrimitive
 # ---------------------------------------------------------------------------
@@ -221,10 +246,10 @@ class MatrixPrimitive(PrimitiveBase):
                     ),
                     hint="every row needs the same number of columns",
                 )
-            data_2d = [[float(v) for v in row] for row in raw_data]
+            data_2d = [[_cell_float(v) for v in row] for row in raw_data]
         else:
             # Flat list -> 2D
-            flat = [float(v) for v in raw_data]
+            flat = [_cell_float(v) for v in raw_data]
             if len(flat) != rows * cols:
                 raise _animation_error(
                     "E1422",

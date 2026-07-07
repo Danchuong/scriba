@@ -77,6 +77,36 @@ class TestPreExistingConstructorTypeGuards:
         assert "E1422" in str(ei.value)
 
 
+class TestSweep3ConstructorGuards:
+    """Sweep-3 (investigations/sweep3-content.md F1): the Matrix ``data=``
+    constructor and NumberLine ``domain=``/``ticks=`` coerced before
+    validating — the same wrong-TYPE leak class as above. Bar validates the
+    identical input with a clean E1490; these pin Matrix/NumberLine to the
+    same fail-loud contract (raw ``ValueError``/``TypeError`` today)."""
+
+    CASES = [
+        ("Matrix", {"rows": 1, "cols": 1, "data": ["abc"]}, "E1423"),
+        ("Matrix", {"rows": 1, "cols": 1, "data": [""]}, "E1423"),
+        ("Matrix", {"rows": 1, "cols": 1, "data": [" "]}, "E1423"),
+        ("Matrix", {"rows": 1, "cols": 2, "data": [[1, "x"]]}, "E1423"),
+        ("NumberLine", {"domain": ["a", 5]}, "E1453"),
+        ("NumberLine", {"domain": [0, 10], "ticks": [5]}, "E1455"),
+        ("NumberLine", {"domain": [0, 10], "ticks": "five"}, "E1455"),
+    ]
+
+    @pytest.mark.parametrize("cls_name,params,code", CASES)
+    def test_wrong_type_raises_clean_ecode(self, cls_name, params, code) -> None:
+        with pytest.raises(ScribaError) as ei:
+            _build(cls_name, params)
+        assert code in str(ei.value), f"{cls_name}{params} → {ei.value}"
+
+    def test_matrix_numeric_strings_still_coerce(self) -> None:
+        # float("3") worked before the guard; keep accepting it so existing
+        # documents don't churn — only genuinely non-numeric content is loud.
+        m = _build("Matrix", {"rows": 1, "cols": 2, "data": ["3", 4]})
+        assert m.data[0][0] == 3.0
+
+
 class TestPlane2DRemoveTypeGuard:
     def test_remove_circle_non_int_is_clean(self) -> None:
         from scriba.animation.primitives.plane2d import Plane2D

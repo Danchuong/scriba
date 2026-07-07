@@ -244,6 +244,12 @@ class Stack(PrimitiveBase):
             y = _PADDING + rev_vi * (_CELL_HEIGHT + _CELL_GAP)
         return (float(x + cw / 2), float(y + _CELL_HEIGHT / 2))
 
+    def _cursor_cell_suffix(self, index: "int") -> str:
+        """Stack addresses parts as ``item[{i}]``, not ``cell[{i}]``."""
+        if isinstance(index, str) and index in ("before", "after"):
+            return index  # sentinel slots (R-42)
+        return f"item[{int(index)}]"
+
     def resolve_below_baseline(self) -> "float | None":
         """``position=below`` pills sit below the whole stack (callout lane),
         clear of the cells. Orientation-dependent: the content bottom is one
@@ -271,6 +277,10 @@ class Stack(PrimitiveBase):
         content_w = w
         core_w = max(w, self._caption_block_width(content_w))
         h += self._caption_block_height(content_w)
+
+        # R-38: a binding caret sits below the content; grow the box so the
+        # ▲ + id are not clipped (0 when no caret → byte-stable).
+        h = max(h, self._cursor_extent_below())
 
         # Layer B/C: reserve space for annotation arrows + position pills.
         # No annotations -> all terms are 0, so the box is byte-stable.
@@ -429,6 +439,14 @@ class Stack(PrimitiveBase):
                 top_y=int(bbox.height - self._caption_block_height(content_w)),
                 render_inline_tex=render_inline_tex,
             )
+
+        # R-38 binding carets ride the decoration band below the content —
+        # sweep3-decor M5: docs §5.11 lists Stack as a \cursor target but
+        # this call was never wired, so a bound caret silently vanished.
+        # (Vertical stacks drop the caret to resolve_below_baseline — the
+        # whole-stack bottom — via _cursor_apex_origin, so it never paints
+        # over the item beneath its cell.)
+        self.emit_cursors_under(parts)
 
         # Annotations (arrows + position pills) via the shared engine, inside
         # the translate group so anchors share the content frame (Layer B/C).

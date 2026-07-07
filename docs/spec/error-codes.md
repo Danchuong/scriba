@@ -187,6 +187,7 @@ documented deprecated alias.
 | E1420 | Matrix requires `rows` and `cols`. | `Matrix{m}{rows=R, cols=C}`. |
 | E1421 | Matrix `rows`/`cols` must be a positive integer. | Use a positive integer for both. |
 | E1422 | Matrix `data` length does not match `rows*cols`. | Supply a flat list of length `rows*cols`. |
+| E1423 | Matrix `data` contains a non-numeric entry. | Every value must be an int or float (write `1e9` out as digits). |
 | E1425 | Matrix/DPTable cell count exceeds maximum. | Ensure `rows*cols <= 250000`. |
 | E1426 | DPTable requires `n` (1D) or both `rows` and `cols` (2D). | `DPTable{t}{n=10}` or `DPTable{t}{rows=5, cols=5}`. |
 | E1427 | DPTable `n` must be a positive integer. | Use a positive integer for `n`. |
@@ -216,7 +217,7 @@ documented deprecated alias.
 | E1443 | Deque underflow: popping more elements than the deque holds (empty or fewer than requested). | Push before popping, or pop no more elements than are present. |
 | E1444 | A plain Queue received a deque-only operation (`push_front`/`push_back`/`pop_front`/`pop_back`); Queue supports only `enqueue`/`dequeue`. | Declare the shape as `Deque` to use double-ended operations. |
 
-### HashMap / NumberLine (E1450--E1454)
+### HashMap / NumberLine (E1450--E1455)
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
@@ -225,6 +226,7 @@ documented deprecated alias.
 | E1452 | NumberLine requires `domain`. | `NumberLine{n}{domain=[min, max]}`. |
 | E1453 | NumberLine `domain` must be a two-element [min, max] list. | Supply exactly two numbers. |
 | E1454 | NumberLine `ticks` exceeds maximum (1000). | Reduce the tick count. |
+| E1455 | NumberLine `ticks` must be an integer. | Example: `ticks=11`. |
 
 ### Graph (E1470--E1475)
 

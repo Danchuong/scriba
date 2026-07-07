@@ -654,6 +654,12 @@ class PrimitiveBase(abc.ABC):
             for b in self.resolve_self_content_rects()
         )
         _trace_label_placed: list[_LabelPlacement] = []
+        # sweep3-decor M3: persist this frame's trace-label pill boxes so the
+        # annotation placer (which runs after) treats them as MUST obstacles
+        # instead of painting a pill on top — the overlay⟷annotate seam of
+        # design-shared-obstacle.md §1.5. Reset per emit; empty (byte-stable)
+        # without labelled traces.
+        self._trace_label_obstacle_boxes: "list[_Obstacle]" = []
         for tr in traces:
             pts: "list[tuple[float, float]]" = []
             ok = True
@@ -755,6 +761,16 @@ class PrimitiveBase(abc.ABC):
                     viewbox_min_y=_vb_min_y,
                 )
                 _trace_label_placed.append(_tl_placement)
+                self._trace_label_obstacle_boxes.append(
+                    _Obstacle(
+                        kind="overlay-label",
+                        x=_tl_placement.x,
+                        y=_tl_placement.y,
+                        width=_tl_placement.width,
+                        height=_tl_placement.height,
+                        severity="MUST",
+                    )
+                )
                 prx = _tl_placement.x - pw / 2.0
                 pry = _tl_placement.y - ph / 2.0
                 _tx = prx + pw / 2.0
@@ -1448,6 +1464,20 @@ class PrimitiveBase(abc.ABC):
         _caret_obs = getattr(self, "_cursor_obstacle_boxes", None)
         if _caret_obs:
             _prim_seg_obs = _prim_seg_obs + tuple(_caret_obs)
+
+        # sweep3-decor M3/M4: overlay label pills painted earlier this frame —
+        # a \trace's scan pill (emit_traces_under) and a \group's title pill
+        # (Graph._emit_group_hulls) — join as MUST boxes so an annotation pill
+        # never buries them. This is the overlay⟷annotate unification
+        # design-shared-obstacle.md §1.5 deferred; both lists are empty (and
+        # placement byte-stable) without those decorations.
+        for _fld in (
+            "_trace_label_obstacle_boxes",
+            "_hull_label_obstacle_boxes",
+        ):
+            _ov = getattr(self, _fld, None)
+            if _ov:
+                _prim_seg_obs = _prim_seg_obs + tuple(_ov)
 
         # R-31 ext: accumulate prior-annotation arrow-stroke segments across the
         # annotation loop.  Each emit_*_arrow_svg call returns sampled segments

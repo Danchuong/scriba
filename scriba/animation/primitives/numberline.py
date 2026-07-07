@@ -108,11 +108,30 @@ class NumberLinePrimitive(PrimitiveBase):
                 ),
             )
 
-        domain_min = float(domain[0])
-        domain_max = float(domain[1])
+        try:
+            domain_min = float(domain[0])
+            domain_max = float(domain[1])
+        except (TypeError, ValueError):
+            # Fail loud, not a raw ValueError traceback (sweep3-content:
+            # same wrong-TYPE leak class as the Matrix data= guard).
+            raise _animation_error(
+                "E1453",
+                detail=(
+                    "NumberLine 'domain' endpoints must be numbers, "
+                    f"got {domain!r}"
+                ),
+            ) from None
 
         ticks: int | None = self.params.get("ticks")
         if ticks is not None:
+            if isinstance(ticks, bool) or not isinstance(ticks, (int, float)):
+                raise _animation_error(
+                    "E1455",
+                    detail=(
+                        f"NumberLine 'ticks' must be an integer, got {ticks!r}"
+                    ),
+                    hint="example: ticks=11",
+                )
             ticks = int(ticks)
             if ticks < 1:
                 raise _animation_error(

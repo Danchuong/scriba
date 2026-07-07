@@ -800,6 +800,7 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1420",
         "E1421",
         "E1422",
+        "E1423",
         "E1425",
         "E1426",
         "E1427",
@@ -829,6 +830,7 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1452",
         "E1453",
         "E1454",
+        "E1455",
         # Plane2D
         "E1460",
         "E1461",

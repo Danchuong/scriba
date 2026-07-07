@@ -19,12 +19,18 @@ from scriba.animation.primitives._svg_helpers import (
     _LABEL_PILL_MAX_W_PX,
     _LabelPlacement,
     _Obstacle,
+    _emit_pill_label_text,
+    _label_has_math,
     _place_pill,
     _wrap_label_lines,
     annotation_color_class,
 )
-from scriba.animation.primitives._text_metrics import measure_label_line
+from scriba.animation.primitives._text_metrics import (
+    measure_label_line,
+    measure_value_text,
+)
 from scriba.animation.primitives._text_render import (
+    _bidi_style,
     _escape_xml,
     strip_math_markup,
 )
@@ -90,8 +96,8 @@ _VALUE_LESS_HINTS: dict[str, str] = {
         "\\recolor/\\annotate to mark a line"
     ),
     "graph": (
-        "value= is edge-scoped on Graph; node values are not rendered — apply "
-        "value= to an edge[(u,v)] instead"
+        "value= renders on Graph nodes and edges only; apply it to a "
+        "node[id] or an edge[(u,v)]"
     ),
 }
 
@@ -385,6 +391,45 @@ def _prescan_value_widths(
                     suffix = suffix[len(shape_name) + 1:]
                 try:
                     prim.set_value(suffix, str(val))
+                except Exception:  # noqa: BLE001 - best effort
+                    pass
+
+    # H1 (sweep3-nodefit): a value= on a part that only EXISTS after a
+    # structural apply (Tree add_node) soft-drops in the live replay above —
+    # the node isn't addressable yet — so its width never reached the label
+    # map: the born-wide node clipped the fixed viewBox and the late live
+    # regrow moved the tree mid-scene. Re-check those values against the
+    # timeline-max clone (the same probe _drop_invalid_selector_values uses
+    # to avoid wrong-drops) and feed the primitive's width channel directly,
+    # so the canvas reserves the final pitch BEFORE the first viewbox read.
+    for shape_name, prim in primitives.items():
+        hook = getattr(prim, "_prescan_future_value", None)
+        if hook is None:
+            continue
+        clone: Any | None = None
+        clone_built = False
+        for frame in frames:
+            shape_state = frame.shape_states.get(shape_name)
+            if not shape_state:
+                continue
+            for target_key, target_data in shape_state.items():
+                if not isinstance(target_data, dict):
+                    continue
+                val = target_data.get("value")
+                if val is None or target_key == shape_name:
+                    continue
+                suffix = target_key
+                if suffix.startswith(shape_name + "."):
+                    suffix = suffix[len(shape_name) + 1:]
+                if prim.validate_selector(suffix):
+                    continue  # live-valid -> the replay above handled it
+                if not clone_built:
+                    clone = _timeline_max_primitive(shape_name, prim, frames)
+                    clone_built = True
+                if clone is None or not clone.validate_selector(suffix):
+                    continue  # genuinely unaddressable -> E1115 soft-drop
+                try:
+                    hook(suffix, str(val), clone)
                 except Exception:  # noqa: BLE001 - best effort
                     pass
 
@@ -1429,6 +1474,7 @@ def _emit_scene_notes(
     primitives: "dict[str, Any] | None" = None,
     stage_offsets: "dict[str, tuple[float, float]] | None" = None,
     extra_obstacles: tuple[_Obstacle, ...] = (),
+    render_inline_tex: "Callable[[str], str] | None" = None,
 ) -> None:
     """Append one ``<g><rect/><text/></g>`` callout per ``\\note``.
 
@@ -1473,24 +1519,49 @@ def _emit_scene_notes(
         style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
         stroke = style["stroke"]
         display = strip_math_markup(text)
+        # M6 (sweep3-decor): docs §5.21 promise ``$math$`` in note text —
+        # route it through the same KaTeX foreignObject channel annotation
+        # pills use, sized by the math-aware oracle and never split inside
+        # ``$...$``. Non-math notes keep the exact pre-fix emit below.
+        has_math = render_inline_tex is not None and _label_has_math(text)
 
         # F1 (note overflow): a note that fits the board stays a byte-identical
         # single line; one wider than the board wraps like an annotation pill
         # instead of painting off-canvas.
-        single_pw = float(measure_label_line(display, LABEL_FONT_PX) + 12)
-        if single_pw <= board_avail:
-            lines = [display]
-            pw = single_pw
+        if has_math:
+            single_pw = float(measure_value_text(text, LABEL_FONT_PX) + 12)
+            if single_pw <= board_avail:
+                lines = [text]
+                pw = single_pw
+            else:
+                lines = _wrap_label_lines(
+                    text,
+                    max_px=wrap_px,
+                    font_px=LABEL_FONT_PX,
+                    math_rendered=True,
+                ) or [text]
+                pw = float(
+                    max(
+                        measure_value_text(ln, LABEL_FONT_PX) for ln in lines
+                    )
+                    + 12
+                )
         else:
-            lines = _wrap_label_lines(
-                display,
-                max_px=wrap_px,
-                font_px=LABEL_FONT_PX,
-                math_rendered=False,
-            ) or [display]
-            pw = float(
-                max(measure_label_line(ln, LABEL_FONT_PX) for ln in lines) + 12
-            )
+            single_pw = float(measure_label_line(display, LABEL_FONT_PX) + 12)
+            if single_pw <= board_avail:
+                lines = [display]
+                pw = single_pw
+            else:
+                lines = _wrap_label_lines(
+                    display,
+                    max_px=wrap_px,
+                    font_px=LABEL_FONT_PX,
+                    math_rendered=False,
+                ) or [display]
+                pw = float(
+                    max(measure_label_line(ln, LABEL_FONT_PX) for ln in lines)
+                    + 12
+                )
         ph = float(LABEL_FONT_PX * len(lines) + 8)
 
         # Height IS bounded like width: a note taller than the board is
@@ -1499,9 +1570,23 @@ def _emit_scene_notes(
         board_avail_h = max(1.0, vh - 2.0 * _NOTE_MARGIN)
         max_lines = max(1, int((board_avail_h - 8) // LABEL_FONT_PX))
         if len(lines) > max_lines:
-            lines = lines[: max_lines - 1] + [lines[max_lines - 1].rstrip() + "…"]
+            if has_math:
+                # Never splice "…" into a line that may carry $...$ — cut
+                # whole lines instead (the warn still flags the loss).
+                lines = lines[:max_lines]
+                pw = float(
+                    max(measure_value_text(ln, LABEL_FONT_PX) for ln in lines)
+                    + 12
+                )
+            else:
+                lines = lines[: max_lines - 1] + [
+                    lines[max_lines - 1].rstrip() + "…"
+                ]
+                pw = float(
+                    max(measure_label_line(ln, LABEL_FONT_PX) for ln in lines)
+                    + 12
+                )
             ph = float(LABEL_FONT_PX * len(lines) + 8)
-            pw = float(max(measure_label_line(ln, LABEL_FONT_PX) for ln in lines) + 12)
             warnings.warn(
                 f"[E1126] \\note {nid!r} text is taller than the board; "
                 f"truncated/clamped into the viewBox",
@@ -1547,12 +1632,36 @@ def _emit_scene_notes(
         key = f"note[{nid}]-solo"
         aria = _escape_xml(display) or "note"
         cx = px + pw / 2.0
-        if len(lines) == 1:
+        # Bidi isolation for RTL/mixed note text — 0.29 pill parity; empty
+        # (byte-identical) for LTR-only notes.
+        _bidi = _bidi_style(display)
+        _style = "text-anchor:middle;dominant-baseline:central" + (
+            f";{_bidi}" if _bidi else ""
+        )
+        if has_math:
+            # KaTeX foreignObject path (shared pill machinery) — every line
+            # is an FO box centered on the pill, mirroring the annotation
+            # pills' _emit_pill_label_text contract.
+            _fo_parts: list[str] = []
+            _emit_pill_label_text(
+                _fo_parts,
+                lines,
+                int(cx),
+                int(py + ph / 2.0),
+                LABEL_FONT_PX,
+                style["label_fill"],
+                "",
+                "",
+                pill_w=int(pw),
+                render_inline_tex=render_inline_tex,
+            )
+            text_el = "".join(_fo_parts)
+        elif len(lines) == 1:
             # Single line: byte-identical to the pre-wrap output.
             text_el = (
                 f'<text x="{cx:.1f}" y="{py + ph / 2.0:.1f}"'
                 f' fill="{style["label_fill"]}"'
-                f' style="text-anchor:middle;dominant-baseline:central">'
+                f' style="{_style}">'
                 f"{_escape_xml(lines[0])}</text>"
             )
         else:
@@ -1565,7 +1674,7 @@ def _emit_scene_notes(
             )
             text_el = (
                 f'<text fill="{style["label_fill"]}"'
-                f' style="text-anchor:middle;dominant-baseline:central">'
+                f' style="{_style}">'
                 f"{tspans}</text>"
             )
         parts.append(
@@ -1980,6 +2089,7 @@ def _emit_frame_svg(
         primitives,
         _link_stage_offsets,
         _link_bridge_obs,
+        render_inline_tex=render_inline_tex,
     )
 
     svg_parts.append("</svg>")

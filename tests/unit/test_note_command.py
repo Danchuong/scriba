@@ -204,3 +204,77 @@ class TestDeterminism:
         )
         assert len(groups) >= 2, "note should appear in both frames"
         assert len(set(groups)) == 1, "note geometry drifted between frames"
+
+
+class TestNoteMathAndBidi:
+    """sweep3-decor M6 + LOW: docs §5.21 promise ``$math$`` in \\note text
+    (the pill channel already renders it via KaTeX foreignObject), and the
+    0.29 bidi-isolation fix shipped only on annotation pills — notes were
+    left stripping math to literal text and scrambling RTL."""
+
+    def test_note_math_renders_katex_not_stripped(self, tmp_path: Path) -> None:
+        source = (
+            '\\begin{animation}[id="d", label="note math"]\n'
+            "\\shape{a}{Array}{size=2, data=[1,2]}\n"
+            "\\step\n"
+            '\\note{n1}{text="$O(n \\log n)$", at=bottom-left}\n'
+            "\\end{animation}\n"
+        )
+        html_out = _render(source, tmp_path)
+        groups = re.findall(
+            r'(<g[^>]*data-annotation="note\[n1\]-solo".*?</g>)',
+            html_out,
+            re.S,
+        )
+        assert groups, "note group missing"
+        g = groups[0]
+        assert "foreignObject" in g, (
+            "math note must render through the KaTeX foreignObject path"
+        )
+        # aria-label rightly carries the stripped plain text; the PAINTED
+        # content must not.
+        painted = re.sub(r'aria-label="[^"]*"', "", g)
+        assert "O(nlog n)" not in painted and "O(n log n)" not in painted, (
+            "math note painted as stripped literal text"
+        )
+
+    def test_note_rtl_carries_bidi_isolation(self, tmp_path: Path) -> None:
+        source = (
+            '\\begin{animation}[id="d", label="note rtl"]\n'
+            "\\shape{a}{Array}{size=2, data=[1,2]}\n"
+            "\\step\n"
+            '\\note{n1}{text="مرحبا بالعالم", at=top-left}\n'
+            "\\end{animation}\n"
+        )
+        html_out = _render(source, tmp_path)
+        groups = re.findall(
+            r'(<g[^>]*data-annotation="note\[n1\]-solo".*?</g>)',
+            html_out,
+            re.S,
+        )
+        assert groups, "note group missing"
+        assert "unicode-bidi:plaintext" in groups[0], (
+            "RTL note text must carry bidi isolation (0.29 pill parity)"
+        )
+
+    def test_note_plain_ltr_emit_unchanged(self, tmp_path: Path) -> None:
+        # The plain-LTR note keeps its exact pre-fix <text> shape — the
+        # byte-identity guard for the whole existing corpus.
+        source = (
+            '\\begin{animation}[id="d", label="note plain"]\n'
+            "\\shape{a}{Array}{size=2, data=[1,2]}\n"
+            "\\step\n"
+            '\\note{n1}{text="careful", at=top-right}\n'
+            "\\end{animation}\n"
+        )
+        html_out = _render(source, tmp_path)
+        groups = re.findall(
+            r'(<g[^>]*data-annotation="note\[n1\]-solo".*?</g>)',
+            html_out,
+            re.S,
+        )
+        assert groups, "note group missing"
+        assert (
+            'style="text-anchor:middle;dominant-baseline:central"' in groups[0]
+        ), "plain note <text> style changed — corpus would churn"
+        assert "foreignObject" not in groups[0]

@@ -292,6 +292,19 @@ class Queue(PrimitiveBase):
                 x = _LABEL_PADDING + idx * (self._cell_width + CELL_GAP) + self._cell_width // 2
                 y = cell_y  # top edge of cell
                 return (float(x), float(y))
+        # sweep3-decor: "front"/"rear" are valid selectors (\recolor works),
+        # but an \annotate on them silently dropped — no anchor resolved.
+        # Anchor at the pointed-at cell's top-center, using the exact display
+        # clamps _emit_pointer paints with, so the arrow lands on the cell
+        # the pointer marks.
+        if selector in (f"{self.name}.front", f"{self.name}.rear"):
+            if selector.endswith(".front"):
+                idx = max(0, min(self.front_idx, self.capacity - 1))
+            else:
+                idx = max(self.rear_idx - 1, 0)
+            cell_y = _POINTER_HEIGHT + _POINTER_LABEL_GAP
+            x = _LABEL_PADDING + idx * (self._cell_width + CELL_GAP) + self._cell_width // 2
+            return (float(x), float(cell_y))
         return None
 
     def resolve_below_baseline(self) -> "float | None":
@@ -357,6 +370,9 @@ class Queue(PrimitiveBase):
         h += self._caption_block_height(content_w)
         if self.label is not None:
             h += _CAPTION_CLEAR_GAP
+        # R-38: a binding caret sits below the row; grow the content box so
+        # the ▲ + id are not clipped (0 when no caret → byte-stable).
+        h = max(h, self._cursor_extent_below())
         arrow_above = self._arrow_height_above(self._annotations)
         h += arrow_above
         # Layer C: below-pill callout lane between the queue and the caption
@@ -511,6 +527,11 @@ class Queue(PrimitiveBase):
                 top_y=caption_top,
                 render_inline_tex=render_inline_tex,
             )
+
+        # R-38 binding carets ride the decoration band below the row —
+        # sweep3-decor M5: docs §5.11 lists Queue as a \cursor target but
+        # this call was never wired, so a bound caret silently vanished.
+        self.emit_cursors_under(parts)
 
         # Annotation arrows + position pills — via the shared split helper so
         # the extent measurement (_measure_emit) runs the exact same path.

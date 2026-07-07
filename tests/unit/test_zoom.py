@@ -236,8 +236,11 @@ def test_scriba_version_unchanged() -> None:
     # RTL pill bidi, \link label viewBox clamp, Bar min-height, and the dim-state
     # opacity removal — a shared-CSS change), then 24 -> 25 for the graph/theme
     # cluster (graph-pill dark CSS, nodefit A/B label fit, force-canvas
-    # scaling). Zoom remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 25
+    # scaling), then 25 -> 26 for the sweep-3 fix wave (FO ink theming +
+    # twin tokens + note math/bidi + cursor wiring + lane halves + Tree
+    # future-value prescan — shared-CSS delta only on the corpus). Zoom
+    # remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 26
 
 
 def test_zoom_no_new_motion_kind() -> None:

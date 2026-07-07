@@ -421,3 +421,60 @@ class TestLegacyUnchanged:
         # check must target the manifest record, not the whole page).
         assert "cursor[" not in html
         assert ',"cursor_move"]' not in html
+
+
+class TestStackQueueCursorWiring:
+    """sweep3-decor M5: docs §5.11 + design anim-multicursor §4.4 list
+    Stack and Queue as ``\\cursor`` targets, but neither ``emit_svg``
+    called ``emit_cursors_under`` — a caret bound to them silently
+    vanished (no paint, no reserve, no warning)."""
+
+    def test_queue_caret_paints_and_reserves(self) -> None:
+        from scriba.animation.primitives.queue import Queue
+
+        base_h = Queue("q", {"capacity": 4, "data": [1, 2, 3]}).bounding_box().height
+        q = Queue("q", {"capacity": 4, "data": [1, 2, 3]})
+        q.set_cursors([{"target": "q", "id": "f", "index": 1, "color": "info"}])
+        svg = q.emit_svg()
+        assert 'data-annotation="q.cursor[f]-solo"' in svg, "queue caret missing"
+        assert q.bounding_box().height > base_h, "caret band not reserved"
+
+    def test_queue_caret_x_tracks_cell_center(self) -> None:
+        from scriba.animation.primitives.queue import Queue
+
+        q = Queue("q", {"capacity": 4, "data": [1, 2, 3]})
+        q.set_cursors([{"target": "q", "id": "f", "index": 2, "color": "info"}])
+        svg = q.emit_svg()
+        cx = q.resolve_annotation_point("q.cell[2]")[0]
+        m = re.search(
+            r'data-annotation="q\.cursor\[f\]-solo".*?<polygon points="([\d.]+),',
+            svg,
+            re.S,
+        )
+        assert m, "caret polygon missing"
+        assert abs(float(m.group(1)) - cx) < 0.6
+
+    def test_stack_caret_paints_item_suffix(self) -> None:
+        from scriba.animation.primitives.stack import Stack
+
+        base_h = Stack("s", {"items": [5, 6, 7]}).bounding_box().height
+        s = Stack("s", {"items": [5, 6, 7]})
+        s.set_cursors([{"target": "s", "id": "t", "index": 1, "color": "info"}])
+        svg = s.emit_svg()
+        assert 'data-annotation="s.cursor[t]-solo"' in svg, "stack caret missing"
+        cx = s.resolve_annotation_point("s.item[1]")[0]
+        m = re.search(
+            r'data-annotation="s\.cursor\[t\]-solo".*?<polygon points="([\d.]+),',
+            svg,
+            re.S,
+        )
+        assert m, "caret polygon missing"
+        assert abs(float(m.group(1)) - cx) < 0.6
+        assert s.bounding_box().height > base_h, "caret band not reserved"
+
+    def test_stack_oob_soft_dropped(self) -> None:
+        from scriba.animation.primitives.stack import Stack
+
+        s = Stack("s", {"items": [5, 6]})
+        s.set_cursors([{"target": "s", "id": "t", "index": 9, "color": "info"}])
+        assert "cursor[" not in s.emit_svg()

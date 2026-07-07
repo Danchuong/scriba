@@ -533,6 +533,7 @@ def _place_isolated_lane(
     isolated: list[str | int],
     width: int,
     height: int,
+    halves: dict[str | int, float] | None = None,
 ) -> dict[str | int, tuple[int, int]]:
     """Round connected positions and append *isolated* nodes in a tidy lane.
 
@@ -542,6 +543,13 @@ def _place_isolated_lane(
     the bottom border), spanning ``[_PADDING, width - _PADDING]`` in
     node-declaration order.  This keeps them inside the canvas instead of
     being flung to a corner by repulsion.
+
+    *halves* (nodefit M1): optional per-node label half-extents. The even
+    count-spread is label-blind, so two adjacent wide ``value=`` labels in a
+    packed lane overlapped; with halves the lane packs by cumulative
+    half-extents (gap = ``_NODE_OVERLAP_GAP``) and centers the run — but it
+    never CONTRACTS below the historic even spread, so short-label lanes
+    stay byte-identical.
     """
     result: dict[str | int, tuple[int, int]] = {
         node: (round(x), round(y)) for node, (x, y) in connected_pos.items()
@@ -556,9 +564,34 @@ def _place_isolated_lane(
     else:
         span = (width - 2 * _PADDING) / (count - 1)
         xs = [_PADDING + i * span for i in range(count)]
+        if halves is not None:
+            packed = _lane_packed_xs(isolated, halves)
+            pair_need = max(b - a for a, b in zip(packed, packed[1:]))
+            if span < pair_need:
+                # The even spread would overlap some adjacent pair — pack
+                # by halves and center the run (the settle grew the canvas
+                # to hold it). Even spreads that already clear every pair
+                # keep the historic layout.
+                run = packed[-1]
+                avail = float(width - 2 * _PADDING)
+                x0 = _PADDING + max(0.0, (avail - run) / 2.0)
+                xs = [x0 + x for x in packed]
     for node, x in zip(isolated, xs):
         result[node] = (round(x), round(lane_y))
     return result
+
+
+def _lane_packed_xs(
+    isolated: list[str | int], halves: dict[str | int, float]
+) -> list[float]:
+    """Cumulative lane offsets packing nodes by label half-extents (nodefit
+    M1). Shared by ``_settle_label_layout`` (canvas need) and
+    ``_place_isolated_lane`` (positions) so reserve == paint."""
+    hs = [float(halves.get(n, 0.0)) for n in isolated]
+    xs = [0.0]
+    for a, b in zip(hs, hs[1:]):
+        xs.append(xs[-1] + a + b + _NODE_OVERLAP_GAP)
+    return xs
 
 
 def fruchterman_reingold(
@@ -1631,6 +1664,11 @@ class Graph(PrimitiveBase):
             incident.add(_v)
         connected = [n for n in self.nodes if n in incident]
         isolated = [n for n in self.nodes if n not in incident]
+        if len(isolated) > 1:
+            # M1: the lane packs by label halves; make sure the canvas can
+            # hold the packed run (reserve exactly what the lane spreads).
+            _run = _lane_packed_xs(isolated, halves)[-1]
+            self.width = max(self.width, int(math.ceil(_run + 2 * _PADDING)))
         solve_max_y = self.height - _PADDING
         if isolated:
             solve_max_y = self.height - _PADDING - _ISOLATED_LANE_BAND
@@ -1651,7 +1689,7 @@ class Graph(PrimitiveBase):
             halves=halves,
         )
         self.positions = _place_isolated_lane(
-            pos, isolated, self.width, self.height
+            pos, isolated, self.width, self.height, halves=halves
         )
         # Geometry moved: drop the lazily-built annotation extent cache.
         self._extent_above_cache = None
@@ -1928,6 +1966,9 @@ class Graph(PrimitiveBase):
         # Shared placed-label registry so a frame's group-title pills dodge each
         # other AND the node/edge content (shared-obstacle model, mechanism a).
         self._group_placed: list[_LabelPlacement] = []
+        # M4: the same boxes, persisted for the annotation placer (reset per
+        # emit; empty without \group labels -> byte-stable).
+        self._hull_label_obstacle_boxes: "list[_Obstacle]" = []
         groups = getattr(self, "_groups", None)
         if not groups:
             return
@@ -2014,6 +2055,20 @@ class Graph(PrimitiveBase):
                     viewbox_min_y=-_GROUP_LABEL_VB,
                 )
                 self._group_placed.append(_placement)
+                # sweep3-decor M4: persist the title-pill box so the
+                # annotation placer (which runs after) treats it as a MUST
+                # obstacle instead of painting a pill on top — the
+                # overlay⟷annotate seam of design-shared-obstacle.md §1.5.
+                self._hull_label_obstacle_boxes.append(
+                    _Obstacle(
+                        kind="overlay-label",
+                        x=_placement.x,
+                        y=_placement.y,
+                        width=_placement.width,
+                        height=_placement.height,
+                        severity="MUST",
+                    )
+                )
                 prx = _placement.x - pw / 2.0
                 pry = _placement.y - ph / 2.0
                 tx = prx + pw / 2.0

@@ -451,6 +451,10 @@ ERROR_CATALOG: dict[str, str] = {
         "hint: supply a flat list of length rows*cols or a 2D list "
         "with R rows each of length C."
     ),
+    "E1423": (
+        "Matrix 'data' contains a non-numeric entry; every value must "
+        "be an int or float."
+    ),
     "E1425": (
         "Matrix/DPTable cell count exceeds maximum. "
         "hint: rows*cols must be <= 250000."
@@ -549,6 +553,9 @@ ERROR_CATALOG: dict[str, str] = {
     ),
     "E1454": (
         "NumberLine 'ticks' parameter out of range; must be <= 1000."
+    ),
+    "E1455": (
+        "NumberLine 'ticks' must be an integer. hint: ticks=11."
     ),
     # --- Plane2D errors (E1460 -- E1469) ---
     "E1460": "Degenerate viewport (xrange or yrange has equal endpoints).",

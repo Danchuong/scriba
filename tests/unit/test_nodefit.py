@@ -248,6 +248,79 @@ class TestHypercubeNodefitA:
 
 
 # ---------------------------------------------------------------------------
+# H1 (sweep3-nodefit): value= on a node that only exists after add_node
+# ---------------------------------------------------------------------------
+
+
+class TestTreeAddNodeWideValue:
+    """A wide ``value=`` applied to a node ADDED mid-scene soft-dropped in
+    the live prescan replay (the node isn't addressable yet), so its width
+    never reached the label map: the born-wide node clipped the fixed
+    viewBox and the late live regrow moved the tree mid-scene. The prescan
+    now re-checks those values against the timeline-max clone and reserves
+    the final pitch up front."""
+
+    @staticmethod
+    def _render(source: str, tmp_path) -> str:
+        import sys
+        from pathlib import Path as _P
+
+        repo = _P(__file__).resolve().parents[2]
+        if str(repo) not in sys.path:
+            sys.path.insert(0, str(repo))
+        from render import render_file
+
+        tex = tmp_path / "in.tex"
+        tex.write_text(source, encoding="utf-8")
+        out = tmp_path / "out.html"
+        render_file(tex, out)
+        return out.read_text(encoding="utf-8")
+
+    @pytest.mark.unit
+    def test_added_node_wide_value_stable_and_contained(self, tmp_path) -> None:
+        import re
+
+        wide = "huge=99999999999999999999"
+        source = (
+            '\\begin{animation}[id="d", label="addnode wide"]\n'
+            "\\shape{T}{Tree}{root=1, nodes=[1,2,3], edges=[(1,2),(1,3)]}\n"
+            "\\step\n"
+            "\\narrate{Small tree.}\n"
+            "\\step\n"
+            "\\apply{T}{add_node={id=99, parent=3}}\n"
+            f'\\apply{{T.node[99]}}{{value="{wide}"}}\n'
+            "\\narrate{Born wide.}\n"
+            "\\end{animation}\n"
+        )
+        html = self._render(source, tmp_path)
+        vbs = set(re.findall(r'viewBox="0 0 (\d+) (\d+)"', html))
+        assert len(vbs) == 1, f"viewBox jumps mid-scene: {sorted(vbs)}"
+        w = int(next(iter(vbs))[0])
+        trs = set(
+            re.findall(
+                r'data-primitive="tree"[^>]*transform="translate\((\d+),(\d+)\)"',
+                html,
+            )
+        )
+        assert len(trs) == 1, f"tree translate jumps mid-scene: {sorted(trs)}"
+        tx = int(next(iter(trs))[0])
+        tw = measure_value_text(wide, _FONT)
+        # final-frame painted extent of the added node's label ⊆ viewBox
+        xs = [
+            float(m)
+            for m in re.findall(
+                r'data-target="T\.node\[99\]" data-node-x="([\d.]+)"', html
+            )
+        ]
+        assert xs, "added node not painted"
+        for cx in xs:
+            assert tx + cx - tw / 2.0 >= -0.5, "label clips left"
+            assert tx + cx + tw / 2.0 <= w + 0.5, (
+                f"label clips right: {tx + cx + tw / 2.0:.1f} > {w}"
+            )
+
+
+# ---------------------------------------------------------------------------
 # nodefit B — label-aware pitch (node-node label collision)
 # ---------------------------------------------------------------------------
 
@@ -265,6 +338,53 @@ def _no_label_collision(positions, widths) -> list[tuple]:
             if dx < (widths[u] + widths[v]) / 2.0 and dy < _LABEL_H:
                 bad.append((u, v, dx, dy))
     return bad
+
+
+class TestIsolatedLaneNodefit:
+    """sweep3-nodefit M1: the isolated-node lane spaced by COUNT only, so
+    wide value= labels on lane nodes overlapped (-61 px in the probe) while
+    the connected solve was already halves-aware. The one-shot settle now
+    re-lanes with the same label halves."""
+
+    @pytest.mark.unit
+    def test_isolated_lane_wide_labels_no_overlap(self) -> None:
+        """The s4c probe shape: a packed all-isolated lane where only two
+        ADJACENT nodes carry wide values — the total overhang grows the
+        canvas a little, but an even count-spread still leaves the two wide
+        neighbours overlapping (-61 px). The lane must pack by halves."""
+        nodes = [f"a{i}" for i in range(12)]
+        g = Graph("G", {"nodes": nodes, "edges": [], "layout_seed": 1})
+        g.set_value("node[a5]", "555555555555")
+        g.set_value("node[a6]", "666666666666")
+        w = g.bounding_box().width  # settles the label relayout
+        tw5 = measure_value_text("555555555555", _FONT)
+        tw6 = measure_value_text("666666666666", _FONT)
+        x5 = g.positions["a5"][0]
+        x6 = g.positions["a6"][0]
+        assert abs(x6 - x5) >= (tw5 + tw6) / 2.0, (
+            f"adjacent lane labels overlap: |dx|={abs(x6 - x5):.1f} < "
+            f"{(tw5 + tw6) / 2.0:.1f}"
+        )
+        left_pad, _right = g._h_label_pad()
+        r = g._node_radius
+        for n, tw in (("a5", tw5), ("a6", tw6)):
+            cx = g.positions[n][0]
+            assert r + left_pad + cx - tw / 2.0 >= 0.0, f"{n} clips left"
+            assert r + left_pad + cx + tw / 2.0 <= w, f"{n} clips right"
+
+    @pytest.mark.unit
+    def test_short_label_lane_unchanged(self) -> None:
+        """No wide labels → the lane keeps its historic count-based spread."""
+        import warnings as _w
+
+        with _w.catch_warnings():
+            _w.simplefilter("ignore")
+            g1 = Graph(
+                "G",
+                {"nodes": ["a", "b", "i1", "i2"], "edges": [("a", "b")],
+                 "layout_seed": 1},
+            )
+        assert g1._h_label_pad() == (0, 0)  # nothing settles
 
 
 class TestGraphNodefitB:
