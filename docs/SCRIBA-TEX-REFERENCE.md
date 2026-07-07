@@ -2,7 +2,7 @@
 
 > **Single-file reference for AI agents.** Read this one file to write valid Scriba `.tex` sources.
 > Scriba renders LaTeX → HTML for competitive programming editorials with animated algorithm visualizations.
-> **Target:** v0.30.0
+> **Target:** v0.31.0
 
 <!-- Maintenance contract (for editors, not authors):
      1. One home per fact. Each command/primitive/selector is documented once (§5/§7/§8);

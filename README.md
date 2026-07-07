@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.30.0 · MIT · Python 3.10+
+**Status:** v0.31.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,27 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.31.0 — sweep-3 fix wave
+
+**Four hunters probed the fresh 0.30.0 surface, decoration stacks, hostile
+value content, and the runtime contract — 12 defects, all fixed structurally,
+all byte-inert on the corpus.** The headline: **KaTeX math values now theme in
+dark mode** — the FO ink was baked to the light palette inline and sat at
+1.06:1 (invisible) on a dark idle cell; it now routes through the state text
+tokens (light pixel-identical, dark flips free), including the default-pill
+math edge weight. A **Tree node born mid-scene with a wide value** no longer
+clips the viewBox or jumps the layout (the prescan reserves the final pitch
+via the timeline-max clone); the **isolated-node lane packs by label halves**;
+**trace/group title pills and annotation pills finally see each other** in the
+shared-obstacle model; **`\cursor` works on Stack/Queue** as documented;
+`\annotate` on `q.front`/`q.rear` anchors instead of vanishing; **`\note`
+renders `$math$`** and isolates RTL; and **Matrix/NumberLine constructors fail
+loud** (E1423/E1455) instead of leaking raw tracebacks. All 107 goldens
+re-bless by one identical CSS delta (`SCRIBA_VERSION` 26).
+
+<details>
+<summary>v0.30.0 changelog</summary>
+
 ## What's new in v0.30.0 — graph/theme cluster
 
 **The focused cycle 0.29.0 promised: graph dark-mode pill + the node-label layout
@@ -44,6 +65,8 @@ floored at 400×300 so N ≤ 16 is byte-identical): 0 overlaps / 0 coincident no
 at N=100 across six probe topologies, where the fixed box left 93 overlapping and
 2 coincident pairs. All 107 goldens re-bless by one identical CSS delta; no SVG
 geometry changed anywhere (`SCRIBA_VERSION` 25).
+
+</details>
 
 <details>
 <summary>v0.29.0 changelog</summary>

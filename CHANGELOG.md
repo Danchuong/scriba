@@ -7,6 +7,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-07-07 — Sweep-3 fix wave: FO ink theming, decoration seams, fail-loud guards
+
+Sweep round 3 — four hunters over the fresh 0.30.0 surface, decoration-stack
+combinatorics, value-channel content, and the runtime contract
+(investigations/sweep3-*.md) — surfaced 12 fixable defects; all fixed
+structurally, all opt-in-inert: the 107 golden re-blesses carry ONLY the
+identical shared-stylesheet delta. `SCRIBA_VERSION` 25 → 26.
+
+### Fixed
+
+- **Math-value foreignObject ink themes with the palette.** KaTeX math values
+  baked the LIGHT state ink into an inline `color:` — CSS state rules touch
+  only SVG `fill`, so a dark-mode math value sat at **1.06:1** (invisible) on
+  the idle cell. Base-sheet rules now route the FO div ink through the same
+  state text tokens (light resolves to the identical hex; `!important` beats
+  the inline style), and the default-pill MATH edge weight gets the same
+  div-ink flip in both dark scopes.
+- **Dark-scope token parity.** Six `--scriba-annotation-state-*` inks lived
+  only in the explicit `[data-theme="dark"]` block, leaving sub-AA light inks
+  on the OS-preference dark path; the `@media` twin now carries them and a
+  mechanical parity test pins both scopes to the same token set forever.
+- **Tree `add_node` + wide `value=` on the born node.** The prescan replay
+  soft-dropped a value whose node did not exist yet, so the born-wide node
+  clipped the viewBox and the late live regrow moved the tree mid-scene. The
+  prescan re-checks those values against the timeline-max clone and reserves
+  the final leaf pitch and left-pad floor before the first viewbox read —
+  frame-stable geometry (R-32), no clip.
+- **Graph isolated-node lane packs by label halves.** The lane spaced nodes by
+  count only, so adjacent wide `value=` labels overlapped (−61 px on the
+  probe); the one-shot settle now re-lanes by cumulative half-extents with the
+  canvas reserving the packed run.
+- **Overlay ⟷ annotate obstacle unification.** A `\trace`'s scan pill and a
+  `\group`'s title pill were invisible to the annotation placer (the deferred
+  seam of design-shared-obstacle.md §1.5) — pills painted on top of each other
+  (663/810 px² on the probes). Overlay emitters persist their placed boxes as
+  MUST obstacles the annotation placer joins.
+- **`\cursor` works on Stack and Queue** as documented (§5.11) — the caret
+  band paints and reserves; Stack carets address `item[i]` and drop to the
+  whole-stack baseline so they never cover the item beneath.
+- **`\annotate` on `q.front`/`q.rear` anchors** at the pointed-at cell instead
+  of silently dropping.
+- **`\note` renders `$math$`** through the shared KaTeX pill channel (docs
+  §5.21 promised it; notes painted the stripped literal), sizes by the
+  math-aware oracle, never splits inside `$...$`, and RTL notes carry
+  `unicode-bidi:plaintext` (0.29 pill parity).
+- **Matrix/NumberLine constructors fail loud.** `Matrix{data=["abc"]}` (and
+  `""`/`" "`/lexer-split `1e9`) leaked a raw `ValueError` traceback;
+  NumberLine `domain=`/`ticks=` type errors leaked too. New `E1423`/`E1455`
+  (+ an `E1453` detail) mirror Bar's `E1490` contract; numeric strings keep
+  coercing so no existing document churns.
+
 ## [0.30.0] - 2026-07-07 — Graph/theme cluster: pill dark, node-label fit, force-canvas scaling
 
 The four-piece structural cluster researched in
