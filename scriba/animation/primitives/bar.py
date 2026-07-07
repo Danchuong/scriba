@@ -25,10 +25,12 @@ See ``docs/primitives/bar.md`` for the authoritative specification.
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any, Callable, ClassVar
 
 from scriba.animation.errors import _animation_error
+from scriba.animation.primitives._text_metrics import measure_value_text
 from scriba.animation.primitives.base import (
     _CAPTION_CLEAR_GAP,
     INDEX_FONT_PX,
@@ -56,6 +58,7 @@ _INDEX_LABEL_BAND = 16   # vertical band below the baseline for index labels
 _INDEX_LABEL_DY = 11     # baseline -> index-label center offset
 _VALUE_LABEL_BAND = 15   # headroom reserved above the plot for value labels
 _VALUE_LABEL_GAP = 4     # column top -> value-label baseline gap
+_VALUE_LABEL_MIN_GAP = 6  # min horizontal gap between adjacent value labels
 _INDEX_FONT_PX = INDEX_FONT_PX   # canonical _types.INDEX_FONT_PX (index labels)
 _VALUE_FONT_PX = LABEL_FONT_PX   # canonical _svg_helpers.LABEL_FONT_PX (value labels)
 _FLOAT_EPS = 1e-9
@@ -123,6 +126,15 @@ class Bar(PrimitiveBase):
         self.values: list[float] = self._parse_data(params.get("data"))
         self.label: str | None = params.get("label")
         self.show_values: bool = bool(params.get("show_values", False))
+
+        # Timeline-max painted label width (R-32: monotone, never per-frame).
+        # The value prescan replays set_value for every frame, so this reaches
+        # the timeline maximum before frame 0 and the pitch stays invariant.
+        self._label_w_max: float = (
+            max(measure_value_text(_fmt_value(v), _VALUE_FONT_PX) for v in self.values)
+            if self.show_values and self.values
+            else 0.0
+        )
 
         # bar_width wins over the width alias; clamp to a sane minimum.
         raw_w = params.get("bar_width", params.get("width", _BAR_WIDTH))
@@ -210,12 +222,24 @@ class Bar(PrimitiveBase):
     def _baseline_y(self) -> int:
         return self._plot_top() + _PLOT_HEIGHT
 
+    def _pitch(self) -> int:
+        """Column-to-column stride. Defaults to ``bar_width + gap``; when
+        ``show_values`` is on it widens to fit the timeline-widest value label
+        (+ a min gap) so near-equal values sharing one label row cannot
+        overprint. Value-less bars keep the exact default (byte-stable)."""
+        base = self.bar_width + _BAR_GAP
+        if not self.show_values:
+            return base
+        return max(base, math.ceil(self._label_w_max) + _VALUE_LABEL_MIN_GAP)
+
     def _content_width(self) -> int:
         n = len(self.values)
-        return n * (self.bar_width + _BAR_GAP) - _BAR_GAP
+        if n == 0:
+            return -_BAR_GAP
+        return (n - 1) * self._pitch() + self.bar_width
 
     def _bar_x(self, i: int) -> int:
-        return _PADDING + i * (self.bar_width + _BAR_GAP)
+        return _PADDING + i * self._pitch()
 
     # ----- value updates (rides value_change) ------------------------------
 
@@ -240,6 +264,10 @@ class Bar(PrimitiveBase):
         self.values[i] = v
         if v > self._envelope_max:
             self._envelope_max = v
+        if self.show_values:
+            self._label_w_max = max(
+                self._label_w_max, measure_value_text(_fmt_value(v), _VALUE_FONT_PX)
+            )
 
     def value_must_be_numeric(self, suffix: str) -> bool:
         """A column height is intrinsically numeric — ``value=`` must parse as a
@@ -407,7 +435,7 @@ class Bar(PrimitiveBase):
                         font_size=str(_VALUE_FONT_PX),
                         text_anchor="middle",
                         dominant_baseline="central",
-                        fo_width=self.bar_width + _BAR_GAP,
+                        fo_width=self._pitch(),
                         fo_height=_VALUE_LABEL_BAND,
                         render_inline_tex=render_inline_tex,
                     )

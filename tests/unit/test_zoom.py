@@ -229,9 +229,11 @@ def test_scriba_version_unchanged() -> None:
     # change), then 20 -> 21 for the value_change value-node targeting fix
     # (data-role="value" tags + the scriba.js selector), then 21 -> 22 for the
     # shared-obstacle decoration routing (group/note/trace-label/link-label pills
-    # now dodge content via the placer). Zoom remains byte-shape-neutral across
-    # all of them.
-    assert SCRIBA_VERSION == 22
+    # now dodge content via the placer), then 22 -> 23 for the render-quality
+    # sweep (coincident-caret/queue-pointer fan, Array/Matrix value-width
+    # reservation, KaTeX math-symbol measurement, Plane2D/note viewport extent).
+    # Zoom remains byte-shape-neutral across all of them.
+    assert SCRIBA_VERSION == 23
 
 
 def test_zoom_no_new_motion_kind() -> None:

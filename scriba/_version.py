@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.27.0"
+__version__: str = "0.28.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 22
+SCRIBA_VERSION: int = 23
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -386,4 +386,55 @@ byte-identically:
     spurious ``value_change`` on an E1115-invalid selector is dropped (completing
     the E1115 soft-drop). ``differ.py`` untouched. It is a SemVer MINOR only for
     the new Graph capability; the rendered-output contract is unchanged from
-    0.26.5 for every renderable input."""
+    0.26.5 for every renderable input.
+
+0.28.0 bumps 22→23 (render-quality sweep — four structural families found by a
+numeric render-defect sweep + BMAD analysis, investigations/hunt-rq-*.md +
+bmad-rq-*.md). Each fix reserves/fits the extent it PAINTS; all are opt-in-inert
+for scenes that don't hit the defect, so exactly SIX corpus goldens re-bless and
+every other document is byte-identical:
+  * FAMILY A — coincident/colliding markers. N ``\\cursor`` carets meeting on one
+    cell (the ``lo==hi`` / ``i==j`` two-pointers moment) fanned byte-identical
+    triangles + id labels; they now spread via a symmetric coincidence fan (a
+    lone caret keeps offset 0 → byte-identical). Queue/Deque front+rear pointer
+    TRIANGLES coincided when both land on one cell (labels were already fanned);
+    the triangle now takes the same nudge. A caret also registers as a MUST
+    obstacle so a same-cell ``position=below`` pill yields below it instead of
+    burying the id. Byte: the five small-queue goldens (``queue``, ``bfs``,
+    ``bfs_grid_editorial``, ``test_reference_datastruct``, ``07_prescan_no_
+    pollution``) re-bless in their coincident-pointer frames only; the caret
+    fixes are byte-identical across the corpus (no doc has coincident carets or a
+    caret co-located with a pill).
+  * FAMILY B — value-channel width reservation. ``Array.set_value`` painted an
+    applied ``value=`` without growing ``_cell_width`` (its ``_grow_cell_width``
+    was reachable only via ``insert=``), so a wide value clipped the cell /
+    overran neighbours; Array now grows like the nine sibling cell-box primitives.
+    ``Matrix`` ``show_values`` measured its reserve at the pre-growth font but
+    painted at the post-growth font; the value font is now pinned so measure ≡
+    paint. Byte: ``two_sum_editorial`` re-blesses (its ``2+11=13``/``2+15=17``
+    status values now fit a grown cell instead of overflowing a 58px box); every
+    other Array/Matrix scene keeps values under the floor → byte-identical.
+  * FAMILY D — text-measurement oracle + a consumer. ``measure_text`` (the 14px
+    cell/node surface) charged out-of-Inter math symbols (``∞ → ← ≤ ≥ −(U+2212)
+    √``) a flat 0.62em (9px), under-measuring 22–56% and clipping arrow-chain / ∞
+    cells; it now consults the vendored KaTeX per-glyph em-advances on the
+    Inter-miss branch (``∞→←``→14, ``≤≥−``→11, ``√``→12; ``± × ÷`` are IN the
+    subset and stay 9px exactly — CJK/scripts still take the heuristic + W1301).
+    ``Bar`` ``show_values`` labels overprinted for near-equal large values (all
+    on one y-row) — the column pitch now reserves the timeline-max label width.
+    Byte: 0 goldens (no corpus cell holds a literal uncovered symbol; no corpus
+    Bar uses ``show_values``).
+  * FAMILY E — content-extent vs viewport. ``Plane2D`` ``aspect="equal"`` sized
+    the plot height purely from the domain ratio, collapsing/​inverting the Y
+    transform on a wide domain and running the viewBox to ~32000px on a tall one
+    (and capping an explicit height); the auto height is now clamped to a
+    legible, non-runaway band (``[_MIN_PLOT_H=96, _MAX_PLOT_H=1280]``) and an
+    explicit height is honoured verbatim. A multi-line ``\\note`` was bounded by
+    board WIDTH but never HEIGHT, so a tall pill spilled silently out the viewBox
+    bottom; it is now height-bounded (truncate + ellipsis) and soft-warns the new
+    **E1126**. Byte: 0 goldens (no corpus asymmetric plot or over-tall note).
+``differ.py`` is untouched (zero new motion kinds — carets keep
+``cursor_move``/``annotation_*``, pointers are static). No CSS change. The
+Graph/Tree/Hypercube node-label overflow family (bmad-rq-nodefit.md) is a
+larger layout-engine change (node pitch + viewBox), deferred to a focused next
+cycle. Consumer caches keyed on rendered output MUST invalidate."""

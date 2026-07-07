@@ -50,6 +50,8 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 _PAD = 32
+_MIN_PLOT_H = 3 * _PAD  # 96: keeps interior (height-2*_PAD) >= _PAD — legible, non-inverted
+_MAX_PLOT_H = 1280      # 4 * default width: bounds the tall-domain viewBox runaway
 _POINT_RADIUS = 4  # px in math-space (inside transformed group)
 _ELEMENT_CAP = 500
 _LABEL_OFFSET = 6  # px offset for labels in SVG space
@@ -189,12 +191,19 @@ class Plane2D(PrimitiveBase):
         self.width: int = int(params.get("width", 320))
 
         if self.aspect == "equal":
-            computed_h = self.width * (self.yrange[1] - self.yrange[0]) / (self.xrange[1] - self.xrange[0])
             explicit_h = params.get("height")
             if explicit_h is not None:
-                self.height = min(int(explicit_h), int(computed_h))
+                # Honor the escape hatch verbatim — a user asking for a tall
+                # plot on a wide domain must not be capped to the collapsed
+                # equal-aspect value (was min(explicit, computed), RQ family E).
+                self.height = int(explicit_h)
             else:
-                self.height = int(computed_h)
+                computed_h = self.width * (self.yrange[1] - self.yrange[0]) / (self.xrange[1] - self.xrange[0])
+                # Clamp into a legible, non-inverted, non-runaway band: the
+                # transform inverts the Y-flip once the interior
+                # (height - 2*_PAD) goes negative, and a tall/narrow domain
+                # otherwise runs the viewBox to tens of thousands of px.
+                self.height = int(min(max(computed_h, _MIN_PLOT_H), _MAX_PLOT_H))
         else:
             self.height = int(params.get("height", 320))
 

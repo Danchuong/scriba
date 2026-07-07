@@ -250,6 +250,20 @@ _CURSOR_H: float = 8.0         # apex -> base height of the ▲
 _CURSOR_HALF_W: float = 5.0    # half the ▲ base width
 _CURSOR_ID_FONT_PX: int = 11   # id label font
 _CURSOR_ID_DY: float = 11.0    # ▲ base -> id label baseline
+_CURSOR_FAN_PITCH: float = 14.0  # ≈ one id-glyph advance; coincident-caret spread
+
+
+def _coincidence_fan(count: int) -> list[float]:
+    """Symmetric cross-axis multipliers for *count* markers sharing one anchor.
+
+    ``count <= 1`` returns ``[0.0]`` so the lone-marker path is byte-identical;
+    ``k > 1`` returns ``[-(k-1)/2 … (k-1)/2]`` so N carets meeting on one cell
+    (the ``lo == hi`` / ``i == j`` two-pointers moment) fan out instead of
+    painting a byte-identical stacked blob (RQ family A)."""
+    if count <= 1:
+        return [0.0]
+    mid = (count - 1) / 2.0
+    return [i - mid for i in range(count)]
 
 # R-37 trace mid-label placer viewport (shared-obstacle model, mechanism a):
 # horizontal bound = the content span (keeps the label from overflowing, the old
@@ -802,6 +816,13 @@ class PrimitiveBase(abc.ABC):
         caret. Records the drawn apex ``(x, y)`` for ``get_cursor_positions``.
         """
         self._cursor_positions: "dict[str, tuple[float, float]]" = {}
+        self._cursor_obstacle_boxes: "list[_Obstacle]" = []
+        # First pass: resolve every caret's cell and bucket coincident carets,
+        # so N carets meeting on one cell fan out instead of painting
+        # byte-identical (RQ family A). A lone caret gets fan offset 0.0, so its
+        # paint stays byte-identical.
+        resolved: "list[list]" = []  # [cur, sel, top, center]
+        buckets: "dict[str, list[int]]" = {}
         for cur in getattr(self, "_cursors", []):
             index = cur.get("index")
             if index is None:
@@ -811,7 +832,27 @@ class PrimitiveBase(abc.ABC):
             center = self.resolve_label_anchor(sel)
             if top is None or center is None:
                 continue  # out-of-range -> soft-drop (mirrors selectors)
-            cx = center[0]
+            buckets.setdefault(sel, []).append(len(resolved))
+            resolved.append([cur, sel, top, center])
+        fan_dx = [0.0] * len(resolved)
+        for members in buckets.values():
+            k = len(members)
+            if k <= 1:
+                continue
+            box = self.resolve_annotation_box(resolved[members[0]][1])
+            cell_w = float(box.width) if box is not None else 60.0
+            # Bound the spread to stay within the cell so a fanned caret never
+            # pokes past the row (only the coincident case widens anything).
+            pitch = min(_CURSOR_FAN_PITCH, 0.8 * cell_w / (k - 1))
+            # Sort by id for a frame-stable spread (avoids per-frame jitter).
+            order = sorted(members, key=lambda r: str(resolved[r][0].get("id", "")))
+            fan = _coincidence_fan(k)
+            for j, r in enumerate(order):
+                fan_dx[r] = fan[j] * pitch
+        # Second pass: paint each caret at its (possibly fanned) x.
+        for r in range(len(resolved)):
+            cur, sel, top, center = resolved[r]
+            cx = center[0] + fan_dx[r]
             # Drop the apex a small gap below the cell bottom, or below the
             # index/tick label lane when the target reserves one (report #7) —
             # see _cursor_apex_origin. cx/center come from the live cell
@@ -844,6 +885,20 @@ class PrimitiveBase(abc.ABC):
                 f"{inner}</g>"
             )
             self._cursor_positions[key] = (cx, apex_y)
+            # F2: register the painted caret (▲ + id) as a MUST obstacle so a
+            # later same-cell position=below pill yields below it rather than
+            # burying the id. Empty when no caret -> byte-stable.
+            id_bottom = base_y + _CURSOR_ID_DY + _CURSOR_ID_FONT_PX / 2.0
+            self._cursor_obstacle_boxes.append(
+                _Obstacle(
+                    kind="cursor",
+                    x=cx,
+                    y=(apex_y + id_bottom) / 2.0,
+                    width=2.0 * _CURSOR_HALF_W,
+                    height=id_bottom - apex_y,
+                    severity="MUST",
+                )
+            )
 
     def _cursor_extent_below(self) -> float:
         """R-38: the deepest local-y any binding caret reaches this frame, so
@@ -1348,6 +1403,14 @@ class PrimitiveBase(abc.ABC):
         _trace_segs = getattr(self, "_trace_obstacle_segments", None)
         if _trace_segs:
             _prim_seg_obs = _prim_seg_obs + tuple(_trace_segs)
+
+        # Shared-obstacle model: this frame's binding carets (▲ + id, painted by
+        # emit_cursors_under before this) join the set as MUST boxes so a
+        # same-cell position=below pill yields below the caret instead of
+        # burying its id (RQ family A / F2). Empty without a caret -> byte-stable.
+        _caret_obs = getattr(self, "_cursor_obstacle_boxes", None)
+        if _caret_obs:
+            _prim_seg_obs = _prim_seg_obs + tuple(_caret_obs)
 
         # R-31 ext: accumulate prior-annotation arrow-stroke segments across the
         # annotation loop.  Each emit_*_arrow_svg call returns sampled segments

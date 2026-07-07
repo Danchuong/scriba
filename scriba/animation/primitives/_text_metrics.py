@@ -116,16 +116,27 @@ class ShippedFontMeasurer:
             # ZWJ emoji clusters: the estimator's two-pass cluster logic is
             # the honest answer; the table has no cluster notion.
             return estimate_text_width(s, font_px)
+        from scriba.animation.primitives._math_metrics import symbol_em
+
         total_units = 0.0
         for ch in s:
             adv = self._advances.get(ord(ch))
-            if adv is None:
-                # out-of-subset (CJK, symbols): heuristic em-units, scaled
-                # to font units so one sum stays exact for covered spans
-                _warn_heuristic_script(ord(ch))
-                total_units += _char_display_width(ch) * self._upm
-            else:
+            if adv is not None:
                 total_units += adv
+                continue
+            # Out-of-subset codepoint. Math symbols the Inter subset lacks
+            # (∞ → ← ≤ ≥ − √ …) have a true advance in KaTeX's own tables;
+            # use it before the flat 0.62em heuristic, which under-measured
+            # them 22–56% and clipped arrow chains / ∞ cells.
+            kem = symbol_em(ord(ch))
+            if kem is not None:
+                total_units += kem * self._upm
+                continue
+            # Scripts/CJK KaTeX doesn't carry either: heuristic em-units,
+            # scaled to font units so one sum stays exact for covered spans
+            # (W1301 over-estimate warning preserved).
+            _warn_heuristic_script(ord(ch))
+            total_units += _char_display_width(ch) * self._upm
         return int(total_units / self._upm * font_px + 0.5)
 
 

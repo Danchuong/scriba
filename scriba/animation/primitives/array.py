@@ -343,6 +343,22 @@ class ArrayPrimitive(PrimitiveBase):
         if needed > self._cell_width:
             self._cell_width = needed
 
+    def set_value(self, suffix: str, value: str) -> None:
+        """Set a cell's display value AND reserve its painted width.
+
+        Mirrors ``Queue.set_value``: base stores ``_values`` (snapshot/restored
+        by ``_prescan_value_widths``); ``_grow_cell_width`` folds the
+        timeline-max painted extent into the monotonic, frame-stable
+        ``_cell_width`` envelope, so a wide ``\\apply`` value no longer clips
+        the cell or overruns its neighbours (R-32). Array was the one cell-box
+        primitive painting an applied value without growing — the follow-up
+        flagged as Risk #6 in investigations/fixedbox-content-sizing.md.
+        """
+        super().set_value(suffix, value)  # validates selector, writes _values
+        m = _SUFFIX_CELL_RE.match(suffix)
+        if m and 0 <= int(m.group("idx")) < self.size:
+            self._grow_cell_width(value)
+
     def _apply_reorder(self, spec: Any) -> None:
         """Permute the live prefix by SOURCE-SLOT indices (gather semantics).
 

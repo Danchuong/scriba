@@ -40,7 +40,7 @@ from importlib.resources import files
 
 from scriba.animation.primitives._text_render import estimate_text_width
 
-__all__ = ["is_linear_math", "math_tall_extra", "measure_inline_math"]
+__all__ = ["is_linear_math", "math_tall_extra", "measure_inline_math", "symbol_em"]
 
 _KATEX_BASE_EM = 1.21  # .katex { font: normal 1.21em ... }
 _SCRIPT_SCALE = 0.7  # scriptstyle multiplier for ^ / _
@@ -201,6 +201,28 @@ def _tables() -> dict[str, dict[int, tuple[float, float]]] | None:
         }
     except (FileNotFoundError, KeyError, ValueError, OSError):
         return None
+
+
+@lru_cache(maxsize=None)
+def symbol_em(cp: int) -> float | None:
+    """Plain-glyph em-advance for one codepoint from KaTeX's own tables
+    (Main-Regular, then AMS-Regular, then Math-Italic). ``width_em`` only —
+    italic correction is NOT folded in (this is a plain-text fallback proxy
+    for a bare glyph, not inline-math layout). ``None`` when KaTeX doesn't
+    cover the codepoint either, so the caller keeps its own heuristic.
+
+    The width oracle for the cell/node surface (``measure_text``) consults
+    this for codepoints the Inter subset lacks — arrows, comparison/relation
+    operators, ``\\infty``/``\\surd`` — which otherwise fell to a flat 0.62em
+    heuristic and under-measured 22–56% (investigations/bmad-rq-measure.md)."""
+    tables = _tables()
+    if tables is None:
+        return None
+    for font in ("Main-Regular", "AMS-Regular", "Math-Italic"):
+        e = tables.get(font, {}).get(cp)
+        if e is not None:
+            return e[0]
+    return None
 
 
 def _known_commands() -> set[str]:

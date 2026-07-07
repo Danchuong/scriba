@@ -65,6 +65,7 @@
 | E1123 | Unknown keyword parameter on a decoration/stage command (`\annotate`, `\note`, `\trace`, `\link`, `\combine`, `\group`, `\reannotate`, `\focus`, `\cursor`) — the key is not one the command reads, so it would be silently dropped and the author's intent lost. A "did you mean X?" suggestion is included when a close match exists (mirrors `\shape` E1114 / `\apply` E1105). | Check the key against the command's documented params in §5 of the TeX reference. |
 | E1124 | A second `\zoom` in one `\step`. `\zoom` crops a single viewBox and cannot union two targets the way `\focus` does, so a later `\zoom` would silently override the earlier one. | Keep a single `\zoom` per `\step`, or crop a selector that already covers both regions. |
 | E1125 | `\note` text is wider than the board; it was wrapped to fit and, when a line still could not fit (a tiny board or an unbreakable token), clamped into the viewBox (warning — the render continues). | Shorten the note, or give it a wider board (more cells / a bigger shape). |
+| E1126 | `\note` text is taller than the board; the extra lines were truncated with an ellipsis and clamped into the viewBox so they are not silently cut off the bottom (warning — the render continues). | Shorten the note, or give it a taller board (a bigger shape). |
 
 ## Render Errors (E1200--E1249)
 

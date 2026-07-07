@@ -1478,6 +1478,21 @@ def _emit_scene_notes(
             )
         ph = float(LABEL_FONT_PX * len(lines) + 8)
 
+        # Height IS bounded like width: a note taller than the board is
+        # truncated with an ellipsis and soft-warned E1126, rather than spilling
+        # silently out the viewBox bottom with its last lines cut (RQ family E).
+        board_avail_h = max(1.0, vh - 2.0 * _NOTE_MARGIN)
+        max_lines = max(1, int((board_avail_h - 8) // LABEL_FONT_PX))
+        if len(lines) > max_lines:
+            lines = lines[: max_lines - 1] + [lines[max_lines - 1].rstrip() + "…"]
+            ph = float(LABEL_FONT_PX * len(lines) + 8)
+            pw = float(max(measure_label_line(ln, LABEL_FONT_PX) for ln in lines) + 12)
+            warnings.warn(
+                f"[E1126] \\note {nid!r} text is taller than the board; "
+                f"truncated/clamped into the viewBox",
+                stacklevel=2,
+            )
+
         idx = stack.get(at, 0)
         stack[at] = idx + 1
         px, py = _note_anchor_xy(at, idx, vx, vy, vw, vh, pw, ph)

@@ -319,3 +319,23 @@ class TestBarAnnotations:
         assert box is not None
         assert abs(box.height - _PLOT_HEIGHT) < 1e-6
         assert box.width == b.bar_width
+
+
+class TestShowValuesLabelWidth:
+    def test_near_equal_large_labels_do_not_overprint(self) -> None:
+        # Near-equal large values -> equal heights -> all labels share one
+        # y-row; 10-digit labels (~70px) at the default 44px pitch overprint.
+        from scriba.animation.primitives._text_metrics import measure_value_text
+        from scriba.animation.primitives.bar import _VALUE_FONT_PX, _fmt_value
+
+        data = [1000000001, 1000000002, 1000000003, 1000000004]
+        b = Bar("h", {"data": data, "show_values": True})
+        centers = [b._bar_x(i) + b.bar_width / 2 for i in range(len(data))]
+        pitch = centers[1] - centers[0]
+        widest = max(measure_value_text(_fmt_value(v), _VALUE_FONT_PX) for v in data)
+        assert pitch >= widest  # now 44 >= 70 -> FAILS; after fix ~76 >= 70
+
+    def test_value_less_bars_keep_default_pitch(self) -> None:
+        # No show_values -> pitch is byte-stable at bar_width + gap.
+        b = Bar("h", {"data": [3, 6, 9]})
+        assert b._bar_x(1) - b._bar_x(0) == b.bar_width + 8

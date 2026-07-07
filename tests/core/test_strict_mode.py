@@ -741,9 +741,10 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         # + second-\zoom-per-step (E1124, scene.py)
         "E1123",
         "E1124",
-        # E1125 (\note wider than the board — wrapped/clamped) is a soft
-        # warning emitted from _frame_renderer._emit_scene_notes, not raised —
-        # excluded like E1543/E1184, but catalogued + documented.
+        # E1125 (\note wider than the board — wrapped/clamped) and E1126 (\note
+        # taller than the board — truncated/clamped) are soft warnings emitted
+        # from _frame_renderer._emit_scene_notes, not raised — excluded like
+        # E1543/E1184, but catalogued + documented.
         # Render (KaTeX) — tex/renderer.py
         "E1200",
         # Starlark sandbox

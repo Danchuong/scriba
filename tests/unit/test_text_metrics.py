@@ -81,3 +81,24 @@ class TestFallbacks:
     def test_zwj_cluster_routes_to_heuristic(self) -> None:
         fam = "👨‍👩‍👧"
         assert measure_text(fam, 14) == estimate_text_width(fam, 14)
+
+
+class TestUncoveredMathSymbols:
+    """Symbols absent from the Inter subset (∞ → ← ≤ ≥ − √) fell to a flat
+    0.62em heuristic = 9px, under-measuring 22–56%; the vendored KaTeX
+    advance table carries their true widths. Covered signs (± × ÷, in the
+    subset) must stay exact — the fallback only fires on an Inter miss."""
+
+    def test_uncovered_symbol_uses_katex_em_not_flat_heuristic(self) -> None:
+        assert measure_text("∞", 14) >= 13  # was 9
+        assert measure_text("→", 14) >= 13  # was 9
+        assert measure_text("≤", 14) >= 11  # was 9
+
+    def test_arrow_chain_fits_measured_cell(self) -> None:
+        # 5 tnum digits + 4 arrows; true width ~101px, was measured 80.
+        assert measure_text("1→2→3→4→5", 14) >= 100
+
+    def test_inter_covered_symbols_untouched_by_katex_fallback(self) -> None:
+        # ± × ÷ ARE in-font (tnum 9px); the fallback must not override them.
+        for g in ("±", "×", "÷"):
+            assert measure_text(g, 14) == 9

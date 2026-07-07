@@ -273,6 +273,12 @@ ERROR_CATALOG: dict[str, str] = {
         "clamped into the viewBox (warning — the render continues). "
         "hint: shorten the note, or give it a wider board."
     ),
+    "E1126": (
+        "\\note text is taller than the board; the extra lines were truncated "
+        "with an ellipsis and clamped into the viewBox so they are not silently "
+        "cut off the bottom (warning — the render continues). "
+        "hint: shorten the note, or give it a taller board (a bigger shape)."
+    ),
     # --- Render errors (E1200 -- E1249) ---
     "E1200": (
         "KaTeX inline error embedded in rendered output (ParseError from "

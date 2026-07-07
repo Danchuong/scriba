@@ -274,14 +274,17 @@ class MatrixPrimitive(PrimitiveBase):
         self.show_values: bool = show_values
         self.cell_size: int = cell_size
 
-        # show_values: floor the cell to the widest formatted value at the
-        # pre-growth font — a value you asked to SHOW must be readable
-        # (init-time only; matrix data is static, no set_value path)
+        # show_values: floor the cell to the widest formatted value AND pin the
+        # value font (derived from the author's cell_size, before any growth) so
+        # the paint site cannot recompute a larger font from the grown cell_size
+        # and overflow the reserved cell — measure font must equal paint font
+        # (RQ family B, investigations/bmad-rq-valuegrow.md). Init-time only;
+        # matrix data is static, no set_value path.
+        self._value_font_px: int = max(8, int(self.cell_size) // 3)
         if self.show_values and self.data:
-            _fpx = max(8, int(self.cell_size) // 3)
             _content_w = max(
                 (
-                    measure_value_text(self._format_value(v), _fpx)
+                    measure_value_text(self._format_value(v), self._value_font_px)
                     for row in self.data
                     for v in row
                 ),
@@ -581,7 +584,7 @@ class MatrixPrimitive(PrimitiveBase):
                 if self.show_values:
                     tx = x + self.cell_size // 2
                     ty = y + self.cell_size // 2
-                    font_size = max(8, self.cell_size // 3)
+                    font_size = self._value_font_px
                     lines.append(
                         "    "
                         + _render_svg_text(

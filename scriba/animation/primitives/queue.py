@@ -559,16 +559,26 @@ class Queue(PrimitiveBase):
 
         cell_center_x = _LABEL_PADDING + idx * (self._cell_width + CELL_GAP) + self._cell_width // 2
 
+        # When front/rear land on one cell, fan BOTH the triangle and its label
+        # so the two arrowheads don't paint byte-identical (RQ family A). front
+        # -> left, rear/back -> right (matches the existing label nudge). A lone
+        # pointer (offset_label False) keeps nudge 0 -> byte-identical.
+        nudge = 0
+        if offset_label:
+            nudge = self._cell_width // 2
+            nudge = -nudge if label == "front" else nudge
+        marker_x = cell_center_x + nudge
+
         # Triangle tip points down, touching the top of the cell
         tip_y = cell_y - 2
         tri_top_y = tip_y - _POINTER_TRIANGLE_SIZE
-        tri_left_x = cell_center_x - _POINTER_TRIANGLE_SIZE
-        tri_right_x = cell_center_x + _POINTER_TRIANGLE_SIZE
+        tri_left_x = marker_x - _POINTER_TRIANGLE_SIZE
+        tri_right_x = marker_x + _POINTER_TRIANGLE_SIZE
 
         triangle_points = (
             f"{tri_left_x},{tri_top_y} "
             f"{tri_right_x},{tri_top_y} "
-            f"{cell_center_x},{tip_y}"
+            f"{marker_x},{tip_y}"
         )
 
         pointer_color = colors["stroke"] if state_name != "idle" else THEME["fg_muted"]
@@ -582,13 +592,9 @@ class Queue(PrimitiveBase):
             f'fill="{pointer_color}" stroke="none"/>'
         )
 
-        # Label text above the triangle
+        # Label text above the triangle — same fan as the triangle above.
         label_y = tri_top_y - 6
-        # Nudge label horizontally when front/rear share a cell
-        label_x = cell_center_x
-        if offset_label:
-            nudge = self._cell_width // 2
-            label_x += -nudge if label == "front" else nudge
+        label_x = marker_x
         parts.append(
             "    "
             + _render_svg_text(
