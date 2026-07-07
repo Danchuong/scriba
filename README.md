@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.26.5 · MIT · Python 3.10+
+**Status:** v0.27.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,23 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.27.0
+
+**Graph nodes can hold a value now.** Shortest-path and traversal editorials label
+each node with a number — Dijkstra distances, BFS levels, DSU rank — and until now
+the graph was the one substrate that couldn't carry it (authors hand-built a side
+array and a node→index mapping). `\apply{g.node[X]}{value=...}` now renders the
+value on the node, mirroring how `Tree`/`Forest` already do it (compose `"A:7"` to
+keep the name). Byte-identical for every existing document; no version bump.
+
+Plus value-channel hardening from the same research: a non-numeric `value=` on
+`Bar`/`Matrix` fails loudly (**E1107**) instead of a silent flip-back, and a couple
+of dishonest-manifest edge cases (`Plane2D` point value, invalid-selector
+`value=`) are closed.
+
+<details>
+<summary>v0.26.5 changelog</summary>
+
 ## What's new in v0.26.5
 
 The two structural classes the report #6/#7 sibling audits surfaced, both closed:
@@ -41,6 +58,8 @@ The two structural classes the report #6/#7 sibling audits surfaced, both closed
   keep `value=`).
 
 `SCRIBA_VERSION` 21→22 (one corpus doc's trace label dodged; strokes unchanged).
+
+</details>
 
 <details>
 <summary>v0.26.4 changelog</summary>

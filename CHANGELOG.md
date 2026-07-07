@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-07-07 — Graph per-node values + value-channel completeness
+
+The 4 research follow-ups to reports #6/#7 (investigations/research-graph-node-value.md,
+research-value-channel.md). Every existing document renders byte-identically
+(`SCRIBA_VERSION` stays 22).
+
+### Added
+- **Graph per-node values** — `\apply{g.node[X]}{value=...}` now renders the value
+  on the node (overriding the id; compose `"A:7"` to keep the name), mirroring
+  Tree/Forest. Unblocks the most common graph-teaching gesture — Dijkstra
+  distances, BFS levels, Tarjan low-link, DSU rank — which 6 flagship examples
+  hand-built a side Array to carry. The runtime already stamped node values (the
+  old flip-back cause), so the server now agrees; `scriba.js` untouched, no bump,
+  0 goldens re-blessed (no existing doc applies `value=` to a graph node).
+
+### Fixed
+- **Non-numeric `value=` on Bar/Matrix raises E1107** — a string value soft-dropped
+  server-side but the runtime stamped it then reverted (a visible flip-back when
+  `show_values=true`). It now fails loudly at author time. E1107 was a dormant spec
+  code (`environments.md` §2.3, defined but never raised) — now live.
+- **Plane2D `point[i]` `value=` rejects via E1105** — the point group is
+  `<circle>`-only, so the value had nowhere to render; it joins the value-less
+  parts (Stack/NumberLine/CodePanel) the 0.26.5 gate rejects.
+- **Spurious `value_change` on an invalid selector is dropped** — an `\apply value=`
+  on an E1115-soft-dropped target no longer bakes a dishonest `value_change` into
+  the manifest (completes the E1115 "no output change" contract).
+
 ## [0.26.5] - 2026-07-07 — decoration obstacle-avoidance + value flip-back (the two open sibling classes)
 
 Closes the two structural classes the report #6/#7 sibling audits surfaced

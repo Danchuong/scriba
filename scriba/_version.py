@@ -1,6 +1,6 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.26.5"
+__version__: str = "0.27.0"
 """PyPI SemVer. Bumped on every release."""
 
 SCRIBA_VERSION: int = 22
@@ -367,4 +367,23 @@ keep riding ``annotation_add``/``_remove``/``_recolor``), and no CSS changed
 ``\\group``/``\\note``/``\\link`` document and exactly one ``\\trace`` document
 (``decoration_spiral``), whose two trace LABELS relocate to clear the cells while
 its strokes stay byte-identical; every other corpus document is byte-identical.
-Consumer caches keyed on rendered output MUST invalidate."""
+Consumer caches keyed on rendered output MUST invalidate.
+
+0.27.0 keeps SCRIBA_VERSION = 22 (value-channel completeness; the 4 items are the
+research follow-ups to reports #6/#7). Every existing document renders
+byte-identically:
+  * NEW capability — Graph per-node value: ``\\apply{g.node[X]}{value=...}`` now
+    renders the value (overriding the node id, mirroring Tree/Forest) instead of
+    raising E1105. The runtime already stamped node values (the old flip-back
+    cause), so the server now agrees; scriba.js is untouched. No corpus document
+    applies ``value=`` to a graph node (it was E1105 since 0.26.3), so all
+    existing docs are byte-identical and 0 goldens re-bless — the new capability
+    is opt-in and inert for non-users, so no marker bump is required.
+  * HARDENING (error-path / manifest-hygiene, no rendered-output change): a
+    non-numeric ``value=`` on Bar/Matrix now raises **E1107** (a dormant spec
+    code, environments.md §2.3, made live) instead of a silent flip-back;
+    Plane2D ``point[i]`` ``value=`` joins the value-less E1105 class; and a
+    spurious ``value_change`` on an E1115-invalid selector is dropped (completing
+    the E1115 soft-drop). ``differ.py`` untouched. It is a SemVer MINOR only for
+    the new Graph capability; the rendered-output contract is unchanged from
+    0.26.5 for every renderable input."""
