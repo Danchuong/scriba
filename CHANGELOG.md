@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-07-07 — Render-quality sweep, round 2
+
+A second numeric render-defect sweep (four hunters) on the angles round 1 didn't
+cover — animation transitions, theme/accessibility, extreme scale, cross-primitive
+composition (investigations/hunt2-*.md). It **validated the engine as otherwise
+sound** (transitions always settle on the correct server frame — the flip-back
+class is absent; geometry never runs away/collapses/clips at extreme scale;
+`\zoom`/`\group`/board-`at=`/cells-RTL all clean) and surfaced five fixable
+defects, all fixed structurally. `SCRIBA_VERSION` 23 → 24.
+
+### Fixed
+
+- **`\focus` now dims Tree/Forest nodes.** The defocus/ref-mark regex required
+  `class=` immediately after `data-target=`, but tree/forest node `<g>` interpose
+  `data-node-x/y`, so a focused tree dimmed its edges but not its nodes (read as
+  half-working). The regex tolerates and preserves interposed attributes;
+  byte-identical for cell/node primitives.
+- **RTL/mixed annotation pills carry `unicode-bidi:plaintext`.** The multi-line
+  label path applied it; the single-line `<text>` fallback omitted it, so a short
+  Arabic/Hebrew pill scrambled. Empty (byte-identical) for LTR labels.
+- **Cross-shape `\link`/`\combine` labels stay inside the stage viewBox.** The
+  mid-bridge label was placed against a ±8192 sentinel viewBox, so a blocked label
+  escaped above the board (clipped ~11px); it now clamps to the real (or
+  zoom-crop) viewBox. Byte-identical when the natural seat is clear.
+- **`Bar` never renders a nonzero value as a 0px invisible column.** A tiny value
+  beside a huge one collapsed to `height="0.00"`; a 2px min-visible floor keeps it
+  visible (a true zero stays empty).
+- **`dim` state contrast.** The dim state layered a group `opacity: 0.5` on top of
+  its muted dim-* tokens, compositing text+fill toward the stage and halving the
+  real contrast to ~1.9:1 on every dim cell — below the 3:1 floor, so the tokens'
+  AA was never delivered. The opacity is removed (desaturation alone keeps the
+  washed-out look); SVG geometry is untouched, only the shared inline stylesheet
+  changes, so every page re-blesses by one identical 3-line delta.
+
+### Deferred
+
+- The graph edge-weight pill's dark-mode theming (a bright island + sub-AA text in
+  dark mode) needs a tint-preserving rework; the Graph force-layout canvas not
+  scaling with node count couples with the node-label layout family
+  (bmad-rq-nodefit.md); four LOW transition-window polish items. All documented
+  for a focused theme/layout cycle.
+
 ## [0.28.0] - 2026-07-07 — Render-quality sweep (four structural families)
 
 A numeric render-defect sweep (four parallel hunters, geometry parsed from the

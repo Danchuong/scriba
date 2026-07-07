@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.28.0 · MIT · Python 3.10+
+**Status:** v0.29.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,28 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.29.0 — render-quality sweep, round 2
+
+**A second numeric sweep on new angles — and mostly a clean bill of health.** Four
+hunters probed what round 1 didn't: animation transitions, theme/accessibility,
+extreme scale, and cross-primitive composition. The engine came back **sound** —
+transitions always settle on the correct frame (no flip-back), geometry never runs
+away or clips even at 25-node graphs and 100-step animations, and `\zoom`/`\group`/
+board layout/RTL-in-cells are all clean. Five fixable defects fell out and were
+fixed structurally: **`\focus`** now dims Tree/Forest *nodes* (a regex missed the
+`data-node-x/y` attributes so a focused tree only half-dimmed); **RTL pills** carry
+bidi isolation so Arabic/Hebrew labels stop scrambling; a **`\link` label** can no
+longer float off the top of the board; a **`Bar`** value that is tiny beside a huge
+one keeps a 2px minimum height instead of vanishing; and the **`dim` state** dropped
+a group `opacity: 0.5` that had been silently halving its contrast to ~1.9:1 on
+every dim cell (the muted palette alone already de-emphasises at ≥4.5:1). Four are
+byte-identical for every existing document; the dim fix re-blesses each page's
+inline stylesheet by one identical delta (`SCRIBA_VERSION` 24). The graph
+dark-mode pill and the node-label layout family are deferred to a focused cycle.
+
+<details>
+<summary>v0.28.0 changelog</summary>
+
 ## What's new in v0.28.0 — render-quality sweep
 
 **Four families of render defects, found by a numeric sweep and fixed structurally.**
@@ -43,6 +65,8 @@ collapsed the plot (or blew the viewBox to ~32000px), and a too-tall `\note` spi
 silently off the bottom — both are bounded now, the note warning the new **E1126**.
 Six goldens re-bless; every other document is byte-identical (`SCRIBA_VERSION` 23).
 The Graph/Tree node-label overflow family is deferred to a focused next cycle.
+
+</details>
 
 <details>
 <summary>v0.27.0 changelog</summary>
