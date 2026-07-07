@@ -56,6 +56,7 @@ from scriba.animation.primitives._text_render import *  # noqa: F401, F403
 from scriba.animation.primitives._text_metrics import (
     label_line_extra,
     measure_label_line,
+    measure_value_text,
 )
 from scriba.animation.primitives._text_render import (  # noqa: F401 — explicit for IDEs
     _INLINE_MATH_RE,
@@ -273,6 +274,10 @@ def _coincidence_fan(count: int) -> list[float]:
 _TRACE_LABEL_VSPAN: float = 400.0
 _TRACE_LABEL_VB: float = 8192.0
 
+# nodefit: the node-label font every node-circle primitive paints
+# (Graph/Tree/Forest node text, Hypercube subset masks — font_size="14").
+_NODE_LABEL_FONT_PX: int = 14
+
 
 class PrimitiveBase(abc.ABC):
     """Base class for all animation primitives.
@@ -341,6 +346,14 @@ class PrimitiveBase(abc.ABC):
         self._states: dict[str, str] = {}  # target suffix -> state name
         self._values: dict[str, str] = {}  # target suffix -> display value
         self._labels: dict[str, str] = {}  # target suffix -> display label
+        # nodefit: monotonic per-node cross-frame-max painted label width.
+        # Seeded with the static ids/labels at each subclass __init__; grown
+        # by set_value overrides during the _prescan_value_widths replay, so
+        # it reaches the timeline max BEFORE viewbox computation. A separate
+        # field from _values on purpose: the prescan restores _values but
+        # this floor must survive (mirror Queue._cell_width / VariableWatch
+        # _value_col_width).
+        self._node_label_wmax: dict[str, int] = {}
         self._annotations: list[dict[str, Any]] = []
         # PaintedExtent | _NO_EXTENT | None(=invalidated)
         self._extent_above_cache: object | None = None
@@ -934,6 +947,30 @@ class PrimitiveBase(abc.ABC):
         offset even in frames with fewer (or no) arrows.
         """
         self._min_arrow_above = value
+
+    # ----- nodefit: cross-frame-max node-label widths -----------------------
+
+    def note_node_label(
+        self,
+        node_key: str,
+        text: object,
+        font_px: int = _NODE_LABEL_FONT_PX,
+    ) -> None:
+        """Grow the monotonic cross-frame-max painted width for one node label.
+
+        Seeded at ``__init__`` (static id/label) and by each ``set_value``
+        during the prescan replay; read by ``_h_label_pad``/``bounding_box``
+        (measure) and — for pitch-aware layouts — the layout solver, so both
+        consumers agree on one number and the geometry is frame-stable
+        (R-32: no per-frame reflow).
+        """
+        w = measure_value_text(str(text), font_px)
+        if w > self._node_label_wmax.get(node_key, 0):
+            self._node_label_wmax[node_key] = w
+
+    def cross_frame_max_label_width(self, node_key: str) -> int:
+        """Cross-frame-max painted label width for *node_key* (0 unknown)."""
+        return self._node_label_wmax.get(node_key, 0)
 
     # ----- abstract interface ----------------------------------------------
 

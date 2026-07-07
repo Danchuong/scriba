@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.29.0"
+__version__: str = "0.30.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 24
+SCRIBA_VERSION: int = 25
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -474,4 +474,38 @@ re-blesses every page's inline stylesheet by one identical 3-line delta:
 cycle: the graph edge-weight pill's dark-mode theming (needs a tint-preserving
 rework), the Graph force-layout canvas not scaling with node count (couples with
 the node-label layout family), and four LOW transition-window polish items.
+Consumer caches keyed on rendered output MUST invalidate.
+
+0.30.0 bumps 24→25 (the graph/theme cluster — the two 0.29.0 deferrals plus the
+node-label fit family, one combined bump):
+  * Graph edge-weight pill dark theming, tint-preserving: the DEFAULT pill emits
+    the literal ``fill="white"`` while every tint emits a hex, so a CSS attribute
+    selector ``.scriba-graph-pill[fill="white"]`` (+ ``~ .scriba-graph-weight``
+    sibling text rule, both dark scopes) flips ONLY the default chip to the
+    idle-fill/idle-text pair (3.71:1 → 14.47:1 on-chip, 12.48:1 bright island →
+    blends) and leaves the state-tint signal untouched. Light byte-identical;
+    all 107 corpus goldens re-bless by the identical CSS delta (DNA-3).
+  * nodefit substrate: ``PrimitiveBase._node_label_wmax`` — monotonic per-node
+    cross-frame-max painted label width, seeded from static ids/labels at
+    ``__init__`` and grown by ``set_value`` during the ``_prescan_value_widths``
+    replay (survives the prescan restore like Queue ``_cell_width``).
+  * nodefit A (viewBox honesty): Graph/Tree/Forest/Hypercube fold the painted
+    node-label overhang into ``_h_label_pad`` (Forest: into its monotonic
+    envelope), so a wide ``value=``/id label grows the frame and shifts the
+    translate instead of clipping (the confirmed "dist[v]=infinity" 8px CLIP-L).
+  * nodefit B (label-aware pitch): Tree leaf pitch, Hypercube per-row pitch,
+    Forest column/seam gaps and the Graph overlap post-pass (per-pair
+    ``halves`` separations, one-shot ``_settle_label_layout`` re-spread with
+    the canvas re-grown by the label overhang) spread wide labels apart
+    instead of letting adjacent node labels collide. Layout settles during
+    the prescan, before the first viewbox read (R-32 frame-stable).
+  * Graph force-canvas scaling: ``_grow_force_canvas`` sizes the force solve
+    by area-per-node (``max(400*300, 7500*N)``, 4:3 kept, floored at the
+    default so N ≤ 16 is byte-identical); the auto-seed sweep stays at the
+    native pass budget and the WINNER alone gets a convergent overlap resolve
+    (10N passes, min_sep from the painted radius). 0/0 overlap/coincident at
+    N=40 and N=100 across ring/chords/dense/grid/tree/star probes (was 93
+    overlaps + 2 coincident at N=100).
+All four are byte-inert on the shipped corpus — the 107 golden re-blesses carry
+ONLY the shared-stylesheet delta; no SVG geometry changed in any golden.
 Consumer caches keyed on rendered output MUST invalidate."""

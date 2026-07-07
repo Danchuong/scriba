@@ -349,15 +349,26 @@ class TestBoundingBox:
         assert bbox.width > 0 and bbox.height > 0
 
     def test_envelope_invariant_across_states_and_values(self) -> None:
-        """No structural op mutates the footprint: recolor, highlight, hide and
-        value-apply must all leave the bounding box byte-identical (R-32)."""
+        """Recolor, highlight, hide and a fitting value= never mutate the
+        footprint. A value= WIDER than its circle grows it (nodefit B3) —
+        monotonically and idempotently, so the prescan settles the box
+        before frame 0 and it stays frame-stable across the scene (R-32),
+        mirroring the Queue/VariableWatch width-growth contract."""
         h = Hypercube("L", {"bits": 4})
         base = h.bounding_box()
         h.set_state("subset[5]", "good")
         h.set_state("subset[3]", "hidden")
         h._highlighted.add("subset[9]")
-        h.apply_command({"value": "123456"}, target_suffix="subset[10]")
+        h.apply_command({"value": "7"}, target_suffix="subset[11]")  # fits
         assert tuple(h.bounding_box()) == tuple(base)
+        h.apply_command({"value": "123456"}, target_suffix="subset[10]")
+        grown = h.bounding_box()
+        assert grown.width > base.width
+        assert grown.height == base.height
+        # Idempotent: replaying the same value (what real frames do after
+        # the prescan) never moves the box again.
+        h.apply_command({"value": "123456"}, target_suffix="subset[10]")
+        assert tuple(h.bounding_box()) == tuple(grown)
 
     def test_caption_grows_height(self) -> None:
         plain = Hypercube("L", {"bits": 3}).bounding_box()

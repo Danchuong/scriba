@@ -869,6 +869,26 @@
   :root:not([data-theme="light"]) .idx { fill: #9ba1a6; }
 }
 
+/* Graph weight pill — default (fill="white") only; tinted pills carry a hex
+   fill (#dbeafe / #ffffff / …) and are excluded so their state tint survives.
+   Both rules are required: flipping the fill alone leaves the #687076 weight
+   text at 3.37:1 (sub-AA) on the dark chip. Mirrors the annotation-pill
+   precedent (.scriba-annotation > rect above) and the .idx hardcoded-fill flip. */
+[data-theme="dark"] .scriba-graph-pill[fill="white"] {
+  fill: var(--scriba-state-idle-fill);
+}
+[data-theme="dark"] .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight {
+  fill: var(--scriba-state-idle-text);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] {
+    fill: var(--scriba-state-idle-fill);
+  }
+  :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight {
+    fill: var(--scriba-state-idle-text);
+  }
+}
+
 /* ============================================
    Focus indicator (interactive widget)
    ============================================ */

@@ -49,6 +49,9 @@ _LAYER_GAP = 60
 _MIN_H_GAP = 50
 _EDGE_STROKE_WIDTH = 1.5
 _PADDING = 30
+# nodefit B2: breathing room between adjacent painted node labels when the
+# pitch is label-driven (labels wider than _MIN_H_GAP - this gap).
+_LABEL_PITCH_GAP = 6
 
 # Regex to parse annotation selectors like "T.node[5]" or "T.node[[0,3]]"
 _TREE_NODE_SEL_RE = re.compile(r"^(?P<name>\w+)\.node\[(?P<id>.+)\]$")
@@ -192,10 +195,18 @@ class Tree(PrimitiveBase):
             if (u, v) not in self.links:
                 self.links.append((u, v))
 
+        # nodefit: seed the cross-frame-max label map with the static display
+        # labels (segtree "[l,r]=v", ids); per-frame value= overrides grow it
+        # via set_value during the prescan.
+        for _n in self.nodes:
+            self.note_node_label(
+                self._node_key(_n), self.node_labels.get(_n, str(_n))
+            )
+
         # Compute viewport dimensions based on tree size
         node_count = len(self.nodes)
         depth = self._compute_max_depth()
-        self.width: int = max(_DEFAULT_WIDTH, node_count * _MIN_H_GAP + 2 * _PADDING)
+        self.width: int = self._layout_width()
         self.height: int = max(_DEFAULT_HEIGHT, (depth + 1) * _LAYER_GAP + 2 * _PADDING)
 
         # Scale node radius with density so dense trees don't overlap
@@ -730,6 +741,59 @@ class Tree(PrimitiveBase):
     def _link_key(u: str | int, v: str | int) -> str:
         return f"link[({u},{v})]"
 
+    def _node_pitch(self) -> int:
+        """Horizontal leaf pitch (nodefit B2): the historic ``_MIN_H_GAP``
+        floor, grown to the widest painted node label plus a small gap —
+        uniform, because Reingold-Tilford gives every leaf one unit of the
+        usable width. max() keeps the pitch (and every byte) unchanged when
+        labels fit."""
+        widest = max(
+            (
+                self.cross_frame_max_label_width(self._node_key(n))
+                for n in self.nodes
+            ),
+            default=0,
+        )
+        return max(_MIN_H_GAP, widest + _LABEL_PITCH_GAP)
+
+    def _layout_width(self) -> int:
+        """Canvas width: the historic node-count formula, widened (nodefit
+        B2) only when the widest painted label needs more LEAF pitch than
+        the historic width already provides — RT spreads the usable width
+        across leaves, so a node-count canvas usually carries slack and
+        must not churn when labels already fit it."""
+        base = len(self.nodes) * _MIN_H_GAP + 2 * _PADDING
+        leaves = sum(1 for n in self.nodes if not self.children_map.get(n))
+        need = max(1, leaves) * self._node_pitch() + 2 * _PADDING
+        return max(_DEFAULT_WIDTH, base, need)
+
+    def _nodefit_regrow(self) -> None:
+        """Widen the canvas to the grown label map and re-run RT.
+
+        Called from ``set_value`` only when a node's cross-frame max grew;
+        the prescan replays every frame BEFORE the first viewbox read, so
+        the geometry settles pre-measure and stays frame-stable (R-32).
+        Only the LABEL-driven need may exceed the current width — the
+        node-count base stays frozen at its __init__ value (add_node has
+        never re-derived the canvas; re-deriving it here would move the
+        tree mid-scene). Radius frozen too — glyph stability."""
+        leaves = sum(1 for n in self.nodes if not self.children_map.get(n))
+        need = max(1, leaves) * self._node_pitch() + 2 * _PADDING
+        if need > self.width:
+            self.width = need
+            self._relayout()
+
+    def set_value(self, suffix: str, value: str) -> None:
+        super().set_value(suffix, value)
+        # nodefit: a node's value= paints centered in the circle at 14 px —
+        # grow the cross-frame-max map only when the set actually landed
+        # (the base soft-drops invalid selectors with E1115).
+        if suffix.startswith("node[") and self.get_value(suffix) == value:
+            before = self.cross_frame_max_label_width(suffix)
+            self.note_node_label(suffix, value)
+            if self.cross_frame_max_label_width(suffix) > before:
+                self._nodefit_regrow()
+
     # ----- Position tracking ------------------------------------------------
 
     def get_node_positions(self) -> dict[str, tuple[int, int]]:
@@ -858,6 +922,32 @@ class Tree(PrimitiveBase):
             origin_x=0.0,
             origin_y=0.0,
         )
+
+    def _h_label_pad(self) -> "tuple[int, int]":
+        """Base pads plus the painted node-label overhang (nodefit A2).
+
+        Defensive for Tree — the canvas already widens with node count — but
+        a very wide value=/label on an outer leaf can still overhang the
+        frame. Same fold as Graph: ``(r + left_pad + cx) ± tw/2`` must stay
+        inside ``[0, width]``; both folds are int 0 when every label fits.
+        """
+        left_pad, right_reach = super()._h_label_pad()
+        r = self._node_radius
+        content_w = self.width + 2 * r
+        lbl_l = 0
+        lbl_r = 0
+        for node_id, (cx, _cy) in self.positions.items():
+            tw = self.cross_frame_max_label_width(self._node_key(node_id))
+            if tw <= 2 * r:
+                continue  # fits inside the circle -> inside the frame
+            half = tw / 2.0
+            lbl_l = max(lbl_l, int(math.ceil(half - (r + cx))))
+            lbl_r = max(lbl_r, int(math.ceil(r + cx + half - content_w)))
+        if lbl_l > 0:
+            left_pad = max(left_pad, lbl_l)
+        if lbl_r > 0:
+            right_reach = max(right_reach, content_w + lbl_r)
+        return left_pad, right_reach
 
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius

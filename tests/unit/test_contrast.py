@@ -222,3 +222,119 @@ class TestDarkModeNonTextContrast:
             f"dark idle stroke {stroke} on bg {bg} is {ratio:.2f}:1, "
             f"below WCAG 1.4.11 non-text {self.WCAG_NONTEXT}:1"
         )
+
+
+class TestGraphPillDarkMode:
+    """Graph edge-weight pill dark theming (research-graph-pill-dark.md).
+
+    The DEFAULT pill emits the literal ``fill="white"``; every tinted pill
+    (tint_by_edge / tint_by_source) emits a hex (#ffffff, #dbeafe, ...).
+    The dark override must therefore target ``[fill="white"]`` ONLY, so the
+    state-tint signal survives untouched, and it must flip BOTH the pill
+    fill and the weight text — flipping the fill alone leaves the #687076
+    text at 3.37:1 (sub-AA) on the dark chip.
+    """
+
+    STAGE_DARK = "#1a1d1e"  # .scriba-widget dark surface (scriba-embed.css)
+
+    @staticmethod
+    def _css() -> str:
+        from pathlib import Path
+
+        return Path(
+            "scriba/animation/static/scriba-scene-primitives.css"
+        ).read_text()
+
+    @staticmethod
+    def _over(fg: str, bg: str, alpha: float = 0.85) -> str:
+        """sRGB source-over composite of *fg* at *alpha* onto *bg* → hex.
+
+        Mirrors the pill's ``fill-opacity="0.85"`` compositing over the
+        dark stage so contrast is computed on the *effective* chip color.
+        """
+        f = [int(fg.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4)]
+        b = [int(bg.lstrip("#")[i : i + 2], 16) for i in (0, 2, 4)]
+        return "#%02x%02x%02x" % tuple(
+            round(alpha * x + (1 - alpha) * y) for x, y in zip(f, b)
+        )
+
+    @pytest.mark.unit
+    def test_dark_pill_rule_is_default_scoped_not_blanket(self) -> None:
+        """Tint-preserving guard: rule must carry [fill="white"], never a
+        bare .scriba-graph-pill (the hunt2 §F2 blanket would clobber tints)."""
+        css = self._css()
+        assert '.scriba-graph-pill[fill="white"]' in css, (
+            "default-scoped dark pill rule missing "
+            '(.scriba-graph-pill[fill="white"])'
+        )
+        assert '[data-theme="dark"] .scriba-graph-pill {' not in css, (
+            "blanket dark pill rule found — would clobber tinted fills"
+        )
+        assert '[data-theme="dark"] .scriba-graph-pill,' not in css, (
+            "blanket dark pill rule (grouped selector) found"
+        )
+
+    @pytest.mark.unit
+    def test_dark_pill_rules_present_in_both_scopes(self) -> None:
+        """Both dark scopes (explicit toggle + OS preference) must carry the
+        pill rect rule AND the sibling weight-text rule (H6 pattern)."""
+        css = self._css()
+        assert '[data-theme="dark"] .scriba-graph-pill[fill="white"]' in css
+        assert (
+            ':root:not([data-theme="light"]) '
+            '.scriba-graph-pill[fill="white"]' in css
+        )
+        assert (
+            '.scriba-graph-pill[fill="white"] ~ .scriba-graph-weight' in css
+        ), "weight-text sibling rule missing — text would sit at 3.37:1"
+
+    @pytest.mark.unit
+    def test_default_graph_pill_dark_text_meets_aa(self) -> None:
+        """Default pill in dark: idle-text on the composited idle-fill chip
+        must meet AA (14.47:1 with the designed pair)."""
+        css = self._css()
+        assert (
+            '.scriba-graph-pill[fill="white"] ~ .scriba-graph-weight' in css
+        ), "no dark weight-text rule — dark text stays #687076 (3.71:1)"
+        fill = TestDarkModeNonTextContrast._dark_token(
+            "--scriba-state-idle-fill"
+        )
+        text = TestDarkModeNonTextContrast._dark_token(
+            "--scriba-state-idle-text"
+        )
+        effective = self._over(fill, self.STAGE_DARK)
+        ratio = contrast_ratio(text, effective)
+        assert ratio >= WCAG_AA_NORMAL, (
+            f"dark pill text {text} on effective chip {effective} is "
+            f"{ratio:.2f}:1, below AA {WCAG_AA_NORMAL}:1"
+        )
+
+    @pytest.mark.unit
+    def test_dark_default_pill_not_bright_island(self) -> None:
+        """The old white@0.85 chip sat at 12.48:1 vs the dark stage — a
+        jarring bright island. The themed chip must blend (< 3:1)."""
+        css = self._css()
+        assert '.scriba-graph-pill[fill="white"]' in css, (
+            "no dark pill fill rule — chip stays a 12.48:1 bright island"
+        )
+        fill = TestDarkModeNonTextContrast._dark_token(
+            "--scriba-state-idle-fill"
+        )
+        effective = self._over(fill, self.STAGE_DARK)
+        ratio = contrast_ratio(effective, self.STAGE_DARK)
+        assert ratio < 3.0, (
+            f"dark default pill chip {effective} vs stage {self.STAGE_DARK} "
+            f"is {ratio:.2f}:1 — still an island, expected blend (< 3:1)"
+        )
+
+    @pytest.mark.unit
+    def test_light_mode_pill_rules_dark_scoped_only(self) -> None:
+        """Light mode must stay byte-identical: every pill override line is
+        scoped under a dark gate (explicit toggle or the @media twin)."""
+        css = self._css()
+        for line in css.splitlines():
+            if ".scriba-graph-pill[" in line:
+                assert (
+                    '[data-theme="dark"]' in line
+                    or ':root:not([data-theme="light"])' in line
+                ), f"un-scoped pill rule would leak into light mode: {line!r}"

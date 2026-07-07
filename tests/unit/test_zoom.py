@@ -234,8 +234,10 @@ def test_scriba_version_unchanged() -> None:
     # reservation, KaTeX math-symbol measurement, Plane2D/note viewport extent),
     # then 23 -> 24 for render-quality sweep round 2 (\focus tree/forest dim,
     # RTL pill bidi, \link label viewBox clamp, Bar min-height, and the dim-state
-    # opacity removal — a shared-CSS change). Zoom remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 24
+    # opacity removal — a shared-CSS change), then 24 -> 25 for the graph/theme
+    # cluster (graph-pill dark CSS, nodefit A/B label fit, force-canvas
+    # scaling). Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 25
 
 
 def test_zoom_no_new_motion_kind() -> None:

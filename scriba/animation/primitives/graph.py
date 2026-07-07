@@ -65,6 +65,19 @@ _PADDING = 20
 _DEFAULT_SEED = 42
 _DEFAULT_ITERATIONS = 50
 
+# Force-layout canvas scaling (research-graph-scaling.md). Force nodes fill
+# AREA, so the canvas must grow with N to keep k = sqrt(area/n) above the
+# collision separation — at the fixed 400x300 box, k drops below min_sep
+# near N=100 and _resolve_overlaps oscillates against the clamp (coincident
+# nodes). Stress-calibrated: N=25 ran overlap-free at 4800 px²/node
+# (hunt2-stress); 6300 still left near-touches at N=100 on dense chord
+# rings because the auto-seed sweep scores layouts overlap-blind; 7500
+# clears them (and the degenerate hub-star from the research probe) with
+# margin. The max() floor in _grow_force_canvas keeps every graph below
+# the threshold (7500*N <= 120000, i.e. N <= 16) byte-identical.
+_FR_AREA_PER_NODE = 7500
+_FR_RESOLVE_PASSES = 10  # names _resolve_overlaps' historical pass budget
+
 # \group overlay hull (investigations/gap-dsu-forest-design.md §6 Phase 1) — a
 # presentation-only decoration wrapping a named node cluster. The hull clears
 # each node centre by node_radius + _GROUP_PAD so circles sit inside; corners
@@ -457,6 +470,7 @@ def _resolve_overlaps(
     height: int,
     passes: int = 10,
     max_y: float | None = None,
+    halves: dict[str | int, float] | None = None,
 ) -> None:
     """Push apart any node pair closer than *min_sep* (in-place).
 
@@ -469,6 +483,12 @@ def _resolve_overlaps(
     ``[_PADDING, max_y]`` in y so nodes stay inside the canvas.  *max_y*
     defaults to ``height - _PADDING``; pass a smaller value to reserve a
     band along the bottom (e.g. for an isolated-node lane).
+
+    *halves* (nodefit B1): optional per-node half-extents — the painted
+    label half-width, floored at the node radius.  When given, a pair's
+    required separation becomes ``max(min_sep, halves[u] + halves[v] +
+    _NODE_OVERLAP_GAP)`` so wide labels spread apart; ``None`` keeps the
+    historic uniform behaviour (byte-identical).
     """
     if max_y is None:
         max_y = height - _PADDING
@@ -476,16 +496,24 @@ def _resolve_overlaps(
         moved = False
         for i, u in enumerate(nodes):
             for v in nodes[i + 1:]:
+                pair_sep = min_sep
+                if halves is not None:
+                    pair_sep = max(
+                        min_sep,
+                        halves.get(u, 0.0)
+                        + halves.get(v, 0.0)
+                        + _NODE_OVERLAP_GAP,
+                    )
                 dx = pos[u][0] - pos[v][0]
                 dy = pos[u][1] - pos[v][1]
                 d = math.sqrt(dx * dx + dy * dy)
-                if d < min_sep:
+                if d < pair_sep:
                     moved = True
                     # Push apart along the connecting line (or along x
                     # if they're at the exact same position).
                     if d < 0.01:
                         dx, dy, d = 1.0, 0.0, 1.0
-                    deficit = (min_sep - d) / 2.0 + 0.5
+                    deficit = (pair_sep - d) / 2.0 + 0.5
                     shift_x = deficit * dx / d
                     shift_y = deficit * dy / d
                     pos[u] = (
@@ -542,6 +570,7 @@ def fruchterman_reingold(
     seed: int = _DEFAULT_SEED,
     iterations: int = _DEFAULT_ITERATIONS,
     node_radius: int = _NODE_RADIUS,
+    passes: int = _FR_RESOLVE_PASSES,
 ) -> dict[str | int, tuple[int, int]]:
     """Compute force-directed node positions.
 
@@ -649,9 +678,28 @@ def fruchterman_reingold(
     # 2*radius of each other when repulsion is balanced by attractive
     # edge forces or boundary constraints.
     min_sep = 2.0 * node_radius + _NODE_OVERLAP_GAP
-    _resolve_overlaps(pos, connected, min_sep, width, height, max_y=solve_max_y)
+    _resolve_overlaps(
+        pos, connected, min_sep, width, height, passes=passes, max_y=solve_max_y
+    )
 
     return _place_isolated_lane(pos, isolated, width, height)
+
+
+def _grow_force_canvas(n: int) -> tuple[int, int]:
+    """Force-layout canvas sized so *n* nodes never pack below the collision
+    separation.
+
+    Area scales with node count; the 4:3 default aspect ratio is preserved;
+    floored at the default so small graphs stay byte-identical (mirrors
+    Tree's max()-floored grow, tree.py). Force layout is 2-D isotropic —
+    nodes fill area, not a row — so both axes scale together.
+    """
+    default_area = _DEFAULT_WIDTH * _DEFAULT_HEIGHT
+    area = max(default_area, _FR_AREA_PER_NODE * n)
+    aspect = _DEFAULT_WIDTH / _DEFAULT_HEIGHT  # 4:3
+    w = max(_DEFAULT_WIDTH, round(math.sqrt(area * aspect)))
+    h = max(_DEFAULT_HEIGHT, round(math.sqrt(area / aspect)))
+    return w, h
 
 
 def map_manual_positions(
@@ -983,6 +1031,19 @@ class Graph(PrimitiveBase):
             else None
         )
 
+        # nodefit: seed the cross-frame-max label map with the static ids so
+        # a wide base label ("Bellman-Ford") is known before layout/measure;
+        # per-frame value= overrides grow it via set_value in the prescan.
+        for _n in self.nodes:
+            self.note_node_label(self._node_key(_n), _n)
+        # nodefit B1 (force layout only): a wide label marks the layout
+        # dirty; _settle_label_layout re-spreads via the overlap post-pass
+        # on the first geometry read. Manual/stable/hierarchical layouts
+        # never set _force_relayout_ok — their positions are author/solver
+        # truth and A's viewBox fold alone protects them from clipping.
+        self._force_relayout_ok: bool = False
+        self._label_layout_dirty: bool = False
+
         self.width: int = _DEFAULT_WIDTH
         self.height: int = _DEFAULT_HEIGHT
 
@@ -1084,10 +1145,37 @@ class Graph(PrimitiveBase):
                 return
             # Invalid orientation or empty — fall through to FR default.
 
+        # Force canvas scales with node count (research-graph-scaling.md):
+        # at the fixed 400x300 box, k = sqrt(area/n) collapses below the
+        # collision separation as N grows and _resolve_overlaps oscillates
+        # against the clamp (overlapping nodes from N~40, coincident from
+        # N~75). Growing the AREA restores k; the max() floor keeps N <= 16
+        # byte-identical. The radius stays computed from the DEFAULT box
+        # above — the glyph is fixed; only spacing and viewBox grow. All of
+        # manual / stable / hierarchical have already returned by here, so
+        # this touches the force path only.
+        self.width, self.height = _grow_force_canvas(len(self.nodes))
+        _grew = (self.width, self.height) != (_DEFAULT_WIDTH, _DEFAULT_HEIGHT)
+        # When the canvas grew, the winning layout's overlap post-pass runs
+        # to convergence (10N passes — _resolve_overlaps early-exits the
+        # moment a pass moves nothing) with min_sep derived from the PAINTED
+        # radius: FR's default separates at r=20 while dense graphs paint
+        # r=12, and the inflated target oscillates in leaf piles instead of
+        # converging (probe: star-100 stuck at 12 px; the convergent resolve
+        # reaches the full 36 px separation on every probed topology). Both
+        # knobs are gated on _grew so byte output below the threshold is
+        # untouched.
+        _heavy_passes = 10 * len(self.nodes)
+
         fr_edges = [(u, v) for u, v, _w in self.edges]
         if self._seed_pinned:
             # Author pinned a seed (or alias): use it directly, no sweep.
-            # Byte-identical to the pre-Phase-3 behaviour.
+            # Byte-identical to the pre-Phase-3 behaviour below threshold.
+            _kw: dict[str, Any] = (
+                {"node_radius": self._node_radius, "passes": _heavy_passes}
+                if _grew
+                else {}
+            )
             self.positions: dict[str | int, tuple[int, int]] = (
                 fruchterman_reingold(
                     self.nodes,
@@ -1095,6 +1183,7 @@ class Graph(PrimitiveBase):
                     width=self.width,
                     height=self.height,
                     seed=self.layout_seed,
+                    **_kw,
                 )
             )
         else:
@@ -1106,6 +1195,10 @@ class Graph(PrimitiveBase):
             )
             best_positions: dict[str | int, tuple[int, int]] | None = None
             best_key: tuple[float, int] | None = None
+            # Candidates run at the NATIVE pass budget even when the canvas
+            # grew: score_layout is overlap-blind, so resolving all 8 to
+            # convergence is 8x wasted work — the winner alone gets the
+            # convergent re-solve below (research-graph-scaling §3.5).
             for cand in range(_AUTO_SEED_COUNT):
                 cand_pos = fruchterman_reingold(
                     self.nodes,
@@ -1128,6 +1221,32 @@ class Graph(PrimitiveBase):
             # resolved default for backward compatibility — see
             # test_default_seed_when_omitted).
             self._auto_seed: int = best_key[1]
+            if _grew:
+                # Convergent re-solve of the WINNER only (decoupled form):
+                # deterministic — same seed and canvas as the sweep run,
+                # only the overlap post-pass deepens and min_sep tracks the
+                # painted radius.
+                self.positions = fruchterman_reingold(
+                    self.nodes,
+                    fr_edges,
+                    width=self.width,
+                    height=self.height,
+                    seed=self._auto_seed,
+                    node_radius=self._node_radius,
+                    passes=_heavy_passes,
+                )
+
+        # nodefit B1: force positions may be re-spread for wide labels. A
+        # wide STATIC id engages it immediately (settled on the first
+        # geometry read); wide value= overrides engage it via set_value
+        # during the prescan. Inert when every label fits its circle.
+        self._force_relayout_ok = True
+        if any(
+            self.cross_frame_max_label_width(self._node_key(_n2))
+            > 2 * self._node_radius
+            for _n2 in self.nodes
+        ):
+            self._label_layout_dirty = True
 
     def _parse_manual_positions(
         self, raw: Any
@@ -1460,6 +1579,83 @@ class Graph(PrimitiveBase):
         """
         return suffix.startswith(("node[", "edge["))
 
+    def set_value(self, suffix: str, value: str) -> None:
+        super().set_value(suffix, value)
+        # nodefit: a node's value= paints centered in the circle at 14 px —
+        # grow the cross-frame-max map only when the set actually landed
+        # (the base soft-drops invalid selectors with E1115).
+        if suffix.startswith("node[") and self.get_value(suffix) == value:
+            before = self.cross_frame_max_label_width(suffix)
+            self.note_node_label(suffix, value)
+            grown = self.cross_frame_max_label_width(suffix)
+            # B1: a label now wider than its circle re-spreads the force
+            # layout (settled lazily on the next geometry read). The
+            # prescan replays every frame first, so repeats at frame time
+            # never grow the max again — geometry stays frame-stable.
+            if (
+                self._force_relayout_ok
+                and grown > before
+                and grown > 2 * self._node_radius
+            ):
+                self._label_layout_dirty = True
+
+    def _settle_label_layout(self) -> None:
+        """nodefit B1 — one-shot post-prescan re-spread of the force layout.
+
+        Re-runs ONLY the overlap post-pass (never the seeded FDL, which
+        would forfeit determinism) on the frozen positions, with per-pair
+        separations from the painted label halves, on a canvas widened by
+        the total label overhang — the canvas reserves exactly what the
+        pitch spreads, both reading the SAME map. The prescan replays every
+        frame's value= BEFORE the first viewbox read, so this settles at
+        most once per growth wave and the scene stays frame-stable (R-32).
+        """
+        if not self._label_layout_dirty:
+            return
+        self._label_layout_dirty = False
+        r = self._node_radius
+        halves: dict[str | int, float] = {}
+        overhang = 0.0
+        for n in self.nodes:
+            w = self.cross_frame_max_label_width(self._node_key(n))
+            halves[n] = max(float(r), w / 2.0)
+            if w > 2 * r:
+                overhang += w - 2 * r
+        if not overhang:
+            return
+        self.width += int(math.ceil(overhang))
+        # Replicate the solve's connected/isolated split and lane band.
+        incident: set[str | int] = set()
+        for _u, _v, _w in self.edges:
+            incident.add(_u)
+            incident.add(_v)
+        connected = [n for n in self.nodes if n in incident]
+        isolated = [n for n in self.nodes if n not in incident]
+        solve_max_y = self.height - _PADDING
+        if isolated:
+            solve_max_y = self.height - _PADDING - _ISOLATED_LANE_BAND
+        pos = {
+            n: (float(x), float(y))
+            for n, (x, y) in self.positions.items()
+            if n in connected
+        }
+        min_sep = 2.0 * r + _NODE_OVERLAP_GAP
+        _resolve_overlaps(
+            pos,
+            connected,
+            min_sep,
+            self.width,
+            self.height,
+            passes=10 * max(1, len(self.nodes)),
+            max_y=solve_max_y,
+            halves=halves,
+        )
+        self.positions = _place_isolated_lane(
+            pos, isolated, self.width, self.height
+        )
+        # Geometry moved: drop the lazily-built annotation extent cache.
+        self._extent_above_cache = None
+
     def _trace_cell_suffix(self, cell) -> str:
         """Map a ``\\trace`` ``cells=`` entry to a node selector suffix.
 
@@ -1536,7 +1732,41 @@ class Graph(PrimitiveBase):
             origin_y=0.0,
         )
 
+    def _h_label_pad(self) -> "tuple[int, int]":
+        """Base pads plus the painted node-label overhang (nodefit A1).
+
+        A label wider than its circle paints ``(r + left_pad + cx) ± tw/2``
+        in frame space; fold the left overhang into ``left_pad`` (the emit
+        translate shifts content right by it) and the right overhang into
+        ``right_reach`` (grows the box). Both folds stay int 0 when every
+        label fits the frame, keeping the corpus byte-identical.
+        """
+        # B1 first: both consumers of this helper (bounding_box frame and
+        # emit_svg translate) must see the settled, re-spread positions.
+        self._settle_label_layout()
+        left_pad, right_reach = super()._h_label_pad()
+        r = self._node_radius
+        content_w = self.width + 2 * r
+        lbl_l = 0
+        lbl_r = 0
+        for node_id, (cx, _cy) in self.positions.items():
+            tw = self.cross_frame_max_label_width(self._node_key(node_id))
+            if tw <= 2 * r:
+                continue  # fits inside the circle -> inside the frame
+            half = tw / 2.0
+            lbl_l = max(lbl_l, int(math.ceil(half - (r + cx))))
+            lbl_r = max(lbl_r, int(math.ceil(r + cx + half - content_w)))
+        if lbl_l > 0:
+            left_pad = max(left_pad, lbl_l)
+        if lbl_r > 0:
+            right_reach = max(right_reach, content_w + lbl_r)
+        return left_pad, right_reach
+
     def bounding_box(self) -> BoundingBox:
+        # B1 first: the box below reads self.width, which the settle may
+        # widen — it must land before the content_w snapshot, not midway
+        # through the _h_label_pad() call further down.
+        self._settle_label_layout()
         r = self._node_radius
         arrow_above = self._reserved_arrow_above()
         # Reserve a top band for the caption and shift content below it, so the

@@ -34,6 +34,7 @@ LinkedList's ``values`` list.
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any, Callable, ClassVar
 
@@ -65,6 +66,9 @@ _LAYER_GAP = 60  # vertical distance between tree depths
 _H_GAP = 56  # horizontal distance between sibling columns within a tree
 _TREE_GAP = 56  # horizontal gap between adjacent trees
 _PADDING = 30  # must match tree_layout._PADDING so wT/hT map to fixed gaps
+# nodefit B3: breathing room between adjacent painted node labels when the
+# column gap / tree gap is label-driven (labels wider than the circle).
+_LABEL_PITCH_GAP = 6
 _EDGE_STROKE_WIDTH = 1.5
 
 # Selector regexes (matched against the full ``name.suffix`` string).
@@ -161,6 +165,13 @@ class Forest(PrimitiveBase):
         }
         self.node_labels: dict[str, str] = {nid: nid for nid in self.node_ids}
 
+        # nodefit: seed the cross-frame-max label map with the static ids;
+        # per-frame value= overrides grow it via set_value in the prescan.
+        # Must precede the first _grow_envelope() so the initial envelope
+        # already reserves any wide static label.
+        for nid in self.node_ids:
+            self.note_node_label(self._node_key(nid), self.node_labels[nid])
+
         # DSU parent array: values[i] is the parent id of node_ids[i]; a node
         # is a root iff it is its own parent. This is the single mutable
         # structural state, and the ONLY thing a union touches — the prescan
@@ -188,6 +199,10 @@ class Forest(PrimitiveBase):
         # grown by every union. bounding_box reads these, never the live layout.
         self._envelope_width: int = 2 * _PADDING
         self._envelope_height: int = 2 * _PADDING
+        # nodefit A3: monotonic left overhang of the widest painted node
+        # label past x=0; folded into _h_label_pad so the emit translate
+        # shifts content right (the right overhang grows _envelope_width).
+        self._envelope_left_pad: int = 0
         self._grow_envelope()
 
     # ----- construction helpers -------------------------------------------
@@ -355,11 +370,30 @@ class Forest(PrimitiveBase):
         r = self._node_radius
         positions: dict[str, tuple[int, int]] = {}
         x_cursor = float(_PADDING + r)
+        prev_half = 0.0
         for root in roots:
             members = members_by_root[root]
             depth_t = self._tree_depth(root, children)
             leaves_t = sum(1 for m in members if not children[m])
-            w_t = max(2 * _PADDING, (leaves_t - 1) * _H_GAP + 2 * _PADDING)
+            # nodefit B3: this tree's column gap follows its widest painted
+            # label, and the seam to the previous tree clears both trees'
+            # widest label halves — wide value= labels spread instead of
+            # colliding. Both max() to the historic constants when labels
+            # fit their circles, keeping the corpus byte-identical.
+            widest_lbl = max(
+                (
+                    self.cross_frame_max_label_width(self._node_key(m))
+                    for m in members
+                ),
+                default=0,
+            )
+            gap_t = max(_H_GAP, widest_lbl + _LABEL_PITCH_GAP)
+            half_t = widest_lbl / 2.0 if widest_lbl > 2 * r else float(r)
+            if prev_half:
+                need = prev_half + half_t + _LABEL_PITCH_GAP
+                if need > _TREE_GAP:
+                    x_cursor += need - _TREE_GAP
+            w_t = max(2 * _PADDING, (leaves_t - 1) * gap_t + 2 * _PADDING)
             h_t = depth_t * _LAYER_GAP + 2 * _PADDING
             sub_children = {m: children[m] for m in members}
             rt = _reingold_tilford(root, sub_children, width=w_t, height=h_t)
@@ -369,6 +403,7 @@ class Forest(PrimitiveBase):
                 positions[m] = (round(x + offset), y)
             tree_w = max(x for x, _ in rt.values()) - min_local_x
             x_cursor += tree_w + _TREE_GAP
+            prev_half = half_t
 
         # Re-anchor top-left node edge to (_PADDING, _PADDING).
         min_cx = min(x for x, _ in positions.values())
@@ -414,9 +449,47 @@ class Forest(PrimitiveBase):
 
     def _grow_envelope(self) -> None:
         """Grow the monotonic envelope to cover the current layout."""
-        w, h = self._measure_content(self._current_positions())
+        positions = self._current_positions()
+        w, h = self._measure_content(positions)
+        # nodefit A3: widen to the painted node-label extent so a wide
+        # value=/id label (tw > 2r) never clips the envelope-derived
+        # viewBox; the left overhang rides its own monotonic pad. Both
+        # no-op when every label fits its circle (byte-stable corpus).
+        for nid, (x, _y) in positions.items():
+            tw = self.cross_frame_max_label_width(self._node_key(nid))
+            if tw <= 2 * self._node_radius:
+                continue
+            half = tw / 2.0
+            w = max(w, int(math.ceil(x + half + _PADDING)))
+            self._envelope_left_pad = max(
+                self._envelope_left_pad, int(math.ceil(half - x))
+            )
         self._envelope_width = max(self._envelope_width, w)
         self._envelope_height = max(self._envelope_height, h)
+
+    def _h_label_pad(self) -> "tuple[int, int]":
+        """Base pads plus the monotonic node-label left overhang (nodefit
+        A3 — the right overhang is already folded into ``_envelope_width``
+        by ``_grow_envelope``)."""
+        left_pad, right_reach = super()._h_label_pad()
+        if self._envelope_left_pad > 0:
+            left_pad = max(left_pad, self._envelope_left_pad)
+        return left_pad, right_reach
+
+    def set_value(self, suffix: str, value: str) -> None:
+        super().set_value(suffix, value)
+        # nodefit: a node's value= paints centered in the circle at 14 px —
+        # grow the map and re-grow the envelope so the reservation is in
+        # place before the viewbox reads it (prescan replays every frame).
+        if suffix.startswith("node[") and self.get_value(suffix) == value:
+            before = self.cross_frame_max_label_width(suffix)
+            self.note_node_label(suffix, value)
+            if self.cross_frame_max_label_width(suffix) > before:
+                # A wider label re-pitches the layout (B3) — drop the
+                # position cache, which is keyed on the DSU signature only.
+                self._pos_cache = None
+                self._pos_cache_sig = None
+            self._grow_envelope()
 
     # ----- selector helpers ------------------------------------------------
 

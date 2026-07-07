@@ -25,6 +25,7 @@ See ``docs/spec/primitives.md`` for the authoritative specification.
 
 from __future__ import annotations
 
+import math
 import re
 from typing import Any, Callable, ClassVar
 
@@ -153,6 +154,12 @@ class Hypercube(PrimitiveBase):
                 if not (v >> b) & 1:
                     self._edges.append((v, v | (1 << b)))
 
+        # nodefit: seed the cross-frame-max label map with the static mask
+        # labels; subset value= overrides grow it via set_value (prescan).
+        for v in range(self._node_count):
+            base = format(v, f"0{self.bits}b") if self.show_bits else str(v)
+            self.note_node_label(f"subset[{v}]", base)
+
         self._positions: dict[int, tuple[float, float]] = {}
         self._content_w, self._content_h = self._compute_layout()
 
@@ -170,17 +177,33 @@ class Hypercube(PrimitiveBase):
         top row; the empty set (popcount 0) is the bottom row. Each row is
         centered horizontally against the widest row.
         """
-        widest = max(len(vs) for vs in self._layers.values())
-        content_w = widest * _H_PITCH
+        # nodefit B3: a row's slot pitch follows its widest painted label
+        # (mask or value= override), so wide DP-state labels spread instead
+        # of colliding. max() keeps the historic _H_PITCH — and every byte —
+        # when labels fit their circles.
+        row_pitch: dict[int, int] = {}
+        content_w = 0
+        for k, values in self._layers.items():
+            widest_lbl = max(
+                (
+                    self.cross_frame_max_label_width(f"subset[{v}]")
+                    for v in values
+                ),
+                default=0,
+            )
+            pitch = max(_H_PITCH, widest_lbl + _H_GAP)
+            row_pitch[k] = pitch
+            content_w = max(content_w, len(values) * pitch)
         content_h = self.bits * _ROW_PITCH + 2 * _NODE_RADIUS
 
         for k, values in self._layers.items():
             row_from_top = self.bits - k
             cy = _PADDING + _NODE_RADIUS + row_from_top * _ROW_PITCH
-            layer_width = len(values) * _H_PITCH
+            pitch = row_pitch[k]
+            layer_width = len(values) * pitch
             x0 = _PADDING + (content_w - layer_width) / 2.0
             for j, v in enumerate(values):
-                cx = x0 + j * _H_PITCH + _H_PITCH / 2.0
+                cx = x0 + j * pitch + pitch / 2.0
                 self._positions[v] = (cx, cy)
 
         return content_w, content_h
@@ -220,6 +243,27 @@ class Hypercube(PrimitiveBase):
         idx = int(m.group("idx"))
         if 0 <= idx < self._node_count:
             self._values[target_suffix] = str(params["value"])
+            # nodefit: this path writes _values directly (bypassing
+            # set_value), so grow the label map here too.
+            self._note_subset_label(target_suffix, str(params["value"]))
+
+    def _note_subset_label(self, suffix: str, value: str) -> None:
+        """Grow the label map; when the max actually grew, re-derive the
+        row pitches (nodefit B3). The prescan replays every frame before
+        the first viewbox read, so the lattice settles pre-measure and
+        stays frame-stable (R-32)."""
+        before = self.cross_frame_max_label_width(suffix)
+        self.note_node_label(suffix, value)
+        if self.cross_frame_max_label_width(suffix) > before:
+            self._content_w, self._content_h = self._compute_layout()
+
+    def set_value(self, suffix: str, value: str) -> None:
+        super().set_value(suffix, value)
+        # nodefit: a subset's value= paints centered at 14 px — grow the
+        # cross-frame-max map only when the set actually landed (the base
+        # soft-drops invalid selectors with E1115).
+        if suffix.startswith("subset[") and self.get_value(suffix) == value:
+            self._note_subset_label(suffix, value)
 
     # ----- Primitive interface ---------------------------------------------
 
@@ -269,6 +313,31 @@ class Hypercube(PrimitiveBase):
         lattice, clear of the empty-set row. Every node's ``cy + radius`` stays
         at or above this content-height baseline."""
         return float(_PADDING + self._content_h)
+
+    def _h_label_pad(self) -> "tuple[int, int]":
+        """Base pads plus the painted subset-label overhang (nodefit A3).
+
+        A subset label paints ``(left_pad + cx) ± tw/2`` in frame space
+        (the emit translate carries no radius term, unlike Graph/Tree);
+        fold the left overhang into ``left_pad`` and the right overhang
+        into ``right_reach``. Both folds stay int 0 when every label fits
+        the frame, keeping existing lattices byte-identical.
+        """
+        left_pad, right_reach = super()._h_label_pad()
+        lbl_l = 0
+        lbl_r = 0
+        for v, (cx, _cy) in self._positions.items():
+            tw = self.cross_frame_max_label_width(f"subset[{v}]")
+            if tw <= 2 * _NODE_RADIUS:
+                continue  # fits inside the circle -> inside the frame
+            half = tw / 2.0
+            lbl_l = max(lbl_l, int(math.ceil(half - cx)))
+            lbl_r = max(lbl_r, int(math.ceil(cx + half - self._content_w)))
+        if lbl_l > 0:
+            left_pad = max(left_pad, lbl_l)
+        if lbl_r > 0:
+            right_reach = max(right_reach, int(self._content_w) + lbl_r)
+        return left_pad, right_reach
 
     def bounding_box(self) -> BoundingBox:
         content_w = float(self._content_w)
