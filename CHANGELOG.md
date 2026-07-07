@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-07-07 — Sweep-3 wave 4: residual closure
+
+The last two open sweep-3 residuals, plus the formal close-out of the four
+accepted-by-design polish items. Zero corpus re-bless — the rendered-output
+function changes only for opt-in inputs. `SCRIBA_VERSION` 26 → 27.
+
+### Fixed
+
+- **`\cursor` paints on Deque.** Deque overrides `emit_svg`, so the 0.31.0
+  Queue wiring never reached it — the caret silently vanished (the same
+  family the Stack/Queue fix closed).
+- **`\link` labels carry the house halo.** The mid-bridge label was a bare
+  `<text>` with no pill and no halo, turning illegible over the dashed bridge
+  or crossed content; it now uses the white paint-order stroke every
+  pill-text fallback uses.
+
+### Closed as by-design (documented, no code change)
+
+- `.scriba-highlighted` stays KNOWN-DEAD (motion-ruleset A-3): retrofitting a
+  paint would change `\highlight` semantics on already-coloured cells.
+- Bare-shape `element_add` appears at the fs-snap (differ.py F4).
+- `tr=null` silent snap when only SVG content grows (no target-set change).
+- The ~180 ms Prev reverse-flash on an overlaid highlight (fs-snap-salvaged;
+  from-model overlay awareness is a differ motion-model change, out of
+  polish scope).
+
 ## [0.31.0] - 2026-07-07 — Sweep-3 fix wave: FO ink theming, decoration seams, fail-loud guards
 
 Sweep round 3 — four hunters over the fresh 0.30.0 surface, decoration-stack

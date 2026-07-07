@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.31.0 · MIT · Python 3.10+
+**Status:** v0.32.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,21 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.32.0 — sweep-3 residual closure
+
+**The render-quality campaign converges.** The last two open residuals are
+fixed — **`\cursor` now paints on Deque** (its own `emit_svg` had missed the
+0.31.0 Queue wiring) and **`\link` labels carry the house halo** so the
+mid-bridge text stays legible over the dashed bridge — and the four remaining
+LOW polish items are formally closed as documented design decisions
+(KNOWN-DEAD `.scriba-highlighted`, fs-snap structural adds, `tr=null` content
+snaps, the Prev reverse-flash). Zero corpus re-bless (`SCRIBA_VERSION` 27).
+Four sweep rounds, four releases: every verified render, visualization, and
+code defect found by the campaign is fixed and pinned by a test.
+
+<details>
+<summary>v0.31.0 changelog</summary>
+
 ## What's new in v0.31.0 — sweep-3 fix wave
 
 **Four hunters probed the fresh 0.30.0 surface, decoration stacks, hostile
@@ -43,6 +58,8 @@ shared-obstacle model; **`\cursor` works on Stack/Queue** as documented;
 renders `$math$`** and isolates RTL; and **Matrix/NumberLine constructors fail
 loud** (E1423/E1455) instead of leaking raw tracebacks. All 107 goldens
 re-bless by one identical CSS delta (`SCRIBA_VERSION` 26).
+
+</details>
 
 <details>
 <summary>v0.30.0 changelog</summary>
