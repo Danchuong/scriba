@@ -328,6 +328,14 @@ class MatrixPrimitive(PrimitiveBase):
 
         return suffix == "all"
 
+    def value_must_be_numeric(self, suffix: str) -> bool:
+        """A cell's ``value=`` drives its colorscale fill — it must be numeric.
+
+        A non-numeric override cannot map to a colour (it soft-drops to the
+        declared datum in :meth:`emit_svg`); the pre-differ pass rejects it with
+        ``E1107`` rather than baking a dishonest ``value_change``."""
+        return bool(_SUFFIX_CELL_2D_RE.match(suffix))
+
     def resolve_annotation_point(self, selector: str) -> tuple[float, float] | None:
         """Return the SVG center of a ``cell[r][c]`` selector for annotations.
 

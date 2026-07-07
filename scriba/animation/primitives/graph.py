@@ -1448,16 +1448,17 @@ class Graph(PrimitiveBase):
         return suffix in cached_set
 
     def renders_value(self, suffix: str) -> bool:
-        """``value=`` is edge-scoped on Graph (docs:1125).
+        """``value=`` is rendered on Graph *edges* and *nodes* (docs:1125).
 
-        An edge renders its ``value=`` as a dynamic weight label
-        (:meth:`emit_svg` reads it back via ``get_value``), so edges honor the
-        key. Nodes are name-keyed identities with no value slot — a ``value=``
-        there would vanish from the render (flip-back), so reject it. Per-node
-        computed-value display (e.g. Dijkstra distances) is a separate future
-        feature, not this key.
+        An edge renders its ``value=`` as a dynamic weight label; a node renders
+        its ``value=`` as an override of the id text inside the circle
+        (:meth:`emit_svg` reads both back via ``get_value``) — mirroring the
+        Tree/Forest node-value display (``tree.py:1004`` / ``forest.py:577``).
+        The value overrides the node id, so compose ``value="A:7"`` to keep the
+        name visible. Any other suffix has no value slot and stays ``False``
+        here (the E1105 flip-back gate rejects it loudly).
         """
-        return suffix.startswith("edge[")
+        return suffix.startswith(("node[", "edge["))
 
     def _trace_cell_suffix(self, cell) -> str:
         """Map a ``\\trace`` ``cells=`` entry to a node selector suffix.
@@ -2261,8 +2262,14 @@ class Graph(PrimitiveBase):
             # when the node is otherwise idle; keep current/error/good alive.
             effective_state = "highlight" if (is_hl and state == "idle") else state
             node_colors = svg_style_attrs(effective_state)
+            # Value-layer override takes precedence over the id label, mirroring
+            # Tree (tree.py:1004) / Forest (forest.py:577): an applied ``value=``
+            # renders inside the circle (Dijkstra dist, BFS level, low-link, ...).
+            # Unset -> str(node_id), byte-identical to the pre-feature render.
+            override = self.get_value(self._node_key(node_id))
+            display_label = override if override is not None else str(node_id)
             node_text = _render_svg_text(
-                str(node_id),
+                str(display_label),
                 cx,
                 cy,
                 fill=node_colors["text"],

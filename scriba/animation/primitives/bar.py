@@ -241,6 +241,12 @@ class Bar(PrimitiveBase):
         if v > self._envelope_max:
             self._envelope_max = v
 
+    def value_must_be_numeric(self, suffix: str) -> bool:
+        """A column height is intrinsically numeric — ``value=`` must parse as a
+        number. A non-numeric override cannot become a height (it soft-drops in
+        :meth:`set_value`); the pre-differ pass rejects it with ``E1107``."""
+        return bool(_BAR_RE.match(suffix))
+
     def apply_command(
         self, params: dict[str, Any], *, target_suffix: str | None = None
     ) -> None:

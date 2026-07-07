@@ -724,6 +724,7 @@ _PRODUCTION_RAISED_CODES: frozenset[str] = frozenset(
         "E1103",
         "E1104",  # node param type mismatch (Tree/Forest pairs-form nodes=)
         "E1105",  # unknown \apply param for the primitive (APPLY_KEYS guard)
+        "E1107",  # non-numeric value= on a numeric-value part (Bar/Matrix)
         "E1109",
         "E1112",
         "E1113",

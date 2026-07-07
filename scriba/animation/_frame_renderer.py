@@ -153,6 +153,176 @@ def _validate_value_channels(
                 )
 
 
+def _timeline_max_primitive(
+    shape_name: str,
+    prim: Any,
+    frames: list[Any],
+) -> Any | None:
+    """Deep-copy *prim* and replay every structural ``\\apply`` from all frames.
+
+    A dynamic primitive (Plane2D ``add_point``, Stack ``push``, Graph
+    ``add_node``, ...) is empty of its applies at prescan time, so
+    ``validate_selector`` cannot yet tell an *in-range* part from an
+    *out-of-range* one. This builds a throwaway clone populated to the timeline
+    maximum so validity can be judged reliably, without mutating the real
+    primitive (its render — and the golden bytes — stay untouched).
+
+    Returns the populated clone, or ``None`` if cloning fails (the caller then
+    treats the selector as valid and never wrongly drops a legitimate value).
+    """
+    import copy as _copy
+
+    # Detach the render context before copying: the clone is a validity probe,
+    # not a render, so it must not deep-copy (or leak warnings through) the
+    # live warnings collector. Restored immediately so the real primitive is
+    # byte-identical afterwards.
+    _MISSING = object()
+    saved_ctx = getattr(prim, "_ctx", _MISSING)
+    if saved_ctx is not _MISSING:
+        prim._ctx = None
+    try:
+        clone = _copy.deepcopy(prim)
+    except Exception:  # noqa: BLE001 - uncopyable primitive -> caller keeps value
+        return None
+    finally:
+        if saved_ctx is not _MISSING:
+            prim._ctx = saved_ctx
+
+    # Suppress the throwaway replay's warnings (E1463 out-of-viewport, etc.) —
+    # they belong to the probe, not the user's render.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for frame in frames:
+            shape_state = frame.shape_states.get(shape_name)
+            if not shape_state:
+                continue
+            for target_data in shape_state.values():
+                if not isinstance(target_data, dict):
+                    continue
+                for ap in target_data.get("apply_params") or []:
+                    if isinstance(ap, dict):
+                        try:
+                            clone.apply_command(ap)
+                        except Exception:  # noqa: BLE001 - best effort
+                            pass
+    return clone
+
+
+def _drop_invalid_selector_values(
+    frames: list[Any],
+    primitives: dict[str, Any],
+) -> None:
+    """Strip a ``value=`` recorded on an invalid selector (completes E1115).
+
+    ``scene._apply_apply`` records ``value`` unconditionally, so a ``value=`` on
+    a selector that ``validate_selector`` rejects (MetricPlot ``point[0]`` —
+    always invalid; Plane2D ``point[9]`` — out of range) still reaches the
+    differ as a ``value_change`` for a target with **zero** DOM elements: a
+    dishonest manifest that violates E1115's "soft-drop = no output change".
+    Dropping the value-record here makes the soft-drop reach the manifest.
+
+    Runs BEFORE the E1105 gate so an *out-of-range* part soft-drops instead of
+    hard-raising the way an *in-range* value-less part does. A live-invalid
+    selector is re-checked against the timeline-max structure first, so a part
+    added later by a structural apply (a real DOM element) is kept and left to
+    the E1105 gate — only a genuinely unaddressable selector is dropped.
+
+    A valid document has no invalid value selectors, so nothing is mutated and
+    the manifest stays byte-identical.
+    """
+    for shape_name, prim in primitives.items():
+        if not hasattr(prim, "validate_selector"):
+            continue
+        clone_built = False
+        clone: Any | None = None
+        for frame in frames:
+            shape_state = frame.shape_states.get(shape_name)
+            if not shape_state:
+                continue
+            for target_key, target_data in shape_state.items():
+                if not isinstance(target_data, dict):
+                    continue
+                if target_data.get("value") is None:
+                    continue
+                # Bare-shape value (``\apply{p}{value=..}``) is a whole-primitive
+                # op with no addressable-part suffix — not a selector to drop.
+                if target_key == shape_name:
+                    continue
+                suffix = target_key
+                if suffix.startswith(shape_name + "."):
+                    suffix = suffix[len(shape_name) + 1:]
+                if prim.validate_selector(suffix):
+                    continue  # live-valid part
+                # Live-invalid: the part may still be added later in the
+                # timeline. Confirm against the timeline-max clone before
+                # dropping (built once per shape, only when needed).
+                if not clone_built:
+                    clone = _timeline_max_primitive(shape_name, prim, frames)
+                    clone_built = True
+                if clone is None:
+                    continue  # cannot disprove validity -> keep (never wrong-drop)
+                if clone.validate_selector(suffix):
+                    continue  # valid at timeline max -> E1105 gate owns it
+                # Genuinely unaddressable selector -> honor the E1115 soft-drop.
+                target_data["value"] = None
+
+
+def _validate_numeric_value_channels(
+    frames: list[Any],
+    primitives: dict[str, Any],
+) -> None:
+    """Reject a non-numeric ``value=`` on a numeric-value part (E1107).
+
+    Bar column heights and Matrix cell colours are derived from a *numeric*
+    value — there is no string-display mode to coerce into. ``set_value``
+    soft-drops a non-numeric override server-side, but the differ still bakes a
+    ``value_change`` carrying the raw string, which the runtime stamps and the
+    fs-snap then reverts (a visible flip-back under ``show_values``). Implements
+    the spec's dormant ``E1107`` (``docs/spec/environments.md`` §3.5).
+
+    Runs after :func:`_drop_invalid_selector_values`, so it only ever sees a
+    value on a **valid** part (an out-of-range Bar/Matrix cell already
+    soft-dropped). The primitive keeps its ``set_value`` soft-drop as a
+    defensive backstop.
+    """
+    for frame in frames:
+        for shape_name, prim in primitives.items():
+            if not hasattr(prim, "value_must_be_numeric"):
+                continue
+            shape_state = frame.shape_states.get(shape_name)
+            if not shape_state:
+                continue
+            for target_key, target_data in shape_state.items():
+                if not isinstance(target_data, dict):
+                    continue
+                val = target_data.get("value")
+                if val is None:
+                    continue
+                suffix = target_key
+                if suffix.startswith(shape_name + "."):
+                    suffix = suffix[len(shape_name) + 1:]
+                if not prim.value_must_be_numeric(suffix):
+                    continue
+                try:
+                    float(val)
+                except (TypeError, ValueError):
+                    # Local import sidesteps the errors.py <-> renderer cycle.
+                    from scriba.animation.errors import _animation_error
+
+                    raise _animation_error(
+                        "E1107",
+                        (
+                            f"{type(prim).__name__} \\apply parameter 'value=' "
+                            f"on {suffix!r} must be numeric; got {val!r}"
+                        ),
+                        hint=(
+                            "Bar column heights and Matrix cell colours are "
+                            "numeric; value= must be an int or float — there is "
+                            "no string display mode to coerce into"
+                        ),
+                    )
+
+
 def _prescan_value_widths(
     frames: list[Any],
     primitives: dict[str, Any],
@@ -165,10 +335,17 @@ def _prescan_value_widths(
     ``value`` field is consumed.  This is idempotent and does not
     mutate structural state (no push/pop/add_node side effects).
     """
-    # Loud-fail a value= on a part the primitive cannot render, BEFORE the
-    # best-effort set_value pass below swallows it and the differ bakes a
-    # flip-back value_change (design-value-flipback.md).
+    # Value-channel honesty, all BEFORE the best-effort set_value pass below
+    # (which swallows drops) and the differ (which bakes a flip-back
+    # value_change) — see investigations/research-value-channel.md:
+    #   1. Strip a value= on an invalid selector so it soft-drops (E1115) and
+    #      never wrongly hard-raises through the E1105 gate like an in-range
+    #      value-less part (an out-of-range Plane2D point[9], MetricPlot point).
+    #   2. Reject a value= on an in-range part with no value slot (E1105).
+    #   3. Reject a non-numeric value= on a numeric-value part (E1107).
+    _drop_invalid_selector_values(frames, primitives)
     _validate_value_channels(frames, primitives)
+    _validate_numeric_value_channels(frames, primitives)
 
     # Snapshot per-primitive display state so pre-scan does not pollute
     # initial render (e.g. DPTable cells appearing pre-filled).  Width

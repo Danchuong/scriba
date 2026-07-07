@@ -425,6 +425,25 @@ class PrimitiveBase(abc.ABC):
         """
         return True
 
+    def value_must_be_numeric(self, suffix: str) -> bool:
+        """Return ``True`` if a ``value=`` on *suffix* MUST be an int/float.
+
+        A few primitives render the value as a *number*, not a string: Bar
+        column heights and Matrix cell colours are derived from the numeric
+        value (there is no string-display mode to coerce into). ``set_value``
+        soft-drops a non-numeric override server-side, but the differ still
+        bakes a ``value_change`` carrying the raw string — the runtime stamps it
+        then the fs-snap reverts (a visible flip-back under ``show_values``). So
+        those primitives override this to return ``True`` for their numeric
+        parts, and the pre-differ pass rejects a non-numeric ``value=`` at build
+        time with ``E1107`` instead of baking a dishonest manifest.
+
+        Default ``False`` — the string-container majority (Array, Tree, ...)
+        accept any ``value=`` string. Suffix-aware, mirroring
+        :meth:`renders_value`.
+        """
+        return False
+
     def set_label(self, suffix: str, label: str) -> None:
         """Set display label for an addressable part."""
         if not self.validate_selector(suffix):

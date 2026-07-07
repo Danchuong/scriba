@@ -69,6 +69,13 @@ _CIRCLE_RE = re.compile(r"^circle\[(?P<idx>\d+)\]$")
 _ARC_RE = re.compile(r"^arc\[(?P<idx>\d+)\]$")
 _WEDGE_RE = re.compile(r"^wedge\[(?P<idx>\d+)\]$")
 
+# Every addressable geometric part in one shape: ``<kind>[idx]``. Used by
+# ``renders_value`` to reject a ``value=`` on any of them (none has a value
+# display slot — see the method docstring).
+_VALUE_LESS_PART_RE = re.compile(
+    r"^(?:point|line|segment|polygon|region|circle|arc|wedge)\[\d+\]$"
+)
+
 # ---------------------------------------------------------------------------
 # Tombstone sentinel (RFC-001 §4.3 — dynamic remove ops)
 # ---------------------------------------------------------------------------
@@ -1001,6 +1008,22 @@ class Plane2D(PrimitiveBase):
             return idx < len(self.wedges) and self.wedges[idx] is not _TOMBSTONE
 
         return False
+
+    def renders_value(self, suffix: str) -> bool:
+        """Plane2D geometric parts have no per-element value display slot.
+
+        Every part is pure geometry — a point is a ``<circle>`` (labels live in
+        a separate ``scriba-plane-labels`` group), and line/segment/polygon/
+        region/circle/arc/wedge are stroke/fill paths. ``emit_svg`` never reads
+        ``get_value``, so a ``value=`` on any of them vanishes from the render
+        while the differ still bakes a ``value_change`` the runtime stamps then
+        the fs-snap reverts (a no-op flip-back). Reject an *in-range* part
+        ``value=`` at build time via the shared E1105 gate; an *out-of-range*
+        part is a separate invalid-selector soft-drop (E1115) and never reaches
+        this check because its value-record is stripped pre-gate. Non-part
+        targets (``all``/bare shape) keep the base default ``True``.
+        """
+        return not _VALUE_LESS_PART_RE.match(suffix)
 
     # ----- annotation point resolution -------------------------------------
 

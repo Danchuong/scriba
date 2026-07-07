@@ -204,6 +204,16 @@ ERROR_CATALOG: dict[str, str] = {
         "offending key/part; a hint steers to the valid keys (with a 'did you "
         "mean' suggestion) or to the verb that renders the intended content."
     ),
+    "E1107": (
+        "Value type mismatch on \\apply — a non-numeric 'value=' was applied to "
+        "a part whose value is intrinsically numeric (a Bar column height, a "
+        "Matrix cell colour). These have no string-display mode to coerce into: "
+        "the override soft-drops server-side while the differ still bakes a "
+        "'value_change' carrying the raw string, so the runtime stamps it then "
+        "the fs-snap reverts it (a flip-back under show_values). The message "
+        "names the primitive and the offending part; a hint states that value= "
+        "must be an int or float."
+    ),
     "E1109": "Invalid \\recolor state or missing required state/color parameter.",
     "E1112": "Unknown annotation position or side.",
     "E1113": "Invalid or missing annotation color.",

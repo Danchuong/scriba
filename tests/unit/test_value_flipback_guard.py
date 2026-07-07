@@ -1,17 +1,20 @@
 r"""E1105 gate for ``value=`` on primitives with no per-part value display.
 
-Four primitives accept the universally-generic ``value=`` ``\apply`` key but
+Three primitives accept the universally-generic ``value=`` ``\apply`` key but
 their ``emit_svg`` renders no value on the targeted part: **Stack** ``item[i]``,
-**Graph** ``node[name]``, **NumberLine** ``tick[i]``, **CodePanel** ``line[i]``.
-The scene layer recorded the value unconditionally, the differ turned the delta
-into a real ``value_change`` transition, and the runtime stamped it into a
-``<text>`` — then the fs-snap frame (which never rendered it) reverted it: a
-flip-back flash, and a silent no-op on the author's intent.
+**NumberLine** ``tick[i]``, **CodePanel** ``line[i]``. The scene layer recorded
+the value unconditionally, the differ turned the delta into a real
+``value_change`` transition, and the runtime stamped it into a ``<text>`` —
+then the fs-snap frame (which never rendered it) reverted it: a flip-back
+flash, and a silent no-op on the author's intent.
 
 The fix rejects ``value=`` on those parts at build time (**E1105**) via the
 ``renders_value(suffix)`` primitive capability, checked in the pre-differ value
-pass. Honoring primitives (Array, Tree, LinkedList, Graph *edges*, ...) keep
-``value=`` working because they render it.
+pass. Honoring primitives (Array, Tree, LinkedList, Graph *nodes* and *edges*,
+...) keep ``value=`` working because they render it. Graph *nodes* joined the
+honoring set via the per-node value override (see
+``tests/unit/test_graph_node_value.py`` and
+``investigations/research-graph-node-value.md``).
 
 See ``investigations/design-value-flipback.md``.
 """
@@ -70,10 +73,11 @@ class TestRendersValueCapability:
         c = CodePanel("c", {"lines": ["alpha", "beta"]})
         assert c.renders_value("line[1]") is False
 
-    def test_graph_node_false_edge_true(self) -> None:
-        # value= is edge-scoped on Graph (docs:1125): nodes reject, edges render.
+    def test_graph_node_and_edge_true(self) -> None:
+        # value= renders on BOTH Graph nodes (per-node override) and edges
+        # (weight label) — see tests/unit/test_graph_node_value.py.
         g = Graph("g", {"nodes": ["A", "B"], "edges": [("A", "B")]})
-        assert g.renders_value("node[A]") is False
+        assert g.renders_value("node[A]") is True
         assert g.renders_value("edge[(A,B)]") is True
 
 
@@ -94,20 +98,6 @@ class TestValueFlipbackRaisesE1105:
             _render(body)
         assert ei.value.code == "E1105"
         assert "Stack" in str(ei.value)
-
-    def test_graph_node_value_raises_with_edge_hint(self) -> None:
-        body = (
-            '\\shape{g}{Graph}{nodes=["A","B"], edges=[("A","B")]}\n'
-            "\\step\n"
-            '\\apply{g.node[A]}{value="9"}\n'
-        )
-        with pytest.raises(AnimationError) as ei:
-            _render(body)
-        assert ei.value.code == "E1105"
-        msg = str(ei.value)
-        assert "Graph" in msg
-        # The hint steers to the edge-scoped value= feature.
-        assert "edge" in msg.lower()
 
     def test_numberline_tick_value_raises(self) -> None:
         body = (
@@ -161,6 +151,17 @@ class TestHonoringPrimitivesUnaffected:
         )
         html = _render(body)  # must NOT raise
         assert "3/10" in html
+
+    def test_graph_node_value_renders(self) -> None:
+        # Graph node value= moved from the reject set to the render set: it
+        # overrides the node id text (per-node value, mirrors Tree/Forest).
+        body = (
+            '\\shape{g}{Graph}{nodes=["A","B"], edges=[("A","B")]}\n'
+            "\\step\n"
+            '\\apply{g.node[A]}{value="7"}\n'
+        )
+        html = _render(body)  # must NOT raise (was E1105 pre-feature)
+        assert "7" in html
 
     def test_array_cell_value_renders(self) -> None:
         body = (
