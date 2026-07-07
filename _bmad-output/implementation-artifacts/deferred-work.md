@@ -1,0 +1,3 @@
+
+## 2026-07-08 — from spec-fix-annot-pill-font-clash review
+- **Note math-branch measure/paint face mismatch (safe over-measure).** `scriba/animation/_frame_renderer.py` note `has_math` branch (~:1540,:1553,:1586) measures via shared `measure_value_text` (mono-default `measure_label_line`, no `text_face` param) while the note `<text>` paints KaTeX_SansSerif via `.scriba-annotation > text`. Fixing requires threading `text_face` through `measure_value_text`'s shared signature (spec Ask-First boundary) — deferred. Direction is conservative (mono ≥ sans → no clipping); only cost is slightly over-wide math-note pills.

@@ -34,8 +34,10 @@ OUT = REPO / "scriba" / "tex" / "vendor" / "katex" / "katex_advances.json"
 
 # The only fonts reachable from inline label math (folabel-measure.md §2):
 # digits/delimiters/operators, italic variables, AMS relations, inline big
-# operators, bold labels.
-FONTS = ("Main-Regular", "Math-Italic", "AMS-Regular", "Size1-Regular", "Main-Bold")
+# operators, bold labels. SansSerif-Bold is the annotation-pill text face
+# (the 600-weight pill label paints in KaTeX_SansSerif Bold, matching the
+# KaTeX math it sits beside — spec-fix-annot-pill-font-clash).
+FONTS = ("Main-Regular", "Math-Italic", "AMS-Regular", "Size1-Regular", "Main-Bold", "SansSerif-Bold")
 
 _ENTRY_RE = re.compile(r"(\d+):\[([^\]]*)\]")
 

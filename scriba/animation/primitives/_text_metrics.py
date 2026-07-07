@@ -159,33 +159,48 @@ def measure_text(text: str, font_px: int) -> int:
     return get_measurer().measure(text, font_px)
 
 
-def measure_label_line(line: str, font_px: int) -> int:
+def measure_label_line(line: str, font_px: int, *, text_face: str = "mono") -> int:
     """Width of a mixed text+``$math$`` label line, in px.
 
     Mirrors the exact split `_render_mixed_html` renders with
-    (``_INLINE_MATH_RE``): text segments flow in the label mono font
-    (``estimate_text_width`` ≈0.62 em/char, a +3% safe over of the
-    measured 0.60 mono advance), math segments take the KaTeX advance-sum
-    (``measure_inline_math``). Inline flow adds no inter-segment gap, so
-    the composition is additive — proven exact to <0.05% against Chromium
-    (investigations/folabel-measure.md §5).
+    (``_INLINE_MATH_RE``): math segments always take the KaTeX advance-sum
+    (``measure_inline_math``); text segments take the face named by
+    *text_face*. Inline flow adds no inter-segment gap, so the composition
+    is additive — proven exact to <0.05% against Chromium on the mono path
+    (investigations/folabel-measure.md §5). The ``katex-sans`` path is
+    advance-sum-exact for glyphs the SansSerif-Bold table covers and
+    heuristic (conservative) for the rest.
+
+    ``text_face`` (opt-in, default ``"mono"``):
+    - ``"mono"`` — text segments flow in the label mono font
+      (``estimate_text_width`` ≈0.62 em/char, a +3% safe over of the
+      measured 0.60 mono advance). The default keeps every non-pill caller
+      (axis labels, captions, codepanel, graph, metricplot) byte-identical.
+    - ``"katex-sans"`` — text segments flow in the annotation pill's
+      KaTeX_SansSerif Bold face (``sans_text_width``); paired with the KaTeX
+      math run this is one family, no serif/mono clash
+      (spec-fix-annot-pill-font-clash).
     """
-    from scriba.animation.primitives._math_metrics import measure_inline_math
+    from scriba.animation.primitives._math_metrics import (
+        measure_inline_math,
+        sans_text_width,
+    )
     from scriba.animation.primitives._text_render import _INLINE_MATH_RE
 
+    _text_w = sans_text_width if text_face == "katex-sans" else estimate_text_width
     if "$" not in line:
-        return estimate_text_width(line, font_px)
+        return int(_text_w(line, font_px) + 0.5)
     total = 0.0
     pos = 0
     for m in _INLINE_MATH_RE.finditer(line):
         text_seg = line[pos : m.start()]
         if text_seg:
-            total += estimate_text_width(text_seg, font_px)
+            total += _text_w(text_seg, font_px)
         total += measure_inline_math(m.group(1), font_px)
         pos = m.end()
     tail = line[pos:]
     if tail:
-        total += estimate_text_width(tail, font_px)
+        total += _text_w(tail, font_px)
     return int(total + 0.5)
 
 

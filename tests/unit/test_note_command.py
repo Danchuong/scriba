@@ -339,3 +339,36 @@ class TestStepCounterAria:
                 f"{m.group(0)[:120]!r}"
             )
         assert 'scriba-step-counter" aria-atomic' not in html_out
+
+
+class TestNoteLabelSansMeasure:
+    """spec-fix-annot-pill-font-clash: a plain-text ``\\note`` pill paints its
+    ``<text>`` in KaTeX_SansSerif Bold (``.scriba-annotation > text``), so the
+    no-math note branch must MEASURE through the same face —
+    ``measure_label_line`` called with ``text_face="katex-sans"``."""
+
+    def test_plain_note_measured_with_katex_sans(
+        self, tmp_path: Path, monkeypatch
+    ) -> None:
+        import scriba.animation._frame_renderer as fr
+
+        seen: list = []
+        real = fr.measure_label_line
+
+        def _spy(line, font_px, *, text_face="mono"):
+            seen.append(text_face)
+            return real(line, font_px, text_face=text_face)
+
+        monkeypatch.setattr(fr, "measure_label_line", _spy)
+        source = (
+            '\\begin{animation}[id="d", label="note"]\n'
+            "\\shape{a}{Array}{size=2, data=[1,2]}\n"
+            "\\step\n"
+            '\\note{n1}{text="careful: 0-indexed", at=top-right}\n'
+            "\\end{animation}\n"
+        )
+        _render(source, tmp_path)
+        assert "katex-sans" in seen, (
+            "plain note pill measured with mono default, not the painted "
+            "KaTeX_SansSerif face"
+        )

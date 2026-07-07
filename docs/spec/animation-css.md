@@ -85,8 +85,11 @@ Declared on `:root` in `scriba-scene-primitives.css`:
   /* Global diagram font-size scale (default 1) */
   --scriba-diagram-font-scale:     1;
 
-  /* Annotation */
-  --scriba-annotation-font:        600 11px ui-monospace, monospace;
+  /* Annotation — pill labels paint in KaTeX_SansSerif Bold (600) so a mixed
+     $math$ + text label pairs KaTeX math with a KaTeX sans-serif text run
+     (one family, no serif/mono clash); ui-monospace is the fallback for
+     codepoints the SansSerif woff2 lacks (·, diacritics, arrows). */
+  --scriba-annotation-font:        600 11px KaTeX_SansSerif, ui-monospace, monospace;
   --scriba-annotation-arrow-width: 2.0;
 
   /* Widget (interactive wrapper — cookbook demos) */
@@ -788,8 +791,16 @@ Annotations are `<g class="scriba-annotation scriba-annotation-{color}">` groups
 }
 
 .scriba-annotation > text {
-  font:         var(--scriba-annotation-font);
+  font:         var(--scriba-annotation-font);  /* KaTeX_SansSerif Bold */
   text-anchor:  middle;
+}
+
+/* Pill label divs match their <text> siblings: the plain-text run resolves
+   to KaTeX_SansSerif Bold (the width oracle models it exactly), while any
+   inline KaTeX math keeps its own KaTeX_Main stack — one family per pill. */
+.scriba-annot-label {
+  font:      var(--scriba-annotation-font);
+  font-size: 11px;
 }
 
 .scriba-annotation > path,

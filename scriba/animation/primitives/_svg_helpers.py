@@ -1435,7 +1435,8 @@ def pill_dimensions(
     # (folabel-sweep-measure-callers: $dp_{i}$ raw 40.5px vs model 29px)
     if math_rendered:
         max_line_w = max(
-            measure_label_line(ln, l_font_px) for ln in label_lines
+            measure_label_line(ln, l_font_px, text_face="katex-sans")
+            for ln in label_lines
         )
     else:
         max_line_w = max(
@@ -1583,7 +1584,7 @@ def _emit_pill_label_text(
         _label_has_math(ln) for ln in label_lines
     ):
         box_w = int(pill_w) if pill_w else max(
-            measure_label_line(ln, _DEFAULT_LABEL_FONT_PX)
+            measure_label_line(ln, _DEFAULT_LABEL_FONT_PX, text_face="katex-sans")
             for ln in label_lines
         ) + _LABEL_PILL_PAD_X * 2
         weight_css = f"font-weight:{l_weight};" if l_weight else ""
@@ -2109,7 +2110,8 @@ def emit_plain_arrow_svg(
         num_lines = len(label_lines)
 
         max_line_w = max(
-            measure_label_line(ln, l_font_px) for ln in label_lines
+            measure_label_line(ln, l_font_px, text_face="katex-sans")
+            for ln in label_lines
         )
         pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
         pill_h = num_lines * line_height + _LABEL_PILL_PAD_Y * 2
@@ -3205,7 +3207,9 @@ def _position_pill_width(label: str, color: str = "info") -> float:
         lines = [label]
     else:
         lines = _wrap_label_lines(label, max_px=_LABEL_PILL_MAX_W_PX, font_px=l_font_px)
-    widest = max(measure_label_line(ln, l_font_px) for ln in lines)
+    widest = max(
+        measure_label_line(ln, l_font_px, text_face="katex-sans") for ln in lines
+    )
     return widest + _LABEL_PILL_PAD_X * 2
 
 

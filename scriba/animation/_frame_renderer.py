@@ -1387,7 +1387,10 @@ def _emit_scene_links(
             # shapes it floats over and off PRIOR bridges; a clear midpoint keeps
             # the natural seat (byte-identical). Its own bridge is excluded (the
             # label belongs on it).
-            _pw = float(measure_label_line(display, LABEL_FONT_PX) + 12)
+            _pw = float(
+                measure_label_line(display, LABEL_FONT_PX, text_face="katex-sans")
+                + 12
+            )
             _ph = float(LABEL_FONT_PX + 8)
             _placement, _ = _place_pill(
                 natural_x=lx,
@@ -1552,7 +1555,10 @@ def _emit_scene_notes(
                     + 12
                 )
         else:
-            single_pw = float(measure_label_line(display, LABEL_FONT_PX) + 12)
+            single_pw = float(
+                measure_label_line(display, LABEL_FONT_PX, text_face="katex-sans")
+                + 12
+            )
             if single_pw <= board_avail:
                 lines = [display]
                 pw = single_pw
@@ -1564,7 +1570,12 @@ def _emit_scene_notes(
                     math_rendered=False,
                 ) or [display]
                 pw = float(
-                    max(measure_label_line(ln, LABEL_FONT_PX) for ln in lines)
+                    max(
+                        measure_label_line(
+                            ln, LABEL_FONT_PX, text_face="katex-sans"
+                        )
+                        for ln in lines
+                    )
                     + 12
                 )
         ph = float(LABEL_FONT_PX * len(lines) + 8)

@@ -125,6 +125,72 @@ class TestMathPillEmission:
         assert svg.count("<tspan") >= 2  # still wrapped, raw $ shown as text
 
 
+class TestKatexSansTextFace:
+    """spec-fix-annot-pill-font-clash: pill labels measure their text runs in
+    KaTeX_SansSerif Bold so a mixed ``$math$ · text`` label pairs KaTeX math
+    with a KaTeX sans text run — one family, no serif/mono clash. The switch
+    is opt-in (``text_face``): the default mono path stays byte-identical for
+    every non-pill caller."""
+
+    def test_mixed_label_width_is_sans_text_plus_katex_math(self) -> None:
+        from scriba.animation.primitives._math_metrics import (
+            measure_inline_math,
+            sans_text_width,
+        )
+        from scriba.animation.primitives._text_metrics import measure_label_line
+
+        label = "$1 < 3$ · exit"
+        got = measure_label_line(label, 11, text_face="katex-sans")
+        # split mirrors _render_mixed_html: math "1 < 3", trailing text " · exit"
+        expected = measure_inline_math("1 < 3", 11) + sans_text_width(" · exit", 11)
+        assert got == int(expected + 0.5)
+
+    def test_plain_text_label_uses_sans_table(self) -> None:
+        from scriba.animation.primitives._math_metrics import sans_text_width
+        from scriba.animation.primitives._text_metrics import measure_label_line
+
+        label = "1 < 3 · exit"
+        assert measure_label_line(label, 11, text_face="katex-sans") == int(
+            sans_text_width(label, 11) + 0.5
+        )
+
+    def test_default_face_is_mono_and_byte_identical(self) -> None:
+        from scriba.animation.primitives._text_metrics import measure_label_line
+        from scriba.animation.primitives._text_render import estimate_text_width
+
+        # plain text: default must equal the legacy mono heuristic exactly
+        assert measure_label_line("exit here", 11) == estimate_text_width(
+            "exit here", 11
+        )
+        assert measure_label_line("$1 < 3$ · exit", 11) != measure_label_line(
+            "$1 < 3$ · exit", 11, text_face="katex-sans"
+        )
+
+    def test_sans_covered_glyphs_narrower_than_mono(self) -> None:
+        from scriba.animation.primitives._math_metrics import sans_text_width
+        from scriba.animation.primitives._text_render import estimate_text_width
+
+        # KaTeX_SansSerif Bold advances beat the flat 0.62 em/char mono over
+        text = "exit here now"
+        assert sans_text_width(text, 11) < estimate_text_width(text, 11)
+
+    def test_uncovered_glyph_fallback_never_zero(self) -> None:
+        from scriba.animation.primitives._math_metrics import sans_text_width
+
+        # '·' and Vietnamese diacritics are absent from SansSerif-Bold — the
+        # per-char heuristic fallback keeps width > 0 (never clips, over-ok)
+        for uncovered in ("·", "ế", "→"):
+            assert sans_text_width(uncovered, 11) > 0.0
+
+    def test_sans_pill_covers_painted_sans_text(self) -> None:
+        # the mixed-label pill (math_rendered=True) is at least as wide as the
+        # KaTeX sans text run it paints — pill >= painted, never clips
+        from scriba.animation.primitives._math_metrics import sans_text_width
+
+        lines, _, pill_w, _ = pill_dimensions("$1 < 3$ · exit", 11)
+        assert pill_w >= int(sans_text_width(" · exit", 11) + 0.5)
+
+
 class TestNoCallbackPillSizing:
     """folabel-sweep-measure-callers BUG B: without render_inline_tex the
     emitter paints the RAW $...$ string in mono, so the pill must be sized

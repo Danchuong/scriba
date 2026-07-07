@@ -95,8 +95,12 @@
    * multiplied by this factor; the default of 1 leaves sizes unchanged. */
   --scriba-diagram-font-scale:     1;
 
-  /* Annotation */
-  --scriba-annotation-font:        600 11px ui-monospace, monospace;
+  /* Annotation — pill labels paint in KaTeX_SansSerif Bold so mixed
+     math+text labels pair KaTeX math with a KaTeX sans-serif text run (one
+     family, no serif/mono clash); ui-monospace stays as the fallback face
+     for codepoints the SansSerif woff2 lacks (·, diacritics, arrows). The
+     pill measurer models this exact face (_math_metrics.sans_text_width). */
+  --scriba-annotation-font:        600 11px KaTeX_SansSerif, ui-monospace, monospace;
   --scriba-annotation-arrow-width: 2.0;
 
   /* Widget (interactive wrapper) */
@@ -533,8 +537,10 @@
 
 /* foreignObject label divs must match their <text> siblings — without
    this pin they inherit the embedding page's body font and measure
-   differently than pill_dimensions predicted. KaTeX spans inside keep
-   their own font stack (KaTeX_Main), which the math measurer models. */
+   differently than pill_dimensions predicted. The plain-text run resolves
+   to KaTeX_SansSerif Bold (sans_text_width models it); KaTeX math spans
+   inside keep their own font stack (KaTeX_Main), which the math measurer
+   models — one family across the whole pill, no serif/mono clash. */
 .scriba-annot-label {
   font:      var(--scriba-annotation-font);
   font-size: 11px;
