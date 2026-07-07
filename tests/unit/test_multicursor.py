@@ -478,3 +478,15 @@ class TestStackQueueCursorWiring:
         s = Stack("s", {"items": [5, 6]})
         s.set_cursors([{"target": "s", "id": "t", "index": 9, "color": "info"}])
         assert "cursor[" not in s.emit_svg()
+
+    def test_deque_caret_paints_and_reserves(self) -> None:
+        """Deque overrides emit_svg, so the Queue wiring didn't reach it —
+        the same silent drop M5 fixed for Stack/Queue (sweep3 wave 4)."""
+        from scriba.animation.primitives.queue import Deque
+
+        base_h = Deque("d", {"capacity": 4, "data": [1, 2, 3]}).bounding_box().height
+        d = Deque("d", {"capacity": 4, "data": [1, 2, 3]})
+        d.set_cursors([{"target": "d", "id": "f", "index": 1, "color": "info"}])
+        svg = d.emit_svg()
+        assert 'data-annotation="d.cursor[f]-solo"' in svg, "deque caret missing"
+        assert d.bounding_box().height > base_h, "caret band not reserved"

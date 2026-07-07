@@ -1403,9 +1403,14 @@ def _emit_scene_links(
             )
             placed_labels.append(_placement)
             lx, ly = _placement.x, _placement.y
+            # House halo (white paint-order stroke, the pill-text fallback
+            # pattern) — the bare mid-bridge text turned illegible over the
+            # dashed bridge / crossed content (sweep3-decor latent note).
             inner += (
                 f'<text x="{lx:.1f}" y="{ly:.1f}" fill="{style["label_fill"]}"'
                 f' font-size="{style["label_size"]}"'
+                f' stroke="white" stroke-width="3"'
+                f' stroke-linejoin="round" paint-order="stroke fill"'
                 f' style="text-anchor:middle;dominant-baseline:central">'
                 f"{_escape_xml(display)}</text>"
             )

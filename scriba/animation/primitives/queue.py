@@ -982,6 +982,11 @@ class Deque(Queue):
                 render_inline_tex=render_inline_tex,
             )
 
+        # R-38 binding carets — Deque overrides emit_svg, so the Queue
+        # wiring above didn't reach it (the same silent drop sweep3 M5
+        # fixed for Stack/Queue).
+        self.emit_cursors_under(parts)
+
         self._emit_queue_annotations(
             parts,
             effective_anns,

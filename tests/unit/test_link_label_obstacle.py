@@ -151,3 +151,44 @@ class TestBridgeRegisteredAsObstacle:
         parts: list[str] = []
         assert _emit_scene_links(frame, {}, {}, parts) == ()
         assert parts == []
+
+
+class TestLinkLabelHalo:
+    """sweep3-decor (inconclusive p08 note): the mid-bridge \\link label is a
+    bare <text> with no pill and no halo, so it turns illegible over the
+    dashed bridge or any content it crosses. It now carries the house halo
+    (white paint-order stroke), like every pill-text fallback."""
+
+    def test_link_label_carries_halo(self, tmp_path) -> None:
+        import re
+        import sys
+        from pathlib import Path as _P
+
+        repo = _P(__file__).resolve().parents[2]
+        if str(repo) not in sys.path:
+            sys.path.insert(0, str(repo))
+        from render import render_file
+
+        source = (
+            '\\begin{diagram}[id="p", label="link halo"]\n'
+            "\\shape{a}{Array}{size=3, data=[1,2,3]}\n"
+            "\\shape{b}{Array}{size=3, data=[4,5,6]}\n"
+            '\\link{a.cell[2] <-> b.cell[0]}{label="carry", color=info}\n'
+            "\\end{diagram}\n"
+        )
+        tex = tmp_path / "in.tex"
+        tex.write_text(source, encoding="utf-8")
+        out = tmp_path / "out.html"
+        render_file(tex, out)
+        html = out.read_text(encoding="utf-8")
+        m = re.search(
+            r'<g class="scriba-annotation scriba-link[^"]*"[^>]*>(.*?)</g>',
+            html,
+            re.S,
+        )
+        assert m, "link group missing"
+        tm = re.search(r"<text[^>]*>carry</text>", m.group(1))
+        assert tm, "link label text missing"
+        assert 'stroke="white"' in tm.group(0) and "paint-order" in tm.group(0), (
+            "link label lacks the house halo"
+        )

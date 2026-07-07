@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.31.0"
+__version__: str = "0.32.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 26
+SCRIBA_VERSION: int = 27
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -542,4 +542,19 @@ decoration stacks, value content, and the runtime contract; 12 defects fixed):
     Bar's E1490 contract, applied to its siblings.
 Every fix is opt-in-inert: the 107 golden re-blesses carry ONLY the identical
 shared-stylesheet delta (FO ink rules + twin tokens + weight-div rules); no
-SVG geometry changed in any golden. Consumer caches MUST invalidate."""
+SVG geometry changed in any golden. Consumer caches MUST invalidate.
+
+0.32.0 bumps 26→27 (sweep-3 wave 4 — residual closure; ZERO corpus re-bless,
+the rendered-output function changes only for opt-in inputs):
+  * Deque paints (and reserves) \\cursor carets — it overrides emit_svg, so
+    the 0.31.0 Queue wiring never reached it (the same silent-drop family).
+  * The mid-bridge \\link label carries the house halo (white paint-order
+    stroke, the pill-text fallback pattern) — the bare text turned illegible
+    over the dashed bridge or crossed content.
+Closed as by-design (documented, no code): the .scriba-highlighted KNOWN-DEAD
+rule (motion-ruleset A-3 — retrofitting paint would change \\highlight
+semantics), bare-shape element_add appearing at the fs-snap (differ.py F4),
+the tr=null silent snap for content-only SVG growth, and the ~180 ms Prev
+reverse-flash on an overlaid highlight (fs-snap-salvaged; from-model overlay
+awareness is a differ-motion-model change out of polish scope).
+Consumer caches keyed on rendered output MUST invalidate."""

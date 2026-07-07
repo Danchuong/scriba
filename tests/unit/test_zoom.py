@@ -238,9 +238,10 @@ def test_scriba_version_unchanged() -> None:
     # cluster (graph-pill dark CSS, nodefit A/B label fit, force-canvas
     # scaling), then 25 -> 26 for the sweep-3 fix wave (FO ink theming +
     # twin tokens + note math/bidi + cursor wiring + lane halves + Tree
-    # future-value prescan — shared-CSS delta only on the corpus). Zoom
-    # remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 26
+    # future-value prescan — shared-CSS delta only on the corpus), then
+    # 26 -> 27 for sweep-3 wave 4 (Deque cursor wiring + the \\link label
+    # halo — zero corpus re-bless). Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 27
 
 
 def test_zoom_no_new_motion_kind() -> None:
