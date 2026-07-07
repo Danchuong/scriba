@@ -652,7 +652,7 @@ Adding an `id=` key draws a small triangular caret in a band just under the cell
 | `color` | annotation colors or `"state:X"` | `info` | quotes required for `state:` |
 | `ephemeral` | bool | `false` | clears at the next `\step` like an annotation |
 
-Declare a caret **once**: it re-reads its binding and slides each step automatically — do not re-issue it per step. An unresolvable or out-of-range binding (blank value, or off the end) **soft-drops** the caret for that frame; it never errors. Reduced-motion and print show it statically at its resolved seat. Works on 1-D cell/tick primitives (Array, DPTable-1D, Stack, Queue, NumberLine); full contract in [spec/smart-label-ruleset.md](spec/smart-label-ruleset.md). Since 0.23.1 it can also park on Array sentinel slots — `\cursor{a}{id=i, at="before"}` / `at="after"` (needs `sentinels=true`).
+Declare a caret **once**: it re-reads its binding and slides each step automatically — do not re-issue it per step. An unresolvable or out-of-range binding (blank value, or off the end) **soft-drops** the caret for that frame; it never errors. Reduced-motion and print show it statically at its resolved seat. Works on cell/tick primitives (Array, Grid, DPTable, Stack, Queue, Deque, NumberLine — Stack/Queue/Deque since 0.31–0.32); full contract in [spec/smart-label-ruleset.md](spec/smart-label-ruleset.md). Since 0.23.1 it can also park on Array sentinel slots — `\cursor{a}{id=i, at="before"}` / `at="after"` (needs `sentinels=true`).
 
 ### 5.12 `\foreach{var}{iterable}...\endforeach`
 Loop expansion. Iterables: a range `0..4`, a literal list `[1,3,5]`, or a bare compute binding `${computed_list}`. A **subscript** iterable (`${list[i]}`) is not valid and raises **E1173** — bind it to a scalar in `\compute` first.
@@ -1322,7 +1322,7 @@ The `data` is either a **flat** list of length `rows*cols` (row-major) or a nest
 | Param | Type | Default | Description |
 |---|---|---|---|
 | `rows` / `cols` | int | — | required; `rows*cols` ≤ 250000 |
-| `data` | flat or 2D list | zeros | flat `rows*cols` (row-major) or nested 2D (E1422) |
+| `data` | flat or 2D list | zeros | flat `rows*cols` (row-major) or nested 2D (E1422); entries must be numeric (E1423 — numeric strings coerce; scientific notation like `1e9` is not lexer-supported, write the digits out) |
 | `colorscale` | string | `"viridis"` | **only `"viridis"` is supported** — any other name raises E1421 |
 | `show_values` | bool | `false` | print the numeric value inside each cell |
 | `cell_size` | int | `24` | cell size in px |
@@ -1519,7 +1519,7 @@ FIFO queue.
 **Operations:** `\apply{q}{enqueue=2}`, `\apply{q}{dequeue=true}` (`dequeue` fires only on truthy `true`; `dequeue=false` is a no-op). Set a specific cell's text directly with `\apply{q.cell[i]}{value=...}`.
 **Selectors:** `q`, `q.cell[i]`, `q.front`, `q.rear`, `q.all`
 
-`q.front` addresses the front-of-queue pointer cell; `q.rear` addresses the rear pointer cell. Both can be used with `\recolor` and `\highlight`.
+`q.front` addresses the front-of-queue pointer cell; `q.rear` addresses the rear pointer cell. Both can be used with `\recolor`, `\highlight`, and (since 0.31.0) `\annotate` — the pill anchors at the cell the pointer marks.
 > Note: a freshly `enqueue`d cell is addressable for `\recolor` in the same `\step` — see §13.1.
 
 ### 7.15 VariableWatch
