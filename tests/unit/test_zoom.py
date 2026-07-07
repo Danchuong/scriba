@@ -227,9 +227,11 @@ def test_scriba_version_unchanged() -> None:
     # Equation primitive's additive ``.scriba-term`` CSS, then 19 -> 20 for the
     # A-9 delta-emphasis self-announce exclusion (a runtime-only scriba.js
     # change), then 20 -> 21 for the value_change value-node targeting fix
-    # (data-role="value" tags + the scriba.js selector). Zoom remains
-    # byte-shape-neutral across all of them.
-    assert SCRIBA_VERSION == 21
+    # (data-role="value" tags + the scriba.js selector), then 21 -> 22 for the
+    # shared-obstacle decoration routing (group/note/trace-label/link-label pills
+    # now dodge content via the placer). Zoom remains byte-shape-neutral across
+    # all of them.
+    assert SCRIBA_VERSION == 22
 
 
 def test_zoom_no_new_motion_kind() -> None:

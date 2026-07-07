@@ -85,6 +85,7 @@ from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explici
     _Obstacle,
     _label_has_math,
     _label_width_text,
+    _place_pill,
     _segment_to_obstacle,
     _translate_segment,
     _wrap_label_lines,
@@ -249,6 +250,14 @@ _CURSOR_H: float = 8.0         # apex -> base height of the ▲
 _CURSOR_HALF_W: float = 5.0    # half the ▲ base width
 _CURSOR_ID_FONT_PX: int = 11   # id label font
 _CURSOR_ID_DY: float = 11.0    # ▲ base -> id label baseline
+
+# R-37 trace mid-label placer viewport (shared-obstacle model, mechanism a):
+# horizontal bound = the content span (keeps the label from overflowing, the old
+# grid clamp's job); vertical span opened by _TRACE_LABEL_VSPAN each way so the
+# scorer can escape a fully-occupied natural band. _TRACE_LABEL_VB is the
+# fallback half-viewport when the primitive exposes no content rects.
+_TRACE_LABEL_VSPAN: float = 400.0
+_TRACE_LABEL_VB: float = 8192.0
 
 
 class PrimitiveBase(abc.ABC):
@@ -571,8 +580,35 @@ class PrimitiveBase(abc.ABC):
         threads cell CENTERS, so its extent is inside the content box and
         never moves the viewBox; the painted⊆bbox honesty pins still see it
         via the FO/polyline-aware extent parsers.
+
+        Shared-obstacle model: each stroke is also registered as a SHOULD
+        ``segment`` obstacle (``_trace_obstacle_segments``) so a LATER pill —
+        annotation, caret-lane, position=below — dodges the polyline
+        (mechanism b); the stroke itself never moves (its paint-order halo is
+        the by-design legibility guard). The mid-vertex label routes through the
+        shared ``_place_pill`` scorer so it slides off the cells/nodes it would
+        otherwise graze (mechanism a), replacing the old grid-only clamp.
         """
-        for tr in getattr(self, "_traces", []):
+        # Registry consumed by emit_annotation_arrows so pills dodge the stroke.
+        self._trace_obstacle_segments: list[_Obstacle] = []
+        traces = getattr(self, "_traces", [])
+        if not traces:
+            return
+        # Content cells/nodes the mid-label slides off, plus a per-frame placed
+        # registry so multiple trace labels dodge each other.
+        _trace_content_obs: tuple[_Obstacle, ...] = tuple(
+            _Obstacle(
+                kind="content_cell",
+                x=float(b.x) + float(b.width) / 2.0,
+                y=float(b.y) + float(b.height) / 2.0,
+                width=float(b.width),
+                height=float(b.height),
+                severity="SHOULD",
+            )
+            for b in self.resolve_self_content_rects()
+        )
+        _trace_label_placed: list[_LabelPlacement] = []
+        for tr in traces:
             pts: "list[tuple[float, float]]" = []
             ok = True
             bad_cell = None
@@ -601,6 +637,23 @@ class PrimitiveBase(abc.ABC):
             tid = tr.get("id", "t")
             key = f"{self.name}.trace[{tid}]-solo"
             d = "M" + " L".join(f"{x:.1f},{y:.1f}" for x, y in pts)
+            # (b) register each polyline segment as a SHOULD obstacle so a later
+            # pill dodges the stroke. The stroke bytes stay byte-identical —
+            # registering an obstacle never moves the registrant.
+            _stroke_segs: list[_Obstacle] = [
+                _Obstacle(
+                    kind="segment",
+                    x=pts[i][0],
+                    y=pts[i][1],
+                    width=0.0,
+                    height=0.0,
+                    x2=pts[i + 1][0],
+                    y2=pts[i + 1][1],
+                    severity="SHOULD",
+                )
+                for i in range(len(pts) - 1)
+            ]
+            self._trace_obstacle_segments.extend(_stroke_segs)
             inner = (
                 f'<path d="{d}" fill="none" stroke="{stroke}"'
                 f' stroke-width="2.5" stroke-linecap="round"'
@@ -624,15 +677,40 @@ class PrimitiveBase(abc.ABC):
                 lw = measure_label_line(str(label), LABEL_FONT_PX)
                 ph = LABEL_FONT_PX + 8
                 pw = lw + 12
+                # Natural seat: centred above the mid vertex (the pre-placer
+                # position). (a) Route it through the shared scorer so it slides
+                # off the cells/nodes it grazes and off its own stroke, instead
+                # of the old x-only grid clamp. The horizontal viewport keeps the
+                # pill in the content span (its former clamp job); the vertical
+                # span is opened generously so the pill can escape above/below
+                # the content when the natural band is occupied.
                 prx, pry = midx - pw / 2.0, midy - ph - 8
-                # keep the pill inside the primitive's content span — a
-                # midpoint on the last column would otherwise overflow the
-                # viewBox (grid_cols/cell_width from the shared metrics)
-                _cm = self._annotation_cell_metrics()
-                if _cm is not None and getattr(_cm, "grid_cols", None):
-                    _cw = float(_cm.cell_width)
-                    _right = _cm.grid_cols * (_cw + 4.0) - 4.0
-                    prx = max(2.0, min(prx, _right - pw - 2.0))
+                _content = self.resolve_self_content_rects()
+                if _content:
+                    _cx0 = min(b.x for b in _content)
+                    _cx1 = max(b.x + b.width for b in _content)
+                    _cy0 = min(b.y for b in _content)
+                    _cy1 = max(b.y + b.height for b in _content)
+                    _vb_min_x, _vb_w = _cx0, _cx1
+                    _vb_min_y, _vb_h = _cy0 - _TRACE_LABEL_VSPAN, _cy1 + _TRACE_LABEL_VSPAN
+                else:
+                    _vb_min_x = _vb_min_y = -_TRACE_LABEL_VB
+                    _vb_w = _vb_h = _TRACE_LABEL_VB
+                _tl_placement, _ = _place_pill(
+                    natural_x=prx + pw / 2.0,
+                    natural_y=pry + ph / 2.0,
+                    pill_w=float(pw),
+                    pill_h=float(ph),
+                    placed_labels=_trace_label_placed,
+                    extra_obstacles=_trace_content_obs + tuple(_stroke_segs),
+                    viewbox_w=_vb_w,
+                    viewbox_h=_vb_h,
+                    viewbox_min_x=_vb_min_x,
+                    viewbox_min_y=_vb_min_y,
+                )
+                _trace_label_placed.append(_tl_placement)
+                prx = _tl_placement.x - pw / 2.0
+                pry = _tl_placement.y - ph / 2.0
                 _tx = prx + pw / 2.0
                 inner += (
                     f'<rect x="{prx:.1f}" y="{pry:.1f}" width="{pw}"'
@@ -1244,6 +1322,13 @@ class PrimitiveBase(abc.ABC):
                 )
                 for b in _content_rects
             )
+
+        # Shared-obstacle model (b): \trace strokes painted under this frame's
+        # cells (emit_traces_under runs before this) join the obstacle set as
+        # SHOULD segments so a pill dodges the polyline instead of sitting on it.
+        _trace_segs = getattr(self, "_trace_obstacle_segments", None)
+        if _trace_segs:
+            _prim_seg_obs = _prim_seg_obs + tuple(_trace_segs)
 
         # R-31 ext: accumulate prior-annotation arrow-stroke segments across the
         # annotation loop.  Each emit_*_arrow_svg call returns sampled segments

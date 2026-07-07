@@ -17,6 +17,9 @@ from scriba.animation.primitives._svg_helpers import (
     ARROW_STYLES,
     LABEL_FONT_PX,
     _LABEL_PILL_MAX_W_PX,
+    _LabelPlacement,
+    _Obstacle,
+    _place_pill,
     _wrap_label_lines,
     annotation_color_class,
 )
@@ -1010,13 +1013,83 @@ def _resolve_link_point(
     return (float(local[0]) + off[0], float(local[1]) + off[1])
 
 
+# Sentinel half-viewport for the scene-level link-label placer: large enough
+# that the clamp never fences the mid-bridge label (its displacement penalty
+# already keeps it near the on-board bridge midpoint).
+_SCENE_LABEL_VB = 8192.0
+# Bézier sampling density for turning a bridge curve into segment obstacles.
+_LINK_BRIDGE_SEGMENTS = 8
+
+
+def _scene_content_obstacles(
+    primitives: dict[str, Any],
+    stage_offsets: dict[str, tuple[float, float]],
+) -> tuple[_Obstacle, ...]:
+    """Every primitive's own content cells/nodes as stage-global SHOULD
+    obstacles, so a scene-level pill (``\\note``, ``\\link`` label) dodges the
+    shapes it floats over (shared-obstacle model, mechanism a).
+
+    Each primitive already exposes ``resolve_self_content_rects()`` in its own
+    local frame; translate by the shape's recorded stage offset so the obstacle
+    lands where the shape is actually painted."""
+    obs: list[_Obstacle] = []
+    for name, prim in primitives.items():
+        off = stage_offsets.get(name)
+        if off is None:
+            continue
+        fn = getattr(prim, "resolve_self_content_rects", None)
+        if fn is None:
+            continue
+        ox, oy = off
+        for b in fn():
+            obs.append(
+                _Obstacle(
+                    kind="content_cell",
+                    x=float(b.x) + float(b.width) / 2.0 + ox,
+                    y=float(b.y) + float(b.height) / 2.0 + oy,
+                    width=float(b.width),
+                    height=float(b.height),
+                    severity="SHOULD",
+                )
+            )
+    return tuple(obs)
+
+
+def _quadratic_segments(
+    x0: float, y0: float, cx: float, cy: float, x1: float, y1: float,
+    n: int = _LINK_BRIDGE_SEGMENTS,
+) -> list[_Obstacle]:
+    """Sample the quadratic ``M(x0,y0) Q(cx,cy) (x1,y1)`` into *n* straight
+    SHOULD segment obstacles so other scene pills dodge the bridge (mechanism
+    b). The bridge path itself is untouched — registering never moves it."""
+    def pt(t: float) -> tuple[float, float]:
+        mt = 1.0 - t
+        return (
+            mt * mt * x0 + 2 * mt * t * cx + t * t * x1,
+            mt * mt * y0 + 2 * mt * t * cy + t * t * y1,
+        )
+    segs: list[_Obstacle] = []
+    prev = pt(0.0)
+    for i in range(1, n + 1):
+        cur = pt(i / n)
+        segs.append(
+            _Obstacle(
+                kind="segment",
+                x=prev[0], y=prev[1], width=0.0, height=0.0,
+                x2=cur[0], y2=cur[1], severity="SHOULD",
+            )
+        )
+        prev = cur
+    return segs
+
+
 def _emit_scene_links(
     frame: Any,
     primitives: dict[str, Any],
     stage_offsets: dict[str, tuple[float, float]],
     parts: list[str],
     render_inline_tex: Callable[[str], str] | None = None,
-) -> None:
+) -> tuple[_Obstacle, ...]:
     """Append one ``<g><path/></g>`` bridge per ``\\link`` / ``\\combine``.
 
     Each group carries ``data-annotation="link[{from}|{to}]-solo"`` — a
@@ -1025,6 +1098,17 @@ def _emit_scene_links(
     handlers animate it for free. The stroke colour is inline (per-link, like
     ``\\trace``); ``.scriba-link`` CSS layers the dashed, translucent look."""
     links = getattr(frame, "links", None) or []
+    if not links:
+        return ()
+    # Shared-obstacle scene pass (reused by \note): the shapes each bridge flies
+    # over, as stage-global obstacles the mid-bridge label dodges (mechanism a).
+    scene_content = _scene_content_obstacles(primitives, stage_offsets)
+    placed_labels: list[_LabelPlacement] = []
+    # Prior bridges the NEXT link's label dodges (a link label may sit on its
+    # OWN bridge — that is where it belongs — but not cross another). Mirrors the
+    # annotation control's prior-arrow-segment accumulation.
+    prior_bridge_obs: list[_Obstacle] = []
+    all_bridge_obs: list[_Obstacle] = []
     for lk in links:
         frm = lk.get("from", "")
         to = lk.get("to", "")
@@ -1050,19 +1134,43 @@ def _emit_scene_links(
         key = f"link[{frm}|{to}]-solo"
         label = lk.get("label")
         d = f"M{x0:.1f},{y0:.1f} Q{cx:.1f},{cy:.1f} {x1:.1f},{y1:.1f}"
+        # (b) sample this bridge into segment obstacles so notes / later link
+        # labels dodge it. The path bytes are untouched.
+        this_bridge = _quadratic_segments(x0, y0, cx, cy, x1, y1)
         inner = (
             f'<path d="{d}" fill="none" stroke="{stroke}"'
             f' stroke-width="1.6" stroke-linecap="round"/>'
         )
         if label:
-            # Mid-curve label at the quadratic's t=0.5 point.
+            display = strip_math_markup(str(label))
+            # Natural mid-curve seat at the quadratic's t=0.5 point.
             lx = 0.25 * x0 + 0.5 * cx + 0.25 * x1
             ly = 0.25 * y0 + 0.5 * cy + 0.25 * y1
+            # (a) route through the shared scorer so the label slides off the
+            # shapes it floats over and off PRIOR bridges; a clear midpoint keeps
+            # the natural seat (byte-identical). Its own bridge is excluded (the
+            # label belongs on it).
+            _pw = float(measure_label_line(display, LABEL_FONT_PX) + 12)
+            _ph = float(LABEL_FONT_PX + 8)
+            _placement, _ = _place_pill(
+                natural_x=lx,
+                natural_y=ly,
+                pill_w=_pw,
+                pill_h=_ph,
+                placed_labels=placed_labels,
+                extra_obstacles=scene_content + tuple(prior_bridge_obs),
+                viewbox_w=_SCENE_LABEL_VB,
+                viewbox_h=_SCENE_LABEL_VB,
+                viewbox_min_x=-_SCENE_LABEL_VB,
+                viewbox_min_y=-_SCENE_LABEL_VB,
+            )
+            placed_labels.append(_placement)
+            lx, ly = _placement.x, _placement.y
             inner += (
                 f'<text x="{lx:.1f}" y="{ly:.1f}" fill="{style["label_fill"]}"'
                 f' font-size="{style["label_size"]}"'
                 f' style="text-anchor:middle;dominant-baseline:central">'
-                f"{_escape_xml(strip_math_markup(str(label)))}</text>"
+                f"{_escape_xml(display)}</text>"
             )
         aria = _escape_xml(strip_math_markup(str(label))) if label else "link"
         parts.append(
@@ -1073,6 +1181,10 @@ def _emit_scene_links(
             f' aria-label="{aria}">'
             f"{inner}</g>"
         )
+        # Only NOW does this bridge become an obstacle for the next label.
+        prior_bridge_obs.extend(this_bridge)
+        all_bridge_obs.extend(this_bridge)
+    return tuple(all_bridge_obs)
 
 
 # ---------------------------------------------------------------------------
@@ -1122,6 +1234,9 @@ def _emit_scene_notes(
     frame: Any,
     viewbox: str,
     parts: list[str],
+    primitives: "dict[str, Any] | None" = None,
+    stage_offsets: "dict[str, tuple[float, float]] | None" = None,
+    extra_obstacles: tuple[_Obstacle, ...] = (),
 ) -> None:
     """Append one ``<g><rect/><text/></g>`` callout per ``\\note``.
 
@@ -1130,7 +1245,14 @@ def _emit_scene_notes(
     ``_remove`` / ``_recolor`` handlers animate it for free (a twin of
     ``_emit_scene_links``). The pill is painted inside the existing viewBox at a
     board-relative margin anchor, reusing the shipped ``scriba-annotation-*``
-    colour classes (zero dedicated note CSS)."""
+    colour classes (zero dedicated note CSS).
+
+    Shared-obstacle model (mechanism a): when *primitives*/*stage_offsets* are
+    supplied, the pill routes through the smart-label scorer so it slides off the
+    cell/node content it floats over (and off *extra_obstacles* — the \\link
+    bridge segments) instead of painting on top of a value. The compass anchor is
+    the natural seed and the stack offset keeps notes apart, so a note over an
+    empty margin keeps its exact anchor (byte-identical)."""
     notes = getattr(frame, "notes", None) or []
     if not notes:
         return
@@ -1138,6 +1260,13 @@ def _emit_scene_notes(
     if len(vb) < 4:
         return
     vx, vy, vw, vh = (float(v) for v in vb[:4])
+    # Content the note pill dodges: every shape's cells/nodes (stage-global) plus
+    # the caller-supplied bridge segments. Empty when the direct caller omits the
+    # scene context, so the placer is a no-op and the anchor is used verbatim.
+    scene_obs: tuple[_Obstacle, ...] = extra_obstacles
+    if primitives is not None and stage_offsets is not None:
+        scene_obs = _scene_content_obstacles(primitives, stage_offsets) + extra_obstacles
+    placed_notes: list[_LabelPlacement] = []
     # A note pill must fit inside the (possibly cropped) viewBox. Space between
     # the margins, and a sane wrap width (the annotation-pill cap, but never
     # wider than the board) — matches min(board - 2*margin, pill_max).
@@ -1187,6 +1316,26 @@ def _emit_scene_notes(
             )
             pw = board_avail
             px = vx + _NOTE_MARGIN
+        else:
+            # (a) route the fitting note through the shared scorer so it dodges
+            # the content it floats over; the viewBox bounds keep it on the
+            # board, and a clear anchor scores best (natural seat unchanged →
+            # byte-identical). A too-wide note (above) is pinned, not scored.
+            _pl, _ = _place_pill(
+                natural_x=px + pw / 2.0,
+                natural_y=py + ph / 2.0,
+                pill_w=pw,
+                pill_h=ph,
+                placed_labels=placed_notes,
+                extra_obstacles=scene_obs,
+                viewbox_w=vx + vw,
+                viewbox_h=vy + vh,
+                viewbox_min_x=vx,
+                viewbox_min_y=vy,
+            )
+            placed_notes.append(_pl)
+            px = _pl.x - pw / 2.0
+            py = _pl.y - ph / 2.0
 
         key = f"note[{nid}]-solo"
         aria = _escape_xml(display) or "note"
@@ -1606,7 +1755,7 @@ def _emit_frame_svg(
     # appended AFTER every primitive <g> so they paint on top of all shapes
     # (top-of-z). They do NOT go through the per-shape annotation bucketing —
     # a link spans two shapes, so its key carries no shape prefix.
-    _emit_scene_links(
+    _link_bridge_obs = _emit_scene_links(
         frame, primitives, _link_stage_offsets, svg_parts, render_inline_tex,
     )
 
@@ -1614,7 +1763,16 @@ def _emit_frame_svg(
     # to the (stable) viewBox rather than to any shape, so they paint on top of
     # every primitive at a deterministic board-relative margin. Under \zoom the
     # crop rect is used so the note stays pinned inside the visible frame (F3).
-    _emit_scene_notes(frame, effective_viewbox, svg_parts)
+    # Shared-obstacle model: the note pill dodges each shape's content and the
+    # \link bridges (the scene pass built above) instead of covering a value.
+    _emit_scene_notes(
+        frame,
+        effective_viewbox,
+        svg_parts,
+        primitives,
+        _link_stage_offsets,
+        _link_bridge_obs,
+    )
 
     svg_parts.append("</svg>")
     # R-40 \focus: bake the defocus overlay onto the assembled SVG. Runs on the

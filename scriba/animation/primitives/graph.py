@@ -40,6 +40,8 @@ from scriba.animation.primitives._svg_helpers import (
     _LABEL_PILL_PAD_X,
     _LABEL_PILL_PAD_Y,
     _LABEL_PILL_RADIUS,
+    _Obstacle,
+    _place_pill,
     ARROW_STYLES,
     annotation_color_class,
     LABEL_FONT_PX,
@@ -74,6 +76,10 @@ _GROUP_CORNER_R = 12
 _GROUP_FILL_OPACITY = "0.12"
 _GROUP_STROKE_OPACITY = "0.55"
 _GROUP_STROKE_DASH = "4,3"
+# Sentinel half-viewport for the group-label placer: large enough that the
+# clamp never fences the pill, so the smart-label scorer is free to slide it
+# off a hull-corner node in any direction (shared-obstacle model, mechanism a).
+_GROUP_LABEL_VB = 8192.0
 
 
 def _rounded_polygon_path(pts: "list[tuple[float, float]]", r: float) -> str:
@@ -1661,6 +1667,18 @@ class Graph(PrimitiveBase):
             (minx, miny, maxx, maxy),
         )
 
+    @allow_forbidden_pattern(
+        "FP-2",
+        reason=(
+            "_group_placed dodges title-pill-vs-title-pill within the frame; "
+            "content avoidance (the node circles / edge pills) goes through "
+            "resolve_self_content_rects (the measure-parity channel FP-2 "
+            "demands). The hull labels are emitted before the annotation "
+            "placer builds its shared `placed` list (design-shared-obstacle.md "
+            "§1.5), so there is no shared registry to join yet"
+        ),
+        issue="investigations/design-shared-obstacle.md",
+    )
     def _emit_group_hulls(
         self,
         parts: "list[str]",
@@ -1676,9 +1694,27 @@ class Graph(PrimitiveBase):
         positions (hidden/unknown) is skipped; an empty cluster soft-drops the
         whole hull (mirrors trace selector semantics)."""
         self._pending_group_labels: list[str] = []
+        # Shared placed-label registry so a frame's group-title pills dodge each
+        # other AND the node/edge content (shared-obstacle model, mechanism a).
+        self._group_placed: list[_LabelPlacement] = []
         groups = getattr(self, "_groups", None)
         if not groups:
             return
+        # Node circles + edge-weight pills as light SHOULD obstacles the title
+        # pill slides off — the same content channel the annotation placer uses
+        # (resolve_self_content_rects, FP-2). Built once; identical for every
+        # group this frame.
+        node_obs: tuple[_Obstacle, ...] = tuple(
+            _Obstacle(
+                kind="content_cell",
+                x=float(b.x) + float(b.width) / 2.0,
+                y=float(b.y) + float(b.height) / 2.0,
+                width=float(b.width),
+                height=float(b.height),
+                severity="SHOULD",
+            )
+            for b in self.resolve_self_content_rects()
+        )
         pos_by_str = {
             str(k): (float(v[0]), float(v[1]))
             for k, v in working_positions.items()
@@ -1724,10 +1760,31 @@ class Graph(PrimitiveBase):
                 # it for the top layer, emitted after the node group.
                 pw = measure_label_line(str(label), LABEL_FONT_PX) + 12
                 ph = LABEL_FONT_PX + 8
+                # Natural top-left corner above the hull — the pre-placer seed.
                 prx = minx
                 pry = miny - ph - 4
                 if pry < 0:
                     pry = miny + 4
+                # Route the pill through the shared smart-label placer so a node
+                # standing at the hull corner is DODGED (not just overdrawn into
+                # ":1", hunt-visual BUG 1). The placer returns the natural corner
+                # unchanged when it is already clear, so a group whose corner has
+                # no node under it stays byte-identical.
+                _placement, _ = _place_pill(
+                    natural_x=prx + pw / 2.0,
+                    natural_y=pry + ph / 2.0,
+                    pill_w=float(pw),
+                    pill_h=float(ph),
+                    placed_labels=self._group_placed,
+                    extra_obstacles=node_obs,
+                    viewbox_w=_GROUP_LABEL_VB,
+                    viewbox_h=_GROUP_LABEL_VB,
+                    viewbox_min_x=-_GROUP_LABEL_VB,
+                    viewbox_min_y=-_GROUP_LABEL_VB,
+                )
+                self._group_placed.append(_placement)
+                prx = _placement.x - pw / 2.0
+                pry = _placement.y - ph / 2.0
                 tx = prx + pw / 2.0
                 self._pending_group_labels.append(
                     f'<g class="scriba-group-label" data-annotation='

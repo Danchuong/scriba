@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.26.4"
+__version__: str = "0.26.5"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 21
+SCRIBA_VERSION: int = 22
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -345,4 +345,26 @@ runtime delta touches every interactive widget's inline slice + external hash.
 ``differ.py`` is UNTOUCHED (zero new motion kinds, the ``tr``/``fs`` manifest is
 unchanged), no CSS changed, and no SVG geometry/viewBox moved — so static/diagram
 HTMLs, static-mode animation goldens and ``differ_*.json`` manifests are
-byte-identical. Consumer caches keyed on rendered output MUST invalidate."""
+byte-identical. Consumer caches keyed on rendered output MUST invalidate.
+
+0.26.5 bumps 21→22 (shared-obstacle decoration routing): the remaining
+direct-emit decoration surfaces now share the R-33/R-34 smart-label placer
+instead of colliding with content (investigations/design-shared-obstacle.md,
+following the caret fix in 0.26.4). Decoration TEXT routes through the placer so
+it DODGES content — the ``\\group`` title pill slides off a hull-corner node, the
+``\\note`` callout slides off the cell value it floats over, the ``\\trace``
+mid-label lifts off the grid cells it grazed (the old x-only clamp is gone), and
+the ``\\link`` / ``\\combine`` mid-bridge label slides off the shapes it crosses.
+Decoration GEOMETRY that physically cannot move is instead REGISTERED as a
+SHOULD obstacle so OTHER placer clients dodge it: the ``\\trace`` stroke and the
+``\\link`` bridge are byte-identical (register-only), but a pill/note near one now
+avoids it. So the OUTPUT SHAPE for a document that places a group/note/trace-
+label/link-label near content changes (the decoration's own pill x/y moves — and
+ONLY that pill; grid cells, values, nodes and the trace/bridge strokes stay
+byte-identical). ``differ.py`` is UNTOUCHED (zero new motion kinds — the pills
+keep riding ``annotation_add``/``_remove``/``_recolor``), and no CSS changed
+(the annotation pill classes are reused). The byte-golden corpus has no
+``\\group``/``\\note``/``\\link`` document and exactly one ``\\trace`` document
+(``decoration_spiral``), whose two trace LABELS relocate to clear the cells while
+its strokes stay byte-identical; every other corpus document is byte-identical.
+Consumer caches keyed on rendered output MUST invalidate."""
