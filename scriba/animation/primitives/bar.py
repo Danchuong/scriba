@@ -59,6 +59,7 @@ _INDEX_LABEL_DY = 11     # baseline -> index-label center offset
 _VALUE_LABEL_BAND = 15   # headroom reserved above the plot for value labels
 _VALUE_LABEL_GAP = 4     # column top -> value-label baseline gap
 _VALUE_LABEL_MIN_GAP = 6  # min horizontal gap between adjacent value labels
+_BAR_MIN_VISIBLE_H = 2.0  # a nonzero value never renders shorter than this (px)
 _INDEX_FONT_PX = INDEX_FONT_PX   # canonical _types.INDEX_FONT_PX (index labels)
 _VALUE_FONT_PX = LABEL_FONT_PX   # canonical _svg_helpers.LABEL_FONT_PX (value labels)
 _FLOAT_EPS = 1e-9
@@ -211,6 +212,11 @@ class Bar(PrimitiveBase):
             return 0.0
         if h > _PLOT_HEIGHT:
             return float(_PLOT_HEIGHT)
+        # A nonzero value must stay visible: floor a tiny bar to a min height so
+        # a small value beside a huge one doesn't collapse to 0px (RQ
+        # hunt2-stress). A true zero stays empty.
+        if h > 0.0:
+            return max(h, _BAR_MIN_VISIBLE_H)
         return h
 
     def _value_band(self) -> int:

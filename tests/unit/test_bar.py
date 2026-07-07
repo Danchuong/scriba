@@ -321,6 +321,25 @@ class TestBarAnnotations:
         assert box.width == b.bar_width
 
 
+class TestBarMinVisibleHeight:
+    def test_tiny_nonzero_value_stays_visible(self) -> None:
+        from scriba.animation.primitives.bar import _BAR_MIN_VISIBLE_H
+
+        # value 1 against a 100000 ceiling -> ~0.0014px -> "0.00" (invisible).
+        b = Bar("h", {"data": [100000, 1, 1, 1]})
+        assert b._bar_px_height(1) >= _BAR_MIN_VISIBLE_H
+        assert b._bar_px_height(100000) == _PLOT_HEIGHT  # tallest unchanged
+
+    def test_true_zero_stays_empty(self) -> None:
+        b = Bar("h", {"data": [10, 0, 5]})
+        assert b._bar_px_height(0) == 0.0
+
+    def test_normal_bars_unchanged(self) -> None:
+        # proportional bars above the floor keep exact height (byte-stable).
+        b = Bar("h", {"data": [10, 5, 8]})
+        assert b._bar_px_height(5) == (5 / 10) * _PLOT_HEIGHT
+
+
 class TestShowValuesLabelWidth:
     def test_near_equal_large_labels_do_not_overprint(self) -> None:
         # Near-equal large values -> equal heights -> all labels share one

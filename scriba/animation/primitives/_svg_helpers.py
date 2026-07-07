@@ -1692,6 +1692,11 @@ def _emit_label_single_line(
         style_parts.append(f"font-size:{l_size}")
     style_parts.append("text-anchor:middle")
     style_parts.append("dominant-baseline:auto")
+    # Bidi isolation for RTL/mixed pill text, symmetric with the multi-line
+    # path — empty (byte-identical) for LTR-only labels (RQ hunt2-crossprim).
+    _bidi = _bidi_style(strip_math_markup(label_text))
+    if _bidi:
+        style_parts.append(_bidi)
     style_str = ";".join(style_parts)
     text_attrs = (
         f'x="{fi_x}" y="{fi_y}" fill="{l_fill}"'

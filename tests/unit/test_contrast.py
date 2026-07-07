@@ -77,11 +77,12 @@ WCAG_AA_NORMAL = 4.5
 class TestStateColorsContrast:
     """Each state's text color must have ≥ 4.5:1 contrast against its fill.
 
-    Note: ``dim`` uses a CSS ``opacity: 0.5`` + ``saturate(0.3)`` filter at
-    the element level, but the *CSS variable* values used here are the raw
-    token values (which must pass on their own).  The dim state is included
-    for completeness; if it ever gets boosted, the test will automatically
-    verify the improvement.
+    Note: ``dim`` de-emphasises with ``saturate(0.3)`` only. It used to also
+    carry a group ``opacity: 0.5``, which composited text+fill toward the stage
+    and halved the REAL contrast to ~1.9:1 — so these raw-token ratios were not
+    actually delivered on screen. That opacity was removed (RQ
+    hunt2-theme-a11y), so the raw-token contrast checked here IS now the
+    rendered contrast.
     """
 
     @pytest.mark.parametrize(

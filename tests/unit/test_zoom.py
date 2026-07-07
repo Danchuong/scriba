@@ -231,9 +231,11 @@ def test_scriba_version_unchanged() -> None:
     # shared-obstacle decoration routing (group/note/trace-label/link-label pills
     # now dodge content via the placer), then 22 -> 23 for the render-quality
     # sweep (coincident-caret/queue-pointer fan, Array/Matrix value-width
-    # reservation, KaTeX math-symbol measurement, Plane2D/note viewport extent).
-    # Zoom remains byte-shape-neutral across all of them.
-    assert SCRIBA_VERSION == 23
+    # reservation, KaTeX math-symbol measurement, Plane2D/note viewport extent),
+    # then 23 -> 24 for render-quality sweep round 2 (\focus tree/forest dim,
+    # RTL pill bidi, \link label viewBox clamp, Bar min-height, and the dim-state
+    # opacity removal — a shared-CSS change). Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 24
 
 
 def test_zoom_no_new_motion_kind() -> None:

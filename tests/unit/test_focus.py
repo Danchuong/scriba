@@ -153,6 +153,30 @@ class TestFocusEmit:
         html_out = self._render(source, tmp_path)
         assert "scriba-defocused" not in _joined_g_classes(html_out)
 
+    def test_focus_dims_tree_nodes(self, tmp_path: Path) -> None:
+        # Regression (RQ hunt2-crossprim): _DEFOCUS_G_RE required class=
+        # adjacent to data-target=, but Tree/Forest node <g> interpose
+        # data-node-x/y, so a focused tree never dimmed its non-focus NODES
+        # (edges dimmed, nodes didn't — it read as half-working).
+        source = (
+            '\\begin{animation}[id="tf", label="focus tree"]\n'
+            '\\shape{T}{Tree}{root="S", nodes=["S","A","B","C"], '
+            'edges=[("S","A"),("S","B"),("B","C")]}\n'
+            "\\step\n"
+            "\\focus{T.node[A]}\n"
+            "\\end{animation}\n"
+        )
+        html_out = self._render(source, tmp_path)
+        node_gs = re.findall(r'<g data-target="T\.node\[[^"]+\]"[^>]*>', html_out)
+        assert node_gs, "no tree node <g> emitted"
+        assert any("scriba-defocused" in g for g in node_gs), (
+            "focused Tree dims no nodes — _DEFOCUS_G_RE missed the interposed "
+            "data-node-x/y attrs"
+        )
+        # The focused node itself must NOT be dimmed.
+        focused = [g for g in node_gs if 'T.node[A]"' in g]
+        assert focused and "scriba-defocused" not in focused[0]
+
 
 def _joined_g_classes(html: str) -> str:
     """All ``<g ...>`` open tags joined, so a CSS-only occurrence of the class

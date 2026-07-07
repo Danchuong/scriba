@@ -1062,7 +1062,11 @@ def _apply_param_list(
             prim.apply_command(params)
 
 
-_DEFOCUS_G_RE = _re.compile(r'<g data-target="([^"]+)" class="([^"]*)"')
+# Group 2 captures any attributes interposed between data-target and class
+# (Tree/Forest nodes carry data-node-x/y there); it is empty for the cell/node
+# primitives that put class immediately after data-target, so those stay
+# byte-identical while tree/forest nodes are no longer missed (RQ hunt2-crossprim).
+_DEFOCUS_G_RE = _re.compile(r'<g data-target="([^"]+)"([^>]*?) class="([^"]*)"')
 
 
 def _apply_ref_marks(svg: str, frame: "Any") -> str:
@@ -1075,9 +1079,10 @@ def _apply_ref_marks(svg: str, frame: "Any") -> str:
 
     def _repl(m: "_re.Match[str]") -> str:
         target = m.group(1)
-        css = m.group(2)
+        mid = m.group(2)  # interposed attrs (data-node-x/y on tree/forest nodes)
+        css = m.group(3)
         if target in marks and "scriba-ref-mark" not in css:
-            return f'<g data-target="{target}" class="{css} scriba-ref-mark"'
+            return f'<g data-target="{target}"{mid} class="{css} scriba-ref-mark"'
         return m.group(0)
 
     return _DEFOCUS_G_RE.sub(_repl, svg)
@@ -1142,12 +1147,13 @@ def _apply_defocus(
 
     def _repl(m: "_re.Match[str]") -> str:
         target = m.group(1)
-        css = m.group(2)
+        mid = m.group(2)  # interposed attrs (data-node-x/y on tree/forest nodes)
+        css = m.group(3)
         shape_name = target.split(".", 1)[0]
         if shape_name in keep and target not in keep[shape_name]:
-            return f'<g data-target="{target}" class="{css} scriba-defocused"'
+            return f'<g data-target="{target}"{mid} class="{css} scriba-defocused"'
         if scope == "board" and shape_name not in focused_shapes:
-            return f'<g data-target="{target}" class="{css} scriba-defocused"'
+            return f'<g data-target="{target}"{mid} class="{css} scriba-defocused"'
         return m.group(0)
 
     return _DEFOCUS_G_RE.sub(_repl, svg)
@@ -1266,6 +1272,7 @@ def _emit_scene_links(
     stage_offsets: dict[str, tuple[float, float]],
     parts: list[str],
     render_inline_tex: Callable[[str], str] | None = None,
+    viewbox: str | None = None,
 ) -> tuple[_Obstacle, ...]:
     """Append one ``<g><path/></g>`` bridge per ``\\link`` / ``\\combine``.
 
@@ -1280,6 +1287,14 @@ def _emit_scene_links(
     # Shared-obstacle scene pass (reused by \note): the shapes each bridge flies
     # over, as stage-global obstacles the mid-bridge label dodges (mechanism a).
     scene_content = _scene_content_obstacles(primitives, stage_offsets)
+    # Clamp bridge labels to the REAL stage viewBox (the ±_SCENE_LABEL_VB
+    # sentinel let a blocked label escape above the board to y≈-1 — RQ
+    # hunt2-crossprim). Fall back to the sentinel when the caller omits it.
+    if viewbox:
+        _vb_min_x, _vb_min_y, _vb_w, _vb_h = (float(v) for v in viewbox.split())
+    else:
+        _vb_min_x = _vb_min_y = -_SCENE_LABEL_VB
+        _vb_w = _vb_h = _SCENE_LABEL_VB
     placed_labels: list[_LabelPlacement] = []
     # Prior bridges the NEXT link's label dodges (a link label may sit on its
     # OWN bridge — that is where it belongs — but not cross another). Mirrors the
@@ -1336,10 +1351,10 @@ def _emit_scene_links(
                 pill_h=_ph,
                 placed_labels=placed_labels,
                 extra_obstacles=scene_content + tuple(prior_bridge_obs),
-                viewbox_w=_SCENE_LABEL_VB,
-                viewbox_h=_SCENE_LABEL_VB,
-                viewbox_min_x=-_SCENE_LABEL_VB,
-                viewbox_min_y=-_SCENE_LABEL_VB,
+                viewbox_w=_vb_w,
+                viewbox_h=_vb_h,
+                viewbox_min_x=_vb_min_x,
+                viewbox_min_y=_vb_min_y,
             )
             placed_labels.append(_placement)
             lx, ly = _placement.x, _placement.y
@@ -1949,6 +1964,7 @@ def _emit_frame_svg(
     # a link spans two shapes, so its key carries no shape prefix.
     _link_bridge_obs = _emit_scene_links(
         frame, primitives, _link_stage_offsets, svg_parts, render_inline_tex,
+        viewbox=effective_viewbox,
     )
 
     # DECORATE v2: free \note callouts are a scene-level overlay too, anchored

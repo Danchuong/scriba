@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.28.0"
+__version__: str = "0.29.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 23
+SCRIBA_VERSION: int = 24
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -437,4 +437,41 @@ every other document is byte-identical:
 ``cursor_move``/``annotation_*``, pointers are static). No CSS change. The
 Graph/Tree/Hypercube node-label overflow family (bmad-rq-nodefit.md) is a
 larger layout-engine change (node pitch + viewBox), deferred to a focused next
-cycle. Consumer caches keyed on rendered output MUST invalidate."""
+cycle. Consumer caches keyed on rendered output MUST invalidate.
+
+0.29.0 bumps 23→24 (render-quality sweep round 2 — a second numeric sweep on the
+angles round 1 didn't cover: animation transitions, theme/a11y, extreme scale,
+cross-primitive composition, investigations/hunt2-*.md). The sweep VALIDATED the
+engine as otherwise sound (transitions always fs-snap to the correct server
+frame — the flip-back class is absent; geometry never runs away/collapses/clips
+at extreme scale; \\zoom/\\group/board-at=/cells-RTL all clean) and surfaced five
+fixable defects, all fixed structurally here. Four are opt-in-inert (0 corpus SVG
+churn — no corpus scene hits them); the fifth is a shared-CSS change that
+re-blesses every page's inline stylesheet by one identical 3-line delta:
+  * \\focus now dims Tree/Forest NODES. The defocus/ref-mark regex required
+    ``class=`` immediately after ``data-target=``, but tree/forest node ``<g>``
+    interpose ``data-node-x/y``, so a focused tree dimmed its edges but not its
+    nodes (read as half-working). The regex now tolerates interposed attributes
+    and preserves them in the rewrite. Byte-identical for cell/node primitives.
+  * RTL/mixed annotation pills carry ``unicode-bidi:plaintext``. The multi-line
+    label path applied it; the single-line ``<text>`` fallback omitted it, so a
+    short Arabic/Hebrew pill scrambled. Empty (byte-identical) for LTR labels.
+  * A cross-shape ``\\link`` / ``\\combine`` label stays inside the stage viewBox.
+    ``_emit_scene_links`` placed the mid-bridge label against a ±8192 sentinel
+    viewBox, so a blocked label escaped above the board (y≈−1, clipped); it now
+    clamps to the real (or zoom-crop) viewBox. Byte-identical when the natural
+    seat is clear.
+  * A ``Bar`` value that is nonzero but tiny beside a huge one no longer collapses
+    to a 0px invisible column — a 2px min-visible floor (a true zero stays empty).
+  * The ``dim`` state dropped its group ``opacity: 0.5``. Layered on the muted
+    dim-* tokens (designed for ≥4.5:1), the opacity composited text+fill toward
+    the stage and halved the REAL contrast to ~1.9:1 on every dim cell — below
+    the 3:1 floor, so the tokens' AA was never delivered. Desaturation
+    (``saturate(0.3)``) alone keeps the washed-out look. SVG geometry is
+    untouched; only the shared inline stylesheet changes (every page re-blesses
+    by the identical delta — the DNA-3 shared-asset bump).
+``differ.py`` is untouched (zero new motion kinds). Deferred to the theme/layout
+cycle: the graph edge-weight pill's dark-mode theming (needs a tint-preserving
+rework), the Graph force-layout canvas not scaling with node count (couples with
+the node-label layout family), and four LOW transition-window polish items.
+Consumer caches keyed on rendered output MUST invalidate."""

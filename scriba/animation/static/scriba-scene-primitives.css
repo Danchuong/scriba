@@ -262,7 +262,8 @@
 }
 
 .scriba-state-dim {
-  opacity: 0.5;
+  /* Muted dim-* tokens above carry de-emphasis at >=4.5:1; a former group
+     opacity:0.5 halved the real contrast to ~1.9:1 and was removed. */
   filter:  saturate(0.3);
 }
 

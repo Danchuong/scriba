@@ -89,6 +89,34 @@ class TestLinkLabelDodgesContent:
         assert _overlap(nat_y - 5.5, nat_y + 5.5, cell_lo, cell_hi) > 0.0
 
 
+class TestLinkLabelWithinViewbox:
+    def test_side_by_side_link_label_on_canvas(self, tmp_path: Path) -> None:
+        """A horizontal bridge between two side-by-side arrays has its t=0.5
+        seat inside the cell band; the placer must slide the label to a clear
+        seat INSIDE the stage viewBox, not escape above the top (RQ hunt2:
+        the ±_SCENE_LABEL_VB sentinel let it float to y≈-1, clipped)."""
+        src = (
+            '\\begin{animation}[id="d", label="L"]\n'
+            "\\shape{a}{Array}{size=3, data=[1,2,3], at=[0,0]}\n"
+            "\\shape{b}{Array}{size=3, data=[4,5,6], at=[0,1]}\n"
+            "\\step\n"
+            '\\link{a.cell[1] <-> b.cell[1]}{label="map"}\n'
+            "\\end{animation}\n"
+        )
+        html = _render(src, tmp_path)
+        vb = re.search(r'viewBox="([^"]+)"', html)
+        vx, vy, vw, vh = (float(v) for v in vb.group(1).split())
+        body = _link_body(html)
+        txt = re.search(r'<text x="[\d.-]+" y="([\d.-]+)"[^>]*font-size="([\d.]+)', body)
+        assert txt, "link label <text> missing"
+        ly, fs = float(txt.group(1)), float(txt.group(2))
+        # The label pill (height fs+8) centred on ly must fit under the top edge.
+        assert ly - (fs + 8.0) / 2.0 >= vy - 0.5, (
+            f"link label (y={ly}, font={fs}) clips above viewBox top {vy}"
+        )
+        assert ly + (fs + 8.0) / 2.0 <= vy + vh + 0.5, "link label clips below viewBox"
+
+
 class TestLinkBridgeByteIdentity:
     def test_bridge_path_unchanged(self, tmp_path: Path) -> None:
         """Registering the bridge as an obstacle (and placing the label) must
