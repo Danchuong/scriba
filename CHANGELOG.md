@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.30.0] - 2026-07-07 — Graph/theme cluster: pill dark, node-label fit, force-canvas scaling
+
+The four-piece structural cluster researched in
+`investigations/research-graph-theme-PLAN.md` (the two 0.29.0 deferrals plus
+the node-label fit family). All four are byte-inert on the shipped corpus —
+the 107 golden re-blesses carry ONLY the shared-stylesheet delta; no SVG
+geometry changed in any golden. `SCRIBA_VERSION` 24 → 25.
+
+### Fixed
+
+- **Graph edge-weight pill themes in dark mode, tint-preserving.** The default
+  pill was a `white`@0.85 chip on the dark stage (a 12.48:1 bright island) with
+  `#687076` text at 3.71:1 (sub-AA). The DEFAULT pill emits the literal
+  `fill="white"` while every state tint emits a hex, so the new CSS attribute
+  selector `.scriba-graph-pill[fill="white"]` (+ the `~ .scriba-graph-weight`
+  sibling text rule, in both dark scopes) flips only the default chip to the
+  idle fill/text pair — 14.47:1 on-chip, the chip blends into the stage, and
+  the state-tint signal survives untouched. Light mode byte-identical.
+- **Node labels fit — viewBox honesty (nodefit A).** Graph/Tree/Forest/
+  Hypercube node labels paint as centered unclipped text, but the viewBox and
+  translate were label-blind: a wide `value=`/id label clipped the frame (the
+  confirmed `dist[v]=infinity` 8px left clip). A new monotonic per-node
+  cross-frame-max label map on `PrimitiveBase` (seeded from static labels at
+  `__init__`, grown by `set_value` during the existing prescan replay) folds
+  the painted overhang into `_h_label_pad` (Forest: into its monotonic
+  envelope), so the frame grows and content shifts instead of clipping.
+- **Node labels fit — label-aware pitch (nodefit B).** Adjacent wide labels no
+  longer overlap each other: Tree leaf pitch, Hypercube per-row pitch, Forest
+  column/seam gaps and the Graph force layout (per-pair label-half
+  separations in the overlap post-pass, with the canvas re-grown by the label
+  overhang) all spread to the same map. Layout settles during the prescan,
+  before the first viewbox read — frame-stable (R-32).
+- **Graph force layout scales its canvas with node count.** The force solve
+  was clamped into a hard-coded 400×300 box, so `k = sqrt(area/n)` collapsed
+  below the collision separation as N grew — overlapping nodes from N≈40,
+  coincident nodes from N≈75. `_grow_force_canvas` sizes the solve by
+  area-per-node (4:3 aspect kept, floored at the default so N ≤ 16 stays
+  byte-identical, mirroring Tree's max()-floored grow), and the auto-seed
+  sweep's WINNER gets one convergent overlap resolve (min_sep from the
+  painted radius). 0 overlaps / 0 coincident at N=40 and N=100 across
+  ring/chords/dense/grid/tree/star probe topologies.
+
 ## [0.29.0] - 2026-07-07 — Render-quality sweep, round 2
 
 A second numeric render-defect sweep (four hunters) on the angles round 1 didn't

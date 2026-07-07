@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.29.0 · MIT · Python 3.10+
+**Status:** v0.30.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,28 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.30.0 — graph/theme cluster
+
+**The focused cycle 0.29.0 promised: graph dark-mode pill + the node-label layout
+family, fixed structurally and byte-inert on the whole shipped corpus.** The graph
+edge-weight **pill now themes in dark mode** without touching the state-tint
+signal: the default pill emits the literal `fill="white"` while every tint emits a
+hex, so a CSS attribute selector flips only the default chip (3.71:1 sub-AA text
+on a 12.48:1 bright island → 14.47:1 on a chip that blends into the stage). **Node
+labels fit:** a monotonic per-node cross-frame-max label map on `PrimitiveBase`
+(seeded from static ids, grown by the existing prescan replay) now drives both the
+viewBox — a wide `dist[v]=infinity` label grows the frame instead of clipping —
+and the pitch — Tree leaves, Hypercube rows, Forest columns/seams and the Graph
+overlap post-pass all spread wide labels apart instead of letting them collide.
+And the **force layout finally scales its canvas with node count** (area-per-node,
+floored at 400×300 so N ≤ 16 is byte-identical): 0 overlaps / 0 coincident nodes
+at N=100 across six probe topologies, where the fixed box left 93 overlapping and
+2 coincident pairs. All 107 goldens re-bless by one identical CSS delta; no SVG
+geometry changed anywhere (`SCRIBA_VERSION` 25).
+
+<details>
+<summary>v0.29.0 changelog</summary>
+
 ## What's new in v0.29.0 — render-quality sweep, round 2
 
 **A second numeric sweep on new angles — and mostly a clean bill of health.** Four
@@ -44,6 +66,8 @@ every dim cell (the muted palette alone already de-emphasises at ≥4.5:1). Four
 byte-identical for every existing document; the dim fix re-blesses each page's
 inline stylesheet by one identical delta (`SCRIBA_VERSION` 24). The graph
 dark-mode pill and the node-label layout family are deferred to a focused cycle.
+
+</details>
 
 <details>
 <summary>v0.28.0 changelog</summary>
