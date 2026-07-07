@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.32.0"
+__version__: str = "0.33.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 27
+SCRIBA_VERSION: int = 28
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -557,4 +557,18 @@ semantics), bare-shape element_add appearing at the fs-snap (differ.py F4),
 the tr=null silent snap for content-only SVG growth, and the ~180 ms Prev
 reverse-flash on an overlaid highlight (fs-snap-salvaged; from-model overlay
 awareness is a differ-motion-model change out of polish scope).
-Consumer caches keyed on rendered output MUST invalidate."""
+Consumer caches keyed on rendered output MUST invalidate.
+
+0.33.0 bumps 27→28 (sweep-3 addendum — two a11y/text LOWs from the
+independent cross-validation pass, sweep3-runtime.md addendum):
+  * The R-15 SVG <title> no longer garbles math narration: tag-stripping the
+    RENDERED narration concatenated each KaTeX island's MathML+raw-TeX
+    annotation with its visual spans ("D \\to A  D → A"); the katex-mathml
+    subtree is dropped first, so the tooltip carries the visual text once.
+    40 corpus docs' titles clean up; plain narrations byte-identical.
+  * The step counter's orphan aria-atomic="true" (no enclosing aria-live —
+    inert) is dropped; the substory narration's aria-atomic stays (it sits
+    inside its own aria-live element, the correct placement).
+93 golden re-blesses (every animation doc: one attribute; +40 with the title
+cleanup); 14 diagram-only docs byte-identical. Consumer caches MUST
+invalidate."""

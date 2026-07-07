@@ -274,3 +274,87 @@ mismatch.)
 - `p1_graph_value.tex` — graph value channel: recolor + node/edge math value_change (fs-snap, math-weight residual, viewBox, a11y).
 - `p3_state_annotation.tex` — `\cursor`/`\annotate color="state:X"` (R-37 asymmetry reach).
 - `p4_mathvalue_dark.tex` — idle-cell math value (general FO dark residual).
+
+---
+
+## Addendum — independent cross-validation (sweep3-content)
+
+A second static pass (agent `sweep3-content`) rendered its own grown-graph probe
+`_sweep3_content/p_grow.tex` (4-node force graph, 3 grow steps `add_edge` +
+node value `1→2→3`) plus re-renders of the shipped corpus. It **reproduces both
+headline findings above with identical numbers**, adds one structural detail to
+the math-FO mechanism, and surfaces **two new LOW deltas** the primary pass did
+not flag. Purely additive; the sections above are unchanged.
+
+### Cross-validation (matches, same numbers)
+
+- **HIGH / math-FO dark (Slice 5).** Confirmed idle `#11181c` on dark cell
+  `#1a1d1e` = **1.06:1** (on the darker `#151718` variant = **1.00:1**). An
+  explicit-dark `.katex` flip *would* give 14.47:1 — so the residual is the full
+  ~13× gap, not a partial one.
+- **MEDIUM / annotation-token twin gap (Slice 3).** Same 6 tokens, same fallback
+  ratios: current **3.45**, done **2.96**, dim **3.37**, good **3.35**, error
+  **3.02**, path **2.89** — all sub-AA.
+- **Slice 1 fs contract.** p_grow frames `fs=[0,1,1,1]`, `value_change`
+  `None→1→2→3`, viewBox constant `0 0 …` across all 4 frames; the "every
+  svg-differing + manifest-bearing frame carries `fs=1`" assertion holds. union_find
+  independently re-scanned: 18 frames `fs=[0, 1×17]` incl. the `C→A` relabel at
+  frame 9. Corroborates the re-snap = server-truth conclusion.
+
+### Structural strengthening of the math-FO mechanism (Slice 5)
+
+Slice 5 notes "no dark-mode CSS rule anywhere flips a foreignObject/div text
+`color` for value FOs." One rule *would* help the KaTeX span itself —
+`[data-theme="dark"] .katex{color:var(--scriba-fg)}`
+(`scriba-tex-content.css:153-164`, with mord/mop/mrel/mbin/minner/mpunct
+inheriting) — but it is **bundle-excluded from pure-animation pages**:
+
+- `_BASE_CSS` (`render.py:254-258`) = scene-primitives + animation + embed +
+  standalone; `scriba-tex-content.css` is added **only** when a TeX prose region
+  exists (`render.py:201,225`).
+- `inline_katex_css()` (`css_bundler.py:64-78`) bundles **only** vendor
+  `katex.min.css`, which sets **no** base text `color` (only
+  `border-color:currentColor`).
+
+So on a pure-animation page even the live `.katex` element inherits nothing dark;
+the FO div's baked hex is the *only* color in play and nothing flips it. The gap
+is structural to the bundle split, not merely a missing per-state rule — which is
+why the residual is total (1.06:1) rather than partial. Verified on a rendered
+animation page: **0** `[data-theme="dark"] .katex` occurrences, 390 `katex.min`
+layout rules, `Toggle theme` button present, baked 4×`#11181c` + 2×`#ffffff`.
+
+**Reachability note:** this is reachable on the **default single-file standalone
+artifact**, not just embeds. `render.py:43` ships a `Toggle theme` button that
+sets `data-theme="dark"` (Scope A), so any reader toggling dark on any animation
+doc that has a math value on a non-`current` cell/node hits 1.06:1. HIGH is not
+embed-only.
+
+### F3 — garbled SVG `<title>` (KaTeX double-strip) — LOW
+
+`_frame_renderer.py:1796` builds the scene `<title>` by tag-stripping the
+**rendered** narration: `_title_text = _re.sub(r"<[^>]+>", " ", _raw_narration)
+.strip()`. Because the narration is already KaTeX-expanded, stripping tags
+concatenates KaTeX's dual layers — the visual glyph run **and** the MathML
+`<annotation>` raw TeX — so a `\to` narration collapses to e.g.
+`"Add edge D → A  D \to A  D → A ; A  A"` (observed on p_grow frame 3).
+
+Tooltip-only, hence LOW: `aria-labelledby` (the narration `<p>`) supersedes
+`<title>` in the AT accessible-name computation, and the narration itself is
+AT-clean (KaTeX visual layers `aria-hidden`, MathML `<annotation>` present). The
+garble reaches only the mouse-hover tooltip on the SVG.
+
+### F4 — orphan `aria-atomic` on the step counter — LOW
+
+`_html_stitcher.py:735` emits the step-counter element with
+`aria-atomic="true"` but there is **no enclosing `aria-live` region**.
+`aria-atomic` only modifies how an `aria-live` announcement is batched; with no
+live region on or around the element it is inert dead markup. LOW (no functional
+harm; the live narration region at `:739` is the one AT actually announces).
+
+### Status
+
+Both cross-validated findings (H2 math-FO, M2 annotation twin) are already
+captured in fix-wave 0.31.0 (task #9). F3 + F4 are scheduled into the 0.33.0
+micro-wave (F3: drop the `katex-mathml` subtree before the tag-strip so the
+title carries the visual text once; F4: drop the dead `aria-atomic`). No
+`scriba/` or `tests/` edits were made in this cross-validation pass.

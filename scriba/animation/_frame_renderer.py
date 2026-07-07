@@ -1837,7 +1837,24 @@ def _emit_frame_svg(
         _title_text = _explicit_title
     else:
         _raw_narration = getattr(frame, "narration_html", "") or ""
-        _title_text = _re.sub(r"<[^>]+>", " ", _raw_narration).strip()
+        # sweep3-content F3: a KaTeX island contributes BOTH its MathML
+        # subtree (whose <annotation> carries the raw TeX) and its visual
+        # spans; tag-stripping the whole island concatenated them into a
+        # garbled tooltip ("D \to A  D → A"). Drop the katex-mathml subtree
+        # first — it nests no <span>, so the non-greedy match ends exactly
+        # at its close — leaving the visual text once. Plain narrations
+        # don't enter this branch and keep the historic strip byte-for-byte.
+        if "katex-mathml" in _raw_narration:
+            _no_mathml = _re.sub(
+                r'<span class="katex-mathml">.*?</span>',
+                " ",
+                _raw_narration,
+                flags=_re.S,
+            )
+            _title_text = _re.sub(r"<[^>]+>", " ", _no_mathml)
+            _title_text = _re.sub(r"\s+", " ", _title_text).strip()
+        else:
+            _title_text = _re.sub(r"<[^>]+>", " ", _raw_narration).strip()
         if not _title_text:
             _title_text = scene_id
     # Re-encode for safe embedding inside <title>…</title>.

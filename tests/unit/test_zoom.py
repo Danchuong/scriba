@@ -240,8 +240,10 @@ def test_scriba_version_unchanged() -> None:
     # twin tokens + note math/bidi + cursor wiring + lane halves + Tree
     # future-value prescan — shared-CSS delta only on the corpus), then
     # 26 -> 27 for sweep-3 wave 4 (Deque cursor wiring + the \\link label
-    # halo — zero corpus re-bless). Zoom remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 27
+    # halo — zero corpus re-bless), then 27 -> 28 for the sweep-3 addendum
+    # (math-clean SVG titles + the orphan aria-atomic drop). Zoom remains
+    # byte-shape-neutral.
+    assert SCRIBA_VERSION == 28
 
 
 def test_zoom_no_new_motion_kind() -> None:

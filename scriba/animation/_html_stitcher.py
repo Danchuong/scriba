@@ -732,7 +732,7 @@ def emit_interactive_html(
     <div class="scriba-stage"></div>
     <div class="scriba-controls">
       <button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button>
-      <span class="scriba-step-counter" aria-atomic="true">1 / {frame_count}</span>
+      <span class="scriba-step-counter">1 / {frame_count}</span>
       <button class="scriba-btn-next" aria-label="Next step"{"" if frame_count > 1 else " disabled"}>&#10095;</button>
     </div>
   </div>

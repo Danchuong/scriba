@@ -278,3 +278,64 @@ class TestNoteMathAndBidi:
             'style="text-anchor:middle;dominant-baseline:central"' in groups[0]
         ), "plain note <text> style changed — corpus would churn"
         assert "foreignObject" not in groups[0]
+
+
+class TestSvgTitleMathNarration:
+    """sweep3-content F3: the R-15 <title> falls back to tag-stripping the
+    RENDERED narration; a KaTeX island contributes its MathML+annotation
+    (raw TeX) AND its visual spans, so the tooltip read like
+    "D \\to A  D → A". The katex-mathml subtree (which carries the raw-TeX
+    annotation) is dropped before the strip, leaving the visual text once."""
+
+    def test_title_carries_math_once_no_raw_tex(self, tmp_path: Path) -> None:
+        source = (
+            '\\begin{animation}[id="d", label="title math"]\n'
+            "\\shape{a}{Array}{size=2, data=[1,2]}\n"
+            "\\step\n"
+            "\\narrate{Add edge $D \\to A$ here.}\n"
+            "\\end{animation}\n"
+        )
+        html_out = _render(source, tmp_path)
+        titles = re.findall(r"<title>([^<]*)</title>", html_out)
+        assert titles, "no svg titles"
+        mathy = [t for t in titles if "D" in t]
+        assert mathy, f"narration title missing: {titles}"
+        for t in mathy:
+            assert "\\to" not in t, f"raw TeX leaked into title: {t!r}"
+            assert t.count("→") <= 1, f"math text duplicated in title: {t!r}"
+
+    def test_plain_narration_title_unchanged(self, tmp_path: Path) -> None:
+        # No math -> the historic strip path, byte-identical.
+        source = (
+            '\\begin{animation}[id="d", label="title plain"]\n'
+            "\\shape{a}{Array}{size=2, data=[1,2]}\n"
+            "\\step\n"
+            "\\narrate{Scan the array once.}\n"
+            "\\end{animation}\n"
+        )
+        html_out = _render(source, tmp_path)
+        assert "<title>Scan the array once.</title>" in html_out
+
+
+class TestStepCounterAria:
+    """sweep3-content F4: the step counter carried aria-atomic="true" with
+    no enclosing aria-live region — an inert attribute (the narration's own
+    aria-live=polite is the real announcement channel). Dropped there; the
+    substory narration's aria-atomic sits INSIDE its aria-live element and
+    is correct, so only the orphan placement is banned."""
+
+    def test_no_orphan_aria_atomic_on_step_counter(self, tmp_path: Path) -> None:
+        source = (
+            '\\begin{animation}[id="d", label="aria"]\n'
+            "\\shape{a}{Array}{size=2, data=[1,2]}\n"
+            "\\step\n"
+            "\\narrate{x}\n"
+            "\\end{animation}\n"
+        )
+        html_out = _render(source, tmp_path)
+        for m in re.finditer(r"<[^>]*aria-atomic[^>]*>", html_out):
+            assert "aria-live" in m.group(0), (
+                f"orphan aria-atomic (no aria-live on the element): "
+                f"{m.group(0)[:120]!r}"
+            )
+        assert 'scriba-step-counter" aria-atomic' not in html_out
