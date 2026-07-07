@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.32.0 · MIT · Python 3.10+
+**Status:** v0.33.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,19 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.33.0 — sweep-3 addendum
+
+**Two accessibility/text polish fixes from the independent cross-validation
+pass.** SVG **tooltips no longer garble math narration** — the `<title>`
+fallback used to concatenate each KaTeX island's raw TeX with its visual text
+(`Add edge D \to A  D → A  D → A`); it now carries the visual text once
+(40 corpus docs clean up). And the step counter drops an **orphan
+`aria-atomic`** that had no `aria-live` to act on. 93 goldens re-bless by one
+attribute (+ the title cleanups); `SCRIBA_VERSION` 28.
+
+<details>
+<summary>v0.32.0 changelog</summary>
+
 ## What's new in v0.32.0 — sweep-3 residual closure
 
 **The render-quality campaign converges.** The last two open residuals are
@@ -37,6 +50,8 @@ LOW polish items are formally closed as documented design decisions
 snaps, the Prev reverse-flash). Zero corpus re-bless (`SCRIBA_VERSION` 27).
 Four sweep rounds, four releases: every verified render, visualization, and
 code defect found by the campaign is fixed and pinned by a test.
+
+</details>
 
 <details>
 <summary>v0.31.0 changelog</summary>

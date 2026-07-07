@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.33.0] - 2026-07-07 — Sweep-3 addendum: math-clean titles, a11y polish
+
+Two LOW findings from the independent cross-validation pass (attributed
+addendum in investigations/sweep3-runtime.md). 93 golden re-blesses (one
+attribute per animation doc; 40 also get their titles cleaned); 14
+diagram-only docs byte-identical. `SCRIBA_VERSION` 27 → 28.
+
+### Fixed
+
+- **SVG `<title>` no longer garbles math narration.** The R-15 tooltip
+  fallback tag-stripped the RENDERED narration, concatenating each KaTeX
+  island's MathML + raw-TeX annotation with its visual spans — a `$D \to A$`
+  narration produced `Add edge D \to A  D → A  D → A`. The `katex-mathml`
+  subtree is dropped before the strip, so the tooltip carries the visual
+  text once; plain narrations keep the historic strip byte-for-byte.
+- **Orphan `aria-atomic` dropped from the step counter.** It had no enclosing
+  `aria-live` region, so it was inert (the narration's own
+  `aria-live="polite"` is the real announcement channel). The substory
+  narration's `aria-atomic` stays — it sits inside its own `aria-live`
+  element, the correct placement.
+
 ## [0.32.0] - 2026-07-07 — Sweep-3 wave 4: residual closure
 
 The last two open sweep-3 residuals, plus the formal close-out of the four
