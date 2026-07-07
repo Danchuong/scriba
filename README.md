@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.26.4 · MIT · Python 3.10+
+**Status:** v0.26.5 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,25 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.26.5
+
+The two structural classes the report #6/#7 sibling audits surfaced, both closed:
+- **Decorations dodge content.** `\group` titles, `\note` callouts and
+  `\trace`/`\link` labels were emitted straight onto the canvas, bypassing the
+  smart-label placer, so they could sit on top of cells and nodes. Their text now
+  routes through the same placement engine annotation pills use (dodging content),
+  and lines that can't move register as obstacles so other labels avoid them.
+- **`\apply value=` on a value-less part fails loudly.** A Stack item, Graph node,
+  NumberLine tick, or CodePanel line renders no per-element value, but `value=` was
+  accepted then animated by the runtime and reverted at settle — a flip-back flash
+  and a silent no-op. It now raises **E1105** with a steering hint (Graph edges
+  keep `value=`).
+
+`SCRIBA_VERSION` 21→22 (one corpus doc's trace label dodged; strokes unchanged).
+
+<details>
+<summary>v0.26.4 changelog</summary>
+
 ## What's new in v0.26.4
 
 Two more legibility fixes from the JudgeZone reports, each fixed structurally
@@ -43,6 +62,8 @@ Two more legibility fixes from the JudgeZone reports, each fixed structurally
 `SCRIBA_VERSION` 20→21 (the value node's `data-role` attribute is the only SVG
 change). Sibling audits flag remaining direct-emit decoration overlaps (`\group`/
 `\note`/`\trace`) for a follow-up shared-obstacle pass.
+
+</details>
 
 <details>
 <summary>v0.26.3 changelog</summary>

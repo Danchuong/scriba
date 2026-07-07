@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.5] - 2026-07-07 — decoration obstacle-avoidance + value flip-back (the two open sibling classes)
+
+Closes the two structural classes the report #6/#7 sibling audits surfaced
+(investigations/design-shared-obstacle.md, design-value-flipback.md).
+
+### Fixed
+- **Direct-emit decorations now dodge content** — `\group` title pills, `\note`
+  callouts, and `\trace`/`\link` labels routed straight past the R-33/R-34
+  smart-label placer and could overlap cells/nodes. Their text now goes through
+  the shared `_place_pill` engine (dodging the content obstacles), and lines that
+  can't move (`\trace` stroke, `\link` bridge) register as obstacles so other
+  pills avoid them. Only where a decoration would actually collide does anything
+  move; the stroke geometry is unchanged. `SCRIBA_VERSION` 21→22 (one corpus doc,
+  `decoration_spiral`, shifts — its trace *label* dodged; the 6 trace strokes are
+  byte-identical).
+- **`\apply value=` on a value-less part raises E1105** — Stack `item`, Graph
+  `node`, NumberLine `tick`, and CodePanel `line` render no per-element value, but
+  `value=` was accepted, recorded, and animated by the runtime, then reverted by
+  the fs-snap — a flip-back flash, and a silent no-op. A `renders_value` gate now
+  rejects it at author time with a steering hint (Graph `value=` stays valid on
+  `edge`). No rendered-output change for valid documents.
+
+### Known (deferred, tracked)
+- `\trace`/`\link` label dodging is the completion of the direct-emit class; the
+  remaining by-design overlaps (strike over its own glyph) are intentional.
+- Non-numeric `value=` on Bar/Matrix (a value-TYPE issue → E1107) and spurious
+  `value_change` on E1115-invalid selectors — distinct classes, separate tickets.
+
 ## [0.26.4] - 2026-07-07 — value-node targeting + caret label-lane collision (reports #6/#7)
 
 Two JudgeZone reports, each fixed structurally with its sibling class swept
