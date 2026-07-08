@@ -42,3 +42,15 @@ This project is indexed by GitNexus as **scriba**. Use the GitNexus MCP tools to
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+## Release & Publish
+
+Release checklist (established 0.34.0; mirrors prior releases):
+
+1. Feature commit carries the version bump: `scriba/_version.py` (`__version__` + `SCRIBA_VERSION` if rendered bytes changed, with a docstring ledger entry) **and** the pinned ledger test `tests/unit/test_zoom.py::test_scriba_version_unchanged` (append the bump rationale to its comment and update the assert).
+2. Release commit `chore(release): X.Y.Z`: CHANGELOG.md entry, README.md status line + "What's new" (fold the previous release into a `<details>` block), `docs/README.md` line 1, `docs/SCRIBA-TEX-REFERENCE.md` "Target:" line.
+3. Push to GitHub (`origin main`). No git tags since 0.9.x.
+4. PyPI — dist name is **`scriba-tex`** (repo name `scriba` is squatted by an unrelated package): `rm -rf dist/ && uv build`, `uvx twine check dist/*`, then upload with the token from **`key.env`** (gitignored, repo root; var `PYPI`) — e.g. `source key.env && TWINE_USERNAME=__token__ TWINE_PASSWORD="$PYPI" uvx twine upload --non-interactive dist/*`. Never print or commit the token.
+5. Verify `https://pypi.org/pypi/scriba-tex/json` reports the new version.
+
+Notes: no `~/.pypirc`/keyring on this machine — `key.env` is the only credential source. Homebrew tap (`homebrew/`) is a stale scaffold (formula still at 0.5.0 placeholders); update its SHA256s only if reviving that channel. RTK's `rg` proxy can return false "0 matches" — use `rtk proxy grep` or the Read tool for release verification greps.
