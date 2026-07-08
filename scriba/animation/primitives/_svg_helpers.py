@@ -1413,9 +1413,15 @@ def pill_dimensions(
     if wrap_px is None:
         label_lines = _wrap_label_lines(label_text)
     else:
+        # Pack with the SAME ruler the final width is measured against: the
+        # math_rendered=True path measures each line in "Scriba Sans" (below),
+        # so it must pack in "Scriba Sans" too — else caps-heavy labels pack
+        # one mono-narrow line that paints wider than the pill budget. The
+        # math_rendered=False path keeps mono (byte-identical).
         label_lines = _wrap_label_lines(
             label_text, max_px=wrap_px, font_px=l_font_px,
             math_rendered=math_rendered,
+            text_face="scriba-sans" if math_rendered else "mono",
         )
     line_height = l_font_px + 2
     if len(label_lines) > 1 and any(_label_has_math(ln) for ln in label_lines):
@@ -1435,7 +1441,7 @@ def pill_dimensions(
     # (folabel-sweep-measure-callers: $dp_{i}$ raw 40.5px vs model 29px)
     if math_rendered:
         max_line_w = max(
-            measure_label_line(ln, l_font_px, text_face="katex-sans")
+            measure_label_line(ln, l_font_px, text_face="scriba-sans")
             for ln in label_lines
         )
     else:
@@ -1584,7 +1590,7 @@ def _emit_pill_label_text(
         _label_has_math(ln) for ln in label_lines
     ):
         box_w = int(pill_w) if pill_w else max(
-            measure_label_line(ln, _DEFAULT_LABEL_FONT_PX, text_face="katex-sans")
+            measure_label_line(ln, _DEFAULT_LABEL_FONT_PX, text_face="scriba-sans")
             for ln in label_lines
         ) + _LABEL_PILL_PAD_X * 2
         weight_css = f"font-weight:{l_weight};" if l_weight else ""
@@ -1717,6 +1723,7 @@ def _wrap_label_lines(
     max_px: "float | None" = None,
     font_px: int = _DEFAULT_LABEL_FONT_PX,
     math_rendered: bool = True,
+    text_face: str = "mono",
 ) -> list[str]:
     """Split label text into lines at natural break points.
 
@@ -1785,7 +1792,8 @@ def _wrap_label_lines(
     line = ""
     if max_px is not None:
         if math_rendered:
-            _measure = measure_label_line
+            def _measure(s: str, fp: int) -> int:
+                return measure_label_line(s, fp, text_face=text_face)
         else:
             def _measure(s: str, fp: int) -> int:
                 return estimate_text_width(strip_math_markup(s), fp)
@@ -1926,13 +1934,19 @@ def _sample_arrow_segments(
 #   good  #027a55 → 5.36:1   info   #506882 → 5.76:1
 #   warn  #92600a → 5.38:1   error  #c6282d → 5.61:1
 #   muted #526070 → 6.43:1   path   #2563eb → 5.17:1
+# "label_weight" stays ≤ 600 for every kind: "Scriba Sans" ships one static
+# 400 master, so a browser renders declared weights ≤ 600 straight from it
+# (no faux-bold synthesis) and the baked advance table the pill measures
+# against is exact. 700 would synthesize a heavier face whose advances exceed
+# the table → under-measure → clipped labels. Kind hierarchy rides on color +
+# halo, not stroke weight.
 ARROW_STYLES: dict[str, dict[str, str]] = {
     "good": {
         "stroke": "#027a55",      # darkened from #059669 (3.77:1 ✗) → 5.36:1 ✓
         "stroke_width": "2.2",
         "opacity": "1.0",
         "label_fill": "#027a55",
-        "label_weight": "700",
+        "label_weight": "600",
         "label_size": "12px",
     },
     "info": {
@@ -1972,7 +1986,7 @@ ARROW_STYLES: dict[str, dict[str, str]] = {
         "stroke_width": "2.5",
         "opacity": "1.0",
         "label_fill": "#2563eb",
-        "label_weight": "700",
+        "label_weight": "600",
         "label_size": "12px",
     },
 }
@@ -2110,7 +2124,7 @@ def emit_plain_arrow_svg(
         num_lines = len(label_lines)
 
         max_line_w = max(
-            measure_label_line(ln, l_font_px, text_face="katex-sans")
+            measure_label_line(ln, l_font_px, text_face="scriba-sans")
             for ln in label_lines
         )
         pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
@@ -3208,7 +3222,7 @@ def _position_pill_width(label: str, color: str = "info") -> float:
     else:
         lines = _wrap_label_lines(label, max_px=_LABEL_PILL_MAX_W_PX, font_px=l_font_px)
     widest = max(
-        measure_label_line(ln, l_font_px, text_face="katex-sans") for ln in lines
+        measure_label_line(ln, l_font_px, text_face="scriba-sans") for ln in lines
     )
     return widest + _LABEL_PILL_PAD_X * 2
 

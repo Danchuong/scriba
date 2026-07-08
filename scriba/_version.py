@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.33.0"
+__version__: str = "0.34.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 28
+SCRIBA_VERSION: int = 29
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -571,4 +571,29 @@ independent cross-validation pass, sweep3-runtime.md addendum):
     inside its own aria-live element, the correct placement).
 93 golden re-blesses (every animation doc: one attribute; +40 with the title
 cleanup); 14 diagram-only docs byte-identical. Consumer caches MUST
+invalidate.
+
+0.34.0 bumps 28→29 (annotation labels adopt the house text oracle — JudgeZone
+report #8, two stages in one release): annotation pill/link/note label TEXT
+runs paint "Scriba Sans" (the shipped Inter subset cells/values/equations
+already use) instead of ui-monospace, beside unchanged KaTeX math runs — one
+family per pill, full Vietnamese coverage. (An interim KaTeX_SansSerif stage
+zebra-striped diacritics with per-glyph mono fallback and is superseded within
+this same release.) Width comes from the same exact Inter advance table via
+the float ``measure_text_run`` (NFC-normalizing — decomposed input measures
+identically to precomposed), summed per line with the KaTeX math advance path
+and rounded once; the parallel ``sans_text_width`` oracle is deleted.
+``good``/``path`` pill labels drop 700→600 (the static Inter master is
+synthesis-free ≤600, so painted advances equal the baked table; the
+annotation rules pin ``font-synthesis:none``), wrap packing uses the painted
+face's ruler (caps-heavy labels wrap instead of overflowing the 132px pill
+budget), the E1126 truncated-note recompute measures the painted face, and
+raw math symbols in text runs (``→``, ``≤`` outside ``$...$``) take a
+conservative 0.9em floor (never clip; ``$...$`` stays the exact path). Every
+annotation-bearing scene's pill rect widths/x, label tspans, leader anchors
+and inline weights change; the shared stylesheet token + ``@font-face``
+descriptor (``400 500 600``→``400 600``) re-bless every page (DNA-3).
+Non-annotation SVG surfaces are byte-identical (old-vs-new ``measure_text``
+proven equal over ZWJ/NFC/CJK/symbol inputs). ``differ.py`` is untouched
+(zero new motion kinds). Consumer caches keyed on rendered output MUST
 invalidate."""

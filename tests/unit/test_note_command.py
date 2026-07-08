@@ -342,12 +342,12 @@ class TestStepCounterAria:
 
 
 class TestNoteLabelSansMeasure:
-    """spec-fix-annot-pill-font-clash: a plain-text ``\\note`` pill paints its
-    ``<text>`` in KaTeX_SansSerif Bold (``.scriba-annotation > text``), so the
+    """spec-fix-annot-pill-face-scriba-sans: a plain-text ``\\note`` pill paints
+    its ``<text>`` in "Scriba Sans" (``.scriba-annotation > text``), so the
     no-math note branch must MEASURE through the same face —
-    ``measure_label_line`` called with ``text_face="katex-sans"``."""
+    ``measure_label_line`` called with ``text_face="scriba-sans"``."""
 
-    def test_plain_note_measured_with_katex_sans(
+    def test_plain_note_measured_with_scriba_sans(
         self, tmp_path: Path, monkeypatch
     ) -> None:
         import scriba.animation._frame_renderer as fr
@@ -368,7 +368,7 @@ class TestNoteLabelSansMeasure:
             "\\end{animation}\n"
         )
         _render(source, tmp_path)
-        assert "katex-sans" in seen, (
+        assert "scriba-sans" in seen, (
             "plain note pill measured with mono default, not the painted "
-            "KaTeX_SansSerif face"
+            "Scriba Sans face"
         )

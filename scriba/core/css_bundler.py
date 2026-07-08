@@ -56,7 +56,7 @@ def inline_text_font_css() -> str:
     return (
         '@font-face{font-family:"Scriba Sans";'
         "src:url(data:font/woff2;base64," + encoded + ') format("woff2");'
-        "font-weight:400 500 600;font-style:normal;font-display:swap}"
+        "font-weight:400 600;font-style:normal;font-display:swap}"
     )
 
 

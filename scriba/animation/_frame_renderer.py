@@ -1388,7 +1388,7 @@ def _emit_scene_links(
             # the natural seat (byte-identical). Its own bridge is excluded (the
             # label belongs on it).
             _pw = float(
-                measure_label_line(display, LABEL_FONT_PX, text_face="katex-sans")
+                measure_label_line(display, LABEL_FONT_PX, text_face="scriba-sans")
                 + 12
             )
             _ph = float(LABEL_FONT_PX + 8)
@@ -1556,7 +1556,7 @@ def _emit_scene_notes(
                 )
         else:
             single_pw = float(
-                measure_label_line(display, LABEL_FONT_PX, text_face="katex-sans")
+                measure_label_line(display, LABEL_FONT_PX, text_face="scriba-sans")
                 + 12
             )
             if single_pw <= board_avail:
@@ -1572,7 +1572,7 @@ def _emit_scene_notes(
                 pw = float(
                     max(
                         measure_label_line(
-                            ln, LABEL_FONT_PX, text_face="katex-sans"
+                            ln, LABEL_FONT_PX, text_face="scriba-sans"
                         )
                         for ln in lines
                     )
@@ -1599,7 +1599,12 @@ def _emit_scene_notes(
                     lines[max_lines - 1].rstrip() + "…"
                 ]
                 pw = float(
-                    max(measure_label_line(ln, LABEL_FONT_PX) for ln in lines)
+                    max(
+                        measure_label_line(
+                            ln, LABEL_FONT_PX, text_face="scriba-sans"
+                        )
+                        for ln in lines
+                    )
                     + 12
                 )
             ph = float(LABEL_FONT_PX * len(lines) + 8)

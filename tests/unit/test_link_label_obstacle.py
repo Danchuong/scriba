@@ -195,12 +195,12 @@ class TestLinkLabelHalo:
 
 
 class TestLinkLabelSansMeasure:
-    """spec-fix-annot-pill-font-clash: the mid-bridge link label paints its
-    ``<text>`` in KaTeX_SansSerif Bold (``.scriba-annotation > text``), so its
+    """spec-fix-annot-pill-face-scriba-sans: the mid-bridge link label paints
+    its ``<text>`` in "Scriba Sans" (``.scriba-annotation > text``), so its
     pill width must be MEASURED through the same face — ``measure_label_line``
-    called with ``text_face="katex-sans"``, not the mono default."""
+    called with ``text_face="scriba-sans"``, not the mono default."""
 
-    def test_link_label_measured_with_katex_sans(
+    def test_link_label_measured_with_scriba_sans(
         self, tmp_path: Path, monkeypatch
     ) -> None:
         import scriba.animation._frame_renderer as fr
@@ -214,7 +214,7 @@ class TestLinkLabelSansMeasure:
 
         monkeypatch.setattr(fr, "measure_label_line", _spy)
         _render(_SRC, tmp_path)
-        assert "katex-sans" in seen, (
+        assert "scriba-sans" in seen, (
             "link label pill measured with mono default, not the painted "
-            "KaTeX_SansSerif face"
+            "Scriba Sans face"
         )

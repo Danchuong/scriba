@@ -86,6 +86,7 @@ __all__ = [
     "label_line_extra",
     "measure_label_line",
     "measure_text",
+    "measure_text_run",
     "measure_value_text",
 ]
 
@@ -95,12 +96,37 @@ class TextMeasurer(Protocol):
         """Rendered width in px (rounded like estimate_text_width)."""
         ...
 
+    def measure_run(
+        self, text: str, font_px: int, *, conservative_symbols: bool = False
+    ) -> float:
+        """Un-rounded px width of a text run, so a mixed-segment caller can
+        sum text and ``$math$`` advances and round ONCE at the line level.
+
+        ``conservative_symbols`` (opt-in, annotation runs only): floor each
+        table-miss glyph to the widest of its KaTeX symbol advance, the
+        display-width heuristic, and the ~0.9em system-UI-sans fallback the
+        CSS tail paints for math/other symbols (``Sm``/``So``), so a raw
+        ``≤``/``→`` in a pill never under-measures and clips. The cell oracle
+        (:meth:`measure`) leaves it False → widths byte-identical."""
+        ...
+
 
 class HeuristicMeasurer:
     """The pre-0.22.0 estimator, verbatim — the no-font fallback."""
 
     def measure(self, text: str, font_px: int) -> int:
         return estimate_text_width(text, font_px)
+
+    def measure_run(
+        self, text: str, font_px: int, *, conservative_symbols: bool = False
+    ) -> float:
+        # NFC first, matching ShippedFontMeasurer, so decomposed and
+        # precomposed input measure identically on the no-font fallback too.
+        # The estimator carries no glyph table, so conservative_symbols has
+        # no table-miss branch to gate — accepted for Protocol parity.
+        return float(
+            estimate_text_width(unicodedata.normalize("NFC", str(text)), font_px)
+        )
 
 
 class ShippedFontMeasurer:
@@ -111,11 +137,16 @@ class ShippedFontMeasurer:
         self._upm = upm
 
     def measure(self, text: str, font_px: int) -> int:
+        return int(self.measure_run(text, font_px) + 0.5)
+
+    def measure_run(
+        self, text: str, font_px: int, *, conservative_symbols: bool = False
+    ) -> float:
         s = unicodedata.normalize("NFC", str(text))
         if "‍" in s:
             # ZWJ emoji clusters: the estimator's two-pass cluster logic is
             # the honest answer; the table has no cluster notion.
-            return estimate_text_width(s, font_px)
+            return float(estimate_text_width(s, font_px))
         from scriba.animation.primitives._math_metrics import symbol_em
 
         total_units = 0.0
@@ -129,6 +160,21 @@ class ShippedFontMeasurer:
             # use it before the flat 0.62em heuristic, which under-measured
             # them 22–56% and clipped arrow chains / ∞ cells.
             kem = symbol_em(ord(ch))
+            if conservative_symbols:
+                # Annotation runs paint table-miss glyphs in the CSS tail's
+                # system UI sans (~0.9em for Sm/So), wider than KaTeX's symbol
+                # advance; floor to the widest of the three models so the pill
+                # never clips. Never zero for a visible glyph (its display-width
+                # em is always in the max); cells keep the flag False.
+                adv_em = max(
+                    kem or 0.0,
+                    _char_display_width(ch),
+                    0.9 if unicodedata.category(ch) in ("Sm", "So") else 0.0,
+                )
+                if kem is None:
+                    _warn_heuristic_script(ord(ch))
+                total_units += adv_em * self._upm
+                continue
             if kem is not None:
                 total_units += kem * self._upm
                 continue
@@ -137,7 +183,7 @@ class ShippedFontMeasurer:
             # (W1301 over-estimate warning preserved).
             _warn_heuristic_script(ord(ch))
             total_units += _char_display_width(ch) * self._upm
-        return int(total_units / self._upm * font_px + 0.5)
+        return total_units / self._upm * font_px
 
 
 @lru_cache(maxsize=1)
@@ -159,6 +205,20 @@ def measure_text(text: str, font_px: int) -> int:
     return get_measurer().measure(text, font_px)
 
 
+def measure_text_run(text: str, font_px: int) -> float:
+    """Un-rounded px width of *text* painted in "Scriba Sans" — the text face
+    of annotation pills, link labels and notes. On the shipped path this is
+    the same NFC-correct Inter advance-sum cells use (:func:`measure_text`),
+    with two deliberate departures: a run carrying a ZWJ emoji cluster falls
+    back to the whole-string heuristic estimate (the table has no cluster
+    notion — NOT an advance-sum), and table-miss math/relation symbols take a
+    conservative UI-sans floor (``conservative_symbols=True``) because the pill
+    paints those in the CSS tail's system sans, not Inter. Returns a float so
+    :func:`measure_label_line` can sum text and ``$math$`` segment advances and
+    round ONCE at the line level (mixed-label widths stay additive)."""
+    return get_measurer().measure_run(text, font_px, conservative_symbols=True)
+
+
 def measure_label_line(line: str, font_px: int, *, text_face: str = "mono") -> int:
     """Width of a mixed text+``$math$`` label line, in px.
 
@@ -167,27 +227,28 @@ def measure_label_line(line: str, font_px: int, *, text_face: str = "mono") -> i
     (``measure_inline_math``); text segments take the face named by
     *text_face*. Inline flow adds no inter-segment gap, so the composition
     is additive — proven exact to <0.05% against Chromium on the mono path
-    (investigations/folabel-measure.md §5). The ``katex-sans`` path is
-    advance-sum-exact for glyphs the SansSerif-Bold table covers and
-    heuristic (conservative) for the rest.
+    (investigations/folabel-measure.md §5). The single ``int(... + 0.5)``
+    rounds the composed line once: on the ``"scriba-sans"`` shipped path the
+    text advances are genuinely un-rounded floats (no per-segment double
+    rounding), whereas the ``"mono"`` face's ``estimate_text_width`` is already
+    int-quantized per segment, so those segments carry their own rounding
+    before the final one.
 
     ``text_face`` (opt-in, default ``"mono"``):
     - ``"mono"`` — text segments flow in the label mono font
       (``estimate_text_width`` ≈0.62 em/char, a +3% safe over of the
       measured 0.60 mono advance). The default keeps every non-pill caller
       (axis labels, captions, codepanel, graph, metricplot) byte-identical.
-    - ``"katex-sans"`` — text segments flow in the annotation pill's
-      KaTeX_SansSerif Bold face (``sans_text_width``); paired with the KaTeX
-      math run this is one family, no serif/mono clash
-      (spec-fix-annot-pill-font-clash).
+    - ``"scriba-sans"`` — text segments flow in the annotation pill's
+      "Scriba Sans" face (``measure_text_run``, the exact NFC-correct Inter
+      advance-sum cells use); paired with the KaTeX math run this is the
+      diagram's own text voice, full Vietnamese coverage, no serif/mono zebra
+      (spec-fix-annot-pill-face-scriba-sans).
     """
-    from scriba.animation.primitives._math_metrics import (
-        measure_inline_math,
-        sans_text_width,
-    )
+    from scriba.animation.primitives._math_metrics import measure_inline_math
     from scriba.animation.primitives._text_render import _INLINE_MATH_RE
 
-    _text_w = sans_text_width if text_face == "katex-sans" else estimate_text_width
+    _text_w = measure_text_run if text_face == "scriba-sans" else estimate_text_width
     if "$" not in line:
         return int(_text_w(line, font_px) + 0.5)
     total = 0.0

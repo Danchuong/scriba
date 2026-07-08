@@ -38,16 +38,12 @@ import re
 from functools import lru_cache
 from importlib.resources import files
 
-from scriba.animation.primitives._text_render import (
-    _char_display_width,
-    estimate_text_width,
-)
+from scriba.animation.primitives._text_render import estimate_text_width
 
 __all__ = [
     "is_linear_math",
     "math_tall_extra",
     "measure_inline_math",
-    "sans_text_width",
     "symbol_em",
 ]
 
@@ -232,36 +228,6 @@ def symbol_em(cp: int) -> float | None:
         if e is not None:
             return e[0]
     return None
-
-
-@lru_cache(maxsize=4096)
-def sans_text_width(text: str, font_px: int) -> float:
-    """Rendered px width of a plain-text run in the annotation pill's
-    KaTeX_SansSerif Bold face (the 600-weight pill text — spec
-    fix-annot-pill-font-clash). Mirrors the KaTeX advance-sum path, but the
-    pill's text nodes sit directly in ``.scriba-annot-label`` at the label
-    ``font-size`` — NOT inside the ``.katex`` 1.21em box — so the sum scales
-    by ``font_px`` alone (no ``_KATEX_BASE_EM`` factor, which applies only to
-    the math run's KaTeX spans).
-
-    Per-char advance sum over the baked ``SansSerif-Bold`` table. Codepoints
-    the table lacks (``·``, Vietnamese diacritics, arrows — which the woff2
-    also lacks, so the browser's CSS stack falls to ``ui-monospace``) take
-    the ``_char_display_width`` heuristic unit, approximating the mono
-    fallback the paint selects (ZWJ/combining clusters diverge from
-    ``estimate_text_width``'s cluster handling); conservative, never zero,
-    never a crash. If the whole table is missing, the run degrades to the
-    mono heuristic wholesale.
-    """
-    tables = _tables()
-    face = tables.get("SansSerif-Bold") if tables is not None else None
-    if not face:
-        return float(estimate_text_width(str(text), font_px))
-    total_em = 0.0
-    for ch in str(text):
-        e = face.get(ord(ch))
-        total_em += e[0] if e else _char_display_width(ch)
-    return total_em * font_px
 
 
 def _known_commands() -> set[str]:

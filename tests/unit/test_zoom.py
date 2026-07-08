@@ -241,9 +241,12 @@ def test_scriba_version_unchanged() -> None:
     # future-value prescan — shared-CSS delta only on the corpus), then
     # 26 -> 27 for sweep-3 wave 4 (Deque cursor wiring + the \\link label
     # halo — zero corpus re-bless), then 27 -> 28 for the sweep-3 addendum
-    # (math-clean SVG titles + the orphan aria-atomic drop). Zoom remains
+    # (math-clean SVG titles + the orphan aria-atomic drop), then 28 -> 29
+    # for the annotation text-face unification (pill/link/note labels paint
+    # and measure "Scriba Sans"; good/path weights 700 -> 600; shared
+    # stylesheet token + @font-face descriptor change). Zoom remains
     # byte-shape-neutral.
-    assert SCRIBA_VERSION == 28
+    assert SCRIBA_VERSION == 29
 
 
 def test_zoom_no_new_motion_kind() -> None:

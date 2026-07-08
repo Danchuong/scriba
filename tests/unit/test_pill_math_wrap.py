@@ -125,33 +125,38 @@ class TestMathPillEmission:
         assert svg.count("<tspan") >= 2  # still wrapped, raw $ shown as text
 
 
-class TestKatexSansTextFace:
-    """spec-fix-annot-pill-font-clash: pill labels measure their text runs in
-    KaTeX_SansSerif Bold so a mixed ``$math$ · text`` label pairs KaTeX math
-    with a KaTeX sans text run — one family, no serif/mono clash. The switch
-    is opt-in (``text_face``): the default mono path stays byte-identical for
-    every non-pill caller."""
+class TestScribaSansTextFace:
+    """spec-fix-annot-pill-face-scriba-sans: annotation pill/link/note labels
+    measure their text runs in the house "Scriba Sans" oracle (Inter subset,
+    full Vietnamese coverage) — the same face cells use — so a mixed
+    ``$math$ · text`` label pairs KaTeX math with the diagram's text voice, no
+    serif/mono zebra. The switch is opt-in (``text_face``): the default mono
+    path stays byte-identical for every non-pill caller."""
 
-    def test_mixed_label_width_is_sans_text_plus_katex_math(self) -> None:
-        from scriba.animation.primitives._math_metrics import (
-            measure_inline_math,
-            sans_text_width,
+    def test_mixed_label_width_is_scriba_sans_plus_katex_math(self) -> None:
+        from scriba.animation.primitives._math_metrics import measure_inline_math
+        from scriba.animation.primitives._text_metrics import (
+            measure_label_line,
+            measure_text_run,
         )
-        from scriba.animation.primitives._text_metrics import measure_label_line
 
         label = "$1 < 3$ · exit"
-        got = measure_label_line(label, 11, text_face="katex-sans")
-        # split mirrors _render_mixed_html: math "1 < 3", trailing text " · exit"
-        expected = measure_inline_math("1 < 3", 11) + sans_text_width(" · exit", 11)
+        got = measure_label_line(label, 11, text_face="scriba-sans")
+        # split mirrors _render_mixed_html: math "1 < 3", trailing text " · exit".
+        # Float math advance + float Inter run summed, then rounded ONCE at the
+        # line level (additive, no per-segment double rounding).
+        expected = measure_inline_math("1 < 3", 11) + measure_text_run(" · exit", 11)
         assert got == int(expected + 0.5)
 
-    def test_plain_text_label_uses_sans_table(self) -> None:
-        from scriba.animation.primitives._math_metrics import sans_text_width
-        from scriba.animation.primitives._text_metrics import measure_label_line
+    def test_plain_text_label_uses_scriba_sans_oracle(self) -> None:
+        from scriba.animation.primitives._text_metrics import (
+            measure_label_line,
+            measure_text_run,
+        )
 
         label = "1 < 3 · exit"
-        assert measure_label_line(label, 11, text_face="katex-sans") == int(
-            sans_text_width(label, 11) + 0.5
+        assert measure_label_line(label, 11, text_face="scriba-sans") == int(
+            measure_text_run(label, 11) + 0.5
         )
 
     def test_default_face_is_mono_and_byte_identical(self) -> None:
@@ -163,32 +168,152 @@ class TestKatexSansTextFace:
             "exit here", 11
         )
         assert measure_label_line("$1 < 3$ · exit", 11) != measure_label_line(
-            "$1 < 3$ · exit", 11, text_face="katex-sans"
+            "$1 < 3$ · exit", 11, text_face="scriba-sans"
         )
 
-    def test_sans_covered_glyphs_narrower_than_mono(self) -> None:
-        from scriba.animation.primitives._math_metrics import sans_text_width
-        from scriba.animation.primitives._text_render import estimate_text_width
+    def test_vietnamese_fully_covered_no_heuristic(self) -> None:
+        # "đã thăm": every glyph lives in the Inter subset, so the run measures
+        # by pure advance-sum — no symbol_em/heuristic fallback, no mono zebra.
+        import unicodedata
 
-        # KaTeX_SansSerif Bold advances beat the flat 0.62 em/char mono over
-        text = "exit here now"
-        assert sans_text_width(text, 11) < estimate_text_width(text, 11)
+        from scriba.animation.primitives._text_metrics import (
+            ShippedFontMeasurer,
+            get_measurer,
+        )
+
+        m = get_measurer()
+        assert isinstance(m, ShippedFontMeasurer), "Inter table not vendored"
+        for ch in unicodedata.normalize("NFC", "đã thăm"):
+            if ch == " ":
+                continue
+            assert ord(ch) in m._advances, (
+                f"{ch!r} outside Inter subset — would fall back and zebra"
+            )
+
+    def test_nfc_decomposed_equals_precomposed(self) -> None:
+        import unicodedata
+
+        from scriba.animation.primitives._text_metrics import (
+            measure_label_line,
+            measure_text_run,
+        )
+
+        pre = "đã thăm"
+        dec = unicodedata.normalize("NFD", pre)
+        assert dec != pre  # sanity: NFD really decomposes ã / ă
+        assert measure_text_run(dec, 11) == measure_text_run(pre, 11)
+        assert measure_label_line(
+            dec, 11, text_face="scriba-sans"
+        ) == measure_label_line(pre, 11, text_face="scriba-sans")
 
     def test_uncovered_glyph_fallback_never_zero(self) -> None:
-        from scriba.animation.primitives._math_metrics import sans_text_width
+        from scriba.animation.primitives._text_metrics import measure_text_run
 
-        # '·' and Vietnamese diacritics are absent from SansSerif-Bold — the
-        # per-char heuristic fallback keeps width > 0 (never clips, over-ok)
-        for uncovered in ("·", "ế", "→"):
-            assert sans_text_width(uncovered, 11) > 0.0
+        # math ops (→ ≤) live in KaTeX's tables (symbol_em); CJK falls to the
+        # display-width heuristic — both stay > 0 (never clip, over-ok)
+        for uncovered in ("→", "≤", "中"):
+            assert measure_text_run(uncovered, 11) > 0.0
 
-    def test_sans_pill_covers_painted_sans_text(self) -> None:
-        # the mixed-label pill (math_rendered=True) is at least as wide as the
-        # KaTeX sans text run it paints — pill >= painted, never clips
-        from scriba.animation.primitives._math_metrics import sans_text_width
+    def test_scriba_sans_pill_covers_painted_text(self) -> None:
+        # the mixed-label pill (math_rendered=True measures scriba-sans) must be
+        # at least as wide as the WHOLE thing it paints: the KaTeX math box plus
+        # the full scriba-sans text run plus both pill pads. int() single-rounds
+        # the summed advance, so allow its ≤0.5px slack — still far tighter than
+        # the trivially-true text-run-only bound.
+        from scriba.animation.primitives._math_metrics import measure_inline_math
+        from scriba.animation.primitives._svg_helpers import _LABEL_PILL_PAD_X
+        from scriba.animation.primitives._text_metrics import measure_text_run
 
         lines, _, pill_w, _ = pill_dimensions("$1 < 3$ · exit", 11)
-        assert pill_w >= int(sans_text_width(" · exit", 11) + 0.5)
+        assert lines == ["$1 < 3$ · exit"]  # single line → bound below is exact
+        painted = measure_inline_math("1 < 3", 11) + measure_text_run(" · exit", 11)
+        assert pill_w >= painted + 2 * _LABEL_PILL_PAD_X - 0.5
+
+    def test_all_arrow_kinds_weight_clamped_synthesis_free(self) -> None:
+        # A1: good/path drop 700 -> 600 so the static 400 master renders without
+        # faux-bold synthesis (advances == baked table == exact measurement).
+        # P6a: the ≤600 invariant must hold for EVERY kind, not just good/path —
+        # any 700 would synthesize a heavier face whose advances exceed the baked
+        # table → under-measure → clipped labels. (CSS font-synthesis:none is the
+        # paint-side fail-safe; this asserts the source-side invariant.)
+        from scriba.animation.primitives._svg_helpers import ARROW_STYLES
+
+        assert ARROW_STYLES  # guard: an empty dict would vacuously "pass"
+        for kind, style in ARROW_STYLES.items():
+            assert int(style["label_weight"]) <= 600, kind
+
+    def test_middot_measured_via_inter_table(self) -> None:
+        # P6b: · (U+00B7) IS in the Inter subset, so the run measures it by
+        # advance-sum — no symbol_em/heuristic fallback — and stays > 0.
+        from scriba.animation.primitives._text_metrics import (
+            ShippedFontMeasurer,
+            get_measurer,
+            measure_text_run,
+        )
+
+        m = get_measurer()
+        assert isinstance(m, ShippedFontMeasurer), "Inter table not vendored"
+        assert ord("·") in m._advances  # table hit, not a symbol_em/heuristic miss
+        assert measure_text_run("·", 11) > 0.0
+
+    def test_missing_glyph_conservative_floor(self) -> None:
+        # P3: a math/relation glyph absent from the Inter table (Sm/So) is
+        # PAINTED by the CSS tail's system UI sans (~0.9em), wider than KaTeX's
+        # symbol advance. measure_text_run (the annotation entry) opts into the
+        # conservative floor so the pill never clips; the cell oracle
+        # (measure_text, conservative_symbols=False) stays byte-identical.
+        from scriba.animation.primitives._text_metrics import (
+            get_measurer,
+            measure_text,
+            measure_text_run,
+        )
+
+        m = get_measurer()
+        fp = 11
+        for ch in ("≮", "→"):  # both Sm, both absent from the Inter subset
+            w = measure_text_run(ch, fp)
+            assert w >= 0.9 * fp - 1e-9, (ch, w)  # floored to the UI-sans em
+            assert w > 0.0  # never zero
+        # ≮ (KaTeX 0.778em) is raised by the 0.9em floor; the cell path is NOT.
+        raw = m.measure_run("≮", fp, conservative_symbols=False)
+        assert measure_text_run("≮", fp) > raw
+        assert measure_text("≮", fp) == int(raw + 0.5)  # cells unchanged
+
+    def test_caps_heavy_label_packs_with_sans_ruler(self) -> None:
+        # P2: pill packing must use the SAME ruler the final width is measured
+        # against. A caps-heavy label packs one line under the mono ruler (≤132)
+        # but paints far wider in scriba-sans (>132); before the fix that
+        # over-wide single line spilled the pill past its budget.
+        from scriba.animation.primitives._svg_helpers import (
+            _LABEL_PILL_MAX_W_PX,
+            _LABEL_PILL_PAD_X,
+            _wrap_label_lines,
+        )
+        from scriba.animation.primitives._text_metrics import measure_label_line
+
+        label = "WORKING WM MEMO WWW"
+        # fixture validity: mono ruler keeps it one line, sans ruler cannot
+        assert (
+            len(
+                _wrap_label_lines(
+                    label, max_px=132, font_px=11, math_rendered=True,
+                    text_face="mono",
+                )
+            )
+            == 1
+        )
+        assert measure_label_line(label, 11, text_face="scriba-sans") > 132
+
+        # the fix: pill_dimensions packs in the scriba-sans face it measures
+        lines, _, pill_w, _ = pill_dimensions(
+            label, 11, wrap_px=132, math_rendered=True
+        )
+        assert len(lines) >= 2
+        assert (
+            max(measure_label_line(ln, 11, text_face="scriba-sans") for ln in lines)
+            <= 132
+        )
+        assert pill_w <= _LABEL_PILL_MAX_W_PX + 2 * _LABEL_PILL_PAD_X
 
 
 class TestNoCallbackPillSizing:
