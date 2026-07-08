@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.34.0] - 2026-07-08 — Annotation labels adopt the house text oracle
+
+JudgeZone report #8 (mixed math+text pill fonts), fixed in two stages within
+this release and BMAD-reviewed by two 3-agent adversarial rounds. All ~107
+annotation-bearing goldens re-bless (pill geometry + shared CSS); non-annotation
+SVG surfaces proven byte-identical old-vs-new. `SCRIBA_VERSION` 28 → 29.
+
+### Fixed
+
+- **Annotation pills no longer mix typefaces.** `\annotate`/`\link`/`\note`
+  label text runs paint **"Scriba Sans"** (the shipped Inter subset cells,
+  values and equations already use) beside unchanged KaTeX math runs — a
+  `"$1 < 3$ · exit"` pill is one visual family. An interim KaTeX_SansSerif
+  stage was superseded in-release after i18n review: KaTeX's sans covers 0/90
+  Vietnamese codepoints and zebra-striped diacritic words (`"đã thăm"`) with
+  per-glyph mono fallback.
+- **One width oracle.** Text runs are measured by the exact Inter advance
+  table via the new float `measure_text_run` (NFC-normalizing — decomposed
+  Vietnamese input now measures identically to precomposed), summed per line
+  with the KaTeX math advance path and rounded once. The parallel
+  `sans_text_width` oracle is deleted; the deferred note math-branch
+  measure/paint mismatch resolves by alignment (its base measurer is now
+  literally the painted face).
+- **Wrap ruler matches the painted face.** `_wrap_label_lines` packs pill
+  lines with the face that paints them — caps-heavy labels wrap instead of
+  overflowing the 132px pill budget (review round, P2).
+- **Truncated-note width.** The E1126 ellipsis recompute measures the painted
+  face (was mono; up to ~21px clip on caps-heavy notes — review round, P1).
+
+### Changed
+
+- `--scriba-annotation-font`: `600 11px "Scriba Sans", -apple-system,
+  BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif` (was `ui-monospace`
+  before this release). `good`/`path` pill labels weight 700 → 600 — the
+  static Inter master is synthesis-free ≤600, so painted advances equal the
+  baked table exactly; the annotation rules pin `font-synthesis: none`.
+- `@font-face "Scriba Sans"` descriptor normalized `400 500 600` → `400 600`
+  (a range takes two values; 500 stays in range).
+- Raw math symbols in TEXT runs (`→`, `≤`, `≮` outside `$...$`) measure with
+  a conservative 0.9em floor (never clip); `$...$` remains the exact KaTeX
+  path. Follow-up deferred: bake the arrows/math-ops blocks into the Inter
+  subset so these paint and measure the house face too.
+
 ## [0.33.0] - 2026-07-07 — Sweep-3 addendum: math-clean titles, a11y polish
 
 Two LOW findings from the independent cross-validation pass (attributed

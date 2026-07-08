@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.33.0 · MIT · Python 3.10+
+**Status:** v0.34.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,24 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.34.0 — annotation labels adopt the house text oracle
+
+**Annotation pills speak one typeface** (JudgeZone report #8). An
+`\annotate`/`\link`/`\note` label mixing inline math and text used to pair
+KaTeX serif math with `ui-monospace` bold text inside one small pill; text
+runs now paint **"Scriba Sans"** — the shipped Inter subset cells, values and
+equations already use, with **full Vietnamese coverage** — and are measured by
+the same exact advance table (float sum, NFC-correct: decomposed input
+measures identically to precomposed). `good`/`path` labels clamp 700 → 600 so
+the static master stays synthesis-free (measured == painted, pinned by
+`font-synthesis: none`), the wrap ruler packs with the painted face, and raw
+math symbols outside `$...$` take a conservative floor. Reviewed by two
+3-agent adversarial rounds; non-annotation surfaces proven byte-identical.
+~107 goldens re-bless (`SCRIBA_VERSION` 29).
+
+<details>
+<summary>v0.33.0 changelog</summary>
+
 ## What's new in v0.33.0 — sweep-3 addendum
 
 **Two accessibility/text polish fixes from the independent cross-validation
@@ -35,6 +53,8 @@ fallback used to concatenate each KaTeX island's raw TeX with its visual text
 (40 corpus docs clean up). And the step counter drops an **orphan
 `aria-atomic`** that had no `aria-live` to act on. 93 goldens re-bless by one
 attribute (+ the title cleanups); `SCRIBA_VERSION` 28.
+
+</details>
 
 <details>
 <summary>v0.32.0 changelog</summary>
