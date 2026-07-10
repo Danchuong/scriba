@@ -1027,19 +1027,38 @@ SC 1.3.1 and improves AT experience with minimal implementation cost (XS).
 **Since:** v0.11.0 (2026-04-22)
 **Supersedes:** a11y A11Y-03
 **Source:** a11y A11Y-03
-**Scope:** `_html_stitcher.py` (SVG root emission)
+**Scope:** `scriba/animation/_frame_renderer.py:_emit_frame_svg` (single shared title
+           builder called from every `_html_stitcher.py` emission mode: `emit_diagram_html`,
+           `emit_animation_html`, `emit_interactive_html`, `emit_substory_html`)
 
-Each `<svg>` root MUST have a `<title>` element as its first child. The `<title>` content
-MUST describe the animation frame in natural language. This is required for reliable
-`aria-labelledby` cross-document referencing.
+When natural-language content exists for a frame — an explicit `\step[title="..."]`
+(§5.3), an env/diagram `label=`, or narration text, checked in that priority order —
+the `<svg>` root MUST have a `<title>` element as its first child, sourced from that
+content. This is required for reliable `aria-labelledby` cross-document referencing.
+
+When NO natural-language content exists, the `<title>` element MUST be omitted
+entirely. It MUST NOT fall back to the internal `scene_id` (or any other
+system-generated slug) as a synthetic accessible name (JudgeZone #10): a slug meant
+for DOM/CSS wiring is not prose, and screen readers speak it letter-by-letter or as
+meaningless phonemes — an active WCAG SC 1.1.1 violation the old scene_id fallback
+caused.
 
 **Rationale:** Without `<title>`, the SVG root's accessible name depends on `aria-labelledby`
 pointing to an element in the outer HTML document, which is fragile across DOM manipulation
 and cross-origin embedding. A `<title>` as first child is the robust, standards-mandated
-pattern (SVG 2 §5.1). XS cost: one element added per frame.
+pattern (SVG 2 §5.1). XS cost: one element added per frame. Omitting `<title>` when no
+natural language exists is strictly better than a `scene_id` fallback: SVG 2 §5.1's
+accessible-name computation still falls through to `aria-labelledby`/ancestor context (or
+no name at all), whereas a slug-as-name is misinformation, not absence of information.
 
-**Code ref:** `scriba/animation/_frame_renderer.py:423` (`<title>` first child injection in `_emit_frame_svg`)
-**Test ref:** `tests/unit/test_filmstrip_aria.py::test_frames_with_label_uses_frame_label`
+**Code ref:** `scriba/animation/_frame_renderer.py:1856` (title-source selection —
+explicit `title=` then stripped narration — in `_emit_frame_svg`); line 1911
+(conditional `<title>` emission, omitted when no natural-language content resolved)
+**Test ref:** `tests/unit/test_filmstrip_aria.py::test_frame_with_title_uses_it_as_svg_title`,
+`::test_frame_without_title_or_narration_omits_svg_title` (SVG `<title>` content and
+omission); `tests/conformance/test_r15_accessible_name_policy.py` (corpus-wide: no
+`<title>` or `role="img"`/`"region"` `aria-label` ever equals an internal
+`data-scriba-scene`/widget id)
 **Golden ref:** none
 
 ---

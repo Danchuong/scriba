@@ -244,9 +244,12 @@ def test_scriba_version_unchanged() -> None:
     # (math-clean SVG titles + the orphan aria-atomic drop), then 28 -> 29
     # for the annotation text-face unification (pill/link/note labels paint
     # and measure "Scriba Sans"; good/path weights 700 -> 600; shared
-    # stylesheet token + @font-face descriptor change). Zoom remains
-    # byte-shape-neutral.
-    assert SCRIBA_VERSION == 29
+    # stylesheet token + @font-face descriptor change), then 29 -> 30 for
+    # the JudgeZone #9-#14 structural closure (accessible-name <title>
+    # policy, dark theme-attr contract + new CSS, label one-interpretation
+    # widths/aria, below-band caret reservation, interp shape-gate). Zoom
+    # remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 30
 
 
 def test_zoom_no_new_motion_kind() -> None:

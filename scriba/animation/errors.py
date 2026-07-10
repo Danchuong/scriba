@@ -151,11 +151,19 @@ ERROR_CATALOG: dict[str, str] = {
     # reserved: diagram mode (not production-ready; raised only via lexer E1003
     # / parser E1050-E1056 once diagram mode ships. Catalog documents the
     # contract ahead of time so downstream tooling stays stable.)
-    "E1050": "\\step is not allowed inside a diagram environment.",
+    "E1050": (
+        "\\step is not allowed inside a diagram environment. Fix: use "
+        "\\begin{animation} if you need multiple steps; for a diagram's "
+        "accessible name, use label= on \\begin{diagram} instead."
+    ),
     "E1051": "\\shape must appear before the first \\step.",
     "E1052": "Trailing text after \\step on the same line.",
     "E1053": "\\highlight is not allowed in the prelude (before any \\step).",
-    "E1054": "\\narrate is not allowed inside a diagram environment.",
+    "E1054": (
+        "\\narrate is not allowed inside a diagram environment. Fix: "
+        "diagrams have no narration; use label= on \\begin{diagram} for "
+        "a natural-language accessible name instead."
+    ),
     "E1055": "Duplicate \\narrate in the same step.",
     "E1056": "\\narrate must be inside a \\step block.",
     "E1057": (
@@ -285,7 +293,7 @@ ERROR_CATALOG: dict[str, str] = {
         "the KaTeX worker). The detail message carries the underlying "
         "error title."
     ),
-    # --- Starlark sandbox errors (E1150 -- E1179) ---
+    # --- Starlark sandbox errors (E1150 -- E1161) ---
     "E1150": "Starlark parse/syntax error.",
     "E1151": "Starlark runtime evaluation failure.",
     "E1152": "Starlark evaluation timed out.",
@@ -296,6 +304,12 @@ ERROR_CATALOG: dict[str, str] = {
     "E1159": (
         "Interpolation references an unknown \\compute binding in a selector "
         "index outside \\foreach (e.g. a.cell[${name}] where 'name' is unbound)."
+    ),
+    # E1160 is reserved (earmarked for a separate, not-yet-implemented lint).
+    "E1161": (
+        "${...} content in a structured value (e.g. value=${...}) is not "
+        "identifier-shaped -- it is not a \\compute binding reference at all "
+        "(e.g. value=${5 \\choose 3} is math, not interpolation syntax)."
     ),
     # --- Foreach errors (E1170 -- E1179) ---
     "E1170": "\\foreach nesting depth exceeds maximum (3).",
@@ -853,7 +867,7 @@ class FrameCountError(RendererError):
 
 
 # ---------------------------------------------------------------------------
-# Starlark errors (E1150 -- E1179)
+# Starlark errors (E1150 -- E1161)
 # ---------------------------------------------------------------------------
 
 

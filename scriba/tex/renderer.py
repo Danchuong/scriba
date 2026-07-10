@@ -69,6 +69,25 @@ _KATEX_COLOR_FALLBACK_RE = re.compile(
     re.IGNORECASE,
 )
 
+# wave-2 theme-attr sweep: the fallback span above carries no class (pure
+# inline style), so no CSS selector can reach it. #cc0000 on
+# --scriba-bg-code (#1a1d1e) is 2.88:1 — below WCAG AA's 4.5:1. strict_math
+# defaults to False, so this is the default lenient-math-error path, not an
+# opt-in edge case. var() self-theming (this file's third established fix
+# pattern) swaps the literal for the same --scriba-error token .katex-error
+# already uses in scriba-tex-content.css.
+_KATEX_COLOR_FALLBACK_SUB_RE = re.compile(
+    r'(style="[^"]*?color\s*:\s*)#cc0000\b',
+    re.IGNORECASE,
+)
+
+
+def _theme_katex_color_fallback(html: str) -> str:
+    """Swap KaTeX's hardcoded ``color:#cc0000`` unknown-command fallback for
+    ``var(--scriba-error)`` so it follows the theme instead of going
+    low-contrast on dark backgrounds."""
+    return _KATEX_COLOR_FALLBACK_SUB_RE.sub(r"\1var(--scriba-error)", html)
+
 
 def _scan_katex_errors(html: str, ctx: RenderContext | None) -> None:
     """Surface every ``<span class="katex-error">`` in *html* via the
@@ -386,6 +405,36 @@ class TexRenderer:
 
     # ----- private API -----
 
+    # Identifier fragment for the interpolation shape gate below: a
+    # Unicode-aware ident (letter/underscore start, then word chars or
+    # combining marks) -- duplicated from
+    # ``scriba.animation.parser.lexer._IDENT_RE`` rather than imported,
+    # since ``scriba.tex`` must not depend on ``scriba.animation``.
+    # Keeping the same character ranges means a combining-mark identifier
+    # (e.g. a Thai \\compute binding name) is recognised here exactly as
+    # it is everywhere else in the pipeline.
+    _INTERP_IDENT = (
+        r"[^\W\d](?:\w|[\u0300-\u036f\u0483-\u0489\u0591-\u05bd\u0610-\u061a"
+        r"\u064b-\u065f\u0670\u06d6-\u06dc\u06df-\u06e4\u0900-\u0903"
+        r"\u093a-\u094f\u0951-\u0957\u0962\u0963\u0981-\u0983\u0e31"
+        r"\u0e34-\u0e3a\u0e47-\u0e4e\u0eb1\u0eb4-\u0ebc\u0ec8-\u0ecd"
+        r"\u102b-\u103e\u1056-\u1059\u17b4-\u17d3\u1a55-\u1a7f\u1dc0-\u1dff"
+        r"\u20d0-\u20f0\ufe20-\ufe2f])*"
+    )
+    # ``${...}`` is interpolation syntax IFF its brace content is
+    # identifier-shaped, optionally followed by ``[index]``/``.attr``
+    # tails -- the same shape ``selectors.py::_expect_ident`` enforces at
+    # selector positions. Anything else (e.g. the math body of
+    # ``${5 \choose 3}$``) is not interpolation syntax at all and must be
+    # left for normal ``$...$`` pairing (judgezone-11).
+    _INTERP_SHAPE_RE = re.compile(
+        r"^\{"
+        + _INTERP_IDENT
+        + r"(?:\[[^\]]*\]|\."
+        + _INTERP_IDENT
+        + r")*\}$"
+    )
+
     def _render_cell(self, raw: str) -> str:
         """Render raw TeX from inside a tabular cell to safe HTML.
 
@@ -430,11 +479,20 @@ class TexRenderer:
         # ``${name}`` is interpolation syntax (resolved earlier against
         # \compute bindings); an *unresolved* one left in the text must not be
         # mis-read as ``$...$`` math when a stray ``$`` follows it.
-        text = re.sub(
-            r"\$\{[^}]*\}",
-            lambda m: _stash(_html.escape(m.group(0), quote=False)),
-            raw,
-        )
+        #
+        # Only shield content that is actually identifier(+subscript/attr)-
+        # shaped (see _INTERP_SHAPE_RE above). Anything else -- e.g. the
+        # math body of ``${5 \choose 3}$`` -- is not interpolation syntax at
+        # all; shielding it anyway would consume only the ``${`` opener's
+        # dollar sign (not the closing dollar the author wrote), leaving an
+        # odd dollar count that mis-pairs every subsequent $...$ on the line
+        # (judgezone-11). Falling through lets it pair normally below.
+        def _shield_sub(m: re.Match[str]) -> str:
+            if not self._INTERP_SHAPE_RE.match(m.group(0)[1:]):
+                return m.group(0)
+            return _stash(_html.escape(m.group(0), quote=False))
+
+        text = re.sub(r"\$\{[^}]*\}", _shield_sub, raw)
         text = re.sub(r"\$\$([\s\S]*?)\$\$", _display_math_sub, text)
         text = re.sub(r"\$([^\$]+?)\$", _math_sub, text)
 
@@ -626,6 +684,10 @@ class TexRenderer:
             # SF KaTeX scan (RFC-002): surface any inline error spans
             # KaTeX produced to Document.warnings via ctx.
             _scan_katex_errors(text, ctx)
+
+            # wave-2 theme-attr sweep: neutralize the hardcoded fallback red
+            # (see _theme_katex_color_fallback).
+            text = _theme_katex_color_fallback(text)
 
         # 9. Restore inline placeholders. Block placeholders stay as opaque
         #    sentinels so the paragraph wrapper does not try to peek inside

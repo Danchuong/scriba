@@ -523,8 +523,11 @@ This test verifies the fix for audit finding 6.1 (cache key collision bug).
 
 ```latex
 \begin{animation}[id=stable-fallback, label="Large graph stable-layout fallback"]
+\compute{
+  nodes = list(range(25))
+}
 \shape{large_g}{Graph}{
-  nodes=${range(25)},
+  nodes=${nodes},
   edges=[],
   layout="stable"
 }

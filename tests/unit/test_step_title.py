@@ -123,3 +123,25 @@ class TestStepTitleRender:
         html_out = self._render(source, tmp_path)
         # The CSS selector is always inlined; assert the *element* is absent.
         assert 'class="scriba-step-title"' not in html_out
+
+    def test_no_narration_no_title_omits_svg_title(self, tmp_path: Path) -> None:
+        """JudgeZone #10, Finding 4: a step with neither \\narrate nor
+        \\step[title=...] has no natural-language content to name the SVG
+        (no validator enforces either being present). Per the
+        accessible-name policy, <title> must be omitted -- it must never
+        fall back to the internal id="d" slug."""
+        source = (
+            '\\begin{animation}[id="d"]\n'
+            "\\shape{a}{Array}{size=2, data=[1,2]}\n"
+            "\\step\n"
+            "\\highlight{a.cell[0]}\n"
+            "\\end{animation}\n"
+        )
+        html_out = self._render(source, tmp_path)
+        # This test renders through the full HTML-document pipeline, which
+        # always emits one document-level <title>Scriba — ...</title> (see
+        # render.py's HTML_TEMPLATE) -- unrelated to the SVG's own <title>.
+        # Assert that's the *only* one (no SVG-level <title> got added), and
+        # that the scene id never leaks in as a fake accessible name.
+        assert html_out.count("<title>") == 1
+        assert "<title>d</title>" not in html_out

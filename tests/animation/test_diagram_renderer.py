@@ -128,6 +128,11 @@ class TestRenderStaticFigure:
         assert "scriba-controls" not in artifact.html
         assert "scriba-narration" not in artifact.html
 
+        # JudgeZone #10: no label= means no natural-language content
+        # exists to name the SVG -- <title> must be omitted, never filled
+        # with the internal id= (R-15 accessible-name policy).
+        assert "<title>" not in artifact.html
+
     def test_no_js_assets(
         self, renderer: DiagramRenderer, ctx: RenderContext
     ) -> None:

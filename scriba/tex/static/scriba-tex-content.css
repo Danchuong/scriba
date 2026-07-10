@@ -1,7 +1,9 @@
 /* Scriba TeX Content Styles
  * Scoped under .scriba-tex-content
  * Uses --scriba-* CSS variables — see :root block below for defaults.
- * Dark mode via [data-theme="dark"] ancestor selector.
+ * Dark mode via [data-theme="dark"] ancestor selector, or automatically
+ * via @media (prefers-color-scheme: dark) when the host page never sets
+ * data-theme (wave-2 theme-attr sweep; H6 fix pattern, see scriba-embed.css).
  */
 
 /* ============================================
@@ -78,6 +80,36 @@
   --scriba-copy-btn-fg-hover: #70b8ff;
   --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
   --scriba-copy-btn-fg-copied: #65ba74;
+}
+
+/* OS-level dark mode preference (overridden by explicit data-theme="light").
+   wave-2 theme-attr sweep: scriba-tex-content.css can ship standalone into a
+   host page that never sets data-theme (see TexRenderer.assets() / examples/
+   integration/minimal.py) — without this twin, OS dark preference was
+   silently ignored until a runtime theme-toggle click set the attribute.
+   Duplicates the token overrides above 1:1, mirroring scriba-embed.css's
+   H6 fix. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --scriba-fg: #ecedee;
+    --scriba-fg-muted: #9ba1a6;
+    --scriba-bg: #151718;
+    --scriba-bg-code: #1a1d1e;
+    --scriba-bg-inline-code: rgba(236, 237, 238, 0.08);
+    --scriba-border: #313538;
+    --scriba-border-strong: #6e767d;
+    --scriba-link: #70b8ff;
+    --scriba-link-hover: #a2ceff;
+    --scriba-error: #ff6369;
+    --scriba-error-bg: rgba(229, 72, 77, 0.15);
+    --scriba-epigraph-border: #9ba1a6;
+    --scriba-copy-btn-bg: #202425;
+    --scriba-copy-btn-fg: #ecedee;
+    --scriba-copy-btn-bg-hover: #2b2f31;
+    --scriba-copy-btn-fg-hover: #70b8ff;
+    --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
+    --scriba-copy-btn-fg-copied: #65ba74;
+  }
 }
 
 /* ============================================
@@ -161,6 +193,21 @@
 [data-theme="dark"] .katex .minner,
 [data-theme="dark"] .katex .mpunct {
   color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .katex {
+    color: var(--scriba-fg);
+  }
+
+  :root:not([data-theme="light"]) .katex .mord,
+  :root:not([data-theme="light"]) .katex .mop,
+  :root:not([data-theme="light"]) .katex .mrel,
+  :root:not([data-theme="light"]) .katex .mbin,
+  :root:not([data-theme="light"]) .katex .minner,
+  :root:not([data-theme="light"]) .katex .mpunct {
+    color: inherit;
+  }
 }
 
 /* Scriba math wrappers */

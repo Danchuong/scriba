@@ -1,5 +1,8 @@
 /* Scriba Pygments theme — One Dark
- * Scoped under [data-theme="dark"] .scriba-tex-content .highlight
+ * Scoped under [data-theme="dark"] .scriba-tex-content .highlight, and its
+ * @media (prefers-color-scheme: dark) twin at the bottom of this file
+ * (wave-2 theme-attr sweep; H6 fix pattern, see scriba-embed.css) so OS
+ * dark preference applies before any explicit data-theme is set.
  * Uses Pygments `.tok-*` token class names.
  */
 
@@ -113,4 +116,124 @@
 [data-theme="dark"] .scriba-tex-content .highlight .tok-err {
   color: var(--scriba-error);
   background: var(--scriba-error-bg);
+}
+
+/* OS-level dark mode preference (overridden by explicit data-theme="light").
+   wave-2 theme-attr sweep: this file was entirely [data-theme="dark"]-guarded
+   with no twin, so a host page that never sets data-theme (see
+   TexRenderer.assets() / examples/integration/minimal.py) silently ignored
+   OS dark preference until a runtime theme-toggle click set the attribute.
+   Duplicates every rule above 1:1, mirroring scriba-embed.css's H6 fix. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight {
+    background: var(--scriba-bg-code);
+    color: #abb2bf;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight pre {
+    background: transparent;
+    color: inherit;
+  }
+
+  /* Keywords */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-k,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kd,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kn,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kp,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kr,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kt {
+    color: #c678dd;
+  }
+
+  /* Names */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-n,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-na,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nx {
+    color: #abb2bf;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-fm,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nd {
+    color: #61afef;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ne {
+    color: #e5c07b;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-no {
+    color: #d19a66;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nv {
+    color: #e06c75;
+  }
+
+  /* Strings */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sa,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-dl,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sd,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s1,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s2,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sh,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-si,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sx,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sr,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ss {
+    color: #98c379;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-se {
+    color: #56b6c2;
+  }
+
+  /* Numbers */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-m,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mh,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mi,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mo,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-l {
+    color: #d19a66;
+  }
+
+  /* Comments */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-c,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ch,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cm,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cpf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-c1,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cs {
+    color: #5c6370;
+    font-style: italic;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cp {
+    color: #c678dd;
+    font-style: normal;
+  }
+
+  /* Operators, punctuation */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-o,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ow {
+    color: #56b6c2;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-p {
+    color: #abb2bf;
+  }
+
+  /* Errors */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-err {
+    color: var(--scriba-error);
+    background: var(--scriba-error-bg);
+  }
 }

@@ -30,11 +30,11 @@
 
 | Code | Description | Common Fix |
 |------|-------------|------------|
-| E1050 | `\step` is not allowed inside a diagram environment. | Use `\begin{animation}` if you need steps. |
+| E1050 | `\step` is not allowed inside a diagram environment. | Use `\begin{animation}` if you need steps; if you only wanted to name/describe the diagram, use `label=` on `\begin{diagram}` instead (reaches the SVG `<title>`, R-15). |
 | E1051 | `\shape` must appear before the first `\step`. | Move shape declarations to the prelude. |
 | E1052 | Trailing text after `\step` on the same line. | Put `\step` on its own line. |
 | E1053 | `\highlight` or `\focus` is not allowed in the prelude. | Move it into a `\step` block. |
-| E1054 | `\narrate` is not allowed inside a diagram environment. | Remove `\narrate`; diagrams have no narration. |
+| E1054 | `\narrate` is not allowed inside a diagram environment. | Diagrams have no narration; use `label=` on `\begin{diagram}` instead for a natural-language accessible name (reaches the SVG `<title>`, R-15). |
 | E1055 | Duplicate `\narrate` in the same step. | Keep only one `\narrate` per step. |
 | E1056 | `\narrate` must be inside a `\step` block. | Move `\narrate` after a `\step`. |
 | E1057 | Mutation command (`\highlight`, `\focus`, `\apply`, or `\recolor`) appears in a substory prelude (before the substory's first `\step`). | Move the command after the first `\step` inside the substory. |
@@ -86,6 +86,7 @@
 | E1155 | Starlark memory limit exceeded (64 MB). | Reduce data size or avoid large intermediate structures. |
 | E1156 | `eval_raw` has been removed. Use `\compute{...}` blocks instead. | Replace any `eval_raw` calls with a `\compute{...}` block. |
 | E1159 | Selector index `${...}` unknown binding, or resolved to a whole container. | Bind it in `\compute` first; subscript containers, e.g. `${rows[k]}`. |
+| E1161 | `${...}` in a structured value (e.g. `value=${...}`) is not identifier-shaped — it is not a `\compute` binding reference at all (e.g. math like `${5 \choose 3}`). | Use a plain binding name or `name[sub]` subscript; precompute math/arithmetic into a `\compute` binding first. |
 
 ## Foreach Errors (E1170--E1173)
 

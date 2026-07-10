@@ -229,6 +229,29 @@ class TestScribaSansTextFace:
         painted = measure_inline_math("1 < 3", 11) + measure_text_run(" · exit", 11)
         assert pill_w >= painted + 2 * _LABEL_PILL_PAD_X - 0.5
 
+    def test_scriba_sans_pill_covers_painted_text_multiline(self) -> None:
+        # JZ-13 defect #1: the tspan paint branch (_emit_pill_label_text)
+        # keeps a trailing space on every non-final line
+        # (`trail = "" if li == num_lines - 1 else " "`) but pill_dimensions
+        # never measured it — the pill under-reserved by one space's width
+        # on every wrapped line. A math_rendered=True label with NO $...$ at
+        # all still paints via tspan (no math -> no foreignObject), so a
+        # plain multi-line label is the exact under-reserve case.
+        from scriba.animation.primitives._svg_helpers import _LABEL_PILL_PAD_X
+        from scriba.animation.primitives._text_metrics import measure_text_run
+
+        label = "một nhãn thuần văn bản đủ dài để phải xuống dòng nhiều lần"
+        lines, _, pill_w, _ = pill_dimensions(
+            label, 11, wrap_px=132, math_rendered=True
+        )
+        assert len(lines) >= 2
+        num_lines = len(lines)
+        for li, ln in enumerate(lines):
+            painted = measure_text_run(ln, 11)
+            if li < num_lines - 1:
+                painted += measure_text_run(" ", 11)
+            assert pill_w >= painted + 2 * _LABEL_PILL_PAD_X - 0.5, (li, ln)
+
     def test_all_arrow_kinds_weight_clamped_synthesis_free(self) -> None:
         # A1: good/path drop 700 -> 600 so the static 400 master renders without
         # faux-bold synthesis (advances == baked table == exact measurement).
@@ -353,3 +376,25 @@ class TestNoCallbackPillSizing:
         painted = estimate_text_width(strip_math_markup("$dp_{i}$"), 11)
         assert pill_w >= painted, (pill_w, painted)
         assert "$" not in re.sub(r"aria-[a-z]+=\"[^\"]*\"", "", svg)
+
+    def test_no_callback_multiline_pill_covers_painted_text(self) -> None:
+        # same under-reserve bug (defect #1), no-callback path: tspan is
+        # ALWAYS the paint branch here, so EVERY wrapped label needs the
+        # trailing-space reservation, not just the math-free subset.
+        from scriba.animation.primitives._svg_helpers import _LABEL_PILL_PAD_X
+        from scriba.animation.primitives._text_render import (
+            estimate_text_width,
+            strip_math_markup,
+        )
+
+        label = "một nhãn thuần văn bản đủ dài để phải xuống dòng nhiều lần"
+        lines, _, pill_w, _ = pill_dimensions(
+            label, 11, wrap_px=132, math_rendered=False
+        )
+        assert len(lines) >= 2
+        num_lines = len(lines)
+        for li, ln in enumerate(lines):
+            painted = estimate_text_width(strip_math_markup(ln), 11)
+            if li < num_lines - 1:
+                painted += estimate_text_width(" ", 11)
+            assert pill_w >= painted + 2 * _LABEL_PILL_PAD_X, (li, ln)

@@ -895,7 +895,7 @@
 [data-theme="dark"] .scriba-annotation-muted > polygon { fill: #9ba1a6; }
 /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
 [data-theme="dark"] .scriba-annotation-path  > polygon { fill: #a78bfa; }
-[data-theme="dark"] .scriba-annotation        > rect    { fill: #1a1d1e; }
+[data-theme="dark"] .scriba-annotation > rect[fill="white"] { fill: #1a1d1e; }
 
 /* -- OS preference dark-mode overrides (H6) -------------------------------- */
 @media (prefers-color-scheme: dark) {
@@ -906,7 +906,7 @@
   :root:not([data-theme="light"]) .scriba-annotation-muted > polygon { fill: #9ba1a6; }
   /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
   :root:not([data-theme="light"]) .scriba-annotation-path  > polygon { fill: #a78bfa; }
-  :root:not([data-theme="light"]) .scriba-annotation        > rect    { fill: #1a1d1e; }
+  :root:not([data-theme="light"]) .scriba-annotation > rect[fill="white"] { fill: #1a1d1e; }
 }
 
 /* Index labels use a hardcoded fill in light mode; flip for dark. */
@@ -941,6 +941,63 @@
   :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight div {
     color: var(--scriba-state-idle-text) !important;
   }
+}
+
+/* \group hull label chip (JudgeZone #9/#14 sibling): the label pill rect
+   carries the pre-existing scriba-group-label parent class already, so the
+   rect needs no source change — only this selector. The label text gets a
+   new class since ARROW_STYLES label_fill literals don't match the
+   --scriba-annotation-* var() tokens for most colors (info/good/muted/path),
+   so it can't reuse scriba-annotation-{cls} without shifting light mode. */
+[data-theme="dark"] .scriba-group-label > rect[fill="white"] { fill: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-group-label-text { fill: var(--scriba-fg, #ecedee); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-group-label > rect[fill="white"] { fill: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-group-label-text { fill: var(--scriba-fg, #ecedee); }
+}
+
+/* CodePanel chrome (JudgeZone #9/#14 sibling): panel bg/border, header
+   title-bar path, and header/divider line all share one chrome class;
+   the empty-panel "no code" text gets its own since it's the fg-muted tone
+   rather than the panel's bg/border tones. */
+[data-theme="dark"] .scriba-codepanel-chrome {
+  fill: var(--scriba-bg-code, #1a1d1e);
+  stroke: var(--scriba-border, #313538);
+}
+[data-theme="dark"] .scriba-codepanel-empty-text { fill: var(--scriba-fg-muted, #9ba1a6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-codepanel-chrome {
+    fill: var(--scriba-bg-code, #1a1d1e);
+    stroke: var(--scriba-border, #313538);
+  }
+  :root:not([data-theme="light"]) .scriba-codepanel-empty-text { fill: var(--scriba-fg-muted, #9ba1a6); }
+}
+
+/* Annotation pill-label halo (wave-2 theme-attr sweep): _emit_pill_label_text
+   and _emit_label_single_line's plain-<text> fallback paint a hand-rolled
+   white paint-order halo — these labels sit outside [data-primitive], so
+   they miss the generic halo cascade above and never got a dark twin. The
+   backing pill already flips to #1a1d1e via Fix A above; match the halo to
+   it so dark mode doesn't show a white ring on a dark pill. The same
+   functions' math/FO branch (.scriba-annot-label div) bakes the identical
+   white as an inline text-shadow; !important beats it, mirroring the FO-ink
+   precedent (CHANGELOG 0.31.0) — scoped to dark only since
+   --scriba-bg-code's light value (#f8f9fa) isn't byte-identical to the
+   literal's pure white, unlike the ink case. */
+[data-theme="dark"] .scriba-annot-label-text { stroke: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-annot-label {
+  text-shadow: 0 0 2px var(--scriba-bg-code, #1a1d1e), 0 0 2px var(--scriba-bg-code, #1a1d1e) !important;
+}
+/* \link annotation label halo: floats with no backing pill/rect (unlike the
+   pill-text fallback above), so it matches the STAGE background instead —
+   same convention as the other floating labels (.idx / .scriba-graph-weight). */
+[data-theme="dark"] .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-annot-label-text { stroke: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-annot-label {
+    text-shadow: 0 0 2px var(--scriba-bg-code, #1a1d1e), 0 0 2px var(--scriba-bg-code, #1a1d1e) !important;
+  }
+  :root:not([data-theme="light"]) .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
 }
 
 /* ============================================
@@ -1609,10 +1666,24 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] body { background: #151718; color: #ecedee; }
 [data-theme="dark"] .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
 
+/* wave-2 theme-attr sweep: this file was entirely [data-theme="dark"]-guarded
+   with no twin. render.py's own HTML_TEMPLATE always sets data-theme
+   explicitly, so this never fires there today — but load_css() is a
+   generic asset loader, and nothing restricts this file to that one
+   template. Mirrors the H6 fix pattern (see scriba-embed.css) so a host
+   page that loads this CSS directly, without an explicit data-theme
+   attribute, still honors OS dark preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body { background: #151718; color: #ecedee; }
+  :root:not([data-theme="light"]) .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
+}
+
 /* Scriba TeX Content Styles
  * Scoped under .scriba-tex-content
  * Uses --scriba-* CSS variables — see :root block below for defaults.
- * Dark mode via [data-theme="dark"] ancestor selector.
+ * Dark mode via [data-theme="dark"] ancestor selector, or automatically
+ * via @media (prefers-color-scheme: dark) when the host page never sets
+ * data-theme (wave-2 theme-attr sweep; H6 fix pattern, see scriba-embed.css).
  */
 
 /* ============================================
@@ -1689,6 +1760,36 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   --scriba-copy-btn-fg-hover: #70b8ff;
   --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
   --scriba-copy-btn-fg-copied: #65ba74;
+}
+
+/* OS-level dark mode preference (overridden by explicit data-theme="light").
+   wave-2 theme-attr sweep: scriba-tex-content.css can ship standalone into a
+   host page that never sets data-theme (see TexRenderer.assets() / examples/
+   integration/minimal.py) — without this twin, OS dark preference was
+   silently ignored until a runtime theme-toggle click set the attribute.
+   Duplicates the token overrides above 1:1, mirroring scriba-embed.css's
+   H6 fix. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --scriba-fg: #ecedee;
+    --scriba-fg-muted: #9ba1a6;
+    --scriba-bg: #151718;
+    --scriba-bg-code: #1a1d1e;
+    --scriba-bg-inline-code: rgba(236, 237, 238, 0.08);
+    --scriba-border: #313538;
+    --scriba-border-strong: #6e767d;
+    --scriba-link: #70b8ff;
+    --scriba-link-hover: #a2ceff;
+    --scriba-error: #ff6369;
+    --scriba-error-bg: rgba(229, 72, 77, 0.15);
+    --scriba-epigraph-border: #9ba1a6;
+    --scriba-copy-btn-bg: #202425;
+    --scriba-copy-btn-fg: #ecedee;
+    --scriba-copy-btn-bg-hover: #2b2f31;
+    --scriba-copy-btn-fg-hover: #70b8ff;
+    --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
+    --scriba-copy-btn-fg-copied: #65ba74;
+  }
 }
 
 /* ============================================
@@ -1772,6 +1873,21 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] .katex .minner,
 [data-theme="dark"] .katex .mpunct {
   color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .katex {
+    color: var(--scriba-fg);
+  }
+
+  :root:not([data-theme="light"]) .katex .mord,
+  :root:not([data-theme="light"]) .katex .mop,
+  :root:not([data-theme="light"]) .katex .mrel,
+  :root:not([data-theme="light"]) .katex .mbin,
+  :root:not([data-theme="light"]) .katex .minner,
+  :root:not([data-theme="light"]) .katex .mpunct {
+    color: inherit;
+  }
 }
 
 /* Scriba math wrappers */
@@ -2145,7 +2261,10 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 }
 
 /* Scriba Pygments theme — One Dark
- * Scoped under [data-theme="dark"] .scriba-tex-content .highlight
+ * Scoped under [data-theme="dark"] .scriba-tex-content .highlight, and its
+ * @media (prefers-color-scheme: dark) twin at the bottom of this file
+ * (wave-2 theme-attr sweep; H6 fix pattern, see scriba-embed.css) so OS
+ * dark preference applies before any explicit data-theme is set.
  * Uses Pygments `.tok-*` token class names.
  */
 
@@ -2259,6 +2378,126 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] .scriba-tex-content .highlight .tok-err {
   color: var(--scriba-error);
   background: var(--scriba-error-bg);
+}
+
+/* OS-level dark mode preference (overridden by explicit data-theme="light").
+   wave-2 theme-attr sweep: this file was entirely [data-theme="dark"]-guarded
+   with no twin, so a host page that never sets data-theme (see
+   TexRenderer.assets() / examples/integration/minimal.py) silently ignored
+   OS dark preference until a runtime theme-toggle click set the attribute.
+   Duplicates every rule above 1:1, mirroring scriba-embed.css's H6 fix. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight {
+    background: var(--scriba-bg-code);
+    color: #abb2bf;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight pre {
+    background: transparent;
+    color: inherit;
+  }
+
+  /* Keywords */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-k,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kd,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kn,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kp,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kr,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kt {
+    color: #c678dd;
+  }
+
+  /* Names */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-n,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-na,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nx {
+    color: #abb2bf;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-fm,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nd {
+    color: #61afef;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ne {
+    color: #e5c07b;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-no {
+    color: #d19a66;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nv {
+    color: #e06c75;
+  }
+
+  /* Strings */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sa,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-dl,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sd,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s1,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s2,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sh,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-si,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sx,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sr,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ss {
+    color: #98c379;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-se {
+    color: #56b6c2;
+  }
+
+  /* Numbers */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-m,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mh,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mi,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mo,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-l {
+    color: #d19a66;
+  }
+
+  /* Comments */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-c,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ch,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cm,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cpf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-c1,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cs {
+    color: #5c6370;
+    font-style: italic;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cp {
+    color: #c678dd;
+    font-style: normal;
+  }
+
+  /* Operators, punctuation */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-o,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ow {
+    color: #56b6c2;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-p {
+    color: #abb2bf;
+  }
+
+  /* Errors */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-err {
+    color: var(--scriba-error);
+    background: var(--scriba-error-bg);
+  }
 }
 
 /* Scriba Pygments theme — One Light
@@ -4194,11 +4433,11 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 %% EDGE CASE C: Empty narrate
 %% ==========================================================</p><h3 id="c-empty-narrate" class="scriba-tex-heading scriba-tex-heading-3">C: Empty Narrate</h3></div>
 
-<div class="scriba-widget" id="edge-c-empty-narrate" tabindex="0" data-scriba-speed="1" role="region" aria-label="Empty narrate test"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter">1 / 2</span><button class="scriba-btn-next" aria-label="Next step">&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="edge-c-empty-narrate-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 146 85" style="max-width:calc(146px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-c-empty-narrate-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>edge-c-empty-narrate</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="c"><g data-target="c.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">1</text></g><g data-target="c.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">2</text></g><text class="scriba-primitive-label" x="61" y="55" fill="#687076" style="text-anchor:middle;dominant-baseline:central">empty narrate</text></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-c-empty-narrate-print-1-narration"></p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">2 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 146 85" style="max-width:calc(146px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-c-empty-narrate-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>This step has narration, the previous did not.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="c"><g data-target="c.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">1</text></g><g data-target="c.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">2</text></g><text class="scriba-primitive-label" x="61" y="55" fill="#687076" style="text-anchor:middle;dominant-baseline:central">empty narrate</text></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-c-empty-narrate-print-2-narration">This step has narration, the previous did not.</p></div></div></div>
+<div class="scriba-widget" id="edge-c-empty-narrate" tabindex="0" data-scriba-speed="1" role="region" aria-label="Empty narrate test"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter">1 / 2</span><button class="scriba-btn-next" aria-label="Next step">&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="edge-c-empty-narrate-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 146 85" style="max-width:calc(146px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-c-empty-narrate-print-1-narration" xmlns="http://www.w3.org/2000/svg"><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="c"><g data-target="c.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">1</text></g><g data-target="c.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">2</text></g><text class="scriba-primitive-label" x="61" y="55" fill="#687076" style="text-anchor:middle;dominant-baseline:central">empty narrate</text></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-c-empty-narrate-print-1-narration"></p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">2 / 2</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 146 85" style="max-width:calc(146px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-c-empty-narrate-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>This step has narration, the previous did not.</title><g transform="translate(12.0,12)"><g data-primitive="array" data-shape="c"><g data-target="c.cell[0]" class="scriba-state-idle"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">1</text></g><g data-target="c.cell[1]" class="scriba-state-idle"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">2</text></g><text class="scriba-primitive-label" x="61" y="55" fill="#687076" style="text-anchor:middle;dominant-baseline:central">empty narrate</text></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-c-empty-narrate-print-2-narration">This step has narration, the previous did not.</p></div></div></div>
 <script>(function(){
   var W=document.getElementById('edge-c-empty-narrate');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 146 85" style="max-width:calc(146px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-c-empty-narrate-narration" xmlns="http://www.w3.org/2000/svg"><title>edge-c-empty-narrate</title>
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 146 85" style="max-width:calc(146px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-c-empty-narrate-narration" xmlns="http://www.w3.org/2000/svg">
 <g transform="translate(12.0,12)">
 <g data-primitive="array" data-shape="c">
   <g data-target="c.cell[0]" class="scriba-state-idle">
@@ -6974,7 +7213,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 %% EDGE CASE I: Multiple annotate on same target, different arrow_from
 %% ==========================================================</p><h3 id="i-multiple-annotations-same-target" class="scriba-tex-heading scriba-tex-heading-3">I: Multiple Annotations Same Target</h3></div>
 
-<div class="scriba-widget" id="edge-i-multi-annotate" tabindex="0" data-scriba-speed="1" role="region" aria-label="Multiple annotations"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter">1 / 3</span><button class="scriba-btn-next" aria-label="Next step">&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="edge-i-multi-annotate-narration" aria-live="polite">Base cases filled: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>0</mn><mo stretchy="false">]</mo><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">dp[0]=0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>1</mn><mo stretchy="false">]</mo><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">dp[1]=3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>2</mn><mo stretchy="false">]</mo><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">dp[2]=7</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">2</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 332 149" style="max-width:calc(332px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-i-multi-annotate-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Base cases filled: d p [ 0 ] = 0 , d p [ 1 ] = 3 , d p [ 2 ] = 7 .</title><g transform="translate(12.0,12)"><g data-primitive="dptable" data-shape="dp"><g transform="translate(0, 38)"><g data-target="dp.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">0</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#687076" style="font-size:10px">0</text><g data-target="dp.cell[1]" class="scriba-state-done"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">3</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#687076" style="font-size:10px">1</text><g data-target="dp.cell[2]" class="scriba-state-done"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">7</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#687076" style="font-size:10px">2</text><g data-target="dp.cell[3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="216" y="56" fill="#687076" style="font-size:10px">3</text><g data-target="dp.cell[4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="278" y="56" fill="#687076" style="font-size:10px">4</text><text class="scriba-primitive-label" x="154" y="81" fill="#687076" style="text-anchor:middle;dominant-baseline:central">dp</text></g></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-i-multi-annotate-print-1-narration">Base cases filled: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>0</mn><mo stretchy="false">]</mo><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">dp[0]=0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>1</mn><mo stretchy="false">]</mo><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">dp[1]=3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>2</mn><mo stretchy="false">]</mo><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">dp[2]=7</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">2</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">2 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 332 149" style="max-width:calc(332px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-i-multi-annotate-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>Two transition arrows into d p [ 3 ] : one from d p [ 1 ] (cost +4) and one from d p [ 2 ] (cost +1).</title><g transform="translate(12.0,12)"><g data-primitive="dptable" data-shape="dp"><g transform="translate(0, 38)"><g data-target="dp.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">0</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#687076" style="font-size:10px">0</text><g data-target="dp.cell[1]" class="scriba-state-done"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">3</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#687076" style="font-size:10px">1</text><g data-target="dp.cell[2]" class="scriba-state-done"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">7</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#687076" style="font-size:10px">2</text><g data-target="dp.cell[3]" class="scriba-state-current"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#ffffff" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="216" y="56" fill="#687076" style="font-size:10px">3</text><g data-target="dp.cell[4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="278" y="56" fill="#687076" style="font-size:10px">4</text><g class="scriba-annotation scriba-annotation-good" data-annotation="dp.cell[3]-dp.cell[1]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[1] to dp.cell[3]: +4"><path d="M92,20 C133,1 174,1 207.8,16.3" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from dp.cell[1] to dp.cell[3]: +4</title></path><polygon points="216.0,20.0 204.8,20.4 208.9,11.3" fill="#027a55"/><rect x="140" y="-34" width="28" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="154" y="-21" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto">+4</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="dp.cell[3]-dp.cell[2]" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[2] to dp.cell[3]: +1"><path d="M154,20 C174,-1 195,-1 209.6,13.6" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from dp.cell[2] to dp.cell[3]: +1</title></path><polygon points="216.0,20.0 205.4,16.5 212.5,9.4" fill="#506882"/><rect x="172" y="-37" width="26" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><text x="185" y="-25" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto">+1</text></g><text class="scriba-primitive-label" x="154" y="81" fill="#687076" style="text-anchor:middle;dominant-baseline:central">dp</text></g></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-i-multi-annotate-print-2-narration">Two transition arrows into <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>3</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">dp[3]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">3</span><span class="mclose">]</span></span></span></span></span>: one from <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>1</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">dp[1]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1</span><span class="mclose">]</span></span></span></span></span> (cost +4) and one from <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>2</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">dp[2]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">2</span><span class="mclose">]</span></span></span></span></span> (cost +1).</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">3 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 332 149" style="max-width:calc(332px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-i-multi-annotate-print-3-narration" xmlns="http://www.w3.org/2000/svg"><title>Chose d p [ 3 ] = min ( 3 + 4 , 7 + 1 ) = 7 ... wait, d p [ 3 ] = 8 . Annotations persist.</title><g transform="translate(12.0,12)"><g data-primitive="dptable" data-shape="dp"><g transform="translate(0, 38)"><g data-target="dp.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">0</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#687076" style="font-size:10px">0</text><g data-target="dp.cell[1]" class="scriba-state-done"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">3</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#687076" style="font-size:10px">1</text><g data-target="dp.cell[2]" class="scriba-state-done"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">7</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#687076" style="font-size:10px">2</text><g data-target="dp.cell[3]" class="scriba-state-done"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">8</text></g><text class="scriba-index-label idx" x="216" y="56" fill="#687076" style="font-size:10px">3</text><g data-target="dp.cell[4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="278" y="56" fill="#687076" style="font-size:10px">4</text><g class="scriba-annotation scriba-annotation-good" data-annotation="dp.cell[3]-dp.cell[1]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[1] to dp.cell[3]: +4"><path d="M92,20 C133,1 174,1 207.8,16.3" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from dp.cell[1] to dp.cell[3]: +4</title></path><polygon points="216.0,20.0 204.8,20.4 208.9,11.3" fill="#027a55"/><rect x="140" y="-34" width="28" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="154" y="-21" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto">+4</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="dp.cell[3]-dp.cell[2]" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[2] to dp.cell[3]: +1"><path d="M154,20 C174,-1 195,-1 209.6,13.6" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from dp.cell[2] to dp.cell[3]: +1</title></path><polygon points="216.0,20.0 205.4,16.5 212.5,9.4" fill="#506882"/><rect x="172" y="-37" width="26" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><text x="185" y="-25" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto">+1</text></g><text class="scriba-primitive-label" x="154" y="81" fill="#687076" style="text-anchor:middle;dominant-baseline:central">dp</text></g></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-i-multi-annotate-print-3-narration">Chose <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>3</mn><mo stretchy="false">]</mo><mo>=</mo><mi>min</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>3</mn><mo>+</mo><mn>4</mn><mo separator="true">,</mo><mn>7</mn><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">dp[3] = \min(3+4, 7+1) = 7</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">3</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">4</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>... wait, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>3</mn><mo stretchy="false">]</mo><mo>=</mo><mn>8</mn></mrow><annotation encoding="application/x-tex">dp[3] = 8</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">3</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>. Annotations persist.</p></div></div></div>
+<div class="scriba-widget" id="edge-i-multi-annotate" tabindex="0" data-scriba-speed="1" role="region" aria-label="Multiple annotations"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter">1 / 3</span><button class="scriba-btn-next" aria-label="Next step">&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="edge-i-multi-annotate-narration" aria-live="polite">Base cases filled: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>0</mn><mo stretchy="false">]</mo><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">dp[0]=0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>1</mn><mo stretchy="false">]</mo><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">dp[1]=3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>2</mn><mo stretchy="false">]</mo><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">dp[2]=7</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">2</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>.</p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 332 149" style="max-width:calc(332px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-i-multi-annotate-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>Base cases filled: d p [ 0 ] = 0 , d p [ 1 ] = 3 , d p [ 2 ] = 7 .</title><g transform="translate(12.0,12)"><g data-primitive="dptable" data-shape="dp"><g transform="translate(0, 38)"><g data-target="dp.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">0</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#687076" style="font-size:10px">0</text><g data-target="dp.cell[1]" class="scriba-state-done"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">3</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#687076" style="font-size:10px">1</text><g data-target="dp.cell[2]" class="scriba-state-done"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">7</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#687076" style="font-size:10px">2</text><g data-target="dp.cell[3]" class="scriba-state-idle"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="216" y="56" fill="#687076" style="font-size:10px">3</text><g data-target="dp.cell[4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="278" y="56" fill="#687076" style="font-size:10px">4</text><text class="scriba-primitive-label" x="154" y="81" fill="#687076" style="text-anchor:middle;dominant-baseline:central">dp</text></g></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-i-multi-annotate-print-1-narration">Base cases filled: <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>0</mn><mo stretchy="false">]</mo><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">dp[0]=0</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">0</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>1</mn><mo stretchy="false">]</mo><mo>=</mo><mn>3</mn></mrow><annotation encoding="application/x-tex">dp[1]=3</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">3</span></span></span></span></span>, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>2</mn><mo stretchy="false">]</mo><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">dp[2]=7</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">2</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>.</p></div><div class="scriba-print-frame" data-step="2"><span class="scriba-step-label">2 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 332 149" style="max-width:calc(332px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-i-multi-annotate-print-2-narration" xmlns="http://www.w3.org/2000/svg"><title>Two transition arrows into d p [ 3 ] : one from d p [ 1 ] (cost +4) and one from d p [ 2 ] (cost +1).</title><g transform="translate(12.0,12)"><g data-primitive="dptable" data-shape="dp"><g transform="translate(0, 38)"><g data-target="dp.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">0</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#687076" style="font-size:10px">0</text><g data-target="dp.cell[1]" class="scriba-state-done"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">3</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#687076" style="font-size:10px">1</text><g data-target="dp.cell[2]" class="scriba-state-done"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">7</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#687076" style="font-size:10px">2</text><g data-target="dp.cell[3]" class="scriba-state-current"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#ffffff" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="216" y="56" fill="#687076" style="font-size:10px">3</text><g data-target="dp.cell[4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="278" y="56" fill="#687076" style="font-size:10px">4</text><g class="scriba-annotation scriba-annotation-good" data-annotation="dp.cell[3]-dp.cell[1]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[1] to dp.cell[3]: +4"><path d="M92,20 C133,1 174,1 207.8,16.3" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from dp.cell[1] to dp.cell[3]: +4</title></path><polygon points="216.0,20.0 204.8,20.4 208.9,11.3" fill="#027a55"/><rect x="140" y="-34" width="28" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="154" y="-21" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">+4</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="dp.cell[3]-dp.cell[2]" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[2] to dp.cell[3]: +1"><path d="M154,20 C174,-1 195,-1 209.6,13.6" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from dp.cell[2] to dp.cell[3]: +1</title></path><polygon points="216.0,20.0 205.4,16.5 212.5,9.4" fill="#506882"/><rect x="172" y="-37" width="26" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><text x="185" y="-25" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">+1</text></g><text class="scriba-primitive-label" x="154" y="81" fill="#687076" style="text-anchor:middle;dominant-baseline:central">dp</text></g></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-i-multi-annotate-print-2-narration">Two transition arrows into <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>3</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">dp[3]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">3</span><span class="mclose">]</span></span></span></span></span>: one from <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>1</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">dp[1]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">1</span><span class="mclose">]</span></span></span></span></span> (cost +4) and one from <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>2</mn><mo stretchy="false">]</mo></mrow><annotation encoding="application/x-tex">dp[2]</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">2</span><span class="mclose">]</span></span></span></span></span> (cost +1).</p></div><div class="scriba-print-frame" data-step="3"><span class="scriba-step-label">3 / 3</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 332 149" style="max-width:calc(332px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="edge-i-multi-annotate-print-3-narration" xmlns="http://www.w3.org/2000/svg"><title>Chose d p [ 3 ] = min ( 3 + 4 , 7 + 1 ) = 7 ... wait, d p [ 3 ] = 8 . Annotations persist.</title><g transform="translate(12.0,12)"><g data-primitive="dptable" data-shape="dp"><g transform="translate(0, 38)"><g data-target="dp.cell[0]" class="scriba-state-done"><rect x="1.0" y="1.0" width="58.0" height="38.0"/><text x="30" y="20" fill="#11181c" style="font-size:14px">0</text></g><text class="scriba-index-label idx" x="30" y="56" fill="#687076" style="font-size:10px">0</text><g data-target="dp.cell[1]" class="scriba-state-done"><rect x="63.0" y="1.0" width="58.0" height="38.0"/><text x="92" y="20" fill="#11181c" style="font-size:14px">3</text></g><text class="scriba-index-label idx" x="92" y="56" fill="#687076" style="font-size:10px">1</text><g data-target="dp.cell[2]" class="scriba-state-done"><rect x="125.0" y="1.0" width="58.0" height="38.0"/><text x="154" y="20" fill="#11181c" style="font-size:14px">7</text></g><text class="scriba-index-label idx" x="154" y="56" fill="#687076" style="font-size:10px">2</text><g data-target="dp.cell[3]" class="scriba-state-done"><rect x="187.0" y="1.0" width="58.0" height="38.0"/><text x="216" y="20" fill="#11181c" style="font-size:14px">8</text></g><text class="scriba-index-label idx" x="216" y="56" fill="#687076" style="font-size:10px">3</text><g data-target="dp.cell[4]" class="scriba-state-idle"><rect x="249.0" y="1.0" width="58.0" height="38.0"/><text x="278" y="20" fill="#11181c" style="font-size:14px"></text></g><text class="scriba-index-label idx" x="278" y="56" fill="#687076" style="font-size:10px">4</text><g class="scriba-annotation scriba-annotation-good" data-annotation="dp.cell[3]-dp.cell[1]" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[1] to dp.cell[3]: +4"><path d="M92,20 C133,1 174,1 207.8,16.3" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from dp.cell[1] to dp.cell[3]: +4</title></path><polygon points="216.0,20.0 204.8,20.4 208.9,11.3" fill="#027a55"/><rect x="140" y="-34" width="28" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="154" y="-21" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">+4</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="dp.cell[3]-dp.cell[2]" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[2] to dp.cell[3]: +1"><path d="M154,20 C174,-1 195,-1 209.6,13.6" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from dp.cell[2] to dp.cell[3]: +1</title></path><polygon points="216.0,20.0 205.4,16.5 212.5,9.4" fill="#506882"/><rect x="172" y="-37" width="26" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><text x="185" y="-25" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">+1</text></g><text class="scriba-primitive-label" x="154" y="81" fill="#687076" style="text-anchor:middle;dominant-baseline:central">dp</text></g></g></g></svg></div><p class="scriba-narration" dir="auto" id="edge-i-multi-annotate-print-3-narration">Chose <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>3</mn><mo stretchy="false">]</mo><mo>=</mo><mi>min</mi><mo>⁡</mo><mo stretchy="false">(</mo><mn>3</mn><mo>+</mo><mn>4</mn><mo separator="true">,</mo><mn>7</mn><mo>+</mo><mn>1</mn><mo stretchy="false">)</mo><mo>=</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">dp[3] = \min(3+4, 7+1) = 7</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">3</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mop">min</span><span class="mopen">(</span><span class="mord">3</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.8389em;vertical-align:-0.1944em;"></span><span class="mord">4</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.1667em;"></span><span class="mord">7</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord">1</span><span class="mclose">)</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7</span></span></span></span></span>... wait, <span class="scriba-tex-math-inline"><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>p</mi><mo stretchy="false">[</mo><mn>3</mn><mo stretchy="false">]</mo><mo>=</mo><mn>8</mn></mrow><annotation encoding="application/x-tex">dp[3] = 8</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathnormal">d</span><span class="mord mathnormal">p</span><span class="mopen">[</span><span class="mord">3</span><span class="mclose">]</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">8</span></span></span></span></span>. Annotations persist.</p></div></div></div>
 <script>(function(){
   var W=document.getElementById('edge-i-multi-annotate');
   var frames=[
@@ -7045,13 +7284,13 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     <path d="M92,20 C133,1 174,1 207.8,16.3" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from dp.cell[1] to dp.cell[3]: +4</title></path>
     <polygon points="216.0,20.0 204.8,20.4 208.9,11.3" fill="#027a55"/>
     <rect x="140" y="-34" width="28" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/>
-    <text x="154" y="-21" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto">+4</text>
+    <text x="154" y="-21" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">+4</text>
   </g>
   <g class="scriba-annotation scriba-annotation-info" data-annotation="dp.cell[3]-dp.cell[2]" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[2] to dp.cell[3]: +1">
     <path d="M154,20 C174,-1 195,-1 209.6,13.6" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from dp.cell[2] to dp.cell[3]: +1</title></path>
     <polygon points="216.0,20.0 205.4,16.5 212.5,9.4" fill="#506882"/>
     <rect x="172" y="-37" width="26" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/>
-    <text x="185" y="-25" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto">+1</text>
+    <text x="185" y="-25" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">+1</text>
   </g>
   <text class="scriba-primitive-label" x="154" y="81" fill="#687076" style="text-anchor:middle;dominant-baseline:central">dp</text>
   </g>
@@ -7091,13 +7330,13 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
     <path d="M92,20 C133,1 174,1 207.8,16.3" stroke="#027a55" stroke-width="2.2" fill="none"><title>Arrow from dp.cell[1] to dp.cell[3]: +4</title></path>
     <polygon points="216.0,20.0 204.8,20.4 208.9,11.3" fill="#027a55"/>
     <rect x="140" y="-34" width="28" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/>
-    <text x="154" y="-21" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto">+4</text>
+    <text x="154" y="-21" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">+4</text>
   </g>
   <g class="scriba-annotation scriba-annotation-info" data-annotation="dp.cell[3]-dp.cell[2]" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="Arrow from dp.cell[2] to dp.cell[3]: +1">
     <path d="M154,20 C174,-1 195,-1 209.6,13.6" stroke="#506882" stroke-width="1.5" fill="none"><title>Arrow from dp.cell[2] to dp.cell[3]: +1</title></path>
     <polygon points="216.0,20.0 205.4,16.5 212.5,9.4" fill="#506882"/>
     <rect x="172" y="-37" width="26" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/>
-    <text x="185" y="-25" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto">+1</text>
+    <text x="185" y="-25" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">+1</text>
   </g>
   <text class="scriba-primitive-label" x="154" y="81" fill="#687076" style="text-anchor:middle;dominant-baseline:central">dp</text>
   </g>

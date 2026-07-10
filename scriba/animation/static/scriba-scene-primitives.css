@@ -887,7 +887,7 @@
 [data-theme="dark"] .scriba-annotation-muted > polygon { fill: #9ba1a6; }
 /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
 [data-theme="dark"] .scriba-annotation-path  > polygon { fill: #a78bfa; }
-[data-theme="dark"] .scriba-annotation        > rect    { fill: #1a1d1e; }
+[data-theme="dark"] .scriba-annotation > rect[fill="white"] { fill: #1a1d1e; }
 
 /* -- OS preference dark-mode overrides (H6) -------------------------------- */
 @media (prefers-color-scheme: dark) {
@@ -898,7 +898,7 @@
   :root:not([data-theme="light"]) .scriba-annotation-muted > polygon { fill: #9ba1a6; }
   /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
   :root:not([data-theme="light"]) .scriba-annotation-path  > polygon { fill: #a78bfa; }
-  :root:not([data-theme="light"]) .scriba-annotation        > rect    { fill: #1a1d1e; }
+  :root:not([data-theme="light"]) .scriba-annotation > rect[fill="white"] { fill: #1a1d1e; }
 }
 
 /* Index labels use a hardcoded fill in light mode; flip for dark. */
@@ -933,6 +933,63 @@
   :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight div {
     color: var(--scriba-state-idle-text) !important;
   }
+}
+
+/* \group hull label chip (JudgeZone #9/#14 sibling): the label pill rect
+   carries the pre-existing scriba-group-label parent class already, so the
+   rect needs no source change — only this selector. The label text gets a
+   new class since ARROW_STYLES label_fill literals don't match the
+   --scriba-annotation-* var() tokens for most colors (info/good/muted/path),
+   so it can't reuse scriba-annotation-{cls} without shifting light mode. */
+[data-theme="dark"] .scriba-group-label > rect[fill="white"] { fill: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-group-label-text { fill: var(--scriba-fg, #ecedee); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-group-label > rect[fill="white"] { fill: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-group-label-text { fill: var(--scriba-fg, #ecedee); }
+}
+
+/* CodePanel chrome (JudgeZone #9/#14 sibling): panel bg/border, header
+   title-bar path, and header/divider line all share one chrome class;
+   the empty-panel "no code" text gets its own since it's the fg-muted tone
+   rather than the panel's bg/border tones. */
+[data-theme="dark"] .scriba-codepanel-chrome {
+  fill: var(--scriba-bg-code, #1a1d1e);
+  stroke: var(--scriba-border, #313538);
+}
+[data-theme="dark"] .scriba-codepanel-empty-text { fill: var(--scriba-fg-muted, #9ba1a6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-codepanel-chrome {
+    fill: var(--scriba-bg-code, #1a1d1e);
+    stroke: var(--scriba-border, #313538);
+  }
+  :root:not([data-theme="light"]) .scriba-codepanel-empty-text { fill: var(--scriba-fg-muted, #9ba1a6); }
+}
+
+/* Annotation pill-label halo (wave-2 theme-attr sweep): _emit_pill_label_text
+   and _emit_label_single_line's plain-<text> fallback paint a hand-rolled
+   white paint-order halo — these labels sit outside [data-primitive], so
+   they miss the generic halo cascade above and never got a dark twin. The
+   backing pill already flips to #1a1d1e via Fix A above; match the halo to
+   it so dark mode doesn't show a white ring on a dark pill. The same
+   functions' math/FO branch (.scriba-annot-label div) bakes the identical
+   white as an inline text-shadow; !important beats it, mirroring the FO-ink
+   precedent (CHANGELOG 0.31.0) — scoped to dark only since
+   --scriba-bg-code's light value (#f8f9fa) isn't byte-identical to the
+   literal's pure white, unlike the ink case. */
+[data-theme="dark"] .scriba-annot-label-text { stroke: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-annot-label {
+  text-shadow: 0 0 2px var(--scriba-bg-code, #1a1d1e), 0 0 2px var(--scriba-bg-code, #1a1d1e) !important;
+}
+/* \link annotation label halo: floats with no backing pill/rect (unlike the
+   pill-text fallback above), so it matches the STAGE background instead —
+   same convention as the other floating labels (.idx / .scriba-graph-weight). */
+[data-theme="dark"] .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-annot-label-text { stroke: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-annot-label {
+    text-shadow: 0 0 2px var(--scriba-bg-code, #1a1d1e), 0 0 2px var(--scriba-bg-code, #1a1d1e) !important;
+  }
+  :root:not([data-theme="light"]) .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
 }
 
 /* ============================================

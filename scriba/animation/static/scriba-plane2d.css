@@ -45,3 +45,18 @@
   user-select: none;
   pointer-events: none;
 }
+
+/* --- Dark mode (JudgeZone #14 + siblings) -------------------------------
+ * Point/line-label chips and tick labels are emitted with hardcoded
+ * light-theme fill="..." attributes (svg_style_attrs() doesn't cover
+ * decoration text). Scoped classes here give them dark coverage in both
+ * scopes (H6 pattern), with literal fallbacks in case var() tokens don't
+ * resolve in bundled/standalone output. */
+[data-theme="dark"] .scriba-plane-label-pill { fill: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-plane-label-text { fill: var(--scriba-fg, #ecedee); }
+[data-theme="dark"] .scriba-plane-tick-label { fill: var(--scriba-fg-muted, #9ba1a6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-plane-label-pill { fill: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-plane-label-text { fill: var(--scriba-fg, #ecedee); }
+  :root:not([data-theme="light"]) .scriba-plane-tick-label { fill: var(--scriba-fg-muted, #9ba1a6); }
+}

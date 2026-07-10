@@ -860,12 +860,15 @@ Example output:
 mirrored to the pill border `<rect>` element. These patterns provide a non-hue cue
 satisfying WCAG 2.2 SC 1.4.1 under deuteranopia/protanopia simulation.
 
-**R-15 — `<title>` as first child of `<svg>` root (line 423 of `_frame_renderer.py`)**
+**R-15 — `<title>` as first child of `<svg>` root (`_emit_frame_svg` in `_frame_renderer.py:1793`)**
 
-Each rendered `<svg>` root has a `<title>` element as its first child. The title content
-is the scene's label text (or `scene_id` as fallback). This is the robust, standards-
-mandated pattern for SVG accessible names (SVG 2 §5.1) and supports `aria-labelledby`
-cross-document referencing.
+When a frame has natural-language content — an explicit `\step[title=...]`, an env/diagram
+`label=`, or narration text — the rendered `<svg>` root has a `<title>` element as its first
+child, sourced from that content. This is the robust, standards-mandated pattern for SVG
+accessible names (SVG 2 §5.1) and supports `aria-labelledby` cross-document referencing.
+When no natural-language content exists, `<title>` is omitted entirely — it is never
+populated with `scene_id` as a fallback (JudgeZone #10: an internal slug is not an
+accessible name).
 
 **R-16 — Pre-populated step-1 `aria-live` narration (line 292 of `_html_stitcher.py`)**
 

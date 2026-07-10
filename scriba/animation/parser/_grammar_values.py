@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from ..errors import _animation_error
 from .ast import InterpolationRef, ParamValue
 from .lexer import Token, TokenKind
 
@@ -57,13 +58,34 @@ class _ValuesMixin:
         return items
 
     def _parse_interp_ref(self, content: str) -> InterpolationRef:
-        """Build an ``InterpolationRef`` from ``${...}`` content."""
-        if "[" not in content:
-            return InterpolationRef(name=content)
+        """Build an ``InterpolationRef`` from ``${...}`` content.
 
-        idx = content.index("[")
-        name = content[:idx]
-        rest = content[idx:]
+        ``content`` must be identifier-shaped -- a \\compute binding name,
+        optionally followed by one or more ``[subscript]`` tails (each
+        either an integer literal or another binding name). Anything else
+        (math, arithmetic, an empty string) is not interpolation syntax at
+        all: building an ``InterpolationRef`` from it anyway would let
+        ``scene.py``'s ``.get(name, name)`` fallback silently resolve it to
+        the literal garbage string instead of failing (judgezone-11
+        sibling), so it is a fail-loud E1161 instead.
+        """
+        if "[" not in content:
+            name = content
+            rest = ""
+        else:
+            idx = content.index("[")
+            name = content[:idx]
+            rest = content[idx:]
+
+        if not name.isidentifier():
+            raise _animation_error(
+                "E1161",
+                f"${{{content}}} is not identifier-shaped (name={name!r}); "
+                "a structured value's ${...} must be a \\compute binding "
+                "name, not a math expression",
+                hint="math belongs in $...$ text, not a structured value=${...}",
+            )
+
         subscripts: list[int | str | InterpolationRef] = []
         while rest.startswith("["):
             end = rest.index("]")
@@ -72,6 +94,16 @@ class _ValuesMixin:
             try:
                 subscripts.append(int(sub_str))
             except ValueError:
+                if not sub_str.isidentifier():
+                    raise _animation_error(
+                        "E1161",
+                        f"subscript '{sub_str}' in ${{{content}}} is not a "
+                        "\\compute binding or an integer literal",
+                        hint=(
+                            "arithmetic like ${arr[i+1]} is not evaluated -- "
+                            "precompute the shifted value in a \\compute block"
+                        ),
+                    )
                 subscripts.append(sub_str)
             rest = rest[end + 1 :]
         return InterpolationRef(name=name, subscripts=tuple(subscripts))

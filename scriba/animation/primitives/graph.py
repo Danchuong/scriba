@@ -240,7 +240,7 @@ def _pill_tint_for_state(state: str) -> str:
 # Harmonises with the edge stroke palette so pill fill tracks edge colour
 # when tint_by_edge=True.  Light hues (~90 %+ lightness) keep text legible.
 _PILL_TINT_BY_EDGE_STATE: dict[str, str] = {
-    "idle":        "#ffffff",  # neutral — no visual noise on resting edges
+    "idle":        "white",    # neutral — matches .scriba-graph-pill[fill="white"] (exact string match required)
     "current":     "#dbeafe",  # light blue (matches current stroke hue)
     "good":        "#d1fae5",  # light green
     "bad":         "#fee2e2",  # light red
@@ -254,7 +254,7 @@ _PILL_TINT_BY_EDGE_STATE: dict[str, str] = {
 
 def _pill_tint_for_edge_state(state: str) -> str:
     """Return the pill background tint for a given edge state (smart-label v2.0)."""
-    return _PILL_TINT_BY_EDGE_STATE.get(state, "#ffffff")
+    return _PILL_TINT_BY_EDGE_STATE.get(state, "white")
 
 
 # ---------------------------------------------------------------------------
@@ -2079,7 +2079,8 @@ class Graph(PrimitiveBase):
                     f' height="{ph}" rx="4" fill="white" fill-opacity="0.92"'
                     f' stroke="{stroke}" stroke-width="0.5"'
                     f' stroke-opacity="0.4"/>'
-                    f'<text x="{tx:.1f}" y="{pry + ph / 2.0:.1f}"'
+                    f'<text class="scriba-group-label-text"'
+                    f' x="{tx:.1f}" y="{pry + ph / 2.0:.1f}"'
                     f' fill="{style["label_fill"]}"'
                     f' style="text-anchor:middle;dominant-baseline:central">'
                     f"{_escape_xml(strip_math_markup(str(label)))}</text></g>"

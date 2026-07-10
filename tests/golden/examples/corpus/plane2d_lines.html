@@ -895,7 +895,7 @@
 [data-theme="dark"] .scriba-annotation-muted > polygon { fill: #9ba1a6; }
 /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
 [data-theme="dark"] .scriba-annotation-path  > polygon { fill: #a78bfa; }
-[data-theme="dark"] .scriba-annotation        > rect    { fill: #1a1d1e; }
+[data-theme="dark"] .scriba-annotation > rect[fill="white"] { fill: #1a1d1e; }
 
 /* -- OS preference dark-mode overrides (H6) -------------------------------- */
 @media (prefers-color-scheme: dark) {
@@ -906,7 +906,7 @@
   :root:not([data-theme="light"]) .scriba-annotation-muted > polygon { fill: #9ba1a6; }
   /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
   :root:not([data-theme="light"]) .scriba-annotation-path  > polygon { fill: #a78bfa; }
-  :root:not([data-theme="light"]) .scriba-annotation        > rect    { fill: #1a1d1e; }
+  :root:not([data-theme="light"]) .scriba-annotation > rect[fill="white"] { fill: #1a1d1e; }
 }
 
 /* Index labels use a hardcoded fill in light mode; flip for dark. */
@@ -941,6 +941,63 @@
   :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight div {
     color: var(--scriba-state-idle-text) !important;
   }
+}
+
+/* \group hull label chip (JudgeZone #9/#14 sibling): the label pill rect
+   carries the pre-existing scriba-group-label parent class already, so the
+   rect needs no source change — only this selector. The label text gets a
+   new class since ARROW_STYLES label_fill literals don't match the
+   --scriba-annotation-* var() tokens for most colors (info/good/muted/path),
+   so it can't reuse scriba-annotation-{cls} without shifting light mode. */
+[data-theme="dark"] .scriba-group-label > rect[fill="white"] { fill: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-group-label-text { fill: var(--scriba-fg, #ecedee); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-group-label > rect[fill="white"] { fill: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-group-label-text { fill: var(--scriba-fg, #ecedee); }
+}
+
+/* CodePanel chrome (JudgeZone #9/#14 sibling): panel bg/border, header
+   title-bar path, and header/divider line all share one chrome class;
+   the empty-panel "no code" text gets its own since it's the fg-muted tone
+   rather than the panel's bg/border tones. */
+[data-theme="dark"] .scriba-codepanel-chrome {
+  fill: var(--scriba-bg-code, #1a1d1e);
+  stroke: var(--scriba-border, #313538);
+}
+[data-theme="dark"] .scriba-codepanel-empty-text { fill: var(--scriba-fg-muted, #9ba1a6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-codepanel-chrome {
+    fill: var(--scriba-bg-code, #1a1d1e);
+    stroke: var(--scriba-border, #313538);
+  }
+  :root:not([data-theme="light"]) .scriba-codepanel-empty-text { fill: var(--scriba-fg-muted, #9ba1a6); }
+}
+
+/* Annotation pill-label halo (wave-2 theme-attr sweep): _emit_pill_label_text
+   and _emit_label_single_line's plain-<text> fallback paint a hand-rolled
+   white paint-order halo — these labels sit outside [data-primitive], so
+   they miss the generic halo cascade above and never got a dark twin. The
+   backing pill already flips to #1a1d1e via Fix A above; match the halo to
+   it so dark mode doesn't show a white ring on a dark pill. The same
+   functions' math/FO branch (.scriba-annot-label div) bakes the identical
+   white as an inline text-shadow; !important beats it, mirroring the FO-ink
+   precedent (CHANGELOG 0.31.0) — scoped to dark only since
+   --scriba-bg-code's light value (#f8f9fa) isn't byte-identical to the
+   literal's pure white, unlike the ink case. */
+[data-theme="dark"] .scriba-annot-label-text { stroke: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-annot-label {
+  text-shadow: 0 0 2px var(--scriba-bg-code, #1a1d1e), 0 0 2px var(--scriba-bg-code, #1a1d1e) !important;
+}
+/* \link annotation label halo: floats with no backing pill/rect (unlike the
+   pill-text fallback above), so it matches the STAGE background instead —
+   same convention as the other floating labels (.idx / .scriba-graph-weight). */
+[data-theme="dark"] .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-annot-label-text { stroke: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-annot-label {
+    text-shadow: 0 0 2px var(--scriba-bg-code, #1a1d1e), 0 0 2px var(--scriba-bg-code, #1a1d1e) !important;
+  }
+  :root:not([data-theme="light"]) .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
 }
 
 /* ============================================
@@ -1609,6 +1666,18 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] body { background: #151718; color: #ecedee; }
 [data-theme="dark"] .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
 
+/* wave-2 theme-attr sweep: this file was entirely [data-theme="dark"]-guarded
+   with no twin. render.py's own HTML_TEMPLATE always sets data-theme
+   explicitly, so this never fires there today — but load_css() is a
+   generic asset loader, and nothing restricts this file to that one
+   template. Mirrors the H6 fix pattern (see scriba-embed.css) so a host
+   page that loads this CSS directly, without an explicit data-theme
+   attribute, still honors OS dark preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body { background: #151718; color: #ecedee; }
+  :root:not([data-theme="light"]) .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
+}
+
 /* Plane2D primitive — minimal CSS for state overrides.
  *
  * Inline SVG attributes from svg_style_attrs() handle the primary
@@ -1657,10 +1726,27 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   pointer-events: none;
 }
 
+/* --- Dark mode (JudgeZone #14 + siblings) -------------------------------
+ * Point/line-label chips and tick labels are emitted with hardcoded
+ * light-theme fill="..." attributes (svg_style_attrs() doesn't cover
+ * decoration text). Scoped classes here give them dark coverage in both
+ * scopes (H6 pattern), with literal fallbacks in case var() tokens don't
+ * resolve in bundled/standalone output. */
+[data-theme="dark"] .scriba-plane-label-pill { fill: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-plane-label-text { fill: var(--scriba-fg, #ecedee); }
+[data-theme="dark"] .scriba-plane-tick-label { fill: var(--scriba-fg-muted, #9ba1a6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-plane-label-pill { fill: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-plane-label-text { fill: var(--scriba-fg, #ecedee); }
+  :root:not([data-theme="light"]) .scriba-plane-tick-label { fill: var(--scriba-fg-muted, #9ba1a6); }
+}
+
 /* Scriba TeX Content Styles
  * Scoped under .scriba-tex-content
  * Uses --scriba-* CSS variables — see :root block below for defaults.
- * Dark mode via [data-theme="dark"] ancestor selector.
+ * Dark mode via [data-theme="dark"] ancestor selector, or automatically
+ * via @media (prefers-color-scheme: dark) when the host page never sets
+ * data-theme (wave-2 theme-attr sweep; H6 fix pattern, see scriba-embed.css).
  */
 
 /* ============================================
@@ -1737,6 +1823,36 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   --scriba-copy-btn-fg-hover: #70b8ff;
   --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
   --scriba-copy-btn-fg-copied: #65ba74;
+}
+
+/* OS-level dark mode preference (overridden by explicit data-theme="light").
+   wave-2 theme-attr sweep: scriba-tex-content.css can ship standalone into a
+   host page that never sets data-theme (see TexRenderer.assets() / examples/
+   integration/minimal.py) — without this twin, OS dark preference was
+   silently ignored until a runtime theme-toggle click set the attribute.
+   Duplicates the token overrides above 1:1, mirroring scriba-embed.css's
+   H6 fix. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --scriba-fg: #ecedee;
+    --scriba-fg-muted: #9ba1a6;
+    --scriba-bg: #151718;
+    --scriba-bg-code: #1a1d1e;
+    --scriba-bg-inline-code: rgba(236, 237, 238, 0.08);
+    --scriba-border: #313538;
+    --scriba-border-strong: #6e767d;
+    --scriba-link: #70b8ff;
+    --scriba-link-hover: #a2ceff;
+    --scriba-error: #ff6369;
+    --scriba-error-bg: rgba(229, 72, 77, 0.15);
+    --scriba-epigraph-border: #9ba1a6;
+    --scriba-copy-btn-bg: #202425;
+    --scriba-copy-btn-fg: #ecedee;
+    --scriba-copy-btn-bg-hover: #2b2f31;
+    --scriba-copy-btn-fg-hover: #70b8ff;
+    --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
+    --scriba-copy-btn-fg-copied: #65ba74;
+  }
 }
 
 /* ============================================
@@ -1820,6 +1936,21 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] .katex .minner,
 [data-theme="dark"] .katex .mpunct {
   color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .katex {
+    color: var(--scriba-fg);
+  }
+
+  :root:not([data-theme="light"]) .katex .mord,
+  :root:not([data-theme="light"]) .katex .mop,
+  :root:not([data-theme="light"]) .katex .mrel,
+  :root:not([data-theme="light"]) .katex .mbin,
+  :root:not([data-theme="light"]) .katex .minner,
+  :root:not([data-theme="light"]) .katex .mpunct {
+    color: inherit;
+  }
 }
 
 /* Scriba math wrappers */
@@ -2193,7 +2324,10 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 }
 
 /* Scriba Pygments theme — One Dark
- * Scoped under [data-theme="dark"] .scriba-tex-content .highlight
+ * Scoped under [data-theme="dark"] .scriba-tex-content .highlight, and its
+ * @media (prefers-color-scheme: dark) twin at the bottom of this file
+ * (wave-2 theme-attr sweep; H6 fix pattern, see scriba-embed.css) so OS
+ * dark preference applies before any explicit data-theme is set.
  * Uses Pygments `.tok-*` token class names.
  */
 
@@ -2307,6 +2441,126 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] .scriba-tex-content .highlight .tok-err {
   color: var(--scriba-error);
   background: var(--scriba-error-bg);
+}
+
+/* OS-level dark mode preference (overridden by explicit data-theme="light").
+   wave-2 theme-attr sweep: this file was entirely [data-theme="dark"]-guarded
+   with no twin, so a host page that never sets data-theme (see
+   TexRenderer.assets() / examples/integration/minimal.py) silently ignored
+   OS dark preference until a runtime theme-toggle click set the attribute.
+   Duplicates every rule above 1:1, mirroring scriba-embed.css's H6 fix. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight {
+    background: var(--scriba-bg-code);
+    color: #abb2bf;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight pre {
+    background: transparent;
+    color: inherit;
+  }
+
+  /* Keywords */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-k,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kd,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kn,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kp,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kr,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kt {
+    color: #c678dd;
+  }
+
+  /* Names */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-n,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-na,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nx {
+    color: #abb2bf;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-fm,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nd {
+    color: #61afef;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ne {
+    color: #e5c07b;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-no {
+    color: #d19a66;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nv {
+    color: #e06c75;
+  }
+
+  /* Strings */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sa,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-dl,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sd,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s1,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s2,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sh,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-si,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sx,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sr,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ss {
+    color: #98c379;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-se {
+    color: #56b6c2;
+  }
+
+  /* Numbers */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-m,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mh,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mi,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mo,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-l {
+    color: #d19a66;
+  }
+
+  /* Comments */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-c,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ch,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cm,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cpf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-c1,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cs {
+    color: #5c6370;
+    font-style: italic;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cp {
+    color: #c678dd;
+    font-style: normal;
+  }
+
+  /* Operators, punctuation */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-o,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ow {
+    color: #56b6c2;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-p {
+    color: #abb2bf;
+  }
+
+  /* Errors */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-err {
+    color: var(--scriba-error);
+    background: var(--scriba-error-bg);
+  }
 }
 
 /* Scriba Pygments theme — One Light
@@ -2437,7 +2691,7 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 same region. Labels should avoid overlapping, have background pills for readability,
 and should not clip at viewport edges.</p></div>
 
-<figure class="scriba-diagram" data-scriba-scene="line-labels-collision" aria-label="Line label collision avoidance"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 344 349" style="max-width:calc(344px * var(--scriba-diagram-font-scale, 1))" role="img" xmlns="http://www.w3.org/2000/svg"><title>line-labels-collision</title><g transform="translate(12,12)"><g data-primitive="plane2d" data-shape="p" data-scriba-xrange="-5 5" data-scriba-yrange="-5 5"><g transform="translate(0, 5)"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="57.60" y1="32.00" x2="57.60" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="83.20" y1="32.00" x2="83.20" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="108.80" y1="32.00" x2="108.80" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="134.40" y1="32.00" x2="134.40" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="160.00" y1="32.00" x2="160.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="185.60" y1="32.00" x2="185.60" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="211.20" y1="32.00" x2="211.20" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="236.80" y1="32.00" x2="236.80" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="262.40" y1="32.00" x2="262.40" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="288.00" y1="32.00" x2="288.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="288.00" x2="288.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="262.40" x2="288.00" y2="262.40" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="236.80" x2="288.00" y2="236.80" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="211.20" x2="288.00" y2="211.20" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="185.60" x2="288.00" y2="185.60" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="134.40" x2="288.00" y2="134.40" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="108.80" x2="288.00" y2="108.80" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="83.20" x2="288.00" y2="83.20" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="57.60" x2="288.00" y2="57.60" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#11181c" stroke-width="1.5"/><path d="M 288.00 160.00 l -6 -3 l 0 6 Z" fill="#11181c"/><line x1="160.00" y1="288.00" x2="160.00" y2="32.00" stroke="#11181c" stroke-width="1.5"/><path d="M 160.00 32.00 l -3 6 l 6 0 Z" fill="#11181c"/></g><g class="scriba-plane-content" transform="translate(160.0000, 160.0000) scale(25.6000, -25.6000)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="-5.0" x2="5" y2="5.0" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="5.0" x2="5" y2="-5.0" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[2]" class="scriba-plane-line scriba-state-idle"><line x1="-2.5" y1="-5" x2="2.5" y2="5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[3]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="-2.5" x2="5" y2="2.5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[4]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="2.5" x2="5" y2="-2.5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[0]" class="scriba-plane-point scriba-state-current"><circle cx="0.0" cy="0.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[1]" class="scriba-plane-point scriba-state-good"><circle cx="3.0" cy="3.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[2]" class="scriba-plane-point scriba-state-good"><circle cx="-3.0" cy="3.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[3]" class="scriba-plane-point scriba-state-done"><circle cx="2.0" cy="4.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[4]" class="scriba-plane-point scriba-state-done"><circle cx="4.0" cy="2.0" r="0.1562" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text x="57.60" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">-4</text><text x="108.80" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">-2</text><text x="211.20" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">2</text><text x="262.40" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">4</text><text x="154.00" y="265.40" text-anchor="end" style="font-size:10px" fill="#687076">-4</text><text x="154.00" y="214.20" text-anchor="end" style="font-size:10px" fill="#687076">-2</text><text x="154.00" y="111.80" text-anchor="end" style="font-size:10px" fill="#687076">2</text><text x="154.00" y="60.60" text-anchor="end" style="font-size:10px" fill="#687076">4</text><rect x="253.0" y="16.0" width="41" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="274" y="26" fill="#11181c" style="text-anchor:middle;font-size:10px">y=x</text><rect x="247.0" y="272.0" width="47" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="270" y="282" fill="#11181c" style="text-anchor:middle;font-size:10px">y=-x</text><rect x="206.5" y="16.0" width="47" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="230" y="26" fill="#11181c" style="text-anchor:middle;font-size:10px">y=2x</text><rect x="235.0" y="80.0" width="59" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="264" y="90" fill="#11181c" style="text-anchor:middle;font-size:10px">y=0.5x</text><rect x="229.0" y="208.0" width="65" height="20" rx="4" fill="white" fill-opacity="0.85"/><text x="262" y="218" fill="#11181c" style="text-anchor:middle;font-size:10px">y=-0.5x</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="p.point[0]-position-above" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="All lines intersect here"><rect x="96" y="78" width="127" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><text x="160" y="91" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto">All lines intersect here</text></g><g class="scriba-annotation scriba-annotation-good" data-annotation="p.point[1]-position-right" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=x"><rect x="245" y="64" width="53" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="272" y="78" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto">On y=x</text></g><g class="scriba-annotation scriba-annotation-good" data-annotation="p.point[2]-position-left" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=-x"><rect x="14" y="74" width="60" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="44" y="88" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto">On y=-x</text></g><g class="scriba-annotation scriba-annotation-warn" data-annotation="p.point[3]-position-above" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=2x"><rect x="183" y="-4" width="56" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#92600a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="3,2"/><text x="211" y="8" fill="#92600a" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto">On y=2x</text></g><g class="scriba-annotation scriba-annotation-warn" data-annotation="p.point[4]-position-below" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=0.5x"><rect x="229" y="126" width="66" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#92600a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="3,2"/><text x="262" y="139" fill="#92600a" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto">On y=0.5x</text></g></g></g></g></svg></div></figure>
+<figure class="scriba-diagram" data-scriba-scene="line-labels-collision" aria-label="Line label collision avoidance"><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 344 349" style="max-width:calc(344px * var(--scriba-diagram-font-scale, 1))" role="img" xmlns="http://www.w3.org/2000/svg"><title>Line label collision avoidance</title><g transform="translate(12,12)"><g data-primitive="plane2d" data-shape="p" data-scriba-xrange="-5 5" data-scriba-yrange="-5 5"><g transform="translate(0, 5)"><g class="scriba-plane-grid"><line x1="32.00" y1="32.00" x2="32.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="57.60" y1="32.00" x2="57.60" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="83.20" y1="32.00" x2="83.20" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="108.80" y1="32.00" x2="108.80" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="134.40" y1="32.00" x2="134.40" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="160.00" y1="32.00" x2="160.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="185.60" y1="32.00" x2="185.60" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="211.20" y1="32.00" x2="211.20" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="236.80" y1="32.00" x2="236.80" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="262.40" y1="32.00" x2="262.40" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="288.00" y1="32.00" x2="288.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="288.00" x2="288.00" y2="288.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="262.40" x2="288.00" y2="262.40" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="236.80" x2="288.00" y2="236.80" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="211.20" x2="288.00" y2="211.20" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="185.60" x2="288.00" y2="185.60" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="134.40" x2="288.00" y2="134.40" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="108.80" x2="288.00" y2="108.80" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="83.20" x2="288.00" y2="83.20" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="57.60" x2="288.00" y2="57.60" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/><line x1="32.00" y1="32.00" x2="288.00" y2="32.00" stroke="#dfe3e6" stroke-width="0.5" opacity="0.6" vector-effect="non-scaling-stroke"/></g><g class="scriba-plane-axes"><line x1="32.00" y1="160.00" x2="288.00" y2="160.00" stroke="#11181c" stroke-width="1.5"/><path d="M 288.00 160.00 l -6 -3 l 0 6 Z" fill="#11181c"/><line x1="160.00" y1="288.00" x2="160.00" y2="32.00" stroke="#11181c" stroke-width="1.5"/><path d="M 160.00 32.00 l -3 6 l 6 0 Z" fill="#11181c"/></g><g class="scriba-plane-content" transform="translate(160.0000, 160.0000) scale(25.6000, -25.6000)"><g data-target="p.line[0]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="-5.0" x2="5" y2="5.0" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[1]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="5.0" x2="5" y2="-5.0" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[2]" class="scriba-plane-line scriba-state-idle"><line x1="-2.5" y1="-5" x2="2.5" y2="5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[3]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="-2.5" x2="5" y2="2.5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.line[4]" class="scriba-plane-line scriba-state-idle"><line x1="-5" y1="2.5" x2="5" y2="-2.5" stroke="#dfe3e6" stroke-width="1.5" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[0]" class="scriba-plane-point scriba-state-current"><circle cx="0.0" cy="0.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[1]" class="scriba-plane-point scriba-state-good"><circle cx="3.0" cy="3.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[2]" class="scriba-plane-point scriba-state-good"><circle cx="-3.0" cy="3.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[3]" class="scriba-plane-point scriba-state-done"><circle cx="2.0" cy="4.0" r="0.1562" vector-effect="non-scaling-stroke"/></g><g data-target="p.point[4]" class="scriba-plane-point scriba-state-done"><circle cx="4.0" cy="2.0" r="0.1562" vector-effect="non-scaling-stroke"/></g></g><g class="scriba-plane-labels"><text class="scriba-plane-tick-label" x="57.60" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">-4</text><text class="scriba-plane-tick-label" x="108.80" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">-2</text><text class="scriba-plane-tick-label" x="211.20" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">2</text><text class="scriba-plane-tick-label" x="262.40" y="172.00" text-anchor="middle" style="font-size:10px" fill="#687076">4</text><text class="scriba-plane-tick-label" x="154.00" y="265.40" text-anchor="end" style="font-size:10px" fill="#687076">-4</text><text class="scriba-plane-tick-label" x="154.00" y="214.20" text-anchor="end" style="font-size:10px" fill="#687076">-2</text><text class="scriba-plane-tick-label" x="154.00" y="111.80" text-anchor="end" style="font-size:10px" fill="#687076">2</text><text class="scriba-plane-tick-label" x="154.00" y="60.60" text-anchor="end" style="font-size:10px" fill="#687076">4</text><rect x="253.0" y="16.0" width="41" height="20" rx="4" fill="white" fill-opacity="0.85" class="scriba-plane-label-pill"/><text class="scriba-plane-label-text" x="274" y="26" fill="#11181c" style="text-anchor:middle;font-size:10px">y=x</text><rect x="247.0" y="272.0" width="47" height="20" rx="4" fill="white" fill-opacity="0.85" class="scriba-plane-label-pill"/><text class="scriba-plane-label-text" x="270" y="282" fill="#11181c" style="text-anchor:middle;font-size:10px">y=-x</text><rect x="206.5" y="16.0" width="47" height="20" rx="4" fill="white" fill-opacity="0.85" class="scriba-plane-label-pill"/><text class="scriba-plane-label-text" x="230" y="26" fill="#11181c" style="text-anchor:middle;font-size:10px">y=2x</text><rect x="235.0" y="80.0" width="59" height="20" rx="4" fill="white" fill-opacity="0.85" class="scriba-plane-label-pill"/><text class="scriba-plane-label-text" x="264" y="90" fill="#11181c" style="text-anchor:middle;font-size:10px">y=0.5x</text><rect x="229.0" y="208.0" width="65" height="20" rx="4" fill="white" fill-opacity="0.85" class="scriba-plane-label-pill"/><text class="scriba-plane-label-text" x="262" y="218" fill="#11181c" style="text-anchor:middle;font-size:10px">y=-0.5x</text></g><g class="scriba-annotation scriba-annotation-info" data-annotation="p.point[0]-position-above" opacity="0.7" role="graphics-symbol" aria-roledescription="annotation" aria-label="All lines intersect here"><rect x="96" y="78" width="127" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#506882" stroke-width="0.5" stroke-opacity="0.3"/><text x="160" y="91" fill="#506882" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:500;font-size:11px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">All lines intersect here</text></g><g class="scriba-annotation scriba-annotation-good" data-annotation="p.point[1]-position-right" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=x"><rect x="245" y="64" width="53" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="272" y="78" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">On y=x</text></g><g class="scriba-annotation scriba-annotation-good" data-annotation="p.point[2]-position-left" opacity="1.0" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=-x"><rect x="14" y="74" width="60" height="20" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#027a55" stroke-width="0.5" stroke-opacity="0.3"/><text x="44" y="88" fill="#027a55" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">On y=-x</text></g><g class="scriba-annotation scriba-annotation-warn" data-annotation="p.point[3]-position-above" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=2x"><rect x="183" y="-4" width="56" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#92600a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="3,2"/><text x="211" y="8" fill="#92600a" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">On y=2x</text></g><g class="scriba-annotation scriba-annotation-warn" data-annotation="p.point[4]-position-below" opacity="0.8" role="graphics-symbol" aria-roledescription="annotation" aria-label="On y=0.5x"><rect x="229" y="126" width="66" height="19" rx="4" ry="4" fill="white" fill-opacity="0.92" stroke="#92600a" stroke-width="0.5" stroke-opacity="0.3" stroke-dasharray="3,2"/><text x="262" y="139" fill="#92600a" stroke="white" stroke-width="3" stroke-linejoin="round" paint-order="stroke fill" style="font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:auto" class="scriba-annot-label-text">On y=0.5x</text></g></g></g></g></svg></div></figure>
 <script>
 document.addEventListener('click',function(e){
     var btn=e.target.closest('[data-scriba-action="theme-toggle"]');

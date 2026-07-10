@@ -820,6 +820,36 @@ def test_katex_macros_expand_in_real_worker():
         pool.close()
 
 
+def test_katex_unknown_command_fallback_uses_themed_color():
+    """KaTeX's own unknown-command fallback (trust=false, strict=false —
+    scriba's default) hardcodes ``color:#cc0000`` inline with no class, so
+    no CSS selector can reach it (2.88:1 contrast on --scriba-bg-code,
+    below WCAG AA's 4.5:1). wave-2 theme-attr sweep:
+    ``_theme_katex_color_fallback`` swaps the literal for
+    ``var(--scriba-error)`` after ``_scan_katex_errors`` has scanned the
+    untouched original, so the E1200 warning is unaffected.
+    """
+    pool = SubprocessWorkerPool()
+    try:
+        r = TexRenderer(worker_pool=pool, pygments_theme="none")
+        try:
+            p = Pipeline([r])
+            try:
+                doc = p.render(r"$\thisisnotarealcommand$", _make_ctx())
+                assert "color:#cc0000" not in doc.html, (
+                    f"hardcoded fallback red leaked unthemed:\n{doc.html}"
+                )
+                assert "color:var(--scriba-error)" in doc.html, (
+                    f"expected themed fallback color, got:\n{doc.html}"
+                )
+            finally:
+                p.close()
+        finally:
+            r.close()
+    finally:
+        pool.close()
+
+
 # ===========================================================================
 # ${...} interpolation literals are shielded from the $...$ math parser
 # ===========================================================================

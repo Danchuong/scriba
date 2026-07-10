@@ -1112,13 +1112,19 @@ class DiagramRenderer:
         )
         snap = state.snapshot(index=1, narration=None)
 
-        frame = _snapshot_to_frame_data(snap, 1, scene_id, ctx)
-        minify = ctx.metadata.get("minify", True)
         # Forward env options exactly like the animation path — the emitter
         # half (aria-label, max-size) was wired and tested, but this call
         # site never fed it, so documented diagram label/width/height were
-        # silently dropped.
+        # silently dropped. `label` is threaded into the frame's `title=`
+        # below too: diagrams forbid \step[title=]/\narrate (E1050/E1054),
+        # so without it the SVG's own <title> (JudgeZone #10 / R-15) would
+        # have no natural-language content to draw on.
         _opts = getattr(ir, "options", None)
+        frame = _snapshot_to_frame_data(
+            snap, 1, scene_id, ctx,
+            title=(getattr(_opts, "label", None) or None),
+        )
+        minify = ctx.metadata.get("minify", True)
         html = emit_html(
             scene_id, [frame], primitives, mode="diagram",
             label=(getattr(_opts, "label", None) or ""),

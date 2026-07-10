@@ -246,22 +246,25 @@ def measure_label_line(line: str, font_px: int, *, text_face: str = "mono") -> i
       (spec-fix-annot-pill-face-scriba-sans).
     """
     from scriba.animation.primitives._math_metrics import measure_inline_math
-    from scriba.animation.primitives._text_render import _INLINE_MATH_RE
+    from scriba.animation.primitives._text_render import (
+        _INLINE_MATH_RE,
+        strip_math_markup,
+    )
 
     _text_w = measure_text_run if text_face == "scriba-sans" else estimate_text_width
     if "$" not in line:
-        return int(_text_w(line, font_px) + 0.5)
+        return int(_text_w(strip_math_markup(line), font_px) + 0.5)
     total = 0.0
     pos = 0
     for m in _INLINE_MATH_RE.finditer(line):
         text_seg = line[pos : m.start()]
         if text_seg:
-            total += _text_w(text_seg, font_px)
+            total += _text_w(strip_math_markup(text_seg), font_px)
         total += measure_inline_math(m.group(1), font_px)
         pos = m.end()
     tail = line[pos:]
     if tail:
-        total += _text_w(tail, font_px)
+        total += _text_w(strip_math_markup(tail), font_px)
     return int(total + 0.5)
 
 
@@ -293,7 +296,7 @@ def measure_value_text(text: str, font_px: int, *, mono: bool = False) -> int:
 
     base = estimate_text_width if mono else measure_text
     if "$" not in text:
-        return base(text, font_px)
+        return base(strip_math_markup(text), font_px)
     return max(
         measure_label_line(text, font_px),
         base(strip_math_markup(text), font_px),

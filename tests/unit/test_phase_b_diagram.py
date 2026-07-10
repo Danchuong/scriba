@@ -112,6 +112,11 @@ class TestDiagramStaticFigure:
         assert "scriba-diagram" in artifact.html
         assert 'data-primitive="array"' in artifact.html
 
+        # JudgeZone #10: no label= option supplied -- no natural-language
+        # content exists to name the SVG, so <title> must be omitted
+        # rather than leaking the internal scene id (R-15 policy).
+        assert "<title>" not in artifact.html
+
 
 # ---------------------------------------------------------------------------
 # 4. Diagram with \recolor -- state applies

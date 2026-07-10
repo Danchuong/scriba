@@ -151,10 +151,75 @@ def _escape_xml(text: str) -> str:
 
 _INLINE_MATH_RE = re.compile(r"\$([^\$]+?)\$")
 
+# Identifier fragment for the interpolation shape gate below -- duplicated
+# from ``scriba.tex.renderer.TexRenderer._INTERP_IDENT`` (itself duplicated
+# from ``scriba.animation.parser.lexer._IDENT_RE``) rather than imported, to
+# keep this low-level SVG text helper free of a dependency on the tex
+# renderer module. Same character ranges, so a combining-mark identifier is
+# recognised identically everywhere.
+_INTERP_IDENT = (
+    r"[^\W\d](?:\w|[̀-ͯ҃-҉֑-ֽؐ-ؚ"
+    r"ً-ٰٟۖ-ۜ۟-ۤऀ-ः"
+    r"ऺ-ॏ॑-ॗॢॣঁ-ঃั"
+    r"ิ-ฺ็-๎ັິ-ຼ່-ໍ"
+    r"ါ-ှၖ-ၙ឴-៓ᩕ-᩿᷀-᷿"
+    r"⃐-⃰︠-︯])*"
+)
+# ``${...}`` is interpolation syntax IFF its brace content is
+# identifier-shaped, optionally followed by ``[index]``/``.attr`` tails --
+# mirrors ``TexRenderer._INTERP_SHAPE_RE``. Labels/notes are not a
+# documented interpolation position (SCRIBA-TEX-REFERENCE.md sec 13.2), so
+# an identifier-shaped run reaching here is always an unresolved literal --
+# but its lone "$" still mis-pairs with the next real $...$ unless shielded
+# from the pairing regex below (judgezone-11 reverse risk: the mirror image
+# of the interpolation-position bug fixed in tex/renderer.py).
+_INTERP_SHAPE_RE = re.compile(
+    r"^\{" + _INTERP_IDENT + r"(?:\[[^\]]*\]|\." + _INTERP_IDENT + r")*\}$"
+)
+_INTERP_REF_RE = re.compile(r"\$\{[^}]*\}")
+
+
+def _shield_interp_refs(text: str) -> "tuple[str, dict[str, str]]":
+    """Replace identifier-shaped ``${...}`` runs with an opaque, ``$``-free
+    placeholder so they cannot be swept into ``$...$`` math pairing (here,
+    or in ``strip_math_markup``'s own internal pairing once restored past
+    it -- callers must restore AFTER any such pairing pass, not before).
+
+    Non-identifier-shaped ``${...}`` (e.g. the math body of
+    ``${5 \\choose 3}$``) is left untouched and falls through to normal
+    math pairing, per the judgezone-11 shape contract.
+    """
+    placeholders: dict[str, str] = {}
+
+    def _sub(m: "re.Match[str]") -> str:
+        if not _INTERP_SHAPE_RE.match(m.group(0)[1:]):
+            return m.group(0)
+        ph = f"\x00SCRIBA_INTERP{len(placeholders)}\x00"
+        placeholders[ph] = m.group(0)
+        return ph
+
+    return _INTERP_REF_RE.sub(_sub, text), placeholders
+
+
+def _unshield_interp_refs(text: str, placeholders: "dict[str, str]") -> str:
+    """Restore placeholders from ``_shield_interp_refs`` to their original
+    (unresolved) ``${...}`` text."""
+    for ph, original in placeholders.items():
+        text = text.replace(ph, original)
+    return text
+
 
 def _has_math(text: str) -> bool:
-    """Return True if *text* contains at least one ``$...$`` fragment."""
-    return "$" in str(text) and _INLINE_MATH_RE.search(str(text)) is not None
+    """Return True if *text* contains at least one ``$...$`` fragment.
+
+    Identifier-shaped ``${...}`` runs are shielded first so text made up
+    only of unresolved interpolation refs (no real math) reports False and
+    stays on the plain-``<text>`` fast path instead of round-tripping
+    through the foreignObject/KaTeX machinery for nothing (judgezone-11
+    reverse risk -- see ``_render_mixed_html``).
+    """
+    shielded, _ = _shield_interp_refs(str(text))
+    return "$" in shielded and _INLINE_MATH_RE.search(shielded) is not None
 
 
 def _render_mixed_html(
@@ -163,51 +228,110 @@ def _render_mixed_html(
 ) -> str:
     """Render a string that may contain ``$...$`` math into HTML.
 
-    Non-math segments are XML-escaped; math segments are rendered via
-    the *render_inline_tex* callback (which takes a bare fragment, no
-    ``$`` delimiters) and returned as-is (already HTML).
+    Non-math segments get the JZ-13 "one interpretation" literal pass
+    (``strip_math_markup``: ``\\_`` unescape, ``\\texttt{}`` unwrap) then
+    XML-escaping; math segments are rendered via the *render_inline_tex*
+    callback (which takes a bare fragment, no ``$`` delimiters) and
+    returned as-is (already HTML).
+
+    Identifier-shaped ``${...}`` runs are shielded from math pairing
+    before the ``$...$`` split runs, so an unresolved ``${name}`` next to
+    real math stays literal instead of being swept into a bogus math span
+    or corrupting the following pair's boundary (judgezone-11 reverse
+    risk).
     """
     # W7-H1: hide escaped \$ before math regex so two escaped dollars
     # cannot pair up as a phantom math span.
     _SENTINEL = "\x00SCRIBA_BASE_DOLLAR\x00"
     src = str(text).replace("\\$", _SENTINEL)
+    src, _interp_placeholders = _shield_interp_refs(src)
+
+    def _restore(segment: str) -> str:
+        return _unshield_interp_refs(segment, _interp_placeholders).replace(
+            _SENTINEL, "$"
+        )
+
     parts: list[str] = []
     last = 0
     for m in _INLINE_MATH_RE.finditer(src):
         if m.start() > last:
-            parts.append(_escape_xml(src[last : m.start()].replace(_SENTINEL, "$")))
-        parts.append(render_inline_tex(f"${m.group(1).replace(_SENTINEL, '$')}$"))
+            # strip_math_markup runs BEFORE placeholders/sentinel are
+            # restored: the segment is guaranteed $-free at this point
+            # (interp refs are opaque placeholders, \$ is sentinelled), so
+            # its own "$" not in text check always takes the literal-only
+            # branch — restoring first could let two independent refs/
+            # escapes re-pair into a phantom math span inside
+            # strip_math_markup's own unshielded pairing.
+            seg = strip_math_markup(src[last : m.start()])
+            parts.append(_escape_xml(_restore(seg)))
+        parts.append(render_inline_tex(f"${_restore(m.group(1))}$"))
         last = m.end()
     tail = src[last:]
     if tail:
-        parts.append(_escape_xml(tail.replace(_SENTINEL, "$")))
+        tail = strip_math_markup(tail)
+        parts.append(_escape_xml(_restore(tail)))
     return "".join(parts)
 
 
 _STRIP_CMD_RE = re.compile(r"\\([a-zA-Z]+)")
 
+# \texttt{...} argument: a literal-text-island, same everywhere regardless
+# of $...$ context (mirrors core/text_utils.py::apply_text_commands).
+_TEXTT_RE = re.compile(r"\\texttt\{([^{}]*)\}")
+
+# Protects a literal underscore that came from unescaping \_ inside a
+# \texttt{} argument so a later subscript-detection regex (which only ever
+# runs on math fragments — some of which may have wrapped a \texttt{}) can
+# never misread it as a subscript trigger. Callers MUST restore this to
+# "_" as their very last step, after all math-only processing has run.
+_SENT_LIT_USCORE = "\x00LU\x00"
+
+
+def _unescape_literal(text: str) -> str:
+    r"""Literal (non-math) text: ``\_`` is the only recognized escape and
+    unescapes to a plain underscore. No other TeX-speech/markup transform
+    runs outside ``$...$`` (JZ-13 "one interpretation" contract)."""
+    return text.replace("\\_", "_")
+
+
+def _unwrap_texttt(text: str) -> str:
+    r"""Unconditional pre-pass: ``\texttt{...}`` is a literal-text-island
+    command authors use both inside and outside ``$...$`` — it always
+    unwraps to its (unescaped) argument, independent of math context.
+    Must run BEFORE any ``$...$`` split. See ``_SENT_LIT_USCORE`` for why
+    the argument's ``\_`` unescapes to a sentinel, not a bare ``_``."""
+
+    def _sub(m: "re.Match[str]") -> str:
+        return m.group(1).replace("\\_", _SENT_LIT_USCORE)
+
+    return _TEXTT_RE.sub(_sub, text)
+
 
 def strip_math_markup(text: str) -> str:
-    """The no-KaTeX paint form of a mixed label/value: ``$`` delimiters
+    r"""The no-KaTeX paint form of a mixed label/value: ``$`` delimiters
     dropped, ``\\cmd`` -> ``cmd``, braces dropped inside math segments.
     ``\$`` escapes survive untouched. This is exactly what the plain-text
     fallbacks paint, so it is also exactly what they must be measured as
-    ("size what you paint")."""
+    ("size what you paint"). Outside ``$...$`` the text is literal:
+    ``\_`` unescapes to ``_``, no other transform applies (JZ-13 "one
+    interpretation" contract). ``\texttt{...}`` unwraps unconditionally,
+    independent of ``$...$``."""
+    text = _unwrap_texttt(str(text))
     if "$" not in text:
-        return text
+        return _unescape_literal(text).replace(_SENT_LIT_USCORE, "_")
     _SENT = "\x00D\x00"
-    src = str(text).replace("\\$", _SENT)
+    src = text.replace("\\$", _SENT)
     parts: list[str] = []
     last = 0
     for m in _INLINE_MATH_RE.finditer(src):
-        parts.append(src[last : m.start()])
+        parts.append(_unescape_literal(src[last : m.start()]))
         frag = m.group(1)
         frag = _STRIP_CMD_RE.sub(r"\1", frag)
         frag = frag.replace("{", "").replace("}", "")
         parts.append(frag)
         last = m.end()
-    parts.append(src[last:])
-    return "".join(parts).replace(_SENT, "\\$")
+    parts.append(_unescape_literal(src[last:]))
+    return "".join(parts).replace(_SENT, "\\$").replace(_SENT_LIT_USCORE, "_")
 
 
 def _render_svg_text(
@@ -274,10 +398,19 @@ def _render_svg_text(
 
     # Fast path — no math or no callback: emit a plain <text>
     if render_inline_tex is None or not _has_math(text_str):
-        if render_inline_tex is None and _has_math(text_str):
-            # no KaTeX available: paint the stripped form, not raw $..$
-            # noise — and measure_value_text sizes this exact string
-            text_str = strip_math_markup(text_str)
+        # JZ-13 "one interpretation": literal text outside $...$ still
+        # gets the \_ unescape / \texttt{} unwrap pass, not just the
+        # has-math+no-callback case — strip_math_markup is a no-op for
+        # plain text carrying neither marker, so this is safe
+        # unconditionally, and measure_value_text sizes this exact string.
+        # Identifier-shaped ${...} runs are shielded first: strip_math_markup
+        # does its own unshielded $...$ pairing internally, which would
+        # mis-pair two unresolved refs (or a ref + real math) the same way
+        # _render_mixed_html would without a shield (judgezone-11 reverse
+        # risk) — this call site just has no foreignObject slow path to
+        # hide behind, so it is equally exposed.
+        _shielded, _interp_ph = _shield_interp_refs(text_str)
+        text_str = _unshield_interp_refs(strip_math_markup(_shielded), _interp_ph)
         attrs = f'x="{x}" y="{y}" fill="{fill}"'
         if css_class:
             attrs = f'class="{css_class}" {attrs}'

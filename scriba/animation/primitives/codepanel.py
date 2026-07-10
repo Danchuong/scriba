@@ -283,14 +283,16 @@ class CodePanel(PrimitiveBase):
 
         # Panel background border
         parts.append(
-            f'<rect x="0" y="0" width="{panel_w}" height="{panel_h}" '
+            f'<rect class="scriba-codepanel-chrome" '
+            f'x="0" y="0" width="{panel_w}" height="{panel_h}" '
             f'rx="{_BORDER_RADIUS}" fill="{_PANEL_BG}" '
             f'stroke="{_PANEL_BORDER}" stroke-width="1"/>'
         )
 
         if not self.lines:
             parts.append(
-                f'<text x="{panel_w // 2}" y="{panel_h // 2}" '
+                f'<text class="scriba-codepanel-empty-text" '
+                f'x="{panel_w // 2}" y="{panel_h // 2}" '
                 f'style="font-family:monospace;'
                 f"font-size:11px;"
                 f"font-weight:400;"
@@ -378,7 +380,8 @@ class CodePanel(PrimitiveBase):
             r = _BORDER_RADIUS
             # Header fill with rounded top corners that match the panel.
             parts.append(
-                f'<path d="M 0 {_HEADER_HEIGHT} L 0 {r} '
+                f'<path class="scriba-codepanel-chrome" '
+                f'd="M 0 {_HEADER_HEIGHT} L 0 {r} '
                 f'Q 0 0 {r} 0 L {panel_w - r} 0 '
                 f'Q {panel_w} 0 {panel_w} {r} '
                 f'L {panel_w} {_HEADER_HEIGHT} Z" '
@@ -386,7 +389,8 @@ class CodePanel(PrimitiveBase):
             )
             # Divider between the header and the code area.
             parts.append(
-                f'<line x1="0" y1="{_HEADER_HEIGHT}" '
+                f'<line class="scriba-codepanel-chrome" '
+                f'x1="0" y1="{_HEADER_HEIGHT}" '
                 f'x2="{panel_w}" y2="{_HEADER_HEIGHT}" '
                 f'stroke="{_PANEL_BORDER}" stroke-width="1"/>'
             )

@@ -246,8 +246,16 @@ class TestDominantBaselineConsistency:
 
 class TestEveryReferencedClassHasCSS:
     """Grep the Python emitters for ``css_class=`` arguments and verify
-    every class name lands somewhere in the stylesheet. Guards against a
-    repeat of Bug A where a class name was referenced but never styled.
+    every class name lands somewhere in the SHIPPED stylesheet family.
+    Guards against a repeat of Bug A where a class name was referenced but
+    never styled.
+
+    The rule may legitimately live in a primitive-specific sheet rather
+    than scriba-scene-primitives.css — e.g. ``.scriba-plane-label-text``
+    (JZ-14 dark theming) is styled in scriba-plane2d.css, which the
+    artifact declares via ``extra_css_assets`` whenever a Plane2D is
+    present — so the guard aggregates every ``scriba/animation/static``
+    sheet, matching what a rendered page can actually load.
     """
 
     _PRIMITIVE_PY_DIR = (
@@ -266,15 +274,18 @@ class TestEveryReferencedClassHasCSS:
                         refs.add(klass)
         return refs
 
-    def test_all_scriba_classes_have_rules(self, css_text: str) -> None:
+    def test_all_scriba_classes_have_rules(self) -> None:
         referenced = self._collect_css_class_refs()
-        stripped = re.sub(r"/\*.*?\*/", "", css_text, flags=re.DOTALL)
+        shipped = "\n".join(
+            p.read_text() for p in sorted(_CSS_PATH.parent.glob("*.css"))
+        )
+        stripped = re.sub(r"/\*.*?\*/", "", shipped, flags=re.DOTALL)
         missing: list[str] = []
         for klass in sorted(referenced):
             if f".{klass}" not in stripped:
                 missing.append(klass)
         assert not missing, (
             f"Primitives reference {len(missing)} CSS class(es) that have "
-            f"no rule in scriba-scene-primitives.css: {missing}. "
+            f"no rule in any scriba/animation/static/*.css sheet: {missing}. "
             "See Wave 8 audit Bug A for the .scriba-index-label reference case."
         )

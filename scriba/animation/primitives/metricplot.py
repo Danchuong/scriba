@@ -521,7 +521,8 @@ class MetricPlot(PrimitiveBase):
             parts.append(
                 f'<text x="{sx}" y="{H - pb + 14}"'
                 f' text-anchor="middle"'
-                f' style="font-size:10px">'
+                f' style="font-size:10px"'
+                f' fill="var(--scriba-fg-muted, #687076)">'
                 f'{_escape_xml(label)}</text>'
             )
         parts.append("</g>")
@@ -540,7 +541,8 @@ class MetricPlot(PrimitiveBase):
             parts.append(
                 f'<text x="{pl - 8}" y="{round(sy + 4, 2)}"'
                 f' text-anchor="end"'
-                f' style="font-size:10px">'
+                f' style="font-size:10px"'
+                f' fill="var(--scriba-fg-muted, #687076)">'
                 f'{_escape_xml(label)}</text>'
             )
         parts.append("</g>")
@@ -560,7 +562,8 @@ class MetricPlot(PrimitiveBase):
                 parts.append(
                     f'<text x="{W - pr + 8}" y="{round(sy + 4, 2)}"'
                     f' text-anchor="start"'
-                    f' style="font-size:10px">'
+                    f' style="font-size:10px"'
+                    f' fill="var(--scriba-fg-muted, #687076)">'
                     f'{_escape_xml(label)}</text>'
                 )
             parts.append("</g>")
@@ -570,6 +573,7 @@ class MetricPlot(PrimitiveBase):
         parts.append(
             _render_svg_text(
                 self.xlabel, cx, H - 6,
+                fill="var(--scriba-fg, #11181c)",
                 font_size="11",
                 text_anchor="middle",
                 fo_width=measure_label_line(str(self.xlabel), 11) + 12,
@@ -581,6 +585,7 @@ class MetricPlot(PrimitiveBase):
         cy = round((pt + H - pb) / 2, 2)
         ylabel_svg = _render_svg_text(
             self.ylabel, 12, cy,
+            fill="var(--scriba-fg, #11181c)",
             font_size="11",
             text_anchor="middle",
             fo_width=measure_label_line(str(self.ylabel), 11) + 12,
@@ -594,6 +599,7 @@ class MetricPlot(PrimitiveBase):
         if self.two_axis and self.ylabel_right:
             ylabel_right_svg = _render_svg_text(
                 self.ylabel_right, W - 10, cy,
+                fill="var(--scriba-fg, #11181c)",
                 font_size="11",
                 text_anchor="middle",
                 css_class="scriba-metricplot-right-axis-label",

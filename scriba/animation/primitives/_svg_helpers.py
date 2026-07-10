@@ -21,17 +21,22 @@ import math
 import unicodedata
 import os
 import re
+import warnings
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Iterator, Literal, NamedTuple
 
 from scriba.animation.primitives._text_metrics import (
     label_line_extra,
     measure_label_line,
+    measure_text_run,
 )
 from scriba.animation.primitives._text_render import (
     _bidi_style,
     _escape_xml,
     _render_mixed_html,
+    _SENT_LIT_USCORE,
+    _unescape_literal,
+    _unwrap_texttt,
     estimate_text_width,
     strip_math_markup,
 )
@@ -66,6 +71,8 @@ __all__ = [
     "_place_pill",
     # Arrow styles and rendering
     "ARROW_STYLES",
+    "STATE_ANNOTATION_FALLBACK",
+    "resolve_arrow_style",
     "emit_plain_arrow_svg",
     "emit_arrow_svg",
     "emit_position_label_svg",
@@ -1035,25 +1042,15 @@ _SUBSCRIPT_RE = re.compile(r"_\{([^}]+)\}|_([A-Za-z0-9])")
 _SUPERSCRIPT_RE = re.compile(r"\^\{([^}]+)\}|\^([A-Za-z0-9])")
 
 
-def _latex_to_speech(tex: str) -> str:
-    r"""Convert a LaTeX-containing string to a screen-reader-friendly speech form.
+def _speech_segment(frag: str) -> str:
+    r"""R-11 steps 2-6 applied to the content of ONE ``$...$`` fragment:
+    command words, subscript, superscript, backslash-strip, brace-strip.
 
-    Algorithm (R-11):
-    1. Strip ``$`` delimiters.
-    2. Replace known ``\command`` tokens from ``_LATEX_SPEECH_MAP``.
-    3. Replace ``_{n}`` / ``_n`` → `` subscript n``.
-    4. Replace ``^{n}`` / ``^n`` → `` to the power n``.
-    5. Remove remaining ``\`` prefix for unknown tokens.
-    6. Strip brace characters ``{`` / ``}``.
-    7. Collapse whitespace.
+    JZ-13 "one interpretation" contract: these transforms are math-only —
+    ``_latex_to_speech`` must never run this outside ``$...$``.
     """
-    if not tex:
-        return tex
-
-    # Step 1: strip $ delimiters (both opening and closing).
-    result = _MATH_DELIM_RE.sub(lambda m: m.group(0)[1:-1], tex)
-
     # Step 2: replace known LaTeX commands before generic stripping.
+    result = frag
     for cmd, replacement in _LATEX_SPEECH_MAP.items():
         result = result.replace(cmd, f" {replacement} " if replacement else " ")
 
@@ -1077,7 +1074,45 @@ def _latex_to_speech(tex: str) -> str:
     # Step 6: strip brace chars.
     result = result.replace("{", "").replace("}", "")
 
-    # Step 7: collapse whitespace.
+    return result
+
+
+def _latex_to_speech(tex: str) -> str:
+    r"""Convert a LaTeX-containing string to a screen-reader-friendly speech form.
+
+    JZ-13 "one interpretation" contract: text outside ``$...$`` is
+    literal — ``\_`` unescapes to ``_``, nothing else transforms. The R-11
+    speech algorithm (``_speech_segment``) applies ONLY inside ``$...$``
+    fragments. ``\texttt{...}`` unwraps unconditionally before the
+    ``$...$`` split (mirrors ``core/text_utils.py``'s always-active
+    treatment of the same command).
+
+    Algorithm:
+    1. Unwrap ``\texttt{...}`` (unconditional pre-pass).
+    2. Split on ``$...$``: text outside is unescaped only; each fragment
+       inside gets ``_speech_segment``.
+    3. Collapse whitespace once, over the whole result.
+    """
+    if not tex:
+        return tex
+
+    text = _unwrap_texttt(str(tex))
+
+    if "$" not in text:
+        result = _unescape_literal(text)
+    else:
+        parts: list[str] = []
+        last = 0
+        for m in _MATH_DELIM_RE.finditer(text):
+            parts.append(_unescape_literal(text[last : m.start()]))
+            parts.append(_speech_segment(text[m.start() + 1 : m.end() - 1]))
+            last = m.end()
+        parts.append(_unescape_literal(text[last:]))
+        result = "".join(parts)
+
+    # Restore the literal underscore \texttt{} sentinel-protected from the
+    # subscript regex above, then collapse whitespace once, at the very end.
+    result = result.replace(_SENT_LIT_USCORE, "_")
     result = " ".join(result.split())
 
     return result
@@ -1439,15 +1474,36 @@ def pill_dimensions(
     # the FO paints compact math (measure_label_line's model); without one
     # the emitters fall back to the RAW $...$ text in mono, which is wider
     # (folabel-sweep-measure-callers: $dp_{i}$ raw 40.5px vs model 29px)
-    if math_rendered:
+    #
+    # JZ-13 defect #1: this must mirror _emit_pill_label_text's OWN
+    # branching exactly. That function paints one <foreignObject> per line
+    # (no inter-line concatenation, no trailing space) only when a KaTeX
+    # callback exists AND at least one line actually has math; every other
+    # case falls back to a single <text> with per-line <tspan>s, and every
+    # non-final tspan keeps a trailing space so copied text stays worded —
+    # a width this function never used to reserve.
+    num_lines = len(label_lines)
+    uses_foreign_object = math_rendered and any(
+        _label_has_math(ln) for ln in label_lines
+    )
+    if uses_foreign_object:
         max_line_w = max(
             measure_label_line(ln, l_font_px, text_face="scriba-sans")
             for ln in label_lines
         )
+    elif math_rendered:
+        _space_w = measure_text_run(" ", l_font_px)
+        max_line_w = max(
+            measure_label_line(ln, l_font_px, text_face="scriba-sans")
+            + (_space_w if li < num_lines - 1 else 0)
+            for li, ln in enumerate(label_lines)
+        )
     else:
+        _space_w = estimate_text_width(" ", l_font_px)
         max_line_w = max(
             estimate_text_width(strip_math_markup(ln), l_font_px)
-            for ln in label_lines
+            + (_space_w if li < num_lines - 1 else 0)
+            for li, ln in enumerate(label_lines)
         )
     pill_w = max_line_w + _LABEL_PILL_PAD_X * 2
     pill_h = len(label_lines) * line_height + _LABEL_PILL_PAD_Y * 2
@@ -1639,8 +1695,15 @@ def _emit_pill_label_text(
             f'<tspan x="{fi_x}" dy="{dy_val}">'
             f"{_escape_xml(strip_math_markup(ln_text))}{trail}</tspan>"
         )
+    # wave-2 theme-attr sweep: the pill rect this halo sits on already
+    # flips dark via .scriba-annotation > rect[fill="white"] (Fix A), but
+    # the hand-rolled halo stroke above is a literal outside the generic
+    # [data-primitive] text cascade (annotations aren't data-primitive
+    # descendants) — class marker lets CSS re-tint it to match in dark
+    # mode without touching the light-mode literal.
     lines.append(
-        f'    <text {text_attrs} style="{style_str}">{tspans}</text>'
+        f'    <text {text_attrs} style="{style_str}"'
+        f' class="scriba-annot-label-text">{tspans}</text>'
     )
 
 
@@ -1710,8 +1773,12 @@ def _emit_label_single_line(
         f' stroke="white" stroke-width="3"'
         f' stroke-linejoin="round" paint-order="stroke fill"'
     )
+    # wave-2 theme-attr sweep: same halo-vs-dark-pill mismatch as
+    # _emit_pill_label_text above — class marker, dark rule re-tints the
+    # stroke; light mode's literal "white" is untouched.
     return (
-        f'    <text {text_attrs} style="{style_str}">'
+        f'    <text {text_attrs} style="{style_str}"'
+        f' class="scriba-annot-label-text">'
         f'{_escape_xml(strip_math_markup(label_text))}</text>'
     )
 
@@ -1991,6 +2058,59 @@ ARROW_STYLES: dict[str, dict[str, str]] = {
     },
 }
 
+# R-37 color="state:X" fallback: state tokens carry no key in ARROW_STYLES
+# (bare good/info/warn/error/muted/path only), so every
+# ARROW_STYLES.get(color, ARROW_STYLES["info"]) call site silently mispainted
+# all six state:X values as "info" (JZ-13 side-finding). stroke/label_fill
+# are the CSS-authoritative --scriba-annotation-state-* light-theme hex
+# (scriba-scene-primitives.css) — NOT the bare entry of the same name, since
+# e.g. bare "good" (#027a55) and bare "path" (#2563eb) are different
+# *semantic* colors from state:good (#2a7e3b) and state:path (#5e6669). The
+# remaining cosmetics (stroke_width/opacity/label_weight/label_size) borrow
+# the closest bare analogue by emphasis: current<-info, done/dim<-muted,
+# good<-good, error<-error, path<-path. CSS applies the hex reactively via
+# the scriba-annotation-state-* class (annotation_color_class) whenever the
+# stylesheet is present; this dict is what a consumer sees otherwise (and is
+# always what supplies the non-color cosmetics, which CSS never overrides).
+STATE_ANNOTATION_FALLBACK: dict[str, dict[str, str]] = {
+    "current": {**ARROW_STYLES["info"], "stroke": "#0070d5", "label_fill": "#0070d5"},
+    "done": {**ARROW_STYLES["muted"], "stroke": "#5b6871", "label_fill": "#5b6871"},
+    "dim": {**ARROW_STYLES["muted"], "stroke": "#687076", "label_fill": "#687076"},
+    "good": {**ARROW_STYLES["good"], "stroke": "#2a7e3b", "label_fill": "#2a7e3b"},
+    "error": {**ARROW_STYLES["error"], "stroke": "#c6282d", "label_fill": "#c6282d"},
+    "path": {**ARROW_STYLES["path"], "stroke": "#5e6669", "label_fill": "#5e6669"},
+}
+
+
+def resolve_arrow_style(color: str) -> dict[str, str]:
+    """One shared resolver for every ``ARROW_STYLES`` consumer (JZ-13
+    side-finding): bare colors resolve as before; ``state:X`` (R-37) resolves
+    via ``STATE_ANNOTATION_FALLBACK`` instead of silently collapsing to
+    "info". An unknown token warns (mirrors the ``\\trace`` out-of-range
+    warning in ``base.py``, ``[E1113]``-tagged to match the parser's own
+    annotation-color diagnostic) and falls back to "info" — the same
+    fallback every replaced call site already had, now correct for all six
+    known ``state:X`` tokens instead of misfiring on every one of them.
+    """
+    if color in ARROW_STYLES:
+        return ARROW_STYLES[color]
+    if color.startswith("state:"):
+        state = color[len("state:") :]
+        if state in STATE_ANNOTATION_FALLBACK:
+            return STATE_ANNOTATION_FALLBACK[state]
+        valid = ", ".join(sorted(f"state:{s}" for s in STATE_ANNOTATION_FALLBACK))
+        warnings.warn(
+            f"[E1113] unknown annotation state color {color!r}; valid: {valid}",
+            stacklevel=2,
+        )
+        return ARROW_STYLES["info"]
+    valid = ", ".join(sorted(ARROW_STYLES))
+    warnings.warn(
+        f"[E1113] unknown annotation color {color!r}; valid: {valid}",
+        stacklevel=2,
+    )
+    return ARROW_STYLES["info"]
+
 
 def emit_plain_arrow_svg(
     lines: list[str],
@@ -2041,7 +2161,7 @@ def emit_plain_arrow_svg(
     x1, y1 = x2, y2 - _PLAIN_ARROW_STEM
 
     # Resolve inline style for this color
-    style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    style = resolve_arrow_style(color)
     s_stroke = style["stroke"]
     s_width = style["stroke_width"]
     s_opacity = style["opacity"]
@@ -2783,7 +2903,7 @@ def emit_arrow_svg(
     # the helper no longer accepts a pre-classified flow kwarg.
     # Real pill height for the natural-anchor clearance (R-01): measured
     # from the same single-source pill_dimensions the label emitter uses.
-    _style_early = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    _style_early = resolve_arrow_style(color)
     _l_size_early = _style_early["label_size"]
     _l_font_early = (
         int(_l_size_early.replace("px", ""))
@@ -2809,7 +2929,7 @@ def emit_arrow_svg(
     ix2, iy2 = int(x2), int(y2)
 
     # Resolve inline style for this color
-    style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    style = resolve_arrow_style(color)
     s_stroke = style["stroke"]
     s_width = style["stroke_width"]
     s_opacity = style["opacity"]
@@ -3212,7 +3332,7 @@ def _position_pill_width(label: str, color: str = "info") -> float:
     size, same wrap policy, same padding. A drift-guard unit test asserts this
     equals the emitted ``<rect>`` width.
     """
-    style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    style = resolve_arrow_style(color)
     l_size = style["label_size"]
     l_font_px = (
         int(l_size.replace("px", "")) if l_size.endswith("px") else _DEFAULT_LABEL_FONT_PX
@@ -3574,7 +3694,7 @@ def emit_position_label_svg(
     target = ann.get("target", "")
     position = ann.get("position", "above")
 
-    style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+    style = resolve_arrow_style(color)
     s_stroke = style["stroke"]
     s_opacity = style["opacity"]
     l_fill = style["label_fill"]

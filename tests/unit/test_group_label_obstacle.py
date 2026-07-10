@@ -96,7 +96,7 @@ class TestGroupLabelByteIdentityWhenClear:
         '<rect x="61.9" y="34.1" width="87" height="19" rx="4" fill="white"'
         ' fill-opacity="0.92" stroke="#506882" stroke-width="0.5"'
         ' stroke-opacity="0.4"/>'
-        '<text x="105.4" y="43.6" fill="#506882"'
+        '<text class="scriba-group-label-text" x="105.4" y="43.6" fill="#506882"'
         ' style="text-anchor:middle;dominant-baseline:central">component X</text>'
         "</g>"
     )

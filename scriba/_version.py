@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.34.0"
+__version__: str = "0.35.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 29
+SCRIBA_VERSION: int = 30
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -596,4 +596,38 @@ descriptor (``400 500 600``→``400 600``) re-bless every page (DNA-3).
 Non-annotation SVG surfaces are byte-identical (old-vs-new ``measure_text``
 proven equal over ZWJ/NFC/CJK/symbol inputs). ``differ.py`` is untouched
 (zero new motion kinds). Consumer caches keyed on rendered output MUST
+invalidate.
+
+0.35.0 bumps 29→30 (JudgeZone #9–#14 structural closure: five family
+contracts, each fixed at the shared emitter/CSS layer and pinned by an
+enforcement test, plus a sweep wave that closed seven sibling defects):
+  * Accessible-name policy (R-15): the static-diagram/silent-step SVG
+    ``<title>`` no longer falls back to the internal scene id — ``label=``
+    threads through as the title, else the element is omitted. Every
+    diagram doc and every silent-step animation doc changes.
+  * Theme-attr contract: dark CSS grows across scene-primitives (annotation
+    pill rule scoped ``rect[fill="white"]`` so ``bracket=true`` outlines
+    survive dark mode, group hull-label, codepanel chrome,
+    annotation-label-text class), plane2d gains its first dark rules
+    (line-label chip, point labels, ticks — all classed now), tex-content/
+    pygments-dark/standalone gain their ``@media`` twins, MetricPlot
+    tick/axis labels self-theme via ``var()`` fills, graph ``tint_by_edge``
+    idle pills normalize ``#ffffff``→``white``, and the KaTeX
+    unknown-command fallback ink routes through ``var(--scriba-error)``.
+  * Label one-interpretation (measure == paint == announce): wrapped pill
+    widths grow by the previously-unmeasured trailing space, ``\_``
+    unescapes and ``\texttt{}`` unwraps in paint/aria outside math, speech
+    transforms scope to ``$...$`` (snake_case labels stop announcing
+    "subscript"), the ``value=`` channel adopts the same literal
+    interpretation, and ``color="state:X"`` arrows/pills resolve the real
+    state hues (previously all six silently collapsed to info).
+  * Below-band reservation: captions and ``position=below`` pills yield to
+    a bound caret's reach via the shared ``_below_lane_height``/
+    ``_cursor_aware_below_baseline`` — one corpus doc grows +1px viewBox.
+  * Interp shape-gate: math-shaped ``${...}`` in narrate/invariant/label/
+    note falls through to normal ``$...$`` pairing instead of re-pairing
+    every later ``$`` off-by-one (corpus byte-unaffected; new E1161 rejects
+    non-identifier structured ``value=${...}``).
+107 example re-blesses + 3 smart_label fragment re-blesses (the annotation
+label-text class attribute). Consumer caches keyed on rendered output MUST
 invalidate."""

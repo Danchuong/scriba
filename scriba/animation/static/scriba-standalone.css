@@ -35,3 +35,15 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 
 [data-theme="dark"] body { background: #151718; color: #ecedee; }
 [data-theme="dark"] .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
+
+/* wave-2 theme-attr sweep: this file was entirely [data-theme="dark"]-guarded
+   with no twin. render.py's own HTML_TEMPLATE always sets data-theme
+   explicitly, so this never fires there today — but load_css() is a
+   generic asset loader, and nothing restricts this file to that one
+   template. Mirrors the H6 fix pattern (see scriba-embed.css) so a host
+   page that loads this CSS directly, without an explicit data-theme
+   attribute, still honors OS dark preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body { background: #151718; color: #ecedee; }
+  :root:not([data-theme="light"]) .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
+}

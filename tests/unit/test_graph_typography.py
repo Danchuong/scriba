@@ -97,6 +97,18 @@ def test_tint_by_source_changes_pill_fill() -> None:
 
 
 @pytest.mark.unit
+def test_tint_by_edge_idle_pill_fill_is_white_not_hex() -> None:
+    """``tint_by_edge=True`` on a default (idle-state) edge must emit the
+    string "white", not "#ffffff" — .scriba-graph-pill[fill="white"] is an
+    exact-string CSS attribute selector, so the two are not interchangeable
+    even though they're the same colour (JudgeZone #9/#14 sibling)."""
+    g = _make_dual(tint_by_edge=True)
+    svg = g.emit_svg()
+    assert 'fill="white"' in svg
+    assert 'fill="#ffffff"' not in svg
+
+
+@pytest.mark.unit
 def test_flags_orthogonal() -> None:
     """Both flags together render without error and produce distinct SVG."""
     g = _make_dual(split_labels=True, tint_by_source=True)

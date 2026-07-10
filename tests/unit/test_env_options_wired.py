@@ -105,6 +105,33 @@ class TestDiagramRendererForwardsOptions:
         html = self._render('[id="d", label="A small BST"]')
         assert 'aria-label="A small BST"' in html
 
+    def test_diagram_label_reaches_svg_title(self) -> None:
+        """JudgeZone #10: label= must also reach the SVG's own <title>, not
+        just the figure's aria-label. The <title> element -- not the
+        figure's aria-label -- is what drives the SVG's own computed
+        accessible name and the native hover tooltip (SVG 2 §5.1)."""
+        html = self._render('[id="internal-slug-x", label="A small BST"]')
+        assert "<title>A small BST</title>" in html
+        assert "<title>internal-slug-x</title>" not in html
+
+    def test_diagram_without_label_omits_svg_title(self) -> None:
+        """Diagrams forbid \\step[title=] and \\narrate (E1050/E1054), so
+        with no label= there is no natural-language content to name the
+        SVG. Per the accessible-name policy, <title> must be omitted
+        entirely -- it must never fall back to the internal id=."""
+        html = self._render('[id="internal-slug-x"]')
+        assert "<title>" not in html
+
+    def test_diagram_without_label_keeps_role_img_and_no_dangling_aria(
+        self,
+    ) -> None:
+        """Omitting <title> must not regress the surrounding a11y wiring:
+        role="img" stays, and no aria-labelledby dangles (a diagram has no
+        narration paragraph for it to reference)."""
+        html = self._render('[id="internal-slug-x"]')
+        assert 'role="img"' in html
+        assert "aria-labelledby" not in html
+
     def test_diagram_width_becomes_max_width(self) -> None:
         html = self._render('[id="d", width=480]')
         assert "max-width:480px" in html

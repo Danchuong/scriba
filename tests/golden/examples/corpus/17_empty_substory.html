@@ -895,7 +895,7 @@
 [data-theme="dark"] .scriba-annotation-muted > polygon { fill: #9ba1a6; }
 /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
 [data-theme="dark"] .scriba-annotation-path  > polygon { fill: #a78bfa; }
-[data-theme="dark"] .scriba-annotation        > rect    { fill: #1a1d1e; }
+[data-theme="dark"] .scriba-annotation > rect[fill="white"] { fill: #1a1d1e; }
 
 /* -- OS preference dark-mode overrides (H6) -------------------------------- */
 @media (prefers-color-scheme: dark) {
@@ -906,7 +906,7 @@
   :root:not([data-theme="light"]) .scriba-annotation-muted > polygon { fill: #9ba1a6; }
   /* R-25: path polygon uses distinct violet (#a78bfa), not same as info (#70b8ff) */
   :root:not([data-theme="light"]) .scriba-annotation-path  > polygon { fill: #a78bfa; }
-  :root:not([data-theme="light"]) .scriba-annotation        > rect    { fill: #1a1d1e; }
+  :root:not([data-theme="light"]) .scriba-annotation > rect[fill="white"] { fill: #1a1d1e; }
 }
 
 /* Index labels use a hardcoded fill in light mode; flip for dark. */
@@ -941,6 +941,63 @@
   :root:not([data-theme="light"]) .scriba-graph-pill[fill="white"] ~ .scriba-graph-weight div {
     color: var(--scriba-state-idle-text) !important;
   }
+}
+
+/* \group hull label chip (JudgeZone #9/#14 sibling): the label pill rect
+   carries the pre-existing scriba-group-label parent class already, so the
+   rect needs no source change — only this selector. The label text gets a
+   new class since ARROW_STYLES label_fill literals don't match the
+   --scriba-annotation-* var() tokens for most colors (info/good/muted/path),
+   so it can't reuse scriba-annotation-{cls} without shifting light mode. */
+[data-theme="dark"] .scriba-group-label > rect[fill="white"] { fill: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-group-label-text { fill: var(--scriba-fg, #ecedee); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-group-label > rect[fill="white"] { fill: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-group-label-text { fill: var(--scriba-fg, #ecedee); }
+}
+
+/* CodePanel chrome (JudgeZone #9/#14 sibling): panel bg/border, header
+   title-bar path, and header/divider line all share one chrome class;
+   the empty-panel "no code" text gets its own since it's the fg-muted tone
+   rather than the panel's bg/border tones. */
+[data-theme="dark"] .scriba-codepanel-chrome {
+  fill: var(--scriba-bg-code, #1a1d1e);
+  stroke: var(--scriba-border, #313538);
+}
+[data-theme="dark"] .scriba-codepanel-empty-text { fill: var(--scriba-fg-muted, #9ba1a6); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-codepanel-chrome {
+    fill: var(--scriba-bg-code, #1a1d1e);
+    stroke: var(--scriba-border, #313538);
+  }
+  :root:not([data-theme="light"]) .scriba-codepanel-empty-text { fill: var(--scriba-fg-muted, #9ba1a6); }
+}
+
+/* Annotation pill-label halo (wave-2 theme-attr sweep): _emit_pill_label_text
+   and _emit_label_single_line's plain-<text> fallback paint a hand-rolled
+   white paint-order halo — these labels sit outside [data-primitive], so
+   they miss the generic halo cascade above and never got a dark twin. The
+   backing pill already flips to #1a1d1e via Fix A above; match the halo to
+   it so dark mode doesn't show a white ring on a dark pill. The same
+   functions' math/FO branch (.scriba-annot-label div) bakes the identical
+   white as an inline text-shadow; !important beats it, mirroring the FO-ink
+   precedent (CHANGELOG 0.31.0) — scoped to dark only since
+   --scriba-bg-code's light value (#f8f9fa) isn't byte-identical to the
+   literal's pure white, unlike the ink case. */
+[data-theme="dark"] .scriba-annot-label-text { stroke: var(--scriba-bg-code, #1a1d1e); }
+[data-theme="dark"] .scriba-annot-label {
+  text-shadow: 0 0 2px var(--scriba-bg-code, #1a1d1e), 0 0 2px var(--scriba-bg-code, #1a1d1e) !important;
+}
+/* \link annotation label halo: floats with no backing pill/rect (unlike the
+   pill-text fallback above), so it matches the STAGE background instead —
+   same convention as the other floating labels (.idx / .scriba-graph-weight). */
+[data-theme="dark"] .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-annot-label-text { stroke: var(--scriba-bg-code, #1a1d1e); }
+  :root:not([data-theme="light"]) .scriba-annot-label {
+    text-shadow: 0 0 2px var(--scriba-bg-code, #1a1d1e), 0 0 2px var(--scriba-bg-code, #1a1d1e) !important;
+  }
+  :root:not([data-theme="light"]) .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
 }
 
 /* ============================================
@@ -1609,10 +1666,24 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] body { background: #151718; color: #ecedee; }
 [data-theme="dark"] .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
 
+/* wave-2 theme-attr sweep: this file was entirely [data-theme="dark"]-guarded
+   with no twin. render.py's own HTML_TEMPLATE always sets data-theme
+   explicitly, so this never fires there today — but load_css() is a
+   generic asset loader, and nothing restricts this file to that one
+   template. Mirrors the H6 fix pattern (see scriba-embed.css) so a host
+   page that loads this CSS directly, without an explicit data-theme
+   attribute, still honors OS dark preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) body { background: #151718; color: #ecedee; }
+  :root:not([data-theme="light"]) .theme-toggle { background: #2b2f31; color: #ecedee; border-color: #313538; }
+}
+
 /* Scriba TeX Content Styles
  * Scoped under .scriba-tex-content
  * Uses --scriba-* CSS variables — see :root block below for defaults.
- * Dark mode via [data-theme="dark"] ancestor selector.
+ * Dark mode via [data-theme="dark"] ancestor selector, or automatically
+ * via @media (prefers-color-scheme: dark) when the host page never sets
+ * data-theme (wave-2 theme-attr sweep; H6 fix pattern, see scriba-embed.css).
  */
 
 /* ============================================
@@ -1689,6 +1760,36 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
   --scriba-copy-btn-fg-hover: #70b8ff;
   --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
   --scriba-copy-btn-fg-copied: #65ba74;
+}
+
+/* OS-level dark mode preference (overridden by explicit data-theme="light").
+   wave-2 theme-attr sweep: scriba-tex-content.css can ship standalone into a
+   host page that never sets data-theme (see TexRenderer.assets() / examples/
+   integration/minimal.py) — without this twin, OS dark preference was
+   silently ignored until a runtime theme-toggle click set the attribute.
+   Duplicates the token overrides above 1:1, mirroring scriba-embed.css's
+   H6 fix. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --scriba-fg: #ecedee;
+    --scriba-fg-muted: #9ba1a6;
+    --scriba-bg: #151718;
+    --scriba-bg-code: #1a1d1e;
+    --scriba-bg-inline-code: rgba(236, 237, 238, 0.08);
+    --scriba-border: #313538;
+    --scriba-border-strong: #6e767d;
+    --scriba-link: #70b8ff;
+    --scriba-link-hover: #a2ceff;
+    --scriba-error: #ff6369;
+    --scriba-error-bg: rgba(229, 72, 77, 0.15);
+    --scriba-epigraph-border: #9ba1a6;
+    --scriba-copy-btn-bg: #202425;
+    --scriba-copy-btn-fg: #ecedee;
+    --scriba-copy-btn-bg-hover: #2b2f31;
+    --scriba-copy-btn-fg-hover: #70b8ff;
+    --scriba-copy-btn-bg-copied: rgba(101, 186, 116, 0.18);
+    --scriba-copy-btn-fg-copied: #65ba74;
+  }
 }
 
 /* ============================================
@@ -1772,6 +1873,21 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] .katex .minner,
 [data-theme="dark"] .katex .mpunct {
   color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .katex {
+    color: var(--scriba-fg);
+  }
+
+  :root:not([data-theme="light"]) .katex .mord,
+  :root:not([data-theme="light"]) .katex .mop,
+  :root:not([data-theme="light"]) .katex .mrel,
+  :root:not([data-theme="light"]) .katex .mbin,
+  :root:not([data-theme="light"]) .katex .minner,
+  :root:not([data-theme="light"]) .katex .mpunct {
+    color: inherit;
+  }
 }
 
 /* Scriba math wrappers */
@@ -2145,7 +2261,10 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 }
 
 /* Scriba Pygments theme — One Dark
- * Scoped under [data-theme="dark"] .scriba-tex-content .highlight
+ * Scoped under [data-theme="dark"] .scriba-tex-content .highlight, and its
+ * @media (prefers-color-scheme: dark) twin at the bottom of this file
+ * (wave-2 theme-attr sweep; H6 fix pattern, see scriba-embed.css) so OS
+ * dark preference applies before any explicit data-theme is set.
  * Uses Pygments `.tok-*` token class names.
  */
 
@@ -2259,6 +2378,126 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 [data-theme="dark"] .scriba-tex-content .highlight .tok-err {
   color: var(--scriba-error);
   background: var(--scriba-error-bg);
+}
+
+/* OS-level dark mode preference (overridden by explicit data-theme="light").
+   wave-2 theme-attr sweep: this file was entirely [data-theme="dark"]-guarded
+   with no twin, so a host page that never sets data-theme (see
+   TexRenderer.assets() / examples/integration/minimal.py) silently ignored
+   OS dark preference until a runtime theme-toggle click set the attribute.
+   Duplicates every rule above 1:1, mirroring scriba-embed.css's H6 fix. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight {
+    background: var(--scriba-bg-code);
+    color: #abb2bf;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight pre {
+    background: transparent;
+    color: inherit;
+  }
+
+  /* Keywords */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-k,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kd,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kn,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kp,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kr,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-kt {
+    color: #c678dd;
+  }
+
+  /* Names */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-n,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-na,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nx {
+    color: #abb2bf;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-fm,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nd {
+    color: #61afef;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ne {
+    color: #e5c07b;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-no {
+    color: #d19a66;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-nv {
+    color: #e06c75;
+  }
+
+  /* Strings */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sa,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sc,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-dl,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sd,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s1,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-s2,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sh,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-si,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sx,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-sr,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ss {
+    color: #98c379;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-se {
+    color: #56b6c2;
+  }
+
+  /* Numbers */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-m,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mb,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mh,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mi,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-mo,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-l {
+    color: #d19a66;
+  }
+
+  /* Comments */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-c,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ch,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cm,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cpf,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-c1,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cs {
+    color: #5c6370;
+    font-style: italic;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-cp {
+    color: #c678dd;
+    font-style: normal;
+  }
+
+  /* Operators, punctuation */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-o,
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-ow {
+    color: #56b6c2;
+  }
+
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-p {
+    color: #abb2bf;
+  }
+
+  /* Errors */
+  :root:not([data-theme="light"]) .scriba-tex-content .highlight .tok-err {
+    color: var(--scriba-error);
+    background: var(--scriba-error-bg);
+  }
 }
 
 /* Scriba Pygments theme — One Light
@@ -2397,11 +2636,11 @@ h1 { font-size: 1.4rem; margin-bottom: 1.5rem; font-weight: 600; }
 %            and will render nothing. Add at least one \step inside
 %            the substory block.</p></div>
 
-<div class="scriba-widget" id="fix-17-empty-substory" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter">1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="fix-17-empty-substory-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 0 0" style="max-width:calc(0px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="fix-17-empty-substory-print-1-narration" xmlns="http://www.w3.org/2000/svg"><title>fix-17-empty-substory</title></svg></div><p class="scriba-narration" dir="auto" id="fix-17-empty-substory-print-1-narration"></p></div></div></div>
+<div class="scriba-widget" id="fix-17-empty-substory" tabindex="0" data-scriba-speed="1" role="region" aria-label="Animation"><div class="scriba-stage-wrap"><div class="scriba-stage"></div><div class="scriba-controls"><button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button><span class="scriba-step-counter">1 / 1</span><button class="scriba-btn-next" aria-label="Next step" disabled>&#10095;</button></div></div><p class="scriba-narration" dir="auto" id="fix-17-empty-substory-narration" aria-live="polite"></p><div class="scriba-substory-container"></div><div class="scriba-print-frames" style="display:none"><div class="scriba-print-frame" data-step="1"><span class="scriba-step-label">1 / 1</span><div class="scriba-stage"><svg class="scriba-stage-svg" viewBox="0 0 0 0" style="max-width:calc(0px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="fix-17-empty-substory-print-1-narration" xmlns="http://www.w3.org/2000/svg"></svg></div><p class="scriba-narration" dir="auto" id="fix-17-empty-substory-print-1-narration"></p></div></div></div>
 <script>(function(){
   var W=document.getElementById('fix-17-empty-substory');
   var frames=[
-    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 0 0" style="max-width:calc(0px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="fix-17-empty-substory-narration" xmlns="http://www.w3.org/2000/svg"><title>fix-17-empty-substory</title>
+    {svg:`<svg class="scriba-stage-svg" viewBox="0 0 0 0" style="max-width:calc(0px * var(--scriba-diagram-font-scale, 1))" role="img" aria-labelledby="fix-17-empty-substory-narration" xmlns="http://www.w3.org/2000/svg">
 </svg>`,narration:``,substory:`      <section class="scriba-substory" role="group"
                aria-label="Sub-computation: empty — triggers E1366"
                data-substory-id="substory1"

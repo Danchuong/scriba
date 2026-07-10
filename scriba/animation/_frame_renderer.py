@@ -1409,12 +1409,21 @@ def _emit_scene_links(
             # House halo (white paint-order stroke, the pill-text fallback
             # pattern) — the bare mid-bridge text turned illegible over the
             # dashed bridge / crossed content (sweep3-decor latent note).
+            # wave-2 theme-attr sweep: this label floats with no backing
+            # pill/rect (unlike the pill-text fallback it borrows the halo
+            # from), so its dark match is the STAGE background, not the
+            # pill background — same convention as the other floating
+            # labels (.scriba-index-label / .idx / .scriba-graph-weight).
+            # Class marker only; the literal stroke="white" stays so the
+            # light-mode render and test_link_label_carries_halo are
+            # untouched.
             inner += (
                 f'<text x="{lx:.1f}" y="{ly:.1f}" fill="{style["label_fill"]}"'
                 f' font-size="{style["label_size"]}"'
                 f' stroke="white" stroke-width="3"'
                 f' stroke-linejoin="round" paint-order="stroke fill"'
-                f' style="text-anchor:middle;dominant-baseline:central">'
+                f' style="text-anchor:middle;dominant-baseline:central"'
+                f' class="scriba-link-label-text">'
                 f"{_escape_xml(display)}</text>"
             )
         aria = _escape_xml(strip_math_markup(str(label))) if label else "link"
@@ -1844,10 +1853,14 @@ def _emit_frame_svg(
     # NOTE: viewbox is NOT recomputed here — the caller passes a stable
     # max-across-all-frames viewbox so the stage size stays constant.
 
-    # R-15: <title> as first child of <svg>.  An explicit \step[title="..."]
-    # (§5.3) supersedes the narration-derived title; otherwise fall back to
-    # stripped narration text, then scene_id.  The title must not contain
-    # HTML tags, so strip markup with a simple regex before embedding.
+    # R-15: <title> as first child of <svg>, when natural-language content
+    # exists.  An explicit \step[title="..."] (§5.3) supersedes the
+    # narration-derived title; otherwise fall back to stripped narration
+    # text.  Accessible names come from author-supplied prose only -- when
+    # neither exists, omit <title> entirely rather than leaking the
+    # internal scene_id as a fake accessible name (JudgeZone #10).  The
+    # title must not contain HTML tags, so strip markup with a simple
+    # regex before embedding.
     _explicit_title = getattr(frame, "title", None)
     if _explicit_title:
         _title_text = _explicit_title
@@ -1871,10 +1884,12 @@ def _emit_frame_svg(
             _title_text = _re.sub(r"\s+", " ", _title_text).strip()
         else:
             _title_text = _re.sub(r"<[^>]+>", " ", _raw_narration).strip()
-        if not _title_text:
-            _title_text = scene_id
-    # Re-encode for safe embedding inside <title>…</title>.
-    _title_escaped = _html_mod.escape(_html_mod.unescape(_title_text))
+    # Re-encode for safe embedding inside <title>…</title>.  Empty when no
+    # natural-language title/narration exists -- the <title> element is
+    # then omitted below rather than populated with a non-prose id.
+    _title_escaped = (
+        _html_mod.escape(_html_mod.unescape(_title_text)) if _title_text else ""
+    )
     # Give the SVG an intrinsic max width equal to its natural viewBox width.
     # A viewBox-only SVG has no intrinsic pixel size, so the package CSS
     # ``width:100%`` would upscale a small drawing to the full container width
@@ -1891,9 +1906,9 @@ def _emit_frame_svg(
         f'style="max-width:calc({vb_width}px * var(--scriba-diagram-font-scale, 1))" '
         f'role="img" '
         + (f'aria-labelledby="{_escape_fn(narration_id)}" ' if narration_id else "")
-        + 
+        +
         f'xmlns="http://www.w3.org/2000/svg">'
-        f'<title>{_title_escaped}</title>',  # R-15: title first child
+        + (f'<title>{_title_escaped}</title>' if _title_escaped else ""),  # R-15
     ]
 
     # Shared defs

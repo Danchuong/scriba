@@ -73,6 +73,7 @@ from scriba.animation.primitives._text_render import (  # noqa: F401 — explici
 from scriba.animation.primitives._svg_helpers import *  # noqa: F401, F403
 from scriba.animation.primitives._svg_helpers import (  # noqa: F401 — explicit for IDEs
     ARROW_STYLES,
+    resolve_arrow_style,
     CellMetrics,
     _LABEL_BG_OPACITY,
     _LABEL_HEADROOM,
@@ -684,7 +685,7 @@ class PrimitiveBase(abc.ABC):
                     )
                 continue
             color = tr.get("color", "info")
-            style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+            style = resolve_arrow_style(color)
             stroke = style["stroke"]
             tid = tr.get("id", "t")
             key = f"{self.name}.trace[{tid}]-solo"
@@ -891,7 +892,7 @@ class PrimitiveBase(abc.ABC):
             cid = str(cur.get("id", "c"))
             color = cur.get("color", "info")
             key = f"{self.name}.cursor[{cid}]-solo"
-            style = ARROW_STYLES.get(color, ARROW_STYLES["info"])
+            style = resolve_arrow_style(color)
             stroke = style["stroke"]
             pts = (
                 f"{cx:.1f},{apex_y:.1f} "
@@ -1102,19 +1103,51 @@ class PrimitiveBase(abc.ABC):
         """
         return None
 
+    def _cursor_aware_below_baseline(self) -> "float | None":
+        """``resolve_below_baseline()``, pushed down to clear this frame's
+        bound R-38 caret stack (``▲`` + id) when one resolves.
+
+        A ``position=below`` pill anchors from this value
+        (``emit_annotation_arrows``'s ``below_baseline=``) — same source the
+        caption's own reservation (``_below_lane_height``) folds. Without
+        this, only a *same-cell* pill was pushed clear of the caret (F2's
+        obstacle nudge, scoped to the caret's own column); a pill on any
+        other cell painted at the raw baseline and could land inside the
+        caret's band. A bound caret can target any cell — or slide between
+        cells across steps — so the callout lane it protects has to be
+        cell-agnostic, not just self-column (JudgeZone #12 wave 2).
+
+        ``None`` when there is no lane. Unchanged when there is no caret —
+        ``_cursor_extent_below()`` is 0.0 and ``baseline`` is always
+        positive, so ``max`` drops the caret term (byte-stable, mirrors
+        ``_below_lane_height``'s own no-op guarantee).
+        """
+        baseline = self.resolve_below_baseline()
+        if baseline is None:
+            return None
+        return max(float(baseline), self._cursor_extent_below())
+
     def _below_lane_height(self) -> int:
-        """Px reserved below ``resolve_below_baseline()`` for ``position=below``
-        callout pills. 0 when nothing paints below the baseline (no-op for the
-        common case). Shared by ``bounding_box``/caption placement of every
-        primitive that opts into the lane.
+        """Px reserved below ``resolve_below_baseline()`` for every tenant of
+        the below-cell band — ``position=below`` callout pills AND a bound
+        R-38 caret's ``▲`` + id. 0 when nothing paints below the baseline
+        (no-op for the common case). Shared by ``bounding_box``/caption
+        placement of every primitive that opts into the lane, so the
+        caption's own top derives from the full occupied extent above it
+        (a reservation) instead of only ever seeing the annotation pills.
 
         Exact painted extent below the baseline — includes downward collision
         nudges the retired ``position_below_lane_height`` formula never
-        modelled."""
+        modelled. ``caret_reach`` is <= 0 (dropped by ``max``) whenever there
+        is no bound caret, since ``_cursor_extent_below()`` is 0.0 and
+        ``baseline`` is always positive — a caption-only frame is unaffected
+        (JudgeZone #12)."""
         baseline = self.resolve_below_baseline()
         if baseline is None:
             return 0
-        return self.annotation_below_overhang(float(baseline))
+        lane = self.annotation_below_overhang(float(baseline))
+        caret_reach = math.ceil(self._cursor_extent_below() - float(baseline))
+        return int(max(lane, caret_reach, 0))
 
     def _h_label_pad(self) -> "tuple[int, int]":
         """``(left_overhang, right_reach)`` of the annotations — the horizontal
@@ -1532,9 +1565,7 @@ class PrimitiveBase(abc.ABC):
                         stacklevel=2,
                     )
                 else:
-                    _sstyle = ARROW_STYLES.get(
-                        ann.get("color", "info"), ARROW_STYLES["info"]
-                    )
+                    _sstyle = resolve_arrow_style(ann.get("color", "info"))
                     _skey = f"{ann.get('target', '')}-strike"
                     parts.append(
                         f'  <g class="scriba-annotation scriba-annotation-'
@@ -1582,9 +1613,7 @@ class PrimitiveBase(abc.ABC):
                 if ann.get("bracket") and ".block[" in ann.get("target", ""):
                     _bbox = self.resolve_annotation_box(ann.get("target", ""))
                     if _bbox is not None:
-                        _bstyle = ARROW_STYLES.get(
-                            ann.get("color", "info"), ARROW_STYLES["info"]
-                        )
+                        _bstyle = resolve_arrow_style(ann.get("color", "info"))
                         _bkey = f"{ann.get('target', '')}-block-bracket"
                         parts.append(
                             f'  <g class="scriba-annotation scriba-annotation-'
@@ -1645,7 +1674,7 @@ class PrimitiveBase(abc.ABC):
                             placed_labels=placed,
                             primitive_obstacles=_cell_obs if _cell_obs else None,
                             cell_width=_cell_w,
-                            below_baseline=self.resolve_below_baseline(),
+                            below_baseline=self._cursor_aware_below_baseline(),
                             is_range="range[" in ann.get("target", ""),
                         )
                 # Position-only annotations have no arrow geometry to accumulate.

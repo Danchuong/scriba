@@ -1831,6 +1831,7 @@ class Plane2D(PrimitiveBase):
                         round(placement.x),
                         round(placement.y),
                         fill=THEME["fg"],
+                        css_class="scriba-plane-label-text",
                         font_size=str(_TICK_FONT_SIZE),
                         text_anchor="middle",
                         fo_width=int(placement.width),
@@ -1847,7 +1848,7 @@ class Plane2D(PrimitiveBase):
                 f'<rect x="{pill_rx:.1f}" y="{pill_ry:.1f}" '
                 f'width="{pill_w:g}" height="{pill_h:g}" '
                 f'rx="{_LINE_PILL_R}" fill="white" '
-                f'fill-opacity="0.85"/>'
+                f'fill-opacity="0.85" class="scriba-plane-label-pill"/>'
             )
             parts.append(
                 _render_svg_text(
@@ -1855,6 +1856,7 @@ class Plane2D(PrimitiveBase):
                     round(placement.x),
                     round(placement.y),
                     fill=THEME["fg"],
+                    css_class="scriba-plane-label-text",
                     font_size=str(_TICK_FONT_SIZE),
                     text_anchor="middle",
                     fo_width=int(pill_w),
@@ -1928,7 +1930,8 @@ class Plane2D(PrimitiveBase):
                 continue
             label = self._format_tick(v)
             parts.append(
-                f'<text x="{sx:.2f}" y="{sy + _TICK_FONT_SIZE + 2:.2f}" '
+                f'<text class="scriba-plane-tick-label" '
+                f'x="{sx:.2f}" y="{sy + _TICK_FONT_SIZE + 2:.2f}" '
                 f'text-anchor="middle" '
                 f'style="font-size:{_TICK_FONT_SIZE}px" '
                 f'fill="{THEME["fg_muted"]}">{label}</text>'
@@ -1945,7 +1948,8 @@ class Plane2D(PrimitiveBase):
                 continue
             label = self._format_tick(v)
             parts.append(
-                f'<text x="{sx - _LABEL_OFFSET:.2f}" y="{sy + 3:.2f}" '
+                f'<text class="scriba-plane-tick-label" '
+                f'x="{sx - _LABEL_OFFSET:.2f}" y="{sy + 3:.2f}" '
                 f'text-anchor="end" '
                 f'style="font-size:{_TICK_FONT_SIZE}px" '
                 f'fill="{THEME["fg_muted"]}">{label}</text>'

@@ -50,15 +50,21 @@ class _Stub:
         pass
 
 
-def _make_frame(label: str = "", step_number: int = 1) -> FrameData:
+def _make_frame(
+    label: str = "",
+    step_number: int = 1,
+    title: str | None = None,
+    narration_html: str = "<p>narration</p>",
+) -> FrameData:
     return FrameData(
         step_number=step_number,
         total_frames=1,
         label=label,
-        narration_html="<p>narration</p>",
+        narration_html=narration_html,
         shape_states={},
         annotations=[],
         substories=[],
+        title=title,
     )
 
 
@@ -122,3 +128,38 @@ def test_frames_with_label_uses_frame_label():
     assert 'aria-label="Binary Search"' in html, (
         "Filmstrip with labelled frame must use that label as aria-label"
     )
+
+
+# ---------------------------------------------------------------------------
+# JudgeZone #10 / R-15: the SVG's own <title> content policy.  R-15 cites
+# this file as its test ref, but until now nothing here asserted on
+# <title> content itself -- only on the figure's aria-label attribute.
+# Accessible names come from author-supplied natural language only; the
+# internal scene id must never surface as a <title>.
+# ---------------------------------------------------------------------------
+
+
+def test_frame_with_title_uses_it_as_svg_title():
+    """An explicit \\step[title=...] (threaded via FrameData.title) names
+    the frame's own SVG <title>, not just the filmstrip figure."""
+    frames = [_make_frame(title="Fill the base row")]
+    html = emit_animation_html(
+        scene_id="internal-slug-y",
+        frames=frames,
+        primitives=_PRIMITIVES,
+    )
+    assert "<title>Fill the base row</title>" in html
+    assert "<title>internal-slug-y</title>" not in html
+
+
+def test_frame_without_title_or_narration_omits_svg_title():
+    """No title and no narration text means no natural-language content
+    exists to name the SVG. <title> must be omitted entirely -- it must
+    never fall back to the internal scene id."""
+    frames = [_make_frame(title=None, narration_html="")]
+    html = emit_animation_html(
+        scene_id="internal-slug-y",
+        frames=frames,
+        primitives=_PRIMITIVES,
+    )
+    assert "<title>" not in html
