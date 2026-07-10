@@ -54,3 +54,25 @@ Release checklist (established 0.34.0; mirrors prior releases):
 5. Verify `https://pypi.org/pypi/scriba-tex/json` reports the new version.
 
 Notes: no `~/.pypirc`/keyring on this machine — `key.env` is the only credential source. Homebrew tap (`homebrew/`) is a stale scaffold (formula still at 0.5.0 placeholders); update its SHA256s only if reviving that channel. RTK's `rg` proxy can return false "0 matches" — use `rtk proxy grep` or the Read tool for release verification greps.
+
+## Multi-agent hygiene (BMAD waves)
+
+Spawned agents (investigation/patcher/sweep) do NOT self-terminate — after
+their final report they sit idle, resumable via SendMessage, until someone
+stops them. Standing policy (user directive, 2026-07-10): **done = dead.**
+
+1. Every spawn prompt must end with: "After delivering your final report to
+   the lead, you are DONE — approve any shutdown_request immediately; do not
+   pick up new work."
+2. The lead, upon receiving AND consolidating an agent's final report, sends
+   that agent `{"type": "shutdown_request"}` via SendMessage. The agent
+   approves (`shutdown_response`, `approve: true`) and its process ends.
+   Do this per-agent as each finishes — don't batch cleanup at the end.
+3. Idle notifications (`idleReason: "available"`) arriving AFTER the final
+   report are the signal the agent is loitering — shut it down then if step
+   2 was missed.
+4. An agent that dies mid-task on a session limit (`idleReason: "failed"`)
+   leaves partial work: the lead inventories its owned files (git status/
+   diff), finishes or respawns the remainder, and writes the missing
+   deliverable. Precedent: fix-label (JZ-13, 2026-07-10) — code complete,
+   lead finished the property-test edge + spec artifact.
