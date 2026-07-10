@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.34.0 · MIT · Python 3.10+
+**Status:** v0.35.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,26 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.35.0 — JudgeZone #9–#14: five family contracts + sweep wave
+
+**Six external bug reports, closed as five structural families** — each fixed
+at the shared emitter/CSS layer behind a permanent enforcement test, then
+swept across the whole surface (seven more sibling defects found and fixed
+the same way). Dark mode stops painting `bracket=true` outlines as opaque
+boxes and the Plane2D chip/labels/ticks get their first dark rules;
+`${5 \choose 3}$` in a narration renders as math instead of re-pairing every
+later `$` off-by-one (interpolation fires only on identifier-shaped
+`${name}`); bound carets, captions, index rows and `position=below` pills
+share one reservation model; labels obey **measure == paint == announce**
+(wrapped pill padding restored, snake_case stops announcing "subscript",
+`\_`/`\texttt{}` behave, `color="state:X"` resolves real state hues); and
+static diagrams stop leaking the internal widget id as the hover tooltip
+(`label=` → `<title>`, else omitted — with a corpus-wide conformance test).
+110 goldens re-bless (`SCRIBA_VERSION` 30).
+
+<details>
+<summary>v0.34.0 changelog</summary>
+
 ## What's new in v0.34.0 — annotation labels adopt the house text oracle
 
 **Annotation pills speak one typeface** (JudgeZone report #8). An
@@ -40,6 +60,8 @@ the static master stays synthesis-free (measured == painted, pinned by
 math symbols outside `$...$` take a conservative floor. Reviewed by two
 3-agent adversarial rounds; non-annotation surfaces proven byte-identical.
 ~107 goldens re-bless (`SCRIBA_VERSION` 29).
+
+</details>
 
 <details>
 <summary>v0.33.0 changelog</summary>

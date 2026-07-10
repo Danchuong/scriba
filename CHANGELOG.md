@@ -7,6 +7,93 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-07-10 — JudgeZone #9–#14: five family contracts + sweep wave
+
+External bug batch (JudgeZone editorial pipeline, 6 reports + 5 structural
+asks) closed at the family level: 5 investigation agents verified every claim
+against live repros, 5 patchers fixed each family at the shared emitter/CSS
+layer behind a permanent enforcement test, and a 5-agent sweep wave then
+hunted each family across the whole surface — finding and fixing seven more
+sibling defects the reports never saw. 107 example + 3 smart_label goldens
+re-bless; full tree green. `SCRIBA_VERSION` 29 → 30.
+
+### Fixed
+
+- **Dark mode stops hiding `bracket=true` blocks (#9).** The annotation-pill
+  dark flip matched EVERY direct rect — including the bracket outline
+  (`fill="none"`), painting an opaque box over the very block it annotates.
+  Rule scoped to `rect[fill="white"]` in both dark scopes, mirroring the
+  graph-pill precedent it ironically cited.
+- **Plane2D themes in dark mode (#14 + siblings).** The line-label chip was
+  a class-less `white`/`#11181c` blob; it, point labels and tick labels now
+  carry classes with dark pairs — `scriba-plane2d.css`'s first dark rules.
+  Same sweep closed the whole class: group hull-labels, CodePanel chrome,
+  MetricPlot tick/axis inks (`var()` self-theming), graph `tint_by_edge`
+  idle pills (`#ffffff`→`white` normalization), tex-content/pygments-dark/
+  standalone `@media` twins, and the KaTeX unknown-command fallback ink
+  (`#cc0000` hardcoded, 2.88:1 on dark code — now `var(--scriba-error)`).
+  Enforced forever by `test_theme_attr_contract.py` (site table + mechanical
+  literal-fill scanner + twin-parity classes).
+- **`${` in narrate/invariant no longer shreds the line (#11).** The
+  interpolation shield consumed one `$` per `${...}` match, re-pairing every
+  later `$` off-by-one — Vietnamese prose inside KaTeX, raw TeX leaking, no
+  E-code. The shield now fires only on identifier-shaped content
+  (`${name}`, `${arr[i]}`, `${obj.attr}` — the documented grammar, same rule
+  the selector parser already enforced); math-shaped `${5 \choose 3}$` falls
+  through to normal `$...$` pairing. The sweep closed the mirror image:
+  label=/note= had NO shield, so an unresolved `${x}` beside real math got
+  swept INTO a math pair — same gate applied before their `$`-split. New
+  `E1161` rejects non-identifier structured `value=${...}` (previously a
+  silent wrong-value fallback).
+- **Bound carets, captions, index rows and below-pills share one lane model
+  (#12).** The caption's lane height never consulted the caret's reach —
+  0.26.4's caret drop landed exactly on the caption line. The shared
+  `_below_lane_height()` now folds `_cursor_extent_below()`; the sweep's
+  four-tenant probe then caught two more overlaps (`position=below` pill vs
+  caret, same-cell 13.2px and cross-cell 4.0px) and closed them at the one
+  call site that backs both passes (`_cursor_aware_below_baseline()`).
+  Array/Grid/DPTable/Queue/Stack/NumberLine combo-tested; the 11 no-cursor
+  primitives pinned byte-identical no-op (`test_below_band_lanes.py`).
+- **Labels have one interpretation: measure == paint == announce (#13).**
+  Four stacked defects, none of them the reported subscript theory: the
+  ruler never measured the trailing space the painter re-adds to wrapped
+  lines (pill padding collapsed 8→2px — generic to ALL wrapped labels);
+  speech transforms ran on plain text (snake_case announced "subscript");
+  `\_` painted a literal backslash; `\texttt{}` painted verbatim. All three
+  consumers now share the same literal-text rules outside `$...$` (speech
+  scoped to math segments, `\_` unescapes, `\texttt{}` unwraps
+  unconditionally). The sweep found the identical signature in the `value=`
+  channel (4 shared fns — Array/VariableWatch/Equation/NumberLine/Bar/graph
+  weights) and fixed it via the same helpers. Hypothesis property tests pin
+  the invariant; `$dp_i$`-style real subscripts keep speaking correctly.
+- **`color="state:X"` resolves real state colors (#13 side-finding).** All
+  six `state:X` tokens silently collapsed to the "info" style at five call
+  sites; a shared `resolve_arrow_style()` resolves them to the
+  CSS-authoritative state hues and warns (`[E1113]`) on unknown tokens.
+- **Static diagrams stop leaking the widget id as the hover tooltip (#10).**
+  The shared `<title>` builder's fallback chain ended at the scene id —
+  every diagram (they forbid title/narrate) and every silent animation step
+  hit it. `label=` now threads through as the SVG title; with no natural
+  language the element is omitted (R-15's own MUST). Corpus-level
+  conformance test (`test_r15_accessible_name_policy.py`) pins the policy —
+  no `<title>`/`aria-label` may equal an internal id, ever; R-15 spec text
+  and a second stale copy in svg-emitter.md synced to the implemented
+  policy; E1050/E1054 guidance now points at `label=`.
+- **Docs:** `graph-stable-layout.md`'s `nodes=${range(25)}` example (already
+  silently non-functional pre-fix) corrected to the working
+  `\compute`+`${nodes}` idiom; `errors.py` E11xx band-header comments no
+  longer claim overlapping ranges.
+
+### Notes
+
+- Deferred, logged in `deferred-work.md`: `\includegraphics alt=` option key
+  (documented-contract change, feature-sized), `\note text=` stray backslash
+  before `${x}` (cosmetic, upstream of the fixed pipeline), corpus fixture
+  for `\_`/`\texttt` inside `values=` (unit/property tests cover it).
+- Artifacts: `_bmad-output/implementation-artifacts/
+  judgezone-2026-07-08-batch-closure-summary.md` indexes the 5
+  investigations + 5 fix specs (each with its sweep-wave section).
+
 ## [0.34.0] - 2026-07-08 — Annotation labels adopt the house text oracle
 
 JudgeZone report #8 (mixed math+text pill fonts), fixed in two stages within
