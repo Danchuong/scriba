@@ -251,8 +251,11 @@ def test_scriba_version_unchanged() -> None:
     # 30 -> 31 for the invariant theorem-box (+ displaystyle + overflow
     # guard), the JZ-15 top-band reservation (Tree/Forest/Graph captions vs
     # crown decorations), and the shell-panel single-source unification
-    # (narration overflow guard included). Zoom remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 31
+    # (narration overflow guard included), then 31 -> 32 for the JZ-16
+    # leader-span fix (displaced below-pills root their leader at the true
+    # anchor once past _LEADER_SNUG_GAP; opt-in-only output change, zero
+    # corpus re-bless). Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 32
 
 
 def test_zoom_no_new_motion_kind() -> None:

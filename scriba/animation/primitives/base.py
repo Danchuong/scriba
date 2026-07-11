@@ -1677,6 +1677,11 @@ class PrimitiveBase(abc.ABC):
                             ann.get("target", "")
                         )
                         _cell_w = float(target_box.width) if target_box is not None else None
+                        _cell_bottom = (
+                            float(target_box.y) + float(target_box.height)
+                            if target_box is not None
+                            else None
+                        )
                         if target_box is not None and ann.get("position") == "below":
                             bx, by, bw, bh = target_box
                             _cell_obs = _cell_obs + (
@@ -1700,6 +1705,7 @@ class PrimitiveBase(abc.ABC):
                             cell_width=_cell_w,
                             below_baseline=self._cursor_aware_below_baseline(),
                             is_range="range[" in ann.get("target", ""),
+                            target_bottom=_cell_bottom,
                         )
                 # Position-only annotations have no arrow geometry to accumulate.
                 continue

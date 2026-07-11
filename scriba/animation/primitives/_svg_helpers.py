@@ -106,6 +106,15 @@ _LABEL_PILL_MAX_W_PX = 132
 # Larger than the normal pill gap so the leader line has a visible run between
 # the cell column and the pill in the lane.
 _LABEL_LANE_GAP = 14
+# JudgeZone #16: threshold distinguishing a "snug" below-lane (the lane sits
+# just past THIS target's own box edge — e.g. Array/Bar/DPTable's 1D mode)
+# from a "displaced" below-lane (the lane is the shared bottom of a taller
+# structure, unrelated to a non-bottom-row/internal target — e.g. Tree's
+# internal nodes, Grid/Matrix/DPTable's 2D mode top rows, Graph/Hypercube's
+# top nodes). Calibrated against the full resolve_below_baseline() family:
+# every snug case measured <=34px past the target's own box bottom, every
+# displaced case measured >=75px — this sits in the middle of that gap.
+_LEADER_SNUG_GAP = 50
 _LABEL_PILL_PAD_X = 6
 _LABEL_PILL_PAD_Y = 3
 _LABEL_PILL_RADIUS = 4
@@ -3653,6 +3662,7 @@ def emit_position_label_svg(
     cell_width: "float | None" = None,
     below_baseline: "float | None" = None,
     is_range: bool = False,
+    target_bottom: "float | None" = None,
 ) -> None:
     """Emit a pill-only label for position-only annotations (no arrow, no arc).
 
@@ -3685,6 +3695,11 @@ def emit_position_label_svg(
         SHOULD avoid.  When provided, ``_place_pill`` is used instead of
         the simple nudge loop so that MUST-severity segments are treated
         as hard blocks.
+    target_bottom:
+        Optional bottom edge (``y + height``) of the annotated target's own
+        AABB (from ``resolve_annotation_box``). Used only to decide the R-07/
+        R-08 leader's origin for ``position="below"`` pills placed in a
+        shared lane — see the leader-origin comment below.
     """
     label_text = ann.get("label", "")
     if not label_text:
@@ -3828,12 +3843,30 @@ def emit_position_label_svg(
     if _pill_spans_neighbours:
         # Leader origin. Default = the anchor (cell centre): always outside the
         # offset pill, so R-08 gives a connector visibly rooted in the cell.
-        # In lane mode the pill sits far below the index/caption stack, so a
-        # leader from the cell centre would strike vertically through the index
-        # digit and caption text. Root it at the lane baseline (just below the
-        # caption) instead — a clean connector into the lane, no strike-through.
+        # In lane mode the pill sits just past the index/caption stack directly
+        # below THIS target, so a leader from the cell centre would strike
+        # vertically through the index digit and caption text. Root it at the
+        # lane baseline instead — a clean connector into the lane, no
+        # strike-through.
+        # JudgeZone #16: that lane-baseline rule assumed the lane always sits
+        # just past THIS target's own box edge. For a non-bottom-row/internal
+        # target in a taller structure (Tree's internal nodes, Grid/Matrix/
+        # DPTable's 2D top rows, Graph/Hypercube's top nodes) the lane is the
+        # shared bottom of the *whole* structure — another row's territory —
+        # so rooting there produces a leader stub glued to the pill,
+        # disconnected from the anchor. Only use the lane baseline when it
+        # sits within _LEADER_SNUG_GAP of the target's own box bottom;
+        # otherwise fall back to the anchor, same as the non-"below" cases.
+        _lane_is_snug = (
+            target_bottom is not None
+            and float(below_baseline) - float(target_bottom) <= _LEADER_SNUG_GAP
+        ) if below_baseline is not None else False
         _lead_ox = ax
-        _lead_oy = float(below_baseline) if (below_baseline is not None and position == "below") else ay
+        _lead_oy = (
+            float(below_baseline)
+            if (below_baseline is not None and position == "below" and _lane_is_snug)
+            else ay
+        )
         _lead_ep = _line_rect_intersection(
             _lead_ox, _lead_oy, _pill_cx, _pill_cy, float(pill_w), float(pill_h)
         )

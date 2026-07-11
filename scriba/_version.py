@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.36.0"
+__version__: str = "0.37.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 31
+SCRIBA_VERSION: int = 32
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -654,4 +654,17 @@ shell-panel/top-band sweep wave):
     375px viewport no longer overflows the page).
 Every corpus page shifts via the shared stylesheet (invariant/narration CSS)
 and invariant-bearing docs also change markup; 107 example re-blesses.
-Consumer caches keyed on rendered output MUST invalidate."""
+Consumer caches keyed on rendered output MUST invalidate.
+
+0.37.0 bumps 31→32 (JudgeZone #16, opt-in-only output change — zero corpus
+re-bless, mirroring the 0.32.0 precedent): the automatic R-07/R-08 below-pill
+leader rooted its origin at the shape-global below lane regardless of how far
+that lane sits from the annotated target, so a pill displaced under an
+internal Tree node (or a Grid/Matrix/DPTable-2D top-row / Graph/Hypercube
+top-node target) drew only a ~10px stub clipped at the pill edge. A
+``_LEADER_SNUG_GAP`` (50px) gate now roots the leader at the true anchor
+edge when the below lane is beyond snug reach — the same convention the
+explicit ``leader=true`` connector always used. Snug/bottom-row targets are
+byte-identical (pinned); only documents annotating non-bottom-row targets
+with ``position=below`` render differently. Consumer caches keyed on
+rendered output for such documents MUST invalidate."""
