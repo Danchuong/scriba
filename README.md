@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.37.0 · MIT · Python 3.10+
+**Status:** v0.38.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,21 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.38.0 — Stack caption honesty + live-controls clearance
+
+**Two fixes where the real mechanism differed from the report.** A Stack's
+caption painted exactly `arrow_above` px past the declared viewBox — not a
+prescan gap, but a coordinate double-count in `stack.py`, the **last of 7
+sibling primitives** still missing the house `- arrow_above` correction
+(one-line fix, annotation-free Stacks byte-identical). And the floating
+prev/next chip's clearance was rem-based while the chip's box is px-based —
+matching only at 16px root font; new `--scriba-pill-*` tokens tie both to
+one `calc()` chain so chrome and content can never share pixels again.
+107 goldens re-bless, print frames untouched (`SCRIBA_VERSION` 33).
+
+<details>
+<summary>v0.37.0 changelog</summary>
+
 ## What's new in v0.37.0 — displaced below-pill leaders reach their anchor
 
 **No more orphaned pills.** A `position=below` pill on an internal Tree node
@@ -36,6 +51,8 @@ in blank canvas pointing at nothing. Past a snug-gap threshold the leader
 now spans **anchor edge → pill edge**, the convention `leader=true` always
 used. 6 family members fixed, 9 snug combos pinned byte-identical, 16 new
 lane tests, zero golden churn (`SCRIBA_VERSION` 32).
+
+</details>
 
 <details>
 <summary>v0.36.0 changelog</summary>

@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-07-11 — Stack caption honesty + live-controls clearance (#17)
+
+JudgeZone #17, both findings — and in both cases the REAL mechanism differed
+from the report's theory (found by BMAD investigation, not assumed). 107
+example re-blesses (shared-CSS delta). `SCRIBA_VERSION` 32 → 33.
+
+### Fixed
+
+- **Stack captions no longer paint past the viewBox (Finding A).** Not the
+  reported cross-frame-prescan theory: `stack.py` placed its caption at
+  `bbox.height - caption_height` in LOCAL coordinates inside a group
+  already shifted by `arrow_above` — double-counting it, so the caption
+  painted exactly `arrow_above` px past the declared frame whenever a
+  Stack carried `label=` plus any headroom-reserving annotation (depth and
+  `max_visible` were correlates, not causes). Stack was the sole outlier:
+  the other six `bbox.height`-relative caption primitives (Bar, HashMap,
+  Hypercube, LinkedList, Queue, VariableWatch) already carried the
+  `- arrow_above` correction with identical comments. One-line fix adopts
+  the house pattern; annotation-free Stacks proven byte-identical across
+  a full timeline. 35 tests.
+- **The floating prev/next + step chip can never sit over stage content
+  again (Finding B).** Clearance existed (`padding-bottom: 3.25rem`) but
+  was rem-denominated while the pill's own box is fixed-px — they matched
+  only at 16px root font, and a caption pushed past the viewBox (Finding
+  A) landed in the chip's band regardless. New `--scriba-pill-*` tokens
+  scoped to `.scriba-stage-wrap` derive the pill's dimensions AND the
+  stage's clearance from one `calc()` chain — chrome and content cannot
+  drift apart at any root font size. Overlay inventory swept: the controls
+  pill and the standalone-page theme toggle are the only floating chrome;
+  the toggle is a viewport-corner singleton outside stage content (noted,
+  untouched). Print frames carry no controls — proven byte-identical.
+  10 tests.
+
+### Notes
+
+- Artifacts: `investigations/judgezone-17a-stack-caption-extent-investigation.md`,
+  `spec-fix-judgezone-17a-caption-extent.md`,
+  `spec-fix-judgezone-17b-chrome-clearance.md`.
+
 ## [0.37.0] - 2026-07-11 — Displaced below-pill leaders span to their anchor (#16)
 
 JudgeZone #16, BMAD-investigated then family-swept in one pass. Zero corpus
