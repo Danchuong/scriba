@@ -76,3 +76,9 @@ stops them. Standing policy (user directive, 2026-07-10): **done = dead.**
    diff), finishes or respawns the remainder, and writes the missing
    deliverable. Precedent: fix-label (JZ-13, 2026-07-10) — code complete,
    lead finished the property-test edge + spec artifact.
+5. **Playwright / browser MCP tools are banned** — lead session AND
+   subagents alike (user directive, 2026-07-11). Spawn prompts must not
+   instruct browser use. Visual verification is done statically: emitted
+   markup + bundled CSS reasoning + the repo's text-metrics oracle
+   (`measure_text_run` etc.). If a real browser check is ever required,
+   ask the user to look themselves.
