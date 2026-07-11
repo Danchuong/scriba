@@ -7,6 +7,70 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-07-11 — Invariant theorem box, top-band reservation (#15), shell-panel unification
+
+Three structural changes, each BMAD-investigated before code (design doc with
+6 scored options for the invariant restyle; measured-geometry investigations
+for the rest), then swept for siblings: the sweep found and fixed 3 more
+top-band tenants, 9 shell-panel duplications, and the narration overflow gap.
+107 example re-blesses. `SCRIBA_VERSION` 30 → 31.
+
+### Changed
+
+- **`\invariant` panels are theorem boxes now.** The blue-left-border bar
+  (whose 14.4px near-black text outweighed the narration above it, and whose
+  long math wrapped INSIDE `\bigl(...\bigr)` pairs at mobile widths) becomes
+  a quiet bordered box on house tokens (`--scriba-border`, `--scriba-bg-code`,
+  `--scriba-frame-radius`; dark pair in both scopes). Deliberately **no
+  caption and no aria-label string** — authors write in many languages, so
+  the chrome itself is the signifier; the inner
+  `<p class="scriba-invariant" role="note">` is byte-identical for existing
+  consumers. Inline `$...$` spans get `\displaystyle` injected —
+  `\max`/`\sum`/`\frac` read at full operator size while staying in the text
+  flow; `${var}` live interpolation and the scriba.js swap contract are
+  untouched. `overflow-wrap: anywhere` ends the mid-parenthesis wrap. N
+  stacked `\invariant` calls share ONE box. Authoring tip: two facts read
+  best as two `\invariant` lines (they stack as rows inside the box) rather
+  than one `;`-joined body.
+
+### Fixed
+
+- **`position=above` pill on a crown node no longer strikes through the
+  caption (JudgeZone #15).** Tree/Forest/Graph paint their `label=` caption
+  ABOVE the crown, through an outer transform whose offset grew with the
+  pill lane — so the caption drifted INTO the pill it was supposed to clear
+  (measured 10.5/4.5/10.5px overlaps). New shared
+  `PrimitiveBase._top_band_layout()`: the caption paints at the outer frame,
+  decoration lanes fold into the inner shift below it — the mirror of the
+  #7/#12 bottom-band model. Byte-identical without a caption.
+- **The sweep closed the rest of the top band:** `\group` hull titles, Tree
+  `\link` bows and Graph antiparallel edge bows now reserve against the
+  caption through the same model (3 fixed); `arrow_from` pills and
+  `\cursor` proven non-tenants (pinned). Tree/Forest/Graph confirmed the
+  complete top-caption set — the other 14 caption-bearing primitives are
+  bottom-anchored and architecturally immune. 25 lane tests pin the band.
+- **Shell panels are single-source across all three HTML emitters.** 9
+  inline duplications (5 narration, 2 step-label, 2 step-controls) in
+  `emit_animation_html`/`emit_substory_html`/`emit_interactive_html` —
+  the same drift class that had already desynced the interactive invariant
+  panel — unified into shared builders with mode-parity tests.
+- **Narration math no longer overflows the page at mobile width.** A 428px
+  formula vs 341px available (375px viewport) ran off-screen —
+  `.scriba-narration` gets the same `overflow-wrap: anywhere` guard the
+  invariant panel adopted; KaTeX emits no breakable whitespace, so without
+  it neither panel could ever wrap.
+
+### Notes
+
+- Deferred, logged with repros in `deferred-work.md`: Forest
+  `\note{at=top-*}` vs caption (scene-level placer assumes a fixed caption
+  band), caption wrap-width locking in before `\annotate` right-reach is
+  known (shared three-primitive reorder, own spec), plus prior entries.
+- Artifacts: `design-invariant-panel-restyle.md`,
+  `spec-fix-invariant-theorem-box.md`,
+  `spec-fix-judgezone-15-top-band-reservation.md` (+ sweep section),
+  `spec-fix-shell-panel-single-source.md`, and the two investigations.
+
 ## [0.35.0] - 2026-07-10 — JudgeZone #9–#14: five family contracts + sweep wave
 
 External bug batch (JudgeZone editorial pipeline, 6 reports + 5 structural

@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.35.0 · MIT · Python 3.10+
+**Status:** v0.36.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,23 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.36.0 — invariant theorem box, top-band reservation, panel unification
+
+**`\invariant` grows up.** The blue side-bar becomes a quiet **theorem box**
+on house tokens — no caption, no hardcoded language anywhere (the chrome IS
+the signifier); inline `$...$` gets `\displaystyle` so `\max`/`\sum` read at
+full operator size; `overflow-wrap` ends mid-parenthesis wrapping; N stacked
+`\invariant` lines share one box. **Top band joins the reservation model**
+(JudgeZone #15): Tree/Forest/Graph captions no longer collide with
+`position=above` pills, `\group` hulls, `\link` bows or antiparallel edge
+bows over the crown — the mirrored sibling of the bottom-band model, closed
+with 25 lane tests. And the three HTML emitters are **single-source** for
+every shell panel now (9 inline duplications unified; narration gains the
+same mobile overflow guard). 107 goldens re-bless (`SCRIBA_VERSION` 31).
+
+<details>
+<summary>v0.35.0 changelog</summary>
+
 ## What's new in v0.35.0 — JudgeZone #9–#14: five family contracts + sweep wave
 
 **Six external bug reports, closed as five structural families** — each fixed
@@ -42,6 +59,8 @@ share one reservation model; labels obey **measure == paint == announce**
 static diagrams stop leaking the internal widget id as the hover tooltip
 (`label=` → `<title>`, else omitted — with a corpus-wide conformance test).
 110 goldens re-bless (`SCRIBA_VERSION` 30).
+
+</details>
 
 <details>
 <summary>v0.34.0 changelog</summary>
