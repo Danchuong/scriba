@@ -432,11 +432,19 @@ class Stack(PrimitiveBase):
             else:
                 content_w = cw + 2 * _PADDING
             bbox = self.bounding_box()
+            # minus arrow_above: the caption is emitted INSIDE the
+            # translate(_, arrow_above) group, so anchoring at raw
+            # bbox.height painted it arrow_above px PAST the bbox
+            # bottom, eating the inter-primitive gap.
             self._emit_caption(
                 parts,
                 content_width=content_w,
                 footprint_width=int(bbox.width),
-                top_y=int(bbox.height - self._caption_block_height(content_w)),
+                top_y=int(
+                    bbox.height
+                    - self._caption_block_height(content_w)
+                    - arrow_above
+                ),
                 render_inline_tex=render_inline_tex,
             )
 

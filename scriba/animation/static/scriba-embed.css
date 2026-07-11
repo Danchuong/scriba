@@ -125,32 +125,51 @@
 
 .scriba-stage-wrap {
   position: relative;
+  /* Pill geometry tokens — scoped here (not :root) so this stays embed-safe;
+     the substory widget's plain .scriba-controls bar never inherits these.
+     Every number the pill actually renders with lives here exactly once;
+     the stage's clearance below is `calc()`-derived from these SAME tokens
+     so the two can never drift apart (px, not rem — the pill's box does
+     not derive from font-size, so it must not be sized as if it did). */
+  --scriba-pill-btn: 28px;
+  --scriba-pill-pad-y: 4px;
+  --scriba-pill-border: 1px;
+  --scriba-pill-offset: 10px;
+  --scriba-pill-gap: 4px;
+  --scriba-pill-height: calc(
+    var(--scriba-pill-btn) + (var(--scriba-pill-pad-y) * 2) + (var(--scriba-pill-border) * 2)
+  );
+  --scriba-pill-clearance: calc(
+    var(--scriba-pill-offset) + var(--scriba-pill-height) + var(--scriba-pill-gap)
+  );
 }
 
 .scriba-stage-wrap > .scriba-stage {
-  padding-bottom: 3.25rem; /* clear room so the pill never covers animation content */
+  /* Clear room so the pill never covers animation content — derived from
+     the pill's own box (see --scriba-pill-* above), not a magic constant. */
+  padding-bottom: var(--scriba-pill-clearance);
 }
 
 .scriba-stage-wrap > .scriba-controls {
   position: absolute;
   left: 50%;
-  bottom: 10px;
+  bottom: var(--scriba-pill-offset);
   transform: translateX(-50%);
   width: auto;
   gap: 0.6rem;
-  padding: 4px 6px;
+  padding: var(--scriba-pill-pad-y) 6px;
   background: rgba(255, 255, 255, 0.8);
   -webkit-backdrop-filter: blur(8px) saturate(1.2);
   backdrop-filter: blur(8px) saturate(1.2);
-  border: 1px solid rgba(205, 211, 218, 0.7);
-  border-bottom: 1px solid rgba(205, 211, 218, 0.7);
+  border: var(--scriba-pill-border) solid rgba(205, 211, 218, 0.7);
+  border-bottom: var(--scriba-pill-border) solid rgba(205, 211, 218, 0.7);
   border-radius: 999px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 6px 18px rgba(16, 24, 40, 0.12);
 }
 
 .scriba-stage-wrap > .scriba-controls button {
-  width: 28px;
-  height: 28px;
+  width: var(--scriba-pill-btn);
+  height: var(--scriba-pill-btn);
   padding: 0;
   border-radius: 50%;
   display: inline-flex;

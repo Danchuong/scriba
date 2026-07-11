@@ -10,7 +10,10 @@ import re
 
 import pytest
 
+from scriba.animation.primitives.layout import DESCENDER_RATIO
 from scriba.animation.primitives.stack import Stack
+
+_CAPTION_FONT_PX = 11
 
 
 # ---------------------------------------------------------------------------
@@ -322,3 +325,46 @@ class TestAnnotationLayout:
         bbox = s.bounding_box()
         assert bbox.width == 2 * 80 + 1 * 4 + 2 * 8
         assert bbox.height == 36 + 2 * 8
+
+    def test_caption_stays_inside_bbox_with_arrow_above(self) -> None:
+        """JudgeZone #17: a ``position=above`` annotation reserves
+        ``arrow_above`` px at the top of the content frame, and the caption
+        (below the content) is emitted inside that same
+        ``translate(_, arrow_above)`` group. Anchoring the caption at raw
+        ``bbox.height`` (which already includes ``arrow_above``) double-counts
+        the shift and paints the caption ``arrow_above`` px past the declared
+        viewBox height — independent of caption line count or max_visible."""
+        s = Stack(
+            "s",
+            {
+                "items": [1, 2, 3],
+                "label": "a caption long enough that it wraps onto a "
+                "second display line every time",
+            },
+        )
+        s.set_annotations(
+            [{"target": "s.item[2]", "label": "top marker", "position": "above"}]
+        )
+        arrow_above = s._reserved_arrow_above()
+        assert arrow_above > 0, "fixture must actually exercise arrow_above"
+
+        svg = s.emit_svg()
+        group_m = re.search(r'<g transform="translate\(([\-\d.]+), ([\-\d.]+)\)">', svg)
+        assert group_m, "expected the arrow_above translate group"
+        shift_y = float(group_m.group(2))
+
+        cap_m = re.search(
+            r'<text class="scriba-primitive-label"([^>]*)>(.*?)</text>', svg, re.S
+        )
+        assert cap_m, "expected a rendered caption"
+        attrs, body = cap_m.group(1), cap_m.group(2)
+        y0 = float(re.search(r'y="([\d.]+)"', attrs).group(1))
+        dys = [float(d) for d in re.findall(r'<tspan[^>]*\bdy="([\d.]+)"', body)]
+        last_local_y = y0 + sum(dys)
+        caption_bottom = shift_y + last_local_y + DESCENDER_RATIO * _CAPTION_FONT_PX
+
+        bbox_h = float(s.bounding_box().height)
+        assert caption_bottom <= bbox_h + 1.0, (
+            f"caption bottom {caption_bottom} escapes bbox height {bbox_h} "
+            f"(arrow_above={arrow_above})"
+        )

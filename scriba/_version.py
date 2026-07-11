@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.37.0"
+__version__: str = "0.38.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 32
+SCRIBA_VERSION: int = 33
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -667,4 +667,24 @@ edge when the below lane is beyond snug reach — the same convention the
 explicit ``leader=true`` connector always used. Snug/bottom-row targets are
 byte-identical (pinned); only documents annotating non-bottom-row targets
 with ``position=below`` render differently. Consumer caches keyed on
-rendered output for such documents MUST invalidate."""
+rendered output for such documents MUST invalidate.
+
+0.38.0 bumps 32→33 (JudgeZone #17, both findings):
+  * Stack caption honesty: ``stack.py`` was the sole outlier among the 7
+    ``bbox.height``-relative caption primitives still double-counting
+    ``arrow_above`` when placing its caption (a local coordinate inside the
+    already-shifted translate group), painting the caption exactly
+    ``arrow_above`` px past the declared viewBox whenever the Stack carried
+    a ``label=`` plus any annotation reserving headroom. One-line fix
+    mirrors the pattern bar/hashmap/hypercube/linkedlist/queue/
+    variablewatch already carry; annotation-free Stacks byte-identical.
+  * Live controls clearance: the stage's ``padding-bottom`` clearance was
+    rem-based while the controls pill's own box is fixed-px — matching only
+    at 16px root font. New ``--scriba-pill-*`` custom properties scoped to
+    ``.scriba-stage-wrap`` derive BOTH the pill dimensions and the stage
+    clearance from one ``calc()`` chain, so chrome and content can never
+    share pixels again at any root font size. Print frames carry no
+    controls and are byte-identical.
+Every page shifts via the shared ``scriba-embed.css`` bundle (107 example
+re-blesses); Stack docs with caption+annotation also change geometry.
+Consumer caches keyed on rendered output MUST invalidate."""

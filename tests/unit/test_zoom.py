@@ -254,8 +254,12 @@ def test_scriba_version_unchanged() -> None:
     # (narration overflow guard included), then 31 -> 32 for the JZ-16
     # leader-span fix (displaced below-pills root their leader at the true
     # anchor once past _LEADER_SNUG_GAP; opt-in-only output change, zero
-    # corpus re-bless). Zoom remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 32
+    # corpus re-bless), then 32 -> 33 for JZ-17 (Stack caption stops
+    # double-counting arrow_above — the last of 7 siblings to adopt the
+    # house pattern — and the live-controls clearance is calc()-tied to
+    # the pill's own box via --scriba-pill-* tokens; shared-CSS delta on
+    # every page). Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 33
 
 
 def test_zoom_no_new_motion_kind() -> None:
