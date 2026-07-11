@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-07-11 — Displaced below-pill leaders span to their anchor (#16)
+
+JudgeZone #16, BMAD-investigated then family-swept in one pass. Zero corpus
+re-bless (opt-in-only output change, the 0.32.0 precedent).
+`SCRIBA_VERSION` 31 → 32.
+
+### Fixed
+
+- **A below-pill displaced far from its anchor no longer floats orphaned
+  with a ~10px stub leader.** The automatic R-07/R-08 leader rooted its
+  origin at the shape-global below lane unconditionally — correct-looking
+  when the lane sits next to the target (single-row layouts, bottom-row
+  targets), but a pill on an INTERNAL Tree node gets pushed below all
+  descendant rows while its leader stayed rooted in another row's territory
+  and clipped to a stub (measured: 10px drawn vs ~174px expected on the
+  reported doc). Past a new `_LEADER_SNUG_GAP` (50px) the leader now roots
+  at the true anchor edge — the same convention the explicit `leader=true`
+  connector always used. Family-swept across all 8
+  `resolve_annotation_box` primitives: 6 broken members fixed (Tree
+  internal nodes, Grid/Matrix/DPTable-2D top rows, Graph/Hypercube top
+  nodes), 9 snug combos pinned byte-identical, `position=above`/side pills
+  proven out-of-family, Forest/CodePanel's no-leader convention documented
+  and pinned. 16 new lane tests; the 9 corpus fixtures using
+  `position=below` are all snug → zero golden churn (render-verified).
+
+### Notes
+
+- Artifacts: `investigations/judgezone-16-leader-stub-investigation.md`,
+  `spec-fix-judgezone-16-leader-span.md`.
+
 ## [0.36.0] - 2026-07-11 — Invariant theorem box, top-band reservation (#15), shell-panel unification
 
 Three structural changes, each BMAD-investigated before code (design doc with

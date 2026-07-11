@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.36.0 · MIT · Python 3.10+
+**Status:** v0.37.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,20 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.37.0 — displaced below-pill leaders reach their anchor
+
+**No more orphaned pills.** A `position=below` pill on an internal Tree node
+(or a top-row Grid/Matrix/DPTable cell, or a Graph/Hypercube top node) gets
+correctly pushed below everything it would collide with — but its leader
+stayed a ~10px stub rooted in another row's territory, so the pill floated
+in blank canvas pointing at nothing. Past a snug-gap threshold the leader
+now spans **anchor edge → pill edge**, the convention `leader=true` always
+used. 6 family members fixed, 9 snug combos pinned byte-identical, 16 new
+lane tests, zero golden churn (`SCRIBA_VERSION` 32).
+
+<details>
+<summary>v0.36.0 changelog</summary>
+
 ## What's new in v0.36.0 — invariant theorem box, top-band reservation, panel unification
 
 **`\invariant` grows up.** The blue side-bar becomes a quiet **theorem box**
@@ -39,6 +53,8 @@ bows over the crown — the mirrored sibling of the bottom-band model, closed
 with 25 lane tests. And the three HTML emitters are **single-source** for
 every shell panel now (9 inline duplications unified; narration gains the
 same mobile overflow guard). 107 goldens re-bless (`SCRIBA_VERSION` 31).
+
+</details>
 
 <details>
 <summary>v0.35.0 changelog</summary>
