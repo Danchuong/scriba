@@ -105,21 +105,102 @@ def _safe_narration_html(value: object) -> str:
 
 
 def _invariant_panel_elements(texts: "list[str] | None") -> list[str]:
-    """Render ``\\invariant`` bodies to ``<p class="scriba-invariant">`` panels.
+    """Render ``\\invariant`` bodies into ONE theorem-box panel element.
 
     Single source for the panel markup so the pinned widget panel, the static
     filmstrip's per-frame panels (F1) and the interactive per-print-frame panels
     (F2) are byte-identical and the same CSS rule applies. Each *text* is already
-    scriba-rendered invariant HTML (KaTeX-applied). Returns ``[]`` when empty, so
-    a document without ``\\invariant`` stays byte-identical.
+    scriba-rendered invariant HTML (KaTeX-applied). N stacked ``\\invariant``
+    bodies land inside a single ``.scriba-invariant-panel`` wrapper (chrome
+    owns border/background/radius so N panels don't stack N borders); the
+    wrapper carries no role/aria-label — the box chrome is the signifier, not
+    a hardcoded caption string (i18n). Returns ``[]`` when empty, so a document
+    without ``\\invariant`` stays byte-identical.
     """
     if not texts:
         return []
-    return [
+    body = "\n  ".join(
         f'<p class="scriba-invariant" role="note">'
         f"{_safe_narration_html(h)}</p>"
         for h in texts
+    )
+    return [f'<div class="scriba-invariant-panel">\n  {body}\n</div>']
+
+
+def _narration_element(
+    content: str,
+    *,
+    id_attr: str = "",
+    aria_live: str = "",
+    aria_atomic: bool = False,
+) -> str:
+    """Render one ``<p class="scriba-narration" dir="auto">`` element.
+
+    Single source for the five call sites that build a narration paragraph
+    (filmstrip frame, interactive widget, interactive print-frame, print
+    substory, substory widget) — each passes only the id/aria bits it
+    needs; the shape and class stay identical everywhere so a future CSS
+    or markup change only has to happen once.
+    """
+    attrs = ""
+    if id_attr:
+        attrs += f' id="{id_attr}"'
+    if aria_live:
+        attrs += f' aria-live="{aria_live}"'
+    if aria_atomic:
+        attrs += ' aria-atomic="true"'
+    return f'<p class="scriba-narration" dir="auto"{attrs}>{content}</p>'
+
+
+def _step_label_span(step: int, frame_count: int) -> str:
+    """Render the ``<span class="scriba-step-label">N / total</span>`` marker.
+
+    Single source for the filmstrip frame header and the interactive
+    widget's print-frame block. The two wrap this span differently (a
+    bordered ``<header>`` bar vs. a bare block styled directly by the
+    ``@media print`` rule) — that difference is intentional (see the print
+    stylesheet), so only the inner span is unified here.
+    """
+    return f'<span class="scriba-step-label">{step} / {frame_count}</span>'
+
+
+def _step_controls_element(
+    frame_count: int,
+    *,
+    extra_class: str = "",
+    prev_label: str = "Previous step",
+    next_label: str = "Next step",
+    progress_html: str | None = None,
+    indent: str = "    ",
+) -> str:
+    """Render the prev/counter/next step-controller bar.
+
+    Single source for the interactive widget's top controls and the
+    substory widget's controls, which differ only in wrapper class,
+    button aria-label wording, an optional trailing progress-dots slot,
+    and indentation depth (the two live at different nesting levels in
+    their respective templates).
+
+    ``progress_html=None`` (default) omits the progress-dots wrapper
+    entirely (the main widget has no dots). The substory site always
+    passes its joined dots string explicitly, even when it is empty (zero
+    sub-frames) — the wrapper must still render in that case, so this
+    checks *presence*, not truthiness.
+    """
+    cls = "scriba-controls" + (f" {extra_class}" if extra_class else "")
+    next_attr = "" if frame_count > 1 else " disabled"
+    lines = [
+        f'{indent}<div class="{cls}">',
+        f'{indent}  <button class="scriba-btn-prev" aria-label="{prev_label}" disabled>&#10094;</button>',
+        f'{indent}  <span class="scriba-step-counter">1 / {frame_count}</span>',
+        f'{indent}  <button class="scriba-btn-next" aria-label="{next_label}"{next_attr}>&#10095;</button>',
     ]
+    if progress_html is not None:
+        lines.append(f'{indent}  <div class="scriba-progress" aria-hidden="true">')
+        lines.append(f'{indent}    {progress_html}')
+        lines.append(f'{indent}  </div>')
+    lines.append(f'{indent}</div>')
+    return "\n".join(lines)
 
 
 def _escape_js(text: str) -> str:
@@ -301,15 +382,12 @@ def emit_animation_html(
             f'    <li class="scriba-frame" id="{frame_id}" '
             f'data-step="{step}"{data_label_attr}>\n'
             f'      <header class="scriba-frame-header">\n'
-            f"        "
-            f'<span class="scriba-step-label">'
-            f"{step} / {frame_count}</span>\n"
+            f"        {_step_label_span(step, frame_count)}\n"
             f"      </header>\n"
             f'      <div class="scriba-stage">\n'
             f"        {svg_html}\n"
             f"      </div>\n"
-            f'      <p class="scriba-narration" dir="auto" id="{narration_id}">'
-            f"{_safe_narration_html(frame.narration_html)}</p>\n"
+            f"      {_narration_element(_safe_narration_html(frame.narration_html), id_attr=narration_id)}\n"
             f"{_inv_html}"
             f"{substory_html}"
             f"    </li>"
@@ -400,6 +478,17 @@ def emit_substory_html(
         f'<div class="scriba-dot{" active" if i == 0 else ""}"></div>'
         for i in range(sub_frame_count)
     )
+    controls_html = _step_controls_element(
+        sub_frame_count,
+        extra_class="scriba-substory-controls",
+        prev_label="Previous sub-step",
+        next_label="Next sub-step",
+        progress_html=dots_html,
+        indent="          ",
+    )
+    narration_html = _narration_element(
+        "", aria_live="polite", aria_atomic=True
+    )
 
     return (
         f'      <section class="scriba-substory" role="group"\n'
@@ -408,17 +497,9 @@ def emit_substory_html(
         f'               data-substory-depth="{depth}">\n'
         f'        <div class="scriba-substory-widget" id="{widget_id}"\n'
         f'             data-scriba-frames="{frames_json}">\n'
-        f'          <div class="scriba-controls scriba-substory-controls">\n'
-        f'            <button class="scriba-btn-prev" aria-label="Previous sub-step" disabled>&#10094;</button>\n'
-        f'            <span class="scriba-step-counter">1 / {sub_frame_count}</span>\n'
-        f'            <button class="scriba-btn-next" aria-label="Next sub-step"'
-        f'{"" if sub_frame_count > 1 else " disabled"}>&#10095;</button>\n'
-        f'            <div class="scriba-progress" aria-hidden="true">\n'
-        f'              {dots_html}\n'
-        f'            </div>\n'
-        f'          </div>\n'
+        f"{controls_html}\n"
         f'          <div class="scriba-stage"></div>\n'
-        f'          <p class="scriba-narration" dir="auto" aria-live="polite" aria-atomic="true"></p>\n'
+        f"          {narration_html}\n"
         f'        </div>\n'
         f'      </section>\n'
     )
@@ -612,8 +693,7 @@ def emit_interactive_html(
                         f'<div class="scriba-substory"'
                         f' data-substory-id="{_escape(sub.substory_id)}">\n'
                         f'  <div class="scriba-stage">{sub_svg}</div>\n'
-                        f'  <p class="scriba-narration" dir="auto">'
-                        f'{_safe_narration_html(sub_frame.narration_html)}</p>\n'
+                        f"  {_narration_element(_safe_narration_html(sub_frame.narration_html))}\n"
                         f'</div>\n'
                     )
         # F2 — a LIVE ``${}`` invariant must print its own per-frame value. The
@@ -630,12 +710,9 @@ def emit_interactive_html(
             )
         print_frame_items.append(
             f'<div class="scriba-print-frame" data-step="{step}"{data_label_attr}>\n'
-            f'  <span class="scriba-step-label">'
-            f'{step} / {frame_count}</span>\n'
+            f"  {_step_label_span(step, frame_count)}\n"
             f'  <div class="scriba-stage">{print_svg}</div>\n'
-            f'  <p class="scriba-narration" dir="auto"'
-            f' id="{_escape(print_narration_id)}">'
-            f'{_safe_narration_html(frame.narration_html)}</p>\n'
+            f"  {_narration_element(_safe_narration_html(frame.narration_html), id_attr=_escape(print_narration_id))}\n"
             f'{_print_inv_html}'
             f'{print_substory}'
             f'</div>'
@@ -712,13 +789,8 @@ def emit_interactive_html(
     _invariant_panels = (
         frames[0].invariants_html if _inv_live else invariants
     )
-    _invariant_html = ""
-    if _invariant_panels:
-        _invariant_html = "\n  " + "\n  ".join(
-            f'<p class="scriba-invariant" role="note">'
-            f'{_safe_narration_html(h)}</p>'
-            for h in _invariant_panels
-        )
+    _panel_elements = _invariant_panel_elements(_invariant_panels)
+    _invariant_html = ("\n  " + _panel_elements[0]) if _panel_elements else ""
 
     # Build the script block: inline or external.
     if inline_runtime:
@@ -730,13 +802,9 @@ def emit_interactive_html(
 <div class="scriba-widget"{size_style} id="{_escape(scene_id)}" tabindex="0" data-scriba-speed="1"{_no_emph} role="region" aria-label="{_aria_label}">
   <div class="scriba-stage-wrap">
     <div class="scriba-stage"></div>
-    <div class="scriba-controls">
-      <button class="scriba-btn-prev" aria-label="Previous step" disabled>&#10094;</button>
-      <span class="scriba-step-counter">1 / {frame_count}</span>
-      <button class="scriba-btn-next" aria-label="Next step"{"" if frame_count > 1 else " disabled"}>&#10095;</button>
-    </div>
+{_step_controls_element(frame_count)}
   </div>
-  <p class="scriba-narration" dir="auto" id="{_escape(scene_id)}-narration" aria-live="polite">{_safe_narration_html(frames[0].narration_html)}</p>{_invariant_html}
+  {_narration_element(_safe_narration_html(frames[0].narration_html), id_attr=f"{_escape(scene_id)}-narration", aria_live="polite")}{_invariant_html}
   <div class="scriba-substory-container"></div>
   <div class="scriba-print-frames" style="display:none">
 {print_frames_html}

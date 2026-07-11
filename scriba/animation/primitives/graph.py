@@ -1806,7 +1806,17 @@ class Graph(PrimitiveBase):
         # through the _h_label_pad() call further down.
         self._settle_label_layout()
         r = self._node_radius
-        arrow_above = self._reserved_arrow_above()
+        # #3 (JudgeZone sweep): a \group hull/title-pill can reach above y=0
+        # independent of any \annotate pill — fold its reach in so bare
+        # \group graphs reserve exactly as much room as they paint.
+        # #4 (JudgeZone sweep): a directed antiparallel-edge bow (C2) can
+        # also reach above y=0 independent of \annotate/\group — fold that
+        # reach in too.
+        arrow_above = max(
+            self._reserved_arrow_above(),
+            self._group_extent_above(),
+            self._antiparallel_extent_above(),
+        )
         # Reserve a top band for the caption and shift content below it, so the
         # caption never overlaps the top nodes (mirrors Tree). Defect 6 — the
         # caption width participates in the footprint so a wide caption is folded
@@ -1936,6 +1946,98 @@ class Graph(PrimitiveBase):
             (minx, miny, maxx, maxy),
         )
 
+    @staticmethod
+    def _group_label_natural_pos(
+        minx: float, miny: float, ph: float
+    ) -> "tuple[float, float]":
+        """Pre-placer seed corner for a ``\\group`` title pill: flush with
+        the hull's left edge, hovering just above it — falling back to just
+        inside the hull top when that seed would leave the canvas. Shared by
+        the real emitter (``_emit_group_hulls``) and the top-band reservation
+        (``_group_extent_above``) so the two can never drift apart; the
+        placer's own obstacle dodge runs after this and is not reproduced
+        here (same documented scope as ``annotation_height_above``'s
+        collision-nudge caveat)."""
+        pry = miny - ph - 4
+        if pry < 0:
+            pry = miny + 4
+        return minx, pry
+
+    def _group_extent_above(self) -> int:
+        """Exact px this frame's ``\\group`` hulls (and title pills, if
+        labeled) reach above local y=0 — the group-overlay counterpart of
+        ``annotation_height_above``. ``\\group`` hulls paint independently of
+        the ``\\annotate`` machinery ``_reserved_arrow_above`` measures, so a
+        hull or pill near the frame's crown was previously invisible to the
+        top-band reservation (JudgeZone sweep). Reuses ``_group_hull_path``'s
+        already-computed bbox — no re-derivation of hull geometry. Uses
+        ``self.positions`` rather than the auto_expand-scaled
+        ``working_positions`` so ``bounding_box`` and ``emit_svg`` agree on
+        the same number."""
+        groups = getattr(self, "_groups", None)
+        if not groups:
+            return 0
+        pos_by_str = {
+            str(k): (float(v[0]), float(v[1])) for k, v in self.positions.items()
+        }
+        inflate = float(self._node_radius) + _GROUP_PAD
+        worst = 0.0
+        for g in groups:
+            centers = [
+                pos_by_str[str(n)] for n in g.get("nodes", []) if str(n) in pos_by_str
+            ]
+            if not centers:
+                continue
+            _d, (minx, miny, _maxx, _maxy) = self._group_hull_path(
+                centers, inflate, _GROUP_CORNER_R
+            )
+            top = miny
+            if g.get("label"):
+                ph = LABEL_FONT_PX + 8
+                _prx, pry = self._group_label_natural_pos(minx, miny, ph)
+                top = min(top, pry)
+            worst = min(worst, top)
+        return int(math.ceil(-worst)) if worst < 0 else 0
+
+    def _antiparallel_extent_above(self) -> int:
+        """Exact px this frame's antiparallel-edge bows (C2: directed (u,v)
+        whose reverse (v,u) is also drawn, both bowed onto opposite arcs)
+        reach above local y=0 -- the antiparallel-curve counterpart of
+        ``_group_extent_above``. The curve paints independently of the
+        ``\\annotate`` machinery ``_reserved_arrow_above`` measures, so a bow
+        near the frame's crown was previously invisible to the top-band
+        reservation (JudgeZone sweep). Uses ``self.positions`` rather than
+        the auto_expand-scaled ``working_positions`` -- same approximation
+        ``_group_extent_above`` makes, so this can run before
+        ``working_positions`` exists and ``bounding_box``/``emit_svg`` agree
+        on the same number. A quadratic curve never rises past its own
+        control point (convex-hull property), so ``qy`` is a safe bound on
+        how far the rendered arc reaches -- mirrors ``_link_bow_apex``'s
+        reasoning for Tree's second-class links."""
+        if not self.directed or not self.edges:
+            return 0
+        hidden = {
+            n for n in self.nodes
+            if self.get_state(self._node_key(n)) == "hidden"
+        }
+        antiparallel = self._antiparallel_edges(hidden)
+        if not antiparallel:
+            return 0
+        pos = {
+            k: (float(v[0]), float(v[1])) for k, v in self.positions.items()
+        }
+        worst = 0.0
+        for u, v in antiparallel:
+            if u not in pos or v not in pos:
+                continue
+            cx1, cy1 = pos[u]
+            cx2, cy2 = pos[v]
+            _qx, qy, *_rest = self._antiparallel_curve(
+                cx1, cy1, cx2, cy2, self._node_radius
+            )
+            worst = min(worst, qy)
+        return int(math.ceil(-worst)) if worst < 0 else 0
+
     @allow_forbidden_pattern(
         "FP-2",
         reason=(
@@ -2033,10 +2135,7 @@ class Graph(PrimitiveBase):
                 pw = measure_label_line(str(label), LABEL_FONT_PX) + 12
                 ph = LABEL_FONT_PX + 8
                 # Natural top-left corner above the hull — the pre-placer seed.
-                prx = minx
-                pry = miny - ph - 4
-                if pry < 0:
-                    pry = miny + 4
+                prx, pry = self._group_label_natural_pos(minx, miny, ph)
                 # Route the pill through the shared smart-label placer so a node
                 # standing at the hull corner is DODGED (not just overdrawn into
                 # ":1", hunt-visual BUG 1). The placer returns the natural corner
@@ -2111,27 +2210,41 @@ class Graph(PrimitiveBase):
 
         r = self._node_radius
         effective_anns = self._annotations
-        arrow_above = self._reserved_arrow_above()
+        # JudgeZone sweep: fold \group hull/title-pill reach into the same
+        # lane \annotate pills reserve — see bounding_box's matching call.
+        # JudgeZone sweep: fold the antiparallel-edge bow (C2) reach in too
+        # — same rationale, see bounding_box's matching call.
+        arrow_above = max(
+            self._reserved_arrow_above(),
+            self._group_extent_above(),
+            self._antiparallel_extent_above(),
+        )
         # #1: shift content right by left_pad so position=left pills clear the
         # viewBox. left_pad is 0 (int) without left pills, so the transform is
         # byte-identical to the pre-#1 "translate({r},{ty})".
         left_pad, _right = self._h_label_pad()
 
+        # Optional label / caption geometry (in the reserved top band),
+        # computed before the outer transform since ty depends on whether a
+        # caption will be painted.
+        label_offset = 0
+        if self.label is not None:
+            content_w = float(self.width + 2 * r)
+            label_offset = self._top_caption_band(content_w)
+
         parts: list[str] = []
-        # Offset by node radius so nodes at edge positions don't clip.
-        # When annotations with arrows exist, shift content down by
-        # arrow_above so curves have room above the graph.
-        ty = r + arrow_above
+        # Offset by node radius so nodes at edge positions don't clip. When
+        # a caption is present, it paints at the outer frame (independent of
+        # arrow_above) and the pill lane folds into the inner content shift
+        # instead (see `_top_band_layout`); otherwise arrow_above is
+        # absorbed by the outer frame directly, same as historically.
+        ty, content_shift = self._top_band_layout(r, arrow_above, label_offset)
         parts.append(
             f'<g data-primitive="graph" data-shape="{_escape_xml(self.name)}"'
             f' transform="translate({r + left_pad},{ty})">'
         )
 
-        # Optional label / caption (in the reserved top band)
-        label_offset = 0
         if self.label is not None:
-            content_w = float(self.width + 2 * r)
-            label_offset = self._top_caption_band(content_w)
             self._emit_top_caption(
                 parts,
                 content_width=content_w,
@@ -2141,8 +2254,8 @@ class Graph(PrimitiveBase):
             )
         # Shift all edges/nodes/annotations below the caption band (mirrors
         # Tree) so the caption no longer overlaps the top nodes.
-        if label_offset:
-            parts.append(f'<g transform="translate(0,{label_offset})">')
+        if content_shift:
+            parts.append(f'<g transform="translate(0,{content_shift})">')
 
         # NOTE: arrowhead marker <defs> are emitted once per SVG at the stage
         # root by `emit_shared_defs` (driven by `_has_directed_graph`).  The
@@ -2598,7 +2711,7 @@ class Graph(PrimitiveBase):
             )
             parts.extend(arrow_lines)
 
-        if label_offset:
+        if content_shift:
             parts.append('</g>')  # close the caption-band content shift
         parts.append('</g>')
         return ''.join(parts)

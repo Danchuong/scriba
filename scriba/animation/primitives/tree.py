@@ -65,6 +65,24 @@ _TREE_LINK_SEL_RE = re.compile(
 )
 
 
+def _link_bow_apex(x1: float, y1: float, x2: float, y2: float) -> tuple[float, float]:
+    """Quadratic-Bezier control point for a second-class link's bow arc,
+    shared by ``_link_geometry`` (the real path emitter) and
+    ``Tree._link_extent_above`` (the top-band reservation) so the two can
+    never drift apart -- mirrors ``Graph._group_label_natural_pos``'s role
+    for ``\\group`` hulls. A quadratic curve never rises past its own control
+    point (convex-hull property), so this is a safe/conservative bound on
+    how far the rendered arc reaches above the two endpoints."""
+    mx, my = (x1 + x2) / 2.0, (y1 + y2) / 2.0
+    dx, dy = x2 - x1, y2 - y1
+    dist = math.hypot(dx, dy) or 1.0
+    # Left-hand perpendicular unit; bow scales with span but has a floor so
+    # short links still arc visibly.
+    perp_x, perp_y = -dy / dist, dx / dist
+    bow = max(20.0, dist * 0.22)
+    return mx + perp_x * bow, my + perp_y * bow
+
+
 def _link_geometry(
     x1: float, y1: float, x2: float, y2: float, radius: float
 ) -> tuple[str, str]:
@@ -75,14 +93,7 @@ def _link_geometry(
     edges beneath them. Returns ``(path_d, arrowhead_points)`` where the tip
     sits on ``v``'s circle boundary, oriented along the arc's end tangent.
     """
-    mx, my = (x1 + x2) / 2.0, (y1 + y2) / 2.0
-    dx, dy = x2 - x1, y2 - y1
-    dist = math.hypot(dx, dy) or 1.0
-    # Left-hand perpendicular unit; bow scales with span but has a floor so
-    # short links still arc visibly.
-    perp_x, perp_y = -dy / dist, dx / dist
-    bow = max(20.0, dist * 0.22)
-    cx, cy = mx + perp_x * bow, my + perp_y * bow
+    cx, cy = _link_bow_apex(x1, y1, x2, y2)
     # Pull both ends back to the node-circle boundary along the control tangent.
     sdx, sdy = cx - x1, cy - y1
     sd = math.hypot(sdx, sdy) or 1.0
@@ -995,9 +1006,36 @@ class Tree(PrimitiveBase):
             right_reach = max(right_reach, content_w + lbl_r)
         return left_pad, right_reach
 
+    def _link_extent_above(self) -> int:
+        """Exact px this frame's second-class ``\\link`` bow arcs reach above
+        local y=0 -- the link-overlay counterpart of ``annotation_height_above``.
+        Fail/suffix links paint independently of the ``\\annotate`` machinery
+        ``_reserved_arrow_above`` measures, so a bow near the frame's crown was
+        previously invisible to the top-band reservation (JudgeZone sweep).
+        Mirrors the exact visibility filtering ``emit_svg`` applies to
+        ``self.links`` so the two never disagree on which links are counted."""
+        if not self.links:
+            return 0
+        worst = 0.0
+        for u, v in self.links:
+            if self.get_state(self._link_key(u, v)) == "hidden":
+                continue
+            if (
+                self.get_state(self._node_key(u)) == "hidden"
+                or self.get_state(self._node_key(v)) == "hidden"
+            ):
+                continue
+            if u not in self.positions or v not in self.positions:
+                continue
+            x1, y1 = self.positions[u]
+            x2, y2 = self.positions[v]
+            _cx, cy = _link_bow_apex(x1, y1, x2, y2)
+            worst = min(worst, cy)
+        return int(math.ceil(-worst)) if worst < 0 else 0
+
     def bounding_box(self) -> BoundingBox:
         r = self._node_radius
-        arrow_above = self._reserved_arrow_above()
+        arrow_above = max(self._reserved_arrow_above(), self._link_extent_above())
         # Defect 6 — the caption width participates in the footprint so a
         # caption wider than the tree is folded into the box, not clipped.
         # Keep the int footprint when no widening is needed so the downstream
@@ -1033,27 +1071,32 @@ class Tree(PrimitiveBase):
 
         r = self._node_radius
         effective_anns = self._annotations
-        arrow_above = self._reserved_arrow_above()
+        arrow_above = max(self._reserved_arrow_above(), self._link_extent_above())
         # #1: shift content right by left_pad so position=left pills clear the
         # viewBox. left_pad is 0 (int) without left pills, so the transform is
         # byte-identical to the pre-#1 "translate({r},{ty})".
         left_pad, _right = self._h_label_pad()
 
+        # Optional label / caption geometry, computed before the outer
+        # transform since ty depends on whether a caption will be painted.
+        label_offset = 0
+        if self.label is not None:
+            content_w = float(self.width + 2 * r)
+            label_offset = self._top_caption_band(content_w)
+
         parts: list[str] = []
-        # Offset by node radius so nodes at edge positions don't clip.
-        # When annotations with arrows exist, shift content down by
-        # arrow_above so curves have room above the tree.
-        ty = r + arrow_above
+        # Offset by node radius so nodes at edge positions don't clip. When
+        # a caption is present, it paints at the outer frame (independent of
+        # arrow_above) and the pill lane folds into the inner content shift
+        # instead (see `_top_band_layout`); otherwise arrow_above is
+        # absorbed by the outer frame directly, same as historically.
+        ty, content_shift = self._top_band_layout(r, arrow_above, label_offset)
         parts.append(
             f'<g data-primitive="tree" data-shape="{_escape_xml(self.name)}"'
             f' transform="translate({r + left_pad},{ty})">'
         )
 
-        # Optional label / caption
-        label_offset = 0
         if self.label is not None:
-            content_w = float(self.width + 2 * r)
-            label_offset = self._top_caption_band(content_w)
             self._emit_top_caption(
                 parts,
                 content_width=content_w,
@@ -1062,9 +1105,9 @@ class Tree(PrimitiveBase):
                 render_inline_tex=render_inline_tex,
             )
 
-        # Shift edges + nodes below the label when present
-        if label_offset:
-            parts.append(f'<g transform="translate(0,{label_offset})">')
+        # Shift edges + nodes below the label/pill lane when present
+        if content_shift:
+            parts.append(f'<g transform="translate(0,{content_shift})">')
 
         # --- Edge layer (rendered first, below nodes) ---
         parts.append('<g class="scriba-tree-edges">')
@@ -1223,8 +1266,8 @@ class Tree(PrimitiveBase):
             )
             parts.extend(arrow_lines)
 
-        # Close the label-offset group if present
-        if label_offset:
+        # Close the content-shift group if present
+        if content_shift:
             parts.append("</g>")
 
         parts.append("</g>")

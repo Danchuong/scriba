@@ -992,6 +992,19 @@
   :root:not([data-theme="light"]) .scriba-link-label-text { stroke: var(--scriba-bg, #151718); }
 }
 
+/* ⑩b — \invariant theorem-box dark pair, matching .scriba-frame-header /
+   .scriba-controls (H6 fix convention: explicit toggle + OS-preference twin). */
+[data-theme="dark"] .scriba-invariant-panel {
+  background: #202425;
+  border-color: #313538;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scriba-invariant-panel {
+    background: #202425;
+    border-color: #313538;
+  }
+}
+
 /* ============================================
    Focus indicator (interactive widget)
    ============================================ */
@@ -1111,16 +1124,24 @@
 }
 
 /* ⑩b — \invariant pinned panel. A static predicate shown across all frames
-   (rendered once at the widget level). A quiet, boxed caption distinct from
-   the live narration; the left rule reads as "holds throughout". */
+   (rendered once at the widget level), wrapped in a theorem-box container
+   that owns border/background/radius/spacing. The box chrome IS the
+   signifier — deliberately no caption text and no aria-label, so the panel
+   carries no hardcoded human-language string (i18n). */
+.scriba-invariant-panel {
+  margin: 0.75rem 0 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--scriba-border);
+  background: var(--scriba-bg-code);
+  border-radius: var(--scriba-frame-radius);
+}
 .scriba-invariant {
-  margin: 0.5em 0 0;
-  padding: 0.35em 0.6em;
-  border-inline-start: 3px solid var(--scriba-annotation-info, #0070d5);
-  background: color-mix(in srgb, var(--scriba-annotation-info, #0070d5) 7%, transparent);
-  border-radius: 0 var(--scriba-frame-radius, 4px) var(--scriba-frame-radius, 4px) 0;
-  font-size: 0.9em;
+  margin: 0.2em 0 0;
+  padding: 0;
+  color: var(--scriba-fg);
+  font-size: 0.82em;
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 /* KNOWN-DEAD: .scriba-highlighted intentionally has no rule. The runtime

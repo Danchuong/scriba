@@ -186,6 +186,7 @@
   font-size: 0.85rem;
   line-height: 1.55;
   color: #475467;
+  overflow-wrap: anywhere;
 }
 
 /* ============================================

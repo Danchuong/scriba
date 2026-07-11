@@ -581,18 +581,28 @@ class Forest(PrimitiveBase):
         arrow_above = self._reserved_arrow_above()
         left_pad, _right = self._h_label_pad()
 
-        parts: list[str] = []
-        parts.append(
-            f'<g data-primitive="forest" data-shape="{_escape_xml(self.name)}"'
-            f' transform="translate({left_pad},{arrow_above})">'
-        )
-
-        # Optional top-band caption (mirror Tree; content is shifted by
-        # left_pad only, so frame_radius == left_pad centres it on the box).
+        # Optional top-band caption geometry, computed before the outer
+        # transform since ty depends on whether a caption will be painted.
         label_offset = 0
         if self.label is not None:
             content_w = float(self._envelope_width)
             label_offset = self._top_caption_band(content_w)
+
+        parts: list[str] = []
+        # When a caption is present, it paints at the outer frame
+        # (independent of arrow_above) and the pill lane folds into the
+        # inner content shift instead (see `_top_band_layout`); otherwise
+        # arrow_above is absorbed by the outer frame directly, same as
+        # historically.
+        ty, content_shift = self._top_band_layout(0, arrow_above, label_offset)
+        parts.append(
+            f'<g data-primitive="forest" data-shape="{_escape_xml(self.name)}"'
+            f' transform="translate({left_pad},{ty})">'
+        )
+
+        # (mirror Tree; content is shifted by left_pad only, so
+        # frame_radius == left_pad centres it on the box).
+        if self.label is not None:
             self._emit_top_caption(
                 parts,
                 content_width=content_w,
@@ -600,8 +610,8 @@ class Forest(PrimitiveBase):
                 frame_radius=float(left_pad),
                 render_inline_tex=render_inline_tex,
             )
-        if label_offset:
-            parts.append(f'<g transform="translate(0,{label_offset})">')
+        if content_shift:
+            parts.append(f'<g transform="translate(0,{content_shift})">')
 
         # --- Edge layer (below nodes) ---
         parts.append('<g class="scriba-forest-edges">')
@@ -691,7 +701,7 @@ class Forest(PrimitiveBase):
             )
             parts.extend(arrow_lines)
 
-        if label_offset:
+        if content_shift:
             parts.append("</g>")
         parts.append("</g>")
         return "".join(parts)

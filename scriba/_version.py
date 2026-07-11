@@ -1,9 +1,9 @@
 """Version constants for Scriba. Bumped on HTML output shape changes."""
 
-__version__: str = "0.35.0"
+__version__: str = "0.36.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 30
+SCRIBA_VERSION: int = 31
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -630,4 +630,28 @@ enforcement test, plus a sweep wave that closed seven sibling defects):
     non-identifier structured ``value=${...}``).
 107 example re-blesses + 3 smart_label fragment re-blesses (the annotation
 label-text class attribute). Consumer caches keyed on rendered output MUST
-invalidate."""
+invalidate.
+
+0.36.0 bumps 30→31 (invariant theorem-box + JudgeZone #15 top-band + the
+shell-panel/top-band sweep wave):
+  * ``\invariant`` panels render inside a bare ``<div class=
+    "scriba-invariant-panel">`` theorem box (border/background/radius from
+    house tokens, dark pair in both scopes, NO caption or aria string — the
+    chrome itself is the language-neutral signifier); inline ``$...$`` spans
+    get ``\displaystyle`` injected so ``\max``/``\sum`` read full-size; the
+    panel gains ``overflow-wrap:anywhere``. N stacked invariants share one
+    box. ``emit_interactive_html`` now calls the shared
+    ``_invariant_panel_elements`` builder instead of an inline duplicate.
+  * Top-band reservation (JZ-15): Tree/Forest/Graph captions paint at the
+    outer frame via the shared ``_top_band_layout()`` while decoration lanes
+    (``position=above`` pills, ``\group`` hulls, Tree ``\link`` bows, Graph
+    antiparallel bows) fold into the inner shift below — captions no longer
+    drift into crown decorations. Byte-identical when no caption.
+  * Shell panels single-sourced: 9 inline duplications (5 narration,
+    2 step-label, 2 step-controls) across the three HTML emitters unified
+    into shared builders; ``.scriba-narration`` gains the same
+    ``overflow-wrap:anywhere`` guard (a 428px formula vs 341px available at
+    375px viewport no longer overflows the page).
+Every corpus page shifts via the shared stylesheet (invariant/narration CSS)
+and invariant-bearing docs also change markup; 107 example re-blesses.
+Consumer caches keyed on rendered output MUST invalidate."""

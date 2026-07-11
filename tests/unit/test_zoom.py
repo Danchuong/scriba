@@ -247,9 +247,12 @@ def test_scriba_version_unchanged() -> None:
     # stylesheet token + @font-face descriptor change), then 29 -> 30 for
     # the JudgeZone #9-#14 structural closure (accessible-name <title>
     # policy, dark theme-attr contract + new CSS, label one-interpretation
-    # widths/aria, below-band caret reservation, interp shape-gate). Zoom
-    # remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 30
+    # widths/aria, below-band caret reservation, interp shape-gate), then
+    # 30 -> 31 for the invariant theorem-box (+ displaystyle + overflow
+    # guard), the JZ-15 top-band reservation (Tree/Forest/Graph captions vs
+    # crown decorations), and the shell-panel single-source unification
+    # (narration overflow guard included). Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 31
 
 
 def test_zoom_no_new_motion_kind() -> None:

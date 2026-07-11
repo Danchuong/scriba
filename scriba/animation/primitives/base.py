@@ -598,6 +598,30 @@ class PrimitiveBase(abc.ABC):
             self.annotation_height_above(), getattr(self, "_min_arrow_above", 0)
         )
 
+    def _top_band_layout(
+        self, base_ty: float, arrow_above: int, label_offset: int
+    ) -> "tuple[float, int]":
+        """Outer/inner ``ty`` split for a top-caption primitive (tree,
+        forest, graph), so the caption band and the ``arrow_above`` pill
+        lane stack in a fixed order instead of both anchoring at the outer
+        frame's origin (JudgeZone #15).
+
+        Without a caption (``label_offset == 0``) this is byte-identical to
+        the historical shape: the outer frame absorbs ``base_ty +
+        arrow_above`` and there is no inner content shift.
+
+        With a caption, the caption paints at the outer frame using
+        ``base_ty`` alone, so its position no longer drifts with
+        ``arrow_above``; the pill lane instead folds into the inner content
+        shift (``label_offset + arrow_above``), placing the caption band
+        first and the pill lane immediately below it, ahead of the node
+        content. Total reserved height is unchanged — this only reorders
+        where each reservation is consumed.
+        """
+        if label_offset:
+            return base_ty, label_offset + arrow_above
+        return base_ty + arrow_above, 0
+
     def set_traces(self, traces: "list[dict]") -> None:
         """Attach this frame's ``\\trace`` decorations (R-37)."""
         self._traces = list(traces)

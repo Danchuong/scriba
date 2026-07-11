@@ -235,16 +235,41 @@ def _render_narration(
     return apply_text_commands(processed), _collected_refs
 
 
+_INVARIANT_MATH_RE = re.compile(r"\$\$([\s\S]*?)\$\$|\$([^\$]+?)\$")
+
+
+def _displaystyle_sub(m: "re.Match[str]") -> str:
+    if m.group(1) is not None:
+        return m.group(0)  # $$...$$ display span — already full-size.
+    body = m.group(2)
+    if body.lstrip().startswith("\\displaystyle"):
+        return m.group(0)  # already present — do not double-inject.
+    return f"$\\displaystyle {body}$"
+
+
+def _inject_displaystyle(text: str) -> str:
+    """Force display-size operators in every inline ``$...$`` span of *text*.
+
+    Used only for ``\\invariant`` bodies (Option E): keeps mixed text+math
+    invariants inline (KaTeX ``displayMode`` is never touched) while making
+    big operators (``\\max``, ``\\sum``, ...) render at the size a reader
+    expects instead of the cramped textstyle default.
+    """
+    return _INVARIANT_MATH_RE.sub(_displaystyle_sub, text)
+
+
 def _render_invariant(text: str, ctx: RenderContext) -> str:
     """Render an ``\\invariant`` body (⑩b) to HTML.
 
     Like narration it runs inline ``$math$`` through KaTeX and expands
     ``\\textbf`` etc., but it carries NO ``\\hl``/``\\ref`` macros — it is
-    pinned chrome, not per-frame narration.  Falls back to a plain-text
-    escape when no TeX renderer is available.
+    pinned chrome, not per-frame narration. Every inline math span is forced
+    to display-size operators first (Option E, route b) so ``\\max``/``\\sum``
+    read at full size while the panel stays inline-flowing. Falls back to a
+    plain-text escape when no TeX renderer is available.
     """
     if ctx.render_inline_tex is not None:
-        rendered = ctx.render_inline_tex(text)
+        rendered = ctx.render_inline_tex(_inject_displaystyle(text))
     else:
         import html as _html_mod
 
