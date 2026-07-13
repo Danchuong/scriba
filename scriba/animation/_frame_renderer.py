@@ -629,6 +629,15 @@ def measure_scene_layout(
                             prim.label = str(label_val)
                     elif hasattr(prim, "set_label"):
                         prim.set_label(suffix, str(label_val))
+                # State parity with the emit loop (its set_state call and
+                # "idle" default, verbatim): extent reservations can be
+                # state-dependent — a \recolor that hides one direction of
+                # an antiparallel pair mid-timeline drops the pair from C2
+                # treatment and the surviving edge may occlusion-bow far
+                # past the C2 reserve (JZ-18). Replaying every frame
+                # all-idle made that transition invisible to the prescan.
+                if target_key != shape_name and hasattr(prim, "set_state"):
+                    prim.set_state(suffix, target_data.get("state", "idle"))
             prim_anns = [
                 a
                 for a in frame.annotations

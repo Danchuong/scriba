@@ -3,7 +3,7 @@
 __version__: str = "0.38.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 34
+SCRIBA_VERSION: int = 35
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -702,4 +702,22 @@ as the offsets (sum of per-shape maxima + gaps + padding). Scenes whose
 shapes peak together (all monotonic timelines — the entire golden corpus,
 zero re-blesses) are byte-identical; compositions with mid-timeline shrink
 grow a few px taller. Consumer caches keyed on rendered output MUST
-invalidate for such documents."""
+invalidate for such documents.
+
+0.39.0 bumps 34→35 (same release, JudgeZone #18 occluded-edge bows): a
+Graph edge whose straight chord passes within ink contact
+(radius + 2px) of a visible non-endpoint node now bows onto a quadratic
+arc sized to clear the blocker (true-profile requirement, capped at
+``_OCCLUSION_MAX_CTRL``), with the weight pill riding the apex; the bow
+is mirrored into the pill-obstacle channel and above/below extent
+reservation, and ``measure_scene_layout`` now replays per-frame STATES
+onto its simulated copies (emit-loop parity) so state-driven extent
+transitions — e.g. hiding one direction of an antiparallel pair, whose
+survivor then occlusion-bows past the C2 reserve — are seen by the
+prescan. Graphs whose layouts route an edge through/past a node change
+bytes (11 corpus re-blesses: bfs, dijkstra ×2, dinic, kruskal_mst,
+necessary_roads, planets_queries2, simulated_annealing, test_edge_overlap,
+test_reference_unionfind, union_find — every line→path audited against
+its own shape's painted geometry: 586 bows, 0 unjustified, 0 missed);
+graphs with no occluded edge are byte-identical. Consumer caches keyed
+on rendered output MUST invalidate."""

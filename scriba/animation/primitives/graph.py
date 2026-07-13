@@ -200,6 +200,26 @@ _WEIGHT_EDGE_MIN_LEN: float = 4.0
 # because a quadratic Bézier's apex deviation is half its control offset.
 _ANTIPARALLEL_CURVE_OFFSET: float = 12.0
 
+# JZ-18 occluded-edge bows. A straight edge whose segment passes within
+# ink-contact distance of a visible NON-ENDPOINT node is invisible as a
+# distinct object (hierarchical LR ranks a chain-with-shortcut collinear,
+# burying the rank-skipping edge under the short ones) and its weight pill
+# anchors on/next to the blocker. Such an edge bows onto a quadratic arc
+# sized to clear the blocker; everything else stays a straight <line>.
+# Trigger: perpendicular chord distance <= radius + _OCCLUSION_TRIGGER_PAD
+# (node stroke + edge stroke halves ≈ ink contact at ~r+2).
+_OCCLUSION_TRIGGER_PAD: float = 2.0
+# Daylight target between the bowed arc and the blocker's ink.
+_OCCLUSION_CLEARANCE: float = 6.0
+# Ceiling on the control offset (apex bulge = ctrl/2). The requirement is
+# sized from the UNCLAMPED deviation profile 2t(1-t) at the blocker's true
+# projection — a blocker near an endpoint demands a huge offset, and at
+# house node separations one that exceeds this ceiling overlaps the
+# endpoint circle itself (layout pathology). Such an edge keeps a
+# best-effort capped arc: clearance degrades gracefully instead of the
+# arc bulging without bound.
+_OCCLUSION_MAX_CTRL: float = 160.0
+
 # Minimum leader-line length gate (GEP-17).  When the computed perpendicular
 # offset is smaller than this value the leader is suppressed and the function
 # falls back to the silent origin (leader=False, stage="origin").
@@ -1543,24 +1563,24 @@ class Graph(PrimitiveBase):
         }
 
     @staticmethod
-    def _antiparallel_curve(
-        cx1: float, cy1: float, cx2: float, cy2: float, radius: int
+    def _quadratic_bow(
+        cx1: float, cy1: float, cx2: float, cy2: float, radius: int,
+        ctrl_off: float,
     ) -> "tuple[float, float, int, int, int, int, float, float]":
-        """Quadratic geometry for one bowed antiparallel edge.
+        """Quadratic geometry for one bowed edge (shared C2 / JZ-18 core).
 
-        Returns ``(qx, qy, sx1, sy1, sx2, sy2, apex_x, apex_y)`` where ``q`` is
-        the control point offset onto the edge's left-hand normal (the reverse
-        edge's normal is the negation, so a pair bows to opposite sides),
-        ``s`` are the endpoints pulled back to each node-circle boundary along
-        the curve tangent, and ``apex`` is the on-curve midpoint B(0.5) — the
-        pill anchor, already shifted onto the bow side.
+        Returns ``(qx, qy, sx1, sy1, sx2, sy2, apex_x, apex_y)`` where ``q``
+        is the control point offset by *ctrl_off* (signed) along the edge's
+        left-hand normal, ``s`` are the endpoints pulled back to each
+        node-circle boundary along the curve tangent, and ``apex`` is the
+        on-curve midpoint B(0.5) — the pill anchor, already shifted onto the
+        bow side.
         """
         dxc = cx2 - cx1
         dyc = cy2 - cy1
         clen = math.hypot(dxc, dyc) or 1.0
         nperp_x = -dyc / clen
         nperp_y = dxc / clen
-        ctrl_off = 2.0 * _ANTIPARALLEL_CURVE_OFFSET
         qx = (cx1 + cx2) / 2 + nperp_x * ctrl_off
         qy = (cy1 + cy2) / 2 + nperp_y * ctrl_off
         sx1, sy1 = _shorten_line_to_circle(qx, qy, cx1, cy1, radius)
@@ -1568,6 +1588,172 @@ class Graph(PrimitiveBase):
         apex_x = 0.25 * sx1 + 0.5 * qx + 0.25 * sx2
         apex_y = 0.25 * sy1 + 0.5 * qy + 0.25 * sy2
         return qx, qy, sx1, sy1, sx2, sy2, apex_x, apex_y
+
+    @staticmethod
+    def _antiparallel_curve(
+        cx1: float, cy1: float, cx2: float, cy2: float, radius: int
+    ) -> "tuple[float, float, int, int, int, int, float, float]":
+        """Quadratic geometry for one bowed antiparallel edge (C2).
+
+        The control point sits ``2·_ANTIPARALLEL_CURVE_OFFSET`` onto the
+        edge's left-hand normal (the reverse edge's normal is the negation,
+        so a pair bows to opposite sides). Delegates to
+        :meth:`_quadratic_bow` — byte-identical to the pre-JZ-18 output.
+        """
+        return Graph._quadratic_bow(
+            cx1, cy1, cx2, cy2, radius, 2.0 * _ANTIPARALLEL_CURVE_OFFSET
+        )
+
+    def _occluded_bows(
+        self,
+        pos: "dict[Any, tuple[float, float]]",
+        hidden_nodes: "set[str | int]",
+    ) -> "dict[tuple[Any, Any], float]":
+        """JZ-18: drawn edges buried by a non-endpoint node -> signed bow.
+
+        Returns ``{(u, v): ctrl_off}`` where ``ctrl_off`` is the SIGNED
+        control-point offset along the edge's left-hand normal that
+        :meth:`_quadratic_bow` needs to clear every blocking node by
+        ``_OCCLUSION_CLEARANCE`` px of daylight.
+
+        A node ``w ∉ {u, v}`` blocks when its center projects strictly
+        between the endpoints and sits within ink contact
+        (``radius + _OCCLUSION_TRIGGER_PAD``) of the straight chord. The bow
+        side is chosen away from the blockers' mean side; the exact-collinear
+        tie bows toward the canvas center (deterministic, keeps the arc
+        inside the frame when room exists). Antiparallel edges keep their C2
+        bow and are never re-bowed here. Undirected duplicate (A,B)+(B,A)
+        copies: with an off-chord blocker both bow away from it onto ONE
+        shared arc (overlapping, same as duplicate straight lines today);
+        at the exact-collinear tie the negated normal + the ``>= 0``
+        tie-break give the two copies OPPOSITE arcs — they separate
+        visually like an antiparallel pair. Pure function of (pos, states)
+        — emit calls it with ``working_positions``, the extent/obstacle
+        paths with ``self.positions`` (same approximation the C2 extent
+        makes).
+        """
+        if not self.edges:
+            return {}
+        r = float(self._node_radius)
+        trigger = r + _OCCLUSION_TRIGGER_PAD
+        antiparallel = self._antiparallel_edges(hidden_nodes)
+        visible = [
+            n for n in self.nodes if n not in hidden_nodes and n in pos
+        ]
+        bows: "dict[tuple[Any, Any], float]" = {}
+        for u, v, _w in self.edges:
+            if u == v or (u, v) in antiparallel:
+                continue
+            if u in hidden_nodes or v in hidden_nodes:
+                continue
+            if u not in pos or v not in pos:
+                continue
+            if self.get_state(self._edge_key(u, v)) == "hidden":
+                continue
+            x1, y1 = pos[u]
+            x2, y2 = pos[v]
+            dx = x2 - x1
+            dy = y2 - y1
+            seg_len_sq = dx * dx + dy * dy
+            if seg_len_sq < 1e-9:
+                continue
+            seg_len = math.sqrt(seg_len_sq)
+            nx = -dy / seg_len
+            ny = dx / seg_len
+            blockers: "list[tuple[float, float]]" = []  # (t, signed perp)
+            for w_node in visible:
+                if w_node == u or w_node == v:
+                    continue
+                wx, wy = pos[w_node]
+                t = ((wx - x1) * dx + (wy - y1) * dy) / seg_len_sq
+                if t <= 0.0 or t >= 1.0:
+                    continue
+                perp = (wx - x1) * nx + (wy - y1) * ny
+                if abs(perp) > trigger:
+                    continue
+                blockers.append((t, perp))
+            if not blockers:
+                continue
+            perp_sum = sum(p for _t, p in blockers)
+            if abs(perp_sum) > 1e-9:
+                side = -1.0 if perp_sum > 0 else 1.0
+            else:
+                # Exact-collinear tie: bow toward the canvas center so the
+                # arc keeps to the roomy side when one exists.
+                mid_x = (x1 + x2) / 2
+                mid_y = (y1 + y2) / 2
+                to_center = (
+                    (self.width / 2.0 - mid_x) * nx
+                    + (self.height / 2.0 - mid_y) * ny
+                )
+                side = 1.0 if to_center >= 0 else -1.0
+            ctrl = 0.0
+            for t, perp in blockers:
+                rel = perp * side  # blocker offset toward the bow side
+                if rel < -(r + _OCCLUSION_CLEARANCE):
+                    # Unreachable under current constants (the trigger
+                    # filter bounds |rel| <= r + _OCCLUSION_TRIGGER_PAD <
+                    # r + _OCCLUSION_CLEARANCE); kept so a future constant
+                    # change cannot silently make far-side blockers inflate
+                    # the arc.
+                    continue
+                # Requirement from the TRUE deviation profile at the
+                # blocker's projection — sizing it from a clamped t
+                # under-cleared near-endpoint blockers by up to ~25x
+                # (review HIGH-2); the ceiling below bounds the blowup.
+                profile = 2.0 * t * (1.0 - t)  # t strictly in (0, 1) here
+                ctrl = max(ctrl, (rel + r + _OCCLUSION_CLEARANCE) / profile)
+            ctrl = min(ctrl, _OCCLUSION_MAX_CTRL)
+            if ctrl > 0.0:
+                bows[(u, v)] = side * ctrl
+        return bows
+
+    def _occluded_bows_from_self_positions(
+        self,
+    ) -> "dict[tuple[Any, Any], float]":
+        """Occluded bows on the unscaled frame (extent/obstacle paths)."""
+        hidden = {
+            n for n in self.nodes
+            if self.get_state(self._node_key(n)) == "hidden"
+        }
+        pos = {
+            k: (float(p[0]), float(p[1])) for k, p in self.positions.items()
+        }
+        return self._occluded_bows(pos, hidden)
+
+    def _occluded_extents(self) -> "tuple[int, int]":
+        """(above, below) px this frame's JZ-18 bows reach past the content
+        — sibling of ``_antiparallel_extent_above`` (same qy convex-hull
+        bound, same ``self.positions`` approximation), computed in ONE
+        ``_occluded_bows`` pass so ``bounding_box`` doesn't pay the O(E·V)
+        detection twice. NOTE (accepted limitation, mirrors the C2 comment):
+        with ``auto_expand=True`` the emit path bows against SCALED
+        working_positions, where a blocker's perp offset grows while the
+        radius does not — the painted arc can exceed this unscaled reserve.
+        ``below`` measures past position-space ``self.height`` and folds
+        straight into ``bounding_box().height`` (no content shift below)."""
+        bows = self._occluded_bows_from_self_positions()
+        if not bows:
+            return 0, 0
+        pos = self.positions
+        worst_above = 0.0
+        worst_below = float(self.height)
+        for (u, v), ctrl in bows.items():
+            _qx, qy, *_rest = self._quadratic_bow(
+                float(pos[u][0]), float(pos[u][1]),
+                float(pos[v][0]), float(pos[v][1]),
+                self._node_radius, ctrl,
+            )
+            worst_above = min(worst_above, qy)
+            worst_below = max(worst_below, qy)
+        above = int(math.ceil(-worst_above)) if worst_above < 0 else 0
+        over = worst_below - float(self.height)
+        below = int(math.ceil(over)) if over > 0 else 0
+        return above, below
+
+    def _occluded_extent_above(self) -> int:
+        """Above-only view of :meth:`_occluded_extents` (emit-side max)."""
+        return self._occluded_extents()[0]
 
     # ----- Primitive interface ---------------------------------------------
 
@@ -1811,11 +1997,14 @@ class Graph(PrimitiveBase):
         # \group graphs reserve exactly as much room as they paint.
         # #4 (JudgeZone sweep): a directed antiparallel-edge bow (C2) can
         # also reach above y=0 independent of \annotate/\group — fold that
-        # reach in too.
+        # reach in too. JZ-18: same for occluded-edge bows (one combined
+        # above+below pass; below folds into the height term).
+        occl_above, occl_below = self._occluded_extents()
         arrow_above = max(
             self._reserved_arrow_above(),
             self._group_extent_above(),
             self._antiparallel_extent_above(),
+            occl_above,
         )
         # Reserve a top band for the caption and shift content below it, so the
         # caption never overlaps the top nodes (mirrors Tree). Defect 6 — the
@@ -1836,7 +2025,10 @@ class Graph(PrimitiveBase):
             x=0,
             y=0,
             width=w,
-            height=self.height + 2 * r + arrow_above + self._below_lane_height() + label_h,
+            # JZ-18: a downward occluded-edge bow paints past the content
+            # bottom; reserve it (0 without such bows — byte-stable).
+            height=self.height + 2 * r + arrow_above + self._below_lane_height()
+            + label_h + occl_below,
         )
 
     def resolve_self_content_rects(self) -> "list[BoundingBox]":
@@ -1858,6 +2050,8 @@ class Graph(PrimitiveBase):
         }
         r = float(self._node_radius)
         antiparallel = self._antiparallel_edges(hidden)
+        # JZ-18: occluded-edge pill obstacles ride the bowed apex too.
+        occluded_bows = self._occluded_bows(pos, hidden)
         rects: list[BoundingBox] = []
         for n in self.nodes:
             if n in hidden or n not in pos:
@@ -1891,6 +2085,12 @@ class Graph(PrimitiveBase):
                 *_c, mid_x, mid_y = self._antiparallel_curve(
                     pos[u][0], pos[u][1], pos[v][0], pos[v][1],
                     self._node_radius,
+                )
+            elif (u, v) in occluded_bows:
+                # JZ-18: same parity for occluded-edge bows.
+                *_c, mid_x, mid_y = self._quadratic_bow(
+                    pos[u][0], pos[u][1], pos[v][0], pos[v][1],
+                    self._node_radius, occluded_bows[(u, v)],
                 )
             tw = measure_value_text(display, _WEIGHT_FONT, mono=True)
             pw = float(tw + _WEIGHT_PILL_PAD_X * 2)
@@ -2213,11 +2413,13 @@ class Graph(PrimitiveBase):
         # JudgeZone sweep: fold \group hull/title-pill reach into the same
         # lane \annotate pills reserve — see bounding_box's matching call.
         # JudgeZone sweep: fold the antiparallel-edge bow (C2) reach in too
-        # — same rationale, see bounding_box's matching call.
+        # — same rationale, see bounding_box's matching call. JZ-18: same
+        # for occluded-edge bows.
         arrow_above = max(
             self._reserved_arrow_above(),
             self._group_extent_above(),
             self._antiparallel_extent_above(),
+            self._occluded_extent_above(),
         )
         # #1: shift content right by left_pad so position=left pills clear the
         # viewBox. left_pad is 0 (int) without left pills, so the transform is
@@ -2355,6 +2557,9 @@ class Graph(PrimitiveBase):
         # C2: directed (u,v) whose reverse (v,u) is also drawn bows onto a
         # quadratic <path>; every other edge keeps its byte-identical <line>.
         antiparallel = self._antiparallel_edges(hidden_nodes)
+        # JZ-18: edges buried by a non-endpoint node bow around it (signed
+        # control offset per edge; empty for every non-occluded scene).
+        occluded_bows = self._occluded_bows(working_positions, hidden_nodes)
         parts.append('<g class="scriba-graph-edges">')
         for u, v, weight in sorted(self.edges, key=_edge_sort_key):
             edge_target = f"{self.name}.{self._edge_key(u, v)}"
@@ -2397,6 +2602,16 @@ class Graph(PrimitiveBase):
                 qx, qy, x1, y1, x2, y2, mid_x, mid_y = self._antiparallel_curve(
                     float(cx1), float(cy1), float(cx2), float(cy2),
                     self._node_radius,
+                )
+                curve_ctrl = (qx, qy)
+            elif (u, v) in occluded_bows:
+                # JZ-18: bow around the blocking node(s); the pill anchor
+                # (mid_x/mid_y) rides the apex, leaving the buried corridor.
+                cx1, cy1 = working_positions[u]
+                cx2, cy2 = working_positions[v]
+                qx, qy, x1, y1, x2, y2, mid_x, mid_y = self._quadratic_bow(
+                    float(cx1), float(cy1), float(cx2), float(cy2),
+                    self._node_radius, occluded_bows[(u, v)],
                 )
                 curve_ctrl = (qx, qy)
 

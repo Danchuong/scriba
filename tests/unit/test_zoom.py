@@ -261,9 +261,11 @@ def test_scriba_version_unchanged() -> None:
     # every page), then 33 -> 34 for the JZ-17 residual (the scene viewBox
     # height derives from the same per-shape timeline-max slot cursor as
     # the y-offsets — sum of slots, not best single frame; only documents
-    # whose shapes peak on different frames shift, zero corpus re-bless).
-    # Zoom remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 34
+    # whose shapes peak on different frames shift, zero corpus re-bless),
+    # then 34 -> 35 for JZ-18 (Graph edges buried by a non-endpoint node
+    # bow onto a quadratic arc + the measure replay applies frame states;
+    # 11 graph corpus re-blesses). Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 35
 
 
 def test_zoom_no_new_motion_kind() -> None:
