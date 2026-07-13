@@ -1,6 +1,6 @@
 # Scriba
 
-**Status:** v0.38.0 · MIT · Python 3.10+
+**Status:** v0.39.0 · MIT · Python 3.10+
 
 Scriba is a backend Python library that renders LaTeX problem statements and
 competitive-programming editorials to self-contained HTML fragments. It is
@@ -26,6 +26,23 @@ asset basenames needed to display it.
   [`docs/spec/ruleset.md`](docs/spec/ruleset.md) for the full grammar and
   error catalog.
 
+## What's new in v0.39.0 — slot-sum viewBox + occluded-edge bows
+
+**Two composition-level honesty fixes.** The scene viewBox was sized to the
+best single frame while shapes paint into fixed slots sized by their own
+timeline maxima — two shapes peaking on different frames clipped the bottom
+shape by a constant (the JudgeZone corpus sweep's −10/−19 px class); the
+viewBox now derives from the same slot cursor as the offsets. And a Graph
+edge whose chord runs within ink contact of a non-endpoint node (hierarchical
+rank-skips, force-layout grazes) now **bows onto a quadratic arc** that
+clears the blocker, weight pill riding the apex — no more edges buried under
+collinear neighbors with their pill stranded on a node. Prescan replays
+per-frame states for extent parity. 11 graph goldens re-bless, every bow
+audited (`SCRIBA_VERSION` 35).
+
+<details>
+<summary>v0.38.0 changelog</summary>
+
 ## What's new in v0.38.0 — Stack caption honesty + live-controls clearance
 
 **Two fixes where the real mechanism differed from the report.** A Stack's
@@ -37,6 +54,8 @@ prev/next chip's clearance was rem-based while the chip's box is px-based —
 matching only at 16px root font; new `--scriba-pill-*` tokens tie both to
 one `calc()` chain so chrome and content can never share pixels again.
 107 goldens re-bless, print frames untouched (`SCRIBA_VERSION` 33).
+
+</details>
 
 <details>
 <summary>v0.37.0 changelog</summary>

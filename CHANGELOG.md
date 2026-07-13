@@ -7,6 +7,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.39.0] - 2026-07-13 — Slot-sum viewBox + occluded-edge bows (#17 residual, #18)
+
+JudgeZone #17 residual (systematic across the reporter's corpus sweep:
+cses-1192/1680/1684) and #18, adversarially reviewed pre-merge (2 HIGH
+findings fixed before commit). 11 graph corpus re-blesses.
+`SCRIBA_VERSION` 33 → 35.
+
+### Fixed
+
+- **The scene viewBox now covers the slotted layout, not the best single
+  frame (#17 residual).** `measure_scene_layout` handed the emit loop fixed
+  y-slots sized by each primitive's timeline-max bbox but sized the viewBox
+  as the max over frames of the SIMULTANEOUS per-frame totals — whenever two
+  shapes peaked on different frames (a grid's pill headroom on the last
+  frame, the stack's depth mid-timeline) the bottom shape clipped by the
+  difference: constant per composition, invariant under `max_visible`,
+  dodgeable by declaration reorder, invisible to isolated repros. The
+  viewBox height now derives from the SAME slot cursor as the offsets.
+  Verified on the reporter's three real files: −13/−19/−19 px → +11 px
+  clear. Zero corpus re-blesses (monotonic timelines peak together). 3 tests.
+- **Graph edges buried by a non-endpoint node bow around it (#18).**
+  Hierarchical LR ranks a chain-with-shortcut collinear: the rank-skipping
+  edge was drawn straight through the intermediate node — invisible under
+  the short edges, weight pill stranded on/next to the node (the GEP pill
+  cascade already dodged nodes, but every point of a buried stroke lies on
+  another edge or a node — no pill-only fix exists). Any drawn edge whose
+  chord passes within ink contact (r+2 px) of a visible non-endpoint node
+  now bows onto a quadratic arc sized from the true deviation profile at
+  each blocker (capped), the pill riding the apex; the bow is mirrored into
+  the pill-obstacle channel and above/below extent reservation. Antiparallel
+  pairs keep their C2 bow. The prescan replay now also applies per-frame
+  STATES (emit-loop parity), so state-driven extent transitions — hiding one
+  direction of an antiparallel pair, whose survivor then occlusion-bows past
+  the C2 reserve — are reserved correctly. 24 tests; all 586 corpus bows
+  audited shape-scoped (0 unjustified, 0 missed).
+
+### Notes
+
+- Artifacts: `investigations/judgezone-17-residual-slot-viewbox-investigation.md`,
+  `investigations/judgezone-18-occluded-edge-bow-investigation.md`.
+- Authoring: the JudgeZone dodges (Stack-before-Grid declaration order,
+  `layout="force"` on cses-1671) are no longer needed on 0.39.0.
+
 ## [0.38.0] - 2026-07-11 — Stack caption honesty + live-controls clearance (#17)
 
 JudgeZone #17, both findings — and in both cases the REAL mechanism differed
