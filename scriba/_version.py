@@ -3,7 +3,7 @@
 __version__: str = "0.38.0"
 """PyPI SemVer. Bumped on every release."""
 
-SCRIBA_VERSION: int = 33
+SCRIBA_VERSION: int = 34
 """Integer version of the core abstractions (Pipeline, Document, Renderer,
 RenderArtifact, RenderContext). Bumped whenever the core API changes in a
 way that invalidates consumer caches, independent of __version__.
@@ -687,4 +687,19 @@ rendered output for such documents MUST invalidate.
     controls and are byte-identical.
 Every page shifts via the shared ``scriba-embed.css`` bundle (107 example
 re-blesses); Stack docs with caption+annotation also change geometry.
-Consumer caches keyed on rendered output MUST invalidate."""
+Consumer caches keyed on rendered output MUST invalidate.
+
+0.39.0 bumps 33→34 (JudgeZone #17 residual, slot-sum viewBox):
+``measure_scene_layout`` sized the shared viewBox as the max over frames of
+the SIMULTANEOUS per-frame stacked totals while handing the emit loop fixed
+y-slots sized by each primitive's TIMELINE-MAX bbox. Whenever two shapes
+reached their maxima on different frames (cses-1192: grid pill headroom on
+the last frame, stack depth mid-timeline) the slotted layout was taller
+than any single frame's total and the bottom shape's ink escaped the
+viewBox by the difference — a constant per composition, invariant under
+``max_visible``. The viewBox height now derives from the SAME slot cursor
+as the offsets (sum of per-shape maxima + gaps + padding). Scenes whose
+shapes peak together (all monotonic timelines — the entire golden corpus,
+zero re-blesses) are byte-identical; compositions with mid-timeline shrink
+grow a few px taller. Consumer caches keyed on rendered output MUST
+invalidate for such documents."""

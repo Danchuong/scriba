@@ -539,13 +539,19 @@ def measure_scene_layout(
     ``set_label``; the scene stores captions OUTSIDE ``apply_params``), and
     per-frame ``set_annotations`` — then records a checkpoint per frame.
 
-    Returns ``(viewbox, reserved_offsets)`` where the viewBox is the global
-    max over all checkpoints and the reserved y-stacking offsets come from
-    each primitive's max bbox across the SAME checkpoints.  Both consumers
-    derive from the same numbers, so they cannot drift: previously the
-    viewBox replayed structure but not captions, while the offsets replayed
-    neither — a growing Stack overlapped the primitive below it and a
-    mid-timeline caption painted past the viewBox.
+    Returns ``(viewbox, reserved_offsets)`` where BOTH values derive from the
+    same per-primitive timeline-max bboxes: the reserved y-stacking offsets
+    are the cumulative slot cursor over each primitive's max bbox, and the
+    viewBox height is that same cursor's final value (slot sum), NOT the max
+    over per-frame simultaneous totals.  The two disagree whenever two shapes
+    reach their maxima on DIFFERENT frames — the emit loop always paints into
+    the fixed slots, so a best-frame viewBox clipped the bottom shape by the
+    other shape's off-frame growth (JZ-17 residual: the grid's pill headroom
+    peaked on the last frame, the stack's depth mid-timeline → the stack
+    caption escaped the viewBox by the difference on its deepest frame).
+    History: the viewBox once replayed structure but not captions, while the
+    offsets replayed neither — a growing Stack overlapped the primitive below
+    it and a mid-timeline caption painted past the viewBox.
 
     Real primitives are never mutated (R-32.4 holds by construction).
     Must run AFTER ``_apply_min_arrow_above`` — the deep copies inherit the
@@ -579,24 +585,16 @@ def measure_scene_layout(
 
     max_bbox: dict[str, tuple[float, float]] = {}
     max_w = 0
-    max_h = 0
 
     def _capture() -> None:
-        nonlocal max_w, max_h
-        total = 0.0
+        nonlocal max_w
         row_w = 0.0
-        first = True
         for name, prim in sim.items():
             _, _, w, h = _normalize_bbox(prim.bounding_box())
             pw, ph = max_bbox.get(name, (0.0, 0.0))
             max_bbox[name] = (max(pw, w), max(ph, h))
-            if not first:
-                total += _PRIMITIVE_GAP
-            first = False
-            total += h
             row_w = max(row_w, w)
         max_w = max(max_w, int(row_w + 2 * _PADDING))
-        max_h = max(max_h, int(total + 2 * _PADDING))
 
     # Initial (pre-frame) extent.
     _capture()
@@ -685,7 +683,12 @@ def measure_scene_layout(
         reserved[name] = (0.0, y_cursor)
         y_cursor += max_bbox[name][1] + _PRIMITIVE_GAP
 
-    return f"0 0 {max_w} {max_h}", reserved
+    # Slot-sum height: the emit loop paints into the fixed slots above, so
+    # the viewBox must cover their full extent (drop the trailing gap, add
+    # the bottom padding) — a per-frame-total max under-reserves whenever
+    # shape maxima land on different frames.
+    total_h = int(y_cursor - _PRIMITIVE_GAP + _PADDING)
+    return f"0 0 {max_w} {total_h}", reserved
 
 
 def _pack_board(

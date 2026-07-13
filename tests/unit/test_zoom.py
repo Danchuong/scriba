@@ -258,8 +258,12 @@ def test_scriba_version_unchanged() -> None:
     # double-counting arrow_above — the last of 7 siblings to adopt the
     # house pattern — and the live-controls clearance is calc()-tied to
     # the pill's own box via --scriba-pill-* tokens; shared-CSS delta on
-    # every page). Zoom remains byte-shape-neutral.
-    assert SCRIBA_VERSION == 33
+    # every page), then 33 -> 34 for the JZ-17 residual (the scene viewBox
+    # height derives from the same per-shape timeline-max slot cursor as
+    # the y-offsets — sum of slots, not best single frame; only documents
+    # whose shapes peak on different frames shift, zero corpus re-bless).
+    # Zoom remains byte-shape-neutral.
+    assert SCRIBA_VERSION == 34
 
 
 def test_zoom_no_new_motion_kind() -> None:
